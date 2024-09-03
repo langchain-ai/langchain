@@ -122,6 +122,7 @@ class WebResearchRetriever(BaseRetriever):
             chunk_size=1500, chunk_overlap=150
         ),
         trust_env: bool = False,
+        allow_dangerous_requests: bool = False,
     ) -> "WebResearchRetriever":
         """Initialize from llm using default template.
 
@@ -134,6 +135,8 @@ class WebResearchRetriever(BaseRetriever):
             text_splitter: Text splitter for splitting web pages into chunks
             trust_env: Whether to use the http_proxy/https_proxy env variables
                 or check .netrc for proxy configuration
+            allow_dangerous_requests: A flag to force users to acknowledge
+                the risks of SSRF attacks when using this retriever
 
         Returns:
             WebResearchRetriever
@@ -162,6 +165,7 @@ class WebResearchRetriever(BaseRetriever):
             num_search_results=num_search_results,
             text_splitter=text_splitter,
             trust_env=trust_env,
+            allow_dangerous_requests=allow_dangerous_requests,
         )
 
     def clean_search_query(self, query: str) -> str:

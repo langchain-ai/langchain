@@ -16,7 +16,7 @@ from langchain_community.utils.openai import is_openai_v1
 
 @deprecated(
     since="0.0.9",
-    removal="0.3.0",
+    removal="1.0",
     alternative_import="langchain_openai.AzureOpenAIEmbeddings",
 )
 class AzureOpenAIEmbeddings(OpenAIEmbeddings):
@@ -65,10 +65,10 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
             or os.getenv("AZURE_OPENAI_API_KEY")
             or os.getenv("OPENAI_API_KEY")
         )
-        values["openai_api_base"] = values["openai_api_base"] or os.getenv(
+        values["openai_api_base"] = values.get("openai_api_base") or os.getenv(
             "OPENAI_API_BASE"
         )
-        values["openai_api_version"] = values["openai_api_version"] or os.getenv(
+        values["openai_api_version"] = values.get("openai_api_version") or os.getenv(
             "OPENAI_API_VERSION", default="2023-05-15"
         )
         values["openai_api_type"] = get_from_dict_or_env(
@@ -91,10 +91,10 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
         values["azure_ad_token"] = values.get("azure_ad_token") or os.getenv(
             "AZURE_OPENAI_AD_TOKEN"
         )
-        # Azure OpenAI embedding models allow a maximum of 16 texts
+        # Azure OpenAI embedding models allow a maximum of 2048 texts
         # at a time in each batch
         # See: https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#embeddings
-        values["chunk_size"] = min(values["chunk_size"], 16)
+        values["chunk_size"] = min(values["chunk_size"], 2048)
         try:
             import openai  # noqa: F401
         except ImportError:

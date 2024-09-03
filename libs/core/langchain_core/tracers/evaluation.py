@@ -144,11 +144,7 @@ class EvaluatorCallbackHandler(BaseTracer):
         example_id = str(run.reference_example_id)
         with self.lock:
             for res in eval_results:
-                run_id = (
-                    str(getattr(res, "target_run_id"))
-                    if hasattr(res, "target_run_id")
-                    else str(run.id)
-                )
+                run_id = str(getattr(res, "target_run_id", run.id))
                 self.logged_eval_results.setdefault((run_id, example_id), []).append(
                     res
                 )
@@ -179,11 +175,9 @@ class EvaluatorCallbackHandler(BaseTracer):
             source_info_: Dict[str, Any] = {}
             if res.evaluator_info:
                 source_info_ = {**res.evaluator_info, **source_info_}
-            run_id_ = (
-                getattr(res, "target_run_id")
-                if hasattr(res, "target_run_id") and res.target_run_id is not None
-                else run.id
-            )
+            run_id_ = getattr(res, "target_run_id", None)
+            if run_id_ is None:
+                run_id_ = run.id
             self.client.create_feedback(
                 run_id_,
                 res.key,

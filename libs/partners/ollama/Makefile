@@ -15,8 +15,10 @@ test tests:
 	poetry run pytest --disable-socket --allow-unix-socket $(TEST_FILE)
 
 # integration tests are run without the --disable-socket flag to allow network calls
-integration_test integration_tests:
+integration_test:
 	poetry run pytest $(TEST_FILE)
+# note: leaving out integration_tests (with s) command to skip release testing for now
+# TODO(erick) configure ollama server to run in CI, in separate repo
 
 ######################
 # LINTING AND FORMATTING
@@ -32,15 +34,13 @@ lint_tests: PYTHON_FILES=tests
 lint_tests: MYPY_CACHE=.mypy_cache_test
 
 lint lint_diff lint_package lint_tests:
-	poetry run ruff .
-	poetry run ruff format $(PYTHON_FILES) --diff
-	poetry run ruff --select I $(PYTHON_FILES)
-	mkdir -p $(MYPY_CACHE); poetry run mypy $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
+	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff $(PYTHON_FILES)
+	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff format $(PYTHON_FILES) --diff
+	[ "$(PYTHON_FILES)" = "" ] || mkdir -p $(MYPY_CACHE) && poetry run mypy $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
 
 format format_diff:
-	poetry run ruff format $(PYTHON_FILES)
-	poetry run ruff --select I --fix $(PYTHON_FILES)
-
+	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff format $(PYTHON_FILES)
+	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff --select I --fix $(PYTHON_FILES)
 spell_check:
 	poetry run codespell --toml pyproject.toml
 

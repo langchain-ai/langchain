@@ -147,7 +147,7 @@ def _convert_delta_to_message_chunk(
 
 
 @deprecated(
-    since="0.0.10", removal="0.3.0", alternative_import="langchain_openai.ChatOpenAI"
+    since="0.0.10", removal="1.0", alternative_import="langchain_openai.ChatOpenAI"
 )
 class ChatOpenAI(BaseChatModel):
     """`OpenAI` Chat large language models API.
@@ -245,8 +245,6 @@ class ChatOpenAI(BaseChatModel):
     """Optional httpx.Client."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
         allow_population_by_field_name = True
 
     @root_validator(pre=True)

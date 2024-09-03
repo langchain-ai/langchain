@@ -20,6 +20,9 @@ from langchain_community.graph_vectorstores.extractors.link_extractor import (
 from langchain_community.graph_vectorstores.extractors.link_extractor_adapter import (
     LinkExtractorAdapter,
 )
+from langchain_community.graph_vectorstores.extractors.link_extractor_transformer import (  # noqa: E501
+    LinkExtractorTransformer,
+)
 
 __all__ = [
     "GLiNERInput",
@@ -34,4 +37,5 @@ __all__ = [
     "LinkExtractor",
     "LinkExtractorAdapter",
     "LinkExtractorAdapter",
+    "LinkExtractorTransformer",
 ]

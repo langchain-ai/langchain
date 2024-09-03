@@ -17,7 +17,6 @@ from typing import (
 )
 from uuid import uuid4
 
-import ollama
 from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
@@ -36,11 +35,11 @@ from langchain_core.messages import (
 from langchain_core.messages.ai import UsageMetadata
 from langchain_core.messages.tool import tool_call
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_tool
-from ollama import AsyncClient, Message, Options
+from ollama import AsyncClient, Client, Message, Options
 
 
 def _get_usage_metadata_from_generation_info(
@@ -292,6 +291,11 @@ class ChatOllama(BaseChatModel):
     """The temperature of the model. Increasing the temperature will
     make the model answer more creatively. (Default: 0.8)"""
 
+    seed: Optional[int] = None
+    """Sets the random number seed to use for generation. Setting this
+    to a specific number will make the model generate the same text for
+    the same prompt."""
+
     stop: Optional[List[str]] = None
     """Sets the stop tokens to use."""
 
@@ -316,6 +320,24 @@ class ChatOllama(BaseChatModel):
     keep_alive: Optional[Union[int, str]] = None
     """How long the model will stay loaded into memory."""
 
+    base_url: Optional[str] = None
+    """Base url the model is hosted under."""
+
+    client_kwargs: Optional[dict] = {}
+    """Additional kwargs to pass to the httpx Client. 
+    For a full list of the params, see [this link](https://pydoc.dev/httpx/latest/httpx.Client.html)
+    """
+
+    _client: Client = Field(default=None)
+    """
+    The client to use for making requests.
+    """
+
+    _async_client: AsyncClient = Field(default=None)
+    """
+    The async client to use for making requests.
+    """
+
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling Ollama."""
@@ -333,6 +355,7 @@ class ChatOllama(BaseChatModel):
                 "repeat_last_n": self.repeat_last_n,
                 "repeat_penalty": self.repeat_penalty,
                 "temperature": self.temperature,
+                "seed": self.seed,
                 "stop": self.stop,
                 "tfs_z": self.tfs_z,
                 "top_k": self.top_k,
@@ -341,12 +364,21 @@ class ChatOllama(BaseChatModel):
             "keep_alive": self.keep_alive,
         }
 
+    @root_validator(pre=False, skip_on_failure=True)
+    def _set_clients(cls, values: dict) -> dict:
+        """Set clients to use for ollama."""
+        values["_client"] = Client(host=values["base_url"], **values["client_kwargs"])
+        values["_async_client"] = AsyncClient(
+            host=values["base_url"], **values["client_kwargs"]
+        )
+        return values
+
     def _convert_messages_to_ollama_messages(
         self, messages: List[BaseMessage]
     ) -> Sequence[Message]:
         ollama_messages: List = []
         for message in messages:
-            role = ""
+            role: Literal["user", "assistant", "system", "tool"]
             tool_call_id: Optional[str] = None
             tool_calls: Optional[List[Dict[str, Any]]] = None
             if isinstance(message, HumanMessage):
@@ -383,11 +415,13 @@ class ChatOllama(BaseChatModel):
                         image_url = None
                         temp_image_url = content_part.get("image_url")
                         if isinstance(temp_image_url, str):
-                            image_url = content_part["image_url"]
-                        elif (
-                            isinstance(temp_image_url, dict) and "url" in temp_image_url
-                        ):
                             image_url = temp_image_url
+                        elif (
+                            isinstance(temp_image_url, dict)
+                            and "url" in temp_image_url
+                            and isinstance(temp_image_url["url"], str)
+                        ):
+                            image_url = temp_image_url["url"]
                         else:
                             raise ValueError(
                                 "Only string image_url or dict with string 'url' "
@@ -408,15 +442,16 @@ class ChatOllama(BaseChatModel):
                             "Must either have type 'text' or type 'image_url' "
                             "with a string 'image_url' field."
                         )
-            msg = {
+            # Should convert to ollama.Message once role includes tool, and tool_call_id is in Message # noqa: E501
+            msg: dict = {
                 "role": role,
                 "content": content,
                 "images": images,
             }
+            if tool_calls:
+                msg["tool_calls"] = tool_calls  # type: ignore
             if tool_call_id:
                 msg["tool_call_id"] = tool_call_id
-            if tool_calls:
-                msg["tool_calls"] = tool_calls
             ollama_messages.append(msg)
 
         return ollama_messages
@@ -439,7 +474,7 @@ class ChatOllama(BaseChatModel):
 
         params["options"]["stop"] = stop
         if "tools" in kwargs:
-            yield await AsyncClient().chat(
+            yield await self._async_client.chat(
                 model=params["model"],
                 messages=ollama_messages,
                 stream=False,
@@ -449,7 +484,7 @@ class ChatOllama(BaseChatModel):
                 tools=kwargs["tools"],
             )  # type:ignore
         else:
-            async for part in await AsyncClient().chat(
+            async for part in await self._async_client.chat(
                 model=params["model"],
                 messages=ollama_messages,
                 stream=True,
@@ -477,7 +512,7 @@ class ChatOllama(BaseChatModel):
 
         params["options"]["stop"] = stop
         if "tools" in kwargs:
-            yield ollama.chat(
+            yield self._client.chat(
                 model=params["model"],
                 messages=ollama_messages,
                 stream=False,
@@ -487,7 +522,7 @@ class ChatOllama(BaseChatModel):
                 tools=kwargs["tools"],
             )
         else:
-            yield from ollama.chat(
+            yield from self._client.chat(
                 model=params["model"],
                 messages=ollama_messages,
                 stream=True,
@@ -712,8 +747,19 @@ class ChatOllama(BaseChatModel):
 
     def bind_tools(
         self,
-        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        tools: Sequence[Union[Dict[str, Any], Type, Callable, BaseTool]],
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
+        """Bind tool-like objects to this chat model.
+
+        Assumes model is compatible with OpenAI tool-calling API.
+
+        Args:
+            tools: A list of tool definitions to bind to this chat model.
+                Supports any tool definition handled by
+                :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`.
+            kwargs: Any additional parameters are passed directly to
+                ``self.bind(**kwargs)``.
+        """  # noqa: E501
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
         return super().bind(tools=formatted_tools, **kwargs)
