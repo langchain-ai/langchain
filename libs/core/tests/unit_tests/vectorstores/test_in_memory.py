@@ -10,7 +10,7 @@ from langchain_standard_tests.integration_tests.vectorstores import (
 from langchain_core.documents import Document
 from langchain_core.embeddings.fake import DeterministicFakeEmbedding
 from langchain_core.vectorstores import InMemoryVectorStore
-from tests.unit_tests.stubs import AnyStr, _AnyIdDocument
+from tests.unit_tests.stubs import _AnyIdDocument
 
 
 class TestInMemoryReadWriteTestSuite(ReadWriteTestSuite):
@@ -117,7 +117,7 @@ async def test_inmemory_filter() -> None:
 
     # Check sync version
     output = store.similarity_search("fee", filter=lambda doc: doc.metadata["id"] == 1)
-    assert output == [Document(page_content="foo", metadata={"id": 1}, id=AnyStr())]
+    assert output == [_AnyIdDocument(page_content="foo", metadata={"id": 1})]
 
     # filter with not stored document id
     output = await store.asimilarity_search(

@@ -34,8 +34,9 @@ try:
 except ImportError:
     TypingAnnotated = ExtensionsAnnotated
 
+from pydantic import BaseModel, Field
+
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables import Runnable, RunnableLambda
 from langchain_core.tools import BaseTool, tool
 from langchain_core.utils.function_calling import (
@@ -450,17 +451,17 @@ def test_multiple_tool_calls() -> None:
         {
             "id": messages[2].tool_call_id,
             "type": "function",
-            "function": {"name": "FakeCall", "arguments": '{"data": "ToolCall1"}'},
+            "function": {"name": "FakeCall", "arguments": '{"data":"ToolCall1"}'},
         },
         {
             "id": messages[3].tool_call_id,
             "type": "function",
-            "function": {"name": "FakeCall", "arguments": '{"data": "ToolCall2"}'},
+            "function": {"name": "FakeCall", "arguments": '{"data":"ToolCall2"}'},
         },
         {
             "id": messages[4].tool_call_id,
             "type": "function",
-            "function": {"name": "FakeCall", "arguments": '{"data": "ToolCall3"}'},
+            "function": {"name": "FakeCall", "arguments": '{"data":"ToolCall3"}'},
         },
     ]
 
@@ -481,7 +482,7 @@ def test_tool_outputs() -> None:
         {
             "id": messages[2].tool_call_id,
             "type": "function",
-            "function": {"name": "FakeCall", "arguments": '{"data": "ToolCall1"}'},
+            "function": {"name": "FakeCall", "arguments": '{"data":"ToolCall1"}'},
         },
     ]
     assert messages[2].content == "Output1"
@@ -737,8 +738,9 @@ def test__convert_typed_dict_to_openai_function(
 @pytest.mark.parametrize("typed_dict", [ExtensionsTypedDict, TypingTypedDict])
 def test__convert_typed_dict_to_openai_function_fail(typed_dict: Type) -> None:
     class Tool(typed_dict):
-        arg1: MutableSet  # Pydantic doesn't support
+        arg1: MutableSet  # Pydantic 2 supports this, but pydantic v1 does not.
 
+    # Error should be raised since we're using v1 code path here
     with pytest.raises(TypeError):
         _convert_typed_dict_to_openai_function(Tool)
 

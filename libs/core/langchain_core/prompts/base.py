@@ -18,6 +18,8 @@ from typing import (
 )
 
 import yaml
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+from typing_extensions import Self
 
 from langchain_core.output_parsers.base import BaseOutputParser
 from langchain_core.prompt_values import (
@@ -25,7 +27,6 @@ from langchain_core.prompt_values import (
     PromptValue,
     StringPromptValue,
 )
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.runnables import RunnableConfig, RunnableSerializable
 from langchain_core.runnables.config import ensure_config
 from langchain_core.runnables.utils import create_model
@@ -64,28 +65,26 @@ class BasePromptTemplate(
     tags: Optional[List[str]] = None
     """Tags to be used for tracing."""
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def validate_variable_names(cls, values: Dict) -> Dict:
+    @model_validator(mode="after")
+    def validate_variable_names(self) -> Self:
         """Validate variable names do not include restricted names."""
-        if "stop" in values["input_variables"]:
+        if "stop" in self.input_variables:
             raise ValueError(
                 "Cannot have an input variable named 'stop', as it is used internally,"
                 " please rename."
             )
-        if "stop" in values["partial_variables"]:
+        if "stop" in self.partial_variables:
             raise ValueError(
                 "Cannot have an partial variable named 'stop', as it is used "
                 "internally, please rename."
             )
 
-        overall = set(values["input_variables"]).intersection(
-            values["partial_variables"]
-        )
+        overall = set(self.input_variables).intersection(self.partial_variables)
         if overall:
             raise ValueError(
                 f"Found overlapping input and partial variables: {overall}"
             )
-        return values
+        return self
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
@@ -99,8 +98,9 @@ class BasePromptTemplate(
         Returns True."""
         return True
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     @property
     def OutputType(self) -> Any:
