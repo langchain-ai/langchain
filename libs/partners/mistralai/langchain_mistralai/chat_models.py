@@ -365,7 +365,7 @@ class ChatMistralAI(BaseChatModel):
         alias="api_key",
         default_factory=secret_from_env("MISTRAL_API_KEY", default=None),
     )
-    endpoint: Optional[str] = Field("https://api.mistral.ai/v1", alias="base_url")
+    endpoint: Optional[str] = Field(default=None, alias="base_url")
     max_retries: int = 5
     timeout: int = 120
     max_concurrent_requests: int = 64
@@ -473,6 +473,7 @@ class ChatMistralAI(BaseChatModel):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate api key, python package exists, temperature, and top_p."""
         api_key_str = values["mistral_api_key"].get_secret_value()
+        
         # todo: handle retries
         base_url_str = (
             values.get("endpoint")
@@ -480,6 +481,7 @@ class ChatMistralAI(BaseChatModel):
             or os.environ.get("MISTRAL_BASE_URL")
             or "https://api.mistral.ai/v1"
         )
+        values["endpoint"] = base_url_str
         if not values.get("client"):
             values["client"] = httpx.Client(
                 base_url=base_url_str,
