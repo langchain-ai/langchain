@@ -12,6 +12,10 @@ class TestAzureOpenAIStandard(EmbeddingsUnitTests):
         return AzureOpenAIEmbeddings
 
     @property
+    def embedding_model_params(self) -> dict:
+        return {"azure_endpoint": "https://endpoint.com"}
+
+    @property
     def init_from_env_params(self) -> Tuple[dict, dict, dict]:
         return (
             {
