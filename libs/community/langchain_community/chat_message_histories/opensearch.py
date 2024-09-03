@@ -139,7 +139,7 @@ class OpenSearchChatMessageHistory(BaseChatMessageHistory):
 
             self.client.delete_by_query(
                 index=self.index,
-                body={"SessionId": self.session_id},
+                body={"query": {"term": {"SessionId": self.session_id}}},
             )
         except RequestError as err:
             logger.error("Could not clear session memory in OpenSearch: %s", err)
