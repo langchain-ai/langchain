@@ -17,7 +17,7 @@ jobs:
       fail-fast: false
       matrix:
         python-version:
-          - "3.8"
+          - "3.9"
           - "3.11"
         working-directory:
           - "libs/partners/openai"
