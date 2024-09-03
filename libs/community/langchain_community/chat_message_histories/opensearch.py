@@ -1,7 +1,7 @@
 import json
 import logging
 from time import time
-from typing import Any, List
+from typing import Any, List, Union
 
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.messages import BaseMessage, message_to_dict, messages_from_dict
@@ -39,7 +39,9 @@ class OpenSearchChatMessageHistory(BaseChatMessageHistory):
         self.index = index
         self.session_id = session_id
 
-        opensearch_connection: "OpenSearch" | None = kwargs.get("opensearch_connection")
+        opensearch_connection: Union["OpenSearch", None] = kwargs.get(
+            "opensearch_connection"
+        )
 
         try:
             from opensearchpy import OpenSearch
