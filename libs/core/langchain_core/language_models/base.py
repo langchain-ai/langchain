@@ -115,7 +115,7 @@ class BaseLanguageModel(
     """
     # Repr = False is consistent with pydantic 1 if verbose = False
     # We can relax this for pydantic 2?
-    # TODO(Team): decide what to do here.
+    # TODO(0.3): Resolve repr for verbose
     # Modified just to get unit tests to pass.
     verbose: bool = Field(default_factory=_get_verbosity, exclude=True, repr=False)
     """Whether to print out response text."""
