@@ -73,3 +73,7 @@ class PiecesOSLLM(BaseLLM):
             except Exception as error:
                 print(f'Error streaming question: {error}')
                 yield GenerationChunk(text='Error streaming question')
+
+    def get_supported_models(self) -> List[str]:
+        """Get the list of supported models."""
+        return [model.value for model in ModelFoundationEnum]      
