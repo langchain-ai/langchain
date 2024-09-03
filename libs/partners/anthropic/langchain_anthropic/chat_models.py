@@ -53,7 +53,7 @@ from pydantic import (
     BaseModel,
     Field,
     SecretStr,
-    root_validator,
+    root_validator, model_validator,
 )
 from langchain_core.runnables import (
     Runnable,
@@ -625,8 +625,9 @@ class ChatAnthropic(BaseChatModel):
             ls_params["ls_stop"] = ls_stop
         return ls_params
 
-    @root_validator(pre=True)
-    def build_extra(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: Dict) -> Any:
         extra = values.get("model_kwargs", {})
         all_required_field_names = get_pydantic_field_names(cls)
         values["model_kwargs"] = build_extra_kwargs(

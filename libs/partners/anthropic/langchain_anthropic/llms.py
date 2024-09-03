@@ -21,7 +21,7 @@ from langchain_core.language_models import BaseLanguageModel, LangSmithParams
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
 from langchain_core.prompt_values import PromptValue
-from pydantic import Field, SecretStr, root_validator
+from pydantic import Field, SecretStr, root_validator, model_validator
 from langchain_core.utils import (
     get_pydantic_field_names,
 )
@@ -86,8 +86,9 @@ class _AnthropicCommon(BaseLanguageModel):
     count_tokens: Optional[Callable[[str], int]] = None
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
 
-    @root_validator(pre=True)
-    def build_extra(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: Dict) -> Any:
         extra = values.get("model_kwargs", {})
         all_required_field_names = get_pydantic_field_names(cls)
         values["model_kwargs"] = build_extra_kwargs(
@@ -164,8 +165,9 @@ class AnthropicLLM(LLM, _AnthropicCommon):
 
     model_config = ConfigDict(populate_by_name=True,arbitrary_types_allowed=True,)
 
-    @root_validator(pre=True)
-    def raise_warning(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def raise_warning(cls, values: Dict) -> Any:
         """Raise warning that this class is deprecated."""
         warnings.warn(
             "This Anthropic LLM is deprecated. "
