@@ -528,3 +528,23 @@ def test_reset_collection(client: chromadb.ClientAPI) -> None:
     assert vectorstore._collection.count() == 0
     # Clean up
     vectorstore.delete_collection()
+
+
+def test_delete_where_clause(client: chromadb.ClientAPI) -> None:
+    """Tests delete_where_clause method."""
+    vectorstore = Chroma(
+        client=client,
+        collection_name="test_collection",
+        embedding_function=FakeEmbeddings(),
+    )
+    vectorstore.add_documents(
+        [
+            Document(page_content="foo", metadata={"test": "bar"}),
+            Document(page_content="bar", metadata={"test": "foo"}),
+        ]
+    )
+    assert vectorstore._collection.count() == 2
+    vectorstore.delete(where={"test": "bar"})
+    assert vectorstore._collection.count() == 1
+    # Clean up
+    vectorstore.delete_collection()
