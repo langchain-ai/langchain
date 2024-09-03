@@ -1,7 +1,7 @@
 import json
 import logging
 from time import time
-from typing import List
+from typing import Any, List
 
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.messages import BaseMessage, message_to_dict, messages_from_dict
@@ -30,16 +30,16 @@ class OpenSearchChatMessageHistory(BaseChatMessageHistory):
 
     def __init__(
         self,
-        opensearch_url: str = None,
-        session_id: str = None,
+        opensearch_url: str,
+        session_id: str,
         index: str = DEFAULT_INDEX_NAME,
-        **kwargs,
+        **kwargs: Any,
     ):
         self.opensearch_url = opensearch_url
         self.index = index
         self.session_id = session_id
 
-        opensearch_connection = kwargs.get("opensearch_connection")
+        opensearch_connection: "OpenSearch" | None = kwargs.get("opensearch_connection")
 
         try:
             from opensearchpy import OpenSearch
@@ -52,7 +52,7 @@ class OpenSearchChatMessageHistory(BaseChatMessageHistory):
 
         try:
             if opensearch_connection:
-                self.client = kwargs.get("opensearch_connection").options(
+                self.client = opensearch_connection.options(
                     headers={"user-agent": self.get_user_agent()}
                 )
             else:
