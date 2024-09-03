@@ -513,8 +513,8 @@ class ChatAnthropic(BaseChatModel):
         populate_by_name=True,
     )
 
-    _client: anthropic.Client = Field(default=None)
-    _async_client: anthropic.AsyncClient = Field(default=None)
+    client: anthropic.Client = Field(default=None)
+    async_client: anthropic.AsyncClient = Field(default=None)
 
     model: str = Field(alias="model_name")
     """Model name to use."""
@@ -652,8 +652,8 @@ class ChatAnthropic(BaseChatModel):
         if self.default_request_timeout is None or self.default_request_timeout > 0:
             client_params["timeout"] = self.default_request_timeout
 
-        self._client = anthropic.Client(**client_params)
-        self._async_client = anthropic.AsyncClient(**client_params)
+        self.client = anthropic.Client(**client_params)
+        self.async_client = anthropic.AsyncClient(**client_params)
         return self
 
     def _get_request_payload(
@@ -692,7 +692,7 @@ class ChatAnthropic(BaseChatModel):
             stream_usage = self.stream_usage
         kwargs["stream"] = True
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
-        stream = self._client.messages.create(**payload)
+        stream = self.client.messages.create(**payload)
         coerce_content_to_string = not _tools_in_params(payload)
         for event in stream:
             msg = _make_message_chunk_from_anthropic_event(
@@ -719,7 +719,7 @@ class ChatAnthropic(BaseChatModel):
             stream_usage = self.stream_usage
         kwargs["stream"] = True
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
-        stream = await self._async_client.messages.create(**payload)
+        stream = await self.async_client.messages.create(**payload)
         coerce_content_to_string = not _tools_in_params(payload)
         async for event in stream:
             msg = _make_message_chunk_from_anthropic_event(
@@ -773,7 +773,7 @@ class ChatAnthropic(BaseChatModel):
             )
             return generate_from_stream(stream_iter)
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
-        data = self._client.messages.create(**payload)
+        data = self.client.messages.create(**payload)
         return self._format_output(data, **kwargs)
 
     async def _agenerate(
@@ -789,7 +789,7 @@ class ChatAnthropic(BaseChatModel):
             )
             return await agenerate_from_stream(stream_iter)
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
-        data = await self._async_client.messages.create(**payload)
+        data = await self.async_client.messages.create(**payload)
         return self._format_output(data, **kwargs)
 
     def bind_tools(

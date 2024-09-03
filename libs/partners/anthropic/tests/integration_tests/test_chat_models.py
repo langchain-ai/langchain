@@ -109,7 +109,7 @@ async def test_astream() -> None:
         assert token.usage_metadata is None
 
     # Check expected raw API output
-    async_client = model._async_client
+    async_client = model.async_client
     params: dict = {
         "model": "claude-3-haiku-20240307",
         "max_tokens": 1024,
