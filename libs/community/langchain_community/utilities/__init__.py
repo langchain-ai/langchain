@@ -8,9 +8,6 @@ import importlib
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from langchain_community.utilities.mindsdb import (
-        AIDataMindWrapper
-    )
     from langchain_community.utilities.alpha_vantage import (
         AlphaVantageAPIWrapper,
     )
@@ -90,6 +87,7 @@ if TYPE_CHECKING:
     from langchain_community.utilities.metaphor_search import (
         MetaphorSearchAPIWrapper,
     )
+    from langchain_community.utilities.mindsdb import AIDataMindWrapper
     from langchain_community.utilities.mojeek_search import (
         MojeekSearchAPIWrapper,
     )
@@ -239,7 +237,9 @@ __all__ = [
 ]
 
 _module_lookup = {
-    "AIDataMindWrapper": "langchain_community.utilities.mindsdb.ai_data_mind.ai_data_mind_wrapper",
+    "AIDataMindWrapper": (
+        "langchain_community.utilities.mindsdb.ai_data_mind.ai_data_mind_wrapper"
+    ),
     "AlphaVantageAPIWrapper": "langchain_community.utilities.alpha_vantage",
     "ApifyWrapper": "langchain_community.utilities.apify",
     "ArceeWrapper": "langchain_community.utilities.arcee",

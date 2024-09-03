@@ -1,10 +1,10 @@
 import secrets
-from typing import Text, Dict, Any
+from typing import Any, Text
+
+from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
 from langchain_community.utils.openai import is_openai_v1
-
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr
 
 DEFAULT_API_BASE = "https://llm.mdb.ai"
 DEFAULT_MODEL = "gpt-3.5-turbo"
@@ -48,7 +48,7 @@ class BaseMindWrapper(BaseModel):
                 "Please install it with `pip install openai`.",
             ) from e
 
-        # Set the client based on the version of the `openai` package that is being used.
+        # Set the client based on the version of the `openai` package.
         try:
             if is_openai_v1():
                 client_params = {

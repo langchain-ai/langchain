@@ -32,9 +32,6 @@ if TYPE_CHECKING:
     )
     from langchain_core.tools.convert import tool as tool
 
-    from langchain_community.tools.mindsdb import (
-        AIMindTool
-    )
     from langchain_community.tools.ainetwork.app import (
         AINAppOps,
     )
@@ -182,6 +179,7 @@ if TYPE_CHECKING:
     from langchain_community.tools.metaphor_search import (
         MetaphorSearchResults,
     )
+    from langchain_community.tools.mindsdb import AIMindTool
     from langchain_community.tools.mojeek_search.tool import (
         MojeekSearch,
     )

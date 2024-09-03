@@ -1,7 +1,7 @@
-import sys
-import json
 import inspect
-from typing import Text, Dict, Literal, Union
+import json
+import sys
+from typing import Dict, Literal, Text, Union
 
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
@@ -9,7 +9,7 @@ from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
 def get_supported_data_sources() -> Dict:
     return {
-        name.lower().replace('model', ''): cls
+        name.lower().replace("model", ""): cls
         for name, cls in inspect.getmembers(sys.modules[__name__], inspect.isclass)
         if issubclass(cls, BaseModel) and cls is not BaseModel
     }
@@ -21,7 +21,7 @@ class PostgresModel(BaseModel):
     host: Text = Field(default=None)
     port: int = Field(default=5432)
     database: Text = Field(default=None)
-    database_schema: Text = Field(alias='schema', default=None)
+    database_schema: Text = Field(alias="schema", default=None)
 
     def __init__(self, **data):
         super().__init__(**data)
@@ -157,7 +157,7 @@ class ClickHouseModel(BaseModel):
     host: Text = Field(default=None)
     port: int = Field(default=8443)
     database: Text = Field(default=None)
-    protocol: Literal['native', 'http', 'https'] = Field(default='http')
+    protocol: Literal["native", "http", "https"] = Field(default="http")
 
     def __init__(self, **data):
         super().__init__(**data)
@@ -193,7 +193,7 @@ class ClickHouseModel(BaseModel):
             data,
             "protocol",
             "CLICKHOUSE_PROTOCOL",
-            default='http',
+            default="http",
         )
 
     def dict(self, **kwargs):
@@ -202,7 +202,7 @@ class ClickHouseModel(BaseModel):
         # Convert the secret password to a string.
         base_dict["password"] = base_dict["password"].get_secret_value()
         return base_dict
-    
+
 
 class SnowflakeModel(BaseModel):
     account: Text = Field(default=None)
@@ -210,7 +210,7 @@ class SnowflakeModel(BaseModel):
     password: SecretStr = Field(default=None)
     warehouse: Text = Field(default=None)
     database: Text = Field(default=None)
-    database_schema: Text = Field(alias='schema', default=None)
+    database_schema: Text = Field(alias="schema", default=None)
 
     def __init__(self, **data):
         super().__init__(**data)
@@ -258,7 +258,7 @@ class SnowflakeModel(BaseModel):
         del base_dict["database_schema"]
 
         return base_dict
-    
+
 
 class BigQueryModel(BaseModel):
     project_id: Text = Field(default=None)
@@ -291,5 +291,7 @@ class BigQueryModel(BaseModel):
         base_dict = super().dict(**kwargs)
 
         # Convert the secret service account json to a dict.
-        base_dict["service_account_json"] = json.loads(base_dict["service_account_json"].get_secret_value())
+        base_dict["service_account_json"] = json.loads(
+            base_dict["service_account_json"].get_secret_value()
+        )
         return base_dict

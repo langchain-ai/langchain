@@ -1,8 +1,14 @@
-from typing import Text, List, Dict, Any, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Text
+
+from langchain_core.pydantic_v1 import BaseModel, Field
 
 from langchain_community.utilities.mindsdb import BaseMindWrapper
-from langchain_community.utilities.mindsdb.ai_data_mind.database_models import get_supported_data_sources
-from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_community.utilities.mindsdb.ai_data_mind.database_models import (
+    get_supported_data_sources,
+)
+
+if TYPE_CHECKING:
+    from mindsdb_sdk.utils.mind import DatabaseConfig
 
 
 class DataSourceConfig(BaseModel):
@@ -59,7 +65,8 @@ class AIDataMindWrapper(BaseMindWrapper):
                 "Please install it with `pip install mindsdb_sdk`.",
             ) from e
 
-        # Validate that the correct connection arguments are provided for the chosen data sources.
+        # Validate that the correct connection arguments are provided for
+        # the chosen data sources.
         data_source_config_objs = []
         for data_source_config in self.data_source_configs:
             data_source_config_obj = DataSourceConfig(**data_source_config)
@@ -77,10 +84,8 @@ class AIDataMindWrapper(BaseMindWrapper):
     def run(self, query: Text) -> Text:
         completion = self.client.create(
             model=self.mind.name,
-            messages=[
-                {'role': 'user', 'content': query}
-            ],
-            stream=False
+            messages=[{"role": "user", "content": query}],
+            stream=False,
         )
 
         return completion.choices[0].message.content
