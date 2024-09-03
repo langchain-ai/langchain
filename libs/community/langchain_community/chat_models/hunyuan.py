@@ -37,16 +37,30 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     elif isinstance(message, SystemMessage):
         message_dict = {"Role": "system", "Content": message.content}
     elif isinstance(message, HumanMessage):
-        if isinstance(message.content, str):
-            message_dict = {"Role": "user", "Content": message.content}
+        success, contents = _string_to_object(message.content)
+        if success:
+            message_dict = {"Role": "user", "Contents": contents}
         else:
-            message_dict = {"Role": "user", "Contents": message.content}
+            message_dict = {"Role": "user", "Content": message.content}
     elif isinstance(message, AIMessage):
         message_dict = {"Role": "assistant", "Content": message.content}
     else:
         raise TypeError(f"Got unknown type {message}")
 
     return message_dict
+
+
+def _string_to_object(string):
+    try:
+        obj = eval(string)
+        success = True
+        for content in obj:
+            if content.get('Type') not in ["image_url", "text"]:
+                success = False
+                break
+        return success, obj
+    except BaseException as e:
+        return False, None
 
 
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:

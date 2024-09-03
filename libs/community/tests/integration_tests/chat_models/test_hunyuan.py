@@ -89,7 +89,7 @@ def test_chat_hunyuan_with_model_vision() -> None:
         },
         {"Type": "text", "Text": "下面图片中是哪个公司的 Logo？"},
     ]
-    message = HumanMessage(content=content)
+    message = HumanMessage(content=str(content))
     response = chat.invoke([message])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)

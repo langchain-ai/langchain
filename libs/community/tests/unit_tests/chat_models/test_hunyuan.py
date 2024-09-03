@@ -33,7 +33,7 @@ def test__convert_message_to_dict_human_vision() -> None:
         },
         {"Type": "text", "Text": "下面图片中是哪个公司的 Logo？"},
     ]
-    message = HumanMessage(content=content)
+    message = HumanMessage(content=str(content))
     result = _convert_message_to_dict(message)
     expected_output = {
         "Role": "user",
