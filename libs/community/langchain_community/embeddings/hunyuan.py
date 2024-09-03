@@ -1,5 +1,4 @@
 import json
-import time
 from typing import Any, Dict, List, Literal, Type
 
 from langchain_core.embeddings import Embeddings
@@ -23,8 +22,6 @@ class HunyuanEmbeddings(Embeddings, BaseModel):
     """The region of hunyuan service."""
     embedding_ctx_length: int = 1024
     """The max embedding context length of hunyuan embedding. Just note that it is 1024."""
-    max_retries: int = 5
-    """The max retries of hunyuan embedding. Default is 5."""
     show_progress_bar: bool = False
     """Show progress bar when embedding. Default is False."""
 
@@ -57,7 +54,9 @@ class HunyuanEmbeddings(Embeddings, BaseModel):
             from tencentcloud.hunyuan.v20230901.hunyuan_client import HunyuanClient
             from tencentcloud.hunyuan.v20230901.models import GetEmbeddingRequest
         except ImportError:
-            raise ImportError("Could not import tencentcloud sdk python package. " "Please install it with `pip install \"tencentcloud-sdk-python>=3.0.1139\"`.")
+            raise ImportError(
+                'Could not import tencentcloud sdk python package. Please install it with `pip install "tencentcloud-sdk-python>=3.0.1139"`.'
+            )
 
         client_profile = ClientProfile()
         client_profile.httpProfile.pre_conn_pool_size = 3
@@ -73,19 +72,7 @@ class HunyuanEmbeddings(Embeddings, BaseModel):
         request = self.request_cls()
         request.Input = text
 
-        retry_sec = 1
-        response = None
-        for _ in range(self.max_retries):
-            try:
-                response = self.client.GetEmbedding(request)
-            except Exception:
-                time.sleep(retry_sec)
-                retry_sec <<= 1
-            else:
-                break
-
-        if not response:
-            raise RuntimeError("Hunyuan embedding error: Retry time exceed")
+        response = self.client.GetEmbedding(request)
 
         _response: Dict[str, Any] = json.loads(response.to_json_string())
 
