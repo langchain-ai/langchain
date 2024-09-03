@@ -275,16 +275,18 @@ class Runnable(Generic[Input, Output], ABC):
     @property
     def InputType(self) -> Type[Input]:
         """The type of input this Runnable accepts specified as a type annotation."""
-        # First loop through bases -- this will help generic
-        # any pydantic models.
+        # First loop through all parent classes and if any of them is
+        # a pydantic model, we will pick up the generic parameterization
+        # from that model via the __pydantic_generic_metadata__ attribute.
         for base in self.__class__.mro():
             if hasattr(base, "__pydantic_generic_metadata__"):
                 metadata = base.__pydantic_generic_metadata__
                 if "args" in metadata and len(metadata["args"]) == 2:
                     return metadata["args"][0]
 
-        # then loop through __orig_bases__ -- this will Runnables that do not inherit
-        # from pydantic
+        # If we didn't find a pydantic model in the parent classes,
+        # then loop through __orig_bases__. This corresponds to
+        # Runnables that are not pydantic models.
         for cls in self.__class__.__orig_bases__:  # type: ignore[attr-defined]
             type_args = get_args(cls)
             if type_args and len(type_args) == 2:
