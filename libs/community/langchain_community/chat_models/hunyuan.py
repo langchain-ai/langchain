@@ -37,7 +37,10 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     elif isinstance(message, SystemMessage):
         message_dict = {"Role": "system", "Content": message.content}
     elif isinstance(message, HumanMessage):
-        message_dict = {"Role": "user", "Content": message.content}
+        if isinstance(message.content,str):
+            message_dict = {"Role": "user", "Content": message.content}
+        else:
+            message_dict = {"Role": "user", "Contents": message.content}
     elif isinstance(message, AIMessage):
         message_dict = {"Role": "assistant", "Content": message.content}
     else:

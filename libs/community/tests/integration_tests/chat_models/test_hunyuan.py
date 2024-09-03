@@ -77,6 +77,29 @@ def test_chat_hunyuan_with_prompt_template() -> None:
     assert uuid.UUID(response.id), "Invalid UUID"
 
 
+@pytest.mark.requires("tencentcloud-sdk-python")
+def test_chat_hunyuan_with_model_vision() -> None:
+    chat = ChatHunyuan(model="hunyuan-vision")
+    content=[
+                {
+                    "Type": "image_url",
+                    "ImageUrl": {
+                        "Url": "https://cloudcache.tencent-cloud.com/qcloud/ui/portal-set/build/About/images/bg-product-series_87d.png"
+                    }
+                },
+                {
+                    "Type": "text",
+                    "Text": "图片内容是？"
+                }
+            ]
+    message = HumanMessage(content=content)
+    response = chat.invoke([message])
+    assert isinstance(response, AIMessage)
+    assert isinstance(response.content, str)
+    assert response.id is not None, "request_id is empty"
+    assert uuid.UUID(response.id), "Invalid UUID"
+
+
 def test_extra_kwargs() -> None:
     chat = ChatHunyuan(temperature=0.88, top_p=0.7)
     assert chat.temperature == 0.88
