@@ -76,7 +76,7 @@ from pydantic import (
     ConfigDict,
     Field,
     SecretStr,
-    root_validator,
+    root_validator, model_validator,
 )
 
 logger = logging.getLogger(__name__)
@@ -469,47 +469,47 @@ class ChatMistralAI(BaseChatModel):
         combined = {"token_usage": overall_token_usage, "model_name": self.model}
         return combined
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="after")
+    def validate_environment(self) -> Self:
         """Validate api key, python package exists, temperature, and top_p."""
-        api_key_str = values["mistral_api_key"].get_secret_value()
+        api_key_str = self.mistral_api_key.get_secret_value()
 
         # todo: handle retries
         base_url_str = (
-            values.get("endpoint")
+            (self.endpoint or None)
             or os.environ.get("MISTRAL_BASE_URL")
             or "https://api.mistral.ai/v1"
         )
-        values["endpoint"] = base_url_str
-        if not values.get("client"):
-            values["client"] = httpx.Client(
+        self.endpoint = base_url_str
+        if not (self.client or None):
+            self.client = httpx.Client(
                 base_url=base_url_str,
                 headers={
                     "Content-Type": "application/json",
                     "Accept": "application/json",
                     "Authorization": f"Bearer {api_key_str}",
                 },
-                timeout=values["timeout"],
+                timeout=self.timeout,
             )
         # todo: handle retries and max_concurrency
-        if not values.get("async_client"):
-            values["async_client"] = httpx.AsyncClient(
+        if not (self.async_client or None):
+            self.async_client = httpx.AsyncClient(
                 base_url=base_url_str,
                 headers={
                     "Content-Type": "application/json",
                     "Accept": "application/json",
                     "Authorization": f"Bearer {api_key_str}",
                 },
-                timeout=values["timeout"],
+                timeout=self.timeout,
             )
 
-        if values["temperature"] is not None and not 0 <= values["temperature"] <= 1:
+        if self.temperature is not None and not 0 <= self.temperature <= 1:
             raise ValueError("temperature must be in the range [0.0, 1.0]")
 
-        if values["top_p"] is not None and not 0 <= values["top_p"] <= 1:
+        if self.top_p is not None and not 0 <= self.top_p <= 1:
             raise ValueError("top_p must be in the range [0.0, 1.0]")
 
-        return values
+        return self
 
     def _generate(
         self,
