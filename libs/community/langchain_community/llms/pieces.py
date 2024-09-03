@@ -77,9 +77,6 @@ class PiecesOSLLM(BaseLLM):
         """Set the model to be used."""
         if model_name in self.get_supported_models():
             self.model = model_name
-            # Here you would typically configure the client to use the selected model
-            # Since we can't pass it directly, you might need to use a different approach
-            # For example, you could set a configuration in the client or use a different endpoint
             print(f"Model set to {model_name}. Note: This setting may not directly affect API calls.")
         else:
             raise ValueError(f"Unsupported model: {model_name}. Supported models are: {', '.join(self.get_supported_models())}")
