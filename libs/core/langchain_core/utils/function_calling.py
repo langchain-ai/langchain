@@ -196,7 +196,7 @@ def convert_python_function_to_openai_function(
 
 def _convert_typed_dict_to_openai_function(typed_dict: Type) -> FunctionDescription:
     visited: Dict = {}
-    from pydantic.v1 import BaseModel  # pydantic: ignore
+    from pydantic.v1 import BaseModel  
 
     model = cast(
         Type[BaseModel],
@@ -214,8 +214,8 @@ def _convert_any_typed_dicts_to_pydantic(
     visited: Dict,
     depth: int = 0,
 ) -> Type:
-    from pydantic.v1 import Field as Field_v1  # pydantic: ignore
-    from pydantic.v1 import create_model as create_model_v1  # pydantic: ignore
+    from pydantic.v1 import Field as Field_v1  
+    from pydantic.v1 import create_model as create_model_v1  
 
     if type_ in visited:
         return visited[type_]

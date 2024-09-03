@@ -3,7 +3,7 @@ import json
 from json import JSONDecodeError
 from typing import Any, Dict, List, Optional
 
-from pydantic import SkipValidation, ValidationError  # pydantic: ignore
+from pydantic import SkipValidation, ValidationError  
 from typing_extensions import Annotated
 
 from langchain_core.exceptions import OutputParserException

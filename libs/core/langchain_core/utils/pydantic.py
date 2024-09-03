@@ -7,10 +7,10 @@ import textwrap
 from functools import wraps
 from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union, overload
 
-import pydantic  # pydantic: ignore
-from pydantic import BaseModel, root_validator  # pydantic: ignore
-from pydantic.json_schema import GenerateJsonSchema, JsonSchemaValue  # pydantic: ignore
-from pydantic_core import core_schema  # pydantic: ignore
+import pydantic  
+from pydantic import BaseModel, root_validator  
+from pydantic.json_schema import GenerateJsonSchema, JsonSchemaValue  
+from pydantic_core import core_schema  
 
 
 def get_pydantic_major_version() -> int:
@@ -77,13 +77,13 @@ def is_basemodel_subclass(cls: Type) -> bool:
         return False
 
     if PYDANTIC_MAJOR_VERSION == 1:
-        from pydantic import BaseModel as BaseModelV1Proper  # pydantic: ignore
+        from pydantic import BaseModel as BaseModelV1Proper  
 
         if issubclass(cls, BaseModelV1Proper):
             return True
     elif PYDANTIC_MAJOR_VERSION == 2:
-        from pydantic import BaseModel as BaseModelV2  # pydantic: ignore
-        from pydantic.v1 import BaseModel as BaseModelV1  # pydantic: ignore
+        from pydantic import BaseModel as BaseModelV2  
+        from pydantic.v1 import BaseModel as BaseModelV1  
 
         if issubclass(cls, BaseModelV2):
             return True
@@ -105,13 +105,13 @@ def is_basemodel_instance(obj: Any) -> bool:
     * pydantic.v1.BaseModel in Pydantic 2.x
     """
     if PYDANTIC_MAJOR_VERSION == 1:
-        from pydantic import BaseModel as BaseModelV1Proper  # pydantic: ignore
+        from pydantic import BaseModel as BaseModelV1Proper  
 
         if isinstance(obj, BaseModelV1Proper):
             return True
     elif PYDANTIC_MAJOR_VERSION == 2:
-        from pydantic import BaseModel as BaseModelV2  # pydantic: ignore
-        from pydantic.v1 import BaseModel as BaseModelV1  # pydantic: ignore
+        from pydantic import BaseModel as BaseModelV2  
+        from pydantic.v1 import BaseModel as BaseModelV1  
 
         if isinstance(obj, BaseModelV2):
             return True
@@ -222,9 +222,9 @@ def _create_subset_model_v1(
 ) -> Type[BaseModel]:
     """Create a pydantic model with only a subset of model's fields."""
     if PYDANTIC_MAJOR_VERSION == 1:
-        from pydantic import create_model  # pydantic: ignore
+        from pydantic import create_model  
     elif PYDANTIC_MAJOR_VERSION == 2:
-        from pydantic.v1 import create_model  # type: ignore # pydantic: ignore
+        from pydantic.v1 import create_model  # type: ignore 
     else:
         raise NotImplementedError(
             f"Unsupported pydantic version: {PYDANTIC_MAJOR_VERSION}"
@@ -259,8 +259,8 @@ def _create_subset_model_v2(
     fn_description: Optional[str] = None,
 ) -> Type[pydantic.BaseModel]:
     """Create a pydantic model with a subset of the model fields."""
-    from pydantic import create_model  # pydantic: ignore
-    from pydantic.fields import FieldInfo  # pydantic: ignore
+    from pydantic import create_model  
+    from pydantic.fields import FieldInfo  
 
     descriptions_ = descriptions or {}
     fields = {}
@@ -299,7 +299,7 @@ def _create_subset_model(
             fn_description=fn_description,
         )
     elif PYDANTIC_MAJOR_VERSION == 2:
-        from pydantic.v1 import BaseModel as BaseModelV1  # pydantic: ignore
+        from pydantic.v1 import BaseModel as BaseModelV1  
 
         if issubclass(model, BaseModelV1):
             return _create_subset_model_v1(

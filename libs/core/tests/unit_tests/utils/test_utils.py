@@ -221,8 +221,8 @@ def test_guard_import_failure(
 
 @pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Requires pydantic 2")
 def test_get_pydantic_field_names_v1_in_2() -> None:
-    from pydantic.v1 import BaseModel as PydanticV1BaseModel  # pydantic: ignore
-    from pydantic.v1 import Field  # pydantic: ignore
+    from pydantic.v1 import BaseModel as PydanticV1BaseModel  
+    from pydantic.v1 import Field  
 
     class PydanticV1Model(PydanticV1BaseModel):
         field1: str
@@ -236,7 +236,7 @@ def test_get_pydantic_field_names_v1_in_2() -> None:
 
 @pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Requires pydantic 2")
 def test_get_pydantic_field_names_v2_in_2() -> None:
-    from pydantic import BaseModel, Field  # pydantic: ignore
+    from pydantic import BaseModel, Field  
 
     class PydanticModel(BaseModel):
         field1: str
@@ -250,7 +250,7 @@ def test_get_pydantic_field_names_v2_in_2() -> None:
 
 @pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 1, reason="Requires pydantic 1")
 def test_get_pydantic_field_names_v1() -> None:
-    from pydantic import BaseModel, Field  # pydantic: ignore
+    from pydantic import BaseModel, Field  
 
     class PydanticModel(BaseModel):
         field1: str

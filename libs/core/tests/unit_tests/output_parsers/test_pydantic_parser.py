@@ -3,10 +3,10 @@
 from enum import Enum
 from typing import Literal, Optional
 
-import pydantic  # pydantic: ignore
+import pydantic  
 import pytest
 from pydantic import BaseModel, Field
-from pydantic.v1 import BaseModel as V1BaseModel  # pydantic: ignore
+from pydantic.v1 import BaseModel as V1BaseModel  
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import ParrotFakeChatModel
