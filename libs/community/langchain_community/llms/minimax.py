@@ -1,4 +1,5 @@
 """Wrapper around Minimax APIs."""
+
 from __future__ import annotations
 
 import logging
@@ -15,7 +16,7 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import LLM
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
@@ -30,7 +31,7 @@ class _MinimaxEndpointClient(BaseModel):
     api_key: SecretStr
     api_url: str
 
-    @root_validator(pre=True, allow_reuse=True)
+    @root_validator(pre=True)
     def set_api_url(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         if "api_url" not in values:
             host = values["host"]
@@ -71,7 +72,7 @@ class MinimaxCommon(BaseModel):
     minimax_group_id: Optional[str] = None
     minimax_api_key: Optional[SecretStr] = None
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["minimax_api_key"] = convert_to_secret_str(

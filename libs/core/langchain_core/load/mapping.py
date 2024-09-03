@@ -17,6 +17,7 @@ because this code was originally in langchain.schema.messages.AIMessage.
 The mapping allows us to deserialize an AIMessage created with an older
 version of LangChain where the code was in a different location.
 """
+
 from typing import Dict, Tuple
 
 # First value is the value that it is serialized as
@@ -75,6 +76,12 @@ SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "messages",
         "tool",
         "ToolMessage",
+    ),
+    ("langchain", "schema", "messages", "RemoveMessage"): (
+        "langchain_core",
+        "messages",
+        "modifier",
+        "RemoveMessage",
     ),
     ("langchain", "schema", "agent", "AgentAction"): (
         "langchain_core",

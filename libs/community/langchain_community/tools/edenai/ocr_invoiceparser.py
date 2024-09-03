@@ -1,13 +1,18 @@
 from __future__ import annotations
 
 import logging
-from typing import Optional
+from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
+from langchain_core.pydantic_v1 import BaseModel, Field, HttpUrl
 
 from langchain_community.tools.edenai.edenai_base_tool import EdenaiTool
 
 logger = logging.getLogger(__name__)
+
+
+class InvoiceParsingInput(BaseModel):
+    query: HttpUrl = Field(description="url of the document to parse")
 
 
 class EdenAiParsingInvoiceTool(EdenaiTool):
@@ -23,7 +28,6 @@ class EdenAiParsingInvoiceTool(EdenaiTool):
     """
 
     name: str = "edenai_invoice_parsing"
-
     description: str = (
         "A wrapper around edenai Services invoice parsing. "
         """Useful for when you have to extract information from 
@@ -33,6 +37,7 @@ class EdenAiParsingInvoiceTool(EdenaiTool):
         in a structured format to automate the invoice processing """
         "Input should be the string url of the document to parse."
     )
+    args_schema: Type[BaseModel] = InvoiceParsingInput
 
     language: Optional[str] = None
     """

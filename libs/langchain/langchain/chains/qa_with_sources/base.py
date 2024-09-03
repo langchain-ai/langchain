@@ -7,6 +7,7 @@ import re
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Tuple
 
+from langchain_core._api import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
@@ -14,7 +15,7 @@ from langchain_core.callbacks import (
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
-from langchain_core.pydantic_v1 import Extra, root_validator
+from langchain_core.pydantic_v1 import root_validator
 
 from langchain.chains import ReduceDocumentsChain
 from langchain.chains.base import Chain
@@ -30,6 +31,15 @@ from langchain.chains.qa_with_sources.map_reduce_prompt import (
 )
 
 
+@deprecated(
+    since="0.2.13",
+    removal="1.0",
+    message=(
+        "This class is deprecated. Refer to this guide on retrieval and question "
+        "answering with sources: "
+        "https://python.langchain.com/v0.2/docs/how_to/qa_sources/"
+    ),
+)
 class BaseQAWithSourcesChain(Chain, ABC):
     """Question answering chain with sources over documents."""
 
@@ -88,10 +98,8 @@ class BaseQAWithSourcesChain(Chain, ABC):
         return cls(combine_documents_chain=combine_documents_chain, **kwargs)
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
         arbitrary_types_allowed = True
+        extra = "forbid"
 
     @property
     def input_keys(self) -> List[str]:
@@ -200,6 +208,15 @@ class BaseQAWithSourcesChain(Chain, ABC):
         return result
 
 
+@deprecated(
+    since="0.2.13",
+    removal="1.0",
+    message=(
+        "This class is deprecated. Refer to this guide on retrieval and question "
+        "answering with sources: "
+        "https://python.langchain.com/v0.2/docs/how_to/qa_sources/"
+    ),
+)
 class QAWithSourcesChain(BaseQAWithSourcesChain):
     """Question answering with sources over documents."""
 

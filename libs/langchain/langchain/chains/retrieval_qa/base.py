@@ -1,4 +1,5 @@
 """Chain for question-answering against a vector database."""
+
 from __future__ import annotations
 
 import inspect
@@ -15,7 +16,7 @@ from langchain_core.callbacks import (
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import PromptTemplate
-from langchain_core.pydantic_v1 import Extra, Field, root_validator
+from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.vectorstores import VectorStore
 
@@ -27,6 +28,15 @@ from langchain.chains.question_answering import load_qa_chain
 from langchain.chains.question_answering.stuff_prompt import PROMPT_SELECTOR
 
 
+@deprecated(
+    since="0.2.13",
+    removal="1.0",
+    message=(
+        "This class is deprecated. Use the `create_retrieval_chain` constructor "
+        "instead. See migration guide here: "
+        "https://python.langchain.com/v0.2/docs/versions/migrating_chains/retrieval_qa/"
+    ),
+)
 class BaseRetrievalQA(Chain):
     """Base class for question-answering chains."""
 
@@ -38,11 +48,9 @@ class BaseRetrievalQA(Chain):
     """Return the source documents or not."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
         allow_population_by_field_name = True
+        arbitrary_types_allowed = True
+        extra = "forbid"
 
     @property
     def input_keys(self) -> List[str]:
@@ -195,7 +203,15 @@ class BaseRetrievalQA(Chain):
             return {self.output_key: answer}
 
 
-@deprecated(since="0.1.17", alternative="create_retrieval_chain", removal="0.3.0")
+@deprecated(
+    since="0.1.17",
+    removal="1.0",
+    message=(
+        "This class is deprecated. Use the `create_retrieval_chain` constructor "
+        "instead. See migration guide here: "
+        "https://python.langchain.com/v0.2/docs/versions/migrating_chains/retrieval_qa/"
+    ),
+)
 class RetrievalQA(BaseRetrievalQA):
     """Chain for question-answering against an index.
 
@@ -272,6 +288,15 @@ class RetrievalQA(BaseRetrievalQA):
         return "retrieval_qa"
 
 
+@deprecated(
+    since="0.2.13",
+    removal="1.0",
+    message=(
+        "This class is deprecated. Use the `create_retrieval_chain` constructor "
+        "instead. See migration guide here: "
+        "https://python.langchain.com/v0.2/docs/versions/migrating_chains/retrieval_qa/"
+    ),
+)
 class VectorDBQA(BaseRetrievalQA):
     """Chain for question-answering against a vector database."""
 
@@ -284,7 +309,7 @@ class VectorDBQA(BaseRetrievalQA):
     search_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Extra search args."""
 
-    @root_validator()
+    @root_validator(pre=True)
     def raise_deprecation(cls, values: Dict) -> Dict:
         warnings.warn(
             "`VectorDBQA` is deprecated - "
@@ -292,7 +317,7 @@ class VectorDBQA(BaseRetrievalQA):
         )
         return values
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_search_type(cls, values: Dict) -> Dict:
         """Validate search type."""
         if "search_type" in values:

@@ -114,8 +114,8 @@ class StarRocksSettings(BaseSettings):
 
     class Config:
         env_file = ".env"
-        env_prefix = "starrocks_"
         env_file_encoding = "utf-8"
+        env_prefix = "starrocks_"
 
 
 class StarRocks(VectorStore):

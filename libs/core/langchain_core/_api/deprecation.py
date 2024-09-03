@@ -14,7 +14,17 @@ import contextlib
 import functools
 import inspect
 import warnings
-from typing import Any, Callable, Generator, Type, TypeVar, Union, cast
+from typing import (
+    Any,
+    Callable,
+    Generator,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
+
+from typing_extensions import ParamSpec
 
 from langchain_core._api.internal import is_caller_internal
 
@@ -30,7 +40,8 @@ class LangChainPendingDeprecationWarning(PendingDeprecationWarning):
 # PUBLIC API
 
 
-T = TypeVar("T", bound=Union[Type, Callable[..., Any]])
+# Last Any should be FieldInfoV1 but this leads to circular imports
+T = TypeVar("T", bound=Union[Type, Callable[..., Any], Any])
 
 
 def _validate_deprecation_params(
@@ -133,6 +144,7 @@ def deprecated(
         _package: str = package,
     ) -> T:
         """Implementation of the decorator returned by `deprecated`."""
+        from langchain_core.utils.pydantic import FieldInfoV1
 
         def emit_warning() -> None:
             """Emit the warning."""
@@ -207,50 +219,73 @@ def deprecated(
                 )
                 return cast(T, obj)
 
+        elif isinstance(obj, FieldInfoV1):
+            wrapped = None
+            if not _obj_type:
+                _obj_type = "attribute"
+            if not _name:
+                raise ValueError(f"Field {obj} must have a name to be deprecated.")
+            old_doc = obj.description
+
+            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:
+                return cast(
+                    T,
+                    FieldInfoV1(
+                        default=obj.default,
+                        default_factory=obj.default_factory,
+                        description=new_doc,
+                        alias=obj.alias,
+                        exclude=obj.exclude,
+                    ),
+                )
+
         elif isinstance(obj, property):
             if not _obj_type:
                 _obj_type = "attribute"
             wrapped = None
-            _name = _name or obj.fget.__qualname__
+            _name = _name or cast(Union[Type, Callable], obj.fget).__qualname__
             old_doc = obj.__doc__
 
             class _deprecated_property(property):
                 """A deprecated property."""
 
-                def __init__(self, fget=None, fset=None, fdel=None, doc=None):
+                def __init__(self, fget=None, fset=None, fdel=None, doc=None):  # type: ignore[no-untyped-def]
                     super().__init__(fget, fset, fdel, doc)
                     self.__orig_fget = fget
                     self.__orig_fset = fset
                     self.__orig_fdel = fdel
 
-                def __get__(self, instance, owner=None):
+                def __get__(self, instance, owner=None):  # type: ignore[no-untyped-def]
                     if instance is not None or owner is not None:
                         emit_warning()
                     return self.fget(instance)
 
-                def __set__(self, instance, value):
+                def __set__(self, instance, value):  # type: ignore[no-untyped-def]
                     if instance is not None:
                         emit_warning()
                     return self.fset(instance, value)
 
-                def __delete__(self, instance):
+                def __delete__(self, instance):  # type: ignore[no-untyped-def]
                     if instance is not None:
                         emit_warning()
                     return self.fdel(instance)
 
-                def __set_name__(self, owner, set_name):
+                def __set_name__(self, owner, set_name):  # type: ignore[no-untyped-def]
                     nonlocal _name
                     if _name == "<lambda>":
                         _name = set_name
 
-            def finalize(wrapper: Callable[..., Any], new_doc: str) -> Any:
+            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:
                 """Finalize the property."""
-                return _deprecated_property(
-                    fget=obj.fget, fset=obj.fset, fdel=obj.fdel, doc=new_doc
+                return cast(
+                    T,
+                    _deprecated_property(
+                        fget=obj.fget, fset=obj.fset, fdel=obj.fdel, doc=new_doc
+                    ),
                 )
 
         else:
-            _name = _name or obj.__qualname__
+            _name = _name or cast(Union[Type, Callable], obj).__qualname__
             if not _obj_type:
                 # edge case: when a function is within another function
                 # within a test, this will call it a "method" not a "function"
@@ -279,23 +314,22 @@ def deprecated(
             old_doc = ""
 
         # Modify the docstring to include a deprecation notice.
-        notes_header = "\nNotes\n-----"
         components = [
-            message,
-            f"Use {alternative} instead." if alternative else "",
-            addendum,
+            _message,
+            f"Use ``{_alternative}`` instead." if _alternative else "",
+            f"Use ``{_alternative_import}`` instead." if _alternative_import else "",
+            _addendum,
         ]
         details = " ".join([component.strip() for component in components if component])
         package = (
             _package or _name.split(".")[0].replace("_", "-") if "." in _name else None
         )
         since_str = f"{package}=={since}" if package else since
-        new_doc = (
-            f"[*Deprecated*] {old_doc}\n"
-            f"{notes_header if notes_header not in old_doc else ''}\n"
-            f".. deprecated:: {since_str}\n"
-            f"   {details}"
-        )
+        new_doc = f"""\
+.. deprecated:: {since_str} {details}
+
+{old_doc}\
+"""
 
         if inspect.iscoroutinefunction(obj):
             finalized = finalize(awarning_emitting_wrapper, new_doc)
@@ -410,7 +444,7 @@ def warn_deprecated(
         LangChainPendingDeprecationWarning if pending else LangChainDeprecationWarning
     )
     warning = warning_cls(message)
-    warnings.warn(warning, category=LangChainDeprecationWarning, stacklevel=2)
+    warnings.warn(warning, category=LangChainDeprecationWarning, stacklevel=4)
 
 
 def surface_langchain_deprecation_warnings() -> None:
@@ -424,3 +458,51 @@ def surface_langchain_deprecation_warnings() -> None:
         "default",
         category=LangChainDeprecationWarning,
     )
+
+
+_P = ParamSpec("_P")
+_R = TypeVar("_R")
+
+
+def rename_parameter(
+    *,
+    since: str,
+    removal: str,
+    old: str,
+    new: str,
+) -> Callable[[Callable[_P, _R]], Callable[_P, _R]]:
+    """Decorator indicating that parameter *old* of *func* is renamed to *new*.
+
+    The actual implementation of *func* should use *new*, not *old*.  If *old*
+    is passed to *func*, a DeprecationWarning is emitted, and its value is
+    used, even if *new* is also passed by keyword.
+
+    Example:
+
+        .. code-block:: python
+
+            @_api.rename_parameter("3.1", "bad_name", "good_name")
+            def func(good_name): ...
+    """
+
+    def decorator(f: Callable[_P, _R]) -> Callable[_P, _R]:
+        @functools.wraps(f)
+        def wrapper(*args: _P.args, **kwargs: _P.kwargs) -> _R:
+            if new in kwargs and old in kwargs:
+                raise TypeError(
+                    f"{f.__name__}() got multiple values for argument {new!r}"
+                )
+            if old in kwargs:
+                warn_deprecated(
+                    since,
+                    removal=removal,
+                    message=f"The parameter `{old}` of `{f.__name__}` was "
+                    f"deprecated in {since} and will be removed "
+                    f"in {removal} Use `{new}` instead.",
+                )
+                kwargs[new] = kwargs.pop(old)
+            return f(*args, **kwargs)
+
+        return wrapper
+
+    return decorator

@@ -33,91 +33,96 @@ jobs:
         run: |
           python .github/scripts/check_diff.py ${{ steps.files.outputs.all }} >> $GITHUB_OUTPUT
     outputs:
-      dirs-to-lint: ${{ steps.set-matrix.outputs.dirs-to-lint }}
-      dirs-to-test: ${{ steps.set-matrix.outputs.dirs-to-test }}
-      dirs-to-extended-test: ${{ steps.set-matrix.outputs.dirs-to-extended-test }}
-      docs-edited: ${{ steps.set-matrix.outputs.docs-edited }}
+      lint: ${{ steps.set-matrix.outputs.lint }}
+      test: ${{ steps.set-matrix.outputs.test }}
+      extended-tests: ${{ steps.set-matrix.outputs.extended-tests }}
+      compile-integration-tests: ${{ steps.set-matrix.outputs.compile-integration-tests }}
+      dependencies: ${{ steps.set-matrix.outputs.dependencies }}
+      test-doc-imports: ${{ steps.set-matrix.outputs.test-doc-imports }}
   lint:
-    name: cd ${{ matrix.working-directory }}
+    name: cd ${{ matrix.job-configs.working-directory }}
     needs: [ build ]
-    if: ${{ needs.build.outputs.dirs-to-lint != '[]' }}
+    if: ${{ needs.build.outputs.lint != '[]' }}
     strategy:
       matrix:
-        working-directory: ${{ fromJson(needs.build.outputs.dirs-to-lint) }}
+        job-configs: ${{ fromJson(needs.build.outputs.lint) }}
     uses: ./.github/workflows/_lint.yml
     with:
-      working-directory: ${{ matrix.working-directory }}
+      working-directory: ${{ matrix.job-configs.working-directory }}
+      python-version: ${{ matrix.job-configs.python-version }}
     secrets: inherit
 
   test:
-    name: cd ${{ matrix.working-directory }}
+    name: cd ${{ matrix.job-configs.working-directory }}
     needs: [ build ]
-    if: ${{ needs.build.outputs.dirs-to-test != '[]' }}
+    if: ${{ needs.build.outputs.test != '[]' }}
     strategy:
       matrix:
-        working-directory: ${{ fromJson(needs.build.outputs.dirs-to-test) }}
+        job-configs: ${{ fromJson(needs.build.outputs.test) }}
     uses: ./.github/workflows/_test.yml
     with:
-      working-directory: ${{ matrix.working-directory }}
+      working-directory: ${{ matrix.job-configs.working-directory }}
+      python-version: ${{ matrix.job-configs.python-version }}
     secrets: inherit
 
   test-doc-imports:
     needs: [ build ]
-    if: ${{ needs.build.outputs.dirs-to-test != '[]' || needs.build.outputs.docs-edited }}
-    uses: ./.github/workflows/_test_doc_imports.yml
-    secrets: inherit
-
-  compile-integration-tests:
-    name: cd ${{ matrix.working-directory }}
-    needs: [ build ]
-    if: ${{ needs.build.outputs.dirs-to-test != '[]' }}
+    if: ${{ needs.build.outputs.test-doc-imports != '[]' }}
     strategy:
       matrix:
-        working-directory: ${{ fromJson(needs.build.outputs.dirs-to-test) }}
+        job-configs: ${{ fromJson(needs.build.outputs.test-doc-imports) }}
+    uses: ./.github/workflows/_test_doc_imports.yml
+    secrets: inherit
+    with:
+      python-version: ${{ matrix.job-configs.python-version }}
+
+  compile-integration-tests:
+    name: cd ${{ matrix.job-configs.working-directory }}
+    needs: [ build ]
+    if: ${{ needs.build.outputs.compile-integration-tests != '[]' }}
+    strategy:
+      matrix:
+        job-configs: ${{ fromJson(needs.build.outputs.compile-integration-tests) }}
     uses: ./.github/workflows/_compile_integration_test.yml
     with:
-      working-directory: ${{ matrix.working-directory }}
+      working-directory: ${{ matrix.job-configs.working-directory }}
+      python-version: ${{ matrix.job-configs.python-version }}
     secrets: inherit
 
   dependencies:
-    name: cd ${{ matrix.working-directory }}
+    name: cd ${{ matrix.job-configs.working-directory }}
     needs: [ build ]
-    if: ${{ needs.build.outputs.dirs-to-test != '[]' }}
+    if: ${{ needs.build.outputs.dependencies != '[]' }}
     strategy:
       matrix:
-        working-directory: ${{ fromJson(needs.build.outputs.dirs-to-test) }}
+        job-configs: ${{ fromJson(needs.build.outputs.dependencies) }}
     uses: ./.github/workflows/_dependencies.yml
     with:
-      working-directory: ${{ matrix.working-directory }}
+      working-directory: ${{ matrix.job-configs.working-directory }}
+      python-version: ${{ matrix.job-configs.python-version }}
     secrets: inherit
 
   extended-tests:
-    name: "cd ${{ matrix.working-directory }} / make extended_tests #${{ matrix.python-version }}"
+    name: "cd ${{ matrix.job-configs.working-directory }} / make extended_tests #${{ matrix.job-configs.python-version }}"
     needs: [ build ]
-    if: ${{ needs.build.outputs.dirs-to-extended-test != '[]' }}
+    if: ${{ needs.build.outputs.extended-tests != '[]' }}
     strategy:
       matrix:
         # note different variable for extended test dirs
-        working-directory: ${{ fromJson(needs.build.outputs.dirs-to-extended-test) }}
-        python-version:
-          - "3.8"
-          - "3.9"
-          - "3.10"
-          - "3.11"
-          - "3.12"
+        job-configs: ${{ fromJson(needs.build.outputs.extended-tests) }}
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ${{ matrix.working-directory }}
+        working-directory: ${{ matrix.job-configs.working-directory }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python ${{ matrix.python-version }} + Poetry ${{ env.POETRY_VERSION }}
+      - name: Set up Python ${{ matrix.job-configs.python-version }} + Poetry ${{ env.POETRY_VERSION }}
         uses: "./.github/actions/poetry_setup"
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: ${{ matrix.job-configs.python-version }}
           poetry-version: ${{ env.POETRY_VERSION }}
-          working-directory: ${{ matrix.working-directory }}
+          working-directory: ${{ matrix.job-configs.working-directory }}
           cache-key: extended
 
       - name: Install dependencies
