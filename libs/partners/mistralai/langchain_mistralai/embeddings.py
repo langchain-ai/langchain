@@ -13,11 +13,11 @@ from pydantic import (
     ConfigDict,
     Field,
     SecretStr,
-    root_validator, model_validator,
+    model_validator,
+    root_validator,
 )
 from tokenizers import Tokenizer
 from typing_extensions import Self
-
 
 # type: ignore
 

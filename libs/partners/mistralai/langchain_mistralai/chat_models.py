@@ -76,10 +76,10 @@ from pydantic import (
     ConfigDict,
     Field,
     SecretStr,
-    root_validator, model_validator,
+    model_validator,
+    root_validator,
 )
 from typing_extensions import Self
-
 
 logger = logging.getLogger(__name__)
 
