@@ -55,3 +55,21 @@ class PiecesOSLLM(BaseLLM):
             text = self._call(prompt, stop=stop, run_manager=run_manager, **kwargs)
             generations.append([GenerationChunk(text=text)])
         return LLMResult(generations=generations)
+
+    def stream(
+            self,
+            prompt: str,
+            stop: Optional[List[str]] = None,
+            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            **kwargs: Any,
+        ) -> Iterator[GenerationChunk]:
+            """Stream the response from Pieces OS model."""
+            try:
+                for response in self.client.copilot.stream_question(prompt):
+                    if response.question:
+                        answers = response.question.answers.iterable
+                        for answer in answers:
+                            yield GenerationChunk(text=answer.text)
+            except Exception as error:
+                print(f'Error streaming question: {error}')
+                yield GenerationChunk(text='Error streaming question')
