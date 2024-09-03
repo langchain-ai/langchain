@@ -80,18 +80,15 @@ def test_chat_hunyuan_with_prompt_template() -> None:
 @pytest.mark.requires("tencentcloud-sdk-python")
 def test_chat_hunyuan_with_model_vision() -> None:
     chat = ChatHunyuan(model="hunyuan-vision")
-    content=[
-                {
-                    "Type": "image_url",
-                    "ImageUrl": {
-                        "Url": "https://cloudcache.tencent-cloud.com/qcloud/ui/portal-set/build/About/images/bg-product-series_87d.png"
-                    }
-                },
-                {
-                    "Type": "text",
-                    "Text": "图片内容是？"
-                }
-            ]
+    content = [
+        {
+            "Type": "image_url",
+            "ImageUrl": {
+                "Url": "https://cloudcache.tencent-cloud.com/qcloud/ui/portal-set/build/About/images/bg-product-series_87d.png"
+            }
+        },
+        {"Type": "text", "Text": "下面图片中是哪个公司的 Logo？"}
+    ]
     message = HumanMessage(content=content)
     response = chat.invoke([message])
     assert isinstance(response, AIMessage)
