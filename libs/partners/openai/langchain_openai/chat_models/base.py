@@ -1190,7 +1190,7 @@ class BaseChatOpenAI(BaseChatModel):
                 from typing import Optional
 
                 from langchain_openai import ChatOpenAI
-                from langchain_core.pydantic_v1 import BaseModel, Field
+                from pydantic import BaseModel, Field
 
 
                 class AnswerWithJustification(BaseModel):
@@ -1221,7 +1221,7 @@ class BaseChatOpenAI(BaseChatModel):
             .. code-block:: python
 
                 from langchain_openai import ChatOpenAI
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
 
 
                 class AnswerWithJustification(BaseModel):
@@ -1311,7 +1311,7 @@ class BaseChatOpenAI(BaseChatModel):
             .. code-block::
 
                 from langchain_openai import ChatOpenAI
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
 
                 class AnswerWithJustification(BaseModel):
                     answer: str
@@ -1613,7 +1613,7 @@ class ChatOpenAI(BaseChatOpenAI):
 
         .. code-block:: python
 
-            from langchain_core.pydantic_v1 import BaseModel, Field
+            from pydantic import BaseModel, Field
 
 
             class GetWeather(BaseModel):
@@ -1699,7 +1699,7 @@ class ChatOpenAI(BaseChatOpenAI):
 
             from typing import Optional
 
-            from langchain_core.pydantic_v1 import BaseModel, Field
+            from pydantic import BaseModel, Field
 
 
             class Joke(BaseModel):
