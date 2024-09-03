@@ -10,7 +10,7 @@ from langchain_core.chat_history import InMemoryChatMessageHistory
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
-from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.pydantic_v1 import BaseModel, create_model_from_typeddict
 from langchain_core.runnables import Runnable
 from langchain_core.runnables.base import RunnableBinding, RunnableLambda
 from langchain_core.runnables.config import RunnableConfig
@@ -422,7 +422,7 @@ async def test_output_dict_async() -> None:
 
 
 def test_get_input_schema_input_dict() -> None:
-    class RunnableWithChatHistoryInput(TypedDict):
+    class RunnableWithChatHistoryInput(BaseModel):
         input: Union[str, BaseMessage, Sequence[BaseMessage]]
         input_key_1: str
         input_key_2: str
@@ -433,7 +433,14 @@ def test_get_input_schema_input_dict() -> None:
         input_key_1: str
         input_key_2: str
 
-    def _callable(input: RunnableInput) -> Dict[str, Any]:
+    class RunnableLambdaWithFakeSchema(RunnableLambda):
+        def get_input_schema(
+            self, config: RunnableConfig | None = None
+        ) -> type[BaseModel]:
+            "Return fake pydantic schema"
+            return create_model_from_typeddict(RunnableInput)
+
+    def _callable(input: Dict[str, Any]) -> Dict[str, Any]:
         history = "\n".join(str(m.content) for m in input["history"])
         if isinstance(input["input"], str):
             input_str = input["input"]
@@ -443,7 +450,7 @@ def test_get_input_schema_input_dict() -> None:
             input_str = "\n".join(str(m.content) for m in input["input"])
         return {"output": [AIMessage("\n".join(["you said:", history, input_str]))]}
 
-    runnable = RunnableLambda(_callable)
+    runnable = RunnableLambdaWithFakeSchema(_callable)
 
     get_session_history = _get_get_session_history()
     with_history = RunnableWithMessageHistory(
