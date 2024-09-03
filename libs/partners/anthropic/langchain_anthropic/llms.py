@@ -30,6 +30,8 @@ from langchain_core.utils.utils import (
     secret_from_env,
 )
 from pydantic import ConfigDict, Field, SecretStr, model_validator, root_validator
+from typing_extensions import Self
+
 
 
 class _AnthropicCommon(BaseLanguageModel):

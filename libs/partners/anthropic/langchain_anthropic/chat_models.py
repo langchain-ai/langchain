@@ -71,7 +71,7 @@ from pydantic import (
     model_validator,
     root_validator,
 )
-from typing_extensions import NotRequired
+from typing_extensions import NotRequired, Self
 
 from langchain_anthropic.output_parsers import extract_tool_calls
 
