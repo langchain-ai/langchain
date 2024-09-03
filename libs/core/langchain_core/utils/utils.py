@@ -4,14 +4,18 @@ import contextlib
 import datetime
 import functools
 import importlib
+import os
 import warnings
 from importlib.metadata import version
-from typing import Any, Callable, Dict, Optional, Set, Tuple, Union
+from typing import Any, Callable, Dict, Optional, Sequence, Set, Tuple, Union, overload
 
 from packaging.version import parse
 from requests import HTTPError, Response
 
 from langchain_core.pydantic_v1 import SecretStr
+from langchain_core.utils.pydantic import (
+    is_pydantic_v1_subclass,
+)
 
 
 def xor_args(*arg_groups: Tuple[str, ...]) -> Callable:
@@ -127,12 +131,12 @@ def guard_import(
     """
     try:
         module = importlib.import_module(module_name, package)
-    except (ImportError, ModuleNotFoundError):
+    except (ImportError, ModuleNotFoundError) as e:
         pip_name = pip_name or module_name.split(".")[0].replace("_", "-")
         raise ImportError(
             f"Could not import {module_name} python package. "
             f"Please install it with `pip install {pip_name}`."
-        )
+        ) from e
     return module
 
 
@@ -192,10 +196,16 @@ def get_pydantic_field_names(pydantic_cls: Any) -> Set[str]:
         Set[str]: Field names.
     """
     all_required_field_names = set()
-    for field in pydantic_cls.__fields__.values():
-        all_required_field_names.add(field.name)
-        if field.has_alias:
-            all_required_field_names.add(field.alias)
+    if is_pydantic_v1_subclass(pydantic_cls):
+        for field in pydantic_cls.__fields__.values():
+            all_required_field_names.add(field.name)
+            if field.has_alias:
+                all_required_field_names.add(field.alias)
+    else:  # Assuming pydantic 2 for now
+        for name, field in pydantic_cls.model_fields.items():
+            all_required_field_names.add(name)
+            if field.alias:
+                all_required_field_names.add(field.alias)
     return all_required_field_names
 
 
@@ -225,7 +235,8 @@ def build_extra_kwargs(
             warnings.warn(
                 f"""WARNING! {field_name} is not default parameter.
                 {field_name} was transferred to model_kwargs.
-                Please confirm that {field_name} is what you intended."""
+                Please confirm that {field_name} is what you intended.""",
+                stacklevel=7,
             )
             extra_kwargs[field_name] = values.pop(field_name)
 
@@ -251,3 +262,155 @@ def convert_to_secret_str(value: Union[SecretStr, str]) -> SecretStr:
     if isinstance(value, SecretStr):
         return value
     return SecretStr(value)
+
+
+class _NoDefaultType:
+    """Type to indicate no default value is provided."""
+
+    pass
+
+
+_NoDefault = _NoDefaultType()
+
+
+@overload
+def from_env(key: str, /) -> Callable[[], str]: ...
+
+
+@overload
+def from_env(key: str, /, *, default: str) -> Callable[[], str]: ...
+
+
+@overload
+def from_env(key: Sequence[str], /, *, default: str) -> Callable[[], str]: ...
+
+
+@overload
+def from_env(key: str, /, *, error_message: str) -> Callable[[], str]: ...
+
+
+@overload
+def from_env(
+    key: Union[str, Sequence[str]], /, *, default: str, error_message: Optional[str]
+) -> Callable[[], str]: ...
+
+
+@overload
+def from_env(
+    key: str, /, *, default: None, error_message: Optional[str]
+) -> Callable[[], Optional[str]]: ...
+
+
+@overload
+def from_env(
+    key: Union[str, Sequence[str]], /, *, default: None
+) -> Callable[[], Optional[str]]: ...
+
+
+def from_env(
+    key: Union[str, Sequence[str]],
+    /,
+    *,
+    default: Union[str, _NoDefaultType, None] = _NoDefault,
+    error_message: Optional[str] = None,
+) -> Union[Callable[[], str], Callable[[], Optional[str]]]:
+    """Create a factory method that gets a value from an environment variable.
+
+    Args:
+        key: The environment variable to look up. If a list of keys is provided,
+            the first key found in the environment will be used.
+            If no key is found, the default value will be used if set,
+            otherwise an error will be raised.
+        default: The default value to return if the environment variable is not set.
+        error_message: the error message which will be raised if the key is not found
+            and no default value is provided.
+            This will be raised as a ValueError.
+    """
+
+    def get_from_env_fn() -> Optional[str]:
+        """Get a value from an environment variable."""
+        if isinstance(key, (list, tuple)):
+            for k in key:
+                if k in os.environ:
+                    return os.environ[k]
+        if isinstance(key, str):
+            if key in os.environ:
+                return os.environ[key]
+
+        if isinstance(default, (str, type(None))):
+            return default
+        else:
+            if error_message:
+                raise ValueError(error_message)
+            else:
+                raise ValueError(
+                    f"Did not find {key}, please add an environment variable"
+                    f" `{key}` which contains it, or pass"
+                    f" `{key}` as a named parameter."
+                )
+
+    return get_from_env_fn
+
+
+@overload
+def secret_from_env(key: str, /) -> Callable[[], SecretStr]: ...
+
+
+@overload
+def secret_from_env(key: str, /, *, default: str) -> Callable[[], SecretStr]: ...
+
+
+@overload
+def secret_from_env(
+    key: Union[str, Sequence[str]], /, *, default: None
+) -> Callable[[], Optional[SecretStr]]: ...
+
+
+@overload
+def secret_from_env(key: str, /, *, error_message: str) -> Callable[[], SecretStr]: ...
+
+
+def secret_from_env(
+    key: Union[str, Sequence[str]],
+    /,
+    *,
+    default: Union[str, _NoDefaultType, None] = _NoDefault,
+    error_message: Optional[str] = None,
+) -> Union[Callable[[], Optional[SecretStr]], Callable[[], SecretStr]]:
+    """Secret from env.
+
+    Args:
+        key: The environment variable to look up.
+        default: The default value to return if the environment variable is not set.
+        error_message: the error message which will be raised if the key is not found
+            and no default value is provided.
+            This will be raised as a ValueError.
+
+    Returns:
+        factory method that will look up the secret from the environment.
+    """
+
+    def get_secret_from_env() -> Optional[SecretStr]:
+        """Get a value from an environment variable."""
+        if isinstance(key, (list, tuple)):
+            for k in key:
+                if k in os.environ:
+                    return SecretStr(os.environ[k])
+        if isinstance(key, str):
+            if key in os.environ:
+                return SecretStr(os.environ[key])
+        if isinstance(default, str):
+            return SecretStr(default)
+        elif isinstance(default, type(None)):
+            return None
+        else:
+            if error_message:
+                raise ValueError(error_message)
+            else:
+                raise ValueError(
+                    f"Did not find {key}, please add an environment variable"
+                    f" `{key}` which contains it, or pass"
+                    f" `{key}` as a named parameter."
+                )
+
+    return get_secret_from_env

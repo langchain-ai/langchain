@@ -16,7 +16,6 @@ cloudpickle>=2.0.0
 cohere>=4,<6
 databricks-vectorsearch>=0.21,<0.22
 datasets>=2.15.0,<3
-dedoc>=2.2.6,<3
 dgml-utils>=0.3.0,<0.4
 elasticsearch>=8.12.0,<9
 esprima>=4.0.1,<5
@@ -40,6 +39,7 @@ jinja2>=3,<4
 jq>=1.4.1,<2
 jsonschema>1
 keybert>=0.8.5
+litellm>=1.30,<=1.39.5
 lxml>=4.9.3,<6.0
 markdownify>=0.11.6,<0.12
 motor>=3.3.1,<4
@@ -73,7 +73,7 @@ rdflib==7.0.0
 requests-toolbelt>=1.0.0,<2
 rspace_client>=2.5.0,<3
 scikit-learn>=1.2.2,<2
-simsimd>=4.3.1,<5
+simsimd>=5.0.0,<6
 sqlite-vss>=0.1.2,<0.2
 sseclient-py>=1.8.0,<2
 streamlit>=1.18.0,<2
@@ -90,3 +90,5 @@ vdms>=0.0.20
 xata>=1.0.0a7,<2
 xmltodict>=0.13.0,<0.14
 nanopq==0.2.1
+mlflow[genai]>=2.14.0
+databricks-sdk>=0.30.0
