@@ -268,6 +268,7 @@ class PyMuPDFParser(BaseBlobParser):
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:  # type: ignore[valid-type]
         """Lazily parse the blob."""
         import fitz
+        import warnings
 
         with blob.as_bytes_io() as file_path:  # type: ignore[attr-defined]
             if blob.data is None:  # type: ignore[attr-defined]
@@ -277,8 +278,10 @@ class PyMuPDFParser(BaseBlobParser):
 
             yield from [
                 Document(
-                    page_content=page.get_text(**self.text_kwargs)
-                    + self._extract_images_from_page(doc, page),
+                    page_content=(lambda content: (
+                        warnings.warn(f"Warning: Empty content on page {page.number} of document {blob.source}")
+                        if not content else content
+                    ))(page.get_text(**self.text_kwargs) + self._extract_images_from_page(doc, page)),
                     metadata=dict(
                         {
                             "source": blob.source,  # type: ignore[attr-defined]
