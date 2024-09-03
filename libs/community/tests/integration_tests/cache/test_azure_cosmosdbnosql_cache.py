@@ -5,12 +5,12 @@ from typing import Any, Dict
 import pytest
 from langchain.globals import get_llm_cache, set_llm_cache
 from langchain_core.outputs import Generation
-from libs.community.tests.integration_tests.cache.fake_embeddings import (
-    FakeEmbeddings,
-)
-from libs.community.tests.unit_tests.llms.fake_llm import FakeLLM
 
 from langchain_community.cache import AzureCosmosDBNoSqlSemanticCache
+from tests.integration_tests.cache.fake_embeddings import (
+    FakeEmbeddings,
+)
+from tests.unit_tests.llms.fake_llm import FakeLLM
 
 HOST = "COSMOS_DB_URI"
 KEY = "COSMOS_DB_KEY"
