@@ -55,7 +55,7 @@ def _string_to_object(string):
         obj = eval(string)
         success = True
         for content in obj:
-            if content.get('Type') not in ["image_url", "text"]:
+            if content.get("Type") not in ["image_url", "text"]:
                 success = False
                 break
         return success, obj
