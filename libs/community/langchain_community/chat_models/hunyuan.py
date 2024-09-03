@@ -37,7 +37,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     elif isinstance(message, SystemMessage):
         message_dict = {"Role": "system", "Content": message.content}
     elif isinstance(message, HumanMessage):
-        if isinstance(message.content,str):
+        if isinstance(message.content, str):
             message_dict = {"Role": "user", "Content": message.content}
         else:
             message_dict = {"Role": "user", "Contents": message.content}
