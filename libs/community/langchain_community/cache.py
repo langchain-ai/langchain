@@ -95,8 +95,8 @@ logger = logging.getLogger(__file__)
 if TYPE_CHECKING:
     import momento
     from astrapy.db import AstraDB, AsyncAstraDB
-    from cassandra.cluster import Session as CassandraSession
     from azure.cosmos.cosmos_client import CosmosClient
+    from cassandra.cluster import Session as CassandraSession
 
 
 def _hash(_input: str) -> str:
