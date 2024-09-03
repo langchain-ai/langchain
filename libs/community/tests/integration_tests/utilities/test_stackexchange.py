@@ -1,4 +1,5 @@
 """Integration test for Stack Exchange."""
+
 from langchain_community.utilities import StackExchangeAPIWrapper
 
 

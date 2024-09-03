@@ -1,4 +1,11 @@
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import (  # type: ignore[import-not-found, import-not-found]
+    Any,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Union,
+)
 
 from exa_py import Exa  # type: ignore
 from exa_py.api import HighlightsContentsOptions, TextContentsOptions  # type: ignore

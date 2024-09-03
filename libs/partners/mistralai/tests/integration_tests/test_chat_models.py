@@ -138,7 +138,7 @@ def test_chat_mistralai_streaming_llm_output_not_contain_token_usage() -> None:
 
 
 def test_structured_output() -> None:
-    llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
+    llm = ChatMistralAI(model="mistral-large-latest", temperature=0)  # type: ignore[call-arg]
     schema = {
         "title": "AnswerWithJustification",
         "description": (
@@ -159,7 +159,7 @@ def test_structured_output() -> None:
 
 
 def test_streaming_structured_output() -> None:
-    llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
+    llm = ChatMistralAI(model="mistral-large-latest", temperature=0)  # type: ignore[call-arg]
 
     class Person(BaseModel):
         name: str
@@ -177,7 +177,7 @@ def test_streaming_structured_output() -> None:
 
 
 def test_tool_call() -> None:
-    llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
+    llm = ChatMistralAI(model="mistral-large-latest", temperature=0)  # type: ignore[call-arg]
 
     class Person(BaseModel):
         name: str
@@ -194,7 +194,7 @@ def test_tool_call() -> None:
 
 
 def test_streaming_tool_call() -> None:
-    llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
+    llm = ChatMistralAI(model="mistral-large-latest", temperature=0)  # type: ignore[call-arg]
 
     class Person(BaseModel):
         name: str

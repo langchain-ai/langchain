@@ -17,7 +17,7 @@ def test_invalid_model_kwargs() -> None:
 
 def test_incorrect_field() -> None:
     with pytest.warns(match="not default parameter"):
-        llm = OpenAIEmbeddings(foo="bar")
+        llm = OpenAIEmbeddings(foo="bar")  # type: ignore[call-arg]
     assert llm.model_kwargs == {"foo": "bar"}
 
 

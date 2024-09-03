@@ -1,4 +1,5 @@
 """Test self-hosted embeddings."""
+
 from typing import Any
 
 from langchain_community.embeddings import (

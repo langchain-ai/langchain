@@ -1,4 +1,5 @@
 """SQLAlchemy wrapper around a database."""
+
 from __future__ import annotations
 
 from typing import Any, Dict, Iterable, List, Literal, Optional, Sequence, Union
@@ -202,7 +203,7 @@ class SQLDatabase:
 
             context = get_context()
             default_host = context.browserHostName
-        except ImportError:
+        except (ImportError, AttributeError):
             default_host = None
 
         if host is None:
@@ -286,7 +287,7 @@ class SQLDatabase:
             return sorted(self._include_tables)
         return sorted(self._all_tables - self._ignore_tables)
 
-    @deprecated("0.0.1", alternative="get_usable_table_names", removal="0.3.0")
+    @deprecated("0.0.1", alternative="get_usable_table_names", removal="1.0")
     def get_table_names(self) -> Iterable[str]:
         """Get names of tables available."""
         return self.get_usable_table_names()
@@ -337,7 +338,7 @@ class SQLDatabase:
                 continue
 
             # Ignore JSON datatyped columns
-            for k, v in table.columns.items():
+            for k, v in table.columns.items():  # AttributeError: items in sqlalchemy v1
                 if type(v.type) is NullType:
                     table._columns.remove(v)
 

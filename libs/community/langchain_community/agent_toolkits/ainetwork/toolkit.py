@@ -3,9 +3,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, List, Literal, Optional
 
 from langchain_core.pydantic_v1 import root_validator
-from langchain_core.tools import BaseToolkit
+from langchain_core.tools import BaseTool
+from langchain_core.tools.base import BaseToolkit
 
-from langchain_community.tools import BaseTool
 from langchain_community.tools.ainetwork.app import AINAppOps
 from langchain_community.tools.ainetwork.owner import AINOwnerOps
 from langchain_community.tools.ainetwork.rule import AINRuleOps
@@ -38,18 +38,24 @@ class AINetworkToolkit(BaseToolkit):
 
     @root_validator(pre=True)
     def set_interface(cls, values: dict) -> dict:
-        """Set the interface if not provided."""
+        """Set the interface if not provided.
+
+        If the interface is not provided, attempt to authenticate with the
+        network using the network value provided.
+
+        Args:
+            values: The values to validate.
+
+        Returns:
+            The validated values.
+        """
         if not values.get("interface"):
             values["interface"] = authenticate(network=values.get("network", "testnet"))
         return values
 
     class Config:
-        """Pydantic config."""
-
-        # Allow extra fields. This is needed for the `interface` field.
-        validate_all = True
-        # Allow arbitrary types. This is needed for the `interface` field.
         arbitrary_types_allowed = True
+        validate_all = True
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""
