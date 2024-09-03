@@ -78,6 +78,8 @@ from pydantic import (
     SecretStr,
     root_validator, model_validator,
 )
+from typing_extensions import Self
+
 
 logger = logging.getLogger(__name__)
 

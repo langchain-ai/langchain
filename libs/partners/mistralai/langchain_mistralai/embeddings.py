@@ -16,6 +16,8 @@ from pydantic import (
     root_validator, model_validator,
 )
 from tokenizers import Tokenizer
+from typing_extensions import Self
+
 
 # type: ignore
 
