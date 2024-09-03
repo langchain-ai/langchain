@@ -473,7 +473,7 @@ class ChatMistralAI(BaseChatModel):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate api key, python package exists, temperature, and top_p."""
         api_key_str = values["mistral_api_key"].get_secret_value()
-        
+
         # todo: handle retries
         base_url_str = (
             values.get("endpoint")
