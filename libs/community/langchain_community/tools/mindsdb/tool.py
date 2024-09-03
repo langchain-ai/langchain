@@ -3,7 +3,7 @@ from typing import Optional, Text
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool
 
-from langchain_community.utilities.mindsdb import BaseMindWrapper
+from langchain_community.utilities.mindsdb.base_mind_wrapper import BaseMindWrapper
 
 
 class AIMindTool(BaseTool):

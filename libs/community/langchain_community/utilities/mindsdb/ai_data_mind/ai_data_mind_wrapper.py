@@ -2,10 +2,10 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Text
 
 from langchain_core.pydantic_v1 import BaseModel, Field
 
-from langchain_community.utilities.mindsdb import BaseMindWrapper
 from langchain_community.utilities.mindsdb.ai_data_mind.database_models import (
     get_supported_data_sources,
 )
+from langchain_community.utilities.mindsdb.base_mind_wrapper import BaseMindWrapper
 
 if TYPE_CHECKING:
     from mindsdb_sdk.utils.mind import DatabaseConfig
