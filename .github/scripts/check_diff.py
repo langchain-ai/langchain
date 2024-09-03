@@ -192,6 +192,9 @@ if __name__ == "__main__":
             # for extended testing
             found = False
             for dir_ in LANGCHAIN_DIRS:
+                if dir_ == "libs/core" and IGNORE_CORE_DEPENDENTS:
+                    dirs_to_run["extended-test"].add(dir_)
+                    continue
                 if file.startswith(dir_):
                     found = True
                 if found:
