@@ -10,13 +10,6 @@ from langchain_core.outputs import GenerationChunk, LLMResult
 from pieces_os_client.wrapper import PiecesClient
 from pieces_os_client.models import ModelFoundationEnum
 
-from typing import Any, List, Mapping, Optional
-
-from langchain_core.callbacks import CallbackManagerForLLMRun
-from langchain_core.language_models.llms import BaseLLM
-from langchain_core.outputs import GenerationChunk, LLMResult
-from pieces_copilot_sdk import PiecesClient
-
 class PiecesOSLLM(BaseLLM):
     """Pieces OS language model."""
 
@@ -35,21 +28,19 @@ class PiecesOSLLM(BaseLLM):
         }
 
     def _call(
-        self,
-        prompt: str,
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> str:
-        """Call the Pieces OS model."""
-        try:
-            response = self.client.ask_question(
-                question=prompt,
-            )
-            return response
-        except Exception as error:
-            print(f'Error asking question: {error}')
-            return 'Error asking question'
+            self,
+            prompt: str,
+            stop: Optional[List[str]] = None,
+            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            **kwargs: Any,
+        ) -> str:
+            """Call the Pieces OS model."""
+            try:
+                response = self.client.copilot.ask_question(prompt)
+                return response.question.answers[0].text if response.question and response.question.answers else ""
+            except Exception as error:
+                print(f'Error asking question: {error}')
+                return 'Error asking question'
 
     def _generate(
         self,
