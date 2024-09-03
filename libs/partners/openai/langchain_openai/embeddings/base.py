@@ -22,6 +22,7 @@ import openai
 import tiktoken
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
+from langchain_core.runnables.utils import gather_with_concurrency
 from langchain_core.utils import (
     convert_to_secret_str,
     get_from_dict_or_env,
@@ -97,7 +98,10 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         max_retries: int = 2
             Maximum number of retries to make when generating.
         request_timeout: Optional[Union[float, Tuple[float, float], Any]] = None
-            Timeout for requests to OpenAI completion API
+            Timeout for requests to OpenAI completion API.
+        max_concurrency: Optional[int] = None
+            Maximum number of coroutines to run concurrently. Only used for
+            ``aembed_documents()``.
 
     See full list of supported init args and their descriptions in the params section.
 
@@ -229,6 +233,11 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     check_embedding_ctx_length: bool = True
     """Whether to check the token length of inputs and automatically split inputs 
         longer than embedding_ctx_length."""
+    max_concurrency: Optional[int] = None
+    """Maximum number of coroutines to run concurrently.
+    
+    Only used for ``aembed_documents()``.
+    """
 
     class Config:
         """Configuration for this pydantic object."""
@@ -503,6 +512,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         split_to_text_indices: List[int],
         *,
         chunk_size: Optional[int] = None,
+        max_concurrency: Optional[int] = None,
     ) -> List[List[float]]:
         """
         Generate length-safe embeddings for a list of texts.
@@ -522,7 +532,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             List[List[float]]: A list of embeddings for each input text.
         """
         split_embeddings = await self._aget_embeddings(
-            split_tokens, chunk_size=chunk_size
+            split_tokens, chunk_size=chunk_size, max_concurrency=max_concurrency
         )
         averaged_embeddings = _process_split_embeddings(
             num_texts,
@@ -570,7 +580,11 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         )
 
     async def aembed_documents(
-        self, texts: List[str], chunk_size: Optional[int] = None
+        self,
+        texts: List[str],
+        chunk_size: Optional[int] = None,
+        *,
+        max_concurrency: Optional[int] = None,
     ) -> List[List[float]]:
         """Call out to OpenAI's embedding endpoint async for embedding search docs.
 
@@ -582,16 +596,27 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
+        max_concurrency = (
+            max_concurrency if max_concurrency is not None else self.max_concurrency
+        )
         if not self.check_embedding_ctx_length:
-            return await self._aget_embeddings(texts, chunk_size=chunk_size)
+            return await self._aget_embeddings(
+                texts, chunk_size=chunk_size, max_concurrency=max_concurrency
+            )
 
         num_texts = len(texts)
         split_tokens, embedding_to_text_indices = self._tokenize_and_split(texts)
         if len(split_tokens) == num_texts:
-            return await self._aget_embeddings(texts, chunk_size=chunk_size)
+            return await self._aget_embeddings(
+                texts, chunk_size=chunk_size, max_concurrency=max_concurrency
+            )
 
         return await self._aget_len_safe_embeddings(
-            num_texts, split_tokens, embedding_to_text_indices, chunk_size=chunk_size
+            num_texts,
+            split_tokens,
+            embedding_to_text_indices,
+            chunk_size=chunk_size,
+            max_concurrency=max_concurrency,
         )
 
     def embed_query(self, text: str) -> List[float]:
@@ -651,15 +676,17 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         input: Sequence[Union[List[int], str]],
         *,
         chunk_size: Optional[int] = None,
+        max_concurrency: Optional[int] = None,
     ) -> List[List[float]]:
         chunk_size = chunk_size or self.chunk_size
-        responses = await asyncio.gather(
+        responses = await gather_with_concurrency(
+            max_concurrency,
             *(
                 self.async_client.create(
                     input=input[start : start + chunk_size], **self._invocation_params
                 )
                 for start in range(0, len(input), chunk_size)
-            )
+            ),
         )
         embeddings: List = []
         for res in responses:
