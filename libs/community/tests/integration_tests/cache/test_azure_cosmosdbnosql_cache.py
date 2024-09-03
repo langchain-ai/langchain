@@ -1,5 +1,6 @@
 """Test Azure CosmosDB NoSql cache functionality."""
 
+from typing import Dict, Any
 from azure.cosmos import CosmosClient, PartitionKey
 from langchain.globals import get_llm_cache, set_llm_cache
 from langchain_core.outputs import Generation
@@ -40,7 +41,7 @@ def vector_embedding_policy(distance_function: str) -> dict:
 
 partition_key = PartitionKey(path="/id")
 cosmos_container_properties_test = {"partition_key": partition_key}
-cosmos_database_properties_test: Dict[str, str] = {}
+cosmos_database_properties_test: Dict[str, Any] = {}
 
 
 def test_azure_cosmos_db_nosql_semantic_cache_cosine_quantizedflat() -> None:
