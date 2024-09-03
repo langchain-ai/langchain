@@ -8,7 +8,10 @@ export default function Compatibility({ packagesAndVersions }) {
               The code in this guide requires{" "}
               {packagesAndVersions.map(([pkg, version], i) => {
                 return (
-                  <code key={`compatiblity-map${pkg}>=${version}-${i}`}>{`${pkg}>=${version}`}</code>
+                  <span key={`compatibility-map${pkg}>=${version}-${i}`}>
+                    <code>{`${pkg}>=${version}`}</code>
+                    {i < packagesAndVersions.length - 1 && ", "}
+                  </span>
                 );
               })}.
               Please ensure you have the correct packages installed.

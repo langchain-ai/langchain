@@ -93,7 +93,9 @@ class ChatYuan2(BaseChatModel):
     )
     """Base URL path for API requests, an OpenAI compatible API server."""
 
-    request_timeout: Optional[Union[float, Tuple[float, float]]] = None
+    request_timeout: Optional[Union[float, Tuple[float, float]]] = Field(
+        default=None, alias="timeout"
+    )
     """Timeout for requests to yuan2 completion API. Default is 600 seconds."""
 
     max_retries: int = 6
@@ -111,7 +113,7 @@ class ChatYuan2(BaseChatModel):
     top_p: Optional[float] = 0.9
     """The top-p value to use for sampling."""
 
-    stop: Optional[List[str]] = ["<eod>"]
+    stop: Optional[List[str]] = Field(default=["<eod>"], alias="stop_sequences")
     """A list of strings to stop generation when encountered."""
 
     repeat_last_n: Optional[int] = 64

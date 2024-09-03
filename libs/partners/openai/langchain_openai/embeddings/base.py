@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-import os
 import warnings
 from typing import (
     Any,
@@ -181,7 +180,10 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     # to support Azure OpenAI Service custom deployment names
     deployment: Optional[str] = model
     # TODO: Move to AzureOpenAIEmbeddings.
-    openai_api_version: Optional[str] = Field(default=None, alias="api_version")
+    openai_api_version: Optional[str] = Field(
+        default_factory=from_env("OPENAI_API_VERSION", default=None),
+        alias="api_version",
+    )
     """Automatically inferred from env var `OPENAI_API_VERSION` if not provided."""
     # to support Azure OpenAI Service custom endpoints
     openai_api_base: Optional[str] = Field(
@@ -296,20 +298,6 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     @root_validator(pre=False, skip_on_failure=True, allow_reuse=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        if values["openai_api_type"] in ("azure", "azure_ad", "azuread"):
-            default_api_version = "2023-05-15"
-            # Azure OpenAI embedding models allow a maximum of 16 texts
-            # at a time in each batch
-            # See: https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#embeddings
-            values["chunk_size"] = min(values["chunk_size"], 16)
-        else:
-            default_api_version = ""
-
-        if values["openai_api_version"] is None:
-            values["openai_api_version"] = os.getenv(
-                "OPENAI_API_VERSION", default=default_api_version
-            )
-
         if values["openai_api_type"] in ("azure", "azure_ad", "azuread"):
             raise ValueError(
                 "If you are using Azure, "

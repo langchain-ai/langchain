@@ -20,3 +20,26 @@ See a [usage example](/docs/integrations/document_loaders/github).
 ```python
 from langchain_community.document_loaders import GitHubIssuesLoader, GithubFileLoader
 ```
+
+## Tools/Toolkit
+
+### GitHubToolkit
+The `GitHub` toolkit contains tools that enable an LLM agent to interact 
+with a GitHub repository. 
+
+The toolkit is a wrapper for the `PyGitHub` library.
+
+```python
+from langchain_community.agent_toolkits.github.toolkit import GitHubToolkit
+```
+
+Learn more in the [example notebook](/docs/integrations/tools/github).
+
+### GitHubAction
+
+Tool for interacting with the GitHub API.
+
+```python
+from langchain_community.tools.github.tool import GitHubAction
+```
+

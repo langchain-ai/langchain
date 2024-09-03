@@ -284,6 +284,57 @@ def _convert_delta_to_message_chunk(
         return default_class(content=content, id=id_)  # type: ignore
 
 
+def _convert_chunk_to_generation_chunk(
+    chunk: dict, default_chunk_class: Type, base_generation_info: Optional[Dict]
+) -> Optional[ChatGenerationChunk]:
+    token_usage = chunk.get("usage")
+    choices = chunk.get("choices", [])
+    usage_metadata: Optional[UsageMetadata] = (
+        UsageMetadata(
+            input_tokens=token_usage.get("prompt_tokens", 0),
+            output_tokens=token_usage.get("completion_tokens", 0),
+            total_tokens=token_usage.get("total_tokens", 0),
+        )
+        if token_usage
+        else None
+    )
+
+    if len(choices) == 0:
+        # logprobs is implicitly None
+        generation_chunk = ChatGenerationChunk(
+            message=default_chunk_class(content="", usage_metadata=usage_metadata)
+        )
+        return generation_chunk
+
+    choice = choices[0]
+    if choice["delta"] is None:
+        return None
+
+    message_chunk = _convert_delta_to_message_chunk(
+        choice["delta"], default_chunk_class
+    )
+    generation_info = {**base_generation_info} if base_generation_info else {}
+
+    if finish_reason := choice.get("finish_reason"):
+        generation_info["finish_reason"] = finish_reason
+        if model_name := chunk.get("model"):
+            generation_info["model_name"] = model_name
+        if system_fingerprint := chunk.get("system_fingerprint"):
+            generation_info["system_fingerprint"] = system_fingerprint
+
+    logprobs = choice.get("logprobs")
+    if logprobs:
+        generation_info["logprobs"] = logprobs
+
+    if usage_metadata and isinstance(message_chunk, AIMessageChunk):
+        message_chunk.usage_metadata = usage_metadata
+
+    generation_chunk = ChatGenerationChunk(
+        message=message_chunk, generation_info=generation_info or None
+    )
+    return generation_chunk
+
+
 class _FunctionCall(TypedDict):
     name: str
 
@@ -561,43 +612,15 @@ class BaseChatOpenAI(BaseChatModel):
             for chunk in response:
                 if not isinstance(chunk, dict):
                     chunk = chunk.model_dump()
-                if len(chunk["choices"]) == 0:
-                    if token_usage := chunk.get("usage"):
-                        usage_metadata = UsageMetadata(
-                            input_tokens=token_usage.get("prompt_tokens", 0),
-                            output_tokens=token_usage.get("completion_tokens", 0),
-                            total_tokens=token_usage.get("total_tokens", 0),
-                        )
-                        generation_chunk = ChatGenerationChunk(
-                            message=default_chunk_class(  # type: ignore[call-arg]
-                                content="", usage_metadata=usage_metadata
-                            )
-                        )
-                        logprobs = None
-                    else:
-                        continue
-                else:
-                    choice = chunk["choices"][0]
-                    if choice["delta"] is None:
-                        continue
-                    message_chunk = _convert_delta_to_message_chunk(
-                        choice["delta"], default_chunk_class
-                    )
-                    generation_info = {**base_generation_info} if is_first_chunk else {}
-                    if finish_reason := choice.get("finish_reason"):
-                        generation_info["finish_reason"] = finish_reason
-                        if model_name := chunk.get("model"):
-                            generation_info["model_name"] = model_name
-                        if system_fingerprint := chunk.get("system_fingerprint"):
-                            generation_info["system_fingerprint"] = system_fingerprint
-
-                    logprobs = choice.get("logprobs")
-                    if logprobs:
-                        generation_info["logprobs"] = logprobs
-                    default_chunk_class = message_chunk.__class__
-                    generation_chunk = ChatGenerationChunk(
-                        message=message_chunk, generation_info=generation_info or None
-                    )
+                generation_chunk = _convert_chunk_to_generation_chunk(
+                    chunk,
+                    default_chunk_class,
+                    base_generation_info if is_first_chunk else {},
+                )
+                if generation_chunk is None:
+                    continue
+                default_chunk_class = generation_chunk.message.__class__
+                logprobs = (generation_chunk.generation_info or {}).get("logprobs")
                 if run_manager:
                     run_manager.on_llm_new_token(
                         generation_chunk.text, chunk=generation_chunk, logprobs=logprobs
@@ -744,51 +767,18 @@ class BaseChatOpenAI(BaseChatModel):
             async for chunk in response:
                 if not isinstance(chunk, dict):
                     chunk = chunk.model_dump()
-                if len(chunk["choices"]) == 0:
-                    if token_usage := chunk.get("usage"):
-                        usage_metadata = UsageMetadata(
-                            input_tokens=token_usage.get("prompt_tokens", 0),
-                            output_tokens=token_usage.get("completion_tokens", 0),
-                            total_tokens=token_usage.get("total_tokens", 0),
-                        )
-                        generation_chunk = ChatGenerationChunk(
-                            message=default_chunk_class(  # type: ignore[call-arg]
-                                content="", usage_metadata=usage_metadata
-                            )
-                        )
-                        logprobs = None
-                    else:
-                        continue
-                else:
-                    choice = chunk["choices"][0]
-                    if choice["delta"] is None:
-                        continue
-                    message_chunk = await run_in_executor(
-                        None,
-                        _convert_delta_to_message_chunk,
-                        choice["delta"],
-                        default_chunk_class,
-                    )
-                    generation_info = {**base_generation_info} if is_first_chunk else {}
-                    if finish_reason := choice.get("finish_reason"):
-                        generation_info["finish_reason"] = finish_reason
-                        if model_name := chunk.get("model"):
-                            generation_info["model_name"] = model_name
-                        if system_fingerprint := chunk.get("system_fingerprint"):
-                            generation_info["system_fingerprint"] = system_fingerprint
-
-                    logprobs = choice.get("logprobs")
-                    if logprobs:
-                        generation_info["logprobs"] = logprobs
-                    default_chunk_class = message_chunk.__class__
-                    generation_chunk = ChatGenerationChunk(
-                        message=message_chunk, generation_info=generation_info or None
-                    )
+                generation_chunk = _convert_chunk_to_generation_chunk(
+                    chunk,
+                    default_chunk_class,
+                    base_generation_info if is_first_chunk else {},
+                )
+                if generation_chunk is None:
+                    continue
+                default_chunk_class = generation_chunk.message.__class__
+                logprobs = (generation_chunk.generation_info or {}).get("logprobs")
                 if run_manager:
                     await run_manager.on_llm_new_token(
-                        token=generation_chunk.text,
-                        chunk=generation_chunk,
-                        logprobs=logprobs,
+                        generation_chunk.text, chunk=generation_chunk, logprobs=logprobs
                     )
                 is_first_chunk = False
                 yield generation_chunk
@@ -957,7 +947,7 @@ class BaseChatOpenAI(BaseChatModel):
                 else:
                     # Cast str(value) in case the message value is not a string
                     # This occurs with function messages
-                    num_tokens += len(encoding.encode(value))
+                    num_tokens += len(encoding.encode(str(value)))
                 if key == "name":
                     num_tokens += tokens_per_name
         # every reply is primed with <im_start>assistant
@@ -1112,19 +1102,15 @@ class BaseChatOpenAI(BaseChatModel):
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
         """Model wrapper that returns outputs formatted to match the given schema.
 
-        .. versionchanged:: 0.1.21
-
-            Support for ``strict`` argument added.
-            Support for ``method`` = "json_schema" added.
-
         Args:
             schema:
                 The output schema. Can be passed in as:
 
-                    - an OpenAI function/tool schema,
-                    - a JSON Schema,
-                    - a TypedDict class (support added in 0.1.20),
-                    - or a Pydantic class.
+                - an OpenAI function/tool schema,
+                - a JSON Schema,
+                - a TypedDict class (support added in 0.1.20),
+                - or a Pydantic class.
+
                 If ``schema`` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
@@ -1132,41 +1118,27 @@ class BaseChatOpenAI(BaseChatModel):
                 for more on how to properly specify types and descriptions of
                 schema fields when specifying a Pydantic or TypedDict class.
 
-                .. versionchanged:: 0.1.20
+            method: The method for steering model generation, one of:
 
-                        Added support for TypedDict class.
-
-            method:
-                The method for steering model generation, one of:
-
-                    - "function_calling":
-                        Uses OpenAI's tool-calling (formerly called function calling)
-                        API: https://platform.openai.com/docs/guides/function-calling
-                    - "json_schema":
-                        Uses OpenAI's Structured Output API:
-                        https://platform.openai.com/docs/guides/structured-outputs
-                        Supported for "gpt-4o-mini", "gpt-4o-2024-08-06", and later
-                        models.
-                    - "json_mode":
-                        Uses OpenAI's JSON mode. Note that if using JSON mode then you
-                        must include instructions for formatting the output into the
-                        desired schema into the model call:
-                        https://platform.openai.com/docs/guides/structured-outputs/json-mode
+                - "function_calling":
+                    Uses OpenAI's tool-calling (formerly called function calling)
+                    API: https://platform.openai.com/docs/guides/function-calling
+                - "json_schema":
+                    Uses OpenAI's Structured Output API: https://platform.openai.com/docs/guides/structured-outputs
+                    Supported for "gpt-4o-mini", "gpt-4o-2024-08-06", and later
+                    models.
+                - "json_mode":
+                    Uses OpenAI's JSON mode. Note that if using JSON mode then you
+                    must include instructions for formatting the output into the
+                    desired schema into the model call:
+                    https://platform.openai.com/docs/guides/structured-outputs/json-mode
 
                 Learn more about the differences between the methods and which models
                 support which methods here:
 
-                    - https://platform.openai.com/docs/guides/structured-outputs/structured-outputs-vs-json-mode
-                    - https://platform.openai.com/docs/guides/structured-outputs/function-calling-vs-response-format
+                - https://platform.openai.com/docs/guides/structured-outputs/structured-outputs-vs-json-mode
+                - https://platform.openai.com/docs/guides/structured-outputs/function-calling-vs-response-format
 
-                .. versionchanged:: 0.1.21
-
-                        Added support for "json_schema".
-
-                .. note:: Planned breaking change in version `0.2.0`
-
-                    ``method`` default will be changed to "json_schema" from
-                    "function_calling".
             include_raw:
                 If False then only the parsed structured output is returned. If
                 an error occurs during model output parsing it will be raised. If True
@@ -1175,6 +1147,7 @@ class BaseChatOpenAI(BaseChatModel):
                 will be caught and returned as well. The final output is always a dict
                 with keys "raw", "parsed", and "parsing_error".
             strict:
+
                 - True:
                     Model output is guaranteed to exactly match the schema.
                     The input schema will also be validated according to
@@ -1189,37 +1162,44 @@ class BaseChatOpenAI(BaseChatModel):
                 "function_calling" or "json_mode" defaults to None. Can only be
                 non-null if ``method`` is "function_calling" or "json_schema".
 
-                .. versionadded:: 0.1.21
-
-                .. note:: Planned breaking change in version `0.2.0`
-
-                    ``strict`` will default to True when ``method`` is
-                    "function_calling" as of version `0.2.0`.
             kwargs: Additional keyword args aren't supported.
 
         Returns:
             A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
 
-            If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs
-            an instance of ``schema`` (i.e., a Pydantic object).
+            | If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs an instance of ``schema`` (i.e., a Pydantic object). Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
 
-            Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
+            | If ``include_raw`` is True, then Runnable outputs a dict with keys:
 
-            If ``include_raw`` is True, then Runnable outputs a dict with keys:
+            - "raw": BaseMessage
+            - "parsed": None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
+            - "parsing_error": Optional[BaseException]
 
-                - "raw": BaseMessage
-                - "parsed": None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-                - "parsing_error": Optional[BaseException]
+        .. versionchanged:: 0.1.20
 
-        Example: schema=Pydantic class, method="function_calling", include_raw=False, strict=True:
-            .. note:: Valid schemas when using ``strict`` = True
+            Added support for TypedDict class ``schema``.
 
-                OpenAI has a number of restrictions on what types of schemas can be
-                provided if ``strict`` = True. When using Pydantic, our model cannot
-                specify any Field metadata (like min/max constraints) and fields cannot
-                have default values.
+        .. versionchanged:: 0.1.21
 
-                See all constraints here: https://platform.openai.com/docs/guides/structured-outputs/supported-schemas
+            Support for ``strict`` argument added.
+            Support for ``method`` = "json_schema" added.
+
+        .. note:: Planned breaking changes in version `0.2.0`
+
+            - ``method`` default will be changed to "json_schema" from
+                "function_calling".
+            - ``strict`` will default to True when ``method`` is
+                "function_calling" as of version `0.2.0`.
+
+
+        .. dropdown:: Example: schema=Pydantic class, method="function_calling", include_raw=False, strict=True
+
+            Note, OpenAI has a number of restrictions on what types of schemas can be
+            provided if ``strict`` = True. When using Pydantic, our model cannot
+            specify any Field metadata (like min/max constraints) and fields cannot
+            have default values.
+
+            See all constraints here: https://platform.openai.com/docs/guides/structured-outputs/supported-schemas
 
             .. code-block:: python
 
@@ -1252,7 +1232,8 @@ class BaseChatOpenAI(BaseChatModel):
                 #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
                 # )
 
-        Example: schema=Pydantic class, method="function_calling", include_raw=True:
+        .. dropdown:: Example: schema=Pydantic class, method="function_calling", include_raw=True
+
             .. code-block:: python
 
                 from langchain_openai import ChatOpenAI
@@ -1280,7 +1261,8 @@ class BaseChatOpenAI(BaseChatModel):
                 #     'parsing_error': None
                 # }
 
-        Example: schema=TypedDict class, method="function_calling", include_raw=False:
+        .. dropdown:: Example: schema=TypedDict class, method="function_calling", include_raw=False
+
             .. code-block:: python
 
                 # IMPORTANT: If you are using Python <=3.8, you need to import Annotated
@@ -1310,7 +1292,8 @@ class BaseChatOpenAI(BaseChatModel):
                 #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
                 # }
 
-        Example: schema=OpenAI function schema, method="function_calling", include_raw=False:
+        .. dropdown:: Example: schema=OpenAI function schema, method="function_calling", include_raw=False
+
             .. code-block:: python
 
                 from langchain_openai import ChatOpenAI
@@ -1339,7 +1322,8 @@ class BaseChatOpenAI(BaseChatModel):
                 #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
                 # }
 
-        Example: schema=Pydantic class, method="json_mode", include_raw=True:
+        .. dropdown:: Example: schema=Pydantic class, method="json_mode", include_raw=True
+
             .. code-block::
 
                 from langchain_openai import ChatOpenAI
@@ -1367,7 +1351,8 @@ class BaseChatOpenAI(BaseChatModel):
                 #     'parsing_error': None
                 # }
 
-        Example: schema=None, method="json_mode", include_raw=True:
+        .. dropdown:: Example: schema=None, method="json_mode", include_raw=True
+
             .. code-block::
 
                 structured_llm = llm.with_structured_output(method="json_mode", include_raw=True)

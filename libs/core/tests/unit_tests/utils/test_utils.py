@@ -1,6 +1,7 @@
 import os
 import re
 from contextlib import AbstractContextManager, nullcontext
+from copy import deepcopy
 from typing import Any, Callable, Dict, Optional, Tuple, Type, Union
 from unittest.mock import patch
 
@@ -120,9 +121,45 @@ def test_merge_dicts(
     else:
         err = nullcontext()
 
+    left_copy = deepcopy(left)
+    right_copy = deepcopy(right)
     with err:
         actual = merge_dicts(left, right)
         assert actual == expected
+        # no mutation
+        assert left == left_copy
+        assert right == right_copy
+
+
+@pytest.mark.parametrize(
+    ("left", "right", "expected"),
+    (
+        # 'type' special key handling
+        ({"type": "foo"}, {"type": "foo"}, {"type": "foo"}),
+        (
+            {"type": "foo"},
+            {"type": "bar"},
+            pytest.raises(ValueError, match="Unable to merge."),
+        ),
+    ),
+)
+@pytest.mark.xfail(reason="Refactors to make in 0.3")
+def test_merge_dicts_0_3(
+    left: dict, right: dict, expected: Union[dict, AbstractContextManager]
+) -> None:
+    if isinstance(expected, AbstractContextManager):
+        err = expected
+    else:
+        err = nullcontext()
+
+    left_copy = deepcopy(left)
+    right_copy = deepcopy(right)
+    with err:
+        actual = merge_dicts(left, right)
+        assert actual == expected
+        # no mutation
+        assert left == left_copy
+        assert right == right_copy
 
 
 @pytest.mark.parametrize(
