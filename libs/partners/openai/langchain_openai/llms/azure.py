@@ -5,12 +5,11 @@ from typing import Any, Callable, Dict, List, Mapping, Optional, Union
 
 import openai
 from langchain_core.language_models import LangSmithParams
-from pydantic import Field, SecretStr, root_validator, model_validator
 from langchain_core.utils import from_env, secret_from_env
+from pydantic import Field, SecretStr, model_validator
+from typing_extensions import Self, cast
 
 from langchain_openai.llms.base import BaseOpenAI
-from typing_extensions import Self
-
 
 logger = logging.getLogger(__name__)
 
@@ -117,7 +116,7 @@ class AzureOpenAI(BaseOpenAI):
         if openai_api_base and self.validate_base_url:
             if "/openai" not in openai_api_base:
                 self.openai_api_base = (
-                    self.openai_api_base.rstrip("/") + "/openai"
+                    cast(str, self.openai_api_base).rstrip("/") + "/openai"
                 )
                 raise ValueError(
                     "As of openai>=1.0.0, Azure endpoints should be specified via "
@@ -133,7 +132,7 @@ class AzureOpenAI(BaseOpenAI):
                     "and `azure_endpoint`."
                 )
                 self.deployment_name = None
-        client_params = {
+        client_params: dict = {
             "api_version": self.openai_api_version,
             "azure_endpoint": self.azure_endpoint,
             "azure_deployment": self.deployment_name,
@@ -154,12 +153,14 @@ class AzureOpenAI(BaseOpenAI):
         if not (self.client or None):
             sync_specific = {"http_client": self.http_client}
             self.client = openai.AzureOpenAI(
-                **client_params, **sync_specific
+                **client_params,
+                **sync_specific,  # type: ignore[arg-type]
             ).completions
         if not (self.async_client or None):
             async_specific = {"http_client": self.http_async_client}
             self.async_client = openai.AsyncAzureOpenAI(
-                **client_params, **async_specific
+                **client_params,
+                **async_specific,  # type: ignore[arg-type]
             ).completions
 
         return self

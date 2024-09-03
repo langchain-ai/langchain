@@ -26,13 +26,10 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
-from pydantic import Field, SecretStr, root_validator, model_validator
 from langchain_core.utils import get_pydantic_field_names
 from langchain_core.utils.utils import build_extra_kwargs, from_env, secret_from_env
-from pydantic import ConfigDict
+from pydantic import ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
-
-
 
 logger = logging.getLogger(__name__)
 
@@ -156,7 +153,7 @@ class BaseOpenAI(BaseLLM):
     """Optional additional JSON properties to include in the request parameters when
     making requests to OpenAI compatible APIs, such as vLLM."""
 
-    model_config = ConfigDict(populate_by_name=True,)
+    model_config = ConfigDict(populate_by_name=True)
 
     @model_validator(mode="before")
     @classmethod
@@ -179,11 +176,9 @@ class BaseOpenAI(BaseLLM):
         if self.streaming and self.best_of > 1:
             raise ValueError("Cannot stream results when best_of > 1.")
 
-        client_params = {
+        client_params: dict = {
             "api_key": (
-                self.openai_api_key.get_secret_value()
-                if self.openai_api_key
-                else None
+                self.openai_api_key.get_secret_value() if self.openai_api_key else None
             ),
             "organization": self.openai_organization,
             "base_url": self.openai_api_base,
@@ -194,13 +189,12 @@ class BaseOpenAI(BaseLLM):
         }
         if not (self.client or None):
             sync_specific = {"http_client": self.http_client}
-            self.client = openai.OpenAI(
-                **client_params, **sync_specific
-            ).completions
+            self.client = openai.OpenAI(**client_params, **sync_specific).completions  # type: ignore[arg-type]
         if not (self.async_client or None):
             async_specific = {"http_client": self.http_async_client}
             self.async_client = openai.AsyncOpenAI(
-                **client_params, **async_specific
+                **client_params,
+                **async_specific,  # type: ignore[arg-type]
             ).completions
 
         return self

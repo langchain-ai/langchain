@@ -73,11 +73,10 @@ from langchain_core.output_parsers.openai_tools import (
     parse_tool_call,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from pydantic import BaseModel, Field, model_validator, SecretStr
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough, chain
 from langchain_core.runnables.config import run_in_executor
 from langchain_core.tools import BaseTool
-from langchain_core.utils import get_from_dict_or_env, get_pydantic_field_names
+from langchain_core.utils import get_pydantic_field_names
 from langchain_core.utils.function_calling import (
     convert_to_openai_function,
     convert_to_openai_tool,
@@ -88,9 +87,8 @@ from langchain_core.utils.pydantic import (
     is_basemodel_subclass,
 )
 from langchain_core.utils.utils import build_extra_kwargs, from_env, secret_from_env
-from pydantic import ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
-
 
 logger = logging.getLogger(__name__)
 
@@ -361,8 +359,7 @@ class BaseChatOpenAI(BaseChatModel):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     openai_api_key: Optional[SecretStr] = Field(
-        alias="api_key",
-        default_factory=secret_from_env("OPENAI_API_KEY", default=None),
+        alias="api_key", default_factory=secret_from_env("OPENAI_API_KEY", default=None)
     )
     openai_api_base: Optional[str] = Field(default=None, alias="base_url")
     """Base URL path for API requests, leave blank if not using a proxy or service 
@@ -431,7 +428,7 @@ class BaseChatOpenAI(BaseChatModel):
     include_response_headers: bool = False
     """Whether to include response headers in the output message response_metadata."""
 
-    model_config = ConfigDict(populate_by_name=True,)
+    model_config = ConfigDict(populate_by_name=True)
 
     @model_validator(mode="before")
     @classmethod
@@ -458,14 +455,10 @@ class BaseChatOpenAI(BaseChatModel):
             or os.getenv("OPENAI_ORG_ID")
             or os.getenv("OPENAI_ORGANIZATION")
         )
-        self.openai_api_base = self.openai_api_base or os.getenv(
-            "OPENAI_API_BASE"
-        )
-        client_params = {
+        self.openai_api_base = self.openai_api_base or os.getenv("OPENAI_API_BASE")
+        client_params: dict = {
             "api_key": (
-                self.openai_api_key.get_secret_value()
-                if self.openai_api_key
-                else None
+                self.openai_api_key.get_secret_value() if self.openai_api_key else None
             ),
             "organization": self.openai_organization,
             "base_url": self.openai_api_base,
@@ -474,9 +467,7 @@ class BaseChatOpenAI(BaseChatModel):
             "default_headers": self.default_headers,
             "default_query": self.default_query,
         }
-        if self.openai_proxy and (
-            self.http_client or self.http_async_client
-        ):
+        if self.openai_proxy and (self.http_client or self.http_async_client):
             openai_proxy = self.openai_proxy
             http_client = self.http_client
             http_async_client = self.http_async_client
@@ -496,7 +487,7 @@ class BaseChatOpenAI(BaseChatModel):
                     ) from e
                 self.http_client = httpx.Client(proxy=self.openai_proxy)
             sync_specific = {"http_client": self.http_client}
-            self.root_client = openai.OpenAI(**client_params, **sync_specific)
+            self.root_client = openai.OpenAI(**client_params, **sync_specific)  # type: ignore[arg-type]
             self.client = self.root_client.chat.completions
         if not (self.async_client or None):
             if self.openai_proxy and not self.http_async_client:
@@ -507,12 +498,11 @@ class BaseChatOpenAI(BaseChatModel):
                         "Could not import httpx python package. "
                         "Please install it with `pip install httpx`."
                     ) from e
-                self.http_async_client = httpx.AsyncClient(
-                    proxy=self.openai_proxy
-                )
+                self.http_async_client = httpx.AsyncClient(proxy=self.openai_proxy)
             async_specific = {"http_client": self.http_async_client}
             self.root_async_client = openai.AsyncOpenAI(
-                **client_params, **async_specific
+                **client_params,
+                **async_specific,  # type: ignore[arg-type]
             )
             self.async_client = self.root_async_client.chat.completions
         return self

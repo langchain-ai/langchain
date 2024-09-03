@@ -20,12 +20,9 @@ from typing import (
 import openai
 import tiktoken
 from langchain_core.embeddings import Embeddings
-from pydantic import BaseModel, Field, SecretStr, root_validator, model_validator
 from langchain_core.utils import from_env, get_pydantic_field_names, secret_from_env
-from pydantic import ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
-
-
 
 logger = logging.getLogger(__name__)
 
@@ -267,7 +264,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     """Whether to check the token length of inputs and automatically split inputs 
         longer than embedding_ctx_length."""
 
-    model_config = ConfigDict(extra="forbid",populate_by_name=True,)
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
     @model_validator(mode="before")
     @classmethod
@@ -304,11 +301,9 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 "If you are using Azure, "
                 "please use the `AzureOpenAIEmbeddings` class."
             )
-        client_params = {
+        client_params: dict = {
             "api_key": (
-                self.openai_api_key.get_secret_value()
-                if self.openai_api_key
-                else None
+                self.openai_api_key.get_secret_value() if self.openai_api_key else None
             ),
             "organization": self.openai_organization,
             "base_url": self.openai_api_base,
@@ -318,9 +313,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             "default_query": self.default_query,
         }
 
-        if self.openai_proxy and (
-            self.http_client or self.http_async_client
-        ):
+        if self.openai_proxy and (self.http_client or self.http_async_client):
             openai_proxy = self.openai_proxy
             http_client = self.http_client
             http_async_client = self.http_async_client
@@ -340,9 +333,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                     ) from e
                 self.http_client = httpx.Client(proxy=self.openai_proxy)
             sync_specific = {"http_client": self.http_client}
-            self.client = openai.OpenAI(
-                **client_params, **sync_specific
-            ).embeddings
+            self.client = openai.OpenAI(**client_params, **sync_specific).embeddings  # type: ignore[arg-type]
         if not (self.async_client or None):
             if self.openai_proxy and not self.http_async_client:
                 try:
@@ -352,12 +343,11 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                         "Could not import httpx python package. "
                         "Please install it with `pip install httpx`."
                     ) from e
-                self.http_async_client = httpx.AsyncClient(
-                    proxy=self.openai_proxy
-                )
+                self.http_async_client = httpx.AsyncClient(proxy=self.openai_proxy)
             async_specific = {"http_client": self.http_async_client}
             self.async_client = openai.AsyncOpenAI(
-                **client_params, **async_specific
+                **client_params,
+                **async_specific,  # type: ignore[arg-type]
             ).embeddings
         return self
 

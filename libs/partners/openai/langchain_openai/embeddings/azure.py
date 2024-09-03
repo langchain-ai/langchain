@@ -2,15 +2,14 @@
 
 from __future__ import annotations
 
-from typing import Callable, Dict, Optional, Union
+from typing import Callable, Optional, Union
 
 import openai
-from pydantic import Field, SecretStr, root_validator, model_validator
 from langchain_core.utils import from_env, secret_from_env
+from pydantic import Field, SecretStr, model_validator
+from typing_extensions import Self, cast
 
 from langchain_openai.embeddings.base import OpenAIEmbeddings
-from typing_extensions import Self
-
 
 
 class AzureOpenAIEmbeddings(OpenAIEmbeddings):
@@ -163,7 +162,7 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
         openai_api_base = self.openai_api_base
         if openai_api_base and self.validate_base_url:
             if "/openai" not in openai_api_base:
-                self.openai_api_base += "/openai"
+                self.openai_api_base = cast(str, self.openai_api_base) + "/openai"
                 raise ValueError(
                     "As of openai>=1.0.0, Azure endpoints should be specified via "
                     "the `azure_endpoint` param not `openai_api_base` "
@@ -177,19 +176,15 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
                     "Instead use `deployment` (or alias `azure_deployment`) "
                     "and `azure_endpoint`."
                 )
-        client_params = {
+        client_params: dict = {
             "api_version": self.openai_api_version,
             "azure_endpoint": self.azure_endpoint,
             "azure_deployment": self.deployment,
             "api_key": (
-                self.openai_api_key.get_secret_value()
-                if self.openai_api_key
-                else None
+                self.openai_api_key.get_secret_value() if self.openai_api_key else None
             ),
             "azure_ad_token": (
-                self.azure_ad_token.get_secret_value()
-                if self.azure_ad_token
-                else None
+                self.azure_ad_token.get_secret_value() if self.azure_ad_token else None
             ),
             "azure_ad_token_provider": self.azure_ad_token_provider,
             "organization": self.openai_organization,
@@ -200,14 +195,16 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
             "default_query": self.default_query,
         }
         if not (self.client or None):
-            sync_specific = {"http_client": self.http_client}
+            sync_specific: dict = {"http_client": self.http_client}
             self.client = openai.AzureOpenAI(
-                **client_params, **sync_specific
+                **client_params,  # type: ignore[arg-type]
+                **sync_specific,
             ).embeddings
         if not (self.async_client or None):
-            async_specific = {"http_client": self.http_async_client}
+            async_specific: dict = {"http_client": self.http_async_client}
             self.async_client = openai.AsyncAzureOpenAI(
-                **client_params, **async_specific
+                **client_params,  # type: ignore[arg-type]
+                **async_specific,
             ).embeddings
         return self
 

@@ -31,16 +31,15 @@ from langchain_core.output_parsers.openai_tools import (
     PydanticToolsParser,
 )
 from langchain_core.outputs import ChatResult
-from pydantic import BaseModel, Field, SecretStr, model_validator
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import from_env, secret_from_env
 from langchain_core.utils.function_calling import convert_to_openai_tool
 from langchain_core.utils.pydantic import is_basemodel_subclass
-
-from langchain_openai.chat_models.base import BaseChatOpenAI
+from pydantic import BaseModel, Field, SecretStr, model_validator
 from typing_extensions import Self
 
+from langchain_openai.chat_models.base import BaseChatOpenAI
 
 logger = logging.getLogger(__name__)
 
@@ -604,19 +603,15 @@ class AzureChatOpenAI(BaseChatOpenAI):
                     "Or you can equivalently specify:\n\n"
                     'base_url="https://xxx.openai.azure.com/openai/deployments/my-deployment"'
                 )
-        client_params = {
+        client_params: dict = {
             "api_version": self.openai_api_version,
             "azure_endpoint": self.azure_endpoint,
             "azure_deployment": self.deployment_name,
             "api_key": (
-                self.openai_api_key.get_secret_value()
-                if self.openai_api_key
-                else None
+                self.openai_api_key.get_secret_value() if self.openai_api_key else None
             ),
             "azure_ad_token": (
-                self.azure_ad_token.get_secret_value()
-                if self.azure_ad_token
-                else None
+                self.azure_ad_token.get_secret_value() if self.azure_ad_token else None
             ),
             "azure_ad_token_provider": self.azure_ad_token_provider,
             "organization": self.openai_organization,
@@ -628,12 +623,13 @@ class AzureChatOpenAI(BaseChatOpenAI):
         }
         if not (self.client or None):
             sync_specific = {"http_client": self.http_client}
-            self.root_client = openai.AzureOpenAI(**client_params, **sync_specific)
+            self.root_client = openai.AzureOpenAI(**client_params, **sync_specific)  # type: ignore[arg-type]
             self.client = self.root_client.chat.completions
         if not (self.async_client or None):
             async_specific = {"http_client": self.http_async_client}
             self.root_async_client = openai.AsyncAzureOpenAI(
-                **client_params, **async_specific
+                **client_params,
+                **async_specific,  # type: ignore[arg-type]
             )
             self.async_client = self.root_async_client.chat.completions
         return self
