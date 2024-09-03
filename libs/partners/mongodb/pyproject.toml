@@ -63,6 +63,7 @@ pytest-mock = "^3.10.0"
 syrupy = "^4.0.2"
 pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
+mongomock = "^4.1.2"
 
 [tool.poetry.group.codespell.dependencies]
 codespell = "^2.2.0"
