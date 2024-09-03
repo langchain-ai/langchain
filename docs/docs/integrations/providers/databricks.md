@@ -40,6 +40,7 @@ LLM
 
 :::caution
 Text completion models have been deprecated and the latest and most popular models are [chat completion models](/docs/concepts/#chat-models). Use `ChatDatabricks` chat model instead to use those models and advanced features such as tool calling.
+:::
 
 ```
 from langchain_community.llm.databricks import Databricks
