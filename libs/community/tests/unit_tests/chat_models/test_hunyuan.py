@@ -22,6 +22,7 @@ def test__convert_message_to_dict_human() -> None:
     expected_output = {"Role": "user", "Content": "foo"}
     assert result == expected_output
 
+
 def test__convert_message_to_dict_human_vision() -> None:
     content = [
         {
@@ -46,7 +47,7 @@ def test__convert_message_to_dict_human_vision() -> None:
             {"Type": "text", "Text": "下面图片中是哪个公司的 Logo？"},
         ],
     }
-    
+
     assert result == expected_output
 
 
