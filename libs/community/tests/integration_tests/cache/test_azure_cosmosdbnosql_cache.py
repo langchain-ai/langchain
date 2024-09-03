@@ -1,9 +1,5 @@
 """Test Azure CosmosDB NoSql cache functionality."""
 
-import os
-import uuid
-
-import pytest
 from azure.cosmos import CosmosClient, PartitionKey
 from langchain.globals import get_llm_cache, set_llm_cache
 from langchain_core.outputs import Generation
@@ -13,7 +9,6 @@ from libs.community.tests.integration_tests.cache.fake_embeddings import (
 from libs.community.tests.unit_tests.llms.fake_llm import FakeLLM
 
 from langchain_community.cache import AzureCosmosDBNoSqlSemanticCache
-from langchain_community.vectorstores import AzureCosmosDBNoSqlVectorSearch
 
 URI = "COSMOS_DB_URI"
 KEY = "COSMOS_DB_KEY"
