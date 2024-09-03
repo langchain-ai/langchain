@@ -1,8 +1,8 @@
-# rag-azure-search
+# RAG - Azure AI Search
 
 This template performs RAG on documents using [Azure AI Search](https://learn.microsoft.com/azure/search/search-what-is-azure-search) as the vectorstore and Azure OpenAI chat and embedding models.
 
-For additional details on RAG with Azure AI Search, refer to [this notebook](https://github.com/langchain-ai/langchain/blob/master/docs/docs/integrations/vectorstores/azuresearch.ipynb).
+For additional details on RAG with `Azure AI Search`, refer to [this notebook](https://github.com/langchain-ai/langchain/blob/master/docs/docs/integrations/vectorstores/azuresearch.ipynb).
 
 
 ## Environment Setup

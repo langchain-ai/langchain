@@ -27,7 +27,7 @@ class ErnieEmbeddings(BaseModel, Embeddings):
 
     chunk_size: int = 16
 
-    model_name = "ErnieBot-Embedding-V1"
+    model_name: str = "ErnieBot-Embedding-V1"
 
     _lock = threading.Lock()
 

@@ -10,24 +10,14 @@ repository = "https://www.github.com/langchain-ai/langchain"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-black = "^24.2.0"
 
 [tool.poetry.group.docs.dependencies]
-langchain = { path = "libs/langchain/", develop = true }
-autodoc_pydantic = "^1.8.0"
-myst_parser = "^0.18.1"
-nbsphinx = "^0.8.9"
-sphinx = "^4.5.0"
-sphinx-autobuild = "^2021.3.14"
-sphinx_book_theme = "^0.3.3"
-sphinx_rtd_theme = "^1.0.0"
-sphinx-typlog-theme = "^0.8.0"
-sphinx-panels = "^0.6.0"
+autodoc_pydantic = "^1"
+sphinx = "^7"
+myst-parser = "^3"
+sphinx-autobuild = "^2021"
+pydata-sphinx-theme = "^0.14"
 toml = "^0.10.2"
-myst-nb = "^0.17.1"
-linkchecker = "^10.2.1"
-sphinx-copybutton = "^0.5.1"
-nbdoc = "^0.0.82"
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.5.0"
@@ -54,8 +44,8 @@ ipykernel = "^6.29.2"
 # Support Python 3.8 and 3.12+.
 # Can be removed once the numpy version is fixed in langchain-community.
 numpy = [
-    {version = "^1.24.0", python = "<3.12"},
-    {version = "^1.26.0", python = ">=3.12"}
+    { version = "^1.24.0", python = "<3.12" },
+    { version = "^1.26.0", python = ">=3.12" },
 ]
 
 [tool.poetry.group.test.dependencies]
@@ -76,19 +66,18 @@ ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogy
 [tool.ruff]
 extend-include = ["*.ipynb"]
 extend-exclude = [
-    "docs/docs/expression_language/why.ipynb"  # TODO: look into why linter errors
+    "docs/docs/expression_language/why.ipynb", # TODO: look into why linter errors
 ]
 
 [tool.ruff.lint.per-file-ignores]
 "**/{cookbook,docs}/*" = [
-    "E402",  # allow imports to appear anywhere in docs
-    "F401",  # allow "imported but unused" example code
-    "F811",  # allow re-importing the same module, so that cells can stay independent
-    "F841",  # allow assignments to variables that are never read -- it's example code
+    "E402", # allow imports to appear anywhere in docs
+    "F401", # allow "imported but unused" example code
+    "F811", # allow re-importing the same module, so that cells can stay independent
+    "F841", # allow assignments to variables that are never read -- it's example code
 ]
 
 # These files were failing the listed rules at the time ruff was adopted for notebooks.
 # Don't require them to change at once, though we should look into them eventually.
 "cookbook/gymnasium_agent_simulation.ipynb" = ["F821"]
 "docs/docs/integrations/document_loaders/tensorflow_datasets.ipynb" = ["F821"]
-

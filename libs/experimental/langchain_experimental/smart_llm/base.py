@@ -15,7 +15,7 @@ from langchain_core.prompts.chat import (
     HumanMessagePromptTemplate,
 )
 
-from langchain_experimental.pydantic_v1 import Extra, root_validator
+from langchain_experimental.pydantic_v1 import root_validator
 
 
 class SmartLLMChain(Chain):
@@ -84,7 +84,7 @@ class SmartLLMChain(Chain):
     history: SmartLLMChainHistory = SmartLLMChainHistory()
 
     class Config:
-        extra = Extra.forbid
+        extra = "forbid"
 
     # TODO: move away from `root_validator` since it is deprecated in pydantic v2
     #       and causes mypy type-checking failures (hence the `type: ignore`)

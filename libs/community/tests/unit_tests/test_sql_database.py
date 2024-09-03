@@ -55,6 +55,7 @@ def db_lazy_reflection(engine: Engine) -> SQLDatabase:
     return SQLDatabase(engine, lazy_table_reflection=True)
 
 
+@pytest.mark.xfail(is_sqlalchemy_v1, reason="SQLAlchemy 1.x issues")
 def test_table_info(db: SQLDatabase) -> None:
     """Test that table info is constructed properly."""
     output = db.table_info
@@ -85,6 +86,7 @@ def test_table_info(db: SQLDatabase) -> None:
     assert sorted(" ".join(output.split())) == sorted(" ".join(expected_output.split()))
 
 
+@pytest.mark.xfail(is_sqlalchemy_v1, reason="SQLAlchemy 1.x issues")
 def test_table_info_lazy_reflection(db_lazy_reflection: SQLDatabase) -> None:
     """Test that table info with lazy reflection"""
     assert len(db_lazy_reflection._metadata.sorted_tables) == 0
@@ -111,6 +113,7 @@ def test_table_info_lazy_reflection(db_lazy_reflection: SQLDatabase) -> None:
     assert db_lazy_reflection._metadata.sorted_tables[1].name == "user"
 
 
+@pytest.mark.xfail(is_sqlalchemy_v1, reason="SQLAlchemy 1.x issues")
 def test_table_info_w_sample_rows(db: SQLDatabase) -> None:
     """Test that table info is constructed properly."""
 

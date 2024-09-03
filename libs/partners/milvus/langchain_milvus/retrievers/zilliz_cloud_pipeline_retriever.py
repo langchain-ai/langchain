@@ -7,13 +7,13 @@ from langchain_core.retrievers import BaseRetriever
 
 
 class ZillizCloudPipelineRetriever(BaseRetriever):
-    """`Zilliz Cloud Pipeline` retriever
+    """`Zilliz Cloud Pipeline` retriever.
 
-    Args:
-        pipeline_ids (dict): A dictionary of pipeline ids.
+    Parameters:
+        pipeline_ids: A dictionary of pipeline ids.
             Valid keys: "ingestion", "search", "deletion".
-        token (str): Zilliz Cloud's token. Defaults to "".
-        cloud_region (str='gcp-us-west1'): The region of Zilliz Cloud's cluster.
+        token: Zilliz Cloud's token. Defaults to "".
+        cloud_region: The region of Zilliz Cloud's cluster.
             Defaults to 'gcp-us-west1'.
     """
 
@@ -35,14 +35,14 @@ class ZillizCloudPipelineRetriever(BaseRetriever):
         Get documents relevant to a query.
 
         Args:
-            query (str): String to find relevant documents for
-            top_k (int=10): The number of results. Defaults to 10.
-            offset (int=0): The number of records to skip in the search result.
+            query: String to find relevant documents for
+            top_k: The number of results. Defaults to 10.
+            offset: The number of records to skip in the search result.
                 Defaults to 0.
-            output_fields (list=[]): The extra fields to present in output.
-            filter (str=""): The Milvus expression to filter search results.
+            output_fields: The extra fields to present in output.
+            filter: The Milvus expression to filter search results.
                 Defaults to "".
-            run_manager (CallBackManagerForRetrieverRun): The callbacks handler to use.
+            run_manager: The callbacks handler to use.
 
         Returns:
             List of relevant documents
@@ -100,8 +100,8 @@ class ZillizCloudPipelineRetriever(BaseRetriever):
         Only supported by a text ingestion pipeline in Zilliz Cloud.
 
         Args:
-            texts (List[str]): A list of text strings.
-            metadata (Dict[str, Any]): A key-value dictionary of metadata will
+            texts: A list of text strings.
+            metadata: A key-value dictionary of metadata will
                 be inserted as preserved fields required by ingestion pipeline.
                 Defaults to None.
         """
@@ -144,7 +144,7 @@ class ZillizCloudPipelineRetriever(BaseRetriever):
 
         Args:
             doc_url: A document url.
-            metadata (Dict[str, Any]): A key-value dictionary of metadata will
+            metadata: A key-value dictionary of metadata will
                 be inserted as preserved fields required by ingestion pipeline.
                 Defaults to None.
         """
