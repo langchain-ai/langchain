@@ -23,7 +23,7 @@ from typing import (
 
 import pytest
 from pydantic import BaseModel, Field, ValidationError
-from pydantic import BaseModel as BaseModelProper  
+from pydantic import BaseModel as BaseModelProper
 from typing_extensions import Annotated, TypedDict, TypeVar
 
 from langchain_core import tools
@@ -1572,7 +1572,7 @@ def generate_models() -> List[Any]:
 
 def generate_backwards_compatible_v1() -> List[Any]:
     """Generate a model with pydantic 2 from the v1 namespace."""
-    from pydantic.v1 import BaseModel as BaseModelV1  
+    from pydantic.v1 import BaseModel as BaseModelV1
 
     class FooV1Namespace(BaseModelV1):
         a: int
@@ -1629,7 +1629,7 @@ def test_args_schema_explicitly_typed() -> None:
     is a pydantic 1 model!
     """
     # Check with whatever pydantic model is passed in and not via v1 namespace
-    from pydantic import BaseModel  
+    from pydantic import BaseModel
 
     class Foo(BaseModel):
         a: int
@@ -1873,9 +1873,9 @@ def test__get_all_basemodel_annotations_v1() -> None:
 
 @pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Testing pydantic v2.")
 def test_tool_args_schema_pydantic_v2_with_metadata() -> None:
-    from pydantic import BaseModel as BaseModelV2  
-    from pydantic import Field as FieldV2  
-    from pydantic import ValidationError as ValidationErrorV2  
+    from pydantic import BaseModel as BaseModelV2
+    from pydantic import Field as FieldV2
+    from pydantic import ValidationError as ValidationErrorV2
 
     class Foo(BaseModelV2):
         x: List[int] = FieldV2(

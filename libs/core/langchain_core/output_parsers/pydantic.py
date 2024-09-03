@@ -1,8 +1,8 @@
 import json
 from typing import Generic, List, Optional, Type
 
-import pydantic  
-from pydantic import SkipValidation  
+import pydantic
+from pydantic import SkipValidation
 from typing_extensions import Annotated
 
 from langchain_core.exceptions import OutputParserException
