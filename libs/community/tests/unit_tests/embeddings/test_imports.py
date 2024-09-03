@@ -81,6 +81,7 @@ EXPECTED_ALL = [
     "AscendEmbeddings",
     "ZhipuAIEmbeddings",
     "TextEmbedEmbeddings",
+    "HunyuanEmbeddings",
 ]
 
 
