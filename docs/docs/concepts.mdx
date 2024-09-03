@@ -15,11 +15,6 @@ The interfaces for core components like LLMs, vector stores, retrievers and more
 No third party integrations are defined here.
 The dependencies are kept purposefully very lightweight.
 
-### Partner packages
-
-While the long tail of integrations are in `langchain-community`, we split popular integrations into their own packages (e.g. `langchain-openai`, `langchain-anthropic`, etc).
-This was done in order to improve support for these important integrations.
-
 ### `langchain`
 
 The main `langchain` package contains chains, agents, and retrieval strategies that make up an application's cognitive architecture.
@@ -32,6 +27,11 @@ This package contains third party integrations that are maintained by the LangCh
 Key partner packages are separated out (see below).
 This contains all integrations for various components (LLMs, vector stores, retrievers).
 All dependencies in this package are optional to keep the package as lightweight as possible.
+
+### Partner packages
+
+While the long tail of integrations is in `langchain-community`, we split popular integrations into their own packages (e.g. `langchain-openai`, `langchain-anthropic`, etc).
+This was done in order to improve support for these important integrations.
 
 ### [`langgraph`](https://langchain-ai.github.io/langgraph)
 
@@ -61,28 +61,28 @@ A developer platform that lets you debug, test, evaluate, and monitor LLM applic
 ## LangChain Expression Language (LCEL)
 <span data-heading-keywords="lcel"></span>
 
-LangChain Expression Language, or LCEL, is a declarative way to chain LangChain components.
+`LangChain Expression Language`, or `LCEL`, is a declarative way to chain LangChain components.
 LCEL was designed from day 1 to **support putting prototypes in production, with no code changes**, from the simplest “prompt + LLM” chain to the most complex chains (we’ve seen folks successfully run LCEL chains with 100s of steps in production). To highlight a few of the reasons you might want to use LCEL:
 
-**First-class streaming support**
+- **First-class streaming support:**
 When you build your chains with LCEL you get the best possible time-to-first-token (time elapsed until the first chunk of output comes out). For some chains this means eg. we stream tokens straight from an LLM to a streaming output parser, and you get back parsed, incremental chunks of output at the same rate as the LLM provider outputs the raw tokens.
 
-**Async support**
+- **Async support:**
 Any chain built with LCEL can be called both with the synchronous API (eg. in your Jupyter notebook while prototyping) as well as with the asynchronous API (eg. in a [LangServe](/docs/langserve/) server). This enables using the same code for prototypes and in production, with great performance, and the ability to handle many concurrent requests in the same server.
 
-**Optimized parallel execution**
+- **Optimized parallel execution:**
 Whenever your LCEL chains have steps that can be executed in parallel (eg if you fetch documents from multiple retrievers) we automatically do it, both in the sync and the async interfaces, for the smallest possible latency.
 
-**Retries and fallbacks**
+- **Retries and fallbacks:**
 Configure retries and fallbacks for any part of your LCEL chain. This is a great way to make your chains more reliable at scale. We’re currently working on adding streaming support for retries/fallbacks, so you can get the added reliability without any latency cost.
 
-**Access intermediate results**
+- **Access intermediate results:**
 For more complex chains it’s often very useful to access the results of intermediate steps even before the final output is produced. This can be used to let end-users know something is happening, or even just to debug your chain. You can stream intermediate results, and it’s available on every [LangServe](/docs/langserve) server.
 
-**Input and output schemas**
+- **Input and output schemas**
 Input and output schemas give every LCEL chain Pydantic and JSONSchema schemas inferred from the structure of your chain. This can be used for validation of inputs and outputs, and is an integral part of LangServe.
 
-[**Seamless LangSmith tracing**](https://docs.smith.langchain.com)
+- [**Seamless LangSmith tracing**](https://docs.smith.langchain.com)
 As your chains get more and more complex, it becomes increasingly important to understand what exactly is happening at every step.
 With LCEL, **all** steps are automatically logged to [LangSmith](https://docs.smith.langchain.com/) for maximum observability and debuggability.
 
@@ -186,7 +186,7 @@ For a full list of LangChain model providers with multimodal models, [check out 
 <span data-heading-keywords="llm,llms"></span>
 
 :::caution
-Pure text-in/text-out LLMs tend to be older or lower-level. Many popular models are best used as [chat completion models](/docs/concepts/#chat-models),
+Pure text-in/text-out LLMs tend to be older or lower-level. Many new popular models are best used as [chat completion models](/docs/concepts/#chat-models),
 even for non-chat use cases.
 
 You are probably looking for [the section above instead](/docs/concepts/#chat-models).
@@ -201,7 +201,7 @@ When messages are passed in as input, they will be formatted into a string under
 
 LangChain does not host any LLMs, rather we rely on third party integrations.
 
-For specifics on how to use LLMs, see the [relevant how-to guides here](/docs/how_to/#llms).
+For specifics on how to use LLMs, see the [how-to guides](/docs/how_to/#llms).
 
 ### Messages
 
@@ -215,7 +215,7 @@ LangChain has different message classes for different roles.
 The `content` property describes the content of the message.
 This can be a few different things:
 
-- A string (most models deal this type of content)
+- A string (most models deal with this type of content)
 - A List of dictionaries (this is used for multimodal input, where the dictionary contains information about that input type and that input location)
 
 Optionally, messages can have a `name` property which allows for differentiating between multiple speakers with the same role.
@@ -365,24 +365,18 @@ See documentation for that [here](/docs/concepts/#function-tool-calling).
 
 :::
 
-Responsible for taking the output of a model and transforming it to a more suitable format for downstream tasks.
+`Output parser` is responsible for taking the output of a model and transforming it to a more suitable format for downstream tasks.
 Useful when you are using LLMs to generate structured data, or to normalize output from chat models and LLMs.
 
 LangChain has lots of different types of output parsers. This is a list of output parsers LangChain supports. The table below has various pieces of information:
 
-**Name**: The name of the output parser
-
-**Supports Streaming**: Whether the output parser supports streaming.
-
-**Has Format Instructions**: Whether the output parser has format instructions. This is generally available except when (a) the desired schema is not specified in the prompt but rather in other parameters (like OpenAI function calling), or (b) when the OutputParser wraps another OutputParser.
-
-**Calls LLM**: Whether this output parser itself calls an LLM. This is usually only done by output parsers that attempt to correct misformatted output.
-
-**Input Type**: Expected input type. Most output parsers work on both strings and messages, but some (like OpenAI Functions) need a message with specific kwargs.
-
-**Output Type**: The output type of the object returned by the parser.
-
-**Description**: Our commentary on this output parser and when to use it.
+- **Name**: The name of the output parser
+- **Supports Streaming**: Whether the output parser supports streaming.
+- **Has Format Instructions**: Whether the output parser has format instructions. This is generally available except when (a) the desired schema is not specified in the prompt but rather in other parameters (like OpenAI function calling), or (b) when the OutputParser wraps another OutputParser.
+- **Calls LLM**: Whether this output parser itself calls an LLM. This is usually only done by output parsers that attempt to correct misformatted output.
+- **Input Type**: Expected input type. Most output parsers work on both strings and messages, but some (like OpenAI Functions) need a message with specific kwargs.
+- **Output Type**: The output type of the object returned by the parser.
+- **Description**: Our commentary on this output parser and when to use it.
 
 | Name            | Supports Streaming | Has Format Instructions       | Calls LLM | Input Type                       | Output Type          | Description                                                                                                                                                                                                                                              |
 |-----------------|--------------------|-------------------------------|-----------|----------------------------------|----------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -534,10 +528,10 @@ Tools are needed whenever you want a model to control parts of your code or call
 
 A tool consists of:
 
-1. The name of the tool.
-2. A description of what the tool does.
-3. A JSON schema defining the inputs to the tool.
-4. A function (and, optionally, an async variant of the function).
+1. The `name` of the tool.
+2. A `description` of what the tool does.
+3. A `JSON schema` defining the inputs to the tool.
+4. A `function` (and, optionally, an async variant of the function).
 
 When a tool is bound to a model, the name, description and JSON schema are provided as context to the model.
 Given a list of tools and a set of instructions, a model can request to call one or more tools with specific inputs.
@@ -650,14 +644,14 @@ The results of those actions can then be fed back into the agent and it determin
 [LangGraph](https://github.com/langchain-ai/langgraph) is an extension of LangChain specifically aimed at creating highly controllable and customizable agents.
 Please check out that documentation for a more in depth overview of agent concepts.
 
-There is a legacy agent concept in LangChain that we are moving towards deprecating: `AgentExecutor`.
+There is a legacy `agent` concept in LangChain that we are moving towards deprecating: `AgentExecutor`.
 AgentExecutor was essentially a runtime for agents.
 It was a great place to get started, however, it was not flexible enough as you started to have more customized agents.
 In order to solve that we built LangGraph to be this flexible, highly-controllable runtime.
 
 If you are still using AgentExecutor, do not fear: we still have a guide on [how to use AgentExecutor](/docs/how_to/agent_executor).
 It is recommended, however, that you start to transition to LangGraph.
-In order to assist in this we have put together a [transition guide on how to do so](/docs/how_to/migrate_agent).
+In order to assist in this, we have put together a [transition guide on how to do so](/docs/how_to/migrate_agent).
 
 #### ReAct agents
 <span data-heading-keywords="react,react agent"></span>
@@ -743,7 +737,7 @@ callbacks to any child objects.
 :::important Async in Python<=3.10
 
 Any `RunnableLambda`, a `RunnableGenerator`, or `Tool` that invokes other runnables
-and is running async in python<=3.10, will have to propagate callbacks to child
+and is running `async` in python<=3.10, will have to propagate callbacks to child
 objects manually. This is because LangChain cannot automatically propagate
 callbacks to child objects in this case.
 
@@ -873,7 +867,7 @@ Furthermore, using tokens can also improve efficiency, since the model processes
 ### Function/tool calling
 
 :::info
-We use the term tool calling interchangeably with function calling. Although
+We use the term `tool calling` interchangeably with `function calling`. Although
 function calling is sometimes meant to refer to invocations of a single function,
 we treat all models as though they can return multiple tool or function calls in
 each message.
@@ -968,7 +962,6 @@ structured_llm.invoke("Tell me a joke about cats")
 
 ```
 Joke(setup='Why was the cat sitting on the computer?', punchline='To keep an eye on the mouse!', rating=None)
-
 ```
 
 We recommend this method as a starting point when working with structured output:
@@ -1107,7 +1100,11 @@ For a full list of model providers that support tool calling, [see this table](/
 
 ### Few-shot prompting
 
-One of the most effective ways to improve model performance is to give a model examples of what you want it to do. The technique of adding example inputs and expected outputs to a model prompt is known as "few-shot prompting". There are a few things to think about when doing few-shot prompting:
+One of the most effective ways to improve model performance is to give a model examples of 
+what you want it to do. The technique of adding example inputs and expected outputs 
+to a model prompt is known as "few-shot prompting". The technique is based on the
+[Language Models are Few-Shot Learners](https://arxiv.org/abs/2005.14165) paper.
+There are a few things to think about when doing few-shot prompting:
 
 1. How are examples generated?
 2. How many examples are in each prompt?
@@ -1182,8 +1179,10 @@ You can see a case study of how Anthropic and OpenAI respond to different few-sh
 
 ### Retrieval
 
-LLMs are trained on a large but fixed dataset, limiting their ability to reason over private or recent information. Fine-tuning an LLM with specific facts is one way to mitigate this, but is often [poorly suited for factual recall](https://www.anyscale.com/blog/fine-tuning-is-for-form-not-facts) and [can be costly](https://www.glean.com/blog/how-to-build-an-ai-assistant-for-the-enterprise). 
-Retrieval is the process of providing relevant information to an LLM to improve its response for a given input. Retrieval augmented generation (RAG) is the process of grounding the LLM generation (output) using the retrieved information.
+LLMs are trained on a large but fixed dataset, limiting their ability to reason over private or recent information. 
+Fine-tuning an LLM with specific facts is one way to mitigate this, but is often [poorly suited for factual recall](https://www.anyscale.com/blog/fine-tuning-is-for-form-not-facts) and [can be costly](https://www.glean.com/blog/how-to-build-an-ai-assistant-for-the-enterprise). 
+`Retrieval` is the process of providing relevant information to an LLM to improve its response for a given input. 
+`Retrieval augmented generation` (`RAG`) [paper](https://arxiv.org/abs/2005.11401) is the process of grounding the LLM generation (output) using the retrieved information.
 
 :::tip
 
@@ -1203,12 +1202,12 @@ First, consider the user input(s) to your RAG system. Ideally, a RAG system can 
 **Using an LLM to review and optionally modify the input is the central idea behind query translation.** This serves as a general buffer, optimizing raw user inputs for your retrieval system. 
 For example, this can be as simple as extracting keywords or as complex as generating multiple sub-questions for a complex query.
 
-| Name          | When to use | Description |
-|---------------|-------------|-------------|
+| Name          | When to use | Description                                                                                                                                                                                                                                                                            |
+|---------------|-------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | [Multi-query](/docs/how_to/MultiQueryRetriever/)   | When you need to cover multiple perspectives of a question. | Rewrite the user question from multiple perspectives, retrieve documents for each rewritten question, return the unique documents for all queries. |
-| [Decomposition](https://github.com/langchain-ai/rag-from-scratch/blob/main/rag_from_scratch_5_to_9.ipynb) | When a question can be broken down into smaller subproblems. | Decompose a question into a set of subproblems / questions, which can either be solved sequentially (use the answer from first + retrieval to answer the second) or in parallel (consolidate each answer into final answer). |
-| [Step-back](https://github.com/langchain-ai/rag-from-scratch/blob/main/rag_from_scratch_5_to_9.ipynb)     | When a higher-level conceptual understanding is required. | First prompt the LLM to ask a generic step-back question about higher-level concepts or principles, and retrieve relevant facts about them. Use this grounding to help answer the user question. |
-| [HyDE](https://github.com/langchain-ai/rag-from-scratch/blob/main/rag_from_scratch_5_to_9.ipynb)          | If you have challenges retrieving relevant documents using the raw user inputs. | Use an LLM to convert questions into hypothetical documents that answer the question. Use the embedded hypothetical documents to retrieve real documents with the premise that doc-doc similarity search can produce more relevant matches. |
+| [Decomposition](https://github.com/langchain-ai/rag-from-scratch/blob/main/rag_from_scratch_5_to_9.ipynb) | When a question can be broken down into smaller subproblems. | Decompose a question into a set of subproblems / questions, which can either be solved sequentially (use the answer from first + retrieval to answer the second) or in parallel (consolidate each answer into final answer).                                                           |
+| [Step-back](https://github.com/langchain-ai/rag-from-scratch/blob/main/rag_from_scratch_5_to_9.ipynb)     | When a higher-level conceptual understanding is required. | First prompt the LLM to ask a generic step-back question about higher-level concepts or principles, and retrieve relevant facts about them. Use this grounding to help answer the user question. [Paper](https://arxiv.org/pdf/2310.06117).                                            |
+| [HyDE](https://github.com/langchain-ai/rag-from-scratch/blob/main/rag_from_scratch_5_to_9.ipynb)          | If you have challenges retrieving relevant documents using the raw user inputs. | Use an LLM to convert questions into hypothetical documents that answer the question. Use the embedded hypothetical documents to retrieve real documents with the premise that doc-doc similarity search can produce more relevant matches. [Paper](https://arxiv.org/abs/2212.10496). |
 
 :::tip
 
@@ -1282,11 +1281,11 @@ Fifth, consider ways to improve the quality of your similarity search itself. Em
 
 There are some additional tricks to improve the quality of your retrieval. Embeddings excel at capturing semantic information, but may struggle with keyword-based queries. Many [vector stores](/docs/integrations/retrievers/pinecone_hybrid_search/) offer built-in [hybrid-search](https://docs.pinecone.io/guides/data/understanding-hybrid-search) to combine keyword and semantic similarity, which marries the benefits of both approaches. Furthermore, many vector stores have [maximal marginal relevance](https://python.langchain.com/v0.1/docs/modules/model_io/prompts/example_selectors/mmr/), which attempts to diversify the results of a search to avoid returning similar and redundant documents. 
 
-| Name              | When to use                                              | Description |
-|-------------------|----------------------------------------------------------|-------------|
-| [ColBERT](/docs/integrations/providers/ragatouille/#using-colbert-as-a-reranker)           | When higher granularity embeddings are needed.           | ColBERT uses contextually influenced embeddings for each token in the document and query to get a granular query-document similarity score. |
-| [Hybrid search](/docs/integrations/retrievers/pinecone_hybrid_search/)     | When combining keyword-based and semantic similarity.    | Hybrid search combines keyword and semantic similarity, marrying the benefits of both approaches. |
-| [Maximal Marginal Relevance (MMR)](/docs/integrations/vectorstores/pinecone/#maximal-marginal-relevance-searches) | When needing to diversify search results. | MMR attempts to diversify the results of a search to avoid returning similar and redundant documents. |
+| Name              | When to use                                              | Description                                                                                                                                                                            |
+|-------------------|----------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [ColBERT](/docs/integrations/providers/ragatouille/#using-colbert-as-a-reranker)           | When higher granularity embeddings are needed.           | ColBERT uses contextually influenced embeddings for each token in the document and query to get a granular query-document similarity score. [Paper](https://arxiv.org/abs/2112.01488). |
+| [Hybrid search](/docs/integrations/retrievers/pinecone_hybrid_search/)     | When combining keyword-based and semantic similarity.    | Hybrid search combines keyword and semantic similarity, marrying the benefits of both approaches. [Paper](https://arxiv.org/abs/2210.11934).                                                                               |
+| [Maximal Marginal Relevance (MMR)](/docs/integrations/vectorstores/pinecone/#maximal-marginal-relevance-searches) | When needing to diversify search results. | MMR attempts to diversify the results of a search to avoid returning similar and redundant documents.                                                                                  |
 
 :::tip
 
@@ -1306,7 +1305,7 @@ Sixth, consider ways to filter or rank retrieved documents. This is very useful 
 
 :::tip
 
-See our RAG from Scratch video on [RAG-Fusion](https://youtu.be/77qELPbNgxA?feature=shared), on approach for post-processing across multiple queries:  Rewrite the user question from multiple perspectives, retrieve documents for each rewritten question, and combine the ranks of multiple search result lists to produce a single, unified ranking with [Reciprocal Rank Fusion (RRF)](https://towardsdatascience.com/forget-rag-the-future-is-rag-fusion-1147298d8ad1).
+See our RAG from Scratch video on [RAG-Fusion](https://youtu.be/77qELPbNgxA?feature=shared) ([paper](https://arxiv.org/abs/2402.03367)), on approach for post-processing across multiple queries:  Rewrite the user question from multiple perspectives, retrieve documents for each rewritten question, and combine the ranks of multiple search result lists to produce a single, unified ranking with [Reciprocal Rank Fusion (RRF)](https://towardsdatascience.com/forget-rag-the-future-is-rag-fusion-1147298d8ad1).
 
 :::
 

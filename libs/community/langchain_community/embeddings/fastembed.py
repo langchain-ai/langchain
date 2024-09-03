@@ -12,6 +12,7 @@ MIN_VERSION = "0.2.0"
 
 class FastEmbedEmbeddings(BaseModel, Embeddings):
     """Qdrant FastEmbedding models.
+
     FastEmbed is a lightweight, fast, Python library built for embedding generation.
     See more documentation at:
     * https://github.com/qdrant/fastembed/

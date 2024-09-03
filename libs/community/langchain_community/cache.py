@@ -2382,7 +2382,11 @@ class OpenSearchSemanticCache(BaseCache):
     """Cache that uses OpenSearch vector store backend"""
 
     def __init__(
-        self, opensearch_url: str, embedding: Embeddings, score_threshold: float = 0.2
+        self,
+        opensearch_url: str,
+        embedding: Embeddings,
+        score_threshold: float = 0.2,
+        **kwargs: Any,
     ):
         """
         Args:
@@ -2403,6 +2407,7 @@ class OpenSearchSemanticCache(BaseCache):
         self.opensearch_url = opensearch_url
         self.embedding = embedding
         self.score_threshold = score_threshold
+        self.connection_kwargs = kwargs
 
     def _index_name(self, llm_string: str) -> str:
         hashed_index = _hash(llm_string)
@@ -2420,6 +2425,7 @@ class OpenSearchSemanticCache(BaseCache):
             opensearch_url=self.opensearch_url,
             index_name=index_name,
             embedding_function=self.embedding,
+            **self.connection_kwargs,
         )
 
         # create index for the vectorstore
