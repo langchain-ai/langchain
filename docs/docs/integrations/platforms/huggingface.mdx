@@ -123,6 +123,22 @@ from langchain_community.document_loaders.hugging_face_dataset import HuggingFac
 from langchain_community.document_loaders import HuggingFaceModelLoader
 ```
 
+### Image captions
+
+It uses the Hugging Face models to generate image captions.
+
+We need to install several python packages.
+
+```bash
+pip install transformers pillow
+```
+
+See a [usage example](/docs/integrations/document_loaders/image_captions).
+
+```python
+from langchain_community.document_loaders import ImageCaptionLoader
+```
+
 ## Tools
 
 ### Hugging Face Hub Tools
@@ -133,7 +149,7 @@ from langchain_community.document_loaders import HuggingFaceModelLoader
 We need to install several python packages.
 
 ```bash
-ppip install transformers huggingface_hub
+pip install transformers huggingface_hub
 ```
 
 See a [usage example](/docs/integrations/tools/huggingface_tools).
@@ -149,3 +165,4 @@ from langchain_community.agent_toolkits.load_tools import load_huggingface_tool
 ```python
 from langchain_community.tools.audio import HuggingFaceTextToSpeechModelInference
 ```
+
