@@ -26,6 +26,7 @@ from langchain_core.utils import get_from_dict_or_env
 
 from langchain_community.document_loaders.base import BaseLoader
 from langchain_community.document_loaders.blob_loaders import Blob
+from langchain_community.document_loaders.dedoc import DedocBaseLoader
 from langchain_community.document_loaders.parsers.pdf import (
     AmazonTextractPDFParser,
     DocumentIntelligenceParser,
@@ -160,10 +161,65 @@ class OnlinePDFLoader(BasePDFLoader):
 
 
 class PyPDFLoader(BasePDFLoader):
-    """Load PDF using pypdf into list of documents.
-
-    Loader chunks by page and stores page numbers in metadata.
     """
+    PyPDFLoader document loader integration
+
+    Setup:
+        Install ``langchain-community``.
+
+        .. code-block:: bash
+
+            pip install -U langchain-community
+
+    Instantiate:
+        .. code-block:: python
+
+            from langchain_community.document_loaders import PyPDFLoader
+
+            loader = PyPDFLoader(
+                file_path = "./example_data/layout-parser-paper.pdf",
+                password = "my-pasword",
+                extract_images = True,
+                # headers = None
+                # extraction_mode = "plain",
+                # extraction_kwargs = None,
+            )
+
+    Lazy load:
+        .. code-block:: python
+
+            docs = []
+            docs_lazy = loader.lazy_load()
+
+            # async variant:
+            # docs_lazy = await loader.alazy_load()
+
+            for doc in docs_lazy:
+                docs.append(doc)
+            print(docs[0].page_content[:100])
+            print(docs[0].metadata)
+
+        .. code-block:: python
+
+            LayoutParser : A Uniﬁed Toolkit for Deep
+            Learning Based Document Image Analysis
+            Zejiang Shen1( ), R
+            {'source': './example_data/layout-parser-paper.pdf', 'page': 0}
+
+    Async load:
+        .. code-block:: python
+
+            docs = await loader.aload()
+            print(docs[0].page_content[:100])
+            print(docs[0].metadata)
+
+        .. code-block:: python
+
+            LayoutParser : A Uniﬁed Toolkit for Deep
+            Learning Based Document Image Analysis
+            Zejiang Shen1( ), R
+            {'source': './example_data/layout-parser-paper.pdf', 'page': 0}
+    """  # noqa: E501
 
     def __init__(
         self,
@@ -180,7 +236,7 @@ class PyPDFLoader(BasePDFLoader):
             import pypdf  # noqa:F401
         except ImportError:
             raise ImportError(
-                "pypdf package not found, please install it with " "`pip install pypdf`"
+                "pypdf package not found, please install it with `pip install pypdf`"
             )
         super().__init__(file_path, headers=headers)
         self.parser = PyPDFParser(
@@ -736,6 +792,104 @@ class AmazonTextractPDFLoader(BasePDFLoader):
             return 1
         else:
             raise ValueError(f"unsupported mime type: {blob.mimetype}")  # type: ignore[attr-defined]
+
+
+class DedocPDFLoader(DedocBaseLoader):
+    """
+    DedocPDFLoader document loader integration to load PDF files using `dedoc`.
+    The file loader can automatically detect the correctness of a textual layer in the
+        PDF document.
+    Note that `__init__` method supports parameters that differ from ones of
+        DedocBaseLoader.
+
+    Setup:
+        Install ``dedoc`` package.
+
+        .. code-block:: bash
+
+            pip install -U dedoc
+
+    Instantiate:
+        .. code-block:: python
+
+            from langchain_community.document_loaders import DedocPDFLoader
+
+            loader = DedocPDFLoader(
+                file_path="example.pdf",
+                # split=...,
+                # with_tables=...,
+                # pdf_with_text_layer=...,
+                # pages=...,
+                # ...
+            )
+
+    Load:
+        .. code-block:: python
+
+            docs = loader.load()
+            print(docs[0].page_content[:100])
+            print(docs[0].metadata)
+
+        .. code-block:: python
+
+            Some text
+            {
+                'file_name': 'example.pdf',
+                'file_type': 'application/pdf',
+                # ...
+            }
+
+    Lazy load:
+        .. code-block:: python
+
+            docs = []
+            docs_lazy = loader.lazy_load()
+
+            for doc in docs_lazy:
+                docs.append(doc)
+            print(docs[0].page_content[:100])
+            print(docs[0].metadata)
+
+        .. code-block:: python
+
+            Some text
+            {
+                'file_name': 'example.pdf',
+                'file_type': 'application/pdf',
+                # ...
+            }
+
+    Parameters used for document parsing via `dedoc`
+        (https://dedoc.readthedocs.io/en/latest/parameters/pdf_handling.html):
+
+        with_attachments: enable attached files extraction
+        recursion_deep_attachments: recursion level for attached files extraction,
+            works only when with_attachments==True
+        pdf_with_text_layer: type of handler for parsing, available options
+            ["true", "false", "tabby", "auto", "auto_tabby" (default)]
+        language: language of the document for PDF without a textual layer,
+            available options ["eng", "rus", "rus+eng" (default)], the list of
+            languages can be extended, please see
+            https://dedoc.readthedocs.io/en/latest/tutorials/add_new_language.html
+        pages: page slice to define the reading range for parsing
+        is_one_column_document: detect number of columns for PDF without a textual
+            layer, available options ["true", "false", "auto" (default)]
+        document_orientation: fix document orientation (90, 180, 270 degrees) for PDF
+            without a textual layer, available options ["auto" (default), "no_change"]
+        need_header_footer_analysis: remove headers and footers from the output result
+        need_binarization: clean pages background (binarize) for PDF without a textual
+            layer
+        need_pdf_table_analysis: parse tables for PDF without a textual layer
+    """
+
+    def _make_config(self) -> dict:
+        from dedoc.utils.langchain import make_manager_pdf_config
+
+        return make_manager_pdf_config(
+            file_path=self.file_path,
+            parsing_params=self.parsing_parameters,
+            split=self.split,
+        )
 
 
 class DocumentIntelligenceLoader(BasePDFLoader):

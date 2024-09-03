@@ -147,7 +147,7 @@ class SQLChatMessageHistory(BaseChatMessageHistory):
     """
 
     @property
-    @deprecated("0.2.2", removal="0.3.0", alternative="session_maker")
+    @deprecated("0.2.2", removal="1.0", alternative="session_maker")
     def Session(self) -> Union[scoped_session, async_sessionmaker]:
         return self.session_maker
 
@@ -185,9 +185,9 @@ class SQLChatMessageHistory(BaseChatMessageHistory):
             if not _warned_once_already:
                 warn_deprecated(
                     since="0.2.2",
-                    removal="0.3.0",
+                    removal="1.0",
                     name="connection_string",
-                    alternative="Use connection instead",
+                    alternative="connection",
                 )
                 _warned_once_already = True
             connection = connection_string

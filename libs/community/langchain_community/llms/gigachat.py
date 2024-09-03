@@ -12,6 +12,7 @@ from langchain_core.language_models.llms import BaseLLM
 from langchain_core.load.serializable import Serializable
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.utils import pre_init
+from langchain_core.utils.pydantic import get_fields
 
 if TYPE_CHECKING:
     import gigachat
@@ -123,7 +124,7 @@ class _BaseGigaChat(Serializable):
                 "Could not import gigachat python package. "
                 "Please install it with `pip install gigachat`."
             )
-        fields = set(cls.__fields__.keys())
+        fields = set(get_fields(cls).keys())
         diff = set(values.keys()) - fields
         if diff:
             logger.warning(f"Extra fields {diff} in GigaChat class")
