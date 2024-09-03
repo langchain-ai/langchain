@@ -48,7 +48,6 @@ from typing import (
     cast,
 )
 
-from azure.cosmos import CosmosClient
 from sqlalchemy import Column, Integer, String, create_engine, delete, select
 from sqlalchemy.engine import Row
 from sqlalchemy.engine.base import Engine
@@ -97,6 +96,7 @@ if TYPE_CHECKING:
     import momento
     from astrapy.db import AstraDB, AsyncAstraDB
     from cassandra.cluster import Session as CassandraSession
+    from azure.cosmos.cosmos_client import CosmosClient
 
 
 def _hash(_input: str) -> str:
