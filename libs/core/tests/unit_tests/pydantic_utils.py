@@ -18,7 +18,7 @@ def replace_all_of_with_ref(schema: Any) -> None:
                 del schema["default"]
         else:
             # Recursively process nested schemas
-            for key, value in schema.items():
+            for value in schema.values():
                 if isinstance(value, (dict, list)):
                     replace_all_of_with_ref(value)
     elif isinstance(schema, list):
@@ -37,7 +37,7 @@ def remove_all_none_default(schema: Any) -> None:
     See difference between Optional and NotRequired types in python.
     """
     if isinstance(schema, dict):
-        for key, value in schema.items():
+        for value in schema.values():
             if isinstance(value, dict):
                 if "default" in value and value["default"] is None:
                     any_of = value.get("anyOf", [])
@@ -61,7 +61,7 @@ def _remove_enum_description(obj: Any) -> None:
         if "enum" in obj:
             if "description" in obj and obj["description"] == "An enumeration.":
                 del obj["description"]
-        for key, value in obj.items():
+        for value in obj.values():
             _remove_enum_description(value)
     elif isinstance(obj, list):
         for item in obj:

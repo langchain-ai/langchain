@@ -217,7 +217,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
                 Union[Runnable[Dict[str, Any], Any], Callable[[Dict[str, Any]], Any]],
             ],
         ],
-    ) -> "RunnableAssign":
+    ) -> RunnableAssign:
         """Merge the Dict input with the output produced by the mapping argument.
 
         Args:

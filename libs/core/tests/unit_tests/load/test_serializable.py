@@ -1,6 +1,9 @@
 from typing import Dict
 
+from pydantic import ConfigDict, Field
+
 from langchain_core.load import Serializable, dumpd
+from langchain_core.load.serializable import _is_field_useful
 
 
 def test_simple_serialization() -> None:
@@ -46,6 +49,7 @@ def test_simple_serialization_secret() -> None:
         bar: int
         baz: str
         secret: SecretStr
+        secret_2: str
 
         @classmethod
         def is_lc_serializable(cls) -> bool:
@@ -53,16 +57,56 @@ def test_simple_serialization_secret() -> None:
 
         @property
         def lc_secrets(self) -> Dict[str, str]:
-            return {"secret": "woof"}
+            return {"secret": "MASKED_SECRET", "secret_2": "MASKED_SECRET_2"}
 
-    foo = Foo(bar=1, baz="baz", secret=SecretStr("meow"))
+    foo = Foo(
+        bar=1, baz="baz", secret=SecretStr("SUPER_SECRET"), secret_2="SUPER_SECRET"
+    )
     assert dumpd(foo) == {
         "id": ["tests", "unit_tests", "load", "test_serializable", "Foo"],
         "kwargs": {
             "bar": 1,
             "baz": "baz",
-            "secret": {"id": ["woof"], "lc": 1, "type": "secret"},
+            "secret": {"id": ["MASKED_SECRET"], "lc": 1, "type": "secret"},
+            "secret_2": {"id": ["MASKED_SECRET_2"], "lc": 1, "type": "secret"},
         },
         "lc": 1,
         "type": "constructor",
     }
+
+
+def test__is_field_useful() -> None:
+    class ArrayObj:
+        def __bool__(self) -> bool:
+            raise ValueError("Truthiness can't be determined")
+
+        def __eq__(self, other: object) -> bool:
+            return self  # type: ignore[return-value]
+
+    class NonBoolObj:
+        def __bool__(self) -> bool:
+            raise ValueError("Truthiness can't be determined")
+
+        def __eq__(self, other: object) -> bool:
+            raise ValueError("Equality can't be determined")
+
+    default_x = ArrayObj()
+    default_y = NonBoolObj()
+
+    class Foo(Serializable):
+        x: ArrayObj = Field(default=default_x)
+        y: NonBoolObj = Field(default=default_y)
+        # Make sure works for fields without default.
+        z: ArrayObj
+
+        model_config = ConfigDict(
+            arbitrary_types_allowed=True,
+        )
+
+    foo = Foo(x=ArrayObj(), y=NonBoolObj(), z=ArrayObj())
+    assert _is_field_useful(foo, "x", foo.x)
+    assert _is_field_useful(foo, "y", foo.y)
+
+    foo = Foo(x=default_x, y=default_y, z=ArrayObj())
+    assert not _is_field_useful(foo, "x", foo.x)
+    assert not _is_field_useful(foo, "y", foo.y)

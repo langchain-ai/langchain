@@ -1,8 +1,8 @@
 import json
-from typing import Any, Dict, List, Literal, Optional, Self, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from pydantic import model_validator
-from typing_extensions import TypedDict
+from typing_extensions import Self, TypedDict
 
 from langchain_core.messages.base import (
     BaseMessage,
@@ -280,8 +280,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
         invalid_tool_calls = []
         for chunk in self.tool_call_chunks:
             try:
-                # TODO(0.3): Handle chunk["args"] is None
-                args_ = parse_partial_json(chunk["args"]) if chunk["args"] != "" else {}  # type: ignore
+                args_ = parse_partial_json(chunk["args"]) if chunk["args"] != "" else {}  # type: ignore[arg-type]
                 if isinstance(args_, dict):
                     tool_calls.append(
                         create_tool_call(

@@ -285,7 +285,14 @@ def _is_field_useful(inst: Serializable, key: str, value: Any) -> bool:
     if field.is_required():
         return True
 
-    if value:
+    # Handle edge case: a value cannot be converted to a boolean (e.g. a
+    # Pandas DataFrame).
+    try:
+        value_is_truthy = bool(value)
+    except Exception as _:
+        value_is_truthy = False
+
+    if value_is_truthy:
         return True
 
     # Value is still falsy here!
@@ -296,8 +303,21 @@ def _is_field_useful(inst: Serializable, key: str, value: Any) -> bool:
     if field.default_factory is list and isinstance(value, list):
         return False
 
+    # Handle edge case: inequality of two objects does not evaluate to a bool (e.g. two
+    # Pandas DataFrames).
+    try:
+        value_neq_default = bool(field.get_default() != value)
+    except Exception as _:
+        try:
+            value_neq_default = all(field.get_default() != value)
+        except Exception as _:
+            try:
+                value_neq_default = value is not field.default
+            except Exception as _:
+                value_neq_default = False
+
     # If value is falsy and does not match the default
-    return field.get_default() != value
+    return value_is_truthy or value_neq_default
 
 
 def _replace_secrets(

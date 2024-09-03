@@ -307,7 +307,7 @@ async def test_fallbacks_astream() -> None:
         runnable = RunnableGenerator(_agenerate_delayed_error).with_fallbacks(
             [RunnableGenerator(_agenerate)]
         )
-        async for c in runnable.astream({}):
+        async for _ in runnable.astream({}):
             pass
 
 
@@ -373,7 +373,7 @@ def test_fallbacks_getattr() -> None:
     assert llm_with_fallbacks.foo == 3
 
     with pytest.raises(AttributeError):
-        llm_with_fallbacks.bar
+        assert llm_with_fallbacks.bar == 4
 
 
 def test_fallbacks_getattr_runnable_output() -> None:

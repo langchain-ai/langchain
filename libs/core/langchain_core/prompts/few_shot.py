@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Optional, Self, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from pydantic import (
     BaseModel,
@@ -12,6 +12,7 @@ from pydantic import (
     Field,
     model_validator,
 )
+from typing_extensions import Self
 
 from langchain_core.example_selectors import BaseExampleSelector
 from langchain_core.messages import BaseMessage, get_buffer_string
@@ -157,7 +158,7 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
                 self.template_format,
                 self.input_variables + list(self.partial_variables),
             )
-        elif self.template_format:
+        elif self.template_format or None:
             self.input_variables = [
                 var
                 for var in get_template_variables(

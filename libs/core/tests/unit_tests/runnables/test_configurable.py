@@ -1,7 +1,8 @@
-from typing import Any, Dict, Optional, Self
+from typing import Any, Dict, Optional
 
 import pytest
 from pydantic import ConfigDict, Field, model_validator
+from typing_extensions import Self
 
 from langchain_core.runnables import (
     ConfigurableField,
