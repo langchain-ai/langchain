@@ -15,6 +15,7 @@ EXTERNAL_PACKAGES = {
     "astradb",
     "aws",
     "cohere",
+    "databricks",
     "elasticsearch",
     "google-community",
     "google-genai",
