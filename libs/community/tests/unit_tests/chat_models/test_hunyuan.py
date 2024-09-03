@@ -28,9 +28,9 @@ def test__convert_message_to_dict_human_vision() -> None:
             "Type": "image_url",
             "ImageUrl": {
                 "Url": "https://cloudcache.tencent-cloud.com/qcloud/ui/portal-set/build/About/images/bg-product-series_87d.png"
-            }
+            },
         },
-        {"Type": "text", "Text": "下面图片中是哪个公司的 Logo？"}
+        {"Type": "text", "Text": "下面图片中是哪个公司的 Logo？"},
     ]
     message = HumanMessage(content=content)
     result = _convert_message_to_dict(message)
@@ -41,13 +41,14 @@ def test__convert_message_to_dict_human_vision() -> None:
                 "Type": "image_url",
                 "ImageUrl": {
                     "Url": "https://cloudcache.tencent-cloud.com/qcloud/ui/portal-set/build/About/images/bg-product-series_87d.png"
-                }
+                },
             },
-            {"Type": "text", "Text": "下面图片中是哪个公司的 Logo？"}
-        ]
+            {"Type": "text", "Text": "下面图片中是哪个公司的 Logo？"},
+        ],
     }
-        
+    
     assert result == expected_output
+
 
 def test__convert_message_to_dict_ai() -> None:
     message = AIMessage(content="foo")

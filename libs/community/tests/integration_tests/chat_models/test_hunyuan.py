@@ -85,9 +85,9 @@ def test_chat_hunyuan_with_model_vision() -> None:
             "Type": "image_url",
             "ImageUrl": {
                 "Url": "https://cloudcache.tencent-cloud.com/qcloud/ui/portal-set/build/About/images/bg-product-series_87d.png"
-            }
+            },
         },
-        {"Type": "text", "Text": "下面图片中是哪个公司的 Logo？"}
+        {"Type": "text", "Text": "下面图片中是哪个公司的 Logo？"},
     ]
     message = HumanMessage(content=content)
     response = chat.invoke([message])
