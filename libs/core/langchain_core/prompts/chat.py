@@ -5,7 +5,6 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import (
-    Annotated,
     Any,
     Dict,
     List,
@@ -28,6 +27,7 @@ from pydantic import (
     SkipValidation,
     model_validator,
 )
+from typing_extensions import Annotated
 
 from langchain_core._api import deprecated
 from langchain_core.load import Serializable
