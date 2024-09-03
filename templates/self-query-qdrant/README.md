@@ -1,9 +1,8 @@
-
-# self-query-qdrant
+# Self-query - Qdrant
 
 This template performs [self-querying](https://python.langchain.com/docs/modules/data_connection/retrievers/self_query/) 
-using Qdrant and OpenAI. By default, it uses an artificial dataset of 10 documents, but you can replace it with your own dataset.
-
+``using `Qdrant` and OpenAI. By default, it uses an artificial dataset of 10 documents, but you can replace it with your own dataset.
+``
 ## Environment Setup
 
 Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
@@ -93,9 +92,10 @@ from langchain.chains.query_constructor.schema import AttributeInfo
 
 from self_query_qdrant.chain import create_chain
 
+model_name = "sentence-transformers/all-mpnet-base-v2"
 chain = create_chain(
     llm=Cohere(),
-    embeddings=HuggingFaceEmbeddings(),
+    embeddings=HuggingFaceEmbeddings(model_name=model_name),
     document_contents="Descriptions of cats, along with their names and breeds.",
     metadata_field_info=[
         AttributeInfo(name="name", description="Name of the cat", type="string"),
@@ -113,8 +113,9 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 
 from self_query_qdrant.chain import initialize
 
+model_name = "sentence-transformers/all-mpnet-base-v2"
 initialize(
-    embeddings=HuggingFaceEmbeddings(),
+    embeddings=HuggingFaceEmbeddings(model_name=model_name),
     collection_name="cats",
     documents=[
         Document(
@@ -146,7 +147,7 @@ langchain serve
 
 ### Local Server
 
-This will start the FastAPI app with a server running locally at 
+This will start the FastAPI app with a server running locally at
 [http://localhost:8000](http://localhost:8000)
 
 You can see all templates at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
