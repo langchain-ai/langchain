@@ -346,27 +346,18 @@ class Neo4jGraph(GraphStore):
             )
 
         url = get_from_dict_or_env({"url": url}, "url", "NEO4J_URI")
-        # if username and password are "", assume Neo4j auth is disabled
-        if username == "" and password == "":
-            auth = None
-        else:
-            username = get_from_dict_or_env(
-                {"username": username},
-                "username",
-                "NEO4J_USERNAME",
-            )
-            password = get_from_dict_or_env(
-                {"password": password},
-                "password",
-                "NEO4J_PASSWORD",
-            )
-            auth = (username, password)
+        username = get_from_dict_or_env(
+            {"username": username}, "username", "NEO4J_USERNAME"
+        )
+        password = get_from_dict_or_env(
+            {"password": password}, "password", "NEO4J_PASSWORD"
+        )
         database = get_from_dict_or_env(
             {"database": database}, "database", "NEO4J_DATABASE", "neo4j"
         )
 
         self._driver = neo4j.GraphDatabase.driver(
-            url, auth=auth, **(driver_config or {})
+            url, auth=(username, password), **(driver_config or {})
         )
         self._database = database
         self.timeout = timeout
