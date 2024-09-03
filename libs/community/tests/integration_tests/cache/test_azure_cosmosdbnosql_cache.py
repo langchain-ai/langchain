@@ -22,11 +22,13 @@ def cosmos_client() -> Any:
 
     return CosmosClient(HOST, KEY)
 
+
 @pytest.fixture()
 def partition_key() -> Any:
     from azure.cosmos import PartitionKey
 
     return PartitionKey(path="/id")
+
 
 # cosine, euclidean, innerproduct
 def indexing_policy(index_type: str) -> dict:
