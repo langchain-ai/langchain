@@ -6,7 +6,7 @@ from unittest import mock
 
 import pytest
 from langchain_core.language_models import BaseChatModel
-from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr
 from langchain_core.runnables import RunnableBinding
 from langchain_core.tools import tool
 
@@ -149,8 +149,11 @@ class ChatModelUnitTests(ChatModelTests):
             with mock.patch.dict(os.environ, env_params):
                 model = self.chat_model_class(**model_params)
             assert model is not None
-            for k, v in expected_attrs.items():
-                assert getattr(model, k) == v
+            for k, expected in expected_attrs.items():
+                actual = getattr(model, k)
+                if isinstance(actual ,SecretStr):
+                    actual = actual.get_secret_value()
+                assert actual == expected
 
     def test_init_streaming(
         self,

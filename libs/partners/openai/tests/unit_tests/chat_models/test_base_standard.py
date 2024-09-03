@@ -24,6 +24,7 @@ class TestOpenAIStandard(ChatModelUnitTests):
             },
             {},
             {
+                "openai_api_key": "api_key",
                 "openai_organization": "org_id",
                 "openai_api_base": "api_base",
                 "openai_proxy": "https://proxy.com",
