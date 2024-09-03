@@ -2,14 +2,26 @@ from __future__ import annotations
 
 import textwrap
 from inspect import signature
-from typing import Any, Awaitable, Callable, Dict, List, Literal, Optional, Type, Union
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Type,
+    Union,
+)
+
+from pydantic import BaseModel, Field, SkipValidation
+from typing_extensions import Annotated
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
 from langchain_core.messages import ToolCall
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables import RunnableConfig, run_in_executor
 from langchain_core.tools.base import (
     FILTERED_ARGS,
@@ -24,7 +36,9 @@ class StructuredTool(BaseTool):
     """Tool that can operate on any number of inputs."""
 
     description: str = ""
-    args_schema: TypeBaseModel = Field(..., description="The tool schema.")
+    args_schema: Annotated[TypeBaseModel, SkipValidation()] = Field(
+        ..., description="The tool schema."
+    )
     """The input arguments' schema."""
     func: Optional[Callable[..., Any]]
     """The function to run when the tool is called."""
