@@ -393,7 +393,9 @@ def get_function_nonlocals(func: Callable) -> List[Any]:
         visitor = FunctionNonLocals()
         visitor.visit(tree)
         values: List[Any] = []
-        for k, v in inspect.getclosurevars(func).nonlocals.items():
+        closure = inspect.getclosurevars(func)
+        candidates = {**closure.globals, **closure.nonlocals}
+        for k, v in candidates.items():
             if k in visitor.nonlocals:
                 values.append(v)
             for kk in visitor.nonlocals:
