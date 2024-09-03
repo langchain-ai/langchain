@@ -706,7 +706,9 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
                     current_content.append(placeholder)
                     placeholder_count += 1
                 else:
-                    current_content.append(_get_element_text(elem))
+                    content = _get_element_text(elem)
+                    if content:
+                        current_content.append(content)
 
             return (
                 documents,
