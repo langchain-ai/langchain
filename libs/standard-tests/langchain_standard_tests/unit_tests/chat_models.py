@@ -135,6 +135,8 @@ class ChatModelUnitTests(ChatModelTests):
 
     @property
     def init_from_env_params(self) -> Tuple[dict, dict, dict]:
+        """Return env vars, init args, and expected instance attrs for initializing
+        from env vars."""
         return {}, {}, {}
 
     def test_init(self) -> None:
