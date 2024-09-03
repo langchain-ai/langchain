@@ -65,7 +65,9 @@ class Epsilla(VectorStore):
                 "Please install pyepsilla package with `pip install pyepsilla`."
             ) from e
 
-        if not isinstance(client, pyepsilla.vectordb.Client) and not isinstance(client, pyepsilla.cloud.client.Vectordb):
+        if not isinstance(client, pyepsilla.vectordb.Client) and not isinstance(
+            client, pyepsilla.cloud.client.Vectordb
+        ):
             raise TypeError(
                 f"client should be an instance of pyepsilla.vectordb.Client or pyepsilla.cloud.client.Vectordb, "
                 f"got {type(client)}"
@@ -75,9 +77,8 @@ class Epsilla(VectorStore):
         self._db_name = db_name
         self._embeddings = embeddings
         self._collection_name = Epsilla._LANGCHAIN_DEFAULT_TABLE_NAME
-        if isinstance(client, pyepsilla.vectordb.Client):
-            self._client.load_db(db_name=db_name, db_path=db_path)
-            self._client.use_db(db_name=db_name)
+        self._client.load_db(db_name=db_name, db_path=db_path)
+        self._client.use_db(db_name=db_name)
 
     @property
     def embeddings(self) -> Optional[Embeddings]:
