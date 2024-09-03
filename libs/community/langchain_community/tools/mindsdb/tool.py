@@ -8,7 +8,11 @@ from langchain_core.tools import BaseTool
 class AIMindTool(BaseTool):
     name: Text = "ai_mind"
     description: Text = (
-
+        "A wrapper around [AI-Minds](https://mindscloud.ai/). "
+        "Useful for when you need answers to questions from your data, stored in "
+        "data sources including PostgreSQL, MySQL, MariaDB, ClickHouse, Snowflake, "
+        "and Google BigQuery. "
+        "Input should be a question in natural language."
     )
     api_wrapper: BaseMindWrapper
 
