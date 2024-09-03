@@ -21,7 +21,6 @@ from langchain_core.language_models import BaseLanguageModel, LangSmithParams
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
 from langchain_core.prompt_values import PromptValue
-from pydantic import Field, SecretStr, root_validator, model_validator
 from langchain_core.utils import (
     get_pydantic_field_names,
 )
@@ -30,8 +29,7 @@ from langchain_core.utils.utils import (
     from_env,
     secret_from_env,
 )
-from pydantic import ConfigDict
-
+from pydantic import ConfigDict, Field, SecretStr, model_validator, root_validator
 
 
 class _AnthropicCommon(BaseLanguageModel):
@@ -163,7 +161,10 @@ class AnthropicLLM(LLM, _AnthropicCommon):
             model = AnthropicLLM()
     """
 
-    model_config = ConfigDict(populate_by_name=True,arbitrary_types_allowed=True,)
+    model_config = ConfigDict(
+        populate_by_name=True,
+        arbitrary_types_allowed=True,
+    )
 
     @model_validator(mode="before")
     @classmethod

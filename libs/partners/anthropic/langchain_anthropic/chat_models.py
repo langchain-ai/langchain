@@ -49,12 +49,6 @@ from langchain_core.output_parsers import (
 )
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from pydantic import (
-    BaseModel,
-    Field,
-    SecretStr,
-    root_validator, model_validator,
-)
 from langchain_core.runnables import (
     Runnable,
     RunnableMap,
@@ -69,11 +63,17 @@ from langchain_core.utils import (
 )
 from langchain_core.utils.function_calling import convert_to_openai_tool
 from langchain_core.utils.pydantic import is_basemodel_subclass
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    SecretStr,
+    model_validator,
+    root_validator,
+)
 from typing_extensions import NotRequired
 
 from langchain_anthropic.output_parsers import extract_tool_calls
-from pydantic import ConfigDict
-
 
 _message_type_lookups = {
     "human": "user",
@@ -510,7 +510,9 @@ class ChatAnthropic(BaseChatModel):
 
     """  # noqa: E501
 
-    model_config = ConfigDict(populate_by_name=True,)
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
     _client: anthropic.Client = Field(default=None)
     _async_client: anthropic.AsyncClient = Field(default=None)
@@ -648,10 +650,7 @@ class ChatAnthropic(BaseChatModel):
         # value <= 0 indicates the param should be ignored. None is a meaningful value
         # for Anthropic client and treated differently than not specifying the param at
         # all.
-        if (
-            self.default_request_timeout is None
-            or self.default_request_timeout > 0
-        ):
+        if self.default_request_timeout is None or self.default_request_timeout > 0:
             client_params["timeout"] = self.default_request_timeout
 
         self._client = anthropic.Client(**client_params)
