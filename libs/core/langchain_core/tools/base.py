@@ -19,25 +19,12 @@ from typing import (
     Sequence,
     Tuple,
     Type,
-    TypeVar,
     Union,
     cast,
-    get_args,
-    get_origin,
     get_type_hints,
 )
 
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    Extra,
-    Field,
-    SkipValidation,
-    ValidationError,
-    model_validator,
-    validate_arguments,
-)
-from typing_extensions import Annotated
+from typing_extensions import Annotated, TypeVar, get_args, get_origin
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import (
@@ -46,7 +33,16 @@ from langchain_core.callbacks import (
     CallbackManager,
     Callbacks,
 )
-from langchain_core.messages.tool import ToolCall, ToolMessage
+from langchain_core.load import Serializable
+from langchain_core.messages import ToolCall, ToolMessage
+from langchain_core.pydantic_v1 import (
+    BaseModel,
+    Extra,
+    Field,
+    ValidationError,
+    root_validator,
+    validate_arguments,
+)
 from langchain_core.runnables import (
     RunnableConfig,
     RunnableSerializable,
@@ -63,7 +59,6 @@ from langchain_core.utils.function_calling import (
 from langchain_core.utils.pydantic import (
     TypeBaseModel,
     _create_subset_model,
-    get_fields,
     is_basemodel_subclass,
     is_pydantic_v1_subclass,
     is_pydantic_v2_subclass,
@@ -209,64 +204,20 @@ def create_schema_from_function(
     """
     # https://docs.pydantic.dev/latest/usage/validation_decorator/
     validated = validate_arguments(func, config=_SchemaConfig)  # type: ignore
-
-    sig = inspect.signature(func)
-
-    # Let's ignore `self` and `cls` arguments for class and instance methods
-    if func.__qualname__ and "." in func.__qualname__:
-        # Then it likely belongs in a class namespace
-        in_class = True
-    else:
-        in_class = False
-
-    has_args = False
-    has_kwargs = False
-
-    for param in sig.parameters.values():
-        if param.kind == param.VAR_POSITIONAL:
-            has_args = True
-        elif param.kind == param.VAR_KEYWORD:
-            has_kwargs = True
-
     inferred_model = validated.model  # type: ignore
-
-    if filter_args:
-        filter_args_ = filter_args
-    else:
-        # Handle classmethods and instance methods
-        existing_params: List[str] = list(sig.parameters.keys())
-        if existing_params and existing_params[0] in ("self", "cls") and in_class:
-            filter_args_ = [existing_params[0]] + list(FILTERED_ARGS)
-        else:
-            filter_args_ = list(FILTERED_ARGS)
-
-        for existing_param in existing_params:
-            if not include_injected and _is_injected_arg_type(
-                sig.parameters[existing_param].annotation
-            ):
-                filter_args_.append(existing_param)
-
+    filter_args = filter_args if filter_args is not None else FILTERED_ARGS
+    for arg in filter_args:
+        if arg in inferred_model.__fields__:
+            del inferred_model.__fields__[arg]
     description, arg_descriptions = _infer_arg_descriptions(
         func,
         parse_docstring=parse_docstring,
         error_on_invalid_docstring=error_on_invalid_docstring,
     )
     # Pydantic adds placeholder virtual fields we need to strip
-    valid_properties = []
-    for field in get_fields(inferred_model):
-        if not has_args:
-            if field == "args":
-                continue
-        if not has_kwargs:
-            if field == "kwargs":
-                continue
-
-        if field == "v__duplicate_kwargs":  # Internal pydantic field
-            continue
-
-        if field not in filter_args_:
-            valid_properties.append(field)
-
+    valid_properties = _get_filtered_args(
+        inferred_model, func, filter_args=filter_args, include_injected=include_injected
+    )
     return _create_subset_model(
         f"{model_name}Schema",
         inferred_model,
@@ -323,10 +274,7 @@ class ChildTool(BaseTool):
     
     You can provide few-shot examples as a part of the description.
     """
-
-    args_schema: Annotated[Optional[TypeBaseModel], SkipValidation()] = Field(
-        default=None, description="The tool schema."
-    )
+    args_schema: Optional[TypeBaseModel] = None
     """Pydantic model class to validate and parse the tool's input arguments.
     
     Args schema should be either: 
@@ -397,9 +345,8 @@ class ChildTool(BaseTool):
                 )
         super().__init__(**kwargs)
 
-    model_config = ConfigDict(
-        arbitrary_types_allowed=True,
-    )
+    class Config(Serializable.Config):
+        arbitrary_types_allowed = True
 
     @property
     def is_single_input(self) -> bool:
@@ -469,7 +416,7 @@ class ChildTool(BaseTool):
         input_args = self.args_schema
         if isinstance(tool_input, str):
             if input_args is not None:
-                key_ = next(iter(get_fields(input_args).keys()))
+                key_ = next(iter(input_args.__fields__.keys()))
                 input_args.validate({key_: tool_input})
             return tool_input
         else:
@@ -482,9 +429,8 @@ class ChildTool(BaseTool):
                 }
             return tool_input
 
-    @model_validator(mode="before")
-    @classmethod
-    def raise_deprecation(cls, values: Dict) -> Any:
+    @root_validator(pre=True)
+    def raise_deprecation(cls, values: Dict) -> Dict:
         """Raise deprecation warning if callback_manager is used.
 
         Args:

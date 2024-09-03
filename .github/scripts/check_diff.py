@@ -111,7 +111,7 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
             {"working-directory": dir_, "python-version": f"3.{v}"}
             for v in range(8, 13)
         ]
-    min_python = "3.8"
+    min_python = "3.9"
     max_python = "3.12"
 
     # custom logic for specific directories

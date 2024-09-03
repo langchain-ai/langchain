@@ -1,9 +1,8 @@
 import inspect
 from typing import Any, Callable, Dict, Literal, Optional, Type, Union, get_type_hints
 
-from pydantic import BaseModel, Field, create_model
-
 from langchain_core.callbacks import Callbacks
+from langchain_core.pydantic_v1 import BaseModel, Field, create_model
 from langchain_core.runnables import Runnable
 from langchain_core.tools.base import BaseTool
 from langchain_core.tools.simple import Tool
