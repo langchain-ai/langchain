@@ -11,7 +11,7 @@ class AIMindTool(BaseTool):
     description: Text = (
         "A wrapper around [AI-Minds](https://mindscloud.ai/). "
         "Useful for when you need answers to questions from your data, stored in "
-        "data sources including PostgreSQL, MySQL, MariaDB, ClickHouse, Snowflake, "
+        "data sources including PostgreSQL, MySQL, MariaDB, ClickHouse, Snowflake "
         "and Google BigQuery. "
         "Input should be a question in natural language."
     )
