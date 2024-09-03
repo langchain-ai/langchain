@@ -75,7 +75,6 @@ def test_chat_hunyuan_with_prompt_template() -> None:
     assert isinstance(response.content, str)
     assert response.id is not None, "request_id is empty"
     assert uuid.UUID(response.id), "Invalid UUID"
-<<<<<<< HEAD
 
 
 @pytest.mark.requires("tencentcloud-sdk-python")
@@ -99,8 +98,6 @@ def test_chat_hunyuan_with_model_vision() -> None:
     assert isinstance(response.content, str)
     assert response.id is not None, "request_id is empty"
     assert uuid.UUID(response.id), "Invalid UUID"
-=======
->>>>>>> master
 
 
 def test_extra_kwargs() -> None:
