@@ -5,16 +5,19 @@ from typing import Dict, Iterable, List
 
 import httpx
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import (
+from langchain_core.utils import (
+    secret_from_env,
+)
+from pydantic import (
     BaseModel,
+    ConfigDict,
     Field,
     SecretStr,
     root_validator,
 )
-from langchain_core.utils import (
-    secret_from_env,
-)
-from tokenizers import Tokenizer  # type: ignore
+from tokenizers import Tokenizer
+
+# type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -125,10 +128,11 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
 
     model: str = "mistral-embed"
 
-    class Config:
-        extra = "forbid"
-        arbitrary_types_allowed = True
-        allow_population_by_field_name = True
+    model_config = ConfigDict(
+        extra="forbid",
+        arbitrary_types_allowed=True,
+        populate_by_name=True,
+    )
 
     @root_validator(pre=False, skip_on_failure=True)
     def validate_environment(cls, values: Dict) -> Dict:
