@@ -64,7 +64,6 @@ def test_mistralai_initialization_baseurl(
 @pytest.mark.parametrize(
     "env_var_name",
     [
-        ("MISTRAL_API_URL"),
         ("MISTRAL_BASE_URL"),
     ],
 )

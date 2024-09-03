@@ -477,7 +477,6 @@ class ChatMistralAI(BaseChatModel):
         # todo: handle retries
         base_url_str = (
             values.get("endpoint")
-            or os.environ.get("MISTRAL_API_URL")
             or os.environ.get("MISTRAL_BASE_URL")
             or "https://api.mistral.ai/v1"
         )
