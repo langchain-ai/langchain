@@ -59,7 +59,7 @@ def _string_to_object(string):
                 success = False
                 break
         return success, obj
-    except BaseException as e:
+    except BaseException:
         return False, None
 
 
