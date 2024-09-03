@@ -415,7 +415,8 @@ class ChildTool(BaseTool):
         """
         input_args = self.args_schema
         if isinstance(tool_input, str):
-            if input_args is not None:
+            # parameterless function's `__fields__` will be an empty dict
+            if input_args is not None and input_args.__fields__:
                 key_ = next(iter(input_args.__fields__.keys()))
                 input_args.validate({key_: tool_input})
             return tool_input
@@ -474,6 +475,9 @@ class ChildTool(BaseTool):
             return (), {}
 
         tool_input = self._parse_input(tool_input)
+        # if the tool is a parameterless function, just return empty arguments
+        if self.args_schema is None or not self.args_schema.__fields__:
+            return (), {}
         # For backwards compatibility, if run_input is a string,
         # pass as a positional argument.
         if isinstance(tool_input, str):
