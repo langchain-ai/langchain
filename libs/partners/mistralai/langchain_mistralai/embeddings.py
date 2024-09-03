@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import warnings
-from typing import Dict, Iterable, List
+from typing import Iterable, List
 
 import httpx
 from langchain_core.embeddings import Embeddings
@@ -14,12 +14,9 @@ from pydantic import (
     Field,
     SecretStr,
     model_validator,
-    root_validator,
 )
-from tokenizers import Tokenizer
+from tokenizers import Tokenizer  # type: ignore
 from typing_extensions import Self
-
-# type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -142,7 +139,7 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
 
         api_key_str = self.mistral_api_key.get_secret_value()
         # todo: handle retries
-        if not (self.client or None):
+        if not self.client:
             self.client = httpx.Client(
                 base_url=self.endpoint,
                 headers={
@@ -153,7 +150,7 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
                 timeout=self.timeout,
             )
         # todo: handle retries and max_concurrency
-        if not (self.async_client or None):
+        if not self.async_client:
             self.async_client = httpx.AsyncClient(
                 base_url=self.endpoint,
                 headers={

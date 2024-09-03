@@ -77,7 +77,6 @@ from pydantic import (
     Field,
     SecretStr,
     model_validator,
-    root_validator,
 )
 from typing_extensions import Self
 
@@ -474,16 +473,19 @@ class ChatMistralAI(BaseChatModel):
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate api key, python package exists, temperature, and top_p."""
-        api_key_str = self.mistral_api_key.get_secret_value()
+        if isinstance(self.mistral_api_key, SecretStr):
+            api_key_str: Optional[str] = self.mistral_api_key.get_secret_value()
+        else:
+            api_key_str = self.mistral_api_key
 
         # todo: handle retries
         base_url_str = (
-            (self.endpoint or None)
+            self.endpoint
             or os.environ.get("MISTRAL_BASE_URL")
             or "https://api.mistral.ai/v1"
         )
         self.endpoint = base_url_str
-        if not (self.client or None):
+        if not self.client:
             self.client = httpx.Client(
                 base_url=base_url_str,
                 headers={
@@ -494,7 +496,7 @@ class ChatMistralAI(BaseChatModel):
                 timeout=self.timeout,
             )
         # todo: handle retries and max_concurrency
-        if not (self.async_client or None):
+        if not self.async_client:
             self.async_client = httpx.AsyncClient(
                 base_url=base_url_str,
                 headers={
