@@ -3,7 +3,6 @@ from __future__ import annotations
 import textwrap
 from inspect import signature
 from typing import (
-    Annotated,
     Any,
     Awaitable,
     Callable,
@@ -16,6 +15,7 @@ from typing import (
 )
 
 from pydantic import BaseModel, Field, SkipValidation
+from typing_extensions import Annotated
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
