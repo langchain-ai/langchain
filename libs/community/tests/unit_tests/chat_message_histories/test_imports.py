@@ -12,6 +12,7 @@ EXPECTED_ALL = [
     "MomentoChatMessageHistory",
     "MongoDBChatMessageHistory",
     "Neo4jChatMessageHistory",
+    "OpenSearchChatMessageHistory",
     "PostgresChatMessageHistory",
     "RedisChatMessageHistory",
     "RocksetChatMessageHistory",

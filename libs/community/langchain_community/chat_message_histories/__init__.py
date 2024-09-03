@@ -131,7 +131,7 @@ _module_lookup = {
     "MomentoChatMessageHistory": "langchain_community.chat_message_histories.momento",
     "MongoDBChatMessageHistory": "langchain_community.chat_message_histories.mongodb",
     "Neo4jChatMessageHistory": "langchain_community.chat_message_histories.neo4j",
-    "OpenSearchChatMessageHistory": "langchain_community.chat_message_histories.opensearch",
+    "OpenSearchChatMessageHistory": "langchain_community.chat_message_histories.opensearch",  # noqa: E501
     "PostgresChatMessageHistory": "langchain_community.chat_message_histories.postgres",
     "RedisChatMessageHistory": "langchain_community.chat_message_histories.redis",
     "RocksetChatMessageHistory": "langchain_community.chat_message_histories.rocksetdb",
