@@ -9,6 +9,15 @@ from langchain_core.language_models import BaseChatModel
 from langchain_core.runnables import RunnableBinding
 from langchain_core.tools import tool
 from pydantic import BaseModel, Field, SecretStr
+from pydantic.v1 import (
+    BaseModel as BaseModelV1,
+)
+from pydantic.v1 import (
+    Field as FieldV1,
+)
+from pydantic.v1 import (
+    ValidationError as ValidationErrorV1,
+)
 
 from langchain_standard_tests.base import BaseStandardTests
 from langchain_standard_tests.utils.pydantic import PYDANTIC_MAJOR_VERSION
@@ -25,27 +34,24 @@ def generate_schema_pydantic_v1_from_2() -> Any:
     """Use to generate a schema from v1 namespace in pydantic 2."""
     if PYDANTIC_MAJOR_VERSION != 2:
         raise AssertionError("This function is only compatible with Pydantic v2.")
-    from pydantic.v1 import BaseModel, Field
 
-    class PersonB(BaseModel):
+    class PersonB(BaseModelV1):
         """Record attributes of a person."""
 
-        name: str = Field(..., description="The name of the person.")
-        age: int = Field(..., description="The age of the person.")
+        name: str = FieldV1(..., description="The name of the person.")
+        age: int = FieldV1(..., description="The age of the person.")
 
     return PersonB
 
 
 def generate_schema_pydantic() -> Any:
     """Works with either pydantic 1 or 2"""
-    from pydantic import BaseModel as BaseModelProper
-    from pydantic import Field as FieldProper
 
-    class PersonA(BaseModelProper):
+    class PersonA(BaseModel):
         """Record attributes of a person."""
 
-        name: str = FieldProper(..., description="The name of the person.")
-        age: int = FieldProper(..., description="The age of the person.")
+        name: str = Field(..., description="The name of the person.")
+        age: int = Field(..., description="The age of the person.")
 
     return PersonA
 
@@ -199,9 +205,7 @@ class ChatModelUnitTests(ChatModelTests):
         assert model.with_structured_output(schema) is not None
 
     def test_standard_params(self, model: BaseChatModel) -> None:
-        from langchain_core.pydantic_v1 import BaseModel, ValidationError
-
-        class ExpectedParams(BaseModel):
+        class ExpectedParams(BaseModelV1):
             ls_provider: str
             ls_model_name: str
             ls_model_type: Literal["chat"]
@@ -212,7 +216,7 @@ class ChatModelUnitTests(ChatModelTests):
         ls_params = model._get_ls_params()
         try:
             ExpectedParams(**ls_params)
-        except ValidationError as e:
+        except ValidationErrorV1 as e:
             pytest.fail(f"Validation error: {e}")
 
         # Test optional params
@@ -222,5 +226,5 @@ class ChatModelUnitTests(ChatModelTests):
         ls_params = model._get_ls_params()
         try:
             ExpectedParams(**ls_params)
-        except ValidationError as e:
+        except ValidationErrorV1 as e:
             pytest.fail(f"Validation error: {e}")
