@@ -3,7 +3,10 @@ import logging
 from typing import Any, Dict, Iterator, List, Mapping, Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
-from langchain_core.language_models.chat_models import BaseChatModel, generate_from_stream
+from langchain_core.language_models.chat_models import (
+    BaseChatModel,
+    generate_from_stream,
+)
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -15,7 +18,7 @@ from langchain_core.messages import (
     HumanMessageChunk,
     SystemMessage,
 )
-from langchain_core.outputs import ChatGenerationChunk, ChatResult
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import (
     convert_to_secret_str,
@@ -38,7 +41,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     elif isinstance(message, AIMessage):
         message_dict = {"Role": "assistant", "Content": message.content}
     else:
-        raise TypeError(f"Got unknown type {type(message)}")
+        raise TypeError(f"Got unknown type {message}")
 
     return message_dict
 
@@ -61,14 +64,12 @@ def _convert_delta_to_message_chunk(
     role = _dict.get("Role")
     content = _dict.get("Content") or ""
 
-    if role == "system" or default_class == SystemMessageChunk:
-        return SystemMessageChunk(content=content)
-    elif role == "user" or default_class == HumanMessageChunk:
+    if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content)
     elif role == "assistant" or default_class == AIMessageChunk:
         return AIMessageChunk(content=content)
     elif role or default_class == ChatMessageChunk:
-        return ChatMessageChunk(content=content, role=role)  # type: ignore
+        return ChatMessageChunk(content=content, role=role)  # type: ignore[arg-type]
     else:
         return default_class(content=content)  # type: ignore[call-arg]
 
@@ -91,41 +92,16 @@ class ChatHunyuan(BaseChatModel):
     For more information, see https://cloud.tencent.com/document/product/1729
     """
 
-    hunyuan_secret_id: SecretStr = Field(alias="secret_id", default=None)
-    """TencentCloud Secret ID"""
-    hunyuan_secret_key: SecretStr = Field(alias="secret_key", default=None)
-    """TencentCloud Secret Key"""
-
-    model_name: str = Field(alias="model")
-    """The hunyuan model name. Available: hunyuan-pro, hunyuan-standard, hunyuan-lite, hunyuan-standard-256k"""
-    region: Literal["ap-guangzhou", "ap-beijing"] = "ap-guangzhou"
-    """The region of hunyuan service."""
-    stream_moderation: bool = False
-    """Whether to enable stream moderation or not."""
-    top_p: float = 0.9
-    """What top p value to use."""
-    temperature: float = 1.0
-    """What sampling temperature to use."""
-
-    client: Any = Field(default=None, exclude=True)
-    """The tencentcloud client"""
-    request_cls: Type = Field(default=None, exclude=True)
-    """The request class of tencentcloud sdk"""
-    message_cls: Type = Field(default=None, exclude=True)
-    """The message class of tencentcloud sdk"""
-
     @property
     def lc_secrets(self) -> Dict[str, str]:
-        return {"hunyuan_secret_id": "HUNYUAN_SECRET_ID", "hunyuan_secret_key": "HUNYUAN_SECRET_KEY"}
+        return {
+            "hunyuan_app_id": "HUNYUAN_APP_ID",
+            "hunyuan_secret_id": "HUNYUAN_SECRET_ID",
+            "hunyuan_secret_key": "HUNYUAN_SECRET_KEY",
+        }
 
-    @classmethod
-    def get_lc_namespace(cls) -> List[str]:
-        """Get the namespace of the langchain object."""
-        return ["langchain", "chat_models", "hunyuan"]
-
-    @classmethod
-    def is_lc_serializable(cls) -> bool:
-        """Return whether this model can be serialized by Langchain."""
+    @property
+    def lc_serializable(self) -> bool:
         return True
 
     hunyuan_app_id: Optional[int] = None
@@ -232,9 +208,11 @@ class ChatHunyuan(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-
-        stream_iter = self._stream(messages=messages, stop=stop, run_manager=run_manager, **kwargs)
-        return generate_from_stream(stream_iter)
+        if self.streaming:
+            stream_iter = self._stream(
+                messages=messages, stop=stop, run_manager=run_manager, **kwargs
+            )
+            return generate_from_stream(stream_iter)
 
         res = self._chat(messages, **kwargs)
         return _create_chat_result(json.loads(res.to_json_string()))
@@ -263,9 +241,10 @@ class ChatHunyuan(BaseChatModel):
                 )
                 chunk.id = response.get("Id", "")
                 default_chunk_class = chunk.__class__
-                yield ChatGenerationChunk(message=chunk)
+                cg_chunk = ChatGenerationChunk(message=chunk)
                 if run_manager:
-                    run_manager.on_llm_new_token(chunk.content)  # type: ignore
+                    run_manager.on_llm_new_token(chunk.content, chunk=cg_chunk)
+                yield cg_chunk
 
     def _chat(self, messages: List[BaseMessage], **kwargs: Any) -> Any:
         if self.hunyuan_secret_key is None:
