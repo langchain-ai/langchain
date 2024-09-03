@@ -96,25 +96,25 @@ class _AnthropicCommon(BaseLanguageModel):
         )
         return values
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="after")
+    def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
-        values["client"] = anthropic.Anthropic(
-            base_url=values["anthropic_api_url"],
-            api_key=values["anthropic_api_key"].get_secret_value(),
-            timeout=values["default_request_timeout"],
-            max_retries=values["max_retries"],
+        self.client = anthropic.Anthropic(
+            base_url=self.anthropic_api_url,
+            api_key=self.anthropic_api_key.get_secret_value(),
+            timeout=self.default_request_timeout,
+            max_retries=self.max_retries,
         )
-        values["async_client"] = anthropic.AsyncAnthropic(
-            base_url=values["anthropic_api_url"],
-            api_key=values["anthropic_api_key"].get_secret_value(),
-            timeout=values["default_request_timeout"],
-            max_retries=values["max_retries"],
+        self.async_client = anthropic.AsyncAnthropic(
+            base_url=self.anthropic_api_url,
+            api_key=self.anthropic_api_key.get_secret_value(),
+            timeout=self.default_request_timeout,
+            max_retries=self.max_retries,
         )
-        values["HUMAN_PROMPT"] = anthropic.HUMAN_PROMPT
-        values["AI_PROMPT"] = anthropic.AI_PROMPT
-        values["count_tokens"] = values["client"].count_tokens
-        return values
+        self.HUMAN_PROMPT = anthropic.HUMAN_PROMPT
+        self.AI_PROMPT = anthropic.AI_PROMPT
+        self.count_tokens = self.client.count_tokens
+        return self
 
     @property
     def _default_params(self) -> Mapping[str, Any]:

@@ -635,28 +635,28 @@ class ChatAnthropic(BaseChatModel):
         )
         return values
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def post_init(cls, values: Dict) -> Dict:
-        api_key = values["anthropic_api_key"].get_secret_value()
-        api_url = values["anthropic_api_url"]
+    @model_validator(mode="after")
+    def post_init(self) -> Self:
+        api_key = self.anthropic_api_key.get_secret_value()
+        api_url = self.anthropic_api_url
         client_params = {
             "api_key": api_key,
             "base_url": api_url,
-            "max_retries": values["max_retries"],
-            "default_headers": values.get("default_headers"),
+            "max_retries": self.max_retries,
+            "default_headers": (self.default_headers or None),
         }
         # value <= 0 indicates the param should be ignored. None is a meaningful value
         # for Anthropic client and treated differently than not specifying the param at
         # all.
         if (
-            values["default_request_timeout"] is None
-            or values["default_request_timeout"] > 0
+            self.default_request_timeout is None
+            or self.default_request_timeout > 0
         ):
-            client_params["timeout"] = values["default_request_timeout"]
+            client_params["timeout"] = self.default_request_timeout
 
-        values["_client"] = anthropic.Client(**client_params)
-        values["_async_client"] = anthropic.AsyncClient(**client_params)
-        return values
+        self._client = anthropic.Client(**client_params)
+        self._async_client = anthropic.AsyncClient(**client_params)
+        return self
 
     def _get_request_payload(
         self,
