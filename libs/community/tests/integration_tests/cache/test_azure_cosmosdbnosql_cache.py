@@ -16,7 +16,7 @@ test_client = CosmosClient(URI, credential=KEY)
 
 
 # cosine, euclidean, innerproduct
-def indexing_policy(index_type: str):
+def indexing_policy(index_type: str) -> dict:
     return {
         "indexingMode": "consistent",
         "includedPaths": [{"path": "/*"}],
@@ -25,7 +25,7 @@ def indexing_policy(index_type: str):
     }
 
 
-def vector_embedding_policy(distance_function: str):
+def vector_embedding_policy(distance_function: str) -> dict:
     return {
         "vectorEmbeddings": [
             {
@@ -40,7 +40,7 @@ def vector_embedding_policy(distance_function: str):
 
 partition_key = PartitionKey(path="/id")
 cosmos_container_properties_test = {"partition_key": partition_key}
-cosmos_database_properties_test = {}
+cosmos_database_properties_test: Dict[str, str] = {}
 
 
 def test_azure_cosmos_db_nosql_semantic_cache_cosine_quantizedflat() -> None:
