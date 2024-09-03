@@ -45,6 +45,38 @@ def test_mistralai_initialization() -> None:
 
 
 @pytest.mark.parametrize(
+    "model,expected_url",
+    [
+        (ChatMistralAI(model="test"), "https://api.mistral.ai/v1"),  # type: ignore[call-arg, arg-type]
+        (ChatMistralAI(model="test", endpoint="baz"), "baz"),  # type: ignore[call-arg, arg-type]
+    ],
+)
+def test_mistralai_initialization_baseurl(model, expected_url) -> None:
+    """Test ChatMistralAI initialization."""
+    # Verify that ChatMistralAI can be initialized providing endpoint, but also
+    # with default
+
+    assert model.endpoint == expected_url
+
+
+@pytest.mark.parametrize(
+    "env_var_name",
+    [
+        ("MISTRAL_API_URL"),
+        ("MISTRAL_BASE_URL"),
+    ],
+)
+def test_mistralai_initialization_baseurl_env(env_var_name) -> None:
+    """Test ChatMistralAI initialization."""
+    # Verify that ChatMistralAI can be initialized using env variable
+    import os
+
+    os.environ[env_var_name] = "boo"
+    model = ChatMistralAI(model="test")
+    assert model.endpoint == "boo"
+
+
+@pytest.mark.parametrize(
     ("message", "expected"),
     [
         (
