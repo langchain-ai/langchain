@@ -69,7 +69,6 @@ from pydantic import (
     Field,
     SecretStr,
     model_validator,
-    root_validator,
 )
 from typing_extensions import NotRequired, Self
 
