@@ -6,7 +6,7 @@ from unittest import mock
 
 import pytest
 from langchain_core.language_models import BaseChatModel
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr
+from pydantic import BaseModel, Field, SecretStr
 from langchain_core.runnables import RunnableBinding
 from langchain_core.tools import tool
 
