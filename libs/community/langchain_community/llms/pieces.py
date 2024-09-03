@@ -3,6 +3,12 @@
 # Implement a method to stream the response from Pieces OS
 
 from __future__ import annotations
+from typing import Any, List, Mapping, Optional, Iterator
+from langchain_core.callbacks import CallbackManagerForLLMRun
+from langchain_core.language_models.llms import BaseLLM
+from langchain_core.outputs import GenerationChunk, LLMResult
+from pieces_os_client.wrapper import PiecesClient
+from pieces_os_client.models import ModelFoundationEnum
 
 from typing import Any, List, Mapping, Optional
 
