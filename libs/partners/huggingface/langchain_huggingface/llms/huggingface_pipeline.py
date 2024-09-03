@@ -54,7 +54,7 @@ class HuggingFacePipeline(BaseLLM):
     """
 
     pipeline: Any  #: :meta private:
-    model_id: str = DEFAULT_MODEL_ID
+    model_id: str = pipeline.model.name_or_path if pipeline else DEFAULT_MODEL_ID
     """Model name to use."""
     model_kwargs: Optional[dict] = None
     """Keyword arguments passed to the model."""
