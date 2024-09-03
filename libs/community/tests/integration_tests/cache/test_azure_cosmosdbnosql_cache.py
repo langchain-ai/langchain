@@ -1,6 +1,7 @@
 """Test Azure CosmosDB NoSql cache functionality."""
 
-from typing import Dict, Any
+from typing import Any, Dict
+
 from azure.cosmos import CosmosClient, PartitionKey
 from langchain.globals import get_llm_cache, set_llm_cache
 from langchain_core.outputs import Generation
