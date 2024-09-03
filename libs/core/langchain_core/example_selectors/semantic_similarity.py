@@ -5,7 +5,7 @@ from __future__ import annotations
 from abc import ABC
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type
 
-from pydantic import BaseModel, ConfigDict, Extra
+from pydantic import BaseModel, ConfigDict
 
 from langchain_core.documents import Document
 from langchain_core.example_selectors.base import BaseExampleSelector
@@ -45,7 +45,7 @@ class _VectorStoreExampleSelector(BaseExampleSelector, BaseModel, ABC):
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
-        extra=Extra.forbid,
+        extra="forbid",
     )
 
     @staticmethod

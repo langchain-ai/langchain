@@ -3,7 +3,7 @@
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import ConfigDict, Extra, model_validator
+from pydantic import ConfigDict, model_validator
 from typing_extensions import Self
 
 from langchain_core.prompts.prompt import PromptTemplate
@@ -90,7 +90,7 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
-        extra=Extra.forbid,
+        extra="forbid",
     )
 
     def _get_examples(self, **kwargs: Any) -> List[dict]:

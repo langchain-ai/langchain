@@ -8,7 +8,6 @@ from typing import Any, Dict, List, Literal, Optional, Union
 from pydantic import (
     BaseModel,
     ConfigDict,
-    Extra,
     Field,
     model_validator,
 )
@@ -42,7 +41,7 @@ class _FewShotPromptTemplateMixin(BaseModel):
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
-        extra=Extra.forbid,
+        extra="forbid",
     )
 
     @model_validator(mode="before")
@@ -170,7 +169,7 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
-        extra=Extra.forbid,
+        extra="forbid",
     )
 
     def format(self, **kwargs: Any) -> str:
@@ -378,7 +377,7 @@ class FewShotChatMessagePromptTemplate(
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
-        extra=Extra.forbid,
+        extra="forbid",
     )
 
     def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
