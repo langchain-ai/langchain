@@ -2,11 +2,13 @@
 
 The management layer uses SQLAlchemy to track upserted records.
 
-Currently, this layer only works with SQLite; hopwever, should be adaptable
-to other SQL implementations with minimal effort.
+Currently supports following backends:
+- sqlite
+- postgresql
+- mssql (SQL Server)
 
-Currently, includes an implementation that uses SQLAlchemy which should
-allow it to work with a variety of SQL as a backend.
+It should be fairly streight forward to implement support
+for other backends.
 
 * Each key is associated with an updated_at field.
 * This filed is updated whenever the key is updated.
@@ -59,18 +61,18 @@ class UpsertionRecord(Base):  # type: ignore[valid-type,misc]
     __tablename__ = "upsertion_record"
 
     uuid = Column(
-        String,
+        String(80),
         index=True,
         default=lambda: str(uuid.uuid4()),
         primary_key=True,
         nullable=False,
     )
-    key = Column(String, index=True)
+    key = Column(String(80), index=True)
     # Using a non-normalized representation to handle `namespace` attribute.
     # If the need arises, this attribute can be pulled into a separate Collection
     # table at some time later.
-    namespace = Column(String, index=True, nullable=False)
-    group_id = Column(String, index=True, nullable=True)
+    namespace = Column(String(120), index=True, nullable=False)
+    group_id = Column(String(2048), index=True, nullable=True)
 
     # The timestamp associated with the last record upsertion.
     updated_at = Column(Float, index=True)
@@ -204,6 +206,8 @@ class SQLRecordManager(RecordManager):
                 query = text("SELECT (julianday('now') - 2440587.5) * 86400.0;")
             elif self.dialect == "postgresql":
                 query = text("SELECT EXTRACT (EPOCH FROM CURRENT_TIMESTAMP);")
+            elif self.dialect == "mssql":
+                query = text("SELECT DATEDIFF_BIG(MILLISECOND, '1970-01-01T00:00:00', GETUTCDATE()) / 1000.0;")
             else:
                 raise NotImplementedError(f"Not implemented for dialect {self.dialect}")
 
@@ -234,6 +238,8 @@ class SQLRecordManager(RecordManager):
                 query = text("SELECT (julianday('now') - 2440587.5) * 86400.0;")
             elif self.dialect == "postgresql":
                 query = text("SELECT EXTRACT (EPOCH FROM CURRENT_TIMESTAMP);")
+            elif self.dialect == "mssql":
+                query = text("SELECT DATEDIFF_BIG(MILLISECOND, '1970-01-01T00:00:00', GETUTCDATE()) / 1000.0;")
             else:
                 raise NotImplementedError(f"Not implemented for dialect {self.dialect}")
 
@@ -252,7 +258,7 @@ class SQLRecordManager(RecordManager):
         group_ids: Optional[Sequence[Optional[str]]] = None,
         time_at_least: Optional[float] = None,
     ) -> None:
-        """Upsert records into the SQLite database."""
+        """Upsert records into the database."""
         if group_ids is None:
             group_ids = [None] * len(keys)
 
@@ -318,6 +324,27 @@ class SQLRecordManager(RecordManager):
                         group_id=pg_insert_stmt.excluded.group_id,
                     ),
                 )
+            elif self.dialect == "mssql":
+                # note: this branch utilizes SQL server's MERGE statement to acheive
+                # the same functionality as `insert.on_conflict_do_update()` used
+                # in sqlite and postgresql branches
+                values_clause = ", ".join([
+                    f"('{str(uuid.uuid4())}', '{record['key']}', '{record['namespace']}', {record['updated_at']}, "
+                    f"{'NULL' if record['group_id'] is None else repr(record['group_id'])})"
+                    for record in records_to_upsert
+                ])
+                stmt = text(f"""
+                    MERGE INTO upsertion_record AS target
+                    USING (VALUES {values_clause}) AS source ([uuid], [key], [namespace], [updated_at], [group_id])
+                    ON (target.[key] = source.[key] AND target.[namespace] = source.[namespace])
+                    WHEN MATCHED THEN 
+                        UPDATE SET 
+                            target.[updated_at] = source.[updated_at],
+                            target.[group_id] = source.[group_id]
+                    WHEN NOT MATCHED THEN
+                        INSERT ([uuid], [key], [namespace], [updated_at], [group_id])
+                        VALUES (source.[uuid], source.[key], source.[namespace], source.[updated_at], source.[group_id]);
+                """)
             else:
                 raise NotImplementedError(f"Unsupported dialect {self.dialect}")
 
@@ -331,7 +358,7 @@ class SQLRecordManager(RecordManager):
         group_ids: Optional[Sequence[Optional[str]]] = None,
         time_at_least: Optional[float] = None,
     ) -> None:
-        """Upsert records into the SQLite database."""
+        """Upsert records into the database."""
         if group_ids is None:
             group_ids = [None] * len(keys)
 
@@ -397,6 +424,27 @@ class SQLRecordManager(RecordManager):
                         group_id=pg_insert_stmt.excluded.group_id,
                     ),
                 )
+            elif self.dialect == "mssql":
+                # note: this branch utilizes SQL server's MERGE statement to acheive
+                # the same functionality as `insert.on_conflict_do_update()` used
+                # in sqlite and postgresql branches
+                values_clause = ", ".join([
+                    f"('{str(uuid.uuid4())}', '{record['key']}', '{record['namespace']}', {record['updated_at']}, "
+                    f"{'NULL' if record['group_id'] is None else repr(record['group_id'])})"
+                    for record in records_to_upsert
+                ])
+                stmt = text(f"""
+                    MERGE INTO upsertion_record AS target
+                    USING (VALUES {values_clause}) AS source ([uuid], [key], [namespace], [updated_at], [group_id])
+                    ON (target.[key] = source.[key] AND target.[namespace] = source.[namespace])
+                    WHEN MATCHED THEN 
+                        UPDATE SET 
+                            target.[updated_at] = source.[updated_at],
+                            target.[group_id] = source.[group_id]
+                    WHEN NOT MATCHED THEN
+                        INSERT ([uuid], [key], [namespace], [updated_at], [group_id])
+                        VALUES (source.[uuid], source.[key], source.[namespace], source.[updated_at], source.[group_id]);
+                """)
             else:
                 raise NotImplementedError(f"Unsupported dialect {self.dialect}")
 
@@ -404,7 +452,7 @@ class SQLRecordManager(RecordManager):
             await session.commit()
 
     def exists(self, keys: Sequence[str]) -> List[bool]:
-        """Check if the given keys exist in the SQLite database."""
+        """Check if the given keys exist in the database."""
         session: Session
         with self._make_session() as session:
             filtered_query: Query = session.query(UpsertionRecord.key).filter(
@@ -418,7 +466,7 @@ class SQLRecordManager(RecordManager):
         return [k in found_keys for k in keys]
 
     async def aexists(self, keys: Sequence[str]) -> List[bool]:
-        """Check if the given keys exist in the SQLite database."""
+        """Check if the given keys exist in the database."""
         async with self._amake_session() as session:
             records = (
                 (
@@ -445,7 +493,7 @@ class SQLRecordManager(RecordManager):
         group_ids: Optional[Sequence[str]] = None,
         limit: Optional[int] = None,
     ) -> List[str]:
-        """List records in the SQLite database based on the provided date range."""
+        """List records in the database based on the provided date range."""
         session: Session
         with self._make_session() as session:
             query: Query = session.query(UpsertionRecord).filter(
@@ -472,7 +520,7 @@ class SQLRecordManager(RecordManager):
         group_ids: Optional[Sequence[str]] = None,
         limit: Optional[int] = None,
     ) -> List[str]:
-        """List records in the SQLite database based on the provided date range."""
+        """List records in the database based on the provided date range."""
         session: AsyncSession
         async with self._amake_session() as session:
             query: Query = select(UpsertionRecord.key).filter(  # type: ignore[assignment]
@@ -493,7 +541,7 @@ class SQLRecordManager(RecordManager):
         return list(records)
 
     def delete_keys(self, keys: Sequence[str]) -> None:
-        """Delete records from the SQLite database."""
+        """Delete records from the database."""
         session: Session
         with self._make_session() as session:
             filtered_query: Query = session.query(UpsertionRecord).filter(
@@ -507,7 +555,7 @@ class SQLRecordManager(RecordManager):
             session.commit()
 
     async def adelete_keys(self, keys: Sequence[str]) -> None:
-        """Delete records from the SQLite database."""
+        """Delete records from the database."""
         async with self._amake_session() as session:
             await session.execute(
                 delete(UpsertionRecord).where(
