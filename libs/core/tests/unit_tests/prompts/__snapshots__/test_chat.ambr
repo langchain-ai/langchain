@@ -3,6 +3,7 @@
   dict({
     'definitions': dict({
       'AIMessage': dict({
+        'additionalProperties': True,
         'description': '''
           Message from an AI.
           
@@ -44,8 +45,16 @@
             'type': 'boolean',
           }),
           'id': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
             'title': 'Id',
-            'type': 'string',
           }),
           'invalid_tool_calls': dict({
             'default': list([
@@ -57,8 +66,16 @@
             'type': 'array',
           }),
           'name': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
             'title': 'Name',
-            'type': 'string',
           }),
           'response_metadata': dict({
             'title': 'Response Metadata',
@@ -74,6 +91,7 @@
             'type': 'array',
           }),
           'type': dict({
+            'const': 'ai',
             'default': 'ai',
             'enum': list([
               'ai',
@@ -82,7 +100,15 @@
             'type': 'string',
           }),
           'usage_metadata': dict({
-            '$ref': '#/definitions/UsageMetadata',
+            'anyOf': list([
+              dict({
+                '$ref': '#/definitions/UsageMetadata',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
           }),
         }),
         'required': list([
@@ -92,6 +118,7 @@
         'type': 'object',
       }),
       'ChatMessage': dict({
+        'additionalProperties': True,
         'description': 'Message that can be assigned an arbitrary speaker (i.e. role).',
         'properties': dict({
           'additional_kwargs': dict({
@@ -120,12 +147,28 @@
             'title': 'Content',
           }),
           'id': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
             'title': 'Id',
-            'type': 'string',
           }),
           'name': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
             'title': 'Name',
-            'type': 'string',
           }),
           'response_metadata': dict({
             'title': 'Response Metadata',
@@ -136,6 +179,7 @@
             'type': 'string',
           }),
           'type': dict({
+            'const': 'chat',
             'default': 'chat',
             'enum': list([
               'chat',
@@ -152,6 +196,7 @@
         'type': 'object',
       }),
       'FunctionMessage': dict({
+        'additionalProperties': True,
         'description': '''
           Message for passing the result of executing a tool back to a model.
           
@@ -189,8 +234,16 @@
             'title': 'Content',
           }),
           'id': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
             'title': 'Id',
-            'type': 'string',
           }),
           'name': dict({
             'title': 'Name',
@@ -201,6 +254,7 @@
             'type': 'object',
           }),
           'type': dict({
+            'const': 'function',
             'default': 'function',
             'enum': list([
               'function',
@@ -217,6 +271,7 @@
         'type': 'object',
       }),
       'HumanMessage': dict({
+        'additionalProperties': True,
         'description': '''
           Message from a human.
           
@@ -273,18 +328,35 @@
             'type': 'boolean',
           }),
           'id': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
             'title': 'Id',
-            'type': 'string',
           }),
           'name': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
             'title': 'Name',
-            'type': 'string',
           }),
           'response_metadata': dict({
             'title': 'Response Metadata',
             'type': 'object',
           }),
           'type': dict({
+            'const': 'human',
             'default': 'human',
             'enum': list([
               'human',
@@ -300,24 +372,59 @@
         'type': 'object',
       }),
       'InvalidToolCall': dict({
+        'description': '''
+          Allowance for errors made by LLM.
+          
+          Here we add an `error` key to surface errors made during generation
+          (e.g., invalid JSON arguments.)
+        ''',
         'properties': dict({
           'args': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
             'title': 'Args',
-            'type': 'string',
           }),
           'error': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
             'title': 'Error',
-            'type': 'string',
           }),
           'id': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
             'title': 'Id',
-            'type': 'string',
           }),
           'name': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
             'title': 'Name',
-            'type': 'string',
           }),
           'type': dict({
+            'const': 'invalid_tool_call',
             'enum': list([
               'invalid_tool_call',
             ]),
@@ -335,6 +442,7 @@
         'type': 'object',
       }),
       'SystemMessage': dict({
+        'additionalProperties': True,
         'description': '''
           Message for priming AI behavior.
           
@@ -386,18 +494,35 @@
             'title': 'Content',
           }),
           'id': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
             'title': 'Id',
-            'type': 'string',
           }),
           'name': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
             'title': 'Name',
-            'type': 'string',
           }),
           'response_metadata': dict({
             'title': 'Response Metadata',
             'type': 'object',
           }),
           'type': dict({
+            'const': 'system',
             'default': 'system',
             'enum': list([
               'system',
@@ -413,20 +538,44 @@
         'type': 'object',
       }),
       'ToolCall': dict({
+        'description': '''
+          Represents a request to call a tool.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  {
+                      "name": "foo",
+                      "args": {"a": 1},
+                      "id": "123"
+                  }
+          
+              This represents a request to call the tool named "foo" with arguments {"a": 1}
+              and an identifier of "123".
+        ''',
         'properties': dict({
           'args': dict({
             'title': 'Args',
             'type': 'object',
           }),
           'id': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
             'title': 'Id',
-            'type': 'string',
           }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
           }),
           'type': dict({
+            'const': 'tool_call',
             'enum': list([
               'tool_call',
             ]),
@@ -443,6 +592,7 @@
         'type': 'object',
       }),
       'ToolMessage': dict({
+        'additionalProperties': True,
         'description': '''
           Message for passing the result of executing a tool back to a model.
           
@@ -513,12 +663,28 @@
             'title': 'Content',
           }),
           'id': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
             'title': 'Id',
-            'type': 'string',
           }),
           'name': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
             'title': 'Name',
-            'type': 'string',
           }),
           'response_metadata': dict({
             'title': 'Response Metadata',
@@ -538,6 +704,7 @@
             'type': 'string',
           }),
           'type': dict({
+            'const': 'tool',
             'default': 'tool',
             'enum': list([
               'tool',
@@ -554,6 +721,21 @@
         'type': 'object',
       }),
       'UsageMetadata': dict({
+        'description': '''
+          Usage metadata for a message, such as token counts.
+          
+          This is a standard representation of token usage that is consistent across models.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  {
+                      "input_tokens": 10,
+                      "output_tokens": 20,
+                      "total_tokens": 30
+                  }
+        ''',
         'properties': dict({
           'input_tokens': dict({
             'title': 'Input Tokens',
@@ -620,6 +802,7 @@
   dict({
     'definitions': dict({
       'AIMessage': dict({
+        'additionalProperties': True,
         'description': '''
           Message from an AI.
           
@@ -661,8 +844,16 @@
             'type': 'boolean',
           }),
           'id': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
             'title': 'Id',
-            'type': 'string',
           }),
           'invalid_tool_calls': dict({
             'default': list([
@@ -674,8 +865,16 @@
             'type': 'array',
           }),
           'name': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
             'title': 'Name',
-            'type': 'string',
           }),
           'response_metadata': dict({
             'title': 'Response Metadata',
@@ -691,6 +890,7 @@
             'type': 'array',
           }),
           'type': dict({
+            'const': 'ai',
             'default': 'ai',
             'enum': list([
               'ai',
@@ -699,7 +899,15 @@
             'type': 'string',
           }),
           'usage_metadata': dict({
-            '$ref': '#/definitions/UsageMetadata',
+            'anyOf': list([
+              dict({
+                '$ref': '#/definitions/UsageMetadata',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
           }),
         }),
         'required': list([
@@ -709,6 +917,7 @@
         'type': 'object',
       }),
       'ChatMessage': dict({
+        'additionalProperties': True,
         'description': 'Message that can be assigned an arbitrary speaker (i.e. role).',
         'properties': dict({
           'additional_kwargs': dict({
@@ -737,12 +946,28 @@
             'title': 'Content',
           }),
           'id': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
             'title': 'Id',
-            'type': 'string',
           }),
           'name': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
             'title': 'Name',
-            'type': 'string',
           }),
           'response_metadata': dict({
             'title': 'Response Metadata',
@@ -753,6 +978,7 @@
             'type': 'string',
           }),
           'type': dict({
+            'const': 'chat',
             'default': 'chat',
             'enum': list([
               'chat',
@@ -769,6 +995,7 @@
         'type': 'object',
       }),
       'FunctionMessage': dict({
+        'additionalProperties': True,
         'description': '''
           Message for passing the result of executing a tool back to a model.
           
@@ -806,8 +1033,16 @@
             'title': 'Content',
           }),
           'id': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
             'title': 'Id',
-            'type': 'string',
           }),
           'name': dict({
             'title': 'Name',
@@ -818,6 +1053,7 @@
             'type': 'object',
           }),
           'type': dict({
+            'const': 'function',
             'default': 'function',
             'enum': list([
               'function',
@@ -834,6 +1070,7 @@
         'type': 'object',
       }),
       'HumanMessage': dict({
+        'additionalProperties': True,
         'description': '''
           Message from a human.
           
@@ -890,18 +1127,35 @@
             'type': 'boolean',
           }),
           'id': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
             'title': 'Id',
-            'type': 'string',
           }),
           'name': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
             'title': 'Name',
-            'type': 'string',
           }),
           'response_metadata': dict({
             'title': 'Response Metadata',
             'type': 'object',
           }),
           'type': dict({
+            'const': 'human',
             'default': 'human',
             'enum': list([
               'human',
@@ -917,24 +1171,59 @@
         'type': 'object',
       }),
       'InvalidToolCall': dict({
+        'description': '''
+          Allowance for errors made by LLM.
+          
+          Here we add an `error` key to surface errors made during generation
+          (e.g., invalid JSON arguments.)
+        ''',
         'properties': dict({
           'args': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
             'title': 'Args',
-            'type': 'string',
           }),
           'error': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
             'title': 'Error',
-            'type': 'string',
           }),
           'id': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
             'title': 'Id',
-            'type': 'string',
           }),
           'name': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
             'title': 'Name',
-            'type': 'string',
           }),
           'type': dict({
+            'const': 'invalid_tool_call',
             'enum': list([
               'invalid_tool_call',
             ]),
@@ -952,6 +1241,7 @@
         'type': 'object',
       }),
       'SystemMessage': dict({
+        'additionalProperties': True,
         'description': '''
           Message for priming AI behavior.
           
@@ -1003,18 +1293,35 @@
             'title': 'Content',
           }),
           'id': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
             'title': 'Id',
-            'type': 'string',
           }),
           'name': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
             'title': 'Name',
-            'type': 'string',
           }),
           'response_metadata': dict({
             'title': 'Response Metadata',
             'type': 'object',
           }),
           'type': dict({
+            'const': 'system',
             'default': 'system',
             'enum': list([
               'system',
@@ -1030,20 +1337,44 @@
         'type': 'object',
       }),
       'ToolCall': dict({
+        'description': '''
+          Represents a request to call a tool.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  {
+                      "name": "foo",
+                      "args": {"a": 1},
+                      "id": "123"
+                  }
+          
+              This represents a request to call the tool named "foo" with arguments {"a": 1}
+              and an identifier of "123".
+        ''',
         'properties': dict({
           'args': dict({
             'title': 'Args',
             'type': 'object',
           }),
           'id': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
             'title': 'Id',
-            'type': 'string',
           }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
           }),
           'type': dict({
+            'const': 'tool_call',
             'enum': list([
               'tool_call',
             ]),
@@ -1060,6 +1391,7 @@
         'type': 'object',
       }),
       'ToolMessage': dict({
+        'additionalProperties': True,
         'description': '''
           Message for passing the result of executing a tool back to a model.
           
@@ -1130,12 +1462,28 @@
             'title': 'Content',
           }),
           'id': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
             'title': 'Id',
-            'type': 'string',
           }),
           'name': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
             'title': 'Name',
-            'type': 'string',
           }),
           'response_metadata': dict({
             'title': 'Response Metadata',
@@ -1155,6 +1503,7 @@
             'type': 'string',
           }),
           'type': dict({
+            'const': 'tool',
             'default': 'tool',
             'enum': list([
               'tool',
@@ -1171,6 +1520,21 @@
         'type': 'object',
       }),
       'UsageMetadata': dict({
+        'description': '''
+          Usage metadata for a message, such as token counts.
+          
+          This is a standard representation of token usage that is consistent across models.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  {
+                      "input_tokens": 10,
+                      "output_tokens": 20,
+                      "total_tokens": 30
+                  }
+        ''',
         'properties': dict({
           'input_tokens': dict({
             'title': 'Input Tokens',
@@ -1436,7 +1800,7 @@
     'type': 'constructor',
   })
 # ---
-# name: test_chat_prompt_w_msgs_placeholder_ser_des[placholder]
+# name: test_chat_prompt_w_msgs_placeholder_ser_des[placeholder]
   dict({
     'id': list([
       'langchain',

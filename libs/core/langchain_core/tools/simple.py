@@ -1,14 +1,24 @@
 from __future__ import annotations
 
 from inspect import signature
-from typing import Any, Awaitable, Callable, Dict, Optional, Tuple, Type, Union
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+)
+
+from pydantic import BaseModel
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
 from langchain_core.messages import ToolCall
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import RunnableConfig, run_in_executor
 from langchain_core.tools.base import (
     BaseTool,
@@ -155,3 +165,6 @@ class Tool(BaseTool):
             args_schema=args_schema,
             **kwargs,
         )
+
+
+Tool.model_rebuild()

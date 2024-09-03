@@ -1,6 +1,7 @@
 """Module to test base parser implementations."""
 
 from typing import List
+from typing import Optional as Optional
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import GenericFakeChatModel
@@ -45,6 +46,8 @@ def test_base_generation_parser() -> None:
             content = generation.message.content
             assert isinstance(content, str)
             return content.swapcase()  # type: ignore
+
+    StrInvertCase.model_rebuild()
 
     model = GenericFakeChatModel(messages=iter([AIMessage(content="hEllo")]))
     chain = model | StrInvertCase()

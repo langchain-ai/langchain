@@ -22,7 +22,8 @@ from typing import (
 )
 
 import pytest
-from pydantic import BaseModel as BaseModelProper  # pydantic: ignore
+from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel as BaseModelProper  
 from typing_extensions import Annotated, TypedDict, TypeVar
 
 from langchain_core import tools
@@ -31,7 +32,6 @@ from langchain_core.callbacks import (
     CallbackManagerForToolRun,
 )
 from langchain_core.messages import ToolMessage
-from langchain_core.pydantic_v1 import BaseModel, Field, ValidationError
 from langchain_core.runnables import (
     Runnable,
     RunnableConfig,
@@ -54,6 +54,7 @@ from langchain_core.tools.base import (
 )
 from langchain_core.utils.function_calling import convert_to_openai_function
 from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION, _create_subset_model
+from langchain_core.utils.pydantic import TypeBaseModel as TypeBaseModel
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
 from tests.unit_tests.pydantic_utils import _schema
 
@@ -874,15 +875,13 @@ async def test_async_validation_error_handling_non_validation_error(
 
 def test_optional_subset_model_rewrite() -> None:
     class MyModel(BaseModel):
-        a: Optional[str]
+        a: Optional[str] = None
         b: str
-        c: Optional[List[Optional[str]]]
+        c: Optional[List[Optional[str]]] = None
 
     model2 = _create_subset_model("model2", MyModel, ["a", "b", "c"])
 
-    assert "a" not in _schema(model2)["required"]  # should be optional
-    assert "b" in _schema(model2)["required"]  # should be required
-    assert "c" not in _schema(model2)["required"]  # should be optional
+    assert set(_schema(model2)["required"]) == {"b"}
 
 
 @pytest.mark.parametrize(
@@ -986,6 +985,9 @@ class FooBase(BaseTool):
 
     def _run(self, bar: Any, bar_config: RunnableConfig, **kwargs: Any) -> Any:
         return assert_bar(bar, bar_config)
+
+
+FooBase.model_rebuild()
 
 
 class AFooBase(FooBase):
@@ -1570,7 +1572,7 @@ def generate_models() -> List[Any]:
 
 def generate_backwards_compatible_v1() -> List[Any]:
     """Generate a model with pydantic 2 from the v1 namespace."""
-    from pydantic.v1 import BaseModel as BaseModelV1  # pydantic: ignore
+    from pydantic.v1 import BaseModel as BaseModelV1  
 
     class FooV1Namespace(BaseModelV1):
         a: int
@@ -1627,7 +1629,7 @@ def test_args_schema_explicitly_typed() -> None:
     is a pydantic 1 model!
     """
     # Check with whatever pydantic model is passed in and not via v1 namespace
-    from pydantic import BaseModel  # pydantic: ignore
+    from pydantic import BaseModel  
 
     class Foo(BaseModel):
         a: int
@@ -1871,9 +1873,9 @@ def test__get_all_basemodel_annotations_v1() -> None:
 
 @pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Testing pydantic v2.")
 def test_tool_args_schema_pydantic_v2_with_metadata() -> None:
-    from pydantic import BaseModel as BaseModelV2  # pydantic: ignore
-    from pydantic import Field as FieldV2  # pydantic: ignore
-    from pydantic import ValidationError as ValidationErrorV2  # pydantic: ignore
+    from pydantic import BaseModel as BaseModelV2  
+    from pydantic import Field as FieldV2  
+    from pydantic import ValidationError as ValidationErrorV2  
 
     class Foo(BaseModelV2):
         x: List[int] = FieldV2(

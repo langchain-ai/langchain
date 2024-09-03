@@ -23,6 +23,13 @@ from typing import (
     cast,
 )
 
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    model_validator,
+)
+
 from langchain_core._api import deprecated
 from langchain_core.caches import BaseCache
 from langchain_core.callbacks import (
@@ -57,11 +64,6 @@ from langchain_core.outputs import (
     RunInfo,
 )
 from langchain_core.prompt_values import ChatPromptValue, PromptValue, StringPromptValue
-from langchain_core.pydantic_v1 import (
-    BaseModel,
-    Field,
-    root_validator,
-)
 from langchain_core.rate_limiters import BaseRateLimiter
 from langchain_core.runnables import RunnableMap, RunnablePassthrough
 from langchain_core.runnables.config import ensure_config, run_in_executor
@@ -193,14 +195,20 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     """  # noqa: E501
 
-    callback_manager: Optional[BaseCallbackManager] = deprecated(
-        name="callback_manager", since="0.1.7", removal="1.0", alternative="callbacks"
-    )(
-        Field(
-            default=None,
-            exclude=True,
-            description="Callback manager to add to the run trace.",
-        )
+    # TODO(0.3): Figure out how to re-apply deprecated decorator
+    # callback_manager: Optional[BaseCallbackManager] = deprecated(
+    #     name="callback_manager", since="0.1.7", removal="1.0", alternative="callbacks"
+    # )(
+    #     Field(
+    #         default=None,
+    #         exclude=True,
+    #         description="Callback manager to add to the run trace.",
+    #     )
+    # )
+    callback_manager: Optional[BaseCallbackManager] = Field(
+        default=None,
+        exclude=True,
+        description="Callback manager to add to the run trace.",
     )
 
     rate_limiter: Optional[BaseRateLimiter] = Field(default=None, exclude=True)
@@ -218,8 +226,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     - If False (default), will always use streaming case if available.
     """
 
-    @root_validator(pre=True)
-    def raise_deprecation(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def raise_deprecation(cls, values: Dict) -> Any:
         """Raise deprecation warning if callback_manager is used.
 
         Args:
@@ -240,8 +249,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             values["callbacks"] = values.pop("callback_manager", None)
         return values
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     # --- Runnable methods ---
 
