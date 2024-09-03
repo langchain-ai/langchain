@@ -3,7 +3,7 @@
 from typing import Any, Union
 
 from langchain_core.callbacks import BaseCallbackHandler
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel
 
 
 class BaseFakeCallbackHandler(BaseModel):

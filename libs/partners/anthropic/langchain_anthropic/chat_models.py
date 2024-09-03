@@ -49,7 +49,7 @@ from langchain_core.output_parsers import (
 )
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import (
+from pydantic import (
     BaseModel,
     Field,
     SecretStr,
@@ -72,6 +72,8 @@ from langchain_core.utils.pydantic import is_basemodel_subclass
 from typing_extensions import NotRequired
 
 from langchain_anthropic.output_parsers import extract_tool_calls
+from pydantic import ConfigDict
+
 
 _message_type_lookups = {
     "human": "user",
@@ -508,10 +510,7 @@ class ChatAnthropic(BaseChatModel):
 
     """  # noqa: E501
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        allow_population_by_field_name = True
+    model_config = ConfigDict(populate_by_name=True,)
 
     _client: anthropic.Client = Field(default=None)
     _async_client: anthropic.AsyncClient = Field(default=None)

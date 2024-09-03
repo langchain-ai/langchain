@@ -7,7 +7,7 @@ from typing import (
 )
 
 from langchain_core._api import deprecated
-from langchain_core.pydantic_v1 import Field
+from pydantic import Field
 
 from langchain_anthropic.chat_models import ChatAnthropic
 
