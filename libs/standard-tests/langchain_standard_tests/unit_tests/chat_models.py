@@ -151,7 +151,7 @@ class ChatModelUnitTests(ChatModelTests):
             assert model is not None
             for k, expected in expected_attrs.items():
                 actual = getattr(model, k)
-                if isinstance(actual ,SecretStr):
+                if isinstance(actual, SecretStr):
                     actual = actual.get_secret_value()
                 assert actual == expected
 
