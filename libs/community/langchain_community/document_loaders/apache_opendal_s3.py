@@ -7,7 +7,7 @@ from typing import Any, Callable, List, Optional
 from langchain_community.document_loaders.unstructured import UnstructuredBaseLoader
 
 
-class ApacheOpendalS3FileLoader(UnstructuredBaseLoader):
+class UnstructuredApacheOpendalS3FileLoader(UnstructuredBaseLoader):
     def __init__(
         self,
         key: str,
