@@ -935,7 +935,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
 
     """  # noqa: E501
 
-    messages: Annotated[List[MessageLike], SkipValidation]
+    messages: Annotated[List[MessageLike], SkipValidation()]
     """List of messages consisting of either message prompt templates or messages."""
     validate_template: bool = False
     """Whether or not to try validating the template."""
