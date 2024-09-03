@@ -1,9 +1,10 @@
 import copy
 import json
 from json import JSONDecodeError
-from typing import Annotated, Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import SkipValidation, ValidationError  # pydantic: ignore
+from typing_extensions import Annotated
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import AIMessage, InvalidToolCall

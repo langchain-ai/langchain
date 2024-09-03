@@ -1,8 +1,9 @@
 import json
-from typing import Annotated, Generic, List, Optional, Type
+from typing import Generic, List, Optional, Type
 
 import pydantic  # pydantic: ignore
 from pydantic import SkipValidation  # pydantic: ignore
+from typing_extensions import Annotated
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import JsonOutputParser
