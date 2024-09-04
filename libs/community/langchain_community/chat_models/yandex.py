@@ -87,10 +87,13 @@ class ChatYandexGPT(_BaseYandexGPT, BaseChatModel):
         """
         text = completion_with_retry(self, messages=messages)
         text = text if stop is None else enforce_stop_tokens(text, stop)
-        message = AIMessage(content=text, response_metadata=self.metadata["llm_output"])
+        message = AIMessage(
+            content=text,
+            response_metadata=self.metadata["llm_output"] if self.metadata else None,
+        )
         return ChatResult(
             generations=[ChatGeneration(message=message)],
-            llm_output=self.metadata["llm_output"],
+            llm_output=self.metadata["llm_output"] if self.metadata else None,
         )
 
     async def _agenerate(
@@ -115,10 +118,13 @@ class ChatYandexGPT(_BaseYandexGPT, BaseChatModel):
         """
         text = await acompletion_with_retry(self, messages=messages)
         text = text if stop is None else enforce_stop_tokens(text, stop)
-        message = AIMessage(content=text, response_metadata=self.metadata["llm_output"])
+        message = AIMessage(
+            content=text,
+            response_metadata=self.metadata["llm_output"] if self.metadata else None,
+        )
         return ChatResult(
             generations=[ChatGeneration(message=message)],
-            llm_output=self.metadata["llm_output"],
+            llm_output=self.metadata["llm_output"] if self.metadata else None,
         )
 
 
