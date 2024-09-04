@@ -32,6 +32,7 @@ def test_serialization_of_wellknown_objects() -> None:
             SystemMessage,
             ChatMessage,
             FunctionMessage,
+            FunctionMessageChunk,
             AIMessage,
             HumanMessageChunk,
             SystemMessageChunk,
@@ -100,7 +101,6 @@ def test_serialization_of_wellknown_objects() -> None:
         obj1 = well_known_lc_object.model_validate(d)
         assert type(obj1.root) is type(lc_object), f"failed for {type(lc_object)}"
 
-    #
     with pytest.raises((TypeError, ValidationError)):
         # Make sure that specifically validation error is raised
         well_known_lc_object.model_validate({})
