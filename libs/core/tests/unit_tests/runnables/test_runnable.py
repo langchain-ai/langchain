@@ -5562,9 +5562,11 @@ async def test_closing_iterator_doesnt_raise_error() -> None:
     time.sleep(0.05)
     assert on_chain_error_triggered is False
 
-def test_pydantic_protected_namespaces() -> None:
 
+def test_pydantic_protected_namespaces() -> None:
     with pytest.warns(None) as record:
+
         class CustomChatModel(RunnableSerializable):
             model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+
     assert len(record) == 0
