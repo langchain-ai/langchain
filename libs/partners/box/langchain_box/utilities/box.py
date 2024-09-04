@@ -354,7 +354,7 @@ class BoxAuth(BaseModel):
     @model_validator(mode="after")
     def validate_box_auth_inputs(self) -> Self:
         """Validate auth_type is set"""
-        if self.auth_type:
+        if not self.auth_type:
             raise ValueError("Auth type must be set.")
 
         """Validate that TOKEN auth type provides box_developer_token."""
