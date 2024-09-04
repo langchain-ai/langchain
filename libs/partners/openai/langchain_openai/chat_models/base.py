@@ -476,7 +476,7 @@ class BaseChatOpenAI(BaseChatModel):
                 "'http_client'/'http_async_client' is already specified. Received:\n"
                 f"{openai_proxy=}\n{http_client=}\n{http_async_client=}"
             )
-        if not (self.client or None):
+        if not self.client:
             if self.openai_proxy and not self.http_client:
                 try:
                     import httpx
