@@ -226,7 +226,7 @@ class ChatOllama(BaseChatModel):
         .. code-block:: python
 
             from langchain_ollama import ChatOllama
-            from langchain_core.pydantic_v1 import BaseModel, Field
+            from pydantic import BaseModel, Field
 
             class Multiply(BaseModel):
                 a: int = Field(..., description="First integer")
