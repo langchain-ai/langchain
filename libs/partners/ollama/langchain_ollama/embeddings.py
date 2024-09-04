@@ -8,10 +8,8 @@ from ollama import AsyncClient, Client
 from pydantic import (
     BaseModel,
     ConfigDict,
-    Field,
     PrivateAttr,
     model_validator,
-    root_validator,
 )
 from typing_extensions import Self
 
