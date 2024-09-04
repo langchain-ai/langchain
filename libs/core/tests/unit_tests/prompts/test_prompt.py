@@ -7,7 +7,6 @@ import pytest
 
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.tracers.run_collector import RunCollectorCallbackHandler
-from tests.unit_tests.pydantic_utils import _schema
 
 
 def test_prompt_valid() -> None:
@@ -70,10 +69,10 @@ def test_mustache_prompt_from_template() -> None:
     prompt = PromptTemplate.from_template(template, template_format="mustache")
     assert prompt.format(foo="bar") == "This is a bar test."
     assert prompt.input_variables == ["foo"]
-    assert _schema(prompt.input_schema) == {
+    assert prompt.get_input_jsonschema() == {
         "title": "PromptInput",
         "type": "object",
-        "properties": {"foo": {"title": "Foo", "type": "string"}},
+        "properties": {"foo": {"title": "Foo", "type": "string", "default": None}},
     }
 
     # Multiple input variables.
@@ -81,12 +80,12 @@ def test_mustache_prompt_from_template() -> None:
     prompt = PromptTemplate.from_template(template, template_format="mustache")
     assert prompt.format(bar="baz", foo="bar") == "This baz is a bar test."
     assert prompt.input_variables == ["bar", "foo"]
-    assert _schema(prompt.input_schema) == {
+    assert prompt.get_input_jsonschema() == {
         "title": "PromptInput",
         "type": "object",
         "properties": {
-            "bar": {"title": "Bar", "type": "string"},
-            "foo": {"title": "Foo", "type": "string"},
+            "bar": {"title": "Bar", "type": "string", "default": None},
+            "foo": {"title": "Foo", "type": "string", "default": None},
         },
     }
 
@@ -95,12 +94,12 @@ def test_mustache_prompt_from_template() -> None:
     prompt = PromptTemplate.from_template(template, template_format="mustache")
     assert prompt.format(bar="baz", foo="bar") == "This baz is a bar test bar."
     assert prompt.input_variables == ["bar", "foo"]
-    assert _schema(prompt.input_schema) == {
+    assert prompt.get_input_jsonschema() == {
         "title": "PromptInput",
         "type": "object",
         "properties": {
-            "bar": {"title": "Bar", "type": "string"},
-            "foo": {"title": "Foo", "type": "string"},
+            "bar": {"title": "Bar", "type": "string", "default": None},
+            "foo": {"title": "Foo", "type": "string", "default": None},
         },
     }
 
@@ -111,23 +110,23 @@ def test_mustache_prompt_from_template() -> None:
         "This foo is a bar test baz."
     )
     assert prompt.input_variables == ["foo", "obj"]
-    assert _schema(prompt.input_schema) == {
-        "title": "PromptInput",
-        "type": "object",
-        "properties": {
-            "foo": {"title": "Foo", "type": "string"},
-            "obj": {"$ref": "#/definitions/obj"},
-        },
-        "definitions": {
+    assert prompt.get_input_jsonschema() == {
+        "$defs": {
             "obj": {
+                "properties": {
+                    "bar": {"default": None, "title": "Bar", "type": "string"},
+                    "foo": {"default": None, "title": "Foo", "type": "string"},
+                },
                 "title": "obj",
                 "type": "object",
-                "properties": {
-                    "foo": {"title": "Foo", "type": "string"},
-                    "bar": {"title": "Bar", "type": "string"},
-                },
             }
         },
+        "properties": {
+            "foo": {"default": None, "title": "Foo", "type": "string"},
+            "obj": {"allOf": [{"$ref": "#/$defs/obj"}], "default": None},
+        },
+        "title": "PromptInput",
+        "type": "object",
     }
 
     # . variables
@@ -135,7 +134,7 @@ def test_mustache_prompt_from_template() -> None:
     prompt = PromptTemplate.from_template(template, template_format="mustache")
     assert prompt.format(foo="baz") == ("This {'foo': 'baz'} is a test.")
     assert prompt.input_variables == []
-    assert _schema(prompt.input_schema) == {
+    assert prompt.get_input_jsonschema() == {
         "title": "PromptInput",
         "type": "object",
         "properties": {},
@@ -152,17 +151,19 @@ def test_mustache_prompt_from_template() -> None:
     is a test."""
     )
     assert prompt.input_variables == ["foo"]
-    assert _schema(prompt.input_schema) == {
-        "title": "PromptInput",
-        "type": "object",
-        "properties": {"foo": {"$ref": "#/definitions/foo"}},
-        "definitions": {
+    assert prompt.get_input_jsonschema() == {
+        "$defs": {
             "foo": {
+                "properties": {
+                    "bar": {"default": None, "title": "Bar", "type": "string"}
+                },
                 "title": "foo",
                 "type": "object",
-                "properties": {"bar": {"title": "Bar", "type": "string"}},
             }
         },
+        "properties": {"foo": {"allOf": [{"$ref": "#/$defs/foo"}], "default": None}},
+        "title": "PromptInput",
+        "type": "object",
     }
 
     # more complex nested section/context variables
@@ -184,26 +185,28 @@ def test_mustache_prompt_from_template() -> None:
     is a test."""
     )
     assert prompt.input_variables == ["foo"]
-    assert _schema(prompt.input_schema) == {
-        "title": "PromptInput",
-        "type": "object",
-        "properties": {"foo": {"$ref": "#/definitions/foo"}},
-        "definitions": {
-            "foo": {
-                "title": "foo",
-                "type": "object",
-                "properties": {
-                    "bar": {"title": "Bar", "type": "string"},
-                    "baz": {"$ref": "#/definitions/baz"},
-                    "quux": {"title": "Quux", "type": "string"},
-                },
-            },
+    assert prompt.get_input_jsonschema() == {
+        "$defs": {
             "baz": {
+                "properties": {
+                    "qux": {"default": None, "title": "Qux", "type": "string"}
+                },
                 "title": "baz",
                 "type": "object",
-                "properties": {"qux": {"title": "Qux", "type": "string"}},
+            },
+            "foo": {
+                "properties": {
+                    "bar": {"default": None, "title": "Bar", "type": "string"},
+                    "baz": {"allOf": [{"$ref": "#/$defs/baz"}], "default": None},
+                    "quux": {"default": None, "title": "Quux", "type": "string"},
+                },
+                "title": "foo",
+                "type": "object",
             },
         },
+        "properties": {"foo": {"allOf": [{"$ref": "#/$defs/foo"}], "default": None}},
+        "title": "PromptInput",
+        "type": "object",
     }
 
     # triply nested section/context variables
@@ -239,39 +242,43 @@ def test_mustache_prompt_from_template() -> None:
     is a test."""
     )
     assert prompt.input_variables == ["foo"]
-    assert _schema(prompt.input_schema) == {
-        "title": "PromptInput",
-        "type": "object",
-        "properties": {"foo": {"$ref": "#/definitions/foo"}},
-        "definitions": {
-            "foo": {
-                "title": "foo",
-                "type": "object",
-                "properties": {
-                    "bar": {"title": "Bar", "type": "string"},
-                    "baz": {"$ref": "#/definitions/baz"},
-                    "quux": {"title": "Quux", "type": "string"},
-                },
-            },
-            "baz": {
-                "title": "baz",
-                "type": "object",
-                "properties": {"qux": {"$ref": "#/definitions/qux"}},
-            },
-            "qux": {
-                "title": "qux",
-                "type": "object",
-                "properties": {
-                    "foobar": {"title": "Foobar", "type": "string"},
-                    "barfoo": {"$ref": "#/definitions/barfoo"},
-                },
-            },
+    assert prompt.get_input_jsonschema() == {
+        "$defs": {
             "barfoo": {
+                "properties": {
+                    "foobar": {"default": None, "title": "Foobar", "type": "string"}
+                },
                 "title": "barfoo",
                 "type": "object",
-                "properties": {"foobar": {"title": "Foobar", "type": "string"}},
+            },
+            "baz": {
+                "properties": {
+                    "qux": {"allOf": [{"$ref": "#/$defs/qux"}], "default": None}
+                },
+                "title": "baz",
+                "type": "object",
+            },
+            "foo": {
+                "properties": {
+                    "bar": {"default": None, "title": "Bar", "type": "string"},
+                    "baz": {"allOf": [{"$ref": "#/$defs/baz"}], "default": None},
+                    "quux": {"default": None, "title": "Quux", "type": "string"},
+                },
+                "title": "foo",
+                "type": "object",
+            },
+            "qux": {
+                "properties": {
+                    "barfoo": {"allOf": [{"$ref": "#/$defs/barfoo"}], "default": None},
+                    "foobar": {"default": None, "title": "Foobar", "type": "string"},
+                },
+                "title": "qux",
+                "type": "object",
             },
         },
+        "properties": {"foo": {"allOf": [{"$ref": "#/$defs/foo"}], "default": None}},
+        "title": "PromptInput",
+        "type": "object",
     }
 
     # section/context variables with repeats
@@ -287,19 +294,20 @@ def test_mustache_prompt_from_template() -> None:
     is a test."""
     )
     assert prompt.input_variables == ["foo"]
-    assert _schema(prompt.input_schema) == {
-        "title": "PromptInput",
-        "type": "object",
-        "properties": {"foo": {"$ref": "#/definitions/foo"}},
-        "definitions": {
+    assert prompt.get_input_jsonschema() == {
+        "$defs": {
             "foo": {
+                "properties": {
+                    "bar": {"default": None, "title": "Bar", "type": "string"}
+                },
                 "title": "foo",
                 "type": "object",
-                "properties": {"bar": {"title": "Bar", "type": "string"}},
             }
         },
+        "properties": {"foo": {"allOf": [{"$ref": "#/$defs/foo"}], "default": None}},
+        "title": "PromptInput",
+        "type": "object",
     }
-
     template = """This{{^foo}}
         no foos
     {{/foo}}is a test."""
@@ -310,10 +318,10 @@ def test_mustache_prompt_from_template() -> None:
     is a test."""
     )
     assert prompt.input_variables == ["foo"]
-    assert _schema(prompt.input_schema) == {
+    assert prompt.get_input_jsonschema() == {
+        "properties": {"foo": {"default": None, "title": "Foo", "type": "object"}},
         "title": "PromptInput",
         "type": "object",
-        "properties": {"foo": {"title": "Foo", "type": "object"}},
     }
 
 

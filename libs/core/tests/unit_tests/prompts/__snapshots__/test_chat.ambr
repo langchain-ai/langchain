@@ -1,7 +1,7 @@
 # serializer version: 1
 # name: test_chat_input_schema[partial]
   dict({
-    'definitions': dict({
+    '$defs': dict({
       'AIMessage': dict({
         'additionalProperties': True,
         'description': '''
@@ -60,7 +60,7 @@
             'default': list([
             ]),
             'items': dict({
-              '$ref': '#/definitions/InvalidToolCall',
+              '$ref': '#/$defs/InvalidToolCall',
             }),
             'title': 'Invalid Tool Calls',
             'type': 'array',
@@ -85,7 +85,7 @@
             'default': list([
             ]),
             'items': dict({
-              '$ref': '#/definitions/ToolCall',
+              '$ref': '#/$defs/ToolCall',
             }),
             'title': 'Tool Calls',
             'type': 'array',
@@ -102,7 +102,7 @@
           'usage_metadata': dict({
             'anyOf': list([
               dict({
-                '$ref': '#/definitions/UsageMetadata',
+                '$ref': '#/$defs/UsageMetadata',
               }),
               dict({
                 'type': 'null',
@@ -639,6 +639,7 @@
             'type': 'object',
           }),
           'artifact': dict({
+            'default': None,
             'title': 'Artifact',
           }),
           'content': dict({
@@ -761,25 +762,26 @@
     }),
     'properties': dict({
       'history': dict({
+        'default': None,
         'items': dict({
           'anyOf': list([
             dict({
-              '$ref': '#/definitions/AIMessage',
+              '$ref': '#/$defs/AIMessage',
             }),
             dict({
-              '$ref': '#/definitions/HumanMessage',
+              '$ref': '#/$defs/HumanMessage',
             }),
             dict({
-              '$ref': '#/definitions/ChatMessage',
+              '$ref': '#/$defs/ChatMessage',
             }),
             dict({
-              '$ref': '#/definitions/SystemMessage',
+              '$ref': '#/$defs/SystemMessage',
             }),
             dict({
-              '$ref': '#/definitions/FunctionMessage',
+              '$ref': '#/$defs/FunctionMessage',
             }),
             dict({
-              '$ref': '#/definitions/ToolMessage',
+              '$ref': '#/$defs/ToolMessage',
             }),
           ]),
         }),
@@ -800,7 +802,7 @@
 # ---
 # name: test_chat_input_schema[required]
   dict({
-    'definitions': dict({
+    '$defs': dict({
       'AIMessage': dict({
         'additionalProperties': True,
         'description': '''
@@ -859,7 +861,7 @@
             'default': list([
             ]),
             'items': dict({
-              '$ref': '#/definitions/InvalidToolCall',
+              '$ref': '#/$defs/InvalidToolCall',
             }),
             'title': 'Invalid Tool Calls',
             'type': 'array',
@@ -884,7 +886,7 @@
             'default': list([
             ]),
             'items': dict({
-              '$ref': '#/definitions/ToolCall',
+              '$ref': '#/$defs/ToolCall',
             }),
             'title': 'Tool Calls',
             'type': 'array',
@@ -901,7 +903,7 @@
           'usage_metadata': dict({
             'anyOf': list([
               dict({
-                '$ref': '#/definitions/UsageMetadata',
+                '$ref': '#/$defs/UsageMetadata',
               }),
               dict({
                 'type': 'null',
@@ -1438,6 +1440,7 @@
             'type': 'object',
           }),
           'artifact': dict({
+            'default': None,
             'title': 'Artifact',
           }),
           'content': dict({
@@ -1563,22 +1566,22 @@
         'items': dict({
           'anyOf': list([
             dict({
-              '$ref': '#/definitions/AIMessage',
+              '$ref': '#/$defs/AIMessage',
             }),
             dict({
-              '$ref': '#/definitions/HumanMessage',
+              '$ref': '#/$defs/HumanMessage',
             }),
             dict({
-              '$ref': '#/definitions/ChatMessage',
+              '$ref': '#/$defs/ChatMessage',
             }),
             dict({
-              '$ref': '#/definitions/SystemMessage',
+              '$ref': '#/$defs/SystemMessage',
             }),
             dict({
-              '$ref': '#/definitions/FunctionMessage',
+              '$ref': '#/$defs/FunctionMessage',
             }),
             dict({
-              '$ref': '#/definitions/ToolMessage',
+              '$ref': '#/$defs/ToolMessage',
             }),
           ]),
         }),
