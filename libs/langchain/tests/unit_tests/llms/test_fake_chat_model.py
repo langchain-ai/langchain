@@ -64,8 +64,8 @@ async def test_generic_fake_chat_model_stream() -> None:
     model = GenericFakeChatModel(messages=cycle([message]))
     chunks = [chunk async for chunk in model.astream("meow")]
     assert chunks == [
-        AIMessageChunk(content="", additional_kwargs={"foo": 42}, id=AnyStr()),
-        AIMessageChunk(content="", additional_kwargs={"bar": 24}, id=AnyStr()),
+        _AnyIdAIMessageChunk(content="", additional_kwargs={"foo": 42}),
+        _AnyIdAIMessageChunk(content="", additional_kwargs={"bar": 24}),
     ]
 
     message = AIMessage(
