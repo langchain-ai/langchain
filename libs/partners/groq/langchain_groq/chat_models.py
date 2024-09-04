@@ -405,7 +405,7 @@ class ChatGroq(BaseChatModel):
                 self.client = groq.Groq(
                     **client_params, **sync_specific
                 ).chat.completions
-            if self.async_client:
+            if not self.async_client:
                 async_specific: Dict[str, Any] = {"http_client": self.http_async_client}
                 self.async_client = groq.AsyncGroq(
                     **client_params, **async_specific
