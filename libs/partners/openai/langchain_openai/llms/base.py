@@ -190,7 +190,7 @@ class BaseOpenAI(BaseLLM):
         if not self.client:
             sync_specific = {"http_client": self.http_client}
             self.client = openai.OpenAI(**client_params, **sync_specific).completions  # type: ignore[arg-type]
-        if not (self.async_client or None):
+        if not self.async_client:
             async_specific = {"http_client": self.http_async_client}
             self.async_client = openai.AsyncOpenAI(
                 **client_params,
