@@ -69,7 +69,7 @@ from pydantic import (
     BaseModel,
     Field,
     SecretStr,
-    root_validator,
+    root_validator, model_validator,
 )
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
@@ -347,8 +347,9 @@ class ChatGroq(BaseChatModel):
 
     model_config = ConfigDict(populate_by_name=True,)
 
-    @root_validator(pre=True)
-    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})
