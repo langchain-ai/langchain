@@ -625,7 +625,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
             sync_specific = {"http_client": self.http_client}
             self.root_client = openai.AzureOpenAI(**client_params, **sync_specific)  # type: ignore[arg-type]
             self.client = self.root_client.chat.completions
-        if not (self.async_client or None):
+        if not self.async_client:
             async_specific = {"http_client": self.http_async_client}
             self.root_async_client = openai.AsyncAzureOpenAI(
                 **client_params,
