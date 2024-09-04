@@ -149,8 +149,9 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     @model_validator(mode="after")
     def _set_clients(self) -> Self:
         """Set clients to use for ollama."""
-        self._client = Client(host=self.base_url, **self.client_kwargs)
-        self._async_client = AsyncClient(host=self.base_url, **self.client_kwargs)
+        client_kwargs = self.client_kwargs or {}
+        self._client = Client(host=self.base_url, **client_kwargs)
+        self._async_client = AsyncClient(host=self.base_url, **client_kwargs)
         return self
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
