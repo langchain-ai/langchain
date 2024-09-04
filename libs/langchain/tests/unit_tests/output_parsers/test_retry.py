@@ -4,6 +4,7 @@ from typing import Any, Callable, Dict, Optional, TypeVar
 import pytest
 from langchain_core.prompt_values import PromptValue, StringPromptValue
 from langchain_core.runnables import Runnable, RunnableLambda, RunnablePassthrough
+from pydantic import Extra
 from pytest_mock import MockerFixture
 
 from langchain.output_parsers.boolean import BooleanOutputParser
@@ -16,7 +17,6 @@ from langchain.output_parsers.retry import (
     RetryOutputParser,
     RetryWithErrorOutputParser,
 )
-from langchain.pydantic_v1 import Extra
 
 T = TypeVar("T")
 

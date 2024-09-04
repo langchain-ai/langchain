@@ -19,7 +19,7 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, Generation
 from langchain_core.prompt_values import ChatPromptValueConcrete, StringPromptValue
-from langchain_core.pydantic_v1 import BaseModel, ValidationError
+from pydantic import BaseModel, ValidationError
 
 
 def test_serialization_of_wellknown_objects() -> None:
