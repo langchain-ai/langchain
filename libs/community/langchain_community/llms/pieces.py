@@ -71,7 +71,7 @@ class PiecesOSLLM(BaseLLM):
 
     def get_supported_models(self) -> List[str]:
         """Get the list of supported models."""
-        return [model.value for model in ModelFoundationEnum]      
+        return self.client.available_models_names
 
     def set_model(self, model_name: str) -> None:
         """Set the model to be used."""
