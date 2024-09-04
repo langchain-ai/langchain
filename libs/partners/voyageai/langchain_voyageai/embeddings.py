@@ -7,7 +7,7 @@ from pydantic import (
     BaseModel,
     Field,
     SecretStr,
-    root_validator,
+    root_validator, PrivateAttr,
 )
 from langchain_core.utils import secret_from_env
 from pydantic import ConfigDict
@@ -27,8 +27,8 @@ class VoyageAIEmbeddings(BaseModel, Embeddings):
             model = VoyageAIEmbeddings()
     """
 
-    _client: voyageai.Client = Field(exclude=True)
-    _aclient: voyageai.client_async.AsyncClient = Field(exclude=True)
+    _client: voyageai.Client = PrivateAttr()
+    _aclient: voyageai.client_async.AsyncClient = PrivateAttr()
     model: str
     batch_size: int
     show_progress_bar: bool = False
