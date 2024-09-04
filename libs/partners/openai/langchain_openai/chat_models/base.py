@@ -2011,19 +2011,24 @@ def _url_to_size(image_source: str) -> Optional[Tuple[int, int]]:
     except ImportError:
         logger.info(
             "Unable to count image tokens. To count image tokens please install "
-            "`pip install -U pillow httpx`."
+            "`pip install -U pillow requests`."
         )
         return None
     if _is_url(image_source):
         try:
-            import httpx
+            import requests  # use requests rather than httpx to avoid 302 redirects
         except ImportError:
             logger.info(
                 "Unable to count image tokens. To count image tokens please install "
-                "`pip install -U httpx`."
+                "`pip install -U requests`."
             )
             return None
-        response = httpx.get(image_source)
+        
+        # use requests with common headers rather than httpx to avoid 302 redirects
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36'
+        }
+        response = requests.get(image_source, headers=headers)
         response.raise_for_status()
         width, height = Image.open(BytesIO(response.content)).size
         return width, height
