@@ -156,4 +156,4 @@ def _xml_to_tool_calls(elem: Any, tools: List[Dict]) -> List[Dict[str, Any]]:
 class ChatAnthropicTools(ChatAnthropic):
     """Chat model for interacting with Anthropic functions."""
 
-    xmllib: Any = Field(default=None)
+    _xmllib: Any = Field(default=None)
