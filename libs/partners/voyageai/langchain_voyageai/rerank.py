@@ -8,7 +8,7 @@ import voyageai  # type: ignore
 from langchain_core.callbacks.manager import Callbacks
 from langchain_core.documents import Document
 from langchain_core.documents.compressor import BaseDocumentCompressor
-from pydantic import SecretStr, root_validator
+from pydantic import SecretStr, root_validator, model_validator
 from langchain_core.utils import convert_to_secret_str
 from voyageai.object import RerankingObject
 from pydantic import ConfigDict
@@ -32,8 +32,9 @@ class VoyageAIRerank(BaseDocumentCompressor):
 
     model_config = ConfigDict(arbitrary_types_allowed=True,)
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that api key exists in environment."""
         voyage_api_key = values.get("voyage_api_key") or os.getenv(
             "VOYAGE_API_KEY", None

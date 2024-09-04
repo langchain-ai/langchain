@@ -7,7 +7,7 @@ from pydantic import (
     BaseModel,
     Field,
     SecretStr,
-    root_validator, PrivateAttr,
+    root_validator, PrivateAttr, model_validator,
 )
 from langchain_core.utils import secret_from_env
 from pydantic import ConfigDict
@@ -44,8 +44,9 @@ class VoyageAIEmbeddings(BaseModel, Embeddings):
 
     model_config = ConfigDict(extra="forbid",populate_by_name=True,)
 
-    @root_validator(pre=True)
-    def default_values(cls, values: dict) -> dict:
+    @model_validator(mode="before")
+    @classmethod
+    def default_values(cls, values: dict) -> Any:
         """Set default batch size based on model"""
         model = values.get("model")
         batch_size = values.get("batch_size")
