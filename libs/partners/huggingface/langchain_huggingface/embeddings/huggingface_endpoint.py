@@ -3,7 +3,7 @@ import os
 from typing import Any, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.utils import from_env, get_from_dict_or_env
+from langchain_core.utils import from_env
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from typing_extensions import Self
 
