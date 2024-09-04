@@ -1,11 +1,24 @@
+[build-system]
+requires = [ "poetry-core>=1.0.0",]
+build-backend = "poetry.core.masonry.api"
+
 [tool.poetry]
 name = "langchain-milvus"
-version = "0.1.4"
+version = "0.1.5"
 description = "An integration package connecting Milvus and LangChain"
 authors = []
 readme = "README.md"
 repository = "https://github.com/langchain-ai/langchain"
 license = "MIT"
+
+[tool.ruff]
+select = [ "E", "F", "I", "T201",]
+
+[tool.mypy]
+disallow_untyped_defs = "True"
+[[tool.mypy.overrides]]
+module = [ "pymilvus",]
+ignore_missing_imports = "True"
 
 [tool.poetry.urls]
 "Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/milvus"
@@ -13,9 +26,8 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = "^0.2.20"
+langchain-core = "^0.2.38"
 pymilvus = "^2.4.3"
-
 [[tool.poetry.dependencies.scipy]]
 version = "^1.7"
 python = "<3.12"
@@ -24,7 +36,27 @@ python = "<3.12"
 version = "^1.9"
 python = ">=3.12"
 
+[tool.coverage.run]
+omit = [ "tests/*",]
+
+[tool.pytest.ini_options]
+addopts = "--snapshot-warn-unused --strict-markers --strict-config --durations=5"
+markers = [ "requires: mark tests as requiring a specific library", "asyncio: mark tests as requiring asyncio", "compile: mark placeholder test used to compile integration tests without running them",]
+asyncio_mode = "auto"
+
 [tool.poetry.group.test]
+optional = true
+
+[tool.poetry.group.codespell]
+optional = true
+
+[tool.poetry.group.test_integration]
+optional = true
+
+[tool.poetry.group.lint]
+optional = true
+
+[tool.poetry.group.dev]
 optional = true
 
 [tool.poetry.group.test.dependencies]
@@ -34,75 +66,28 @@ pytest-mock = "^3.10.0"
 syrupy = "^4.0.2"
 pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
-langchain-core = { path = "../../core", develop = true }
-
-[tool.poetry.group.codespell]
-optional = true
 
 [tool.poetry.group.codespell.dependencies]
 codespell = "^2.2.0"
 
-[tool.poetry.group.test_integration]
-optional = true
-
 [tool.poetry.group.test_integration.dependencies]
-
-[tool.poetry.group.lint]
-optional = true
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.1.5"
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^0.991"
-langchain-core = { path = "../../core", develop = true }
 types-requests = "^2"
 simsimd = "^5.0.0"
 
-[tool.poetry.group.dev]
-optional = true
+[tool.poetry.group.test.dependencies.langchain-core]
+path = "../../core"
+develop = true
 
-[tool.poetry.group.dev.dependencies]
-langchain-core = { path = "../../core", develop = true }
+[tool.poetry.group.typing.dependencies.langchain-core]
+path = "../../core"
+develop = true
 
-[tool.ruff]
-select = [
-  "E",    # pycodestyle
-  "F",    # pyflakes
-  "I",    # isort
-  "T201", # print
-]
-
-[tool.mypy]
-disallow_untyped_defs = "True"
-
-[[tool.mypy.overrides]]
-module = ["pymilvus"]
-ignore_missing_imports = "True"
-
-[tool.coverage.run]
-omit = ["tests/*"]
-
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
-
-[tool.pytest.ini_options]
-# --strict-markers will raise errors on unknown marks.
-# https://docs.pytest.org/en/7.1.x/how-to/mark.html#raising-errors-on-unknown-marks
-#
-# https://docs.pytest.org/en/7.1.x/reference/reference.html
-# --strict-config       any warnings encountered while parsing the `pytest`
-#                       section of the configuration file raise errors.
-#
-# https://github.com/tophat/syrupy
-# --snapshot-warn-unused    Prints a warning on unused snapshots rather than fail the test suite.
-addopts = "--snapshot-warn-unused --strict-markers --strict-config --durations=5"
-# Registering custom markers.
-# https://docs.pytest.org/en/7.1.x/example/markers.html#registering-markers
-markers = [
-  "requires: mark tests as requiring a specific library",
-  "asyncio: mark tests as requiring asyncio",
-  "compile: mark placeholder test used to compile integration tests without running them",
-]
-asyncio_mode = "auto"
+[tool.poetry.group.dev.dependencies.langchain-core]
+path = "../../core"
+develop = true
