@@ -389,7 +389,7 @@ class ChatFireworks(BaseChatModel):
             "timeout": self.request_timeout,
         }
 
-        if not (self.client or None):
+        if not self.client:
             self.client = Fireworks(**client_params).chat.completions
         if not (self.async_client or None):
             self.async_client = AsyncFireworks(**client_params).chat.completions
