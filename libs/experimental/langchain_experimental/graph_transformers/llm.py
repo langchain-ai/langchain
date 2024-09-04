@@ -650,6 +650,10 @@ class LLMGraphTransformer:
           any relationship properties from text. Alternatively, a list of valid
           properties can be provided for the LLM to extract, restricting extraction to
           those specified.
+        ignore_tool_usage (bool): Indicates whether the transformer should
+          bypass the use of structured output functionality of the language model.
+          If set to True, the transformer will not use the language model's native
+          function calling capabilities to handle structured output. Defaults to False.
 
     Example:
         .. code-block:: python
@@ -675,16 +679,18 @@ class LLMGraphTransformer:
         strict_mode: bool = True,
         node_properties: Union[bool, List[str]] = False,
         relationship_properties: Union[bool, List[str]] = False,
+        ignore_tool_usage: bool = False,
     ) -> None:
         self.allowed_nodes = allowed_nodes
         self.allowed_relationships = allowed_relationships
         self.strict_mode = strict_mode
-        self._function_call = True
+        self._function_call = not ignore_tool_usage
         # Check if the LLM really supports structured output
-        try:
-            llm.with_structured_output(_Graph)
-        except NotImplementedError:
-            self._function_call = False
+        if self._function_call:
+            try:
+                llm.with_structured_output(_Graph)
+            except NotImplementedError:
+                self._function_call = False
         if not self._function_call:
             if node_properties or relationship_properties:
                 raise ValueError(
