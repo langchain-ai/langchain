@@ -116,7 +116,7 @@ def _merge_messages(
     """Merge runs of human/tool messages into single human messages with content blocks."""  # noqa: E501
     merged: list = []
     for curr in messages:
-        curr = curr.copy(deep=True)
+        curr = curr.model_copy(deep=True)
         if isinstance(curr, ToolMessage):
             if isinstance(curr.content, list) and all(
                 isinstance(block, dict) and block.get("type") == "tool_result"
