@@ -4,8 +4,10 @@ from typing import (
 )
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from pydantic import BaseModel, Field, root_validator
 from ollama import AsyncClient, Client
+from pydantic import ConfigDict
+
 
 
 class OllamaEmbeddings(BaseModel, Embeddings):
@@ -136,10 +138,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     The async client to use for making requests.
     """
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid",)
 
     @root_validator(pre=False, skip_on_failure=True)
     def _set_clients(cls, values: dict) -> dict:

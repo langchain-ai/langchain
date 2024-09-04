@@ -18,7 +18,7 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models import BaseLLM, LangSmithParams
 from langchain_core.outputs import GenerationChunk, LLMResult
-from langchain_core.pydantic_v1 import Field, root_validator
+from pydantic import Field, root_validator
 from ollama import AsyncClient, Client, Options
 
 
