@@ -19,7 +19,7 @@ disallow_untyped_defs = "True"
 "Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-mistralai%3D%3D0%22&expanded=true"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
+python = ">=3.9,<4.0"
 langchain-core = "^0.2.38"
 tokenizers = ">=0.15.1,<1"
 httpx = ">=0.25.2,<1"
