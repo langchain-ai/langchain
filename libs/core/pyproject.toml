@@ -23,7 +23,7 @@ ignore_missing_imports = true
 "Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-core%3D%3D0%22&expanded=true"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
+python = ">=3.9,<4.0"
 langsmith = "^0.1.75"
 tenacity = "^8.1.0,!=8.4.0"
 jsonpatch = "^1.33"

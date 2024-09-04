@@ -94,12 +94,12 @@ def test_with_aliases() -> None:
 def test_is_basemodel_subclass() -> None:
     """Test pydantic."""
     if PYDANTIC_MAJOR_VERSION == 1:
-        from pydantic import BaseModel as BaseModelV1Proper  
+        from pydantic import BaseModel as BaseModelV1Proper
 
         assert is_basemodel_subclass(BaseModelV1Proper)
     elif PYDANTIC_MAJOR_VERSION == 2:
-        from pydantic import BaseModel as BaseModelV2  
-        from pydantic.v1 import BaseModel as BaseModelV1  
+        from pydantic import BaseModel as BaseModelV2
+        from pydantic.v1 import BaseModel as BaseModelV1
 
         assert is_basemodel_subclass(BaseModelV2)
 
@@ -111,15 +111,15 @@ def test_is_basemodel_subclass() -> None:
 def test_is_basemodel_instance() -> None:
     """Test pydantic."""
     if PYDANTIC_MAJOR_VERSION == 1:
-        from pydantic import BaseModel as BaseModelV1Proper  
+        from pydantic import BaseModel as BaseModelV1Proper
 
         class FooV1(BaseModelV1Proper):
             x: int
 
         assert is_basemodel_instance(FooV1(x=5))
     elif PYDANTIC_MAJOR_VERSION == 2:
-        from pydantic import BaseModel as BaseModelV2  
-        from pydantic.v1 import BaseModel as BaseModelV1  
+        from pydantic import BaseModel as BaseModelV2
+        from pydantic.v1 import BaseModel as BaseModelV1
 
         class Foo(BaseModelV2):
             x: int
@@ -137,8 +137,8 @@ def test_is_basemodel_instance() -> None:
 @pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Only tests Pydantic v2")
 def test_with_field_metadata() -> None:
     """Test pydantic with field metadata"""
-    from pydantic import BaseModel as BaseModelV2  
-    from pydantic import Field as FieldV2  
+    from pydantic import BaseModel as BaseModelV2
+    from pydantic import Field as FieldV2
 
     class Foo(BaseModelV2):
         x: List[int] = FieldV2(
@@ -165,7 +165,7 @@ def test_with_field_metadata() -> None:
 
 @pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 1, reason="Only tests Pydantic v1")
 def test_fields_pydantic_v1() -> None:
-    from pydantic import BaseModel  
+    from pydantic import BaseModel
 
     class Foo(BaseModel):
         x: int
@@ -176,7 +176,7 @@ def test_fields_pydantic_v1() -> None:
 
 @pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Only tests Pydantic v2")
 def test_fields_pydantic_v2_proper() -> None:
-    from pydantic import BaseModel  
+    from pydantic import BaseModel
 
     class Foo(BaseModel):
         x: int
@@ -187,7 +187,7 @@ def test_fields_pydantic_v2_proper() -> None:
 
 @pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Only tests Pydantic v2")
 def test_fields_pydantic_v1_from_2() -> None:
-    from pydantic.v1 import BaseModel  
+    from pydantic.v1 import BaseModel
 
     class Foo(BaseModel):
         x: int

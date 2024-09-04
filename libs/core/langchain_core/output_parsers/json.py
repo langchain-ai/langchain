@@ -5,8 +5,8 @@ from json import JSONDecodeError
 from typing import Any, List, Optional, Type, TypeVar, Union
 
 import jsonpatch  # type: ignore[import]
-import pydantic  
-from pydantic import SkipValidation  
+import pydantic
+from pydantic import SkipValidation
 from typing_extensions import Annotated
 
 from langchain_core.exceptions import OutputParserException
@@ -24,7 +24,7 @@ if PYDANTIC_MAJOR_VERSION < 2:
     PydanticBaseModel = pydantic.BaseModel
 
 else:
-    from pydantic.v1 import BaseModel  
+    from pydantic.v1 import BaseModel
 
     # Union type needs to be last assignment to PydanticBaseModel to make mypy happy.
     PydanticBaseModel = Union[BaseModel, pydantic.BaseModel]  # type: ignore
