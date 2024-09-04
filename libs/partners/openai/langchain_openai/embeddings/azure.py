@@ -125,7 +125,8 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
     )
     """Automatically inferred from env var `AZURE_OPENAI_API_KEY` if not provided."""
     openai_api_version: Optional[str] = Field(
-        default_factory=from_env("OPENAI_API_VERSION", default="2023-05-15")
+        default_factory=from_env("OPENAI_API_VERSION", default="2023-05-15"),
+        alias="api_version",
     )
     """Automatically inferred from env var `OPENAI_API_VERSION` if not provided.
     
