@@ -641,7 +641,7 @@ class ChatAnthropic(BaseChatModel):
     def post_init(self) -> Self:
         api_key = self.anthropic_api_key.get_secret_value()
         api_url = self.anthropic_api_url
-        client_params = {
+        client_params: Dict[str, Any] = {
             "api_key": api_key,
             "base_url": api_url,
             "max_retries": self.max_retries,
