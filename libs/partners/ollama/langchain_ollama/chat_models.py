@@ -35,7 +35,7 @@ from langchain_core.messages import (
 from langchain_core.messages.ai import UsageMetadata
 from langchain_core.messages.tool import tool_call
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from pydantic import Field, root_validator, PrivateAttr
+from pydantic import Field, root_validator, PrivateAttr, model_validator
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_tool
@@ -364,14 +364,14 @@ class ChatOllama(BaseChatModel):
             "keep_alive": self.keep_alive,
         }
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def _set_clients(cls, values: dict) -> dict:
+    @model_validator(mode="after")
+    def _set_clients(self) -> Self:
         """Set clients to use for ollama."""
-        values["_client"] = Client(host=values["base_url"], **values["client_kwargs"])
-        values["_async_client"] = AsyncClient(
-            host=values["base_url"], **values["client_kwargs"]
+        self._client = Client(host=self.base_url, **self.client_kwargs)
+        self._async_client = AsyncClient(
+            host=self.base_url, **self.client_kwargs
         )
-        return values
+        return self
 
     def _convert_messages_to_ollama_messages(
         self, messages: List[BaseMessage]

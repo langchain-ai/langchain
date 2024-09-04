@@ -18,7 +18,7 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models import BaseLLM, LangSmithParams
 from langchain_core.outputs import GenerationChunk, LLMResult
-from pydantic import Field, root_validator, PrivateAttr
+from pydantic import Field, root_validator, PrivateAttr, model_validator
 from ollama import AsyncClient, Client, Options
 
 
@@ -164,14 +164,14 @@ class OllamaLLM(BaseLLM):
             params["ls_max_tokens"] = max_tokens
         return params
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def _set_clients(cls, values: dict) -> dict:
+    @model_validator(mode="after")
+    def _set_clients(self) -> Self:
         """Set clients to use for ollama."""
-        values["_client"] = Client(host=values["base_url"], **values["client_kwargs"])
-        values["_async_client"] = AsyncClient(
-            host=values["base_url"], **values["client_kwargs"]
+        self._client = Client(host=self.base_url, **self.client_kwargs)
+        self._async_client = AsyncClient(
+            host=self.base_url, **self.client_kwargs
         )
-        return values
+        return self
 
     async def _acreate_generate_stream(
         self,
