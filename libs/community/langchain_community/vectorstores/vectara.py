@@ -16,6 +16,8 @@ from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.runnables import Runnable, RunnableConfig
 from langchain_core.vectorstores import VectorStore, VectorStoreRetriever
+from pydantic import ConfigDict
+
 
 logger = logging.getLogger(__name__)
 
@@ -731,8 +733,7 @@ class VectaraRetriever(VectorStoreRetriever):
     config: VectaraQueryConfig
     """Configuration for this retriever."""
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True,)
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun

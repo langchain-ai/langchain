@@ -7,13 +7,15 @@ from typing import Any, Callable, Dict, List, Mapping, Optional
 import requests
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import LLM
-from langchain_core.pydantic_v1 import (
+from pydantic import (
     BaseModel,
     Field,
     PrivateAttr,
     root_validator,
-    validator,
+    validator, model_validator,
 )
+from pydantic import ConfigDict
+
 
 __all__ = ["Databricks"]
 
@@ -97,8 +99,9 @@ class _DatabricksServingEndpointClient(_DatabricksClientBase):
     def llm(self) -> bool:
         return self.task in ("llm/v1/chat", "llm/v1/completions", "llama2/chat")
 
-    @root_validator(pre=True)
-    def set_api_url(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def set_api_url(cls, values: Dict[str, Any]) -> Any:
         if "api_url" not in values:
             host = values["host"]
             endpoint_name = values["endpoint_name"]
@@ -141,8 +144,9 @@ class _DatabricksClusterDriverProxyClient(_DatabricksClientBase):
     cluster_id: str
     cluster_driver_port: str
 
-    @root_validator(pre=True)
-    def set_api_url(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def set_api_url(cls, values: Dict[str, Any]) -> Any:
         if "api_url" not in values:
             host = values["host"]
             cluster_id = values["cluster_id"]
@@ -395,9 +399,7 @@ class Databricks(LLM):
 
     _client: _DatabricksClientBase = PrivateAttr()
 
-    class Config:
-        extra = "forbid"
-        underscore_attrs_are_private = True
+    model_config = ConfigDict(extra="forbid",underscore_attrs_are_private=True,)
 
     @property
     def _llm_params(self) -> Dict[str, Any]:

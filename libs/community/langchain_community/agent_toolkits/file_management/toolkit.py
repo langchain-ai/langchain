@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Dict, List, Optional, Type
 
-from langchain_core.pydantic_v1 import root_validator
+from pydantic import root_validator, model_validator
 from langchain_core.tools import BaseTool, BaseToolkit
 from langchain_core.utils.pydantic import get_fields
 
@@ -63,8 +63,9 @@ class FileManagementToolkit(BaseToolkit):
     selected_tools: Optional[List[str]] = None
     """If provided, only provide the selected tools. Defaults to all."""
 
-    @root_validator(pre=True)
-    def validate_tools(cls, values: dict) -> dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_tools(cls, values: dict) -> Any:
         selected_tools = values.get("selected_tools") or []
         for tool_name in selected_tools:
             if tool_name not in _FILE_TOOLS_MAP:

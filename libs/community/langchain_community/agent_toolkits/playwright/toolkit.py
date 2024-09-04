@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, List, Optional, Type, cast
 
-from langchain_core.pydantic_v1 import root_validator
+from pydantic import root_validator, model_validator
 from langchain_core.tools import BaseTool, BaseToolkit
 
 from langchain_community.tools.playwright.base import (
@@ -20,6 +20,8 @@ from langchain_community.tools.playwright.extract_text import ExtractTextTool
 from langchain_community.tools.playwright.get_elements import GetElementsTool
 from langchain_community.tools.playwright.navigate import NavigateTool
 from langchain_community.tools.playwright.navigate_back import NavigateBackTool
+from pydantic import ConfigDict
+
 
 if TYPE_CHECKING:
     from playwright.async_api import Browser as AsyncBrowser
@@ -68,12 +70,11 @@ class PlayWrightBrowserToolkit(BaseToolkit):
     sync_browser: Optional["SyncBrowser"] = None
     async_browser: Optional["AsyncBrowser"] = None
 
-    class Config:
-        arbitrary_types_allowed = True
-        extra = "forbid"
+    model_config = ConfigDict(arbitrary_types_allowed=True,extra="forbid",)
 
-    @root_validator(pre=True)
-    def validate_imports_and_browser_provided(cls, values: dict) -> dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_imports_and_browser_provided(cls, values: dict) -> Any:
         """Check that the arguments are valid."""
         lazy_import_playwright_browsers()
         if values.get("async_browser") is None and values.get("sync_browser") is None:

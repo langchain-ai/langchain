@@ -17,7 +17,7 @@ from langchain_core.callbacks import (
 )
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseLanguageModel
-from langchain_core.pydantic_v1 import Field, validator
+from pydantic import Field, validator
 from langchain_core.vectorstores import VectorStoreRetriever
 
 from langchain_community.chains.pebblo_retrieval.enforcement_filters import (
@@ -38,6 +38,8 @@ from langchain_community.chains.pebblo_retrieval.utilities import (
     PebbloRetrievalAPIWrapper,
     get_runtime,
 )
+from pydantic import ConfigDict
+
 
 logger = logging.getLogger(__name__)
 
@@ -189,10 +191,7 @@ class PebbloRetrievalQA(Chain):
         else:
             return {self.output_key: answer}
 
-    class Config:
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
-        extra = "forbid"
+    model_config = ConfigDict(populate_by_name=True,arbitrary_types_allowed=True,extra="forbid",)
 
     @property
     def input_keys(self) -> List[str]:

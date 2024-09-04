@@ -5,7 +5,7 @@ from typing import Dict, List, Literal, Optional, Type
 
 import requests
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator, validator
+from pydantic import BaseModel, Field, root_validator, validator, model_validator
 
 from langchain_community.tools.edenai.edenai_base_tool import EdenaiTool
 
@@ -28,7 +28,7 @@ class EdenAiTextToSpeechTool(EdenaiTool):
     """
 
     name: str = "edenai_text_to_speech"
-    description = (
+    description: str = (
         "A wrapper around edenai Services text to speech."
         "Useful for when you need to convert text to speech."
         """the output is a string representing the URL of the audio file,
@@ -70,8 +70,9 @@ class EdenAiTextToSpeechTool(EdenaiTool):
             )
         return v
 
-    @root_validator(pre=True)
-    def check_voice_models_key_is_provider_name(cls, values: dict) -> dict:
+    @model_validator(mode="before")
+    @classmethod
+    def check_voice_models_key_is_provider_name(cls, values: dict) -> Any:
         for key in values.get("voice_models", {}).keys():
             if key not in values.get("providers", []):
                 raise ValueError(

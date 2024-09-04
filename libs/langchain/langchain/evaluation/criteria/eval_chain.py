@@ -8,13 +8,15 @@ from langchain_core.callbacks.manager import Callbacks
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts import BasePromptTemplate
-from langchain_core.pydantic_v1 import Field
+from pydantic import Field
 
 from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.criteria.prompt import PROMPT, PROMPT_WITH_REFERENCES
 from langchain.evaluation.schema import LLMEvalChain, StringEvaluator
 from langchain.schema import RUN_KEY
+from pydantic import ConfigDict
+
 
 
 class Criteria(str, Enum):
@@ -236,8 +238,7 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
     def is_lc_serializable(cls) -> bool:
         return False
 
-    class Config:
-        extra = "ignore"
+    model_config = ConfigDict(extra="ignore",)
 
     @property
     def requires_reference(self) -> bool:

@@ -8,7 +8,9 @@ from langchain_core.documents import Document
 from langchain_core.documents.compressor import (
     BaseDocumentCompressor,
 )
-from langchain_core.pydantic_v1 import root_validator
+from pydantic import root_validator, model_validator
+from pydantic import ConfigDict
+
 
 DEFAULT_LLM_LINGUA_INSTRUCTION = (
     "Given this documents, please answer the final question"
@@ -52,8 +54,9 @@ class LLMLinguaCompressor(BaseDocumentCompressor):
     lingua: Any
     """The instance of the llm linqua"""
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that the python package exists in environment."""
         try:
             from llmlingua import PromptCompressor
@@ -71,9 +74,7 @@ class LLMLinguaCompressor(BaseDocumentCompressor):
             )
         return values
 
-    class Config:
-        arbitrary_types_allowed = True
-        extra = "forbid"
+    model_config = ConfigDict(arbitrary_types_allowed=True,extra="forbid",)
 
     @staticmethod
     def _format_context(docs: Sequence[Document]) -> List[str]:

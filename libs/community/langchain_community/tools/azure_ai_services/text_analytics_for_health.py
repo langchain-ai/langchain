@@ -4,7 +4,7 @@ import logging
 from typing import Any, Dict, Optional
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import root_validator
+from pydantic import root_validator, model_validator
 from langchain_core.tools import BaseTool
 from langchain_core.utils import get_from_dict_or_env
 
@@ -29,8 +29,9 @@ class AzureAiServicesTextAnalyticsForHealthTool(BaseTool):
         "Input should be text."
     )
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that api key and endpoint exists in environment."""
         azure_ai_services_key = get_from_dict_or_env(
             values, "azure_ai_services_key", "AZURE_AI_SERVICES_KEY"

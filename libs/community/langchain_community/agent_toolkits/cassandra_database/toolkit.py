@@ -2,7 +2,7 @@
 
 from typing import List
 
-from langchain_core.pydantic_v1 import Field
+from pydantic import Field
 from langchain_core.tools import BaseTool
 from langchain_core.tools.base import BaseToolkit
 
@@ -12,6 +12,8 @@ from langchain_community.tools.cassandra_database.tool import (
     QueryCassandraDatabaseTool,
 )
 from langchain_community.utilities.cassandra_database import CassandraDatabase
+from pydantic import ConfigDict
+
 
 
 class CassandraDatabaseToolkit(BaseToolkit):
@@ -24,8 +26,7 @@ class CassandraDatabaseToolkit(BaseToolkit):
 
     db: CassandraDatabase = Field(exclude=True)
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True,)
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""

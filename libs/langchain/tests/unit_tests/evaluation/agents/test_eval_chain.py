@@ -6,7 +6,7 @@ import pytest
 from langchain_core.agents import AgentAction, BaseMessage
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.exceptions import OutputParserException
-from langchain_core.pydantic_v1 import Field
+from pydantic import Field
 from langchain_core.tools import tool
 
 from langchain.evaluation.agents.trajectory_eval_chain import (

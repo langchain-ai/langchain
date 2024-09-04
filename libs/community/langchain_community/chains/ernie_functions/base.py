@@ -22,7 +22,7 @@ from langchain_core.output_parsers import (
     BaseOutputParser,
 )
 from langchain_core.prompts import BasePromptTemplate
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel
 from langchain_core.runnables import Runnable
 from langchain_core.utils.pydantic import is_basemodel_subclass
 

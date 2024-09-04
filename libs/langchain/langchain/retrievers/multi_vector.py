@@ -1,12 +1,12 @@
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import Field, root_validator
+from pydantic import Field, root_validator, model_validator
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.stores import BaseStore, ByteStore
 from langchain_core.vectorstores import VectorStore
@@ -41,8 +41,9 @@ class MultiVectorRetriever(BaseRetriever):
     search_type: SearchType = SearchType.similarity
     """Type of search to perform (similarity / mmr)"""
 
-    @root_validator(pre=True)
-    def shim_docstore(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def shim_docstore(cls, values: Dict) -> Any:
         byte_store = values.get("byte_store")
         docstore = values.get("docstore")
         if byte_store is not None:

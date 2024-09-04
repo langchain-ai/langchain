@@ -21,7 +21,7 @@ from typing import (
 import numpy as np
 from langchain_core._api.deprecation import deprecated
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from pydantic import BaseModel, Field, root_validator, model_validator
 from langchain_core.utils import (
     get_from_dict_or_env,
     get_pydantic_field_names,
@@ -37,6 +37,8 @@ from tenacity import (
 )
 
 from langchain_community.utils.openai import is_openai_v1
+from pydantic import ConfigDict
+
 
 logger = logging.getLogger(__name__)
 
@@ -254,12 +256,11 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     http_client: Union[Any, None] = None
     """Optional httpx.Client."""
 
-    class Config:
-        allow_population_by_field_name = True
-        extra = "forbid"
+    model_config = ConfigDict(populate_by_name=True,extra="forbid",)
 
-    @root_validator(pre=True)
-    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})

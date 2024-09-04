@@ -5,11 +5,15 @@ from typing import Dict, List
 from langchain_core._api import deprecated
 from langchain_core.memory import BaseMemory
 from langchain_core.prompts import BasePromptTemplate
-from langchain_core.pydantic_v1 import Field, root_validator
+from pydantic import Field, root_validator, model_validator
 
 from langchain.chains.conversation.prompt import PROMPT
 from langchain.chains.llm import LLMChain
 from langchain.memory.buffer import ConversationBufferMemory
+from pydantic import ConfigDict
+from typing_extensions import Self
+
+
 
 
 @deprecated(
@@ -110,9 +114,7 @@ class ConversationChain(LLMChain):
     input_key: str = "input"  #: :meta private:
     output_key: str = "response"  #: :meta private:
 
-    class Config:
-        arbitrary_types_allowed = True
-        extra = "forbid"
+    model_config = ConfigDict(arbitrary_types_allowed=True,extra="forbid",)
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -123,17 +125,17 @@ class ConversationChain(LLMChain):
         """Use this since so some prompt vars come from history."""
         return [self.input_key]
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def validate_prompt_input_variables(cls, values: Dict) -> Dict:
+    @model_validator(mode="after")
+    def validate_prompt_input_variables(self) -> Self:
         """Validate that prompt input variables are consistent."""
-        memory_keys = values["memory"].memory_variables
-        input_key = values["input_key"]
+        memory_keys = self.memory.memory_variables
+        input_key = self.input_key
         if input_key in memory_keys:
             raise ValueError(
                 f"The input key {input_key} was also found in the memory keys "
                 f"({memory_keys}) - please provide keys that don't overlap."
             )
-        prompt_variables = values["prompt"].input_variables
+        prompt_variables = self.prompt.input_variables
         expected_keys = memory_keys + [input_key]
         if set(expected_keys) != set(prompt_variables):
             raise ValueError(
@@ -141,4 +143,4 @@ class ConversationChain(LLMChain):
                 f"{prompt_variables}, but got {memory_keys} as inputs from "
                 f"memory, and {input_key} as the normal input key."
             )
-        return values
+        return self

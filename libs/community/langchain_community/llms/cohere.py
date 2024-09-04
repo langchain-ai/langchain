@@ -10,7 +10,7 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import LLM
 from langchain_core.load.serializable import Serializable
-from langchain_core.pydantic_v1 import Field, SecretStr
+from pydantic import Field, SecretStr
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 from tenacity import (
     before_sleep_log,
@@ -21,6 +21,8 @@ from tenacity import (
 )
 
 from langchain_community.llms.utils import enforce_stop_tokens
+from pydantic import ConfigDict
+
 
 logger = logging.getLogger(__name__)
 
@@ -159,8 +161,7 @@ class Cohere(LLM, BaseCohere):
     max_retries: int = 10
     """Maximum number of retries to make when generating."""
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid",)
 
     @property
     def _default_params(self) -> Dict[str, Any]:

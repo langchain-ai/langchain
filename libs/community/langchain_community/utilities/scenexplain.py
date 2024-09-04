@@ -6,11 +6,12 @@ You can obtain a key by following the steps below.
 - Navigate to the API Access page (https://scenex.jina.ai/api) and create a new API key.
 """
 
-from typing import Dict
+from typing import Dict, Any
 
 import requests
-from langchain_core.pydantic_v1 import BaseModel, BaseSettings, Field, root_validator
+from pydantic import BaseModel, Field, root_validator, model_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic_settings import BaseSettings
 
 
 class SceneXplainAPIWrapper(BaseSettings, BaseModel):
@@ -47,8 +48,9 @@ class SceneXplainAPIWrapper(BaseSettings, BaseModel):
 
         return img.get("text", "")
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that api key exists in environment."""
         scenex_api_key = get_from_dict_or_env(
             values, "scenex_api_key", "SCENEX_API_KEY"

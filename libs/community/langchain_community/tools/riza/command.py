@@ -10,7 +10,7 @@ from typing import Any, Optional, Type
 from langchain_core.callbacks import (
     CallbackManagerForToolRun,
 )
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 from langchain_core.tools import BaseTool, ToolException
 
 

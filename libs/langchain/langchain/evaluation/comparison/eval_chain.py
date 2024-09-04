@@ -10,7 +10,7 @@ from langchain_core.callbacks.manager import Callbacks
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts.prompt import PromptTemplate
-from langchain_core.pydantic_v1 import Field
+from pydantic import Field
 
 from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
 from langchain.chains.llm import LLMChain
@@ -25,6 +25,8 @@ from langchain.evaluation.criteria.eval_chain import (
 )
 from langchain.evaluation.schema import LLMEvalChain, PairwiseStringEvaluator
 from langchain.schema import RUN_KEY
+from pydantic import ConfigDict
+
 
 logger = logging.getLogger(__name__)
 
@@ -191,8 +193,7 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
     def is_lc_serializable(cls) -> bool:
         return False
 
-    class Config:
-        extra = "ignore"
+    model_config = ConfigDict(extra="ignore",)
 
     @property
     def requires_reference(self) -> bool:

@@ -16,7 +16,7 @@ from typing import (
 )
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from pydantic import BaseModel, Field, root_validator, model_validator
 from langchain_core.utils import (
     get_from_dict_or_env,
     get_pydantic_field_names,
@@ -30,6 +30,8 @@ from tenacity import (
     stop_after_attempt,
     wait_exponential,
 )
+from pydantic import ConfigDict
+
 
 logger = logging.getLogger(__name__)
 
@@ -166,11 +168,11 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid",)
 
-    @root_validator(pre=True)
-    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})

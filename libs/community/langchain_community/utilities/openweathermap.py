@@ -2,8 +2,10 @@
 
 from typing import Any, Dict, Optional
 
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from pydantic import BaseModel, root_validator, model_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import ConfigDict
+
 
 
 class OpenWeatherMapAPIWrapper(BaseModel):
@@ -19,11 +21,11 @@ class OpenWeatherMapAPIWrapper(BaseModel):
     owm: Any
     openweathermap_api_key: Optional[str] = None
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid",)
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that api key exists in environment."""
         openweathermap_api_key = get_from_dict_or_env(
             values, "openweathermap_api_key", "OPENWEATHERMAP_API_KEY"

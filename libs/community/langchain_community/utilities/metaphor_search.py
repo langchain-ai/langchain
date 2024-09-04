@@ -4,12 +4,14 @@ In order to set this up, follow instructions at:
 """
 
 import json
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 
 import aiohttp
 import requests
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from pydantic import BaseModel, root_validator, model_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import ConfigDict
+
 
 METAPHOR_API_URL = "https://api.metaphor.systems"
 
@@ -20,8 +22,7 @@ class MetaphorSearchAPIWrapper(BaseModel):
     metaphor_api_key: str
     k: int = 10
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid",)
 
     def _metaphor_search_results(
         self,
@@ -58,8 +59,9 @@ class MetaphorSearchAPIWrapper(BaseModel):
         search_results = response.json()
         return search_results["results"]
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that api key and endpoint exists in environment."""
         metaphor_api_key = get_from_dict_or_env(
             values, "metaphor_api_key", "METAPHOR_API_KEY"

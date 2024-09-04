@@ -43,6 +43,8 @@ from langchain_community.vectorstores.redis.constants import (
     REDIS_TAG_SEPARATOR,
 )
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
+from pydantic import ConfigDict
+
 
 logger = logging.getLogger(__name__)
 ListOfDict = List[Dict[str, str]]
@@ -1452,8 +1454,7 @@ class RedisVectorStoreRetriever(VectorStoreRetriever):
     ]
     """Allowed search types."""
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True,)
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun

@@ -32,12 +32,14 @@ from langchain_core.callbacks import (
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.exceptions import LangChainException
-from langchain_core.pydantic_v1 import root_validator
+from pydantic import root_validator, model_validator
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.utils import get_from_env
 from langchain_core.vectorstores import VectorStore
 
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
+from pydantic import ConfigDict
+
 
 logger = logging.getLogger()
 
@@ -1580,11 +1582,11 @@ class AzureSearchVectorStoreRetriever(BaseRetriever):
         "semantic_hybrid_score_threshold",
     )
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True,)
 
-    @root_validator(pre=True)
-    def validate_search_type(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_search_type(cls, values: Dict) -> Any:
         """Validate search type."""
         if "search_type" in values:
             search_type = values["search_type"]

@@ -5,6 +5,8 @@ from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 
 from langchain_community.llms.utils import enforce_stop_tokens
+from pydantic import ConfigDict
+
 
 DEFAULT_MODEL_ID = "google/flan-t5-large"
 DEFAULT_TASK = "text2text-generation"
@@ -71,8 +73,7 @@ class WeightOnlyQuantPipeline(LLM):
     pipeline_kwargs: Optional[dict] = None
     """Key word arguments passed to the pipeline."""
 
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow",)
 
     @classmethod
     def from_model_id(

@@ -3,9 +3,11 @@ from typing import Any, Dict, List, Mapping, Optional
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
+from pydantic import Field, SecretStr, root_validator, model_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 from langchain_core.utils.pydantic import get_fields
+from pydantic import ConfigDict
+
 
 logger = logging.getLogger(__name__)
 
@@ -63,11 +65,11 @@ class GooseAI(LLM):
 
     gooseai_api_key: Optional[SecretStr] = None
 
-    class Config:
-        extra = "ignore"
+    model_config = ConfigDict(extra="ignore",)
 
-    @root_validator(pre=True)
-    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = {field.alias for field in get_fields(cls).values()}
 

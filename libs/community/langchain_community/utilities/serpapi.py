@@ -8,8 +8,10 @@ import sys
 from typing import Any, Dict, Optional, Tuple
 
 import aiohttp
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from pydantic import BaseModel, Field, root_validator, model_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import ConfigDict
+
 
 
 class HiddenPrints:
@@ -52,12 +54,11 @@ class SerpAPIWrapper(BaseModel):
     serpapi_api_key: Optional[str] = None
     aiosession: Optional[aiohttp.ClientSession] = None
 
-    class Config:
-        arbitrary_types_allowed = True
-        extra = "forbid"
+    model_config = ConfigDict(arbitrary_types_allowed=True,extra="forbid",)
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that api key and python package exists in environment."""
         serpapi_api_key = get_from_dict_or_env(
             values, "serpapi_api_key", "SERPAPI_API_KEY"

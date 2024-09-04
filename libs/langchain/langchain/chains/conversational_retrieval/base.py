@@ -18,7 +18,7 @@ from langchain_core.documents import Document
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import BaseMessage
 from langchain_core.prompts import BasePromptTemplate
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from pydantic import BaseModel, Field, root_validator, model_validator
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import RunnableConfig
 from langchain_core.vectorstores import VectorStore
@@ -29,6 +29,8 @@ from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.conversational_retrieval.prompts import CONDENSE_QUESTION_PROMPT
 from langchain.chains.llm import LLMChain
 from langchain.chains.question_answering import load_qa_chain
+from pydantic import ConfigDict
+
 
 # Depending on the memory type and configuration, the chat history format may differ.
 # This needs to be consolidated.
@@ -96,10 +98,7 @@ class BaseConversationalRetrievalChain(Chain):
     """If specified, the chain will return a fixed response if no docs 
     are found for the question. """
 
-    class Config:
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
-        extra = "forbid"
+    model_config = ConfigDict(populate_by_name=True,arbitrary_types_allowed=True,extra="forbid",)
 
     @property
     def input_keys(self) -> List[str]:
@@ -482,8 +481,9 @@ class ChatVectorDBChain(BaseConversationalRetrievalChain):
     def _chain_type(self) -> str:
         return "chat-vector-db"
 
-    @root_validator(pre=True)
-    def raise_deprecation(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def raise_deprecation(cls, values: Dict) -> Any:
         warnings.warn(
             "`ChatVectorDBChain` is deprecated - "
             "please use `from langchain.chains import ConversationalRetrievalChain`"

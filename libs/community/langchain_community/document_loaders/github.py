@@ -1,11 +1,11 @@
 import base64
 from abc import ABC
 from datetime import datetime
-from typing import Callable, Dict, Iterator, List, Literal, Optional, Union
+from typing import Callable, Dict, Iterator, List, Literal, Optional, Union, Any
 
 import requests
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import BaseModel, root_validator, validator
+from pydantic import BaseModel, root_validator, validator, model_validator
 from langchain_core.utils import get_from_dict_or_env
 
 from langchain_community.document_loaders.base import BaseLoader
@@ -21,8 +21,9 @@ class BaseGitHubLoader(BaseLoader, BaseModel, ABC):
     github_api_url: str = "https://api.github.com"
     """URL of GitHub API"""
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that access token exists in environment."""
         values["access_token"] = get_from_dict_or_env(
             values, "access_token", "GITHUB_PERSONAL_ACCESS_TOKEN"

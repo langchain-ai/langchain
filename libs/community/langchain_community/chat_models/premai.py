@@ -38,7 +38,7 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import (
+from pydantic import (
     BaseModel,
     Field,
     SecretStr,
@@ -47,6 +47,8 @@ from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 from langchain_core.utils import get_from_dict_or_env, pre_init
 from langchain_core.utils.function_calling import convert_to_openai_tool
+from pydantic import ConfigDict
+
 
 if TYPE_CHECKING:
     from premai.api.chat_completions.v1_chat_completions_create import (
@@ -306,10 +308,7 @@ class ChatPremAI(BaseChatModel, BaseModel):
 
     client: Any
 
-    class Config:
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
-        extra = "forbid"
+    model_config = ConfigDict(populate_by_name=True,arbitrary_types_allowed=True,extra="forbid",)
 
     @pre_init
     def validate_environments(cls, values: Dict) -> Dict:

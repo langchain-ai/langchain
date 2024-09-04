@@ -3,7 +3,7 @@ from typing import Any, Dict, Iterator, List, Optional
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import LLM
 from langchain_core.outputs import GenerationChunk
-from langchain_core.pydantic_v1 import Field
+from pydantic import Field
 from langchain_core.utils import pre_init
 
 
@@ -41,7 +41,7 @@ class ExLlamaV2(LLM):
     settings: Any = None
 
     # Langchain parameters
-    logfunc = print
+    logfunc: callable = print
 
     stop_sequences: List[str] = Field("")
     """Sequences that immediately will stop the generator."""

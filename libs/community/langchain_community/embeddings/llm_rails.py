@@ -4,8 +4,10 @@ from typing import Dict, List, Optional
 
 import requests
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, SecretStr
+from pydantic import BaseModel, SecretStr
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
+from pydantic import ConfigDict
+
 
 
 class LLMRailsEmbeddings(BaseModel, Embeddings):
@@ -32,8 +34,7 @@ class LLMRailsEmbeddings(BaseModel, Embeddings):
     api_key: Optional[SecretStr] = None
     """LLMRails API key."""
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid",)
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:

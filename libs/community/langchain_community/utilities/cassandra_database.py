@@ -5,7 +5,11 @@ from __future__ import annotations
 import re
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple, Union
 
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from pydantic import BaseModel, Field, root_validator, model_validator
+from pydantic import ConfigDict
+from typing_extensions import Self
+
+
 
 if TYPE_CHECKING:
     from cassandra.cluster import ResultSet, Session
@@ -480,16 +484,15 @@ class Table(BaseModel):
     clustering: List[Tuple[str, str]] = Field(default_factory=list)
     indexes: List[Tuple[str, str, str]] = Field(default_factory=list)
 
-    class Config:
-        frozen = True
+    model_config = ConfigDict(frozen=True,)
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def check_required_fields(cls, class_values: dict) -> dict:
+    @model_validator(mode="after")
+    def check_required_fields(self) -> Self:
         if not class_values["columns"]:
             raise ValueError("non-empty column list for must be provided")
         if not class_values["partition"]:
             raise ValueError("non-empty partition list must be provided")
-        return class_values
+        return self
 
     @classmethod
     def from_database(

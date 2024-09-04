@@ -26,6 +26,8 @@ from langchain_community.utilities.anthropic import (
     get_num_tokens_anthropic,
     get_token_ids_anthropic,
 )
+from pydantic import ConfigDict
+
 
 
 def _convert_one_message_to_text_mistral(message: BaseMessage) -> str:
@@ -231,8 +233,7 @@ class BedrockChat(BaseChatModel, BedrockBase):
 
         return attributes
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid",)
 
     def _stream(
         self,

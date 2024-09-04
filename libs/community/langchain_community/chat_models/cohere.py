@@ -21,6 +21,8 @@ from langchain_core.messages import (
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 
 from langchain_community.llms.cohere import BaseCohere
+from pydantic import ConfigDict
+
 
 
 def get_role(message: BaseMessage) -> str:
@@ -117,9 +119,7 @@ class ChatCohere(BaseChatModel, BaseCohere):
             chat.invoke(messages)
     """
 
-    class Config:
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(populate_by_name=True,arbitrary_types_allowed=True,)
 
     @property
     def _llm_type(self) -> str:

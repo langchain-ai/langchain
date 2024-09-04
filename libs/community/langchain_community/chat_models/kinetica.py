@@ -26,7 +26,9 @@ from langchain_core.messages import (
 )
 from langchain_core.output_parsers.transform import BaseOutputParser
 from langchain_core.outputs import ChatGeneration, ChatResult, Generation
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
+from pydantic import ConfigDict
+
 
 LOG = logging.getLogger(__name__)
 
@@ -543,8 +545,7 @@ class KineticaSqlResponse(BaseModel):
     dataframe: Any = Field(default=None)
     """The Pandas dataframe containing the fetched data."""
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True,)
 
 
 class KineticaSqlOutputParser(BaseOutputParser[KineticaSqlResponse]):
@@ -582,8 +583,7 @@ class KineticaSqlOutputParser(BaseOutputParser[KineticaSqlResponse]):
     kdbc: Any = Field(exclude=True)
     """ Kinetica DB connection. """
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True,)
 
     def parse(self, text: str) -> KineticaSqlResponse:
         df = self.kdbc.to_df(text)

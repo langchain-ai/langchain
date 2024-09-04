@@ -4,10 +4,12 @@ from typing import Any, Dict, List, Optional
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import Generation, LLMResult
-from langchain_core.pydantic_v1 import Field
+from pydantic import Field
 from langchain_core.utils import pre_init
 
 from langchain_community.llms.utils import enforce_stop_tokens
+from pydantic import ConfigDict
+
 
 logger = logging.getLogger(__name__)
 
@@ -49,8 +51,7 @@ class Clarifai(LLM):
     model: Any = Field(default=None, exclude=True)  #: :meta private:
     api_base: str = "https://api.clarifai.com"
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid",)
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:

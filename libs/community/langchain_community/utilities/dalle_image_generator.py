@@ -4,13 +4,17 @@ import logging
 import os
 from typing import Any, Dict, Mapping, Optional, Tuple, Union
 
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from pydantic import BaseModel, Field, root_validator, model_validator
 from langchain_core.utils import (
     get_from_dict_or_env,
     get_pydantic_field_names,
 )
 
 from langchain_community.utils.openai import is_openai_v1
+from pydantic import ConfigDict
+from typing_extensions import Self
+
+
 
 logger = logging.getLogger(__name__)
 
@@ -59,11 +63,11 @@ class DallEAPIWrapper(BaseModel):
     http_client: Union[Any, None] = None
     """Optional httpx.Client."""
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid",)
 
-    @root_validator(pre=True)
-    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})
@@ -88,23 +92,23 @@ class DallEAPIWrapper(BaseModel):
         values["model_kwargs"] = extra
         return values
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="after")
+    def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
-        values["openai_api_key"] = get_from_dict_or_env(
+        self.openai_api_key = get_from_dict_or_env(
             values, "openai_api_key", "OPENAI_API_KEY"
         )
         # Check OPENAI_ORGANIZATION for backwards compatibility.
-        values["openai_organization"] = (
-            values["openai_organization"]
+        self.openai_organization = (
+            self.openai_organization
             or os.getenv("OPENAI_ORG_ID")
             or os.getenv("OPENAI_ORGANIZATION")
             or None
         )
-        values["openai_api_base"] = values["openai_api_base"] or os.getenv(
+        self.openai_api_base = self.openai_api_base or os.getenv(
             "OPENAI_API_BASE"
         )
-        values["openai_proxy"] = get_from_dict_or_env(
+        self.openai_proxy = get_from_dict_or_env(
             values,
             "openai_proxy",
             "OPENAI_PROXY",
@@ -122,25 +126,25 @@ class DallEAPIWrapper(BaseModel):
 
         if is_openai_v1():
             client_params = {
-                "api_key": values["openai_api_key"],
-                "organization": values["openai_organization"],
-                "base_url": values["openai_api_base"],
-                "timeout": values["request_timeout"],
-                "max_retries": values["max_retries"],
-                "default_headers": values["default_headers"],
-                "default_query": values["default_query"],
-                "http_client": values["http_client"],
+                "api_key": self.openai_api_key,
+                "organization": self.openai_organization,
+                "base_url": self.openai_api_base,
+                "timeout": self.request_timeout,
+                "max_retries": self.max_retries,
+                "default_headers": self.default_headers,
+                "default_query": self.default_query,
+                "http_client": self.http_client,
             }
 
-            if not values.get("client"):
-                values["client"] = openai.OpenAI(**client_params).images
-            if not values.get("async_client"):
-                values["async_client"] = openai.AsyncOpenAI(**client_params).images
-        elif not values.get("client"):
-            values["client"] = openai.Image
+            if not (self.client or None):
+                self.client = openai.OpenAI(**client_params).images
+            if not (self.async_client or None):
+                self.async_client = openai.AsyncOpenAI(**client_params).images
+        elif not (self.client or None):
+            self.client = openai.Image
         else:
             pass
-        return values
+        return self
 
     def run(self, query: str) -> str:
         """Run query through OpenAI and parse result."""

@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Optional
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from pydantic import BaseModel, root_validator, model_validator
 from langchain_core.retrievers import BaseRetriever
 
 
@@ -105,8 +105,9 @@ class AmazonKnowledgeBasesRetriever(BaseRetriever):
     client: Any
     retrieval_config: RetrievalConfig
 
-    @root_validator(pre=True)
-    def create_client(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def create_client(cls, values: Dict[str, Any]) -> Any:
         if values.get("client") is not None:
             return values
 

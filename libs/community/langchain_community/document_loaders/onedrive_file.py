@@ -4,10 +4,12 @@ import tempfile
 from typing import TYPE_CHECKING, List
 
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 
 from langchain_community.document_loaders.base import BaseLoader
 from langchain_community.document_loaders.unstructured import UnstructuredFileLoader
+from pydantic import ConfigDict
+
 
 if TYPE_CHECKING:
     from O365.drive import File
@@ -21,8 +23,7 @@ class OneDriveFileLoader(BaseLoader, BaseModel):
     file: File = Field(...)
     """The file to load."""
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True,)
 
     def load(self) -> List[Document]:
         """Load Documents"""

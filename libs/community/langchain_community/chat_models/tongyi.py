@@ -53,7 +53,7 @@ from langchain_core.outputs import (
     ChatGenerationChunk,
     ChatResult,
 )
-from langchain_core.pydantic_v1 import (
+from pydantic import (
     BaseModel,
     Field,
     SecretStr,
@@ -77,6 +77,8 @@ from langchain_community.llms.tongyi import (
     check_response,
     generate_with_last_element_mark,
 )
+from pydantic import ConfigDict
+
 
 logger = logging.getLogger(__name__)
 
@@ -457,8 +459,7 @@ class ChatTongyi(BaseChatModel):
     max_retries: int = 10
     """Maximum number of retries to make when generating."""
 
-    class Config:
-        allow_population_by_field_name = True
+    model_config = ConfigDict(populate_by_name=True,)
 
     @property
     def _llm_type(self) -> str:

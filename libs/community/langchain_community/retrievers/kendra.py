@@ -13,11 +13,11 @@ from typing import (
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import (
+from pydantic import (
     BaseModel,
     Field,
     root_validator,
-    validator,
+    validator, model_validator,
 )
 from langchain_core.retrievers import BaseRetriever
 from typing_extensions import Annotated
@@ -382,8 +382,9 @@ class AmazonKendraRetriever(BaseRetriever):
             raise ValueError(f"top_k ({value}) cannot be negative.")
         return value
 
-    @root_validator(pre=True)
-    def create_client(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def create_client(cls, values: Dict[str, Any]) -> Any:
         if values.get("client") is not None:
             return values
 

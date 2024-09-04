@@ -10,6 +10,8 @@ from langchain_core.language_models.llms import LLM
 from langchain_core.utils import pre_init
 
 from langchain_community.llms.utils import enforce_stop_tokens
+from pydantic import ConfigDict
+
 
 INPUT_TYPE = TypeVar("INPUT_TYPE", bound=Union[str, List[str]])
 OUTPUT_TYPE = TypeVar("OUTPUT_TYPE", bound=Union[str, List[List[float]], Iterator])
@@ -244,8 +246,7 @@ class SagemakerEndpoint(LLM):
     .. _boto3: <https://boto3.amazonaws.com/v1/documentation/api/latest/index.html>
     """
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid",)
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:

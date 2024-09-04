@@ -9,11 +9,15 @@ from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import BaseOutputParser, StrOutputParser
 from langchain_core.output_parsers.json import SimpleJsonOutputParser
 from langchain_core.prompts import BasePromptTemplate
-from langchain_core.pydantic_v1 import root_validator
+from pydantic import root_validator, model_validator
 from langchain_core.runnables import Runnable
 
 from langchain.chains.base import Chain
 from langchain.chains.elasticsearch_database.prompts import ANSWER_PROMPT, DSL_PROMPT
+from pydantic import ConfigDict
+from typing_extensions import Self
+
+
 
 if TYPE_CHECKING:
     from elasticsearch import Elasticsearch
@@ -51,17 +55,15 @@ class ElasticsearchDatabaseChain(Chain):
     return_intermediate_steps: bool = False
     """Whether or not to return the intermediate steps along with the final answer."""
 
-    class Config:
-        arbitrary_types_allowed = True
-        extra = "forbid"
+    model_config = ConfigDict(arbitrary_types_allowed=True,extra="forbid",)
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def validate_indices(cls, values: dict) -> dict:
-        if values["include_indices"] and values["ignore_indices"]:
+    @model_validator(mode="after")
+    def validate_indices(self) -> Self:
+        if self.include_indices and self.ignore_indices:
             raise ValueError(
                 "Cannot specify both 'include_indices' and 'ignore_indices'."
             )
-        return values
+        return self
 
     @property
     def input_keys(self) -> List[str]:

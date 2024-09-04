@@ -7,8 +7,10 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence
 from langchain.retrievers.document_compressors.base import BaseDocumentCompressor
 from langchain_core.callbacks.manager import Callbacks
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import Field, PrivateAttr, root_validator
+from pydantic import Field, PrivateAttr, root_validator, model_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import ConfigDict
+
 
 if TYPE_CHECKING:
     from rank_llm.data import Candidate, Query, Request
@@ -36,12 +38,11 @@ class RankLLMRerank(BaseDocumentCompressor):
     """OpenAI model name."""
     _retriever: Any = PrivateAttr()
 
-    class Config:
-        arbitrary_types_allowed = True
-        extra = "forbid"
+    model_config = ConfigDict(arbitrary_types_allowed=True,extra="forbid",)
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate python package exists in environment."""
 
         if not values.get("client"):

@@ -6,7 +6,7 @@ from langchain_core.messages import BaseMessage, HumanMessage
 from langchain_core.messages.ai import AIMessage
 from langchain_core.messages.tool import ToolMessage
 from langchain_core.outputs import ChatGeneration, LLMResult
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel
 from langchain_core.runnables.base import RunnableBinding
 
 from langchain_community.chat_models.deepinfra import ChatDeepInfra

@@ -9,6 +9,8 @@ from langchain_core.retrievers import BaseRetriever
 from langchain_core.utils.pydantic import get_fields
 
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
+from pydantic import ConfigDict
+
 
 
 class SearchType(str, Enum):
@@ -45,8 +47,7 @@ class DocArrayRetriever(BaseRetriever):
     top_k: int = 1
     filters: Optional[Any] = None
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True,)
 
     def _get_relevant_documents(
         self,

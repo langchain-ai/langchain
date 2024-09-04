@@ -23,7 +23,7 @@ from langchain_core.callbacks import (
 )
 from langchain_core.messages import AIMessageChunk, BaseMessage
 from langchain_core.outputs import ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import Field, SecretStr
+from pydantic import Field, SecretStr
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 
 from langchain_community.adapters.openai import (

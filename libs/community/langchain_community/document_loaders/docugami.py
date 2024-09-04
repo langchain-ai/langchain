@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence, Union
 import requests
 from langchain_core._api.deprecation import deprecated
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from pydantic import BaseModel, root_validator, model_validator
 
 from langchain_community.document_loaders.base import BaseLoader
 
@@ -81,8 +81,9 @@ class DocugamiLoader(BaseLoader, BaseModel):
     include_project_metadata_in_doc_metadata: bool = True
     """Set to True if you want to include the project metadata in the doc metadata."""
 
-    @root_validator(pre=True)
-    def validate_local_or_remote(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_local_or_remote(cls, values: Dict[str, Any]) -> Any:
         """Validate that either local file paths are given, or remote API docset ID.
 
         Args:

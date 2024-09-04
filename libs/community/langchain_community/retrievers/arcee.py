@@ -2,11 +2,13 @@ from typing import Any, Dict, List, Optional
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import SecretStr
+from pydantic import SecretStr
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 
 from langchain_community.utilities.arcee import ArceeWrapper, DALMFilter
+from pydantic import ConfigDict
+
 
 
 class ArceeRetriever(BaseRetriever):
@@ -49,9 +51,7 @@ class ArceeRetriever(BaseRetriever):
     model_kwargs: Optional[Dict[str, Any]] = None
     """Keyword arguments to pass to the model."""
 
-    class Config:
-        extra = "forbid"
-        underscore_attrs_are_private = True
+    model_config = ConfigDict(extra="forbid",underscore_attrs_are_private=True,)
 
     def __init__(self, **data: Any) -> None:
         """Initializes private fields."""

@@ -3,7 +3,9 @@
 import logging
 from typing import Any, Dict, List, Mapping
 
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from pydantic import BaseModel, root_validator, model_validator
+from pydantic import ConfigDict
+
 
 logger = logging.getLogger(__name__)
 
@@ -36,11 +38,11 @@ class BibtexparserWrapper(BaseModel):
     a bibtex file and fetch document summaries.
     """
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid",)
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that the python package exists in environment."""
         try:
             import bibtexparser  # noqa

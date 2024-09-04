@@ -4,7 +4,7 @@ from typing import Type, cast
 
 import pytest
 from langchain_core.language_models import BaseChatModel
-from langchain_core.pydantic_v1 import SecretStr
+from pydantic import SecretStr
 from langchain_standard_tests.integration_tests import ChatModelIntegrationTests
 
 from langchain_community.chat_models.moonshot import MoonshotChat

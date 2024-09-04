@@ -47,7 +47,7 @@ from langchain_core.output_parsers.openai_tools import (
     PydanticToolsParser,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import (
+from pydantic import (
     BaseModel,
     Field,
     SecretStr,
@@ -59,6 +59,8 @@ from langchain_core.utils.function_calling import convert_to_openai_tool
 from langchain_core.utils.pydantic import is_basemodel_subclass
 
 from langchain_community.utilities.requests import Requests
+from pydantic import ConfigDict
+
 
 
 def _result_to_chunked_message(generated_result: ChatResult) -> ChatGenerationChunk:
@@ -296,8 +298,7 @@ class ChatEdenAI(BaseChatModel):
 
     edenai_api_key: Optional[SecretStr] = Field(None, description="EdenAI API Token")
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid",)
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:

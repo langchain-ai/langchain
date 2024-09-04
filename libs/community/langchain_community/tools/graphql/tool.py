@@ -5,6 +5,8 @@ from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool
 
 from langchain_community.utilities.graphql import GraphQLAPIWrapper
+from pydantic import ConfigDict
+
 
 
 class BaseGraphQLTool(BaseTool):
@@ -22,8 +24,7 @@ class BaseGraphQLTool(BaseTool):
     Example Input: query {{ allUsers {{ id, name, email }} }}\
     """  # noqa: E501
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True,)
 
     def _run(
         self,

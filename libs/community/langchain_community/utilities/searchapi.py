@@ -2,8 +2,10 @@ from typing import Any, Dict, Optional
 
 import aiohttp
 import requests
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from pydantic import BaseModel, root_validator, model_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import ConfigDict
+
 
 
 class SearchApiAPIWrapper(BaseModel):
@@ -27,11 +29,11 @@ class SearchApiAPIWrapper(BaseModel):
     searchapi_api_key: Optional[str] = None
     aiosession: Optional[aiohttp.ClientSession] = None
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True,)
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that API key exists in environment."""
         searchapi_api_key = get_from_dict_or_env(
             values, "searchapi_api_key", "SEARCHAPI_API_KEY"

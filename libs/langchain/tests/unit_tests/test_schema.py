@@ -19,16 +19,13 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, Generation
 from langchain_core.prompt_values import ChatPromptValueConcrete, StringPromptValue
-from langchain_core.pydantic_v1 import BaseModel, ValidationError
+from pydantic import BaseModel, ValidationError, RootModel
 
 
 def test_serialization_of_wellknown_objects() -> None:
     """Test that pydantic is able to serialize and deserialize well known objects."""
 
-    class WellKnownLCObject(BaseModel):
-        """A well known LangChain object."""
-
-        __root__: Union[
+    class WellKnownLCObject(RootModel[Union[
             Document,
             HumanMessage,
             SystemMessage,
@@ -48,7 +45,9 @@ def test_serialization_of_wellknown_objects() -> None:
             ChatGeneration,
             Generation,
             ChatGenerationChunk,
-        ]
+        ]]):
+        """A well known LangChain object."""
+
 
     lc_objects = [
         HumanMessage(content="human"),

@@ -7,11 +7,13 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple
 from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from pydantic import BaseModel, Field, root_validator, model_validator
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.utils import get_from_dict_or_env
 
 from langchain_community.utilities.vertexai import get_client_info
+from pydantic import ConfigDict
+
 
 if TYPE_CHECKING:
     from google.api_core.client_options import ClientOptions
@@ -46,8 +48,9 @@ class _BaseGoogleVertexAISearchRetriever(BaseModel):
     3 - Blended search
     """
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validates the environment."""
         try:
             from google.cloud import discoveryengine_v1beta  # noqa: F401
@@ -245,10 +248,7 @@ class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetr
     _client: SearchServiceClient
     _serving_config: str
 
-    class Config:
-        arbitrary_types_allowed = True
-        extra = "ignore"
-        underscore_attrs_are_private = True
+    model_config = ConfigDict(arbitrary_types_allowed=True,extra="ignore",underscore_attrs_are_private=True,)
 
     def __init__(self, **kwargs: Any) -> None:
         """Initializes private fields."""
@@ -410,10 +410,7 @@ class GoogleVertexAIMultiTurnSearchRetriever(
     _client: ConversationalSearchServiceClient
     _serving_config: str
 
-    class Config:
-        arbitrary_types_allowed = True
-        extra = "ignore"
-        underscore_attrs_are_private = True
+    model_config = ConfigDict(arbitrary_types_allowed=True,extra="ignore",underscore_attrs_are_private=True,)
 
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)

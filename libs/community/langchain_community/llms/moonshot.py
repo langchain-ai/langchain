@@ -3,10 +3,12 @@ from typing import Any, Dict, List, Optional
 import requests
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import LLM
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
+from pydantic import BaseModel, Field, SecretStr, root_validator, model_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 
 from langchain_community.llms.utils import enforce_stop_tokens
+from pydantic import ConfigDict
+
 
 MOONSHOT_SERVICE_URL_BASE = "https://api.moonshot.cn/v1"
 
@@ -44,8 +46,7 @@ class MoonshotCommon(BaseModel):
     temperature: float = 0.3
     """Temperature parameter (higher values make the model more creative)."""
 
-    class Config:
-        allow_population_by_field_name = True
+    model_config = ConfigDict(populate_by_name=True,)
 
     @property
     def lc_secrets(self) -> dict:
@@ -69,8 +70,9 @@ class MoonshotCommon(BaseModel):
     def _invocation_params(self) -> Dict[str, Any]:
         return {**{"model": self.model_name}, **self._default_params}
 
-    @root_validator(pre=True)
-    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra parameters.
         Override the superclass method, prevent the model parameter from being
         overridden.
@@ -112,8 +114,7 @@ class Moonshot(MoonshotCommon, LLM):
             moonshot = Moonshot(model="moonshot-v1-8k")
     """
 
-    class Config:
-        allow_population_by_field_name = True
+    model_config = ConfigDict(populate_by_name=True,)
 
     def _call(
         self,

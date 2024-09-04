@@ -6,7 +6,7 @@ from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain_core.pydantic_v1 import BaseModel, Field, create_model, root_validator
+from pydantic import BaseModel, Field, create_model, root_validator, model_validator
 from langchain_core.tools import BaseTool
 
 from langchain_community.tools.connery.models import Action, Parameter
@@ -63,8 +63,9 @@ class ConneryAction(BaseTool):
 
         return self.args_schema.schema_json(indent=2)
 
-    @root_validator(pre=True)
-    def validate_attributes(cls, values: dict) -> dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_attributes(cls, values: dict) -> Any:
         """
         Validate the attributes of the ConneryAction class.
         Parameters:

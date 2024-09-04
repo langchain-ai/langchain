@@ -1,7 +1,7 @@
 """Test `Javelin AI Gateway` chat models"""
 
 import pytest
-from langchain_core.pydantic_v1 import SecretStr
+from pydantic import SecretStr
 
 from langchain_community.chat_models import ChatJavelinAIGateway
 

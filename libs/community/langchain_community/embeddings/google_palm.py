@@ -4,7 +4,7 @@ import logging
 from typing import Any, Callable, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel
 from langchain_core.utils import get_from_dict_or_env, pre_init
 from tenacity import (
     before_sleep_log,

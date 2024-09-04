@@ -3,7 +3,9 @@
 import json
 from typing import Any, Dict, Optional
 
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from pydantic import BaseModel, root_validator, model_validator
+from pydantic import ConfigDict
+
 
 
 class LambdaWrapper(BaseModel):
@@ -30,11 +32,11 @@ class LambdaWrapper(BaseModel):
     awslambda_tool_description: Optional[str] = None
     """If passing to an agent as a tool, the description"""
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid",)
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that python package exists in environment."""
 
         try:

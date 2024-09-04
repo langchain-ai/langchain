@@ -6,10 +6,12 @@ from typing import Any, Dict, List, Optional, Sequence, Union
 from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks.manager import Callbacks
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import root_validator
+from pydantic import root_validator, model_validator
 from langchain_core.utils import get_from_dict_or_env
 
 from langchain.retrievers.document_compressors.base import BaseDocumentCompressor
+from pydantic import ConfigDict
+
 
 
 @deprecated(
@@ -30,12 +32,11 @@ class CohereRerank(BaseDocumentCompressor):
     user_agent: str = "langchain"
     """Identifier for the application making the request."""
 
-    class Config:
-        arbitrary_types_allowed = True
-        extra = "forbid"
+    model_config = ConfigDict(arbitrary_types_allowed=True,extra="forbid",)
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that api key and python package exists in environment."""
         if not values.get("client"):
             try:

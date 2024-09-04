@@ -5,8 +5,10 @@ from typing import Any, AsyncGenerator, Dict, Literal, Optional, Union
 
 import aiohttp
 import requests
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel
 from requests import Response
+from pydantic import ConfigDict
+
 
 
 class Requests(BaseModel):
@@ -21,9 +23,7 @@ class Requests(BaseModel):
     auth: Optional[Any] = None
     verify: Optional[bool] = True
 
-    class Config:
-        arbitrary_types_allowed = True
-        extra = "forbid"
+    model_config = ConfigDict(arbitrary_types_allowed=True,extra="forbid",)
 
     def get(self, url: str, **kwargs: Any) -> requests.Response:
         """GET the URL and return the text."""
@@ -145,9 +145,7 @@ class GenericRequestsWrapper(BaseModel):
     response_content_type: Literal["text", "json"] = "text"
     verify: bool = True
 
-    class Config:
-        arbitrary_types_allowed = True
-        extra = "forbid"
+    model_config = ConfigDict(arbitrary_types_allowed=True,extra="forbid",)
 
     @property
     def requests(self) -> Requests:

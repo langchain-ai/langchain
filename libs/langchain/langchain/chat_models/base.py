@@ -30,7 +30,7 @@ from langchain_core.language_models.chat_models import (
     generate_from_stream,
 )
 from langchain_core.messages import AnyMessage, BaseMessage
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel
 from langchain_core.runnables import Runnable, RunnableConfig
 from langchain_core.runnables.schema import StreamEvent
 from langchain_core.tools import BaseTool

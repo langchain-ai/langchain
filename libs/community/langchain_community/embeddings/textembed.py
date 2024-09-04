@@ -17,8 +17,12 @@ import aiohttp
 import numpy as np
 import requests
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from pydantic import BaseModel, root_validator, model_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import ConfigDict
+from typing_extensions import Self
+
+
 
 __all__ = ["TextEmbedEmbeddings"]
 
@@ -59,11 +63,10 @@ class TextEmbedEmbeddings(BaseModel, Embeddings):
     client: Any = None
     """TextEmbed client."""
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid",)
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="after")
+    def validate_environment(self) -> Self:
         """Validate that api key and URL exist in the environment.
 
         Args:
@@ -72,13 +75,13 @@ class TextEmbedEmbeddings(BaseModel, Embeddings):
         Returns:
             Dict: Validated values.
         """
-        values["api_url"] = get_from_dict_or_env(values, "api_url", "API_URL")
-        values["api_key"] = get_from_dict_or_env(values, "api_key", "API_KEY")
+        self.api_url = get_from_dict_or_env(values, "api_url", "API_URL")
+        self.api_key = get_from_dict_or_env(values, "api_key", "API_KEY")
 
-        values["client"] = AsyncOpenAITextEmbedEmbeddingClient(
-            host=values["api_url"], api_key=values["api_key"]
+        self.client = AsyncOpenAITextEmbedEmbeddingClient(
+            host=self.api_url, api_key=self.api_key
         )
-        return values
+        return self
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Call out to TextEmbed's embedding endpoint.

@@ -5,6 +5,8 @@ from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 
 from langchain_community.llms.utils import enforce_stop_tokens
+from pydantic import ConfigDict
+
 
 
 class ContentHandlerAmazonAPIGateway:
@@ -43,8 +45,7 @@ class AmazonAPIGateway(LLM):
     and the endpoint.
     """
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid",)
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:

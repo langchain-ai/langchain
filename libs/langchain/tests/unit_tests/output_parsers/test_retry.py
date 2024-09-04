@@ -16,7 +16,7 @@ from langchain.output_parsers.retry import (
     RetryOutputParser,
     RetryWithErrorOutputParser,
 )
-from langchain.pydantic_v1 import Extra
+from pydantic import Extra
 
 T = TypeVar("T")
 

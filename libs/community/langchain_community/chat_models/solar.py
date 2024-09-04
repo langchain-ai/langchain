@@ -3,11 +3,13 @@
 from typing import Dict
 
 from langchain_core._api import deprecated
-from langchain_core.pydantic_v1 import Field
+from pydantic import Field
 from langchain_core.utils import get_from_dict_or_env, pre_init
 
 from langchain_community.chat_models import ChatOpenAI
 from langchain_community.llms.solar import SOLAR_SERVICE_URL_BASE, SolarCommon
+from pydantic import ConfigDict
+
 
 
 @deprecated(  # type: ignore[arg-type]
@@ -30,10 +32,7 @@ class SolarChat(SolarCommon, ChatOpenAI):
     max_tokens: int = Field(default=1024)
 
     # this is needed to match ChatOpenAI superclass
-    class Config:
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
-        extra = "ignore"
+    model_config = ConfigDict(populate_by_name=True,arbitrary_types_allowed=True,extra="ignore",)
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:

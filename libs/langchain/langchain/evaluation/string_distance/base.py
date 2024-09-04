@@ -8,7 +8,7 @@ from langchain_core.callbacks.manager import (
     CallbackManagerForChainRun,
     Callbacks,
 )
-from langchain_core.pydantic_v1 import Field
+from pydantic import Field
 from langchain_core.utils import pre_init
 
 from langchain.chains.base import Chain

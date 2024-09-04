@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional, Tuple, Type
 
-from langchain_core.pydantic_v1 import root_validator
+from pydantic import root_validator, model_validator
 from langchain_core.tools import BaseTool
 from langchain_core.utils import guard_import
 
@@ -38,8 +38,9 @@ class BaseBrowserTool(BaseTool):
     sync_browser: Optional["SyncBrowser"] = None
     async_browser: Optional["AsyncBrowser"] = None
 
-    @root_validator(pre=True)
-    def validate_browser_provided(cls, values: dict) -> dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_browser_provided(cls, values: dict) -> Any:
         """Check that the arguments are valid."""
         lazy_import_playwright_browsers()
         if values.get("async_browser") is None and values.get("sync_browser") is None:

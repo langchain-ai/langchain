@@ -4,7 +4,7 @@ import pytest
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel
 from langchain_core.runnables import RunnableConfig
 from langchain_standard_tests.integration_tests import ChatModelIntegrationTests
 

@@ -6,7 +6,7 @@ from enum import Enum
 from typing import Any, Dict, List, Literal, Mapping, Optional, Union
 
 import requests
-from langchain_core.pydantic_v1 import BaseModel, SecretStr, root_validator
+from pydantic import BaseModel, SecretStr, root_validator, model_validator
 from langchain_core.retrievers import Document
 
 
@@ -51,8 +51,9 @@ class DALMFilter(BaseModel):
     value: str
     _is_metadata: bool = False
 
-    @root_validator(pre=True)
-    def set_meta(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def set_meta(cls, values: Dict) -> Any:
         """document and name are reserved arcee keys. Anything else is metadata"""
         values["_is_meta"] = values.get("field_name") not in ["document", "name"]
         return values

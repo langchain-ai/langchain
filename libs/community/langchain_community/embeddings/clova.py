@@ -4,8 +4,10 @@ from typing import Dict, List, Optional, cast
 
 import requests
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, SecretStr, root_validator
+from pydantic import BaseModel, SecretStr, root_validator, model_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from pydantic import ConfigDict
+
 
 
 class ClovaEmbeddings(BaseModel, Embeddings):
@@ -53,11 +55,11 @@ class ClovaEmbeddings(BaseModel, Embeddings):
     app_id: Optional[SecretStr] = None
     """Application ID for identifying your application."""
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid",)
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate api key exists in environment."""
         values["clova_emb_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(values, "clova_emb_api_key", "CLOVA_EMB_API_KEY")

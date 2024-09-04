@@ -5,7 +5,11 @@ from logging import getLogger
 from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from pydantic import BaseModel, root_validator, model_validator
+from pydantic import ConfigDict
+from typing_extensions import Self
+
+
 
 __all__ = ["InfinityEmbeddingsLocal"]
 
@@ -57,11 +61,10 @@ class InfinityEmbeddingsLocal(BaseModel, Embeddings):
     """Infinity's AsyncEmbeddingEngine."""
 
     # LLM call kwargs
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid",)
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="after")
+    def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
 
         try:
@@ -74,15 +77,15 @@ class InfinityEmbeddingsLocal(BaseModel, Embeddings):
             )
         logger.debug(f"Using InfinityEmbeddingsLocal with kwargs {values}")
 
-        values["engine"] = AsyncEmbeddingEngine(
-            model_name_or_path=values["model"],
-            device=values["device"],
-            revision=values["revision"],
-            model_warmup=values["model_warmup"],
-            batch_size=values["batch_size"],
-            engine=values["backend"],
+        self.engine = AsyncEmbeddingEngine(
+            model_name_or_path=self.model,
+            device=self.device,
+            revision=self.revision,
+            model_warmup=self.model_warmup,
+            batch_size=self.batch_size,
+            engine=self.backend,
         )
-        return values
+        return self
 
     async def __aenter__(self) -> None:
         """start the background worker.

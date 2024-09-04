@@ -10,11 +10,13 @@ from langchain_core._api import deprecated
 from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts.prompt import PromptTemplate
-from langchain_core.pydantic_v1 import root_validator
+from pydantic import root_validator, model_validator
 
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.sequential import SequentialChain
+from pydantic import ConfigDict
+
 
 PROMPTS_DIR = Path(__file__).parent / "prompts"
 
@@ -105,12 +107,11 @@ class LLMSummarizationCheckerChain(Chain):
     max_checks: int = 2
     """Maximum number of times to check the assertions. Default to double-checking."""
 
-    class Config:
-        arbitrary_types_allowed = True
-        extra = "forbid"
+    model_config = ConfigDict(arbitrary_types_allowed=True,extra="forbid",)
 
-    @root_validator(pre=True)
-    def raise_deprecation(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def raise_deprecation(cls, values: Dict) -> Any:
         if "llm" in values:
             warnings.warn(
                 "Directly instantiating an LLMSummarizationCheckerChain with an llm is "

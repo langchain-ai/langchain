@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any, List, Optional, Sequence
 
 from langchain_core.language_models import BaseLanguageModel
-from langchain_core.pydantic_v1 import Field
+from pydantic import Field
 from langchain_core.tools import BaseTool
 from langchain_core.tools.base import BaseToolkit
 

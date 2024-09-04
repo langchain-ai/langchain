@@ -4,12 +4,14 @@ import numpy as np
 from langchain_core.callbacks.manager import Callbacks
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import Field
+from pydantic import Field
 from langchain_core.utils import pre_init
 
 from langchain.retrievers.document_compressors.base import (
     BaseDocumentCompressor,
 )
+from pydantic import ConfigDict
+
 
 
 def _get_similarity_function() -> Callable:
@@ -41,8 +43,7 @@ class EmbeddingsFilter(BaseDocumentCompressor):
     to be considered redundant. Defaults to None, must be specified if `k` is set
     to None."""
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True,)
 
     @pre_init
     def validate_params(cls, values: Dict) -> Dict:
