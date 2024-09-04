@@ -107,6 +107,9 @@ class LangChainProjectNameTest(unittest.TestCase):
             self.envvars = envvars
             self.expected_project_name = expected_project_name
 
+    @pytest.mark.xfail(
+        reason="regression in langsmith 0.1.112 and 0.1.113 currently causing this to fail."
+    )
     def test_correct_get_tracer_project(self) -> None:
         cases = [
             self.SetProperTracerProjectTestCase(

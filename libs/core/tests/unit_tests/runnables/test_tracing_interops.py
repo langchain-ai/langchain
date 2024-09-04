@@ -174,6 +174,9 @@ async def test_config_traceable_async_handoff() -> None:
 @patch("langchain_core.tracers.langchain.get_client")
 @pytest.mark.parametrize("enabled", [None, True, False])
 @pytest.mark.parametrize("env", ["", "true"])
+@pytest.mark.xfail(
+    reason="regression in langsmith 0.1.112 and 0.1.113 currently causing this to fail."
+)
 def test_tracing_enable_disable(
     mock_get_client: MagicMock, enabled: bool, env: str
 ) -> None:
