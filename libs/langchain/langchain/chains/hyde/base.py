@@ -14,6 +14,7 @@ from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.runnables import Runnable
+from pydantic import ConfigDict
 
 from langchain.chains.base import Chain
 from langchain.chains.hyde.prompts import PROMPT_MAP
@@ -29,9 +30,10 @@ class HypotheticalDocumentEmbedder(Chain, Embeddings):
     base_embeddings: Embeddings
     llm_chain: Runnable
 
-    class Config:
-        arbitrary_types_allowed = True
-        extra = "forbid"
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
     @property
     def input_keys(self) -> List[str]:
