@@ -489,7 +489,7 @@ class BaseChatOpenAI(BaseChatModel):
             sync_specific = {"http_client": self.http_client}
             self.root_client = openai.OpenAI(**client_params, **sync_specific)  # type: ignore[arg-type]
             self.client = self.root_client.chat.completions
-        if not (self.async_client or None):
+        if not self.async_client:
             if self.openai_proxy and not self.http_async_client:
                 try:
                     import httpx
