@@ -54,8 +54,6 @@ class HuggingFacePipeline(BaseLLM):
     """
 
     pipeline: Any  #: :meta private:
-    model_id: str = str(property(lambda self: self.pipeline.model.name_or_path))
-    """Model name to use."""
     model_kwargs: Optional[dict] = None
     """Keyword arguments passed to the model."""
     pipeline_kwargs: Optional[dict] = None
@@ -249,6 +247,11 @@ class HuggingFacePipeline(BaseLLM):
     @property
     def _llm_type(self) -> str:
         return "huggingface_pipeline"
+
+    @property
+    def model_id(self) -> str:
+        """Property to fetch model name from the pipeline"""
+        return self.pipeline.model.name_or_path if self.pipeline else DEFAULT_MODEL_ID
 
     def _generate(
         self,
