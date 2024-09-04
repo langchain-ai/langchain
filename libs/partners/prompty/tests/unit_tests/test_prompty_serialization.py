@@ -6,7 +6,7 @@ from langchain.agents.format_scratchpad import format_to_openai_function_message
 from langchain.tools import tool
 from langchain_core.language_models import FakeListLLM
 from langchain_core.messages import AIMessage, HumanMessage
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 from langchain_core.utils.function_calling import convert_to_openai_function
 
 import langchain_prompty
