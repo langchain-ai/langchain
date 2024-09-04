@@ -13,11 +13,11 @@ from langchain_core.callbacks.manager import CallbackManager
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import PromptTemplate
-from pydantic import BaseModel, Field, PrivateAttr, create_model
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import BaseTool, StructuredTool, Tool
 from langchain_core.tracers.context import _tracing_v2_is_enabled
 from langsmith import Client
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, create_model
 
 from langchain_robocorp._common import (
     get_param_fields,
@@ -27,8 +27,6 @@ from langchain_robocorp._common import (
 from langchain_robocorp._prompts import (
     API_CONTROLLER_PROMPT,
 )
-from pydantic import ConfigDict
-
 
 LLM_TRACE_HEADER = "X-action-trace"
 
@@ -112,7 +110,9 @@ class ActionServerToolkit(BaseModel):
     """Enable reporting Langsmith trace to Action Server runs"""
     _run_details: dict = PrivateAttr({})
 
-    model_config = ConfigDict(arbitrary_types_allowed=True,)
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     def get_tools(
         self,
