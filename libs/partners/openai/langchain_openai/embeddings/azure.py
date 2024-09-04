@@ -201,7 +201,7 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
                 **client_params,  # type: ignore[arg-type]
                 **sync_specific,
             ).embeddings
-        if not (self.async_client or None):
+        if not self.async_client:
             async_specific: dict = {"http_client": self.http_async_client}
             self.async_client = openai.AsyncAzureOpenAI(
                 **client_params,  # type: ignore[arg-type]
