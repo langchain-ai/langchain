@@ -89,19 +89,6 @@ jobs:
       python-version: ${{ matrix.job-configs.python-version }}
     secrets: inherit
 
-  dependencies:
-    name: cd ${{ matrix.job-configs.working-directory }}
-    needs: [ build ]
-    if: ${{ needs.build.outputs.dependencies != '[]' }}
-    strategy:
-      matrix:
-        job-configs: ${{ fromJson(needs.build.outputs.dependencies) }}
-    uses: ./.github/workflows/_dependencies.yml
-    with:
-      working-directory: ${{ matrix.job-configs.working-directory }}
-      python-version: ${{ matrix.job-configs.python-version }}
-    secrets: inherit
-
   extended-tests:
     name: "cd ${{ matrix.job-configs.working-directory }} / make extended_tests #${{ matrix.job-configs.python-version }}"
     needs: [ build ]
@@ -149,7 +136,7 @@ jobs:
           echo "$STATUS" | grep 'nothing to commit, working tree clean'
   ci_success:
     name: "CI Success"
-    needs: [build, lint, test, compile-integration-tests, dependencies, extended-tests, test-doc-imports]
+    needs: [build, lint, test, compile-integration-tests, extended-tests, test-doc-imports]
     if: |
       always()
     runs-on: ubuntu-latest
