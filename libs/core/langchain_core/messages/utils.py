@@ -52,6 +52,12 @@ AnyMessage = Union[
     SystemMessage,
     FunctionMessage,
     ToolMessage,
+    AIMessageChunk,
+    HumanMessageChunk,
+    ChatMessageChunk,
+    SystemMessageChunk,
+    FunctionMessageChunk,
+    ToolMessageChunk,
 ]
 
 
