@@ -13,8 +13,8 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, LLMResult
-from pydantic import BaseModel, Field
 from langchain_core.tools import tool
+from pydantic import BaseModel, Field
 
 from langchain_groq import ChatGroq
 from tests.unit_tests.fake.callbacks import (
