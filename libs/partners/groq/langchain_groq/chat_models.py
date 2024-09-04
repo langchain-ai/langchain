@@ -84,6 +84,8 @@ from langchain_core.utils.function_calling import (
 )
 from langchain_core.utils.pydantic import is_basemodel_subclass
 from pydantic import ConfigDict
+from typing_extensions import Self
+
 
 
 
