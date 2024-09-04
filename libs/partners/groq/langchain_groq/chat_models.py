@@ -65,7 +65,7 @@ from langchain_core.output_parsers.openai_tools import (
     parse_tool_call,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import (
+from pydantic import (
     BaseModel,
     Field,
     SecretStr,
@@ -83,6 +83,8 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_tool,
 )
 from langchain_core.utils.pydantic import is_basemodel_subclass
+from pydantic import ConfigDict
+
 
 
 class ChatGroq(BaseChatModel):
@@ -343,10 +345,7 @@ class ChatGroq(BaseChatModel):
     """Optional httpx.AsyncClient. Only used for async invocations. Must specify
         http_client as well if you'd like a custom client for sync invocations."""
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        allow_population_by_field_name = True
+    model_config = ConfigDict(populate_by_name=True,)
 
     @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
