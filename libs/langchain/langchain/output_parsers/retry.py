@@ -1,9 +1,6 @@
 from __future__ import annotations
 
-from pydantic import SkipValidation
 from typing import Any, TypeVar, Union
-from typing_extensions import Annotated
-from typing_extensions import TypedDict
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import BaseLanguageModel
@@ -11,6 +8,8 @@ from langchain_core.output_parsers import BaseOutputParser, StrOutputParser
 from langchain_core.prompt_values import PromptValue
 from langchain_core.prompts import BasePromptTemplate, PromptTemplate
 from langchain_core.runnables import RunnableSerializable
+from pydantic import SkipValidation
+from typing_extensions import Annotated, TypedDict
 
 NAIVE_COMPLETION_RETRY = """Prompt:
 {prompt}

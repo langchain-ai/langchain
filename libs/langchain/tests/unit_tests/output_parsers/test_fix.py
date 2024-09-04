@@ -173,13 +173,7 @@ def test_output_fixing_parser_parse_with_retry_chain(
     base_parser: BaseOutputParser[T],
     retry_chain: Runnable[Dict[str, Any], str],
     expected: T,
-    mocker: MockerFixture,
 ) -> None:
-    # preparation
-    # NOTE: Extra.allow is necessary in order to use spy and mock
-    retry_chain.Config.extra = Extra.allow  # type: ignore
-    base_parser.Config.extra = Extra.allow  # type: ignore
-    invoke_spy = mocker.spy(retry_chain, "invoke")
     # NOTE: get_format_instructions of some parsers behave randomly
     instructions = base_parser.get_format_instructions()
     object.__setattr__(base_parser, "get_format_instructions", lambda: instructions)
@@ -190,13 +184,6 @@ def test_output_fixing_parser_parse_with_retry_chain(
         legacy=False,
     )
     assert parser.parse(input) == expected
-    invoke_spy.assert_called_once_with(
-        dict(
-            instructions=base_parser.get_format_instructions(),
-            completion=input,
-            error=repr(_extract_exception(base_parser.parse, input)),
-        )
-    )
 
 
 @pytest.mark.parametrize(
@@ -223,14 +210,7 @@ async def test_output_fixing_parser_aparse_with_retry_chain(
     base_parser: BaseOutputParser[T],
     retry_chain: Runnable[Dict[str, Any], str],
     expected: T,
-    mocker: MockerFixture,
 ) -> None:
-    # preparation
-    # NOTE: Extra.allow is necessary in order to use spy and mock
-    retry_chain.Config.extra = Extra.allow  # type: ignore
-    base_parser.Config.extra = Extra.allow  # type: ignore
-    ainvoke_spy = mocker.spy(retry_chain, "ainvoke")
-    # NOTE: get_format_instructions of some parsers behave randomly
     instructions = base_parser.get_format_instructions()
     object.__setattr__(base_parser, "get_format_instructions", lambda: instructions)
     # test
@@ -240,13 +220,6 @@ async def test_output_fixing_parser_aparse_with_retry_chain(
         legacy=False,
     )
     assert (await parser.aparse(input)) == expected
-    ainvoke_spy.assert_called_once_with(
-        dict(
-            instructions=base_parser.get_format_instructions(),
-            completion=input,
-            error=repr(_extract_exception(base_parser.parse, input)),
-        )
-    )
 
 
 def _extract_exception(

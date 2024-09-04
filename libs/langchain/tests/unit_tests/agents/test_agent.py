@@ -4,15 +4,6 @@ import json
 from itertools import cycle
 from typing import Any, Dict, List, Optional, Union, cast
 
-from langchain.agents import (
-    AgentExecutor,
-    AgentType,
-    create_openai_functions_agent,
-    create_openai_tools_agent,
-    create_tool_calling_agent,
-    initialize_agent,
-)
-from langchain.agents.output_parsers.openai_tools import OpenAIToolAgentAction
 from langchain_core.agents import (
     AgentAction,
     AgentFinish,
@@ -31,6 +22,16 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables.utils import add
 from langchain_core.tools import Tool, tool
 from langchain_core.tracers import RunLog, RunLogPatch
+
+from langchain.agents import (
+    AgentExecutor,
+    AgentType,
+    create_openai_functions_agent,
+    create_openai_tools_agent,
+    create_tool_calling_agent,
+    initialize_agent,
+)
+from langchain.agents.output_parsers.openai_tools import OpenAIToolAgentAction
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 from tests.unit_tests.llms.fake_chat_model import GenericFakeChatModel
 from tests.unit_tests.stubs import (
@@ -783,8 +784,6 @@ def _make_func_invocation(name: str, **kwargs: Any) -> AIMessage:
             }
         },
     )
-
-
 
 
 def _recursive_dump(obj: Any) -> Any:

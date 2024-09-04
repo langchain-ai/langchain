@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, TypeVar, Union, Annotated
+from typing import Annotated, Any, TypeVar, Union
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import BaseOutputParser, StrOutputParser
