@@ -36,6 +36,8 @@ from langchain_core.utils.function_calling import convert_to_openai_tool
 
 from langchain_huggingface.llms.huggingface_endpoint import HuggingFaceEndpoint
 from langchain_huggingface.llms.huggingface_pipeline import HuggingFacePipeline
+from typing_extensions import Self
+
 
 DEFAULT_SYSTEM_PROMPT = """You are a helpful, respectful, and honest assistant."""
 

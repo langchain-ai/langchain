@@ -5,6 +5,8 @@ from langchain_core.embeddings import Embeddings
 from pydantic import BaseModel, root_validator, model_validator
 from langchain_core.utils import get_from_dict_or_env
 from pydantic import ConfigDict
+from typing_extensions import Self
+
 
 
 DEFAULT_MODEL = "sentence-transformers/all-mpnet-base-v2"
