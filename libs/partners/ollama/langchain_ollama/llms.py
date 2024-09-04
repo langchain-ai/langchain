@@ -18,10 +18,9 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models import BaseLLM, LangSmithParams
 from langchain_core.outputs import GenerationChunk, LLMResult
-from pydantic import Field, root_validator, PrivateAttr, model_validator
 from ollama import AsyncClient, Client, Options
+from pydantic import Field, PrivateAttr, model_validator, root_validator
 from typing_extensions import Self
-
 
 
 class OllamaLLM(BaseLLM):
@@ -170,9 +169,7 @@ class OllamaLLM(BaseLLM):
     def _set_clients(self) -> Self:
         """Set clients to use for ollama."""
         self._client = Client(host=self.base_url, **self.client_kwargs)
-        self._async_client = AsyncClient(
-            host=self.base_url, **self.client_kwargs
-        )
+        self._async_client = AsyncClient(host=self.base_url, **self.client_kwargs)
         return self
 
     async def _acreate_generate_stream(

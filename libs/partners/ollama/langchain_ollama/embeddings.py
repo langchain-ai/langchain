@@ -4,12 +4,16 @@ from typing import (
 )
 
 from langchain_core.embeddings import Embeddings
-from pydantic import BaseModel, Field, root_validator, PrivateAttr, model_validator
 from ollama import AsyncClient, Client
-from pydantic import ConfigDict
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    PrivateAttr,
+    model_validator,
+    root_validator,
+)
 from typing_extensions import Self
-
-
 
 
 class OllamaEmbeddings(BaseModel, Embeddings):
@@ -140,15 +144,15 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     The async client to use for making requests.
     """
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @model_validator(mode="after")
     def _set_clients(self) -> Self:
         """Set clients to use for ollama."""
         self._client = Client(host=self.base_url, **self.client_kwargs)
-        self._async_client = AsyncClient(
-            host=self.base_url, **self.client_kwargs
-        )
+        self._async_client = AsyncClient(host=self.base_url, **self.client_kwargs)
         return self
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:

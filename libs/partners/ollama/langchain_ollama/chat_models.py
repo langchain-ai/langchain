@@ -35,13 +35,12 @@ from langchain_core.messages import (
 from langchain_core.messages.ai import UsageMetadata
 from langchain_core.messages.tool import tool_call
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from pydantic import Field, root_validator, PrivateAttr, model_validator
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_tool
 from ollama import AsyncClient, Client, Message, Options
+from pydantic import Field, PrivateAttr, model_validator, root_validator
 from typing_extensions import Self
-
 
 
 def _get_usage_metadata_from_generation_info(
@@ -370,9 +369,7 @@ class ChatOllama(BaseChatModel):
     def _set_clients(self) -> Self:
         """Set clients to use for ollama."""
         self._client = Client(host=self.base_url, **self.client_kwargs)
-        self._async_client = AsyncClient(
-            host=self.base_url, **self.client_kwargs
-        )
+        self._async_client = AsyncClient(host=self.base_url, **self.client_kwargs)
         return self
 
     def _convert_messages_to_ollama_messages(
