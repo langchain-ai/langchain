@@ -11,12 +11,15 @@ from langchain_core.utils.pydantic import get_fields
 from langchain_community.callbacks import get_openai_callback
 from langchain_community.callbacks.manager import get_bedrock_anthropic_callback
 from langchain_community.llms.openai import BaseOpenAI
+from langsmith import utils as ls_utils
 
 
 def test_callback_manager_configure_context_vars(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Test callback manager configuration."""
+    ls_utils.get_env_var.cache_clear()
+    ls_utils.get_tracer_project.cache_clear()
     monkeypatch.setenv("LANGCHAIN_TRACING_V2", "true")
     monkeypatch.setenv("LANGCHAIN_TRACING", "false")
     monkeypatch.setenv("LANGCHAIN_API_KEY", "foo")
