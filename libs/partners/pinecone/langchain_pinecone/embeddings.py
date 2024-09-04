@@ -92,7 +92,7 @@ class PineconeEmbeddings(BaseModel, Embeddings):
         self._client = client
 
         # initialize async client
-        if not (self._async_client or None):
+        if not self._async_client:
             self._async_client = aiohttp.ClientSession(
                 headers={
                     "Api-Key": api_key_str,
