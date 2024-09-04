@@ -2,13 +2,13 @@ import time
 from dataclasses import dataclass
 from typing import Any, Dict, List, Set, Tuple, Union, cast
 
-from langchain_core.pydantic_v1 import (
+from langchain_core.utils.json_schema import dereference_refs
+from langchain_core.utils.pydantic import is_basemodel_instance
+from pydantic import (
     BaseModel,
     Field,
     create_model,
 )
-from langchain_core.utils.json_schema import dereference_refs
-from langchain_core.utils.pydantic import is_basemodel_instance
 
 
 @dataclass(frozen=True)
