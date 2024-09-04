@@ -67,6 +67,7 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    PrivateAttr,
     SecretStr,
     model_validator,
 )
@@ -513,8 +514,8 @@ class ChatAnthropic(BaseChatModel):
         populate_by_name=True,
     )
 
-    _client: anthropic.Client = Field(default=None)
-    _async_client: anthropic.AsyncClient = Field(default=None)
+    _client: anthropic.Client = PrivateAttr(default=None)
+    _async_client: anthropic.AsyncClient = PrivateAttr(default=None)
 
     model: str = Field(alias="model_name")
     """Model name to use."""
