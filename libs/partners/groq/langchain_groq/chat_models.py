@@ -374,38 +374,38 @@ class ChatGroq(BaseChatModel):
         values["model_kwargs"] = extra
         return values
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="after")
+    def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
-        if values["n"] < 1:
+        if self.n < 1:
             raise ValueError("n must be at least 1.")
-        if values["n"] > 1 and values["streaming"]:
+        if self.n > 1 and self.streaming:
             raise ValueError("n must be 1 when streaming.")
-        if values["temperature"] == 0:
-            values["temperature"] = 1e-8
+        if self.temperature == 0:
+            self.temperature = 1e-8
 
         client_params = {
-            "api_key": values["groq_api_key"].get_secret_value()
-            if values["groq_api_key"]
+            "api_key": self.groq_api_key.get_secret_value()
+            if self.groq_api_key
             else None,
-            "base_url": values["groq_api_base"],
-            "timeout": values["request_timeout"],
-            "max_retries": values["max_retries"],
-            "default_headers": values["default_headers"],
-            "default_query": values["default_query"],
+            "base_url": self.groq_api_base,
+            "timeout": self.request_timeout,
+            "max_retries": self.max_retries,
+            "default_headers": self.default_headers,
+            "default_query": self.default_query,
         }
 
         try:
             import groq
 
-            sync_specific = {"http_client": values["http_client"]}
-            if not values.get("client"):
-                values["client"] = groq.Groq(
+            sync_specific = {"http_client": self.http_client}
+            if not (self.client or None):
+                self.client = groq.Groq(
                     **client_params, **sync_specific
                 ).chat.completions
-            if not values.get("async_client"):
-                async_specific = {"http_client": values["http_async_client"]}
-                values["async_client"] = groq.AsyncGroq(
+            if not (self.async_client or None):
+                async_specific = {"http_client": self.http_async_client}
+                self.async_client = groq.AsyncGroq(
                     **client_params, **async_specific
                 ).chat.completions
         except ImportError:
@@ -413,7 +413,7 @@ class ChatGroq(BaseChatModel):
                 "Could not import groq python package. "
                 "Please install it with `pip install groq`."
             )
-        return values
+        return self
 
     #
     # Serializable class method overrides
