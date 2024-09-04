@@ -75,8 +75,6 @@ class PiecesOSLLM(BaseLLM):
 
     def set_model(self, model_name: str) -> None:
         """Set the model to be used."""
-        if model_name in self.get_supported_models():
-            self.model = model_name
-            print(f"Model set to {model_name}. Note: This setting may not directly affect API calls.")
-        else:
-            raise ValueError(f"Unsupported model: {model_name}. Supported models are: {', '.join(self.get_supported_models())}")
+                self.model = model_name
+                self.client.model_name = model_name
+                print(f"Model set to {model_name}.")
