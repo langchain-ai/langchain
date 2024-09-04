@@ -54,13 +54,13 @@ class VoyageAIEmbeddings(BaseModel, Embeddings):
             values["batch_size"] = 72 if model in ["voyage-2", "voyage-02"] else 7
         return values
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def validate_environment(cls, values: dict) -> dict:
+    @model_validator(mode="after")
+    def validate_environment(self) -> Self:
         """Validate that VoyageAI credentials exist in environment."""
-        api_key_str = values["voyage_api_key"].get_secret_value()
-        values["_client"] = voyageai.Client(api_key=api_key_str)
-        values["_aclient"] = voyageai.client_async.AsyncClient(api_key=api_key_str)
-        return values
+        api_key_str = self.voyage_api_key.get_secret_value()
+        self._client = voyageai.Client(api_key=api_key_str)
+        self._aclient = voyageai.client_async.AsyncClient(api_key=api_key_str)
+        return self
 
     def _get_batch_iterator(self, texts: List[str]) -> Iterable:
         if self.show_progress_bar:
