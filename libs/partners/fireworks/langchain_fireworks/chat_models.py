@@ -805,7 +805,7 @@ class ChatFireworks(BaseChatModel):
                 from typing import Optional
 
                 from langchain_fireworks import ChatFireworks
-                from langchain_core.pydantic_v1 import BaseModel, Field
+                from pydantic import BaseModel, Field
 
 
                 class AnswerWithJustification(BaseModel):
@@ -836,7 +836,7 @@ class ChatFireworks(BaseChatModel):
             .. code-block:: python
 
                 from langchain_fireworks import ChatFireworks
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
 
 
                 class AnswerWithJustification(BaseModel):
@@ -923,7 +923,7 @@ class ChatFireworks(BaseChatModel):
             .. code-block::
 
                 from langchain_fireworks import ChatFireworks
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
 
                 class AnswerWithJustification(BaseModel):
                     answer: str
