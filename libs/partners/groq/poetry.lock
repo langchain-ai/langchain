@@ -11,9 +11,6 @@ files = [
     {file = "annotated_types-0.7.0.tar.gz", hash = "sha256:aff07c09a53a08bc8cfccb9c85b05f1aa9a2a6f23728d790723543408344ce89"},
 ]
 
-[package.dependencies]
-typing-extensions = {version = ">=4.0.0", markers = "python_version < \"3.9\""}
-
 [[package]]
 name = "anyio"
 version = "4.4.0"
@@ -323,10 +320,10 @@ files = [
 
 [[package]]
 name = "langchain-core"
-version = "0.2.26"
+version = "0.2.38"
 description = "Building applications with LLMs through composability"
 optional = false
-python-versions = ">=3.8.1,<4.0"
+python-versions = ">=3.9,<4.0"
 files = []
 develop = true
 
@@ -941,5 +938,5 @@ watchmedo = ["PyYAML (>=3.10)"]
 
 [metadata]
 lock-version = "2.0"
-python-versions = ">=3.8.1,<4.0"
-content-hash = "1acd2a13007daf276263c7036959c1a4c973d4fd8dba924105c8fdc035e02a88"
+python-versions = ">=3.9,<4.0"
+content-hash = "b38cdb706f0dbe01f2f5d9b263904695fd468476459360a0cfbde42c940ea1cb"
