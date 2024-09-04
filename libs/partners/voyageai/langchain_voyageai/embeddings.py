@@ -11,6 +11,8 @@ from pydantic import (
 )
 from langchain_core.utils import secret_from_env
 from pydantic import ConfigDict
+from typing_extensions import Self
+
 
 
 logger = logging.getLogger(__name__)
