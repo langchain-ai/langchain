@@ -45,24 +45,6 @@
       'ChatMistralAI',
     ]),
     'kwargs': dict({
-      'async_client': dict({
-        'id': list([
-          'httpx',
-          'AsyncClient',
-        ]),
-        'lc': 1,
-        'repr': '<httpx.AsyncClient object at 0x1119d6990>',
-        'type': 'not_implemented',
-      }),
-      'client': dict({
-        'id': list([
-          'httpx',
-          'Client',
-        ]),
-        'lc': 1,
-        'repr': '<httpx.Client object at 0x1119d3b90>',
-        'type': 'not_implemented',
-      }),
       'endpoint': 'boo',
       'max_concurrent_requests': 64,
       'max_retries': 2,
