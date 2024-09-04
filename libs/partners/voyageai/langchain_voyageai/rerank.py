@@ -8,9 +8,11 @@ import voyageai  # type: ignore
 from langchain_core.callbacks.manager import Callbacks
 from langchain_core.documents import Document
 from langchain_core.documents.compressor import BaseDocumentCompressor
-from langchain_core.pydantic_v1 import SecretStr, root_validator
+from pydantic import SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str
-from voyageai.object import RerankingObject  # type: ignore
+from voyageai.object import RerankingObject
+from pydantic import ConfigDict
+  # type: ignore
 
 
 class VoyageAIRerank(BaseDocumentCompressor):
@@ -28,8 +30,7 @@ class VoyageAIRerank(BaseDocumentCompressor):
     """Number of documents to return."""
     truncation: bool = True
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True,)
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:

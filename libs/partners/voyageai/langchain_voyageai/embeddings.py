@@ -3,13 +3,15 @@ from typing import Iterable, List, Optional
 
 import voyageai  # type: ignore
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import (
+from pydantic import (
     BaseModel,
     Field,
     SecretStr,
     root_validator,
 )
 from langchain_core.utils import secret_from_env
+from pydantic import ConfigDict
+
 
 logger = logging.getLogger(__name__)
 
@@ -40,9 +42,7 @@ class VoyageAIEmbeddings(BaseModel, Embeddings):
         ),
     )
 
-    class Config:
-        extra = "forbid"
-        allow_population_by_field_name = True
+    model_config = ConfigDict(extra="forbid",populate_by_name=True,)
 
     @root_validator(pre=True)
     def default_values(cls, values: dict) -> dict:
