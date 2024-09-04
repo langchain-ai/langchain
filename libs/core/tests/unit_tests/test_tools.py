@@ -1756,13 +1756,17 @@ def test__get_all_basemodel_annotations_v2(use_v1_namespace: bool) -> None:
     A = TypeVar("A")
 
     if use_v1_namespace:
+        from pydantic.v1 import BaseModel as BM1
 
-        class ModelA(BaseModel, Generic[A], extra="allow"):
+        class ModelA(BM1, Generic[A], extra="allow"):
             a: A
     else:
+        from pydantic import BaseModel as BM2
+        from pydantic import ConfigDict
 
-        class ModelA(BaseModelProper, Generic[A], extra="allow"):  # type: ignore[no-redef]
+        class ModelA(BM2, Generic[A], extra="allow"):  # type: ignore[no-redef]
             a: A
+            model_config = ConfigDict(arbitrary_types_allowed=True)
 
     class ModelB(ModelA[str]):
         b: Annotated[ModelA[Dict[str, Any]], "foo"]
@@ -1869,6 +1873,26 @@ def test__get_all_basemodel_annotations_v1() -> None:
     }
     actual = _get_all_basemodel_annotations(ModelD[int])
     assert actual == expected
+
+
+def test_tool_annotations_preserved() -> None:
+    """Test that annotations are preserved when creating a tool."""
+
+    @tool
+    def my_tool(val: int, other_val: Annotated[dict, "my annotation"]) -> str:
+        """Tool docstring."""
+        return "foo"
+
+    schema = my_tool.get_input_schema()  # type: ignore[attr-defined]
+
+    func = my_tool.func  # type: ignore[attr-defined]
+
+    expected_type_hints = {
+        name: hint
+        for name, hint in func.__annotations__.items()
+        if name in inspect.signature(func).parameters
+    }
+    assert schema.__annotations__ == expected_type_hints
 
 
 @pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Testing pydantic v2.")
