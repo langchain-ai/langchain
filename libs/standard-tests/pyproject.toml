@@ -15,6 +15,7 @@ python = ">=3.8.1,<4.0"
 langchain-core = ">=0.1.40,<0.3"
 pytest = ">=7,<9"
 httpx = "^0.27.0"
+syrupy = "^4"
 
 [tool.poetry.group.test]
 optional = true
