@@ -208,7 +208,7 @@ class SQLRecordManager(RecordManager):
                 query = text("SELECT EXTRACT (EPOCH FROM CURRENT_TIMESTAMP);")
             elif self.dialect == "mssql":
                 query = text(
-                    "SELECT DATEDIFF_BIG(MILLISECOND, '1970-01-01T00:00:00', GETUTCDATE()) / 1000.0;" # noqa: E501
+                    "SELECT DATEDIFF_BIG(MILLISECOND, '1970-01-01T00:00:00', GETUTCDATE()) / 1000.0;"  # noqa: E501
                 )
             else:
                 raise NotImplementedError(f"Not implemented for dialect {self.dialect}")
@@ -242,7 +242,7 @@ class SQLRecordManager(RecordManager):
                 query = text("SELECT EXTRACT (EPOCH FROM CURRENT_TIMESTAMP);")
             elif self.dialect == "mssql":
                 query = text(
-                    "SELECT DATEDIFF_BIG(MILLISECOND, '1970-01-01T00:00:00', GETUTCDATE()) / 1000.0;" # noqa: E501
+                    "SELECT DATEDIFF_BIG(MILLISECOND, '1970-01-01T00:00:00', GETUTCDATE()) / 1000.0;"  # noqa: E501
                 )
             else:
                 raise NotImplementedError(f"Not implemented for dialect {self.dialect}")
@@ -337,7 +337,7 @@ class SQLRecordManager(RecordManager):
                         (
                             f"('{str(uuid.uuid4())}', '{record['key']}', "
                             f"'{record['namespace']}', {record['updated_at']}, "
-                            f"{'NULL' if record['group_id'] is None else repr(record['group_id'])})" # noqa: E501
+                            f"{'NULL' if record['group_id'] is None else repr(record['group_id'])})"  # noqa: E501
                         )
                         for record in records_to_upsert
                     ]
@@ -353,7 +353,7 @@ class SQLRecordManager(RecordManager):
                     WHEN NOT MATCHED THEN
                         INSERT ([uuid], [key], [namespace], [updated_at], [group_id])
                         VALUES (source.[uuid], source.[key], source.[namespace], source.[updated_at], source.[group_id]);
-                """) # noqa: E501
+                """)  # noqa: E501
             else:
                 raise NotImplementedError(f"Unsupported dialect {self.dialect}")
 
@@ -442,7 +442,7 @@ class SQLRecordManager(RecordManager):
                         (
                             f"('{str(uuid.uuid4())}', '{record['key']}', "
                             f"'{record['namespace']}', {record['updated_at']}, "
-                            f"{'NULL' if record['group_id'] is None else repr(record['group_id'])})" # noqa: E501
+                            f"{'NULL' if record['group_id'] is None else repr(record['group_id'])})"  # noqa: E501
                         )
                         for record in records_to_upsert
                     ]
@@ -458,7 +458,7 @@ class SQLRecordManager(RecordManager):
                     WHEN NOT MATCHED THEN
                         INSERT ([uuid], [key], [namespace], [updated_at], [group_id])
                         VALUES (source.[uuid], source.[key], source.[namespace], source.[updated_at], source.[group_id]);
-                """) # noqa: E501
+                """)  # noqa: E501
             else:
                 raise NotImplementedError(f"Unsupported dialect {self.dialect}")
 
