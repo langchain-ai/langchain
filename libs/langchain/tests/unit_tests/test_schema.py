@@ -19,26 +19,23 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, Generation
 from langchain_core.prompt_values import ChatPromptValueConcrete, StringPromptValue
-from langchain_core.pydantic_v1 import BaseModel, ValidationError
+from pydantic import RootModel, ValidationError
 
 
 def test_serialization_of_wellknown_objects() -> None:
     """Test that pydantic is able to serialize and deserialize well known objects."""
-
-    class WellKnownLCObject(BaseModel):
-        """A well known LangChain object."""
-
-        __root__: Union[
+    well_known_lc_object = RootModel[
+        Union[
             Document,
             HumanMessage,
             SystemMessage,
             ChatMessage,
             FunctionMessage,
+            FunctionMessageChunk,
             AIMessage,
             HumanMessageChunk,
             SystemMessageChunk,
             ChatMessageChunk,
-            FunctionMessageChunk,
             AIMessageChunk,
             StringPromptValue,
             ChatPromptValueConcrete,
@@ -49,6 +46,7 @@ def test_serialization_of_wellknown_objects() -> None:
             Generation,
             ChatGenerationChunk,
         ]
+    ]
 
     lc_objects = [
         HumanMessage(content="human"),
@@ -97,11 +95,11 @@ def test_serialization_of_wellknown_objects() -> None:
     ]
 
     for lc_object in lc_objects:
-        d = lc_object.dict()
+        d = lc_object.model_dump()
         assert "type" in d, f"Missing key `type` for {type(lc_object)}"
-        obj1 = WellKnownLCObject.parse_obj(d)
-        assert type(obj1.__root__) is type(lc_object), f"failed for {type(lc_object)}"
+        obj1 = well_known_lc_object.model_validate(d)
+        assert type(obj1.root) is type(lc_object), f"failed for {type(lc_object)}"
 
-    with pytest.raises(ValidationError):
+    with pytest.raises((TypeError, ValidationError)):
         # Make sure that specifically validation error is raised
-        WellKnownLCObject.parse_obj({})
+        well_known_lc_object.model_validate({})

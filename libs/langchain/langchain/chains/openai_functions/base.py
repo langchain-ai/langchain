@@ -19,11 +19,11 @@ from langchain_core.output_parsers.openai_functions import (
     PydanticAttrOutputFunctionsParser,
 )
 from langchain_core.prompts import BasePromptTemplate
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.utils.function_calling import (
     PYTHON_TO_JSON_TYPES,
     convert_to_openai_function,
 )
+from pydantic import BaseModel
 
 from langchain.chains import LLMChain
 from langchain.chains.structured_output.base import (
