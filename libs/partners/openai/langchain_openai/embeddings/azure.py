@@ -195,7 +195,7 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
             "default_headers": self.default_headers,
             "default_query": self.default_query,
         }
-        if not (self.client or None):
+        if not self.client:
             sync_specific: dict = {"http_client": self.http_client}
             self.client = openai.AzureOpenAI(
                 **client_params,  # type: ignore[arg-type]
