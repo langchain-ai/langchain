@@ -18,7 +18,7 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models import BaseLLM, LangSmithParams
 from langchain_core.outputs import GenerationChunk, LLMResult
-from pydantic import Field, root_validator
+from pydantic import Field, root_validator, PrivateAttr
 from ollama import AsyncClient, Client, Options
 
 
@@ -115,12 +115,12 @@ class OllamaLLM(BaseLLM):
     For a full list of the params, see [this link](https://pydoc.dev/httpx/latest/httpx.Client.html)
     """
 
-    _client: Client = Field(default=None)
+    _client: Client = PrivateAttr(default=None)
     """
     The client to use for making requests.
     """
 
-    _async_client: AsyncClient = Field(default=None)
+    _async_client: AsyncClient = PrivateAttr(default=None)
     """
     The async client to use for making requests.
     """

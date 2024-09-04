@@ -4,7 +4,7 @@ from typing import (
 )
 
 from langchain_core.embeddings import Embeddings
-from pydantic import BaseModel, Field, root_validator
+from pydantic import BaseModel, Field, root_validator, PrivateAttr
 from ollama import AsyncClient, Client
 from pydantic import ConfigDict
 
@@ -128,12 +128,12 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     For a full list of the params, see [this link](https://pydoc.dev/httpx/latest/httpx.Client.html)
     """
 
-    _client: Client = Field(default=None)
+    _client: Client = PrivateAttr(default=None)
     """
     The client to use for making requests.
     """
 
-    _async_client: AsyncClient = Field(default=None)
+    _async_client: AsyncClient = PrivateAttr(default=None)
     """
     The async client to use for making requests.
     """
