@@ -1,10 +1,12 @@
-# RAG - AWS Bedrock
+# RAG - AWS Bedrock, FAISS
 
 This template is designed to connect with the `AWS Bedrock` service, a managed server that offers a set of foundation models.
 
 It primarily uses the `Anthropic Claude` for text generation and `Amazon Titan` for text embedding, and utilizes FAISS as the vectorstore.
 
-For additional context on the RAG pipeline, refer to [this notebook](https://github.com/aws-samples/amazon-bedrock-workshop/blob/main/03_QuestionAnswering/01_qa_w_rag_claude.ipynb).
+For additional context on the RAG pipeline, refer to [these notebooks](https://github.com/aws-samples/amazon-bedrock-workshop/tree/main/02_KnowledgeBases_and_RAG).
+
+See [The FAISS Library](https://arxiv.org/pdf/2401.08281) paper for more details.
 
 ## Environment Setup
 
