@@ -207,7 +207,9 @@ class SQLRecordManager(RecordManager):
             elif self.dialect == "postgresql":
                 query = text("SELECT EXTRACT (EPOCH FROM CURRENT_TIMESTAMP);")
             elif self.dialect == "mssql":
-                query = text("SELECT DATEDIFF_BIG(MILLISECOND, '1970-01-01T00:00:00', GETUTCDATE()) / 1000.0;")
+                query = text(
+                    "SELECT DATEDIFF_BIG(MILLISECOND, '1970-01-01T00:00:00', GETUTCDATE()) / 1000.0;" # noqa: E501
+                )
             else:
                 raise NotImplementedError(f"Not implemented for dialect {self.dialect}")
 
@@ -239,7 +241,9 @@ class SQLRecordManager(RecordManager):
             elif self.dialect == "postgresql":
                 query = text("SELECT EXTRACT (EPOCH FROM CURRENT_TIMESTAMP);")
             elif self.dialect == "mssql":
-                query = text("SELECT DATEDIFF_BIG(MILLISECOND, '1970-01-01T00:00:00', GETUTCDATE()) / 1000.0;")
+                query = text(
+                    "SELECT DATEDIFF_BIG(MILLISECOND, '1970-01-01T00:00:00', GETUTCDATE()) / 1000.0;" # noqa: E501
+                )
             else:
                 raise NotImplementedError(f"Not implemented for dialect {self.dialect}")
 
@@ -328,11 +332,16 @@ class SQLRecordManager(RecordManager):
                 # note: this branch utilizes SQL server's MERGE statement to acheive
                 # the same functionality as `insert.on_conflict_do_update()` used
                 # in sqlite and postgresql branches
-                values_clause = ", ".join([
-                    f"('{str(uuid.uuid4())}', '{record['key']}', '{record['namespace']}', {record['updated_at']}, "
-                    f"{'NULL' if record['group_id'] is None else repr(record['group_id'])})"
-                    for record in records_to_upsert
-                ])
+                values_clause = ", ".join(
+                    [
+                        (
+                            f"('{str(uuid.uuid4())}', '{record['key']}', "
+                            f"'{record['namespace']}', {record['updated_at']}, "
+                            f"{'NULL' if record['group_id'] is None else repr(record['group_id'])})" # noqa: E501
+                        )
+                        for record in records_to_upsert
+                    ]
+                )
                 stmt = text(f"""
                     MERGE INTO upsertion_record AS target
                     USING (VALUES {values_clause}) AS source ([uuid], [key], [namespace], [updated_at], [group_id])
@@ -344,7 +353,7 @@ class SQLRecordManager(RecordManager):
                     WHEN NOT MATCHED THEN
                         INSERT ([uuid], [key], [namespace], [updated_at], [group_id])
                         VALUES (source.[uuid], source.[key], source.[namespace], source.[updated_at], source.[group_id]);
-                """)
+                """) # noqa: E501
             else:
                 raise NotImplementedError(f"Unsupported dialect {self.dialect}")
 
@@ -428,11 +437,16 @@ class SQLRecordManager(RecordManager):
                 # note: this branch utilizes SQL server's MERGE statement to acheive
                 # the same functionality as `insert.on_conflict_do_update()` used
                 # in sqlite and postgresql branches
-                values_clause = ", ".join([
-                    f"('{str(uuid.uuid4())}', '{record['key']}', '{record['namespace']}', {record['updated_at']}, "
-                    f"{'NULL' if record['group_id'] is None else repr(record['group_id'])})"
-                    for record in records_to_upsert
-                ])
+                values_clause = ", ".join(
+                    [
+                        (
+                            f"('{str(uuid.uuid4())}', '{record['key']}', "
+                            f"'{record['namespace']}', {record['updated_at']}, "
+                            f"{'NULL' if record['group_id'] is None else repr(record['group_id'])})" # noqa: E501
+                        )
+                        for record in records_to_upsert
+                    ]
+                )
                 stmt = text(f"""
                     MERGE INTO upsertion_record AS target
                     USING (VALUES {values_clause}) AS source ([uuid], [key], [namespace], [updated_at], [group_id])
@@ -444,7 +458,7 @@ class SQLRecordManager(RecordManager):
                     WHEN NOT MATCHED THEN
                         INSERT ([uuid], [key], [namespace], [updated_at], [group_id])
                         VALUES (source.[uuid], source.[key], source.[namespace], source.[updated_at], source.[group_id]);
-                """)
+                """) # noqa: E501
             else:
                 raise NotImplementedError(f"Unsupported dialect {self.dialect}")
 
