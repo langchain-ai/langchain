@@ -987,7 +987,7 @@ def _make_tools_invocation(name_to_arguments: Dict[str, Dict[str, Any]]) -> AIMe
         AIMessage that represents a request to invoke a tool.
     """
     raw_tool_calls = [
-        {"function": {"name": name, "arguments": json.dumps(arguments)}, "id": idx}
+        {"function": {"name": name, "arguments": json.dumps(arguments)}, "id": str(idx)}
         for idx, (name, arguments) in enumerate(name_to_arguments.items())
     ]
     tool_calls = [
@@ -1085,14 +1085,14 @@ async def test_openai_agent_tools_agent() -> None:
                                                     "name": "find_pet",
                                                     "arguments": '{"pet": "cat"}',
                                                 },
-                                                "id": 0,
+                                                "id": "0",
                                             },
                                             {
                                                 "function": {
                                                     "name": "check_time",
                                                     "arguments": "{}",
                                                 },
-                                                "id": 1,
+                                                "id": "1",
                                             },
                                         ]
                                     },
@@ -1111,14 +1111,14 @@ async def test_openai_agent_tools_agent() -> None:
                                             "name": "find_pet",
                                             "arguments": '{"pet": "cat"}',
                                         },
-                                        "id": 0,
+                                        "id": "0",
                                     },
                                     {
                                         "function": {
                                             "name": "check_time",
                                             "arguments": "{}",
                                         },
-                                        "id": 1,
+                                        "id": "1",
                                     },
                                 ]
                             },
@@ -1141,14 +1141,14 @@ async def test_openai_agent_tools_agent() -> None:
                                                     "name": "find_pet",
                                                     "arguments": '{"pet": "cat"}',
                                                 },
-                                                "id": 0,
+                                                "id": "0",
                                             },
                                             {
                                                 "function": {
                                                     "name": "check_time",
                                                     "arguments": "{}",
                                                 },
-                                                "id": 1,
+                                                "id": "1",
                                             },
                                         ]
                                     },
@@ -1167,14 +1167,14 @@ async def test_openai_agent_tools_agent() -> None:
                                             "name": "find_pet",
                                             "arguments": '{"pet": "cat"}',
                                         },
-                                        "id": 0,
+                                        "id": "0",
                                     },
                                     {
                                         "function": {
                                             "name": "check_time",
                                             "arguments": "{}",
                                         },
-                                        "id": 1,
+                                        "id": "1",
                                     },
                                 ]
                             },
@@ -1203,14 +1203,14 @@ async def test_openai_agent_tools_agent() -> None:
                                                         "name": "find_pet",
                                                         "arguments": '{"pet": "cat"}',
                                                     },
-                                                    "id": 0,
+                                                    "id": "0",
                                                 },
                                                 {
                                                     "function": {
                                                         "name": "check_time",
                                                         "arguments": "{}",
                                                     },
-                                                    "id": 1,
+                                                    "id": "1",
                                                 },
                                             ]
                                         },
@@ -1245,14 +1245,14 @@ async def test_openai_agent_tools_agent() -> None:
                                                         "name": "find_pet",
                                                         "arguments": '{"pet": "cat"}',
                                                     },
-                                                    "id": 0,
+                                                    "id": "0",
                                                 },
                                                 {
                                                     "function": {
                                                         "name": "check_time",
                                                         "arguments": "{}",
                                                     },
-                                                    "id": 1,
+                                                    "id": "1",
                                                 },
                                             ]
                                         },
