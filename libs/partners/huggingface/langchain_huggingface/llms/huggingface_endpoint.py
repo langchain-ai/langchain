@@ -9,7 +9,7 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
-from pydantic import Field, root_validator
+from pydantic import Field, root_validator, model_validator
 from langchain_core.utils import get_from_dict_or_env, get_pydantic_field_names
 from pydantic import ConfigDict
 
@@ -122,8 +122,9 @@ class HuggingFaceEndpoint(LLM):
 
     model_config = ConfigDict(extra="forbid",)
 
-    @root_validator(pre=True)
-    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})
