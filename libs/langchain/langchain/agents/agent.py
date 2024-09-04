@@ -1138,7 +1138,7 @@ class AgentExecutor(Chain):
         """
         agent = self.agent
         tools = self.tools
-        allowed_tools = agent.get_allowed_tools()
+        allowed_tools = agent.get_allowed_tools()  # type: ignore
         if allowed_tools is not None:
             if set(allowed_tools) != set([tool.name for tool in tools]):
                 raise ValueError(
