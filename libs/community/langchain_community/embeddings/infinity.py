@@ -8,10 +8,8 @@ import aiohttp
 import numpy as np
 import requests
 from langchain_core.embeddings import Embeddings
-from pydantic import BaseModel, root_validator, model_validator
 from langchain_core.utils import get_from_dict_or_env
-from pydantic import ConfigDict
-
+from pydantic import BaseModel, ConfigDict, model_validator, root_validator
 
 __all__ = ["InfinityEmbeddings"]
 
@@ -46,7 +44,9 @@ class InfinityEmbeddings(BaseModel, Embeddings):
     """Infinity client."""
 
     # LLM call kwargs
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @model_validator(mode="before")
     @classmethod

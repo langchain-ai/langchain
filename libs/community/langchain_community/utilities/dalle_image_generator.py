@@ -4,17 +4,14 @@ import logging
 import os
 from typing import Any, Dict, Mapping, Optional, Tuple, Union
 
-from pydantic import BaseModel, Field, root_validator, model_validator
 from langchain_core.utils import (
     get_from_dict_or_env,
     get_pydantic_field_names,
 )
-
-from langchain_community.utils.openai import is_openai_v1
-from pydantic import ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, model_validator, root_validator
 from typing_extensions import Self
 
-
+from langchain_community.utils.openai import is_openai_v1
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +60,9 @@ class DallEAPIWrapper(BaseModel):
     http_client: Union[Any, None] = None
     """Optional httpx.Client."""
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @model_validator(mode="before")
     @classmethod
@@ -105,9 +104,7 @@ class DallEAPIWrapper(BaseModel):
             or os.getenv("OPENAI_ORGANIZATION")
             or None
         )
-        self.openai_api_base = self.openai_api_base or os.getenv(
-            "OPENAI_API_BASE"
-        )
+        self.openai_api_base = self.openai_api_base or os.getenv("OPENAI_API_BASE")
         self.openai_proxy = get_from_dict_or_env(
             values,
             "openai_proxy",

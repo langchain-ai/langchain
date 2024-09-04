@@ -4,10 +4,8 @@ from typing import Dict, List, Optional, cast
 
 import requests
 from langchain_core.embeddings import Embeddings
-from pydantic import BaseModel, SecretStr, root_validator, model_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
-from pydantic import ConfigDict
-
+from pydantic import BaseModel, ConfigDict, SecretStr, model_validator, root_validator
 
 
 class ClovaEmbeddings(BaseModel, Embeddings):
@@ -55,7 +53,9 @@ class ClovaEmbeddings(BaseModel, Embeddings):
     app_id: Optional[SecretStr] = None
     """Application ID for identifying your application."""
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @model_validator(mode="before")
     @classmethod

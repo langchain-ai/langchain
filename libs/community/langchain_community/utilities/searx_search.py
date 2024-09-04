@@ -132,16 +132,16 @@ from typing import Any, Dict, List, Optional
 
 import aiohttp
 import requests
+from langchain_core.utils import get_from_dict_or_env
 from pydantic import (
     BaseModel,
+    ConfigDict,
     Field,
     PrivateAttr,
+    model_validator,
     root_validator,
-    validator, model_validator,
+    validator,
 )
-from langchain_core.utils import get_from_dict_or_env
-from pydantic import ConfigDict
-
 
 
 def _get_default_params() -> dict:
@@ -260,7 +260,9 @@ class SearxSearchWrapper(BaseModel):
 
         return values
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     def _searx_api_query(self, params: dict) -> SearxResults:
         """Actual request to searx API."""

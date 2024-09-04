@@ -10,8 +10,8 @@ from typing import (
 )
 
 from langchain_core.embeddings import Embeddings
-from pydantic import BaseModel, root_validator, model_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, ConfigDict, model_validator, root_validator
 from requests.exceptions import HTTPError
 from tenacity import (
     before_sleep_log,
@@ -20,8 +20,6 @@ from tenacity import (
     stop_after_attempt,
     wait_exponential,
 )
-from pydantic import ConfigDict
-
 
 logger = logging.getLogger(__name__)
 
@@ -110,7 +108,9 @@ class DashScopeEmbeddings(BaseModel, Embeddings):
     max_retries: int = 5
     """Maximum number of retries to make when generating."""
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @model_validator(mode="before")
     @classmethod

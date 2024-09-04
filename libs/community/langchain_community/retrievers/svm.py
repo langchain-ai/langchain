@@ -11,7 +11,6 @@ from langchain_core.retrievers import BaseRetriever
 from pydantic import ConfigDict
 
 
-
 def create_index(contexts: List[str], embeddings: Embeddings) -> np.ndarray:
     """
     Create an index of embeddings for a list of contexts.
@@ -47,7 +46,9 @@ class SVMRetriever(BaseRetriever):
     relevancy_threshold: Optional[float] = None
     """Threshold for relevancy."""
 
-    model_config = ConfigDict(arbitrary_types_allowed=True,)
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     @classmethod
     def from_texts(

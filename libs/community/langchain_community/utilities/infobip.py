@@ -1,14 +1,12 @@
 """Util that sends messages via Infobip."""
 
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
 
 import requests
-from pydantic import BaseModel, root_validator, model_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, ConfigDict, model_validator, root_validator
 from requests.adapters import HTTPAdapter
 from urllib3.util import Retry
-from pydantic import ConfigDict
-
 
 
 class InfobipAPIWrapper(BaseModel):
@@ -17,7 +15,9 @@ class InfobipAPIWrapper(BaseModel):
     infobip_api_key: Optional[str] = None
     infobip_base_url: Optional[str] = "https://api.infobip.com"
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @model_validator(mode="before")
     @classmethod

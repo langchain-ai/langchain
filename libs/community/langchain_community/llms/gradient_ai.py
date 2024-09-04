@@ -11,14 +11,11 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, LLMResult
-from pydantic import Field, root_validator, model_validator
 from langchain_core.utils import get_from_dict_or_env
-
-from langchain_community.llms.utils import enforce_stop_tokens
-from pydantic import ConfigDict
+from pydantic import ConfigDict, Field, model_validator, root_validator
 from typing_extensions import Self
 
-
+from langchain_community.llms.utils import enforce_stop_tokens
 
 
 class TrainResult(TypedDict):
@@ -77,7 +74,10 @@ class GradientLLM(BaseLLM):
     """ClientSession, private, subject to change in upcoming releases."""
 
     # LLM call kwargs
-    model_config = ConfigDict(populate_by_name=True,extra="forbid",)
+    model_config = ConfigDict(
+        populate_by_name=True,
+        extra="forbid",
+    )
 
     @model_validator(mode="before")
     @classmethod
@@ -111,16 +111,10 @@ class GradientLLM(BaseLLM):
             pass
 
         # Can be most to post_init_validation
-        if (
-            self.gradient_access_token is None
-            or len(self.gradient_access_token) < 10
-        ):
+        if self.gradient_access_token is None or len(self.gradient_access_token) < 10:
             raise ValueError("env variable `GRADIENT_ACCESS_TOKEN` must be set")
 
-        if (
-            self.gradient_workspace_id is None
-            or len(self.gradient_access_token) < 3
-        ):
+        if self.gradient_workspace_id is None or len(self.gradient_access_token) < 3:
             raise ValueError("env variable `GRADIENT_WORKSPACE_ID` must be set")
 
         if self.model_kwargs:

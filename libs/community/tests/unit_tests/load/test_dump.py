@@ -11,10 +11,8 @@ from langchain_core.load.dump import dumps
 from langchain_core.load.serializable import Serializable
 from langchain_core.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
-from pydantic import Field, root_validator, model_validator
 from langchain_core.tracers.langchain import LangChainTracer
-from pydantic import ConfigDict
-
+from pydantic import ConfigDict, Field, model_validator, root_validator
 
 
 class Person(Serializable):
@@ -184,7 +182,9 @@ class TestClass(Serializable):
     my_favorite_secret: str = Field(alias="my_favorite_secret_alias")
     my_other_secret: str = Field()
 
-    model_config = ConfigDict(populate_by_name=True,)
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
     @model_validator(mode="before")
     @classmethod

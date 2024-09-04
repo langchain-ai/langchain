@@ -9,8 +9,8 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from pydantic import BaseModel
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel
 
 
 class ApiConfig(BaseModel):

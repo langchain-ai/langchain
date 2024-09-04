@@ -6,12 +6,10 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from pydantic import BaseModel, Field
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel, ConfigDict, Field
 
 from langchain_community.utilities.searx_search import SearxSearchWrapper
-from pydantic import ConfigDict
-
 
 
 class SearxSearchQueryInput(BaseModel):
@@ -64,7 +62,9 @@ class SearxSearchResults(BaseTool):
     kwargs: dict = Field(default_factory=dict)
     args_schema: Type[BaseModel] = SearxSearchQueryInput
 
-    model_config = ConfigDict(extra="allow",)
+    model_config = ConfigDict(
+        extra="allow",
+    )
 
     def _run(
         self,

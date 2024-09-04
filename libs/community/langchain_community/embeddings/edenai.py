@@ -1,16 +1,15 @@
 from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 from pydantic import (
     BaseModel,
+    ConfigDict,
     Field,
     SecretStr,
 )
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 
 from langchain_community.utilities.requests import Requests
-from pydantic import ConfigDict
-
 
 
 class EdenAiEmbeddings(BaseModel, Embeddings):
@@ -30,7 +29,9 @@ class EdenAiEmbeddings(BaseModel, Embeddings):
     available models are shown on https://docs.edenai.co/ under 'available providers'
     """
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:

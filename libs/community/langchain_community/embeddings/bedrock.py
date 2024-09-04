@@ -6,12 +6,9 @@ from typing import Any, Dict, List, Optional
 import numpy as np
 from langchain_core._api.deprecation import deprecated
 from langchain_core.embeddings import Embeddings
-from pydantic import BaseModel, root_validator, model_validator
 from langchain_core.runnables.config import run_in_executor
-from pydantic import ConfigDict
+from pydantic import BaseModel, ConfigDict, model_validator, root_validator
 from typing_extensions import Self
-
-
 
 
 @deprecated(
@@ -78,7 +75,9 @@ class BedrockEmbeddings(BaseModel, Embeddings):
     normalize: bool = False
     """Whether the embeddings should be normalized to unit vectors"""
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @model_validator(mode="after")
     def validate_environment(self) -> Self:

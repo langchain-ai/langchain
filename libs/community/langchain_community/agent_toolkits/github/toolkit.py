@@ -2,9 +2,9 @@
 
 from typing import Dict, List
 
-from pydantic import BaseModel, Field
 from langchain_core.tools import BaseTool
 from langchain_core.tools.base import BaseToolkit
+from pydantic import BaseModel, Field
 
 from langchain_community.tools.github.prompt import (
     COMMENT_ON_ISSUE_PROMPT,

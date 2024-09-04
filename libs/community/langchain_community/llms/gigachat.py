@@ -15,7 +15,6 @@ from langchain_core.utils import pre_init
 from langchain_core.utils.pydantic import get_fields
 from pydantic import ConfigDict
 
-
 if TYPE_CHECKING:
     import gigachat
     import gigachat.models as gm
@@ -332,4 +331,6 @@ class GigaChat(_BaseGigaChat, BaseLLM):
                 if run_manager:
                     await run_manager.on_llm_new_token(content)
 
-    model_config = ConfigDict(extra="allow",)
+    model_config = ConfigDict(
+        extra="allow",
+    )

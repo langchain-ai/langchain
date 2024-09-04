@@ -6,11 +6,11 @@ You can obtain a key by following the steps below.
 - Navigate to the API Access page (https://scenex.jina.ai/api) and create a new API key.
 """
 
-from typing import Dict, Any
+from typing import Any, Dict
 
 import requests
-from pydantic import BaseModel, Field, root_validator, model_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, Field, model_validator, root_validator
 from pydantic_settings import BaseSettings
 
 

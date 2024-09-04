@@ -5,10 +5,8 @@ from typing import Any, AsyncGenerator, Dict, Literal, Optional, Union
 
 import aiohttp
 import requests
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from requests import Response
-from pydantic import ConfigDict
-
 
 
 class Requests(BaseModel):
@@ -23,7 +21,10 @@ class Requests(BaseModel):
     auth: Optional[Any] = None
     verify: Optional[bool] = True
 
-    model_config = ConfigDict(arbitrary_types_allowed=True,extra="forbid",)
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
     def get(self, url: str, **kwargs: Any) -> requests.Response:
         """GET the URL and return the text."""
@@ -145,7 +146,10 @@ class GenericRequestsWrapper(BaseModel):
     response_content_type: Literal["text", "json"] = "text"
     verify: bool = True
 
-    model_config = ConfigDict(arbitrary_types_allowed=True,extra="forbid",)
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
     @property
     def requests(self) -> Requests:

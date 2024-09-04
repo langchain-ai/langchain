@@ -4,10 +4,9 @@ import requests
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.utils import get_from_dict_or_env, pre_init
-
-from langchain_community.llms.utils import enforce_stop_tokens
 from pydantic import ConfigDict
 
+from langchain_community.llms.utils import enforce_stop_tokens
 
 INSTRUCTION_KEY = "### Instruction:"
 RESPONSE_KEY = "### Response:"
@@ -60,7 +59,9 @@ class MosaicML(LLM):
 
     mosaicml_api_token: Optional[str] = None
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:

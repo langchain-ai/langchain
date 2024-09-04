@@ -10,10 +10,9 @@ from typing import Any, Dict, List, Literal, Optional
 import aiohttp
 import requests
 from langchain_core.documents import Document
-from pydantic import BaseModel, Field, root_validator, model_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, Field, model_validator, root_validator
 from typing_extensions import Self
-
 
 YOU_API_URL = "https://api.ydc-index.io"
 
@@ -126,7 +125,7 @@ class YouSearchAPIWrapper(BaseModel):
                     warnings.warn(
                         (
                             f"News API-specific field '{field}' is set but "
-                            f"`endpoint_type=\"{self.endpoint_type}\"`. "
+                            f'`endpoint_type="{self.endpoint_type}"`. '
                             "This will have no effect."
                         ),
                         UserWarning,
@@ -147,7 +146,7 @@ class YouSearchAPIWrapper(BaseModel):
         if self.endpoint_type == "snippets":
             warnings.warn(
                 (
-                    f"`endpoint_type=\"{self.endpoint_type}\"` is deprecated. "
+                    f'`endpoint_type="{self.endpoint_type}"` is deprecated. '
                     'Use `endpoint_type="search"` instead.'
                 ),
                 DeprecationWarning,

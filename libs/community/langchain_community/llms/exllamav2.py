@@ -3,8 +3,8 @@ from typing import Any, Dict, Iterator, List, Optional
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import LLM
 from langchain_core.outputs import GenerationChunk
-from pydantic import Field
 from langchain_core.utils import pre_init
+from pydantic import Field
 
 
 class ExLlamaV2(LLM):

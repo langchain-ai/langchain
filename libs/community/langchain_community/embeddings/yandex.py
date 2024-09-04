@@ -7,8 +7,8 @@ import time
 from typing import Any, Callable, Dict, List, Sequence
 
 from langchain_core.embeddings import Embeddings
-from pydantic import BaseModel, Field, SecretStr
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
+from pydantic import BaseModel, ConfigDict, Field, SecretStr
 from tenacity import (
     before_sleep_log,
     retry,
@@ -16,8 +16,6 @@ from tenacity import (
     stop_after_attempt,
     wait_exponential,
 )
-from pydantic import ConfigDict
-
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +71,9 @@ class YandexGPTEmbeddings(BaseModel, Embeddings):
     If you provide personal data, confidential information, disable logging."""
     grpc_metadata: Sequence
 
-    model_config = ConfigDict(populate_by_name=True,)
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:

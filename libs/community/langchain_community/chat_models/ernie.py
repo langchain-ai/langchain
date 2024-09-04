@@ -13,8 +13,8 @@ from langchain_core.messages import (
     HumanMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatResult
-from pydantic import root_validator, model_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import model_validator, root_validator
 
 logger = logging.getLogger(__name__)
 

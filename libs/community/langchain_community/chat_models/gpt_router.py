@@ -30,8 +30,8 @@ from langchain_core.language_models.chat_models import (
 from langchain_core.language_models.llms import create_base_retry_decorator
 from langchain_core.messages import AIMessageChunk, BaseMessage, BaseMessageChunk
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from pydantic import BaseModel, Field, SecretStr, root_validator, model_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from pydantic import BaseModel, Field, SecretStr, model_validator, root_validator
 
 from langchain_community.adapters.openai import (
     convert_dict_to_message,

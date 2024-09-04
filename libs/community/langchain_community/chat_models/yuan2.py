@@ -40,12 +40,12 @@ from langchain_core.messages import (
     SystemMessageChunk,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from pydantic import BaseModel, Field, root_validator, model_validator
 from langchain_core.utils import (
     get_from_dict_or_env,
     get_pydantic_field_names,
     pre_init,
 )
+from pydantic import BaseModel, ConfigDict, Field, model_validator, root_validator
 from tenacity import (
     before_sleep_log,
     retry,
@@ -53,8 +53,6 @@ from tenacity import (
     stop_after_attempt,
     wait_exponential,
 )
-from pydantic import ConfigDict
-
 
 logger = logging.getLogger(__name__)
 
@@ -124,7 +122,9 @@ class ChatYuan2(BaseChatModel):
     repeat_penalty: Optional[float] = 1.18
     """The penalty to apply to repeated tokens."""
 
-    model_config = ConfigDict(populate_by_name=True,)
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
     @property
     def lc_secrets(self) -> Dict[str, str]:

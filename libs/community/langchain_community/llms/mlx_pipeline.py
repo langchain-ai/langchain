@@ -8,7 +8,6 @@ from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
 from pydantic import ConfigDict
 
-
 DEFAULT_MODEL_ID = "mlx-community/quantized-gemma-2b"
 
 logger = logging.getLogger(__name__)
@@ -76,7 +75,9 @@ class MLXPipeline(LLM):
 
     """
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @classmethod
     def from_model_id(

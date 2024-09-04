@@ -1,12 +1,12 @@
 import base64
 from abc import ABC
 from datetime import datetime
-from typing import Callable, Dict, Iterator, List, Literal, Optional, Union, Any
+from typing import Any, Callable, Dict, Iterator, List, Literal, Optional, Union
 
 import requests
 from langchain_core.documents import Document
-from pydantic import BaseModel, root_validator, validator, model_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, model_validator, root_validator, validator
 
 from langchain_community.document_loaders.base import BaseLoader
 

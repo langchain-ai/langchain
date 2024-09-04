@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Sequence, Union
 
 from pydantic import (
     BaseModel,
+    ConfigDict,
     Field,
     FilePath,
     SecretStr,
@@ -23,8 +24,6 @@ from langchain_community.document_loaders.blob_loaders.file_system import (
     FileSystemBlobLoader,
 )
 from langchain_community.document_loaders.blob_loaders.schema import Blob
-from pydantic import ConfigDict
-
 
 if TYPE_CHECKING:
     from O365 import Account
@@ -39,7 +38,11 @@ class _O365Settings(BaseSettings):
     client_id: str = Field(..., env="O365_CLIENT_ID")
     client_secret: SecretStr = Field(..., env="O365_CLIENT_SECRET")
 
-    model_config = ConfigDict(case_sentive=False,env_file=".env",env_prefix="",)
+    model_config = ConfigDict(
+        case_sentive=False,
+        env_file=".env",
+        env_prefix="",
+    )
 
 
 class _O365TokenStorage(BaseSettings):

@@ -26,7 +26,6 @@ from langchain_core.outputs import GenerationChunk, LLMResult
 from pydantic import ConfigDict
 
 
-
 def _stream_response_to_generation_chunk(
     stream_response: str,
 ) -> GenerationChunk:
@@ -399,7 +398,9 @@ class Ollama(BaseLLM, _OllamaCommon):
             ollama = Ollama(model="llama2")
     """
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @property
     def _llm_type(self) -> str:

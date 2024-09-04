@@ -4,18 +4,18 @@ from decimal import Decimal
 from hashlib import md5
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union
 
-from pydantic import BaseModel, Field, create_model
 from langchain_core.tools import BaseTool, StructuredTool
 from langchain_core.tools.base import BaseToolkit
+from pydantic import BaseModel, Field, create_model
 from typing_extensions import Self
 
 if TYPE_CHECKING:
     from databricks.sdk import WorkspaceClient
     from databricks.sdk.service.catalog import FunctionInfo
 
-from langchain_community.tools.databricks._execution import execute_function
 from pydantic import ConfigDict
 
+from langchain_community.tools.databricks._execution import execute_function
 
 
 def _uc_type_to_pydantic_type(uc_type_json: Union[str, Dict[str, Any]]) -> Type:
@@ -144,7 +144,9 @@ class UCFunctionToolkit(BaseToolkit):
 
     tools: Dict[str, BaseTool] = Field(default_factory=dict)
 
-    model_config = ConfigDict(arbitrary_types_allowed=True,)
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     def include(self, *function_names: str, **kwargs: Any) -> Self:
         """

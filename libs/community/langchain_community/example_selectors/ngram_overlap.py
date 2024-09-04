@@ -4,12 +4,12 @@ https://www.nltk.org/_modules/nltk/translate/bleu_score.html
 https://aclanthology.org/P02-1040.pdf
 """
 
-from typing import Dict, List, Any
+from typing import Any, Dict, List
 
 import numpy as np
 from langchain_core.example_selectors import BaseExampleSelector
 from langchain_core.prompts import PromptTemplate
-from pydantic import BaseModel, root_validator, model_validator
+from pydantic import BaseModel, model_validator, root_validator
 
 
 def ngram_overlap_score(source: List[str], example: List[str]) -> float:

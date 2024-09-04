@@ -6,14 +6,15 @@ from langchain_core.utils import pre_init
 from pydantic import ConfigDict
 
 
-
 class ManifestWrapper(LLM):
     """HazyResearch's Manifest library."""
 
     client: Any  #: :meta private:
     llm_kwargs: Optional[Dict] = None
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:

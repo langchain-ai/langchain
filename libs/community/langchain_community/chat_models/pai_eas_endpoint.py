@@ -17,8 +17,8 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from pydantic import root_validator, model_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import model_validator, root_validator
 
 from langchain_community.llms.utils import enforce_stop_tokens
 

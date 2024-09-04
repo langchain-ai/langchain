@@ -9,13 +9,13 @@ from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import LLM
 from pydantic import (
     BaseModel,
+    ConfigDict,
     Field,
     PrivateAttr,
+    model_validator,
     root_validator,
-    validator, model_validator,
+    validator,
 )
-from pydantic import ConfigDict
-
 
 __all__ = ["Databricks"]
 
@@ -399,7 +399,10 @@ class Databricks(LLM):
 
     _client: _DatabricksClientBase = PrivateAttr()
 
-    model_config = ConfigDict(extra="forbid",underscore_attrs_are_private=True,)
+    model_config = ConfigDict(
+        extra="forbid",
+        underscore_attrs_are_private=True,
+    )
 
     @property
     def _llm_params(self) -> Dict[str, Any]:

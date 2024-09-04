@@ -1,14 +1,12 @@
 """Util that calls Merriam-Webster."""
 
 import json
-from typing import Dict, Iterator, List, Optional, Any
+from typing import Any, Dict, Iterator, List, Optional
 from urllib.parse import quote
 
 import requests
-from pydantic import BaseModel, root_validator, model_validator
 from langchain_core.utils import get_from_dict_or_env
-from pydantic import ConfigDict
-
+from pydantic import BaseModel, ConfigDict, model_validator, root_validator
 
 MERRIAM_WEBSTER_API_URL = (
     "https://www.dictionaryapi.com/api/v3/references/collegiate/json"
@@ -30,7 +28,9 @@ class MerriamWebsterAPIWrapper(BaseModel):
 
     merriam_webster_api_key: Optional[str] = None
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @model_validator(mode="before")
     @classmethod

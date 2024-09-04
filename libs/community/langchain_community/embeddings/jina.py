@@ -5,8 +5,8 @@ from urllib.parse import urlparse
 
 import requests
 from langchain_core.embeddings import Embeddings
-from pydantic import BaseModel, SecretStr, root_validator, model_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from pydantic import BaseModel, SecretStr, model_validator, root_validator
 
 JINA_API_URL: str = "https://api.jina.ai/v1/embeddings"
 

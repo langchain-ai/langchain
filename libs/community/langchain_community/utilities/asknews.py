@@ -5,10 +5,8 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
 
-from pydantic import BaseModel, root_validator, model_validator
 from langchain_core.utils import get_from_dict_or_env
-from pydantic import ConfigDict
-
+from pydantic import BaseModel, ConfigDict, model_validator, root_validator
 
 
 class AskNewsAPIWrapper(BaseModel):
@@ -21,7 +19,9 @@ class AskNewsAPIWrapper(BaseModel):
     asknews_client_secret: Optional[str] = None
     """Client Secret for the AskNews API."""
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @model_validator(mode="before")
     @classmethod

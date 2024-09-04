@@ -5,11 +5,8 @@ from logging import getLogger
 from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from pydantic import BaseModel, root_validator, model_validator
-from pydantic import ConfigDict
+from pydantic import BaseModel, ConfigDict, model_validator, root_validator
 from typing_extensions import Self
-
-
 
 __all__ = ["InfinityEmbeddingsLocal"]
 
@@ -61,7 +58,9 @@ class InfinityEmbeddingsLocal(BaseModel, Embeddings):
     """Infinity's AsyncEmbeddingEngine."""
 
     # LLM call kwargs
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @model_validator(mode="after")
     def validate_environment(self) -> Self:

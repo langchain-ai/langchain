@@ -5,12 +5,10 @@ from typing import Any, Dict, List, Mapping, Optional, Union, cast
 import requests
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from pydantic import root_validator, model_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import ConfigDict, model_validator, root_validator
 
 from langchain_community.llms.utils import enforce_stop_tokens
-from pydantic import ConfigDict
-
 
 TIMEOUT = 60
 
@@ -124,7 +122,9 @@ class Aviary(LLM):
     # API version to use for Aviary
     version: Optional[str] = None
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @model_validator(mode="before")
     @classmethod

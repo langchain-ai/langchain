@@ -5,10 +5,9 @@ from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.utils import get_from_dict_or_env, pre_init
-
-from langchain_community.llms.utils import enforce_stop_tokens
 from pydantic import ConfigDict
 
+from langchain_community.llms.utils import enforce_stop_tokens
 
 # key: task
 # value: key in the output dictionary
@@ -57,7 +56,9 @@ class HuggingFaceHub(LLM):
 
     huggingfacehub_api_token: Optional[str] = None
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:

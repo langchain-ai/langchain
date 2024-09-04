@@ -8,9 +8,9 @@ from langchain_core.callbacks import (
     CallbackManagerForToolRun,
 )
 from langchain_core.language_models import BaseLanguageModel
-from pydantic import BaseModel, Field, ConfigDict
 from langchain_core.tools import BaseTool
 from langchain_core.vectorstores import VectorStore
+from pydantic import BaseModel, ConfigDict, Field
 
 from langchain_community.llms.openai import OpenAI
 

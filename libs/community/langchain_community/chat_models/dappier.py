@@ -13,12 +13,10 @@ from langchain_core.messages import (
     BaseMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatResult
-from pydantic import Field, SecretStr, root_validator, model_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from pydantic import ConfigDict, Field, SecretStr, model_validator, root_validator
 
 from langchain_community.utilities.requests import Requests
-from pydantic import ConfigDict
-
 
 
 def _format_dappier_messages(
@@ -72,7 +70,9 @@ class ChatDappierAI(BaseChatModel):
 
     dappier_api_key: Optional[SecretStr] = Field(None, description="Dappier API Token")
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @model_validator(mode="before")
     @classmethod

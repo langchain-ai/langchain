@@ -18,10 +18,9 @@ from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.utils import pre_init
-
-from langchain_community.vectorstores.qdrant import Qdrant, QdrantException
 from pydantic import ConfigDict
 
+from langchain_community.vectorstores.qdrant import Qdrant, QdrantException
 
 
 @deprecated(
@@ -56,7 +55,10 @@ class QdrantSparseVectorRetriever(BaseRetriever):
     search_options: Dict[str, Any] = {}
     """Additional search options to pass to qdrant_client.QdrantClient.search()."""
 
-    model_config = ConfigDict(arbitrary_types_allowed=True,extra="forbid",)
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:

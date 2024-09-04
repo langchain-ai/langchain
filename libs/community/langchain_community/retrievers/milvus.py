@@ -6,8 +6,8 @@ from typing import Any, Dict, List, Optional
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from pydantic import root_validator, model_validator
 from langchain_core.retrievers import BaseRetriever
+from pydantic import model_validator, root_validator
 
 from langchain_community.vectorstores.milvus import Milvus
 

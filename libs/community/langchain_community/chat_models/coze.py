@@ -19,13 +19,11 @@ from langchain_core.messages import (
     HumanMessageChunk,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from pydantic import Field, SecretStr, root_validator, model_validator
 from langchain_core.utils import (
     convert_to_secret_str,
     get_from_dict_or_env,
 )
-from pydantic import ConfigDict
-
+from pydantic import ConfigDict, Field, SecretStr, model_validator, root_validator
 
 logger = logging.getLogger(__name__)
 
@@ -113,7 +111,9 @@ class ChatCoze(BaseChatModel):
     "Streaming response" will provide real-time response of the model to the client, and
     the client needs to assemble the final reply based on the type of message. """
 
-    model_config = ConfigDict(populate_by_name=True,)
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
     @model_validator(mode="before")
     @classmethod

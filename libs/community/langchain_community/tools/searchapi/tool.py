@@ -6,8 +6,8 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from pydantic import Field
 from langchain_core.tools import BaseTool
+from pydantic import Field
 
 from langchain_community.utilities.searchapi import SearchApiAPIWrapper
 

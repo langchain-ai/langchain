@@ -2,10 +2,8 @@
 
 from typing import Any, Dict, Optional
 
-from pydantic import BaseModel, root_validator, model_validator
 from langchain_core.utils import get_from_dict_or_env
-from pydantic import ConfigDict
-
+from pydantic import BaseModel, ConfigDict, model_validator, root_validator
 
 
 class TwilioAPIWrapper(BaseModel):
@@ -45,7 +43,10 @@ class TwilioAPIWrapper(BaseModel):
         must be empty.
     """
 
-    model_config = ConfigDict(arbitrary_types_allowed=False,extra="forbid",)
+    model_config = ConfigDict(
+        arbitrary_types_allowed=False,
+        extra="forbid",
+    )
 
     @model_validator(mode="before")
     @classmethod

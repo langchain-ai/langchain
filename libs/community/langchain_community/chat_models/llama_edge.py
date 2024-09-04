@@ -21,10 +21,8 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from pydantic import root_validator, model_validator
 from langchain_core.utils import get_pydantic_field_names
-from pydantic import ConfigDict
-
+from pydantic import ConfigDict, model_validator, root_validator
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +84,9 @@ class LlamaEdgeChatService(BaseChatModel):
     streaming: bool = False
     """Whether to stream the results or not."""
 
-    model_config = ConfigDict(populate_by_name=True,)
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
     @model_validator(mode="before")
     @classmethod

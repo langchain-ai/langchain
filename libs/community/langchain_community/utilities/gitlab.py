@@ -5,10 +5,8 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from pydantic import BaseModel, root_validator, model_validator
 from langchain_core.utils import get_from_dict_or_env
-from pydantic import ConfigDict
-
+from pydantic import BaseModel, ConfigDict, model_validator, root_validator
 
 if TYPE_CHECKING:
     from gitlab.v4.objects import Issue
@@ -32,7 +30,9 @@ class GitLabAPIWrapper(BaseModel):
         Usually 'main' or 'master'. Defaults to 'main'.
     """
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @model_validator(mode="before")
     @classmethod

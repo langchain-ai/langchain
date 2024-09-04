@@ -8,10 +8,8 @@ import sys
 from typing import Any, Dict, Optional, Tuple
 
 import aiohttp
-from pydantic import BaseModel, Field, root_validator, model_validator
 from langchain_core.utils import get_from_dict_or_env
-from pydantic import ConfigDict
-
+from pydantic import BaseModel, ConfigDict, Field, model_validator, root_validator
 
 
 class HiddenPrints:
@@ -54,7 +52,10 @@ class SerpAPIWrapper(BaseModel):
     serpapi_api_key: Optional[str] = None
     aiosession: Optional[aiohttp.ClientSession] = None
 
-    model_config = ConfigDict(arbitrary_types_allowed=True,extra="forbid",)
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
     @model_validator(mode="before")
     @classmethod

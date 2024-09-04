@@ -6,8 +6,8 @@ import traceback
 from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Type, Union
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from pydantic import BaseModel, Field
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel, Field
 
 from langchain_community.utilities.cassandra_database import CassandraDatabase
 

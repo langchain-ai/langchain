@@ -7,8 +7,8 @@ from langchain_core.callbacks import (
     CallbackManagerForRetrieverRun,
 )
 from langchain_core.documents import Document
-from pydantic import root_validator, model_validator
 from langchain_core.retrievers import BaseRetriever
+from pydantic import model_validator, root_validator
 
 if TYPE_CHECKING:
     from zep_cloud import MemorySearchResult, SearchScope, SearchType

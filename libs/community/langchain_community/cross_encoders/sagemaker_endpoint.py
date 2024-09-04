@@ -1,11 +1,9 @@
 import json
 from typing import Any, Dict, List, Optional, Tuple
 
-from pydantic import BaseModel, root_validator, model_validator
+from pydantic import BaseModel, ConfigDict, model_validator, root_validator
 
 from langchain_community.cross_encoders.base import BaseCrossEncoder
-from pydantic import ConfigDict
-
 
 
 class CrossEncoderContentHandler:
@@ -91,7 +89,10 @@ class SagemakerEndpointCrossEncoder(BaseModel, BaseCrossEncoder):
    .. _boto3: <https://boto3.amazonaws.com/v1/documentation/api/latest/index.html>
    """
 
-    model_config = ConfigDict(arbitrary_types_allowed=True,extra="forbid",)
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
     @model_validator(mode="before")
     @classmethod

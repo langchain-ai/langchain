@@ -41,14 +41,12 @@ from langchain_core.outputs import (
     ChatGenerationChunk,
     ChatResult,
 )
-from pydantic import Field, root_validator, model_validator
 from langchain_core.utils import (
     get_from_dict_or_env,
     get_pydantic_field_names,
 )
 from langchain_core.utils.pydantic import get_fields
-from pydantic import ConfigDict
-
+from pydantic import ConfigDict, Field, model_validator, root_validator
 
 logger = logging.getLogger(__name__)
 
@@ -298,7 +296,9 @@ class ChatSparkLLM(BaseChatModel):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for API call not explicitly specified."""
 
-    model_config = ConfigDict(populate_by_name=True,)
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
     @model_validator(mode="before")
     @classmethod

@@ -3,8 +3,8 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Type
 
 import requests
-from pydantic import BaseModel, Field, ValidationError, validator
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel, Field, ValidationError, validator
 
 
 class Detector(str, Enum):

@@ -6,11 +6,9 @@ from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
-from pydantic import Field, root_validator, model_validator
 from langchain_core.utils import get_from_dict_or_env, pre_init
 from langchain_core.utils.pydantic import get_fields
-from pydantic import ConfigDict
-
+from pydantic import ConfigDict, Field, model_validator, root_validator
 
 if TYPE_CHECKING:
     from replicate.prediction import Prediction
@@ -58,7 +56,10 @@ class Replicate(LLM):
     stop: List[str] = Field(default_factory=list)
     """Stop sequences to early-terminate generation."""
 
-    model_config = ConfigDict(populate_by_name=True,extra="forbid",)
+    model_config = ConfigDict(
+        populate_by_name=True,
+        extra="forbid",
+    )
 
     @property
     def lc_secrets(self) -> Dict[str, str]:

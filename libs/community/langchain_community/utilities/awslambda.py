@@ -3,9 +3,7 @@
 import json
 from typing import Any, Dict, Optional
 
-from pydantic import BaseModel, root_validator, model_validator
-from pydantic import ConfigDict
-
+from pydantic import BaseModel, ConfigDict, model_validator, root_validator
 
 
 class LambdaWrapper(BaseModel):
@@ -32,7 +30,9 @@ class LambdaWrapper(BaseModel):
     awslambda_tool_description: Optional[str] = None
     """If passing to an agent as a tool, the description"""
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @model_validator(mode="before")
     @classmethod

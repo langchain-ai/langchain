@@ -12,7 +12,6 @@ from langchain_core.utils import get_pydantic_field_names
 from pydantic import ConfigDict
 
 
-
 class Llamafile(LLM):
     """Llamafile lets you distribute and run large language models with a
     single file.
@@ -114,7 +113,9 @@ class Llamafile(LLM):
     mirostat_eta: float = 0.1
     """Set the Mirostat learning rate, parameter eta. Default: 0.1."""
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @property
     def _llm_type(self) -> str:

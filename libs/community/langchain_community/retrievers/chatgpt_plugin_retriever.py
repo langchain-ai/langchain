@@ -13,7 +13,6 @@ from langchain_core.retrievers import BaseRetriever
 from pydantic import ConfigDict
 
 
-
 class ChatGPTPluginRetriever(BaseRetriever):
     """`ChatGPT plugin` retriever."""
 
@@ -28,7 +27,9 @@ class ChatGPTPluginRetriever(BaseRetriever):
     aiosession: Optional[aiohttp.ClientSession] = None
     """Aiohttp session to use for requests."""
 
-    model_config = ConfigDict(arbitrary_types_allowed=True,)
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun

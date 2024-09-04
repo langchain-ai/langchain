@@ -57,7 +57,10 @@ def test_load(mocker: MockerFixture) -> None:
         ),
     )
     loader = OneNoteLoader(
-        settings={"client_id": "", "client_secret": ""},object_ids=["test_id"], access_token="access_token")
+        settings={"client_id": "", "client_secret": ""},
+        object_ids=["test_id"],
+        access_token="access_token",
+    )
     documents = loader.load()
     assert documents == [
         Document(

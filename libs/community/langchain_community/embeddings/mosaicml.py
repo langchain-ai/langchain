@@ -2,10 +2,8 @@ from typing import Any, Dict, List, Mapping, Optional, Tuple
 
 import requests
 from langchain_core.embeddings import Embeddings
-from pydantic import BaseModel, root_validator, model_validator
 from langchain_core.utils import get_from_dict_or_env
-from pydantic import ConfigDict
-
+from pydantic import BaseModel, ConfigDict, model_validator, root_validator
 
 
 class MosaicMLInstructorEmbeddings(BaseModel, Embeddings):
@@ -43,7 +41,9 @@ class MosaicMLInstructorEmbeddings(BaseModel, Embeddings):
 
     mosaicml_api_token: Optional[str] = None
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @model_validator(mode="before")
     @classmethod

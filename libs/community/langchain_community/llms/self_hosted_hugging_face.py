@@ -3,11 +3,10 @@ import logging
 from typing import Any, Callable, List, Mapping, Optional
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
+from pydantic import ConfigDict
 
 from langchain_community.llms.self_hosted import SelfHostedPipeline
 from langchain_community.llms.utils import enforce_stop_tokens
-from pydantic import ConfigDict
-
 
 DEFAULT_MODEL_ID = "gpt2"
 DEFAULT_TASK = "text-generation"
@@ -170,7 +169,9 @@ class SelfHostedHuggingFaceLLM(SelfHostedPipeline):
     inference_fn: Callable = _generate_text  #: :meta private:
     """Inference function to send to the remote hardware."""
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     def __init__(self, **kwargs: Any):
         """Construct the pipeline remotely using an auxiliary function.

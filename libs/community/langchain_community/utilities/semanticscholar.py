@@ -1,9 +1,9 @@
 """Utils for interacting with the Semantic Scholar API."""
 
 import logging
-from typing import Any, Dict, Optional, List
+from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, root_validator, model_validator
+from pydantic import BaseModel, model_validator, root_validator
 
 logger = logging.getLogger(__name__)
 

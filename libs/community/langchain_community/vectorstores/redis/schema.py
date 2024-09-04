@@ -7,8 +7,8 @@ from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
 import yaml
-from pydantic import BaseModel, Field, validator, field_validator
 from langchain_core.utils.pydantic import get_fields
+from pydantic import BaseModel, Field, field_validator, validator
 from typing_extensions import TYPE_CHECKING, Literal
 
 from langchain_community.vectorstores.redis.constants import REDIS_VECTOR_DTYPE_MAP

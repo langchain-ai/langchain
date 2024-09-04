@@ -40,13 +40,13 @@ from langchain_core.messages import (
     SystemMessageChunk,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from pydantic import Field, SecretStr, root_validator, model_validator
 from langchain_core.utils import (
     convert_to_secret_str,
     get_from_dict_or_env,
     get_pydantic_field_names,
     pre_init,
 )
+from pydantic import ConfigDict, Field, SecretStr, model_validator, root_validator
 from tenacity import (
     before_sleep_log,
     retry,
@@ -54,8 +54,6 @@ from tenacity import (
     stop_after_attempt,
     wait_exponential,
 )
-from pydantic import ConfigDict
-
 
 logger = logging.getLogger(__name__)
 
@@ -190,7 +188,9 @@ class JinaChat(BaseChatModel):
     max_tokens: Optional[int] = None
     """Maximum number of tokens to generate."""
 
-    model_config = ConfigDict(populate_by_name=True,)
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
     @model_validator(mode="before")
     @classmethod

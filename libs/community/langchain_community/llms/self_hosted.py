@@ -5,10 +5,9 @@ from typing import Any, Callable, List, Mapping, Optional
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-
-from langchain_community.llms.utils import enforce_stop_tokens
 from pydantic import ConfigDict
 
+from langchain_community.llms.utils import enforce_stop_tokens
 
 logger = logging.getLogger(__name__)
 
@@ -145,7 +144,9 @@ class SelfHostedPipeline(LLM):
     loading compromised data.
     """
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     def __init__(self, **kwargs: Any):
         """Init the pipeline with an auxiliary function.

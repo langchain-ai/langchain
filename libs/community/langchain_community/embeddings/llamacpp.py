@@ -1,11 +1,8 @@
 from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from pydantic import BaseModel, Field, root_validator, model_validator
-from pydantic import ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, model_validator, root_validator
 from typing_extensions import Self
-
-
 
 
 class LlamaCppEmbeddings(BaseModel, Embeddings):
@@ -64,7 +61,9 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
     device: Optional[str] = Field(None, alias="device")
     """Device type to use and pass to the model"""
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @model_validator(mode="after")
     def validate_environment(self) -> Self:

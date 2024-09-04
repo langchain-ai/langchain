@@ -18,9 +18,7 @@ from langchain_core.outputs import (
     ChatGeneration,
     ChatResult,
 )
-from pydantic import BaseModel, Field, SecretStr
-from pydantic import ConfigDict
-
+from pydantic import BaseModel, ConfigDict, Field, SecretStr
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +68,9 @@ class ChatJavelinAIGateway(BaseChatModel):
     javelin_api_key: Optional[SecretStr] = Field(None, alias="api_key")
     """The API key for the Javelin AI Gateway."""
 
-    model_config = ConfigDict(populate_by_name=True,)
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
     def __init__(self, **kwargs: Any):
         try:

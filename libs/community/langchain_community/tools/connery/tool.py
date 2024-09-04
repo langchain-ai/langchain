@@ -6,8 +6,8 @@ from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from pydantic import BaseModel, Field, create_model, root_validator, model_validator
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel, Field, create_model, model_validator, root_validator
 
 from langchain_community.tools.connery.models import Action, Parameter
 

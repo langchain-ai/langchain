@@ -3,10 +3,8 @@ from typing import Any, Dict, List, Optional, cast
 import requests
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from pydantic import BaseModel, SecretStr
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
-from pydantic import ConfigDict
-
+from pydantic import BaseModel, ConfigDict, SecretStr
 
 
 class AI21PenaltyData(BaseModel):
@@ -70,7 +68,9 @@ class AI21(LLM):
     base_url: Optional[str] = None
     """Base url to use, if None decides based on model name."""
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:

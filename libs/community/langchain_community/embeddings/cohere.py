@@ -2,12 +2,10 @@ from typing import Any, Dict, List, Optional
 
 from langchain_core._api.deprecation import deprecated
 from langchain_core.embeddings import Embeddings
-from pydantic import BaseModel, root_validator, model_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, ConfigDict, model_validator, root_validator
 
 from langchain_community.llms.cohere import _create_retry_decorator
-from pydantic import ConfigDict
-
 
 
 @deprecated(
@@ -51,7 +49,9 @@ class CohereEmbeddings(BaseModel, Embeddings):
     user_agent: str = "langchain"
     """Identifier for the application making the request."""
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @model_validator(mode="before")
     @classmethod

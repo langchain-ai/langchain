@@ -3,13 +3,11 @@ from typing import Any, Dict, List, Mapping, Optional
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from pydantic import Field, SecretStr, root_validator, model_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 from langchain_core.utils.pydantic import get_fields
+from pydantic import ConfigDict, Field, SecretStr, model_validator, root_validator
 
 from langchain_community.llms.utils import enforce_stop_tokens
-from pydantic import ConfigDict
-
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +63,9 @@ class Petals(LLM):
 
     huggingface_api_key: Optional[SecretStr] = None
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @model_validator(mode="before")
     @classmethod

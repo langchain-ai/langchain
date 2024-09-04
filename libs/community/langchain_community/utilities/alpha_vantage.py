@@ -3,10 +3,8 @@
 from typing import Any, Dict, List, Optional
 
 import requests
-from pydantic import BaseModel, root_validator, model_validator
 from langchain_core.utils import get_from_dict_or_env
-from pydantic import ConfigDict
-
+from pydantic import BaseModel, ConfigDict, model_validator, root_validator
 
 
 class AlphaVantageAPIWrapper(BaseModel):
@@ -20,7 +18,9 @@ class AlphaVantageAPIWrapper(BaseModel):
 
     alphavantage_api_key: Optional[str] = None
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @model_validator(mode="before")
     @classmethod

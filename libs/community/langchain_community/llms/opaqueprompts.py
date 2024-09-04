@@ -8,7 +8,6 @@ from langchain_core.messages import AIMessage
 from langchain_core.utils import get_from_dict_or_env, pre_init
 from pydantic import ConfigDict
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -34,7 +33,9 @@ class OpaquePrompts(LLM):
     base_llm: BaseLanguageModel
     """The base LLM to use."""
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:

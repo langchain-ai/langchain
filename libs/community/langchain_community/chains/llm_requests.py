@@ -7,11 +7,9 @@ from typing import Any, Dict, List, Optional
 from langchain.chains import LLMChain
 from langchain.chains.base import Chain
 from langchain_core.callbacks import CallbackManagerForChainRun
-from pydantic import Field, root_validator, model_validator
+from pydantic import ConfigDict, Field, model_validator, root_validator
 
 from langchain_community.utilities.requests import TextRequestsWrapper
-from pydantic import ConfigDict
-
 
 DEFAULT_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36"  # noqa: E501
@@ -40,7 +38,10 @@ class LLMRequestsChain(Chain):
     input_key: str = "url"  #: :meta private:
     output_key: str = "output"  #: :meta private:
 
-    model_config = ConfigDict(arbitrary_types_allowed=True,extra="forbid",)
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
     @property
     def input_keys(self) -> List[str]:

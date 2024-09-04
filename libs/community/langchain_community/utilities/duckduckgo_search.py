@@ -4,11 +4,9 @@ No setup required. Free.
 https://pypi.org/project/duckduckgo-search/
 """
 
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, root_validator, model_validator
-from pydantic import ConfigDict
-
+from pydantic import BaseModel, ConfigDict, model_validator, root_validator
 
 
 class DuckDuckGoSearchAPIWrapper(BaseModel):
@@ -39,7 +37,9 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
     Options: text, news
     """
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @model_validator(mode="before")
     @classmethod

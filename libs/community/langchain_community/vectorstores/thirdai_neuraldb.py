@@ -10,7 +10,6 @@ from langchain_core.vectorstores import VectorStore
 from pydantic import ConfigDict
 
 
-
 class NeuralDBVectorStore(VectorStore):
     """Vectorstore that uses ThirdAI's NeuralDB.
 
@@ -32,7 +31,10 @@ class NeuralDBVectorStore(VectorStore):
     db: Any = None  #: :meta private:
     """NeuralDB instance"""
 
-    model_config = ConfigDict(extra="forbid",underscore_attrs_are_private=True,)
+    model_config = ConfigDict(
+        extra="forbid",
+        underscore_attrs_are_private=True,
+    )
 
     @staticmethod
     def _verify_thirdai_library(thirdai_key: Optional[str] = None):  # type: ignore[no-untyped-def]
@@ -330,7 +332,10 @@ class NeuralDBClientVectorStore(VectorStore):
     db: Any = None  #: :meta private:
     """NeuralDB Client instance"""
 
-    model_config = ConfigDict(extra="forbid",underscore_attrs_are_private=True,)
+    model_config = ConfigDict(
+        extra="forbid",
+        underscore_attrs_are_private=True,
+    )
 
     def similarity_search(
         self, query: str, k: int = 10, **kwargs: Any

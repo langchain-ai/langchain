@@ -3,7 +3,7 @@ from typing import Any, Callable, Dict, List, Optional
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from pydantic import root_validator, model_validator
+from pydantic import model_validator, root_validator
 
 logger = logging.getLogger(__name__)
 

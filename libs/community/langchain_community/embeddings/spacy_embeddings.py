@@ -2,9 +2,7 @@ import importlib.util
 from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from pydantic import BaseModel, root_validator, model_validator
-from pydantic import ConfigDict
-
+from pydantic import BaseModel, ConfigDict, model_validator, root_validator
 
 
 class SpacyEmbeddings(BaseModel, Embeddings):
@@ -24,7 +22,9 @@ class SpacyEmbeddings(BaseModel, Embeddings):
     model_name: str = "en_core_web_sm"
     nlp: Optional[Any] = None
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @model_validator(mode="before")
     @classmethod

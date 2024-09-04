@@ -10,12 +10,10 @@ from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models.llms import LLM
-from pydantic import SecretStr, root_validator, model_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from pydantic import ConfigDict, SecretStr, model_validator, root_validator
 
 from langchain_community.utilities.requests import Requests
-from pydantic import ConfigDict
-
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +66,9 @@ class Together(LLM):
         the response for each token generation step.
     """
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @model_validator(mode="before")
     @classmethod

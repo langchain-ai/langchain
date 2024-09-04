@@ -53,16 +53,17 @@ from langchain_core.outputs import (
     ChatGenerationChunk,
     ChatResult,
 )
-from pydantic import (
-    BaseModel,
-    Field,
-    SecretStr,
-)
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 from langchain_core.utils.function_calling import convert_to_openai_tool
 from langchain_core.utils.pydantic import is_basemodel_subclass
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    SecretStr,
+)
 from requests.exceptions import HTTPError
 from tenacity import (
     before_sleep_log,
@@ -77,8 +78,6 @@ from langchain_community.llms.tongyi import (
     check_response,
     generate_with_last_element_mark,
 )
-from pydantic import ConfigDict
-
 
 logger = logging.getLogger(__name__)
 
@@ -459,7 +458,9 @@ class ChatTongyi(BaseChatModel):
     max_retries: int = 10
     """Maximum number of retries to make when generating."""
 
-    model_config = ConfigDict(populate_by_name=True,)
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
     @property
     def _llm_type(self) -> str:

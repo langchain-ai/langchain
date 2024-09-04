@@ -9,14 +9,12 @@ from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models.llms import LLM
-from pydantic import Field, root_validator, model_validator
 from langchain_core.utils import get_from_dict_or_env, pre_init
 from langchain_core.utils.pydantic import get_fields
+from pydantic import ConfigDict, Field, model_validator, root_validator
 
 from langchain_community.llms.utils import enforce_stop_tokens
 from langchain_community.utilities.requests import Requests
-from pydantic import ConfigDict
-
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +69,9 @@ class EdenAI(LLM):
     stop_sequences: Optional[List[str]] = None
     """Stop sequences to use."""
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:

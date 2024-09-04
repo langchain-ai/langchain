@@ -14,12 +14,11 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type
 import numpy as np
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from pydantic_settings import BaseSettings
 from langchain_core.vectorstores import VectorStore
+from pydantic import ConfigDict
+from pydantic_settings import BaseSettings
 
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
-from pydantic import ConfigDict
-
 
 
 class DistanceStrategy(str, enum.Enum):
@@ -81,7 +80,11 @@ class KineticaSettings(BaseSettings):
     def __getitem__(self, item: str) -> Any:
         return getattr(self, item)
 
-    model_config = ConfigDict(env_file=".env",env_file_encoding="utf-8",env_prefix="kinetica_",)
+    model_config = ConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        env_prefix="kinetica_",
+    )
 
 
 class Kinetica(VectorStore):

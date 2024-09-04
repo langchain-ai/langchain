@@ -1,9 +1,7 @@
 import json
 from typing import Any, Callable, Dict, Optional
 
-from pydantic import BaseModel, root_validator, model_validator
-from pydantic import ConfigDict
-
+from pydantic import BaseModel, ConfigDict, model_validator, root_validator
 
 
 class GraphQLAPIWrapper(BaseModel):
@@ -19,7 +17,9 @@ class GraphQLAPIWrapper(BaseModel):
     gql_client: Any  #: :meta private:
     gql_function: Callable[[str], Any]  #: :meta private:
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @model_validator(mode="before")
     @classmethod

@@ -2,10 +2,8 @@ from typing import Any, Dict, List, Mapping, Optional
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from pydantic import SecretStr
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
-from pydantic import ConfigDict
-
+from pydantic import ConfigDict, SecretStr
 
 
 class NLPCloud(LLM):
@@ -53,7 +51,9 @@ class NLPCloud(LLM):
 
     nlpcloud_api_key: Optional[SecretStr] = None
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:

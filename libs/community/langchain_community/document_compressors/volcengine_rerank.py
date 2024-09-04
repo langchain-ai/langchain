@@ -5,10 +5,8 @@ from typing import Any, Dict, List, Optional, Sequence, Union
 
 from langchain_core.callbacks.base import Callbacks
 from langchain_core.documents import BaseDocumentCompressor, Document
-from pydantic import root_validator, model_validator
 from langchain_core.utils import get_from_dict_or_env
-from pydantic import ConfigDict
-
+from pydantic import ConfigDict, model_validator, root_validator
 
 
 class VolcengineRerank(BaseDocumentCompressor):
@@ -34,7 +32,11 @@ class VolcengineRerank(BaseDocumentCompressor):
     top_n: Optional[int] = 3
     """Number of documents to return."""
 
-    model_config = ConfigDict(populate_by_name=True,arbitrary_types_allowed=True,extra="forbid",)
+    model_config = ConfigDict(
+        populate_by_name=True,
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
     @model_validator(mode="before")
     @classmethod

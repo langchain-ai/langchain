@@ -2,10 +2,8 @@
 
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, root_validator, model_validator
 from langchain_core.utils import get_from_dict_or_env
-from pydantic import ConfigDict
-
+from pydantic import BaseModel, ConfigDict, model_validator, root_validator
 
 
 # TODO: think about error handling, more specific api specs, and jql/project limits
@@ -19,7 +17,9 @@ class JiraAPIWrapper(BaseModel):
     jira_instance_url: Optional[str] = None
     jira_cloud: Optional[bool] = None
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @model_validator(mode="before")
     @classmethod

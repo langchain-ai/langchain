@@ -1,13 +1,11 @@
 """Util that calls Golden."""
 
 import json
-from typing import Dict, Optional, Any
+from typing import Any, Dict, Optional
 
 import requests
-from pydantic import BaseModel, root_validator, model_validator
 from langchain_core.utils import get_from_dict_or_env
-from pydantic import ConfigDict
-
+from pydantic import BaseModel, ConfigDict, model_validator, root_validator
 
 GOLDEN_BASE_URL = "https://golden.com"
 GOLDEN_TIMEOUT = 5000
@@ -26,7 +24,9 @@ class GoldenQueryAPIWrapper(BaseModel):
 
     golden_api_key: Optional[str] = None
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @model_validator(mode="before")
     @classmethod

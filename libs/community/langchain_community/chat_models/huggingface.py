@@ -25,15 +25,14 @@ from langchain_core.outputs import (
     ChatResult,
     LLMResult,
 )
-from pydantic import root_validator, model_validator
+from pydantic import model_validator, root_validator
+from typing_extensions import Self
 
 from langchain_community.llms.huggingface_endpoint import HuggingFaceEndpoint
 from langchain_community.llms.huggingface_hub import HuggingFaceHub
 from langchain_community.llms.huggingface_text_gen_inference import (
     HuggingFaceTextGenInference,
 )
-from typing_extensions import Self
-
 
 DEFAULT_SYSTEM_PROMPT = """You are a helpful, respectful, and honest assistant."""
 

@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional, Tuple, Type
 
-from pydantic import root_validator, model_validator
 from langchain_core.tools import BaseTool
 from langchain_core.utils import guard_import
+from pydantic import model_validator, root_validator
 
 if TYPE_CHECKING:
     from playwright.async_api import Browser as AsyncBrowser

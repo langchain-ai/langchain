@@ -4,9 +4,7 @@ from typing import TYPE_CHECKING, Dict, Optional, Sequence
 
 from langchain_core.callbacks.manager import Callbacks
 from langchain_core.documents import BaseDocumentCompressor, Document
-from pydantic import root_validator, model_validator
-from pydantic import ConfigDict
-
+from pydantic import ConfigDict, model_validator, root_validator
 
 if TYPE_CHECKING:
     from flashrank import Ranker, RerankRequest
@@ -35,7 +33,10 @@ class FlashrankRerank(BaseDocumentCompressor):
     prefix_metadata: str = ""
     """Prefix for flashrank_rerank metadata keys"""
 
-    model_config = ConfigDict(arbitrary_types_allowed=True,extra="forbid",)
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
     @model_validator(mode="before")
     @classmethod

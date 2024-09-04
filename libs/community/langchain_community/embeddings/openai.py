@@ -21,12 +21,12 @@ from typing import (
 import numpy as np
 from langchain_core._api.deprecation import deprecated
 from langchain_core.embeddings import Embeddings
-from pydantic import BaseModel, Field, root_validator, model_validator
 from langchain_core.utils import (
     get_from_dict_or_env,
     get_pydantic_field_names,
     pre_init,
 )
+from pydantic import BaseModel, ConfigDict, Field, model_validator, root_validator
 from tenacity import (
     AsyncRetrying,
     before_sleep_log,
@@ -37,8 +37,6 @@ from tenacity import (
 )
 
 from langchain_community.utils.openai import is_openai_v1
-from pydantic import ConfigDict
-
 
 logger = logging.getLogger(__name__)
 
@@ -256,7 +254,10 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     http_client: Union[Any, None] = None
     """Optional httpx.Client."""
 
-    model_config = ConfigDict(populate_by_name=True,extra="forbid",)
+    model_config = ConfigDict(
+        populate_by_name=True,
+        extra="forbid",
+    )
 
     @model_validator(mode="before")
     @classmethod

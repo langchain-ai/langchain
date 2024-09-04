@@ -3,10 +3,8 @@
 from typing import Any, Dict, Optional, cast
 
 import requests
-from pydantic import BaseModel, SecretStr, root_validator, model_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
-from pydantic import ConfigDict
-
+from pydantic import BaseModel, ConfigDict, SecretStr, model_validator, root_validator
 
 
 class GoogleLensAPIWrapper(BaseModel):
@@ -32,7 +30,9 @@ class GoogleLensAPIWrapper(BaseModel):
     serp_search_engine: Any
     serp_api_key: Optional[SecretStr] = None
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @model_validator(mode="before")
     @classmethod

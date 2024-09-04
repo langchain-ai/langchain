@@ -4,11 +4,9 @@ from typing import Any, Iterator, List, Optional
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from langchain_community.llms.utils import enforce_stop_tokens
-from pydantic import ConfigDict
-
 
 
 class Device(str, Enum):
@@ -21,7 +19,9 @@ class Device(str, Enum):
 class ReaderConfig(BaseModel):
     """Configuration for the reader to be deployed in Titan Takeoff API."""
 
-    model_config = ConfigDict(protected_namespaces=(),)
+    model_config = ConfigDict(
+        protected_namespaces=(),
+    )
 
     model_name: str
     """The name of the model to use"""

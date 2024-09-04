@@ -50,13 +50,11 @@ from langchain_core.output_parsers.openai_tools import (
     PydanticToolsParser,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from pydantic import BaseModel, Field, root_validator, model_validator
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import get_from_dict_or_env
 from langchain_core.utils.function_calling import convert_to_openai_tool
-from pydantic import ConfigDict
-
+from pydantic import BaseModel, ConfigDict, Field, model_validator, root_validator
 
 logger = logging.getLogger(__name__)
 
@@ -482,7 +480,9 @@ class ChatZhipuAI(BaseChatModel):
     max_tokens: Optional[int] = None
     """Maximum number of tokens to generate."""
 
-    model_config = ConfigDict(populate_by_name=True,)
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
     @model_validator(mode="before")
     @classmethod

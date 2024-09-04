@@ -3,8 +3,8 @@ from typing import TYPE_CHECKING, Optional, Type
 from langchain_core.callbacks import (
     CallbackManagerForToolRun,
 )
-from pydantic import BaseModel, Field
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
     # This is for linting and IDE typehints

@@ -3,12 +3,10 @@ from typing import Any, Dict, List, Mapping, Optional, Set
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from pydantic import Field
 from langchain_core.utils import pre_init
+from pydantic import ConfigDict, Field
 
 from langchain_community.llms.utils import enforce_stop_tokens
-from pydantic import ConfigDict
-
 
 
 class GPT4All(LLM):
@@ -98,7 +96,9 @@ class GPT4All(LLM):
 
     client: Any = None  #: :meta private:
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @staticmethod
     def _model_param_names() -> Set[str]:

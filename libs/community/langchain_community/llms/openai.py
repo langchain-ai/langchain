@@ -28,7 +28,6 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import BaseLLM, create_base_retry_decorator
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
-from pydantic import Field, root_validator, model_validator
 from langchain_core.utils import (
     get_from_dict_or_env,
     get_pydantic_field_names,
@@ -36,10 +35,9 @@ from langchain_core.utils import (
 )
 from langchain_core.utils.pydantic import get_fields
 from langchain_core.utils.utils import build_extra_kwargs
+from pydantic import ConfigDict, Field, model_validator, root_validator
 
 from langchain_community.utils.openai import is_openai_v1
-from pydantic import ConfigDict
-
 
 logger = logging.getLogger(__name__)
 
@@ -261,7 +259,9 @@ class BaseOpenAI(BaseLLM):
             return OpenAIChat(**data)
         return super().__new__(cls)
 
-    model_config = ConfigDict(populate_by_name=True,)
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
     @model_validator(mode="before")
     @classmethod

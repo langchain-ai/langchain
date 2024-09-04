@@ -2,10 +2,8 @@ from enum import Enum
 from typing import Any, Dict, Iterator, List, Mapping, Optional
 
 from langchain_core.embeddings import Embeddings
-from pydantic import BaseModel
 from langchain_core.utils import pre_init
-from pydantic import ConfigDict
-
+from pydantic import BaseModel, ConfigDict
 
 CUSTOM_ENDPOINT_PREFIX = "ocid1.generativeaiendpoint"
 
@@ -87,7 +85,9 @@ class OCIGenAIEmbeddings(BaseModel, Embeddings):
     """Batch size of OCI GenAI embedding requests. OCI GenAI may handle up to 96 texts
      per request"""
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:  # pylint: disable=no-self-argument

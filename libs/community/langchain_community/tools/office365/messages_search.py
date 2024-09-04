@@ -7,12 +7,10 @@ https://learn.microsoft.com/en-us/graph/auth/
 from typing import Any, Dict, List, Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from langchain_community.tools.office365.base import O365BaseTool
 from langchain_community.tools.office365.utils import UTC_FORMAT, clean_body
-from pydantic import ConfigDict
-
 
 
 class SearchEmailsInput(BaseModel):
@@ -68,7 +66,9 @@ class O365SearchEmails(O365BaseTool):
         " The output is a JSON list of the requested resource."
     )
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     def _run(
         self,

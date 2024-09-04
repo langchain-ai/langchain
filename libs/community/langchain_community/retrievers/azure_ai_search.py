@@ -10,11 +10,9 @@ from langchain_core.callbacks import (
     CallbackManagerForRetrieverRun,
 )
 from langchain_core.documents import Document
-from pydantic import root_validator, model_validator
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.utils import get_from_dict_or_env, get_from_env
-from pydantic import ConfigDict
-
+from pydantic import ConfigDict, model_validator, root_validator
 
 DEFAULT_URL_SUFFIX = "search.windows.net"
 """Default URL Suffix for endpoint connection - commercial cloud"""
@@ -105,7 +103,10 @@ class AzureAISearchRetriever(BaseRetriever):
     filter: Optional[str] = None
     """OData $filter expression to apply to the search query."""
 
-    model_config = ConfigDict(arbitrary_types_allowed=True,extra="forbid",)
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
     @model_validator(mode="before")
     @classmethod

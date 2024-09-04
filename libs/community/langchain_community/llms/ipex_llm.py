@@ -5,7 +5,6 @@ from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from pydantic import ConfigDict
 
-
 DEFAULT_MODEL_ID = "gpt2"
 
 
@@ -33,7 +32,9 @@ class IpexLLM(LLM):
     streaming: bool = True
     """Whether to stream the results, token by token."""
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @classmethod
     def from_model_id(

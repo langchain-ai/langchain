@@ -9,7 +9,6 @@ from langchain_core.utils import get_from_dict_or_env, pre_init
 from pydantic import ConfigDict
 
 
-
 class SVEndpointHandler:
     """
     SambaNova Systems Interface for Sambaverse endpoint.
@@ -211,7 +210,9 @@ class Sambaverse(LLM):
     streaming: Optional[bool] = False
     """Streaming flag to get streamed response."""
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -728,7 +729,9 @@ class SambaStudio(LLM):
     streaming: Optional[bool] = False
     """Streaming flag to get streamed response."""
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @classmethod
     def is_lc_serializable(cls) -> bool:

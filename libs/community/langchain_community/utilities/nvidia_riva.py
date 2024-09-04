@@ -25,6 +25,7 @@ from typing import (
 
 from langchain_core.messages import AnyMessage, BaseMessage
 from langchain_core.prompt_values import PromptValue
+from langchain_core.runnables import RunnableConfig, RunnableSerializable
 from pydantic import (
     AnyHttpUrl,
     BaseModel,
@@ -33,7 +34,6 @@ from pydantic import (
     root_validator,
     validator,
 )
-from langchain_core.runnables import RunnableConfig, RunnableSerializable
 
 if TYPE_CHECKING:
     import riva.client

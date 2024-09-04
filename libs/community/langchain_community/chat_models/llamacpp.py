@@ -46,17 +46,17 @@ from langchain_core.output_parsers.openai_tools import (
     parse_tool_call,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from pydantic import (
-    BaseModel,
-    Field,
-    root_validator, model_validator,
-)
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_tool
 from langchain_core.utils.pydantic import is_basemodel_subclass
+from pydantic import (
+    BaseModel,
+    Field,
+    model_validator,
+    root_validator,
+)
 from typing_extensions import Self
-
 
 
 class ChatLlamaCpp(BaseChatModel):

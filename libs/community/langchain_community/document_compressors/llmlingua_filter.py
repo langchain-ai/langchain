@@ -8,9 +8,7 @@ from langchain_core.documents import Document
 from langchain_core.documents.compressor import (
     BaseDocumentCompressor,
 )
-from pydantic import root_validator, model_validator
-from pydantic import ConfigDict
-
+from pydantic import ConfigDict, model_validator, root_validator
 
 DEFAULT_LLM_LINGUA_INSTRUCTION = (
     "Given this documents, please answer the final question"
@@ -74,7 +72,10 @@ class LLMLinguaCompressor(BaseDocumentCompressor):
             )
         return values
 
-    model_config = ConfigDict(arbitrary_types_allowed=True,extra="forbid",)
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
     @staticmethod
     def _format_context(docs: Sequence[Document]) -> List[str]:

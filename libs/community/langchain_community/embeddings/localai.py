@@ -16,12 +16,12 @@ from typing import (
 )
 
 from langchain_core.embeddings import Embeddings
-from pydantic import BaseModel, Field, root_validator, model_validator
 from langchain_core.utils import (
     get_from_dict_or_env,
     get_pydantic_field_names,
     pre_init,
 )
+from pydantic import BaseModel, ConfigDict, Field, model_validator, root_validator
 from tenacity import (
     AsyncRetrying,
     before_sleep_log,
@@ -30,8 +30,6 @@ from tenacity import (
     stop_after_attempt,
     wait_exponential,
 )
-from pydantic import ConfigDict
-
 
 logger = logging.getLogger(__name__)
 
@@ -168,7 +166,9 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @model_validator(mode="before")
     @classmethod

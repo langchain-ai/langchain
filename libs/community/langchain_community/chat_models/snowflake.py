@@ -11,7 +11,6 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatResult
-from pydantic import Field, SecretStr, root_validator, model_validator
 from langchain_core.utils import (
     convert_to_secret_str,
     get_from_dict_or_env,
@@ -19,6 +18,7 @@ from langchain_core.utils import (
     pre_init,
 )
 from langchain_core.utils.utils import build_extra_kwargs
+from pydantic import Field, SecretStr, model_validator, root_validator
 
 SUPPORTED_ROLES: List[str] = [
     "system",

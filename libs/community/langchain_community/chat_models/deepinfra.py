@@ -54,17 +54,14 @@ from langchain_core.outputs import (
     ChatGenerationChunk,
     ChatResult,
 )
-from pydantic import BaseModel, Field, root_validator, model_validator
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 from langchain_core.utils import get_from_dict_or_env
 from langchain_core.utils.function_calling import convert_to_openai_tool
-
-from langchain_community.utilities.requests import Requests
-from pydantic import ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, model_validator, root_validator
 from typing_extensions import Self
 
-
+from langchain_community.utilities.requests import Requests
 
 logger = logging.getLogger(__name__)
 
@@ -226,7 +223,9 @@ class ChatDeepInfra(BaseChatModel):
     streaming: bool = False
     max_retries: int = 1
 
-    model_config = ConfigDict(populate_by_name=True,)
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
     @property
     def _default_params(self) -> Dict[str, Any]:

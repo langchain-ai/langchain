@@ -3,9 +3,7 @@ from typing import Any, Dict, List, Mapping, Optional
 
 import requests
 from langchain_core.embeddings import Embeddings
-from pydantic import BaseModel
-from pydantic import ConfigDict
-
+from pydantic import BaseModel, ConfigDict
 
 logger = logging.getLogger(__name__)
 
@@ -143,7 +141,9 @@ class OllamaEmbeddings(BaseModel, Embeddings):
         """Get the identifying parameters."""
         return {**{"model": self.model}, **self._default_params}
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     def _process_emb_response(self, input: str) -> List[float]:
         """Process a response from the API.

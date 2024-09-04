@@ -1,19 +1,20 @@
 import base64
-from typing import Dict, Optional, Any
+from typing import Any, Dict, Optional
 from urllib.parse import quote
 
 import aiohttp
 import requests
-from pydantic import BaseModel, Field, root_validator, model_validator
 from langchain_core.utils import get_from_dict_or_env
-from pydantic import ConfigDict
-
+from pydantic import BaseModel, ConfigDict, Field, model_validator, root_validator
 
 
 class DataForSeoAPIWrapper(BaseModel):
     """Wrapper around the DataForSeo API."""
 
-    model_config = ConfigDict(arbitrary_types_allowed=True,extra="forbid",)
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
     default_params: dict = Field(
         default={

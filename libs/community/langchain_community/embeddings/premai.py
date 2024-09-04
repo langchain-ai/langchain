@@ -5,8 +5,8 @@ from typing import Any, Callable, Dict, List, Optional, Union
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models.llms import create_base_retry_decorator
-from pydantic import BaseModel, SecretStr
 from langchain_core.utils import get_from_dict_or_env, pre_init
+from pydantic import BaseModel, SecretStr
 
 logger = logging.getLogger(__name__)
 

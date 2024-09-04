@@ -5,11 +5,8 @@ from __future__ import annotations
 import re
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple, Union
 
-from pydantic import BaseModel, Field, root_validator, model_validator
-from pydantic import ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, model_validator, root_validator
 from typing_extensions import Self
-
-
 
 if TYPE_CHECKING:
     from cassandra.cluster import ResultSet, Session
@@ -484,7 +481,9 @@ class Table(BaseModel):
     clustering: List[Tuple[str, str]] = Field(default_factory=list)
     indexes: List[Tuple[str, str, str]] = Field(default_factory=list)
 
-    model_config = ConfigDict(frozen=True,)
+    model_config = ConfigDict(
+        frozen=True,
+    )
 
     @model_validator(mode="after")
     def check_required_fields(self) -> Self:

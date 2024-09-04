@@ -5,14 +5,12 @@ https://docs.tavily.com/docs/tavily-api/introduction
 """
 
 import json
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
 
 import aiohttp
 import requests
-from pydantic import BaseModel, SecretStr, root_validator, model_validator
 from langchain_core.utils import get_from_dict_or_env
-from pydantic import ConfigDict
-
+from pydantic import BaseModel, ConfigDict, SecretStr, model_validator, root_validator
 
 TAVILY_API_URL = "https://api.tavily.com"
 
@@ -22,7 +20,9 @@ class TavilySearchAPIWrapper(BaseModel):
 
     tavily_api_key: SecretStr
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @model_validator(mode="before")
     @classmethod

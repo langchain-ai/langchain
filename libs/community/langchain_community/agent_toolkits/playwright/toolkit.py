@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, List, Optional, Type, cast
 
-from pydantic import root_validator, model_validator
 from langchain_core.tools import BaseTool, BaseToolkit
+from pydantic import ConfigDict, model_validator, root_validator
 
 from langchain_community.tools.playwright.base import (
     BaseBrowserTool,
@@ -20,8 +20,6 @@ from langchain_community.tools.playwright.extract_text import ExtractTextTool
 from langchain_community.tools.playwright.get_elements import GetElementsTool
 from langchain_community.tools.playwright.navigate import NavigateTool
 from langchain_community.tools.playwright.navigate_back import NavigateBackTool
-from pydantic import ConfigDict
-
 
 if TYPE_CHECKING:
     from playwright.async_api import Browser as AsyncBrowser
@@ -70,7 +68,10 @@ class PlayWrightBrowserToolkit(BaseToolkit):
     sync_browser: Optional["SyncBrowser"] = None
     async_browser: Optional["AsyncBrowser"] = None
 
-    model_config = ConfigDict(arbitrary_types_allowed=True,extra="forbid",)
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
     @model_validator(mode="before")
     @classmethod

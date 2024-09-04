@@ -10,7 +10,6 @@ from langchain_core.retrievers import BaseRetriever
 from pydantic import ConfigDict
 
 
-
 class TFIDFRetriever(BaseRetriever):
     """`TF-IDF` retriever.
 
@@ -27,7 +26,9 @@ class TFIDFRetriever(BaseRetriever):
     k: int = 4
     """Number of documents to return."""
 
-    model_config = ConfigDict(arbitrary_types_allowed=True,)
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     @classmethod
     def from_texts(

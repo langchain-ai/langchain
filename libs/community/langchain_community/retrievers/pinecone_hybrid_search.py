@@ -11,7 +11,6 @@ from langchain_core.utils import pre_init
 from pydantic import ConfigDict
 
 
-
 def hash_text(text: str) -> str:
     """Hash a text using SHA256.
 
@@ -116,7 +115,10 @@ class PineconeHybridSearchRetriever(BaseRetriever):
     namespace: Optional[str] = None
     """Namespace value for index partition."""
 
-    model_config = ConfigDict(arbitrary_types_allowed=True,extra="forbid",)
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
     def add_texts(
         self,

@@ -1,8 +1,8 @@
 from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from pydantic import BaseModel
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel
 
 from langchain_community.utilities.polygon import PolygonAPIWrapper
 

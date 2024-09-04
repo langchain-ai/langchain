@@ -2,17 +2,21 @@ from typing import Any, Dict, List, Optional
 
 import requests
 from langchain_core.embeddings import Embeddings
-from pydantic import BaseModel, Field, SecretStr, root_validator, model_validator
 from langchain_core.utils import (
     convert_to_secret_str,
     get_from_dict_or_env,
     secret_from_env,
 )
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    SecretStr,
+    model_validator,
+    root_validator,
+)
 from requests import RequestException
-from pydantic import ConfigDict
 from typing_extensions import Self
-
-
 
 BAICHUAN_API_URL: str = "http://api.baichuan-ai.com/v1/embeddings"
 
@@ -69,7 +73,9 @@ class BaichuanTextEmbeddings(BaseModel, Embeddings):
     chunk_size: int = 16
     """Chunk size when multiple texts are input"""
 
-    model_config = ConfigDict(populate_by_name=True,)
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
     @model_validator(mode="after")
     def validate_environment(self) -> Self:

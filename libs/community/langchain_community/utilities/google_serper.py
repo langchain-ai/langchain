@@ -4,11 +4,9 @@ from typing import Any, Dict, List, Optional
 
 import aiohttp
 import requests
-from pydantic import BaseModel, root_validator, model_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, ConfigDict, model_validator, root_validator
 from typing_extensions import Literal
-from pydantic import ConfigDict
-
 
 
 class GoogleSerperAPIWrapper(BaseModel):
@@ -44,7 +42,9 @@ class GoogleSerperAPIWrapper(BaseModel):
     serper_api_key: Optional[str] = None
     aiosession: Optional[aiohttp.ClientSession] = None
 
-    model_config = ConfigDict(arbitrary_types_allowed=True,)
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     @model_validator(mode="before")
     @classmethod

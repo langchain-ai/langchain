@@ -16,10 +16,8 @@ from langchain_core.language_models.chat_models import (
 )
 from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from pydantic import Field, SecretStr
 from langchain_core.utils import convert_to_secret_str
-from pydantic import ConfigDict
-
+from pydantic import ConfigDict, Field, SecretStr
 
 
 def _convert_role(role: str) -> str:
@@ -91,7 +89,10 @@ class ChatNebula(BaseChatModel):
 
     nebula_api_key: Optional[SecretStr] = Field(None, description="Nebula API Token")
 
-    model_config = ConfigDict(populate_by_name=True,arbitrary_types_allowed=True,)
+    model_config = ConfigDict(
+        populate_by_name=True,
+        arbitrary_types_allowed=True,
+    )
 
     def __init__(self, **kwargs: Any) -> None:
         if "nebula_api_key" in kwargs:

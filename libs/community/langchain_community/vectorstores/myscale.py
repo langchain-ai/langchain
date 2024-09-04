@@ -8,10 +8,9 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from pydantic_settings import BaseSettings
 from langchain_core.vectorstores import VectorStore
 from pydantic import ConfigDict
-
+from pydantic_settings import BaseSettings
 
 logger = logging.getLogger()
 
@@ -87,7 +86,11 @@ class MyScaleSettings(BaseSettings):
     def __getitem__(self, item: str) -> Any:
         return getattr(self, item)
 
-    model_config = ConfigDict(env_file=".env",env_file_encoding="utf-8",env_prefix="myscale_",)
+    model_config = ConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        env_prefix="myscale_",
+    )
 
 
 class MyScale(VectorStore):

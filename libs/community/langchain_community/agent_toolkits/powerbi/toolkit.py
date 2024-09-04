@@ -13,9 +13,9 @@ from langchain_core.prompts.chat import (
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
-from pydantic import Field
 from langchain_core.tools import BaseTool
 from langchain_core.tools.base import BaseToolkit
+from pydantic import ConfigDict, Field
 
 from langchain_community.tools.powerbi.prompt import (
     QUESTION_TO_QUERY_BASE,
@@ -28,8 +28,6 @@ from langchain_community.tools.powerbi.tool import (
     QueryPowerBITool,
 )
 from langchain_community.utilities.powerbi import PowerBIDataset
-from pydantic import ConfigDict
-
 
 if TYPE_CHECKING:
     from langchain.chains.llm import LLMChain
@@ -65,7 +63,9 @@ class PowerBIToolkit(BaseToolkit):
     output_token_limit: Optional[int] = None
     tiktoken_model_name: Optional[str] = None
 
-    model_config = ConfigDict(arbitrary_types_allowed=True,)
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""

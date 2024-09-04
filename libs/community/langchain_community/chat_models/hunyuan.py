@@ -19,15 +19,13 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from pydantic import Field, SecretStr, root_validator, model_validator
 from langchain_core.utils import (
     convert_to_secret_str,
     get_from_dict_or_env,
     get_pydantic_field_names,
     pre_init,
 )
-from pydantic import ConfigDict
-
+from pydantic import ConfigDict, Field, SecretStr, model_validator, root_validator
 
 logger = logging.getLogger(__name__)
 
@@ -140,7 +138,9 @@ class ChatHunyuan(BaseChatModel):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for API call not explicitly specified."""
 
-    model_config = ConfigDict(populate_by_name=True,)
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
     @model_validator(mode="before")
     @classmethod

@@ -2,7 +2,7 @@ from typing import Any, Dict, Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.language_models import BaseLanguageModel
-from pydantic import BaseModel, Field, root_validator, model_validator
+from pydantic import BaseModel, Field, model_validator, root_validator
 
 from langchain_community.chat_models import ChatOpenAI
 from langchain_community.tools.amadeus.base import AmadeusBaseTool

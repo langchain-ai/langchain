@@ -9,11 +9,9 @@ from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models.llms import LLM
-from pydantic import SecretStr, root_validator, model_validator
+from pydantic import ConfigDict, SecretStr, model_validator, root_validator
 
 from langchain_community.utils.openai import is_openai_v1
-from pydantic import ConfigDict
-
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +60,9 @@ class Konko(LLM):
         the response for each token generation step.
     """
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @model_validator(mode="before")
     @classmethod

@@ -175,7 +175,7 @@ def test_github_file_content_get_file_paths(mocker: MockerFixture) -> None:
         repo="shufanhao/langchain",
         access_token="access_token",
         github_api_url="https://github.com",
-        file_filter=None
+        file_filter=None,
     )
 
     # Call the load method
@@ -225,7 +225,7 @@ def test_github_file_content_loader(mocker: MockerFixture) -> None:
         repo="shufanhao/langchain",
         access_token="access_token",
         github_api_url="https://github.com",
-        file_filter=None
+        file_filter=None,
     )
 
     # Call the load method

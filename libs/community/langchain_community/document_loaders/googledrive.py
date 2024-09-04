@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional, Sequence, Union
 
 from langchain_core._api.deprecation import deprecated
 from langchain_core.documents import Document
-from pydantic import BaseModel, root_validator, validator, model_validator
+from pydantic import BaseModel, model_validator, root_validator, validator
 
 from langchain_community.document_loaders.base import BaseLoader
 

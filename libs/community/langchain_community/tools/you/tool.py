@@ -5,8 +5,8 @@ from langchain_core.callbacks import (
     CallbackManagerForToolRun,
 )
 from langchain_core.documents import Document
-from pydantic import BaseModel, Field
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel, Field
 
 from langchain_community.utilities.you import YouSearchAPIWrapper
 

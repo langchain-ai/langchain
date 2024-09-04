@@ -2,12 +2,10 @@ from typing import Any, Dict, List, Optional, Union, cast
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from pydantic import SecretStr, root_validator, model_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from pydantic import ConfigDict, SecretStr, model_validator, root_validator
 
 from langchain_community.utilities.arcee import ArceeWrapper, DALMFilter
-from pydantic import ConfigDict
-
 
 
 class Arcee(LLM):
@@ -53,7 +51,10 @@ class Arcee(LLM):
     model_kwargs: Optional[Dict[str, Any]] = None
     """Keyword arguments to pass to the model."""
 
-    model_config = ConfigDict(extra="forbid",underscore_attrs_are_private=True,)
+    model_config = ConfigDict(
+        extra="forbid",
+        underscore_attrs_are_private=True,
+    )
 
     @property
     def _llm_type(self) -> str:

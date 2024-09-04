@@ -7,9 +7,9 @@ from typing import Any, Dict, Iterator, List, Optional, Union
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
-from pydantic import Field, root_validator, model_validator
 from langchain_core.utils import get_pydantic_field_names, pre_init
 from langchain_core.utils.utils import build_extra_kwargs
+from pydantic import Field, model_validator, root_validator
 
 logger = logging.getLogger(__name__)
 

@@ -2,10 +2,8 @@ from typing import Any, Dict, List, Mapping, Optional
 
 import requests
 from langchain_core.embeddings import Embeddings
-from pydantic import BaseModel
 from langchain_core.utils import get_from_dict_or_env, pre_init
-from pydantic import ConfigDict
-
+from pydantic import BaseModel, ConfigDict
 
 DEFAULT_MODEL_ID = "sentence-transformers/clip-ViT-B-32"
 MAX_BATCH_SIZE = 1024
@@ -56,7 +54,9 @@ class DeepInfraEmbeddings(BaseModel, Embeddings):
     batch_size: int = MAX_BATCH_SIZE
     """Batch size for embedding requests."""
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:

@@ -16,6 +16,7 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from pydantic import ConfigDict
 
 from langchain_community.chat_models.anthropic import (
     convert_messages_to_prompt_anthropic,
@@ -26,8 +27,6 @@ from langchain_community.utilities.anthropic import (
     get_num_tokens_anthropic,
     get_token_ids_anthropic,
 )
-from pydantic import ConfigDict
-
 
 
 def _convert_one_message_to_text_mistral(message: BaseMessage) -> str:
@@ -233,7 +232,9 @@ class BedrockChat(BaseChatModel, BedrockBase):
 
         return attributes
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     def _stream(
         self,

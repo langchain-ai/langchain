@@ -35,12 +35,9 @@ from langchain_core.messages import (
     ToolMessageChunk,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from pydantic import Field, root_validator, model_validator
 from langchain_core.utils import get_from_dict_or_env, get_pydantic_field_names
-from pydantic import ConfigDict
+from pydantic import ConfigDict, Field, model_validator, root_validator
 from typing_extensions import Self
-
-
 
 logger = logging.getLogger(__name__)
 
@@ -85,7 +82,9 @@ class ChatPerplexity(BaseChatModel):
     max_tokens: Optional[int] = None
     """Maximum number of tokens to generate."""
 
-    model_config = ConfigDict(populate_by_name=True,)
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
@@ -121,9 +120,7 @@ class ChatPerplexity(BaseChatModel):
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
-        self.pplx_api_key = get_from_dict_or_env(
-            values, "pplx_api_key", "PPLX_API_KEY"
-        )
+        self.pplx_api_key = get_from_dict_or_env(values, "pplx_api_key", "PPLX_API_KEY")
         try:
             import openai
         except ImportError:

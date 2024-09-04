@@ -5,8 +5,8 @@ from typing import Any, Callable, Dict, List, Mapping, Optional
 import requests
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from pydantic import SecretStr
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
+from pydantic import ConfigDict, SecretStr
 from requests import ConnectTimeout, ReadTimeout, RequestException
 from tenacity import (
     before_sleep_log,
@@ -17,8 +17,6 @@ from tenacity import (
 )
 
 from langchain_community.llms.utils import enforce_stop_tokens
-from pydantic import ConfigDict
-
 
 DEFAULT_NEBULA_SERVICE_URL = "https://api-nebula.symbl.ai"
 DEFAULT_NEBULA_SERVICE_PATH = "/v1/model/generate"
@@ -62,7 +60,9 @@ class Nebula(LLM):
     stop_sequences: Optional[List[str]] = None
     max_retries: Optional[int] = 10
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:

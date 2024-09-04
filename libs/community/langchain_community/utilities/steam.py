@@ -2,20 +2,18 @@
 
 from typing import Any, List
 
-from pydantic import BaseModel, root_validator, model_validator
-from pydantic import ConfigDict
+from pydantic import BaseModel, ConfigDict, model_validator, root_validator
 
 from langchain_community.tools.steam.prompt import (
     STEAM_GET_GAMES_DETAILS,
     STEAM_GET_RECOMMENDED_GAMES,
 )
 
+
 class SteamWebAPIWrapper(BaseModel):
     """Wrapper for Steam API."""
 
     steam: Any  # for python-steam-api
-
-
 
     # operations: a list of dictionaries, each representing a specific operation that
     # can be performed with the API
@@ -32,7 +30,9 @@ class SteamWebAPIWrapper(BaseModel):
         },
     ]
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     def get_operations(self) -> List[dict]:
         """Return a list of operations."""

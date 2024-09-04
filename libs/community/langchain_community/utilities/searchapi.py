@@ -2,10 +2,8 @@ from typing import Any, Dict, Optional
 
 import aiohttp
 import requests
-from pydantic import BaseModel, root_validator, model_validator
 from langchain_core.utils import get_from_dict_or_env
-from pydantic import ConfigDict
-
+from pydantic import BaseModel, ConfigDict, model_validator, root_validator
 
 
 class SearchApiAPIWrapper(BaseModel):
@@ -29,7 +27,9 @@ class SearchApiAPIWrapper(BaseModel):
     searchapi_api_key: Optional[str] = None
     aiosession: Optional[aiohttp.ClientSession] = None
 
-    model_config = ConfigDict(arbitrary_types_allowed=True,)
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     @model_validator(mode="before")
     @classmethod

@@ -2,10 +2,8 @@ from typing import Any, Dict, List, Optional
 
 import numpy as np
 from langchain_core.embeddings import Embeddings
-from pydantic import BaseModel
 from langchain_core.utils import pre_init
-from pydantic import ConfigDict
-
+from pydantic import BaseModel, ConfigDict
 
 LASER_MULTILINGUAL_MODEL: str = "laser2"
 
@@ -39,7 +37,9 @@ class LaserEmbeddings(BaseModel, Embeddings):
 
     _encoder_pipeline: Any  # : :meta private:
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:

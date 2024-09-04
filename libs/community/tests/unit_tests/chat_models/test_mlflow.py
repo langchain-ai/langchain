@@ -19,8 +19,8 @@ from langchain_core.messages import (
     ToolMessageChunk,
 )
 from langchain_core.prompts import ChatPromptTemplate
-from pydantic import BaseModel
 from langchain_core.tools import StructuredTool
+from pydantic import BaseModel
 
 from langchain_community.chat_models.mlflow import ChatMlflow
 
