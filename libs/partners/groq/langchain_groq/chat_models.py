@@ -402,11 +402,11 @@ class ChatGroq(BaseChatModel):
             import groq
 
             sync_specific = {"http_client": self.http_client}
-            if not (self.client or None):
+            if not self.client:
                 self.client = groq.Groq(
                     **client_params, **sync_specific
                 ).chat.completions
-            if not (self.async_client or None):
+            if self.async_client:
                 async_specific = {"http_client": self.http_async_client}
                 self.async_client = groq.AsyncGroq(
                     **client_params, **async_specific
