@@ -9,8 +9,8 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
-from langchain_core.utils import get_from_dict_or_env, get_pydantic_field_names
-from pydantic import ConfigDict, Field, model_validator, root_validator
+from langchain_core.utils import from_env, get_pydantic_field_names
+from pydantic import ConfigDict, Field, model_validator
 from typing_extensions import Self
 
 logger = logging.getLogger(__name__)
@@ -72,7 +72,9 @@ class HuggingFaceEndpoint(LLM):
     should be pass as env variable in `HF_INFERENCE_ENDPOINT`"""
     repo_id: Optional[str] = None
     """Repo to use. If endpoint_url is not specified then this needs to given"""
-    huggingfacehub_api_token: Optional[str] = None
+    huggingfacehub_api_token: Optional[str] = Field(
+        default_factory=from_env("HUGGINGFACEHUB_API_TOKEN", default=None)
+    )
     max_new_tokens: int = 512
     """Maximum number of generated tokens"""
     top_k: Optional[int] = None
@@ -195,12 +197,8 @@ class HuggingFaceEndpoint(LLM):
                 "Please install it with `pip install huggingface_hub`."
             )
 
-        self.huggingfacehub_api_token = get_from_dict_or_env(
-            values, "huggingfacehub_api_token", "HUGGINGFACEHUB_API_TOKEN", None
-        )
-
-        huggingfacehub_api_token = get_from_dict_or_env(
-            values, "huggingfacehub_api_token", "HF_TOKEN", None
+        huggingfacehub_api_token = self.huggingfacehub_api_token or os.getenv(
+            "HF_TOKEN"
         )
 
         if huggingfacehub_api_token is not None:
