@@ -34,6 +34,8 @@ def test_import_all() -> None:
                 # If the module is not installed, we suppress the error
                 if "Module langchain_community" in str(e) and COMMUNITY_NOT_INSTALLED:
                     pass
+            except Exception as e:
+                raise AssertionError(f"Could not import {module_name}.{name}") from e
 
 
 def test_import_all_using_dir() -> None:

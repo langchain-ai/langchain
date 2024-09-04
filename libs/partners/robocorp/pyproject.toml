@@ -18,10 +18,11 @@ disallow_untyped_defs = "True"
 "Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/robocorp"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
+python = ">=3.9,<4.0"
 langchain-core = ">=0.2.24,<0.3"
 requests = "^2.31.0"
 types-requests = "^2.31.0.6"
+pydantic = ">=2,<3"
 
 [tool.ruff.lint]
 select = [ "E", "F", "I", "T201",]
