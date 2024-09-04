@@ -3,7 +3,7 @@
 import logging
 from typing import Any, Dict, List, Mapping
 
-from pydantic import BaseModel, ConfigDict, model_validator, root_validator
+from pydantic import BaseModel, ConfigDict, model_validator
 
 logger = logging.getLogger(__name__)
 

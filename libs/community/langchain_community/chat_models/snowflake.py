@@ -18,7 +18,7 @@ from langchain_core.utils import (
     pre_init,
 )
 from langchain_core.utils.utils import build_extra_kwargs
-from pydantic import Field, SecretStr, model_validator, root_validator
+from pydantic import Field, SecretStr, model_validator
 
 SUPPORTED_ROLES: List[str] = [
     "system",

@@ -15,7 +15,6 @@ from pydantic import (
     ConfigDict,
     Field,
     model_validator,
-    root_validator,
     validator,
 )
 from requests.exceptions import Timeout

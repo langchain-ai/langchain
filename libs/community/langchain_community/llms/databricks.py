@@ -13,7 +13,6 @@ from pydantic import (
     Field,
     PrivateAttr,
     model_validator,
-    root_validator,
     validator,
 )
 

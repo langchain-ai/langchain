@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional
 import aiohttp
 import requests
 from langchain_core.utils import get_from_dict_or_env
-from pydantic import BaseModel, ConfigDict, model_validator, root_validator
+from pydantic import BaseModel, ConfigDict, model_validator
 
 METAPHOR_API_URL = "https://api.metaphor.systems"
 

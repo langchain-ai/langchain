@@ -25,7 +25,7 @@ from langchain_core.utils import (
     get_pydantic_field_names,
     pre_init,
 )
-from pydantic import ConfigDict, Field, SecretStr, model_validator, root_validator
+from pydantic import ConfigDict, Field, SecretStr, model_validator
 
 logger = logging.getLogger(__name__)
 

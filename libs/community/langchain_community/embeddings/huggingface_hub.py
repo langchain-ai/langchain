@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 from langchain_core._api import deprecated
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils import get_from_dict_or_env
-from pydantic import BaseModel, ConfigDict, model_validator, root_validator
+from pydantic import BaseModel, ConfigDict, model_validator
 from typing_extensions import Self
 
 DEFAULT_MODEL = "sentence-transformers/all-mpnet-base-v2"

@@ -12,7 +12,7 @@ from langchain_core.load.serializable import Serializable
 from langchain_core.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.tracers.langchain import LangChainTracer
-from pydantic import ConfigDict, Field, model_validator, root_validator
+from pydantic import ConfigDict, Field, model_validator
 
 
 class Person(Serializable):

@@ -55,7 +55,6 @@ from pydantic import (
     Field,
     SecretStr,
     model_validator,
-    root_validator,
 )
 
 logger = logging.getLogger(__name__)

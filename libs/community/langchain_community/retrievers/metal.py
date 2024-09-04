@@ -3,7 +3,7 @@ from typing import Any, List, Optional
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
-from pydantic import model_validator, root_validator
+from pydantic import model_validator
 
 
 class MetalRetriever(BaseRetriever):

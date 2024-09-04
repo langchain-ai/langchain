@@ -11,7 +11,7 @@ from typing import (
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils import get_from_dict_or_env
-from pydantic import BaseModel, ConfigDict, model_validator, root_validator
+from pydantic import BaseModel, ConfigDict, model_validator
 from requests.exceptions import HTTPError
 from tenacity import (
     before_sleep_log,

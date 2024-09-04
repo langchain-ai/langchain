@@ -3,7 +3,7 @@
 from typing import Any, Dict, List, Optional
 
 from langchain_core.utils import get_from_dict_or_env
-from pydantic import BaseModel, ConfigDict, model_validator, root_validator
+from pydantic import BaseModel, ConfigDict, model_validator
 
 
 # TODO: think about error handling, more specific api specs, and jql/project limits

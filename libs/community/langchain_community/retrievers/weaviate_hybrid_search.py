@@ -6,7 +6,7 @@ from uuid import uuid4
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
-from pydantic import ConfigDict, model_validator, root_validator
+from pydantic import ConfigDict, model_validator
 
 
 class WeaviateHybridSearchRetriever(BaseRetriever):

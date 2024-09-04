@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional
 import requests
 from langchain_core.documents import Document
 from langchain_core.utils import get_from_dict_or_env
-from pydantic import BaseModel, model_validator, root_validator
+from pydantic import BaseModel, model_validator
 
 logger = logging.getLogger(__name__)
 

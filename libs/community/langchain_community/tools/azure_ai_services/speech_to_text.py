@@ -7,7 +7,7 @@ from typing import Any, Dict, Optional
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool
 from langchain_core.utils import get_from_dict_or_env
-from pydantic import model_validator, root_validator
+from pydantic import model_validator
 
 from langchain_community.tools.azure_ai_services.utils import (
     detect_file_src_type,

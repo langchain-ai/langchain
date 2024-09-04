@@ -2,7 +2,7 @@ import logging
 from typing import Any, Callable, Dict, Iterator, List, Optional
 
 from langchain_core.documents import Document
-from pydantic import BaseModel, model_validator, root_validator
+from pydantic import BaseModel, model_validator
 
 logger = logging.getLogger(__name__)
 

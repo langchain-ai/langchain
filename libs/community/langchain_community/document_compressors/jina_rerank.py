@@ -7,7 +7,7 @@ import requests
 from langchain_core.callbacks import Callbacks
 from langchain_core.documents import BaseDocumentCompressor, Document
 from langchain_core.utils import get_from_dict_or_env
-from pydantic import ConfigDict, model_validator, root_validator
+from pydantic import ConfigDict, model_validator
 
 JINA_API_URL: str = "https://api.jina.ai/v1/rerank"
 

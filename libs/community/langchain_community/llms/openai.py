@@ -35,7 +35,7 @@ from langchain_core.utils import (
 )
 from langchain_core.utils.pydantic import get_fields
 from langchain_core.utils.utils import build_extra_kwargs
-from pydantic import ConfigDict, Field, model_validator, root_validator
+from pydantic import ConfigDict, Field, model_validator
 
 from langchain_community.utils.openai import is_openai_v1
 

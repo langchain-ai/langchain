@@ -35,7 +35,7 @@ from langchain_core.exceptions import LangChainException
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.utils import get_from_env
 from langchain_core.vectorstores import VectorStore
-from pydantic import ConfigDict, model_validator, root_validator
+from pydantic import ConfigDict, model_validator
 
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
 

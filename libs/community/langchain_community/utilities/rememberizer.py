@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, cast
 import requests
 from langchain_core.documents import Document
 from langchain_core.utils import get_from_dict_or_env
-from pydantic import BaseModel, model_validator, root_validator
+from pydantic import BaseModel, model_validator
 
 
 class RememberizerAPIWrapper(BaseModel):

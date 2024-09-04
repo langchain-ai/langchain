@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 
 import requests
 from langchain_core.utils import get_from_dict_or_env
-from pydantic import BaseModel, ConfigDict, model_validator, root_validator
+from pydantic import BaseModel, ConfigDict, model_validator
 from requests.adapters import HTTPAdapter
 from urllib3.util import Retry
 

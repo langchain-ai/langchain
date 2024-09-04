@@ -34,7 +34,7 @@ from langchain_core.messages import (
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.utils import convert_to_secret_str
 from langchain_core.utils.env import get_from_dict_or_env
-from pydantic import Field, SecretStr, model_validator, root_validator
+from pydantic import Field, SecretStr, model_validator
 
 from langchain_community.adapters.openai import convert_message_to_dict
 

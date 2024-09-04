@@ -14,7 +14,7 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.utils import get_from_dict_or_env
-from pydantic import model_validator, root_validator
+from pydantic import model_validator
 
 logger = logging.getLogger(__name__)
 

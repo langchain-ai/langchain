@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import os
 import warnings
-from typing import Callable, Dict, Optional, Union
+from typing import Any, Callable, Dict, Optional, Union
 
 from langchain_core._api.deprecation import deprecated
 from langchain_core.utils import get_from_dict_or_env
-from pydantic import Field, model_validator, root_validator
+from pydantic import Field, model_validator
 from typing_extensions import Self
 
 from langchain_community.embeddings.openai import OpenAIEmbeddings

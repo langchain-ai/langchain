@@ -9,7 +9,7 @@ from typing import Any, Dict, List
 import numpy as np
 from langchain_core.example_selectors import BaseExampleSelector
 from langchain_core.prompts import PromptTemplate
-from pydantic import BaseModel, model_validator, root_validator
+from pydantic import BaseModel, model_validator
 
 
 def ngram_overlap_score(source: List[str], example: List[str]) -> float:

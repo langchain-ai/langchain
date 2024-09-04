@@ -11,7 +11,7 @@ import aiohttp
 import requests
 from langchain_core.documents import Document
 from langchain_core.utils import get_from_dict_or_env
-from pydantic import BaseModel, Field, model_validator, root_validator
+from pydantic import BaseModel, Field, model_validator
 from typing_extensions import Self
 
 YOU_API_URL = "https://api.ydc-index.io"

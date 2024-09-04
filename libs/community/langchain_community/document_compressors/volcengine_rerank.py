@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Sequence, Union
 from langchain_core.callbacks.base import Callbacks
 from langchain_core.documents import BaseDocumentCompressor, Document
 from langchain_core.utils import get_from_dict_or_env
-from pydantic import ConfigDict, model_validator, root_validator
+from pydantic import ConfigDict, model_validator
 
 
 class VolcengineRerank(BaseDocumentCompressor):

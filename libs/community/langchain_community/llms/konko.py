@@ -9,7 +9,7 @@ from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models.llms import LLM
-from pydantic import ConfigDict, SecretStr, model_validator, root_validator
+from pydantic import ConfigDict, SecretStr, model_validator
 
 from langchain_community.utils.openai import is_openai_v1
 

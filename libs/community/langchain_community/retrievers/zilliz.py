@@ -5,7 +5,7 @@ from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.retrievers import BaseRetriever
-from pydantic import model_validator, root_validator
+from pydantic import model_validator
 
 from langchain_community.vectorstores.zilliz import Zilliz
 

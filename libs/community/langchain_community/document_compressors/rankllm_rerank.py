@@ -8,7 +8,7 @@ from langchain.retrievers.document_compressors.base import BaseDocumentCompresso
 from langchain_core.callbacks.manager import Callbacks
 from langchain_core.documents import Document
 from langchain_core.utils import get_from_dict_or_env
-from pydantic import ConfigDict, Field, PrivateAttr, model_validator, root_validator
+from pydantic import ConfigDict, Field, PrivateAttr, model_validator
 
 if TYPE_CHECKING:
     from rank_llm.data import Candidate, Query, Request

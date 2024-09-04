@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, Optional
 
 from langchain_core.documents import Document
 from langchain_core.utils import get_from_dict_or_env
-from pydantic import BaseModel, model_validator, root_validator
+from pydantic import BaseModel, model_validator
 
 if TYPE_CHECKING:
     from langchain_community.document_loaders import ApifyDatasetLoader

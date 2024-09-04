@@ -10,7 +10,6 @@ from pydantic import (
     Field,
     SecretStr,
     model_validator,
-    root_validator,
 )
 
 from langchain_community.llms.utils import enforce_stop_tokens

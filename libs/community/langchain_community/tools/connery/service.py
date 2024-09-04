@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 
 import requests
 from langchain_core.utils.env import get_from_dict_or_env
-from pydantic import BaseModel, model_validator, root_validator
+from pydantic import BaseModel, model_validator
 
 from langchain_community.tools.connery.models import Action
 from langchain_community.tools.connery.tool import ConneryAction

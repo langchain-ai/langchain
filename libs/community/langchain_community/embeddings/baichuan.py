@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional
 
 import requests
 from langchain_core.embeddings import Embeddings
@@ -13,7 +13,6 @@ from pydantic import (
     Field,
     SecretStr,
     model_validator,
-    root_validator,
 )
 from requests import RequestException
 from typing_extensions import Self

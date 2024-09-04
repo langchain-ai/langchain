@@ -2,10 +2,10 @@
 
 import asyncio
 from logging import getLogger
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from pydantic import BaseModel, ConfigDict, model_validator, root_validator
+from pydantic import BaseModel, ConfigDict, model_validator
 from typing_extensions import Self
 
 __all__ = ["InfinityEmbeddingsLocal"]

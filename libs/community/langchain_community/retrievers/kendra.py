@@ -18,7 +18,6 @@ from pydantic import (
     BaseModel,
     Field,
     model_validator,
-    root_validator,
     validator,
 )
 from typing_extensions import Annotated

@@ -26,7 +26,7 @@ from langchain_core.utils import (
     get_pydantic_field_names,
     pre_init,
 )
-from pydantic import BaseModel, ConfigDict, Field, model_validator, root_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from tenacity import (
     AsyncRetrying,
     before_sleep_log,

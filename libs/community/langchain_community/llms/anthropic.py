@@ -27,7 +27,7 @@ from langchain_core.utils import (
     pre_init,
 )
 from langchain_core.utils.utils import build_extra_kwargs, convert_to_secret_str
-from pydantic import ConfigDict, Field, SecretStr, model_validator, root_validator
+from pydantic import ConfigDict, Field, SecretStr, model_validator
 
 
 class _AnthropicCommon(BaseLanguageModel):

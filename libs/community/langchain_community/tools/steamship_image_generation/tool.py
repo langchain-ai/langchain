@@ -15,12 +15,12 @@ To use this tool, you must first set as environment variables:
 from __future__ import annotations
 
 from enum import Enum
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool
 from langchain_core.utils import get_from_dict_or_env
-from pydantic import model_validator, root_validator
+from pydantic import model_validator
 
 from langchain_community.tools.steamship_image_generation.utils import make_image_public
 

@@ -1,7 +1,7 @@
 from typing import Any, Callable, Dict, List
 
 from langchain_core.documents import Document
-from pydantic import BaseModel, model_validator, root_validator
+from pydantic import BaseModel, model_validator
 
 from langchain_community.document_loaders.base import BaseLoader
 

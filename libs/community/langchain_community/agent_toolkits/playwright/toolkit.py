@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List, Optional, Type, cast
+from typing import TYPE_CHECKING, Any, List, Optional, Type, cast
 
 from langchain_core.tools import BaseTool, BaseToolkit
-from pydantic import ConfigDict, model_validator, root_validator
+from pydantic import ConfigDict, model_validator
 
 from langchain_community.tools.playwright.base import (
     BaseBrowserTool,

@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Literal, Mapping, Optional, Union
 
 import requests
 from langchain_core.retrievers import Document
-from pydantic import BaseModel, SecretStr, model_validator, root_validator
+from pydantic import BaseModel, SecretStr, model_validator
 
 
 class ArceeRoute(str, Enum):

@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import logging
 import sys
-from typing import TYPE_CHECKING, Dict, Optional, Set
+from typing import TYPE_CHECKING, Any, Dict, Optional, Set
 
 from langchain_core.messages import BaseMessage
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
-from pydantic import Field, model_validator, root_validator
+from pydantic import Field, model_validator
 
 from langchain_community.adapters.openai import convert_message_to_dict
 from langchain_community.chat_models.openai import (

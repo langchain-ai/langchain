@@ -7,7 +7,7 @@ import urllib.request
 from typing import Any, Dict, Iterator, List
 
 from langchain_core.documents import Document
-from pydantic import BaseModel, model_validator, root_validator
+from pydantic import BaseModel, model_validator
 
 logger = logging.getLogger(__name__)
 

@@ -23,7 +23,7 @@ from langchain_core.utils import (
     convert_to_secret_str,
     get_from_dict_or_env,
 )
-from pydantic import ConfigDict, Field, SecretStr, model_validator, root_validator
+from pydantic import ConfigDict, Field, SecretStr, model_validator
 
 logger = logging.getLogger(__name__)
 

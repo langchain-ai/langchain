@@ -58,7 +58,6 @@ from pydantic import (
     Field,
     SecretStr,
     model_validator,
-    root_validator,
 )
 
 from langchain_community.chat_models.llamacpp import (

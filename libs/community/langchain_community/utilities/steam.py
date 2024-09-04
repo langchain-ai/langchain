@@ -2,7 +2,7 @@
 
 from typing import Any, List
 
-from pydantic import BaseModel, ConfigDict, model_validator, root_validator
+from pydantic import BaseModel, ConfigDict, model_validator
 
 from langchain_community.tools.steam.prompt import (
     STEAM_GET_GAMES_DETAILS,

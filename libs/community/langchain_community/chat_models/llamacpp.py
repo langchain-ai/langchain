@@ -54,7 +54,6 @@ from pydantic import (
     BaseModel,
     Field,
     model_validator,
-    root_validator,
 )
 from typing_extensions import Self
 

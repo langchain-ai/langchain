@@ -9,7 +9,7 @@ from langchain_core.callbacks import (
 )
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
-from pydantic import model_validator, root_validator
+from pydantic import model_validator
 
 if TYPE_CHECKING:
     from zep_python.memory import MemorySearchResult

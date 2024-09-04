@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence, Union
 import requests
 from langchain_core._api.deprecation import deprecated
 from langchain_core.documents import Document
-from pydantic import BaseModel, model_validator, root_validator
+from pydantic import BaseModel, model_validator
 
 from langchain_community.document_loaders.base import BaseLoader
 

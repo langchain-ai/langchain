@@ -18,7 +18,7 @@ from langchain_core.load import dumpd
 from langchain_core.runnables import RunnableConfig, ensure_config
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_tool
-from pydantic import BaseModel, Field, model_validator, root_validator
+from pydantic import BaseModel, Field, model_validator
 from typing_extensions import Self
 
 if TYPE_CHECKING:
