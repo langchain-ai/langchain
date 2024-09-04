@@ -650,7 +650,7 @@ class LLMGraphTransformer:
           any relationship properties from text. Alternatively, a list of valid
           properties can be provided for the LLM to extract, restricting extraction to
           those specified.
-        ignore_tool_usage (Optional[bool]): Indicates whether the transformer should
+        ignore_tool_usage (bool): Indicates whether the transformer should
           bypass the use of structured output functionality of the language model.
           If set to True, the transformer will not use the language model's native
           function calling capabilities to handle structured output. Defaults to False.
@@ -679,7 +679,7 @@ class LLMGraphTransformer:
         strict_mode: bool = True,
         node_properties: Union[bool, List[str]] = False,
         relationship_properties: Union[bool, List[str]] = False,
-        ignore_tool_usage: Optional[bool] = False,
+        ignore_tool_usage: bool = False,
     ) -> None:
         self.allowed_nodes = allowed_nodes
         self.allowed_relationships = allowed_relationships
