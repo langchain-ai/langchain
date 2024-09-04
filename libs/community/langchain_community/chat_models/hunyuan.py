@@ -38,7 +38,8 @@ def _convert_message_to_dict(message: BaseMessage, model: str = None) -> dict:
         message_dict = {"Role": "system", "Content": message.content}
     elif isinstance(message, HumanMessage):
         success, contents = _string_to_object(message.content, model)
-        if model == "hunyuan-vision" and success: # hunyuan-vision 模型的输入是 数组形式的 Contents
+        # hunyuan-vision 模型的输入是 数组形式的 Contents
+        if model == "hunyuan-vision" and success:
             message_dict = {"Role": "user", "Contents": contents} 
         else:
             message_dict = {"Role": "user", "Content": message.content}
