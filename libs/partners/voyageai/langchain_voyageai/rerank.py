@@ -10,7 +10,7 @@ from langchain_core.documents import Document
 from langchain_core.documents.compressor import BaseDocumentCompressor
 from langchain_core.utils import convert_to_secret_str
 from pydantic import ConfigDict, SecretStr, model_validator
-from voyageai.object import RerankingObject
+from voyageai.object import RerankingObject  # type: ignore
 
 
 class VoyageAIRerank(BaseDocumentCompressor):
