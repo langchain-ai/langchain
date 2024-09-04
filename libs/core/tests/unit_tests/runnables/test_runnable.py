@@ -5565,7 +5565,7 @@ async def test_closing_iterator_doesnt_raise_error() -> None:
 
 
 def test_pydantic_protected_namespaces() -> None:
-    # Check that protected namespaces (e.g., `model_kwargs`) do not raise warnings`
+    # Check that protected namespaces (e.g., `model_kwargs`) do not raise warnings
     with warnings.catch_warnings():
         warnings.simplefilter("error")
 
