@@ -9,12 +9,11 @@ You can obtain a key by following the steps below.
 from typing import Any, Dict
 
 import requests
-from langchain_core.utils import get_from_dict_or_env
-from pydantic import BaseModel, Field, model_validator, root_validator
-from pydantic_settings import BaseSettings
+from langchain_core.utils import from_env, get_from_dict_or_env
+from pydantic import BaseModel, Field, model_validator
 
 
-class SceneXplainAPIWrapper(BaseSettings, BaseModel):
+class SceneXplainAPIWrapper(BaseModel):
     """Wrapper for SceneXplain API.
 
     In order to set this up, you need API key for the SceneXplain API.
@@ -24,7 +23,7 @@ class SceneXplainAPIWrapper(BaseSettings, BaseModel):
       and create a new API key.
     """
 
-    scenex_api_key: str = Field(..., env="SCENEX_API_KEY")
+    scenex_api_key: str = Field(..., default_factory=from_env("SCENEX_API_KEY"))
     scenex_api_url: str = "https://api.scenex.jina.ai/v1/describe"
 
     def _describe_image(self, image: str) -> str:
