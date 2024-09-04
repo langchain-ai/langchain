@@ -9,17 +9,18 @@ TextEmbed offers flexibility and scalability for diverse applications.
 TextEmbed is maintained by Keval Dekivadiya and is licensed under the Apache-2.0 license.
 """  # noqa: E501
 
-import asyncio
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import aiohttp
+import asyncio
 import numpy as np
 import requests
-from langchain_core.embeddings import Embeddings
-from langchain_core.utils import get_from_dict_or_env
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict, model_validator, SecretStr, Field
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 from typing_extensions import Self
+
+from langchain_core.embeddings import Embeddings
+from langchain_core.utils import from_env, secret_from_env
 
 __all__ = ["TextEmbedEmbeddings"]
 
@@ -51,10 +52,14 @@ class TextEmbedEmbeddings(BaseModel, Embeddings):
     model: str
     """Underlying TextEmbed model id."""
 
-    api_url: str = "http://localhost:8000/v1"
+    api_url: str = Field(
+        default_factory=from_env(
+            "TEXTEMBED_API_URL", default="http://localhost:8000/v1"
+        )
+    )
     """Endpoint URL to use."""
 
-    api_key: str = "None"
+    api_key: SecretStr = Field(default_factory=secret_from_env("TEXTEMBED_API_KEY"))
     """API Key for authentication"""
 
     client: Any = None
@@ -66,19 +71,9 @@ class TextEmbedEmbeddings(BaseModel, Embeddings):
 
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
-        """Validate that api key and URL exist in the environment.
-
-        Args:
-            values (Dict): Dictionary of values to validate.
-
-        Returns:
-            Dict: Validated values.
-        """
-        self.api_url = get_from_dict_or_env(values, "api_url", "API_URL")
-        self.api_key = get_from_dict_or_env(values, "api_key", "API_KEY")
-
+        """Validate that api key and URL exist in the environment."""
         self.client = AsyncOpenAITextEmbedEmbeddingClient(
-            host=self.api_url, api_key=self.api_key
+            host=self.api_url, api_key=self.api_key.get_secret_value()
         )
         return self
 
