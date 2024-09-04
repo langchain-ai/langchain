@@ -2,7 +2,7 @@ import time
 from dataclasses import dataclass
 from typing import Any, Dict, List, Set, Tuple, Union, cast
 
-from langchain_core.pydantic_v1 import (
+from pydantic import (
     BaseModel,
     Field,
     create_model,
