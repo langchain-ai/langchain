@@ -353,7 +353,7 @@ class SQLRecordManager(RecordManager):
                     WHEN NOT MATCHED THEN
                         INSERT ([uuid], [key], [namespace], [updated_at], [group_id])
                         VALUES (source.[uuid], source.[key], source.[namespace], source.[updated_at], source.[group_id]);
-                """)  # noqa: E501, # type: ignore[assignment]
+                """)  # type: ignore[assignment] # noqa: E501
             else:
                 raise NotImplementedError(f"Unsupported dialect {self.dialect}")
 
@@ -458,7 +458,7 @@ class SQLRecordManager(RecordManager):
                     WHEN NOT MATCHED THEN
                         INSERT ([uuid], [key], [namespace], [updated_at], [group_id])
                         VALUES (source.[uuid], source.[key], source.[namespace], source.[updated_at], source.[group_id]);
-                """)  # noqa: E501, # type: ignore[assignment]
+                """)  # type: ignore[assignment] # noqa: E501
             else:
                 raise NotImplementedError(f"Unsupported dialect {self.dialect}")
 
