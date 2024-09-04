@@ -11,7 +11,7 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 
 if TYPE_CHECKING:
-    from pyepsilla import vectordb
+    from pyepsilla import vectordb, cloud
 
 logger = logging.getLogger()
 
