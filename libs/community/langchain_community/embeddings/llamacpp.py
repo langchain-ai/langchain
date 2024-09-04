@@ -82,7 +82,7 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
             "verbose",
             "device",
         ]
-        model_params = {k: values[k] for k in model_param_names}
+        model_params = {k: getattr(self, k) for k in model_param_names}
         # For backwards compatibility, only include if non-null.
         if self.n_gpu_layers is not None:
             model_params["n_gpu_layers"] = self.n_gpu_layers

@@ -121,7 +121,7 @@ class YouSearchAPIWrapper(BaseModel):
         if self.endpoint_type != "news":
             news_api_fields = ("search_lang", "ui_lang", "spellcheck")
             for field in news_api_fields:
-                if values[field]:
+                if getattr(self, field):
                     warnings.warn(
                         (
                             f"News API-specific field '{field}' is set but "
