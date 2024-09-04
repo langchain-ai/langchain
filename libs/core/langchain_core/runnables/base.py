@@ -2358,6 +2358,12 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
 
     name: Optional[str] = None
 
+    model_config = ConfigDict(
+        # Suppress warnings from pydantic protected namespaces
+        # (e.g., `model_`)
+        protected_namespaces=(),
+    )
+
     def to_json(self) -> Union[SerializedConstructor, SerializedNotImplemented]:
         """Serialize the Runnable to JSON.
 
