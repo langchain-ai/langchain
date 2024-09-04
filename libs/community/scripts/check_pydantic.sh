@@ -20,7 +20,7 @@ count=$(git grep -E '(@root_validator)|(@validator)|(@pre_init)' -- "*.py" | wc 
 # PRs that increase the current count will not be accepted.
 # PRs that decrease update the code in the repository
 # and allow decreasing the count of are welcome!
-current_count=336
+current_count=138
 
 if [ "$count" -gt "$current_count" ]; then
   echo "The PR seems to be introducing new usage of @root_validator and/or @field_validator."
@@ -36,19 +36,6 @@ elif [ "$count" -lt "$current_count" ]; then
     exit 1
 fi
 
-
-# Search for lines matching the pattern within the specified repository
-result=$(git -C "$repository_path" grep -En '^import pydantic|^from pydantic')
-
-# Check if any matching lines were found
-if [ -n "$result" ]; then
-  echo "ERROR: The following lines need to be updated:"
-  echo "$result"
-  echo "Please replace the code with an import from langchain_core.pydantic_v1."
-  echo "For example, replace 'from pydantic import BaseModel'"
-  echo "with 'from langchain_core.pydantic_v1 import BaseModel'"
-  exit 1
-fi
 
 # Forbid vanilla usage of @root_validator
 # This prevents the code from using either @root_validator or @root_validator()
