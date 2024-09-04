@@ -20,6 +20,8 @@ from langchain_core.language_models import BaseLLM, LangSmithParams
 from langchain_core.outputs import GenerationChunk, LLMResult
 from pydantic import Field, root_validator, PrivateAttr, model_validator
 from ollama import AsyncClient, Client, Options
+from typing_extensions import Self
+
 
 
 class OllamaLLM(BaseLLM):

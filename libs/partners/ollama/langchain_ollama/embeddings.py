@@ -7,6 +7,8 @@ from langchain_core.embeddings import Embeddings
 from pydantic import BaseModel, Field, root_validator, PrivateAttr, model_validator
 from ollama import AsyncClient, Client
 from pydantic import ConfigDict
+from typing_extensions import Self
+
 
 
 

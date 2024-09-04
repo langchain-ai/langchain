@@ -40,6 +40,8 @@ from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_tool
 from ollama import AsyncClient, Client, Message, Options
+from typing_extensions import Self
+
 
 
 def _get_usage_metadata_from_generation_info(
