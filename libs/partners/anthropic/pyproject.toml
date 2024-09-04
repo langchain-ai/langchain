@@ -22,6 +22,7 @@ disallow_untyped_defs = "True"
 python = ">=3.8.1,<4.0"
 anthropic = ">=0.30.0,<1"
 langchain-core = "^0.2.26"
+pydantic = ">=2,<3"
 
 [tool.ruff.lint]
 select = [ "E", "F", "I", "T201",]
