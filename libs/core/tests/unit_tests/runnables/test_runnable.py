@@ -1,5 +1,6 @@
 import sys
 import uuid
+import warnings
 from functools import partial
 from operator import itemgetter
 from typing import (
@@ -5564,9 +5565,9 @@ async def test_closing_iterator_doesnt_raise_error() -> None:
 
 
 def test_pydantic_protected_namespaces() -> None:
-    with pytest.warns(None) as record:
+    # Check that protected namespaces (e.g., `model_kwargs`) do not raise warnings`
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
 
         class CustomChatModel(RunnableSerializable):
             model_kwargs: Dict[str, Any] = Field(default_factory=dict)
-
-    assert len(record) == 0
