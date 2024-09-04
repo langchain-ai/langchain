@@ -2,16 +2,16 @@
 
 from typing import Tuple, Type
 
-from langchain_core.language_models import BaseChatModel
-from langchain_standard_tests.unit_tests import ChatModelUnitTests
+from langchain_core.embeddings import Embeddings
+from langchain_standard_tests.unit_tests.embeddings import EmbeddingsUnitTests
 
-from langchain_openai import ChatOpenAI
+from langchain_openai import OpenAIEmbeddings
 
 
-class TestOpenAIStandard(ChatModelUnitTests):
+class TestOpenAIStandard(EmbeddingsUnitTests):
     @property
-    def chat_model_class(self) -> Type[BaseChatModel]:
-        return ChatOpenAI
+    def embeddings_class(self) -> Type[Embeddings]:
+        return OpenAIEmbeddings
 
     @property
     def init_from_env_params(self) -> Tuple[dict, dict, dict]:

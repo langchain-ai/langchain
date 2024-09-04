@@ -23,7 +23,7 @@ from typing import (
 
 import pytest
 from pydantic import BaseModel, Field, ValidationError
-from pydantic import BaseModel as BaseModelProper  
+from pydantic import BaseModel as BaseModelProper
 from typing_extensions import Annotated, TypedDict, TypeVar
 
 from langchain_core import tools
@@ -1572,7 +1572,7 @@ def generate_models() -> List[Any]:
 
 def generate_backwards_compatible_v1() -> List[Any]:
     """Generate a model with pydantic 2 from the v1 namespace."""
-    from pydantic.v1 import BaseModel as BaseModelV1  
+    from pydantic.v1 import BaseModel as BaseModelV1
 
     class FooV1Namespace(BaseModelV1):
         a: int
@@ -1629,7 +1629,7 @@ def test_args_schema_explicitly_typed() -> None:
     is a pydantic 1 model!
     """
     # Check with whatever pydantic model is passed in and not via v1 namespace
-    from pydantic import BaseModel  
+    from pydantic import BaseModel
 
     class Foo(BaseModel):
         a: int
@@ -1756,13 +1756,17 @@ def test__get_all_basemodel_annotations_v2(use_v1_namespace: bool) -> None:
     A = TypeVar("A")
 
     if use_v1_namespace:
+        from pydantic.v1 import BaseModel as BM1
 
-        class ModelA(BaseModel, Generic[A], extra="allow"):
+        class ModelA(BM1, Generic[A], extra="allow"):
             a: A
     else:
+        from pydantic import BaseModel as BM2
+        from pydantic import ConfigDict
 
-        class ModelA(BaseModelProper, Generic[A], extra="allow"):  # type: ignore[no-redef]
+        class ModelA(BM2, Generic[A], extra="allow"):  # type: ignore[no-redef]
             a: A
+            model_config = ConfigDict(arbitrary_types_allowed=True)
 
     class ModelB(ModelA[str]):
         b: Annotated[ModelA[Dict[str, Any]], "foo"]
@@ -1871,11 +1875,31 @@ def test__get_all_basemodel_annotations_v1() -> None:
     assert actual == expected
 
 
+def test_tool_annotations_preserved() -> None:
+    """Test that annotations are preserved when creating a tool."""
+
+    @tool
+    def my_tool(val: int, other_val: Annotated[dict, "my annotation"]) -> str:
+        """Tool docstring."""
+        return "foo"
+
+    schema = my_tool.get_input_schema()  # type: ignore[attr-defined]
+
+    func = my_tool.func  # type: ignore[attr-defined]
+
+    expected_type_hints = {
+        name: hint
+        for name, hint in func.__annotations__.items()
+        if name in inspect.signature(func).parameters
+    }
+    assert schema.__annotations__ == expected_type_hints
+
+
 @pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Testing pydantic v2.")
 def test_tool_args_schema_pydantic_v2_with_metadata() -> None:
-    from pydantic import BaseModel as BaseModelV2  
-    from pydantic import Field as FieldV2  
-    from pydantic import ValidationError as ValidationErrorV2  
+    from pydantic import BaseModel as BaseModelV2
+    from pydantic import Field as FieldV2
+    from pydantic import ValidationError as ValidationErrorV2
 
     class Foo(BaseModelV2):
         x: List[int] = FieldV2(

@@ -10,7 +10,7 @@ from typing import (
     cast,
 )
 
-from pydantic import BaseModel, ConfigDict  
+from pydantic import BaseModel, ConfigDict
 from typing_extensions import NotRequired
 
 from langchain_core.utils.pydantic import v1_repr

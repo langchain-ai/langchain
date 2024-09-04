@@ -531,7 +531,7 @@ async def test_partial_pydantic_output_parser_async() -> None:
 @pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="This test is for pydantic 2")
 def test_parse_with_different_pydantic_2_v1() -> None:
     """Test with pydantic.v1.BaseModel from pydantic 2."""
-    import pydantic  
+    import pydantic
 
     class Forecast(pydantic.v1.BaseModel):
         temperature: int
@@ -566,7 +566,7 @@ def test_parse_with_different_pydantic_2_v1() -> None:
 @pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="This test is for pydantic 2")
 def test_parse_with_different_pydantic_2_proper() -> None:
     """Test with pydantic.BaseModel from pydantic 2."""
-    import pydantic  
+    import pydantic
 
     class Forecast(pydantic.BaseModel):
         temperature: int
@@ -601,7 +601,7 @@ def test_parse_with_different_pydantic_2_proper() -> None:
 @pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 1, reason="This test is for pydantic 1")
 def test_parse_with_different_pydantic_1_proper() -> None:
     """Test with pydantic.BaseModel from pydantic 1."""
-    import pydantic  
+    import pydantic
 
     class Forecast(pydantic.BaseModel):
         temperature: int

@@ -27,9 +27,6 @@ IGNORED_PARTNERS = [
     # specifically in huggingface jobs
     # https://github.com/langchain-ai/langchain/issues/25558
     "huggingface",
-    # remove ai21 because of breaking changes in sdk version 2.14.0
-    # that have not been fixed yet
-    "ai21",
 ]
 
 
@@ -97,8 +94,7 @@ def add_dependents(dirs_to_eval: Set[str], dependents: dict) -> List[str]:
     for dir_ in dirs_to_eval:
         # handle core manually because it has so many dependents
         if "core" in dir_:
-            if not IGNORE_CORE_DEPENDENTS:
-                updated.add(dir_)
+            updated.add(dir_)
             continue
         pkg = "langchain-" + dir_.split("/")[-1]
         updated.update(dependents[pkg])
@@ -112,7 +108,7 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
             {"working-directory": dir_, "python-version": f"3.{v}"}
             for v in range(8, 13)
         ]
-    min_python = "3.8"
+    min_python = "3.9"
     max_python = "3.12"
 
     # custom logic for specific directories
@@ -206,7 +202,6 @@ if __name__ == "__main__":
             dirs_to_run["test"].add("libs/partners/mistralai")
             dirs_to_run["test"].add("libs/partners/openai")
             dirs_to_run["test"].add("libs/partners/anthropic")
-            dirs_to_run["test"].add("libs/partners/ai21")
             dirs_to_run["test"].add("libs/partners/fireworks")
             dirs_to_run["test"].add("libs/partners/groq")
 
