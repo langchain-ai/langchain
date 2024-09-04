@@ -16,6 +16,15 @@ LANGCHAIN_DIRS = [
     "libs/experimental",
 ]
 
+# ignored partners are removed from dependents
+# but still run if directly edited
+IGNORED_PARTNERS = [
+    # remove huggingface from dependents because of CI instability
+    # specifically in huggingface jobs
+    # https://github.com/langchain-ai/langchain/issues/25558
+    "huggingface",
+]
+
 
 def all_package_dirs() -> Set[str]:
     return {
@@ -69,12 +78,10 @@ def dependents_graph() -> dict:
                     if "langchain" in dep:
                         dependents[dep].add(pkg_dir)
 
-    # remove huggingface from dependents because of CI instability
-    # specifically in huggingface jobs
-    # https://github.com/langchain-ai/langchain/issues/25558
     for k in dependents:
-        if "libs/partners/huggingface" in dependents[k]:
-            dependents[k].remove("libs/partners/huggingface")
+        for partner in IGNORED_PARTNERS:
+            if f"libs/partners/{partner}" in dependents[k]:
+                dependents[k].remove(f"libs/partners/{partner}")
     return dependents
 
 
@@ -188,7 +195,6 @@ if __name__ == "__main__":
             dirs_to_run["test"].add("libs/partners/mistralai")
             dirs_to_run["test"].add("libs/partners/openai")
             dirs_to_run["test"].add("libs/partners/anthropic")
-            dirs_to_run["test"].add("libs/partners/ai21")
             dirs_to_run["test"].add("libs/partners/fireworks")
             dirs_to_run["test"].add("libs/partners/groq")
 

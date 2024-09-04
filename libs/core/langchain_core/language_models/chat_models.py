@@ -235,6 +235,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             warnings.warn(
                 "callback_manager is deprecated. Please use callbacks instead.",
                 DeprecationWarning,
+                stacklevel=5,
             )
             values["callbacks"] = values.pop("callback_manager", None)
         return values

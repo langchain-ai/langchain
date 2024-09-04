@@ -21,9 +21,24 @@ model = Predibase(
     model="mistral-7b",
     predibase_api_key=os.environ.get("PREDIBASE_API_TOKEN"),
     predibase_sdk_version=None,  # optional parameter (defaults to the latest Predibase SDK version if omitted)
+    """
+    Optionally use `model_kwargs` to set new default "generate()" settings.  For example:
+    {
+        "api_token": os.environ.get("HUGGING_FACE_HUB_TOKEN"),
+        "max_new_tokens": 5,  # default is 256
+    }
+    """
+    **model_kwargs,
 )
 
-response = model.invoke("Can you recommend me a nice dry wine?")
+"""
+Optionally use `kwargs` to dynamically overwrite "generate()" settings.  For example:
+{
+    "temperature": 0.5,  # default is the value in model_kwargs or 0.1 (initialization default)
+    "max_new_tokens": 1024,  # default is the value in model_kwargs or 256 (initialization default)
+}
+"""
+response = model.invoke("Can you recommend me a nice dry wine?", **kwargs)
 print(response)
 ```
 
@@ -42,9 +57,24 @@ model = Predibase(
     predibase_sdk_version=None,  # optional parameter (defaults to the latest Predibase SDK version if omitted)
     adapter_id="e2e_nlg",
     adapter_version=1,
+    """
+    Optionally use `model_kwargs` to set new default "generate()" settings.  For example:
+    {
+        "api_token": os.environ.get("HUGGING_FACE_HUB_TOKEN"),
+        "max_new_tokens": 5,  # default is 256
+    }
+    """
+    **model_kwargs,
 )
 
-response = model.invoke("Can you recommend me a nice dry wine?")
+"""
+Optionally use `kwargs` to dynamically overwrite "generate()" settings.  For example:
+{
+    "temperature": 0.5,  # default is the value in model_kwargs or 0.1 (initialization default)
+    "max_new_tokens": 1024,  # default is the value in model_kwargs or 256 (initialization default)
+}
+"""
+response = model.invoke("Can you recommend me a nice dry wine?", **kwargs)
 print(response)
 ```
 
@@ -62,8 +92,23 @@ model = Predibase(
     predibase_api_key=os.environ.get("PREDIBASE_API_TOKEN"),
     predibase_sdk_version=None,  # optional parameter (defaults to the latest Predibase SDK version if omitted)
     adapter_id="predibase/e2e_nlg",
+    """
+    Optionally use `model_kwargs` to set new default "generate()" settings.  For example:
+    {
+        "api_token": os.environ.get("HUGGING_FACE_HUB_TOKEN"),
+        "max_new_tokens": 5,  # default is 256
+    }
+    """
+    **model_kwargs,
 )
 
-response = model.invoke("Can you recommend me a nice dry wine?")
+"""
+Optionally use `kwargs` to dynamically overwrite "generate()" settings.  For example:
+{
+    "temperature": 0.5,  # default is the value in model_kwargs or 0.1 (initialization default)
+    "max_new_tokens": 1024,  # default is the value in model_kwargs or 256 (initialization default)
+}
+"""
+response = model.invoke("Can you recommend me a nice dry wine?", **kwargs)
 print(response)
 ```

@@ -55,20 +55,20 @@ class ChatPerplexity(BaseChatModel):
             from langchain_community.chat_models import ChatPerplexity
 
             chat = ChatPerplexity(
-                model="llama-3-sonar-small-32k-online",
+                model="llama-3.1-sonar-small-128k-online",
                 temperature=0.7,
             )
     """
 
     client: Any  #: :meta private:
-    model: str = "llama-3-sonar-small-32k-online"
+    model: str = "llama-3.1-sonar-small-128k-online"
     """Model name."""
     temperature: float = 0.7
     """What sampling temperature to use."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     pplx_api_key: Optional[str] = Field(None, alias="api_key")
-    """Base URL path for API requests, 
+    """Base URL path for API requests,
     leave blank if not using a proxy or service emulator."""
     request_timeout: Optional[Union[float, Tuple[float, float]]] = Field(
         None, alias="timeout"
