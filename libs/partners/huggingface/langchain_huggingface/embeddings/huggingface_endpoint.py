@@ -2,7 +2,7 @@ import json
 from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from pydantic import BaseModel, root_validator
+from pydantic import BaseModel, root_validator, model_validator
 from langchain_core.utils import get_from_dict_or_env
 from pydantic import ConfigDict
 
@@ -45,10 +45,10 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
 
     model_config = ConfigDict(extra="forbid",)
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="after")
+    def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
-        values["huggingfacehub_api_token"] = get_from_dict_or_env(
+        self.huggingfacehub_api_token = get_from_dict_or_env(
             values, "huggingfacehub_api_token", "HUGGINGFACEHUB_API_TOKEN", None
         )
 
@@ -62,38 +62,38 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
                 InferenceClient,
             )
 
-            if values["model"]:
-                values["repo_id"] = values["model"]
-            elif values["repo_id"]:
-                values["model"] = values["repo_id"]
+            if self.model:
+                self.repo_id = self.model
+            elif self.repo_id:
+                self.model = self.repo_id
             else:
-                values["model"] = DEFAULT_MODEL
-                values["repo_id"] = DEFAULT_MODEL
+                self.model = DEFAULT_MODEL
+                self.repo_id = DEFAULT_MODEL
 
             client = InferenceClient(
-                model=values["model"],
+                model=self.model,
                 token=huggingfacehub_api_token,
             )
 
             async_client = AsyncInferenceClient(
-                model=values["model"],
+                model=self.model,
                 token=huggingfacehub_api_token,
             )
 
-            if values["task"] not in VALID_TASKS:
+            if self.task not in VALID_TASKS:
                 raise ValueError(
-                    f"Got invalid task {values['task']}, "
+                    f"Got invalid task {self.task}, "
                     f"currently only {VALID_TASKS} are supported"
                 )
-            values["client"] = client
-            values["async_client"] = async_client
+            self.client = client
+            self.async_client = async_client
 
         except ImportError:
             raise ImportError(
                 "Could not import huggingface_hub python package. "
                 "Please install it with `pip install huggingface_hub`."
             )
-        return values
+        return self
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Call out to HuggingFaceHub's embedding endpoint for embedding search docs.

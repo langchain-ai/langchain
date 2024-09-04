@@ -182,8 +182,8 @@ class HuggingFaceEndpoint(LLM):
             )
         return values
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="after")
+    def validate_environment(self) -> Self:
         """Validate that package is installed and that the API token is valid."""
         try:
             from huggingface_hub import login  # type: ignore[import]
@@ -194,7 +194,7 @@ class HuggingFaceEndpoint(LLM):
                 "Please install it with `pip install huggingface_hub`."
             )
 
-        values["huggingfacehub_api_token"] = get_from_dict_or_env(
+        self.huggingfacehub_api_token = get_from_dict_or_env(
             values, "huggingfacehub_api_token", "HUGGINGFACEHUB_API_TOKEN", None
         )
 
@@ -213,20 +213,20 @@ class HuggingFaceEndpoint(LLM):
 
         from huggingface_hub import AsyncInferenceClient, InferenceClient
 
-        values["client"] = InferenceClient(
-            model=values["model"],
-            timeout=values["timeout"],
+        self.client = InferenceClient(
+            model=self.model,
+            timeout=self.timeout,
             token=huggingfacehub_api_token,
-            **values["server_kwargs"],
+            **self.server_kwargs,
         )
-        values["async_client"] = AsyncInferenceClient(
-            model=values["model"],
-            timeout=values["timeout"],
+        self.async_client = AsyncInferenceClient(
+            model=self.model,
+            timeout=self.timeout,
             token=huggingfacehub_api_token,
-            **values["server_kwargs"],
+            **self.server_kwargs,
         )
 
-        return values
+        return self
 
     @property
     def _default_params(self) -> Dict[str, Any]:
