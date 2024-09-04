@@ -1,17 +1,19 @@
 import os
 
+from aerospike_vector_search import AdminClient, Client
+from aerospike_vector_search.types import HostPort, VectorDistanceMetric
+from langchain_community.document_loaders import PyPDFLoader
 from langchain_community.vectorstores import Aerospike
-from aerospike_vector_search.types import VectorDistanceMetric
-from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate, format_document
+from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.pydantic_v1 import BaseModel
-from langchain_core.prompts import format_document
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_openai import ChatOpenAI
 from langchain_core.runnables import (
     RunnablePassthrough,
 )
-from langchain_core.prompts.prompt import PromptTemplate
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_openai import ChatOpenAI
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 
 def get_bool_env(name, default):
@@ -34,14 +36,15 @@ class Config(object):
     AVS_INDEX_NAME = os.environ.get("AVS_INDEX_NAME") or "langchain-rag"
     AVS_IS_LOADBALANCER = get_bool_env("AVS_IS_LOADBALANCER", True)
     AVS_NAMESPACE = os.environ.get("AVS_NAMESPACE") or "test"
-    DATASOURCE = os.environ.get("DATASOURCE") or "https://aerospike.com/files/ebooks/aerospike-up-and-running-early-release3.pdf"
+    DATASOURCE = (
+        os.environ.get("DATASOURCE")
+        or "https://aerospike.com/files/ebooks/aerospike-up-and-running-early-release3.pdf"
+    )
 
 
 # Initialize Aerospike Vector Search admin client
-from aerospike_vector_search import AdminClient, types
-
 avs_admin_client = AdminClient(
-    seeds=types.HostPort(
+    seeds=HostPort(
         host=Config.AVS_HOST,
         port=Config.AVS_PORT,
     ),
@@ -78,10 +81,8 @@ if not index_exists:
 avs_admin_client.close()
 
 # Initialize Aerospike Vector Search client
-from aerospike_vector_search import Client
-
 avs_client = Client(
-    seeds=types.HostPort(
+    seeds=HostPort(
         host=Config.AVS_HOST,
         port=Config.AVS_PORT,
     ),
@@ -90,13 +91,11 @@ avs_client = Client(
 
 # load documents
 # you can comment this out if this is not the first time running this chain
-from langchain_community.document_loaders import PyPDFLoader
 # For this example we use a PDF of the Aerospike DB architecture whitepaper.
-# This RAG application will better answer Aerospike related questions based on this information.
+# This RAG application will answer questions based on this information.
 loader = PyPDFLoader(Config.DATASOURCE)
 data = loader.load()
 
-from langchain_text_splitters import RecursiveCharacterTextSplitter
 text_splitter = RecursiveCharacterTextSplitter(chunk_size=750, chunk_overlap=0)
 documents = text_splitter.split_documents(data)
 
@@ -124,6 +123,7 @@ prompt = ChatPromptTemplate.from_template(template)
 
 # Conversational Retrieval Chain
 document_prompt = PromptTemplate.from_template(template="{page_content}")
+
 
 # Combine documents returned by the Aerospike Vector Search retriever
 # into a single string for better processing by the LLM
