@@ -24,6 +24,7 @@ langchain-core = "^0.2.26"
 tokenizers = ">=0.15.1,<1"
 httpx = ">=0.25.2,<1"
 httpx-sse = ">=0.3.1,<1"
+pydantic = ">2,<3"
 
 [tool.ruff.lint]
 select = [ "E", "F", "I", "T201",]
