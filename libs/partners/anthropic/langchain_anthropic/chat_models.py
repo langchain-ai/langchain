@@ -384,7 +384,7 @@ class ChatAnthropic(BaseChatModel):
     Tool calling:
         .. code-block:: python
 
-            from langchain_core.pydantic_v1 import BaseModel, Field
+            from pydantic import BaseModel, Field
 
             class GetWeather(BaseModel):
                 '''Get the current weather in a given location'''
@@ -422,7 +422,7 @@ class ChatAnthropic(BaseChatModel):
 
             from typing import Optional
 
-            from langchain_core.pydantic_v1 import BaseModel, Field
+            from pydantic import BaseModel, Field
 
             class Joke(BaseModel):
                 '''Joke to tell user.'''
@@ -823,7 +823,7 @@ class ChatAnthropic(BaseChatModel):
             .. code-block:: python
 
                 from langchain_anthropic import ChatAnthropic
-                from langchain_core.pydantic_v1 import BaseModel, Field
+                from pydantic import BaseModel, Field
 
                 class GetWeather(BaseModel):
                     '''Get the current weather in a given location'''
@@ -852,7 +852,7 @@ class ChatAnthropic(BaseChatModel):
             .. code-block:: python
 
                 from langchain_anthropic import ChatAnthropic
-                from langchain_core.pydantic_v1 import BaseModel, Field
+                from pydantic import BaseModel, Field
 
                 class GetWeather(BaseModel):
                     '''Get the current weather in a given location'''
@@ -874,7 +874,7 @@ class ChatAnthropic(BaseChatModel):
             .. code-block:: python
 
                 from langchain_anthropic import ChatAnthropic
-                from langchain_core.pydantic_v1 import BaseModel, Field
+                from pydantic import BaseModel, Field
 
                 class GetWeather(BaseModel):
                     '''Get the current weather in a given location'''
@@ -895,7 +895,7 @@ class ChatAnthropic(BaseChatModel):
             .. code-block:: python
 
                 from langchain_anthropic import ChatAnthropic, convert_to_anthropic_tool
-                from langchain_core.pydantic_v1 import BaseModel, Field
+                from pydantic import BaseModel, Field
 
                 class GetWeather(BaseModel):
                     '''Get the current weather in a given location'''
@@ -1005,7 +1005,7 @@ class ChatAnthropic(BaseChatModel):
             .. code-block:: python
 
                 from langchain_anthropic import ChatAnthropic
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
 
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
@@ -1026,7 +1026,7 @@ class ChatAnthropic(BaseChatModel):
             .. code-block:: python
 
                 from langchain_anthropic import ChatAnthropic
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
 
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
