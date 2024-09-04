@@ -73,7 +73,6 @@ def test_import_all_modules() -> None:
             ("langchain", "chat_models", "google_palm", "ChatGooglePalm"),
             ("langchain", "chat_models", "openai", "ChatOpenAI"),
             ("langchain", "chat_models", "vertexai", "ChatVertexAI"),
-            ("langchain", "chat_models", "mistralai", "ChatMistralAI"),
         ]
     )
 
@@ -103,7 +102,7 @@ def test_serializable_mapping() -> None:
             "modifier",
             "RemoveMessage",
         ),
-        ("langchain", "chat_models", "mistralai", "MistralAI"): (
+        ("langchain", "chat_models", "mistralai", "ChatMistralAI"): (
             "langchain_mistralai",
             "chat_models",
             "ChatMistralAI",
