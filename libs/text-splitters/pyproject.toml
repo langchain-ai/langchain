@@ -23,7 +23,7 @@ ignore_missing_imports = "True"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = "^0.2.38"
+langchain-core = ">=0.2.38,<0.4"
 
 [tool.ruff.lint]
 select = [ "E", "F", "I", "T201",]
