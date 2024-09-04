@@ -9,12 +9,9 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
-from pydantic import Field, root_validator, model_validator
 from langchain_core.utils import get_from_dict_or_env, get_pydantic_field_names
-from pydantic import ConfigDict
+from pydantic import ConfigDict, Field, model_validator, root_validator
 from typing_extensions import Self
-
-
 
 logger = logging.getLogger(__name__)
 
@@ -122,7 +119,9 @@ class HuggingFaceEndpoint(LLM):
     """Task to call the model with.
     Should be a task that returns `generated_text` or `summary_text`."""
 
-    model_config = ConfigDict(extra="forbid",)
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @model_validator(mode="before")
     @classmethod
