@@ -1,19 +1,18 @@
 import logging
-from typing import Iterable, List, Optional
+from typing import Any, Iterable, List, Optional
 
 import voyageai  # type: ignore
 from langchain_core.embeddings import Embeddings
+from langchain_core.utils import secret_from_env
 from pydantic import (
     BaseModel,
+    ConfigDict,
     Field,
+    PrivateAttr,
     SecretStr,
-    root_validator, PrivateAttr, model_validator,
+    model_validator,
 )
-from langchain_core.utils import secret_from_env
-from pydantic import ConfigDict
 from typing_extensions import Self
-
-
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +43,10 @@ class VoyageAIEmbeddings(BaseModel, Embeddings):
         ),
     )
 
-    model_config = ConfigDict(extra="forbid",populate_by_name=True,)
+    model_config = ConfigDict(
+        extra="forbid",
+        populate_by_name=True,
+    )
 
     @model_validator(mode="before")
     @classmethod
