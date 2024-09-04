@@ -49,12 +49,6 @@ from langchain_core.output_parsers import (
 )
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import (
-    BaseModel,
-    Field,
-    SecretStr,
-    root_validator,
-)
 from langchain_core.runnables import (
     Runnable,
     RunnableMap,
@@ -69,7 +63,15 @@ from langchain_core.utils import (
 )
 from langchain_core.utils.function_calling import convert_to_openai_tool
 from langchain_core.utils.pydantic import is_basemodel_subclass
-from typing_extensions import NotRequired
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    PrivateAttr,
+    SecretStr,
+    model_validator,
+)
+from typing_extensions import NotRequired, Self
 
 from langchain_anthropic.output_parsers import extract_tool_calls
 
@@ -114,7 +116,7 @@ def _merge_messages(
     """Merge runs of human/tool messages into single human messages with content blocks."""  # noqa: E501
     merged: list = []
     for curr in messages:
-        curr = curr.copy(deep=True)
+        curr = curr.model_copy(deep=True)
         if isinstance(curr, ToolMessage):
             if isinstance(curr.content, list) and all(
                 isinstance(block, dict) and block.get("type") == "tool_result"
@@ -383,7 +385,7 @@ class ChatAnthropic(BaseChatModel):
     Tool calling:
         .. code-block:: python
 
-            from langchain_core.pydantic_v1 import BaseModel, Field
+            from pydantic import BaseModel, Field
 
             class GetWeather(BaseModel):
                 '''Get the current weather in a given location'''
@@ -421,7 +423,7 @@ class ChatAnthropic(BaseChatModel):
 
             from typing import Optional
 
-            from langchain_core.pydantic_v1 import BaseModel, Field
+            from pydantic import BaseModel, Field
 
             class Joke(BaseModel):
                 '''Joke to tell user.'''
@@ -508,13 +510,12 @@ class ChatAnthropic(BaseChatModel):
 
     """  # noqa: E501
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
-        allow_population_by_field_name = True
-
-    _client: anthropic.Client = Field(default=None)
-    _async_client: anthropic.AsyncClient = Field(default=None)
+    _client: anthropic.Client = PrivateAttr(default=None)
+    _async_client: anthropic.AsyncClient = PrivateAttr(default=None)
 
     model: str = Field(alias="model_name")
     """Model name to use."""
@@ -626,8 +627,9 @@ class ChatAnthropic(BaseChatModel):
             ls_params["ls_stop"] = ls_stop
         return ls_params
 
-    @root_validator(pre=True)
-    def build_extra(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: Dict) -> Any:
         extra = values.get("model_kwargs", {})
         all_required_field_names = get_pydantic_field_names(cls)
         values["model_kwargs"] = build_extra_kwargs(
@@ -635,28 +637,25 @@ class ChatAnthropic(BaseChatModel):
         )
         return values
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def post_init(cls, values: Dict) -> Dict:
-        api_key = values["anthropic_api_key"].get_secret_value()
-        api_url = values["anthropic_api_url"]
-        client_params = {
+    @model_validator(mode="after")
+    def post_init(self) -> Self:
+        api_key = self.anthropic_api_key.get_secret_value()
+        api_url = self.anthropic_api_url
+        client_params: Dict[str, Any] = {
             "api_key": api_key,
             "base_url": api_url,
-            "max_retries": values["max_retries"],
-            "default_headers": values.get("default_headers"),
+            "max_retries": self.max_retries,
+            "default_headers": (self.default_headers or None),
         }
         # value <= 0 indicates the param should be ignored. None is a meaningful value
         # for Anthropic client and treated differently than not specifying the param at
         # all.
-        if (
-            values["default_request_timeout"] is None
-            or values["default_request_timeout"] > 0
-        ):
-            client_params["timeout"] = values["default_request_timeout"]
+        if self.default_request_timeout is None or self.default_request_timeout > 0:
+            client_params["timeout"] = self.default_request_timeout
 
-        values["_client"] = anthropic.Client(**client_params)
-        values["_async_client"] = anthropic.AsyncClient(**client_params)
-        return values
+        self._client = anthropic.Client(**client_params)
+        self._async_client = anthropic.AsyncClient(**client_params)
+        return self
 
     def _get_request_payload(
         self,
@@ -825,7 +824,7 @@ class ChatAnthropic(BaseChatModel):
             .. code-block:: python
 
                 from langchain_anthropic import ChatAnthropic
-                from langchain_core.pydantic_v1 import BaseModel, Field
+                from pydantic import BaseModel, Field
 
                 class GetWeather(BaseModel):
                     '''Get the current weather in a given location'''
@@ -854,7 +853,7 @@ class ChatAnthropic(BaseChatModel):
             .. code-block:: python
 
                 from langchain_anthropic import ChatAnthropic
-                from langchain_core.pydantic_v1 import BaseModel, Field
+                from pydantic import BaseModel, Field
 
                 class GetWeather(BaseModel):
                     '''Get the current weather in a given location'''
@@ -876,7 +875,7 @@ class ChatAnthropic(BaseChatModel):
             .. code-block:: python
 
                 from langchain_anthropic import ChatAnthropic
-                from langchain_core.pydantic_v1 import BaseModel, Field
+                from pydantic import BaseModel, Field
 
                 class GetWeather(BaseModel):
                     '''Get the current weather in a given location'''
@@ -897,7 +896,7 @@ class ChatAnthropic(BaseChatModel):
             .. code-block:: python
 
                 from langchain_anthropic import ChatAnthropic, convert_to_anthropic_tool
-                from langchain_core.pydantic_v1 import BaseModel, Field
+                from pydantic import BaseModel, Field
 
                 class GetWeather(BaseModel):
                     '''Get the current weather in a given location'''
@@ -1007,7 +1006,7 @@ class ChatAnthropic(BaseChatModel):
             .. code-block:: python
 
                 from langchain_anthropic import ChatAnthropic
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
 
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
@@ -1028,7 +1027,7 @@ class ChatAnthropic(BaseChatModel):
             .. code-block:: python
 
                 from langchain_anthropic import ChatAnthropic
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
 
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
