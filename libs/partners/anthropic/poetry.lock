@@ -11,9 +11,6 @@ files = [
     {file = "annotated_types-0.7.0.tar.gz", hash = "sha256:aff07c09a53a08bc8cfccb9c85b05f1aa9a2a6f23728d790723543408344ce89"},
 ]
 
-[package.dependencies]
-typing-extensions = {version = ">=4.0.0", markers = "python_version < \"3.9\""}
-
 [[package]]
 name = "anthropic"
 version = "0.33.1"
@@ -513,10 +510,10 @@ files = [
 
 [[package]]
 name = "langchain-core"
-version = "0.2.30"
+version = "0.2.38"
 description = "Building applications with LLMs through composability"
 optional = false
-python-versions = ">=3.8.1,<4.0"
+python-versions = ">=3.9,<4.0"
 files = []
 develop = true
 
@@ -1318,5 +1315,5 @@ watchmedo = ["PyYAML (>=3.10)"]
 
 [metadata]
 lock-version = "2.0"
-python-versions = ">=3.8.1,<4.0"
-content-hash = "8e57ed7d6701a7ae5881fb1e5be89fc53ba81b98f04a9b54ffb0032d33589960"
+python-versions = ">=3.9,<4.0"
+content-hash = "ac27cc14498fc96bd8543b6e44a502e7a1e6bfb2fdfb59d3018df4b0cb8869dc"
