@@ -37,6 +37,18 @@ ASSISTANT_PROMPT = "\n\nAssistant:"
 ALTERNATION_ERROR = (
     "Error: Prompt must alternate between '\n\nHuman:' and '\n\nAssistant:'."
 )
+AWS_REGIONS = [
+    "us",
+    "sa",
+    "me",
+    "il",
+    "eu",
+    "cn",
+    "ca",
+    "ap",
+    "af",
+    "us-gov",
+]
 
 
 def _add_newlines_before_ha(input_text: str) -> str:
@@ -447,6 +459,12 @@ class BedrockBase(BaseModel, ABC):
             **{"model_kwargs": _model_kwargs},
         }
 
+    @property
+    def _model_is_inference(self) -> bool:
+        parts = self.model_id.split(".")
+
+        return True if parts[0] in AWS_REGIONS else False
+
     def _get_provider(self) -> str:
         if self.provider:
             return self.provider
@@ -456,7 +474,9 @@ class BedrockBase(BaseModel, ABC):
                 "model_id"
             )
 
-        return self.model_id.split(".")[0]
+        parts = self.model_id.split(".")
+
+        return parts[1] if self._model_is_inference else parts[0]
 
     @property
     def _model_is_anthropic(self) -> bool:
