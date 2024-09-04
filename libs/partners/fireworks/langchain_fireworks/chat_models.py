@@ -391,7 +391,7 @@ class ChatFireworks(BaseChatModel):
 
         if not self.client:
             self.client = Fireworks(**client_params).chat.completions
-        if not (self.async_client or None):
+        if not self.async_client:
             self.async_client = AsyncFireworks(**client_params).chat.completions
         if self.max_retries:
             self.client._max_retries = self.max_retries
