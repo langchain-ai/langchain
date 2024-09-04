@@ -1,9 +1,10 @@
 import json
-from typing import Any, Dict, List, Optional
+import os
+from typing import Any, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.utils import get_from_dict_or_env
-from pydantic import BaseModel, ConfigDict, model_validator, root_validator
+from langchain_core.utils import from_env, get_from_dict_or_env
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from typing_extensions import Self
 
 DEFAULT_MODEL = "sentence-transformers/all-mpnet-base-v2"
@@ -40,7 +41,9 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
     model_kwargs: Optional[dict] = None
     """Keyword arguments to pass to the model."""
 
-    huggingfacehub_api_token: Optional[str] = None
+    huggingfacehub_api_token: Optional[str] = Field(
+        default_factory=from_env("HUGGINGFACEHUB_API_TOKEN", default=None)
+    )
 
     model_config = ConfigDict(
         extra="forbid",
@@ -49,12 +52,8 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
-        self.huggingfacehub_api_token = get_from_dict_or_env(
-            values, "huggingfacehub_api_token", "HUGGINGFACEHUB_API_TOKEN", None
-        )
-
-        huggingfacehub_api_token = get_from_dict_or_env(
-            values, "huggingfacehub_api_token", "HF_TOKEN", None
+        huggingfacehub_api_token = self.huggingfacehub_api_token or os.getenv(
+            "HF_TOKEN"
         )
 
         try:
