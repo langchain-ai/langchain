@@ -360,7 +360,9 @@ class ChatMistralAI(BaseChatModel):
     """A chat model that uses the MistralAI API."""
 
     client: httpx.Client = Field(default=None, exclude=True)  #: :meta private:
-    async_client: httpx.AsyncClient = Field(default=None, exclude=True)  #: :meta private:
+    async_client: httpx.AsyncClient = Field(
+        default=None, exclude=True
+    )  #: :meta private:
     mistral_api_key: Optional[SecretStr] = Field(
         alias="api_key",
         default_factory=secret_from_env("MISTRAL_API_KEY", default=None),

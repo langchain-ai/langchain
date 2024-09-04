@@ -102,6 +102,16 @@ def test_serializable_mapping() -> None:
             "modifier",
             "RemoveMessage",
         ),
+        ("langchain", "chat_models", "mistralai", "MistralAI"): (
+            "langchain_mistralai",
+            "chat_models",
+            "ChatMistralAI",
+        ),
+        ("langchain_groq", "chat_models", "ChatGroq"): (
+            "langchain_groq",
+            "chat_models",
+            "ChatGroq",
+        ),
     }
     serializable_modules = import_all_modules("langchain")
 
