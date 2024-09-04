@@ -30,16 +30,16 @@ from langchain_core.utils import (
 logger = logging.getLogger(__name__)
 
 
-def _convert_message_to_dict(message: BaseMessage) -> dict:
+def _convert_message_to_dict(message: BaseMessage, model: str = None) -> dict:
     message_dict: Dict[str, Any]
     if isinstance(message, ChatMessage):
         message_dict = {"Role": message.role, "Content": message.content}
     elif isinstance(message, SystemMessage):
         message_dict = {"Role": "system", "Content": message.content}
     elif isinstance(message, HumanMessage):
-        success, contents = _string_to_object(message.content)
-        if success:
-            message_dict = {"Role": "user", "Contents": contents}
+        success, contents = _string_to_object(message.content, model)
+        if model == "hunyuan-vision" and success: # hunyuan-vision 模型的输入是 数组形式的 Contents
+            message_dict = {"Role": "user", "Contents": contents} 
         else:
             message_dict = {"Role": "user", "Content": message.content}
     elif isinstance(message, AIMessage):
@@ -50,15 +50,12 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     return message_dict
 
 
-def _string_to_object(string):
+def _string_to_object(content: str, model: str):
+    if model != "hunyuan-vision": # hunyuan-vision 模型的输入是 数组形式的 Contents
+        return False, None
     try:
-        obj = eval(string)
-        success = True
-        for content in obj:
-            if content.get("Type") not in ["image_url", "text"]:
-                success = False
-                break
-        return success, obj
+        obj = eval(content)
+        return True, obj
     except BaseException:
         return False, None
 
@@ -283,7 +280,7 @@ class ChatHunyuan(BaseChatModel):
         client = hunyuan_client.HunyuanClient(cred, "")
         req = models.ChatCompletionsRequest()
         params = {
-            "Messages": [_convert_message_to_dict(m) for m in messages],
+            "Messages": [_convert_message_to_dict(m, self.model) for m in messages],
             **parameters,
         }
         req.from_json_string(json.dumps(params))
