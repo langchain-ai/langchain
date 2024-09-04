@@ -5,7 +5,10 @@ from typing import Any, List, Literal, Optional, Tuple, Type
 from unittest import mock
 
 import pytest
+from syrupy import SnapshotAssertion
+
 from langchain_core.language_models import BaseChatModel
+from langchain_core.load import dumpd, load
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr
 from langchain_core.runnables import RunnableBinding
 from langchain_core.tools import tool
@@ -224,3 +227,10 @@ class ChatModelUnitTests(ChatModelTests):
             ExpectedParams(**ls_params)
         except ValidationError as e:
             pytest.fail(f"Validation error: {e}")
+
+    def test_serdes(self, model: BaseChatModel, snapshot: SnapshotAssertion) -> None:
+        if not self.chat_model_class.is_lc_serializable():
+            return
+        ser = dumpd(model)
+        assert ser == snapshot(name="serialized")
+        assert model.dict() == load(dumpd(model)).dict()

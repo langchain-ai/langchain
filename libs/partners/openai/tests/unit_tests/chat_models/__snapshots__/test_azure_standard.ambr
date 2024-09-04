@@ -1,0 +1,72 @@
+# serializer version: 1
+# name: TestOpenAIStandard.test_serdes[serialized]
+  dict({
+    'graph': dict({
+      'edges': list([
+        dict({
+          'source': 0,
+          'target': 1,
+        }),
+        dict({
+          'source': 1,
+          'target': 2,
+        }),
+      ]),
+      'nodes': list([
+        dict({
+          'data': 'AzureChatOpenAIInput',
+          'id': 0,
+          'type': 'schema',
+        }),
+        dict({
+          'data': dict({
+            'id': list([
+              'langchain',
+              'chat_models',
+              'azure_openai',
+              'AzureChatOpenAI',
+            ]),
+            'name': 'AzureChatOpenAI',
+          }),
+          'id': 1,
+          'type': 'runnable',
+        }),
+        dict({
+          'data': 'AzureChatOpenAIOutput',
+          'id': 2,
+          'type': 'schema',
+        }),
+      ]),
+    }),
+    'id': list([
+      'langchain',
+      'chat_models',
+      'azure_openai',
+      'AzureChatOpenAI',
+    ]),
+    'kwargs': dict({
+      'azure_endpoint': 'https://test.azure.com',
+      'deployment_name': 'test',
+      'max_retries': 2,
+      'max_tokens': 100,
+      'n': 1,
+      'openai_api_key': dict({
+        'id': list([
+          'AZURE_OPENAI_API_KEY',
+        ]),
+        'lc': 1,
+        'type': 'secret',
+      }),
+      'openai_api_type': 'azure',
+      'openai_api_version': '2021-10-01',
+      'request_timeout': 60.0,
+      'stop': list([
+      ]),
+      'temperature': 0.0,
+      'validate_base_url': True,
+    }),
+    'lc': 1,
+    'name': 'AzureChatOpenAI',
+    'type': 'constructor',
+  })
+# ---
