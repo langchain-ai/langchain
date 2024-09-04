@@ -156,7 +156,7 @@ class AzureOpenAI(BaseOpenAI):
                 **client_params,
                 **sync_specific,  # type: ignore[arg-type]
             ).completions
-        if not (self.async_client or None):
+        if not self.async_client:
             async_specific = {"http_client": self.http_async_client}
             self.async_client = openai.AsyncAzureOpenAI(
                 **client_params,
