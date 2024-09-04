@@ -73,6 +73,7 @@ def test_import_all_modules() -> None:
             ("langchain", "chat_models", "google_palm", "ChatGooglePalm"),
             ("langchain", "chat_models", "openai", "ChatOpenAI"),
             ("langchain", "chat_models", "vertexai", "ChatVertexAI"),
+            ("langchain", "chat_models", "mistralai", "ChatMistralAI"),
         ]
     )
 
