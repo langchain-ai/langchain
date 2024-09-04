@@ -1,7 +1,9 @@
 from typing import Any, Dict, List, Optional  # type: ignore[import-not-found]
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
+from pydantic import ConfigDict
+
 
 DEFAULT_MODEL_NAME = "sentence-transformers/all-mpnet-base-v2"
 
@@ -62,10 +64,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
             self.model_name, cache_folder=self.cache_folder, **self.model_kwargs
         )
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid",)
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Compute doc embeddings using a HuggingFace transformer model.
