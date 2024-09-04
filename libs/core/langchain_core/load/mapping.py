@@ -274,7 +274,7 @@ SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
     ("langchain_groq", "chat_models", "ChatGroq"): (
         "langchain_groq",
         "chat_models",
-        "ChatGroq"
+        "ChatGroq",
     ),
     ("langchain", "chat_models", "fireworks", "ChatFireworks"): (
         "langchain_fireworks",
