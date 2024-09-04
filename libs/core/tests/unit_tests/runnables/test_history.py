@@ -440,7 +440,7 @@ def test_get_input_schema_input_dict() -> None:
             "Return fake pydantic schema"
             return create_model_from_typeddict(RunnableInput)
 
-    def _callable(input: Dict[str, Any]) -> Dict[str, Any]:
+    def _callable(input: RunnableInput) -> Dict[str, Any]:
         history = "\n".join(str(m.content) for m in input["history"])
         if isinstance(input["input"], str):
             input_str = input["input"]
