@@ -381,89 +381,86 @@ class BoxAuth(BaseModel):
         return self
 
     def _authorize(self) -> None:
-        match self.auth_type:
-            case "token":
-                try:
-                    auth = box_sdk_gen.BoxDeveloperTokenAuth(
-                        token=self.box_developer_token
-                    )
-                    self._box_client = box_sdk_gen.BoxClient(
-                        auth=auth
-                    ).with_extra_headers(extra_headers=self._custom_header)
-
-                except box_sdk_gen.BoxSDKError as bse:
-                    raise RuntimeError(
-                        f"Error getting client from developer token: {bse.message}"
-                    )
-                except Exception as ex:
-                    raise ValueError(
-                        f"Invalid Box developer token. Please verify your \
-                            token and try again.\n{ex}"
-                    ) from ex
-
-            case "jwt":
-                try:
-                    jwt_config = box_sdk_gen.JWTConfig.from_config_file(
-                        config_file_path=self.box_jwt_path
-                    )
-                    auth = box_sdk_gen.BoxJWTAuth(config=jwt_config)
-
-                    self._box_client = box_sdk_gen.BoxClient(
-                        auth=auth
-                    ).with_extra_headers(extra_headers=self._custom_header)
-
-                    if self.box_user_id is not None:
-                        user_auth = auth.with_user_subject(self.box_user_id)
-                        self._box_client = box_sdk_gen.BoxClient(
-                            auth=user_auth
-                        ).with_extra_headers(extra_headers=self._custom_header)
-
-                except box_sdk_gen.BoxSDKError as bse:
-                    raise RuntimeError(
-                        f"Error getting client from jwt token: {bse.message}"
-                    )
-                except Exception as ex:
-                    raise ValueError(
-                        "Error authenticating. Please verify your JWT config \
-                            and try again."
-                    ) from ex
-
-            case "ccg":
-                try:
-                    if self.box_user_id is not None:
-                        ccg_config = box_sdk_gen.CCGConfig(
-                            client_id=self.box_client_id,
-                            client_secret=self.box_client_secret,
-                            user_id=self.box_user_id,
-                        )
-                    else:
-                        ccg_config = box_sdk_gen.CCGConfig(
-                            client_id=self.box_client_id,
-                            client_secret=self.box_client_secret,
-                            enterprise_id=self.box_enterprise_id,
-                        )
-                    auth = box_sdk_gen.BoxCCGAuth(config=ccg_config)
-
-                    self._box_client = box_sdk_gen.BoxClient(
-                        auth=auth
-                    ).with_extra_headers(extra_headers=self._custom_header)
-
-                except box_sdk_gen.BoxSDKError as bse:
-                    raise RuntimeError(
-                        f"Error getting client from ccg token: {bse.message}"
-                    )
-                except Exception as ex:
-                    raise ValueError(
-                        "Error authenticating. Please verify you are providing a \
-                            valid client id, secret and either a valid user ID or \
-                                enterprise ID."
-                    ) from ex
-
-            case _:
-                raise ValueError(
-                    f"{self.auth_type} is not a valid auth_type. Value must be \
-                TOKEN, CCG, or JWT."
+        if self.auth_type == "token":
+            try:
+                auth = box_sdk_gen.BoxDeveloperTokenAuth(token=self.box_developer_token)
+                self._box_client = box_sdk_gen.BoxClient(auth=auth).with_extra_headers(
+                    extra_headers=self._custom_header
                 )
+
+            except box_sdk_gen.BoxSDKError as bse:
+                raise RuntimeError(
+                    f"Error getting client from developer token: {bse.message}"
+                )
+            except Exception as ex:
+                raise ValueError(
+                    f"Invalid Box developer token. Please verify your \
+                        token and try again.\n{ex}"
+                ) from ex
+
+        elif self.auth_type == "jwt":
+            try:
+                jwt_config = box_sdk_gen.JWTConfig.from_config_file(
+                    config_file_path=self.box_jwt_path
+                )
+                auth = box_sdk_gen.BoxJWTAuth(config=jwt_config)
+
+                self._box_client = box_sdk_gen.BoxClient(auth=auth).with_extra_headers(
+                    extra_headers=self._custom_header
+                )
+
+                if self.box_user_id is not None:
+                    user_auth = auth.with_user_subject(self.box_user_id)
+                    self._box_client = box_sdk_gen.BoxClient(
+                        auth=user_auth
+                    ).with_extra_headers(extra_headers=self._custom_header)
+
+            except box_sdk_gen.BoxSDKError as bse:
+                raise RuntimeError(
+                    f"Error getting client from jwt token: {bse.message}"
+                )
+            except Exception as ex:
+                raise ValueError(
+                    "Error authenticating. Please verify your JWT config \
+                        and try again."
+                ) from ex
+
+        elif self.auth_type == "ccg":
+            try:
+                if self.box_user_id is not None:
+                    ccg_config = box_sdk_gen.CCGConfig(
+                        client_id=self.box_client_id,
+                        client_secret=self.box_client_secret,
+                        user_id=self.box_user_id,
+                    )
+                else:
+                    ccg_config = box_sdk_gen.CCGConfig(
+                        client_id=self.box_client_id,
+                        client_secret=self.box_client_secret,
+                        enterprise_id=self.box_enterprise_id,
+                    )
+                auth = box_sdk_gen.BoxCCGAuth(config=ccg_config)
+
+                self._box_client = box_sdk_gen.BoxClient(auth=auth).with_extra_headers(
+                    extra_headers=self._custom_header
+                )
+
+            except box_sdk_gen.BoxSDKError as bse:
+                raise RuntimeError(
+                    f"Error getting client from ccg token: {bse.message}"
+                )
+            except Exception as ex:
+                raise ValueError(
+                    "Error authenticating. Please verify you are providing a \
+                        valid client id, secret and either a valid user ID or \
+                            enterprise ID."
+                ) from ex
+
+        else:
+            raise ValueError(
+                f"{self.auth_type} is not a valid auth_type. Value must be \
+            TOKEN, CCG, or JWT."
+            )
 
     def get_client(self) -> box_sdk_gen.BoxClient:
         """Instantiate the Box SDK."""
