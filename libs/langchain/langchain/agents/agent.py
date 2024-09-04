@@ -40,7 +40,7 @@ from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.prompts.few_shot import FewShotPromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
-from pydantic import BaseModel, root_validator, model_validator
+from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.runnables import Runnable, RunnableConfig, ensure_config
 from langchain_core.runnables.utils import AddableDict
 from langchain_core.tools import BaseTool
@@ -52,10 +52,6 @@ from langchain.agents.tools import InvalidTool
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.utilities.asyncio import asyncio_timeout
-from pydantic import ConfigDict
-from typing_extensions import Self
-
-
 
 logger = logging.getLogger(__name__)
 
@@ -424,7 +420,8 @@ class RunnableAgent(BaseSingleActionAgent):
         individual LLM tokens will not be available in stream_log.
     """
 
-    model_config = ConfigDict(arbitrary_types_allowed=True,)
+    class Config:
+        arbitrary_types_allowed = True
 
     @property
     def return_values(self) -> List[str]:
@@ -531,7 +528,8 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
         individual LLM tokens will not be available in stream_log.
     """
 
-    model_config = ConfigDict(arbitrary_types_allowed=True,)
+    class Config:
+        arbitrary_types_allowed = True
 
     @property
     def return_values(self) -> List[str]:
@@ -856,8 +854,8 @@ class Agent(BaseSingleActionAgent):
         """
         return list(set(self.llm_chain.input_keys) - {"agent_scratchpad"})
 
-    @model_validator(mode="after")
-    def validate_prompt(self) -> Self:
+    @root_validator(pre=False, skip_on_failure=True)
+    def validate_prompt(cls, values: Dict) -> Dict:
         """Validate that prompt matches format.
 
         Args:
@@ -870,7 +868,7 @@ class Agent(BaseSingleActionAgent):
             ValueError: If `agent_scratchpad` is not in prompt.input_variables
              and prompt is not a FewShotPromptTemplate or a PromptTemplate.
         """
-        prompt = self.llm_chain.prompt
+        prompt = values["llm_chain"].prompt
         if "agent_scratchpad" not in prompt.input_variables:
             logger.warning(
                 "`agent_scratchpad` should be a variable in prompt.input_variables."
@@ -883,7 +881,7 @@ class Agent(BaseSingleActionAgent):
                 prompt.suffix += "\n{agent_scratchpad}"
             else:
                 raise ValueError(f"Got unexpected prompt type {type(prompt)}")
-        return self
+        return values
 
     @property
     @abstractmethod
@@ -1122,8 +1120,8 @@ class AgentExecutor(Chain):
             **kwargs,
         )
 
-    @model_validator(mode="after")
-    def validate_tools(self) -> Self:
+    @root_validator(pre=False, skip_on_failure=True)
+    def validate_tools(cls, values: Dict) -> Dict:
         """Validate that tools are compatible with agent.
 
         Args:
@@ -1135,8 +1133,8 @@ class AgentExecutor(Chain):
         Raises:
             ValueError: If allowed tools are different than provided tools.
         """
-        agent = self.agent
-        tools = self.tools
+        agent = values["agent"]
+        tools = values["tools"]
         allowed_tools = agent.get_allowed_tools()
         if allowed_tools is not None:
             if set(allowed_tools) != set([tool.name for tool in tools]):
@@ -1144,11 +1142,10 @@ class AgentExecutor(Chain):
                     f"Allowed tools ({allowed_tools}) different than "
                     f"provided tools ({[tool.name for tool in tools]})"
                 )
-        return self
+        return values
 
-    @model_validator(mode="before")
-    @classmethod
-    def validate_runnable_agent(cls, values: Dict) -> Any:
+    @root_validator(pre=True)
+    def validate_runnable_agent(cls, values: Dict) -> Dict:
         """Convert runnable to agent if passed in.
 
         Args:

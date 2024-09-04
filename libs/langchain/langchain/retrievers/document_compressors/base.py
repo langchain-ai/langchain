@@ -7,8 +7,6 @@ from langchain_core.documents import (
     BaseDocumentTransformer,
     Document,
 )
-from pydantic import ConfigDict
-
 
 
 class DocumentCompressorPipeline(BaseDocumentCompressor):
@@ -17,7 +15,8 @@ class DocumentCompressorPipeline(BaseDocumentCompressor):
     transformers: List[Union[BaseDocumentTransformer, BaseDocumentCompressor]]
     """List of document filters that are chained together and run in sequence."""
 
-    model_config = ConfigDict(arbitrary_types_allowed=True,)
+    class Config:
+        arbitrary_types_allowed = True
 
     def compress_documents(
         self,

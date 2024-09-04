@@ -6,7 +6,7 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
 )
-from pydantic import Field, root_validator, model_validator
+from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.utils import check_package_version, get_from_dict_or_env
 
 from langchain.chains.base import Chain
@@ -40,9 +40,8 @@ class OpenAIModerationChain(Chain):
     openai_organization: Optional[str] = None
     openai_pre_1_0: bool = Field(default=None)
 
-    @model_validator(mode="before")
-    @classmethod
-    def validate_environment(cls, values: Dict) -> Any:
+    @root_validator(pre=True)
+    def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         openai_api_key = get_from_dict_or_env(
             values, "openai_api_key", "OPENAI_API_KEY"

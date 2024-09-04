@@ -21,8 +21,6 @@ from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.llm import LLMChain
-from pydantic import ConfigDict
-
 
 
 @deprecated(
@@ -79,7 +77,9 @@ class MapReduceChain(Chain):
             **kwargs,
         )
 
-    model_config = ConfigDict(arbitrary_types_allowed=True,extra="forbid",)
+    class Config:
+        arbitrary_types_allowed = True
+        extra = "forbid"
 
     @property
     def input_keys(self) -> List[str]:

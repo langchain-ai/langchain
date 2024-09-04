@@ -8,7 +8,7 @@ from langchain_core.documents import Document
 from langchain_core.language_models import LanguageModelLike
 from langchain_core.output_parsers import BaseOutputParser, StrOutputParser
 from langchain_core.prompts import BasePromptTemplate, format_document
-from pydantic import Field, root_validator, model_validator
+from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.runnables import Runnable, RunnablePassthrough
 
 from langchain.chains.combine_documents.base import (
@@ -19,8 +19,6 @@ from langchain.chains.combine_documents.base import (
     _validate_prompt,
 )
 from langchain.chains.llm import LLMChain
-from pydantic import ConfigDict
-
 
 
 def create_stuff_documents_chain(
@@ -158,11 +156,12 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
     document_separator: str = "\n\n"
     """The string with which to join the formatted documents"""
 
-    model_config = ConfigDict(arbitrary_types_allowed=True,extra="forbid",)
+    class Config:
+        arbitrary_types_allowed = True
+        extra = "forbid"
 
-    @model_validator(mode="before")
-    @classmethod
-    def get_default_document_variable_name(cls, values: Dict) -> Any:
+    @root_validator(pre=True)
+    def get_default_document_variable_name(cls, values: Dict) -> Dict:
         """Get default document variable name, if not provided.
 
         If only one variable is present in the llm_chain.prompt,

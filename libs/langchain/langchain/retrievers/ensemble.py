@@ -25,7 +25,7 @@ from langchain_core.callbacks import (
 )
 from langchain_core.documents import Document
 from langchain_core.load.dump import dumpd
-from pydantic import root_validator, model_validator
+from langchain_core.pydantic_v1 import root_validator
 from langchain_core.retrievers import BaseRetriever, RetrieverLike
 from langchain_core.runnables import RunnableConfig
 from langchain_core.runnables.config import ensure_config, patch_config
@@ -83,9 +83,8 @@ class EnsembleRetriever(BaseRetriever):
             spec for retriever in self.retrievers for spec in retriever.config_specs
         )
 
-    @model_validator(mode="before")
-    @classmethod
-    def set_weights(cls, values: Dict[str, Any]) -> Any:
+    @root_validator(pre=True)
+    def set_weights(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         if not values.get("weights"):
             n_retrievers = len(values["retrievers"])
             values["weights"] = [1 / n_retrievers] * n_retrievers

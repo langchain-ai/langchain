@@ -21,7 +21,7 @@ from langchain_core.callbacks import (
 from langchain_core.load.dump import dumpd
 from langchain_core.memory import BaseMemory
 from langchain_core.outputs import RunInfo
-from pydantic import BaseModel, Field, root_validator, validator, model_validator
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator, validator
 from langchain_core.runnables import (
     RunnableConfig,
     RunnableSerializable,
@@ -31,8 +31,6 @@ from langchain_core.runnables import (
 from langchain_core.runnables.utils import create_model
 
 from langchain.schema import RUN_KEY
-from pydantic import ConfigDict
-
 
 logger = logging.getLogger(__name__)
 
@@ -98,7 +96,8 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
     callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
     """[DEPRECATED] Use `callbacks` instead."""
 
-    model_config = ConfigDict(arbitrary_types_allowed=True,)
+    class Config:
+        arbitrary_types_allowed = True
 
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
@@ -224,9 +223,8 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
     def _chain_type(self) -> str:
         raise NotImplementedError("Saving not supported for this chain type.")
 
-    @model_validator(mode="before")
-    @classmethod
-    def raise_callback_manager_deprecation(cls, values: Dict) -> Any:
+    @root_validator(pre=True)
+    def raise_callback_manager_deprecation(cls, values: Dict) -> Dict:
         """Raise deprecation warning if callback_manager is used."""
         if values.get("callback_manager") is not None:
             if values.get("callbacks") is not None:

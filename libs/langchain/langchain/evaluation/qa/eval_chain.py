@@ -14,8 +14,6 @@ from langchain.chains.llm import LLMChain
 from langchain.evaluation.qa.eval_prompt import CONTEXT_PROMPT, COT_PROMPT, PROMPT
 from langchain.evaluation.schema import LLMEvalChain, StringEvaluator
 from langchain.schema import RUN_KEY
-from pydantic import ConfigDict
-
 
 
 def _get_score(text: str) -> Optional[Tuple[str, int]]:
@@ -74,7 +72,8 @@ class QAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
 
     output_key: str = "results"  #: :meta private:
 
-    model_config = ConfigDict(extra="ignore",)
+    class Config:
+        extra = "ignore"
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -221,7 +220,8 @@ class ContextQAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
         """Whether the chain requires an input string."""
         return True
 
-    model_config = ConfigDict(extra="ignore",)
+    class Config:
+        extra = "ignore"
 
     @classmethod
     def _validate_input_vars(cls, prompt: PromptTemplate) -> None:

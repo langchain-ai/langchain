@@ -8,14 +8,12 @@ from langchain_core.callbacks import Callbacks
 from langchain_core.documents import Document
 from langchain_core.prompts import BasePromptTemplate, format_document
 from langchain_core.prompts.prompt import PromptTemplate
-from pydantic import Field, root_validator, model_validator
+from langchain_core.pydantic_v1 import Field, root_validator
 
 from langchain.chains.combine_documents.base import (
     BaseCombineDocumentsChain,
 )
 from langchain.chains.llm import LLMChain
-from pydantic import ConfigDict
-
 
 
 def _get_default_document_prompt() -> PromptTemplate:
@@ -100,20 +98,20 @@ class RefineDocumentsChain(BaseCombineDocumentsChain):
             _output_keys = _output_keys + ["intermediate_steps"]
         return _output_keys
 
-    model_config = ConfigDict(arbitrary_types_allowed=True,extra="forbid",)
+    class Config:
+        arbitrary_types_allowed = True
+        extra = "forbid"
 
-    @model_validator(mode="before")
-    @classmethod
-    def get_return_intermediate_steps(cls, values: Dict) -> Any:
+    @root_validator(pre=True)
+    def get_return_intermediate_steps(cls, values: Dict) -> Dict:
         """For backwards compatibility."""
         if "return_refine_steps" in values:
             values["return_intermediate_steps"] = values["return_refine_steps"]
             del values["return_refine_steps"]
         return values
 
-    @model_validator(mode="before")
-    @classmethod
-    def get_default_document_variable_name(cls, values: Dict) -> Any:
+    @root_validator(pre=True)
+    def get_default_document_variable_name(cls, values: Dict) -> Dict:
         """Get default document variable name, if not provided."""
         if "initial_llm_chain" not in values:
             raise ValueError("initial_llm_chain must be provided")

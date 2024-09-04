@@ -11,8 +11,6 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 
 from langchain.chains.router.base import RouterChain
-from pydantic import ConfigDict
-
 
 
 class EmbeddingRouterChain(RouterChain):
@@ -21,7 +19,9 @@ class EmbeddingRouterChain(RouterChain):
     vectorstore: VectorStore
     routing_keys: List[str] = ["query"]
 
-    model_config = ConfigDict(arbitrary_types_allowed=True,extra="forbid",)
+    class Config:
+        arbitrary_types_allowed = True
+        extra = "forbid"
 
     @property
     def input_keys(self) -> List[str]:

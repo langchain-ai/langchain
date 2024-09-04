@@ -16,8 +16,6 @@ from langchain.retrievers.document_compressors.base import BaseDocumentCompresso
 from langchain.retrievers.document_compressors.chain_filter_prompt import (
     prompt_template,
 )
-from pydantic import ConfigDict
-
 
 
 def _get_default_chain_prompt() -> PromptTemplate:
@@ -43,7 +41,8 @@ class LLMChainFilter(BaseDocumentCompressor):
     get_input: Callable[[str, Document], dict] = default_get_input
     """Callable for constructing the chain input from the query and a Document."""
 
-    model_config = ConfigDict(arbitrary_types_allowed=True,)
+    class Config:
+        arbitrary_types_allowed = True
 
     def compress_documents(
         self,

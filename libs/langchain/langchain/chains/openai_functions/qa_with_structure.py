@@ -10,7 +10,7 @@ from langchain_core.output_parsers.openai_functions import (
 )
 from langchain_core.prompts import PromptTemplate
 from langchain_core.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate
-from pydantic import BaseModel, Field
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.utils.pydantic import is_basemodel_subclass
 
 from langchain.chains.llm import LLMChain

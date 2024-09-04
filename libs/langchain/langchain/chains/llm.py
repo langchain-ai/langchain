@@ -23,7 +23,7 @@ from langchain_core.output_parsers import BaseLLMOutputParser, StrOutputParser
 from langchain_core.outputs import ChatGeneration, Generation, LLMResult
 from langchain_core.prompt_values import PromptValue
 from langchain_core.prompts import BasePromptTemplate, PromptTemplate
-from pydantic import Field
+from langchain_core.pydantic_v1 import Field
 from langchain_core.runnables import (
     Runnable,
     RunnableBinding,
@@ -34,8 +34,6 @@ from langchain_core.runnables.configurable import DynamicRunnable
 from langchain_core.utils.input import get_colored_text
 
 from langchain.chains.base import Chain
-from pydantic import ConfigDict
-
 
 
 @deprecated(
@@ -97,7 +95,9 @@ class LLMChain(Chain):
     If false, will return a bunch of extra information about the generation."""
     llm_kwargs: dict = Field(default_factory=dict)
 
-    model_config = ConfigDict(arbitrary_types_allowed=True,extra="forbid",)
+    class Config:
+        arbitrary_types_allowed = True
+        extra = "forbid"
 
     @property
     def input_keys(self) -> List[str]:

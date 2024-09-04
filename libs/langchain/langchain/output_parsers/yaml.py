@@ -5,7 +5,7 @@ from typing import Type, TypeVar
 import yaml
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import BaseOutputParser
-from pydantic import BaseModel, ValidationError
+from langchain_core.pydantic_v1 import BaseModel, ValidationError
 
 from langchain.output_parsers.format_instructions import YAML_FORMAT_INSTRUCTIONS
 

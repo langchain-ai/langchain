@@ -6,7 +6,7 @@ from typing import Any
 
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import BaseLLMOutputParser
-from pydantic import Field
+from langchain_core.pydantic_v1 import Field
 
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.qa.generate_prompt import PROMPT

@@ -12,8 +12,6 @@ from langchain_core.callbacks import (
 )
 
 from langchain.chains.base import Chain
-from pydantic import ConfigDict
-
 
 
 class Route(NamedTuple):
@@ -62,7 +60,9 @@ class MultiRouteChain(Chain):
     """If True, use default_chain when an invalid destination name is provided. 
     Defaults to False."""
 
-    model_config = ConfigDict(arbitrary_types_allowed=True,extra="forbid",)
+    class Config:
+        arbitrary_types_allowed = True
+        extra = "forbid"
 
     @property
     def input_keys(self) -> List[str]:

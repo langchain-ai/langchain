@@ -8,7 +8,7 @@ from langchain_core.callbacks import (
     CallbackManagerForChainRun,
 )
 from langchain_core.documents import Document
-from pydantic import Field, root_validator, model_validator
+from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.vectorstores import VectorStore
 
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
@@ -61,9 +61,8 @@ class VectorDBQAWithSourcesChain(BaseQAWithSourcesChain):
     ) -> List[Document]:
         raise NotImplementedError("VectorDBQAWithSourcesChain does not support async")
 
-    @model_validator(mode="before")
-    @classmethod
-    def raise_deprecation(cls, values: Dict) -> Any:
+    @root_validator(pre=True)
+    def raise_deprecation(cls, values: Dict) -> Dict:
         warnings.warn(
             "`VectorDBQAWithSourcesChain` is deprecated - "
             "please use `from langchain.chains import RetrievalQAWithSourcesChain`"

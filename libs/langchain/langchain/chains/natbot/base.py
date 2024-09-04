@@ -9,13 +9,11 @@ from langchain_core._api import deprecated
 from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import StrOutputParser
-from pydantic import root_validator, model_validator
+from langchain_core.pydantic_v1 import root_validator
 from langchain_core.runnables import Runnable
 
 from langchain.chains.base import Chain
 from langchain.chains.natbot.prompt import PROMPT
-from pydantic import ConfigDict
-
 
 
 @deprecated(
@@ -61,11 +59,12 @@ class NatBotChain(Chain):
     previous_command: str = ""  #: :meta private:
     output_key: str = "command"  #: :meta private:
 
-    model_config = ConfigDict(arbitrary_types_allowed=True,extra="forbid",)
+    class Config:
+        arbitrary_types_allowed = True
+        extra = "forbid"
 
-    @model_validator(mode="before")
-    @classmethod
-    def raise_deprecation(cls, values: Dict) -> Any:
+    @root_validator(pre=True)
+    def raise_deprecation(cls, values: Dict) -> Dict:
         if "llm" in values:
             warnings.warn(
                 "Directly instantiating an NatBotChain with an llm is deprecated. "

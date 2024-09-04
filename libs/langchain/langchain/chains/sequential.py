@@ -6,14 +6,10 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
 )
-from pydantic import root_validator, model_validator
+from langchain_core.pydantic_v1 import root_validator
 from langchain_core.utils.input import get_color_mapping
 
 from langchain.chains.base import Chain
-from pydantic import ConfigDict
-from typing_extensions import Self
-
-
 
 
 class SequentialChain(Chain):
@@ -24,7 +20,9 @@ class SequentialChain(Chain):
     output_variables: List[str]  #: :meta private:
     return_all: bool = False
 
-    model_config = ConfigDict(arbitrary_types_allowed=True,extra="forbid",)
+    class Config:
+        arbitrary_types_allowed = True
+        extra = "forbid"
 
     @property
     def input_keys(self) -> List[str]:
@@ -42,9 +40,8 @@ class SequentialChain(Chain):
         """
         return self.output_variables
 
-    @model_validator(mode="before")
-    @classmethod
-    def validate_chains(cls, values: Dict) -> Any:
+    @root_validator(pre=True)
+    def validate_chains(cls, values: Dict) -> Dict:
         """Validate that the correct inputs exist for all chains."""
         chains = values["chains"]
         input_variables = values["input_variables"]
@@ -132,7 +129,9 @@ class SimpleSequentialChain(Chain):
     input_key: str = "input"  #: :meta private:
     output_key: str = "output"  #: :meta private:
 
-    model_config = ConfigDict(arbitrary_types_allowed=True,extra="forbid",)
+    class Config:
+        arbitrary_types_allowed = True
+        extra = "forbid"
 
     @property
     def input_keys(self) -> List[str]:
@@ -150,10 +149,10 @@ class SimpleSequentialChain(Chain):
         """
         return [self.output_key]
 
-    @model_validator(mode="after")
-    def validate_chains(self) -> Self:
+    @root_validator(pre=False, skip_on_failure=True)
+    def validate_chains(cls, values: Dict) -> Dict:
         """Validate that chains are all single input/output."""
-        for chain in self.chains:
+        for chain in values["chains"]:
             if len(chain.input_keys) != 1:
                 raise ValueError(
                     "Chains used in SimplePipeline should all have one input, got "
@@ -164,7 +163,7 @@ class SimpleSequentialChain(Chain):
                     "Chains used in SimplePipeline should all have one output, got "
                     f"{chain} with {len(chain.output_keys)} outputs."
                 )
-        return self
+        return values
 
     def _call(
         self,

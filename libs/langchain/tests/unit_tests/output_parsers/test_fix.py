@@ -12,7 +12,7 @@ from langchain.output_parsers.boolean import BooleanOutputParser
 from langchain.output_parsers.datetime import DatetimeOutputParser
 from langchain.output_parsers.fix import BaseOutputParser, OutputFixingParser
 from langchain.output_parsers.prompts import NAIVE_FIX_PROMPT
-from pydantic import Extra
+from langchain.pydantic_v1 import Extra
 
 T = TypeVar("T")
 
