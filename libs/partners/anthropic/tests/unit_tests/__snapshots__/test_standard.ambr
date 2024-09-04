@@ -1,0 +1,69 @@
+# serializer version: 1
+# name: TestAnthropicStandard.test_serdes[serialized]
+  dict({
+    'graph': dict({
+      'edges': list([
+        dict({
+          'source': 0,
+          'target': 1,
+        }),
+        dict({
+          'source': 1,
+          'target': 2,
+        }),
+      ]),
+      'nodes': list([
+        dict({
+          'data': 'ChatAnthropicInput',
+          'id': 0,
+          'type': 'schema',
+        }),
+        dict({
+          'data': dict({
+            'id': list([
+              'langchain',
+              'chat_models',
+              'anthropic',
+              'ChatAnthropic',
+            ]),
+            'name': 'ChatAnthropic',
+          }),
+          'id': 1,
+          'type': 'runnable',
+        }),
+        dict({
+          'data': 'ChatAnthropicOutput',
+          'id': 2,
+          'type': 'schema',
+        }),
+      ]),
+    }),
+    'id': list([
+      'langchain',
+      'chat_models',
+      'anthropic',
+      'ChatAnthropic',
+    ]),
+    'kwargs': dict({
+      'anthropic_api_key': dict({
+        'id': list([
+          'ANTHROPIC_API_KEY',
+        ]),
+        'lc': 1,
+        'type': 'secret',
+      }),
+      'anthropic_api_url': 'https://api.anthropic.com',
+      'default_request_timeout': 60.0,
+      'max_retries': 2,
+      'max_tokens': 100,
+      'model': 'claude-3-haiku-20240307',
+      'stop_sequences': list([
+      ]),
+      'stream_usage': True,
+      'temperature': 0.0,
+    }),
+    'lc': 1,
+    'name': 'ChatAnthropic',
+    'type': 'constructor',
+  })
+# ---
