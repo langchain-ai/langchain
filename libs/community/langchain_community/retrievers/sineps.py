@@ -1,17 +1,18 @@
 """
-Provides similar query retrieval functionality as SelfQueryRetriever 
+Provides similar query retrieval functionality as SelfQueryRetriever
 but uses Sineps' Filter Extractor for query construction.
-For date-type fields, Sineps support the current_date placeholder 
+For date-type fields, Sineps support the current_date placeholder
 to indicate the date when the query is made.
-Please refer to the Sineps' documentation(https://docs.sineps.io/docs/docs/guides_and_concepts/filter_extractor) 
+Please refer to the Sineps' documentation(https://docs.sineps.io/docs/docs/guides_and_concepts/filter_extractor)
 for more information.
 """
 
+import asyncio
 import logging
 import os
 import re
-from datetime import date, datetime, timedelta
-from typing import Any, Dict, List, Tuple
+from datetime import date, timedelta
+from typing import Any, Dict, List, Optional, Tuple
 
 import sineps
 from langchain.retrievers.self_query.base import _get_builtin_translator
@@ -20,7 +21,7 @@ from langchain_core.callbacks.manager import (
     CallbackManagerForRetrieverRun,
 )
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.structured_query import (
     Comparator,
@@ -34,15 +35,18 @@ from langchain_core.structured_query import (
 from langchain_core.vectorstores import VectorStore
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+handler = logging.StreamHandler()
+logger.addHandler(handler)
 
 
 class SinepsAttributeInfo(BaseModel):
     name: str
     type: str
     description: str
-    values: List[str] = None
+    values: Optional[List[str]] = None
 
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
         if self.values is None:
             return {
                 "name": self.name,
@@ -57,9 +61,7 @@ class SinepsAttributeInfo(BaseModel):
         }
 
 
-def _calculate_date(
-    sineps_date_representation: str, current_date: datetime.date
-) -> datetime.date:
+def _calculate_date(sineps_date_representation: str, current_date: date) -> date:
     match = re.match(
         r"\$\(\s*current_date\s*-\s*(\d+)([ymd])\s*\)",
         sineps_date_representation.strip(),
@@ -87,8 +89,8 @@ def _calculate_date(
 
 
 def _translate_sineps_filter_node(
-    node: dict, attribute: str, current_date: date = None
-) -> FilterDirective:
+    node: Any, attribute: str, current_date: Optional[date] = None
+) -> Optional[FilterDirective]:
     if not node:
         return None
     if node.type == "ConjunctedFilter":
@@ -143,36 +145,35 @@ def _translate_sineps_filter_node(
             attribute=attribute,
             value=value,
         )
+    return None
 
 
 class SinepsSelfQueryRetriever(BaseRetriever):
     """Provides similar query retrieval functionality as SelfQueryRetriever
     but uses Sineps' Filter Extractor for query construction."""
 
-    sineps_api_key: str = None
+    sineps_api_key: str = ""
     vectorstore: VectorStore
     """The underlying vector store from which documents will be retrieved."""
     search_type: str = "similarity"
     """The search type to perform on the vector store."""
     search_kwargs: dict = Field(default_factory=dict)
     """Keyword arguments to pass in to the vector store search."""
-    structured_query_translator: Visitor
+    structured_query_translator: Optional[Visitor] = None
     """Translator for turning internal query language into vectorstore search params."""
     sineps_metadata_field_info: List[SinepsAttributeInfo]
     verbose: bool = False
 
-    @root_validator(pre=True)
-    def validate_translator(cls, values: Dict) -> Dict:
-        """Validate translator."""
-        if "structured_query_translator" not in values:
-            values["structured_query_translator"] = _get_builtin_translator(
-                values["vectorstore"]
-            )
-        return values
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        if "structured_query_translator" not in kwargs:
+            self.structured_query_translator = _get_builtin_translator(self.vectorstore)
 
     def _prepare_query(
         self, query: str, structured_query: StructuredQuery
     ) -> Tuple[str, Dict[str, Any]]:
+        if self.structured_query_translator is None:
+            raise ValueError("Structured query translator is not set")
         new_query, new_kwargs = self.structured_query_translator.visit_structured_query(
             structured_query
         )
@@ -198,7 +199,7 @@ class SinepsSelfQueryRetriever(BaseRetriever):
         query: str,
         *,
         run_manager: CallbackManagerForRetrieverRun,
-        current_date: date = None,
+        current_date: Optional[date] = None,
     ) -> List[Document]:
         """Get documents relevant for a query.
 
@@ -239,10 +240,10 @@ class SinepsSelfQueryRetriever(BaseRetriever):
                 filter=filters[0],
             )
         else:
-            structured_query = StructuredQuery(query=query)
+            structured_query = StructuredQuery(query=query, filter=None)
 
-        if self.verbose:
-            logger.info(f"Generated Query: {structured_query}")
+        # if self.verbose:
+        #     logger.info(f"Generated Query: {structured_query}")
         new_query, search_kwargs = self._prepare_query(query, structured_query)
         docs = self._get_docs_with_query(new_query, search_kwargs)
         return docs
@@ -252,7 +253,7 @@ class SinepsSelfQueryRetriever(BaseRetriever):
         query: str,
         *,
         run_manager: AsyncCallbackManagerForRetrieverRun,
-        current_date: datetime.date = None,
+        current_date: Optional[date] = None,
     ) -> List[Document]:
         """Get documents relevant for a query.
 
@@ -265,23 +266,32 @@ class SinepsSelfQueryRetriever(BaseRetriever):
         client = sineps.AsyncClient(
             api_key=self.sineps_api_key or os.getenv("SINEPS_API_KEY")
         )
-        filters = []
-        for field in self.sineps_metadata_field_info:
-            try:
-                response = await client.exec_filter_extractor(
-                    query=query, field=field.to_dict()
-                )
-            except sineps.APIStatusError as e:
-                response_text = f"{e.status_code}: {e.message}"
-                run_manager.on_text(
-                    response_text, color="red", end="\n", verbose=self.verbose
-                )
-                raise ValueError(f"Response is Invalid: {response_text}")
+
+        async def process_field(
+            field: SinepsAttributeInfo,
+        ) -> Optional[FilterDirective]:
+            response = await client.exec_filter_extractor(
+                query=query, field=field.to_dict()
+            )
             filter = _translate_sineps_filter_node(
                 response.result, field.name, current_date=current_date
             )
-            if filter is not None:
-                filters.append(filter)
+            return filter
+
+        try:
+            tasks = [process_field(field) for field in self.sineps_metadata_field_info]
+
+            filters = await asyncio.gather(*tasks, return_exceptions=True)
+            filters: List[FilterDirective] = [
+                filter for filter in filters if isinstance(filter, FilterDirective)
+            ]
+
+        except sineps.APIStatusError as e:
+            response_text = f"{e.status_code}: {e.message}"
+            await run_manager.on_text(
+                response_text, color="red", end="\n", verbose=self.verbose
+            )
+            raise ValueError(f"Response is Invalid: {response_text}")
         if len(filters) >= 2:
             structured_query = StructuredQuery(
                 query=query,
@@ -293,10 +303,10 @@ class SinepsSelfQueryRetriever(BaseRetriever):
                 filter=filters[0],
             )
         else:
-            structured_query = StructuredQuery(query=query)
+            structured_query = StructuredQuery(query=query, filter=None)
 
-        if self.verbose:
-            logger.info(f"Generated Query: {structured_query}")
+        # if self.verbose:
+        #     logger.info(f"Generated Query: {structured_query}")
         new_query, search_kwargs = self._prepare_query(query, structured_query)
         docs = self._get_docs_with_query(new_query, search_kwargs)
         return docs

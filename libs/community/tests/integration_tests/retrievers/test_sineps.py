@@ -1,4 +1,3 @@
-from langchain.chains.query_constructor.base import AttributeInfo
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from langchain_openai import OpenAIEmbeddings
@@ -17,17 +16,17 @@ def test_sineps_retriever():
             metadata={"year": 1993, "rating": 7.7, "genre": "science fiction"},
         ),
         Document(
-            page_content="Leo DiCaprio gets lost in a dream "
+            page_content="Leo DiCaprio gets lost in a dream"
             "within a dream within a dream within a ...",
             metadata={"year": 2010, "director": "Christopher Nolan", "rating": 8.2},
         ),
         Document(
-            page_content="A psychologist / detective gets lost in a series of "
-            "dreams within dreams within dreams and Inception reused the idea",
+            page_content="A psychologist / detective gets lost in a series"
+            "of dreams within dreams within dreams and Inception reused the idea",
             metadata={"year": 2006, "director": "Satoshi Kon", "rating": 8.6},
         ),
         Document(
-            page_content="A bunch of normal-sized women are supremely "
+            page_content="A bunch of normal-sized women are supremely"
             "wholesome and some men pine after them",
             metadata={"year": 2019, "director": "Greta Gerwig", "rating": 8.3},
         ),
@@ -61,7 +60,7 @@ def test_sineps_retriever():
                 "animated",
             ],
         ),
-        AttributeInfo(
+        SinepsAttributeInfo(
             name="year",
             description="The year the movie was released",
             type="number",
@@ -87,4 +86,5 @@ def test_sineps_retriever():
         verbose=True,
     )
     res = retriever.invoke("I want to watch a movie rated higher than 8.5")
+
     assert len(res) == 2

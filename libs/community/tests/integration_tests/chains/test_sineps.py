@@ -4,7 +4,7 @@ from langchain_community.chains.sineps.intent_router import (
 )
 
 
-def test_sineps_intent_router():
+def test_sineps_intent_router() -> None:
     routes = [
         Route(
             key="greet",
@@ -21,5 +21,5 @@ def test_sineps_intent_router():
     ]
 
     chain = SinepsIntentRouterChain(routes=routes, allow_none=True)
-    output = chain({"query": "hello"})
+    output = chain.invoke({"query": "hello"})
     assert output["key"] == "greet"

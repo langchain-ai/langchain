@@ -1,6 +1,6 @@
 """
 Chain that captures the intent of the query and classifies it as a route.
-Please refer to the Sineps' documentation(https://docs.sineps.io/docs/docs/guides_and_concepts/intent_router) 
+Please refer to the Sineps' documentation(https://docs.sineps.io/docs/docs/guides_and_concepts/intent_router)
 for more information.
 """
 
@@ -9,7 +9,10 @@ from typing import Any, Dict, List, Optional
 
 import sineps
 from langchain.chains.base import Chain
-from langchain_core.callbacks import CallbackManagerForChainRun
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForChainRun,
+    CallbackManagerForChainRun,
+)
 
 
 class Route:
@@ -19,7 +22,7 @@ class Route:
         self.description = description
         self.utterances = utterances
 
-    def __dict__(self):
+    def to_dict(self) -> Dict[str, Any]:
         return {
             "name": self.name,
             "description": self.description,
@@ -58,16 +61,16 @@ class SinepsIntentRouterChain(Chain):
     """
 
     routes: List[Route]
-    allow_none: bool
-    sineps_api_key: str = None
+    allow_none: bool = False
+    sineps_api_key: str = ""
     query_key: str = "query"
 
     @property
-    def input_keys(self):
+    def input_keys(self) -> List[str]:
         return [self.query_key]
 
     @property
-    def output_keys(self):
+    def output_keys(self) -> List[str]:
         return ["key"]
 
     def _call(
@@ -79,7 +82,7 @@ class SinepsIntentRouterChain(Chain):
         query = inputs[self.query_key]
         sineps_api_key = self.sineps_api_key or os.getenv("SINEPS_API_KEY")
         client = sineps.Client(api_key=sineps_api_key)
-        _routes = [route.__dict__() for route in self.routes]
+        _routes = [route.to_dict() for route in self.routes]
         try:
             response = client.exec_intent_router(
                 query=query, routes=_routes, allow_none=self.allow_none
@@ -99,20 +102,20 @@ class SinepsIntentRouterChain(Chain):
     async def _acall(
         self,
         inputs: Dict[str, Any],
-        run_manager: Optional[CallbackManagerForChainRun] = None,
-    ):
-        _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+    ) -> Dict[str, str]:
+        _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
         query = inputs[self.query_key]
         sineps_api_key = self.sineps_api_key or os.getenv("SINEPS_API_KEY")
         client = sineps.AsyncClient(api_key=sineps_api_key)
-        _routes = [route.__dict__() for route in self.routes]
+        _routes = [route.to_dict() for route in self.routes]
         try:
             response = await client.exec_intent_router(
                 query=query, routes=_routes, allow_none=self.allow_none
             )
         except sineps.APIStatusError as e:
             response_text = f"{e.status_code}: {e.message}"
-            _run_manager.on_text(
+            await _run_manager.on_text(
                 response_text, color="red", end="\n", verbose=self.verbose
             )
             raise ValueError(f"Response is Invalid: {response_text}")
