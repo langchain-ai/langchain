@@ -17,7 +17,7 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_core.messages.ai import UsageMetadata
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel
 
 from langchain_openai import ChatOpenAI
 from langchain_openai.chat_models.base import (

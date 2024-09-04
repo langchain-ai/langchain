@@ -7,7 +7,7 @@ import json
 from typing import Optional
 
 from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessageChunk
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel
 
 from langchain_fireworks import ChatFireworks
 

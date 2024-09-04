@@ -1,5 +1,6 @@
 import sys
 import uuid
+import warnings
 from functools import partial
 from operator import itemgetter
 from typing import (
@@ -19,7 +20,7 @@ from uuid import UUID
 
 import pytest
 from freezegun import freeze_time
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from pytest_mock import MockerFixture
 from syrupy import SnapshotAssertion
 from typing_extensions import TypedDict
@@ -5561,3 +5562,12 @@ async def test_closing_iterator_doesnt_raise_error() -> None:
     # Wait for a bit to make sure that the callback is called.
     time.sleep(0.05)
     assert on_chain_error_triggered is False
+
+
+def test_pydantic_protected_namespaces() -> None:
+    # Check that protected namespaces (e.g., `model_kwargs`) do not raise warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+
+        class CustomChatModel(RunnableSerializable):
+            model_kwargs: Dict[str, Any] = Field(default_factory=dict)

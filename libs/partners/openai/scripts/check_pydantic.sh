@@ -20,8 +20,8 @@ result=$(git -C "$repository_path" grep -E '^import pydantic|^from pydantic')
 if [ -n "$result" ]; then
   echo "ERROR: The following lines need to be updated:"
   echo "$result"
-  echo "Please replace the code with an import from langchain_core.pydantic_v1."
+  echo "Please replace the code with an import from pydantic."
   echo "For example, replace 'from pydantic import BaseModel'"
-  echo "with 'from langchain_core.pydantic_v1 import BaseModel'"
+  echo "with 'from pydantic import BaseModel'"
   exit 1
 fi
