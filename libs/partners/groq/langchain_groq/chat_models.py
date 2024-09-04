@@ -83,7 +83,6 @@ from pydantic import (
     Field,
     SecretStr,
     model_validator,
-    root_validator,
 )
 from typing_extensions import Self
 
@@ -387,7 +386,7 @@ class ChatGroq(BaseChatModel):
         if self.temperature == 0:
             self.temperature = 1e-8
 
-        client_params = {
+        client_params: Dict[str, Any] = {
             "api_key": self.groq_api_key.get_secret_value()
             if self.groq_api_key
             else None,
@@ -401,13 +400,13 @@ class ChatGroq(BaseChatModel):
         try:
             import groq
 
-            sync_specific = {"http_client": self.http_client}
+            sync_specific: Dict[str, Any] = {"http_client": self.http_client}
             if not self.client:
                 self.client = groq.Groq(
                     **client_params, **sync_specific
                 ).chat.completions
             if self.async_client:
-                async_specific = {"http_client": self.http_async_client}
+                async_specific: Dict[str, Any] = {"http_client": self.http_async_client}
                 self.async_client = groq.AsyncGroq(
                     **client_params, **async_specific
                 ).chat.completions
