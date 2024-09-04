@@ -1,7 +1,7 @@
 """Test formatting functionality."""
 
 import pytest
-from pydantic import RootModel, BaseModel
+from pydantic import RootModel
 from pydantic import ValidationError
 from typing import Union
 
@@ -22,34 +22,34 @@ from langchain_core.messages import (
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, Generation
 from langchain_core.prompt_values import ChatPromptValueConcrete, StringPromptValue
 
-well_known_lc_object = RootModel[
-    Union[
-        Document,
-        HumanMessage,
-        SystemMessage,
-        ChatMessage,
-        FunctionMessage,
-        FunctionMessageChunk,
-        AIMessage,
-        HumanMessageChunk,
-        SystemMessageChunk,
-        ChatMessageChunk,
-        AIMessageChunk,
-        StringPromptValue,
-        ChatPromptValueConcrete,
-        AgentFinish,
-        AgentAction,
-        AgentActionMessageLog,
-        ChatGeneration,
-        Generation,
-        ChatGenerationChunk,
+
+def test_serialization_of_wellknown_objects() -> None:
+    """Test that pydantic is able to serialize and deserialize well known objects."""
+    well_known_lc_object = RootModel[
+        Union[
+            Document,
+            HumanMessage,
+            SystemMessage,
+            ChatMessage,
+            FunctionMessage,
+            FunctionMessageChunk,
+            AIMessage,
+            HumanMessageChunk,
+            SystemMessageChunk,
+            ChatMessageChunk,
+            AIMessageChunk,
+            StringPromptValue,
+            ChatPromptValueConcrete,
+            AgentFinish,
+            AgentAction,
+            AgentActionMessageLog,
+            ChatGeneration,
+            Generation,
+            ChatGenerationChunk,
+        ]
     ]
-]
 
-
-@pytest.mark.parametrize(
-    "lc_object",
-    [
+    lc_objects = [
         HumanMessage(content="human"),
         HumanMessageChunk(content="human"),
         AIMessage(content="ai"),
@@ -93,15 +93,14 @@ well_known_lc_object = RootModel[
         ChatGenerationChunk(
             message=HumanMessageChunk(content="cat"),
         ),
-    ],
-)
-def test_serialization_of_wellknown_objects(lc_object: BaseModel) -> None:
-    """Test that pydantic is able to serialize and deserialize well known objects."""
-    d = lc_object.model_dump()
-    assert "type" in d, f"Missing key `type` for {type(lc_object)}"
-    obj1 = well_known_lc_object.model_validate(d)
-    assert type(obj1.root) is type(lc_object), f"failed for {type(lc_object)}"
+    ]
 
-    with pytest.raises((ValidationError, TypeError)):
+    for lc_object in lc_objects:
+        d = lc_object.model_dump()
+        assert "type" in d, f"Missing key `type` for {type(lc_object)}"
+        obj1 = well_known_lc_object.model_validate(d)
+        assert type(obj1.root) is type(lc_object), f"failed for {type(lc_object)}"
+
+    with pytest.raises((TypeError, ValidationError)):
         # Make sure that specifically validation error is raised
         well_known_lc_object.model_validate({})
