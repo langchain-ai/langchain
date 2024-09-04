@@ -376,7 +376,7 @@ class Runnable(Generic[Input, Output], ABC):
 
         .. versionadded:: 0.3.0
         """
-        return self.get_input_schema(config).schema()
+        return self.get_input_schema(config).model_json_schema()
 
     @property
     def output_schema(self) -> Type[BaseModel]:
@@ -436,7 +436,7 @@ class Runnable(Generic[Input, Output], ABC):
 
         .. versionadded:: 0.3.0
         """
-        return self.get_output_schema(config).schema()
+        return self.get_output_schema(config).model_json_schema()
 
     @property
     def config_specs(self) -> List[ConfigurableFieldSpec]:
@@ -504,7 +504,7 @@ class Runnable(Generic[Input, Output], ABC):
 
         .. versionadded:: 0.3.0
         """
-        return self.config_schema(include=include).schema()
+        return self.config_schema(include=include).model_json_schema()
 
     def get_graph(self, config: Optional[RunnableConfig] = None) -> Graph:
         """Return a graph representation of this Runnable."""
