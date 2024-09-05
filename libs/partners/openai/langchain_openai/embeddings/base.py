@@ -4,6 +4,7 @@ import logging
 import warnings
 from typing import (
     Any,
+    Callable,
     Dict,
     Iterable,
     List,
@@ -19,9 +20,18 @@ from typing import (
 
 import openai
 import tiktoken
+from langchain_community.utils.openai import is_openai_v1
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
 from langchain_core.utils import from_env, get_pydantic_field_names, secret_from_env
+from tenacity import (
+    AsyncRetrying,
+    before_sleep_log,
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -85,6 +95,107 @@ def _process_batched_chunked_embeddings(
             embeddings.append([val / magnitude for val in average])
 
     return embeddings
+
+
+def _create_retry_decorator(embeddings: OpenAIEmbeddings) -> Callable[[Any], Any]:
+    import openai
+
+    # Wait 2^x * 1 second between each retry starting with
+    # retry_min_seconds seconds, then up to retry_max_seconds seconds,
+    # then retry_max_seconds seconds afterwards
+    # retry_min_seconds and retry_max_seconds are optional arguments of
+    # OpenAIEmbeddings
+    return retry(
+        reraise=True,
+        stop=stop_after_attempt(embeddings.max_retries),
+        wait=wait_exponential(
+            multiplier=1,
+            min=embeddings.retry_min_seconds,
+            max=embeddings.retry_max_seconds,
+        ),
+        retry=(
+            retry_if_exception_type(openai.error.Timeout)
+            | retry_if_exception_type(openai.error.APIError)
+            | retry_if_exception_type(openai.error.APIConnectionError)
+            | retry_if_exception_type(openai.error.RateLimitError)
+            | retry_if_exception_type(openai.error.ServiceUnavailableError)
+        ),
+        before_sleep=before_sleep_log(logger, logging.WARNING),
+    )
+
+
+def _async_retry_decorator(embeddings: OpenAIEmbeddings) -> Any:
+    import openai
+
+    # Wait 2^x * 1 second between each retry starting with
+    # retry_min_seconds seconds, then up to retry_max_seconds seconds,
+    # then retry_max_seconds seconds afterwards
+    # retry_min_seconds and retry_max_seconds are optional arguments of
+    # OpenAIEmbeddings
+    async_retrying = AsyncRetrying(
+        reraise=True,
+        stop=stop_after_attempt(embeddings.max_retries),
+        wait=wait_exponential(
+            multiplier=1,
+            min=embeddings.retry_min_seconds,
+            max=embeddings.retry_max_seconds,
+        ),
+        retry=(
+            retry_if_exception_type(openai.error.Timeout)
+            | retry_if_exception_type(openai.error.APIError)
+            | retry_if_exception_type(openai.error.APIConnectionError)
+            | retry_if_exception_type(openai.error.RateLimitError)
+            | retry_if_exception_type(openai.error.ServiceUnavailableError)
+        ),
+        before_sleep=before_sleep_log(logger, logging.WARNING),
+    )
+
+    def wrap(func: Callable) -> Callable:
+        async def wrapped_f(*args: Any, **kwargs: Any) -> Callable:
+            async for _ in async_retrying:
+                return await func(*args, **kwargs)
+            raise AssertionError("this is unreachable")
+
+        return wrapped_f
+
+    return wrap
+
+
+# https://stackoverflow.com/questions/76469415/getting-embeddings-of-length-1-from-langchain-openaiembeddings
+def _check_response(response: dict, skip_empty: bool = False) -> dict:
+    if any(len(d["embedding"]) == 1 for d in response["data"]) and not skip_empty:
+        import openai
+
+        raise openai.error.APIError("OpenAI API returned an empty embedding")
+    return response
+
+
+def embed_with_retry(embeddings: OpenAIEmbeddings, **kwargs: Any) -> Any:
+    """Use tenacity to retry the embedding call."""
+    if is_openai_v1():
+        return embeddings.client.create(**kwargs)
+    retry_decorator = _create_retry_decorator(embeddings)
+
+    @retry_decorator
+    def _embed_with_retry(**kwargs: Any) -> Any:
+        response = embeddings.client.create(**kwargs)
+        return _check_response(response, skip_empty=embeddings.skip_empty)
+
+    return _embed_with_retry(**kwargs)
+
+
+async def async_embed_with_retry(embeddings: OpenAIEmbeddings, **kwargs: Any) -> Any:
+    """Use tenacity to retry the embedding call."""
+
+    if is_openai_v1():
+        return await embeddings.async_client.create(**kwargs)
+
+    @_async_retry_decorator(embeddings)
+    async def _async_embed_with_retry(**kwargs: Any) -> Any:
+        response = await embeddings.client.acreate(**kwargs)
+        return _check_response(response, skip_empty=embeddings.skip_empty)
+
+    return await _async_embed_with_retry(**kwargs)
 
 
 class OpenAIEmbeddings(BaseModel, Embeddings):
@@ -487,8 +598,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         _iter, tokens, indices = self._tokenize(texts, _chunk_size)
         batched_embeddings: List[List[float]] = []
         for i in _iter:
-            response = self.client.create(
-                input=tokens[i : i + _chunk_size], **self._invocation_params
+            response = embed_with_retry(
+                self, input=tokens[i : i + _chunk_size], **self._invocation_params
             )
             if not isinstance(response, dict):
                 response = response.model_dump()
@@ -502,8 +613,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         def empty_embedding() -> List[float]:
             nonlocal _cached_empty_embedding
             if _cached_empty_embedding is None:
-                average_embedded = self.client.create(
-                    input="", **self._invocation_params
+                average_embedded = embed_with_retry(
+                    self, input="", **self._invocation_params
                 )
                 if not isinstance(average_embedded, dict):
                     average_embedded = average_embedded.model_dump()
@@ -538,8 +649,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         batched_embeddings: List[List[float]] = []
         _chunk_size = chunk_size or self.chunk_size
         for i in range(0, len(tokens), _chunk_size):
-            response = await self.async_client.create(
-                input=tokens[i : i + _chunk_size], **self._invocation_params
+            response = await async_embed_with_retry(
+                self, input=tokens[i : i + _chunk_size], **self._invocation_params
             )
 
             if not isinstance(response, dict):
@@ -554,8 +665,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         async def empty_embedding() -> List[float]:
             nonlocal _cached_empty_embedding
             if _cached_empty_embedding is None:
-                average_embedded = await self.async_client.create(
-                    input="", **self._invocation_params
+                average_embedded = await async_embed_with_retry(
+                    self, input="", **self._invocation_params
                 )
                 if not isinstance(average_embedded, dict):
                     average_embedded = average_embedded.model_dump()
@@ -580,7 +691,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         if not self.check_embedding_ctx_length:
             embeddings: List[List[float]] = []
             for text in texts:
-                response = self.client.create(input=text, **self._invocation_params)
+                response = embed_with_retry(self, input=text, **self._invocation_params)
                 if not isinstance(response, dict):
                     response = response.dict()
                 embeddings.extend(r["embedding"] for r in response["data"])
@@ -607,8 +718,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         if not self.check_embedding_ctx_length:
             embeddings: List[List[float]] = []
             for text in texts:
-                response = await self.async_client.create(
-                    input=text, **self._invocation_params
+                response = await async_embed_with_retry(
+                    self, input=text, **self._invocation_params
                 )
                 if not isinstance(response, dict):
                     response = response.dict()
