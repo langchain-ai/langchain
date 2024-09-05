@@ -74,8 +74,6 @@ class InfinityEmbeddingsLocal(BaseModel, Embeddings):
                 "`pip install 'infinity_emb[optimum,torch]>=0.0.24'` "
                 "package to use the InfinityEmbeddingsLocal."
             )
-        logger.debug(f"Using InfinityEmbeddingsLocal with kwargs {values}")
-
         self.engine = AsyncEmbeddingEngine(
             model_name_or_path=self.model,
             device=self.device,
