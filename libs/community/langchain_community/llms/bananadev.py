@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Mapping, Optional, cast
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init, secret_from_env
 from langchain_core.utils.pydantic import get_fields
 from pydantic import ConfigDict, Field, SecretStr, model_validator
 
@@ -39,7 +39,9 @@ class Banana(LLM):
     """Holds any model parameters valid for `create` call not
     explicitly specified."""
 
-    banana_api_key: Optional[SecretStr] = None
+    banana_api_key: Optional[SecretStr] = Field(
+        default_factory=secret_from_env("BANANA_API_KEY", default=None)
+    )
 
     model_config = ConfigDict(
         extra="forbid",
@@ -49,8 +51,7 @@ class Banana(LLM):
     @classmethod
     def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
-        all_required_field_names = {field.alias for field in get_fields(cls).values()}
-
+        all_required_field_names = set(list(cls.model_fields.keys()))
         extra = values.get("model_kwargs", {})
         for field_name in list(values):
             if field_name not in all_required_field_names:
@@ -62,15 +63,6 @@ class Banana(LLM):
                 )
                 extra[field_name] = values.pop(field_name)
         values["model_kwargs"] = extra
-        return values
-
-    @pre_init
-    def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that api key and python package exists in environment."""
-        banana_api_key = convert_to_secret_str(
-            get_from_dict_or_env(values, "banana_api_key", "BANANA_API_KEY")
-        )
-        values["banana_api_key"] = banana_api_key
         return values
 
     @property

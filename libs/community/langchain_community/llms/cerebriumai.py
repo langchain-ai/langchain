@@ -48,7 +48,7 @@ class CerebriumAI(LLM):
     @classmethod
     def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
-        all_required_field_names = {field.alias for field in get_fields(cls).values()}
+        all_required_field_names = set(list(cls.model_fields.keys()))
 
         extra = values.get("model_kwargs", {})
         for field_name in list(values):
