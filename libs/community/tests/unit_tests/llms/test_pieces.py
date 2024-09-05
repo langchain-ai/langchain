@@ -29,6 +29,16 @@ class TestPiecesOSLLM(unittest.TestCase):
 
     def test_identifying_params(self):
         self.assertEqual(self.llm._identifying_params, {"model": "pieces_os"})
+
+    def test_call(self):
+        mock_response = Mock()
+        mock_response.question.answers = [Mock(text="Test answer")]
+        self.mock_copilot.ask_question.return_value = mock_response
+
+        result = self.llm._call("Test prompt")
+        self.assertEqual(result, "Test answer")
+        self.mock_copilot.ask_question.assert_called_once_with("Test prompt")
+        
 def mock_function_name(args):
     # Define the mock behavior for the function being mocked
     pass
