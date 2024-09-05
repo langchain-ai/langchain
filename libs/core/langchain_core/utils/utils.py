@@ -353,7 +353,7 @@ def from_env(
 
 
 @overload
-def secret_from_env(key: str, /) -> Callable[[], SecretStr]: ...
+def secret_from_env(key: Union[str, Sequence[str]], /) -> Callable[[], SecretStr]: ...
 
 
 @overload
@@ -363,12 +363,6 @@ def secret_from_env(key: str, /, *, default: str) -> Callable[[], SecretStr]: ..
 @overload
 def secret_from_env(
     key: Union[str, Sequence[str]], /, *, default: None
-) -> Callable[[], Optional[SecretStr]]: ...
-
-
-@overload
-def secret_from_env(
-    key: Union[str, Sequence[str]],
 ) -> Callable[[], Optional[SecretStr]]: ...
 
 
