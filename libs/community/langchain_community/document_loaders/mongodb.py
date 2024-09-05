@@ -28,6 +28,31 @@ class MongodbLoader(BaseLoader):
         metadata_mapper: Optional[Callable[..., Dict[str, Any]]] = None,
         enable_total_count_check: bool = True,
     ) -> None:
+        """
+        Args:
+            connection_string: The connection string for the MongoDB database.
+            db_name: The name of the MongoDB database.
+            collection_name: The name of the collection within the database.
+            filter_criteria: Optional dictionary to filter documents in the
+                collection. Defaults to an empty dictionary if not provided.
+            field_names: Optional sequence of field names to include in the
+                loaded documents. If not provided, all fields will be included.
+            cursor_builder: Optional function to build a cursor for querying
+                the collection. Defaults to `default_cursor_builder` if not
+                provided.
+            page_content_mapper: Optional function to map a document to its
+                page content. Defaults to `page_content_default_mapper` if
+                not provided.
+            metadata_mapper: Optional function to map a document to its metadata.
+                Defaults to `metadata_default_mapper` if not provided.
+            enable_total_count_check: Whether to check the total count of
+                documents in the collection to ensure completeness. Defaults
+                to True.
+        Raises:
+            ValueError: If `connection_string`, `db_name`, or `collection_name`
+                is not provided.
+            ImportError: If `motor` is not installed and cannot be imported.
+        """
         try:
             from motor.motor_asyncio import AsyncIOMotorClient
         except ImportError as e:
@@ -88,7 +113,7 @@ class MongodbLoader(BaseLoader):
         doc: Dict,
     ) -> Dict[str, Any]:
         """
-        A reasonable default function to convert a doc into a "metadata" dictionary.
+        Converts a doc into a "metadata" dictionary.
         """
         return {
             "database": db_name,
@@ -100,7 +125,7 @@ class MongodbLoader(BaseLoader):
         doc: Dict, field_names: Optional[Sequence[str]] = None
     ) -> str:
         """
-        A reasonable default function to convert a record into a "page content" string.
+        Converts a record into a "page content" string.
         """
         # Extract text content from filtered fields or use the entire document
         if field_names is not None:
