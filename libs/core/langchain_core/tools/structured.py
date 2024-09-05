@@ -15,8 +15,8 @@ from langchain_core.tools.base import (
     FILTERED_ARGS,
     BaseTool,
     _get_runnable_config_param,
+    create_return_schema_from_function,
     create_schema_from_function,
-    create_return_schema_from_function
 )
 from langchain_core.utils.pydantic import TypeBaseModel
 

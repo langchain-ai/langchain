@@ -1,5 +1,15 @@
 import inspect
-from typing import Any, Callable, Dict, Literal, Optional, Type, Union, get_type_hints, List
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Type,
+    Union,
+    get_type_hints,
+)
 
 from langchain_core.callbacks import Callbacks
 from langchain_core.pydantic_v1 import BaseModel, Field, create_model

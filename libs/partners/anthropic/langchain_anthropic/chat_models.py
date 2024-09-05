@@ -261,11 +261,11 @@ class ChatAnthropic(BaseChatModel):
     See https://docs.anthropic.com/en/docs/models-overview for a list of the latest models.
 
     Setup:
-        Install ``langchain-anthropic`` and set environment variable ``ANTHROPIC_API_KEY``.
+        Install ``gigachain-anthropic`` and set environment variable ``ANTHROPIC_API_KEY``.
 
         .. code-block:: bash
 
-            pip install -U langchain-anthropic
+            pip install -U gigachain-anthropic
             export ANTHROPIC_API_KEY="your-api-key"
 
     Key init args — completion params:
