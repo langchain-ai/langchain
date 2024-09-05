@@ -11,7 +11,7 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 
 if TYPE_CHECKING:
-    from pyepsilla import vectordb, cloud
+    from pyepsilla import vectordb
 
 logger = logging.getLogger()
 
@@ -69,8 +69,8 @@ class Epsilla(VectorStore):
             client, pyepsilla.cloud.client.Vectordb
         ):
             raise TypeError(
-                f"client should be an instance of pyepsilla.vectordb.Client or pyepsilla.cloud.client.Vectordb, "
-                f"got {type(client)}"
+                f"client should be an instance of pyepsilla.vectordb.Client "
+                "or pyepsilla.cloud.client.Vectordb, got {type(client)}"
             )
 
         self._client: vectordb.Client = client
