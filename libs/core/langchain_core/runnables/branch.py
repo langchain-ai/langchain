@@ -171,7 +171,10 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         )
 
         for runnable in runnables:
-            if runnable.get_input_schema(config).schema().get("type") is not None:
+            if (
+                runnable.get_input_schema(config).model_json_schema().get("type")
+                is not None
+            ):
                 return runnable.get_input_schema(config)
 
         return super().get_input_schema(config)

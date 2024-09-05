@@ -144,7 +144,7 @@ def deprecated(
         _package: str = package,
     ) -> T:
         """Implementation of the decorator returned by `deprecated`."""
-        from langchain_core.utils.pydantic import FieldInfoV1
+        from langchain_core.utils.pydantic import FieldInfoV1, FieldInfoV2
 
         def emit_warning() -> None:
             """Emit the warning."""
@@ -231,6 +231,25 @@ def deprecated(
                 return cast(
                     T,
                     FieldInfoV1(
+                        default=obj.default,
+                        default_factory=obj.default_factory,
+                        description=new_doc,
+                        alias=obj.alias,
+                        exclude=obj.exclude,
+                    ),
+                )
+        elif isinstance(obj, FieldInfoV2):
+            wrapped = None
+            if not _obj_type:
+                _obj_type = "attribute"
+            if not _name:
+                raise ValueError(f"Field {obj} must have a name to be deprecated.")
+            old_doc = obj.description
+
+            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:
+                return cast(
+                    T,
+                    FieldInfoV2(
                         default=obj.default,
                         default_factory=obj.default_factory,
                         description=new_doc,

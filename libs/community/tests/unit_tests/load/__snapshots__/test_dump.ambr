@@ -71,6 +71,7 @@
       "LLMChain"
     ],
     "kwargs": {
+      "verbose": false,
       "prompt": {
         "lc": 1,
         "type": "constructor",
@@ -298,6 +299,7 @@
       "LLMChain"
     ],
     "kwargs": {
+      "verbose": false,
       "prompt": {
         "lc": 1,
         "type": "constructor",
@@ -587,6 +589,7 @@
       "LLMChain"
     ],
     "kwargs": {
+      "verbose": false,
       "prompt": {
         "lc": 1,
         "type": "constructor",

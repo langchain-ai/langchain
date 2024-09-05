@@ -5,8 +5,8 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
 
-from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, ConfigDict, model_validator
 
 
 class AskNewsAPIWrapper(BaseModel):
@@ -19,11 +19,13 @@ class AskNewsAPIWrapper(BaseModel):
     asknews_client_secret: Optional[str] = None
     """Client Secret for the AskNews API."""
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that api credentials and python package exists in environment."""
 
         asknews_client_id = get_from_dict_or_env(

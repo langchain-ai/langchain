@@ -23,6 +23,7 @@ from langchain_core.callbacks import (
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import GenerationChunk, LLMResult
+from pydantic import ConfigDict
 
 
 def _stream_response_to_generation_chunk(
@@ -397,8 +398,9 @@ class Ollama(BaseLLM, _OllamaCommon):
             ollama = Ollama(model="llama2")
     """
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @property
     def _llm_type(self) -> str:

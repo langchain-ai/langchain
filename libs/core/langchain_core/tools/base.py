@@ -30,8 +30,8 @@ from typing import (
 from pydantic import (
     BaseModel,
     ConfigDict,
-    Extra,
     Field,
+    PydanticDeprecationWarning,
     SkipValidation,
     ValidationError,
     model_validator,
@@ -97,7 +97,7 @@ def _get_filtered_args(
     include_injected: bool = True,
 ) -> dict:
     """Get the arguments from a function's signature."""
-    schema = inferred_model.schema()["properties"]
+    schema = inferred_model.model_json_schema()["properties"]
     valid_keys = signature(func).parameters
     return {
         k: schema[k]
@@ -175,7 +175,7 @@ class _SchemaConfig:
             Defaults to True.
     """
 
-    extra: Any = Extra.forbid
+    extra: str = "forbid"
     arbitrary_types_allowed: bool = True
 
 
@@ -208,7 +208,12 @@ def create_schema_from_function(
         A pydantic model with the same arguments as the function.
     """
     # https://docs.pydantic.dev/latest/usage/validation_decorator/
-    validated = validate_arguments(func, config=_SchemaConfig)  # type: ignore
+    with warnings.catch_warnings():
+        # We are using deprecated functionality here.
+        # This code should be re-written to simply construct a pydantic model
+        # using inspect.signature and create_model.
+        warnings.simplefilter("ignore", category=PydanticDeprecationWarning)
+        validated = validate_arguments(func, config=_SchemaConfig)  # type: ignore
 
     sig = inspect.signature(func)
 
@@ -409,7 +414,7 @@ class ChildTool(BaseTool):
 
     @property
     def args(self) -> dict:
-        return self.get_input_schema().schema()["properties"]
+        return self.get_input_schema().model_json_schema()["properties"]
 
     @property
     def tool_call_schema(self) -> Type[BaseModel]:

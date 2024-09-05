@@ -18,7 +18,7 @@ from typing import (
     Union,
 )
 
-from pydantic import BaseModel, ConfigDict, Field, validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from typing_extensions import TypeAlias, TypedDict
 
 from langchain_core._api import deprecated
@@ -134,7 +134,7 @@ class BaseLanguageModel(
         arbitrary_types_allowed=True,
     )
 
-    @validator("verbose", pre=True, always=True, allow_reuse=True)
+    @field_validator("verbose", mode="before")
     def set_verbose(cls, verbose: Optional[bool]) -> bool:
         """If verbose is None, set it.
 

@@ -1,7 +1,7 @@
 import html
 from typing import Any, Dict, Literal
 
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from pydantic import BaseModel, Field, model_validator
 
 
 class StackExchangeAPIWrapper(BaseModel):
@@ -19,8 +19,9 @@ class StackExchangeAPIWrapper(BaseModel):
     result_separator: str = "\n\n"
     """Separator between question,answer pairs."""
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that the required Python package exists."""
         try:
             from stackapi import StackAPI

@@ -60,7 +60,7 @@ class Tool(BaseTool):
             The input arguments for the tool.
         """
         if self.args_schema is not None:
-            return self.args_schema.schema()["properties"]
+            return self.args_schema.model_json_schema()["properties"]
         # For backwards compatibility, if the function signature is ambiguous,
         # assume it takes a single string input.
         return {"tool_input": {"type": "string"}}
