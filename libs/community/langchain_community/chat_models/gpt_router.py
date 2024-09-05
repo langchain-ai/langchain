@@ -17,6 +17,7 @@ from typing import (
     Type,
     Union,
 )
+from typing_extensions import Self
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -186,8 +187,8 @@ class GPTRouter(BaseChatModel):
         )
         return values
 
-    @root_validator(pre=True, skip_on_failure=True)
-    def post_init(cls, values: Dict) -> Dict:
+    @model_validator(mode="after")
+    def post_init(self) -> Self:
         try:
             from gpt_router.client import GPTRouterClient
 
@@ -198,12 +199,12 @@ class GPTRouter(BaseChatModel):
             )
 
         gpt_router_client = GPTRouterClient(
-            values["gpt_router_api_base"],
-            values["gpt_router_api_key"].get_secret_value(),
+            self.gpt_router_api_base,
+            self.gpt_router_api_key.get_secret_value(),
         )
-        values["client"] = gpt_router_client
+        self.client = gpt_router_client
 
-        return values
+        return self
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
