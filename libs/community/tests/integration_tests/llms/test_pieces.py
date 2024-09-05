@@ -36,3 +36,11 @@ class TestPiecesOSLLMIntegration(unittest.TestCase):
         self.llm.set_model("GPT-4 Chat Model")
         self.assertEqual(self.llm.model, "GPT-4 Chat Model")
         self.assertEqual(self.mock_client.model_name, "GPT-4 Chat Model")
+
+    def test_stream_integration(self):
+        mock_response = Mock()
+        mock_response.question.answers.iterable = [Mock(text="Mocked answer")]
+        self.mock_client.copilot.stream_question.return_value = [mock_response]
+
+        result = list(self.llm.stream("What is AI?"))
+        self.assertEqual(result[0].text, "Mocked answer")
