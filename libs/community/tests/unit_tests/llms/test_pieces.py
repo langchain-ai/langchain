@@ -85,21 +85,6 @@ class TestPiecesOSLLM(unittest.TestCase):
         with print_patch as mock_print:
             self.llm.set_model(invalid_model)
             mock_print.assert_called_once_with(f"Model set to {invalid_model}.")
-            
-def mock_function_name(args):
-    # Define the mock behavior for the function being mocked
-    pass
-
-def test_pieces_implementation(monkeypatch):
-    # Mock the necessary functions
-    monkeypatch.setattr(module_name, "function_name", mock_function_name)
-
-    # Instantiate the Pieces class or relevant objects
-
-    # Define assertions to verify the behavior
-    assert pieces.some_method() == expected_output
-
-    # Add more assertions as needed
 
 if __name__ == "__main__":
-    test_pieces_implementation()
+    unittest.main()
