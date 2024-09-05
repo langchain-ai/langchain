@@ -1,17 +1,15 @@
 """Utility that calls OpenAI's Dall-E Image Generator."""
 
 import logging
-import os
+from pydantic import BaseModel, ConfigDict, Field, model_validator, Secret
 from typing import Any, Dict, Mapping, Optional, Tuple, Union
-
-from langchain_core.utils import (
-    get_from_dict_or_env,
-    get_pydantic_field_names,
-)
-from pydantic import BaseModel, ConfigDict, Field, model_validator
 from typing_extensions import Self
 
 from langchain_community.utils.openai import is_openai_v1
+from langchain_core.utils import (
+    get_pydantic_field_names,
+)
+from langchain_core.utils import secret_from_env, from_env
 
 logger = logging.getLogger(__name__)
 
@@ -31,15 +29,30 @@ class DallEAPIWrapper(BaseModel):
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
     model_name: str = Field(default="dall-e-2", alias="model")
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
-    openai_api_key: Optional[str] = Field(default=None, alias="api_key")
+    openai_api_key: Secret[str] = Field(
+        alias="api_key",
+        default_factory=secret_from_env(
+            "OPENAI_API_KEY",
+            default=None,
+        ),
+    )
     """Automatically inferred from env var `OPENAI_API_KEY` if not provided."""
-    openai_api_base: Optional[str] = Field(default=None, alias="base_url")
+    openai_api_base: Optional[str] = Field(
+        alias="base_url", default_factory=from_env("OPENAI_API_BASE", default=None)
+    )
     """Base URL path for API requests, leave blank if not using a proxy or service 
         emulator."""
-    openai_organization: Optional[str] = Field(default=None, alias="organization")
+    openai_organization: Optional[str] = Field(
+        alias="organization",
+        default_factory=from_env(
+            ["OPENAI_ORG_ID", "OPENAI_ORGANIZATION"], default=None
+        ),
+    )
     """Automatically inferred from env var `OPENAI_ORG_ID` if not provided."""
     # to support explicit proxy for OpenAI
-    openai_proxy: Optional[str] = None
+    openai_proxy: str = Field(
+        default_factory=from_env("OPENAI_PROXY", default="")
+    )
     request_timeout: Union[float, Tuple[float, float], Any, None] = Field(
         default=None, alias="timeout"
     )
@@ -94,24 +107,6 @@ class DallEAPIWrapper(BaseModel):
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
-        self.openai_api_key = get_from_dict_or_env(
-            values, "openai_api_key", "OPENAI_API_KEY"
-        )
-        # Check OPENAI_ORGANIZATION for backwards compatibility.
-        self.openai_organization = (
-            self.openai_organization
-            or os.getenv("OPENAI_ORG_ID")
-            or os.getenv("OPENAI_ORGANIZATION")
-            or None
-        )
-        self.openai_api_base = self.openai_api_base or os.getenv("OPENAI_API_BASE")
-        self.openai_proxy = get_from_dict_or_env(
-            values,
-            "openai_proxy",
-            "OPENAI_PROXY",
-            default="",
-        )
-
         try:
             import openai
 
@@ -133,11 +128,11 @@ class DallEAPIWrapper(BaseModel):
                 "http_client": self.http_client,
             }
 
-            if not (self.client or None):
+            if not self.client:
                 self.client = openai.OpenAI(**client_params).images
-            if not (self.async_client or None):
+            if not self.async_client:
                 self.async_client = openai.AsyncOpenAI(**client_params).images
-        elif not (self.client or None):
+        elif not self.client:
             self.client = openai.Image
         else:
             pass
