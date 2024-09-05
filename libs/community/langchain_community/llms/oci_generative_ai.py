@@ -9,7 +9,7 @@ from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
 from langchain_core.utils import pre_init
-from pydantic import BaseModel, ConfigDict, PrivateAttr
+from pydantic import BaseModel, ConfigDict, Field
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
@@ -61,7 +61,7 @@ class OCIAuthType(Enum):
 class OCIGenAIBase(BaseModel, ABC):
     """Base class for OCI GenAI models"""
 
-    client: PrivateAttr(Any)  #: :meta private:
+    client: Any = Field(default=None, exclude=True)  #: :meta private:
 
     auth_type: Optional[str] = "API_KEY"
     """Authentication type, could be 
