@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import warnings
+from importlib.metadata import version
 from typing import (
     Any,
     Callable,
@@ -20,10 +21,10 @@ from typing import (
 
 import openai
 import tiktoken
-from langchain_community.utils.openai import is_openai_v1
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
 from langchain_core.utils import from_env, get_pydantic_field_names, secret_from_env
+from packaging.version import parse
 from tenacity import (
     AsyncRetrying,
     before_sleep_log,
@@ -34,6 +35,12 @@ from tenacity import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def is_openai_v1() -> bool:
+    """Return whether OpenAI API is v1 or more."""
+    _version = parse(version("openai"))
+    return _version.major >= 1
 
 
 def _process_batched_chunked_embeddings(
@@ -114,11 +121,11 @@ def _create_retry_decorator(embeddings: OpenAIEmbeddings) -> Callable[[Any], Any
             max=embeddings.retry_max_seconds,
         ),
         retry=(
-            retry_if_exception_type(openai.error.Timeout)
-            | retry_if_exception_type(openai.error.APIError)
-            | retry_if_exception_type(openai.error.APIConnectionError)
-            | retry_if_exception_type(openai.error.RateLimitError)
-            | retry_if_exception_type(openai.error.ServiceUnavailableError)
+            retry_if_exception_type(openai.Timeout)
+            | retry_if_exception_type(openai.APIError)
+            | retry_if_exception_type(openai.APIConnectionError)
+            | retry_if_exception_type(openai.RateLimitError)
+            | retry_if_exception_type(openai.OpenAIError)
         ),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
@@ -141,11 +148,11 @@ def _async_retry_decorator(embeddings: OpenAIEmbeddings) -> Any:
             max=embeddings.retry_max_seconds,
         ),
         retry=(
-            retry_if_exception_type(openai.error.Timeout)
-            | retry_if_exception_type(openai.error.APIError)
-            | retry_if_exception_type(openai.error.APIConnectionError)
-            | retry_if_exception_type(openai.error.RateLimitError)
-            | retry_if_exception_type(openai.error.ServiceUnavailableError)
+            retry_if_exception_type(openai.Timeout)
+            | retry_if_exception_type(openai.APIError)
+            | retry_if_exception_type(openai.APIConnectionError)
+            | retry_if_exception_type(openai.RateLimitError)
+            | retry_if_exception_type(openai.OpenAIError)
         ),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
