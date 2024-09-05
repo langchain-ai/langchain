@@ -52,9 +52,7 @@ class DallEAPIWrapper(BaseModel):
     )
     """Automatically inferred from env var `OPENAI_ORG_ID` if not provided."""
     # to support explicit proxy for OpenAI
-    openai_proxy: str = Field(
-        default_factory=from_env("OPENAI_PROXY", default="")
-    )
+    openai_proxy: str = Field(default_factory=from_env("OPENAI_PROXY", default=""))
     request_timeout: Union[float, Tuple[float, float], Any, None] = Field(
         default=None, alias="timeout"
     )
