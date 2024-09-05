@@ -72,6 +72,10 @@ class TestPiecesOSLLM(unittest.TestCase):
         supported_models = self.llm.get_supported_models()
         self.assertIsInstance(supported_models, list)
         self.assertEqual(supported_models, self.mock_client.available_models_names)
+
+    def test_set_model_valid(self):
+        self.llm.set_model("GPT-4 Chat Model")
+        self.assertEqual(self.llm.model, "GPT-4 Chat Model")
         
 def mock_function_name(args):
     # Define the mock behavior for the function being mocked
