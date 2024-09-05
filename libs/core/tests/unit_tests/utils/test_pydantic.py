@@ -204,7 +204,8 @@ def test_v1_repr() -> None:
         bar: int = Field(default=1, alias="baz", exclude=True)
         x: int = Field(default=2)
 
-        def __repr__(self):
+        def __repr__(self) -> str:
+            """Custom repr."""
             return v1_repr(self)
 
-    assert repr(Foo(bar=2, x=3)) == "Foo(x=3)"
+    assert repr(Foo(bar=2, x=3)) == "Foo(x=3)"  # type: ignore[arg-type]
