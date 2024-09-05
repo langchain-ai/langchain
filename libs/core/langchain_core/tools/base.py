@@ -31,6 +31,7 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    PydanticDeprecationWarning,
     SkipValidation,
     ValidationError,
     model_validator,
@@ -207,7 +208,12 @@ def create_schema_from_function(
         A pydantic model with the same arguments as the function.
     """
     # https://docs.pydantic.dev/latest/usage/validation_decorator/
-    validated = validate_arguments(func, config=_SchemaConfig)  # type: ignore
+    with warnings.catch_warnings():
+        # We are using deprecated functionality here.
+        # This code should be re-written to simply construct a pydantic model
+        # using inspect.signature and create_model.
+        warnings.simplefilter("ignore", category=PydanticDeprecationWarning)
+        validated = validate_arguments(func, config=_SchemaConfig)  # type: ignore
 
     sig = inspect.signature(func)
 
