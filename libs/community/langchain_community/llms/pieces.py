@@ -75,6 +75,6 @@ class PiecesOSLLM(BaseLLM):
 
     def set_model(self, model_name: str) -> None:
         """Set the model to be used."""
-                self.model = model_name
-                self.client.model_name = model_name
-                print(f"Model set to {model_name}.")
+        self.model = model_name
+        self.client.model_name = model_name
+        print(f"Model set to {model_name}.")
