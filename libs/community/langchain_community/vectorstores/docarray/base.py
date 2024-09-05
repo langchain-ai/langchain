@@ -51,9 +51,9 @@ class DocArrayIndex(VectorStore, ABC):
         from docarray.typing import NdArray
 
         class DocArrayDoc(BaseDoc):
-            text: Optional[str] = Field(default=None, required=False)
+            text: Optional[str] = Field(default=None)
             embedding: Optional[NdArray] = Field(**embeddings_params)
-            metadata: Optional[dict] = Field(default=None, required=False)
+            metadata: Optional[dict] = Field(default=None)
 
         return DocArrayDoc
 
