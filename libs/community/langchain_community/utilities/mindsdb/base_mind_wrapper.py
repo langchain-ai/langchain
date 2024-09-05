@@ -67,3 +67,6 @@ class BaseMindWrapper(BaseModel):
                 "due to an old version of the openai package. Try upgrading it "
                 "with `pip install --upgrade openai`.",
             ) from exc
+
+    def run(self, query: Text) -> Text:
+        raise NotImplementedError("Method `run` must be implemented in a subclass.")
