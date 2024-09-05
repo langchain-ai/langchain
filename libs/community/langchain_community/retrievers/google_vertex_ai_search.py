@@ -249,7 +249,6 @@ class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetr
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
         extra="ignore",
-        underscore_attrs_are_private=True,
     )
 
     def __init__(self, **kwargs: Any) -> None:
@@ -415,7 +414,6 @@ class GoogleVertexAIMultiTurnSearchRetriever(
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
         extra="ignore",
-        underscore_attrs_are_private=True,
     )
 
     def __init__(self, **kwargs: Any):

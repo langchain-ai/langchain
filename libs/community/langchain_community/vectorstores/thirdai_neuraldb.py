@@ -33,7 +33,6 @@ class NeuralDBVectorStore(VectorStore):
 
     model_config = ConfigDict(
         extra="forbid",
-        underscore_attrs_are_private=True,
     )
 
     @staticmethod
@@ -334,7 +333,6 @@ class NeuralDBClientVectorStore(VectorStore):
 
     model_config = ConfigDict(
         extra="forbid",
-        underscore_attrs_are_private=True,
     )
 
     def similarity_search(

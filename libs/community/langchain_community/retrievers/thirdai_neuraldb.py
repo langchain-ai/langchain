@@ -23,7 +23,6 @@ class NeuralDBRetriever(BaseRetriever):
 
     model_config = ConfigDict(
         extra="forbid",
-        underscore_attrs_are_private=True,
     )
 
     @staticmethod

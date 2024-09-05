@@ -51,7 +51,6 @@ class ArceeRetriever(BaseRetriever):
 
     model_config = ConfigDict(
         extra="forbid",
-        underscore_attrs_are_private=True,
     )
 
     def __init__(self, **data: Any) -> None:
