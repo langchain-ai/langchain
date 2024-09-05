@@ -30,7 +30,6 @@ from typing import (
 from pydantic import (
     BaseModel,
     ConfigDict,
-    Extra,
     Field,
     SkipValidation,
     ValidationError,
@@ -175,7 +174,7 @@ class _SchemaConfig:
             Defaults to True.
     """
 
-    extra: Any = Extra.forbid
+    extra: str = "forbid"
     arbitrary_types_allowed: bool = True
 
 

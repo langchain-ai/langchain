@@ -3,7 +3,7 @@
 import re
 from typing import Callable, Dict, List
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
 
 from langchain_core.example_selectors.base import BaseExampleSelector
 from langchain_core.prompts.prompt import PromptTemplate
@@ -52,7 +52,7 @@ class LengthBasedExampleSelector(BaseExampleSelector, BaseModel):
 
         self.add_example(example)
 
-    @validator("example_text_lengths", always=True)
+    @field_validator("example_text_lengths")
     def calculate_example_text_lengths(cls, v: List[int], values: Dict) -> List[int]:
         """Calculate text lengths if they don't exist."""
         # Check if text lengths were passed in
