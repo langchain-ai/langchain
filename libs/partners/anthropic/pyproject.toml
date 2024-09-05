@@ -21,7 +21,7 @@ disallow_untyped_defs = "True"
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
 anthropic = ">=0.30.0,<1"
-langchain-core = { version = ">=0.3.0.dev1", allow-prereleases = true }
+langchain-core = { version = "^0.3.0.dev1", allow-prereleases = true }
 pydantic = ">=2,<3"
 
 [tool.ruff.lint]
