@@ -139,7 +139,6 @@ from pydantic import (
     Field,
     PrivateAttr,
     model_validator,
-    validator,
 )
 
 
@@ -215,20 +214,6 @@ class SearxSearchWrapper(BaseModel):
     k: int = 10
     aiosession: Optional[Any] = None
 
-    @validator("unsecure")
-    def disable_ssl_warnings(cls, v: bool) -> bool:
-        """Disable SSL warnings."""
-        if v:
-            # requests.urllib3.disable_warnings()
-            try:
-                import urllib3
-
-                urllib3.disable_warnings()
-            except ImportError as e:
-                print(e)  # noqa: T201
-
-        return v
-
     @model_validator(mode="before")
     @classmethod
     def validate_params(cls, values: Dict) -> Any:
@@ -254,7 +239,6 @@ class SearxSearchWrapper(BaseModel):
             searx_host = "https://" + searx_host
         elif searx_host.startswith("http://"):
             values["unsecure"] = True
-            cls.disable_ssl_warnings(True)
         values["searx_host"] = searx_host
 
         return values
