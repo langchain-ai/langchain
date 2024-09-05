@@ -5344,7 +5344,7 @@
             'default': list([
             ]),
             'items': dict({
-              '$ref': '#/definitions/InvalidToolCall',
+              '$ref': '#/$defs/InvalidToolCall',
             }),
             'title': 'Invalid Tool Calls',
             'type': 'array',
@@ -5369,7 +5369,7 @@
             'default': list([
             ]),
             'items': dict({
-              '$ref': '#/definitions/ToolCallChunk',
+              '$ref': '#/$defs/ToolCallChunk',
             }),
             'title': 'Tool Call Chunks',
             'type': 'array',
@@ -5378,7 +5378,7 @@
             'default': list([
             ]),
             'items': dict({
-              '$ref': '#/definitions/ToolCall',
+              '$ref': '#/$defs/ToolCall',
             }),
             'title': 'Tool Calls',
             'type': 'array',
@@ -5395,7 +5395,7 @@
           'usage_metadata': dict({
             'anyOf': list([
               dict({
-                '$ref': '#/definitions/UsageMetadata',
+                '$ref': '#/$defs/UsageMetadata',
               }),
               dict({
                 'type': 'null',
@@ -6401,6 +6401,7 @@
             'type': 'object',
           }),
           'artifact': dict({
+            'default': None,
             'title': 'Artifact',
           }),
           'content': dict({
@@ -6544,22 +6545,22 @@
               '$ref': '#/$defs/ToolMessage',
             }),
             dict({
-              '$ref': '#/definitions/AIMessageChunk',
+              '$ref': '#/$defs/AIMessageChunk',
             }),
             dict({
-              '$ref': '#/definitions/HumanMessageChunk',
+              '$ref': '#/$defs/HumanMessageChunk',
             }),
             dict({
-              '$ref': '#/definitions/ChatMessageChunk',
+              '$ref': '#/$defs/ChatMessageChunk',
             }),
             dict({
-              '$ref': '#/definitions/SystemMessageChunk',
+              '$ref': '#/$defs/SystemMessageChunk',
             }),
             dict({
-              '$ref': '#/definitions/FunctionMessageChunk',
+              '$ref': '#/$defs/FunctionMessageChunk',
             }),
             dict({
-              '$ref': '#/definitions/ToolMessageChunk',
+              '$ref': '#/$defs/ToolMessageChunk',
             }),
           ]),
         }),
@@ -6742,7 +6743,7 @@
             'default': list([
             ]),
             'items': dict({
-              '$ref': '#/definitions/InvalidToolCall',
+              '$ref': '#/$defs/InvalidToolCall',
             }),
             'title': 'Invalid Tool Calls',
             'type': 'array',
@@ -6767,7 +6768,7 @@
             'default': list([
             ]),
             'items': dict({
-              '$ref': '#/definitions/ToolCallChunk',
+              '$ref': '#/$defs/ToolCallChunk',
             }),
             'title': 'Tool Call Chunks',
             'type': 'array',
@@ -6776,7 +6777,7 @@
             'default': list([
             ]),
             'items': dict({
-              '$ref': '#/definitions/ToolCall',
+              '$ref': '#/$defs/ToolCall',
             }),
             'title': 'Tool Calls',
             'type': 'array',
@@ -6793,7 +6794,7 @@
           'usage_metadata': dict({
             'anyOf': list([
               dict({
-                '$ref': '#/definitions/UsageMetadata',
+                '$ref': '#/$defs/UsageMetadata',
               }),
               dict({
                 'type': 'null',
@@ -6992,22 +6993,22 @@
                   '$ref': '#/$defs/ToolMessage',
                 }),
                 dict({
-                  '$ref': '#/definitions/AIMessageChunk',
+                  '$ref': '#/$defs/AIMessageChunk',
                 }),
                 dict({
-                  '$ref': '#/definitions/HumanMessageChunk',
+                  '$ref': '#/$defs/HumanMessageChunk',
                 }),
                 dict({
-                  '$ref': '#/definitions/ChatMessageChunk',
+                  '$ref': '#/$defs/ChatMessageChunk',
                 }),
                 dict({
-                  '$ref': '#/definitions/SystemMessageChunk',
+                  '$ref': '#/$defs/SystemMessageChunk',
                 }),
                 dict({
-                  '$ref': '#/definitions/FunctionMessageChunk',
+                  '$ref': '#/$defs/FunctionMessageChunk',
                 }),
                 dict({
-                  '$ref': '#/definitions/ToolMessageChunk',
+                  '$ref': '#/$defs/ToolMessageChunk',
                 }),
               ]),
             }),
@@ -7888,6 +7889,7 @@
             'type': 'object',
           }),
           'artifact': dict({
+            'default': None,
             'title': 'Artifact',
           }),
           'content': dict({

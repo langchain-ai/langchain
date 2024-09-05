@@ -200,6 +200,8 @@ def v1_repr(obj: BaseModel) -> str:
         if isinstance(value, BaseModel):
             repr_.append(f"{name}={v1_repr(value)}")
         else:
+            if field.exclude:
+                continue
             if not field.is_required():
                 if not value:
                     continue
