@@ -1,5 +1,11 @@
+import unittest
 from unittest.mock import Mock
 from unittest.mock import patch
+from langchain_core.outputs import GenerationChunk, LLMResult
+from typing import Any, List, Mapping, Optional, Iterator
+from langchain_core.callbacks import CallbackManagerForLLMRun
+from langchain_core.language_models.llms import BaseLLM
+from langchain_core.outputs import GenerationChunk, LLMResult
 from pieces_copilot_sdk import PiecesClient
 
 
