@@ -84,7 +84,7 @@ class E2BDataAnalysisToolArguments(BaseModel):
 
     python_code: str = Field(
         ...,
-        example="print('Hello World')",
+        examples=["print('Hello World')"],
         description=(
             "The python script to be evaluated. "
             "The contents will be in main.py. "

@@ -154,8 +154,8 @@ class ConneryAction(BaseTool):
             type = param.type
 
             dynamic_input_fields[param.key] = (
-                str,
-                Field(default, title=title, description=description, type=type),
+                type,
+                Field(default, title=title, description=description),
             )
 
         InputModel = create_model("InputSchema", **dynamic_input_fields)

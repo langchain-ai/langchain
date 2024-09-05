@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from pydantic import BaseModel
 
@@ -15,7 +15,7 @@ class Parameter(BaseModel):
     key: str
     title: str
     description: Optional[str] = None
-    type: str
+    type: Any
     validation: Optional[Validation] = None
 
 
