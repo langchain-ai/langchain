@@ -701,9 +701,9 @@ class Redis(VectorStore):
                 Defaults to None.
             embeddings (Optional[List[List[float]]], optional): Optional pre-generated
                 embeddings. Defaults to None.
-            keys (List[str]) or ids (List[str]): Identifiers of entries.
-                Defaults to None.
             batch_size (int, optional): Batch size to use for writes. Defaults to 1000.
+            clean_metadata (bool, optional): Weather remove metadata keys that the
+                client shouldn't see from a metadata map.
 
         Returns:
             List[str]: List of ids added to the vectorstore
