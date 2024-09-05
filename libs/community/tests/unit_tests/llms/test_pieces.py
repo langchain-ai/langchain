@@ -23,6 +23,10 @@ class TestPiecesOSLLM(unittest.TestCase):
             'Claude 3 Haiku Chat Model', 'GPT-4o Mini Chat Model', 'GPT-4o Chat Model'
         ]
         self.llm = PiecesOSLLM(client=self.mock_client)
+
+    def test_llm_type(self):
+        self.assertEqual(self.llm._llm_type, "pieces_os")
+        
 def mock_function_name(args):
     # Define the mock behavior for the function being mocked
     pass
