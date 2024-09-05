@@ -1,5 +1,15 @@
 import inspect
-from typing import Any, Callable, Dict, Literal, Optional, Type, Union, get_type_hints
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Type,
+    Union,
+    get_type_hints,
+)
 
 from langchain_core.callbacks import Callbacks
 from langchain_core.pydantic_v1 import BaseModel, Field, create_model
@@ -13,7 +23,9 @@ def tool(
     *args: Union[str, Callable, Runnable],
     return_direct: bool = False,
     args_schema: Optional[Type] = None,
+    return_schema: Optional[Type] = None,
     infer_schema: bool = True,
+    few_shot_examples: Optional[List[Dict[str, Any]]] = None,
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
@@ -180,7 +192,9 @@ def tool(
                     description=description,
                     return_direct=return_direct,
                     args_schema=schema,
+                    return_schema=return_schema,
                     infer_schema=infer_schema,
+                    few_shot_examples=few_shot_examples,
                     response_format=response_format,
                     parse_docstring=parse_docstring,
                     error_on_invalid_docstring=error_on_invalid_docstring,
@@ -198,6 +212,7 @@ def tool(
                 description=f"{tool_name} tool",
                 return_direct=return_direct,
                 coroutine=coroutine,
+                few_shot_examples=few_shot_examples,
                 response_format=response_format,
             )
 

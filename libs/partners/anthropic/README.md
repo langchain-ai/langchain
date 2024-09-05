@@ -1,10 +1,10 @@
-# langchain-anthropic
+# gigachain-anthropic
 
 This package contains the LangChain integration for Anthropic's generative models.
 
 ## Installation
 
-`pip install -U langchain-anthropic`
+`pip install -U gigachain-anthropic`
 
 ## Chat Models
 

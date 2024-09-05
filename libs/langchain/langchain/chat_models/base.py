@@ -114,7 +114,7 @@ def init_chat_model(
         model_provider: The model provider. Supported model_provider values and the
             corresponding integration package:
                 - openai (langchain-openai)
-                - anthropic (langchain-anthropic)
+                - anthropic (gigachain-anthropic)
                 - azure_openai (langchain-openai)
                 - google_vertexai (langchain-google-vertexai)
                 - google_genai (langchain-google-genai)
@@ -171,7 +171,7 @@ def init_chat_model(
     Initialize non-configurable models:
         .. code-block:: python
 
-            # pip install langchain langchain-openai langchain-anthropic langchain-google-vertexai
+            # pip install langchain langchain-openai gigachain-anthropic langchain-google-vertexai
             from langchain.chat_models import init_chat_model
 
             gpt_4o = init_chat_model("gpt-4o", model_provider="openai", temperature=0)
@@ -186,7 +186,7 @@ def init_chat_model(
     Create a partially configurable model with no default model:
         .. code-block:: python
 
-            # pip install langchain langchain-openai langchain-anthropic
+            # pip install langchain langchain-openai gigachain-anthropic
             from langchain.chat_models import init_chat_model
 
             # We don't need to specify configurable=True if a model isn't specified.
@@ -207,7 +207,7 @@ def init_chat_model(
     Create a fully configurable model with a default model and a config prefix:
         .. code-block:: python
 
-            # pip install langchain langchain-openai langchain-anthropic
+            # pip install langchain langchain-openai gigachain-anthropic
             from langchain.chat_models import init_chat_model
 
             configurable_model_with_default = init_chat_model(
@@ -239,7 +239,7 @@ def init_chat_model(
 
         .. code-block:: python
 
-            # pip install langchain langchain-openai langchain-anthropic
+            # pip install langchain langchain-openai gigachain-anthropic
             from langchain.chat_models import init_chat_model
             from langchain_core.pydantic_v1 import BaseModel, Field
 

@@ -14,7 +14,7 @@ from gigachat.models import (
     MessagesChunk,
     Usage,
 )
-from langchain.llms.gigachat import GigaChat
+from langchain_community.llms.gigachat import GigaChat
 
 from ..callbacks.fake_callback_handler import (
     FakeAsyncCallbackHandler,
