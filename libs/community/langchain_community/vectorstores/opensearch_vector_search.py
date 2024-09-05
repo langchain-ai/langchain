@@ -197,32 +197,35 @@ async def _abulk_ingest_embeddings(
     not_found_error = _import_not_found_error()
     requests = []
     return_ids = []
-
     try:
-        await client.indices.get(index=index_name)
-    except not_found_error:
-        await client.indices.create(index=index_name, body=mapping)
-
-    for i, text in enumerate(texts):
-        metadata = metadatas[i] if metadatas else {}
-        _id = ids[i] if ids else str(uuid.uuid4())
-        request = {
-            "_op_type": "index",
-            "_index": index_name,
-            vector_field: embeddings[i],
-            text_field: text,
-            "metadata": metadata,
-        }
-        if is_aoss:
-            request["id"] = _id
-        else:
-            request["_id"] = _id
-        requests.append(request)
-        return_ids.append(_id)
-
-    await async_bulk(client, requests, max_chunk_bytes=max_chunk_bytes)
-    if not is_aoss:
-        await client.indices.refresh(index=index_name)
+        try:
+            await client.indices.get(index=index_name)
+        except not_found_error:
+            await client.indices.create(index=index_name, body=mapping)
+    
+        for i, text in enumerate(texts):
+            metadata = metadatas[i] if metadatas else {}
+            _id = ids[i] if ids else str(uuid.uuid4())
+            request = {
+                "_op_type": "index",
+                "_index": index_name,
+                vector_field: embeddings[i],
+                text_field: text,
+                "metadata": metadata,
+            }
+            if is_aoss:
+                request["id"] = _id
+            else:
+                request["_id"] = _id
+            requests.append(request)
+            return_ids.append(_id)
+    
+        await async_bulk(client, requests, max_chunk_bytes=max_chunk_bytes)
+        if not is_aoss:
+            await client.indices.refresh(index=index_name)
+    finally:
+        # Ensure the client is closed after the operation
+        await client.close()
 
     return return_ids
 
