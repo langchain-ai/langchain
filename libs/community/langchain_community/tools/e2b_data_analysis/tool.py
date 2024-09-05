@@ -12,8 +12,8 @@ from langchain_core.callbacks import (
     CallbackManager,
     CallbackManagerForToolRun,
 )
-from langchain_core.pydantic_v1 import BaseModel, Field, PrivateAttr
 from langchain_core.tools import BaseTool, Tool
+from pydantic import BaseModel, Field, PrivateAttr
 
 from langchain_community.tools.e2b_data_analysis.unparse import Unparser
 

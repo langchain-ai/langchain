@@ -5,13 +5,13 @@ from typing import Dict, Iterator, List, Optional
 
 import requests
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import (
+from pydantic import (
     BaseModel,
-    BaseSettings,
     Field,
     FilePath,
     SecretStr,
 )
+from pydantic_settings import BaseSettings
 
 from langchain_community.document_loaders.base import BaseLoader
 
@@ -21,7 +21,7 @@ class _OneNoteGraphSettings(BaseSettings):
     client_secret: SecretStr = Field(..., env="MS_GRAPH_CLIENT_SECRET")
 
     class Config:
-        case_sentive = False
+        case_sensitive = False
         env_file = ".env"
         env_prefix = ""
 

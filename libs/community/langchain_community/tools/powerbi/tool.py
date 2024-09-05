@@ -8,8 +8,8 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain_core.pydantic_v1 import Field, validator
 from langchain_core.tools import BaseTool
+from pydantic import ConfigDict, Field, validator
 
 from langchain_community.chat_models.openai import _import_tiktoken
 from langchain_community.tools.powerbi.prompt import (
@@ -39,8 +39,9 @@ class QueryPowerBITool(BaseTool):
     output_token_limit: int = 4000
     tiktoken_model_name: Optional[str] = None  # "cl100k_base"
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     @validator("llm_chain")
     def validate_llm_chain_input_variables(  # pylint: disable=E0213
@@ -225,8 +226,9 @@ class InfoPowerBITool(BaseTool):
     """  # noqa: E501
     powerbi: PowerBIDataset = Field(exclude=True)
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     def _run(
         self,
@@ -251,8 +253,9 @@ class ListPowerBITool(BaseTool):
     description: str = "Input is an empty string, output is a comma separated list of tables in the database."  # noqa: E501 # pylint: disable=C0301
     powerbi: PowerBIDataset = Field(exclude=True)
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     def _run(
         self,

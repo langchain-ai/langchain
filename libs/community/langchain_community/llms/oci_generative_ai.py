@@ -8,8 +8,8 @@ from typing import Any, Dict, Iterator, List, Mapping, Optional
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.utils import pre_init
+from pydantic import BaseModel, ConfigDict, Field
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
@@ -61,7 +61,7 @@ class OCIAuthType(Enum):
 class OCIGenAIBase(BaseModel, ABC):
     """Base class for OCI GenAI models"""
 
-    client: Any  #: :meta private:
+    client: Any = Field(default=None, exclude=True)  #: :meta private:
 
     auth_type: Optional[str] = "API_KEY"
     """Authentication type, could be 
@@ -79,10 +79,10 @@ class OCIGenAIBase(BaseModel, ABC):
     If not specified , DEFAULT will be used 
     """
 
-    model_id: str = None  # type: ignore[assignment]
+    model_id: Optional[str] = None
     """Id of the model to call, e.g., cohere.command"""
 
-    provider: str = None  # type: ignore[assignment]
+    provider: Optional[str] = None
     """Provider name of the model. Default to None, 
     will try to be derived from the model_id
     otherwise, requires user input
@@ -91,14 +91,19 @@ class OCIGenAIBase(BaseModel, ABC):
     model_kwargs: Optional[Dict] = None
     """Keyword arguments to pass to the model"""
 
-    service_endpoint: str = None  # type: ignore[assignment]
+    service_endpoint: Optional[str] = None
     """service endpoint url"""
 
-    compartment_id: str = None  # type: ignore[assignment]
+    compartment_id: Optional[str] = None
     """OCID of compartment"""
 
     is_stream: bool = False
     """Whether to stream back partial progress"""
+
+    model_config = ConfigDict(
+        extra="forbid",
+        arbitrary_types_allowed=True,
+    )
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
@@ -230,8 +235,10 @@ class OCIGenAI(LLM, OCIGenAIBase):
                 )
     """
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(
+        extra="forbid",
+        arbitrary_types_allowed=True,
+    )
 
     @property
     def _llm_type(self) -> str:

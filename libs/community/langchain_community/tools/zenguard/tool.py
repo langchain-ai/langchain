@@ -1,10 +1,10 @@
 import os
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Type
 
 import requests
-from langchain_core.pydantic_v1 import BaseModel, Field, ValidationError, validator
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel, Field, ValidationError, validator
 
 
 class Detector(str, Enum):
@@ -50,7 +50,7 @@ class ZenGuardTool(BaseTool):
     description: str = (
         "ZenGuard AI integration package. ZenGuard AI - the fastest GenAI guardrails."
     )
-    args_schema = ZenGuardInput
+    args_schema: Type[BaseModel] = ZenGuardInput
     return_direct: bool = True
 
     zenguard_api_key: Optional[str] = Field(default=None)

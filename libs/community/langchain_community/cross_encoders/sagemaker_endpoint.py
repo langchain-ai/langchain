@@ -1,7 +1,7 @@
 import json
 from typing import Any, Dict, List, Optional, Tuple
 
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from pydantic import BaseModel, ConfigDict, model_validator
 
 from langchain_community.cross_encoders.base import BaseCrossEncoder
 
@@ -89,12 +89,14 @@ class SagemakerEndpointCrossEncoder(BaseModel, BaseCrossEncoder):
    .. _boto3: <https://boto3.amazonaws.com/v1/documentation/api/latest/index.html>
    """
 
-    class Config:
-        arbitrary_types_allowed = True
-        extra = "forbid"
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that AWS credentials to and python package exists in environment."""
         try:
             import boto3
