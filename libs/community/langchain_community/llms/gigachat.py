@@ -216,8 +216,11 @@ class _BaseGigaChat(Serializable):
         return await self._client.aget_image(file_id)
 
 
-@deprecated(alternative="gigachain_community.chat_models.gigachat", 
-            since="0.2.12", removal="0.3.0")
+@deprecated(
+    alternative="gigachain_community.chat_models.gigachat",
+    since="0.2.12",
+    removal="0.3.0",
+)
 class GigaChat(_BaseGigaChat, BaseLLM):
     """`GigaChat` large language models API.
 
