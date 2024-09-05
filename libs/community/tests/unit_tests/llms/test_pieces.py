@@ -26,7 +26,9 @@ class TestPiecesOSLLM(unittest.TestCase):
 
     def test_llm_type(self):
         self.assertEqual(self.llm._llm_type, "pieces_os")
-        
+
+    def test_identifying_params(self):
+        self.assertEqual(self.llm._identifying_params, {"model": "pieces_os"})
 def mock_function_name(args):
     # Define the mock behavior for the function being mocked
     pass
