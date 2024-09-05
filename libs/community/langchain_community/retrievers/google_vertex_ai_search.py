@@ -414,7 +414,6 @@ class GoogleVertexAIMultiTurnSearchRetriever(
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
         extra="ignore",
-        ,
     )
 
     def __init__(self, **kwargs: Any):

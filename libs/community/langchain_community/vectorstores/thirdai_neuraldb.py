@@ -333,7 +333,6 @@ class NeuralDBClientVectorStore(VectorStore):
 
     model_config = ConfigDict(
         extra="forbid",
-        
     )
 
     def similarity_search(
