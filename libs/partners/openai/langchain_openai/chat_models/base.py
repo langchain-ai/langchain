@@ -716,14 +716,12 @@ class BaseChatOpenAI(BaseChatModel):
             "system_fingerprint": response_dict.get("system_fingerprint", ""),
         }
 
-        if isinstance(response, openai.BaseModel) and getattr(
-            response, "choices", None
-        ):
-            message = response.choices[0].message  # type: ignore[attr-defined]
-            if hasattr(message, "parsed"):
-                generations[0].message.additional_kwargs["parsed"] = message.parsed
-            if hasattr(message, "refusal"):
-                generations[0].message.additional_kwargs["refusal"] = message.refusal
+        if response_dict.get("choices"):
+            message = response_dict["choices"][0]["message"]
+            if "parsed" in message:
+                generations[0].message.additional_kwargs["parsed"] = message["parsed"]
+            if "refusal" in message:
+                generations[0].message.additional_kwargs["refusal"] = message["refusal"]
 
         return ChatResult(generations=generations, llm_output=llm_output)
 
