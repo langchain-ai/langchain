@@ -29,7 +29,7 @@ def amazon_retriever(
 
 
 def test_create_client(amazon_retriever: AmazonKnowledgeBasesRetriever) -> None:
-    with pytest.raises(ImportError):
+    with pytest.raises(ValueError):
         amazon_retriever.create_client({})
 
 
