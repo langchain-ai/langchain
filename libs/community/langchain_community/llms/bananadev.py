@@ -3,7 +3,12 @@ from typing import Any, Dict, List, Mapping, Optional, cast
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init, secret_from_env
+from langchain_core.utils import (
+    convert_to_secret_str,
+    get_from_dict_or_env,
+    pre_init,
+    secret_from_env,
+)
 from langchain_core.utils.pydantic import get_fields
 from pydantic import ConfigDict, Field, SecretStr, model_validator
 

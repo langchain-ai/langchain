@@ -10,7 +10,7 @@ def test_sparkllm_initialization_by_alias() -> None:
     embeddings = BaichuanTextEmbeddings(
         model="embedding_model",
         api_key="your-api-key",  # type: ignore[arg-type]
-        session=None
+        session=None,
     )
     assert embeddings.model_name == "embedding_model"
     assert (

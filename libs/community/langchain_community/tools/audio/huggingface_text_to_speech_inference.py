@@ -49,7 +49,7 @@ class HuggingFaceTextToSpeechModelInference(BaseTool):
         file_naming_func: Literal["uuid", "timestamp"] = "uuid",
         huggingface_api_key: Optional[SecretStr] = None,
         _HUGGINGFACE_API_KEY_ENV_NAME: str = "HUGGINGFACE_API_KEY",
-            _HUGGINGFACE_API_URL_ROOT: str = "https://api-inference.huggingface.co/models"
+        _HUGGINGFACE_API_URL_ROOT: str = "https://api-inference.huggingface.co/models",
     ) -> None:
         if not huggingface_api_key:
             huggingface_api_key = SecretStr(
@@ -82,7 +82,7 @@ class HuggingFaceTextToSpeechModelInference(BaseTool):
             file_namer=file_namer,
             huggingface_api_key=huggingface_api_key,
             _HUGGINGFACE_API_KEY_ENV_NAME=_HUGGINGFACE_API_KEY_ENV_NAME,
-            _HUGGINGFACE_API_URL_ROOT=_HUGGINGFACE_API_URL_ROOT
+            _HUGGINGFACE_API_URL_ROOT=_HUGGINGFACE_API_URL_ROOT,
         )
 
     def _run(

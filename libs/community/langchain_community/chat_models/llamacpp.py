@@ -434,7 +434,7 @@ class ChatLlamaCpp(BaseChatModel):
             .. code-block:: python
 
                 from langchain_community.chat_models import ChatLlamaCpp
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
 
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
@@ -466,7 +466,7 @@ class ChatLlamaCpp(BaseChatModel):
             .. code-block:: python
 
                 from langchain_community.chat_models import ChatLlamaCpp
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
 
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
@@ -498,7 +498,7 @@ class ChatLlamaCpp(BaseChatModel):
             .. code-block:: python
 
                 from langchain_community.chat_models import ChatLlamaCpp
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
                 from langchain_core.utils.function_calling import convert_to_openai_tool
 
                 class AnswerWithJustification(BaseModel):

@@ -222,14 +222,18 @@ def test_chat_mlflow_bind_tools(
         ]
     )
 
-    def mock_func(*args: Any, **kwargs: Any) -> str:
+    def mock_func(x: int, y: int) -> str:
         return "36939 x 8922.4 = 329,511,111.6"
+
+    class ArgsSchema(BaseModel):
+        x: int
+        y: int
 
     tools = [
         StructuredTool(
             name="name",
             description="description",
-            args_schema=BaseModel,
+            args_schema=ArgsSchema,
             func=mock_func,
         )
     ]

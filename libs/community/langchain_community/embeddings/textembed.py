@@ -9,18 +9,17 @@ TextEmbed offers flexibility and scalability for diverse applications.
 TextEmbed is maintained by Keval Dekivadiya and is licensed under the Apache-2.0 license.
 """  # noqa: E501
 
+import asyncio
 from concurrent.futures import ThreadPoolExecutor
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import aiohttp
-import asyncio
 import numpy as np
 import requests
-from pydantic import BaseModel, ConfigDict, model_validator, SecretStr, Field
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
-from typing_extensions import Self
-
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils import from_env, secret_from_env
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
+from typing_extensions import Self
 
 __all__ = ["TextEmbedEmbeddings"]
 

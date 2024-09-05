@@ -98,9 +98,7 @@ def test_invoke(pebblo_retrieval_qa: PebbloRetrievalQA) -> None:
     assert response is not None
 
 
-def test_validate_vectorstore(
-    retriever: FakeRetriever
-) -> None:
+def test_validate_vectorstore(retriever: FakeRetriever) -> None:
     """
     Test vectorstore validation
     """

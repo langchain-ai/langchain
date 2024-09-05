@@ -62,7 +62,7 @@ class ChatJavelinAIGateway(BaseChatModel):
     params: Optional[ChatParams] = None
     """Parameters for the Javelin AI Gateway LLM."""
 
-    client: Any
+    client: Any = None
     """javelin client."""
 
     javelin_api_key: Optional[SecretStr] = Field(None, alias="api_key")

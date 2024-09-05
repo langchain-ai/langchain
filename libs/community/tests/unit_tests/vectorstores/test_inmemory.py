@@ -25,6 +25,7 @@ def _AnyDocument(**kwargs: Any) -> Document:
     doc.id = AnyStr()
     return doc
 
+
 class TestInMemoryReadWriteTestSuite(ReadWriteTestSuite):
     @pytest.fixture
     def vectorstore(self) -> InMemoryVectorStore:

@@ -69,10 +69,10 @@ class DocugamiLoader(BaseLoader, BaseModel):
     """Set to False if you want to full whitespace formatting in the original
     XML doc, including indentation."""
 
-    docset_id: Optional[str]
+    docset_id: Optional[str] = None
     """The Docugami API docset ID to use."""
 
-    document_ids: Optional[Sequence[str]]
+    document_ids: Optional[Sequence[str]] = None
     """The Docugami API document IDs to use."""
 
     file_paths: Optional[Sequence[Union[Path, str]]]

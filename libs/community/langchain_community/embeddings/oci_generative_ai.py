@@ -46,9 +46,9 @@ class OCIGenAIEmbeddings(BaseModel, Embeddings):
             )
     """
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
 
-    service_models: Any  #: :meta private:
+    service_models: Any = None  #: :meta private:
 
     auth_type: Optional[str] = "API_KEY"
     """Authentication type, could be 
@@ -66,16 +66,16 @@ class OCIGenAIEmbeddings(BaseModel, Embeddings):
     If not specified , DEFAULT will be used 
     """
 
-    model_id: str = None  # type: ignore[assignment]
+    model_id: Optional[str] = None
     """Id of the model to call, e.g., cohere.embed-english-light-v2.0"""
 
     model_kwargs: Optional[Dict] = None
     """Keyword arguments to pass to the model"""
 
-    service_endpoint: str = None  # type: ignore[assignment]
+    service_endpoint: Optional[str] = None
     """service endpoint url"""
 
-    compartment_id: str = None  # type: ignore[assignment]
+    compartment_id: Optional[str] = None
     """OCID of compartment"""
 
     truncate: Optional[str] = "END"

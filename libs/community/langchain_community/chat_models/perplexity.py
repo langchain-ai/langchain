@@ -35,8 +35,12 @@ from langchain_core.messages import (
     ToolMessageChunk,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.utils import get_from_dict_or_env, get_pydantic_field_names
-from pydantic import ConfigDict, Field, model_validator
+from langchain_core.utils import (
+    from_env,
+    get_from_dict_or_env,
+    get_pydantic_field_names,
+)
+from pydantic import ConfigDict, Field, PrivateAttr, model_validator
 from typing_extensions import Self
 
 logger = logging.getLogger(__name__)
@@ -61,14 +65,16 @@ class ChatPerplexity(BaseChatModel):
             )
     """
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     model: str = "llama-3.1-sonar-small-128k-online"
     """Model name."""
     temperature: float = 0.7
     """What sampling temperature to use."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
-    pplx_api_key: Optional[str] = Field(None, alias="api_key")
+    pplx_api_key: Optional[str] = Field(
+        default_factory=from_env("PPLX_API_KEY", default=None), alias="api_key"
+    )
     """Base URL path for API requests,
     leave blank if not using a proxy or service emulator."""
     request_timeout: Optional[Union[float, Tuple[float, float]]] = Field(
@@ -120,7 +126,6 @@ class ChatPerplexity(BaseChatModel):
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
-        self.pplx_api_key = get_from_dict_or_env(values, "pplx_api_key", "PPLX_API_KEY")
         try:
             import openai
         except ImportError:

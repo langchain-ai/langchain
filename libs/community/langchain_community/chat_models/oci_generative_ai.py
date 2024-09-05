@@ -501,6 +501,7 @@ class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
 
     model_config = ConfigDict(
         extra="forbid",
+        arbitrary_types_allowed=True,
     )
 
     @property

@@ -273,7 +273,7 @@ class MiniMaxChat(BaseChatModel):
     Tool calling:
         .. code-block:: python
 
-            from langchain_core.pydantic_v1 import BaseModel, Field
+            from pydantic import BaseModel, Field
 
 
             class GetWeather(BaseModel):
@@ -313,7 +313,7 @@ class MiniMaxChat(BaseChatModel):
 
             from typing import Optional
 
-            from langchain_core.pydantic_v1 import BaseModel, Field
+            from pydantic import BaseModel, Field
 
 
             class Joke(BaseModel):
@@ -702,7 +702,7 @@ class MiniMaxChat(BaseChatModel):
             .. code-block:: python
 
                 from langchain_community.chat_models import MiniMaxChat
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
 
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
@@ -723,7 +723,7 @@ class MiniMaxChat(BaseChatModel):
             .. code-block:: python
 
                 from langchain_community.chat_models import MiniMaxChat
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
 
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
@@ -745,7 +745,7 @@ class MiniMaxChat(BaseChatModel):
             .. code-block:: python
 
                 from langchain_community.chat_models import MiniMaxChat
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
                 from langchain_core.utils.function_calling import convert_to_openai_tool
 
                 class AnswerWithJustification(BaseModel):
