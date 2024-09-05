@@ -54,6 +54,7 @@ optional = true
 [tool.poetry.group.test.dependencies]
 pytest = "^7.3.0"
 pytest-asyncio = "^0.21.1"
+pytest-watcher = "^0.3.4"
 
 [tool.poetry.group.test_integration.dependencies]
 
