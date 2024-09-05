@@ -16,6 +16,7 @@ from langchain_core.tools.base import (
     BaseTool,
     _get_runnable_config_param,
     create_schema_from_function,
+    create_return_schema_from_function
 )
 from langchain_core.utils.pydantic import TypeBaseModel
 
@@ -99,7 +100,9 @@ class StructuredTool(BaseTool):
         description: Optional[str] = None,
         return_direct: bool = False,
         args_schema: Optional[Type[BaseModel]] = None,
+        return_schema: Optional[Type[BaseModel]] = None,
         infer_schema: bool = True,
+        few_shot_examples: Optional[List[Dict[str, Any]]] = None,
         *,
         response_format: Literal["content", "content_and_artifact"] = "content",
         parse_docstring: bool = False,
@@ -119,6 +122,8 @@ class StructuredTool(BaseTool):
             return_direct: Whether to return the result directly or as a callback.
                 Defaults to False.
             args_schema: The schema of the tool's input arguments. Defaults to None.
+            return_schema: The schema of the tool's return value. Defaults to None.
+            few_shot_examples: Few-shot examples of function usage. Defaults to None.
             infer_schema: Whether to infer the schema from the function's signature.
                 Defaults to True.
             response_format: The tool response format. If "content" then the output of
@@ -167,6 +172,9 @@ class StructuredTool(BaseTool):
                 error_on_invalid_docstring=error_on_invalid_docstring,
                 filter_args=_filter_schema_args(source_function),
             )
+        if return_schema is None and infer_schema:
+            # schema name is appended within function
+            return_schema = create_return_schema_from_function(name, source_function)
         description_ = description
         if description is None and not parse_docstring:
             description_ = source_function.__doc__ or None
@@ -188,8 +196,10 @@ class StructuredTool(BaseTool):
             func=func,
             coroutine=coroutine,
             args_schema=args_schema,  # type: ignore[arg-type]
+            return_schema=return_schema,  # type: ignore[arg-type]
             description=description_,
             return_direct=return_direct,
+            few_shot_examples=few_shot_examples,
             response_format=response_format,
             **kwargs,
         )
