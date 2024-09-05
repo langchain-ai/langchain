@@ -21,3 +21,11 @@ class TestPiecesOSLLMIntegration(unittest.TestCase):
         result = self.llm._call("What is AI?")
         self.assertEqual(result, "Mocked answer")
 
+    def test_generate_integration(self):
+        mock_response = Mock()
+        mock_response.question.answers = [Mock(text="Mocked answer")]
+        self.mock_client.copilot.ask_question.return_value = mock_response
+
+        result = self.llm._generate(["What is AI?"])
+        self.assertEqual(result.generations[0][0].text, "Mocked answer")
+
