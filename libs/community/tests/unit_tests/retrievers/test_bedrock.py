@@ -29,7 +29,9 @@ def amazon_retriever(
 
 
 def test_create_client(amazon_retriever: AmazonKnowledgeBasesRetriever) -> None:
-    with pytest.raises(ValueError):
+    # Import error if boto3 is not installed
+    # Value error if credentials are not supplied.
+    with pytest.raises((ImportError, ValueError)):
         amazon_retriever.create_client({})
 
 
