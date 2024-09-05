@@ -1,13 +1,12 @@
 """Loads data from OneNote Notebooks"""
 
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Optional
+from typing import Dict, Iterator, List, Optional
 
 import requests
 from langchain_core.documents import Document
 from pydantic import (
     BaseModel,
-    ConfigDict,
     Field,
     FilePath,
     SecretStr,
