@@ -15,7 +15,7 @@ from langchain_core.messages import (
     HumanMessage,
     HumanMessageChunk,
     SystemMessage,
-    SystemMessageChunk,
+    SystemMessageChunk, ToolMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, Generation
 from langchain_core.prompt_values import ChatPromptValueConcrete, StringPromptValue
@@ -72,7 +72,10 @@ def test_serialization_of_wellknown_objects() -> None:
             content="human",
         ),
         StringPromptValue(text="hello"),
+        ChatPromptValueConcrete(messages=[AIMessage(content="foo")]),
         ChatPromptValueConcrete(messages=[HumanMessage(content="human")]),
+        ChatPromptValueConcrete(messages=[ToolMessage(content="foo", tool_call_id="bar")]),
+        ChatPromptValueConcrete(messages=[SystemMessage(content="foo")]),
         Document(page_content="hello"),
         AgentFinish(return_values={}, log=""),
         AgentAction(tool="tool", tool_input="input", log=""),
