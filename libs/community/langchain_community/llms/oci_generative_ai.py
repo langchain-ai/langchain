@@ -194,6 +194,12 @@ class OCIGenAIBase(BaseModel, ABC):
         if self.provider is not None:
             provider = self.provider
         else:
+            if self.model_id is None:
+                raise ValueError(
+                    "model_id is required to derive the provider, "
+                    "please provide the provider explicitly or specify "
+                    "the model_id to derive the provider."
+                )
             provider = self.model_id.split(".")[0].lower()
 
         if provider not in provider_map:
@@ -266,6 +272,12 @@ class OCIGenAI(LLM, OCIGenAIBase):
         _model_kwargs = self.model_kwargs or {}
         if stop is not None:
             _model_kwargs[self._provider.stop_sequence_key] = stop
+
+        if self.model_id is None:
+            raise ValueError(
+                "model_id is required to call the model, "
+                "please provide the model_id."
+            )
 
         if self.model_id.startswith(CUSTOM_ENDPOINT_PREFIX):
             serving_mode = models.DedicatedServingMode(endpoint_id=self.model_id)

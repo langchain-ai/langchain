@@ -62,7 +62,7 @@ class BaichuanTextEmbeddings(BaseModel, Embeddings):
     session: Any  #: :meta private:
     model_name: str = Field(default="Baichuan-Text-Embedding", alias="model")
     """The model used to embed the documents."""
-    baichuan_api_key: Optional[SecretStr] = Field(
+    baichuan_api_key: SecretStr = Field(
         alias="api_key",
         default_factory=secret_from_env(["BAICHUAN_API_KEY", "BAICHUAN_AUTH_TOKEN"]),
     )

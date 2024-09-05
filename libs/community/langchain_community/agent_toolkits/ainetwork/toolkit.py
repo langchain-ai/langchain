@@ -56,7 +56,7 @@ class AINetworkToolkit(BaseToolkit):
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
-        validate_all=True,
+        validate_default=True,
     )
 
     def get_tools(self) -> List[BaseTool]:
