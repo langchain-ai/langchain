@@ -1,9 +1,10 @@
 """Select examples based on length."""
 
 import re
-from typing import Callable, Dict, List, Self
+from typing import Callable, Dict, List
 
 from pydantic import BaseModel, Field, model_validator
+from typing_extensions import Self
 
 from langchain_core.example_selectors.base import BaseExampleSelector
 from langchain_core.prompts.prompt import PromptTemplate
