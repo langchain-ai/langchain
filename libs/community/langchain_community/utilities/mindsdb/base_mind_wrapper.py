@@ -17,7 +17,7 @@ class BaseMindWrapper(BaseModel):
     name: Text = Field(default=None)
     client: Any = Field(default=None, exclude=True)
 
-    def __init__(self, **data):
+    def __init__(self, **data: Any) -> None:
         super().__init__(**data)
 
         # Validate that the API key and base URL are available.

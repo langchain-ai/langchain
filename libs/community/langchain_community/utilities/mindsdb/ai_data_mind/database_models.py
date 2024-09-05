@@ -1,7 +1,7 @@
 import inspect
 import json
 import sys
-from typing import Dict, Literal, Text, Union
+from typing import Any, Dict, Literal, Text, Union
 
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
@@ -23,7 +23,7 @@ class PostgresModel(BaseModel):
     database: Text = Field(default=None)
     database_schema: Text = Field(alias="schema", default=None)
 
-    def __init__(self, **data):
+    def __init__(self, **data: Any) -> None:
         super().__init__(**data)
         self.user = get_from_dict_or_env(
             data,
@@ -59,7 +59,7 @@ class PostgresModel(BaseModel):
             "POSTGRES_SCHEMA",
         )
 
-    def dict(self, **kwargs):
+    def dict(self, **kwargs: Any) -> Dict:
         base_dict = super().dict(**kwargs)
 
         # Convert the secret password to a string.
@@ -79,7 +79,7 @@ class MySQLModel(BaseModel):
     port: int = Field(default=3306)
     database: Text = Field(default=None)
 
-    def __init__(self, **data):
+    def __init__(self, **data: Any) -> None:
         super().__init__(**data)
         self.user = get_from_dict_or_env(
             data,
@@ -110,7 +110,7 @@ class MySQLModel(BaseModel):
             "MYSQL_DATABASE",
         )
 
-    def dict(self, **kwargs):
+    def dict(self, **kwargs: Any) -> Dict:
         base_dict = super().dict(**kwargs)
 
         # Convert the secret password to a string.
@@ -119,7 +119,7 @@ class MySQLModel(BaseModel):
 
 
 class MariaDBModel(MySQLModel):
-    def __init__(self, **data):
+    def __init__(self, **data: Any) -> None:
         super().__init__(**data)
         self.user = get_from_dict_or_env(
             data,
@@ -159,7 +159,7 @@ class ClickHouseModel(BaseModel):
     database: Text = Field(default=None)
     protocol: Literal["native", "http", "https"] = Field(default="http")
 
-    def __init__(self, **data):
+    def __init__(self, **data: Any) -> None:
         super().__init__(**data)
         self.user = get_from_dict_or_env(
             data,
@@ -196,7 +196,7 @@ class ClickHouseModel(BaseModel):
             default="http",
         )
 
-    def dict(self, **kwargs):
+    def dict(self, **kwargs: Any) -> Dict:
         base_dict = super().dict(**kwargs)
 
         # Convert the secret password to a string.
@@ -212,7 +212,7 @@ class SnowflakeModel(BaseModel):
     database: Text = Field(default=None)
     database_schema: Text = Field(alias="schema", default=None)
 
-    def __init__(self, **data):
+    def __init__(self, **data: Any) -> None:
         super().__init__(**data)
         self.account = get_from_dict_or_env(
             data,
@@ -247,7 +247,7 @@ class SnowflakeModel(BaseModel):
             "SNOWFLAKE_SCHEMA",
         )
 
-    def dict(self, **kwargs):
+    def dict(self, **kwargs: Any) -> Dict:
         base_dict = super().dict(**kwargs)
 
         # Convert the secret password to a string.
@@ -265,7 +265,7 @@ class BigQueryModel(BaseModel):
     dataset: Text = Field(default=None)
     service_account_json: Union[SecretStr, Dict] = Field(default=None)
 
-    def __init__(self, **data):
+    def __init__(self, **data: Any) -> None:
         super().__init__(**data)
         self.project_id = get_from_dict_or_env(
             data,
@@ -287,7 +287,7 @@ class BigQueryModel(BaseModel):
 
         self.service_account_json = convert_to_secret_str(service_account_json)
 
-    def dict(self, **kwargs):
+    def dict(self, **kwargs: Any) -> Dict:
         base_dict = super().dict(**kwargs)
 
         # Convert the secret service account json to a dict.

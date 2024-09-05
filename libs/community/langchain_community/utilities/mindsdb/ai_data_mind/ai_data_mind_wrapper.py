@@ -17,7 +17,7 @@ class DataSourceConfig(BaseModel):
     connection_args: Dict[Text, Any]
     tables: Optional[List[Text]] = Field(default=[])
 
-    def __init__(self, **data):
+    def __init__(self, **data: Any) -> None:
         super().__init__(**data)
 
         supported_data_sources = get_supported_data_sources()
@@ -53,7 +53,7 @@ class AIDataMindWrapper(BaseMindWrapper):
     data_source_configs: List[Dict[Text, Any]] = Field(default=None)
     mind: Any = Field(default=None, exclude=True)
 
-    def __init__(self, **data):
+    def __init__(self, **data: Any) -> None:
         super().__init__(**data)
 
         # Validate that the `mindsdb_sdk` package can be imported.
