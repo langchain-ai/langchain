@@ -200,7 +200,9 @@ class GPTRouter(BaseChatModel):
 
         gpt_router_client = GPTRouterClient(
             self.gpt_router_api_base,
-            self.gpt_router_api_key.get_secret_value(),
+            self.gpt_router_api_key.get_secret_value()
+            if self.gpt_router_api_key
+            else None,
         )
         self.client = gpt_router_client
 

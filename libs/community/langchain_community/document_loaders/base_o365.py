@@ -34,11 +34,11 @@ CHUNK_SIZE = 1024 * 1024 * 5
 
 
 class _O365Settings(BaseSettings):
-    client_id: str = Field(..., env="O365_CLIENT_ID")
-    client_secret: SecretStr = Field(..., env="O365_CLIENT_SECRET")
+    client_id: str = Field(..., alias="O365_CLIENT_ID")
+    client_secret: SecretStr = Field(..., alias="O365_CLIENT_SECRET")
 
     model_config = SettingsConfigDict(
-        case_sentive=False, env_file=".env", env_prefix=""
+        case_sensitive=False, env_file=".env", env_prefix=""
     )
 
 

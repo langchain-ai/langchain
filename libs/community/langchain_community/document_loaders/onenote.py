@@ -11,19 +11,20 @@ from pydantic import (
     FilePath,
     SecretStr,
 )
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from langchain_community.document_loaders.base import BaseLoader
 
 
 class _OneNoteGraphSettings(BaseSettings):
-    client_id: str = Field(..., env="MS_GRAPH_CLIENT_ID")
-    client_secret: SecretStr = Field(..., env="MS_GRAPH_CLIENT_SECRET")
+    client_id: str = Field(..., alias="MS_GRAPH_CLIENT_ID")
+    client_secret: SecretStr = Field(..., alias="MS_GRAPH_CLIENT_SECRET")
 
-    class Config:
-        case_sensitive = False
-        env_file = ".env"
-        env_prefix = ""
+    model_config = SettingsConfigDict(
+        case_sensitive=False,
+        env_file=".env",
+        env_prefix="",
+    )
 
 
 class OneNoteLoader(BaseLoader, BaseModel):
