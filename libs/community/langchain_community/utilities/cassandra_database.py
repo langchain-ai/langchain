@@ -487,9 +487,9 @@ class Table(BaseModel):
 
     @model_validator(mode="after")
     def check_required_fields(self) -> Self:
-        if not class_values["columns"]:
+        if not self.columns:
             raise ValueError("non-empty column list for must be provided")
-        if not class_values["partition"]:
+        if not self.partition:
             raise ValueError("non-empty partition list must be provided")
         return self
 
