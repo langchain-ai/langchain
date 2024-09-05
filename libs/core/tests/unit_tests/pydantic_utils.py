@@ -70,13 +70,14 @@ def _remove_enum_description(obj: Any) -> None:
 
 def _schema(obj: Any) -> dict:
     """Return the schema of the object."""
-    # Remap to old style schema
+
     if not is_basemodel_subclass(obj):
         raise TypeError(
             f"Object must be a Pydantic BaseModel subclass. Got {type(obj)}"
         )
+    # Remap to old style schema
     if not hasattr(obj, "model_json_schema"):  # V1 model
-        return obj.model_json_schema()
+        return obj.schema()
 
     schema_ = obj.model_json_schema(ref_template="#/definitions/{model}")
     if "$defs" in schema_:
