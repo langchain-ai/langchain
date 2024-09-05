@@ -93,7 +93,7 @@ class ChatOllama(BaseChatModel):
 
     .. dropdown:: Setup
         :open:
-        
+
         Install ``langchain-ollama`` and download any models you want to use from ollama.
 
         .. code-block:: bash
