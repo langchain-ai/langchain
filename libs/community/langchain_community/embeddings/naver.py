@@ -7,7 +7,6 @@ from langchain_core.pydantic_v1 import (
     BaseModel,
     Field,
     SecretStr,
-    root_validator,
 )
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
@@ -113,38 +112,43 @@ class ClovaXEmbeddings(BaseModel, Embeddings):
             f"/v1/api-tools/embedding/{model_name}/{self.app_id}"
         )
 
-    @root_validator(allow_reuse=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    def __init__(self, **kwargs: Any) -> None:
         """Validate that api key and python package exists in environment."""
-        values["ncp_clovastudio_api_key"] = convert_to_secret_str(
+        kwargs["ncp_clovastudio_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(
-                values, "ncp_clovastudio_api_key", "NCP_CLOVASTUDIO_API_KEY"
+                kwargs, "ncp_clovastudio_api_key", "NCP_CLOVASTUDIO_API_KEY"
             )
         )
-        values["ncp_apigw_api_key"] = convert_to_secret_str(
-            get_from_dict_or_env(values, "ncp_apigw_api_key", "NCP_APIGW_API_KEY", "ncp_apigw_api_key")
+        kwargs["ncp_apigw_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(kwargs, "ncp_apigw_api_key", "NCP_APIGW_API_KEY", "ncp_apigw_api_key")
         )
-        values["base_url"] = get_from_dict_or_env(
-            values, "base_url", "NCP_CLOVASTUDIO_API_BASE_URL", DEFAULT_BASE_URL
+        kwargs["base_url"] = get_from_dict_or_env(
+            kwargs, "base_url", "NCP_CLOVASTUDIO_API_BASE_URL", DEFAULT_BASE_URL
         )
 
-        values["app_id"] = get_from_dict_or_env(
-            values, "app_id", "NCP_CLOVASTUDIO_APP_ID"
+        super().__init__(**kwargs)
+
+        self.app_id = get_from_dict_or_env(
+            kwargs, "app_id", "NCP_CLOVASTUDIO_APP_ID"
         )
 
-        if not values.get("client"):
-            values["client"] = httpx.Client(
-                base_url=values["base_url"],
-                headers=cls.default_headers(values),
-                timeout=values["timeout"],
+        if "client" in kwargs:
+            self.client = kwargs.get("client")
+        else:
+            self.client = httpx.Client(
+                base_url=self.base_url,
+                headers=self.default_headers(kwargs),
+                timeout=self.timeout,
             )
-        if not values.get("async_client"):
-            values["async_client"] = httpx.AsyncClient(
-                base_url=values["base_url"],
-                headers=cls.default_headers(values),
-                timeout=values["timeout"],
+
+        if "async_client" in kwargs:
+            self.async_client = kwargs.get("async_client")
+        else:
+            self.async_client = httpx.AsyncClient(
+                base_url=self.base_url,
+                headers=self.default_headers(kwargs),
+                timeout=self.timeout,
             )
-        return values
 
     @staticmethod
     def default_headers(values):

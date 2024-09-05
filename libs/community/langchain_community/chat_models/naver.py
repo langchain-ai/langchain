@@ -34,7 +34,7 @@ from langchain_core.messages import (
     SystemMessageChunk,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
+from langchain_core.pydantic_v1 import Field, SecretStr
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
 DEFAULT_BASE_URL = "https://clovastudio.stream.ntruss.com"
@@ -278,58 +278,62 @@ class ChatClovaX(BaseChatModel):
         else:
             return f"{self.base_url}/{app_type}/v1/chat-completions/{self.model_name}"
 
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
-        if values["temperature"] is not None and not 0 < values["temperature"] <= 1:
+    def __init__(self, **kwargs: Any) -> None:
+        if "temperature" in kwargs and not 0 < kwargs["temperature"] <= 1:
             raise ValueError("temperature must be in the range (0.0, 1.0]")
 
-        if values["top_k"] is not None and not 0 <= values["top_k"] <= 128:
+        if "top_k" in kwargs and not 0 <= kwargs["top_k"] <= 128:
             raise ValueError("top_k must be in the range [0, 128]")
 
-        if values["top_p"] is not None and not 0 <= values["top_p"] <= 1:
+        if "top_p" in kwargs and not 0 <= kwargs["top_p"] <= 1:
             raise ValueError("top_p must be in the range [0.0, 1.0]")
 
         if (
-            values["repeat_penalty"] is not None
-            and not 0 < values["repeat_penalty"] <= 10
+            "repeat_penalty" in kwargs and not 0 < kwargs["repeat_penalty"] <= 10
         ):
             raise ValueError("repeat_penalty must be in the range (0.0, 10]")
 
-        if values["max_tokens"] is not None and not 0 <= values["max_tokens"] <= 4096:
+        if "max_tokens" in kwargs and not 0 <= kwargs["max_tokens"] <= 4096:
             raise ValueError("max_tokens must be in the range [0, 4096]")
 
-        if values["seed"] is not None and not 0 <= values["seed"] <= 4294967295:
+        if "seed" in kwargs and not 0 <= kwargs["seed"] <= 4294967295:
             raise ValueError("seed must be in the range [0, 4294967295]")
 
-        if not (values["model_name"] or values["task_id"]):
+        """Validate that api key and python package exists in environment."""
+        kwargs["ncp_clovastudio_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(
+                kwargs, "ncp_clovastudio_api_key", "NCP_CLOVASTUDIO_API_KEY"
+            )
+        )
+        kwargs["ncp_apigw_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(kwargs, "ncp_apigw_api_key", "NCP_APIGW_API_KEY", "ncp_apigw_api_key")
+        )
+        kwargs["base_url"] = get_from_dict_or_env(
+            kwargs, "base_url", "NCP_CLOVASTUDIO_API_BASE_URL", DEFAULT_BASE_URL
+        )
+
+        super().__init__(**kwargs)
+
+        if not (self.model_name or self.task_id):
             raise ValueError("either model_name or task_id must be assigned a value.")
 
-        """Validate that api key and python package exists in environment."""
-        values["ncp_clovastudio_api_key"] = convert_to_secret_str(
-            get_from_dict_or_env(
-                values, "ncp_clovastudio_api_key", "NCP_CLOVASTUDIO_API_KEY"
+        if "client" in kwargs:
+            self.client = kwargs.get("client")
+        else:
+            self.client = httpx.Client(
+                base_url=self.base_url,
+                headers=self.default_headers(kwargs),
+                timeout=self.timeout,
             )
-        )
-        values["ncp_apigw_api_key"] = convert_to_secret_str(
-            get_from_dict_or_env(values, "ncp_apigw_api_key", "NCP_APIGW_API_KEY", "ncp_apigw_api_key")
-        )
-        values["base_url"] = get_from_dict_or_env(
-            values, "base_url", "NCP_CLOVASTUDIO_API_BASE_URL", DEFAULT_BASE_URL
-        )
 
-        if not values.get("client"):
-            values["client"] = httpx.Client(
-                base_url=values["base_url"],
-                headers=cls.default_headers(values),
-                timeout=values["timeout"],
+        if "async_client" in kwargs:
+            self.async_client = kwargs.get("async_client")
+        else:
+            self.async_client = httpx.AsyncClient(
+                base_url=self.base_url,
+                headers=self.default_headers(kwargs),
+                timeout=self.timeout,
             )
-        if not values.get("async_client"):
-            values["async_client"] = httpx.AsyncClient(
-                base_url=values["base_url"],
-                headers=cls.default_headers(values),
-                timeout=values["timeout"],
-            )
-        return values
 
     @staticmethod
     def default_headers(values):
