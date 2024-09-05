@@ -37,10 +37,9 @@ from langchain_core.messages import (
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.utils import (
     from_env,
-    get_from_dict_or_env,
     get_pydantic_field_names,
 )
-from pydantic import ConfigDict, Field, PrivateAttr, model_validator
+from pydantic import ConfigDict, Field, model_validator
 from typing_extensions import Self
 
 logger = logging.getLogger(__name__)

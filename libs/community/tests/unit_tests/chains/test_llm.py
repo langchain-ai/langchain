@@ -1,8 +1,6 @@
 """Test LLM chain."""
 
-from tempfile import TemporaryDirectory
 from typing import Dict, List, Union
-from unittest.mock import patch
 
 import pytest
 from langchain.chains.llm import LLMChain
