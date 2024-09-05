@@ -123,7 +123,7 @@ const FEATURE_TABLES = {
                 "link": "cohere/",
                 "structured_output": true,
                 "tool_calling": true,
-                "json_mode": false,
+                "json_mode": true,
                 "multimodal": false,
                 "local": false,
                 "apiLink": "https://python.langchain.com/v0.2/api_reference/cohere/chat_models/langchain_cohere.chat_models.ChatCohere.html"
