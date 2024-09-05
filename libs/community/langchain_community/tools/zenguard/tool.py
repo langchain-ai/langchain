@@ -30,13 +30,12 @@ class DetectorAPI(str, Enum):
 class ZenGuardInput(BaseModel):
     prompts: List[str] = Field(
         ...,
-        min_items=1,
         min_length=1,
         description="Prompt to check",
     )
     detectors: List[Detector] = Field(
         ...,
-        min_items=1,
+        min_length=1,
         description="List of detectors by which you want to check the prompt",
     )
     in_parallel: bool = Field(
