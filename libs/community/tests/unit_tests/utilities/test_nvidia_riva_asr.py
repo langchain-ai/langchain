@@ -2,9 +2,9 @@
 
 from typing import TYPE_CHECKING, Any, Generator
 from unittest.mock import patch
-from pydantic import AnyHttpUrl
 
 import pytest
+from pydantic import AnyHttpUrl
 
 from langchain_community.utilities.nvidia_riva import (
     AudioStream,
