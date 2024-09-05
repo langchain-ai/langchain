@@ -54,6 +54,19 @@ class TestPiecesOSLLM(unittest.TestCase):
         self.assertEqual(len(result.generations), 2)
         self.assertEqual(result.generations[0][0].text, "Test answer")
         self.assertEqual(result.generations[1][0].text, "Test answer")
+
+    def test_stream(self):
+        mock_response = Mock()
+        mock_response.question.answers.iterable = [
+            Mock(text="Test "),
+            Mock(text="streaming "),
+            Mock(text="response")
+        ]
+        self.mock_copilot.stream_question.return_value = [mock_response]
+
+        result = list(self.llm.stream("Test prompt"))
+        self.assertEqual(len(result), 3)
+        self.assertEqual("".join(chunk.text for chunk in result), "Test streaming response")
         
 def mock_function_name(args):
     # Define the mock behavior for the function being mocked
