@@ -38,6 +38,11 @@ class TestPiecesOSLLM(unittest.TestCase):
         result = self.llm._call("Test prompt")
         self.assertEqual(result, "Test answer")
         self.mock_copilot.ask_question.assert_called_once_with("Test prompt")
+
+    def test_call_error(self):
+        self.mock_copilot.ask_question.side_effect = Exception("API Error")
+        result = self.llm._call("Test prompt")
+        self.assertEqual(result, "Error asking question")
         
 def mock_function_name(args):
     # Define the mock behavior for the function being mocked
