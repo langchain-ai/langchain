@@ -15,7 +15,6 @@ def test_initialization() -> None:
     os.environ["MS_GRAPH_CLIENT_SECRET"] = "CLIENT_SECRET"
 
     loader = OneNoteLoader(
-        settings={"client_id": "", "client_secret": ""},
         notebook_name="test_notebook",
         section_name="test_section",
         page_title="test_title",
@@ -40,7 +39,6 @@ def test_load(mocker: MockerFixture) -> None:
         return_value=mocker.MagicMock(json=lambda: {"value": []}, links=None),
     )
     loader = OneNoteLoader(
-        settings={"client_id": "", "client_secret": ""},
         notebook_name="test_notebook",
         section_name="test_section",
         page_title="test_title",
@@ -57,7 +55,6 @@ def test_load(mocker: MockerFixture) -> None:
         ),
     )
     loader = OneNoteLoader(
-        settings={"client_id": "", "client_secret": ""},
         object_ids=["test_id"],
         access_token="access_token",
     )
@@ -85,7 +82,6 @@ def test_msal_import(monkeypatch: MonkeyPatch, mocker: MockerFixture) -> None:
         return_value=FakeConfidentialClientApplication(),
     )
     loader = OneNoteLoader(
-        settings={"client_id": "", "client_secret": ""},
         notebook_name="test_notebook",
         section_name="test_section",
         page_title="test_title",
@@ -99,7 +95,6 @@ def test_url() -> None:
     os.environ["MS_GRAPH_CLIENT_SECRET"] = "CLIENT_SECRET"
 
     loader = OneNoteLoader(
-        settings={"client_id": "", "client_secret": ""},
         notebook_name="test_notebook",
         section_name="test_section",
         page_title="test_title",
@@ -115,7 +110,6 @@ def test_url() -> None:
     )
 
     loader = OneNoteLoader(
-        settings={"client_id": "", "client_secret": ""},
         notebook_name="test_notebook",
         section_name="test_section",
         access_token="access_token",
@@ -129,7 +123,6 @@ def test_url() -> None:
     )
 
     loader = OneNoteLoader(
-        settings={"client_id": "", "client_secret": ""},
         notebook_name="test_notebook",
         access_token="access_token",
         onenote_api_base_url="https://graph.microsoft.com/v1.0/me/onenote",
@@ -141,7 +134,6 @@ def test_url() -> None:
     )
 
     loader = OneNoteLoader(
-        settings={"client_id": "", "client_secret": ""},
         section_name="test_section",
         access_token="access_token",
         onenote_api_base_url="https://graph.microsoft.com/v1.0/me/onenote",
@@ -153,7 +145,6 @@ def test_url() -> None:
     )
 
     loader = OneNoteLoader(
-        settings={"client_id": "", "client_secret": ""},
         section_name="test_section",
         page_title="test_title",
         access_token="access_token",
@@ -167,7 +158,6 @@ def test_url() -> None:
     )
 
     loader = OneNoteLoader(
-        settings={"client_id": "", "client_secret": ""},
         page_title="test_title",
         access_token="access_token",
         onenote_api_base_url="https://graph.microsoft.com/v1.0/me/onenote",

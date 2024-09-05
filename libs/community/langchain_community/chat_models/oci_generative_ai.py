@@ -548,6 +548,9 @@ class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
 
         chat_params = {**_model_kwargs, **kwargs, **oci_params}
 
+        if not self.model_id:
+            raise ValueError("Model ID is required to chat")
+
         if self.model_id.startswith(CUSTOM_ENDPOINT_PREFIX):
             serving_mode = models.DedicatedServingMode(endpoint_id=self.model_id)
         else:

@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterator, List, Optional
+from typing import Any, Callable, Dict, Iterator, List, Optional
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import LLM
@@ -41,7 +41,7 @@ class ExLlamaV2(LLM):
     settings: Any = None
 
     # Langchain parameters
-    logfunc: callable = print
+    logfunc: Callable = print
 
     stop_sequences: List[str] = Field("")
     """Sequences that immediately will stop the generator."""

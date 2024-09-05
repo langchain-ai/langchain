@@ -181,6 +181,9 @@ class OCIGenAIEmbeddings(BaseModel, Embeddings):
         """
         from oci.generative_ai_inference import models
 
+        if not self.model_id:
+            raise ValueError("Model ID is required to embed documents")
+
         if self.model_id.startswith(CUSTOM_ENDPOINT_PREFIX):
             serving_mode = models.DedicatedServingMode(endpoint_id=self.model_id)
         else:
