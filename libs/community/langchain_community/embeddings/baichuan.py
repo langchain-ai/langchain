@@ -1,12 +1,4 @@
-from typing import Any, List, Optional
-
 import requests
-from langchain_core.embeddings import Embeddings
-from langchain_core.utils import (
-    convert_to_secret_str,
-    get_from_dict_or_env,
-    secret_from_env,
-)
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -15,7 +7,13 @@ from pydantic import (
     model_validator,
 )
 from requests import RequestException
+from typing import Any, List, Optional
 from typing_extensions import Self
+
+from langchain_core.embeddings import Embeddings
+from langchain_core.utils import (
+    secret_from_env,
+)
 
 BAICHUAN_API_URL: str = "http://api.baichuan-ai.com/v1/embeddings"
 
@@ -66,7 +64,7 @@ class BaichuanTextEmbeddings(BaseModel, Embeddings):
     """The model used to embed the documents."""
     baichuan_api_key: Optional[SecretStr] = Field(
         alias="api_key",
-        default_factory=secret_from_env("BAICHUAN_API_KEY", default=None),
+        default_factory=secret_from_env(["BAICHUAN_API_KEY", "BAICHUAN_AUTH_TOKEN"]),
     )
     """Automatically inferred from env var `BAICHUAN_API_KEY` if not provided."""
     chunk_size: int = 16
@@ -79,22 +77,10 @@ class BaichuanTextEmbeddings(BaseModel, Embeddings):
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate that auth token exists in environment."""
-        if self.baichuan_api_key is None:
-            # This is likely here for some backwards compatibility with
-            # BAICHUAN_AUTH_TOKEN
-            baichuan_api_key = convert_to_secret_str(
-                get_from_dict_or_env(
-                    values, "baichuan_auth_token", "BAICHUAN_AUTH_TOKEN"
-                )
-            )
-            self.baichuan_api_key = baichuan_api_key
-        else:
-            baichuan_api_key = self.baichuan_api_key
-
         session = requests.Session()
         session.headers.update(
             {
-                "Authorization": f"Bearer {baichuan_api_key.get_secret_value()}",
+                "Authorization": f"Bearer {self.baichuan_api_key.get_secret_value()}",
                 "Accept-Encoding": "identity",
                 "Content-type": "application/json",
             }
