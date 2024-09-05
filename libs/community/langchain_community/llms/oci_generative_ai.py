@@ -273,6 +273,12 @@ class OCIGenAI(LLM, OCIGenAIBase):
         if stop is not None:
             _model_kwargs[self._provider.stop_sequence_key] = stop
 
+        if self.model_id is None:
+            raise ValueError(
+                "model_id is required to call the model, "
+                "please provide the model_id."
+            )
+
         if self.model_id.startswith(CUSTOM_ENDPOINT_PREFIX):
             serving_mode = models.DedicatedServingMode(endpoint_id=self.model_id)
         else:
