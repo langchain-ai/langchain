@@ -208,4 +208,4 @@ def test_v1_repr() -> None:
             """Custom repr."""
             return v1_repr(self)
 
-    assert repr(Foo(bar=2, x=3)) == "Foo(x=3)"  # type: ignore[arg-type]
+    assert repr(Foo(bar=2, x=3)) == "Foo(x=3)" # type: ignore[call-arg]
