@@ -67,6 +67,11 @@ class TestPiecesOSLLM(unittest.TestCase):
         result = list(self.llm.stream("Test prompt"))
         self.assertEqual(len(result), 3)
         self.assertEqual("".join(chunk.text for chunk in result), "Test streaming response")
+
+    def test_get_supported_models(self):
+        supported_models = self.llm.get_supported_models()
+        self.assertIsInstance(supported_models, list)
+        self.assertEqual(supported_models, self.mock_client.available_models_names)
         
 def mock_function_name(args):
     # Define the mock behavior for the function being mocked
