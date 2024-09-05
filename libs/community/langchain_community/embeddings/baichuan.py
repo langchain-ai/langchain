@@ -1,4 +1,10 @@
+from typing import Any, List, Optional
+
 import requests
+from langchain_core.embeddings import Embeddings
+from langchain_core.utils import (
+    secret_from_env,
+)
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -7,13 +13,7 @@ from pydantic import (
     model_validator,
 )
 from requests import RequestException
-from typing import Any, List, Optional
 from typing_extensions import Self
-
-from langchain_core.embeddings import Embeddings
-from langchain_core.utils import (
-    secret_from_env,
-)
 
 BAICHUAN_API_URL: str = "http://api.baichuan-ai.com/v1/embeddings"
 
