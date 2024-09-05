@@ -8,7 +8,7 @@ from langchain_core.documents import Document
 from langchain_core.documents.compressor import (
     BaseDocumentCompressor,
 )
-from pydantic import ConfigDict, model_validator
+from pydantic import ConfigDict, Field, model_validator
 
 DEFAULT_LLM_LINGUA_INSTRUCTION = (
     "Given this documents, please answer the final question"
@@ -35,9 +35,9 @@ class LLMLinguaCompressor(BaseDocumentCompressor):
     """The target number of compressed tokens"""
     rank_method: str = "longllmlingua"
     """The ranking method to use"""
-    model_config: dict = {}
+    model_configuration: dict = Field(default_factory=dict, alias="model_config")
     """Custom configuration for the model"""
-    open_api_config: dict = {}
+    open_api_config: dict = Field(default_factory=dict)
     """open_api configuration"""
     instruction: str = DEFAULT_LLM_LINGUA_INSTRUCTION
     """The instruction for the LLM"""
@@ -75,6 +75,7 @@ class LLMLinguaCompressor(BaseDocumentCompressor):
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
         extra="forbid",
+        populate_by_name=True,
     )
 
     @staticmethod
