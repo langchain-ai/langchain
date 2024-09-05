@@ -12,12 +12,11 @@ from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Sequence, Union
 
 from pydantic import (
     BaseModel,
-    ConfigDict,
     Field,
     FilePath,
     SecretStr,
 )
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from langchain_community.document_loaders.base import BaseLoader
 from langchain_community.document_loaders.blob_loaders.file_system import (
@@ -38,10 +37,8 @@ class _O365Settings(BaseSettings):
     client_id: str = Field(..., env="O365_CLIENT_ID")
     client_secret: SecretStr = Field(..., env="O365_CLIENT_SECRET")
 
-    model_config = ConfigDict(
-        case_sentive=False,
-        env_file=".env",
-        env_prefix="",
+    model_config = SettingsConfigDict(
+        case_sentive=False, env_file=".env", env_prefix=""
     )
 
 
