@@ -20,9 +20,6 @@ class BaseCassandraDatabaseTool(BaseModel):
 
     db: CassandraDatabase = Field(exclude=True)
 
-    class Config(BaseTool.Config):
-        pass
-
 
 class _QueryCassandraDatabaseToolInput(BaseModel):
     query: str = Field(..., description="A detailed and correct CQL query.")

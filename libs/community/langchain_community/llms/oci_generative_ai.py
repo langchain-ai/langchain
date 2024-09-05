@@ -194,6 +194,12 @@ class OCIGenAIBase(BaseModel, ABC):
         if self.provider is not None:
             provider = self.provider
         else:
+            if self.model_id is None:
+                raise ValueError(
+                    "model_id is required to derive the provider, "
+                    "please provide the provider explicitly or specify "
+                    "the model_id to derive the provider."
+                )
             provider = self.model_id.split(".")[0].lower()
 
         if provider not in provider_map:
