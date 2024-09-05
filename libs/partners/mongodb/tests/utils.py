@@ -17,7 +17,7 @@ from langchain_core.messages import (
     BaseMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatResult
-from langchain_core.pydantic_v1 import validator
+from pydantic import validator
 from pymongo.collection import Collection
 from pymongo.results import DeleteResult, InsertManyResult
 
