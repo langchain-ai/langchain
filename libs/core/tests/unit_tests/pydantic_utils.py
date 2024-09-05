@@ -76,7 +76,7 @@ def _schema(obj: Any) -> dict:
             f"Object must be a Pydantic BaseModel subclass. Got {type(obj)}"
         )
     if not hasattr(obj, "model_json_schema"):  # V1 model
-        return obj.schema()
+        return obj.model_json_schema()
 
     schema_ = obj.model_json_schema(ref_template="#/definitions/{model}")
     if "$defs" in schema_:

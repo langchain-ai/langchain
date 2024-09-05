@@ -1492,7 +1492,7 @@ def test_tool_inherited_injected_arg() -> None:
             return y
 
     tool_ = InheritedInjectedArgTool()
-    assert tool_.get_input_schema().schema() == {
+    assert tool_.get_input_schema().model_json_schema() == {
         "title": "fooSchema",
         "description": "foo.",
         "type": "object",
@@ -1502,7 +1502,7 @@ def test_tool_inherited_injected_arg() -> None:
         },
         "required": ["y", "x"],
     }
-    assert tool_.tool_call_schema.schema() == {
+    assert tool_.tool_call_schema.model_json_schema() == {
         "title": "foo",
         "description": "foo.",
         "type": "object",
@@ -1646,7 +1646,7 @@ def test_args_schema_explicitly_typed() -> None:
 
     tool = SomeTool(name="some_tool", description="some description")
 
-    assert tool.get_input_schema().schema() == {
+    assert tool.get_input_schema().model_json_schema() == {
         "properties": {
             "a": {"title": "A", "type": "integer"},
             "b": {"title": "B", "type": "string"},
@@ -1656,7 +1656,7 @@ def test_args_schema_explicitly_typed() -> None:
         "type": "object",
     }
 
-    assert tool.tool_call_schema.schema() == {
+    assert tool.tool_call_schema.model_json_schema() == {
         "description": "some description",
         "properties": {
             "a": {"title": "A", "type": "integer"},
@@ -1911,7 +1911,7 @@ def test_tool_args_schema_pydantic_v2_with_metadata() -> None:
         """foo"""
         return x
 
-    assert foo.tool_call_schema.schema() == {
+    assert foo.tool_call_schema.model_json_schema() == {
         "description": "foo",
         "properties": {
             "x": {

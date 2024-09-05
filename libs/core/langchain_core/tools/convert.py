@@ -82,7 +82,7 @@ def tool(
                 \"\"\"
                 return bar
 
-            foo.args_schema.schema()
+            foo.args_schema.model_json_schema()
 
         .. code-block:: python
 
@@ -145,7 +145,7 @@ def tool(
             if isinstance(dec_func, Runnable):
                 runnable = dec_func
 
-                if runnable.input_schema.schema().get("type") != "object":
+                if runnable.input_schema.model_json_schema().get("type") != "object":
                     raise ValueError("Runnable must have an object schema.")
 
                 async def ainvoke_wrapper(
@@ -227,7 +227,7 @@ def tool(
 
 def _get_description_from_runnable(runnable: Runnable) -> str:
     """Generate a placeholder description of a runnable."""
-    input_schema = runnable.input_schema.schema()
+    input_schema = runnable.input_schema.model_json_schema()
     return f"Takes {input_schema}."
 
 
@@ -275,7 +275,7 @@ def convert_runnable_to_tool(
     description = description or _get_description_from_runnable(runnable)
     name = name or runnable.get_name()
 
-    schema = runnable.input_schema.schema()
+    schema = runnable.input_schema.model_json_schema()
     if schema.get("type") == "string":
         return Tool(
             name=name,
