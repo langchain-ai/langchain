@@ -76,7 +76,16 @@ class TestPiecesOSLLM(unittest.TestCase):
     def test_set_model_valid(self):
         self.llm.set_model("GPT-4 Chat Model")
         self.assertEqual(self.llm.model, "GPT-4 Chat Model")
-        
+
+    def test_set_model_invalid(self):
+        invalid_model = "INVALID_MODEL"
+        self.llm.set_model(invalid_model)
+        self.assertEqual(self.llm.model, invalid_model)
+        print_patch = patch('builtins.print')
+        with print_patch as mock_print:
+            self.llm.set_model(invalid_model)
+            mock_print.assert_called_once_with(f"Model set to {invalid_model}.")
+            
 def mock_function_name(args):
     # Define the mock behavior for the function being mocked
     pass
