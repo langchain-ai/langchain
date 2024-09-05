@@ -297,6 +297,12 @@ SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "chat_models",
         "ChatMistralAI",
     ),
+    ("langchain", "chat_models", "bedrock", "ChatBedrock"): (
+        "langchain_aws",
+        "chat_models",
+        "bedrock",
+        "ChatBedrock",
+    ),
     ("langchain", "schema", "output", "ChatGenerationChunk"): (
         "langchain_core",
         "outputs",
