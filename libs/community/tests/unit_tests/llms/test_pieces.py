@@ -43,6 +43,17 @@ class TestPiecesOSLLM(unittest.TestCase):
         self.mock_copilot.ask_question.side_effect = Exception("API Error")
         result = self.llm._call("Test prompt")
         self.assertEqual(result, "Error asking question")
+
+    def test_generate(self):
+        mock_response = Mock()
+        mock_response.question.answers = [Mock(text="Test answer")]
+        self.mock_copilot.ask_question.return_value = mock_response
+
+        result = self.llm._generate(["Test prompt 1", "Test prompt 2"])
+        self.assertIsInstance(result, LLMResult)
+        self.assertEqual(len(result.generations), 2)
+        self.assertEqual(result.generations[0][0].text, "Test answer")
+        self.assertEqual(result.generations[1][0].text, "Test answer")
         
 def mock_function_name(args):
     # Define the mock behavior for the function being mocked
