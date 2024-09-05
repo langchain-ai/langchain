@@ -350,6 +350,34 @@ class Runnable(Generic[Input, Output], ABC):
             __root__=root_type,
         )
 
+    def get_input_jsonschema(
+        self, config: Optional[RunnableConfig] = None
+    ) -> Dict[str, Any]:
+        """Get a JSON schema that represents the input to the Runnable.
+
+        Args:
+            config: A config to use when generating the schema.
+
+        Returns:
+            A JSON schema that represents the input to the Runnable.
+
+        Example:
+
+            .. code-block:: python
+
+                from langchain_core.runnables import RunnableLambda
+
+                def add_one(x: int) -> int:
+                    return x + 1
+
+                runnable = RunnableLambda(add_one)
+
+                print(runnable.get_input_jsonschema())
+
+        .. versionadded:: 0.3.0
+        """
+        return self.get_input_schema(config).model_json_schema()
+
     @property
     def output_schema(self) -> Type[BaseModel]:
         """The type of output this Runnable produces specified as a pydantic model."""
@@ -381,6 +409,34 @@ class Runnable(Generic[Input, Output], ABC):
             self.get_name("Output"),
             __root__=root_type,
         )
+
+    def get_output_jsonschema(
+        self, config: Optional[RunnableConfig] = None
+    ) -> Dict[str, Any]:
+        """Get a JSON schema that represents the output of the Runnable.
+
+        Args:
+            config: A config to use when generating the schema.
+
+        Returns:
+            A JSON schema that represents the output of the Runnable.
+
+        Example:
+
+            .. code-block:: python
+
+                from langchain_core.runnables import RunnableLambda
+
+                def add_one(x: int) -> int:
+                    return x + 1
+
+                runnable = RunnableLambda(add_one)
+
+                print(runnable.get_output_jsonschema())
+
+        .. versionadded:: 0.3.0
+        """
+        return self.get_output_schema(config).model_json_schema()
 
     @property
     def config_specs(self) -> List[ConfigurableFieldSpec]:
@@ -434,6 +490,21 @@ class Runnable(Generic[Input, Output], ABC):
             self.get_name("Config"), **all_fields
         )
         return model
+
+    def get_config_jsonschema(
+        self, *, include: Optional[Sequence[str]] = None
+    ) -> Dict[str, Any]:
+        """Get a JSON schema that represents the output of the Runnable.
+
+        Args:
+            include: A list of fields to include in the config schema.
+
+        Returns:
+            A JSON schema that represents the output of the Runnable.
+
+        .. versionadded:: 0.3.0
+        """
+        return self.config_schema(include=include).model_json_schema()
 
     def get_graph(self, config: Optional[RunnableConfig] = None) -> Graph:
         """Return a graph representation of this Runnable."""
