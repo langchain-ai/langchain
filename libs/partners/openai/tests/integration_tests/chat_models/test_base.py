@@ -20,13 +20,13 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatResult, LLMResult
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_standard_tests.integration_tests.chat_models import (
     _validate_tool_call_message,
 )
 from langchain_standard_tests.integration_tests.chat_models import (
     magic_function as invalid_magic_function,
 )
+from pydantic import BaseModel, Field
 
 from langchain_openai import ChatOpenAI
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
