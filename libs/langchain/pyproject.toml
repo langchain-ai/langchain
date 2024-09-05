@@ -34,7 +34,7 @@ langchain-server = "langchain.server:main"
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
 langchain-core = { version = "^0.3.0.dev1", allow-prereleases = true }
-langchain-text-splitters = { version = "^0.3.0.dev0", allow-prereleases = true }
+langchain-text-splitters = { version = ">=0.3.0.dev0,<0.4", allow-prereleases = true }
 langsmith = "^0.1.17"
 pydantic = ">=1,<3"
 SQLAlchemy = ">=1.4,<3"
