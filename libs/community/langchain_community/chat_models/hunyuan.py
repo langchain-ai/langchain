@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Any, Dict, Iterator, List, Mapping, Optional, Type
+from typing import Any, Dict, Iterator, List, Mapping, Optional, Type, Union
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.chat_models import (
@@ -30,7 +30,7 @@ from langchain_core.utils import (
 logger = logging.getLogger(__name__)
 
 
-def _convert_message_to_dict(message: BaseMessage, model: str = None) -> dict:
+def _convert_message_to_dict(message: BaseMessage, model: str = "") -> dict:
     message_dict: Dict[str, Any]
     if isinstance(message, ChatMessage):
         message_dict = {"Role": message.role, "Content": message.content}
@@ -51,8 +51,12 @@ def _convert_message_to_dict(message: BaseMessage, model: str = None) -> dict:
     return message_dict
 
 
-def _string_to_object(content: str, model: str):
-    if model != "hunyuan-vision":  # hunyuan-vision 模型的输入是 数组形式的 Contents
+def _string_to_object(
+    content: Union[str, List[Union[str, Dict]]],
+    model: str,
+) -> tuple[bool, Any]:
+    # hunyuan-vision 模型的输入是 数组形式的 Contents
+    if not isinstance(content, str) or model != "hunyuan-vision":
         return False, None
     try:
         obj = eval(content)
