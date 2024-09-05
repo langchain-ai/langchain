@@ -6,8 +6,8 @@ import json
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 import requests
-from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, ConfigDict, model_validator
 
 if TYPE_CHECKING:
     from github.Issue import Issue
@@ -37,11 +37,13 @@ class GitHubAPIWrapper(BaseModel):
     active_branch: Optional[str] = None
     github_base_branch: Optional[str] = None
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that api key and python package exists in environment."""
         github_repository = get_from_dict_or_env(
             values, "github_repository", "GITHUB_REPOSITORY"

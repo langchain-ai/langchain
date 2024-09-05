@@ -18,6 +18,7 @@ from typing import (
     Union,
     cast,
 )
+from typing import Mapping as Mapping
 from weakref import WeakValueDictionary
 
 from pydantic import BaseModel, ConfigDict
@@ -451,6 +452,9 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
             )
         else:
             return (self.default, config)
+
+
+RunnableConfigurableFields.model_rebuild()
 
 
 # Before Python 3.11 native StrEnum is not available

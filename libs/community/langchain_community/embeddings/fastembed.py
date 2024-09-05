@@ -4,8 +4,8 @@ from typing import Any, Dict, List, Literal, Optional
 
 import numpy as np
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.utils import pre_init
+from pydantic import BaseModel, ConfigDict
 
 MIN_VERSION = "0.2.0"
 
@@ -67,8 +67,9 @@ class FastEmbedEmbeddings(BaseModel, Embeddings):
 
     _model: Any  # : :meta private:
 
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(
+        extra="allow",
+    )
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:

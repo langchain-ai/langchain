@@ -48,6 +48,7 @@ def test_required_dependencies(poetry_conf: Mapping[str, Any]) -> None:
             "numpy",
             "python",
             "requests",
+            "pydantic-settings",
             "tenacity",
             "langchain",
         ]

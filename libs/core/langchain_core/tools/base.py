@@ -30,7 +30,6 @@ from typing import (
 from pydantic import (
     BaseModel,
     ConfigDict,
-    Extra,
     Field,
     SkipValidation,
     ValidationError,
@@ -97,7 +96,7 @@ def _get_filtered_args(
     include_injected: bool = True,
 ) -> dict:
     """Get the arguments from a function's signature."""
-    schema = inferred_model.schema()["properties"]
+    schema = inferred_model.model_json_schema()["properties"]
     valid_keys = signature(func).parameters
     return {
         k: schema[k]
@@ -175,7 +174,7 @@ class _SchemaConfig:
             Defaults to True.
     """
 
-    extra: Any = Extra.forbid
+    extra: str = "forbid"
     arbitrary_types_allowed: bool = True
 
 
@@ -409,7 +408,7 @@ class ChildTool(BaseTool):
 
     @property
     def args(self) -> dict:
-        return self.get_input_schema().schema()["properties"]
+        return self.get_input_schema().model_json_schema()["properties"]
 
     @property
     def tool_call_schema(self) -> Type[BaseModel]:
