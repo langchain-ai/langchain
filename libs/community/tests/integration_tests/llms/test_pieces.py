@@ -29,3 +29,10 @@ class TestPiecesOSLLMIntegration(unittest.TestCase):
         result = self.llm._generate(["What is AI?"])
         self.assertEqual(result.generations[0][0].text, "Mocked answer")
 
+    def test_set_model_integration(self):
+        supported_models = self.llm.get_supported_models()
+        self.assertIn("GPT-4 Chat Model", supported_models)
+
+        self.llm.set_model("GPT-4 Chat Model")
+        self.assertEqual(self.llm.model, "GPT-4 Chat Model")
+        self.assertEqual(self.mock_client.model_name, "GPT-4 Chat Model")
