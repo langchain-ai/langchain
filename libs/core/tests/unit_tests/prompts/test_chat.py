@@ -788,7 +788,7 @@ async def test_messages_prompt_accepts_list() -> None:
         await prompt.ainvoke([("user", "Hi there")])  # type: ignore
 
 
-def test_chat_input_schema(snapshot: SnapshotAssertion) -> None:
+def test_chat_input_schema(snapshot: SnapshotAssertion) -> None:  #
     prompt_all_required = ChatPromptTemplate(
         messages=[MessagesPlaceholder("history", optional=False), ("user", "${input}")]
     )
