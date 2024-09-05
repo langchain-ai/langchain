@@ -59,17 +59,13 @@ class ClovaXEmbeddings(BaseModel, Embeddings):
     client: httpx.Client = Field(default=None)  #: :meta private:
     async_client: httpx.AsyncClient = Field(default=None)  #: :meta private:
 
-    ncp_clovastudio_api_key: Optional[SecretStr] = Field(
-        default=None, alias="api_key"
-    )
+    ncp_clovastudio_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
     """Automatically inferred from env are `NCP_CLOVASTUDIO_API_KEY` if not provided."""
 
     ncp_apigw_api_key: Optional[SecretStr] = Field(default=None, alias="apigw_api_key")
     """Automatically inferred from env are `NCP_APIGW_API_KEY` if not provided."""
 
-    base_url: Optional[str] = Field(
-        default=None, alias="base_url"
-    )
+    base_url: Optional[str] = Field(default=None, alias="base_url")
     """
     Automatically inferred from env are  `NCP_CLOVASTUDIO_API_BASE_URL` if not provided.
     """
@@ -115,12 +111,12 @@ class ClovaXEmbeddings(BaseModel, Embeddings):
     def __init__(self, **kwargs: Any) -> None:
         """Validate that api key and python package exists in environment."""
         kwargs["ncp_clovastudio_api_key"] = convert_to_secret_str(
-            get_from_dict_or_env(
-                kwargs, "ncp_clovastudio_api_key", "NCP_CLOVASTUDIO_API_KEY"
-            )
+            get_from_dict_or_env(kwargs, "api_key", "NCP_CLOVASTUDIO_API_KEY")
         )
         kwargs["ncp_apigw_api_key"] = convert_to_secret_str(
-            get_from_dict_or_env(kwargs, "ncp_apigw_api_key", "NCP_APIGW_API_KEY", "ncp_apigw_api_key")
+            get_from_dict_or_env(
+                kwargs, "apigw_api_key", "NCP_APIGW_API_KEY", "ncp_apigw_api_key"
+            )
         )
         kwargs["base_url"] = get_from_dict_or_env(
             kwargs, "base_url", "NCP_CLOVASTUDIO_API_BASE_URL", DEFAULT_BASE_URL
@@ -128,9 +124,9 @@ class ClovaXEmbeddings(BaseModel, Embeddings):
 
         super().__init__(**kwargs)
 
-        self.app_id = get_from_dict_or_env(
-            kwargs, "app_id", "NCP_CLOVASTUDIO_APP_ID"
-        )
+        self.timeout = 90 if self.timeout is None else self.timeout
+
+        self.app_id = get_from_dict_or_env(kwargs, "app_id", "NCP_CLOVASTUDIO_APP_ID")
 
         if "client" in kwargs:
             self.client = kwargs.get("client")

@@ -183,19 +183,13 @@ class ChatClovaX(BaseChatModel):
         description="false: use testapp, true: use service app on NCP Clova Studio",
     )
 
-    ncp_clovastudio_api_key: Optional[SecretStr] = Field(
-        default=None, alias="api_key"
-    )
+    ncp_clovastudio_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
     """Automatically inferred from env are `NCP_CLOVASTUDIO_API_KEY` if not provided."""
 
-    ncp_apigw_api_key: Optional[SecretStr] = Field(
-        default=None, alias="apigw_api_key"
-    )
+    ncp_apigw_api_key: Optional[SecretStr] = Field(default=None, alias="apigw_api_key")
     """Automatically inferred from env are `NCP_APIGW_API_KEY` if not provided."""
 
-    base_url: Optional[str] = Field(
-        default=None, alias="base_url"
-    )
+    base_url: Optional[str] = Field(default=None, alias="base_url")
     """
     Automatically inferred from env are `NCP_CLOVASTUDIO_API_BASE_URL` if not provided.
     """
@@ -205,14 +199,12 @@ class ChatClovaX(BaseChatModel):
     top_p: Optional[float] = None
     repeat_penalty: Optional[float] = None
     max_tokens: Optional[int] = None
-    stop_before: Optional[str] = Field(
-        default=None, alias="stop"
-    )
+    stop_before: Optional[list[str]] = Field(default=None, alias="stop")
     include_ai_filters: Optional[bool] = None
     seed: Optional[int] = None
 
-    timeout: int = 90
-    max_retries: int = 2
+    timeout: Optional[int] = 90
+    max_retries: Optional[int] = 2
 
     class Config:
         """Configuration for this pydantic object."""
@@ -279,40 +271,65 @@ class ChatClovaX(BaseChatModel):
             return f"{self.base_url}/{app_type}/v1/chat-completions/{self.model_name}"
 
     def __init__(self, **kwargs: Any) -> None:
-        if "temperature" in kwargs and not 0 < kwargs["temperature"] <= 1:
+        if (
+            "temperature" in kwargs
+            and kwargs["temperature"] is not None
+            and not 0 < kwargs["temperature"] <= 1
+        ):
             raise ValueError("temperature must be in the range (0.0, 1.0]")
 
-        if "top_k" in kwargs and not 0 <= kwargs["top_k"] <= 128:
+        if (
+            "top_k" in kwargs
+            and kwargs["top_k"] is not None
+            and not 0 <= kwargs["top_k"] <= 128
+        ):
             raise ValueError("top_k must be in the range [0, 128]")
 
-        if "top_p" in kwargs and not 0 <= kwargs["top_p"] <= 1:
+        if (
+            "top_p" in kwargs
+            and kwargs["top_p"] is not None
+            and not 0 <= kwargs["top_p"] <= 1
+        ):
             raise ValueError("top_p must be in the range [0.0, 1.0]")
 
         if (
-            "repeat_penalty" in kwargs and not 0 < kwargs["repeat_penalty"] <= 10
+            "repeat_penalty" in kwargs
+            and kwargs["repeat_penalty"] is not None
+            and not 0 < kwargs["repeat_penalty"] <= 10
         ):
             raise ValueError("repeat_penalty must be in the range (0.0, 10]")
 
-        if "max_tokens" in kwargs and not 0 <= kwargs["max_tokens"] <= 4096:
+        if (
+            "max_tokens" in kwargs
+            and kwargs["max_tokens"] is not None
+            and not 0 <= kwargs["max_tokens"] <= 4096
+        ):
             raise ValueError("max_tokens must be in the range [0, 4096]")
 
-        if "seed" in kwargs and not 0 <= kwargs["seed"] <= 4294967295:
+        if (
+            "seed" in kwargs
+            and kwargs["seed"] is not None
+            and not 0 <= kwargs["seed"] <= 4294967295
+        ):
             raise ValueError("seed must be in the range [0, 4294967295]")
 
         """Validate that api key and python package exists in environment."""
         kwargs["ncp_clovastudio_api_key"] = convert_to_secret_str(
-            get_from_dict_or_env(
-                kwargs, "ncp_clovastudio_api_key", "NCP_CLOVASTUDIO_API_KEY"
-            )
+            get_from_dict_or_env(kwargs, "api_key", "NCP_CLOVASTUDIO_API_KEY")
         )
         kwargs["ncp_apigw_api_key"] = convert_to_secret_str(
-            get_from_dict_or_env(kwargs, "ncp_apigw_api_key", "NCP_APIGW_API_KEY", "ncp_apigw_api_key")
+            get_from_dict_or_env(
+                kwargs, "apigw_api_key", "NCP_APIGW_API_KEY", "ncp_apigw_api_key"
+            )
         )
         kwargs["base_url"] = get_from_dict_or_env(
             kwargs, "base_url", "NCP_CLOVASTUDIO_API_BASE_URL", DEFAULT_BASE_URL
         )
 
         super().__init__(**kwargs)
+
+        self.timeout = 90 if self.timeout is None else self.timeout
+        self.max_retries = 2 if self.max_retries is None else self.max_retries
 
         if not (self.model_name or self.task_id):
             raise ValueError("either model_name or task_id must be assigned a value.")
@@ -370,6 +387,7 @@ class ChatClovaX(BaseChatModel):
             SSEError,
             connect_sse,
         )
+
         if "stream" not in kwargs:
             kwargs["stream"] = False
 
@@ -406,6 +424,7 @@ class ChatClovaX(BaseChatModel):
         **kwargs: Any,
     ) -> Any:
         from httpx_sse import aconnect_sse
+
         """Use tenacity to retry the async completion call."""
         retry_decorator = _create_retry_decorator(self, run_manager=run_manager)
 
@@ -436,7 +455,7 @@ class ChatClovaX(BaseChatModel):
             "output_tokens": result.get("outputLength"),
             "total_tokens": result.get("inputLength") + result.get("outputLength"),
         }
-        
+
         gen = ChatGeneration(
             message=message,
         )

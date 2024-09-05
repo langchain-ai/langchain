@@ -1,4 +1,5 @@
 """Test chat model integration."""
+
 import json
 import os
 from typing import Any, AsyncGenerator, Generator, cast
@@ -132,6 +133,7 @@ async def test_naver_ainvoke(mock_chat_completion_response: dict) -> None:
 
 def _make_completion_response_from_token(token: str):
     from httpx_sse import ServerSentEvent
+
     return ServerSentEvent(
         event="token",
         data=json.dumps(

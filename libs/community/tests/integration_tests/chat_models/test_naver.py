@@ -1,4 +1,5 @@
 """Test ChatNaver chat model."""
+
 from langchain_community.chat_models import ChatClovaX
 
 
