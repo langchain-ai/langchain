@@ -624,8 +624,6 @@ class Redis(VectorStore):
 
         Args:
             ids: List of ids (keys in redis) to delete.
-            redis_url: Redis connection url. This should be passed in the kwargs
-                or set as an environment variable: REDIS_URL.
 
         Returns:
             bool: Whether or not the deletions were successful.
