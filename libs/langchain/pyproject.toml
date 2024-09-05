@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain"
-version = "0.2.16"
+version = "0.3.0.dev0"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -32,9 +32,9 @@ ignore-words-list = "momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogy
 langchain-server = "langchain.server:main"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
-langchain-core = "^0.2.38"
-langchain-text-splitters = "^0.2.0"
+python = ">=3.9,<4.0"
+langchain-core = { version = "^0.3.0.dev1", allow-prereleases = true }
+langchain-text-splitters = { version = "^0.3.0.dev0", allow-prereleases = true }
 langsmith = "^0.1.17"
 pydantic = ">=1,<3"
 SQLAlchemy = ">=1.4,<3"
