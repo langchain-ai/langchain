@@ -12,30 +12,25 @@ from pydantic import (
     FilePath,
     SecretStr,
 )
+from pydantic_settings import BaseSettings
 
 from langchain_community.document_loaders.base import BaseLoader
 
 
-def _get_settings():
-    from pydantic_settings import BaseSettings
+class _OneNoteGraphSettings(BaseSettings):
+    client_id: str = Field(..., env="MS_GRAPH_CLIENT_ID")
+    client_secret: SecretStr = Field(..., env="MS_GRAPH_CLIENT_SECRET")
 
-    class _OneNoteGraphSettings(BaseSettings):
-        client_id: str = Field(..., env="MS_GRAPH_CLIENT_ID")
-        client_secret: SecretStr = Field(..., env="MS_GRAPH_CLIENT_SECRET")
-
-        model_config = ConfigDict(
-            case_sentive=False,
-            env_file=".env",
-            env_prefix="",
-        )
-
-    return _OneNoteGraphSettings()
+    class Config:
+        case_sensitive = False
+        env_file = ".env"
+        env_prefix = ""
 
 
 class OneNoteLoader(BaseLoader, BaseModel):
     """Load pages from OneNote notebooks."""
 
-    settings: Any = Field(default_factory=_get_settings)  # type: ignore[arg-type]
+    settings: _OneNoteGraphSettings = Field(default_factory=_OneNoteGraphSettings)  # type: ignore[arg-type]
     """Settings for the Microsoft Graph API client."""
     auth_with_token: bool = False
     """Whether to authenticate with a token or not. Defaults to False."""
