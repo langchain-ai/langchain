@@ -54,8 +54,8 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
             if issubclass(pydantic_object, pydantic.BaseModel):
                 return pydantic_object.model_json_schema()
             elif issubclass(pydantic_object, pydantic.v1.BaseModel):
-                return pydantic_object.schema()
-        return pydantic_object.schema()
+                return pydantic_object.model_json_schema()
+        return pydantic_object.model_json_schema()
 
     def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
         """Parse the result of an LLM call to a JSON object.

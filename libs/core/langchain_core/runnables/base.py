@@ -204,8 +204,8 @@ class Runnable(Generic[Input, Output], ABC):
             )
         )
 
-        print(sequence.input_schema.schema()) # Show inferred input schema
-        print(sequence.output_schema.schema()) # Show inferred output schema
+        print(sequence.input_schema.model_json_schema()) # Show inferred input schema
+        print(sequence.output_schema.model_json_schema()) # Show inferred output schema
         print(sequence.invoke(2)) # invoke the sequence (note the retry above!!)
 
     Debugging and tracing
@@ -683,10 +683,10 @@ class Runnable(Generic[Input, Output], ABC):
 
             chain_with_assign = chain.assign(hello=itemgetter("str") | llm)
 
-            print(chain_with_assign.input_schema.schema())
+            print(chain_with_assign.input_schema.model_json_schema())
             # {'title': 'PromptInput', 'type': 'object', 'properties':
             {'question': {'title': 'Question', 'type': 'string'}}}
-            print(chain_with_assign.output_schema.schema()) #
+            print(chain_with_assign.output_schema.model_json_schema()) #
             {'title': 'RunnableSequenceOutput', 'type': 'object', 'properties':
             {'str': {'title': 'Str',
             'type': 'string'}, 'hello': {'title': 'Hello', 'type': 'string'}}}
@@ -3562,7 +3562,8 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
             The input schema of the Runnable.
         """
         if all(
-            s.get_input_schema(config).schema().get("type", "object") == "object"
+            s.get_input_schema(config).model_json_schema().get("type", "object")
+            == "object"
             for s in self.steps__.values()
         ):
             # This is correct, but pydantic typings/mypy don't think so.
