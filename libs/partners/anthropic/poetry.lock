@@ -13,13 +13,22 @@ files = [
 
 [[package]]
 name = "anthropic"
+<<<<<<< HEAD
 version = "0.34.2"
+=======
+version = "0.34.1"
+>>>>>>> master
 description = "The official Python library for the anthropic API"
 optional = false
 python-versions = ">=3.7"
 files = [
+<<<<<<< HEAD
     {file = "anthropic-0.34.2-py3-none-any.whl", hash = "sha256:f50a628eb71e2c76858b106c8cbea278c45c6bd2077cb3aff716a112abddc9fc"},
     {file = "anthropic-0.34.2.tar.gz", hash = "sha256:808ea19276f26646bfde9ee535669735519376e4eeb301a2974fc69892be1d6e"},
+=======
+    {file = "anthropic-0.34.1-py3-none-any.whl", hash = "sha256:2fa26710809d0960d970f26cd0be3686437250a481edb95c33d837aa5fa24158"},
+    {file = "anthropic-0.34.1.tar.gz", hash = "sha256:69e822bd7a31ec11c2edb85f2147e8f0ee0cfd3288fea70b0ca8808b2f9bf91d"},
+>>>>>>> master
 ]
 
 [package.dependencies]
@@ -511,7 +520,11 @@ files = [
 
 [[package]]
 name = "langchain-core"
+<<<<<<< HEAD
 version = "0.3.0.dev1"
+=======
+version = "0.2.38"
+>>>>>>> master
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -552,13 +565,22 @@ url = "../../standard-tests"
 
 [[package]]
 name = "langsmith"
+<<<<<<< HEAD
 version = "0.1.115"
+=======
+version = "0.1.111"
+>>>>>>> master
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
+<<<<<<< HEAD
     {file = "langsmith-0.1.115-py3-none-any.whl", hash = "sha256:04e35cfd4c2d4ff1ea10bb577ff43957b05ebb3d9eb4e06e200701f4a2b4ac9f"},
     {file = "langsmith-0.1.115.tar.gz", hash = "sha256:3b775377d858d32354f3ee0dd1ed637068cfe9a1f13e7b3bfa82db1615cdffc9"},
+=======
+    {file = "langsmith-0.1.111-py3-none-any.whl", hash = "sha256:e5c702764911193c9812fe55136ae01cd0b9ddf5dff0b068ce6fd60eeddbcb40"},
+    {file = "langsmith-0.1.111.tar.gz", hash = "sha256:bab24fd6125685f588d682693c4a3253e163804242829b1ff902e1a3e984a94c"},
+>>>>>>> master
 ]
 
 [package.dependencies]
