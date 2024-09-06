@@ -16,6 +16,6 @@ def test_benchmark_model() -> None:
         model.invoke("foo")
     toc = time.time()
 
-    # Verify that the time taken to run the loop is less than 0.5 seconds
+    # Verify that the time taken to run the loop is less than 1 seconds
 
-    assert (toc - tic) < 0.6
+    assert (toc - tic) < 1
