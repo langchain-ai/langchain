@@ -120,9 +120,7 @@ def _create_retry_decorator(embeddings: OpenAIEmbeddings) -> Callable[[Any], Any
             min=embeddings.retry_min_seconds,
             max=embeddings.retry_max_seconds,
         ),
-        retry=retry_if_exception_type(
-            (Timeout, APIError, APIConnectionError, RateLimitError, OpenAIError)
-        ),
+        retry=retry_if_exception_type((openai.OpenAIError)),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
 
@@ -143,9 +141,7 @@ def _async_retry_decorator(embeddings: OpenAIEmbeddings) -> Any:
             min=embeddings.retry_min_seconds,
             max=embeddings.retry_max_seconds,
         ),
-        retry=retry_if_exception_type(
-            (Timeout, APIError, APIConnectionError, RateLimitError, OpenAIError)
-        ),
+        retry=retry_if_exception_type((openai.OpenAIError)),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
 
