@@ -15,7 +15,7 @@ from langchain_core.prompt_values import ChatPromptValueConcrete
 
 @pytest.mark.xfail(reason="Broken union type.")
 def test_chat_prompt_value_concrete() -> None:
-    messages = [
+    messages: list = [
         AIMessage("foo"),
         HumanMessage("foo"),
         SystemMessage("foo"),
