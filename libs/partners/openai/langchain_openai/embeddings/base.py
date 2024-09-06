@@ -161,7 +161,7 @@ def _check_response(response: dict, skip_empty: bool = False) -> dict:
     if any(len(d["embedding"]) == 1 for d in response["data"]) and not skip_empty:
         import openai
 
-        raise openai.APIError("OpenAI API returned an empty embedding")
+        raise openai.OpenAIError("OpenAI API returned an empty embedding")
     return response
 
 
