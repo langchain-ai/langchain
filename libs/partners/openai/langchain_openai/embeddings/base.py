@@ -120,12 +120,8 @@ def _create_retry_decorator(embeddings: OpenAIEmbeddings) -> Callable[[Any], Any
             min=embeddings.retry_min_seconds,
             max=embeddings.retry_max_seconds,
         ),
-        retry=(
-            retry_if_exception_type(openai.Timeout)
-            | retry_if_exception_type(openai.APIError)
-            | retry_if_exception_type(openai.APIConnectionError)
-            | retry_if_exception_type(openai.RateLimitError)
-            | retry_if_exception_type(openai.OpenAIError)
+        retry=retry_if_exception_type(
+            (Timeout, APIError, APIConnectionError, RateLimitError, OpenAIError)
         ),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
@@ -147,12 +143,8 @@ def _async_retry_decorator(embeddings: OpenAIEmbeddings) -> Any:
             min=embeddings.retry_min_seconds,
             max=embeddings.retry_max_seconds,
         ),
-        retry=(
-            retry_if_exception_type(openai.Timeout)
-            | retry_if_exception_type(openai.APIError)
-            | retry_if_exception_type(openai.APIConnectionError)
-            | retry_if_exception_type(openai.RateLimitError)
-            | retry_if_exception_type(openai.OpenAIError)
+        retry=retry_if_exception_type(
+            (Timeout, APIError, APIConnectionError, RateLimitError, OpenAIError)
         ),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
@@ -173,7 +165,7 @@ def _check_response(response: dict, skip_empty: bool = False) -> dict:
     if any(len(d["embedding"]) == 1 for d in response["data"]) and not skip_empty:
         import openai
 
-        raise openai.error.APIError("OpenAI API returned an empty embedding")
+        raise openai.APIError("OpenAI API returned an empty embedding")
     return response
 
 
