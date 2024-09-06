@@ -126,8 +126,10 @@ class ImagePromptValue(PromptValue):
         """Return prompt (image URL) as messages."""
         return [HumanMessage(content=[cast(dict, self.image_url)])]
 
+
 def _msg_discriminator(v: Any) -> str:
     return v.type
+
 
 class ChatPromptValueConcrete(ChatPromptValue):
     """Chat prompt value which explicitly lists out the message types it accepts.
