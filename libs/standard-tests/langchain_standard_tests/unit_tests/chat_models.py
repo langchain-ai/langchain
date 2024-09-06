@@ -1,13 +1,16 @@
 """Unit tests for chat models."""
-
+import os
 from abc import abstractmethod
-from typing import Any, List, Literal, Optional, Type
+from typing import Any, List, Literal, Optional, Tuple, Type
+from unittest import mock
 
 import pytest
 from langchain_core.language_models import BaseChatModel
-from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.load import dumpd, load
+from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr
 from langchain_core.runnables import RunnableBinding
 from langchain_core.tools import tool
+from syrupy import SnapshotAssertion
 
 from langchain_standard_tests.base import BaseStandardTests
 from langchain_standard_tests.utils.pydantic import PYDANTIC_MAJOR_VERSION
@@ -132,11 +135,29 @@ class ChatModelUnitTests(ChatModelTests):
         params["api_key"] = "test"
         return params
 
+    @property
+    def init_from_env_params(self) -> Tuple[dict, dict, dict]:
+        """Return env vars, init args, and expected instance attrs for initializing
+        from env vars."""
+        return {}, {}, {}
+
     def test_init(self) -> None:
         model = self.chat_model_class(
             **{**self.standard_chat_model_params, **self.chat_model_params}
         )
         assert model is not None
+
+    def test_init_from_env(self) -> None:
+        env_params, model_params, expected_attrs = self.init_from_env_params
+        if env_params:
+            with mock.patch.dict(os.environ, env_params):
+                model = self.chat_model_class(**model_params)
+            assert model is not None
+            for k, expected in expected_attrs.items():
+                actual = getattr(model, k)
+                if isinstance(actual, SecretStr):
+                    actual = actual.get_secret_value()
+                assert actual == expected
 
     def test_init_streaming(
         self,
@@ -205,3 +226,12 @@ class ChatModelUnitTests(ChatModelTests):
             ExpectedParams(**ls_params)
         except ValidationError as e:
             pytest.fail(f"Validation error: {e}")
+
+    def test_serdes(self, model: BaseChatModel, snapshot: SnapshotAssertion) -> None:
+        if not self.chat_model_class.is_lc_serializable():
+            return
+        env_params, model_params, expected_attrs = self.init_from_env_params
+        with mock.patch.dict(os.environ, env_params):
+            ser = dumpd(model)
+            assert ser == snapshot(name="serialized")
+            assert model.dict() == load(dumpd(model)).dict()

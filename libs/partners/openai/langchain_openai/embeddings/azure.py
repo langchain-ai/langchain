@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-import os
 from typing import Callable, Dict, Optional, Union
 
 import openai
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.utils import from_env, secret_from_env
 
 from langchain_openai.embeddings.base import OpenAIEmbeddings
 
@@ -100,7 +99,9 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
             [-0.009100092574954033, 0.005071679595857859, -0.0029193938244134188]
     """  # noqa: E501
 
-    azure_endpoint: Union[str, None] = None
+    azure_endpoint: Optional[str] = Field(
+        default_factory=from_env("AZURE_OPENAI_ENDPOINT", default=None)
+    )
     """Your Azure endpoint, including the resource.
 
         Automatically inferred from env var `AZURE_OPENAI_ENDPOINT` if not provided.
@@ -113,9 +114,27 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
         If given sets the base client URL to include `/deployments/{azure_deployment}`.
         Note: this means you won't be able to use non-deployment endpoints.
     """
-    openai_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
+    # Check OPENAI_KEY for backwards compatibility.
+    # TODO: Remove OPENAI_API_KEY support to avoid possible conflict when using
+    # other forms of azure credentials.
+    openai_api_key: Optional[SecretStr] = Field(
+        alias="api_key",
+        default_factory=secret_from_env(
+            ["AZURE_OPENAI_API_KEY", "OPENAI_API_KEY"], default=None
+        ),
+    )
     """Automatically inferred from env var `AZURE_OPENAI_API_KEY` if not provided."""
-    azure_ad_token: Optional[SecretStr] = None
+    openai_api_version: Optional[str] = Field(
+        default_factory=from_env("OPENAI_API_VERSION", default="2023-05-15"),
+        alias="api_version",
+    )
+    """Automatically inferred from env var `OPENAI_API_VERSION` if not provided.
+    
+    Set to "2023-05-15" by default if env variable `OPENAI_API_VERSION` is not set.
+    """
+    azure_ad_token: Optional[SecretStr] = Field(
+        default_factory=secret_from_env("AZURE_OPENAI_AD_TOKEN", default=None)
+    )
     """Your Azure Active Directory token.
 
         Automatically inferred from env var `AZURE_OPENAI_AD_TOKEN` if not provided.
@@ -128,52 +147,16 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
 
         Will be invoked on every request.
     """
-    openai_api_version: Optional[str] = Field(default=None, alias="api_version")
-    """Automatically inferred from env var `OPENAI_API_VERSION` if not provided."""
+    openai_api_type: Optional[str] = Field(
+        default_factory=from_env("OPENAI_API_TYPE", default="azure")
+    )
     validate_base_url: bool = True
     chunk_size: int = 2048
     """Maximum number of texts to embed in each batch"""
 
-    @root_validator()
+    @root_validator(pre=False, skip_on_failure=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        # Check OPENAI_KEY for backwards compatibility.
-        # TODO: Remove OPENAI_API_KEY support to avoid possible conflict when using
-        # other forms of azure credentials.
-        openai_api_key = (
-            values["openai_api_key"]
-            or os.getenv("AZURE_OPENAI_API_KEY")
-            or os.getenv("OPENAI_API_KEY")
-        )
-        values["openai_api_key"] = (
-            convert_to_secret_str(openai_api_key) if openai_api_key else None
-        )
-        values["openai_api_base"] = (
-            values["openai_api_base"]
-            if "openai_api_base" in values
-            else os.getenv("OPENAI_API_BASE")
-        )
-        values["openai_api_version"] = values["openai_api_version"] or os.getenv(
-            "OPENAI_API_VERSION", default="2023-05-15"
-        )
-        values["openai_api_type"] = get_from_dict_or_env(
-            values, "openai_api_type", "OPENAI_API_TYPE", default="azure"
-        )
-        values["openai_organization"] = (
-            values["openai_organization"]
-            or os.getenv("OPENAI_ORG_ID")
-            or os.getenv("OPENAI_ORGANIZATION")
-        )
-        values["openai_proxy"] = get_from_dict_or_env(
-            values, "openai_proxy", "OPENAI_PROXY", default=""
-        )
-        values["azure_endpoint"] = values["azure_endpoint"] or os.getenv(
-            "AZURE_OPENAI_ENDPOINT"
-        )
-        azure_ad_token = values["azure_ad_token"] or os.getenv("AZURE_OPENAI_AD_TOKEN")
-        values["azure_ad_token"] = (
-            convert_to_secret_str(azure_ad_token) if azure_ad_token else None
-        )
         # For backwards compatibility. Before openai v1, no distinction was made
         # between azure_endpoint and base_url (openai_api_base).
         openai_api_base = values["openai_api_base"]

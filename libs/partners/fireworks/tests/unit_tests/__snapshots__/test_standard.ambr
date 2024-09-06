@@ -1,0 +1,67 @@
+# serializer version: 1
+# name: TestFireworksStandard.test_serdes[serialized]
+  dict({
+    'graph': dict({
+      'edges': list([
+        dict({
+          'source': 0,
+          'target': 1,
+        }),
+        dict({
+          'source': 1,
+          'target': 2,
+        }),
+      ]),
+      'nodes': list([
+        dict({
+          'data': 'ChatFireworksInput',
+          'id': 0,
+          'type': 'schema',
+        }),
+        dict({
+          'data': dict({
+            'id': list([
+              'langchain',
+              'chat_models',
+              'fireworks',
+              'ChatFireworks',
+            ]),
+            'name': 'ChatFireworks',
+          }),
+          'id': 1,
+          'type': 'runnable',
+        }),
+        dict({
+          'data': 'ChatFireworksOutput',
+          'id': 2,
+          'type': 'schema',
+        }),
+      ]),
+    }),
+    'id': list([
+      'langchain',
+      'chat_models',
+      'fireworks',
+      'ChatFireworks',
+    ]),
+    'kwargs': dict({
+      'fireworks_api_key': dict({
+        'id': list([
+          'FIREWORKS_API_KEY',
+        ]),
+        'lc': 1,
+        'type': 'secret',
+      }),
+      'max_retries': 2,
+      'max_tokens': 100,
+      'model_name': 'accounts/fireworks/models/mixtral-8x7b-instruct',
+      'n': 1,
+      'request_timeout': 60.0,
+      'stop': list([
+      ]),
+    }),
+    'lc': 1,
+    'name': 'ChatFireworks',
+    'type': 'constructor',
+  })
+# ---
