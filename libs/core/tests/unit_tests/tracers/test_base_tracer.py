@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import warnings
 from datetime import datetime, timezone
 from typing import Any, List
 from unittest.mock import MagicMock
@@ -12,7 +11,6 @@ import langsmith
 import pytest
 from freezegun import freeze_time
 from langsmith import Client, traceable
-from pydantic import PydanticDeprecationWarning
 
 from langchain_core.callbacks import CallbackManager
 from langchain_core.exceptions import TracerException
@@ -83,9 +81,7 @@ def test_tracer_llm_run() -> None:
 
     tracer.on_llm_start(serialized=SERIALIZED, prompts=[], run_id=uuid)
     tracer.on_llm_end(response=LLMResult(generations=[[]]), run_id=uuid)
-    with warnings.catch_warnings():
-        warnings.filterwarnings(action="ignore", category=PydanticDeprecationWarning)
-        assert tracer.runs == [compare_run]
+    assert tracer.runs == [compare_run]
 
 
 @freeze_time("2023-01-01")

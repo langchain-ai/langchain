@@ -1600,7 +1600,13 @@ def test_args_schema_as_pydantic(pydantic_model: Any) -> None:
         name="some_tool", description="some description", args_schema=pydantic_model
     )
 
-    assert tool.get_input_schema().model_json_schema() == {
+    input_schema = tool.get_input_schema()
+    input_json_schema = (
+        input_schema.model_json_schema()
+        if hasattr(input_schema, "model_json_schema")
+        else input_schema.schema()
+    )
+    assert input_json_schema == {
         "properties": {
             "a": {"title": "A", "type": "integer"},
             "b": {"title": "B", "type": "string"},
@@ -1610,7 +1616,13 @@ def test_args_schema_as_pydantic(pydantic_model: Any) -> None:
         "type": "object",
     }
 
-    assert tool.tool_call_schema.model_json_schema() == {
+    tool_schema = tool.tool_call_schema
+    tool_json_schema = (
+        tool_schema.model_json_schema()
+        if hasattr(tool_schema, "model_json_schema")
+        else tool_schema.schema()
+    )
+    assert tool_json_schema == {
         "description": "some description",
         "properties": {
             "a": {"title": "A", "type": "integer"},
@@ -1684,7 +1696,13 @@ def test_structured_tool_with_different_pydantic_versions(pydantic_model: Any) -
 
     assert foo_tool.invoke({"a": 5, "b": "hello"}) == "foo"
 
-    assert foo_tool.args_schema.model_json_schema() == {
+    args_schema = foo_tool.args_schema
+    args_json_schema = (
+        args_schema.model_json_schema()
+        if hasattr(args_schema, "model_json_schema")
+        else args_schema.schema()
+    )
+    assert args_json_schema == {
         "properties": {
             "a": {"title": "A", "type": "integer"},
             "b": {"title": "B", "type": "string"},
@@ -1694,7 +1712,13 @@ def test_structured_tool_with_different_pydantic_versions(pydantic_model: Any) -
         "type": "object",
     }
 
-    assert foo_tool.get_input_schema().model_json_schema() == {
+    input_schema = foo_tool.get_input_schema()
+    input_json_schema = (
+        input_schema.model_json_schema()
+        if hasattr(input_schema, "model_json_schema")
+        else input_schema.schema()
+    )
+    assert input_json_schema == {
         "properties": {
             "a": {"title": "A", "type": "integer"},
             "b": {"title": "B", "type": "string"},

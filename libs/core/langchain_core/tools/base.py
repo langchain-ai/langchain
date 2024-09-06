@@ -475,15 +475,24 @@ class ChildTool(BaseTool):
         if isinstance(tool_input, str):
             if input_args is not None:
                 key_ = next(iter(get_fields(input_args).keys()))
-                input_args.model_validate({key_: tool_input})
+                if hasattr(input_args, "model_validate"):
+                    input_args.model_validate({key_: tool_input})
+                else:
+                    input_args.parse_obj({key_: tool_input})
             return tool_input
         else:
             if input_args is not None:
-                result = input_args.model_validate(tool_input)
+                if hasattr(input_args, "model_validate"):
+                    result = input_args.model_validate(tool_input)
+                else:
+                    result = input_args.parse_obj(tool_input)
+                dump = (
+                    result.model_dump()
+                    if hasattr(result, "model_dump")
+                    else result.dict()
+                )
                 return {
-                    k: getattr(result, k)
-                    for k, v in result.model_dump().items()
-                    if k in tool_input
+                    k: getattr(result, k) for k, v in dump.items() if k in tool_input
                 }
             return tool_input
 
