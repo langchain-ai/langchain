@@ -7,10 +7,9 @@ They can be used to represent text, images, or chat message pieces.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, List, Literal, Sequence, cast
+from typing import List, Literal, Sequence, cast
 
-from pydantic import Discriminator
-from typing_extensions import Annotated, TypedDict
+from typing_extensions import TypedDict
 
 from langchain_core.load.serializable import Serializable
 from langchain_core.messages import (
