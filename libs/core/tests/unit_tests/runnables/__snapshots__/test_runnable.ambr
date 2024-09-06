@@ -6855,23 +6855,6 @@
     'properties': dict({
       'history': dict({
         'items': dict({
-          'discriminator': dict({
-            'mapping': dict({
-              'AIMessageChunk': '#/$defs/AIMessageChunk',
-              'ChatMessageChunk': '#/$defs/ChatMessageChunk',
-              'FunctionMessageChunk': '#/$defs/FunctionMessageChunk',
-              'HumanMessageChunk': '#/$defs/HumanMessageChunk',
-              'SystemMessageChunk': '#/$defs/SystemMessageChunk',
-              'ToolMessageChunk': '#/$defs/ToolMessageChunk',
-              'ai': '#/$defs/AIMessage',
-              'chat': '#/$defs/ChatMessage',
-              'function': '#/$defs/FunctionMessage',
-              'human': '#/$defs/HumanMessage',
-              'system': '#/$defs/SystemMessage',
-              'tool': '#/$defs/ToolMessage',
-            }),
-            'propertyName': 'type',
-          }),
           'oneOf': list([
             dict({
               '$ref': '#/$defs/AIMessage',
@@ -7320,23 +7303,6 @@
         'properties': dict({
           'messages': dict({
             'items': dict({
-              'discriminator': dict({
-                'mapping': dict({
-                  'AIMessageChunk': '#/$defs/AIMessageChunk',
-                  'ChatMessageChunk': '#/$defs/ChatMessageChunk',
-                  'FunctionMessageChunk': '#/$defs/FunctionMessageChunk',
-                  'HumanMessageChunk': '#/$defs/HumanMessageChunk',
-                  'SystemMessageChunk': '#/$defs/SystemMessageChunk',
-                  'ToolMessageChunk': '#/$defs/ToolMessageChunk',
-                  'ai': '#/$defs/AIMessage',
-                  'chat': '#/$defs/ChatMessage',
-                  'function': '#/$defs/FunctionMessage',
-                  'human': '#/$defs/HumanMessage',
-                  'system': '#/$defs/SystemMessage',
-                  'tool': '#/$defs/ToolMessage',
-                }),
-                'propertyName': 'type',
-              }),
               'oneOf': list([
                 dict({
                   '$ref': '#/$defs/AIMessage',
@@ -8399,23 +8365,6 @@
       }),
       dict({
         'items': dict({
-          'discriminator': dict({
-            'mapping': dict({
-              'AIMessageChunk': '#/definitions/AIMessageChunk',
-              'ChatMessageChunk': '#/definitions/ChatMessageChunk',
-              'FunctionMessageChunk': '#/definitions/FunctionMessageChunk',
-              'HumanMessageChunk': '#/definitions/HumanMessageChunk',
-              'SystemMessageChunk': '#/definitions/SystemMessageChunk',
-              'ToolMessageChunk': '#/definitions/ToolMessageChunk',
-              'ai': '#/definitions/AIMessage',
-              'chat': '#/definitions/ChatMessage',
-              'function': '#/definitions/FunctionMessage',
-              'human': '#/definitions/HumanMessage',
-              'system': '#/definitions/SystemMessage',
-              'tool': '#/definitions/ToolMessage',
-            }),
-            'propertyName': 'type',
-          }),
           'oneOf': list([
             dict({
               '$ref': '#/definitions/AIMessage',
@@ -8854,23 +8803,6 @@
         'properties': dict({
           'messages': dict({
             'items': dict({
-              'discriminator': dict({
-                'mapping': dict({
-                  'AIMessageChunk': '#/definitions/AIMessageChunk',
-                  'ChatMessageChunk': '#/definitions/ChatMessageChunk',
-                  'FunctionMessageChunk': '#/definitions/FunctionMessageChunk',
-                  'HumanMessageChunk': '#/definitions/HumanMessageChunk',
-                  'SystemMessageChunk': '#/definitions/SystemMessageChunk',
-                  'ToolMessageChunk': '#/definitions/ToolMessageChunk',
-                  'ai': '#/definitions/AIMessage',
-                  'chat': '#/definitions/ChatMessage',
-                  'function': '#/definitions/FunctionMessage',
-                  'human': '#/definitions/HumanMessage',
-                  'system': '#/definitions/SystemMessage',
-                  'tool': '#/definitions/ToolMessage',
-                }),
-                'propertyName': 'type',
-              }),
               'oneOf': list([
                 dict({
                   '$ref': '#/definitions/AIMessage',
@@ -11253,23 +11185,6 @@
         'type': 'object',
       }),
     }),
-    'discriminator': dict({
-      'mapping': dict({
-        'AIMessageChunk': '#/definitions/AIMessageChunk',
-        'ChatMessageChunk': '#/definitions/ChatMessageChunk',
-        'FunctionMessageChunk': '#/definitions/FunctionMessageChunk',
-        'HumanMessageChunk': '#/definitions/HumanMessageChunk',
-        'SystemMessageChunk': '#/definitions/SystemMessageChunk',
-        'ToolMessageChunk': '#/definitions/ToolMessageChunk',
-        'ai': '#/definitions/AIMessage',
-        'chat': '#/definitions/ChatMessage',
-        'function': '#/definitions/FunctionMessage',
-        'human': '#/definitions/HumanMessage',
-        'system': '#/definitions/SystemMessage',
-        'tool': '#/definitions/ToolMessage',
-      }),
-      'propertyName': 'type',
-    }),
     'oneOf': list([
       dict({
         '$ref': '#/definitions/AIMessage',
@@ -11325,23 +11240,6 @@
       }),
       dict({
         'items': dict({
-          'discriminator': dict({
-            'mapping': dict({
-              'AIMessageChunk': '#/definitions/AIMessageChunk',
-              'ChatMessageChunk': '#/definitions/ChatMessageChunk',
-              'FunctionMessageChunk': '#/definitions/FunctionMessageChunk',
-              'HumanMessageChunk': '#/definitions/HumanMessageChunk',
-              'SystemMessageChunk': '#/definitions/SystemMessageChunk',
-              'ToolMessageChunk': '#/definitions/ToolMessageChunk',
-              'ai': '#/definitions/AIMessage',
-              'chat': '#/definitions/ChatMessage',
-              'function': '#/definitions/FunctionMessage',
-              'human': '#/definitions/HumanMessage',
-              'system': '#/definitions/SystemMessage',
-              'tool': '#/definitions/ToolMessage',
-            }),
-            'propertyName': 'type',
-          }),
           'oneOf': list([
             dict({
               '$ref': '#/definitions/AIMessage',
@@ -11780,23 +11678,6 @@
         'properties': dict({
           'messages': dict({
             'items': dict({
-              'discriminator': dict({
-                'mapping': dict({
-                  'AIMessageChunk': '#/definitions/AIMessageChunk',
-                  'ChatMessageChunk': '#/definitions/ChatMessageChunk',
-                  'FunctionMessageChunk': '#/definitions/FunctionMessageChunk',
-                  'HumanMessageChunk': '#/definitions/HumanMessageChunk',
-                  'SystemMessageChunk': '#/definitions/SystemMessageChunk',
-                  'ToolMessageChunk': '#/definitions/ToolMessageChunk',
-                  'ai': '#/definitions/AIMessage',
-                  'chat': '#/definitions/ChatMessage',
-                  'function': '#/definitions/FunctionMessage',
-                  'human': '#/definitions/HumanMessage',
-                  'system': '#/definitions/SystemMessage',
-                  'tool': '#/definitions/ToolMessage',
-                }),
-                'propertyName': 'type',
-              }),
               'oneOf': list([
                 dict({
                   '$ref': '#/definitions/AIMessage',
@@ -12842,23 +12723,6 @@
         'type': 'string',
       }),
       dict({
-        'discriminator': dict({
-          'mapping': dict({
-            'AIMessageChunk': '#/definitions/AIMessageChunk',
-            'ChatMessageChunk': '#/definitions/ChatMessageChunk',
-            'FunctionMessageChunk': '#/definitions/FunctionMessageChunk',
-            'HumanMessageChunk': '#/definitions/HumanMessageChunk',
-            'SystemMessageChunk': '#/definitions/SystemMessageChunk',
-            'ToolMessageChunk': '#/definitions/ToolMessageChunk',
-            'ai': '#/definitions/AIMessage',
-            'chat': '#/definitions/ChatMessage',
-            'function': '#/definitions/FunctionMessage',
-            'human': '#/definitions/HumanMessage',
-            'system': '#/definitions/SystemMessage',
-            'tool': '#/definitions/ToolMessage',
-          }),
-          'propertyName': 'type',
-        }),
         'oneOf': list([
           dict({
             '$ref': '#/definitions/AIMessage',
@@ -14642,23 +14506,6 @@
         'properties': dict({
           'messages': dict({
             'items': dict({
-              'discriminator': dict({
-                'mapping': dict({
-                  'AIMessageChunk': '#/definitions/AIMessageChunk',
-                  'ChatMessageChunk': '#/definitions/ChatMessageChunk',
-                  'FunctionMessageChunk': '#/definitions/FunctionMessageChunk',
-                  'HumanMessageChunk': '#/definitions/HumanMessageChunk',
-                  'SystemMessageChunk': '#/definitions/SystemMessageChunk',
-                  'ToolMessageChunk': '#/definitions/ToolMessageChunk',
-                  'ai': '#/definitions/AIMessage',
-                  'chat': '#/definitions/ChatMessage',
-                  'function': '#/definitions/FunctionMessage',
-                  'human': '#/definitions/HumanMessage',
-                  'system': '#/definitions/SystemMessage',
-                  'tool': '#/definitions/ToolMessage',
-                }),
-                'propertyName': 'type',
-              }),
               'oneOf': list([
                 dict({
                   '$ref': '#/definitions/AIMessage',
@@ -16118,23 +15965,6 @@
         'properties': dict({
           'messages': dict({
             'items': dict({
-              'discriminator': dict({
-                'mapping': dict({
-                  'AIMessageChunk': '#/definitions/AIMessageChunk',
-                  'ChatMessageChunk': '#/definitions/ChatMessageChunk',
-                  'FunctionMessageChunk': '#/definitions/FunctionMessageChunk',
-                  'HumanMessageChunk': '#/definitions/HumanMessageChunk',
-                  'SystemMessageChunk': '#/definitions/SystemMessageChunk',
-                  'ToolMessageChunk': '#/definitions/ToolMessageChunk',
-                  'ai': '#/definitions/AIMessage',
-                  'chat': '#/definitions/ChatMessage',
-                  'function': '#/definitions/FunctionMessage',
-                  'human': '#/definitions/HumanMessage',
-                  'system': '#/definitions/SystemMessage',
-                  'tool': '#/definitions/ToolMessage',
-                }),
-                'propertyName': 'type',
-              }),
               'oneOf': list([
                 dict({
                   '$ref': '#/definitions/AIMessage',
