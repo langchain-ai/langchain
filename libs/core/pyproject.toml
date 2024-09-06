@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-core"
-version = "0.3.0.dev2"
+version = "0.3.0.dev3"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -37,7 +37,7 @@ jsonpatch = "^1.33"
 PyYAML = ">=5.3"
 packaging = ">=23.2,<25"
 typing-extensions = ">=4.7"
-pydantic = "^2.7.4"
+pydantic = "^2.9"
 
 [tool.poetry.extras]
 
