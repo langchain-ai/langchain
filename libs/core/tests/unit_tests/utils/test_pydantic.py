@@ -194,5 +194,3 @@ def test_fields_pydantic_v1_from_2() -> None:
 
     fields = get_fields(Foo)
     assert fields == {"x": Foo.__fields__["x"]}
-
-

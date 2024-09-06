@@ -111,7 +111,6 @@ class BaseMessage(Serializable):
         print(self.pretty_repr(html=is_interactive_env()))  # noqa: T201
 
 
-
 def merge_content(
     first_content: Union[str, List[Union[str, Dict]]],
     *contents: Union[str, List[Union[str, Dict]]],

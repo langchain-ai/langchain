@@ -258,7 +258,6 @@ class Serializable(BaseModel, ABC):
         return to_json_not_implemented(self)
 
 
-
 def _is_field_useful(inst: Serializable, key: str, value: Any) -> bool:
     """Check if a field is useful as a constructor argument.
 
