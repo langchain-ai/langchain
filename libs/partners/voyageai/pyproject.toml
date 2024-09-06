@@ -13,7 +13,7 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-langchain-core = ">=0.1.52,<0.3"
+langchain-core = "^0.3.0.dev"
 voyageai = ">=0.2.1,<1"
 pydantic = ">=2,<3"
 

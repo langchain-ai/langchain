@@ -47,10 +47,10 @@ langchain-core = { path = "../core", develop = true }
 
 [tool.ruff.lint]
 select = [
-    "E",    # pycodestyle
-    "F",    # pyflakes
-    "I",    # isort
-    "T201", # print
+  "E",    # pycodestyle
+  "F",    # pyflakes
+  "I",    # isort
+  "T201", # print
 ]
 
 [tool.mypy]
@@ -82,4 +82,3 @@ markers = [
   "compile: mark placeholder test used to compile integration tests without running them",
 ]
 asyncio_mode = "auto"
-
