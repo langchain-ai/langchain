@@ -29,7 +29,7 @@ def get_from_dict_or_env(
     key: Union[str, List[str]],
     env_key: str,
         default: Optional[Union[str, object]] = _get_from_env_default_sentinel,
-) -> Union[str, object, None]:
+) -> str:
     """Get a value from a dictionary or an environment variable.
 
     Args:
@@ -54,15 +54,16 @@ def get_from_dict_or_env(
         key_for_err = key[0]
     else:
         key_for_err = key
-
-    return get_from_env(key_for_err, env_key, default=default)
-
+    if default is _get_from_env_default_sentinel:
+        return get_from_env(key_for_err, env_key)
+    else:
+        return get_from_env(key_for_err, env_key, default=default)
 
 def get_from_env(
         key: str,
         env_key: str,
         default: Optional[Union[str, object]] = _get_from_env_default_sentinel,
-) -> Union[str, object, None]:
+) -> str:
     """Get a value from a dictionary or an environment variable.
     Args:
         key: The key to look up in the dictionary.
@@ -81,7 +82,7 @@ def get_from_env(
     if env_key in os.environ and os.environ[env_key]:
         return os.environ[env_key]
     elif default is not _get_from_env_default_sentinel:
-        return default
+        return str(default)
     else:
         raise ValueError(
             f"Did not find {key}, please add an environment variable"
