@@ -31,8 +31,11 @@ def test_callback_manager_configure_context_vars(
 ) -> None:
     """Test callback manager configuration."""
     monkeypatch.setenv("LANGCHAIN_TRACING_V2", "true")
+    monkeypatch.setenv("LANGSMITH_TRACING_V2", "true")
     monkeypatch.setenv("LANGCHAIN_TRACING", "false")
+    monkeypatch.setenv("LANGSMITH_TRACING_V2", "false")
     monkeypatch.setenv("LANGCHAIN_API_KEY", "foo")
+    monkeypatch.setenv("LANGCHAIN_TRACING", "foo")
     with patch.object(LangChainTracer, "_update_run_single"):
         with patch.object(LangChainTracer, "_persist_run_single"):
             with trace_as_chain_group("test") as group_manager:
