@@ -481,12 +481,14 @@ class ChildTool(BaseTool):
             if input_args is not None:
                 if issubclass(input_args, BaseModel):
                     result = input_args.model_validate(tool_input)
+                    result_dict = result.model_dump()
                 else:
                     # Pydantic V1
                     result = input_args.parse_obj(tool_input)
+                    result_dict = result.dict()
                 return {
                     k: getattr(result, k)
-                    for k, v in result.dict().items()
+                    for k, v in result_dict.items()
                     if k in tool_input
                 }
             return tool_input
