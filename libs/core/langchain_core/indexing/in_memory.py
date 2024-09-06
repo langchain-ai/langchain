@@ -79,4 +79,4 @@ class InMemoryDocumentIndex(DocumentIndex):
             counts_by_doc.append((document, count))
 
         counts_by_doc.sort(key=lambda x: x[1], reverse=True)
-        return [doc.copy() for doc, count in counts_by_doc[: self.top_k]]
+        return [doc.model_copy() for doc, count in counts_by_doc[: self.top_k]]

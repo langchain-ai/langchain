@@ -429,8 +429,8 @@ def test_message_chunk_to_message() -> None:
         ],
     )
     assert message_chunk_to_message(chunk) == expected
-    assert AIMessage(**expected.dict()) == expected
-    assert AIMessageChunk(**chunk.dict()) == chunk
+    assert AIMessage(**expected.model_dump()) == expected
+    assert AIMessageChunk(**chunk.model_dump()) == chunk
 
 
 def test_tool_calls_merge() -> None:

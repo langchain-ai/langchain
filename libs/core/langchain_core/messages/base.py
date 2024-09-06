@@ -237,7 +237,7 @@ def message_to_dict(message: BaseMessage) -> dict:
         Message as a dict. The dict will have a "type" key with the message type
         and a "data" key with the message data as a dict.
     """
-    return {"type": message.type, "data": message.dict()}
+    return {"type": message.type, "data": message.model_dump()}
 
 
 def messages_to_dict(messages: Sequence[BaseMessage]) -> List[dict]:

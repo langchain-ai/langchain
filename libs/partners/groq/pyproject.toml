@@ -1,5 +1,5 @@
 [build-system]
-requires = [ "poetry-core>=1.0.0",]
+requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
@@ -20,19 +20,22 @@ disallow_untyped_defs = "True"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-langchain-core = "^0.2.26"
+langchain-core = "^0.3.0.dev"
 groq = ">=0.4.1,<1"
 pydantic = ">=2,<3"
 
 [tool.ruff.lint]
-select = [ "E", "F", "I", "W",]
+select = ["E", "F", "I", "W"]
 
 [tool.coverage.run]
-omit = [ "tests/*",]
+omit = ["tests/*"]
 
 [tool.pytest.ini_options]
 addopts = "--strict-markers --strict-config --durations=5"
-markers = [ "compile: mark placeholder test used to compile integration tests without running them", "scheduled: mark tests to run in scheduled testing",]
+markers = [
+    "compile: mark placeholder test used to compile integration tests without running them",
+    "scheduled: mark tests to run in scheduled testing",
+]
 asyncio_mode = "auto"
 
 [tool.poetry.group.test]
