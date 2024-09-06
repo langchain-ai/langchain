@@ -37,6 +37,7 @@ from pydantic import (
     model_validator,
     validate_arguments,
 )
+from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import Annotated
 
 from langchain_core._api import deprecated
@@ -482,17 +483,21 @@ class ChildTool(BaseTool):
             return tool_input
         else:
             if input_args is not None:
-                if hasattr(input_args, "model_validate"):
+                if issubclass(input_args, BaseModel):
                     result = input_args.model_validate(tool_input)
-                else:
+                    result_dict = result.model_dump()
+                elif issubclass(input_args, BaseModelV1):
                     result = input_args.parse_obj(tool_input)
-                dump = (
-                    result.model_dump()
-                    if hasattr(result, "model_dump")
-                    else result.dict()
-                )
+                    result_dict = result.dict()
+                else:
+                    raise NotImplementedError(
+                        "args_schema must be a Pydantic BaseModel, "
+                        f"got {self.args_schema}"
+                    )
                 return {
-                    k: getattr(result, k) for k, v in dump.items() if k in tool_input
+                    k: getattr(result, k)
+                    for k, v in result_dict.items()
+                    if k in tool_input
                 }
             return tool_input
 
