@@ -275,10 +275,14 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
         else:
             fn_name = _result["name"]
             _args = _result["arguments"]
-            if hasattr(self.pydantic_schema, "model_validate_json"):
-                pydantic_args = self.pydantic_schema[fn_name].model_validate_json(_args)  # type: ignore
+            if isinstance(self.pydantic_schema, dict):
+                pydantic_schema = self.pydantic_schema[fn_name]
             else:
-                pydantic_args = self.pydantic_schema[fn_name].parse_raw(_args)  # type: ignore
+                pydantic_schema = self.pydantic_schema
+            if hasattr(pydantic_schema, "model_validate_json"):
+                pydantic_args = pydantic_schema.model_validate_json(_args)  # type: ignore
+            else:
+                pydantic_args = pydantic_schema.parse_raw(_args)  # type: ignore
         return pydantic_args
 
 
