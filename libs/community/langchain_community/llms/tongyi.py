@@ -199,44 +199,38 @@ class Tongyi(BaseLLM):
     Invoke:
         .. code-block:: python
 
-            messages = [
-                ("system", "你是一名专业的翻译家，可以将用户的中文翻译为英文。"),
-                ("human", "我喜欢编程。"),
-            ]
-            llm.invoke(messages)
+            input_text = "用50个字左右阐述，生命的意义在于"
+            llm.invoke(input_text)
 
         .. code-block:: python
 
-            'I enjoy programming.'
+            '探索、成长、连接与爱——在有限的时间里，不断学习、体验、贡献并寻找与世界和谐共存之道，让每一刻充满价值与意义。'
 
     Stream:
         .. code-block:: python
 
-            for chunk in llm.stream(messages):
+            for chunk in llm.stream(input_text):
                 print(chunk)
 
         .. code-block:: python
 
-            I
-             enjoy
-             programming
-            .
+            探索 | 、 | 成长 | 、连接与爱。 | 在有限的时间里，寻找个人价值， | 贡献于他人，共同体验世界的美好 | ，让世界因自己的存在而更 | 温暖。
 
     Async:
         .. code-block:: python
 
-            await llm.ainvoke(messages)
+            await llm.ainvoke(input_text)
 
             # stream:
-            # async for chunk in llm.astream(messages):
+            # async for chunk in llm.astream(input_text):
             #    print(chunk)
 
             # batch:
-            # await llm.abatch([messages])
+            # await llm.abatch([input_text])
 
         .. code-block:: python
 
-            'I enjoy programming.'
+            '探索、成长、连接与爱。在有限的时间里，寻找个人价值，贡献于他人和社会，体验丰富多彩的情感与经历，不断学习进步，让世界因自己的存在而更美好。'
 
     """  # noqa: E501
 

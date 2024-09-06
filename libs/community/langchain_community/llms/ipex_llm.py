@@ -139,6 +139,16 @@ class IpexLLM(LLM):
         kwargs = kwargs or {}
 
         _tokenizer_id = tokenizer_id or model_id
+        # Set "cpu" as default device
+        if "device" not in _model_kwargs:
+            _model_kwargs["device"] = "cpu"
+
+        if _model_kwargs["device"] not in ["cpu", "xpu"]:
+            raise ValueError(
+                "IpexLLMBgeEmbeddings currently only supports device to be "
+                f"'cpu' or 'xpu', but you have: {_model_kwargs['device']}."
+            )
+        device = _model_kwargs.pop("device")
 
         try:
             tokenizer = AutoTokenizer.from_pretrained(_tokenizer_id, **_model_kwargs)
@@ -185,6 +195,8 @@ class IpexLLM(LLM):
                 load_kwargs=load_kwargs,
                 model_kwargs=_model_kwargs,
             )
+
+        model.to(device)
 
         return cls(
             model_id=model_id,
@@ -235,6 +247,7 @@ class IpexLLM(LLM):
             from transformers import TextStreamer
 
             input_ids = self.tokenizer.encode(prompt, return_tensors="pt")
+            input_ids = input_ids.to(self.model.device)
             streamer = TextStreamer(
                 self.tokenizer, skip_prompt=True, skip_special_tokens=True
             )
@@ -261,6 +274,7 @@ class IpexLLM(LLM):
             return text
         else:
             input_ids = self.tokenizer.encode(prompt, return_tensors="pt")
+            input_ids = input_ids.to(self.model.device)
             if stop is not None:
                 from transformers.generation.stopping_criteria import (
                     StoppingCriteriaList,

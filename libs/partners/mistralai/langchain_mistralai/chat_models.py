@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import os
 import re
 import uuid
 from operator import itemgetter
@@ -73,7 +74,7 @@ from langchain_core.pydantic_v1 import (
 )
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.utils import secret_from_env
 from langchain_core.utils.function_calling import convert_to_openai_tool
 from langchain_core.utils.pydantic import is_basemodel_subclass
 
@@ -358,10 +359,15 @@ def _convert_message_to_mistral_chat_message(
 class ChatMistralAI(BaseChatModel):
     """A chat model that uses the MistralAI API."""
 
-    client: httpx.Client = Field(default=None)  #: :meta private:
-    async_client: httpx.AsyncClient = Field(default=None)  #: :meta private:
-    mistral_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
-    endpoint: str = "https://api.mistral.ai/v1"
+    client: httpx.Client = Field(default=None, exclude=True)  #: :meta private:
+    async_client: httpx.AsyncClient = Field(
+        default=None, exclude=True
+    )  #: :meta private:
+    mistral_api_key: Optional[SecretStr] = Field(
+        alias="api_key",
+        default_factory=secret_from_env("MISTRAL_API_KEY", default=None),
+    )
+    endpoint: Optional[str] = Field(default=None, alias="base_url")
     max_retries: int = 5
     timeout: int = 120
     max_concurrent_requests: int = 64
@@ -465,20 +471,21 @@ class ChatMistralAI(BaseChatModel):
         combined = {"token_usage": overall_token_usage, "model_name": self.model}
         return combined
 
-    @root_validator()
+    @root_validator(pre=False, skip_on_failure=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate api key, python package exists, temperature, and top_p."""
-
-        values["mistral_api_key"] = convert_to_secret_str(
-            get_from_dict_or_env(
-                values, "mistral_api_key", "MISTRAL_API_KEY", default=""
-            )
-        )
         api_key_str = values["mistral_api_key"].get_secret_value()
+
         # todo: handle retries
+        base_url_str = (
+            values.get("endpoint")
+            or os.environ.get("MISTRAL_BASE_URL")
+            or "https://api.mistral.ai/v1"
+        )
+        values["endpoint"] = base_url_str
         if not values.get("client"):
             values["client"] = httpx.Client(
-                base_url=values["endpoint"],
+                base_url=base_url_str,
                 headers={
                     "Content-Type": "application/json",
                     "Accept": "application/json",
@@ -489,7 +496,7 @@ class ChatMistralAI(BaseChatModel):
         # todo: handle retries and max_concurrency
         if not values.get("async_client"):
             values["async_client"] = httpx.AsyncClient(
-                base_url=values["endpoint"],
+                base_url=base_url_str,
                 headers={
                     "Content-Type": "application/json",
                     "Accept": "application/json",

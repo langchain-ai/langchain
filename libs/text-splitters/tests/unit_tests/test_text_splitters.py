@@ -180,6 +180,30 @@ def test_character_text_splitter_discard_separator_regex(
     assert output == expected_output
 
 
+def test_recursive_character_text_splitter_keep_separators() -> None:
+    split_tags = [",", "."]
+    query = "Apple,banana,orange and tomato."
+    # start
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=10,
+        chunk_overlap=0,
+        separators=split_tags,
+        keep_separator="start",
+    )
+    result = splitter.split_text(query)
+    assert result == ["Apple", ",banana", ",orange and tomato", "."]
+
+    # end
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=10,
+        chunk_overlap=0,
+        separators=split_tags,
+        keep_separator="end",
+    )
+    result = splitter.split_text(query)
+    assert result == ["Apple,", "banana,", "orange and tomato."]
+
+
 def test_character_text_splitting_args() -> None:
     """Test invalid arguments."""
     with pytest.raises(ValueError):

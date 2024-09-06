@@ -62,6 +62,11 @@ SEARCH_TOOL_FEAT_TABLE = {
         "available_data": "Answer",
         "link": "/docs/integrations/tools/serpapi",
     },
+    "Jina Search": {
+        "pricing": "1M Response Tokens Free",
+        "available_data": "URL, Snippet, Title, Page Content",
+        "link": "/docs/integrations/tools/jina_search/",
+    },
 }
 
 CODE_INTERPRETER_TOOL_FEAT_TABLE = {
@@ -71,6 +76,7 @@ CODE_INTERPRETER_TOOL_FEAT_TABLE = {
         "upload": True,
         "return_results": "Text",
         "link": "/docs/integrations/tools/bearly",
+        "self_hosting": False,
     },
     "Riza Code Interpreter": {
         "langauges": "Python, JavaScript, PHP, Ruby",
@@ -78,6 +84,7 @@ CODE_INTERPRETER_TOOL_FEAT_TABLE = {
         "upload": False,
         "return_results": "Text",
         "link": "/docs/integrations/tools/riza",
+        "self_hosting": True,
     },
     "E2B Data Analysis": {
         "langauges": "Python. In beta: JavaScript, R, Java",
@@ -85,6 +92,7 @@ CODE_INTERPRETER_TOOL_FEAT_TABLE = {
         "upload": True,
         "return_results": "Text, Images, Videos",
         "link": "/docs/integrations/tools/e2b_data_analysis",
+        "self_hosting": True,
     },
     "Azure Container Apps dynamic sessions": {
         "langauges": "Python",
@@ -92,6 +100,7 @@ CODE_INTERPRETER_TOOL_FEAT_TABLE = {
         "upload": True,
         "return_results": "Text, Images",
         "link": "/docs/integrations/tools/azure_dynamic_sessions",
+        "self_hosting": False,
     },
 }
 
@@ -301,13 +310,14 @@ def get_search_tools_table() -> str:
 
 
 def get_code_interpreter_table() -> str:
-    """Get the table of search tools."""
+    """Get the table of code interpreter tools."""
     header = [
         "tool",
         "langauges",
         "sandbox_lifetime",
         "upload",
         "return_results",
+        "self_hosting",
     ]
     title = [
         "Tool/Toolkit",
@@ -315,6 +325,7 @@ def get_code_interpreter_table() -> str:
         "Sandbox Lifetime",
         "Supports File Uploads",
         "Return Types",
+        "Supports Self-Hosting",
     ]
     rows = [title, [":-"] + [":-:"] * (len(title) - 1)]
     for search_tool, feats in sorted(CODE_INTERPRETER_TOOL_FEAT_TABLE.items()):
@@ -324,7 +335,7 @@ def get_code_interpreter_table() -> str:
         ]
         for h in header[1:]:
             value = feats.get(h)
-            if h == "upload":
+            if h == "upload" or h == "self_hosting":
                 if value is True:
                     row.append("✅")
                 else:

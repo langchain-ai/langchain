@@ -50,8 +50,8 @@ class Predibase(LLM):
         **kwargs: Any,
     ) -> str:
         options: Dict[str, Union[str, float]] = {
-            **(self.model_kwargs or {}),
             **self.default_options_for_generation,
+            **(self.model_kwargs or {}),
             **(kwargs or {}),
         }
         if self._is_deprecated_sdk_version():

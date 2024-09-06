@@ -1,7 +1,6 @@
 -e ../partners/openai
 -e ../partners/anthropic
 -e ../partners/fireworks
--e ../partners/together
 -e ../partners/mistralai
 -e ../partners/groq
 jsonschema>=4.22.0,<5
