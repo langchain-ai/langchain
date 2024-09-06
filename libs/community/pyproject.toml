@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "gigachain-community"
-version = "0.2.12post1"
+version = "0.2.12post2"
 description = "Community contributed LangChain integrations."
 authors = []
 license = "MIT"
@@ -36,7 +36,7 @@ ignore-words-list = "momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogy
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-gigachain-core = "^0.2.35post2"
+gigachain-core = "^0.2.35post3"
 gigachain = ">=0.2.12"
 SQLAlchemy = ">=1.4,<3"
 requests = "^2"
