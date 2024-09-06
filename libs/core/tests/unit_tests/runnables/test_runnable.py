@@ -2972,13 +2972,15 @@ Question:
     }
     assert chat_spy.call_args.args[1] == ChatPromptValue(
         messages=[
-            SystemMessage(content="You are a nice assistant."),
+            SystemMessage(
+                content="You are a nice assistant.",
+                additional_kwargs={},
+                response_metadata={},
+            ),
             HumanMessage(
-                content="""Context:
-[Document(page_content='foo'), Document(page_content='bar')]
-
-Question:
-What is your name?"""
+                content="Context:\n[Document(metadata={}, page_content='foo'), Document(metadata={}, page_content='bar')]\n\nQuestion:\nWhat is your name?",
+                additional_kwargs={},
+                response_metadata={},
             ),
         ]
     )

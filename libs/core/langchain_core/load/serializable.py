@@ -13,8 +13,6 @@ from typing import (
 from pydantic import BaseModel, ConfigDict
 from typing_extensions import NotRequired
 
-from langchain_core.utils.pydantic import v1_repr
-
 
 class BaseSerialized(TypedDict):
     """Base class for serialized objects.
@@ -258,10 +256,6 @@ class Serializable(BaseModel, ABC):
 
     def to_json_not_implemented(self) -> SerializedNotImplemented:
         return to_json_not_implemented(self)
-
-    def __repr__(self) -> str:
-        # TODO(0.3): Remove this override after confirming unit tests!
-        return v1_repr(self)
 
 
 def _is_field_useful(inst: Serializable, key: str, value: Any) -> bool:
