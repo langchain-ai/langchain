@@ -7,6 +7,7 @@ from typing import Any, Iterator, List, Mapping, Optional
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
+from pydantic import BaseModel, root_validator
 
 DEFAULT_MODEL_ID = "gpt2"
 DEFAULT_TASK = "text-generation"
@@ -54,6 +55,8 @@ class HuggingFacePipeline(BaseLLM):
     """
 
     pipeline: Any  #: :meta private:
+    model_id: Optional[str] = None
+    """Model name to use."""
     model_kwargs: Optional[dict] = None
     """Keyword arguments passed to the model."""
     pipeline_kwargs: Optional[dict] = None
@@ -65,6 +68,15 @@ class HuggingFacePipeline(BaseLLM):
         """Configuration for this pydantic object."""
 
         extra = "forbid"
+
+    @root_validator(pre=True)
+    def set_model_id(cls, values):
+        """Ensure model_id is set either by pipeline or user input."""
+        if 'pipeline' in values and values['pipeline']:
+            values['model_id'] = values['pipeline'].model.name_or_path
+        elif 'model_id' not in values:
+            raise ValueError("A model_id must be provided if no pipeline is passed.")
+        return values
 
     @classmethod
     def from_model_id(
