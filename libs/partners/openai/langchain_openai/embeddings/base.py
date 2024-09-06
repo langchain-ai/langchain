@@ -264,7 +264,9 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     """Whether to check the token length of inputs and automatically split inputs 
         longer than embedding_ctx_length."""
 
-    model_config = ConfigDict(extra="forbid", populate_by_name=True)
+    model_config = ConfigDict(
+        extra="forbid", populate_by_name=True, protected_namespaces=()
+    )
 
     @model_validator(mode="before")
     @classmethod
