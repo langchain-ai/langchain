@@ -649,7 +649,7 @@ def test_lambda_schemas(snapshot: SnapshotAssertion) -> None:
 
     if PYDANTIC_VERSION >= (2, 9):
         assert _normalize_schema(
-            RunnableLambda(aget_values_typed).get_output_jsonschema()
+            RunnableLambda(aget_values_typed).get_output_jsonschema()  # type: ignore
         ) == snapshot(name="schema8")
 
 
