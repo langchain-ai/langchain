@@ -15,10 +15,10 @@ from langchain_community.llms.openai import BaseOpenAI
 
 
 @pytest.fixture(autouse=True)
-def disable_lru_cache(monkeypatch):
+def disable_lru_cache(monkeypatch: pytest.MonkeyPatch) -> None:
     """Disable lru_cache for tests. (Env caching in langfuse)"""
 
-    def no_cache_decorator(func=None, *, maxsize=None, typed=False):
+    def no_cache_decorator(func=None, *, maxsize=None, typed=False) -> callable:  # type: ignore
         if func is not None:
             return func
         return lambda f: f
@@ -33,9 +33,9 @@ def test_callback_manager_configure_context_vars(
     monkeypatch.setenv("LANGCHAIN_TRACING_V2", "true")
     monkeypatch.setenv("LANGSMITH_TRACING_V2", "true")
     monkeypatch.setenv("LANGCHAIN_TRACING", "false")
-    monkeypatch.setenv("LANGSMITH_TRACING_V2", "false")
+    monkeypatch.setenv("LANGSMITH_TRACING", "false")
     monkeypatch.setenv("LANGCHAIN_API_KEY", "foo")
-    monkeypatch.setenv("LANGCHAIN_TRACING", "foo")
+    monkeypatch.setenv("LANGSMITH_API_KEY", "foo")
     with patch.object(LangChainTracer, "_update_run_single"):
         with patch.object(LangChainTracer, "_persist_run_single"):
             with trace_as_chain_group("test") as group_manager:
