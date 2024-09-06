@@ -8,7 +8,6 @@ from langchain_core.load.serializable import Serializable
 from langchain_core.utils import get_bolded_text
 from langchain_core.utils._merge import merge_dicts, merge_lists
 from langchain_core.utils.interactive_env import is_interactive_env
-from langchain_core.utils.pydantic import v1_repr
 
 if TYPE_CHECKING:
     from langchain_core.prompts.chat import ChatPromptTemplate
@@ -111,9 +110,6 @@ class BaseMessage(Serializable):
     def pretty_print(self) -> None:
         print(self.pretty_repr(html=is_interactive_env()))  # noqa: T201
 
-    def __repr__(self) -> str:
-        # TODO(0.3): Remove this override after confirming unit tests!
-        return v1_repr(self)
 
 
 def merge_content(

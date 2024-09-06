@@ -12,7 +12,6 @@ from langchain_core.utils.pydantic import (
     is_basemodel_instance,
     is_basemodel_subclass,
     pre_init,
-    v1_repr,
 )
 
 
@@ -197,15 +196,3 @@ def test_fields_pydantic_v1_from_2() -> None:
     assert fields == {"x": Foo.__fields__["x"]}
 
 
-def test_v1_repr() -> None:
-    from pydantic import BaseModel, Field
-
-    class Foo(BaseModel):
-        bar: int = Field(default=1, alias="baz", exclude=True)
-        x: int = Field(default=2)
-
-        def __repr__(self) -> str:
-            """Custom repr."""
-            return v1_repr(self)
-
-    assert repr(Foo(bar=2, x=3)) == "Foo(x=3)"  # type: ignore[call-arg]

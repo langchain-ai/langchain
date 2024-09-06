@@ -9,7 +9,6 @@ from typing import Any, Dict, Generator, List, Literal, Optional, Union, cast
 from pydantic import ConfigDict, Field, model_validator
 
 from langchain_core.load.serializable import Serializable
-from langchain_core.utils.pydantic import v1_repr
 
 PathLike = Union[str, PurePath]
 
@@ -298,6 +297,3 @@ class Document(BaseMedia):
         else:
             return f"page_content='{self.page_content}'"
 
-    def __repr__(self) -> str:
-        # TODO(0.3): Remove this override after confirming unit tests!
-        return v1_repr(self)
