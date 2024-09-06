@@ -19,8 +19,8 @@ disallow_untyped_defs = true
 "Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-chroma%3D%3D0%22&expanded=true"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4"
-langchain-core = ">=0.1.40,<0.3"
+python = ">=3.9,<4"
+langchain-core = "^0.3.0.dev"
 [[tool.poetry.dependencies.numpy]]
 version = "^1"
 python = "<3.12"
