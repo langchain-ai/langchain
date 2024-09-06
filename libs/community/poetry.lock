@@ -1699,8 +1699,8 @@ develop = true
 [package.dependencies]
 aiohttp = "^3.8.3"
 async-timeout = {version = "^4.0.0", markers = "python_version < \"3.11\""}
-langchain-core = "^0.3.0.dev"
-langchain-text-splitters = "^0.2.0"
+langchain-core = "^0.3.0.dev2"
+langchain-text-splitters = "^0.3.0.dev1"
 langsmith = "^0.1.17"
 numpy = [
     {version = ">=1,<2", markers = "python_version < \"3.12\""},
@@ -1718,7 +1718,7 @@ url = "../langchain"
 
 [[package]]
 name = "langchain-core"
-version = "0.3.0.dev1"
+version = "0.3.0.dev2"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -1749,7 +1749,7 @@ develop = true
 
 [package.dependencies]
 httpx = "^0.27.0"
-langchain-core = "^0.3.0.dev"
+langchain-core = ">=0.3.0.dev1"
 pytest = ">=7,<9"
 syrupy = "^4"
 
@@ -1759,7 +1759,7 @@ url = "../standard-tests"
 
 [[package]]
 name = "langchain-text-splitters"
-version = "0.2.4"
+version = "0.3.0.dev1"
 description = "LangChain text splitting utilities"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -4287,4 +4287,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0"
-content-hash = "6d29d496c816b57f68cadffc526189e3ee15ef6460aa3ef4b0f58dbe43efe4d4"
+content-hash = "4c56685bbb5a91ec54e45beb7a2e34020d5d9a1225b7dfdc197f5652094991b6"

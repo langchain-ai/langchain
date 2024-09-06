@@ -1846,7 +1846,7 @@ files = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.0.dev1"
+version = "0.3.0.dev2"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -1868,7 +1868,7 @@ url = "../core"
 
 [[package]]
 name = "langchain-openai"
-version = "0.1.23"
+version = "0.2.0.dev2"
 description = "An integration package connecting OpenAI and LangChain"
 optional = true
 python-versions = ">=3.9,<4.0"
@@ -1876,7 +1876,7 @@ files = []
 develop = true
 
 [package.dependencies]
-langchain-core = "^0.3.0.dev"
+langchain-core = "^0.3.0.dev1"
 openai = "^1.40.0"
 tiktoken = ">=0.7,<1"
 
@@ -1895,7 +1895,7 @@ develop = true
 
 [package.dependencies]
 httpx = "^0.27.0"
-langchain-core = "^0.3.0.dev"
+langchain-core = ">=0.3.0.dev1"
 pytest = ">=7,<9"
 syrupy = "^4"
 
@@ -1905,7 +1905,7 @@ url = "../standard-tests"
 
 [[package]]
 name = "langchain-text-splitters"
-version = "0.2.4"
+version = "0.3.0.dev1"
 description = "LangChain text splitting utilities"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -4616,4 +4616,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0"
-content-hash = "703f768e3b2011a360c0479e514991d7e798ea6c405daaf26c33e5f0d62e4eb9"
+content-hash = "3a9dc34fbd8b95c885adf430c775b10ce75b8140104e0c175a6b04fffc07f2bd"

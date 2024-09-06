@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-core"
-version = "0.3.0.dev1"
+version = "0.3.0.dev2"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -12,7 +12,6 @@ readme = "README.md"
 repository = "https://github.com/langchain-ai/langchain"
 
 [tool.mypy]
-disallow_untyped_defs = "True"
 exclude = [
     "notebooks",
     "examples",
@@ -20,6 +19,8 @@ exclude = [
     "langchain_core/pydantic",
     "tests/unit_tests/utils/test_function_calling.py",
 ]
+"disallow_untyped_defs" = "True"
+
 [[tool.mypy.overrides]]
 module = ["numpy", "pytest"]
 ignore_missing_imports = true
