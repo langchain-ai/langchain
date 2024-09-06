@@ -20,7 +20,7 @@ disallow_untyped_defs = "True"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-langchain-core = ">=0.1.52,<0.3"
+langchain-core = "^0.3.0.dev"
 azure-identity = "^1.16.0"
 requests = "^2.31.0"
 

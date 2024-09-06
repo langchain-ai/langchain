@@ -21,7 +21,7 @@ ignore_missing_imports = "True"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-langchain-core = ">=0.2.0,<0.3"
+langchain-core = "^0.3.0.dev"
 couchbase = "^4.2.1"
 
 [tool.ruff.lint]
@@ -57,7 +57,7 @@ pytest = "^7.4.3"
 pytest-asyncio = "^0.23.2"
 pytest-socket = "^0.7.0"
 syrupy = "^4.0.2"
-langchain = "^0.2.9"
+langchain = "^0.3.0.dev"
 
 [tool.poetry.group.codespell.dependencies]
 codespell = "^2.2.6"
