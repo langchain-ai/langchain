@@ -116,4 +116,6 @@ def _normalize_schema(obj: Any) -> Dict[str, Any]:
         data = obj.model_json_schema()
     else:
         data = obj
-    return replace_all_of_with_ref(data)
+    remove_all_none_default(data)
+    replace_all_of_with_ref(data)
+    return data
