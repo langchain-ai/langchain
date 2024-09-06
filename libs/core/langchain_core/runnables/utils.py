@@ -6,6 +6,7 @@ import ast
 import asyncio
 import inspect
 import textwrap
+import warnings
 from functools import lru_cache
 from inspect import signature
 from itertools import groupby
@@ -31,13 +32,14 @@ from typing import (
     cast,
 )
 
-from pydantic import BaseModel, ConfigDict, RootModel
+from pydantic import BaseModel, ConfigDict, PydanticDeprecationWarning, RootModel
 from pydantic import create_model as _create_model_base  # pydantic :ignore
 from pydantic.json_schema import (
     DEFAULT_REF_TEMPLATE,
     GenerateJsonSchema,
     JsonSchemaMode,
 )
+from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import TypeGuard
 
 from langchain_core.runnables.schema import StreamEvent
@@ -754,7 +756,12 @@ def create_base_class(
 
     if default_ is not NO_DEFAULT:
         base_class_attributes["root"] = default_
-    custom_root_type = type(name, (RootModel,), base_class_attributes)
+    with warnings.catch_warnings():
+        if isinstance(type_, type) and issubclass(type_, BaseModelV1):
+            warnings.filterwarnings(
+                action="ignore", category=PydanticDeprecationWarning
+            )
+        custom_root_type = type(name, (RootModel,), base_class_attributes)
     return cast(Type[BaseModel], custom_root_type)
 
 
