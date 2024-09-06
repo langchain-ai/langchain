@@ -4,7 +4,7 @@ from itertools import cycle
 from langchain_core.language_models import GenericFakeChatModel
 
 
-def test_benchamrk_model() -> None:
+def test_benchmark_model() -> None:
     """Add rate limiter."""
     tic = time.time()
 
