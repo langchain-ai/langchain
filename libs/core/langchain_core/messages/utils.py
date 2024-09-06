@@ -29,6 +29,9 @@ from typing import (
     overload,
 )
 
+from pydantic import Discriminator, Field
+from typing_extensions import Annotated
+
 from langchain_core.messages.ai import AIMessage, AIMessageChunk
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk
 from langchain_core.messages.chat import ChatMessage, ChatMessageChunk
@@ -45,19 +48,23 @@ if TYPE_CHECKING:
     from langchain_core.prompt_values import PromptValue
     from langchain_core.runnables.base import Runnable
 
-AnyMessage = Union[
-    AIMessage,
-    HumanMessage,
-    ChatMessage,
-    SystemMessage,
-    FunctionMessage,
-    ToolMessage,
-    AIMessageChunk,
-    HumanMessageChunk,
-    ChatMessageChunk,
-    SystemMessageChunk,
-    FunctionMessageChunk,
-    ToolMessageChunk,
+
+AnyMessage = Annotated[
+    Union[
+        AIMessage,
+        HumanMessage,
+        ChatMessage,
+        SystemMessage,
+        FunctionMessage,
+        ToolMessage,
+        AIMessageChunk,
+        HumanMessageChunk,
+        ChatMessageChunk,
+        SystemMessageChunk,
+        FunctionMessageChunk,
+        ToolMessageChunk,
+    ],
+    Field(discriminator=Discriminator("type")),
 ]
 
 
