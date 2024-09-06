@@ -71,9 +71,7 @@ class YandexGPTEmbeddings(BaseModel, Embeddings):
     If you provide personal data, confidential information, disable logging."""
     grpc_metadata: Sequence
 
-    model_config = ConfigDict(
-        populate_by_name=True,
-    )
+    model_config = ConfigDict(populate_by_name=True, protected_namespaces=())
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:

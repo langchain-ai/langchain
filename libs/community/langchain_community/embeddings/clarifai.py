@@ -43,9 +43,7 @@ class ClarifaiEmbeddings(BaseModel, Embeddings):
     model: Any = Field(default=None, exclude=True)  #: :meta private:
     api_base: str = "https://api.clarifai.com"
 
-    model_config = ConfigDict(
-        extra="forbid",
-    )
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
 
     @model_validator(mode="before")
     @classmethod
