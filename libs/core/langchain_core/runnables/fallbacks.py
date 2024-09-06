@@ -622,7 +622,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
 
                 return self.__class__(
                     **{
-                        **self.dict(),
+                        **self.model_dump(),
                         **{"runnable": new_runnable, "fallbacks": new_fallbacks},
                     }
                 )
