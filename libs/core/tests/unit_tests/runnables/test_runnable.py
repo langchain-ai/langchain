@@ -641,7 +641,7 @@ def test_lambda_schemas() -> None:
                 "allOf": [{"$ref": "#/$defs/InputType"}],
                 "title": "aget_values_typed_input",
             }
-        ),
+        )
     )
 
     assert _normalize_schema(
