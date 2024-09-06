@@ -841,8 +841,7 @@ class OpenSearchVectorSearch(VectorStore):
             )
             return response
         except Exception as e:
-            print(f"An error occurred: {e}")
-            return None
+            raise e
 
     def search_pipeline_exists(self, pipeline_name: str) -> bool:
         """
@@ -868,8 +867,7 @@ class OpenSearchVectorSearch(VectorStore):
                 method="GET", url=f"/_search/pipeline/"
             )
         except Exception as e:
-            response = None
-            print(f"An error occurred: {e}")
+            raise e
 
         return pipeline_name in existed_pipelines
 
@@ -913,7 +911,7 @@ class OpenSearchVectorSearch(VectorStore):
                 method="GET", url=f"/_search/pipeline/{pipeline_name}"
             )
         except Exception as e:
-            print(f"An error occurred: {e}")
+            raise e
 
         return response
 
@@ -1238,8 +1236,7 @@ class OpenSearchVectorSearch(VectorStore):
                 return [hit for hit in response["hits"]["hits"]]
 
             except Exception as e:
-                print(f"An error occurred: {e}")
-                return None
+                raise 
 
         else:
             raise ValueError("Invalid `search_type` provided as an argument")
