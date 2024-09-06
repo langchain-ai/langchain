@@ -186,34 +186,6 @@ class _IgnoreUnserializable(GenerateJsonSchema):
         return {}
 
 
-def v1_repr(obj: BaseModel) -> str:
-    """Return the schema of the object as a string.
-
-    Get a repr for the pydantic object which is consistent with pydantic.v1.
-    """
-    if not is_basemodel_instance(obj):
-        raise TypeError(f"Expected a pydantic BaseModel, got {type(obj)}")
-    repr_ = []
-    for name, field in get_fields(obj).items():
-        value = getattr(obj, name)
-
-        if isinstance(value, BaseModel):
-            repr_.append(f"{name}={v1_repr(value)}")
-        else:
-            if field.exclude:
-                continue
-            if not field.is_required():
-                if not value:
-                    continue
-                if field.default == value:
-                    continue
-
-            repr_.append(f"{name}={repr(value)}")
-
-    args = ", ".join(repr_)
-    return f"{obj.__class__.__name__}({args})"
-
-
 def _create_subset_model_v1(
     name: str,
     model: Type[BaseModel],
