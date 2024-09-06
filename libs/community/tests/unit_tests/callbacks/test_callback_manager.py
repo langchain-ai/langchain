@@ -1,6 +1,6 @@
 """Test CallbackManager."""
 
-import sys
+import functools
 from unittest.mock import patch
 
 import pytest
@@ -14,7 +14,18 @@ from langchain_community.callbacks.manager import get_bedrock_anthropic_callback
 from langchain_community.llms.openai import BaseOpenAI
 
 
-@pytest.mark.skipif(sys.version_info[:2] == (3, 8), reason="Skip test on Python 3.8")
+@pytest.fixture(autouse=True)
+def disable_lru_cache(monkeypatch):
+    """Disable lru_cache for tests. (Env caching in langfuse)"""
+
+    def no_cache_decorator(func=None, *, maxsize=None, typed=False):
+        if func is not None:
+            return func
+        return lambda f: f
+
+    monkeypatch.setattr(functools, "lru_cache", no_cache_decorator)
+
+
 def test_callback_manager_configure_context_vars(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
