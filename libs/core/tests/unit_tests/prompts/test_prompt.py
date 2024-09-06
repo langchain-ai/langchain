@@ -1,14 +1,15 @@
 """Test functionality related to prompts."""
 
+from typing import Any, Dict, Union
 from unittest import mock
 
 import pydantic
 import pytest
+from syrupy import SnapshotAssertion
+
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.tracers.run_collector import RunCollectorCallbackHandler
-from syrupy import SnapshotAssertion
 from tests.unit_tests.pydantic_utils import _normalize_schema
-from typing import Any, Dict, Union
 
 PYDANTIC_VERSION = tuple(map(int, pydantic.__version__.split(".")))
 
