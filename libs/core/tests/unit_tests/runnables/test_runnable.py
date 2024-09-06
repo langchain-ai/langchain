@@ -90,7 +90,7 @@ from langchain_core.tracers import (
     RunLogPatch,
 )
 from langchain_core.tracers.context import collect_runs
-from tests.unit_tests.pydantic_utils import _schema
+from tests.unit_tests.pydantic_utils import _normalize_schema, _schema
 from tests.unit_tests.stubs import AnyStr, _AnyIdAIMessage, _AnyIdAIMessageChunk
 
 
@@ -617,45 +617,53 @@ def test_lambda_schemas() -> None:
         }
 
     assert (
-        RunnableLambda(
-            aget_values_typed  # type: ignore[arg-type]
-        ).get_input_jsonschema()
-        == {
-            "$defs": {
-                "InputType": {
-                    "properties": {
-                        "variable_name": {
-                            "title": "Variable " "Name",
-                            "type": "string",
+        _normalize_schema(
+            RunnableLambda(
+                aget_values_typed  # type: ignore[arg-type]
+            ).get_input_jsonschema()
+        )
+        == _normalize_schema(
+            {
+                "$defs": {
+                    "InputType": {
+                        "properties": {
+                            "variable_name": {
+                                "title": "Variable " "Name",
+                                "type": "string",
+                            },
+                            "yo": {"title": "Yo", "type": "integer"},
                         },
-                        "yo": {"title": "Yo", "type": "integer"},
+                        "required": ["variable_name", "yo"],
+                        "title": "InputType",
+                        "type": "object",
+                    }
+                },
+                "allOf": [{"$ref": "#/$defs/InputType"}],
+                "title": "aget_values_typed_input",
+            }
+        ),
+    )
+
+    assert _normalize_schema(
+        RunnableLambda(aget_values_typed).get_output_jsonschema()
+    ) == _normalize_schema(
+        {  # type: ignore[arg-type]
+            "$defs": {
+                "OutputType": {
+                    "properties": {
+                        "bye": {"title": "Bye", "type": "string"},
+                        "byebye": {"title": "Byebye", "type": "integer"},
+                        "hello": {"title": "Hello", "type": "string"},
                     },
-                    "required": ["variable_name", "yo"],
-                    "title": "InputType",
+                    "required": ["hello", "bye", "byebye"],
+                    "title": "OutputType",
                     "type": "object",
                 }
             },
-            "allOf": [{"$ref": "#/$defs/InputType"}],
-            "title": "aget_values_typed_input",
+            "allOf": [{"$ref": "#/$defs/OutputType"}],
+            "title": "aget_values_typed_output",
         }
     )
-
-    assert RunnableLambda(aget_values_typed).get_output_jsonschema() == {  # type: ignore[arg-type]
-        "$defs": {
-            "OutputType": {
-                "properties": {
-                    "bye": {"title": "Bye", "type": "string"},
-                    "byebye": {"title": "Byebye", "type": "integer"},
-                    "hello": {"title": "Hello", "type": "string"},
-                },
-                "required": ["hello", "bye", "byebye"],
-                "title": "OutputType",
-                "type": "object",
-            }
-        },
-        "allOf": [{"$ref": "#/$defs/OutputType"}],
-        "title": "aget_values_typed_output",
-    }
 
 
 def test_with_types_with_type_generics() -> None:
@@ -767,38 +775,42 @@ def test_configurable_fields() -> None:
 
     assert fake_llm_configurable.invoke("...") == "a"
 
-    assert fake_llm_configurable.get_config_jsonschema() == {
-        "$defs": {
-            "Configurable": {
-                "properties": {
-                    "llm_responses": {
-                        "default": ["a"],
-                        "description": "A "
-                        "list "
-                        "of "
-                        "fake "
-                        "responses "
-                        "for "
-                        "this "
-                        "LLM",
-                        "items": {"type": "string"},
-                        "title": "LLM " "Responses",
-                        "type": "array",
-                    }
-                },
-                "title": "Configurable",
-                "type": "object",
-            }
-        },
-        "properties": {
-            "configurable": {
-                "allOf": [{"$ref": "#/$defs/Configurable"}],
-                "default": None,
-            }
-        },
-        "title": "RunnableConfigurableFieldsConfig",
-        "type": "object",
-    }
+    assert _normalize_schema(
+        fake_llm_configurable.get_config_jsonschema()
+    ) == _normalize_schema(
+        {
+            "$defs": {
+                "Configurable": {
+                    "properties": {
+                        "llm_responses": {
+                            "default": ["a"],
+                            "description": "A "
+                            "list "
+                            "of "
+                            "fake "
+                            "responses "
+                            "for "
+                            "this "
+                            "LLM",
+                            "items": {"type": "string"},
+                            "title": "LLM " "Responses",
+                            "type": "array",
+                        }
+                    },
+                    "title": "Configurable",
+                    "type": "object",
+                }
+            },
+            "properties": {
+                "configurable": {
+                    "allOf": [{"$ref": "#/$defs/Configurable"}],
+                    "default": None,
+                }
+            },
+            "title": "RunnableConfigurableFieldsConfig",
+            "type": "object",
+        }
+    )
 
     fake_llm_configured = fake_llm_configurable.with_config(
         configurable={"llm_responses": ["b"]}
@@ -822,35 +834,39 @@ def test_configurable_fields() -> None:
         text="Hello, John!"
     )
 
-    assert prompt_configurable.get_config_jsonschema() == {
-        "$defs": {
-            "Configurable": {
-                "properties": {
-                    "prompt_template": {
-                        "default": "Hello, " "{name}!",
-                        "description": "The "
-                        "prompt "
-                        "template "
-                        "for "
-                        "this "
-                        "chain",
-                        "title": "Prompt " "Template",
-                        "type": "string",
-                    }
-                },
-                "title": "Configurable",
-                "type": "object",
-            }
-        },
-        "properties": {
-            "configurable": {
-                "allOf": [{"$ref": "#/$defs/Configurable"}],
-                "default": None,
-            }
-        },
-        "title": "RunnableConfigurableFieldsConfig",
-        "type": "object",
-    }
+    assert _normalize_schema(
+        prompt_configurable.get_config_jsonschema()
+    ) == _normalize_schema(
+        {
+            "$defs": {
+                "Configurable": {
+                    "properties": {
+                        "prompt_template": {
+                            "default": "Hello, " "{name}!",
+                            "description": "The "
+                            "prompt "
+                            "template "
+                            "for "
+                            "this "
+                            "chain",
+                            "title": "Prompt " "Template",
+                            "type": "string",
+                        }
+                    },
+                    "title": "Configurable",
+                    "type": "object",
+                }
+            },
+            "properties": {
+                "configurable": {
+                    "allOf": [{"$ref": "#/$defs/Configurable"}],
+                    "default": None,
+                }
+            },
+            "title": "RunnableConfigurableFieldsConfig",
+            "type": "object",
+        }
+    )
 
     prompt_configured = prompt_configurable.with_config(
         configurable={"prompt_template": "Hello, {name}! {name}!"}
@@ -876,49 +892,53 @@ def test_configurable_fields() -> None:
 
     assert chain_configurable.invoke({"name": "John"}) == "a"
 
-    assert chain_configurable.get_config_jsonschema() == {
-        "$defs": {
-            "Configurable": {
-                "properties": {
-                    "llm_responses": {
-                        "default": ["a"],
-                        "description": "A "
-                        "list "
-                        "of "
-                        "fake "
-                        "responses "
-                        "for "
-                        "this "
-                        "LLM",
-                        "items": {"type": "string"},
-                        "title": "LLM " "Responses",
-                        "type": "array",
+    assert _normalize_schema(
+        chain_configurable.get_config_jsonschema()
+    ) == _normalize_schema(
+        {
+            "$defs": {
+                "Configurable": {
+                    "properties": {
+                        "llm_responses": {
+                            "default": ["a"],
+                            "description": "A "
+                            "list "
+                            "of "
+                            "fake "
+                            "responses "
+                            "for "
+                            "this "
+                            "LLM",
+                            "items": {"type": "string"},
+                            "title": "LLM " "Responses",
+                            "type": "array",
+                        },
+                        "prompt_template": {
+                            "default": "Hello, " "{name}!",
+                            "description": "The "
+                            "prompt "
+                            "template "
+                            "for "
+                            "this "
+                            "chain",
+                            "title": "Prompt " "Template",
+                            "type": "string",
+                        },
                     },
-                    "prompt_template": {
-                        "default": "Hello, " "{name}!",
-                        "description": "The "
-                        "prompt "
-                        "template "
-                        "for "
-                        "this "
-                        "chain",
-                        "title": "Prompt " "Template",
-                        "type": "string",
-                    },
-                },
-                "title": "Configurable",
-                "type": "object",
-            }
-        },
-        "properties": {
-            "configurable": {
-                "allOf": [{"$ref": "#/$defs/Configurable"}],
-                "default": None,
-            }
-        },
-        "title": "RunnableSequenceConfig",
-        "type": "object",
-    }
+                    "title": "Configurable",
+                    "type": "object",
+                }
+            },
+            "properties": {
+                "configurable": {
+                    "allOf": [{"$ref": "#/$defs/Configurable"}],
+                    "default": None,
+                }
+            },
+            "title": "RunnableSequenceConfig",
+            "type": "object",
+        }
+    )
 
     assert (
         chain_configurable.with_config(
@@ -960,55 +980,59 @@ def test_configurable_fields() -> None:
         "llm3": "a",
     }
 
-    assert chain_with_map_configurable.get_config_jsonschema() == {
-        "$defs": {
-            "Configurable": {
-                "properties": {
-                    "llm_responses": {
-                        "default": ["a"],
-                        "description": "A "
-                        "list "
-                        "of "
-                        "fake "
-                        "responses "
-                        "for "
-                        "this "
-                        "LLM",
-                        "items": {"type": "string"},
-                        "title": "LLM " "Responses",
-                        "type": "array",
+    assert _normalize_schema(
+        chain_with_map_configurable.get_config_jsonschema()
+    ) == _normalize_schema(
+        {
+            "$defs": {
+                "Configurable": {
+                    "properties": {
+                        "llm_responses": {
+                            "default": ["a"],
+                            "description": "A "
+                            "list "
+                            "of "
+                            "fake "
+                            "responses "
+                            "for "
+                            "this "
+                            "LLM",
+                            "items": {"type": "string"},
+                            "title": "LLM " "Responses",
+                            "type": "array",
+                        },
+                        "other_responses": {
+                            "default": ["a"],
+                            "items": {"type": "string"},
+                            "title": "Other " "Responses",
+                            "type": "array",
+                        },
+                        "prompt_template": {
+                            "default": "Hello, " "{name}!",
+                            "description": "The "
+                            "prompt "
+                            "template "
+                            "for "
+                            "this "
+                            "chain",
+                            "title": "Prompt " "Template",
+                            "type": "string",
+                        },
                     },
-                    "other_responses": {
-                        "default": ["a"],
-                        "items": {"type": "string"},
-                        "title": "Other " "Responses",
-                        "type": "array",
-                    },
-                    "prompt_template": {
-                        "default": "Hello, " "{name}!",
-                        "description": "The "
-                        "prompt "
-                        "template "
-                        "for "
-                        "this "
-                        "chain",
-                        "title": "Prompt " "Template",
-                        "type": "string",
-                    },
-                },
-                "title": "Configurable",
-                "type": "object",
-            }
-        },
-        "properties": {
-            "configurable": {
-                "allOf": [{"$ref": "#/$defs/Configurable"}],
-                "default": None,
-            }
-        },
-        "title": "RunnableSequenceConfig",
-        "type": "object",
-    }
+                    "title": "Configurable",
+                    "type": "object",
+                }
+            },
+            "properties": {
+                "configurable": {
+                    "allOf": [{"$ref": "#/$defs/Configurable"}],
+                    "default": None,
+                }
+            },
+            "title": "RunnableSequenceConfig",
+            "type": "object",
+        }
+    )
 
     assert chain_with_map_configurable.with_config(
         configurable={
@@ -1078,71 +1102,73 @@ def test_configurable_fields_prefix_keys() -> None:
 
     chain = prompt | fake_llm
 
-    assert _schema(chain.config_schema()) == {
-        "title": "RunnableSequenceConfig",
-        "type": "object",
-        "properties": {"configurable": {"$ref": "#/definitions/Configurable"}},
-        "definitions": {
-            "Chat_Responses": {
-                "enum": ["hello", "bye", "helpful"],
-                "title": "Chat Responses",
-                "type": "string",
-            },
-            "Configurable": {
-                "properties": {
-                    "chat_sleep": {
-                        "anyOf": [{"type": "number"}, {"type": "null"}],
-                        "default": None,
-                        "title": "Chat " "Sleep",
-                    },
-                    "llm": {
-                        "$ref": "#/definitions/LLM",
-                        "default": "default",
-                        "title": "LLM",
-                    },
-                    "llm==chat/responses": {
-                        "default": ["hello", "bye"],
-                        "items": {"$ref": "#/definitions/Chat_Responses"},
-                        "title": "Chat " "Responses",
-                        "type": "array",
-                    },
-                    "llm==default/responses": {
-                        "default": ["a"],
-                        "description": "A "
-                        "list "
-                        "of "
-                        "fake "
-                        "responses "
-                        "for "
-                        "this "
-                        "LLM",
-                        "items": {"type": "string"},
-                        "title": "LLM " "Responses",
-                        "type": "array",
-                    },
-                    "prompt_template": {
-                        "$ref": "#/definitions/Prompt_Template",
-                        "default": "hello",
-                        "description": "The "
-                        "prompt "
-                        "template "
-                        "for "
-                        "this "
-                        "chain",
-                        "title": "Prompt " "Template",
-                    },
+    assert _normalize_schema(_schema(chain.config_schema())) == _normalize_schema(
+        {
+            "title": "RunnableSequenceConfig",
+            "type": "object",
+            "properties": {"configurable": {"$ref": "#/definitions/Configurable"}},
+            "definitions": {
+                "Chat_Responses": {
+                    "enum": ["hello", "bye", "helpful"],
+                    "title": "Chat Responses",
+                    "type": "string",
                 },
-                "title": "Configurable",
-                "type": "object",
+                "Configurable": {
+                    "properties": {
+                        "chat_sleep": {
+                            "anyOf": [{"type": "number"}, {"type": "null"}],
+                            "default": None,
+                            "title": "Chat " "Sleep",
+                        },
+                        "llm": {
+                            "$ref": "#/definitions/LLM",
+                            "default": "default",
+                            "title": "LLM",
+                        },
+                        "llm==chat/responses": {
+                            "default": ["hello", "bye"],
+                            "items": {"$ref": "#/definitions/Chat_Responses"},
+                            "title": "Chat " "Responses",
+                            "type": "array",
+                        },
+                        "llm==default/responses": {
+                            "default": ["a"],
+                            "description": "A "
+                            "list "
+                            "of "
+                            "fake "
+                            "responses "
+                            "for "
+                            "this "
+                            "LLM",
+                            "items": {"type": "string"},
+                            "title": "LLM " "Responses",
+                            "type": "array",
+                        },
+                        "prompt_template": {
+                            "$ref": "#/definitions/Prompt_Template",
+                            "default": "hello",
+                            "description": "The "
+                            "prompt "
+                            "template "
+                            "for "
+                            "this "
+                            "chain",
+                            "title": "Prompt " "Template",
+                        },
+                    },
+                    "title": "Configurable",
+                    "type": "object",
+                },
+                "LLM": {"enum": ["chat", "default"], "title": "LLM", "type": "string"},
+                "Prompt_Template": {
+                    "enum": ["hello", "good_morning"],
+                    "title": "Prompt Template",
+                    "type": "string",
+                },
             },
-            "LLM": {"enum": ["chat", "default"], "title": "LLM", "type": "string"},
-            "Prompt_Template": {
-                "enum": ["hello", "good_morning"],
-                "title": "Prompt Template",
-                "type": "string",
-            },
-        },
-    }
+        }
+    )
 
 
 def test_configurable_fields_example() -> None:
@@ -1191,71 +1217,75 @@ def test_configurable_fields_example() -> None:
 
     assert chain_configurable.invoke({"name": "John"}) == "a"
 
-    assert chain_configurable.get_config_jsonschema() == {
-        "$defs": {
-            "Chat_Responses": {
-                "enum": ["hello", "bye", "helpful"],
-                "title": "Chat Responses",
-                "type": "string",
-            },
-            "Configurable": {
-                "properties": {
-                    "chat_responses": {
-                        "default": ["hello", "bye"],
-                        "items": {"$ref": "#/$defs/Chat_Responses"},
-                        "title": "Chat " "Responses",
-                        "type": "array",
-                    },
-                    "llm": {
-                        "allOf": [{"$ref": "#/$defs/LLM"}],
-                        "default": "default",
-                        "title": "LLM",
-                    },
-                    "llm_responses": {
-                        "default": ["a"],
-                        "description": "A "
-                        "list "
-                        "of "
-                        "fake "
-                        "responses "
-                        "for "
-                        "this "
-                        "LLM",
-                        "items": {"type": "string"},
-                        "title": "LLM " "Responses",
-                        "type": "array",
-                    },
-                    "prompt_template": {
-                        "allOf": [{"$ref": "#/$defs/Prompt_Template"}],
-                        "default": "hello",
-                        "description": "The "
-                        "prompt "
-                        "template "
-                        "for "
-                        "this "
-                        "chain",
-                        "title": "Prompt " "Template",
-                    },
+    assert _normalize_schema(
+        chain_configurable.get_config_jsonschema()
+    ) == _normalize_schema(
+        {
+            "$defs": {
+                "Chat_Responses": {
+                    "enum": ["hello", "bye", "helpful"],
+                    "title": "Chat Responses",
+                    "type": "string",
                 },
-                "title": "Configurable",
-                "type": "object",
+                "Configurable": {
+                    "properties": {
+                        "chat_responses": {
+                            "default": ["hello", "bye"],
+                            "items": {"$ref": "#/$defs/Chat_Responses"},
+                            "title": "Chat " "Responses",
+                            "type": "array",
+                        },
+                        "llm": {
+                            "allOf": [{"$ref": "#/$defs/LLM"}],
+                            "default": "default",
+                            "title": "LLM",
+                        },
+                        "llm_responses": {
+                            "default": ["a"],
+                            "description": "A "
+                            "list "
+                            "of "
+                            "fake "
+                            "responses "
+                            "for "
+                            "this "
+                            "LLM",
+                            "items": {"type": "string"},
+                            "title": "LLM " "Responses",
+                            "type": "array",
+                        },
+                        "prompt_template": {
+                            "allOf": [{"$ref": "#/$defs/Prompt_Template"}],
+                            "default": "hello",
+                            "description": "The "
+                            "prompt "
+                            "template "
+                            "for "
+                            "this "
+                            "chain",
+                            "title": "Prompt " "Template",
+                        },
+                    },
+                    "title": "Configurable",
+                    "type": "object",
+                },
+                "LLM": {"enum": ["chat", "default"], "title": "LLM", "type": "string"},
+                "Prompt_Template": {
+                    "enum": ["hello", "good_morning"],
+                    "title": "Prompt Template",
+                    "type": "string",
+                },
             },
-            "LLM": {"enum": ["chat", "default"], "title": "LLM", "type": "string"},
-            "Prompt_Template": {
-                "enum": ["hello", "good_morning"],
-                "title": "Prompt Template",
-                "type": "string",
+            "properties": {
+                "configurable": {
+                    "allOf": [{"$ref": "#/$defs/Configurable"}],
+                    "default": None,
+                }
             },
-        },
-        "properties": {
-            "configurable": {
-                "allOf": [{"$ref": "#/$defs/Configurable"}],
-                "default": None,
-            }
-        },
-        "title": "RunnableSequenceConfig",
-        "type": "object",
-    }
+            "title": "RunnableSequenceConfig",
+            "type": "object",
+        }
+    )
 
     assert (
         chain_configurable.with_config(configurable={"llm": "chat"}).invoke(
