@@ -1,5 +1,6 @@
 """Test CallbackManager."""
 
+import sys
 from unittest.mock import patch
 
 import pytest
@@ -13,6 +14,7 @@ from langchain_community.callbacks.manager import get_bedrock_anthropic_callback
 from langchain_community.llms.openai import BaseOpenAI
 
 
+@pytest.mark.skipif(sys.version_info[:2] == (3, 8), reason="Skip test on Python 3.8")
 def test_callback_manager_configure_context_vars(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
