@@ -6973,7 +6973,7 @@
         'properties': dict({
           'messages': dict({
             'items': dict({
-              'anyOf': list([
+              'oneOf': list([
                 dict({
                   '$ref': '#/$defs/AIMessage',
                 }),
@@ -8473,7 +8473,7 @@
         'properties': dict({
           'messages': dict({
             'items': dict({
-              'anyOf': list([
+              'oneOf': list([
                 dict({
                   '$ref': '#/definitions/AIMessage',
                 }),
@@ -11348,7 +11348,7 @@
         'properties': dict({
           'messages': dict({
             'items': dict({
-              'anyOf': list([
+              'oneOf': list([
                 dict({
                   '$ref': '#/definitions/AIMessage',
                 }),
@@ -14172,7 +14172,7 @@
         'properties': dict({
           'messages': dict({
             'items': dict({
-              'anyOf': list([
+              'oneOf': list([
                 dict({
                   '$ref': '#/definitions/AIMessage',
                 }),
@@ -15631,7 +15631,7 @@
         'properties': dict({
           'messages': dict({
             'items': dict({
-              'anyOf': list([
+              'oneOf': list([
                 dict({
                   '$ref': '#/definitions/AIMessage',
                 }),

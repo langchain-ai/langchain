@@ -7,19 +7,16 @@ They can be used to represent text, images, or chat message pieces.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, List, Literal, Sequence, Union, cast
+from typing import Any, List, Literal, Sequence, cast
 
-from pydantic import Discriminator, Field, Tag
+from pydantic import Discriminator
 from typing_extensions import Annotated, TypedDict
 
 from langchain_core.load.serializable import Serializable
 from langchain_core.messages import (
-    AIMessage,
     AnyMessage,
     BaseMessage,
     HumanMessage,
-    SystemMessage,
-    ToolMessage,
     get_buffer_string,
 )
 
@@ -129,24 +126,14 @@ class ImagePromptValue(PromptValue):
         """Return prompt (image URL) as messages."""
         return [HumanMessage(content=[cast(dict, self.image_url)])]
 
-
-TaggedMessage = Union[
-    Annotated[AIMessage, Tag("ai")],
-    Annotated[SystemMessage, Tag("system")],
-    Annotated[HumanMessage, Tag("human")],
-    Annotated[ToolMessage, Tag("tool")],
-]
-
-
-def get_discriminator_value(v: Any) -> str:
+def _msg_discriminator(v: Any) -> str:
     return v.type
-
 
 class ChatPromptValueConcrete(ChatPromptValue):
     """Chat prompt value which explicitly lists out the message types it accepts.
     For use in external schemas."""
 
-    messages: Sequence[Annotated[TaggedMessage, Discriminator(get_discriminator_value)]]
+    messages: Sequence[Annotated[AnyMessage, Discriminator(_msg_discriminator)]]
     """Sequence of messages."""
 
     type: Literal["ChatPromptValueConcrete"] = "ChatPromptValueConcrete"
