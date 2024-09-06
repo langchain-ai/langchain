@@ -1349,6 +1349,23 @@
       'history': dict({
         'default': None,
         'items': dict({
+          'discriminator': dict({
+            'mapping': dict({
+              'AIMessageChunk': '#/$defs/AIMessageChunk',
+              'ChatMessageChunk': '#/$defs/ChatMessageChunk',
+              'FunctionMessageChunk': '#/$defs/FunctionMessageChunk',
+              'HumanMessageChunk': '#/$defs/HumanMessageChunk',
+              'SystemMessageChunk': '#/$defs/SystemMessageChunk',
+              'ToolMessageChunk': '#/$defs/ToolMessageChunk',
+              'ai': '#/$defs/AIMessage',
+              'chat': '#/$defs/ChatMessage',
+              'function': '#/$defs/FunctionMessage',
+              'human': '#/$defs/HumanMessage',
+              'system': '#/$defs/SystemMessage',
+              'tool': '#/$defs/ToolMessage',
+            }),
+            'propertyName': 'type',
+          }),
           'oneOf': list([
             dict({
               '$ref': '#/$defs/AIMessage',
@@ -2752,6 +2769,23 @@
     'properties': dict({
       'history': dict({
         'items': dict({
+          'discriminator': dict({
+            'mapping': dict({
+              'AIMessageChunk': '#/$defs/AIMessageChunk',
+              'ChatMessageChunk': '#/$defs/ChatMessageChunk',
+              'FunctionMessageChunk': '#/$defs/FunctionMessageChunk',
+              'HumanMessageChunk': '#/$defs/HumanMessageChunk',
+              'SystemMessageChunk': '#/$defs/SystemMessageChunk',
+              'ToolMessageChunk': '#/$defs/ToolMessageChunk',
+              'ai': '#/$defs/AIMessage',
+              'chat': '#/$defs/ChatMessage',
+              'function': '#/$defs/FunctionMessage',
+              'human': '#/$defs/HumanMessage',
+              'system': '#/$defs/SystemMessage',
+              'tool': '#/$defs/ToolMessage',
+            }),
+            'propertyName': 'type',
+          }),
           'oneOf': list([
             dict({
               '$ref': '#/$defs/AIMessage',

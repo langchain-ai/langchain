@@ -29,7 +29,7 @@ from typing import (
     overload,
 )
 
-from pydantic import Discriminator, Field, Tag
+from pydantic import Discriminator, Field
 from typing_extensions import Annotated
 
 from langchain_core.messages.ai import AIMessage, AIMessageChunk
@@ -55,20 +55,20 @@ def _get_type(val: Any) -> str:
 
 AnyMessage = Annotated[
     Union[
-        Annotated[AIMessage, Tag(tag="ai")],
-        Annotated[HumanMessage, Tag(tag="human")],
-        Annotated[ChatMessage, Tag(tag="chat")],
-        Annotated[SystemMessage, Tag(tag="system")],
-        Annotated[FunctionMessage, Tag(tag="function")],
-        Annotated[ToolMessage, Tag(tag="tool")],
-        Annotated[AIMessageChunk, Tag(tag="AIMessageChunk")],
-        Annotated[HumanMessageChunk, Tag(tag="HumanMessageChunk")],
-        Annotated[ChatMessageChunk, Tag(tag="ChatMessageChunk")],
-        Annotated[SystemMessageChunk, Tag(tag="SystemMessageChunk")],
-        Annotated[FunctionMessageChunk, Tag(tag="FunctionMessageChunk")],
-        Annotated[ToolMessageChunk, Tag(tag="ToolMessageChunk")],
+        AIMessage,
+        HumanMessage,
+        ChatMessage,
+        SystemMessage,
+        FunctionMessage,
+        ToolMessage,
+        AIMessageChunk,
+        HumanMessageChunk,
+        ChatMessageChunk,
+        SystemMessageChunk,
+        FunctionMessageChunk,
+        ToolMessageChunk,
     ],
-    Field(discriminator=Discriminator(_get_type)),
+    Field(discriminator=Discriminator("type")),
 ]
 
 
