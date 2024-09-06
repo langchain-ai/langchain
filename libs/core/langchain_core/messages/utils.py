@@ -72,25 +72,6 @@ AnyMessage = Annotated[
 ]
 
 
-# AnyMessage = Annotated[
-#     Union[
-#         AIMessage,
-#         HumanMessage,
-#         ChatMessage,
-#         SystemMessage,
-#         FunctionMessage,
-#         ToolMessage,
-#         AIMessageChunk,
-#         HumanMessageChunk,
-#         ChatMessageChunk,
-#         SystemMessageChunk,
-#         FunctionMessageChunk,
-#         ToolMessageChunk,
-#     ],
-#     Field(discriminator=Discriminator("type")),
-# ]
-
-
 def get_buffer_string(
     messages: Sequence[BaseMessage], human_prefix: str = "Human", ai_prefix: str = "AI"
 ) -> str:
