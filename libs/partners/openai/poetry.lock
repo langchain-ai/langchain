@@ -473,7 +473,7 @@ files = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.0.dev1"
+version = "0.3.0.dev2"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -504,7 +504,7 @@ develop = true
 
 [package.dependencies]
 httpx = "^0.27.0"
-langchain-core = "^0.3.0.dev"
+langchain-core = ">=0.3.0.dev1"
 pytest = ">=7,<9"
 syrupy = "^4"
 
@@ -1503,4 +1503,4 @@ watchmedo = ["PyYAML (>=3.10)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0"
-content-hash = "48b109beee7d50f72abaa71aa2986070a36fc85639de873f6daf5a5b1415eb28"
+content-hash = "24716f2ed37064f1494928c4840c99b90d4ddba2f84a83b004d4730f8a5a4ae0"
