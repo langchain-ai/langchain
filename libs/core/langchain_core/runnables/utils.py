@@ -805,7 +805,7 @@ def create_model(
         try:
             named_root_model = _create_root_model_cached(__model_name, **kwargs)
         except TypeError:
-            # something in field definitions is not hashable
+            # something in the arguments into _create_root_model_cached is not hashable
             named_root_model = _create_root_model(__model_name, **kwargs)
         return named_root_model
     try:
