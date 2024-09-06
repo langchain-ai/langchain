@@ -29,7 +29,7 @@ from typing import (
     overload,
 )
 
-from pydantic import Discriminator, Field
+from pydantic import Discriminator, Field, Tag
 from typing_extensions import Annotated
 
 from langchain_core.messages.ai import AIMessage, AIMessageChunk
@@ -49,23 +49,46 @@ if TYPE_CHECKING:
     from langchain_core.runnables.base import Runnable
 
 
+def _get_type(v: Any) -> str:
+    return v.type
+
+
 AnyMessage = Annotated[
     Union[
-        AIMessage,
-        HumanMessage,
-        ChatMessage,
-        SystemMessage,
-        FunctionMessage,
-        ToolMessage,
-        AIMessageChunk,
-        HumanMessageChunk,
-        ChatMessageChunk,
-        SystemMessageChunk,
-        FunctionMessageChunk,
-        ToolMessageChunk,
+        Annotated[AIMessage, Tag(tag="ai")],
+        Annotated[HumanMessage, Tag(tag="human")],
+        Annotated[ChatMessage, Tag(tag="chat")],
+        Annotated[SystemMessage, Tag(tag="system")],
+        Annotated[FunctionMessage, Tag(tag="function")],
+        Annotated[ToolMessage, Tag(tag="tool")],
+        Annotated[AIMessageChunk, Tag(tag="AIMessageChunk")],
+        Annotated[HumanMessageChunk, Tag(tag="HumanMessageChunk")],
+        Annotated[ChatMessageChunk, Tag(tag="ChatMessageChunk")],
+        Annotated[SystemMessageChunk, Tag(tag="SystemMessageChunk")],
+        Annotated[FunctionMessageChunk, Tag(tag="FunctionMessageChunk")],
+        Annotated[ToolMessageChunk, Tag(tag="ToolMessageChunk")],
     ],
-    Field(discriminator=Discriminator("type")),
+    Field(discriminator=Discriminator(_get_type)),
 ]
+
+
+# AnyMessage = Annotated[
+#     Union[
+#         AIMessage,
+#         HumanMessage,
+#         ChatMessage,
+#         SystemMessage,
+#         FunctionMessage,
+#         ToolMessage,
+#         AIMessageChunk,
+#         HumanMessageChunk,
+#         ChatMessageChunk,
+#         SystemMessageChunk,
+#         FunctionMessageChunk,
+#         ToolMessageChunk,
+#     ],
+#     Field(discriminator=Discriminator("type")),
+# ]
 
 
 def get_buffer_string(
