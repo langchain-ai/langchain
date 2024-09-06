@@ -12,7 +12,7 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-langchain-core = "^0.3.0.dev"
+langchain-core = { version = ">=0.3.0.dev1", allow-prereleases = true }
 pytest = ">=7,<9"
 httpx = "^0.27.0"
 syrupy = "^4"

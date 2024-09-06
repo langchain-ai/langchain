@@ -33,8 +33,8 @@ ignore-words-list = "momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogy
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-langchain-core = "^0.3.0.dev"
-langchain = "^0.3.0.dev"
+langchain-core = { version = "^0.3.0.dev2", allow-prereleases = true }
+langchain = { version = "^0.3.0.dev1", allow-prereleases = true }
 SQLAlchemy = ">=1.4,<3"
 requests = "^2"
 PyYAML = ">=5.3"

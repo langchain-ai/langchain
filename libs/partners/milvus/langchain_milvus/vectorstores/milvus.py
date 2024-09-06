@@ -394,7 +394,7 @@ class Milvus(VectorStore):
                     and (addr["address"] == given_address)
                     and ("user" in addr)
                     and (addr["user"] == tmp_user)
-                    and (addr["db_name"] == db_name)
+                    and (addr.get("db_name", "default") == db_name)
                 ):
                     logger.debug("Using previous connection: %s", con[0])
                     return con[0]
