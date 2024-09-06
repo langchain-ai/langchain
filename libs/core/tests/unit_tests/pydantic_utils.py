@@ -118,4 +118,5 @@ def _normalize_schema(obj: Any) -> Dict[str, Any]:
         data = obj
     remove_all_none_default(data)
     replace_all_of_with_ref(data)
+    _remove_enum_description(data)
     return data
