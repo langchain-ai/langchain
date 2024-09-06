@@ -303,6 +303,11 @@ SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "bedrock",
         "ChatBedrock",
     ),
+    ("langchain_google_genai", "chat_models", "ChatGoogleGenerativeAI"): (
+        "langchain_google_genai",
+        "chat_models",
+        "ChatGoogleGenerativeAI",
+    ),
     ("langchain", "schema", "output", "ChatGenerationChunk"): (
         "langchain_core",
         "outputs",
