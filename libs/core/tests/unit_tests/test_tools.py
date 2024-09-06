@@ -293,7 +293,7 @@ def test_structured_tool_types_parsed() -> None:
     assert isinstance(structured_tool, StructuredTool)
     args = {
         "some_enum": SomeEnum.A.value,
-        "some_base_model": SomeBaseModel(foo="bar").dict(),
+        "some_base_model": SomeBaseModel(foo="bar").model_dump(),
     }
     result = structured_tool.run(json.loads(json.dumps(args)))
     expected = {
@@ -1600,7 +1600,7 @@ def test_args_schema_as_pydantic(pydantic_model: Any) -> None:
         name="some_tool", description="some description", args_schema=pydantic_model
     )
 
-    assert tool.get_input_schema().schema() == {
+    assert tool.get_input_schema().model_json_schema() == {
         "properties": {
             "a": {"title": "A", "type": "integer"},
             "b": {"title": "B", "type": "string"},
@@ -1610,7 +1610,7 @@ def test_args_schema_as_pydantic(pydantic_model: Any) -> None:
         "type": "object",
     }
 
-    assert tool.tool_call_schema.schema() == {
+    assert tool.tool_call_schema.model_json_schema() == {
         "description": "some description",
         "properties": {
             "a": {"title": "A", "type": "integer"},
@@ -1684,7 +1684,7 @@ def test_structured_tool_with_different_pydantic_versions(pydantic_model: Any) -
 
     assert foo_tool.invoke({"a": 5, "b": "hello"}) == "foo"
 
-    assert foo_tool.args_schema.schema() == {
+    assert foo_tool.args_schema.model_json_schema() == {
         "properties": {
             "a": {"title": "A", "type": "integer"},
             "b": {"title": "B", "type": "string"},
@@ -1694,7 +1694,7 @@ def test_structured_tool_with_different_pydantic_versions(pydantic_model: Any) -
         "type": "object",
     }
 
-    assert foo_tool.get_input_schema().schema() == {
+    assert foo_tool.get_input_schema().model_json_schema() == {
         "properties": {
             "a": {"title": "A", "type": "integer"},
             "b": {"title": "B", "type": "string"},

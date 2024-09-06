@@ -172,7 +172,7 @@ def test_fields_pydantic_v1() -> None:
         x: int
 
     fields = get_fields(Foo)
-    assert fields == {"x": Foo.__fields__["x"]}  # type: ignore[index]
+    assert fields == {"x": Foo.model_fields["x"]}  # type: ignore[index]
 
 
 @pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Only tests Pydantic v2")

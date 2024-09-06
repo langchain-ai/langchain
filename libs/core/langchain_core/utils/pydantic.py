@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import inspect
 import textwrap
+import warnings
 from functools import wraps
 from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union, overload
 
 import pydantic
-from pydantic import BaseModel, root_validator
+from pydantic import BaseModel, root_validator, PydanticDeprecationWarning
 from pydantic.json_schema import GenerateJsonSchema, JsonSchemaValue
 from pydantic_core import core_schema
 
@@ -134,42 +135,44 @@ def pre_init(func: Callable) -> Any:
         Any: The decorated function.
     """
 
-    @root_validator(pre=True)
-    @wraps(func)
-    def wrapper(cls: Type[BaseModel], values: Dict[str, Any]) -> Dict[str, Any]:
-        """Decorator to run a function before model initialization.
+    with warnings.catch_warnings():
+        warnings.filterwarnings(action='ignore', category=PydanticDeprecationWarning)
+        @root_validator(pre=True)
+        @wraps(func)
+        def wrapper(cls: Type[BaseModel], values: Dict[str, Any]) -> Dict[str, Any]:
+            """Decorator to run a function before model initialization.
 
-        Args:
-            cls (Type[BaseModel]): The model class.
-            values (Dict[str, Any]): The values to initialize the model with.
+            Args:
+                cls (Type[BaseModel]): The model class.
+                values (Dict[str, Any]): The values to initialize the model with.
 
-        Returns:
-            Dict[str, Any]: The values to initialize the model with.
-        """
-        # Insert default values
-        fields = cls.model_fields
-        for name, field_info in fields.items():
-            # Check if allow_population_by_field_name is enabled
-            # If yes, then set the field name to the alias
-            if hasattr(cls, "Config"):
-                if hasattr(cls.Config, "allow_population_by_field_name"):
-                    if cls.Config.allow_population_by_field_name:
+            Returns:
+                Dict[str, Any]: The values to initialize the model with.
+            """
+            # Insert default values
+            fields = cls.model_fields
+            for name, field_info in fields.items():
+                # Check if allow_population_by_field_name is enabled
+                # If yes, then set the field name to the alias
+                if hasattr(cls, "Config"):
+                    if hasattr(cls.Config, "allow_population_by_field_name"):
+                        if cls.Config.allow_population_by_field_name:
+                            if field_info.alias in values:
+                                values[name] = values.pop(field_info.alias)
+                if hasattr(cls, "model_config"):
+                    if cls.model_config.get("populate_by_name"):
                         if field_info.alias in values:
                             values[name] = values.pop(field_info.alias)
-            if hasattr(cls, "model_config"):
-                if cls.model_config.get("populate_by_name"):
-                    if field_info.alias in values:
-                        values[name] = values.pop(field_info.alias)
 
-            if name not in values or values[name] is None:
-                if not field_info.is_required():
-                    if field_info.default_factory is not None:
-                        values[name] = field_info.default_factory()
-                    else:
-                        values[name] = field_info.default
+                if name not in values or values[name] is None:
+                    if not field_info.is_required():
+                        if field_info.default_factory is not None:
+                            values[name] = field_info.default_factory()
+                        else:
+                            values[name] = field_info.default
 
-        # Call the decorated function
-        return func(cls, values)
+            # Call the decorated function
+            return func(cls, values)
 
     return wrapper
 

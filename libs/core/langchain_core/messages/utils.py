@@ -521,7 +521,7 @@ def merge_message_runs(
     messages = convert_to_messages(messages)
     merged: List[BaseMessage] = []
     for msg in messages:
-        curr = msg.copy(deep=True)
+        curr = msg.model_copy(deep=True)
         last = merged.pop() if merged else None
         if not last:
             merged.append(curr)
@@ -872,7 +872,7 @@ def _first_max_tokens(
     if idx < len(messages) - 1 and partial_strategy:
         included_partial = False
         if isinstance(messages[idx].content, list):
-            excluded = messages[idx].copy(deep=True)
+            excluded = messages[idx].model_copy(deep=True)
             num_block = len(excluded.content)
             if partial_strategy == "last":
                 excluded.content = list(reversed(excluded.content))
@@ -886,7 +886,7 @@ def _first_max_tokens(
             if included_partial and partial_strategy == "last":
                 excluded.content = list(reversed(excluded.content))
         if not included_partial:
-            excluded = messages[idx].copy(deep=True)
+            excluded = messages[idx].model_copy(deep=True)
             if isinstance(excluded.content, list) and any(
                 isinstance(block, str) or block["type"] == "text"
                 for block in messages[idx].content
@@ -977,11 +977,11 @@ _CHUNK_MSG_MAP = {v: k for k, v in _MSG_CHUNK_MAP.items()}
 
 def _msg_to_chunk(message: BaseMessage) -> BaseMessageChunk:
     if message.__class__ in _MSG_CHUNK_MAP:
-        return _MSG_CHUNK_MAP[message.__class__](**message.dict(exclude={"type"}))
+        return _MSG_CHUNK_MAP[message.__class__](**message.model_dump(exclude={"type"}))
 
     for msg_cls, chunk_cls in _MSG_CHUNK_MAP.items():
         if isinstance(message, msg_cls):
-            return chunk_cls(**message.dict(exclude={"type"}))
+            return chunk_cls(**message.model_dump(exclude={"type"}))
 
     raise ValueError(
         f"Unrecognized message class {message.__class__}. Supported classes are "
@@ -992,11 +992,11 @@ def _msg_to_chunk(message: BaseMessage) -> BaseMessageChunk:
 def _chunk_to_msg(chunk: BaseMessageChunk) -> BaseMessage:
     if chunk.__class__ in _CHUNK_MSG_MAP:
         return _CHUNK_MSG_MAP[chunk.__class__](
-            **chunk.dict(exclude={"type", "tool_call_chunks"})
+            **chunk.model_dump(exclude={"type", "tool_call_chunks"})
         )
     for chunk_cls, msg_cls in _CHUNK_MSG_MAP.items():
         if isinstance(chunk, chunk_cls):
-            return msg_cls(**chunk.dict(exclude={"type", "tool_call_chunks"}))
+            return msg_cls(**chunk.model_dump(exclude={"type", "tool_call_chunks"}))
 
     raise ValueError(
         f"Unrecognized message chunk class {chunk.__class__}. Supported classes are "

@@ -12,6 +12,7 @@ from langsmith.schemas import RunTypeEnum as RunTypeEnumDep
 
 from langchain_core._api import deprecated
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from pydantic import PydanticDeprecationWarning
 
 
 @deprecated("0.1.0", alternative="Use string instead.", removal="1.0")
@@ -142,9 +143,14 @@ class Run(BaseRunV2):
         return values
 
 
-ChainRun.update_forward_refs()
-ToolRun.update_forward_refs()
-Run.update_forward_refs()
+# TODO: Update once langsmith moves to Pydantic V2 and we can swap Run.model_rebuild
+# for Run.update_forward_refs
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore", category=PydanticDeprecationWarning)
+
+    ChainRun.update_forward_refs()
+    ToolRun.update_forward_refs()
+    Run.update_forward_refs()
 
 __all__ = [
     "BaseRun",

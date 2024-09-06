@@ -51,6 +51,9 @@ omit = [ "tests/*",]
 addopts = "--snapshot-warn-unused --strict-markers --strict-config --durations=5"
 markers = [ "requires: mark tests as requiring a specific library", "asyncio: mark tests as requiring asyncio", "compile: mark placeholder test used to compile integration tests without running them",]
 asyncio_mode = "auto"
+filterwarnings =  [
+    "ignore::langchain_core._api.beta_decorator.LangChainBetaWarning",
+]
 
 [tool.poetry.group.lint]
 optional = true
