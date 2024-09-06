@@ -49,10 +49,6 @@ if TYPE_CHECKING:
     from langchain_core.runnables.base import Runnable
 
 
-def _get_type(val: Any) -> str:
-    return val.type
-
-
 AnyMessage = Annotated[
     Union[
         AIMessage,
