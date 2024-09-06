@@ -159,7 +159,6 @@ class LangChainTracer(BaseTracer):
         return chat_model_run
 
     def _persist_run(self, run: Run) -> None:
-
         # TODO: Update once langsmith moves to Pydantic V2 and we can swap run.copy for
         # run.model_copy
         with warnings.catch_warnings():

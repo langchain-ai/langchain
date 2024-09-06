@@ -9,7 +9,7 @@ from functools import wraps
 from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union, overload
 
 import pydantic
-from pydantic import BaseModel, root_validator, PydanticDeprecationWarning
+from pydantic import BaseModel, PydanticDeprecationWarning, root_validator
 from pydantic.json_schema import GenerateJsonSchema, JsonSchemaValue
 from pydantic_core import core_schema
 
@@ -136,7 +136,8 @@ def pre_init(func: Callable) -> Any:
     """
 
     with warnings.catch_warnings():
-        warnings.filterwarnings(action='ignore', category=PydanticDeprecationWarning)
+        warnings.filterwarnings(action="ignore", category=PydanticDeprecationWarning)
+
         @root_validator(pre=True)
         @wraps(func)
         def wrapper(cls: Type[BaseModel], values: Dict[str, Any]) -> Dict[str, Any]:
