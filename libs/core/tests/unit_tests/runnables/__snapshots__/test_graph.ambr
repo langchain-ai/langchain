@@ -1710,40 +1710,44 @@
               'type': 'string',
             }),
             dict({
-              '$ref': '#/$defs/AIMessage',
-            }),
-            dict({
-              '$ref': '#/$defs/HumanMessage',
-            }),
-            dict({
-              '$ref': '#/$defs/ChatMessage',
-            }),
-            dict({
-              '$ref': '#/$defs/SystemMessage',
-            }),
-            dict({
-              '$ref': '#/$defs/FunctionMessage',
-            }),
-            dict({
-              '$ref': '#/$defs/ToolMessage',
-            }),
-            dict({
-              '$ref': '#/$defs/AIMessageChunk',
-            }),
-            dict({
-              '$ref': '#/$defs/HumanMessageChunk',
-            }),
-            dict({
-              '$ref': '#/$defs/ChatMessageChunk',
-            }),
-            dict({
-              '$ref': '#/$defs/SystemMessageChunk',
-            }),
-            dict({
-              '$ref': '#/$defs/FunctionMessageChunk',
-            }),
-            dict({
-              '$ref': '#/$defs/ToolMessageChunk',
+              'oneOf': list([
+                dict({
+                  '$ref': '#/$defs/AIMessage',
+                }),
+                dict({
+                  '$ref': '#/$defs/HumanMessage',
+                }),
+                dict({
+                  '$ref': '#/$defs/ChatMessage',
+                }),
+                dict({
+                  '$ref': '#/$defs/SystemMessage',
+                }),
+                dict({
+                  '$ref': '#/$defs/FunctionMessage',
+                }),
+                dict({
+                  '$ref': '#/$defs/ToolMessage',
+                }),
+                dict({
+                  '$ref': '#/$defs/AIMessageChunk',
+                }),
+                dict({
+                  '$ref': '#/$defs/HumanMessageChunk',
+                }),
+                dict({
+                  '$ref': '#/$defs/ChatMessageChunk',
+                }),
+                dict({
+                  '$ref': '#/$defs/SystemMessageChunk',
+                }),
+                dict({
+                  '$ref': '#/$defs/FunctionMessageChunk',
+                }),
+                dict({
+                  '$ref': '#/$defs/ToolMessageChunk',
+                }),
+              ]),
             }),
           ]),
           'title': 'RunnableParallel<as_list,as_str>Input',

@@ -127,15 +127,11 @@ class ImagePromptValue(PromptValue):
         return [HumanMessage(content=[cast(dict, self.image_url)])]
 
 
-def _msg_discriminator(v: Any) -> str:
-    return v.type
-
-
 class ChatPromptValueConcrete(ChatPromptValue):
     """Chat prompt value which explicitly lists out the message types it accepts.
     For use in external schemas."""
 
-    messages: Sequence[Annotated[AnyMessage, Discriminator(_msg_discriminator)]]
+    messages: Sequence[AnyMessage]
     """Sequence of messages."""
 
     type: Literal["ChatPromptValueConcrete"] = "ChatPromptValueConcrete"

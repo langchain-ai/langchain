@@ -6525,7 +6525,7 @@
     'properties': dict({
       'history': dict({
         'items': dict({
-          'anyOf': list([
+          'oneOf': list([
             dict({
               '$ref': '#/$defs/AIMessage',
             }),
@@ -8035,7 +8035,7 @@
       }),
       dict({
         'items': dict({
-          'anyOf': list([
+          'oneOf': list([
             dict({
               '$ref': '#/definitions/AIMessage',
             }),
@@ -9513,44 +9513,6 @@
 # ---
 # name: test_schemas[fake_chat_output_schema]
   dict({
-    'anyOf': list([
-      dict({
-        '$ref': '#/definitions/AIMessage',
-      }),
-      dict({
-        '$ref': '#/definitions/HumanMessage',
-      }),
-      dict({
-        '$ref': '#/definitions/ChatMessage',
-      }),
-      dict({
-        '$ref': '#/definitions/SystemMessage',
-      }),
-      dict({
-        '$ref': '#/definitions/FunctionMessage',
-      }),
-      dict({
-        '$ref': '#/definitions/ToolMessage',
-      }),
-      dict({
-        '$ref': '#/definitions/AIMessageChunk',
-      }),
-      dict({
-        '$ref': '#/definitions/HumanMessageChunk',
-      }),
-      dict({
-        '$ref': '#/definitions/ChatMessageChunk',
-      }),
-      dict({
-        '$ref': '#/definitions/SystemMessageChunk',
-      }),
-      dict({
-        '$ref': '#/definitions/FunctionMessageChunk',
-      }),
-      dict({
-        '$ref': '#/definitions/ToolMessageChunk',
-      }),
-    ]),
     'definitions': dict({
       'AIMessage': dict({
         'additionalProperties': True,
@@ -10893,6 +10855,44 @@
         'type': 'object',
       }),
     }),
+    'oneOf': list([
+      dict({
+        '$ref': '#/definitions/AIMessage',
+      }),
+      dict({
+        '$ref': '#/definitions/HumanMessage',
+      }),
+      dict({
+        '$ref': '#/definitions/ChatMessage',
+      }),
+      dict({
+        '$ref': '#/definitions/SystemMessage',
+      }),
+      dict({
+        '$ref': '#/definitions/FunctionMessage',
+      }),
+      dict({
+        '$ref': '#/definitions/ToolMessage',
+      }),
+      dict({
+        '$ref': '#/definitions/AIMessageChunk',
+      }),
+      dict({
+        '$ref': '#/definitions/HumanMessageChunk',
+      }),
+      dict({
+        '$ref': '#/definitions/ChatMessageChunk',
+      }),
+      dict({
+        '$ref': '#/definitions/SystemMessageChunk',
+      }),
+      dict({
+        '$ref': '#/definitions/FunctionMessageChunk',
+      }),
+      dict({
+        '$ref': '#/definitions/ToolMessageChunk',
+      }),
+    ]),
     'title': 'FakeListChatModelOutput',
   })
 # ---
@@ -10910,7 +10910,7 @@
       }),
       dict({
         'items': dict({
-          'anyOf': list([
+          'oneOf': list([
             dict({
               '$ref': '#/definitions/AIMessage',
             }),
@@ -12393,40 +12393,44 @@
         'type': 'string',
       }),
       dict({
-        '$ref': '#/definitions/AIMessage',
-      }),
-      dict({
-        '$ref': '#/definitions/HumanMessage',
-      }),
-      dict({
-        '$ref': '#/definitions/ChatMessage',
-      }),
-      dict({
-        '$ref': '#/definitions/SystemMessage',
-      }),
-      dict({
-        '$ref': '#/definitions/FunctionMessage',
-      }),
-      dict({
-        '$ref': '#/definitions/ToolMessage',
-      }),
-      dict({
-        '$ref': '#/definitions/AIMessageChunk',
-      }),
-      dict({
-        '$ref': '#/definitions/HumanMessageChunk',
-      }),
-      dict({
-        '$ref': '#/definitions/ChatMessageChunk',
-      }),
-      dict({
-        '$ref': '#/definitions/SystemMessageChunk',
-      }),
-      dict({
-        '$ref': '#/definitions/FunctionMessageChunk',
-      }),
-      dict({
-        '$ref': '#/definitions/ToolMessageChunk',
+        'oneOf': list([
+          dict({
+            '$ref': '#/definitions/AIMessage',
+          }),
+          dict({
+            '$ref': '#/definitions/HumanMessage',
+          }),
+          dict({
+            '$ref': '#/definitions/ChatMessage',
+          }),
+          dict({
+            '$ref': '#/definitions/SystemMessage',
+          }),
+          dict({
+            '$ref': '#/definitions/FunctionMessage',
+          }),
+          dict({
+            '$ref': '#/definitions/ToolMessage',
+          }),
+          dict({
+            '$ref': '#/definitions/AIMessageChunk',
+          }),
+          dict({
+            '$ref': '#/definitions/HumanMessageChunk',
+          }),
+          dict({
+            '$ref': '#/definitions/ChatMessageChunk',
+          }),
+          dict({
+            '$ref': '#/definitions/SystemMessageChunk',
+          }),
+          dict({
+            '$ref': '#/definitions/FunctionMessageChunk',
+          }),
+          dict({
+            '$ref': '#/definitions/ToolMessageChunk',
+          }),
+        ]),
       }),
     ]),
     'definitions': dict({
