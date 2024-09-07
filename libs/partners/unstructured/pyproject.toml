@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-unstructured"
-version = "0.1.2"
+version = "0.1.3"
 description = "An integration package connecting Unstructured and LangChain"
 authors = []
 readme = "README.md"
@@ -13,7 +13,7 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-langchain-core = "^0.2.23"
+langchain-core = "^0.2.38"
 unstructured-client = { version = "^0.25.0" }
 unstructured = { version = "^0.15.7", optional = true, python = "<3.13", extras = [
   "all-docs",

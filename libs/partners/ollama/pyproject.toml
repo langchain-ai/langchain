@@ -54,6 +54,7 @@ pytest = "^7.4.3"
 pytest-asyncio = "^0.23.2"
 syrupy = "^4.0.2"
 pytest-socket = "^0.7.0"
+pytest-watcher = "^0.3.4"
 
 [tool.poetry.group.codespell.dependencies]
 codespell = "^2.2.6"

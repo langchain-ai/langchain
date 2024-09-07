@@ -1,0 +1,66 @@
+# serializer version: 1
+# name: TestGroqStandard.test_serdes[serialized]
+  dict({
+    'graph': dict({
+      'edges': list([
+        dict({
+          'source': 0,
+          'target': 1,
+        }),
+        dict({
+          'source': 1,
+          'target': 2,
+        }),
+      ]),
+      'nodes': list([
+        dict({
+          'data': 'ChatGroqInput',
+          'id': 0,
+          'type': 'schema',
+        }),
+        dict({
+          'data': dict({
+            'id': list([
+              'langchain_groq',
+              'chat_models',
+              'ChatGroq',
+            ]),
+            'name': 'ChatGroq',
+          }),
+          'id': 1,
+          'type': 'runnable',
+        }),
+        dict({
+          'data': 'ChatGroqOutput',
+          'id': 2,
+          'type': 'schema',
+        }),
+      ]),
+    }),
+    'id': list([
+      'langchain_groq',
+      'chat_models',
+      'ChatGroq',
+    ]),
+    'kwargs': dict({
+      'groq_api_key': dict({
+        'id': list([
+          'GROQ_API_KEY',
+        ]),
+        'lc': 1,
+        'type': 'secret',
+      }),
+      'max_retries': 2,
+      'max_tokens': 100,
+      'model_name': 'mixtral-8x7b-32768',
+      'n': 1,
+      'request_timeout': 60.0,
+      'stop': list([
+      ]),
+      'temperature': 1e-08,
+    }),
+    'lc': 1,
+    'name': 'ChatGroq',
+    'type': 'constructor',
+  })
+# ---
