@@ -15,12 +15,7 @@ from langchain_community.utilities.vertexai import get_client_info
 
 if TYPE_CHECKING:
     from google.api_core.client_options import ClientOptions
-    from google.cloud.discoveryengine_v1beta import (
-        ConversationalSearchServiceClient,
-        SearchRequest,
-        SearchResult,
-        SearchServiceClient,
-    )
+    from google.cloud.discoveryengine_v1beta import SearchRequest, SearchResult
 
 
 class _BaseGoogleVertexAISearchRetriever(BaseModel):
@@ -243,7 +238,8 @@ class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetr
         Search will be based on the corrected query if found.
     """
 
-    _client: SearchServiceClient
+    # type: SearchServiceClient
+    _client: Any
     _serving_config: str
 
     model_config = ConfigDict(
@@ -408,7 +404,8 @@ class GoogleVertexAIMultiTurnSearchRetriever(
     conversation_id: str = "-"
     """Vertex AI Search Conversation ID."""
 
-    _client: ConversationalSearchServiceClient
+    # type: ConversationalSearchServiceClient
+    _client: Any
     _serving_config: str
 
     model_config = ConfigDict(
