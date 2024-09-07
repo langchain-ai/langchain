@@ -660,7 +660,7 @@ class LLMSingleActionAgent(BaseSingleActionAgent):
 
     def dict(self, **kwargs: Any) -> Dict:
         """Return dictionary representation of agent."""
-        _dict = super().model_dump()
+        _dict = super().dict()
         del _dict["output_parser"]
         return _dict
 
