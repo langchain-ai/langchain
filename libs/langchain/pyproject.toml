@@ -64,6 +64,11 @@ markers = [
     "compile: mark placeholder test used to compile integration tests without running them",
 ]
 asyncio_mode = "auto"
+filterwarnings =  [
+    "ignore::langchain_core._api.beta_decorator.LangChainBetaWarning",
+    "ignore::langchain_core._api.deprecation.LangChainDeprecationWarning:tests",
+    "ignore::langchain_core._api.deprecation.LangChainPendingDeprecationWarning:tests",
+]
 
 [tool.poetry.dependencies.async-timeout]
 version = "^4.0.0"

@@ -176,7 +176,7 @@ class BaseSingleActionAgent(BaseModel):
         Returns:
             Dict: Dictionary representation of agent.
         """
-        _dict = super().dict()
+        _dict = super().model_dump()
         try:
             _type = self._agent_type
         except NotImplementedError:
@@ -324,7 +324,7 @@ class BaseMultiActionAgent(BaseModel):
 
     def dict(self, **kwargs: Any) -> Dict:
         """Return dictionary representation of agent."""
-        _dict = super().dict()
+        _dict = super().model_dump()
         try:
             _dict["_type"] = str(self._agent_type)
         except NotImplementedError:
@@ -660,7 +660,7 @@ class LLMSingleActionAgent(BaseSingleActionAgent):
 
     def dict(self, **kwargs: Any) -> Dict:
         """Return dictionary representation of agent."""
-        _dict = super().dict()
+        _dict = super().model_dump()
         del _dict["output_parser"]
         return _dict
 
