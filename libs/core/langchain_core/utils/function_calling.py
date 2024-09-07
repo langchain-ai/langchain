@@ -605,6 +605,19 @@ def _recursive_set_additional_properties_false(
         # Check if 'required' is a key at the current level
         if "required" in schema:
             schema["additionalProperties"] = False
+        # Handle Pydantic allOf schema
+        if "allOf" in schema and len(schema["allOf"]) == 1:
+            if "enum" in schema["allOf"][0]:
+                schema["enum"] = schema["allOf"][0]["enum"]
+                del schema['allOf']
+            else:
+                schema['properties'] = schema["allOf"][0]["properties"]
+                schema["type"] = "object"
+                schema["additionalProperties"] = False
+                schema["required"] = list(schema["properties"].keys())
+                del schema['allOf']
+                for value in schema["properties"].values():
+                    _recursive_set_additional_properties_false(value)
         # Recursively check 'properties' and 'items' if they exist
         if "properties" in schema:
             for value in schema["properties"].values():
