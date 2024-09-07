@@ -1772,7 +1772,7 @@ develop = true
 
 [package.dependencies]
 jsonpatch = "^1.33"
-langsmith = "^0.1.75"
+langsmith = "^0.1.112"
 packaging = ">=23.2,<25"
 pydantic = [
     {version = ">=1,<3", markers = "python_full_version < \"3.12.4\""},
@@ -1799,6 +1799,7 @@ develop = true
 httpx = "^0.27.0"
 langchain-core = ">=0.1.40,<0.3"
 pytest = ">=7,<9"
+syrupy = "^4"
 
 [package.source]
 type = "directory"
@@ -1822,13 +1823,13 @@ url = "../text-splitters"
 
 [[package]]
 name = "langsmith"
-version = "0.1.110"
+version = "0.1.116"
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "langsmith-0.1.110-py3-none-any.whl", hash = "sha256:316d279e3853f5e90e462f9c035eeb468d042f2a21a269c1102d65f3dccdc334"},
-    {file = "langsmith-0.1.110.tar.gz", hash = "sha256:9a619dfe22a67a05a05091f0677b9c842499faec5f051b31afcd901b6627d0a3"},
+    {file = "langsmith-0.1.116-py3-none-any.whl", hash = "sha256:4b5ea64c81ba5ca309695c85dc3fb4617429a985129ed5d9eca00d1c9d6483f4"},
+    {file = "langsmith-0.1.116.tar.gz", hash = "sha256:5ccd7f5c1840f7c507ab3ee56334a1391de28c8bf72669782e2d82cafeefffa7"},
 ]
 
 [package.dependencies]
@@ -2481,8 +2482,8 @@ files = [
 [package.dependencies]
 numpy = [
     {version = ">=1.20.3", markers = "python_version < \"3.10\""},
-    {version = ">=1.21.0", markers = "python_version >= \"3.10\" and python_version < \"3.11\""},
     {version = ">=1.23.2", markers = "python_version >= \"3.11\""},
+    {version = ">=1.21.0", markers = "python_version >= \"3.10\" and python_version < \"3.11\""},
 ]
 python-dateutil = ">=2.8.2"
 pytz = ">=2020.1"
@@ -4323,4 +4324,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "b69b2186cc152c64945d8000e883e92d7872a38b7113f60b1db5c7e1c9aed7c6"
+content-hash = "83bd930c36648406317fb87fa8205f67e41c89b27c30cb25b9e66a476d0e5e08"
