@@ -238,7 +238,7 @@ class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetr
         Search will be based on the corrected query if found.
     """
 
-    # type: SearchServiceClient
+    # type is SearchServiceClient but can't be set due to optional imports
     _client: Any
     _serving_config: str
 
@@ -404,7 +404,7 @@ class GoogleVertexAIMultiTurnSearchRetriever(
     conversation_id: str = "-"
     """Vertex AI Search Conversation ID."""
 
-    # type: ConversationalSearchServiceClient
+    # type is ConversationalSearchServiceClient but can't be set due to optional imports
     _client: Any
     _serving_config: str
 
