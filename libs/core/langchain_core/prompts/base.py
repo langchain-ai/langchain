@@ -310,7 +310,7 @@ class BasePromptTemplate(
         Raises:
             NotImplementedError: If the prompt type is not implemented.
         """
-        prompt_dict = super().dict(**kwargs)
+        prompt_dict = super().model_dump(**kwargs)
         try:
             prompt_dict["_type"] = self._prompt_type
         except NotImplementedError:

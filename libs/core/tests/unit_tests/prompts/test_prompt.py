@@ -3,10 +3,15 @@
 from typing import Any, Dict, Union
 from unittest import mock
 
+import pydantic
 import pytest
+from syrupy import SnapshotAssertion
 
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.tracers.run_collector import RunCollectorCallbackHandler
+from tests.unit_tests.pydantic_utils import _normalize_schema
+
+PYDANTIC_VERSION = tuple(map(int, pydantic.__version__.split(".")))
 
 
 def test_prompt_valid() -> None:
@@ -62,7 +67,7 @@ def test_prompt_from_template() -> None:
     assert prompt == expected_prompt
 
 
-def test_mustache_prompt_from_template() -> None:
+def test_mustache_prompt_from_template(snapshot: SnapshotAssertion) -> None:
     """Test prompts can be constructed from a template."""
     # Single input variable.
     template = "This is a {{foo}} test."
@@ -110,24 +115,10 @@ def test_mustache_prompt_from_template() -> None:
         "This foo is a bar test baz."
     )
     assert prompt.input_variables == ["foo", "obj"]
-    assert prompt.get_input_jsonschema() == {
-        "$defs": {
-            "obj": {
-                "properties": {
-                    "bar": {"default": None, "title": "Bar", "type": "string"},
-                    "foo": {"default": None, "title": "Foo", "type": "string"},
-                },
-                "title": "obj",
-                "type": "object",
-            }
-        },
-        "properties": {
-            "foo": {"default": None, "title": "Foo", "type": "string"},
-            "obj": {"allOf": [{"$ref": "#/$defs/obj"}], "default": None},
-        },
-        "title": "PromptInput",
-        "type": "object",
-    }
+    if PYDANTIC_VERSION >= (2, 9):
+        assert _normalize_schema(prompt.get_input_jsonschema()) == snapshot(
+            name="schema_0"
+        )
 
     # . variables
     template = "This {{.}} is a test."
@@ -151,20 +142,10 @@ def test_mustache_prompt_from_template() -> None:
     is a test."""
     )
     assert prompt.input_variables == ["foo"]
-    assert prompt.get_input_jsonschema() == {
-        "$defs": {
-            "foo": {
-                "properties": {
-                    "bar": {"default": None, "title": "Bar", "type": "string"}
-                },
-                "title": "foo",
-                "type": "object",
-            }
-        },
-        "properties": {"foo": {"allOf": [{"$ref": "#/$defs/foo"}], "default": None}},
-        "title": "PromptInput",
-        "type": "object",
-    }
+    if PYDANTIC_VERSION >= (2, 9):
+        assert _normalize_schema(prompt.get_input_jsonschema()) == snapshot(
+            name="schema_2"
+        )
 
     # more complex nested section/context variables
     template = """This{{#foo}}
@@ -185,29 +166,10 @@ def test_mustache_prompt_from_template() -> None:
     is a test."""
     )
     assert prompt.input_variables == ["foo"]
-    assert prompt.get_input_jsonschema() == {
-        "$defs": {
-            "baz": {
-                "properties": {
-                    "qux": {"default": None, "title": "Qux", "type": "string"}
-                },
-                "title": "baz",
-                "type": "object",
-            },
-            "foo": {
-                "properties": {
-                    "bar": {"default": None, "title": "Bar", "type": "string"},
-                    "baz": {"allOf": [{"$ref": "#/$defs/baz"}], "default": None},
-                    "quux": {"default": None, "title": "Quux", "type": "string"},
-                },
-                "title": "foo",
-                "type": "object",
-            },
-        },
-        "properties": {"foo": {"allOf": [{"$ref": "#/$defs/foo"}], "default": None}},
-        "title": "PromptInput",
-        "type": "object",
-    }
+    if PYDANTIC_VERSION >= (2, 9):
+        assert _normalize_schema(prompt.get_input_jsonschema()) == snapshot(
+            name="schema_3"
+        )
 
     # triply nested section/context variables
     template = """This{{#foo}}
@@ -242,44 +204,10 @@ def test_mustache_prompt_from_template() -> None:
     is a test."""
     )
     assert prompt.input_variables == ["foo"]
-    assert prompt.get_input_jsonschema() == {
-        "$defs": {
-            "barfoo": {
-                "properties": {
-                    "foobar": {"default": None, "title": "Foobar", "type": "string"}
-                },
-                "title": "barfoo",
-                "type": "object",
-            },
-            "baz": {
-                "properties": {
-                    "qux": {"allOf": [{"$ref": "#/$defs/qux"}], "default": None}
-                },
-                "title": "baz",
-                "type": "object",
-            },
-            "foo": {
-                "properties": {
-                    "bar": {"default": None, "title": "Bar", "type": "string"},
-                    "baz": {"allOf": [{"$ref": "#/$defs/baz"}], "default": None},
-                    "quux": {"default": None, "title": "Quux", "type": "string"},
-                },
-                "title": "foo",
-                "type": "object",
-            },
-            "qux": {
-                "properties": {
-                    "barfoo": {"allOf": [{"$ref": "#/$defs/barfoo"}], "default": None},
-                    "foobar": {"default": None, "title": "Foobar", "type": "string"},
-                },
-                "title": "qux",
-                "type": "object",
-            },
-        },
-        "properties": {"foo": {"allOf": [{"$ref": "#/$defs/foo"}], "default": None}},
-        "title": "PromptInput",
-        "type": "object",
-    }
+    if PYDANTIC_VERSION >= (2, 9):
+        assert _normalize_schema(prompt.get_input_jsonschema()) == snapshot(
+            name="schema_4"
+        )
 
     # section/context variables with repeats
     template = """This{{#foo}}
@@ -294,20 +222,10 @@ def test_mustache_prompt_from_template() -> None:
     is a test."""
     )
     assert prompt.input_variables == ["foo"]
-    assert prompt.get_input_jsonschema() == {
-        "$defs": {
-            "foo": {
-                "properties": {
-                    "bar": {"default": None, "title": "Bar", "type": "string"}
-                },
-                "title": "foo",
-                "type": "object",
-            }
-        },
-        "properties": {"foo": {"allOf": [{"$ref": "#/$defs/foo"}], "default": None}},
-        "title": "PromptInput",
-        "type": "object",
-    }
+    if PYDANTIC_VERSION >= (2, 9):
+        assert _normalize_schema(prompt.get_input_jsonschema()) == snapshot(
+            name="schema_5"
+        )
     template = """This{{^foo}}
         no foos
     {{/foo}}is a test."""
