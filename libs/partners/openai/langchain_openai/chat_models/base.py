@@ -443,7 +443,7 @@ class BaseChatOpenAI(BaseChatModel):
         )
         return values
 
-    @root_validator(pre=False, skip_on_failure=True)
+    @root_validator(pre=False, skip_on_failure=True, allow_reuse=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         if values["n"] < 1:
@@ -757,7 +757,7 @@ class BaseChatOpenAI(BaseChatModel):
             )
             return
         if self.include_response_headers:
-            raw_response = self.async_client.with_raw_response.create(**payload)
+            raw_response = await self.async_client.with_raw_response.create(**payload)
             response = raw_response.parse()
             base_generation_info = {"headers": dict(raw_response.headers)}
         else:
