@@ -757,7 +757,7 @@ class BaseChatOpenAI(BaseChatModel):
             )
             return
         if self.include_response_headers:
-            raw_response = self.async_client.with_raw_response.create(**payload)
+            raw_response = await self.async_client.with_raw_response.create(**payload)
             response = raw_response.parse()
             base_generation_info = {"headers": dict(raw_response.headers)}
         else:
