@@ -5332,12 +5332,13 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):
     `RunnableWithFallbacks`) that add additional functionality.
 
     These methods include:
-    - `bind`: Bind kwargs to pass to the underlying Runnable when running it.
-    - `with_config`: Bind config to pass to the underlying Runnable when running it.
-    - `with_listeners`:  Bind lifecycle listeners to the underlying Runnable.
-    - `with_types`: Override the input and output types of the underlying Runnable.
-    - `with_retry`: Bind a retry policy to the underlying Runnable.
-    - `with_fallbacks`: Bind a fallback policy to the underlying Runnable.
+
+    - ``bind``: Bind kwargs to pass to the underlying Runnable when running it.
+    - ``with_config``: Bind config to pass to the underlying Runnable when running it.
+    - ``with_listeners``:  Bind lifecycle listeners to the underlying Runnable.
+    - ``with_types``: Override the input and output types of the underlying Runnable.
+    - ``with_retry``: Bind a retry policy to the underlying Runnable.
+    - ``with_fallbacks``: Bind a fallback policy to the underlying Runnable.
 
     Example:
 
