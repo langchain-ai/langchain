@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from langsmith import Client, traceable
 from langsmith.run_helpers import tracing_context
+from langsmith.utils import get_env_var
 
 from langchain_core.runnables.base import RunnableLambda, RunnableParallel
 from langchain_core.tracers.langchain import LangChainTracer
@@ -31,6 +32,7 @@ def _get_posts(client: Client) -> list:
 
 
 def test_config_traceable_handoff() -> None:
+    get_env_var.cache_clear()
     mock_session = MagicMock()
     mock_client_ = Client(
         session=mock_session, api_key="test", auto_batch_tracing=False
@@ -186,6 +188,7 @@ def test_tracing_enable_disable(
     def my_func(a: int) -> int:
         return a + 1
 
+    get_env_var.cache_clear()
     env_on = env == "true"
     with patch.dict("os.environ", {"LANGSMITH_TRACING": env}):
         with tracing_context(enabled=enabled):

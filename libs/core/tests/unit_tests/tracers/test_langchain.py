@@ -9,6 +9,7 @@ from uuid import UUID
 import pytest
 from langsmith import Client
 from langsmith.run_trees import RunTree
+from langsmith.utils import get_env_var, get_tracer_project
 
 from langchain_core.outputs import LLMResult
 from langchain_core.tracers.langchain import LangChainTracer
@@ -130,6 +131,8 @@ class LangChainProjectNameTest(unittest.TestCase):
         ]
 
         for case in cases:
+            get_env_var.cache_clear()
+            get_tracer_project.cache_clear()
             with self.subTest(msg=case.test_name):
                 with pytest.MonkeyPatch.context() as mp:
                     for k, v in case.envvars.items():
