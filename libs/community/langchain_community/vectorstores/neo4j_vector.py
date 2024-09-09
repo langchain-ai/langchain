@@ -594,7 +594,7 @@ class Neo4jVector(VectorStore):
         self,
         query: str,
         *,
-        params: dict = {},
+        params: Optional[Dict] = None,
         max_retries: int = 3,
         initial_delay: float = 0.1,
     ) -> List[Dict[str, Any]]:
