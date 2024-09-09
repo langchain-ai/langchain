@@ -6,7 +6,6 @@ from pydantic import SecretStr
 from langchain_community.chat_models import ChatJavelinAIGateway
 
 
-@pytest.mark.requires("javelin_sdk")
 def test_api_key_is_secret_string() -> None:
     llm = ChatJavelinAIGateway(
         gateway_uri="<javelin-ai-gateway-uri>",
@@ -18,7 +17,6 @@ def test_api_key_is_secret_string() -> None:
     assert llm.javelin_api_key.get_secret_value() == "secret-api-key"
 
 
-@pytest.mark.requires("javelin_sdk")
 def test_api_key_masked_when_passed_via_constructor() -> None:
     llm = ChatJavelinAIGateway(
         gateway_uri="<javelin-ai-gateway-uri>",
@@ -32,7 +30,6 @@ def test_api_key_masked_when_passed_via_constructor() -> None:
     assert "secret-api-key" not in repr(llm)
 
 
-@pytest.mark.requires("javelin_sdk")
 def test_api_key_alias() -> None:
     for model in [
         ChatJavelinAIGateway(
