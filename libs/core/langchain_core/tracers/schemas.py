@@ -9,10 +9,9 @@ from uuid import UUID
 
 from langsmith.schemas import RunBase as BaseRunV2
 from langsmith.schemas import RunTypeEnum as RunTypeEnumDep
-from pydantic import PydanticDeprecationWarning
+from pydantic import BaseModel, Field, PydanticDeprecationWarning, root_validator
 
 from langchain_core._api import deprecated
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 
 
 @deprecated("0.1.0", alternative="Use string instead.", removal="1.0")
