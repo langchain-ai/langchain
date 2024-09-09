@@ -47,7 +47,6 @@ class OVHCloudEmbeddings(BaseModel, Embeddings):
 
         return self._send_request_to_ai_endpoints("text/plain", text, "text2vec")
 
-
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Create a retry decorator for PremAIEmbeddings.
         Args:
@@ -58,8 +57,9 @@ class OVHCloudEmbeddings(BaseModel, Embeddings):
 
         """
 
-        return self._send_request_to_ai_endpoints("application/json", json.dumps(texts), "batch_text2vec")
-
+        return self._send_request_to_ai_endpoints(
+            "application/json", json.dumps(texts), "batch_text2vec"
+        )
 
     def embed_query(self, text: str) -> List[float]:
         """Embed a single query text.
@@ -69,7 +69,7 @@ class OVHCloudEmbeddings(BaseModel, Embeddings):
             List[float]: Embeddings for the text.
         """
         return self._generate_embedding(text)
-    
+
     def _send_request_to_ai_endpoints(self, contentType: str, payload: str, route: str):
         """Send a HTTPS request to OVHCloud AI Endpoints
         Args:
@@ -110,4 +110,3 @@ class OVHCloudEmbeddings(BaseModel, Embeddings):
                     )
                 )
             return response.json()
-
