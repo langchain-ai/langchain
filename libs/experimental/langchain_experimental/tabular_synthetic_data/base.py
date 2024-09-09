@@ -8,6 +8,8 @@ from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts.few_shot import FewShotPromptTemplate
 from langchain_core.utils.pydantic import is_basemodel_instance
 from pydantic import ConfigDict
+from typing_extensions import Self
+
 
 
 

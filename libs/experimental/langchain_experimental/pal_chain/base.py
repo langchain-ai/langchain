@@ -20,6 +20,8 @@ from langchain_experimental.pal_chain.math_prompt import MATH_PROMPT
 from pydantic import Field, root_validator, model_validator
 from langchain_experimental.utilities import PythonREPL
 from pydantic import ConfigDict
+from typing_extensions import Self
+
 
 
 COMMAND_EXECUTION_FUNCTIONS = [
