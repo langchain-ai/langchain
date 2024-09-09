@@ -603,12 +603,12 @@ class Neo4jVector(VectorStore):
 
         Args:
             query (str): The Cypher query to execute.
-            params (dict): The parameters to pass to the query.
+            params (dict, optional): Dictionary of query parameters. Defaults to {}.
             max_retries (int): Maximum number of retries.
             initial_delay (float): Initial delay in seconds before the first retry.
 
         Returns:
-            List[Dict[str, Any]]: The list of dictionaries containing the query results.
+            List[Dict[str, Any]]: List of dictionaries containing the query results.
         """
         from neo4j import Query
         from neo4j.exceptions import DriverError, Neo4jError
