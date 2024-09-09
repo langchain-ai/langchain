@@ -125,12 +125,24 @@ class ImagePromptValue(PromptValue):
         """Return prompt (image URL) as messages."""
         return [HumanMessage(content=[cast(dict, self.image_url)])]
 
+from typing import Annotated, Union
+from langchain_core.messages import AIMessage, HumanMessage
+from pydantic import Field, Discriminator
+
+# AnyMessage = Annotated[
+#     Union[
+#         AIMessage,
+#         HumanMessage,
+#     ],
+#     Field(discriminator=Discriminator("type")),
+# ]
+
 
 class ChatPromptValueConcrete(ChatPromptValue):
     """Chat prompt value which explicitly lists out the message types it accepts.
     For use in external schemas."""
 
-    messages: Sequence[AnyMessage]
+    messages: Sequence[Annotated[Union[AIMessage, HumanMessage], Field(discriminator="type")]]
     """Sequence of messages."""
 
     type: Literal["ChatPromptValueConcrete"] = "ChatPromptValueConcrete"
@@ -142,3 +154,6 @@ class ChatPromptValueConcrete(ChatPromptValue):
         Defaults to ["langchain", "prompts", "chat"].
         """
         return ["langchain", "prompts", "chat"]
+
+
+ChatPromptValueConcrete.model_rebuild()

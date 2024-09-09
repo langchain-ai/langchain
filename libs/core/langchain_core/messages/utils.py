@@ -53,16 +53,6 @@ AnyMessage = Annotated[
     Union[
         AIMessage,
         HumanMessage,
-        ChatMessage,
-        SystemMessage,
-        FunctionMessage,
-        ToolMessage,
-        AIMessageChunk,
-        HumanMessageChunk,
-        ChatMessageChunk,
-        SystemMessageChunk,
-        FunctionMessageChunk,
-        ToolMessageChunk,
     ],
     Field(discriminator=Discriminator("type")),
 ]
