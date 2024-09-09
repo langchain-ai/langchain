@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+import time
 import enum
 import logging
 import os
@@ -594,38 +594,39 @@ class Neo4jVector(VectorStore):
         self,
         query: str,
         *,
-        params: Optional[dict] = None,
-        retry_on_session_expired: bool = True,
+        params: dict = {},
+        max_retries: int = 3,
+        initial_delay: float = 0.1,
     ) -> List[Dict[str, Any]]:
-        """
-        This method sends a Cypher query to the connected Neo4j database
-        and returns the results as a list of dictionaries.
+        """Query Neo4j database with retries and exponential backoff.
 
         Args:
             query (str): The Cypher query to execute.
-            params (dict, optional): Dictionary of query parameters. Defaults to {}.
+            params (dict): The parameters to pass to the query.
+            max_retries (int): Maximum number of retries.
+            initial_delay (float): Initial delay in seconds before the first retry.
 
         Returns:
-            List[Dict[str, Any]]: List of dictionaries containing the query results.
+            List[Dict[str, Any]]: The list of dictionaries containing the query results.
         """
-        from neo4j.exceptions import CypherSyntaxError, SessionExpired
+        from neo4j import Query
+        from neo4j.exceptions import DriverError, Neo4jError
 
+        retries = 0
+        delay = initial_delay
         params = params or {}
-        with self._driver.session(database=self._database) as session:
+        while True:
             try:
-                data = session.run(query, params)
-                return [r.data() for r in data]
-            except CypherSyntaxError as e:
-                raise ValueError(f"Cypher Statement is not valid\n{e}")
-            except (
-                SessionExpired
-            ) as e:  # Session expired is a transient error that can be retried
-                if retry_on_session_expired:
-                    return self.query(
-                        query, params=params, retry_on_session_expired=False
-                    )
-                else:
+                with self._driver.session(database=self._database) as session:
+                    data = session.run(Query(text=query), params)
+                    return [r.data() for r in data]
+            except (DriverError, Neo4jError) as e:
+                if not e.is_retryable() or retries >= max_retries:
                     raise e
+
+                retries += 1
+                time.sleep(delay)
+                delay *= 2  # Exponential backoff
 
     def verify_version(self) -> None:
         """
