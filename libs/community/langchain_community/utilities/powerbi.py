@@ -15,7 +15,6 @@ from pydantic import (
     ConfigDict,
     Field,
     model_validator,
-    validator,
 )
 from requests.exceptions import Timeout
 
@@ -50,15 +49,12 @@ class PowerBIDataset(BaseModel):
         arbitrary_types_allowed=True,
     )
 
-    @validator("table_names", allow_reuse=True)
-    def fix_table_names(cls, table_names: List[str]) -> List[str]:
-        """Fix the table names."""
-        return [fix_table_name(table) for table in table_names]
-
     @model_validator(mode="before")
     @classmethod
-    def token_or_credential_present(cls, values: Dict[str, Any]) -> Any:
+    def validate_params(cls, values: Dict[str, Any]) -> Any:
         """Validate that at least one of token and credentials is present."""
+        table_names = values.get("table_names")
+        values["table_names"] = [fix_table_name(table) for table in table_names]
         if "token" in values or "credential" in values:
             return values
         raise ValueError("Please provide either a credential or a token.")
