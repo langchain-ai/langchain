@@ -2,7 +2,7 @@ from typing import Any, Dict, List
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils.pydantic import get_fields
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, ConfigDict, model_validator
 
 
 class OpenCLIPEmbeddings(BaseModel, Embeddings):
@@ -14,6 +14,8 @@ class OpenCLIPEmbeddings(BaseModel, Embeddings):
     # Select model: https://github.com/mlfoundations/open_clip
     model_name: str = "ViT-H-14"
     checkpoint: str = "laion2b_s32b_b79k"
+
+    model_config = ConfigDict(protected_namespaces=())
 
     @model_validator(mode="before")
     @classmethod

@@ -83,14 +83,14 @@ def convert_to_ollama_tool(tool: Any) -> Dict:
     """Convert a tool to an Ollama tool."""
     description = None
     if _is_pydantic_class(tool):
-        schema = tool.construct().schema()
+        schema = tool.model_construct().model_json_schema()
         name = schema["title"]
     elif isinstance(tool, BaseTool):
-        schema = tool.tool_call_schema.schema()
+        schema = tool.tool_call_schema.model_json_schema()
         name = tool.get_name()
         description = tool.description
     elif is_basemodel_instance(tool):
-        schema = tool.get_input_schema().schema()
+        schema = tool.get_input_schema().model_json_schema()
         name = tool.get_name()
         description = tool.description
     elif isinstance(tool, dict) and "name" in tool and "parameters" in tool:

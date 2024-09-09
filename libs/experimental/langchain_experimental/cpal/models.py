@@ -10,7 +10,7 @@ from pydantic import (
     Field,
     PrivateAttr,
     model_validator,
-    validator,
+    field_validator,
 )
 
 from langchain_experimental.cpal.constants import Constant
@@ -25,7 +25,7 @@ class NarrativeModel(BaseModel):
     story_hypothetical: str
     story_plot: str  # causal stack of operations
 
-    @validator("*", pre=True)
+    @field_validator("*", mode="before")
     def empty_str_to_none(cls, v: str) -> Union[str, None]:
         """Empty strings are not allowed"""
         if v == "":
@@ -48,7 +48,7 @@ class EntityModel(BaseModel):
         validate_assignment=True,
     )
 
-    @validator("name")
+    @field_validator("name")
     def lower_case_name(cls, v: str) -> str:
         v = v.lower()
         return v
@@ -75,7 +75,7 @@ class EntitySettingModel(BaseModel):
     attribute: str = Field(description="name of the attribute to be calculated")
     value: float = Field(description="entity's attribute value (calculated)")
 
-    @validator("name")
+    @field_validator("name")
     def lower_case_transform(cls, v: str) -> str:
         v = v.lower()
         return v
@@ -109,7 +109,7 @@ class InterventionModel(BaseModel):
     entity_settings: List[EntitySettingModel]
     system_settings: Optional[List[SystemSettingModel]] = None
 
-    @validator("system_settings")
+    @field_validator("system_settings")
     def lower_case_name(cls, v: str) -> Union[str, None]:
         if v is not None:
             raise NotImplementedError("system_setting is not implemented yet")
