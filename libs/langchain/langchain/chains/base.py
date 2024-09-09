@@ -32,8 +32,8 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    field_validator,
     model_validator,
-    validator,
 )
 
 from langchain.schema import RUN_KEY
@@ -248,7 +248,8 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
             values["callbacks"] = values.pop("callback_manager", None)
         return values
 
-    @validator("verbose", pre=True, always=True)
+    @field_validator("verbose", mode="before")
+    @classmethod
     def set_verbose(cls, verbose: Optional[bool]) -> bool:
         """Set the chain verbosity.
 
