@@ -48,7 +48,7 @@ class OVHCloudEmbeddings(BaseModel, Embeddings):
         return self._send_request_to_ai_endpoints("text/plain", text, "text2vec")
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        """Create a retry decorator for PremAIEmbeddings.
+        """Embed a list of documents.
         Args:
            texts (List[str]): The list of texts to embed.
 
@@ -71,7 +71,7 @@ class OVHCloudEmbeddings(BaseModel, Embeddings):
         return self._generate_embedding(text)
 
     def _send_request_to_ai_endpoints(self, contentType: str, payload: str, route: str):
-        """Send a HTTPS request to OVHCloud AI Endpoints
+        """Send a HTTPS request to OVHcloud AI Endpoints
         Args:
             contentType (str): The content type of the request, application/json or text/plain.
             payload (str): The payload of the request.
