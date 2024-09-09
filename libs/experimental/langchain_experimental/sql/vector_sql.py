@@ -32,7 +32,7 @@ class VectorSQLOutputParser(BaseOutputParser[str]):
     """Distance name for Vector SQL"""
 
     model_config = ConfigDict(
-        arbitrary_types_allowed=1,
+        arbitrary_types_allowed=True,
     )
 
     @property
