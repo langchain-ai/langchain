@@ -13,7 +13,7 @@ from langchain_core.callbacks.manager import (
 )
 from langchain_core.runnables.config import run_in_executor
 from langchain_core.tools import BaseTool
-from pydantic import BaseModel, Field, model_validator, root_validator
+from pydantic import BaseModel, Field, model_validator
 
 from langchain_experimental.utilities.python import PythonREPL
 

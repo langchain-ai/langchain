@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Optional
 
 from langchain.chains.base import Chain
 from langchain_core.callbacks.manager import CallbackManagerForChainRun
-from pydantic import model_validator, root_validator
+from pydantic import model_validator
 
 from langchain_experimental.comprehend_moderation.base_moderation import BaseModeration
 from langchain_experimental.comprehend_moderation.base_moderation_callbacks import (

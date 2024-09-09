@@ -14,7 +14,7 @@ from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain_core.callbacks.manager import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
-from pydantic import ConfigDict, Field, model_validator, root_validator
+from pydantic import ConfigDict, Field, model_validator
 from typing_extensions import Self
 
 from langchain_experimental.pal_chain.colored_object_prompt import COLORED_OBJECT_PROMPT

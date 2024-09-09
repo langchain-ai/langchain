@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Any, Union
 
 from langchain_core.tools import BaseTool
-from pydantic import Field, model_validator, root_validator
+from pydantic import Field, model_validator
 
 if TYPE_CHECKING:
     from transformers import Pipeline

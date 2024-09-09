@@ -6,7 +6,7 @@ from langchain.chains.llm import LLMChain
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts.few_shot import FewShotPromptTemplate
 from langchain_core.utils.pydantic import is_basemodel_instance
-from pydantic import BaseModel, ConfigDict, model_validator, root_validator
+from pydantic import BaseModel, ConfigDict, model_validator
 from typing_extensions import Self
 
 

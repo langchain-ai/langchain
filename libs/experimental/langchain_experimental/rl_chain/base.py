@@ -25,7 +25,7 @@ from langchain_core.prompts import (
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
-from pydantic import BaseModel, ConfigDict, model_validator, root_validator
+from pydantic import BaseModel, ConfigDict, model_validator
 
 from langchain_experimental.rl_chain.helpers import _Embed
 from langchain_experimental.rl_chain.metrics import (
