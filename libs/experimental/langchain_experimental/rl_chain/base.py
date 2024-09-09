@@ -359,8 +359,8 @@ class RLChain(Chain, Generic[TEvent]):
     active_policy: Policy = _NoOpPolicy()
     auto_embed: bool = False
     selection_scorer_activated: bool = True
-    selected_input_key = "rl_chain_selected"
-    selected_based_on_input_key = "rl_chain_selected_based_on"
+    selected_input_key: str = "rl_chain_selected"
+    selected_based_on_input_key: str = "rl_chain_selected_based_on"
     metrics: Optional[Union[MetricsTrackerRollingWindow, MetricsTrackerAverage]] = None
 
     def __init__(
