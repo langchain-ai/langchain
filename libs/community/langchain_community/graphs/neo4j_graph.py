@@ -445,7 +445,7 @@ class Neo4jGraph(GraphStore):
                     return json_data
             except (DriverError, Neo4jError) as e:
                 if not e.is_retryable() or retries >= max_retries:
-                    raise e
+                    raise
 
                 retries += 1
                 time.sleep(delay)
