@@ -119,9 +119,9 @@ def draw_mermaid(
                         for i in range(0, len(words), wrap_label_n_words)
                     )
                 if edge.conditional:
-                    edge_label = f" -. &nbsp{edge_data}&nbsp .-> "
+                    edge_label = f" -. &nbsp;{edge_data}&nbsp; .-> "
                 else:
-                    edge_label = f" -- &nbsp{edge_data}&nbsp --> "
+                    edge_label = f" -- &nbsp;{edge_data}&nbsp; --> "
             else:
                 if edge.conditional:
                     edge_label = " -.-> "
