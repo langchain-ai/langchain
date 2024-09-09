@@ -65,6 +65,9 @@ markers = [
     "compile: mark placeholder test used to compile integration tests without running them",
 ]
 asyncio_mode = "auto"
+filterwarnings = [
+    "ignore::langchain_core._api.deprecation.LangChainDeprecationWarning:test",
+]
 
 [tool.poetry.group.test]
 optional = true
