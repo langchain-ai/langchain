@@ -159,7 +159,7 @@ def optional_enum_field(
     if enum_values and llm_type == "openai-chat":
         return Field(
             ...,
-            enum=enum_values,
+            enum=enum_values,  # type: ignore[call-arg]
             description=f"{description}. Available options are {enum_values}",
             **field_kwargs,
         )
