@@ -26,7 +26,7 @@ from langchain_core.prompts import (
     SystemMessagePromptTemplate,
 )
 
-from pydantic import BaseModel, root_validator
+from pydantic import BaseModel, root_validator, model_validator
 from langchain_experimental.rl_chain.helpers import _Embed
 from langchain_experimental.rl_chain.metrics import (
     MetricsTrackerAverage,
@@ -281,8 +281,9 @@ class AutoSelectionScorer(SelectionScorer[Event], BaseModel):
         )
         return chat_prompt
 
-    @root_validator(pre=True)
-    def set_prompt_and_llm_chain(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def set_prompt_and_llm_chain(cls, values: Dict[str, Any]) -> Any:
         llm = values.get("llm")
         prompt = values.get("prompt")
         scoring_criteria_template_str = values.get("scoring_criteria_template_str")

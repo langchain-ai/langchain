@@ -10,7 +10,7 @@ from langchain_experimental.comprehend_moderation.base_moderation_callbacks impo
 from langchain_experimental.comprehend_moderation.base_moderation_config import (
     BaseModerationConfig,
 )
-from pydantic import root_validator
+from pydantic import root_validator, model_validator
 
 
 class AmazonComprehendModerationChain(Chain):
@@ -54,8 +54,9 @@ class AmazonComprehendModerationChain(Chain):
     unique_id: Optional[str] = None
     """A unique id that can be used to identify or group a user or session"""
 
-    @root_validator(pre=True)
-    def create_client(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def create_client(cls, values: Dict[str, Any]) -> Any:
         """
         Creates an Amazon Comprehend client.
 

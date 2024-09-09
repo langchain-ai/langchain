@@ -15,7 +15,7 @@ from langchain_core.callbacks.manager import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts.prompt import PromptTemplate
 
-from pydantic import Field, root_validator
+from pydantic import Field, root_validator, model_validator
 from pydantic import ConfigDict
 
 
@@ -70,8 +70,9 @@ class SQLDatabaseChain(Chain):
 
     model_config = ConfigDict(arbitrary_types_allowed=True,extra="forbid",)
 
-    @root_validator(pre=True)
-    def raise_deprecation(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def raise_deprecation(cls, values: Dict) -> Any:
         if "llm" in values:
             warnings.warn(
                 "Directly instantiating an SQLDatabaseChain with an llm is deprecated. "

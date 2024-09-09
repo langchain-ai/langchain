@@ -7,7 +7,7 @@ from contextlib import redirect_stdout
 from io import StringIO
 from typing import Any, Dict, Optional, Type
 
-from pydantic import BaseModel, Field, root_validator
+from pydantic import BaseModel, Field, root_validator, model_validator
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
@@ -97,8 +97,9 @@ class PythonAstREPLTool(BaseTool):
     sanitize_input: bool = True
     args_schema: Type[BaseModel] = PythonInputs
 
-    @root_validator(pre=True)
-    def validate_python_version(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_python_version(cls, values: Dict) -> Any:
         """Validate valid python version."""
         if sys.version_info < (3, 9):
             raise ValueError(

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Union
 
-from pydantic import Field, root_validator
+from pydantic import Field, root_validator, model_validator
 from langchain_core.tools import BaseTool
 
 if TYPE_CHECKING:
@@ -81,8 +81,9 @@ class HuggingFaceInjectionIdentifier(BaseTool):
     
     Defaults to ``INJECTION``. Value depends on the model used."""
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: dict) -> dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: dict) -> Any:
         if isinstance(values.get("model"), str):
             values["model"] = _model_default_factory(model_name=values["model"])
         return values

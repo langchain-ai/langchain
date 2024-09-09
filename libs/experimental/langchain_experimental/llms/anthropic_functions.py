@@ -19,7 +19,7 @@ from langchain_core.messages import (
     SystemMessage,
 )
 
-from pydantic import root_validator
+from pydantic import root_validator, model_validator
 
 prompt = """In addition to responding, you can use tools. \
 You have access to the following tools.
@@ -134,8 +134,9 @@ class AnthropicFunctions(BaseChatModel):
 
     llm: BaseChatModel
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         values["llm"] = values.get("llm") or ChatAnthropic(**values)
         return values
 
