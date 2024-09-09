@@ -50,7 +50,16 @@ if TYPE_CHECKING:
 
 
 def _get_type(v: Any) -> str:
-    return v.type
+    """Get the type associated with the object for serialization purposes."""
+    if isinstance(v, dict) and "type" in v:
+        return v["type"]
+    elif hasattr(v, "type"):
+        return v.type
+    else:
+        raise TypeError(
+            f"Expected either a dictionary with a 'type' key or an object "
+            f"with a 'type' attribute. Instead got type {type(v)}."
+        )
 
 
 AnyMessage = Annotated[
