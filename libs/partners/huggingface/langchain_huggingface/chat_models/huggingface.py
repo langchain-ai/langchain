@@ -106,8 +106,11 @@ def _convert_TGI_message_to_LC_message(
     if tool_calls := _message.tool_calls:
         if "arguments" in tool_calls[0]["function"]:
             import json
+
             functions = tool_calls[0]["function"].pop("arguments")
-            tool_calls[0]["function"]["arguments"] = json.dumps(functions,ensure_ascii=False)
+            tool_calls[0]["function"]["arguments"] = json.dumps(
+                functions, ensure_ascii=False
+            )
         additional_kwargs["tool_calls"] = tool_calls
     return AIMessage(content=content, additional_kwargs=additional_kwargs)
 
