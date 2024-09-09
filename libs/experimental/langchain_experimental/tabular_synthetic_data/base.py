@@ -41,9 +41,9 @@ class SyntheticDataGenerator(BaseModel):
 
     @model_validator(mode="after")
     def set_llm_chain(self) -> Self:
-        llm_chain = self.llm_chain or None
-        llm = self.llm or None
-        few_shot_template = self.template or None
+        llm_chain = self.llm_chain
+        llm = self.llm
+        few_shot_template = self.template
 
         if not llm_chain:  # If llm_chain is None or not present
             if llm is None or few_shot_template is None:
