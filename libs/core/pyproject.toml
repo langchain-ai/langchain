@@ -82,6 +82,8 @@ optional = true
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.5"
+# TODO: hack to fix 3.9 builds
+cffi = [{version = "<1.17.1", python="<3.10"}, {version = "*", python=">=3.10"}]
 
 [tool.poetry.group.typing.dependencies]
 mypy = ">=1.10,<1.11"
