@@ -14,15 +14,12 @@ from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain_core.callbacks.manager import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
+from pydantic import ConfigDict, Field, model_validator, root_validator
+from typing_extensions import Self
 
 from langchain_experimental.pal_chain.colored_object_prompt import COLORED_OBJECT_PROMPT
 from langchain_experimental.pal_chain.math_prompt import MATH_PROMPT
-from pydantic import Field, root_validator, model_validator
 from langchain_experimental.utilities import PythonREPL
-from pydantic import ConfigDict
-from typing_extensions import Self
-
-
 
 COMMAND_EXECUTION_FUNCTIONS = [
     "system",
@@ -172,7 +169,10 @@ class PALChain(Chain):
 
         return self
 
-    model_config = ConfigDict(arbitrary_types_allowed=True,extra="forbid",)
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
     @property
     def input_keys(self) -> List[str]:

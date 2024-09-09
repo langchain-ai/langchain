@@ -12,8 +12,8 @@ from langchain_core.prompts import (
     HumanMessagePromptTemplate,
     PromptTemplate,
 )
-from pydantic import BaseModel, Field, create_model
 from langchain_core.runnables import RunnableConfig
+from pydantic import BaseModel, Field, create_model
 
 examples = [
     {

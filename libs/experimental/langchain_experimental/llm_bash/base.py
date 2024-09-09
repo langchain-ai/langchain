@@ -11,12 +11,10 @@ from langchain.chains.llm import LLMChain
 from langchain.schema import BasePromptTemplate, OutputParserException
 from langchain_core.callbacks.manager import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
+from pydantic import ConfigDict, Field, model_validator, root_validator
 
 from langchain_experimental.llm_bash.bash import BashProcess
 from langchain_experimental.llm_bash.prompt import PROMPT
-from pydantic import Field, root_validator, model_validator
-from pydantic import ConfigDict
-
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +39,10 @@ class LLMBashChain(Chain):
     """[Deprecated]"""
     bash_process: BashProcess = Field(default_factory=BashProcess)  #: :meta private:
 
-    model_config = ConfigDict(arbitrary_types_allowed=True,extra="forbid",)
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
     @model_validator(mode="before")
     @classmethod

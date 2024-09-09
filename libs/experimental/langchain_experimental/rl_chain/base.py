@@ -25,8 +25,8 @@ from langchain_core.prompts import (
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
+from pydantic import BaseModel, ConfigDict, model_validator, root_validator
 
-from pydantic import BaseModel, root_validator, model_validator
 from langchain_experimental.rl_chain.helpers import _Embed
 from langchain_experimental.rl_chain.metrics import (
     MetricsTrackerAverage,
@@ -34,8 +34,6 @@ from langchain_experimental.rl_chain.metrics import (
 )
 from langchain_experimental.rl_chain.model_repository import ModelRepository
 from langchain_experimental.rl_chain.vw_logger import VwLogger
-from pydantic import ConfigDict
-
 
 if TYPE_CHECKING:
     import vowpal_wabbit_next as vw
@@ -403,7 +401,10 @@ class RLChain(Chain, Generic[TEvent]):
         else:
             self.metrics = MetricsTrackerAverage(step=metrics_step)
 
-    model_config = ConfigDict(arbitrary_types_allowed=True,extra="forbid",)
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
     @property
     def input_keys(self) -> List[str]:

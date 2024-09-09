@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, Any, List, Optional
 from langchain.schema import LLMResult
 from langchain_community.llms.huggingface_pipeline import HuggingFacePipeline
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
-
 from pydantic import Field
 
 if TYPE_CHECKING:

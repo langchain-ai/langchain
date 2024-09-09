@@ -7,13 +7,13 @@ from contextlib import redirect_stdout
 from io import StringIO
 from typing import Any, Dict, Optional, Type
 
-from pydantic import BaseModel, Field, root_validator, model_validator
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
 from langchain_core.runnables.config import run_in_executor
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel, Field, model_validator, root_validator
 
 from langchain_experimental.utilities.python import PythonREPL
 

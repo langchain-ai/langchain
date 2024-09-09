@@ -2,7 +2,6 @@ from abc import abstractmethod
 from typing import List, Tuple
 
 from langchain_core.output_parsers import BaseOutputParser
-
 from pydantic import BaseModel, Field
 
 

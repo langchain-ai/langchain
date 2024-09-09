@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Union
 
-from pydantic import Field, root_validator, model_validator
 from langchain_core.tools import BaseTool
+from pydantic import Field, model_validator, root_validator
 
 if TYPE_CHECKING:
     from transformers import Pipeline

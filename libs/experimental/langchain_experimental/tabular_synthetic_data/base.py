@@ -3,14 +3,11 @@ from typing import Any, Dict, List, Optional, Union, cast
 
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
-from pydantic import BaseModel, root_validator, model_validator
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts.few_shot import FewShotPromptTemplate
 from langchain_core.utils.pydantic import is_basemodel_instance
-from pydantic import ConfigDict
+from pydantic import BaseModel, ConfigDict, model_validator, root_validator
 from typing_extensions import Self
-
-
 
 
 class SyntheticDataGenerator(BaseModel):
@@ -38,13 +35,15 @@ class SyntheticDataGenerator(BaseModel):
     llm_chain: Optional[Chain] = None
     example_input_key: str = "example"
 
-    model_config = ConfigDict(validate_assignment=True,)
+    model_config = ConfigDict(
+        validate_assignment=True,
+    )
 
     @model_validator(mode="after")
     def set_llm_chain(self) -> Self:
-        llm_chain = (self.llm_chain or None)
-        llm = (self.llm or None)
-        few_shot_template = (self.template or None)
+        llm_chain = self.llm_chain or None
+        llm = self.llm or None
+        few_shot_template = self.template or None
 
         if not llm_chain:  # If llm_chain is None or not present
             if llm is None or few_shot_template is None:

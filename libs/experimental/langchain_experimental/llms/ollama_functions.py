@@ -31,14 +31,14 @@ from langchain_core.output_parsers.json import JsonOutputParser
 from langchain_core.output_parsers.pydantic import PydanticOutputParser
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.prompts import SystemMessagePromptTemplate
-from pydantic import (
-    BaseModel,
-)
 from langchain_core.runnables import Runnable, RunnableLambda
 from langchain_core.runnables.base import RunnableMap
 from langchain_core.runnables.passthrough import RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils.pydantic import is_basemodel_instance, is_basemodel_subclass
+from pydantic import (
+    BaseModel,
+)
 
 DEFAULT_SYSTEM_TEMPLATE = """You have access to the following tools:
 

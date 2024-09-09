@@ -1,8 +1,8 @@
 from typing import Any, Dict, List
 
-from pydantic import BaseModel, root_validator
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils.pydantic import get_fields
+from pydantic import BaseModel, root_validator
 
 
 class OpenCLIPEmbeddings(BaseModel, Embeddings):

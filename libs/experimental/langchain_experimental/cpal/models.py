@@ -4,17 +4,16 @@ import re
 from typing import Any, List, Optional, Union
 
 from langchain_community.graphs.networkx_graph import NetworkxEntityGraph
-
-from langchain_experimental.cpal.constants import Constant
 from pydantic import (
     BaseModel,
+    ConfigDict,
     Field,
     PrivateAttr,
     root_validator,
     validator,
 )
-from pydantic import ConfigDict
 
+from langchain_experimental.cpal.constants import Constant
 
 
 class NarrativeModel(BaseModel):
@@ -45,7 +44,9 @@ class EntityModel(BaseModel):
     # TODO: generalize to multivariate math
     # TODO: acyclic graph
 
-    model_config = ConfigDict(validate_assignment=True,)
+    model_config = ConfigDict(
+        validate_assignment=True,
+    )
 
     @validator("name")
     def lower_case_name(cls, v: str) -> str:
