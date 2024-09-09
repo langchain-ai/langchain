@@ -24,7 +24,7 @@ langchain-core = { version = "^0.3.0.dev4", allow-prereleases = true }
 tokenizers = ">=0.15.1,<1"
 httpx = ">=0.25.2,<1"
 httpx-sse = ">=0.3.1,<1"
-pydantic = ">2,<3"
+pydantic = ">=2,<3"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "T201"]
