@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional, Union, cast
 
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
-from pydantic import BaseModel, root_validator
+from pydantic import BaseModel, root_validator, model_validator
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts.few_shot import FewShotPromptTemplate
 from langchain_core.utils.pydantic import is_basemodel_instance
@@ -38,11 +38,11 @@ class SyntheticDataGenerator(BaseModel):
 
     model_config = ConfigDict(validate_assignment=True,)
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def set_llm_chain(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        llm_chain = values.get("llm_chain")
-        llm = values.get("llm")
-        few_shot_template = values.get("template")
+    @model_validator(mode="after")
+    def set_llm_chain(self) -> Self:
+        llm_chain = (self.llm_chain or None)
+        llm = (self.llm or None)
+        few_shot_template = (self.template or None)
 
         if not llm_chain:  # If llm_chain is None or not present
             if llm is None or few_shot_template is None:
@@ -50,9 +50,9 @@ class SyntheticDataGenerator(BaseModel):
                     "Both llm and few_shot_template must be provided if llm_chain is "
                     "not given."
                 )
-            values["llm_chain"] = LLMChain(llm=llm, prompt=few_shot_template)
+            self.llm_chain = LLMChain(llm=llm, prompt=few_shot_template)
 
-        return values
+        return self
 
     @staticmethod
     def _format_dict_to_string(input_dict: Dict) -> str:
