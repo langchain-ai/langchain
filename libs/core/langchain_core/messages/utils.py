@@ -57,8 +57,8 @@ def _get_type(v: Any) -> str:
         return v.type
     else:
         raise TypeError(
-            f"Expected either a dictionary with a 'type' key or an object with a 'type' "
-            f"attribute. Instead got type {type(v)}."
+            f"Expected either a dictionary with a 'type' key or an object "
+            f"with a 'type' attribute. Instead got type {type(v)}."
         )
 
 
