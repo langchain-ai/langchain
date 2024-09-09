@@ -108,7 +108,7 @@ pytest-socket = "^0.6.0"
 syrupy = "^4.0.2"
 requests-mock = "^1.11.0"
 # TODO: hack to fix 3.9 builds
-cffi = [{version = "<1.17.1", python="<=3.9"}, {version = "*", python=">3.9"}]
+cffi = [{version = "<1.17.1", python="<3.10"}, {version = "*", python=">=3.10"}]
 
 [tool.poetry.group.codespell.dependencies]
 codespell = "^2.2.0"
