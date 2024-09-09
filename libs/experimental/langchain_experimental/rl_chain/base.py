@@ -241,7 +241,7 @@ class Embedder(Generic[TEvent], ABC):
     def format(self, event: TEvent) -> str: ...
 
 
-class SelectionScorer(BaseModel, Generic[TEvent], ABC):
+class SelectionScorer(Generic[TEvent], ABC, BaseModel):
     """Abstract class to grade the chosen selection or the response of the llm."""
 
     @abstractmethod
