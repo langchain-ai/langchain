@@ -9,8 +9,8 @@ from pydantic import (
     ConfigDict,
     Field,
     PrivateAttr,
-    model_validator,
     field_validator,
+    model_validator,
 )
 
 from langchain_experimental.cpal.constants import Constant
