@@ -7,7 +7,7 @@ from contextlib import redirect_stdout
 from io import StringIO
 from typing import Any, Dict, Optional, Type
 
-from langchain.pydantic_v1 import BaseModel, Field, root_validator
+from pydantic import BaseModel, Field, root_validator
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,

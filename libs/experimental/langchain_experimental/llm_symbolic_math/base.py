@@ -15,6 +15,8 @@ from langchain_core.callbacks.manager import (
 from langchain_core.prompts.base import BasePromptTemplate
 
 from langchain_experimental.llm_symbolic_math.prompt import PROMPT
+from pydantic import ConfigDict
+
 
 
 class LLMSymbolicMathChain(Chain):
@@ -36,9 +38,7 @@ class LLMSymbolicMathChain(Chain):
     input_key: str = "question"  #: :meta private:
     output_key: str = "answer"  #: :meta private:
 
-    class Config:
-        arbitrary_types_allowed = True
-        extra = "forbid"
+    model_config = ConfigDict(arbitrary_types_allowed=True,extra="forbid",)
 
     @property
     def input_keys(self) -> List[str]:

@@ -1,5 +1,5 @@
 import pytest
-from langchain.pydantic_v1 import BaseModel
+from pydantic import BaseModel
 from langchain_community.chat_models import ChatOpenAI
 from langchain_core.prompts.few_shot import FewShotPromptTemplate
 

@@ -18,6 +18,8 @@ from langchain_experimental.video_captioning.services.image_service import (
     ImageProcessor,
 )
 from langchain_experimental.video_captioning.services.srt_service import SRTProcessor
+from pydantic import ConfigDict
+
 
 
 class VideoCaptioningChain(Chain):
@@ -36,9 +38,7 @@ class VideoCaptioningChain(Chain):
     closed_caption_similarity_threshold: int = 80
     use_unclustered_video_models: bool = False
 
-    class Config:
-        arbitrary_types_allowed = True
-        extra = "allow"
+    model_config = ConfigDict(arbitrary_types_allowed=True,extra="allow",)
 
     @property
     def input_keys(self) -> List[str]:

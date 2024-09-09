@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Union
 
-from langchain.pydantic_v1 import Field, root_validator
+from pydantic import Field, root_validator
 from langchain_core.tools import BaseTool
 
 if TYPE_CHECKING:

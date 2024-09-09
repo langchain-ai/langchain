@@ -3,10 +3,12 @@ from typing import Any, Dict, List, Optional, Union, cast
 
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
-from langchain.pydantic_v1 import BaseModel, root_validator
+from pydantic import BaseModel, root_validator
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts.few_shot import FewShotPromptTemplate
 from langchain_core.utils.pydantic import is_basemodel_instance
+from pydantic import ConfigDict
+
 
 
 class SyntheticDataGenerator(BaseModel):
@@ -34,8 +36,7 @@ class SyntheticDataGenerator(BaseModel):
     llm_chain: Optional[Chain] = None
     example_input_key: str = "example"
 
-    class Config:
-        validate_assignment = True
+    model_config = ConfigDict(validate_assignment=True,)
 
     @root_validator(pre=False, skip_on_failure=True)
     def set_llm_chain(cls, values: Dict[str, Any]) -> Dict[str, Any]:

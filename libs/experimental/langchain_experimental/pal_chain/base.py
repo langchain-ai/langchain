@@ -17,8 +17,10 @@ from langchain_core.language_models import BaseLanguageModel
 
 from langchain_experimental.pal_chain.colored_object_prompt import COLORED_OBJECT_PROMPT
 from langchain_experimental.pal_chain.math_prompt import MATH_PROMPT
-from langchain_experimental.pydantic_v1 import Field, root_validator
+from pydantic import Field, root_validator
 from langchain_experimental.utilities import PythonREPL
+from pydantic import ConfigDict
+
 
 COMMAND_EXECUTION_FUNCTIONS = [
     "system",
@@ -168,9 +170,7 @@ class PALChain(Chain):
 
         return values
 
-    class Config:
-        arbitrary_types_allowed = True
-        extra = "forbid"
+    model_config = ConfigDict(arbitrary_types_allowed=True,extra="forbid",)
 
     @property
     def input_keys(self) -> List[str]:

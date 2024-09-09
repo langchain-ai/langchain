@@ -18,6 +18,8 @@ from langchain_experimental.tot.thought_generation import (
     BaseThoughtGenerationStrategy,
     ProposePromptStrategy,
 )
+from pydantic import ConfigDict
+
 
 
 class ToTChain(Chain):
@@ -42,9 +44,7 @@ class ToTChain(Chain):
     tot_strategy_class: Type[BaseThoughtGenerationStrategy] = ProposePromptStrategy
     verbose_llm: bool = False
 
-    class Config:
-        arbitrary_types_allowed = True
-        extra = "forbid"
+    model_config = ConfigDict(arbitrary_types_allowed=True,extra="forbid",)
 
     @classmethod
     def from_llm(cls, llm: BaseLanguageModel, **kwargs: Any) -> ToTChain:

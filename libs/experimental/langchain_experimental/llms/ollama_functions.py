@@ -31,7 +31,7 @@ from langchain_core.output_parsers.json import JsonOutputParser
 from langchain_core.output_parsers.pydantic import PydanticOutputParser
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.prompts import SystemMessagePromptTemplate
-from langchain_core.pydantic_v1 import (
+from pydantic import (
     BaseModel,
 )
 from langchain_core.runnables import Runnable, RunnableLambda

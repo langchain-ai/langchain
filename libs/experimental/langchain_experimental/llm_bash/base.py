@@ -14,7 +14,9 @@ from langchain_core.language_models import BaseLanguageModel
 
 from langchain_experimental.llm_bash.bash import BashProcess
 from langchain_experimental.llm_bash.prompt import PROMPT
-from langchain_experimental.pydantic_v1 import Field, root_validator
+from pydantic import Field, root_validator
+from pydantic import ConfigDict
+
 
 logger = logging.getLogger(__name__)
 
@@ -39,9 +41,7 @@ class LLMBashChain(Chain):
     """[Deprecated]"""
     bash_process: BashProcess = Field(default_factory=BashProcess)  #: :meta private:
 
-    class Config:
-        arbitrary_types_allowed = True
-        extra = "forbid"
+    model_config = ConfigDict(arbitrary_types_allowed=True,extra="forbid",)
 
     @root_validator(pre=True)
     def raise_deprecation(cls, values: Dict) -> Dict:

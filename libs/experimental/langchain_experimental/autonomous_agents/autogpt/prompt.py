@@ -9,7 +9,7 @@ from langchain_core.tools import BaseTool
 from langchain_core.vectorstores import VectorStoreRetriever
 
 from langchain_experimental.autonomous_agents.autogpt.prompt_generator import get_prompt
-from langchain_experimental.pydantic_v1 import BaseModel
+from pydantic import BaseModel
 
 
 # This class has a metaclass conflict: both `BaseChatPromptTemplate` and `BaseModel`

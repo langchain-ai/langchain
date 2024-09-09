@@ -12,7 +12,7 @@ from langchain_experimental.plan_and_execute.schema import (
     BaseStepContainer,
     ListStepContainer,
 )
-from langchain_experimental.pydantic_v1 import Field
+from pydantic import Field
 
 
 class PlanAndExecute(Chain):

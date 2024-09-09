@@ -4,7 +4,7 @@ from langchain.memory.chat_memory import BaseChatMemory
 from langchain.memory.utils import get_prompt_input_key
 from langchain_core.vectorstores import VectorStoreRetriever
 
-from langchain_experimental.pydantic_v1 import Field
+from pydantic import Field
 
 
 class AutoGPTMemory(BaseChatMemory):

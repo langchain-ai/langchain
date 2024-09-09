@@ -22,7 +22,7 @@ from langchain_experimental.autonomous_agents.autogpt.prompt import AutoGPTPromp
 from langchain_experimental.autonomous_agents.autogpt.prompt_generator import (
     FINISH_NAME,
 )
-from langchain_experimental.pydantic_v1 import ValidationError
+from pydantic import ValidationError
 
 
 class AutoGPT:
