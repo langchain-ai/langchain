@@ -46,6 +46,9 @@ markers = [
     "scheduled: mark tests to run in scheduled testing",
 ]
 asyncio_mode = "auto"
+filterwarnings = [
+    "ignore::langchain_core._api.beta_decorator.LangChainBetaWarning",
+]
 
 [tool.poetry.group.test]
 optional = true
