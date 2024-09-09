@@ -11,7 +11,7 @@ from langchain.chains.llm import LLMChain
 from langchain.schema import BasePromptTemplate, OutputParserException
 from langchain_core.callbacks.manager import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
-from pydantic import ConfigDict, Field, model_validator, root_validator
+from pydantic import ConfigDict, Field, model_validator
 
 from langchain_experimental.llm_bash.bash import BashProcess
 from langchain_experimental.llm_bash.prompt import PROMPT
@@ -57,10 +57,9 @@ class LLMBashChain(Chain):
                 values["llm_chain"] = LLMChain(llm=values["llm"], prompt=prompt)
         return values
 
-    # TODO: move away from `root_validator` since it is deprecated in pydantic v2
-    #       and causes mypy type-checking failures (hence the `type: ignore`)
-    @root_validator  # type: ignore[call-overload]
-    def validate_prompt(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_prompt(cls, values: Dict) -> Any:
         if values["llm_chain"].prompt.output_parser is None:
             raise ValueError(
                 "The prompt used by llm_chain is expected to have an output_parser."
