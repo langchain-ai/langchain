@@ -210,8 +210,8 @@ class TestCouchbaseCache:
 
         document_keys = get_document_keys(
             cluster=cluster,
-            bucket=BUCKET_NAME,
-            scope=SCOPE_NAME,
+            bucket_name=BUCKET_NAME,
+            scope_name=SCOPE_NAME,
             query=fetch_documents_query,
         )
         assert len(document_keys) == 1
@@ -220,9 +220,9 @@ class TestCouchbaseCache:
 
         document_expiry_time = fetch_document_expiry_time(
             cluster=cluster,
-            bucket=BUCKET_NAME,
-            scope=SCOPE_NAME,
-            collection=MESSAGE_HISTORY_COLLECTION_NAME,
+            bucket_name=BUCKET_NAME,
+            scope_name=SCOPE_NAME,
+            collection_name=MESSAGE_HISTORY_COLLECTION_NAME,
             document_key=document_keys[0],
         )
         current_time = datetime.now()
@@ -275,8 +275,8 @@ class TestCouchbaseCache:
 
         document_keys = get_document_keys(
             cluster=cluster,
-            bucket=BUCKET_NAME,
-            scope=SCOPE_NAME,
+            bucket_name=BUCKET_NAME,
+            scope_name=SCOPE_NAME,
             query=fetch_documents_query,
         )
         assert len(document_keys) == 2
@@ -285,9 +285,9 @@ class TestCouchbaseCache:
         for document_key in document_keys:
             document_expiry_time = fetch_document_expiry_time(
                 cluster=cluster,
-                bucket=BUCKET_NAME,
-                scope=SCOPE_NAME,
-                collection=MESSAGE_HISTORY_COLLECTION_NAME,
+                bucket_name=BUCKET_NAME,
+                scope_name=SCOPE_NAME,
+                collection_name=MESSAGE_HISTORY_COLLECTION_NAME,
                 document_key=document_key,
             )
             current_time = datetime.now()

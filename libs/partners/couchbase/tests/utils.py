@@ -120,20 +120,26 @@ def cache_key_hash_function(_input: str) -> str:
 
 
 def fetch_document_expiry_time(
-    cluster: Cluster, bucket: str, scope: str, collection: str, document_key: str
+    cluster: Cluster,
+    bucket_name: str,
+    scope_name: str,
+    collection_name: str,
+    document_key: str,
 ) -> datetime:
     """Fetch the document's expiry time from the database."""
-    collection = cluster.bucket(bucket).scope(scope).collection(collection)
+    collection = (
+        cluster.bucket(bucket_name).scope(scope_name).collection(collection_name)
+    )
     result = collection.get(document_key, GetOptions(with_expiry=True))
 
     return result.expiryTime
 
 
 def get_document_keys(
-    cluster: Cluster, bucket: str, scope: str, query: str
+    cluster: Cluster, bucket_name: str, scope_name: str, query: str
 ) -> List[str]:
     """Get the document key from the database based on the query using meta().id."""
-    scope = cluster.bucket(bucket).scope(scope)
+    scope = cluster.bucket(bucket_name).scope(scope_name)
 
     result = scope.query(query).execute()
 
