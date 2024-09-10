@@ -91,7 +91,9 @@ def _lc_tool_call_to_openai_tool_call(tool_call: ToolCall) -> dict:
 class ChatOllama(BaseChatModel):
     """Ollama chat model integration.
 
-    Setup:
+    .. dropdown:: Setup
+        :open:
+
         Install ``langchain-ollama`` and download any models you want to use from ollama.
 
         .. code-block:: bash

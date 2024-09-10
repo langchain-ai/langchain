@@ -66,11 +66,13 @@ pytest-mock = "^3.10.0"
 syrupy = "^4.0.2"
 pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
+milvus_model = "^0.2.0"
 
 [tool.poetry.group.codespell.dependencies]
 codespell = "^2.2.0"
 
 [tool.poetry.group.test_integration.dependencies]
+milvus_model = "^0.2.0"
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.1.5"

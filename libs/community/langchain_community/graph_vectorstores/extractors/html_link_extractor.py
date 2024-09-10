@@ -69,11 +69,175 @@ class HtmlLinkExtractor(LinkExtractor[HtmlInput]):
 
         Expects the input to be an HTML string or a `BeautifulSoup` object.
 
+        Example::
+
+            extractor = HtmlLinkExtractor()
+            results = extractor.extract_one(HtmlInput(html, url))
+
+        .. seealso::
+
+            - :mod:`How to use a graph vector store <langchain_community.graph_vectorstores>`
+            - :class:`How to create links between documents <langchain_core.graph_vectorstores.links.Link>`
+
+        How to link Documents on hyperlinks in HTML
+        ===========================================
+
+        Preliminaries
+        -------------
+
+        Install the ``beautifulsoup4`` package:
+
+        .. code-block:: bash
+
+            pip install -q langchain_community beautifulsoup4
+
+        Usage
+        -----
+
+        For this example, we'll scrape 2 HTML pages that have an hyperlink from one
+        page to the other using an ``AsyncHtmlLoader``.
+        Then we use the ``HtmlLinkExtractor`` to create the links in the documents.
+
+        Using extract_one()
+        ^^^^^^^^^^^^^^^^^^^
+
+        We can use :meth:`extract_one` on a document to get the links and add the links
+        to the document metadata with
+        :meth:`~langchain_core.graph_vectorstores.links.add_links`::
+
+            from langchain_community.document_loaders import AsyncHtmlLoader
+            from langchain_community.graph_vectorstores.extractors import (
+                HtmlInput,
+                HtmlLinkExtractor,
+            )
+            from langchain_community.graph_vectorstores.links import add_links
+            from langchain_core.documents import Document
+
+            loader = AsyncHtmlLoader(
+                [
+                    "https://python.langchain.com/v0.2/docs/integrations/providers/astradb/",
+                    "https://docs.datastax.com/en/astra/home/astra.html",
+                ]
+            )
+
+            documents = loader.load()
+
+            html_extractor = HtmlLinkExtractor()
+
+            for doc in documents:
+                links = html_extractor.extract_one(HtmlInput(doc.page_content, url))
+                add_links(doc, links)
+
+            documents[0].metadata["links"][:5]
+
+        .. code-block:: output
+
+            [Link(kind='hyperlink', direction='out', tag='https://python.langchain.com/v0.2/docs/integrations/providers/spreedly/'),
+             Link(kind='hyperlink', direction='out', tag='https://python.langchain.com/v0.2/docs/integrations/providers/nvidia/'),
+             Link(kind='hyperlink', direction='out', tag='https://python.langchain.com/v0.2/docs/integrations/providers/ray_serve/'),
+             Link(kind='hyperlink', direction='out', tag='https://python.langchain.com/v0.2/docs/integrations/providers/bageldb/'),
+             Link(kind='hyperlink', direction='out', tag='https://python.langchain.com/v0.2/docs/introduction/')]
+
+        Using as_document_extractor()
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+        If you use a document loader that returns the raw HTML and that sets the source
+        key in the document metadata such as ``AsyncHtmlLoader``,
+        you can simplify by using :meth:`as_document_extractor` that takes directly a
+        ``Document`` as input::
+
+            from langchain_community.document_loaders import AsyncHtmlLoader
+            from langchain_community.graph_vectorstores.extractors import HtmlLinkExtractor
+            from langchain_core.graph_vectorstores.links import add_links
+
+            loader = AsyncHtmlLoader(
+                [
+                    "https://python.langchain.com/v0.2/docs/integrations/providers/astradb/",
+                    "https://docs.datastax.com/en/astra/home/astra.html",
+                ]
+            )
+            documents = loader.load()
+            html_extractor = HtmlLinkExtractor().as_document_extractor()
+
+            for document in documents:
+                links = html_extractor.extract_one(document)
+                add_links(document, links)
+
+            documents[0].metadata["links"][:5]
+
+        .. code-block:: output
+
+            [Link(kind='hyperlink', direction='out', tag='https://python.langchain.com/v0.2/docs/integrations/providers/spreedly/'),
+             Link(kind='hyperlink', direction='out', tag='https://python.langchain.com/v0.2/docs/integrations/providers/nvidia/'),
+             Link(kind='hyperlink', direction='out', tag='https://python.langchain.com/v0.2/docs/integrations/providers/ray_serve/'),
+             Link(kind='hyperlink', direction='out', tag='https://python.langchain.com/v0.2/docs/integrations/providers/bageldb/'),
+             Link(kind='hyperlink', direction='out', tag='https://python.langchain.com/v0.2/docs/introduction/')]
+
+        Using LinkExtractorTransformer
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+        Using the :class:`~langchain_community.graph_vectorstores.extractors.keybert_link_extractor.LinkExtractorTransformer`,
+        we can simplify the link extraction::
+
+            from langchain_community.document_loaders import AsyncHtmlLoader
+            from langchain_community.graph_vectorstores.extractors import (
+                HtmlLinkExtractor,
+                LinkExtractorTransformer,
+            )
+            from langchain_community.graph_vectorstores.links import add_links
+
+            loader = AsyncHtmlLoader(
+                [
+                    "https://python.langchain.com/v0.2/docs/integrations/providers/astradb/",
+                    "https://docs.datastax.com/en/astra/home/astra.html",
+                ]
+            )
+
+            documents = loader.load()
+            transformer = LinkExtractorTransformer([HtmlLinkExtractor().as_document_extractor()])
+            documents = transformer.transform_documents(documents)
+
+            documents[0].metadata["links"][:5]
+
+        .. code-block:: output
+
+            [Link(kind='hyperlink', direction='out', tag='https://python.langchain.com/v0.2/docs/integrations/providers/spreedly/'),
+             Link(kind='hyperlink', direction='out', tag='https://python.langchain.com/v0.2/docs/integrations/providers/nvidia/'),
+             Link(kind='hyperlink', direction='out', tag='https://python.langchain.com/v0.2/docs/integrations/providers/ray_serve/'),
+             Link(kind='hyperlink', direction='out', tag='https://python.langchain.com/v0.2/docs/integrations/providers/bageldb/'),
+             Link(kind='hyperlink', direction='out', tag='https://python.langchain.com/v0.2/docs/introduction/')]
+
+        We can check that there is a link from the first document to the second::
+
+            for doc_to in documents:
+                for link_to in doc_to.metadata["links"]:
+                    if link_to.direction == "in":
+                        for doc_from in documents:
+                            for link_from in doc_from.metadata["links"]:
+                                if (
+                                    link_to.direction == "in"
+                                    and link_from.direction == "out"
+                                    and link_to.tag == link_from.tag
+                                ):
+                                    print(
+                                        f"Found link from {doc_from.metadata['source']} to {doc_to.metadata['source']}."
+                                    )
+
+        .. code-block:: output
+
+            Found link from https://python.langchain.com/v0.2/docs/integrations/providers/astradb/ to https://docs.datastax.com/en/astra/home/astra.html.
+
+        The documents with URL links can then be added to a :class:`~langchain_core.graph_vectorstores.base.GraphVectorStore`::
+
+            from langchain_community.graph_vectorstores import CassandraGraphVectorStore
+
+            store = CassandraGraphVectorStore.from_documents(documents=documents, embedding=...)
+
         Args:
-            kind: The kind of edge to extract. Defaults to "hyperlink".
+            kind: The kind of edge to extract. Defaults to ``hyperlink``.
             drop_fragments: Whether fragments in URLs and links should be
-                dropped. Defaults to `True`.
-        """
+                dropped. Defaults to ``True``.
+        """  # noqa: E501
         try:
             import bs4  # noqa:F401
         except ImportError as e:
@@ -90,9 +254,10 @@ class HtmlLinkExtractor(LinkExtractor[HtmlInput]):
     ) -> LinkExtractor[Document]:
         """Return a LinkExtractor that applies to documents.
 
-        NOTE: Since the HtmlLinkExtractor parses HTML, if you use with other similar
-        link extractors it may be more efficient to call the link extractors directly
-        on the parsed BeautifulSoup object.
+        Note:
+            Since the HtmlLinkExtractor parses HTML, if you use with other similar
+            link extractors it may be more efficient to call the link extractors
+            directly on the parsed BeautifulSoup object.
 
         Args:
             url_metadata_key: The name of the filed in document metadata with the URL of

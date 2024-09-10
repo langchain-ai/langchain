@@ -18,7 +18,6 @@ from typing import (
     cast,
 )
 
-from langchain_core.load.dump import dumpd
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables.base import Runnable, RunnableSerializable
 from langchain_core.runnables.config import (
@@ -163,9 +162,9 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         callback_manager = get_callback_manager_for_config(config)
         # start the root run
         run_manager = callback_manager.on_chain_start(
-            dumpd(self),
+            None,
             input,
-            name=config.get("run_name"),
+            name=config.get("run_name") or self.get_name(),
             run_id=config.pop("run_id", None),
         )
         first_error = None
@@ -214,9 +213,9 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         callback_manager = get_async_callback_manager_for_config(config)
         # start the root run
         run_manager = await callback_manager.on_chain_start(
-            dumpd(self),
+            None,
             input,
-            name=config.get("run_name"),
+            name=config.get("run_name") or self.get_name(),
             run_id=config.pop("run_id", None),
         )
 
@@ -287,9 +286,9 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         # start the root runs, one per input
         run_managers = [
             cm.on_chain_start(
-                dumpd(self),
+                None,
                 input if isinstance(input, dict) else {"input": input},
-                name=config.get("run_name"),
+                name=config.get("run_name") or self.get_name(),
                 run_id=config.pop("run_id", None),
             )
             for cm, input, config in zip(callback_managers, inputs, configs)
@@ -380,9 +379,9 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         run_managers: List[AsyncCallbackManagerForChainRun] = await asyncio.gather(
             *(
                 cm.on_chain_start(
-                    dumpd(self),
+                    None,
                     input,
-                    name=config.get("run_name"),
+                    name=config.get("run_name") or self.get_name(),
                     run_id=config.pop("run_id", None),
                 )
                 for cm, input, config in zip(callback_managers, inputs, configs)
@@ -458,9 +457,9 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         callback_manager = get_callback_manager_for_config(config)
         # start the root run
         run_manager = callback_manager.on_chain_start(
-            dumpd(self),
+            None,
             input,
-            name=config.get("run_name"),
+            name=config.get("run_name") or self.get_name(),
             run_id=config.pop("run_id", None),
         )
         first_error = None
@@ -521,9 +520,9 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         callback_manager = get_async_callback_manager_for_config(config)
         # start the root run
         run_manager = await callback_manager.on_chain_start(
-            dumpd(self),
+            None,
             input,
-            name=config.get("run_name"),
+            name=config.get("run_name") or self.get_name(),
             run_id=config.pop("run_id", None),
         )
         first_error = None

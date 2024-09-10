@@ -11,6 +11,8 @@ from langchain_core.runnables.graph import (
     NodeStyles,
 )
 
+MARKDOWN_SPECIAL_CHARS = "*_`"
+
 
 def draw_mermaid(
     nodes: Dict[str, Node],
@@ -58,13 +60,19 @@ def draw_mermaid(
         default_class_label = "default"
         format_dict = {default_class_label: "{0}({1})"}
         if first_node is not None:
-            format_dict[first_node] = "{0}([{0}]):::first"
+            format_dict[first_node] = "{0}([{1}]):::first"
         if last_node is not None:
-            format_dict[last_node] = "{0}([{0}]):::last"
+            format_dict[last_node] = "{0}([{1}]):::last"
 
         # Add nodes to the graph
         for key, node in nodes.items():
-            label = node.name.split(":")[-1]
+            node_name = node.name.split(":")[-1]
+            label = (
+                f"<p>{node_name}</p>"
+                if node_name.startswith(tuple(MARKDOWN_SPECIAL_CHARS))
+                and node_name.endswith(tuple(MARKDOWN_SPECIAL_CHARS))
+                else node_name
+            )
             if node.metadata:
                 label = (
                     f"{label}<hr/><small><em>"
@@ -119,9 +127,9 @@ def draw_mermaid(
                         for i in range(0, len(words), wrap_label_n_words)
                     )
                 if edge.conditional:
-                    edge_label = f" -. &nbsp{edge_data}&nbsp .-> "
+                    edge_label = f" -. &nbsp;{edge_data}&nbsp; .-> "
                 else:
-                    edge_label = f" -- &nbsp{edge_data}&nbsp --> "
+                    edge_label = f" -- &nbsp;{edge_data}&nbsp; --> "
             else:
                 if edge.conditional:
                     edge_label = " -.-> "
