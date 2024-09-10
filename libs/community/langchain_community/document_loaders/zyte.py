@@ -122,7 +122,7 @@ class ZyteURLLoader(BaseLoader):
                 content = self._get_content(response)
                 yield Document(page_content=content, metadata={"url": response["url"]})
 
-    async def fetch_items(self) -> Iterator[Document]:
+    async def fetch_items(self) -> List:
         results = []
         queries = [self._zyte_request_params(url) for url in self.urls]
         async with self.client_async.session() as session:
@@ -169,7 +169,7 @@ class ZyteURLLoader(BaseLoader):
             content = self._get_article(response)
         return content
 
-    def aload(self) -> Iterator[Document]:
+    async def aload(self) -> List[Document]:
         docs = []
         responses = asyncio.run(self.fetch_items())
         for response in responses:
