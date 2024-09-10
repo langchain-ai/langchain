@@ -4,9 +4,9 @@ import glob
 import tomllib
 from pathlib import Path
 
-import toml
 import subprocess
 import re
+import toml
 
 ROOT_DIR = Path(__file__).parents[1]
 
@@ -68,7 +68,8 @@ def main():
             except FileNotFoundError:
                 continue
             file_lines[int(line_no) - 1] = (
-                file_lines[int(line_no) - 1][:-1] + f"  # type: ignore[{all_errors}]\n"
+                file_lines[int(line_no) - 1][:-1] +
+                f"  # type: ignore[{all_errors}]\n"
             )
             with open(full_path, "w") as f:
                 f.write("".join(file_lines))
@@ -80,6 +81,7 @@ def main():
             capture_output=True,
             text=True,
         )
+
 
 if __name__ == "__main__":
     main()
