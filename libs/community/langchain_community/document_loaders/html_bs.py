@@ -1,3 +1,4 @@
+import importlib
 import logging
 from pathlib import Path
 from typing import Dict, Iterator, Union
@@ -106,9 +107,7 @@ class BSHTMLLoader(BaseLoader):
         self.file_path = file_path
         self.open_encoding = open_encoding
         if bs_kwargs is None:
-            try:
-                import lxml
-            except ImportError:
+            if not importlib.util.find_spec("lxml"):
                 raise ImportError(
                     "By default BSHTMLLoader uses the 'lxml' package. Please either "
                     "install it with `pip install -U lxml` or pass in init arg "
