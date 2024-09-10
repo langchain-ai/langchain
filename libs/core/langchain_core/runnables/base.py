@@ -39,7 +39,6 @@ from pydantic import BaseModel, ConfigDict, Field, RootModel
 from typing_extensions import Literal, get_args, get_type_hints
 
 from langchain_core._api import beta_decorator
-from langchain_core.load.dump import dumpd
 from langchain_core.load.serializable import (
     Serializable,
     SerializedConstructor,
@@ -1893,6 +1892,7 @@ class Runnable(Generic[Input, Output], ABC):
         input: Input,
         config: Optional[RunnableConfig],
         run_type: Optional[str] = None,
+        serialized: Optional[Dict[str, Any]] = None,
         **kwargs: Optional[Any],
     ) -> Output:
         """Helper method to transform an Input value to an Output value,
@@ -1900,7 +1900,7 @@ class Runnable(Generic[Input, Output], ABC):
         config = ensure_config(config)
         callback_manager = get_callback_manager_for_config(config)
         run_manager = callback_manager.on_chain_start(
-            dumpd(self),
+            serialized,
             input,
             run_type=run_type,
             name=config.get("run_name") or self.get_name(),
@@ -1941,6 +1941,7 @@ class Runnable(Generic[Input, Output], ABC):
         input: Input,
         config: Optional[RunnableConfig],
         run_type: Optional[str] = None,
+        serialized: Optional[Dict[str, Any]] = None,
         **kwargs: Optional[Any],
     ) -> Output:
         """Helper method to transform an Input value to an Output value,
@@ -1948,7 +1949,7 @@ class Runnable(Generic[Input, Output], ABC):
         config = ensure_config(config)
         callback_manager = get_async_callback_manager_for_config(config)
         run_manager = await callback_manager.on_chain_start(
-            dumpd(self),
+            serialized,
             input,
             run_type=run_type,
             name=config.get("run_name") or self.get_name(),
@@ -2001,7 +2002,7 @@ class Runnable(Generic[Input, Output], ABC):
         callback_managers = [get_callback_manager_for_config(c) for c in configs]
         run_managers = [
             callback_manager.on_chain_start(
-                dumpd(self),
+                None,
                 input,
                 run_type=run_type,
                 name=config.get("run_name") or self.get_name(),
@@ -2074,7 +2075,7 @@ class Runnable(Generic[Input, Output], ABC):
         run_managers: List[AsyncCallbackManagerForChainRun] = await asyncio.gather(
             *(
                 callback_manager.on_chain_start(
-                    dumpd(self),
+                    None,
                     input,
                     run_type=run_type,
                     name=config.get("run_name") or self.get_name(),
@@ -2153,7 +2154,7 @@ class Runnable(Generic[Input, Output], ABC):
         config = ensure_config(config)
         callback_manager = get_callback_manager_for_config(config)
         run_manager = callback_manager.on_chain_start(
-            dumpd(self),
+            None,
             {"input": ""},
             run_type=run_type,
             name=config.get("run_name") or self.get_name(),
@@ -2253,7 +2254,7 @@ class Runnable(Generic[Input, Output], ABC):
         config = ensure_config(config)
         callback_manager = get_async_callback_manager_for_config(config)
         run_manager = await callback_manager.on_chain_start(
-            dumpd(self),
+            None,
             {"input": ""},
             run_type=run_type,
             name=config.get("run_name") or self.get_name(),
@@ -2459,7 +2460,6 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
         dumped = super().to_json()
         try:
             dumped["name"] = self.get_name()
-            dumped["graph"] = self.get_graph().to_json()
         except Exception:
             pass
         return dumped
@@ -2991,7 +2991,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         callback_manager = get_callback_manager_for_config(config)
         # start the root run
         run_manager = callback_manager.on_chain_start(
-            dumpd(self),
+            None,
             input,
             name=config.get("run_name") or self.get_name(),
             run_id=config.pop("run_id", None),
@@ -3031,7 +3031,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         callback_manager = get_async_callback_manager_for_config(config)
         # start the root run
         run_manager = await callback_manager.on_chain_start(
-            dumpd(self),
+            None,
             input,
             name=config.get("run_name") or self.get_name(),
             run_id=config.pop("run_id", None),
@@ -3096,7 +3096,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         # start the root runs, one per input
         run_managers = [
             cm.on_chain_start(
-                dumpd(self),
+                None,
                 input,
                 name=config.get("run_name") or self.get_name(),
                 run_id=config.pop("run_id", None),
@@ -3223,7 +3223,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         run_managers: List[AsyncCallbackManagerForChainRun] = await asyncio.gather(
             *(
                 cm.on_chain_start(
-                    dumpd(self),
+                    None,
                     input,
                     name=config.get("run_name") or self.get_name(),
                     run_id=config.pop("run_id", None),
@@ -3677,7 +3677,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         )
         # start the root run
         run_manager = callback_manager.on_chain_start(
-            dumpd(self),
+            None,
             input,
             name=config.get("run_name") or self.get_name(),
             run_id=config.pop("run_id", None),
@@ -3729,7 +3729,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         callback_manager = get_async_callback_manager_for_config(config)
         # start the root run
         run_manager = await callback_manager.on_chain_start(
-            dumpd(self),
+            None,
             input,
             name=config.get("run_name") or self.get_name(),
             run_id=config.pop("run_id", None),
