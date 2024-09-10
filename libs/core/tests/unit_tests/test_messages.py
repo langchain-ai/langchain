@@ -1,8 +1,11 @@
 import unittest
+import uuid
 from typing import List, Type, Union
 
 import pytest
+from pydantic import ValidationError
 
+from langchain_core.documents import Document
 from langchain_core.load import dumpd, load
 from langchain_core.messages import (
     AIMessage,
@@ -980,3 +983,27 @@ def test_merge_content(
 ) -> None:
     actual = merge_content(first, *others)
     assert actual == expected
+
+
+def test_tool_message_content() -> None:
+    ToolMessage("foo", tool_call_id="1")
+    ToolMessage(["foo"], tool_call_id="1")
+    ToolMessage([{"foo": "bar"}], tool_call_id="1")
+
+    assert ToolMessage(("a", "b", "c"), tool_call_id="1").content == ["a", "b", "c"]  # type: ignore[arg-type]
+    assert ToolMessage(5, tool_call_id="1").content == "5"  # type: ignore[arg-type]
+    assert ToolMessage(5.1, tool_call_id="1").content == "5.1"  # type: ignore[arg-type]
+    assert ToolMessage({"foo": "bar"}, tool_call_id="1").content == "{'foo': 'bar'}"  # type: ignore[arg-type]
+    assert (
+        ToolMessage(Document("foo"), tool_call_id="1").content == "page_content='foo'"  # type: ignore[arg-type]
+    )
+
+
+def test_tool_message_tool_call_id() -> None:
+    ToolMessage("foo", tool_call_id="1")
+
+    # Currently we only handle UUID->str coercion manually.
+    ToolMessage("foo", tool_call_id=uuid.uuid4())
+
+    with pytest.raises(ValidationError):
+        ToolMessage("foo", tool_call_id=1)

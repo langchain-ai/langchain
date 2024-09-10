@@ -410,7 +410,9 @@ class Neo4jGraph(GraphStore):
         """Returns the structured schema of the Graph"""
         return self.structured_schema
 
-    def query(self, query: str, params: dict = {}) -> List[Dict[str, Any]]:
+    def query(
+        self, query: str, params: dict = {}, retry_on_session_expired: bool = True
+    ) -> List[Dict[str, Any]]:
         """Query Neo4j database.
 
         Args:
@@ -421,7 +423,7 @@ class Neo4jGraph(GraphStore):
             List[Dict[str, Any]]: The list of dictionaries containing the query results.
         """
         from neo4j import Query
-        from neo4j.exceptions import CypherSyntaxError
+        from neo4j.exceptions import CypherSyntaxError, SessionExpired
 
         with self._driver.session(database=self._database) as session:
             try:
@@ -432,6 +434,15 @@ class Neo4jGraph(GraphStore):
                 return json_data
             except CypherSyntaxError as e:
                 raise ValueError(f"Generated Cypher Statement is not valid\n{e}")
+            except (
+                SessionExpired
+            ) as e:  # Session expired is a transient error that can be retried
+                if retry_on_session_expired:
+                    return self.query(
+                        query, params=params, retry_on_session_expired=False
+                    )
+                else:
+                    raise e
 
     def refresh_schema(self) -> None:
         """
