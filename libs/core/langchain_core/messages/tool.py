@@ -1,7 +1,8 @@
 import json
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
+from uuid import UUID
 
-from pydantic import Field
+from pydantic import Field, model_validator
 from typing_extensions import NotRequired, TypedDict
 
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk, merge_content
@@ -82,15 +83,21 @@ class ToolMessage(BaseMessage):
         Default is ["langchain", "schema", "messages"]."""
         return ["langchain", "schema", "messages"]
 
+    @model_validator(mode="before")
+    @classmethod
+    def coerce_args(cls, values: dict) -> dict:
+        content = values["content"]
+        if isinstance(content, (int, float)):
+            values["content"] = str(content)
+
+        tool_call_id = values["tool_call_id"]
+        if isinstance(tool_call_id, UUID):
+            values["tool_call_id"] = str(tool_call_id)
+        return values
+
     def __init__(
         self, content: Union[str, List[Union[str, Dict]]], **kwargs: Any
     ) -> None:
-        """Pass in content as positional arg.
-
-        Args:
-            content: The string contents of the message.
-            kwargs: Additional fields to pass to the message
-        """
         super().__init__(content=content, **kwargs)
 
 

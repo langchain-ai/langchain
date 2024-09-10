@@ -106,6 +106,15 @@ class BSHTMLLoader(BaseLoader):
         self.file_path = file_path
         self.open_encoding = open_encoding
         if bs_kwargs is None:
+            try:
+                import lxml
+            except ImportError:
+                raise ImportError(
+                    "By default BSHTMLLoader uses the 'lxml' package. Please either "
+                    "install it with `pip install -U lxml` or pass in init arg "
+                    "`bs_kwargs={'features': '...'}` to overwrite the default "
+                    "BeautifulSoup kwargs."
+                )
             bs_kwargs = {"features": "lxml"}
         self.bs_kwargs = bs_kwargs
         self.get_text_separator = get_text_separator

@@ -1,8 +1,11 @@
 import unittest
+import uuid
 from typing import List, Type, Union
 
 import pytest
+from pydantic import ValidationError
 
+from langchain_core.documents import Document
 from langchain_core.load import dumpd, load
 from langchain_core.messages import (
     AIMessage,
@@ -980,3 +983,32 @@ def test_merge_content(
 ) -> None:
     actual = merge_content(first, *others)
     assert actual == expected
+
+
+def test_tool_message_content() -> None:
+    ToolMessage("foo", tool_call_id="1")
+    ToolMessage(["foo"], tool_call_id="1")
+    ToolMessage([{"foo": "bar"}], tool_call_id="1")
+
+    # Pydantic automatically handles tuple->list coercion.
+    ToolMessage(("a", "b", "c"), tool_call_id="1")  # type: ignore[arg-type]
+
+    # Currently we only handle int,float->str coercion manually.
+    assert ToolMessage(5, tool_call_id="1").content == "5"  # type: ignore[arg-type]
+    assert ToolMessage(5.1, tool_call_id="1").content == "5.1"  # type: ignore[arg-type]
+
+    with pytest.raises(ValidationError):
+        ToolMessage({"foo": "bar"}, tool_call_id="1")  # type: ignore[arg-type]
+
+    with pytest.raises(ValidationError):
+        ToolMessage(Document("foo"), tool_call_id="1")  # type: ignore[arg-type]
+
+
+def test_tool_message_tool_call_id() -> None:
+    ToolMessage("foo", tool_call_id="1")
+
+    # Currently we only handle UUID->str coercion manually.
+    ToolMessage("foo", tool_call_id=uuid.uuid4())
+
+    with pytest.raises(ValidationError):
+        ToolMessage("foo", tool_call_id=1)
