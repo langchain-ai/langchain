@@ -416,7 +416,7 @@ class ChatKinetica(BaseChatModel):
 
         # convert the prompt to messages
         # request = SuggestRequest.model_validate(prompt_json) # pydantic v2
-        request = _KdtoSuggestRequest.parse_obj(prompt_json)
+        request = _KdtoSuggestRequest.model_validate(prompt_json)
         payload = request.payload
 
         dict_messages = []
@@ -448,7 +448,7 @@ class ChatKinetica(BaseChatModel):
 
         data = response_json["data"]
         # response = CompletionResponse.model_validate(data) # pydantic v2
-        response = _KdtCompletionResponse.parse_obj(data)
+        response = _KdtCompletionResponse.model_validate(data)
         if response.status != "OK":
             raise ValueError("SQL Generation failed")
         return response.data
