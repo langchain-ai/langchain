@@ -4049,6 +4049,26 @@ class RunnableGenerator(Runnable[Input, Output]):
         except ValueError:
             return Any
 
+    def get_input_schema(
+        self, config: Optional[RunnableConfig] = None
+    ) -> Type[BaseModel]:
+        # Override the default implementation.
+        # For a runnable generator, we need to bring to provide the
+        # module of the underlying function when creating the model.
+        root_type = self.InputType
+
+        func = getattr(self, "_transform", None) or self._atransform
+        module = getattr(func, "__module__", None)
+
+        if inspect.isclass(root_type) and issubclass(root_type, BaseModel):
+            return root_type
+
+        return create_model(
+            self.get_name("Input"),
+            __root__=root_type,
+            __module_name=module,
+        )
+
     @property
     def OutputType(self) -> Any:
         func = getattr(self, "_transform", None) or self._atransform
@@ -4061,6 +4081,25 @@ class RunnableGenerator(Runnable[Input, Output]):
             )
         except ValueError:
             return Any
+
+    def get_output_schema(
+        self, config: Optional[RunnableConfig] = None
+    ) -> Type[BaseModel]:
+        # Override the default implementation.
+        # For a runnable generator, we need to bring to provide the
+        # module of the underlying function when creating the model.
+        root_type = self.OutputType
+        func = getattr(self, "_transform", None) or self._atransform
+        module = getattr(func, "__module__", None)
+
+        if inspect.isclass(root_type) and issubclass(root_type, BaseModel):
+            return root_type
+
+        return create_model(
+            self.get_name("Output"),
+            __root__=root_type,
+            __module_name=module,
+        )
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, RunnableGenerator):
@@ -4310,9 +4349,11 @@ class RunnableLambda(Runnable[Input, Output]):
                 # It's a dict, lol
                 return create_model(self.get_name("Input"), **fields)
             else:
+                module = getattr(func, "__module__", None)
                 return create_model(
                     self.get_name("Input"),
                     __root__=List[Any],
+                    __module_name=module,
                 )
 
         if self.InputType != Any:
@@ -4348,6 +4389,25 @@ class RunnableLambda(Runnable[Input, Output]):
                 return Any
         except ValueError:
             return Any
+
+    def get_output_schema(
+        self, config: Optional[RunnableConfig] = None
+    ) -> Type[BaseModel]:
+        # Override the default implementation.
+        # For a runnable lambda, we need to bring to provide the
+        # module of the underlying function when creating the model.
+        root_type = self.OutputType
+        func = getattr(self, "func", None) or self.afunc
+        module = getattr(func, "__module__", None)
+
+        if inspect.isclass(root_type) and issubclass(root_type, BaseModel):
+            return root_type
+
+        return create_model(
+            self.get_name("Output"),
+            __root__=root_type,
+            __module_name=module,
+        )
 
     @property
     def deps(self) -> List[Runnable]:
