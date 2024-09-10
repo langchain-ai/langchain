@@ -312,7 +312,7 @@ def test_output_messages() -> None:
     )
     get_session_history = _get_get_session_history()
     with_history = RunnableWithMessageHistory(
-        runnable,  # type: ignore
+        runnable,
         get_session_history,
         input_messages_key="input",
         history_messages_key="history",
@@ -342,7 +342,7 @@ async def test_output_messages_async() -> None:
     )
     get_session_history = _get_get_session_history()
     with_history = RunnableWithMessageHistory(
-        runnable,  # type: ignore
+        runnable,
         get_session_history,
         input_messages_key="input",
         history_messages_key="history",

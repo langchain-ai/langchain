@@ -188,7 +188,7 @@ class XMLOutputParser(BaseTransformOutputParser):
         # likely if you're reading this you can move them to the top of the file
         if self.parser == "defusedxml":
             try:
-                from defusedxml import ElementTree as DET  # type: ignore
+                from defusedxml import ElementTree as DET
             except ImportError as e:
                 raise ImportError(
                     "defusedxml is not installed. "

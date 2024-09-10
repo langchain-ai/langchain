@@ -442,7 +442,7 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
             for name, field_info in map_output_schema.model_fields.items():
                 fields[name] = (field_info.annotation, field_info.default)
 
-            return create_model(  # type: ignore[call-overload]
+            return create_model(
                 "RunnableAssignOutput",
                 **fields,
             )
@@ -552,7 +552,7 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
             # start map output stream
             first_map_chunk_future = executor.submit(
                 next,
-                map_output,  # type: ignore
+                map_output,
                 None,
             )
             # consume passthrough stream

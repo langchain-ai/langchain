@@ -24,7 +24,7 @@ def set_verbose(value: bool) -> None:
         value: The new value for the `verbose` global setting.
     """
     try:
-        import langchain  # type: ignore[import]
+        import langchain
 
         # We're about to run some deprecated code, don't report warnings from it.
         # The user called the correct (non-deprecated) code path and shouldn't get warnings.
@@ -56,7 +56,7 @@ def get_verbose() -> bool:
         The value of the `verbose` global setting.
     """
     try:
-        import langchain  # type: ignore[import]
+        import langchain
 
         # We're about to run some deprecated code, don't report warnings from it.
         # The user called the correct (non-deprecated) code path and shouldn't get warnings.
@@ -93,7 +93,7 @@ def set_debug(value: bool) -> None:
         value: The new value for the `debug` global setting.
     """
     try:
-        import langchain  # type: ignore[import]
+        import langchain
 
         # We're about to run some deprecated code, don't report warnings from it.
         # The user called the correct (non-deprecated) code path and shouldn't get warnings.
@@ -123,7 +123,7 @@ def get_debug() -> bool:
         The value of the `debug` global setting.
     """
     try:
-        import langchain  # type: ignore[import]
+        import langchain
 
         # We're about to run some deprecated code, don't report warnings from it.
         # The user called the correct (non-deprecated) code path and shouldn't get warnings.
@@ -158,7 +158,7 @@ def set_llm_cache(value: Optional["BaseCache"]) -> None:
         value: The new LLM cache to use. If `None`, the LLM cache is disabled.
     """
     try:
-        import langchain  # type: ignore[import]
+        import langchain
 
         # We're about to run some deprecated code, don't report warnings from it.
         # The user called the correct (non-deprecated) code path and shouldn't get warnings.
@@ -190,7 +190,7 @@ def get_llm_cache() -> "BaseCache":
         The value of the `llm_cache` global setting.
     """
     try:
-        import langchain  # type: ignore[import]
+        import langchain
 
         # We're about to run some deprecated code, don't report warnings from it.
         # The user called the correct (non-deprecated) code path and shouldn't get warnings.

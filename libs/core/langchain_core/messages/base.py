@@ -88,7 +88,7 @@ class BaseMessage(Serializable):
         """Concatenate this message with another message."""
         from langchain_core.prompts.chat import ChatPromptTemplate
 
-        prompt = ChatPromptTemplate(messages=[self])  # type: ignore[call-arg]
+        prompt = ChatPromptTemplate(messages=[self])
         return prompt + other
 
     def pretty_repr(self, html: bool = False) -> str:

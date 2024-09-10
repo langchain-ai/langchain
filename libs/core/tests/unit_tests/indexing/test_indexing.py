@@ -47,7 +47,7 @@ def record_manager() -> InMemoryRecordManager:
     return record_manager
 
 
-@pytest_asyncio.fixture  # type: ignore
+@pytest_asyncio.fixture
 async def arecord_manager() -> InMemoryRecordManager:
     """Timestamped set fixture."""
     record_manager = InMemoryRecordManager(namespace="hello")
@@ -190,7 +190,7 @@ def test_index_simple_delete_full(
 
         doc_texts = set(
             # Ignoring type since doc should be in the store and not a None
-            vector_store.get_by_ids([uid])[0].page_content  # type: ignore
+            vector_store.get_by_ids([uid])[0].page_content
             for uid in vector_store.store
         )
         assert doc_texts == {"mutated document 1", "This is another document."}
@@ -272,7 +272,7 @@ async def test_aindex_simple_delete_full(
 
     doc_texts = set(
         # Ignoring type since doc should be in the store and not a None
-        vector_store.get_by_ids([uid])[0].page_content  # type: ignore
+        vector_store.get_by_ids([uid])[0].page_content
         for uid in vector_store.store
     )
     assert doc_texts == {"mutated document 1", "This is another document."}
@@ -563,7 +563,7 @@ def test_incremental_delete(
 
     doc_texts = set(
         # Ignoring type since doc should be in the store and not a None
-        vector_store.get_by_ids([uid])[0].page_content  # type: ignore
+        vector_store.get_by_ids([uid])[0].page_content
         for uid in vector_store.store
     )
     assert doc_texts == {"This is another document.", "This is a test document."}
@@ -622,7 +622,7 @@ def test_incremental_delete(
 
     doc_texts = set(
         # Ignoring type since doc should be in the store and not a None
-        vector_store.get_by_ids([uid])[0].page_content  # type: ignore
+        vector_store.get_by_ids([uid])[0].page_content
         for uid in vector_store.store
     )
     assert doc_texts == {
@@ -690,7 +690,7 @@ def test_incremental_indexing_with_batch_size(
 
     doc_texts = set(
         # Ignoring type since doc should be in the store and not a None
-        vector_store.get_by_ids([uid])[0].page_content  # type: ignore
+        vector_store.get_by_ids([uid])[0].page_content
         for uid in vector_store.store
     )
     assert doc_texts == {"1", "2", "3", "4"}
@@ -740,7 +740,7 @@ def test_incremental_delete_with_batch_size(
 
     doc_texts = set(
         # Ignoring type since doc should be in the store and not a None
-        vector_store.get_by_ids([uid])[0].page_content  # type: ignore
+        vector_store.get_by_ids([uid])[0].page_content
         for uid in vector_store.store
     )
     assert doc_texts == {"1", "2", "3", "4"}
@@ -885,7 +885,7 @@ async def test_aincremental_delete(
 
     doc_texts = set(
         # Ignoring type since doc should be in the store and not a None
-        vector_store.get_by_ids([uid])[0].page_content  # type: ignore
+        vector_store.get_by_ids([uid])[0].page_content
         for uid in vector_store.store
     )
     assert doc_texts == {"This is another document.", "This is a test document."}
@@ -944,7 +944,7 @@ async def test_aincremental_delete(
 
     doc_texts = set(
         # Ignoring type since doc should be in the store and not a None
-        vector_store.get_by_ids([uid])[0].page_content  # type: ignore
+        vector_store.get_by_ids([uid])[0].page_content
         for uid in vector_store.store
     )
     assert doc_texts == {

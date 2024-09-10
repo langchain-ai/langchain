@@ -138,8 +138,8 @@ def _set_config_context(config: RunnableConfig) -> None:
         config (RunnableConfig): The config to set.
     """
     from langsmith import (
-        RunTree,  # type: ignore
-        run_helpers,  # type: ignore
+        RunTree,
+        run_helpers,
     )
 
     var_child_runnable_config.set(config)

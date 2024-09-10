@@ -2,7 +2,7 @@ import copy
 import json
 from typing import Any, Dict, List, Optional, Type, Union
 
-import jsonpatch  # type: ignore[import]
+import jsonpatch
 from pydantic import BaseModel, model_validator
 
 from langchain_core.exceptions import OutputParserException
@@ -280,9 +280,9 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
             else:
                 pydantic_schema = self.pydantic_schema
             if hasattr(pydantic_schema, "model_validate_json"):
-                pydantic_args = pydantic_schema.model_validate_json(_args)  # type: ignore
+                pydantic_args = pydantic_schema.model_validate_json(_args)
             else:
-                pydantic_args = pydantic_schema.parse_raw(_args)  # type: ignore
+                pydantic_args = pydantic_schema.parse_raw(_args)
         return pydantic_args
 
 

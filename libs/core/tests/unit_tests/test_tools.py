@@ -416,7 +416,7 @@ def test_structured_tool_lambda_multi_args_schema() -> None:
     tool = StructuredTool.from_function(
         name="tool",
         description="A tool",
-        func=lambda tool_input, other_arg: f"{tool_input}{other_arg}",  # type: ignore
+        func=lambda tool_input, other_arg: f"{tool_input}{other_arg}",
     )
     assert tool.args_schema is not None
     expected_args = {
@@ -806,7 +806,7 @@ def test_validation_error_handling_non_validation_error(
         async def _arun(self) -> str:
             return "dummy"
 
-    _tool = _RaiseNonValidationErrorTool(handle_validation_error=handler)  # type: ignore[call-arg]
+    _tool = _RaiseNonValidationErrorTool(handle_validation_error=handler)
     with pytest.raises(NotImplementedError):
         _tool.run({})
 
@@ -868,7 +868,7 @@ async def test_async_validation_error_handling_non_validation_error(
         async def _arun(self) -> str:
             return "dummy"
 
-    _tool = _RaiseNonValidationErrorTool(handle_validation_error=handler)  # type: ignore[call-arg]
+    _tool = _RaiseNonValidationErrorTool(handle_validation_error=handler)
     with pytest.raises(NotImplementedError):
         await _tool.arun({})
 
@@ -1651,7 +1651,7 @@ def test_args_schema_explicitly_typed() -> None:
         # type ignoring here since we're allowing overriding a type
         # signature of pydantic.v1.BaseModel with pydantic.BaseModel
         # for pydantic 2!
-        args_schema: Type[BaseModel] = Foo  # type: ignore[assignment]
+        args_schema: Type[BaseModel] = Foo
 
         def _run(self, *args: Any, **kwargs: Any) -> str:
             return "foo"

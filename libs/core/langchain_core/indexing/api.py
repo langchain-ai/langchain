@@ -341,7 +341,7 @@ def index(
                         f"as source id."
                     )
             # source ids cannot be None after for loop above.
-            source_ids = cast(Sequence[str], source_ids)  # type: ignore[assignment]
+            source_ids = cast(Sequence[str], source_ids)
 
         exists_batch = record_manager.exists([doc.uid for doc in hashed_docs])
 

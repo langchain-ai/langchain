@@ -160,10 +160,8 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
                 stacklevel=4,
             )
             swap = cls.get_relevant_documents
-            cls.get_relevant_documents = (  # type: ignore[assignment]
-                BaseRetriever.get_relevant_documents
-            )
-            cls._get_relevant_documents = swap  # type: ignore[assignment]
+            cls.get_relevant_documents = BaseRetriever.get_relevant_documents
+            cls._get_relevant_documents = swap
         if (
             hasattr(cls, "aget_relevant_documents")
             and cls.aget_relevant_documents != BaseRetriever.aget_relevant_documents
@@ -175,10 +173,8 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
                 stacklevel=4,
             )
             aswap = cls.aget_relevant_documents
-            cls.aget_relevant_documents = (  # type: ignore[assignment]
-                BaseRetriever.aget_relevant_documents
-            )
-            cls._aget_relevant_documents = aswap  # type: ignore[assignment]
+            cls.aget_relevant_documents = BaseRetriever.aget_relevant_documents
+            cls._aget_relevant_documents = aswap
         parameters = signature(cls._get_relevant_documents).parameters
         cls._new_arg_supported = parameters.get("run_manager") is not None
         # If a V1 retriever broke the interface and expects additional arguments

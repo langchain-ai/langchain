@@ -236,7 +236,7 @@ def _create_message_from_message_type(
     if tool_call_id is not None:
         kwargs["tool_call_id"] = tool_call_id
     if additional_kwargs:
-        kwargs["additional_kwargs"] = additional_kwargs  # type: ignore[assignment]
+        kwargs["additional_kwargs"] = additional_kwargs
     if id is not None:
         kwargs["id"] = id
     if tool_calls is not None:
@@ -825,7 +825,7 @@ def trim_messages(
             def list_token_counter(messages: Sequence[BaseMessage]) -> int:
                 return sum(token_counter(msg) for msg in messages)  # type: ignore[arg-type, misc]
         else:
-            list_token_counter = token_counter  # type: ignore[assignment]
+            list_token_counter = token_counter
     else:
         raise ValueError(
             f"'token_counter' expected to be a model that implements "

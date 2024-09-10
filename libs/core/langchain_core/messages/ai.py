@@ -122,7 +122,7 @@ class AIMessage(BaseMessage):
             raw_tool_calls := values.get("additional_kwargs", {}).get("tool_calls")
         ):
             try:
-                if issubclass(cls, AIMessageChunk):  # type: ignore
+                if issubclass(cls, AIMessageChunk):
                     values["tool_call_chunks"] = default_tool_chunk_parser(
                         raw_tool_calls
                     )

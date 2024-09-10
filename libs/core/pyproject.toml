@@ -20,6 +20,7 @@ exclude = [
     "tests/unit_tests/utils/test_function_calling.py",
 ]
 "disallow_untyped_defs" = "True"
+"warn_unused_ignores" = "True"
 
 [[tool.mypy.overrides]]
 module = ["numpy", "pytest"]

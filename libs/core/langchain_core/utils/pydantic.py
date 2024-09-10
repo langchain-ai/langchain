@@ -243,7 +243,7 @@ def _create_subset_model_v2(
     descriptions_ = descriptions or {}
     fields = {}
     for field_name in field_names:
-        field = model.model_fields[field_name]  # type: ignore
+        field = model.model_fields[field_name]
         description = descriptions_.get(field_name, field.description)
         field_info = FieldInfo(description=description, default=field.default)
         if field.metadata:
@@ -339,7 +339,7 @@ if PYDANTIC_MAJOR_VERSION == 2:
     ) -> Union[Dict[str, FieldInfoV2], Dict[str, FieldInfoV1]]:
         """Get the field names of a Pydantic model."""
         if hasattr(model, "model_fields"):
-            return model.model_fields  # type: ignore
+            return model.model_fields
 
         elif hasattr(model, "__fields__"):
             return model.__fields__  # type: ignore

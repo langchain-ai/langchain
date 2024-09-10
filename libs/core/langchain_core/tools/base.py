@@ -144,7 +144,7 @@ def _infer_arg_descriptions(
     """Infer argument descriptions from a function's docstring."""
     if hasattr(inspect, "get_annotations"):
         # This is for python < 3.10
-        annotations = inspect.get_annotations(fn)  # type: ignore
+        annotations = inspect.get_annotations(fn)
     else:
         annotations = getattr(fn, "__annotations__", {})
     if parse_docstring:
@@ -234,7 +234,7 @@ def create_schema_from_function(
         elif param.kind == param.VAR_KEYWORD:
             has_kwargs = True
 
-    inferred_model = validated.model  # type: ignore
+    inferred_model = validated.model
 
     if filter_args:
         filter_args_ = filter_args
@@ -739,7 +739,7 @@ class ChildTool(BaseTool):
 
             coro = context.run(self._arun, *tool_args, **tool_kwargs)
             if asyncio_accepts_context():
-                response = await asyncio.create_task(coro, context=context)  # type: ignore
+                response = await asyncio.create_task(coro, context=context)
             else:
                 response = await coro
             if self.response_format == "content_and_artifact":

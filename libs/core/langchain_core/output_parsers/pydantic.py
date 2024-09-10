@@ -18,7 +18,7 @@ from langchain_core.utils.pydantic import (
 class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
     """Parse an output using a pydantic model."""
 
-    pydantic_object: Annotated[Type[TBaseModel], SkipValidation()]  # type: ignore
+    pydantic_object: Annotated[Type[TBaseModel], SkipValidation()]
     """The pydantic model to parse."""
 
     def _parse_obj(self, obj: dict) -> TBaseModel:

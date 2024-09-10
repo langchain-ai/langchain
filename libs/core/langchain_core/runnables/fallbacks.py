@@ -233,7 +233,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                 context.run(_set_config_context, child_config)
                 coro = runnable.ainvoke(input, child_config, **kwargs)
                 if asyncio_accepts_context():
-                    output = await asyncio.create_task(coro, context=context)  # type: ignore
+                    output = await asyncio.create_task(coro, context=context)
                 else:
                     output = await coro
             except self.exceptions_to_handle as e:
@@ -479,7 +479,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                     input,
                     **kwargs,
                 )
-                chunk: Output = context.run(next, stream)  # type: ignore
+                chunk: Output = context.run(next, stream)
             except self.exceptions_to_handle as e:
                 first_error = e if first_error is None else first_error
                 last_error = e
@@ -543,7 +543,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                     **kwargs,
                 )
                 if asyncio_accepts_context():
-                    chunk: Output = await asyncio.create_task(  # type: ignore[call-arg]
+                    chunk: Output = await asyncio.create_task(
                         py_anext(stream),  # type: ignore[arg-type]
                         context=context,
                     )

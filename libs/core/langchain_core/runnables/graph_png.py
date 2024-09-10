@@ -134,7 +134,7 @@ class PngDrawer:
         """
 
         try:
-            import pygraphviz as pgv  # type: ignore[import]
+            import pygraphviz as pgv
         except ImportError as exc:
             raise ImportError(
                 "Install pygraphviz to draw graphs: `pip install pygraphviz`."

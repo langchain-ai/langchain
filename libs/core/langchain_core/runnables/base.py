@@ -477,7 +477,7 @@ class Runnable(Generic[Input, Output], ABC):
         include = include or []
         config_specs = self.config_specs
         configurable = (
-            create_model(  # type: ignore[call-overload]
+            create_model(
                 "Configurable",
                 **{
                     spec.id: (
@@ -502,9 +502,7 @@ class Runnable(Generic[Input, Output], ABC):
                 if field_name in [i for i in include if i != "configurable"]
             },
         }
-        model = create_model(  # type: ignore[call-overload]
-            self.get_name("Config"), **all_fields
-        )
+        model = create_model(self.get_name("Config"), **all_fields)
         return model
 
     def get_config_jsonschema(
@@ -1526,7 +1524,7 @@ class Runnable(Generic[Input, Output], ABC):
             config=cast(
                 RunnableConfig,
                 {**(config or {}), **kwargs},
-            ),  # type: ignore[misc]
+            ),
             kwargs={},
         )
 
@@ -1914,8 +1912,8 @@ class Runnable(Generic[Input, Output], ABC):
                 Output,
                 context.run(
                     call_func_with_variable_args,  # type: ignore[arg-type]
-                    func,  # type: ignore[arg-type]
-                    input,  # type: ignore[arg-type]
+                    func,
+                    input,
                     config,
                     run_manager,
                     **kwargs,
@@ -2173,7 +2171,7 @@ class Runnable(Generic[Input, Output], ABC):
                     cast(_StreamingCallbackHandler, h)
                     for h in run_manager.handlers
                     # instance check OK here, it's a mixin
-                    if isinstance(h, _StreamingCallbackHandler)  # type: ignore[misc]
+                    if isinstance(h, _StreamingCallbackHandler)
                 ),
                 None,
             ):
@@ -2181,7 +2179,7 @@ class Runnable(Generic[Input, Output], ABC):
                 iterator = stream_handler.tap_output_iter(run_manager.run_id, iterator)
             try:
                 while True:
-                    chunk: Output = context.run(next, iterator)  # type: ignore
+                    chunk: Output = context.run(next, iterator)
                     yield chunk
                     if final_output_supported:
                         if final_output is None:
@@ -2274,7 +2272,7 @@ class Runnable(Generic[Input, Output], ABC):
                     cast(_StreamingCallbackHandler, h)
                     for h in run_manager.handlers
                     # instance check OK here, it's a mixin
-                    if isinstance(h, _StreamingCallbackHandler)  # type: ignore[misc]
+                    if isinstance(h, _StreamingCallbackHandler)
                 ),
                 None,
             ):
@@ -2287,7 +2285,7 @@ class Runnable(Generic[Input, Output], ABC):
             try:
                 while True:
                     if asyncio_accepts_context():
-                        chunk: Output = await asyncio.create_task(  # type: ignore[call-arg]
+                        chunk: Output = await asyncio.create_task(
                             py_anext(iterator),  # type: ignore[arg-type]
                             context=context,
                         )
@@ -2583,7 +2581,7 @@ def _seq_input_schema(
         next_input_schema = _seq_input_schema(steps[1:], config)
         if not issubclass(next_input_schema, RootModel):
             # it's a dict as expected
-            return create_model(  # type: ignore[call-overload]
+            return create_model(
                 "RunnableSequenceInput",
                 **{
                     k: (v.annotation, v.default)
@@ -2610,7 +2608,7 @@ def _seq_output_schema(
         prev_output_schema = _seq_output_schema(steps[:-1], config)
         if not issubclass(prev_output_schema, RootModel):
             # it's a dict as expected
-            return create_model(  # type: ignore[call-overload]
+            return create_model(
                 "RunnableSequenceOutput",
                 **{
                     **{
@@ -2628,7 +2626,7 @@ def _seq_output_schema(
         if not issubclass(prev_output_schema, RootModel):
             # it's a dict as expected
             if isinstance(last.keys, list):
-                return create_model(  # type: ignore[call-overload]
+                return create_model(
                     "RunnableSequenceOutput",
                     **{
                         k: (v.annotation, v.default)
@@ -2638,7 +2636,7 @@ def _seq_output_schema(
                 )
             else:
                 field = prev_output_schema.model_fields[last.keys]
-                return create_model(  # type: ignore[call-overload]
+                return create_model(
                     "RunnableSequenceOutput",
                     __root__=(field.annotation, field.default),
                 )
@@ -3052,7 +3050,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                 else:
                     part = functools.partial(step.ainvoke, input, config)
                 if asyncio_accepts_context():
-                    input = await asyncio.create_task(part(), context=context)  # type: ignore
+                    input = await asyncio.create_task(part(), context=context)
                 else:
                     input = await asyncio.create_task(part())
         # finish the root run
@@ -3582,7 +3580,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
             for s in self.steps__.values()
         ):
             # This is correct, but pydantic typings/mypy don't think so.
-            return create_model(  # type: ignore[call-overload]
+            return create_model(
                 self.get_name("Input"),
                 **{
                     k: (v.annotation, v.default)
@@ -3746,7 +3744,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
             context = copy_context()
             context.run(_set_config_context, child_config)
             if asyncio_accepts_context():
-                return await asyncio.create_task(  # type: ignore
+                return await asyncio.create_task(
                     step.ainvoke(input, child_config), context=context
                 )
             else:
@@ -4033,7 +4031,7 @@ class RunnableGenerator(Runnable[Input, Output]):
             func_for_name: Callable = atransform
 
         if is_async_generator(transform):
-            self._atransform = transform  # type: ignore[assignment]
+            self._atransform = transform
             func_for_name = transform
         elif inspect.isgeneratorfunction(transform):
             self._transform = transform
@@ -4146,7 +4144,7 @@ class RunnableGenerator(Runnable[Input, Output]):
             input,
             self._transform,  # type: ignore[arg-type]
             config,
-            **kwargs,  # type: ignore[arg-type]
+            **kwargs,
         )
 
     def stream(
@@ -4384,7 +4382,7 @@ class RunnableLambda(Runnable[Input, Output]):
         if dict_keys := get_function_first_arg_dict_keys(func):
             return create_model(
                 self.get_name("Input"),
-                **{key: (Any, ...) for key in dict_keys},  # type: ignore
+                **{key: (Any, ...) for key in dict_keys},
             )
 
         return super().get_input_schema(config)

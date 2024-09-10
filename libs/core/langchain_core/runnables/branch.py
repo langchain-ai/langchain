@@ -119,7 +119,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         _branches = []
 
         for branch in branches[:-1]:
-            if not isinstance(branch, (tuple, list)):  # type: ignore[arg-type]
+            if not isinstance(branch, (tuple, list)):
                 raise TypeError(
                     f"RunnableBranch branches must be "
                     f"tuples or lists, not {type(branch)}"

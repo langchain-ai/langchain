@@ -162,9 +162,9 @@ def _build_sugiyama_layout(
     vertices: Mapping[str, str], edges: Sequence[LangEdge]
 ) -> Any:
     try:
-        from grandalf.graphs import Edge, Graph, Vertex  # type: ignore[import]
-        from grandalf.layouts import SugiyamaLayout  # type: ignore[import]
-        from grandalf.routing import (  # type: ignore[import]
+        from grandalf.graphs import Edge, Graph, Vertex
+        from grandalf.layouts import SugiyamaLayout
+        from grandalf.routing import (
             EdgeViewer,
             route_with_lines,
         )
