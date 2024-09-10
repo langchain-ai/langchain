@@ -195,20 +195,14 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     """  # noqa: E501
 
-    # TODO(0.3): Figure out how to re-apply deprecated decorator
-    # callback_manager: Optional[BaseCallbackManager] = deprecated(
-    #     name="callback_manager", since="0.1.7", removal="1.0", alternative="callbacks"
-    # )(
-    #     Field(
-    #         default=None,
-    #         exclude=True,
-    #         description="Callback manager to add to the run trace.",
-    #     )
-    # )
-    callback_manager: Optional[BaseCallbackManager] = Field(
-        default=None,
-        exclude=True,
-        description="Callback manager to add to the run trace.",
+    callback_manager: Optional[BaseCallbackManager] = deprecated(
+        name="callback_manager", since="0.1.7", removal="1.0", alternative="callbacks"
+    )(
+        Field(
+            default=None,
+            exclude=True,
+            description="Callback manager to add to the run trace.",
+        )
     )
 
     rate_limiter: Optional[BaseRateLimiter] = Field(default=None, exclude=True)
