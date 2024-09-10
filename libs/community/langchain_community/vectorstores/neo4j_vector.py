@@ -602,8 +602,6 @@ class Neo4jVector(VectorStore):
         Args:
             query (str): The Cypher query to execute.
             params (dict, optional): Dictionary of query parameters. Defaults to {}.
-            max_retries (int): Maximum number of retries.
-            initial_delay (float): Initial delay in seconds before the first retry.
 
         Returns:
             List[Dict[str, Any]]: List of dictionaries containing the query results.
@@ -636,6 +634,7 @@ class Neo4jVector(VectorStore):
                 )
             ):
                 raise
+        # Fallback to allow implicit transactions
         with self._driver.session() as session:
             data = session.run(Query(text=query), params)
             return [r.data() for r in data]

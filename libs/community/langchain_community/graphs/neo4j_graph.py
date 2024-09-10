@@ -416,13 +416,11 @@ class Neo4jGraph(GraphStore):
         query: str,
         params: dict = {},
     ) -> List[Dict[str, Any]]:
-        """Query Neo4j database with retries and exponential backoff.
+        """Query Neo4j database.
 
         Args:
             query (str): The Cypher query to execute.
             params (dict): The parameters to pass to the query.
-            max_retries (int): Maximum number of retries.
-            initial_delay (float): Initial delay in seconds before the first retry.
 
         Returns:
             List[Dict[str, Any]]: The list of dictionaries containing the query results.
@@ -459,6 +457,7 @@ class Neo4jGraph(GraphStore):
                 )
             ):
                 raise
+        # fallback to allow implicit transactions
         with self._driver.session() as session:
             data = session.run(Query(text=query, timeout=self.timeout), params)
             json_data = [r.data() for r in data]
