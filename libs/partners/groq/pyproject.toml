@@ -20,9 +20,8 @@ disallow_untyped_defs = "True"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-langchain-core = { version = "^0.3.0.dev1", allow-prereleases = true }
+langchain-core = { version = "^0.3.0.dev4", allow-prereleases = true }
 groq = ">=0.4.1,<1"
-pydantic = ">=2,<3"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "W"]
