@@ -124,13 +124,15 @@ class GraphSparqlQAChain(Chain):
             {"prompt": prompt, "schema": self.graph.get_schema}, callbacks=callbacks
         )
 
+        generated_sparql_cleaned = re.sub(r'^```|```$', '', generated_sparql)
+
         _run_manager.on_text("Generated SPARQL:", end="\n", verbose=self.verbose)
         _run_manager.on_text(
-            generated_sparql, color="green", end="\n", verbose=self.verbose
+            generated_sparql_cleaned, color="green", end="\n", verbose=self.verbose
         )
 
         if intent == "SELECT":
-            context = self.graph.query(generated_sparql)
+            context = self.graph.query(generated_sparql_cleaned)
 
             _run_manager.on_text("Full Context:", end="\n", verbose=self.verbose)
             _run_manager.on_text(
@@ -142,12 +144,12 @@ class GraphSparqlQAChain(Chain):
             )
             res = result[self.qa_chain.output_key]
         elif intent == "UPDATE":
-            self.graph.update(generated_sparql)
+            self.graph.update(generated_sparql_cleaned)
             res = "Successfully inserted triples into the graph."
         else:
             raise ValueError("Unsupported SPARQL query type.")
 
         chain_result: Dict[str, Any] = {self.output_key: res}
         if self.return_sparql_query:
-            chain_result[self.sparql_query_key] = generated_sparql
+            chain_result[self.sparql_query_key] = generated_sparql_cleaned
         return chain_result
