@@ -348,6 +348,7 @@ class Runnable(Generic[Input, Output], ABC):
         return create_model(
             self.get_name("Input"),
             __root__=root_type,
+            __module_name=self.__class__.__module__,
         )
 
     def get_input_jsonschema(
@@ -408,6 +409,7 @@ class Runnable(Generic[Input, Output], ABC):
         return create_model(
             self.get_name("Output"),
             __root__=root_type,
+            __module_name=self.__class__.__module__,
         )
 
     def get_output_jsonschema(
@@ -4864,6 +4866,7 @@ class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
                 List[self.bound.get_input_schema(config)],  # type: ignore
                 None,
             ),
+            __module_name=self.__class__.__module__,
         )
 
     @property
@@ -4877,6 +4880,7 @@ class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
         return create_model(
             self.get_name("Output"),
             __root__=List[schema],  # type: ignore[valid-type]
+            __module_name=self.__class__.__module__,
         )
 
     @property

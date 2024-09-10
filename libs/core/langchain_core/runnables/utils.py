@@ -43,6 +43,7 @@ from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import TypeGuard
 
 from langchain_core.runnables.schema import StreamEvent
+from langchain_core.utils.pydantic import _IgnoreUnserializable
 
 Input = TypeVar("Input", contravariant=True)
 # Output type should implement __concat__, as eg str, list, dict do
@@ -713,7 +714,10 @@ NO_DEFAULT = object()
 
 
 def _create_root_model(
-    name: str, type_: Any, default_: object = NO_DEFAULT
+    name: str,
+    type_: Any,
+    default_: object = NO_DEFAULT,
+    __module_name: Optional[str] = None,
 ) -> Type[BaseModel]:
     """Create a base class."""
 
@@ -733,7 +737,8 @@ def _create_root_model(
         cls: Type[BaseModel],
         by_alias: bool = True,
         ref_template: str = DEFAULT_REF_TEMPLATE,
-        schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
+        # Using a default schema generator that ignores unserializable types
+        schema_generator: type[GenerateJsonSchema] = _IgnoreUnserializable,
         mode: JsonSchemaMode = "validation",
     ) -> Dict[str, Any]:
         # Complains about model_json_schema not being defined in superclass
@@ -751,7 +756,7 @@ def _create_root_model(
         "model_config": ConfigDict(arbitrary_types_allowed=True),
         "schema": classmethod(schema),
         "model_json_schema": classmethod(model_json_schema),
-        "__module__": "langchain_core.runnables.utils",
+        "__module__": __module_name or "langchain_core.runnables.utils",
     }
 
     if default_ is not NO_DEFAULT:
@@ -770,12 +775,16 @@ def _create_root_model_cached(
     __model_name: str,
     type_: Any,
     default_: object = NO_DEFAULT,
+    __module_name: Optional[str] = None,
 ) -> Type[BaseModel]:
-    return _create_root_model(__model_name, type_, default_)
+    return _create_root_model(
+        __model_name, type_, default_=default_, __module_name=__module_name
+    )
 
 
 def create_model(
     __model_name: str,
+    __module_name: Optional[str] = None,
     **field_definitions: Any,
 ) -> Type[BaseModel]:
     """Create a pydantic model with the given field definitions.
@@ -803,10 +812,14 @@ def create_model(
             kwargs = {"type_": arg}
 
         try:
-            named_root_model = _create_root_model_cached(__model_name, **kwargs)
+            named_root_model = _create_root_model_cached(
+                __model_name, __module_name=__module_name, **kwargs
+            )
         except TypeError:
             # something in the arguments into _create_root_model_cached is not hashable
-            named_root_model = _create_root_model(__model_name, **kwargs)
+            named_root_model = _create_root_model(
+                __model_name, __module_name=__module_name, **kwargs
+            )
         return named_root_model
     try:
         return _create_model_cached(__model_name, **field_definitions)

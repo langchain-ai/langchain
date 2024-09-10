@@ -454,6 +454,37 @@ def test_get_input_schema_input_dict() -> None:
     )
 
 
+def test_get_output_schema() -> None:
+    """Test get output schema."""
+    runnable = RunnableLambda(
+        lambda input: {
+            "output": [
+                AIMessage(
+                    content="you said: "
+                    + "\n".join(
+                        [
+                            str(m.content)
+                            for m in input["history"]
+                            if isinstance(m, HumanMessage)
+                        ]
+                        + [input["input"]]
+                    )
+                )
+            ]
+        }
+    )
+    get_session_history = _get_get_session_history()
+    with_history = RunnableWithMessageHistory(
+        runnable,
+        get_session_history,
+        input_messages_key="input",
+        history_messages_key="history",
+        output_messages_key="output",
+    )
+    output_type = with_history.get_output_schema()
+    assert _schema(output_type) == {"title": "_call_runnable_sync_output"}
+
+
 def test_get_input_schema_input_messages() -> None:
     from pydantic import RootModel
 
