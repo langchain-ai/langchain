@@ -66,7 +66,9 @@ markers = [
 ]
 asyncio_mode = "auto"
 filterwarnings = [
+    "ignore::langchain_core._api.beta_decorator.LangChainBetaWarning",
     "ignore::langchain_core._api.deprecation.LangChainDeprecationWarning:test",
+    "ignore::langchain_core._api.deprecation.LangChainPendingDeprecationWarning:test",
 ]
 
 [tool.poetry.group.test]
