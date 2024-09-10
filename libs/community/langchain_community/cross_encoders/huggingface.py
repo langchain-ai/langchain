@@ -45,9 +45,7 @@ class HuggingFaceCrossEncoder(BaseModel, BaseCrossEncoder):
             self.model_name, **self.model_kwargs
         )
 
-    model_config = ConfigDict(
-        extra="forbid",
-    )
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
 
     def score(self, text_pairs: List[Tuple[str, str]]) -> List[float]:
         """Compute similarity scores using a HuggingFace transformer model.
