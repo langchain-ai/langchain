@@ -1,4 +1,5 @@
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional
+
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -21,7 +22,7 @@ from langchain_core.pydantic_v1 import Field, PrivateAttr
 from langchain_core.utils import get_from_dict_or_env
 
 try:
-    from reka.client import Reka, AsyncReka
+    from reka.client import AsyncReka, Reka
 except ImportError:
     raise ValueError(
         "Reka is not installed. Please install it with `pip install reka-api`."
@@ -70,11 +71,26 @@ def process_messages_for_reka(messages: List[BaseMessage]) -> List[Dict[str, str
 class ChatReka(BaseChatModel):
     """Reka chat large language models."""
 
-    model: str = Field(default=DEFAULT_REKA_MODEL, description="The Reka model to use.")
-    temperature: float = Field(default=0.7, description="The sampling temperature.")
-    max_tokens: int = Field(default=512, description="The maximum number of tokens to generate.")
-    api_key: str = Field(default=None, description="The API key for Reka.")
-    streaming: bool = Field(default=False, description="Whether to stream the response.")
+    model: str = Field(
+        default=DEFAULT_REKA_MODEL, 
+        description="The Reka model to use."
+    )
+    temperature: float = Field(
+        default=0.7, 
+        description="The sampling temperature."
+    )
+    max_tokens: int = Field(
+        default=512, 
+        description="The maximum number of tokens to generate."
+    )
+    api_key: str = Field(
+        default=None, 
+        description="The API key for Reka."
+    )
+    streaming: bool = Field(
+        default=False, 
+        description="Whether to stream the response."
+    )
 
     _client: Reka = PrivateAttr()
     _aclient: AsyncReka = PrivateAttr()
@@ -132,7 +148,10 @@ class ChatReka(BaseChatModel):
         if stop:
             params["stop"] = stop
 
-        stream = await self._aclient.chat.create_stream(messages=reka_messages, **params)
+        stream = await self._aclient.chat.create_stream(
+            messages=reka_messages, 
+            **params
+        )
 
         async for chunk in stream:
             content = chunk.responses[0].chunk.content

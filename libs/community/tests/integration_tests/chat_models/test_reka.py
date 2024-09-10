@@ -10,6 +10,7 @@ from langchain_core.outputs import ChatGeneration, LLMResult
 from langchain_community.chat_models.reka import ChatReka
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
+
 @pytest.mark.scheduled
 def test_reka_call() -> None:
     """Test valid call to Reka."""
