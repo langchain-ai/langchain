@@ -1762,6 +1762,7 @@ class Runnable(Generic[Input, Output], ABC):
         input: Input,
         config: Optional[RunnableConfig],
         run_type: Optional[str] = None,
+        serialized: Optional[Dict[str, Any]] = None,
         **kwargs: Optional[Any],
     ) -> Output:
         """Helper method to transform an Input value to an Output value,
@@ -1769,7 +1770,7 @@ class Runnable(Generic[Input, Output], ABC):
         config = ensure_config(config)
         callback_manager = get_callback_manager_for_config(config)
         run_manager = callback_manager.on_chain_start(
-            None,
+            serialized,
             input,
             run_type=run_type,
             name=config.get("run_name") or self.get_name(),
@@ -1810,6 +1811,7 @@ class Runnable(Generic[Input, Output], ABC):
         input: Input,
         config: Optional[RunnableConfig],
         run_type: Optional[str] = None,
+        serialized: Optional[Dict[str, Any]] = None,
         **kwargs: Optional[Any],
     ) -> Output:
         """Helper method to transform an Input value to an Output value,
@@ -1817,7 +1819,7 @@ class Runnable(Generic[Input, Output], ABC):
         config = ensure_config(config)
         callback_manager = get_async_callback_manager_for_config(config)
         run_manager = await callback_manager.on_chain_start(
-            None,
+            serialized,
             input,
             run_type=run_type,
             name=config.get("run_name") or self.get_name(),
@@ -2324,7 +2326,6 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
         dumped = super().to_json()
         try:
             dumped["name"] = self.get_name()
-            dumped["graph"] = self.get_graph().to_json()
         except Exception:
             pass
         return dumped
