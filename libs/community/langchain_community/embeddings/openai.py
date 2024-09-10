@@ -255,8 +255,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     """Optional httpx.Client."""
 
     model_config = ConfigDict(
-        populate_by_name=True,
-        extra="forbid",
+        populate_by_name=True, extra="forbid", protected_namespaces=()
     )
 
     @model_validator(mode="before")

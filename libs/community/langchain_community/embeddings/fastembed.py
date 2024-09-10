@@ -67,9 +67,7 @@ class FastEmbedEmbeddings(BaseModel, Embeddings):
 
     _model: Any  # : :meta private:
 
-    model_config = ConfigDict(
-        extra="allow",
-    )
+    model_config = ConfigDict(extra="allow", protected_namespaces=())
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:

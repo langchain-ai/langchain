@@ -75,9 +75,7 @@ class BedrockEmbeddings(BaseModel, Embeddings):
     normalize: bool = False
     """Whether the embeddings should be normalized to unit vectors"""
 
-    model_config = ConfigDict(
-        extra="forbid",
-    )
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
 
     @model_validator(mode="after")
     def validate_environment(self) -> Self:

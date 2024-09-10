@@ -85,9 +85,7 @@ class OCIGenAIEmbeddings(BaseModel, Embeddings):
     """Batch size of OCI GenAI embedding requests. OCI GenAI may handle up to 96 texts
      per request"""
 
-    model_config = ConfigDict(
-        extra="forbid",
-    )
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:  # pylint: disable=no-self-argument

@@ -70,9 +70,7 @@ class BaichuanTextEmbeddings(BaseModel, Embeddings):
     chunk_size: int = 16
     """Chunk size when multiple texts are input"""
 
-    model_config = ConfigDict(
-        populate_by_name=True,
-    )
+    model_config = ConfigDict(populate_by_name=True, protected_namespaces=())
 
     @model_validator(mode="after")
     def validate_environment(self) -> Self:

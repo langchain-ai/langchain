@@ -48,9 +48,7 @@ class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
 
     huggingfacehub_api_token: Optional[str] = None
 
-    model_config = ConfigDict(
-        extra="forbid",
-    )
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
 
     @model_validator(mode="before")
     @classmethod

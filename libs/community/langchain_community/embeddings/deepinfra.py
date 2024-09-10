@@ -54,9 +54,7 @@ class DeepInfraEmbeddings(BaseModel, Embeddings):
     batch_size: int = MAX_BATCH_SIZE
     """Batch size for embedding requests."""
 
-    model_config = ConfigDict(
-        extra="forbid",
-    )
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:

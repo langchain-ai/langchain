@@ -43,9 +43,7 @@ class CloudflareWorkersAIEmbeddings(BaseModel, Embeddings):
 
         self.headers = {"Authorization": f"Bearer {self.api_token}"}
 
-    model_config = ConfigDict(
-        extra="forbid",
-    )
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Compute doc embeddings using Cloudflare Workers AI.

@@ -141,9 +141,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
         """Get the identifying parameters."""
         return {**{"model": self.model}, **self._default_params}
 
-    model_config = ConfigDict(
-        extra="forbid",
-    )
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
 
     def _process_emb_response(self, input: str) -> List[float]:
         """Process a response from the API.

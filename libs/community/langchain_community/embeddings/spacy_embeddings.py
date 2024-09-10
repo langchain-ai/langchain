@@ -22,9 +22,7 @@ class SpacyEmbeddings(BaseModel, Embeddings):
     model_name: str = "en_core_web_sm"
     nlp: Optional[Any] = None
 
-    model_config = ConfigDict(
-        extra="forbid",
-    )
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
 
     @model_validator(mode="before")
     @classmethod
