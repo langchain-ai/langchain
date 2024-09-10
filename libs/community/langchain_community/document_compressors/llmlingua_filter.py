@@ -76,6 +76,7 @@ class LLMLinguaCompressor(BaseDocumentCompressor):
         arbitrary_types_allowed=True,
         extra="forbid",
         populate_by_name=True,
+        protected_namespaces=(),
     )
 
     @staticmethod
