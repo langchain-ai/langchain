@@ -93,7 +93,7 @@ def create_openai_fn_chain(
                 from langchain_community.chat_models import ChatOpenAI
                 from langchain_core.prompts import ChatPromptTemplate
 
-                from langchain_core.pydantic_v1 import BaseModel, Field
+                from pydantic import BaseModel, Field
 
 
                 class RecordPerson(BaseModel):
@@ -183,7 +183,7 @@ def create_structured_output_chain(
                 from langchain_community.chat_models import ChatOpenAI
                 from langchain_core.prompts import ChatPromptTemplate
 
-                from langchain_core.pydantic_v1 import BaseModel, Field
+                from pydantic import BaseModel, Field
 
                 class Dog(BaseModel):
                     \"\"\"Identifying information about a dog.\"\"\"
