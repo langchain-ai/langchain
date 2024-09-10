@@ -391,7 +391,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         else:
             fields["__root__"] = (Sequence[BaseMessage], ...)
         return create_model(  # type: ignore[call-overload]
-            "RunnableWithMessageHistoryInput",
+            "RunnableWithChatHistoryInput",
             **fields,
         )
 
@@ -423,7 +423,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             return root_type
 
         return create_model(
-            "RunnableWithMessageHistoryOutput",
+            "RunnableWithChatHistoryOutput",
             __root__=root_type,
             __module_name=self.__class__.__module__,
         )

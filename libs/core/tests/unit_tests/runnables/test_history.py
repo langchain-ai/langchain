@@ -482,8 +482,9 @@ def test_get_output_schema() -> None:
         output_messages_key="output",
     )
     output_type = with_history.get_output_schema()
+
     assert _schema(output_type) == {
-        "title": "RunnableWithMessageHistoryOutput",
+        "title": "RunnableWithChatHistoryOutput",
         "type": "object",
     }
 
