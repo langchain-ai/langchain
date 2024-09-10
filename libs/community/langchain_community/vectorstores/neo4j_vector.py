@@ -596,8 +596,6 @@ class Neo4jVector(VectorStore):
         query: str,
         *,
         params: Optional[dict] = None,
-        max_retries: int = 3,
-        initial_delay: float = 0.1,
     ) -> List[Dict[str, Any]]:
         """Query Neo4j database with retries and exponential backoff.
 
@@ -611,23 +609,36 @@ class Neo4jVector(VectorStore):
             List[Dict[str, Any]]: List of dictionaries containing the query results.
         """
         from neo4j import Query
-        from neo4j.exceptions import DriverError, Neo4jError
+        from neo4j.exceptions import Neo4jError
 
-        retries = 0
-        delay = initial_delay
         params = params or {}
-        while True:
-            try:
-                with self._driver.session(database=self._database) as session:
-                    data = session.run(Query(text=query), params)
-                    return [r.data() for r in data]
-            except (DriverError, Neo4jError) as e:
-                if not e.is_retryable() or retries >= max_retries:
-                    raise
-
-                retries += 1
-                time.sleep(delay)
-                delay *= 2  # Exponential backoff
+        try:
+            data, _, _ = self._driver.execute_query(
+                query, database=self._database, parameters_=params
+            )
+            return [r.data() for r in data]
+        except Neo4jError as e:
+            if not (
+                (
+                    (  # isCallInTransactionError
+                        e.code == "Neo.DatabaseError.Statement.ExecutionFailed"
+                        or e.code
+                        == "Neo.DatabaseError.Transaction.TransactionStartFailed"
+                    )
+                    and "in an implicit transaction" in e.message
+                )
+                or (  # isPeriodicCommitError
+                    e.code == "Neo.ClientError.Statement.SemanticError"
+                    and (
+                        "in an open transaction is not possible" in e.message
+                        or "tried to execute in an explicit transaction" in e.message
+                    )
+                )
+            ):
+                raise
+        with self._driver.session() as session:
+            data = session.run(Query(text=query), params)
+            return [r.data() for r in data]
 
     def verify_version(self) -> None:
         """
