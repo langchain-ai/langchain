@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional  # type: ignore[import-not-found]
 
 from langchain_core.embeddings import Embeddings
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
 DEFAULT_MODEL_NAME = "sentence-transformers/all-mpnet-base-v2"
 
@@ -26,7 +26,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
             )
     """
 
-    client: Any  #: :meta private:
+    _client: Any = PrivateAttr()
     model_name: str = DEFAULT_MODEL_NAME
     """Model name to use."""
     cache_folder: Optional[str] = None
@@ -58,9 +58,13 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
                 "Please install it with `pip install sentence-transformers`."
             ) from exc
 
-        self.client = sentence_transformers.SentenceTransformer(
+        self._client = sentence_transformers.SentenceTransformer(
             self.model_name, cache_folder=self.cache_folder, **self.model_kwargs
         )
+
+    @property
+    def client(self) -> Any:
+        return self._client
 
     model_config = ConfigDict(
         extra="forbid",
