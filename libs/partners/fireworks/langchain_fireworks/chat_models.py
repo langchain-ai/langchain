@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 from operator import itemgetter
 from typing import (
     Any,
@@ -69,17 +68,9 @@ from langchain_core.output_parsers.openai_tools import (
     parse_tool_call,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import (
-    BaseModel,
-    Field,
-    SecretStr,
-    root_validator,
-)
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import (
-    convert_to_secret_str,
-    get_from_dict_or_env,
     get_pydantic_field_names,
 )
 from langchain_core.utils.function_calling import (
@@ -87,7 +78,15 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_tool,
 )
 from langchain_core.utils.pydantic import is_basemodel_subclass
-from langchain_core.utils.utils import build_extra_kwargs
+from langchain_core.utils.utils import build_extra_kwargs, from_env, secret_from_env
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    SecretStr,
+    model_validator,
+)
+from typing_extensions import Self
 
 logger = logging.getLogger(__name__)
 
@@ -322,9 +321,25 @@ class ChatFireworks(BaseChatModel):
     """Default stop sequences."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
-    fireworks_api_key: SecretStr = Field(default=None, alias="api_key")
-    """Automatically inferred from env var `FIREWORKS_API_KEY` if not provided."""
-    fireworks_api_base: Optional[str] = Field(default=None, alias="base_url")
+    fireworks_api_key: SecretStr = Field(
+        alias="api_key",
+        default_factory=secret_from_env(
+            "FIREWORKS_API_KEY",
+            error_message=(
+                "You must specify an api key. "
+                "You can pass it an argument as `api_key=...` or "
+                "set the environment variable `FIREWORKS_API_KEY`."
+            ),
+        ),
+    )
+    """Fireworks API key.
+    
+    Automatically read from env variable `FIREWORKS_API_KEY` if not provided.
+    """
+
+    fireworks_api_base: Optional[str] = Field(
+        alias="base_url", default_factory=from_env("FIREWORKS_API_BASE", default=None)
+    )
     """Base URL path for API requests, leave blank if not using a proxy or service 
         emulator."""
     request_timeout: Union[float, Tuple[float, float], Any, None] = Field(
@@ -341,13 +356,13 @@ class ChatFireworks(BaseChatModel):
     max_retries: Optional[int] = None
     """Maximum number of retries to make when generating."""
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
-        allow_population_by_field_name = True
-
-    @root_validator(pre=True)
-    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})
@@ -356,38 +371,32 @@ class ChatFireworks(BaseChatModel):
         )
         return values
 
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="after")
+    def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
-        if values["n"] < 1:
+        if self.n < 1:
             raise ValueError("n must be at least 1.")
-        if values["n"] > 1 and values["streaming"]:
+        if self.n > 1 and self.streaming:
             raise ValueError("n must be 1 when streaming.")
 
-        values["fireworks_api_key"] = convert_to_secret_str(
-            get_from_dict_or_env(values, "fireworks_api_key", "FIREWORKS_API_KEY")
-        )
-        values["fireworks_api_base"] = values["fireworks_api_base"] or os.getenv(
-            "FIREWORKS_API_BASE"
-        )
         client_params = {
             "api_key": (
-                values["fireworks_api_key"].get_secret_value()
-                if values["fireworks_api_key"]
+                self.fireworks_api_key.get_secret_value()
+                if self.fireworks_api_key
                 else None
             ),
-            "base_url": values["fireworks_api_base"],
-            "timeout": values["request_timeout"],
+            "base_url": self.fireworks_api_base,
+            "timeout": self.request_timeout,
         }
 
-        if not values.get("client"):
-            values["client"] = Fireworks(**client_params).chat.completions
-        if not values.get("async_client"):
-            values["async_client"] = AsyncFireworks(**client_params).chat.completions
-        if values["max_retries"]:
-            values["client"]._max_retries = values["max_retries"]
-            values["async_client"]._max_retries = values["max_retries"]
-        return values
+        if not self.client:
+            self.client = Fireworks(**client_params).chat.completions
+        if not self.async_client:
+            self.async_client = AsyncFireworks(**client_params).chat.completions
+        if self.max_retries:
+            self.client._max_retries = self.max_retries
+            self.async_client._max_retries = self.max_retries
+        return self
 
     @property
     def _default_params(self) -> Dict[str, Any]:
@@ -796,7 +805,7 @@ class ChatFireworks(BaseChatModel):
                 from typing import Optional
 
                 from langchain_fireworks import ChatFireworks
-                from langchain_core.pydantic_v1 import BaseModel, Field
+                from pydantic import BaseModel, Field
 
 
                 class AnswerWithJustification(BaseModel):
@@ -827,7 +836,7 @@ class ChatFireworks(BaseChatModel):
             .. code-block:: python
 
                 from langchain_fireworks import ChatFireworks
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
 
 
                 class AnswerWithJustification(BaseModel):
@@ -914,7 +923,7 @@ class ChatFireworks(BaseChatModel):
             .. code-block::
 
                 from langchain_fireworks import ChatFireworks
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
 
                 class AnswerWithJustification(BaseModel):
                     answer: str

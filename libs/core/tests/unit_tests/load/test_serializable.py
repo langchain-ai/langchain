@@ -1,6 +1,9 @@
 from typing import Dict
 
+from pydantic import ConfigDict, Field
+
 from langchain_core.load import Serializable, dumpd
+from langchain_core.load.serializable import _is_field_useful
 
 
 def test_simple_serialization() -> None:
@@ -38,8 +41,9 @@ def test_simple_serialization_is_serializable() -> None:
 
 def test_simple_serialization_secret() -> None:
     """Test handling of secrets."""
+    from pydantic import SecretStr
+
     from langchain_core.load import Serializable
-    from langchain_core.pydantic_v1 import SecretStr
 
     class Foo(Serializable):
         bar: int
@@ -69,3 +73,40 @@ def test_simple_serialization_secret() -> None:
         "lc": 1,
         "type": "constructor",
     }
+
+
+def test__is_field_useful() -> None:
+    class ArrayObj:
+        def __bool__(self) -> bool:
+            raise ValueError("Truthiness can't be determined")
+
+        def __eq__(self, other: object) -> bool:
+            return self  # type: ignore[return-value]
+
+    class NonBoolObj:
+        def __bool__(self) -> bool:
+            raise ValueError("Truthiness can't be determined")
+
+        def __eq__(self, other: object) -> bool:
+            raise ValueError("Equality can't be determined")
+
+    default_x = ArrayObj()
+    default_y = NonBoolObj()
+
+    class Foo(Serializable):
+        x: ArrayObj = Field(default=default_x)
+        y: NonBoolObj = Field(default=default_y)
+        # Make sure works for fields without default.
+        z: ArrayObj
+
+        model_config = ConfigDict(
+            arbitrary_types_allowed=True,
+        )
+
+    foo = Foo(x=ArrayObj(), y=NonBoolObj(), z=ArrayObj())
+    assert _is_field_useful(foo, "x", foo.x)
+    assert _is_field_useful(foo, "y", foo.y)
+
+    foo = Foo(x=default_x, y=default_y, z=ArrayObj())
+    assert not _is_field_useful(foo, "x", foo.x)
+    assert not _is_field_useful(foo, "y", foo.y)

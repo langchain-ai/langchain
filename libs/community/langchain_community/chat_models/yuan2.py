@@ -40,12 +40,12 @@ from langchain_core.messages import (
     SystemMessageChunk,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.utils import (
     get_from_dict_or_env,
     get_pydantic_field_names,
     pre_init,
 )
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from tenacity import (
     before_sleep_log,
     retry,
@@ -93,7 +93,9 @@ class ChatYuan2(BaseChatModel):
     )
     """Base URL path for API requests, an OpenAI compatible API server."""
 
-    request_timeout: Optional[Union[float, Tuple[float, float]]] = None
+    request_timeout: Optional[Union[float, Tuple[float, float]]] = Field(
+        default=None, alias="timeout"
+    )
     """Timeout for requests to yuan2 completion API. Default is 600 seconds."""
 
     max_retries: int = 6
@@ -111,7 +113,7 @@ class ChatYuan2(BaseChatModel):
     top_p: Optional[float] = 0.9
     """The top-p value to use for sampling."""
 
-    stop: Optional[List[str]] = ["<eod>"]
+    stop: Optional[List[str]] = Field(default=["<eod>"], alias="stop_sequences")
     """A list of strings to stop generation when encountered."""
 
     repeat_last_n: Optional[int] = 64
@@ -120,8 +122,9 @@ class ChatYuan2(BaseChatModel):
     repeat_penalty: Optional[float] = 1.18
     """The penalty to apply to repeated tokens."""
 
-    class Config:
-        allow_population_by_field_name = True
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
@@ -139,8 +142,9 @@ class ChatYuan2(BaseChatModel):
 
         return attributes
 
-    @root_validator(pre=True)
-    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})

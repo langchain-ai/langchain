@@ -1,5 +1,5 @@
 [build-system]
-requires = [ "poetry-core>=1.0.0",]
+requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
@@ -18,20 +18,25 @@ disallow_untyped_defs = "True"
 "Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/robocorp"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
-langchain-core = ">=0.2.24,<0.3"
+python = ">=3.9,<4.0"
+langchain-core = "^0.3.0.dev"
 requests = "^2.31.0"
 types-requests = "^2.31.0.6"
+pydantic = ">=2,<3"
 
 [tool.ruff.lint]
-select = [ "E", "F", "I", "T201",]
+select = ["E", "F", "I", "T201"]
 
 [tool.coverage.run]
-omit = [ "tests/*",]
+omit = ["tests/*"]
 
 [tool.pytest.ini_options]
 addopts = "--snapshot-warn-unused --strict-markers --strict-config --durations=5"
-markers = [ "requires: mark tests as requiring a specific library", "asyncio: mark tests as requiring asyncio", "compile: mark placeholder test used to compile integration tests without running them",]
+markers = [
+    "requires: mark tests as requiring a specific library",
+    "asyncio: mark tests as requiring asyncio",
+    "compile: mark placeholder test used to compile integration tests without running them",
+]
 asyncio_mode = "auto"
 
 [tool.poetry.group.test]

@@ -13,7 +13,7 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.12.4"
-langchain-core = ">=0.1.5,<0.3"
+langchain-core = "^0.3.0.dev"
 airbyte = "^0.7.3"
 pydantic = ">=1.10.8,<2"
 

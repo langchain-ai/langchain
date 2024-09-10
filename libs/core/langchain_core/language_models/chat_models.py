@@ -23,7 +23,12 @@ from typing import (
     cast,
 )
 
-from typing_extensions import TypedDict
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    model_validator,
+)
 
 from langchain_core._api import deprecated
 from langchain_core.caches import BaseCache
@@ -36,7 +41,11 @@ from langchain_core.callbacks import (
     Callbacks,
 )
 from langchain_core.globals import get_llm_cache
-from langchain_core.language_models.base import BaseLanguageModel, LanguageModelInput
+from langchain_core.language_models.base import (
+    BaseLanguageModel,
+    LangSmithParams,
+    LanguageModelInput,
+)
 from langchain_core.load import dumpd, dumps
 from langchain_core.messages import (
     AIMessage,
@@ -55,11 +64,6 @@ from langchain_core.outputs import (
     RunInfo,
 )
 from langchain_core.prompt_values import ChatPromptValue, PromptValue, StringPromptValue
-from langchain_core.pydantic_v1 import (
-    BaseModel,
-    Field,
-    root_validator,
-)
 from langchain_core.rate_limiters import BaseRateLimiter
 from langchain_core.runnables import RunnableMap, RunnablePassthrough
 from langchain_core.runnables.config import ensure_config, run_in_executor
@@ -71,23 +75,6 @@ if TYPE_CHECKING:
     from langchain_core.output_parsers.base import OutputParserLike
     from langchain_core.runnables import Runnable, RunnableConfig
     from langchain_core.tools import BaseTool
-
-
-class LangSmithParams(TypedDict, total=False):
-    """LangSmith parameters for tracing."""
-
-    ls_provider: str
-    """Provider of the model."""
-    ls_model_name: str
-    """Name of the model."""
-    ls_model_type: Literal["chat"]
-    """Type of the model. Should be 'chat'."""
-    ls_temperature: Optional[float]
-    """Temperature for generation."""
-    ls_max_tokens: Optional[int]
-    """Max tokens for generation."""
-    ls_stop: Optional[List[str]]
-    """Stop words for generation."""
 
 
 def generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
@@ -233,8 +220,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     - If False (default), will always use streaming case if available.
     """
 
-    @root_validator(pre=True)
-    def raise_deprecation(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def raise_deprecation(cls, values: Dict) -> Any:
         """Raise deprecation warning if callback_manager is used.
 
         Args:
@@ -250,12 +238,14 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             warnings.warn(
                 "callback_manager is deprecated. Please use callbacks instead.",
                 DeprecationWarning,
+                stacklevel=5,
             )
             values["callbacks"] = values.pop("callback_manager", None)
         return values
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     # --- Runnable methods ---
 
@@ -1184,7 +1174,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         Example: Pydantic schema (include_raw=False):
             .. code-block:: python
 
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
 
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
@@ -1204,7 +1194,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         Example: Pydantic schema (include_raw=True):
             .. code-block:: python
 
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
 
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
@@ -1224,7 +1214,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         Example: Dict schema (include_raw=False):
             .. code-block:: python
 
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
                 from langchain_core.utils.function_calling import convert_to_openai_tool
 
                 class AnswerWithJustification(BaseModel):

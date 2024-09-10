@@ -2,8 +2,8 @@ from typing import Any, Dict, List, Optional, Sequence
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from langchain_core.pydantic_v1 import SecretStr
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
+from pydantic import ConfigDict, SecretStr
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
@@ -162,8 +162,9 @@ class AlephAlpha(LLM):
     nice to other users
     by de-prioritizing your request below concurrent ones."""
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:

@@ -271,6 +271,11 @@ SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "chat_models",
         "ChatAnthropic",
     ),
+    ("langchain_groq", "chat_models", "ChatGroq"): (
+        "langchain_groq",
+        "chat_models",
+        "ChatGroq",
+    ),
     ("langchain", "chat_models", "fireworks", "ChatFireworks"): (
         "langchain_fireworks",
         "chat_models",
@@ -286,6 +291,22 @@ SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "langchain_google_vertexai",
         "chat_models",
         "ChatVertexAI",
+    ),
+    ("langchain", "chat_models", "mistralai", "ChatMistralAI"): (
+        "langchain_mistralai",
+        "chat_models",
+        "ChatMistralAI",
+    ),
+    ("langchain", "chat_models", "bedrock", "ChatBedrock"): (
+        "langchain_aws",
+        "chat_models",
+        "bedrock",
+        "ChatBedrock",
+    ),
+    ("langchain_google_genai", "chat_models", "ChatGoogleGenerativeAI"): (
+        "langchain_google_genai",
+        "chat_models",
+        "ChatGoogleGenerativeAI",
     ),
     ("langchain", "schema", "output", "ChatGenerationChunk"): (
         "langchain_core",

@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import inspect
 import textwrap
+import warnings
 from functools import wraps
 from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union, overload
 
-import pydantic  # pydantic: ignore
-
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+import pydantic
+from pydantic import BaseModel, PydanticDeprecationWarning, root_validator
+from pydantic.json_schema import GenerateJsonSchema, JsonSchemaValue
+from pydantic_core import core_schema
 
 
 def get_pydantic_major_version() -> int:
@@ -76,13 +78,13 @@ def is_basemodel_subclass(cls: Type) -> bool:
         return False
 
     if PYDANTIC_MAJOR_VERSION == 1:
-        from pydantic import BaseModel as BaseModelV1Proper  # pydantic: ignore
+        from pydantic import BaseModel as BaseModelV1Proper
 
         if issubclass(cls, BaseModelV1Proper):
             return True
     elif PYDANTIC_MAJOR_VERSION == 2:
-        from pydantic import BaseModel as BaseModelV2  # pydantic: ignore
-        from pydantic.v1 import BaseModel as BaseModelV1  # pydantic: ignore
+        from pydantic import BaseModel as BaseModelV2
+        from pydantic.v1 import BaseModel as BaseModelV1
 
         if issubclass(cls, BaseModelV2):
             return True
@@ -104,13 +106,13 @@ def is_basemodel_instance(obj: Any) -> bool:
     * pydantic.v1.BaseModel in Pydantic 2.x
     """
     if PYDANTIC_MAJOR_VERSION == 1:
-        from pydantic import BaseModel as BaseModelV1Proper  # pydantic: ignore
+        from pydantic import BaseModel as BaseModelV1Proper
 
         if isinstance(obj, BaseModelV1Proper):
             return True
     elif PYDANTIC_MAJOR_VERSION == 2:
-        from pydantic import BaseModel as BaseModelV2  # pydantic: ignore
-        from pydantic.v1 import BaseModel as BaseModelV1  # pydantic: ignore
+        from pydantic import BaseModel as BaseModelV2
+        from pydantic.v1 import BaseModel as BaseModelV1
 
         if isinstance(obj, BaseModelV2):
             return True
@@ -133,40 +135,59 @@ def pre_init(func: Callable) -> Any:
         Any: The decorated function.
     """
 
-    @root_validator(pre=True)
-    @wraps(func)
-    def wrapper(cls: Type[BaseModel], values: Dict[str, Any]) -> Dict[str, Any]:
-        """Decorator to run a function before model initialization.
+    with warnings.catch_warnings():
+        warnings.filterwarnings(action="ignore", category=PydanticDeprecationWarning)
 
-        Args:
-            cls (Type[BaseModel]): The model class.
-            values (Dict[str, Any]): The values to initialize the model with.
+        @root_validator(pre=True)
+        @wraps(func)
+        def wrapper(cls: Type[BaseModel], values: Dict[str, Any]) -> Dict[str, Any]:
+            """Decorator to run a function before model initialization.
 
-        Returns:
-            Dict[str, Any]: The values to initialize the model with.
-        """
-        # Insert default values
-        fields = cls.__fields__
-        for name, field_info in fields.items():
-            # Check if allow_population_by_field_name is enabled
-            # If yes, then set the field name to the alias
-            if hasattr(cls, "Config"):
-                if hasattr(cls.Config, "allow_population_by_field_name"):
-                    if cls.Config.allow_population_by_field_name:
+            Args:
+                cls (Type[BaseModel]): The model class.
+                values (Dict[str, Any]): The values to initialize the model with.
+
+            Returns:
+                Dict[str, Any]: The values to initialize the model with.
+            """
+            # Insert default values
+            fields = cls.model_fields
+            for name, field_info in fields.items():
+                # Check if allow_population_by_field_name is enabled
+                # If yes, then set the field name to the alias
+                if hasattr(cls, "Config"):
+                    if hasattr(cls.Config, "allow_population_by_field_name"):
+                        if cls.Config.allow_population_by_field_name:
+                            if field_info.alias in values:
+                                values[name] = values.pop(field_info.alias)
+                if hasattr(cls, "model_config"):
+                    if cls.model_config.get("populate_by_name"):
                         if field_info.alias in values:
                             values[name] = values.pop(field_info.alias)
 
-            if name not in values or values[name] is None:
-                if not field_info.required:
-                    if field_info.default_factory is not None:
-                        values[name] = field_info.default_factory()
-                    else:
-                        values[name] = field_info.default
+                if name not in values or values[name] is None:
+                    if not field_info.is_required():
+                        if field_info.default_factory is not None:
+                            values[name] = field_info.default_factory()
+                        else:
+                            values[name] = field_info.default
 
-        # Call the decorated function
-        return func(cls, values)
+            # Call the decorated function
+            return func(cls, values)
 
     return wrapper
+
+
+class _IgnoreUnserializable(GenerateJsonSchema):
+    """A JSON schema generator that ignores unknown types.
+
+    https://docs.pydantic.dev/latest/concepts/json_schema/#customizing-the-json-schema-generation-process
+    """
+
+    def handle_invalid_for_json_schema(
+        self, schema: core_schema.CoreSchema, error_info: str
+    ) -> JsonSchemaValue:
+        return {}
 
 
 def _create_subset_model_v1(
@@ -178,12 +199,20 @@ def _create_subset_model_v1(
     fn_description: Optional[str] = None,
 ) -> Type[BaseModel]:
     """Create a pydantic model with only a subset of model's fields."""
-    from langchain_core.pydantic_v1 import create_model
+    if PYDANTIC_MAJOR_VERSION == 1:
+        from pydantic import create_model
+    elif PYDANTIC_MAJOR_VERSION == 2:
+        from pydantic.v1 import create_model  # type: ignore
+    else:
+        raise NotImplementedError(
+            f"Unsupported pydantic version: {PYDANTIC_MAJOR_VERSION}"
+        )
 
     fields = {}
 
     for field_name in field_names:
-        field = model.__fields__[field_name]
+        # Using pydantic v1 so can access __fields__ as a dict.
+        field = model.__fields__[field_name]  # type: ignore
         t = (
             # this isn't perfect but should work for most functions
             field.outer_type_
@@ -208,8 +237,8 @@ def _create_subset_model_v2(
     fn_description: Optional[str] = None,
 ) -> Type[pydantic.BaseModel]:
     """Create a pydantic model with a subset of the model fields."""
-    from pydantic import create_model  # pydantic: ignore
-    from pydantic.fields import FieldInfo  # pydantic: ignore
+    from pydantic import create_model
+    from pydantic.fields import FieldInfo
 
     descriptions_ = descriptions or {}
     fields = {}
@@ -222,6 +251,17 @@ def _create_subset_model_v2(
         fields[field_name] = (field.annotation, field_info)
     rtn = create_model(name, **fields)  # type: ignore
 
+    # TODO(0.3): Determine if there is a more "pydantic" way to preserve annotations.
+    # This is done to preserve __annotations__ when working with pydantic 2.x
+    # and using the Annotated type with TypedDict.
+    # Comment out the following line, to trigger the relevant test case.
+    selected_annotations = [
+        (name, annotation)
+        for name, annotation in model.__annotations__.items()
+        if name in field_names
+    ]
+
+    rtn.__annotations__ = dict(selected_annotations)
     rtn.__doc__ = textwrap.dedent(fn_description or model.__doc__ or "")
     return rtn
 
@@ -248,7 +288,7 @@ def _create_subset_model(
             fn_description=fn_description,
         )
     elif PYDANTIC_MAJOR_VERSION == 2:
-        from pydantic.v1 import BaseModel as BaseModelV1  # pydantic: ignore
+        from pydantic.v1 import BaseModel as BaseModelV1
 
         if issubclass(model, BaseModelV1):
             return _create_subset_model_v1(

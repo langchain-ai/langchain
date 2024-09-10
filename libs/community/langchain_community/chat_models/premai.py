@@ -38,15 +38,16 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import (
-    BaseModel,
-    Field,
-    SecretStr,
-)
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 from langchain_core.utils import get_from_dict_or_env, pre_init
 from langchain_core.utils.function_calling import convert_to_openai_tool
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    SecretStr,
+)
 
 if TYPE_CHECKING:
     from premai.api.chat_completions.v1_chat_completions_create import (
@@ -271,13 +272,22 @@ class ChatPremAI(BaseChatModel, BaseModel):
     If model name is other than default model then it will override the calls 
     from the model deployed from launchpad."""
 
-    temperature: Optional[float] = None
+    session_id: Optional[str] = None
+    """The ID of the session to use. It helps to track the chat history."""
+
+    temperature: Optional[float] = Field(default=None)
     """Model temperature. Value should be >= 0 and <= 1.0"""
 
-    max_tokens: Optional[int] = None
+    top_p: Optional[float] = None
+    """top_p adjusts the number of choices for each predicted tokens based on
+        cumulative probabilities. Value should be ranging between 0.0 and 1.0. 
+    """
+
+    max_tokens: Optional[int] = Field(default=None)
+
     """The maximum number of tokens to generate"""
 
-    max_retries: int = 1
+    max_retries: int = Field(default=1)
     """Max number of retries to call the API"""
 
     system_prompt: Optional[str] = ""
@@ -297,10 +307,11 @@ class ChatPremAI(BaseChatModel, BaseModel):
 
     client: Any
 
-    class Config:
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
-        extra = "forbid"
+    model_config = ConfigDict(
+        populate_by_name=True,
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
     @pre_init
     def validate_environments(cls, values: Dict) -> Dict:

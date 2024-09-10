@@ -2,8 +2,8 @@
 
 from typing import Dict
 
-from langchain_core.pydantic_v1 import Field, SecretStr
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
+from pydantic import Field, SecretStr
 
 from langchain_community.chat_models.openai import ChatOpenAI
 from langchain_community.utils.openai import is_openai_v1
@@ -32,8 +32,8 @@ class ChatOctoAI(ChatOpenAI):
     """
 
     octoai_api_base: str = Field(default=DEFAULT_API_BASE)
-    octoai_api_token: SecretStr = Field(default=None)
-    model_name: str = Field(default=DEFAULT_MODEL)
+    octoai_api_token: SecretStr = Field(default=None, alias="api_key")
+    model_name: str = Field(default=DEFAULT_MODEL, alias="model")
 
     @property
     def _llm_type(self) -> str:

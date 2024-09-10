@@ -16,10 +16,10 @@ from langchain_core.messages import (
 )
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import tool
-from pydantic import BaseModel as RawBaseModel
-from pydantic import Field as RawField
+from pydantic import BaseModel, Field
+from pydantic.v1 import BaseModel as BaseModelV1
+from pydantic.v1 import Field as FieldV1
 
 from langchain_standard_tests.unit_tests.chat_models import (
     ChatModelTests,
@@ -28,8 +28,8 @@ from langchain_standard_tests.unit_tests.chat_models import (
 from langchain_standard_tests.utils.pydantic import PYDANTIC_MAJOR_VERSION
 
 
-class MagicFunctionSchema(RawBaseModel):
-    input: int = RawField(..., gt=-1000, lt=1000)
+class MagicFunctionSchema(BaseModel):
+    input: int = Field(..., gt=-1000, lt=1000)
 
 
 @tool(args_schema=MagicFunctionSchema)
@@ -170,7 +170,11 @@ class ChatModelIntegrationTests(ChatModelTests):
     def test_tool_calling(self, model: BaseChatModel) -> None:
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
-        model_with_tools = model.bind_tools([magic_function])
+        if self.tool_choice_value == "tool_name":
+            tool_choice: Optional[str] = "magic_function"
+        else:
+            tool_choice = self.tool_choice_value
+        model_with_tools = model.bind_tools([magic_function], tool_choice=tool_choice)
 
         # Test invoke
         query = "What is the value of magic_function(3)? Use the tool."
@@ -188,7 +192,13 @@ class ChatModelIntegrationTests(ChatModelTests):
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
 
-        model_with_tools = model.bind_tools([magic_function_no_args])
+        if self.tool_choice_value == "tool_name":
+            tool_choice: Optional[str] = "magic_function_no_args"
+        else:
+            tool_choice = self.tool_choice_value
+        model_with_tools = model.bind_tools(
+            [magic_function_no_args], tool_choice=tool_choice
+        )
         query = "What is the value of magic_function()? Use the tool."
         result = model_with_tools.invoke(query)
         _validate_tool_call_message_no_args(result)
@@ -212,7 +222,11 @@ class ChatModelIntegrationTests(ChatModelTests):
             name="greeting_generator",
             description="Generate a greeting in a particular style of speaking.",
         )
-        model_with_tools = model.bind_tools([tool_])
+        if self.tool_choice_value == "tool_name":
+            tool_choice: Optional[str] = "greeting_generator"
+        else:
+            tool_choice = self.tool_choice_value
+        model_with_tools = model.bind_tools([tool_], tool_choice=tool_choice)
         query = "Using the tool, generate a Pirate greeting."
         result = model_with_tools.invoke(query)
         assert isinstance(result, AIMessage)
@@ -226,14 +240,11 @@ class ChatModelIntegrationTests(ChatModelTests):
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
 
-        from pydantic import BaseModel as BaseModelProper
-        from pydantic import Field as FieldProper
-
-        class Joke(BaseModelProper):
+        class Joke(BaseModel):
             """Joke to tell user."""
 
-            setup: str = FieldProper(description="question to set up a joke")
-            punchline: str = FieldProper(description="answer to resolve the joke")
+            setup: str = Field(description="question to set up a joke")
+            punchline: str = Field(description="answer to resolve the joke")
 
         # Pydantic class
         # Type ignoring since the interface only officially supports pydantic 1
@@ -266,11 +277,11 @@ class ChatModelIntegrationTests(ChatModelTests):
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
 
-        class Joke(BaseModel):  # Uses langchain_core.pydantic_v1.BaseModel
+        class Joke(BaseModelV1):  # Uses langchain_core.pydantic_v1.BaseModel
             """Joke to tell user."""
 
-            setup: str = Field(description="question to set up a joke")
-            punchline: str = Field(description="answer to resolve the joke")
+            setup: str = FieldV1(description="question to set up a joke")
+            punchline: str = FieldV1(description="answer to resolve the joke")
 
         # Pydantic class
         chat = model.with_structured_output(Joke)
@@ -425,7 +436,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         if not self.supports_anthropic_inputs:
             return
 
-        class color_picker(BaseModel):
+        class color_picker(BaseModelV1):
             """Input your fav color and get a random fact about it."""
 
             fav_color: str
@@ -509,3 +520,10 @@ class ChatModelIntegrationTests(ChatModelTests):
         ]
         result = model_with_tools.invoke(messages)
         assert isinstance(result, AIMessage)
+
+    def test_message_with_name(self, model: BaseChatModel) -> None:
+        result = model.invoke([HumanMessage("hello", name="example_user")])
+        assert result is not None
+        assert isinstance(result, AIMessage)
+        assert isinstance(result.content, str)
+        assert len(result.content) > 0

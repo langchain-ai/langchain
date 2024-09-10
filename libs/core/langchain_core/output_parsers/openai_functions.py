@@ -3,6 +3,7 @@ import json
 from typing import Any, Dict, List, Optional, Type, Union
 
 import jsonpatch  # type: ignore[import]
+from pydantic import BaseModel, model_validator
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import (
@@ -11,7 +12,6 @@ from langchain_core.output_parsers import (
 )
 from langchain_core.output_parsers.json import parse_partial_json
 from langchain_core.outputs import ChatGeneration, Generation
-from langchain_core.pydantic_v1 import BaseModel, root_validator
 
 
 class OutputFunctionsParser(BaseGenerationOutputParser[Any]):
@@ -42,7 +42,9 @@ class OutputFunctionsParser(BaseGenerationOutputParser[Any]):
         try:
             func_call = copy.deepcopy(message.additional_kwargs["function_call"])
         except KeyError as exc:
-            raise OutputParserException(f"Could not parse function call: {exc}")
+            raise OutputParserException(
+                f"Could not parse function call: {exc}"
+            ) from exc
 
         if self.args_only:
             return func_call["arguments"]
@@ -100,7 +102,9 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
             if partial:
                 return None
             else:
-                raise OutputParserException(f"Could not parse function call: {exc}")
+                raise OutputParserException(
+                    f"Could not parse function call: {exc}"
+                ) from exc
         try:
             if partial:
                 try:
@@ -126,7 +130,7 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
                     except (json.JSONDecodeError, TypeError) as exc:
                         raise OutputParserException(
                             f"Could not parse function call data: {exc}"
-                        )
+                        ) from exc
                 else:
                     try:
                         return {
@@ -138,7 +142,7 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
                     except (json.JSONDecodeError, TypeError) as exc:
                         raise OutputParserException(
                             f"Could not parse function call data: {exc}"
-                        )
+                        ) from exc
         except KeyError:
             return None
 
@@ -226,8 +230,9 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
     determine which schema to use.
     """
 
-    @root_validator(pre=True)
-    def validate_schema(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_schema(cls, values: Dict) -> Any:
         """Validate the pydantic schema.
 
         Args:
@@ -263,11 +268,21 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
         """
         _result = super().parse_result(result)
         if self.args_only:
-            pydantic_args = self.pydantic_schema.parse_raw(_result)  # type: ignore
+            if hasattr(self.pydantic_schema, "model_validate_json"):
+                pydantic_args = self.pydantic_schema.model_validate_json(_result)
+            else:
+                pydantic_args = self.pydantic_schema.parse_raw(_result)  # type: ignore
         else:
             fn_name = _result["name"]
             _args = _result["arguments"]
-            pydantic_args = self.pydantic_schema[fn_name].parse_raw(_args)  # type: ignore
+            if isinstance(self.pydantic_schema, dict):
+                pydantic_schema = self.pydantic_schema[fn_name]
+            else:
+                pydantic_schema = self.pydantic_schema
+            if hasattr(pydantic_schema, "model_validate_json"):
+                pydantic_args = pydantic_schema.model_validate_json(_args)  # type: ignore
+            else:
+                pydantic_args = pydantic_schema.parse_raw(_args)  # type: ignore
         return pydantic_args
 
 

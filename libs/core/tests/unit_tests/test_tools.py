@@ -22,7 +22,8 @@ from typing import (
 )
 
 import pytest
-from pydantic import BaseModel as BaseModelProper  # pydantic: ignore
+from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel as BaseModelProper
 from typing_extensions import Annotated, TypedDict, TypeVar
 
 from langchain_core import tools
@@ -31,7 +32,6 @@ from langchain_core.callbacks import (
     CallbackManagerForToolRun,
 )
 from langchain_core.messages import ToolMessage
-from langchain_core.pydantic_v1 import BaseModel, Field, ValidationError
 from langchain_core.runnables import (
     Runnable,
     RunnableConfig,
@@ -54,6 +54,7 @@ from langchain_core.tools.base import (
 )
 from langchain_core.utils.function_calling import convert_to_openai_function
 from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION, _create_subset_model
+from langchain_core.utils.pydantic import TypeBaseModel as TypeBaseModel
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
 from tests.unit_tests.pydantic_utils import _schema
 
@@ -292,7 +293,7 @@ def test_structured_tool_types_parsed() -> None:
     assert isinstance(structured_tool, StructuredTool)
     args = {
         "some_enum": SomeEnum.A.value,
-        "some_base_model": SomeBaseModel(foo="bar").dict(),
+        "some_base_model": SomeBaseModel(foo="bar").model_dump(),
     }
     result = structured_tool.run(json.loads(json.dumps(args)))
     expected = {
@@ -874,15 +875,13 @@ async def test_async_validation_error_handling_non_validation_error(
 
 def test_optional_subset_model_rewrite() -> None:
     class MyModel(BaseModel):
-        a: Optional[str]
+        a: Optional[str] = None
         b: str
-        c: Optional[List[Optional[str]]]
+        c: Optional[List[Optional[str]]] = None
 
     model2 = _create_subset_model("model2", MyModel, ["a", "b", "c"])
 
-    assert "a" not in _schema(model2)["required"]  # should be optional
-    assert "b" in _schema(model2)["required"]  # should be required
-    assert "c" not in _schema(model2)["required"]  # should be optional
+    assert set(_schema(model2)["required"]) == {"b"}
 
 
 @pytest.mark.parametrize(
@@ -986,6 +985,9 @@ class FooBase(BaseTool):
 
     def _run(self, bar: Any, bar_config: RunnableConfig, **kwargs: Any) -> Any:
         return assert_bar(bar, bar_config)
+
+
+FooBase.model_rebuild()
 
 
 class AFooBase(FooBase):
@@ -1490,7 +1492,7 @@ def test_tool_inherited_injected_arg() -> None:
             return y
 
     tool_ = InheritedInjectedArgTool()
-    assert tool_.get_input_schema().schema() == {
+    assert tool_.get_input_schema().model_json_schema() == {
         "title": "fooSchema",
         "description": "foo.",
         "type": "object",
@@ -1500,7 +1502,7 @@ def test_tool_inherited_injected_arg() -> None:
         },
         "required": ["y", "x"],
     }
-    assert tool_.tool_call_schema.schema() == {
+    assert tool_.tool_call_schema.model_json_schema() == {
         "title": "foo",
         "description": "foo.",
         "type": "object",
@@ -1570,7 +1572,7 @@ def generate_models() -> List[Any]:
 
 def generate_backwards_compatible_v1() -> List[Any]:
     """Generate a model with pydantic 2 from the v1 namespace."""
-    from pydantic.v1 import BaseModel as BaseModelV1  # pydantic: ignore
+    from pydantic.v1 import BaseModel as BaseModelV1
 
     class FooV1Namespace(BaseModelV1):
         a: int
@@ -1598,7 +1600,13 @@ def test_args_schema_as_pydantic(pydantic_model: Any) -> None:
         name="some_tool", description="some description", args_schema=pydantic_model
     )
 
-    assert tool.get_input_schema().schema() == {
+    input_schema = tool.get_input_schema()
+    input_json_schema = (
+        input_schema.model_json_schema()
+        if hasattr(input_schema, "model_json_schema")
+        else input_schema.schema()
+    )
+    assert input_json_schema == {
         "properties": {
             "a": {"title": "A", "type": "integer"},
             "b": {"title": "B", "type": "string"},
@@ -1608,7 +1616,13 @@ def test_args_schema_as_pydantic(pydantic_model: Any) -> None:
         "type": "object",
     }
 
-    assert tool.tool_call_schema.schema() == {
+    tool_schema = tool.tool_call_schema
+    tool_json_schema = (
+        tool_schema.model_json_schema()
+        if hasattr(tool_schema, "model_json_schema")
+        else tool_schema.schema()
+    )
+    assert tool_json_schema == {
         "description": "some description",
         "properties": {
             "a": {"title": "A", "type": "integer"},
@@ -1627,7 +1641,7 @@ def test_args_schema_explicitly_typed() -> None:
     is a pydantic 1 model!
     """
     # Check with whatever pydantic model is passed in and not via v1 namespace
-    from pydantic import BaseModel  # pydantic: ignore
+    from pydantic import BaseModel
 
     class Foo(BaseModel):
         a: int
@@ -1644,7 +1658,7 @@ def test_args_schema_explicitly_typed() -> None:
 
     tool = SomeTool(name="some_tool", description="some description")
 
-    assert tool.get_input_schema().schema() == {
+    assert tool.get_input_schema().model_json_schema() == {
         "properties": {
             "a": {"title": "A", "type": "integer"},
             "b": {"title": "B", "type": "string"},
@@ -1654,7 +1668,7 @@ def test_args_schema_explicitly_typed() -> None:
         "type": "object",
     }
 
-    assert tool.tool_call_schema.schema() == {
+    assert tool.tool_call_schema.model_json_schema() == {
         "description": "some description",
         "properties": {
             "a": {"title": "A", "type": "integer"},
@@ -1682,7 +1696,13 @@ def test_structured_tool_with_different_pydantic_versions(pydantic_model: Any) -
 
     assert foo_tool.invoke({"a": 5, "b": "hello"}) == "foo"
 
-    assert foo_tool.args_schema.schema() == {
+    args_schema = foo_tool.args_schema
+    args_json_schema = (
+        args_schema.model_json_schema()
+        if hasattr(args_schema, "model_json_schema")
+        else args_schema.schema()
+    )
+    assert args_json_schema == {
         "properties": {
             "a": {"title": "A", "type": "integer"},
             "b": {"title": "B", "type": "string"},
@@ -1692,7 +1712,13 @@ def test_structured_tool_with_different_pydantic_versions(pydantic_model: Any) -
         "type": "object",
     }
 
-    assert foo_tool.get_input_schema().schema() == {
+    input_schema = foo_tool.get_input_schema()
+    input_json_schema = (
+        input_schema.model_json_schema()
+        if hasattr(input_schema, "model_json_schema")
+        else input_schema.schema()
+    )
+    assert input_json_schema == {
         "properties": {
             "a": {"title": "A", "type": "integer"},
             "b": {"title": "B", "type": "string"},
@@ -1754,18 +1780,22 @@ def test__get_all_basemodel_annotations_v2(use_v1_namespace: bool) -> None:
     A = TypeVar("A")
 
     if use_v1_namespace:
+        from pydantic.v1 import BaseModel as BM1
 
-        class ModelA(BaseModel, Generic[A], extra="allow"):
+        class ModelA(BM1, Generic[A], extra="allow"):
             a: A
     else:
+        from pydantic import BaseModel as BM2
+        from pydantic import ConfigDict
 
-        class ModelA(BaseModelProper, Generic[A], extra="allow"):  # type: ignore[no-redef]
+        class ModelA(BM2, Generic[A], extra="allow"):  # type: ignore[no-redef]
             a: A
+            model_config = ConfigDict(arbitrary_types_allowed=True)
 
     class ModelB(ModelA[str]):
         b: Annotated[ModelA[Dict[str, Any]], "foo"]
 
-    class Mixin(object):
+    class Mixin:
         def foo(self) -> str:
             return "foo"
 
@@ -1822,7 +1852,7 @@ def test__get_all_basemodel_annotations_v1() -> None:
     class ModelB(ModelA[str]):
         b: Annotated[ModelA[Dict[str, Any]], "foo"]
 
-    class Mixin(object):
+    class Mixin:
         def foo(self) -> str:
             return "foo"
 
@@ -1869,11 +1899,31 @@ def test__get_all_basemodel_annotations_v1() -> None:
     assert actual == expected
 
 
+def test_tool_annotations_preserved() -> None:
+    """Test that annotations are preserved when creating a tool."""
+
+    @tool
+    def my_tool(val: int, other_val: Annotated[dict, "my annotation"]) -> str:
+        """Tool docstring."""
+        return "foo"
+
+    schema = my_tool.get_input_schema()  # type: ignore[attr-defined]
+
+    func = my_tool.func  # type: ignore[attr-defined]
+
+    expected_type_hints = {
+        name: hint
+        for name, hint in func.__annotations__.items()
+        if name in inspect.signature(func).parameters
+    }
+    assert schema.__annotations__ == expected_type_hints
+
+
 @pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Testing pydantic v2.")
 def test_tool_args_schema_pydantic_v2_with_metadata() -> None:
-    from pydantic import BaseModel as BaseModelV2  # pydantic: ignore
-    from pydantic import Field as FieldV2  # pydantic: ignore
-    from pydantic import ValidationError as ValidationErrorV2  # pydantic: ignore
+    from pydantic import BaseModel as BaseModelV2
+    from pydantic import Field as FieldV2
+    from pydantic import ValidationError as ValidationErrorV2
 
     class Foo(BaseModelV2):
         x: List[int] = FieldV2(
@@ -1885,7 +1935,7 @@ def test_tool_args_schema_pydantic_v2_with_metadata() -> None:
         """foo"""
         return x
 
-    assert foo.tool_call_schema.schema() == {
+    assert foo.tool_call_schema.model_json_schema() == {
         "description": "foo",
         "properties": {
             "x": {

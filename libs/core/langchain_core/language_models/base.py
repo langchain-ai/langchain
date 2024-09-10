@@ -8,6 +8,7 @@ from typing import (
     Callable,
     Dict,
     List,
+    Literal,
     Mapping,
     Optional,
     Sequence,
@@ -17,7 +18,8 @@ from typing import (
     Union,
 )
 
-from typing_extensions import TypeAlias
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+from typing_extensions import TypeAlias, TypedDict
 
 from langchain_core._api import deprecated
 from langchain_core.messages import (
@@ -27,7 +29,6 @@ from langchain_core.messages import (
     get_buffer_string,
 )
 from langchain_core.prompt_values import PromptValue
-from langchain_core.pydantic_v1 import BaseModel, Field, validator
 from langchain_core.runnables import Runnable, RunnableSerializable
 from langchain_core.utils import get_pydantic_field_names
 
@@ -35,6 +36,23 @@ if TYPE_CHECKING:
     from langchain_core.caches import BaseCache
     from langchain_core.callbacks import Callbacks
     from langchain_core.outputs import LLMResult
+
+
+class LangSmithParams(TypedDict, total=False):
+    """LangSmith parameters for tracing."""
+
+    ls_provider: str
+    """Provider of the model."""
+    ls_model_name: str
+    """Name of the model."""
+    ls_model_type: Literal["chat", "llm"]
+    """Type of the model. Should be 'chat' or 'llm'."""
+    ls_temperature: Optional[float]
+    """Temperature for generation."""
+    ls_max_tokens: Optional[int]
+    """Max tokens for generation."""
+    ls_stop: Optional[List[str]]
+    """Stop words for generation."""
 
 
 @lru_cache(maxsize=None)  # Cache the tokenizer
@@ -46,12 +64,12 @@ def get_tokenizer() -> Any:
     """
     try:
         from transformers import GPT2TokenizerFast  # type: ignore[import]
-    except ImportError:
+    except ImportError as e:
         raise ImportError(
             "Could not import transformers python package. "
             "This is needed in order to calculate get_token_ids. "
             "Please install it with `pip install transformers`."
-        )
+        ) from e
     # create a GPT-2 tokenizer instance
     return GPT2TokenizerFast.from_pretrained("gpt2")
 
@@ -95,7 +113,11 @@ class BaseLanguageModel(
     
     Caching is not currently supported for streaming methods of models.
     """
-    verbose: bool = Field(default_factory=_get_verbosity)
+    # Repr = False is consistent with pydantic 1 if verbose = False
+    # We can relax this for pydantic 2?
+    # TODO(0.3): Resolve repr for verbose
+    # Modified just to get unit tests to pass.
+    verbose: bool = Field(default_factory=_get_verbosity, exclude=True, repr=False)
     """Whether to print out response text."""
     callbacks: Callbacks = Field(default=None, exclude=True)
     """Callbacks to add to the run trace."""
@@ -108,7 +130,11 @@ class BaseLanguageModel(
     )
     """Optional encoder to use for counting tokens."""
 
-    @validator("verbose", pre=True, always=True, allow_reuse=True)
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
+
+    @field_validator("verbose", mode="before")
     def set_verbose(cls, verbose: Optional[bool]) -> bool:
         """If verbose is None, set it.
 

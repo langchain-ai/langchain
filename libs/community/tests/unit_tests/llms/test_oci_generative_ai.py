@@ -22,7 +22,12 @@ def test_llm_complete(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
     oci_gen_ai_client = MagicMock()
     llm = OCIGenAI(model_id=test_model_id, client=oci_gen_ai_client)
 
-    provider = llm.model_id.split(".")[0].lower()
+    model_id = llm.model_id
+
+    if model_id is None:
+        raise ValueError("Model ID is required for OCI Generative AI LLM service.")
+
+    provider = model_id.split(".")[0].lower()
 
     def mocked_response(*args):  # type: ignore[no-untyped-def]
         response_text = "This is the completion."

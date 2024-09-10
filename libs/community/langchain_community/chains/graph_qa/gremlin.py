@@ -10,7 +10,7 @@ from langchain_core.callbacks.manager import CallbackManager, CallbackManagerFor
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
-from langchain_core.pydantic_v1 import Field
+from pydantic import Field
 
 from langchain_community.chains.graph_qa.prompts import (
     CYPHER_QA_PROMPT,
