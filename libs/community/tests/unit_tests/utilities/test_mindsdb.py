@@ -1,5 +1,6 @@
-from unittest.mock import Mock, patch
 import pytest
+from typing import Text, Dict, Any
+from unittest.mock import Mock, patch
 
 from langchain_core.pydantic_v1 import SecretStr
 
@@ -10,7 +11,7 @@ DATA_SOURCES = ["postgres", "mysql", "mariadb", "clickhouse", "snowflake", "bigq
 
 
 @pytest.fixture
-def data_source_configs():
+def data_source_configs() -> Dict[Text, Dict[Text, Any]]:
     return {
         "postgres": {
             "type": "postgres",
@@ -96,7 +97,12 @@ def data_source_configs():
 @pytest.mark.parametrize("data_source_key", DATA_SOURCES)
 @patch("mindsdb_sdk.utils.mind.create_mind")
 @patch("mindsdb_sdk.utils.mind.DatabaseConfig")
-def test_init_with_single_data_source(mock_database_config, mock_create_mind, data_source_key, data_source_configs):
+def test_init_with_single_data_source(
+    mock_database_config: Mock, 
+    mock_create_mind: Mock, 
+    data_source_key: Text, 
+    data_source_configs: Dict[Text, Dict[Text, Any]]
+) -> None:
     data_source_config = data_source_configs[data_source_key]
     ai_data_mind_config = {
         "name": "dummy_mind",
@@ -126,7 +132,12 @@ def test_init_with_single_data_source(mock_database_config, mock_create_mind, da
 @pytest.mark.parametrize("data_source_key", DATA_SOURCES)
 @patch("mindsdb_sdk.utils.mind.create_mind")
 @patch("mindsdb_sdk.utils.mind.DatabaseConfig")
-def test_run_with_single_data_source(mock_database_config, mock_create_mind, data_source_key, data_source_configs):
+def test_run_with_single_data_source(
+    mock_database_config: Mock, 
+    mock_create_mind: Mock, 
+    data_source_key: Text, 
+    data_source_configs: Dict[Text, Dict[Text, Any]]
+) -> None:
     data_source_config = data_source_configs[data_source_key]
     ai_data_mind_config = {
         "name": "dummy_mind",
@@ -173,7 +184,11 @@ def test_run_with_single_data_source(mock_database_config, mock_create_mind, dat
 @pytest.mark.requires("mindsdb_sdk")
 @patch("mindsdb_sdk.utils.mind.create_mind")
 @patch("mindsdb_sdk.utils.mind.DatabaseConfig")
-def test_init_with_multiple_data_sources(mock_database_config, mock_create_mind, data_source_configs):
+def test_init_with_multiple_data_sources(
+    mock_database_config: Mock, 
+    mock_create_mind: Mock, 
+    data_source_configs: Dict[Text, Dict[Text, Any]]
+) -> None:
     ai_data_mind_config = {
         "name": "dummy_mind",
         "mindsdb_api_key": "dummy_key",
@@ -207,7 +222,11 @@ def test_init_with_multiple_data_sources(mock_database_config, mock_create_mind,
 @pytest.mark.requires("mindsdb_sdk")
 @patch("mindsdb_sdk.utils.mind.create_mind")
 @patch("mindsdb_sdk.utils.mind.DatabaseConfig")
-def test_run_with_multiple_data_sources(mock_database_config, mock_create_mind, data_source_configs):
+def test_run_with_multiple_data_sources(
+    mock_database_config: Mock, 
+    mock_create_mind: Mock, 
+    data_source_configs: Dict[Text, Dict[Text, Any]]
+) -> None:
     ai_data_mind_config = {
         "name": "dummy_mind",
         "mindsdb_api_key": "dummy_key",
