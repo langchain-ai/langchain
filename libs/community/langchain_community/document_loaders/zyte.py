@@ -74,7 +74,7 @@ class ZyteURLLoader(BaseLoader):
         self.client = ZyteAPI(api_key=api_key, user_agent=user_agent)
         self.client_async = AsyncZyteAPI(api_key=api_key, user_agent=user_agent)
 
-    def _zyte_html_option(self):
+    def _zyte_html_option(self) -> str:
         if "browserHtml" in self.download_kwargs:
             return "browserHtml"
         return "httpResponseBody"
@@ -83,14 +83,12 @@ class ZyteURLLoader(BaseLoader):
         iter = self.lazy_load()
         return list(iter)
 
-    def _get_article(self, page):
+    def _get_article(self, page: Dict) -> str:
         content = page["article"]["headline"] + "\n\n" + page["article"]["articleBody"]
         return content
 
-    def _zyte_request_params(self, url):
-        request_params = {
-            "url": url,
-        }
+    def _zyte_request_params(self, url: str) -> dict:
+        request_params: Dict[str, Any] = {"url": url}
         if self.mode == "article":
             request_params.update({"article": True})
 
@@ -149,7 +147,7 @@ class ZyteURLLoader(BaseLoader):
                         raise e
         return results
 
-    def _get_content(self, response):
+    def _get_content(self, response: Dict) -> str:
         if self.mode == "html-text":
             try:
                 from html2text import html2text
@@ -171,7 +169,7 @@ class ZyteURLLoader(BaseLoader):
             content = self._get_article(response)
         return content
 
-    def aload(self):
+    def aload(self) -> Iterator[Document]:
         docs = []
         responses = asyncio.run(self.fetch_items())
         for response in responses:
