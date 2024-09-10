@@ -776,7 +776,7 @@ develop = true
 
 [package.dependencies]
 jsonpatch = "^1.33"
-langsmith = "^0.1.112"
+langsmith = "^0.1.117"
 packaging = ">=23.2,<25"
 pydantic = "^2.7.4"
 PyYAML = ">=5.3"
@@ -2137,4 +2137,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0"
-content-hash = "95bff72acb9baa9dd5eef2ae6ffdb347e1318df809da89d9ee42b8dbd82ad3ce"
+content-hash = "fe62bc24571cd20efbe0df50c14022baf10f307e75c71d5d5d444fe81fbc69b5"

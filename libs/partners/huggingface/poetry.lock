@@ -1121,7 +1121,7 @@ develop = true
 
 [package.dependencies]
 jsonpatch = "^1.33"
-langsmith = "^0.1.112"
+langsmith = "^0.1.117"
 packaging = ">=23.2,<25"
 pydantic = "^2.7.4"
 PyYAML = ">=5.3"
@@ -3626,4 +3626,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0"
-content-hash = "0b3a220713150a9a3e688b356a0cabdc7a4456122feb42bf7d857073815f9918"
+content-hash = "11dfe9bfbf2a9415e76931599bc74db2ac263611491336a79d9718bb31ec3c41"

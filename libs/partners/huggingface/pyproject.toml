@@ -20,7 +20,7 @@ disallow_untyped_defs = "True"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-langchain-core = "^0.3.0.dev"
+langchain-core = { version = "^0.3.0.dev4", allow-prereleases = true }
 tokenizers = ">=0.19.1"
 transformers = ">=4.39.0"
 sentence-transformers = ">=2.6.0"
