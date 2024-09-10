@@ -67,6 +67,19 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
     def __init__(self, **kwargs: Any):
         """Initialize the sentence_transformer."""
         super().__init__(**kwargs)
+
+        if "model_name" not in kwargs:
+            since = "0.2.16"
+            removal = "0.4.0"
+            warn_deprecated(
+                since=since,
+                removal=removal,
+                message=f"Default values for {self.__class__.__name__}.model_name"
+                + f" were deprecated in LangChain {since} and will be removed in"
+                + f" {removal}. Explicitly pass a model_name to the"
+                + f" {self.__class__.__name__} constructor instead.",
+            )
+
         try:
             import sentence_transformers
 
@@ -159,6 +172,19 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
     def __init__(self, **kwargs: Any):
         """Initialize the sentence_transformer."""
         super().__init__(**kwargs)
+
+        if "model_name" not in kwargs:
+            since = "0.2.16"
+            removal = "0.4.0"
+            warn_deprecated(
+                since=since,
+                removal=removal,
+                message=f"Default values for {self.__class__.__name__}.model_name"
+                + f" were deprecated in LangChain {since} and will be removed in"
+                + f" {removal}. Explicitly pass a model_name to the"
+                + f" {self.__class__.__name__} constructor instead.",
+            )
+
         try:
             from InstructorEmbedding import INSTRUCTOR
 
@@ -231,7 +257,7 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
 
             from langchain_community.embeddings import HuggingFaceBgeEmbeddings
 
-            model_name = "BAAI/bge-large-en"
+            model_name = "BAAI/bge-large-en-v1.5"
             model_kwargs = {'device': 'cpu'}
             encode_kwargs = {'normalize_embeddings': True}
             hf = HuggingFaceBgeEmbeddings(
@@ -279,6 +305,19 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
     def __init__(self, **kwargs: Any):
         """Initialize the sentence_transformer."""
         super().__init__(**kwargs)
+
+        if "model_name" not in kwargs:
+            since = "0.2.5"
+            removal = "0.4.0"
+            warn_deprecated(
+                since=since,
+                removal=removal,
+                message=f"Default values for {self.__class__.__name__}.model_name"
+                + f" were deprecated in LangChain {since} and will be removed in"
+                + f" {removal}. Explicitly pass a model_name to the"
+                + f" {self.__class__.__name__} constructor instead.",
+            )
+
         try:
             import sentence_transformers
 

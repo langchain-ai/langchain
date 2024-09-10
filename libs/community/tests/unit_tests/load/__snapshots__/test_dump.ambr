@@ -87,44 +87,7 @@
           "template": "hello {name}!",
           "template_format": "f-string"
         },
-        "name": "PromptTemplate",
-        "graph": {
-          "nodes": [
-            {
-              "id": 0,
-              "type": "schema",
-              "data": "PromptInput"
-            },
-            {
-              "id": 1,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain",
-                  "prompts",
-                  "prompt",
-                  "PromptTemplate"
-                ],
-                "name": "PromptTemplate"
-              }
-            },
-            {
-              "id": 2,
-              "type": "schema",
-              "data": "PromptTemplateOutput"
-            }
-          ],
-          "edges": [
-            {
-              "source": 0,
-              "target": 1
-            },
-            {
-              "source": 1,
-              "target": 2
-            }
-          ]
-        }
+        "name": "PromptTemplate"
       },
       "llm": {
         "lc": 1,
@@ -154,44 +117,7 @@
           "max_retries": 2,
           "disallowed_special": "all"
         },
-        "name": "OpenAI",
-        "graph": {
-          "nodes": [
-            {
-              "id": 0,
-              "type": "schema",
-              "data": "OpenAIInput"
-            },
-            {
-              "id": 1,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain",
-                  "llms",
-                  "openai",
-                  "OpenAI"
-                ],
-                "name": "OpenAI"
-              }
-            },
-            {
-              "id": 2,
-              "type": "schema",
-              "data": "OpenAIOutput"
-            }
-          ],
-          "edges": [
-            {
-              "source": 0,
-              "target": 1
-            },
-            {
-              "source": 1,
-              "target": 2
-            }
-          ]
-        }
+        "name": "OpenAI"
       },
       "output_key": "text",
       "output_parser": {
@@ -204,85 +130,11 @@
           "StrOutputParser"
         ],
         "kwargs": {},
-        "name": "StrOutputParser",
-        "graph": {
-          "nodes": [
-            {
-              "id": 0,
-              "type": "schema",
-              "data": "StrOutputParserInput"
-            },
-            {
-              "id": 1,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain",
-                  "schema",
-                  "output_parser",
-                  "StrOutputParser"
-                ],
-                "name": "StrOutputParser"
-              }
-            },
-            {
-              "id": 2,
-              "type": "schema",
-              "data": "StrOutputParserOutput"
-            }
-          ],
-          "edges": [
-            {
-              "source": 0,
-              "target": 1
-            },
-            {
-              "source": 1,
-              "target": 2
-            }
-          ]
-        }
+        "name": "StrOutputParser"
       },
       "return_final_only": true
     },
-    "name": "LLMChain",
-    "graph": {
-      "nodes": [
-        {
-          "id": 0,
-          "type": "schema",
-          "data": "ChainInput"
-        },
-        {
-          "id": 1,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain",
-              "chains",
-              "llm",
-              "LLMChain"
-            ],
-            "name": "LLMChain"
-          }
-        },
-        {
-          "id": 2,
-          "type": "schema",
-          "data": "ChainOutput"
-        }
-      ],
-      "edges": [
-        {
-          "source": 0,
-          "target": 1
-        },
-        {
-          "source": 1,
-          "target": 2
-        }
-      ]
-    }
+    "name": "LLMChain"
   }
   '''
 # ---
@@ -338,87 +190,13 @@
                     "template": "hello {name}!",
                     "template_format": "f-string"
                   },
-                  "name": "PromptTemplate",
-                  "graph": {
-                    "nodes": [
-                      {
-                        "id": 0,
-                        "type": "schema",
-                        "data": "PromptInput"
-                      },
-                      {
-                        "id": 1,
-                        "type": "runnable",
-                        "data": {
-                          "id": [
-                            "langchain",
-                            "prompts",
-                            "prompt",
-                            "PromptTemplate"
-                          ],
-                          "name": "PromptTemplate"
-                        }
-                      },
-                      {
-                        "id": 2,
-                        "type": "schema",
-                        "data": "PromptTemplateOutput"
-                      }
-                    ],
-                    "edges": [
-                      {
-                        "source": 0,
-                        "target": 1
-                      },
-                      {
-                        "source": 1,
-                        "target": 2
-                      }
-                    ]
-                  }
+                  "name": "PromptTemplate"
                 }
               }
             }
           ]
         },
-        "name": "ChatPromptTemplate",
-        "graph": {
-          "nodes": [
-            {
-              "id": 0,
-              "type": "schema",
-              "data": "PromptInput"
-            },
-            {
-              "id": 1,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain",
-                  "prompts",
-                  "chat",
-                  "ChatPromptTemplate"
-                ],
-                "name": "ChatPromptTemplate"
-              }
-            },
-            {
-              "id": 2,
-              "type": "schema",
-              "data": "ChatPromptTemplateOutput"
-            }
-          ],
-          "edges": [
-            {
-              "source": 0,
-              "target": 1
-            },
-            {
-              "source": 1,
-              "target": 2
-            }
-          ]
-        }
+        "name": "ChatPromptTemplate"
       },
       "llm": {
         "lc": 1,
@@ -443,44 +221,7 @@
           "max_retries": 2,
           "n": 1
         },
-        "name": "ChatOpenAI",
-        "graph": {
-          "nodes": [
-            {
-              "id": 0,
-              "type": "schema",
-              "data": "ChatOpenAIInput"
-            },
-            {
-              "id": 1,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain",
-                  "chat_models",
-                  "openai",
-                  "ChatOpenAI"
-                ],
-                "name": "ChatOpenAI"
-              }
-            },
-            {
-              "id": 2,
-              "type": "schema",
-              "data": "ChatOpenAIOutput"
-            }
-          ],
-          "edges": [
-            {
-              "source": 0,
-              "target": 1
-            },
-            {
-              "source": 1,
-              "target": 2
-            }
-          ]
-        }
+        "name": "ChatOpenAI"
       },
       "output_key": "text",
       "output_parser": {
@@ -493,85 +234,11 @@
           "StrOutputParser"
         ],
         "kwargs": {},
-        "name": "StrOutputParser",
-        "graph": {
-          "nodes": [
-            {
-              "id": 0,
-              "type": "schema",
-              "data": "StrOutputParserInput"
-            },
-            {
-              "id": 1,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain",
-                  "schema",
-                  "output_parser",
-                  "StrOutputParser"
-                ],
-                "name": "StrOutputParser"
-              }
-            },
-            {
-              "id": 2,
-              "type": "schema",
-              "data": "StrOutputParserOutput"
-            }
-          ],
-          "edges": [
-            {
-              "source": 0,
-              "target": 1
-            },
-            {
-              "source": 1,
-              "target": 2
-            }
-          ]
-        }
+        "name": "StrOutputParser"
       },
       "return_final_only": true
     },
-    "name": "LLMChain",
-    "graph": {
-      "nodes": [
-        {
-          "id": 0,
-          "type": "schema",
-          "data": "ChainInput"
-        },
-        {
-          "id": 1,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain",
-              "chains",
-              "llm",
-              "LLMChain"
-            ],
-            "name": "LLMChain"
-          }
-        },
-        {
-          "id": 2,
-          "type": "schema",
-          "data": "ChainOutput"
-        }
-      ],
-      "edges": [
-        {
-          "source": 0,
-          "target": 1
-        },
-        {
-          "source": 1,
-          "target": 2
-        }
-      ]
-    }
+    "name": "LLMChain"
   }
   '''
 # ---
@@ -603,44 +270,7 @@
           "template": "hello {name}!",
           "template_format": "f-string"
         },
-        "name": "PromptTemplate",
-        "graph": {
-          "nodes": [
-            {
-              "id": 0,
-              "type": "schema",
-              "data": "PromptInput"
-            },
-            {
-              "id": 1,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain",
-                  "prompts",
-                  "prompt",
-                  "PromptTemplate"
-                ],
-                "name": "PromptTemplate"
-              }
-            },
-            {
-              "id": 2,
-              "type": "schema",
-              "data": "PromptTemplateOutput"
-            }
-          ],
-          "edges": [
-            {
-              "source": 0,
-              "target": 1
-            },
-            {
-              "source": 1,
-              "target": 2
-            }
-          ]
-        }
+        "name": "PromptTemplate"
       },
       "llm": {
         "lc": 1,
@@ -670,44 +300,7 @@
           "max_retries": 2,
           "disallowed_special": "all"
         },
-        "name": "OpenAI",
-        "graph": {
-          "nodes": [
-            {
-              "id": 0,
-              "type": "schema",
-              "data": "OpenAIInput"
-            },
-            {
-              "id": 1,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain",
-                  "llms",
-                  "openai",
-                  "OpenAI"
-                ],
-                "name": "OpenAI"
-              }
-            },
-            {
-              "id": 2,
-              "type": "schema",
-              "data": "OpenAIOutput"
-            }
-          ],
-          "edges": [
-            {
-              "source": 0,
-              "target": 1
-            },
-            {
-              "source": 1,
-              "target": 2
-            }
-          ]
-        }
+        "name": "OpenAI"
       },
       "output_key": "text",
       "output_parser": {
@@ -720,85 +313,11 @@
           "StrOutputParser"
         ],
         "kwargs": {},
-        "name": "StrOutputParser",
-        "graph": {
-          "nodes": [
-            {
-              "id": 0,
-              "type": "schema",
-              "data": "StrOutputParserInput"
-            },
-            {
-              "id": 1,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain",
-                  "schema",
-                  "output_parser",
-                  "StrOutputParser"
-                ],
-                "name": "StrOutputParser"
-              }
-            },
-            {
-              "id": 2,
-              "type": "schema",
-              "data": "StrOutputParserOutput"
-            }
-          ],
-          "edges": [
-            {
-              "source": 0,
-              "target": 1
-            },
-            {
-              "source": 1,
-              "target": 2
-            }
-          ]
-        }
+        "name": "StrOutputParser"
       },
       "return_final_only": true
     },
-    "name": "LLMChain",
-    "graph": {
-      "nodes": [
-        {
-          "id": 0,
-          "type": "schema",
-          "data": "ChainInput"
-        },
-        {
-          "id": 1,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain",
-              "chains",
-              "llm",
-              "LLMChain"
-            ],
-            "name": "LLMChain"
-          }
-        },
-        {
-          "id": 2,
-          "type": "schema",
-          "data": "ChainOutput"
-        }
-      ],
-      "edges": [
-        {
-          "source": 0,
-          "target": 1
-        },
-        {
-          "source": 1,
-          "target": 2
-        }
-      ]
-    }
+    "name": "LLMChain"
   }
   '''
 # ---
@@ -832,44 +351,7 @@
       "max_retries": 2,
       "disallowed_special": "all"
     },
-    "name": "OpenAI",
-    "graph": {
-      "nodes": [
-        {
-          "id": 0,
-          "type": "schema",
-          "data": "OpenAIInput"
-        },
-        {
-          "id": 1,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain",
-              "llms",
-              "openai",
-              "OpenAI"
-            ],
-            "name": "OpenAI"
-          }
-        },
-        {
-          "id": 2,
-          "type": "schema",
-          "data": "OpenAIOutput"
-        }
-      ],
-      "edges": [
-        {
-          "source": 0,
-          "target": 1
-        },
-        {
-          "source": 1,
-          "target": 2
-        }
-      ]
-    }
+    "name": "OpenAI"
   }
   '''
 # ---

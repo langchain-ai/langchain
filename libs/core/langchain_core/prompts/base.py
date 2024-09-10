@@ -19,6 +19,7 @@ from typing import (
 
 import yaml
 
+from langchain_core.load import dumpd
 from langchain_core.output_parsers.base import BaseOutputParser
 from langchain_core.prompt_values import (
     ChatPromptValueConcrete,
@@ -129,7 +130,7 @@ class BasePromptTemplate(
             "PromptInput", **{**required_input_variables, **optional_input_variables}
         )
 
-    def _validate_input(self, inner_input: Dict) -> Dict:
+    def _validate_input(self, inner_input: Any) -> Dict:
         if not isinstance(inner_input, dict):
             if len(self.input_variables) == 1:
                 var_name = self.input_variables[0]
@@ -142,11 +143,18 @@ class BasePromptTemplate(
                 )
         missing = set(self.input_variables).difference(inner_input)
         if missing:
-            raise KeyError(
+            msg = (
                 f"Input to {self.__class__.__name__} is missing variables {missing}. "
                 f" Expected: {self.input_variables}"
                 f" Received: {list(inner_input.keys())}"
             )
+            example_key = missing.pop()
+            msg += (
+                f"\nNote: if you intended {{{example_key}}} to be part of the string"
+                " and not a variable, please escape it with double curly braces like: "
+                f"'{{{{{example_key}}}}}'."
+            )
+            raise KeyError(msg)
         return inner_input
 
     def _format_prompt_with_error_handling(self, inner_input: Dict) -> PromptValue:
@@ -181,6 +189,7 @@ class BasePromptTemplate(
             input,
             config,
             run_type="prompt",
+            serialized=dumpd(self),
         )
 
     async def ainvoke(
@@ -205,6 +214,7 @@ class BasePromptTemplate(
             input,
             config,
             run_type="prompt",
+            serialized=dumpd(self),
         )
 
     @abstractmethod

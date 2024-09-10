@@ -1516,7 +1516,7 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
     ) == [5, 7]
 
     assert len(spy.call_args_list) == 2
-    for i, call in enumerate(spy.call_args_list):
+    for call in spy.call_args_list:
         call_arg = call.args[0]
 
         if call_arg == "hello":
@@ -1533,7 +1533,7 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
     assert fake.batch(["hello", "wooorld"], dict(tags=["a-tag"])) == [5, 7]
     assert len(spy.call_args_list) == 2
     assert set(call.args[0] for call in spy.call_args_list) == {"hello", "wooorld"}
-    for i, call in enumerate(spy.call_args_list):
+    for call in spy.call_args_list:
         assert call.args[1].get("tags") == ["a-tag"]
         assert call.args[1].get("metadata") == {}
     spy.reset_mock()
@@ -2180,7 +2180,7 @@ async def test_prompt_with_llm(
                 "value": {
                     "end_time": None,
                     "final_output": None,
-                    "metadata": {},
+                    "metadata": {"ls_model_type": "llm", "ls_provider": "fakelist"},
                     "name": "FakeListLLM",
                     "start_time": "2023-01-01T00:00:00.000+00:00",
                     "streamed_output": [],
@@ -2384,7 +2384,10 @@ async def test_prompt_with_llm_parser(
                 "value": {
                     "end_time": None,
                     "final_output": None,
-                    "metadata": {},
+                    "metadata": {
+                        "ls_model_type": "llm",
+                        "ls_provider": "fakestreaminglist",
+                    },
                     "name": "FakeStreamingListLLM",
                     "start_time": "2023-01-01T00:00:00.000+00:00",
                     "streamed_output": [],
@@ -2517,7 +2520,7 @@ async def test_stream_log_retriever() -> None:
         "ChatPromptTemplate",
         "FakeListLLM",
         "FakeListLLM:2",
-        "Retriever",
+        "FakeRetriever",
         "RunnableLambda",
         "RunnableParallel<documents,question>",
         "RunnableParallel<one,two>",
@@ -3130,7 +3133,7 @@ def test_map_stream() -> None:
     assert streamed_chunks[0] in [
         {"passthrough": prompt.invoke({"question": "What is your name?"})},
         {"llm": "i"},
-        {"chat": AIMessageChunk(content="i")},
+        {"chat": _AnyIdAIMessageChunk(content="i")},
     ]
     assert len(streamed_chunks) == len(chat_res) + len(llm_res) + 1
     assert all(len(c.keys()) == 1 for c in streamed_chunks)
@@ -3188,7 +3191,7 @@ def test_map_stream() -> None:
 
     assert streamed_chunks[0] in [
         {"llm": "i"},
-        {"chat": AIMessageChunk(content="i")},
+        {"chat": _AnyIdAIMessageChunk(content="i")},
     ]
     assert len(streamed_chunks) == len(llm_res) + len(chat_res)
 
@@ -3231,7 +3234,7 @@ def test_map_stream_iterator_input() -> None:
     assert streamed_chunks[0] in [
         {"passthrough": "i"},
         {"llm": "i"},
-        {"chat": AIMessageChunk(content="i")},
+        {"chat": _AnyIdAIMessageChunk(content="i")},
     ]
     assert len(streamed_chunks) == len(chat_res) + len(llm_res) + len(llm_res)
     assert all(len(c.keys()) == 1 for c in streamed_chunks)
@@ -5124,8 +5127,7 @@ async def test_runnable_gen_transform() -> None:
     """Test that a generator can be used as a runnable."""
 
     def gen_indexes(length_iter: Iterator[int]) -> Iterator[int]:
-        for i in range(next(length_iter)):
-            yield i
+        yield from range(next(length_iter))
 
     async def agen_indexes(length_iter: AsyncIterator[int]) -> AsyncIterator[int]:
         async for length in length_iter:
@@ -5203,7 +5205,7 @@ def test_invoke_stream_passthrough_assign_trace() -> None:
     assert tracer.runs[0].child_runs[0].name == "RunnableParallel<urls>"
 
     tracer = FakeTracer()
-    for item in chain.stream({"example": [1, 2, 3]}, dict(callbacks=[tracer])):
+    for _ in chain.stream({"example": [1, 2, 3]}, dict(callbacks=[tracer])):
         pass
 
     assert tracer.runs[0].name == "RunnableAssign<urls>"
@@ -5223,7 +5225,7 @@ async def test_ainvoke_astream_passthrough_assign_trace() -> None:
     assert tracer.runs[0].child_runs[0].name == "RunnableParallel<urls>"
 
     tracer = FakeTracer()
-    async for item in chain.astream({"example": [1, 2, 3]}, dict(callbacks=[tracer])):
+    async for _ in chain.astream({"example": [1, 2, 3]}, dict(callbacks=[tracer])):
         pass
 
     assert tracer.runs[0].name == "RunnableAssign<urls>"

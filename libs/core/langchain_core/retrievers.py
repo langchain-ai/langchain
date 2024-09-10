@@ -30,7 +30,6 @@ from typing_extensions import TypedDict
 
 from langchain_core._api import deprecated
 from langchain_core.documents import Document
-from langchain_core.load.dump import dumpd
 from langchain_core.runnables import (
     Runnable,
     RunnableConfig,
@@ -155,6 +154,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
                 "Retrievers must implement abstract `_get_relevant_documents` method"
                 " instead of `get_relevant_documents`",
                 DeprecationWarning,
+                stacklevel=4,
             )
             swap = cls.get_relevant_documents
             cls.get_relevant_documents = (  # type: ignore[assignment]
@@ -169,6 +169,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
                 "Retrievers must implement abstract `_aget_relevant_documents` method"
                 " instead of `aget_relevant_documents`",
                 DeprecationWarning,
+                stacklevel=4,
             )
             aswap = cls.aget_relevant_documents
             cls.aget_relevant_documents = (  # type: ignore[assignment]
@@ -233,9 +234,9 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
             local_metadata=self.metadata,
         )
         run_manager = callback_manager.on_retriever_start(
-            dumpd(self),
+            None,
             input,
-            name=config.get("run_name"),
+            name=config.get("run_name") or self.get_name(),
             run_id=kwargs.pop("run_id", None),
         )
         try:
@@ -296,9 +297,9 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
             local_metadata=self.metadata,
         )
         run_manager = await callback_manager.on_retriever_start(
-            dumpd(self),
+            None,
             input,
-            name=config.get("run_name"),
+            name=config.get("run_name") or self.get_name(),
             run_id=kwargs.pop("run_id", None),
         )
         try:

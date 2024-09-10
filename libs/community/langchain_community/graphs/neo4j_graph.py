@@ -246,7 +246,7 @@ def _format_schema(schema: Dict, is_enhanced: bool) -> str:
                         )
                 elif prop["type"] == "LIST":
                     # Skip embeddings
-                    if prop["min_size"] > LIST_LIMIT:
+                    if not prop.get("min_size") or prop["min_size"] > LIST_LIMIT:
                         continue
                     example = (
                         f'Min Size: {prop["min_size"]}, Max Size: {prop["max_size"]}'
@@ -346,18 +346,27 @@ class Neo4jGraph(GraphStore):
             )
 
         url = get_from_dict_or_env({"url": url}, "url", "NEO4J_URI")
-        username = get_from_dict_or_env(
-            {"username": username}, "username", "NEO4J_USERNAME"
-        )
-        password = get_from_dict_or_env(
-            {"password": password}, "password", "NEO4J_PASSWORD"
-        )
+        # if username and password are "", assume Neo4j auth is disabled
+        if username == "" and password == "":
+            auth = None
+        else:
+            username = get_from_dict_or_env(
+                {"username": username},
+                "username",
+                "NEO4J_USERNAME",
+            )
+            password = get_from_dict_or_env(
+                {"password": password},
+                "password",
+                "NEO4J_PASSWORD",
+            )
+            auth = (username, password)
         database = get_from_dict_or_env(
             {"database": database}, "database", "NEO4J_DATABASE", "neo4j"
         )
 
         self._driver = neo4j.GraphDatabase.driver(
-            url, auth=(username, password), **(driver_config or {})
+            url, auth=auth, **(driver_config or {})
         )
         self._database = database
         self.timeout = timeout
@@ -401,7 +410,9 @@ class Neo4jGraph(GraphStore):
         """Returns the structured schema of the Graph"""
         return self.structured_schema
 
-    def query(self, query: str, params: dict = {}) -> List[Dict[str, Any]]:
+    def query(
+        self, query: str, params: dict = {}, retry_on_session_expired: bool = True
+    ) -> List[Dict[str, Any]]:
         """Query Neo4j database.
 
         Args:
@@ -412,7 +423,7 @@ class Neo4jGraph(GraphStore):
             List[Dict[str, Any]]: The list of dictionaries containing the query results.
         """
         from neo4j import Query
-        from neo4j.exceptions import CypherSyntaxError
+        from neo4j.exceptions import CypherSyntaxError, SessionExpired
 
         with self._driver.session(database=self._database) as session:
             try:
@@ -423,6 +434,15 @@ class Neo4jGraph(GraphStore):
                 return json_data
             except CypherSyntaxError as e:
                 raise ValueError(f"Generated Cypher Statement is not valid\n{e}")
+            except (
+                SessionExpired
+            ) as e:  # Session expired is a transient error that can be retried
+                if retry_on_session_expired:
+                    return self.query(
+                        query, params=params, retry_on_session_expired=False
+                    )
+                else:
+                    raise e
 
     def refresh_schema(self) -> None:
         """
