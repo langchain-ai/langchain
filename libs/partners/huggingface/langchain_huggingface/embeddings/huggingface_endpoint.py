@@ -4,7 +4,7 @@ from typing import Any, List, Optional
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils import from_env
-from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from typing_extensions import Self
 
 DEFAULT_MODEL = "sentence-transformers/all-mpnet-base-v2"
@@ -30,8 +30,8 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
             )
     """
 
-    _client: Any = PrivateAttr()
-    _async_client: Any = PrivateAttr()
+    client: Any = None
+    async_client: Any = None
     model: Optional[str] = None
     """Model name to use."""
     repo_id: Optional[str] = None
@@ -49,14 +49,6 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
         extra="forbid",
         protected_namespaces=(),
     )
-
-    @property
-    def client(self) -> Any:
-        return self._client
-
-    @property
-    def async_client(self) -> Any:
-        return self._async_client
 
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
@@ -94,8 +86,8 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
                     f"Got invalid task {self.task}, "
                     f"currently only {VALID_TASKS} are supported"
                 )
-            self._client = client
-            self._async_client = async_client
+            self.client = client
+            self.async_client = async_client
 
         except ImportError:
             raise ImportError(
