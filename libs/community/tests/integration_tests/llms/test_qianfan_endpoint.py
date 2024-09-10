@@ -1,8 +1,9 @@
 """Test Baidu Qianfan LLM Endpoint."""
 
-from typing import Generator
+from typing import Generator, cast
 
 from langchain_core.outputs import LLMResult
+from langchain_core.pydantic_v1 import SecretStr
 
 from langchain_community.llms.baidu_qianfan_endpoint import QianfanLLMEndpoint
 
@@ -42,3 +43,15 @@ def test_rate_limit() -> None:
     output = llm.generate(["write a joke"])
     assert isinstance(output, LLMResult)
     assert isinstance(output.generations, list)
+
+
+def test_qianfan_with_param_alias() -> None:
+    """Test with qianfan llm parameter alias."""
+    llm = QianfanLLMEndpoint(  # type: ignore[call-arg]
+        api_key="your-api-key",  # type: ignore[arg-type]
+        secret_key="your-secret-key",  # type: ignore[arg-type]
+        timeout=50,
+    )  # type: ignore[call-arg]
+    assert cast(SecretStr, llm.qianfan_ak).get_secret_value() == "your-api-key"
+    assert cast(SecretStr, llm.qianfan_sk).get_secret_value() == "your-secret-key"
+    assert llm.request_timeout == 50

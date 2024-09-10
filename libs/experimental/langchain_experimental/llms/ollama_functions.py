@@ -134,7 +134,7 @@ def parse_response(message: BaseMessage) -> str:
 
 
 @deprecated(  # type: ignore[arg-type]
-    since="0.0.64", removal="0.4.0", alternative_import="langchain_ollama.ChatOllama"
+    since="0.0.64", removal="1.0", alternative_import="langchain_ollama.ChatOllama"
 )
 class OllamaFunctions(ChatOllama):
     """Function chat model that uses Ollama API."""

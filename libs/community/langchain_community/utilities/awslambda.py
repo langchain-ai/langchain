@@ -3,7 +3,7 @@
 import json
 from typing import Any, Dict, Optional
 
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_core.pydantic_v1 import BaseModel, root_validator
 
 
 class LambdaWrapper(BaseModel):
@@ -31,9 +31,7 @@ class LambdaWrapper(BaseModel):
     """If passing to an agent as a tool, the description"""
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:

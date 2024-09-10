@@ -1,6 +1,6 @@
 import re
 from pathlib import Path
-from typing import Iterator, Union
+from typing import Iterator, Pattern, Union
 
 from langchain_core.documents import Document
 
@@ -10,7 +10,9 @@ from langchain_community.document_loaders.base import BaseLoader
 class AcreomLoader(BaseLoader):
     """Load `acreom` vault from a directory."""
 
-    FRONT_MATTER_REGEX = re.compile(r"^---\n(.*?)\n---\n", re.MULTILINE | re.DOTALL)
+    FRONT_MATTER_REGEX: Pattern = re.compile(
+        r"^---\n(.*?)\n---\n", re.MULTILINE | re.DOTALL
+    )
     """Regex to match front matter metadata in markdown files."""
 
     def __init__(

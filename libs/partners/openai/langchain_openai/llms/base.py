@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-import os
 import sys
 from typing import (
     AbstractSet,
@@ -28,12 +27,8 @@ from langchain_core.callbacks import (
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
-from langchain_core.utils import (
-    convert_to_secret_str,
-    get_from_dict_or_env,
-    get_pydantic_field_names,
-)
-from langchain_core.utils.utils import build_extra_kwargs
+from langchain_core.utils import get_pydantic_field_names
+from langchain_core.utils.utils import build_extra_kwargs, from_env, secret_from_env
 
 logger = logging.getLogger(__name__)
 
@@ -90,15 +85,26 @@ class BaseOpenAI(BaseLLM):
     """Generates best_of completions server-side and returns the "best"."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
-    openai_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
+    openai_api_key: Optional[SecretStr] = Field(
+        alias="api_key", default_factory=secret_from_env("OPENAI_API_KEY", default=None)
+    )
     """Automatically inferred from env var `OPENAI_API_KEY` if not provided."""
-    openai_api_base: Optional[str] = Field(default=None, alias="base_url")
+    openai_api_base: Optional[str] = Field(
+        alias="base_url", default_factory=from_env("OPENAI_API_BASE", default=None)
+    )
     """Base URL path for API requests, leave blank if not using a proxy or service 
         emulator."""
-    openai_organization: Optional[str] = Field(default=None, alias="organization")
+    openai_organization: Optional[str] = Field(
+        alias="organization",
+        default_factory=from_env(
+            ["OPENAI_ORG_ID", "OPENAI_ORGANIZATION"], default=None
+        ),
+    )
     """Automatically inferred from env var `OPENAI_ORG_ID` if not provided."""
     # to support explicit proxy for OpenAI
-    openai_proxy: Optional[str] = None
+    openai_proxy: Optional[str] = Field(
+        default_factory=from_env("OPENAI_PROXY", default=None)
+    )
     batch_size: int = 20
     """Batch size to use when passing multiple documents to generate."""
     request_timeout: Union[float, Tuple[float, float], Any, None] = Field(
@@ -161,7 +167,7 @@ class BaseOpenAI(BaseLLM):
         )
         return values
 
-    @root_validator()
+    @root_validator(pre=False, skip_on_failure=True, allow_reuse=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         if values["n"] < 1:
@@ -170,24 +176,6 @@ class BaseOpenAI(BaseLLM):
             raise ValueError("Cannot stream results when n > 1.")
         if values["streaming"] and values["best_of"] > 1:
             raise ValueError("Cannot stream results when best_of > 1.")
-
-        openai_api_key = get_from_dict_or_env(
-            values, "openai_api_key", "OPENAI_API_KEY"
-        )
-        values["openai_api_key"] = (
-            convert_to_secret_str(openai_api_key) if openai_api_key else None
-        )
-        values["openai_api_base"] = values["openai_api_base"] or os.getenv(
-            "OPENAI_API_BASE"
-        )
-        values["openai_proxy"] = get_from_dict_or_env(
-            values, "openai_proxy", "OPENAI_PROXY", default=""
-        )
-        values["openai_organization"] = (
-            values["openai_organization"]
-            or os.getenv("OPENAI_ORG_ID")
-            or os.getenv("OPENAI_ORGANIZATION")
-        )
 
         client_params = {
             "api_key": (
@@ -605,21 +593,105 @@ class BaseOpenAI(BaseLLM):
 
 
 class OpenAI(BaseOpenAI):
-    """OpenAI large language models.
+    """OpenAI completion model integration.
 
-    To use, you should have the environment variable ``OPENAI_API_KEY``
-    set with your API key, or pass it as a named parameter to the constructor.
+    Setup:
+        Install ``langchain-openai`` and set environment variable ``OPENAI_API_KEY``.
 
-    Any parameters that are valid to be passed to the openai.create call can be passed
-    in, even if not explicitly saved on this class.
+        .. code-block:: bash
 
-    Example:
+            pip install -U langchain-openai
+            export OPENAI_API_KEY="your-api-key"
+
+    Key init args — completion params:
+        model: str
+            Name of OpenAI model to use.
+        temperature: float
+            Sampling temperature.
+        max_tokens: Optional[int]
+            Max number of tokens to generate.
+        logprobs: Optional[bool]
+            Whether to return logprobs.
+        stream_options: Dict
+            Configure streaming outputs, like whether to return token usage when
+            streaming (``{"include_usage": True}``).
+
+    Key init args — client params:
+        timeout: Union[float, Tuple[float, float], Any, None]
+            Timeout for requests.
+        max_retries: int
+            Max number of retries.
+        api_key: Optional[str]
+            OpenAI API key. If not passed in will be read from env var OPENAI_API_KEY.
+        base_url: Optional[str]
+            Base URL for API requests. Only specify if using a proxy or service
+            emulator.
+        organization: Optional[str]
+            OpenAI organization ID. If not passed in will be read from env
+            var OPENAI_ORG_ID.
+
+    See full list of supported init args and their descriptions in the params section.
+
+    Instantiate:
         .. code-block:: python
 
             from langchain_openai import OpenAI
 
-            model = OpenAI(model_name="gpt-3.5-turbo-instruct")
-    """
+            llm = OpenAI(
+                model="gpt-3.5-turbo-instruct",
+                temperature=0,
+                max_retries=2,
+                # api_key="...",
+                # base_url="...",
+                # organization="...",
+                # other params...
+            )
+
+    Invoke:
+        .. code-block:: python
+
+            input_text = "The meaning of life is "
+            llm.invoke(input_text)
+
+        .. code-block:: none
+
+            "a philosophical question that has been debated by thinkers and scholars for centuries."
+
+    Stream:
+        .. code-block:: python
+
+            for chunk in llm.stream(input_text):
+                print(chunk, end="|")
+
+        .. code-block:: none
+
+            a| philosophical| question| that| has| been| debated| by| thinkers| and| scholars| for| centuries|.
+
+        .. code-block:: python
+
+            "".join(llm.stream(input_text))
+
+        .. code-block:: none
+
+            "a philosophical question that has been debated by thinkers and scholars for centuries."
+
+    Async:
+        .. code-block:: python
+
+            await llm.ainvoke(input_text)
+
+            # stream:
+            # async for chunk in (await llm.astream(input_text)):
+            #    print(chunk)
+
+            # batch:
+            # await llm.abatch([input_text])
+
+        .. code-block:: none
+
+            "a philosophical question that has been debated by thinkers and scholars for centuries."
+
+    """  # noqa: E501
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:

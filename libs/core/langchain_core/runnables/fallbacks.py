@@ -1,12 +1,12 @@
 import asyncio
 import inspect
 import typing
+from contextvars import copy_context
 from functools import wraps
 from typing import (
     TYPE_CHECKING,
     Any,
     AsyncIterator,
-    Awaitable,
     Dict,
     Iterator,
     List,
@@ -18,11 +18,11 @@ from typing import (
     cast,
 )
 
-from langchain_core.load.dump import dumpd
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables.base import Runnable, RunnableSerializable
 from langchain_core.runnables.config import (
     RunnableConfig,
+    _set_config_context,
     ensure_config,
     get_async_callback_manager_for_config,
     get_callback_manager_for_config,
@@ -33,6 +33,7 @@ from langchain_core.runnables.utils import (
     ConfigurableFieldSpec,
     Input,
     Output,
+    asyncio_accepts_context,
     get_unique_config_specs,
 )
 from langchain_core.utils.aiter import py_anext
@@ -161,9 +162,9 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         callback_manager = get_callback_manager_for_config(config)
         # start the root run
         run_manager = callback_manager.on_chain_start(
-            dumpd(self),
+            None,
             input,
-            name=config.get("run_name"),
+            name=config.get("run_name") or self.get_name(),
             run_id=config.pop("run_id", None),
         )
         first_error = None
@@ -172,9 +173,13 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             try:
                 if self.exception_key and last_error is not None:
                     input[self.exception_key] = last_error
-                output = runnable.invoke(
+                child_config = patch_config(config, callbacks=run_manager.get_child())
+                context = copy_context()
+                context.run(_set_config_context, child_config)
+                output = context.run(
+                    runnable.invoke,
                     input,
-                    patch_config(config, callbacks=run_manager.get_child()),
+                    config,
                     **kwargs,
                 )
             except self.exceptions_to_handle as e:
@@ -208,9 +213,9 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         callback_manager = get_async_callback_manager_for_config(config)
         # start the root run
         run_manager = await callback_manager.on_chain_start(
-            dumpd(self),
+            None,
             input,
-            name=config.get("run_name"),
+            name=config.get("run_name") or self.get_name(),
             run_id=config.pop("run_id", None),
         )
 
@@ -220,11 +225,14 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             try:
                 if self.exception_key and last_error is not None:
                     input[self.exception_key] = last_error
-                output = await runnable.ainvoke(
-                    input,
-                    patch_config(config, callbacks=run_manager.get_child()),
-                    **kwargs,
-                )
+                child_config = patch_config(config, callbacks=run_manager.get_child())
+                context = copy_context()
+                context.run(_set_config_context, child_config)
+                coro = runnable.ainvoke(input, child_config, **kwargs)
+                if asyncio_accepts_context():
+                    output = await asyncio.create_task(coro, context=context)  # type: ignore
+                else:
+                    output = await coro
             except self.exceptions_to_handle as e:
                 if first_error is None:
                     first_error = e
@@ -278,9 +286,9 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         # start the root runs, one per input
         run_managers = [
             cm.on_chain_start(
-                dumpd(self),
+                None,
                 input if isinstance(input, dict) else {"input": input},
-                name=config.get("run_name"),
+                name=config.get("run_name") or self.get_name(),
                 run_id=config.pop("run_id", None),
             )
             for cm, input, config in zip(callback_managers, inputs, configs)
@@ -371,9 +379,9 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         run_managers: List[AsyncCallbackManagerForChainRun] = await asyncio.gather(
             *(
                 cm.on_chain_start(
-                    dumpd(self),
+                    None,
                     input,
-                    name=config.get("run_name"),
+                    name=config.get("run_name") or self.get_name(),
                     run_id=config.pop("run_id", None),
                 )
                 for cm, input, config in zip(callback_managers, inputs, configs)
@@ -449,9 +457,9 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         callback_manager = get_callback_manager_for_config(config)
         # start the root run
         run_manager = callback_manager.on_chain_start(
-            dumpd(self),
+            None,
             input,
-            name=config.get("run_name"),
+            name=config.get("run_name") or self.get_name(),
             run_id=config.pop("run_id", None),
         )
         first_error = None
@@ -460,12 +468,15 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             try:
                 if self.exception_key and last_error is not None:
                     input[self.exception_key] = last_error
-                stream = runnable.stream(
+                child_config = patch_config(config, callbacks=run_manager.get_child())
+                context = copy_context()
+                context.run(_set_config_context, child_config)
+                stream = context.run(
+                    runnable.stream,
                     input,
-                    patch_config(config, callbacks=run_manager.get_child()),
                     **kwargs,
                 )
-                chunk = next(stream)
+                chunk: Output = context.run(next, stream)  # type: ignore
             except self.exceptions_to_handle as e:
                 first_error = e if first_error is None else first_error
                 last_error = e
@@ -509,9 +520,9 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         callback_manager = get_async_callback_manager_for_config(config)
         # start the root run
         run_manager = await callback_manager.on_chain_start(
-            dumpd(self),
+            None,
             input,
-            name=config.get("run_name"),
+            name=config.get("run_name") or self.get_name(),
             run_id=config.pop("run_id", None),
         )
         first_error = None
@@ -520,12 +531,21 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             try:
                 if self.exception_key and last_error is not None:
                     input[self.exception_key] = last_error
+                child_config = patch_config(config, callbacks=run_manager.get_child())
+                context = copy_context()
+                context.run(_set_config_context, child_config)
                 stream = runnable.astream(
                     input,
-                    patch_config(config, callbacks=run_manager.get_child()),
+                    child_config,
                     **kwargs,
                 )
-                chunk = await cast(Awaitable[Output], py_anext(stream))
+                if asyncio_accepts_context():
+                    chunk: Output = await asyncio.create_task(  # type: ignore[call-arg]
+                        py_anext(stream),  # type: ignore[arg-type]
+                        context=context,
+                    )
+                else:
+                    chunk = cast(Output, await py_anext(stream))
             except self.exceptions_to_handle as e:
                 first_error = e if first_error is None else first_error
                 last_error = e

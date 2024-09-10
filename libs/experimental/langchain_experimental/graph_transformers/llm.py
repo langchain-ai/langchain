@@ -13,6 +13,7 @@ from langchain_core.prompts import (
     PromptTemplate,
 )
 from langchain_core.pydantic_v1 import BaseModel, Field, create_model
+from langchain_core.runnables import RunnableConfig
 
 examples = [
     {
@@ -478,7 +479,7 @@ def _parse_and_clean_json(
         nodes.append(
             Node(
                 id=node["id"],
-                type=node.get("type"),
+                type=node.get("type", "Node"),
                 properties=node_properties,
             )
         )
@@ -583,9 +584,20 @@ def _convert_to_graph_document(
                     ]
                 )
             except Exception:  # Google type response
-                argument_json = json.loads(
-                    raw_schema["raw"].additional_kwargs["function_call"]["arguments"]
-                )
+                try:
+                    argument_json = json.loads(
+                        raw_schema["raw"].additional_kwargs["function_call"][
+                            "arguments"
+                        ]
+                    )
+                except Exception:  # Ollama type response
+                    argument_json = raw_schema["raw"].tool_calls[0]["args"]
+                    if isinstance(argument_json["nodes"], str):
+                        argument_json["nodes"] = json.loads(argument_json["nodes"])
+                    if isinstance(argument_json["relationships"], str):
+                        argument_json["relationships"] = json.loads(
+                            argument_json["relationships"]
+                        )
 
             nodes, relationships = _parse_and_clean_json(argument_json)
         except Exception:  # If we can't parse JSON
@@ -638,6 +650,10 @@ class LLMGraphTransformer:
           any relationship properties from text. Alternatively, a list of valid
           properties can be provided for the LLM to extract, restricting extraction to
           those specified.
+        ignore_tool_usage (bool): Indicates whether the transformer should
+          bypass the use of structured output functionality of the language model.
+          If set to True, the transformer will not use the language model's native
+          function calling capabilities to handle structured output. Defaults to False.
 
     Example:
         .. code-block:: python
@@ -663,16 +679,18 @@ class LLMGraphTransformer:
         strict_mode: bool = True,
         node_properties: Union[bool, List[str]] = False,
         relationship_properties: Union[bool, List[str]] = False,
+        ignore_tool_usage: bool = False,
     ) -> None:
         self.allowed_nodes = allowed_nodes
         self.allowed_relationships = allowed_relationships
         self.strict_mode = strict_mode
-        self._function_call = True
+        self._function_call = not ignore_tool_usage
         # Check if the LLM really supports structured output
-        try:
-            llm.with_structured_output(_Graph)
-        except NotImplementedError:
-            self._function_call = False
+        if self._function_call:
+            try:
+                llm.with_structured_output(_Graph)
+            except NotImplementedError:
+                self._function_call = False
         if not self._function_call:
             if node_properties or relationship_properties:
                 raise ValueError(
@@ -710,13 +728,15 @@ class LLMGraphTransformer:
             prompt = prompt or default_prompt
             self.chain = prompt | structured_llm
 
-    def process_response(self, document: Document) -> GraphDocument:
+    def process_response(
+        self, document: Document, config: Optional[RunnableConfig] = None
+    ) -> GraphDocument:
         """
         Processes a single document, transforming it into a graph document using
         an LLM based on the model's schema and constraints.
         """
         text = document.page_content
-        raw_schema = self.chain.invoke({"input": text})
+        raw_schema = self.chain.invoke({"input": text}, config=config)
         if self._function_call:
             raw_schema = cast(Dict[Any, Any], raw_schema)
             nodes, relationships = _convert_to_graph_document(raw_schema)
@@ -726,6 +746,8 @@ class LLMGraphTransformer:
             if not isinstance(raw_schema, str):
                 raw_schema = raw_schema.content
             parsed_json = self.json_repair.loads(raw_schema)
+            if isinstance(parsed_json, dict):
+                parsed_json = [parsed_json]
             for rel in parsed_json:
                 # Nodes need to be deduplicated using a set
                 nodes_set.add((rel["head"], rel["head_type"]))
@@ -765,26 +787,28 @@ class LLMGraphTransformer:
         return GraphDocument(nodes=nodes, relationships=relationships, source=document)
 
     def convert_to_graph_documents(
-        self, documents: Sequence[Document]
+        self, documents: Sequence[Document], config: Optional[RunnableConfig] = None
     ) -> List[GraphDocument]:
         """Convert a sequence of documents into graph documents.
 
         Args:
             documents (Sequence[Document]): The original documents.
-            **kwargs: Additional keyword arguments.
+            kwargs: Additional keyword arguments.
 
         Returns:
             Sequence[GraphDocument]: The transformed documents as graphs.
         """
-        return [self.process_response(document) for document in documents]
+        return [self.process_response(document, config) for document in documents]
 
-    async def aprocess_response(self, document: Document) -> GraphDocument:
+    async def aprocess_response(
+        self, document: Document, config: Optional[RunnableConfig] = None
+    ) -> GraphDocument:
         """
         Asynchronously processes a single document, transforming it into a
         graph document.
         """
         text = document.page_content
-        raw_schema = await self.chain.ainvoke({"input": text})
+        raw_schema = await self.chain.ainvoke({"input": text}, config=config)
         raw_schema = cast(Dict[Any, Any], raw_schema)
         nodes, relationships = _convert_to_graph_document(raw_schema)
 
@@ -811,13 +835,13 @@ class LLMGraphTransformer:
         return GraphDocument(nodes=nodes, relationships=relationships, source=document)
 
     async def aconvert_to_graph_documents(
-        self, documents: Sequence[Document]
+        self, documents: Sequence[Document], config: Optional[RunnableConfig] = None
     ) -> List[GraphDocument]:
         """
         Asynchronously convert a sequence of documents into graph documents.
         """
         tasks = [
-            asyncio.create_task(self.aprocess_response(document))
+            asyncio.create_task(self.aprocess_response(document, config))
             for document in documents
         ]
         results = await asyncio.gather(*tasks)

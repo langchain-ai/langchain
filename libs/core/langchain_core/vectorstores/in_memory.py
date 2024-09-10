@@ -8,30 +8,142 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Iterator,
     List,
     Optional,
     Sequence,
     Tuple,
 )
 
+from langchain_core._api import deprecated
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.load import dumpd, load
 from langchain_core.vectorstores import VectorStore
 from langchain_core.vectorstores.utils import _cosine_similarity as cosine_similarity
-from langchain_core.vectorstores.utils import (
-    _maximal_marginal_relevance as maximal_marginal_relevance,
-)
+from langchain_core.vectorstores.utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
     from langchain_core.indexing import UpsertResponse
 
 
 class InMemoryVectorStore(VectorStore):
-    """In-memory implementation of VectorStore using a dictionary.
+    """In-memory vector store implementation.
 
-    Uses numpy to compute cosine similarity for search.
-    """
+    Uses a dictionary, and computes cosine similarity for search using numpy.
+
+    Setup:
+        Install ``langchain-core``.
+
+        .. code-block:: bash
+
+            pip install -U langchain-core
+
+    Key init args — indexing params:
+        embedding_function: Embeddings
+            Embedding function to use.
+
+    Instantiate:
+        .. code-block:: python
+
+            from langchain_core.vectorstores import InMemoryVectorStore
+            from langchain_openai import OpenAIEmbeddings
+
+            vector_store = InMemoryVectorStore(OpenAIEmbeddings())
+
+    Add Documents:
+        .. code-block:: python
+
+            from langchain_core.documents import Document
+
+            document_1 = Document(id="1", page_content="foo", metadata={"baz": "bar"})
+            document_2 = Document(id="2", page_content="thud", metadata={"bar": "baz"})
+            document_3 = Document(id="3", page_content="i will be deleted :(")
+
+            documents = [document_1, document_2, document_3]
+            vector_store.add_documents(documents=documents)
+
+    Delete Documents:
+        .. code-block:: python
+
+            vector_store.delete(ids=["3"])
+
+    Search:
+        .. code-block:: python
+
+            results = vector_store.similarity_search(query="thud",k=1)
+            for doc in results:
+                print(f"* {doc.page_content} [{doc.metadata}]")
+
+        .. code-block:: none
+
+            * thud [{'bar': 'baz'}]
+
+    Search with filter:
+        .. code-block:: python
+
+            def _filter_function(doc: Document) -> bool:
+                return doc.metadata.get("bar") == "baz"
+
+            results = vector_store.similarity_search(
+                query="thud", k=1, filter=_filter_function
+            )
+            for doc in results:
+                print(f"* {doc.page_content} [{doc.metadata}]")
+
+        .. code-block:: none
+
+            * thud [{'bar': 'baz'}]
+
+
+    Search with score:
+        .. code-block:: python
+
+            results = vector_store.similarity_search_with_score(
+                query="qux", k=1
+            )
+            for doc, score in results:
+                print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
+
+        .. code-block:: none
+
+            * [SIM=0.832268] foo [{'baz': 'bar'}]
+
+    Async:
+        .. code-block:: python
+
+            # add documents
+            # await vector_store.aadd_documents(documents=documents)
+
+            # delete documents
+            # await vector_store.adelete(ids=["3"])
+
+            # search
+            # results = vector_store.asimilarity_search(query="thud", k=1)
+
+            # search with score
+            results = await vector_store.asimilarity_search_with_score(query="qux", k=1)
+            for doc,score in results:
+                print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
+
+        .. code-block:: none
+
+            * [SIM=0.832268] foo [{'baz': 'bar'}]
+
+    Use as Retriever:
+        .. code-block:: python
+
+            retriever = vector_store.as_retriever(
+                search_type="mmr",
+                search_kwargs={"k": 1, "fetch_k": 2, "lambda_mult": 0.5},
+            )
+            retriever.invoke("thud")
+
+        .. code-block:: none
+
+            [Document(id='2', metadata={'bar': 'baz'}, page_content='thud')]
+
+    """  # noqa: E501
 
     def __init__(self, embedding: Embeddings) -> None:
         """Initialize with the given embedding function.
@@ -56,43 +168,71 @@ class InMemoryVectorStore(VectorStore):
     async def adelete(self, ids: Optional[Sequence[str]] = None, **kwargs: Any) -> None:
         self.delete(ids)
 
-    def upsert(self, items: Sequence[Document], /, **kwargs: Any) -> UpsertResponse:
-        vectors = self.embedding.embed_documents([item.page_content for item in items])
-        ids = []
-        for item, vector in zip(items, vectors):
-            doc_id = item.id if item.id else str(uuid.uuid4())
-            ids.append(doc_id)
-            self.store[doc_id] = {
-                "id": doc_id,
-                "vector": vector,
-                "text": item.page_content,
-                "metadata": item.metadata,
-            }
-        return {
-            "succeeded": ids,
-            "failed": [],
-        }
+    def add_documents(
+        self,
+        documents: List[Document],
+        ids: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> List[str]:
+        """Add documents to the store."""
+        texts = [doc.page_content for doc in documents]
+        vectors = self.embedding.embed_documents(texts)
 
-    async def aupsert(
-        self, items: Sequence[Document], /, **kwargs: Any
-    ) -> UpsertResponse:
-        vectors = await self.embedding.aembed_documents(
-            [item.page_content for item in items]
+        if ids and len(ids) != len(texts):
+            raise ValueError(
+                f"ids must be the same length as texts. "
+                f"Got {len(ids)} ids and {len(texts)} texts."
+            )
+
+        id_iterator: Iterator[Optional[str]] = (
+            iter(ids) if ids else iter(doc.id for doc in documents)
         )
-        ids = []
-        for item, vector in zip(items, vectors):
-            doc_id = item.id if item.id else str(uuid.uuid4())
-            ids.append(doc_id)
-            self.store[doc_id] = {
-                "id": doc_id,
+
+        ids_ = []
+
+        for doc, vector in zip(documents, vectors):
+            doc_id = next(id_iterator)
+            doc_id_ = doc_id if doc_id else str(uuid.uuid4())
+            ids_.append(doc_id_)
+            self.store[doc_id_] = {
+                "id": doc_id_,
                 "vector": vector,
-                "text": item.page_content,
-                "metadata": item.metadata,
+                "text": doc.page_content,
+                "metadata": doc.metadata,
             }
-        return {
-            "succeeded": ids,
-            "failed": [],
-        }
+
+        return ids_
+
+    async def aadd_documents(
+        self, documents: List[Document], ids: Optional[List[str]] = None, **kwargs: Any
+    ) -> List[str]:
+        """Add documents to the store."""
+        texts = [doc.page_content for doc in documents]
+        vectors = await self.embedding.aembed_documents(texts)
+
+        if ids and len(ids) != len(texts):
+            raise ValueError(
+                f"ids must be the same length as texts. "
+                f"Got {len(ids)} ids and {len(texts)} texts."
+            )
+
+        id_iterator: Iterator[Optional[str]] = (
+            iter(ids) if ids else iter(doc.id for doc in documents)
+        )
+        ids_: List[str] = []
+
+        for doc, vector in zip(documents, vectors):
+            doc_id = next(id_iterator)
+            doc_id_ = doc_id if doc_id else str(uuid.uuid4())
+            ids_.append(doc_id_)
+            self.store[doc_id_] = {
+                "id": doc_id_,
+                "vector": vector,
+                "text": doc.page_content,
+                "metadata": doc.metadata,
+            }
+
+        return ids_
 
     def get_by_ids(self, ids: Sequence[str], /) -> List[Document]:
         """Get documents by their ids.
@@ -116,6 +256,62 @@ class InMemoryVectorStore(VectorStore):
                     )
                 )
         return documents
+
+    @deprecated(
+        alternative="VectorStore.add_documents",
+        message=(
+            "This was a beta API that was added in 0.2.11. "
+            "It'll be removed in 0.3.0."
+        ),
+        since="0.2.29",
+        removal="1.0",
+    )
+    def upsert(self, items: Sequence[Document], /, **kwargs: Any) -> UpsertResponse:
+        vectors = self.embedding.embed_documents([item.page_content for item in items])
+        ids = []
+        for item, vector in zip(items, vectors):
+            doc_id = item.id if item.id else str(uuid.uuid4())
+            ids.append(doc_id)
+            self.store[doc_id] = {
+                "id": doc_id,
+                "vector": vector,
+                "text": item.page_content,
+                "metadata": item.metadata,
+            }
+        return {
+            "succeeded": ids,
+            "failed": [],
+        }
+
+    @deprecated(
+        alternative="VectorStore.aadd_documents",
+        message=(
+            "This was a beta API that was added in 0.2.11. "
+            "It'll be removed in 0.3.0."
+        ),
+        since="0.2.29",
+        removal="1.0",
+    )
+    async def aupsert(
+        self, items: Sequence[Document], /, **kwargs: Any
+    ) -> UpsertResponse:
+        vectors = await self.embedding.aembed_documents(
+            [item.page_content for item in items]
+        )
+        ids = []
+        for item, vector in zip(items, vectors):
+            doc_id = item.id if item.id else str(uuid.uuid4())
+            ids.append(doc_id)
+            self.store[doc_id] = {
+                "id": doc_id,
+                "vector": vector,
+                "text": item.page_content,
+                "metadata": item.metadata,
+            }
+        return {
+            "succeeded": ids,
+            "failed": [],
+        }
 
     async def aget_by_ids(self, ids: Sequence[str], /) -> List[Document]:
         """Async get documents by their ids.
@@ -239,11 +435,11 @@ class InMemoryVectorStore(VectorStore):
 
         try:
             import numpy as np
-        except ImportError:
+        except ImportError as e:
             raise ImportError(
                 "numpy must be installed to use max_marginal_relevance_search "
                 "pip install numpy"
-            )
+            ) from e
 
         mmr_chosen_indices = maximal_marginal_relevance(
             np.array(embedding, dtype=np.float32),
@@ -294,7 +490,7 @@ class InMemoryVectorStore(VectorStore):
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
-    ) -> "InMemoryVectorStore":
+    ) -> InMemoryVectorStore:
         store = cls(
             embedding=embedding,
         )
@@ -308,7 +504,7 @@ class InMemoryVectorStore(VectorStore):
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
-    ) -> "InMemoryVectorStore":
+    ) -> InMemoryVectorStore:
         store = cls(
             embedding=embedding,
         )
@@ -318,13 +514,13 @@ class InMemoryVectorStore(VectorStore):
     @classmethod
     def load(
         cls, path: str, embedding: Embeddings, **kwargs: Any
-    ) -> "InMemoryVectorStore":
+    ) -> InMemoryVectorStore:
         """Load a vector store from a file.
 
         Args:
             path: The path to load the vector store from.
             embedding: The embedding to use.
-            **kwargs: Additional arguments to pass to the constructor.
+            kwargs: Additional arguments to pass to the constructor.
 
         Returns:
             A VectorStore object.

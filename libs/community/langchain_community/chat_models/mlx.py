@@ -186,9 +186,9 @@ class ChatMLX(BaseChatModel):
             # yield text, if any
             if text:
                 chunk = ChatGenerationChunk(message=AIMessageChunk(content=text))
-                yield chunk
                 if run_manager:
                     run_manager.on_llm_new_token(text, chunk=chunk)
+                yield chunk
 
             # break if stop sequence found
             if token == eos_token_id or (stop is not None and text in stop):

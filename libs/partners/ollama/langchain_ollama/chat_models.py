@@ -35,7 +35,7 @@ from langchain_core.messages import (
 from langchain_core.messages.ai import UsageMetadata
 from langchain_core.messages.tool import tool_call
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_tool
@@ -91,7 +91,9 @@ def _lc_tool_call_to_openai_tool_call(tool_call: ToolCall) -> dict:
 class ChatOllama(BaseChatModel):
     """Ollama chat model integration.
 
-    Setup:
+    .. dropdown:: Setup
+        :open:
+
         Install ``langchain-ollama`` and download any models you want to use from ollama.
 
         .. code-block:: bash
@@ -323,6 +325,21 @@ class ChatOllama(BaseChatModel):
     base_url: Optional[str] = None
     """Base url the model is hosted under."""
 
+    client_kwargs: Optional[dict] = {}
+    """Additional kwargs to pass to the httpx Client. 
+    For a full list of the params, see [this link](https://pydoc.dev/httpx/latest/httpx.Client.html)
+    """
+
+    _client: Client = Field(default=None)
+    """
+    The client to use for making requests.
+    """
+
+    _async_client: AsyncClient = Field(default=None)
+    """
+    The async client to use for making requests.
+    """
+
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling Ollama."""
@@ -348,6 +365,15 @@ class ChatOllama(BaseChatModel):
             },
             "keep_alive": self.keep_alive,
         }
+
+    @root_validator(pre=False, skip_on_failure=True)
+    def _set_clients(cls, values: dict) -> dict:
+        """Set clients to use for ollama."""
+        values["_client"] = Client(host=values["base_url"], **values["client_kwargs"])
+        values["_async_client"] = AsyncClient(
+            host=values["base_url"], **values["client_kwargs"]
+        )
+        return values
 
     def _convert_messages_to_ollama_messages(
         self, messages: List[BaseMessage]
@@ -450,7 +476,7 @@ class ChatOllama(BaseChatModel):
 
         params["options"]["stop"] = stop
         if "tools" in kwargs:
-            yield await AsyncClient(host=self.base_url).chat(
+            yield await self._async_client.chat(
                 model=params["model"],
                 messages=ollama_messages,
                 stream=False,
@@ -460,7 +486,7 @@ class ChatOllama(BaseChatModel):
                 tools=kwargs["tools"],
             )  # type:ignore
         else:
-            async for part in await AsyncClient(host=self.base_url).chat(
+            async for part in await self._async_client.chat(
                 model=params["model"],
                 messages=ollama_messages,
                 stream=True,
@@ -488,7 +514,7 @@ class ChatOllama(BaseChatModel):
 
         params["options"]["stop"] = stop
         if "tools" in kwargs:
-            yield Client(host=self.base_url).chat(
+            yield self._client.chat(
                 model=params["model"],
                 messages=ollama_messages,
                 stream=False,
@@ -498,7 +524,7 @@ class ChatOllama(BaseChatModel):
                 tools=kwargs["tools"],
             )
         else:
-            yield from Client(host=self.base_url).chat(
+            yield from self._client.chat(
                 model=params["model"],
                 messages=ollama_messages,
                 stream=True,
@@ -723,8 +749,19 @@ class ChatOllama(BaseChatModel):
 
     def bind_tools(
         self,
-        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        tools: Sequence[Union[Dict[str, Any], Type, Callable, BaseTool]],
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
+        """Bind tool-like objects to this chat model.
+
+        Assumes model is compatible with OpenAI tool-calling API.
+
+        Args:
+            tools: A list of tool definitions to bind to this chat model.
+                Supports any tool definition handled by
+                :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`.
+            kwargs: Any additional parameters are passed directly to
+                ``self.bind(**kwargs)``.
+        """  # noqa: E501
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
         return super().bind(tools=formatted_tools, **kwargs)

@@ -17,6 +17,7 @@ DEFAULT_NAMESPACES = [
     "langchain_core",
     "langchain_community",
     "langchain_anthropic",
+    "langchain_groq",
 ]
 
 ALL_SERIALIZABLE_MAPPINGS = {

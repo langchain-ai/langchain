@@ -23,6 +23,7 @@ pytest = "^7.4.3"
 pytest-asyncio = "^0.23.2"
 pytest-socket = "^0.7.0"
 langchain-core = { path = "../../core", develop = true }
+pytest-watcher = "^0.3.4"
 
 [tool.poetry.group.codespell]
 optional = true

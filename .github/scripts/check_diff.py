@@ -1,7 +1,6 @@
 import glob
 import json
 import os
-import re
 import sys
 import tomllib
 from collections import defaultdict
@@ -15,6 +14,15 @@ LANGCHAIN_DIRS = [
     "libs/langchain",
     "libs/community",
     "libs/experimental",
+]
+
+# ignored partners are removed from dependents
+# but still run if directly edited
+IGNORED_PARTNERS = [
+    # remove huggingface from dependents because of CI instability
+    # specifically in huggingface jobs
+    # https://github.com/langchain-ai/langchain/issues/25558
+    "huggingface",
 ]
 
 
@@ -69,6 +77,11 @@ def dependents_graph() -> dict:
 
                     if "langchain" in dep:
                         dependents[dep].add(pkg_dir)
+
+    for k in dependents:
+        for partner in IGNORED_PARTNERS:
+            if f"libs/partners/{partner}" in dependents[k]:
+                dependents[k].remove(f"libs/partners/{partner}")
     return dependents
 
 
@@ -86,6 +99,11 @@ def add_dependents(dirs_to_eval: Set[str], dependents: dict) -> List[str]:
 
 
 def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
+    if dir_ == "libs/core":
+        return [
+            {"working-directory": dir_, "python-version": f"3.{v}"}
+            for v in range(8, 13)
+        ]
     min_python = "3.8"
     max_python = "3.12"
 
@@ -98,6 +116,10 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
     if dir_ in ["libs/community", "libs/langchain"] and job == "extended-tests":
         # community extended test resolution in 3.12 is slow
         # even in uv
+        max_python = "3.11"
+
+    if dir_ == "libs/community" and job == "compile-integration-tests":
+        # community integration deps are slow in 3.12
         max_python = "3.11"
 
     return [
@@ -173,7 +195,6 @@ if __name__ == "__main__":
             dirs_to_run["test"].add("libs/partners/mistralai")
             dirs_to_run["test"].add("libs/partners/openai")
             dirs_to_run["test"].add("libs/partners/anthropic")
-            dirs_to_run["test"].add("libs/partners/ai21")
             dirs_to_run["test"].add("libs/partners/fireworks")
             dirs_to_run["test"].add("libs/partners/groq")
 

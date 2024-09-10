@@ -16,6 +16,7 @@ from langchain_core.documents import Document
 from langchain_core.embeddings import DeterministicFakeEmbedding
 from langchain_core.indexing import InMemoryRecordManager, aindex, index
 from langchain_core.indexing.api import _abatch, _HashedDocument
+from langchain_core.indexing.in_memory import InMemoryDocumentIndex
 from langchain_core.vectorstores import InMemoryVectorStore, VectorStore
 
 
@@ -1284,7 +1285,10 @@ def test_indexing_custom_batch_size(
 
         index(docs, record_manager, vector_store, batch_size=batch_size)
         args, kwargs = mock_add_documents.call_args
-        assert args == (docs,)
+        doc_with_id = Document(
+            id=ids[0], page_content="This is a test document.", metadata={"source": "1"}
+        )
+        assert args == ([doc_with_id],)
         assert kwargs == {"ids": ids, "batch_size": batch_size}
     finally:
         vector_store.add_documents = original  # type: ignore
@@ -1304,8 +1308,102 @@ async def test_aindexing_custom_batch_size(
 
     batch_size = 1
     mock_add_documents = AsyncMock()
+    doc_with_id = Document(
+        id=ids[0], page_content="This is a test document.", metadata={"source": "1"}
+    )
     vector_store.aadd_documents = mock_add_documents  # type: ignore
     await aindex(docs, arecord_manager, vector_store, batch_size=batch_size)
     args, kwargs = mock_add_documents.call_args
-    assert args == (docs,)
+    assert args == ([doc_with_id],)
     assert kwargs == {"ids": ids, "batch_size": batch_size}
+
+
+def test_index_into_document_index(record_manager: InMemoryRecordManager) -> None:
+    """Get an in memory index."""
+    document_index = InMemoryDocumentIndex()
+    docs = [
+        Document(
+            page_content="This is a test document.",
+            metadata={"source": "1"},
+        ),
+        Document(
+            page_content="This is another document.",
+            metadata={"source": "2"},
+        ),
+    ]
+
+    assert index(docs, record_manager, document_index, cleanup="full") == {
+        "num_added": 2,
+        "num_deleted": 0,
+        "num_skipped": 0,
+        "num_updated": 0,
+    }
+
+    assert index(docs, record_manager, document_index, cleanup="full") == {
+        "num_added": 0,
+        "num_deleted": 0,
+        "num_skipped": 2,
+        "num_updated": 0,
+    }
+
+    assert index(
+        docs, record_manager, document_index, cleanup="full", force_update=True
+    ) == {
+        "num_added": 0,
+        "num_deleted": 0,
+        "num_skipped": 0,
+        "num_updated": 2,
+    }
+
+    assert index([], record_manager, document_index, cleanup="full") == {
+        "num_added": 0,
+        "num_deleted": 2,
+        "num_skipped": 0,
+        "num_updated": 0,
+    }
+
+
+async def test_aindex_into_document_index(
+    arecord_manager: InMemoryRecordManager,
+) -> None:
+    """Get an in memory index."""
+    document_index = InMemoryDocumentIndex()
+    docs = [
+        Document(
+            page_content="This is a test document.",
+            metadata={"source": "1"},
+        ),
+        Document(
+            page_content="This is another document.",
+            metadata={"source": "2"},
+        ),
+    ]
+
+    assert await aindex(docs, arecord_manager, document_index, cleanup="full") == {
+        "num_added": 2,
+        "num_deleted": 0,
+        "num_skipped": 0,
+        "num_updated": 0,
+    }
+
+    assert await aindex(docs, arecord_manager, document_index, cleanup="full") == {
+        "num_added": 0,
+        "num_deleted": 0,
+        "num_skipped": 2,
+        "num_updated": 0,
+    }
+    assert await aindex(
+        docs, arecord_manager, document_index, cleanup="full", force_update=True
+    ) == {
+        "num_added": 0,
+        "num_deleted": 0,
+        "num_skipped": 0,
+        "num_updated": 2,
+    }
+
+    assert await aindex([], arecord_manager, document_index, cleanup="full") == {
+        "num_added": 0,
+        "num_deleted": 2,
+        "num_skipped": 0,
+        "num_updated": 0,
+    }

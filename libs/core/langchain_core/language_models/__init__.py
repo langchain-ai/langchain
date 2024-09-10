@@ -39,6 +39,7 @@ https://python.langchain.com/v0.2/docs/how_to/custom_llm/
 
 from langchain_core.language_models.base import (
     BaseLanguageModel,
+    LangSmithParams,
     LanguageModelInput,
     LanguageModelLike,
     LanguageModelOutput,
@@ -62,6 +63,7 @@ __all__ = [
     "LLM",
     "LanguageModelInput",
     "get_tokenizer",
+    "LangSmithParams",
     "LanguageModelOutput",
     "LanguageModelLike",
     "FakeListLLM",

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 from time import monotonic, sleep
-from typing import Any, Dict, Generator, Iterable, List, Optional, Union
+from typing import Any, Dict, List
 
 import pytest  # type: ignore[import-not-found]
 from bson import ObjectId
@@ -14,11 +14,10 @@ from pymongo import MongoClient
 from pymongo.collection import Collection
 from pymongo.errors import OperationFailure
 
-from langchain_mongodb import MongoDBAtlasVectorSearch
 from langchain_mongodb.index import drop_vector_search_index
 from langchain_mongodb.utils import oid_to_str
 
-from ..utils import ConsistentFakeEmbeddings
+from ..utils import ConsistentFakeEmbeddings, PatchedMongoDBAtlasVectorSearch
 
 INDEX_NAME = "langchain-test-index-vectorstores"
 INDEX_CREATION_NAME = "langchain-test-index-vectorstores-create-test"
@@ -32,41 +31,14 @@ TIMEOUT = 120.0
 INTERVAL = 0.5
 
 
-class PatchedMongoDBAtlasVectorSearch(MongoDBAtlasVectorSearch):
-    def bulk_embed_and_insert_texts(
-        self,
-        texts: Union[List[str], Iterable[str]],
-        metadatas: Union[List[dict], Generator[dict, Any, Any]],
-        ids: Optional[List[str]] = None,
-    ) -> List:
-        """Patched insert_texts that waits for data to be indexed before returning"""
-        ids_inserted = super().bulk_embed_and_insert_texts(texts, metadatas, ids)
-        start = monotonic()
-        while len(ids_inserted) != len(self.similarity_search("sandwich")) and (
-            monotonic() - start <= TIMEOUT
-        ):
-            sleep(INTERVAL)
-        return ids_inserted
-
-    def create_vector_search_index(
-        self,
-        dimensions: int,
-        filters: Optional[List[Dict[str, str]]] = None,
-        update: bool = False,
-    ) -> None:
-        result = super().create_vector_search_index(
-            dimensions=dimensions, filters=filters, update=update
-        )
-        start = monotonic()
-        while monotonic() - start <= TIMEOUT:
-            if indexes := list(
-                self._collection.list_search_indexes(name=self._index_name)
-            ):
-                if indexes[0].get("status") == "READY":
-                    return result
-            sleep(INTERVAL)
-
-        raise TimeoutError(f"{self._index_name} never reached 'status: READY'")
+@pytest.fixture
+def example_documents() -> List[Document]:
+    return [
+        Document(page_content="Dogs are tough.", metadata={"a": 1}),
+        Document(page_content="Cats have fluff.", metadata={"b": 1}),
+        Document(page_content="What is a sandwich?", metadata={"c": 1}),
+        Document(page_content="That fence is purple.", metadata={"d": 1, "e": 2}),
+    ]
 
 
 def _await_index_deletion(coll: Collection, index_name: str) -> None:
@@ -137,40 +109,46 @@ class TestMongoDBAtlasVectorSearch:
 
     @pytest.fixture
     def embeddings(self) -> Embeddings:
-        return ConsistentFakeEmbeddings(DIMENSIONS)
+        try:
+            from langchain_openai import OpenAIEmbeddings
 
-    def test_from_documents(self, embeddings: Embeddings, collection: Any) -> None:
+            return OpenAIEmbeddings(
+                openai_api_key=os.environ["OPENAI_API_KEY"],  # type: ignore # noqa
+                model="text-embedding-3-small",
+            )
+        except Exception:
+            return ConsistentFakeEmbeddings(DIMENSIONS)
+
+    def test_from_documents(
+        self,
+        embeddings: Embeddings,
+        collection: Any,
+        example_documents: List[Document],
+    ) -> None:
         """Test end to end construction and search."""
-        documents = [
-            Document(page_content="Dogs are tough.", metadata={"a": 1}),
-            Document(page_content="Cats have fluff.", metadata={"b": 1}),
-            Document(page_content="What is a sandwich?", metadata={"c": 1}),
-            Document(page_content="That fence is purple.", metadata={"d": 1, "e": 2}),
-        ]
         vectorstore = PatchedMongoDBAtlasVectorSearch.from_documents(
-            documents,
-            embeddings,
+            example_documents,
+            embedding=embeddings,
             collection=collection,
             index_name=INDEX_NAME,
         )
         output = vectorstore.similarity_search("Sandwich", k=1)
         assert len(output) == 1
         # Check for the presence of the metadata key
-        assert any([key.page_content == output[0].page_content for key in documents])
+        assert any(
+            [key.page_content == output[0].page_content for key in example_documents]
+        )
 
     def test_from_documents_no_embedding_return(
-        self, embeddings: Embeddings, collection: Any
+        self,
+        embeddings: Embeddings,
+        collection: Any,
+        example_documents: List[Document],
     ) -> None:
         """Test end to end construction and search."""
-        documents = [
-            Document(page_content="Dogs are tough.", metadata={"a": 1}),
-            Document(page_content="Cats have fluff.", metadata={"b": 1}),
-            Document(page_content="What is a sandwich?", metadata={"c": 1}),
-            Document(page_content="That fence is purple.", metadata={"d": 1, "e": 2}),
-        ]
         vectorstore = PatchedMongoDBAtlasVectorSearch.from_documents(
-            documents,
-            embeddings,
+            example_documents,
+            embedding=embeddings,
             collection=collection,
             index_name=INDEX_NAME,
         )
@@ -179,37 +157,38 @@ class TestMongoDBAtlasVectorSearch:
         # Check for presence of embedding in each document
         assert all(["embedding" not in key.metadata for key in output])
         # Check for the presence of the metadata key
-        assert any([key.page_content == output[0].page_content for key in documents])
+        assert any(
+            [key.page_content == output[0].page_content for key in example_documents]
+        )
 
     def test_from_documents_embedding_return(
-        self, embeddings: Embeddings, collection: Any
+        self,
+        embeddings: Embeddings,
+        collection: Any,
+        example_documents: List[Document],
     ) -> None:
         """Test end to end construction and search."""
-        documents = [
-            Document(page_content="Dogs are tough.", metadata={"a": 1}),
-            Document(page_content="Cats have fluff.", metadata={"b": 1}),
-            Document(page_content="What is a sandwich?", metadata={"c": 1}),
-            Document(page_content="That fence is purple.", metadata={"d": 1, "e": 2}),
-        ]
         vectorstore = PatchedMongoDBAtlasVectorSearch.from_documents(
-            documents,
-            embeddings,
+            example_documents,
+            embedding=embeddings,
             collection=collection,
             index_name=INDEX_NAME,
         )
-        output = vectorstore.similarity_search("Sandwich", k=1, include_embedding=True)
+        output = vectorstore.similarity_search("Sandwich", k=1, include_embeddings=True)
         assert len(output) == 1
         # Check for presence of embedding in each document
         assert all([key.metadata.get("embedding") for key in output])
         # Check for the presence of the metadata key
-        assert any([key.page_content == output[0].page_content for key in documents])
+        assert any(
+            [key.page_content == output[0].page_content for key in example_documents]
+        )
 
     def test_from_texts(
         self, embeddings: Embeddings, collection: Collection, texts: List[str]
     ) -> None:
         vectorstore = PatchedMongoDBAtlasVectorSearch.from_texts(
             texts,
-            embeddings,
+            embedding=embeddings,
             collection=collection,
             index_name=INDEX_NAME,
         )
@@ -226,7 +205,7 @@ class TestMongoDBAtlasVectorSearch:
         metakeys = ["a", "b", "c", "d", "e"]
         vectorstore = PatchedMongoDBAtlasVectorSearch.from_texts(
             texts,
-            embeddings,
+            embedding=embeddings,
             metadatas=metadatas,
             collection=collection,
             index_name=INDEX_NAME,
@@ -242,21 +221,26 @@ class TestMongoDBAtlasVectorSearch:
         metadatas = [{"a": 1}, {"b": 1}, {"c": 1}, {"d": 1, "e": 2}]
         vectorstore = PatchedMongoDBAtlasVectorSearch.from_texts(
             texts,
-            embeddings,
+            embedding=embeddings,
             metadatas=metadatas,
             collection=collection,
             index_name=INDEX_NAME,
         )
-        output = vectorstore.similarity_search(
+        does_not_match_filter = vectorstore.similarity_search(
             "Sandwich", k=1, pre_filter={"c": {"$lte": 0}}
         )
-        assert output == []
+        assert does_not_match_filter == []
+
+        matches_filter = vectorstore.similarity_search(
+            "Sandwich", k=3, pre_filter={"c": {"$gt": 0}}
+        )
+        assert len(matches_filter) == 1
 
     def test_mmr(self, embeddings: Embeddings, collection: Any) -> None:
         texts = ["foo", "foo", "fou", "foy"]
         vectorstore = PatchedMongoDBAtlasVectorSearch.from_texts(
             texts,
-            embeddings,
+            embedding=embeddings,
             collection=collection,
             index_name=INDEX_NAME,
         )
@@ -266,10 +250,57 @@ class TestMongoDBAtlasVectorSearch:
         assert output[0].page_content == "foo"
         assert output[1].page_content != "foo"
 
+    def test_retriever(
+        self,
+        embeddings: Embeddings,
+        collection: Any,
+        example_documents: List[Document],
+    ) -> None:
+        """Demonstrate usage and parity of VectorStore similarity_search
+        with Retriever.invoke."""
+        vectorstore = PatchedMongoDBAtlasVectorSearch.from_documents(
+            example_documents,
+            embedding=embeddings,
+            collection=collection,
+            index_name=INDEX_NAME,
+        )
+        query = "sandwich"
+
+        retriever_default_kwargs = vectorstore.as_retriever()
+        result_retriever = retriever_default_kwargs.invoke(query)
+        result_vectorstore = vectorstore.similarity_search(query)
+        assert all(
+            [
+                result_retriever[i].page_content == result_vectorstore[i].page_content
+                for i in range(len(result_retriever))
+            ]
+        )
+
+    def test_include_embeddings(
+        self,
+        embeddings: Embeddings,
+        collection: Any,
+        example_documents: List[Document],
+    ) -> None:
+        """Test explicitly passing vector kwarg matches default."""
+        vectorstore = PatchedMongoDBAtlasVectorSearch.from_documents(
+            documents=example_documents,
+            embedding=embeddings,
+            collection=collection,
+            index_name=INDEX_NAME,
+        )
+
+        output_with = vectorstore.similarity_search(
+            "Sandwich", include_embeddings=True, k=1
+        )
+        assert vectorstore._embedding_key in output_with[0].metadata
+        output_without = vectorstore.similarity_search("Sandwich", k=1)
+        assert vectorstore._embedding_key not in output_without[0].metadata
+
     def test_delete(
         self, embeddings: Embeddings, collection: Any, texts: List[str]
     ) -> None:
-        vectorstore = MongoDBAtlasVectorSearch(  # PatchedMongoDBAtlasVectorSearch(
+        vectorstore = PatchedMongoDBAtlasVectorSearch(
             collection=collection,
             embedding=embeddings,
             index_name=INDEX_NAME,
@@ -296,7 +327,10 @@ class TestMongoDBAtlasVectorSearch:
         collection: Collection,
         texts: List[str],
     ) -> None:
-        """Tests API of add_texts, focussing on id treatment"""
+        """Tests API of add_texts, focussing on id treatment
+
+        Warning: This is slow because of the number of cases
+        """
         metadatas: List[Dict[str, Any]] = [
             {"a": 1},
             {"b": 1},
@@ -380,7 +414,6 @@ class TestMongoDBAtlasVectorSearch:
         self,
         embeddings: Embeddings,
         collection: Collection,
-        index_name: str = INDEX_NAME,
     ) -> None:
         """Tests add_documents."""
         vectorstore = PatchedMongoDBAtlasVectorSearch(
@@ -428,13 +461,13 @@ class TestMongoDBAtlasVectorSearch:
         self, embeddings: Embeddings, index_collection: Any
     ) -> None:
         vectorstore = PatchedMongoDBAtlasVectorSearch(
-            index_collection, embeddings, index_name=INDEX_CREATION_NAME
+            index_collection, embedding=embeddings, index_name=INDEX_CREATION_NAME
         )
         vectorstore.create_vector_search_index(dimensions=1536)
 
     def test_index_update(self, embeddings: Embeddings, index_collection: Any) -> None:
         vectorstore = PatchedMongoDBAtlasVectorSearch(
-            index_collection, embeddings, index_name=INDEX_CREATION_NAME
+            index_collection, embedding=embeddings, index_name=INDEX_CREATION_NAME
         )
         vectorstore.create_vector_search_index(dimensions=1536)
         vectorstore.create_vector_search_index(dimensions=1536, update=True)

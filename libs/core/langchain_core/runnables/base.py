@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import collections
+import functools
 import inspect
 import threading
 from abc import ABC, abstractmethod
@@ -37,7 +38,6 @@ from typing import (
 from typing_extensions import Literal, get_args
 
 from langchain_core._api import beta_decorator
-from langchain_core.load.dump import dumpd
 from langchain_core.load.serializable import (
     Serializable,
     SerializedConstructor,
@@ -68,8 +68,8 @@ from langchain_core.runnables.utils import (
     Input,
     Output,
     accepts_config,
-    accepts_context,
     accepts_run_manager,
+    asyncio_accepts_context,
     create_model,
     gather_with_concurrency,
     get_function_first_arg_dict_keys,
@@ -108,8 +108,8 @@ Other = TypeVar("Other")
 class Runnable(Generic[Input, Output], ABC):
     """A unit of work that can be invoked, batched, streamed, transformed and composed.
 
-     Key Methods
-     ===========
+    Key Methods
+    ===========
 
     - **invoke/ainvoke**: Transforms a single input into an output.
     - **batch/abatch**: Efficiently transforms multiple inputs into outputs.
@@ -738,7 +738,7 @@ class Runnable(Generic[Input, Output], ABC):
                for more details. Defaults to None.
             return_exceptions: Whether to return exceptions instead of raising them.
                 Defaults to False.
-            **kwargs: Additional keyword arguments to pass to the Runnable.
+            kwargs: Additional keyword arguments to pass to the Runnable.
 
         Returns:
             A list of outputs from the Runnable.
@@ -802,7 +802,7 @@ class Runnable(Generic[Input, Output], ABC):
                for more details. Defaults to None. Defaults to None.
             return_exceptions: Whether to return exceptions instead of raising them.
                 Defaults to False.
-            **kwargs: Additional keyword arguments to pass to the Runnable.
+            kwargs: Additional keyword arguments to pass to the Runnable.
 
         Yields:
             A tuple of the index of the input and the output from the Runnable.
@@ -846,7 +846,7 @@ class Runnable(Generic[Input, Output], ABC):
         Args:
             input: The input to the Runnable.
             config: The config to use for the Runnable. Defaults to None.
-            **kwargs: Additional keyword arguments to pass to the Runnable.
+            kwargs: Additional keyword arguments to pass to the Runnable.
 
         Yields:
             The output of the Runnable.
@@ -866,7 +866,7 @@ class Runnable(Generic[Input, Output], ABC):
         Args:
             input: The input to the Runnable.
             config: The config to use for the Runnable. Defaults to None.
-            **kwargs: Additional keyword arguments to pass to the Runnable.
+            kwargs: Additional keyword arguments to pass to the Runnable.
 
         Yields:
             The output of the Runnable.
@@ -943,7 +943,7 @@ class Runnable(Generic[Input, Output], ABC):
             exclude_names: Exclude logs with these names.
             exclude_types: Exclude logs with these types.
             exclude_tags: Exclude logs with these tags.
-            **kwargs: Additional keyword arguments to pass to the Runnable.
+            kwargs: Additional keyword arguments to pass to the Runnable.
 
         Yields:
             A RunLogPatch or RunLog object.
@@ -1260,7 +1260,7 @@ class Runnable(Generic[Input, Output], ABC):
         Args:
             input: An iterator of inputs to the Runnable.
             config: The config to use for the Runnable. Defaults to None.
-            **kwargs: Additional keyword arguments to pass to the Runnable.
+            kwargs: Additional keyword arguments to pass to the Runnable.
 
         Yields:
             The output of the Runnable.
@@ -1302,7 +1302,7 @@ class Runnable(Generic[Input, Output], ABC):
         Args:
             input: An async iterator of inputs to the Runnable.
             config: The config to use for the Runnable. Defaults to None.
-            **kwargs: Additional keyword arguments to pass to the Runnable.
+            kwargs: Additional keyword arguments to pass to the Runnable.
 
         Yields:
             The output of the Runnable.
@@ -1762,6 +1762,7 @@ class Runnable(Generic[Input, Output], ABC):
         input: Input,
         config: Optional[RunnableConfig],
         run_type: Optional[str] = None,
+        serialized: Optional[Dict[str, Any]] = None,
         **kwargs: Optional[Any],
     ) -> Output:
         """Helper method to transform an Input value to an Output value,
@@ -1769,7 +1770,7 @@ class Runnable(Generic[Input, Output], ABC):
         config = ensure_config(config)
         callback_manager = get_callback_manager_for_config(config)
         run_manager = callback_manager.on_chain_start(
-            dumpd(self),
+            serialized,
             input,
             run_type=run_type,
             name=config.get("run_name") or self.get_name(),
@@ -1810,6 +1811,7 @@ class Runnable(Generic[Input, Output], ABC):
         input: Input,
         config: Optional[RunnableConfig],
         run_type: Optional[str] = None,
+        serialized: Optional[Dict[str, Any]] = None,
         **kwargs: Optional[Any],
     ) -> Output:
         """Helper method to transform an Input value to an Output value,
@@ -1817,7 +1819,7 @@ class Runnable(Generic[Input, Output], ABC):
         config = ensure_config(config)
         callback_manager = get_async_callback_manager_for_config(config)
         run_manager = await callback_manager.on_chain_start(
-            dumpd(self),
+            serialized,
             input,
             run_type=run_type,
             name=config.get("run_name") or self.get_name(),
@@ -1830,7 +1832,7 @@ class Runnable(Generic[Input, Output], ABC):
             coro = acall_func_with_variable_args(
                 func, input, config, run_manager, **kwargs
             )
-            if accepts_context(asyncio.create_task):
+            if asyncio_accepts_context():
                 output: Output = await asyncio.create_task(coro, context=context)  # type: ignore
             else:
                 output = await coro
@@ -1870,7 +1872,7 @@ class Runnable(Generic[Input, Output], ABC):
         callback_managers = [get_callback_manager_for_config(c) for c in configs]
         run_managers = [
             callback_manager.on_chain_start(
-                dumpd(self),
+                None,
                 input,
                 run_type=run_type,
                 name=config.get("run_name") or self.get_name(),
@@ -1943,7 +1945,7 @@ class Runnable(Generic[Input, Output], ABC):
         run_managers: List[AsyncCallbackManagerForChainRun] = await asyncio.gather(
             *(
                 callback_manager.on_chain_start(
-                    dumpd(self),
+                    None,
                     input,
                     run_type=run_type,
                     name=config.get("run_name") or self.get_name(),
@@ -2022,7 +2024,7 @@ class Runnable(Generic[Input, Output], ABC):
         config = ensure_config(config)
         callback_manager = get_callback_manager_for_config(config)
         run_manager = callback_manager.on_chain_start(
-            dumpd(self),
+            None,
             {"input": ""},
             run_type=run_type,
             name=config.get("run_name") or self.get_name(),
@@ -2122,7 +2124,7 @@ class Runnable(Generic[Input, Output], ABC):
         config = ensure_config(config)
         callback_manager = get_async_callback_manager_for_config(config)
         run_manager = await callback_manager.on_chain_start(
-            dumpd(self),
+            None,
             {"input": ""},
             run_type=run_type,
             name=config.get("run_name") or self.get_name(),
@@ -2156,7 +2158,7 @@ class Runnable(Generic[Input, Output], ABC):
                 iterator = iterator_
             try:
                 while True:
-                    if accepts_context(asyncio.create_task):
+                    if asyncio_accepts_context():
                         chunk: Output = await asyncio.create_task(  # type: ignore[call-arg]
                             py_anext(iterator),  # type: ignore[arg-type]
                             context=context,
@@ -2324,7 +2326,6 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
         dumped = super().to_json()
         try:
             dumped["name"] = self.get_name()
-            dumped["graph"] = self.get_graph().to_json()
         except Exception:
             pass
         return dumped
@@ -2856,7 +2857,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         callback_manager = get_callback_manager_for_config(config)
         # start the root run
         run_manager = callback_manager.on_chain_start(
-            dumpd(self),
+            None,
             input,
             name=config.get("run_name") or self.get_name(),
             run_id=config.pop("run_id", None),
@@ -2869,10 +2870,12 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                 config = patch_config(
                     config, callbacks=run_manager.get_child(f"seq:step:{i+1}")
                 )
+                context = copy_context()
+                context.run(_set_config_context, config)
                 if i == 0:
-                    input = step.invoke(input, config, **kwargs)
+                    input = context.run(step.invoke, input, config, **kwargs)
                 else:
-                    input = step.invoke(input, config)
+                    input = context.run(step.invoke, input, config)
         # finish the root run
         except BaseException as e:
             run_manager.on_chain_error(e)
@@ -2894,7 +2897,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         callback_manager = get_async_callback_manager_for_config(config)
         # start the root run
         run_manager = await callback_manager.on_chain_start(
-            dumpd(self),
+            None,
             input,
             name=config.get("run_name") or self.get_name(),
             run_id=config.pop("run_id", None),
@@ -2907,10 +2910,16 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                 config = patch_config(
                     config, callbacks=run_manager.get_child(f"seq:step:{i+1}")
                 )
+                context = copy_context()
+                context.run(_set_config_context, config)
                 if i == 0:
-                    input = await step.ainvoke(input, config, **kwargs)
+                    part = functools.partial(step.ainvoke, input, config, **kwargs)
                 else:
-                    input = await step.ainvoke(input, config)
+                    part = functools.partial(step.ainvoke, input, config)
+                if asyncio_accepts_context():
+                    input = await asyncio.create_task(part(), context=context)  # type: ignore
+                else:
+                    input = await asyncio.create_task(part())
         # finish the root run
         except BaseException as e:
             await run_manager.on_chain_error(e)
@@ -2953,7 +2962,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         # start the root runs, one per input
         run_managers = [
             cm.on_chain_start(
-                dumpd(self),
+                None,
                 input,
                 name=config.get("run_name") or self.get_name(),
                 run_id=config.pop("run_id", None),
@@ -3080,7 +3089,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         run_managers: List[AsyncCallbackManagerForChainRun] = await asyncio.gather(
             *(
                 cm.on_chain_start(
-                    dumpd(self),
+                    None,
                     input,
                     name=config.get("run_name") or self.get_name(),
                     run_id=config.pop("run_id", None),
@@ -3199,8 +3208,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             else:
                 final_pipeline = step.transform(final_pipeline, config)
 
-        for output in final_pipeline:
-            yield output
+        yield from final_pipeline
 
     async def _atransform(
         self,
@@ -3536,27 +3544,36 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         )
         # start the root run
         run_manager = callback_manager.on_chain_start(
-            dumpd(self),
+            None,
             input,
             name=config.get("run_name") or self.get_name(),
             run_id=config.pop("run_id", None),
         )
 
+        def _invoke_step(
+            step: Runnable[Input, Any], input: Input, config: RunnableConfig, key: str
+        ) -> Any:
+            child_config = patch_config(
+                config,
+                # mark each step as a child run
+                callbacks=run_manager.get_child(f"map:key:{key}"),
+            )
+            context = copy_context()
+            context.run(_set_config_context, child_config)
+            return context.run(
+                step.invoke,
+                input,
+                child_config,
+            )
+
         # gather results from all steps
         try:
             # copy to avoid issues from the caller mutating the steps during invoke()
             steps = dict(self.steps__)
+
             with get_executor_for_config(config) as executor:
                 futures = [
-                    executor.submit(
-                        step.invoke,
-                        input,
-                        # mark each step as a child run
-                        patch_config(
-                            config,
-                            callbacks=run_manager.get_child(f"map:key:{key}"),
-                        ),
-                    )
+                    executor.submit(_invoke_step, step, input, config, key)
                     for key, step in steps.items()
                 ]
                 output = {key: future.result() for key, future in zip(steps, futures)}
@@ -3579,11 +3596,27 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         callback_manager = get_async_callback_manager_for_config(config)
         # start the root run
         run_manager = await callback_manager.on_chain_start(
-            dumpd(self),
+            None,
             input,
             name=config.get("run_name") or self.get_name(),
             run_id=config.pop("run_id", None),
         )
+
+        async def _ainvoke_step(
+            step: Runnable[Input, Any], input: Input, config: RunnableConfig, key: str
+        ) -> Any:
+            child_config = patch_config(
+                config,
+                callbacks=run_manager.get_child(f"map:key:{key}"),
+            )
+            context = copy_context()
+            context.run(_set_config_context, child_config)
+            if asyncio_accepts_context():
+                return await asyncio.create_task(  # type: ignore
+                    step.ainvoke(input, child_config), context=context
+                )
+            else:
+                return await asyncio.create_task(step.ainvoke(input, child_config))
 
         # gather results from all steps
         try:
@@ -3591,12 +3624,12 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
             steps = dict(self.steps__)
             results = await asyncio.gather(
                 *(
-                    step.ainvoke(
+                    _ainvoke_step(
+                        step,
                         input,
                         # mark each step as a child run
-                        patch_config(
-                            config, callbacks=run_manager.get_child(f"map:key:{key}")
-                        ),
+                        config,
+                        key,
                     )
                     for key, step in steps.items()
                 )
@@ -3882,7 +3915,7 @@ class RunnableGenerator(Runnable[Input, Output]):
 
     @property
     def InputType(self) -> Any:
-        func = getattr(self, "_transform", None) or getattr(self, "_atransform")
+        func = getattr(self, "_transform", None) or self._atransform
         try:
             params = inspect.signature(func).parameters
             first_param = next(iter(params.values()), None)
@@ -3895,7 +3928,7 @@ class RunnableGenerator(Runnable[Input, Output]):
 
     @property
     def OutputType(self) -> Any:
-        func = getattr(self, "_transform", None) or getattr(self, "_atransform")
+        func = getattr(self, "_transform", None) or self._atransform
         try:
             sig = inspect.signature(func)
             return (
@@ -4119,7 +4152,7 @@ class RunnableLambda(Runnable[Input, Output]):
     @property
     def InputType(self) -> Any:
         """The type of the input to this Runnable."""
-        func = getattr(self, "func", None) or getattr(self, "afunc")
+        func = getattr(self, "func", None) or self.afunc
         try:
             params = inspect.signature(func).parameters
             first_param = next(iter(params.values()), None)
@@ -4141,7 +4174,7 @@ class RunnableLambda(Runnable[Input, Output]):
         Returns:
             The input schema for this Runnable.
         """
-        func = getattr(self, "func", None) or getattr(self, "afunc")
+        func = getattr(self, "func", None) or self.afunc
 
         if isinstance(func, itemgetter):
             # This is terrible, but afaict it's not possible to access _items
@@ -4179,7 +4212,7 @@ class RunnableLambda(Runnable[Input, Output]):
         Returns:
             The type of the output of this Runnable.
         """
-        func = getattr(self, "func", None) or getattr(self, "afunc")
+        func = getattr(self, "func", None) or self.afunc
         try:
             sig = inspect.signature(func)
             if sig.return_annotation != inspect.Signature.empty:
@@ -4429,7 +4462,7 @@ class RunnableLambda(Runnable[Input, Output]):
         Args:
             input: The input to this Runnable.
             config: The config to use. Defaults to None.
-            **kwargs: Additional keyword arguments.
+            kwargs: Additional keyword arguments.
 
         Returns:
             The output of this Runnable.
@@ -4461,7 +4494,7 @@ class RunnableLambda(Runnable[Input, Output]):
         Args:
             input: The input to this Runnable.
             config: The config to use. Defaults to None.
-            **kwargs: Additional keyword arguments.
+            kwargs: Additional keyword arguments.
 
         Returns:
             The output of this Runnable.
@@ -4543,13 +4576,12 @@ class RunnableLambda(Runnable[Input, Output]):
         **kwargs: Optional[Any],
     ) -> Iterator[Output]:
         if hasattr(self, "func"):
-            for output in self._transform_stream_with_config(
+            yield from self._transform_stream_with_config(
                 input,
                 self._transform,
                 self._config(config, self.func),
                 **kwargs,
-            ):
-                yield output
+            )
         else:
             raise TypeError(
                 "Cannot stream a coroutine function synchronously."
@@ -5300,12 +5332,13 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):
     `RunnableWithFallbacks`) that add additional functionality.
 
     These methods include:
-    - `bind`: Bind kwargs to pass to the underlying Runnable when running it.
-    - `with_config`: Bind config to pass to the underlying Runnable when running it.
-    - `with_listeners`:  Bind lifecycle listeners to the underlying Runnable.
-    - `with_types`: Override the input and output types of the underlying Runnable.
-    - `with_retry`: Bind a retry policy to the underlying Runnable.
-    - `with_fallbacks`: Bind a fallback policy to the underlying Runnable.
+
+    - ``bind``: Bind kwargs to pass to the underlying Runnable when running it.
+    - ``with_config``: Bind config to pass to the underlying Runnable when running it.
+    - ``with_listeners``:  Bind lifecycle listeners to the underlying Runnable.
+    - ``with_types``: Override the input and output types of the underlying Runnable.
+    - ``with_retry``: Bind a retry policy to the underlying Runnable.
+    - ``with_fallbacks``: Bind a fallback policy to the underlying Runnable.
 
     Example:
 

@@ -19,6 +19,7 @@ from typing import (
 
 import yaml
 
+from langchain_core.load import dumpd
 from langchain_core.output_parsers.base import BaseOutputParser
 from langchain_core.prompt_values import (
     ChatPromptValueConcrete,
@@ -46,7 +47,9 @@ class BasePromptTemplate(
     """A list of the names of the variables whose values are required as inputs to the 
     prompt."""
     optional_variables: List[str] = Field(default=[])
-    """A list of the names of the variables that are optional in the prompt."""
+    """optional_variables: A list of the names of the variables for placeholder
+       or MessagePlaceholder that are optional. These variables are auto inferred 
+       from the prompt and user need not provide them."""
     input_types: Dict[str, Any] = Field(default_factory=dict, exclude=True)
     """A dictionary of the types of the variables the prompt template expects.
     If not provided, all variables are assumed to be strings."""
@@ -98,8 +101,6 @@ class BasePromptTemplate(
         return True
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
     @property
@@ -129,7 +130,7 @@ class BasePromptTemplate(
             "PromptInput", **{**required_input_variables, **optional_input_variables}
         )
 
-    def _validate_input(self, inner_input: Dict) -> Dict:
+    def _validate_input(self, inner_input: Any) -> Dict:
         if not isinstance(inner_input, dict):
             if len(self.input_variables) == 1:
                 var_name = self.input_variables[0]
@@ -142,11 +143,18 @@ class BasePromptTemplate(
                 )
         missing = set(self.input_variables).difference(inner_input)
         if missing:
-            raise KeyError(
+            msg = (
                 f"Input to {self.__class__.__name__} is missing variables {missing}. "
                 f" Expected: {self.input_variables}"
                 f" Received: {list(inner_input.keys())}"
             )
+            example_key = missing.pop()
+            msg += (
+                f"\nNote: if you intended {{{example_key}}} to be part of the string"
+                " and not a variable, please escape it with double curly braces like: "
+                f"'{{{{{example_key}}}}}'."
+            )
+            raise KeyError(msg)
         return inner_input
 
     def _format_prompt_with_error_handling(self, inner_input: Dict) -> PromptValue:
@@ -181,6 +189,7 @@ class BasePromptTemplate(
             input,
             config,
             run_type="prompt",
+            serialized=dumpd(self),
         )
 
     async def ainvoke(
@@ -205,6 +214,7 @@ class BasePromptTemplate(
             input,
             config,
             run_type="prompt",
+            serialized=dumpd(self),
         )
 
     @abstractmethod
