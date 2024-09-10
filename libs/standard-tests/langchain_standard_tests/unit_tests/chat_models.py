@@ -1,4 +1,5 @@
 """Unit tests for chat models."""
+
 import os
 from abc import abstractmethod
 from typing import Any, List, Literal, Optional, Tuple, Type
@@ -187,7 +188,12 @@ class ChatModelUnitTests(ChatModelTests):
         tools = [my_adder_tool, my_adder]
 
         for pydantic_model in TEST_PYDANTIC_MODELS:
-            tools.extend([pydantic_model, pydantic_model.schema()])
+            model_schema = (
+                pydantic_model.model_json_schema()
+                if hasattr(pydantic_model, "model_json_schema")
+                else pydantic_model.schema()
+            )
+            tools.extend([pydantic_model, model_schema])
 
         # Doing a mypy ignore here since some of the tools are from pydantic
         # BaseModel 2 which isn't typed properly yet. This will need to be fixed

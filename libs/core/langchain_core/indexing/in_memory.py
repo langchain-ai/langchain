@@ -32,7 +32,7 @@ class InMemoryDocumentIndex(DocumentIndex):
         for item in items:
             if item.id is None:
                 id_ = str(uuid.uuid4())
-                item_ = item.copy()
+                item_ = item.model_copy()
                 item_.id = id_
             else:
                 item_ = item
@@ -79,4 +79,4 @@ class InMemoryDocumentIndex(DocumentIndex):
             counts_by_doc.append((document, count))
 
         counts_by_doc.sort(key=lambda x: x[1], reverse=True)
-        return [doc.copy() for doc, count in counts_by_doc[: self.top_k]]
+        return [doc.model_copy() for doc, count in counts_by_doc[: self.top_k]]

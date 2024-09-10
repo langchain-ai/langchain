@@ -122,10 +122,9 @@ def test_serializable_mapping() -> None:
             "ChatBedrock",
         ),
         ("langchain_google_genai", "chat_models", "ChatGoogleGenerativeAI"): (
-            "langchain_aws",
+            "langchain_google_genai",
             "chat_models",
-            "bedrock",
-            "ChatBedrock",
+            "ChatGoogleGenerativeAI",
         ),
     }
     serializable_modules = import_all_modules("langchain")

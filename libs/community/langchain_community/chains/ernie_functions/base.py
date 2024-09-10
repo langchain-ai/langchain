@@ -243,7 +243,7 @@ def create_ernie_fn_runnable(
                 from langchain.chains.ernie_functions import create_ernie_fn_chain
                 from langchain_community.chat_models import ErnieBotChat
                 from langchain_core.prompts import ChatPromptTemplate
-                from langchain.pydantic_v1 import BaseModel, Field
+                from pydantic import BaseModel, Field
 
 
                 class RecordPerson(BaseModel):
@@ -317,7 +317,7 @@ def create_structured_output_runnable(
             from langchain.chains.ernie_functions import create_structured_output_chain
             from langchain_community.chat_models import ErnieBotChat
             from langchain_core.prompts import ChatPromptTemplate
-            from langchain.pydantic_v1 import BaseModel, Field
+            from pydantic import BaseModel, Field
 
             class Dog(BaseModel):
                 \"\"\"Identifying information about a dog.\"\"\"
@@ -415,7 +415,7 @@ def create_ernie_fn_chain(
                 from langchain_community.chat_models import ErnieBotChat
                 from langchain_core.prompts import ChatPromptTemplate
 
-                from langchain.pydantic_v1 import BaseModel, Field
+                from pydantic import BaseModel, Field
 
 
                 class RecordPerson(BaseModel):
@@ -502,7 +502,7 @@ def create_structured_output_chain(
                 from langchain_community.chat_models import ErnieBotChat
                 from langchain_core.prompts import ChatPromptTemplate
 
-                from langchain.pydantic_v1 import BaseModel, Field
+                from pydantic import BaseModel, Field
 
                 class Dog(BaseModel):
                     \"\"\"Identifying information about a dog.\"\"\"

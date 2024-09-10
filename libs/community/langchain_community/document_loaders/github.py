@@ -6,7 +6,7 @@ from typing import Any, Callable, Dict, Iterator, List, Literal, Optional, Union
 import requests
 from langchain_core.documents import Document
 from langchain_core.utils import get_from_dict_or_env
-from pydantic import BaseModel, model_validator, validator
+from pydantic import BaseModel, field_validator, model_validator
 
 from langchain_community.document_loaders.base import BaseLoader
 
@@ -73,7 +73,8 @@ class GitHubIssuesLoader(BaseGitHubLoader):
     """Number of items per page. 
         Defaults to 30 in the GitHub API."""
 
-    @validator("since", allow_reuse=True)
+    @field_validator("since")
+    @classmethod
     def validate_since(cls, v: Optional[str]) -> Optional[str]:
         if v:
             try:

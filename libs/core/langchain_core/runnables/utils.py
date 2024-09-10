@@ -6,6 +6,7 @@ import ast
 import asyncio
 import inspect
 import textwrap
+import warnings
 from functools import lru_cache
 from inspect import signature
 from itertools import groupby
@@ -31,13 +32,14 @@ from typing import (
     cast,
 )
 
-from pydantic import BaseModel, ConfigDict, RootModel
+from pydantic import BaseModel, ConfigDict, PydanticDeprecationWarning, RootModel
 from pydantic import create_model as _create_model_base  # pydantic :ignore
 from pydantic.json_schema import (
     DEFAULT_REF_TEMPLATE,
     GenerateJsonSchema,
     JsonSchemaMode,
 )
+from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import TypeGuard
 
 from langchain_core.runnables.schema import StreamEvent
@@ -710,7 +712,7 @@ _SchemaConfig = ConfigDict(arbitrary_types_allowed=True, frozen=True)
 NO_DEFAULT = object()
 
 
-def create_base_class(
+def _create_root_model(
     name: str, type_: Any, default_: object = NO_DEFAULT
 ) -> Type[BaseModel]:
     """Create a base class."""
@@ -754,8 +756,22 @@ def create_base_class(
 
     if default_ is not NO_DEFAULT:
         base_class_attributes["root"] = default_
-    custom_root_type = type(name, (RootModel,), base_class_attributes)
+    with warnings.catch_warnings():
+        if isinstance(type_, type) and issubclass(type_, BaseModelV1):
+            warnings.filterwarnings(
+                action="ignore", category=PydanticDeprecationWarning
+            )
+        custom_root_type = type(name, (RootModel,), base_class_attributes)
     return cast(Type[BaseModel], custom_root_type)
+
+
+@lru_cache(maxsize=256)
+def _create_root_model_cached(
+    __model_name: str,
+    type_: Any,
+    default_: object = NO_DEFAULT,
+) -> Type[BaseModel]:
+    return _create_root_model(__model_name, type_, default_)
 
 
 def create_model(
@@ -782,9 +798,15 @@ def create_model(
 
         arg = field_definitions["__root__"]
         if isinstance(arg, tuple):
-            named_root_model = create_base_class(__model_name, arg[0], arg[1])
+            kwargs = {"type_": arg[0], "default_": arg[1]}
         else:
-            named_root_model = create_base_class(__model_name, arg)
+            kwargs = {"type_": arg}
+
+        try:
+            named_root_model = _create_root_model_cached(__model_name, **kwargs)
+        except TypeError:
+            # something in the arguments into _create_root_model_cached is not hashable
+            named_root_model = _create_root_model(__model_name, **kwargs)
         return named_root_model
     try:
         return _create_model_cached(__model_name, **field_definitions)

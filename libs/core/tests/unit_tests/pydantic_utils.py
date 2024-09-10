@@ -1,4 +1,6 @@
-from typing import Any
+from typing import Any, Dict
+
+from pydantic import BaseModel
 
 from langchain_core.utils.pydantic import is_basemodel_subclass
 
@@ -92,3 +94,29 @@ def _schema(obj: Any) -> dict:
     _remove_enum_description(schema_)
 
     return schema_
+
+
+def _normalize_schema(obj: Any) -> Dict[str, Any]:
+    """Generate a schema and normalize it.
+
+    This will collapse single element allOfs into $ref.
+
+    For example,
+
+    'obj': {'allOf': [{'$ref': '#/$defs/obj'}]
+
+    to:
+
+    'obj': {'$ref': '#/$defs/obj'}
+
+    Args:
+        obj: The object to generate the schema for
+    """
+    if isinstance(obj, BaseModel):
+        data = obj.model_json_schema()
+    else:
+        data = obj
+    remove_all_none_default(data)
+    replace_all_of_with_ref(data)
+    _remove_enum_description(data)
+    return data

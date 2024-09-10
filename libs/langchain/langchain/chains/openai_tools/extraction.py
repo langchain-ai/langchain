@@ -32,7 +32,7 @@ If a property is not present and is not required in the function parameters, do 
     removal="1.0",
     alternative=(
         """
-            from langchain_core.pydantic_v1 import BaseModel, Field
+            from pydantic import BaseModel, Field
             from langchain_anthropic import ChatAnthropic
     
             class Joke(BaseModel):

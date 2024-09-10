@@ -1,5 +1,3 @@
-import pytest
-
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -13,7 +11,6 @@ from langchain_core.messages import (
 from langchain_core.prompt_values import ChatPromptValueConcrete
 
 
-@pytest.mark.xfail(reason="Broken union type.")
 def test_chat_prompt_value_concrete() -> None:
     messages: list = [
         AIMessage("foo"),

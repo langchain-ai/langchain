@@ -385,6 +385,10 @@ class AmazonKendraRetriever(BaseRetriever):
     @model_validator(mode="before")
     @classmethod
     def create_client(cls, values: Dict[str, Any]) -> Any:
+        top_k = values.get("top_k")
+        if top_k is not None and top_k < 0:
+            raise ValueError(f"top_k ({top_k}) cannot be negative.")
+
         if values.get("client") is not None:
             return values
 

@@ -195,20 +195,14 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     """  # noqa: E501
 
-    # TODO(0.3): Figure out how to re-apply deprecated decorator
-    # callback_manager: Optional[BaseCallbackManager] = deprecated(
-    #     name="callback_manager", since="0.1.7", removal="1.0", alternative="callbacks"
-    # )(
-    #     Field(
-    #         default=None,
-    #         exclude=True,
-    #         description="Callback manager to add to the run trace.",
-    #     )
-    # )
-    callback_manager: Optional[BaseCallbackManager] = Field(
-        default=None,
-        exclude=True,
-        description="Callback manager to add to the run trace.",
+    callback_manager: Optional[BaseCallbackManager] = deprecated(
+        name="callback_manager", since="0.1.7", removal="1.0", alternative="callbacks"
+    )(
+        Field(
+            default=None,
+            exclude=True,
+            description="Callback manager to add to the run trace.",
+        )
     )
 
     rate_limiter: Optional[BaseRateLimiter] = Field(default=None, exclude=True)
@@ -1180,7 +1174,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         Example: Pydantic schema (include_raw=False):
             .. code-block:: python
 
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
 
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
@@ -1200,7 +1194,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         Example: Pydantic schema (include_raw=True):
             .. code-block:: python
 
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
 
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
@@ -1220,7 +1214,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         Example: Dict schema (include_raw=False):
             .. code-block:: python
 
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
                 from langchain_core.utils.function_calling import convert_to_openai_tool
 
                 class AnswerWithJustification(BaseModel):

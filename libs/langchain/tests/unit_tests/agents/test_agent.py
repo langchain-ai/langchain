@@ -799,10 +799,10 @@ def _recursive_dump(obj: Any) -> Any:
     if hasattr(obj, "dict"):
         # if the object contains an ID field, we'll remove it for testing purposes
         if hasattr(obj, "id"):
-            d = obj.dict()
+            d = obj.model_dump()
             d.pop("id")
             return _recursive_dump(d)
-        return _recursive_dump(obj.dict())
+        return _recursive_dump(obj.model_dump())
     return obj
 
 
