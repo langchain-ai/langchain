@@ -15,7 +15,7 @@
     :member-order: groupwise
     :show-inheritance: True
     :special-members: __call__
-    :exclude-members: construct, copy, dict, from_orm, parse_file, parse_obj, parse_raw, schema, schema_json, update_forward_refs, validate, json, is_lc_serializable, to_json_not_implemented, lc_secrets, lc_attributes, lc_id, get_lc_namespace, astream_log, transform, atransform, get_output_schema, get_prompts, config_schema, map, pick, pipe, with_listeners, with_alisteners, with_config, with_fallbacks, with_types, with_retry, InputType, OutputType, config_specs, output_schema, get_input_schema, get_graph, get_name, input_schema, name, bind, assign, as_tool
+    :exclude-members: construct, copy, dict, from_orm, parse_file, parse_obj, parse_raw, schema, schema_json, update_forward_refs, validate, json, is_lc_serializable, to_json_not_implemented, lc_secrets, lc_attributes, lc_id, get_lc_namespace, astream_log, transform, atransform, get_output_schema, get_prompts, config_schema, map, pick, pipe, with_listeners, with_alisteners, with_config, with_fallbacks, with_types, with_retry, InputType, OutputType, config_specs, output_schema, get_input_schema, get_graph, get_name, input_schema, name, bind, assign, as_tool, get_config_jsonschema, get_input_jsonschema, get_output_jsonschema, model_construct, model_copy, model_dump, model_dump_json, model_parametrized_name, model_post_init, model_rebuild, model_validate, model_validate_json, model_validate_strings, to_json, model_extra, model_fields_set, model_json_schema
 
     .. NOTE:: {{objname}} implements the standard :py:class:`Runnable Interface <langchain_core.runnables.base.Runnable>`. 🏃
 
