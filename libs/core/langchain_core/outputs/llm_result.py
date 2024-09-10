@@ -48,6 +48,9 @@ class LLMResult(BaseModel):
     run: Optional[List[RunInfo]] = None
     """List of metadata info for model call for each input."""
 
+    type: Literal["LLMResult"] = "LLMResult"  # type: ignore[assignment]
+    """Type is used exclusively for serialization purposes."""
+
     def flatten(self) -> List[LLMResult]:
         """Flatten generations into a single list.
 
