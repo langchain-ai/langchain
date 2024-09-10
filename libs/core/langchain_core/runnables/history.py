@@ -257,7 +257,6 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         output_messages_key: Optional[str] = None,
         history_messages_key: Optional[str] = None,
         history_factory_config: Optional[Sequence[ConfigurableFieldSpec]] = None,
-        name: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize RunnableWithMessageHistory.
@@ -362,7 +361,6 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             bound=bound,
             history_messages_key=history_messages_key,
             history_factory_config=_config_specs,
-            name=name or "RunnableWithMessageHistory",
             **kwargs,
         )
         self._history_chain = history_chain
