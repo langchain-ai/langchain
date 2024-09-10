@@ -155,7 +155,7 @@ class Aerospike(VectorStore):
     def add_texts(
         self,
         texts: Iterable[str],
-        labels: Optional[List[dict[str, str]]] = None,
+        metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         set_name: Optional[str] = None,
         embedding_chunk_size: int = 1000,
@@ -168,7 +168,7 @@ class Aerospike(VectorStore):
 
         Args:
             texts: Iterable of strings to add to the vectorstore.
-            labels: Optional list of labels associated with the texts.
+            metadatas: Optional list of metadata associated with the texts.
             ids: Optional list of ids to associate with the texts.
             set_name: Optional aerospike set name to add the texts to.
             batch_size: Batch size to use when adding the texts to the vectorstore.
@@ -197,24 +197,22 @@ class Aerospike(VectorStore):
         ids = ids or [str(uuid.uuid4()) for _ in texts]
 
         # We need to shallow copy so that we can add the vector and text keys
-        if labels:
-            labels = [m.copy() for m in labels]
+        if metadatas:
+            metadatas = [m.copy() for m in metadatas]
         else:
-            labels = labels or [{} for _ in texts]
+            metadatas = metadatas or [{} for _ in texts]
 
         for i in range(0, len(texts), embedding_chunk_size):
             chunk_texts = texts[i : i + embedding_chunk_size]
             chunk_ids = ids[i : i + embedding_chunk_size]
-            chunk_labels = labels[i : i + embedding_chunk_size]
+            chunk_metadatas = metadatas[i : i + embedding_chunk_size]
             embeddings = self._embed_documents(chunk_texts)
 
-            for metadata, embedding, text in zip(
-                chunk_labels, embeddings, chunk_texts
-            ):
+            for metadata, embedding, text in zip(chunk_metadatas, embeddings, chunk_texts):
                 metadata[self._vector_key] = embedding
                 metadata[self._text_key] = text
 
-            for id, metadata in zip(chunk_ids, chunk_labels):
+            for id, metadata in zip(chunk_ids, chunk_metadatas):
                 metadata[self._id_key] = id
                 self._client.upsert(
                     namespace=self._namespace,
@@ -545,7 +543,7 @@ class Aerospike(VectorStore):
         cls,
         texts: List[str],
         embedding: Embeddings,
-        labels: Optional[List[dict]] = None,
+        metadatas: Optional[List[dict]] = None,
         client: Client = None,
         namespace: str = "test",
         index_name: Optional[str] = None,
@@ -589,7 +587,7 @@ class Aerospike(VectorStore):
 
         aerospike.add_texts(
             texts,
-            labels=labels,
+            metadatas=metadatas,
             ids=ids,
             index_name=index_name,
             embedding_chunk_size=embeddings_chunk_size,
