@@ -205,10 +205,9 @@ def test_init_with_multiple_data_sources(mock_database_config, mock_create_mind,
 
 
 @pytest.mark.requires("mindsdb_sdk")
-@pytest.mark.parametrize("data_source_key", ["postgres", "mysql", "mariadb", "clickhouse", "snowflake", "bigquery"])
 @patch("mindsdb_sdk.utils.mind.create_mind")
 @patch("mindsdb_sdk.utils.mind.DatabaseConfig")
-def test_run_with_multiple_data_sources(mock_database_config, mock_create_mind, data_source_key, data_source_configs):
+def test_run_with_multiple_data_sources(mock_database_config, mock_create_mind, data_source_configs):
     ai_data_mind_config = {
         "name": "dummy_mind",
         "mindsdb_api_key": "dummy_key",
