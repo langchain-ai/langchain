@@ -155,7 +155,7 @@ class Aerospike(VectorStore):
     def add_texts(
         self,
         texts: Iterable[str],
-        metadata: Optional[List[dict]] = None,
+        metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         set_name: Optional[str] = None,
         embedding_chunk_size: int = 1000,
@@ -197,15 +197,15 @@ class Aerospike(VectorStore):
         ids = ids or [str(uuid.uuid4()) for _ in texts]
 
         # We need to shallow copy so that we can add the vector and text keys
-        if metadata:
-            metadata = [m.copy() for m in metadata]
+        if metadatas:
+            metadatas = [m.copy() for m in metadatas]
         else:
-            metadata = metadata or [{} for _ in texts]
+            metadatas = metadatas or [{} for _ in texts]
 
         for i in range(0, len(texts), embedding_chunk_size):
             chunk_texts = texts[i : i + embedding_chunk_size]
             chunk_ids = ids[i : i + embedding_chunk_size]
-            chunk_metadatas = metadata[i : i + embedding_chunk_size]
+            chunk_metadatas = metadatas[i : i + embedding_chunk_size]
             embeddings = self._embed_documents(chunk_texts)
 
             for metadata, embedding, text in zip(
@@ -589,7 +589,7 @@ class Aerospike(VectorStore):
 
         aerospike.add_texts(
             texts,
-            metadata=metadatas,
+            metadatas=metadatas,
             ids=ids,
             index_name=index_name,
             embedding_chunk_size=embeddings_chunk_size,
