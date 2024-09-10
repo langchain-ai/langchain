@@ -1,16 +1,18 @@
 from __future__ import annotations
 
+from concurrent.futures import FIRST_COMPLETED, wait
+
 import asyncio
 import collections
 import functools
 import inspect
 import threading
 from abc import ABC, abstractmethod
-from concurrent.futures import FIRST_COMPLETED, wait
 from contextvars import copy_context
 from functools import wraps
 from itertools import groupby, tee
 from operator import itemgetter
+from pydantic import BaseModel, ConfigDict, Field, RootModel
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -34,8 +36,6 @@ from typing import (
     cast,
     overload,
 )
-
-from pydantic import BaseModel, ConfigDict, Field, RootModel
 from typing_extensions import Literal, get_args, get_type_hints
 
 from langchain_core._api import beta_decorator
@@ -348,6 +348,13 @@ class Runnable(Generic[Input, Output], ABC):
         return create_model(
             self.get_name("Input"),
             __root__=root_type,
+            # create model needs access to appropriate type annotations to be
+            # able to construct the pydantic model.
+            # When we create the model, we pass information about the namespace
+            # where the model is being created, so the type annotations can
+            # be resolved correctly as well.
+            # self.__class__.__module__ handles the case when the Runnable is
+            # being sub-classed in a different module.
             __module_name=self.__class__.__module__,
         )
 
@@ -409,6 +416,13 @@ class Runnable(Generic[Input, Output], ABC):
         return create_model(
             self.get_name("Output"),
             __root__=root_type,
+            # create model needs access to appropriate type annotations to be
+            # able to construct the pydantic model.
+            # When we create the model, we pass information about the namespace
+            # where the model is being created, so the type annotations can
+            # be resolved correctly as well.
+            # self.__class__.__module__ handles the case when the Runnable is
+            # being sub-classed in a different module.
             __module_name=self.__class__.__module__,
         )
 
@@ -4066,6 +4080,9 @@ class RunnableGenerator(Runnable[Input, Output]):
         return create_model(
             self.get_name("Input"),
             __root__=root_type,
+            # To create the schema, we need to provide the module
+            # where the underlying function is defined.
+            # This allows pydantic to resolve type annotations appropriately.
             __module_name=module,
         )
 
@@ -4098,6 +4115,9 @@ class RunnableGenerator(Runnable[Input, Output]):
         return create_model(
             self.get_name("Output"),
             __root__=root_type,
+            # To create the schema, we need to provide the module
+            # where the underlying function is defined.
+            # This allows pydantic to resolve type annotations appropriately.
             __module_name=module,
         )
 
@@ -4353,6 +4373,9 @@ class RunnableLambda(Runnable[Input, Output]):
                 return create_model(
                     self.get_name("Input"),
                     __root__=List[Any],
+                    # To create the schema, we need to provide the module
+                    # where the underlying function is defined.
+                    # This allows pydantic to resolve type annotations appropriately.
                     __module_name=module,
                 )
 
@@ -4406,6 +4429,9 @@ class RunnableLambda(Runnable[Input, Output]):
         return create_model(
             self.get_name("Output"),
             __root__=root_type,
+            # To create the schema, we need to provide the module
+            # where the underlying function is defined.
+            # This allows pydantic to resolve type annotations appropriately.
             __module_name=module,
         )
 
@@ -4926,6 +4952,13 @@ class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
                 List[self.bound.get_input_schema(config)],  # type: ignore
                 None,
             ),
+            # create model needs access to appropriate type annotations to be
+            # able to construct the pydantic model.
+            # When we create the model, we pass information about the namespace
+            # where the model is being created, so the type annotations can
+            # be resolved correctly as well.
+            # self.__class__.__module__ handles the case when the Runnable is
+            # being sub-classed in a different module.
             __module_name=self.__class__.__module__,
         )
 
@@ -4940,6 +4973,13 @@ class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
         return create_model(
             self.get_name("Output"),
             __root__=List[schema],  # type: ignore[valid-type]
+            # create model needs access to appropriate type annotations to be
+            # able to construct the pydantic model.
+            # When we create the model, we pass information about the namespace
+            # where the model is being created, so the type annotations can
+            # be resolved correctly as well.
+            # self.__class__.__module__ handles the case when the Runnable is
+            # being sub-classed in a different module.
             __module_name=self.__class__.__module__,
         )
 
