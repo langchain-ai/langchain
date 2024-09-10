@@ -2,11 +2,11 @@
 
 from typing import Type
 
+import pytest
 from langchain_core.language_models import BaseChatModel
 from langchain_standard_tests.integration_tests import ChatModelIntegrationTests
-import pytest
 
-from langchain_huggingface import ChatHuggingFace, HuggingFaceEndpoint, HuggingFacePipeline
+from langchain_huggingface import ChatHuggingFace, HuggingFaceEndpoint
 
 
 class TestHuggingFaceEndpoint(ChatModelIntegrationTests):
@@ -20,14 +20,14 @@ class TestHuggingFaceEndpoint(ChatModelIntegrationTests):
 
     @pytest.fixture
     def model(self) -> BaseChatModel:
-        llm = HuggingFaceEndpoint(
+        llm = HuggingFaceEndpoint(  # type: ignore[call-arg]
             repo_id="HuggingFaceH4/zephyr-7b-beta",
             task="text-generation",
             max_new_tokens=512,
             do_sample=False,
             repetition_penalty=1.03,
         )
-        return self.chat_model_class(llm=llm)
+        return self.chat_model_class(llm=llm)  # type: ignore[call-arg]
 
     @pytest.mark.xfail(reason=("Not implemented"))
     def test_stream(self, model: BaseChatModel) -> None:
@@ -68,11 +68,11 @@ class TestHuggingFaceEndpoint(ChatModelIntegrationTests):
     @pytest.mark.xfail(reason=("Not implemented"))
     def test_structured_output_pydantic_2_v1(self, model: BaseChatModel) -> None:
         super().test_structured_output_pydantic_2_v1(model)
-    
+
     @pytest.mark.xfail(reason=("Not implemented"))
     def test_tool_message_histories_list_content(self, model: BaseChatModel) -> None:
         super().test_tool_message_histories_list_content(model)
-    
+
     @pytest.mark.xfail(reason=("Not implemented"))
     def test_structured_few_shot_examples(self, model: BaseChatModel) -> None:
         super().test_structured_few_shot_examples(model)
