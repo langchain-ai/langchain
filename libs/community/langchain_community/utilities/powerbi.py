@@ -53,7 +53,7 @@ class PowerBIDataset(BaseModel):
     @classmethod
     def validate_params(cls, values: Dict[str, Any]) -> Any:
         """Validate that at least one of token and credentials is present."""
-        table_names = values.get("table_names")
+        table_names = values.get("table_names", [])
         values["table_names"] = [fix_table_name(table) for table in table_names]
         if "token" in values or "credential" in values:
             return values

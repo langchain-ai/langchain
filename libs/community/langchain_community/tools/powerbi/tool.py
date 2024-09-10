@@ -49,7 +49,7 @@ class QueryPowerBITool(BaseTool):
         cls, values: dict
     ) -> dict:
         """Make sure the LLM chain has the correct input variables."""
-        llm_chain = values.get("llm_chain")
+        llm_chain = values["llm_chain"]
         for var in llm_chain.prompt.input_variables:
             if var not in ["tool_input", "tables", "schemas", "examples"]:
                 raise ValueError(
