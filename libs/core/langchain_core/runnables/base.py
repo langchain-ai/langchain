@@ -2364,7 +2364,7 @@ class Runnable(Generic[Input, Output], ABC):
         .. code-block:: python
 
             from typing import Any, Dict, List
-            from langchain_core.pydantic_v1 import BaseModel, Field
+            from pydantic import BaseModel, Field
             from langchain_core.runnables import RunnableLambda
 
             def f(x: Dict[str, Any]) -> str:
