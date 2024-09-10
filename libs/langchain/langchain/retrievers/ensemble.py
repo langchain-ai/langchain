@@ -24,7 +24,6 @@ from langchain_core.callbacks import (
     CallbackManagerForRetrieverRun,
 )
 from langchain_core.documents import Document
-from langchain_core.load.dump import dumpd
 from langchain_core.pydantic_v1 import root_validator
 from langchain_core.retrievers import BaseRetriever, RetrieverLike
 from langchain_core.runnables import RunnableConfig
@@ -106,9 +105,9 @@ class EnsembleRetriever(BaseRetriever):
             local_metadata=self.metadata,
         )
         run_manager = callback_manager.on_retriever_start(
-            dumpd(self),
+            None,
             input,
-            name=config.get("run_name"),
+            name=config.get("run_name") or self.get_name(),
             **kwargs,
         )
         try:
@@ -139,9 +138,9 @@ class EnsembleRetriever(BaseRetriever):
             local_metadata=self.metadata,
         )
         run_manager = await callback_manager.on_retriever_start(
-            dumpd(self),
+            None,
             input,
-            name=config.get("run_name"),
+            name=config.get("run_name") or self.get_name(),
             **kwargs,
         )
         try:
