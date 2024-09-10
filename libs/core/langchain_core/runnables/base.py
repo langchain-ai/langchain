@@ -1094,7 +1094,6 @@ class Runnable(Generic[Input, Output], ABC):
         ):
             yield item
 
-    @beta_decorator.beta(message="This API is in beta and may change in the future.")
     async def astream_events(
         self,
         input: Any,
