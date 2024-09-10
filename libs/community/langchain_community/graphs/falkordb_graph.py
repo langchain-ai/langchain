@@ -199,3 +199,7 @@ class FalkorDBGraph(GraphStore):
                     ),
                     {"properties": rel.properties},
                 )
+                
+    def switch_graph(self, graph_name: str) -> None:
+        """Switch to the given graph name."""
+        self._graph = self._driver.select_graph(graph_name)
