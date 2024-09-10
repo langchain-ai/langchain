@@ -990,18 +990,13 @@ def test_tool_message_content() -> None:
     ToolMessage(["foo"], tool_call_id="1")
     ToolMessage([{"foo": "bar"}], tool_call_id="1")
 
-    # Pydantic automatically handles tuple->list coercion.
-    ToolMessage(("a", "b", "c"), tool_call_id="1")  # type: ignore[arg-type]
-
-    # Currently we only handle int,float->str coercion manually.
+    assert ToolMessage(("a", "b", "c"), tool_call_id="1").content == ["a", "b", "c"]  # type: ignore[arg-type]
     assert ToolMessage(5, tool_call_id="1").content == "5"  # type: ignore[arg-type]
     assert ToolMessage(5.1, tool_call_id="1").content == "5.1"  # type: ignore[arg-type]
-
-    with pytest.raises(ValidationError):
-        ToolMessage({"foo": "bar"}, tool_call_id="1")  # type: ignore[arg-type]
-
-    with pytest.raises(ValidationError):
-        ToolMessage(Document("foo"), tool_call_id="1")  # type: ignore[arg-type]
+    assert ToolMessage({"foo": "bar"}, tool_call_id="1").content == "{'foo': 'bar'}"  # type: ignore[arg-type]
+    assert (
+        ToolMessage(Document("foo"), tool_call_id="1").content == "page_content='foo'"  # type: ignore[arg-type]
+    )
 
 
 def test_tool_message_tool_call_id() -> None:
