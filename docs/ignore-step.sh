@@ -9,12 +9,6 @@ if [ "$VERCEL_ENV" == "production" ] || [ "$VERCEL_GIT_COMMIT_REF" == "master" ]
     exit 1; 
 fi 
 
-# TODO: remove this for v0.3 launch
-# exit 0 if git commit ref is v0.3rc
-echo "🛑 v0.3rc build is ignored currently"
-exit 0; 
-# end TODO
-
 
 echo "Checking for changes in docs/"
 echo "---"
