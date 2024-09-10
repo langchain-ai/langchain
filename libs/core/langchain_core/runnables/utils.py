@@ -43,7 +43,6 @@ from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import TypeGuard
 
 from langchain_core.runnables.schema import StreamEvent
-from langchain_core.utils.pydantic import _IgnoreUnserializable
 
 Input = TypeVar("Input", contravariant=True)
 # Output type should implement __concat__, as eg str, list, dict do
@@ -737,8 +736,7 @@ def _create_root_model(
         cls: Type[BaseModel],
         by_alias: bool = True,
         ref_template: str = DEFAULT_REF_TEMPLATE,
-        # Using a default schema generator that ignores unserializable types
-        schema_generator: type[GenerateJsonSchema] = _IgnoreUnserializable,
+        schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
         mode: JsonSchemaMode = "validation",
     ) -> Dict[str, Any]:
         # Complains about model_json_schema not being defined in superclass

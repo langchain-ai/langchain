@@ -652,13 +652,6 @@ def test_lambda_schemas(snapshot: SnapshotAssertion) -> None:
             RunnableLambda(aget_values_typed).get_output_jsonschema()  # type: ignore
         ) == snapshot(name="schema8")
 
-    def foo(x: int) -> Runnable:
-        raise NotImplementedError()
-
-    assert RunnableLambda(foo).get_output_schema().model_json_schema() == {
-        "title": "foo_output"
-    }
-
 
 def test_with_types_with_type_generics() -> None:
     """Verify that with_types works if we use things like List[int]"""

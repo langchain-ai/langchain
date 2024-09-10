@@ -482,7 +482,10 @@ def test_get_output_schema() -> None:
         output_messages_key="output",
     )
     output_type = with_history.get_output_schema()
-    assert _schema(output_type) == {"title": "_call_runnable_sync_output"}
+    assert _schema(output_type) == {
+        "title": "RunnableWithMessageHistoryOutput",
+        "type": "object",
+    }
 
 
 def test_get_input_schema_input_messages() -> None:
