@@ -241,7 +241,7 @@ def init_chat_model(
 
             # pip install langchain langchain-openai langchain-anthropic
             from langchain.chat_models import init_chat_model
-            from langchain_core.pydantic_v1 import BaseModel, Field
+            from pydantic import BaseModel, Field
 
             class GetWeather(BaseModel):
                 '''Get the current weather in a given location'''
