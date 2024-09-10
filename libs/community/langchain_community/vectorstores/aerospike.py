@@ -205,16 +205,16 @@ class Aerospike(VectorStore):
         for i in range(0, len(texts), embedding_chunk_size):
             chunk_texts = texts[i : i + embedding_chunk_size]
             chunk_ids = ids[i : i + embedding_chunk_size]
-            chunk_metadata = metadatas[i : i + embedding_chunk_size]
+            chunk_metadatas = metadatas[i : i + embedding_chunk_size]
             embeddings = self._embed_documents(chunk_texts)
 
             for metadatas, embedding, text in zip(
-                chunk_metadata, embeddings, chunk_texts
+                chunk_metadatas, embeddings, chunk_texts
             ):
                 metadatas[self._vector_key] = embedding
                 metadatas[self._text_key] = text
 
-            for id, metadatas in zip(chunk_ids, chunk_metadata):
+            for id, metadatas in zip(chunk_ids, chunk_metadatas):
                 metadatas[self._id_key] = id
                 self._client.upsert(
                     namespace=self._namespace,
