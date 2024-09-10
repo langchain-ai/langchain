@@ -6,6 +6,8 @@ from langchain_core.pydantic_v1 import SecretStr
 from langchain_community.utilities.mindsdb.ai_data_mind.ai_data_mind_wrapper import AIDataMindWrapper
 from langchain_community.utilities.mindsdb.base_mind_wrapper import DEFAULT_API_BASE, DEFAULT_MODEL
 
+DATA_SOURCES = ["postgres", "mysql", "mariadb", "clickhouse", "snowflake", "bigquery"]
+
 
 @pytest.fixture
 def data_source_configs():
@@ -91,7 +93,7 @@ def data_source_configs():
 
 
 @pytest.mark.requires("mindsdb_sdk")
-@pytest.mark.parametrize("data_source_key", ["postgres", "mysql", "mariadb", "clickhouse", "snowflake", "bigquery"])
+@pytest.mark.parametrize("data_source_key", DATA_SOURCES)
 @patch("mindsdb_sdk.utils.mind.create_mind")
 @patch("mindsdb_sdk.utils.mind.DatabaseConfig")
 def test_init_with_single_data_source(mock_database_config, mock_create_mind, data_source_key, data_source_configs):
@@ -121,7 +123,7 @@ def test_init_with_single_data_source(mock_database_config, mock_create_mind, da
 
 
 @pytest.mark.requires("mindsdb_sdk")
-@pytest.mark.parametrize("data_source_key", ["postgres", "mysql", "mariadb", "clickhouse", "snowflake", "bigquery"])
+@pytest.mark.parametrize("data_source_key", DATA_SOURCES)
 @patch("mindsdb_sdk.utils.mind.create_mind")
 @patch("mindsdb_sdk.utils.mind.DatabaseConfig")
 def test_run_with_single_data_source(mock_database_config, mock_create_mind, data_source_key, data_source_configs):
