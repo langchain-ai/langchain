@@ -50,9 +50,7 @@ class MoonshotCommon(BaseModel):
     temperature: float = 0.3
     """Temperature parameter (higher values make the model more creative)."""
 
-    model_config = ConfigDict(
-        populate_by_name=True,
-    )
+    model_config = ConfigDict(populate_by_name=True, protected_namespaces=())
 
     @property
     def lc_secrets(self) -> dict:

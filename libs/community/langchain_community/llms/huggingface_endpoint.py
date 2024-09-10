@@ -120,8 +120,8 @@ class HuggingFaceEndpoint(LLM):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `call` not explicitly specified"""
     model: str
-    client: Any
-    async_client: Any
+    client: Any = None
+    async_client: Any = None
     task: Optional[str] = None
     """Task to call the model with.
     Should be a task that returns `generated_text` or `summary_text`."""

@@ -53,6 +53,7 @@ class SolarCommon(BaseModel):
         populate_by_name=True,
         arbitrary_types_allowed=True,
         extra="ignore",
+        protected_namespaces=(),
     )
 
     @property
