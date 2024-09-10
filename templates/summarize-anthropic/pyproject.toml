@@ -1,7 +1,7 @@
 
 [tool.poetry]
 name = "summarize-anthropic"
-version = "0.1.0"
+version = "0.1.0post1"
 description = "This template uses Anthropic's `Claude2` to summarize long documents."
 authors = ["Lance Martin <lance@langchain.dev>"]
 readme = "README.md"
@@ -10,14 +10,14 @@ readme = "README.md"
 python = ">=3.8.1,<4.0"
 gigachain = "^0.1"
 langchainhub = ">=0.1.13"
-gigachain-anthropic = "^0.1.4"
+gigachain-anthropic = "^0.1.23"
 
 [tool.poetry.group.dev.dependencies]
 gigachain-cli = ">=0.0.21"
 
 [tool.templates-hub]
 use-case = "summarization"
-author = "LangChain"
+author = "LangChain, GigaChain"
 integrations = ["Anthropic"]
 tags = ["summarization"]
 

@@ -118,13 +118,13 @@ def new(
     if has_packages:
         add(package, project_dir=destination_dir, pip=pip_bool)
 
-    typer.echo(f'\n\nSuccess! Created a new LangChain app under "./{app_name}"!\n\n')
+    typer.echo(f'\n\nSuccess! Created a new GigaChain app under "./{app_name}"!\n\n')
     typer.echo("Next, enter your new app directory by running:\n")
     typer.echo(f"    cd ./{app_name}\n")
     typer.echo("Then add templates with commands like:\n")
-    typer.echo("    langchain app add extraction-openai-functions")
+    typer.echo("    gigachain app add extraction-openai-functions")
     typer.echo(
-        "    langchain app add git+ssh://git@github.com/efriis/simple-pirate.git\n\n"
+        "    gigachain app add git+ssh://git@github.com/efriis/simple-pirate.git\n\n"
     )
 
 
