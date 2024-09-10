@@ -208,7 +208,9 @@ class Aerospike(VectorStore):
             chunk_metadatas = metadatas[i : i + embedding_chunk_size]
             embeddings = self._embed_documents(chunk_texts)
 
-            for metadata, embedding, text in zip(chunk_metadatas, embeddings, chunk_texts):
+            for metadata, embedding, text in zip(
+                chunk_metadatas, embeddings, chunk_texts
+            ):
                 metadata[self._vector_key] = embedding
                 metadata[self._text_key] = text
 
