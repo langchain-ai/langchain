@@ -2075,6 +2075,7 @@ async def test_prompt_with_llm(
                     ],
                     "llm_output": None,
                     "run": None,
+                    "type": "LLMResult",
                 },
             },
             {
@@ -2288,6 +2289,7 @@ async def test_prompt_with_llm_parser(
                     ],
                     "llm_output": None,
                     "run": None,
+                    "type": "LLMResult",
                 },
             },
             {
