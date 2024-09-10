@@ -715,8 +715,8 @@ NO_DEFAULT = object()
 def _create_root_model(
     name: str,
     type_: Any,
+    module_name: Optional[str] = None,
     default_: object = NO_DEFAULT,
-    __module_name: Optional[str] = None,
 ) -> Type[BaseModel]:
     """Create a base class."""
 
@@ -754,7 +754,7 @@ def _create_root_model(
         "model_config": ConfigDict(arbitrary_types_allowed=True),
         "schema": classmethod(schema),
         "model_json_schema": classmethod(model_json_schema),
-        "__module__": __module_name or "langchain_core.runnables.utils",
+        "__module__": module_name or "langchain_core.runnables.utils",
     }
 
     if default_ is not NO_DEFAULT:
@@ -773,10 +773,10 @@ def _create_root_model_cached(
     __model_name: str,
     type_: Any,
     default_: object = NO_DEFAULT,
-    __module_name: Optional[str] = None,
+    module_name: Optional[str] = None,
 ) -> Type[BaseModel]:
     return _create_root_model(
-        __model_name, type_, default_=default_, __module_name=__module_name
+        __model_name, type_, default_=default_, module_name=module_name
     )
 
 
@@ -789,6 +789,8 @@ def create_model(
 
     Args:
         __model_name: The name of the model.
+        __module_name: The name of the module where the model is defined.
+            This is used by Pydantic to resolve any forward references.
         **field_definitions: The field definitions for the model.
 
     Returns:
@@ -811,12 +813,14 @@ def create_model(
 
         try:
             named_root_model = _create_root_model_cached(
-                __model_name, __module_name=__module_name, **kwargs
+                __model_name, module_name=__module_name, **kwargs
             )
         except TypeError:
             # something in the arguments into _create_root_model_cached is not hashable
             named_root_model = _create_root_model(
-                __model_name, __module_name=__module_name, **kwargs
+                __model_name,
+                module_name=__module_name,
+                **kwargs,
             )
         return named_root_model
     try:
