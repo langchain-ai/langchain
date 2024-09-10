@@ -393,7 +393,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         else:
             fields["__root__"] = (Sequence[BaseMessage], ...)
         return create_model(  # type: ignore[call-overload]
-            self.get_name("Input"),
+            "RunnableWithMessageHistoryInput",
             **fields,
         )
 
