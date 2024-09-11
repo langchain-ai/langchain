@@ -323,17 +323,20 @@ def test_structured_tool_types_parsed_pydantic_v1() -> None:
     class SomeBaseModel(BaseModelV1):
         foo: str
 
+    class AnotherBaseModel(BaseModelV1):
+        bar: str
+
     @tool
-    def structured_tool(some_base_model: SomeBaseModel) -> dict:
+    def structured_tool(some_base_model: SomeBaseModel) -> AnotherBaseModel:
         """Return the arguments directly."""
-        return {"some_base_model": some_base_model}
+        return AnotherBaseModel(bar=some_base_model.foo)
 
     assert isinstance(structured_tool, StructuredTool)
 
-    expected = {"some_base_model": SomeBaseModel(foo="bar")}
+    expected = AnotherBaseModel(bar="baz")
     for arg in [
-        SomeBaseModel(foo="bar"),
-        SomeBaseModel(foo="bar").dict(),
+        SomeBaseModel(foo="baz"),
+        SomeBaseModel(foo="baz").dict(),
     ]:
         args = {"some_base_model": arg}
         result = structured_tool.run(args)
