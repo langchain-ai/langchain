@@ -2,15 +2,12 @@
 
 import inspect
 import json
-import pytest
 import sys
 import textwrap
 import threading
 from datetime import datetime
 from enum import Enum
 from functools import partial
-from pydantic import BaseModel, Field, ValidationError
-from pydantic import BaseModel as BaseModelProper
 from typing import (
     Any,
     Callable,
@@ -23,6 +20,10 @@ from typing import (
     Type,
     Union,
 )
+
+import pytest
+from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel as BaseModelProper
 from typing_extensions import Annotated, TypedDict, TypeVar
 
 from langchain_core import tools
