@@ -874,8 +874,8 @@ def test_chat_prompt_template() -> None:
     from langchain_core.prompts import ChatPromptTemplate
 
     with pytest.warns(None) as record:
-        prompt = ChatPromptTemplate([("system", "{schema}")])
-        prompt.invoke({"schema": "test"})
+        prompt = ChatPromptTemplate([("system", "{model_json_schema}")])
+        foo = prompt.get_input_schema()
 
     # If warnings were captured, print them
     if record:

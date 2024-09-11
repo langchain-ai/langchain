@@ -22,9 +22,9 @@ from langchain_core.runnables.passthrough import RunnablePassthrough
 from langchain_core.runnables.utils import (
     ConfigurableFieldSpec,
     Output,
-    create_model,
     get_unique_config_specs,
 )
+from langchain_core.utils.pydantic import create_model
 
 if TYPE_CHECKING:
     from langchain_core.language_models.base import LanguageModelLike

@@ -41,10 +41,10 @@ from langchain_core.runnables.graph import Graph
 from langchain_core.runnables.utils import (
     AddableDict,
     ConfigurableFieldSpec,
-    create_model,
 )
 from langchain_core.utils.aiter import atee, py_anext
 from langchain_core.utils.iter import safetee
+from langchain_core.utils.pydantic import create_model
 
 if TYPE_CHECKING:
     from langchain_core.callbacks.manager import (

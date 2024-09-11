@@ -29,7 +29,7 @@ from langchain_core.prompt_values import (
 )
 from langchain_core.runnables import RunnableConfig, RunnableSerializable
 from langchain_core.runnables.config import ensure_config
-from langchain_core.runnables.utils import create_model
+from langchain_core.utils.pydantic import create_model
 
 if TYPE_CHECKING:
     from langchain_core.documents import Document

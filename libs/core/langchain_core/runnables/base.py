@@ -71,7 +71,6 @@ from langchain_core.runnables.utils import (
     accepts_config,
     accepts_run_manager,
     asyncio_accepts_context,
-    create_model,
     gather_with_concurrency,
     get_function_first_arg_dict_keys,
     get_function_nonlocals,
@@ -83,6 +82,7 @@ from langchain_core.runnables.utils import (
 )
 from langchain_core.utils.aiter import aclosing, atee, py_anext
 from langchain_core.utils.iter import safetee
+from langchain_core.utils.pydantic import create_model
 
 if TYPE_CHECKING:
     from langchain_core.callbacks.manager import (
