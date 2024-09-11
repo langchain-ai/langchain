@@ -18,7 +18,7 @@ LANGCHAIN_DIRS = [
 
 # for 0.3rc, we are ignoring core dependents
 # in order to be able to get CI to pass for individual PRs.
-IGNORE_CORE_DEPENDENTS = True
+IGNORE_CORE_DEPENDENTS = False
 
 # ignored partners are removed from dependents
 # but still run if directly edited
