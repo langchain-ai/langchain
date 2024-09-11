@@ -19,7 +19,6 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import Extra
 from langchain_core.utils import get_from_dict_or_env, pre_init
 
 
@@ -71,11 +70,6 @@ class ChatSambaNovaCloud(BaseChatModel):
 
     stream_options: dict = {"include_usage": True}
     """stream options, include usage to get generation metrics"""
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
