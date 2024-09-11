@@ -36,7 +36,7 @@ class EmbeddingsFilter(BaseDocumentCompressor):
     k: Optional[int] = 20
     """The number of relevant documents to return. Can be set to None, in which case
     `similarity_threshold` must be specified. Defaults to 20."""
-    similarity_threshold: Optional[float]
+    similarity_threshold: Optional[float] = None
     """Threshold for determining when two documents are similar enough
     to be considered redundant. Defaults to None, must be specified if `k` is set
     to None."""

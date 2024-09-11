@@ -92,7 +92,7 @@ class BaseConversationalRetrievalChain(Chain):
     get_chat_history: Optional[Callable[[List[CHAT_TURN_TYPE]], str]] = None
     """An optional function to get a string of the chat history.
     If None is provided, will use a default."""
-    response_if_no_docs_found: Optional[str]
+    response_if_no_docs_found: Optional[str] = None
     """If specified, the chain will return a fixed response if no docs 
     are found for the question. """
 
