@@ -272,7 +272,7 @@ def _create_message_from_message_type(
         message = RemoveMessage(**kwargs)
     else:
         raise ValueError(
-            f"Unexpected message type: {message_type}. Use one of 'human',"
+            f"Unexpected message type: '{message_type}'. Use one of 'human',"
             f" 'user', 'ai', 'assistant', 'function', 'tool', or 'system'."
         )
     return message
