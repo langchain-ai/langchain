@@ -30,7 +30,6 @@ from typing_extensions import TypedDict
 
 from langchain_core._api import deprecated
 from langchain_core.documents import Document
-from langchain_core.load.dump import dumpd
 from langchain_core.runnables import (
     Runnable,
     RunnableConfig,
@@ -235,9 +234,9 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
             local_metadata=self.metadata,
         )
         run_manager = callback_manager.on_retriever_start(
-            dumpd(self),
+            None,
             input,
-            name=config.get("run_name"),
+            name=config.get("run_name") or self.get_name(),
             run_id=kwargs.pop("run_id", None),
         )
         try:
@@ -298,9 +297,9 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
             local_metadata=self.metadata,
         )
         run_manager = await callback_manager.on_retriever_start(
-            dumpd(self),
+            None,
             input,
-            name=config.get("run_name"),
+            name=config.get("run_name") or self.get_name(),
             run_id=kwargs.pop("run_id", None),
         )
         try:

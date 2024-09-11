@@ -2520,7 +2520,7 @@ async def test_stream_log_retriever() -> None:
         "ChatPromptTemplate",
         "FakeListLLM",
         "FakeListLLM:2",
-        "Retriever",
+        "FakeRetriever",
         "RunnableLambda",
         "RunnableParallel<documents,question>",
         "RunnableParallel<one,two>",
