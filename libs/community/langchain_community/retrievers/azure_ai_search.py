@@ -82,13 +82,22 @@ class AzureAISearchRetriever(BaseRetriever):
             chain.invoke("...")
             """
     service_name: str = ""
+    """Name of Azure AI Search service"""
     index_name: str = ""
+    """Name of Index inside Azure AI Search service"""
     api_key: str = ""
+    """API Key. Both Admin and Query keys work, but for reading data it's
+    recommended to use a Query key."""
     api_version: str = "2023-11-01"
+    """API version"""
     aiosession: Optional[aiohttp.ClientSession] = None
+    """ClientSession, in case we want to reuse connection for better performance."""
     content_key: str = "content"
+    """Key in a retrieved result to set as the Document page_content."""
     top_k: Optional[int] = None
+    """Number of results to retrieve. Set to None to retrieve all results."""
     filter: Optional[str] = None
+    """OData $filter expression to apply to the search query."""
 
     class Config:
         extra = Extra.forbid
@@ -207,3 +216,10 @@ class AzureAISearchRetriever(BaseRetriever):
             Document(page_content=result.pop(self.content_key), metadata=result)
             for result in search_results
         ]
+
+# For backwards compatibility
+class AzureCognitiveSearchRetriever(AzureAISearchRetriever):
+    """`Azure Cognitive Search` service retriever.
+    This version of the retriever will soon be
+    depreciated. Please switch to AzureAISearchRetriever
+    """
