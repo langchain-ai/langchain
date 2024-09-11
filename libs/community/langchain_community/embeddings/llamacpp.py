@@ -19,7 +19,7 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
             llama = LlamaCppEmbeddings(model_path="/path/to/model.bin")
     """
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     model_path: str
 
     n_ctx: int = Field(512, alias="n_ctx")

@@ -18,7 +18,7 @@ class DataheraldAPIWrapper(BaseModel):
 
     """
 
-    dataherald_client: Any  #: :meta private:
+    dataherald_client: Any = None  #: :meta private:
     db_connection_id: str
     dataherald_api_key: Optional[str] = None
 

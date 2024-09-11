@@ -27,7 +27,7 @@ class LaserEmbeddings(BaseModel, Embeddings):
         embeddings = encoder.encode_sentences(["Hello", "World"])
     """
 
-    lang: Optional[str]
+    lang: Optional[str] = None
     """The language or language code you'd like to use
     If empty, this implementation will default
     to using a multilingual earlier LASER encoder model (called laser2)
@@ -35,7 +35,7 @@ class LaserEmbeddings(BaseModel, Embeddings):
     https://github.com/facebookresearch/flores/blob/main/flores200/README.md#languages-in-flores-200
     """
 
-    _encoder_pipeline: Any  # : :meta private:
+    _encoder_pipeline: Any = None  # : :meta private:
 
     model_config = ConfigDict(
         extra="forbid",

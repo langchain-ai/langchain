@@ -25,7 +25,7 @@ class AlephAlpha(LLM):
             aleph_alpha = AlephAlpha(aleph_alpha_api_key="my-api-key")
     """
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     model: Optional[str] = "luminous-base"
     """Model name to use."""
 

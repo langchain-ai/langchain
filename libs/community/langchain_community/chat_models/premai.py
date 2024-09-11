@@ -305,7 +305,7 @@ class ChatPremAI(BaseChatModel, BaseModel):
     streaming: Optional[bool] = False
     """Whether to stream the responses or not."""
 
-    client: Any
+    client: Any = None
 
     model_config = ConfigDict(
         populate_by_name=True,

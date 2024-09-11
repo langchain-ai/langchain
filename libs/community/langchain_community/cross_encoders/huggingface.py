@@ -23,7 +23,7 @@ class HuggingFaceCrossEncoder(BaseModel, BaseCrossEncoder):
             )
     """
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     model_name: str = DEFAULT_MODEL_NAME
     """Model name to use."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)

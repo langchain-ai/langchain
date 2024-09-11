@@ -93,7 +93,7 @@ class WatsonxLLM(BaseLLM):
     streaming: bool = False
     """ Whether to stream the results or not. """
 
-    watsonx_model: Any
+    watsonx_model: Any = None
 
     model_config = ConfigDict(
         extra="forbid",

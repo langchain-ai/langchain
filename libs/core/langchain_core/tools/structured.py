@@ -40,7 +40,7 @@ class StructuredTool(BaseTool):
         ..., description="The tool schema."
     )
     """The input arguments' schema."""
-    func: Optional[Callable[..., Any]]
+    func: Optional[Callable[..., Any]] = None
     """The function to run when the tool is called."""
     coroutine: Optional[Callable[..., Awaitable[Any]]] = None
     """The asynchronous version of the function."""
@@ -98,8 +98,8 @@ class StructuredTool(BaseTool):
                 kwargs[config_param] = config
             return await self.coroutine(*args, **kwargs)
 
-        # NOTE: this code is unreachable since _arun is only called if coroutine is not
-        # None.
+        # If self.coroutine is None, then this will delegate to the default
+        # implementation which is expected to delegate to _run on a separate thread.
         return await super()._arun(
             *args, config=config, run_manager=run_manager, **kwargs
         )

@@ -30,7 +30,7 @@ class ExLlamaV2(LLM):
     - Add support for custom stop sequences
     """
 
-    client: Any
+    client: Any = None
     model_path: str
     exllama_cache: Any = None
     config: Any = None

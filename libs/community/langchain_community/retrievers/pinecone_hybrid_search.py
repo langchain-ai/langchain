@@ -104,9 +104,9 @@ class PineconeHybridSearchRetriever(BaseRetriever):
     embeddings: Embeddings
     """Embeddings model to use."""
     """description"""
-    sparse_encoder: Any
+    sparse_encoder: Any = None
     """Sparse encoder to use."""
-    index: Any
+    index: Any = None
     """Pinecone index to use."""
     top_k: int = 4
     """Number of documents to return."""
