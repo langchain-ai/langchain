@@ -1,0 +1,78 @@
+name: Run docs notebooks, check in results
+
+on:
+  workflow_dispatch: # This allows the workflow to be triggered manually
+
+env:
+  POETRY_VERSION: "1.7.1"
+
+jobs:
+  update-and-pr:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Git
+      run: |
+        git config --global user.name 'github-actions[bot]'
+        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: "./langchain/.github/actions/poetry_setup"
+      with:
+        python-version: ${{ matrix.python-version }}
+        poetry-version: ${{ env.POETRY_VERSION }}
+        working-directory: langchain/${{ matrix.working-directory }}
+        cache-key: scheduled
+
+    - name: Install dependencies
+      run: |
+        poetry run pip install -U pip
+        poetry run pip install -U jupyter nbconvert
+
+    - name: Run how-to notebooks
+      env:
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        AZURE_OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
+        AZURE_OPENAI_API_BASE: ${{ secrets.AZURE_OPENAI_API_BASE }}
+        AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+        AZURE_OPENAI_CHAT_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_CHAT_DEPLOYMENT_NAME }}
+        AZURE_OPENAI_LLM_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_LLM_DEPLOYMENT_NAME }}
+        AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME }}
+        FIREWORKS_API_KEY: ${{ secrets.FIREWORKS_API_KEY }}
+        GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        HUGGINGFACEHUB_API_TOKEN: ${{ secrets.HUGGINGFACEHUB_API_TOKEN }}
+        MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+        COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
+        NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+        GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+        GOOGLE_SEARCH_API_KEY: ${{ secrets.GOOGLE_SEARCH_API_KEY }}
+        GOOGLE_CSE_ID: ${{ secrets.GOOGLE_CSE_ID }}
+        # TODO: Remove this once 0.3 is relased
+        PIP_PRE: 1
+      run: |
+        poetry run jupyter nbconvert --to notebook --execute --allow-errors docs/docs/how_to/*.ipynb;
+        find docs/docs/how_to/ -type f -name "*.nbconvert.ipynb" -exec bash -c 'mv "$0" "${0%.nbconvert.ipynb}.ipynb"' {} \; 
+
+    - name: Get current date and time
+      id: datetime
+      run: echo "datetime=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_ENV
+
+    - name: Commit and push
+      run: |
+        NEW_BRANCH="gha/$(date +'%Y%m%d%H%M%S')/update-how-to-docs"
+        git checkout -b $NEW_BRANCH
+        git commit -am "[AUTO] docs: run how-to docs"
+        git push origin $NEW_BRANCH
+
+    - name: Create pull request
+      uses: peter-evans/create-pull-request@v5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        branch: "gha/${{ env.datetime }}/update-how-to-docs"
+        title: "[AUTO] docs: run how-to docs"
+        body: "This is an automated pull request that runs all docs how-to notebooks and checks in the results."
+        base: master
