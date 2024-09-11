@@ -31,9 +31,9 @@ class OpenVINOEmbeddings(BaseModel, Embeddings):
             )
     """
 
-    ov_model: Any
+    ov_model: Any = None
     """OpenVINO model object."""
-    tokenizer: Any
+    tokenizer: Any = None
     """Tokenizer for embedding model."""
     model_name_or_path: str
     """HuggingFace model id."""

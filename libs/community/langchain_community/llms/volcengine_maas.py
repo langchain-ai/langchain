@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field, SecretStr
 class VolcEngineMaasBase(BaseModel):
     """Base class for VolcEngineMaas models."""
 
-    client: Any
+    client: Any = None
 
     volc_engine_maas_ak: Optional[SecretStr] = None
     """access key for volc engine"""

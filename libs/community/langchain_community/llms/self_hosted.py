@@ -126,11 +126,11 @@ class SelfHostedPipeline(LLM):
             )
     """
 
-    pipeline_ref: Any  #: :meta private:
-    client: Any  #: :meta private:
+    pipeline_ref: Any = None  #: :meta private:
+    client: Any = None  #: :meta private:
     inference_fn: Callable = _generate_text  #: :meta private:
     """Inference function to send to the remote hardware."""
-    hardware: Any
+    hardware: Any = None
     """Remote hardware to send the inference function to."""
     model_load_fn: Callable
     """Function to load the model remotely on the server."""

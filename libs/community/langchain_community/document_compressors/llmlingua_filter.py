@@ -49,7 +49,7 @@ class LLMLinguaCompressor(BaseDocumentCompressor):
         "dynamic_context_compression_ratio": 0.4,
     }
     """Extra compression arguments"""
-    lingua: Any
+    lingua: Any = None
     """The instance of the llm linqua"""
 
     @model_validator(mode="before")

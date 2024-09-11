@@ -156,7 +156,7 @@ class Aphrodite(BaseLLM):
     """Holds any model parameters valid for `aphrodite.LLM` call not explicitly
     specified."""
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:

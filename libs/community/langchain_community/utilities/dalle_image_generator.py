@@ -27,7 +27,7 @@ class DallEAPIWrapper(BaseModel):
     2. save your OPENAI_API_KEY in an environment variable
     """
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
     model_name: str = Field(default="dall-e-2", alias="model")
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)

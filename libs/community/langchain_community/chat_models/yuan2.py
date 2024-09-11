@@ -76,7 +76,7 @@ class ChatYuan2(BaseChatModel):
             chat = ChatYuan2()
     """
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
 
     model_name: str = Field(default="yuan2", alias="model")

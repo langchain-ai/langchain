@@ -13,7 +13,7 @@ from langchain_community.tools.steam.prompt import (
 class SteamWebAPIWrapper(BaseModel):
     """Wrapper for Steam API."""
 
-    steam: Any  # for python-steam-api
+    steam: Any = None  # for python-steam-api
 
     # operations: a list of dictionaries, each representing a specific operation that
     # can be performed with the API

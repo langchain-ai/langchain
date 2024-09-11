@@ -30,7 +30,7 @@ class GooseAI(LLM):
 
     """
 
-    client: Any
+    client: Any = None
 
     model_name: str = "gpt-neo-20b"
     """Model name to use"""

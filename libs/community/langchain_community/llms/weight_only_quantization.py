@@ -62,7 +62,7 @@ class WeightOnlyQuantPipeline(LLM):
             hf = WeightOnlyQuantPipeline(pipeline=pipe)
     """
 
-    pipeline: Any  #: :meta private:
+    pipeline: Any = None  #: :meta private:
     model_id: str = DEFAULT_MODEL_ID
     """Model name or local path to use."""
 

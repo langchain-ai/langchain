@@ -100,8 +100,8 @@ class HuggingFaceTextGenInference(LLM):
     """Holds any text-generation-inference server parameters not explicitly specified"""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `call` not explicitly specified"""
-    client: Any
-    async_client: Any
+    client: Any = None
+    async_client: Any = None
 
     model_config = ConfigDict(
         extra="forbid",

@@ -171,7 +171,7 @@ class JinaChat(BaseChatModel):
         """Return whether this model can be serialized by Langchain."""
         return False
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     temperature: float = 0.7
     """What sampling temperature to use."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)

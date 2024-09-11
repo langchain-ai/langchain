@@ -28,7 +28,7 @@ class OracleEmbeddings(BaseModel, Embeddings):
     """Get Embeddings"""
 
     """Oracle Connection"""
-    conn: Any
+    conn: Any = None
     """Embedding Parameters"""
     params: Dict[str, Any]
     """Proxy"""
