@@ -793,3 +793,22 @@ def test_convert_union_type_py_39() -> None:
     assert result["parameters"]["properties"]["input"] == {
         "anyOf": [{"type": "integer"}, {"type": "number"}]
     }
+
+
+def test_convert_to_openai_function_no_args() -> None:
+    @tool
+    def empty_tool() -> str:
+        """No args"""
+        return "foo"
+
+    actual = convert_to_openai_function(empty_tool, strict=True)
+    assert actual == {
+        "name": "empty_tool",
+        "description": "No args",
+        "parameters": {
+            "properties": {},
+            "additionalProperties": False,
+            "type": "object",
+        },
+        "strict": True,
+    }
