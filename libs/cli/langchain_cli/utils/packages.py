@@ -20,7 +20,7 @@ def get_package_root(cwd: Optional[Path] = None) -> Path:
 
 class LangServeExport(TypedDict):
     """
-    Fields from pyproject.toml that are relevant to LangServe
+    Fields from pyproject.toml that are relevant to GigaServe
 
     Attributes:
         module: The module to import from, tool.langserve.export_module
@@ -37,9 +37,13 @@ def get_langserve_export(filepath: Path) -> LangServeExport:
     with open(filepath) as f:
         data: Dict[str, Any] = load(f)
     try:
-        module = data["tool"]["langserve"]["export_module"]
-        attr = data["tool"]["langserve"]["export_attr"]
+        if "gigaserve" in data["tool"]:
+            module = data["tool"]["gigaserve"]["export_module"]
+            attr = data["tool"]["gigaserve"]["export_attr"]
+        else:
+            module = data["tool"]["langserve"]["export_module"]
+            attr = data["tool"]["langserve"]["export_attr"]
         package_name = data["tool"]["poetry"]["name"]
     except KeyError as e:
-        raise KeyError("Invalid LangServe PyProject.toml") from e
+        raise KeyError("Invalid GigaServe pyproject.toml") from e
     return LangServeExport(module=module, attr=attr, package_name=package_name)

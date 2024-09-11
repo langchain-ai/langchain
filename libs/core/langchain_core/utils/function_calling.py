@@ -375,9 +375,12 @@ def format_tool_to_gigachat_function(tool: BaseTool) -> GigaFunctionDescription:
         raise Exception(
             "Incorrect function or tool description. Description is required."
         )
-    if tool.args_schema:
+    tool_schema = tool.args_schema
+    if tool.tool_call_schema:
+        tool_schema = tool.tool_call_schema
+    if tool_schema:
         return convert_pydantic_to_gigachat_function(
-            tool.args_schema,
+            tool_schema,
             name=tool.name,
             description=tool.description,
             return_model=tool.return_schema,
