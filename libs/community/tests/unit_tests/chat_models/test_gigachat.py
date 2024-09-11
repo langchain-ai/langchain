@@ -1,5 +1,6 @@
 # flake8: noqa: I001
 from typing import Any, AsyncGenerator, Iterable, List
+from typing_extensions import Annotated
 
 import pytest
 from gigachat.models import (
@@ -20,12 +21,15 @@ from langchain.schema.messages import (
     HumanMessage,
     SystemMessage,
 )
+from langchain.tools import tool
 from langchain_community.chat_models.gigachat import (
     GigaChat,
     _convert_dict_to_message,
     _convert_message_to_dict,
 )
 from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.runnables import RunnableConfig
+from langchain_core.tools.base import InjectedToolArg
 from pytest_mock import MockerFixture
 from tests.unit_tests.stubs import AnyStr
 
@@ -317,3 +321,16 @@ async def test_gigachat_bind_with_description() -> None:
     llm = GigaChat()
     llm.bind_functions(functions=[Person], function_call="Person")
     llm.bind_tools(tools=[Person], tool_choice="Person")
+
+
+@tool
+def _test_tool(
+    arg: str, config: RunnableConfig, injected: Annotated[str, InjectedToolArg]
+) -> None:
+    """Some description"""
+    return
+
+
+async def test_gigachat_bind_with_injected_vars() -> None:
+    llm = GigaChat().bind_tools(tools=[_test_tool])
+    assert llm.kwargs["functions"][0]["parameters"]["required"] == ["arg"]  # type: ignore[attr-defined]

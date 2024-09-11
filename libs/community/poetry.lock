@@ -1094,7 +1094,7 @@ url = "../langchain"
 
 [[package]]
 name = "gigachain-core"
-version = "0.2.35post3"
+version = "0.2.35post4"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -4461,4 +4461,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "1dccdc92a38bbc7441042c8d0e9bdde52d35da899783ffc8980d687f62b68ebf"
+content-hash = "7f944f4c227f4cf4df15ff4271646f0ef570311195359b2cf6161110e05d841b"
