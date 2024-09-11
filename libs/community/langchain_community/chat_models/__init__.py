@@ -149,7 +149,10 @@ if TYPE_CHECKING:
     )
     from langchain_community.chat_models.sambanova import (
         ChatSambaNovaCloud,
-        ChatSambaStudio,
+        ChatSambaStudio
+    )
+    from langchain_community.chat_models.reka import (
+        ChatReka,
     )
     from langchain_community.chat_models.snowflake import (
         ChatSnowflakeCortex,
@@ -214,6 +217,7 @@ __all__ = [
     "ChatOllama",
     "ChatOpenAI",
     "ChatPerplexity",
+    "ChatReka",
     "ChatPremAI",
     "ChatSambaNovaCloud",
     "ChatSambaStudio",
@@ -274,6 +278,7 @@ _module_lookup = {
     "ChatOCIGenAI": "langchain_community.chat_models.oci_generative_ai",
     "ChatOllama": "langchain_community.chat_models.ollama",
     "ChatOpenAI": "langchain_community.chat_models.openai",
+    "ChatReka": "langchain_community.chat_models.reka",
     "ChatPerplexity": "langchain_community.chat_models.perplexity",
     "ChatSambaNovaCloud": "langchain_community.chat_models.sambanova",
     "ChatSambaStudio": "langchain_community.chat_models.sambanova",

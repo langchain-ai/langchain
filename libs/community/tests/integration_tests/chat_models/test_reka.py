@@ -20,6 +20,7 @@ def test_reka_call() -> None:
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
 
+
 @pytest.mark.scheduled
 def test_reka_generate() -> None:
     """Test generate method of Reka."""
@@ -36,6 +37,7 @@ def test_reka_generate() -> None:
         assert response.text == response.message.content
     assert chat_messages == messages_copy
 
+
 @pytest.mark.scheduled
 def test_reka_streaming() -> None:
     """Test streaming tokens from Reka."""
@@ -44,6 +46,7 @@ def test_reka_streaming() -> None:
     response = chat.invoke([message])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
+
 
 @pytest.mark.scheduled
 def test_reka_streaming_callback() -> None:
@@ -59,6 +62,7 @@ def test_reka_streaming_callback() -> None:
     message = HumanMessage(content="Write me a sentence with 10 words.")
     chat.invoke([message])
     assert callback_handler.llm_streams > 1
+
 
 @pytest.mark.scheduled
 async def test_reka_async_streaming_callback() -> None:
