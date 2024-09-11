@@ -628,7 +628,7 @@ async def test_astream_events_from_model() -> None:
                         ],
                         "llm_output": None,
                         "run": None,
-                        "type": "LLMResult"
+                        "type": "LLMResult",
                     },
                 },
                 "event": "on_chat_model_end",
@@ -751,7 +751,7 @@ async def test_astream_events_from_model() -> None:
                         ],
                         "llm_output": None,
                         "run": None,
-                        "type": "LLMResult"
+                        "type": "LLMResult",
                     },
                 },
                 "event": "on_chat_model_end",
