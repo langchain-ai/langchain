@@ -330,10 +330,14 @@ def test_structured_tool_types_parsed_pydantic_v1() -> None:
 
     assert isinstance(structured_tool, StructuredTool)
 
-    args = {"some_base_model": SomeBaseModel(foo="bar").dict()}
-    result = structured_tool.run(args)
     expected = {"some_base_model": SomeBaseModel(foo="bar")}
-    assert result == expected
+    for arg in [
+        SomeBaseModel(foo="bar"),
+        SomeBaseModel(foo="bar").dict(),
+    ]:
+        args = {"some_base_model": arg}
+        result = structured_tool.run(args)
+        assert result == expected
 
 
 def test_base_tool_inheritance_base_schema() -> None:
