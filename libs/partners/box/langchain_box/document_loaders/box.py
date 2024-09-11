@@ -173,7 +173,7 @@ class BoxLoader(BaseLoader, BaseModel):
     """character_limit is an int that caps the number of characters to
        return per document."""
 
-    _box: Optional[_BoxAPIWrapper]
+    _box: Optional[_BoxAPIWrapper] = None
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,

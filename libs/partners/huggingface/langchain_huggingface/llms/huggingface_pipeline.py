@@ -54,7 +54,7 @@ class HuggingFacePipeline(BaseLLM):
             hf = HuggingFacePipeline(pipeline=pipe)
     """
 
-    pipeline: Any  #: :meta private:
+    pipeline: Any = None  #: :meta private:
     model_id: str = DEFAULT_MODEL_ID
     """Model name to use."""
     model_kwargs: Optional[dict] = None
