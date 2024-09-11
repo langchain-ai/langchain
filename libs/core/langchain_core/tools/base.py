@@ -239,15 +239,6 @@ class ToolException(Exception):
     pass
 
 
-def convert_exception_to_tool_exception(e: Exception) -> ToolException:
-    tool_e = ToolException()
-    tool_e.args = e.args
-    tool_e.__cause__ = e.__cause__
-    tool_e.__context__ = e.__context__
-    tool_e.__traceback__ = e.__traceback__
-    return tool_e
-
-
 class BaseTool(RunnableSerializable[Union[str, Dict, ToolCall], Any]):
     """Interface LangChain tools must implement."""
 
@@ -552,43 +543,53 @@ class ChildTool(BaseTool):
         artifact = None
         error_to_raise: Union[Exception, KeyboardInterrupt, None] = None
         try:
-            child_config = patch_config(config, callbacks=run_manager.get_child())
-            context = copy_context()
-            context.run(_set_config_context, child_config)
-            tool_args, tool_kwargs = self._to_args_and_kwargs(tool_input)
-            if signature(self._run).parameters.get("run_manager"):
-                tool_kwargs["run_manager"] = run_manager
+            try:
+                child_config = patch_config(config, callbacks=run_manager.get_child())
+                context = copy_context()
+                context.run(_set_config_context, child_config)
+                tool_args, tool_kwargs = self._to_args_and_kwargs(tool_input)
+                if signature(self._run).parameters.get("run_manager"):
+                    tool_kwargs["run_manager"] = run_manager
 
-            if config_param := _get_runnable_config_param(self._run):
-                tool_kwargs[config_param] = config
-            response = context.run(self._run, *tool_args, **tool_kwargs)
-            if self.response_format == "content_and_artifact":
-                if not isinstance(response, tuple) or len(response) != 2:
-                    raise ValueError(
-                        "Since response_format='content_and_artifact' "
-                        "a two-tuple of the message content and raw tool output is "
-                        f"expected. Instead generated response of type: "
-                        f"{type(response)}."
+                if config_param := _get_runnable_config_param(self._run):
+                    tool_kwargs[config_param] = config
+                response = context.run(self._run, *tool_args, **tool_kwargs)
+                if self.response_format == "content_and_artifact":
+                    if not isinstance(response, tuple) or len(response) != 2:
+                        raise ValueError(
+                            "Since response_format='content_and_artifact' "
+                            "a two-tuple of the message content and raw tool output is "
+                            f"expected. Instead generated response of type: "
+                            f"{type(response)}."
+                        )
+                    content, artifact = response
+                else:
+                    content = response
+                status = "success"
+            except ValidationError as e:
+                if not self.handle_validation_error:
+                    error_to_raise = e
+                else:
+                    content = _handle_validation_error(
+                        e, flag=self.handle_validation_error
                     )
-                content, artifact = response
-            else:
-                content = response
-            status = "success"
-        except ValidationError as e:
-            if not self.handle_validation_error:
+                status = "error"
+            except ToolException as e:
+                if not self.handle_tool_error:
+                    error_to_raise = e
+                else:
+                    content = _handle_tool_error(e, flag=self.handle_tool_error)
+                status = "error"
+            except Exception as e:
+                raise ToolException(str(e)) from e
+            except KeyboardInterrupt as e:
                 error_to_raise = e
-            else:
-                content = _handle_validation_error(e, flag=self.handle_validation_error)
-            status = "error"
-        except Exception as e:
+                status = "error"
+        except ToolException as e:
             if not self.handle_tool_error:
                 error_to_raise = e
             else:
-                e = convert_exception_to_tool_exception(e)
                 content = _handle_tool_error(e, flag=self.handle_tool_error)
-            status = "error"
-        except KeyboardInterrupt as e:
-            error_to_raise = e
             status = "error"
 
         if error_to_raise:
@@ -662,50 +663,60 @@ class ChildTool(BaseTool):
         artifact = None
         error_to_raise: Optional[Union[Exception, KeyboardInterrupt]] = None
         try:
-            tool_args, tool_kwargs = self._to_args_and_kwargs(tool_input)
-            child_config = patch_config(config, callbacks=run_manager.get_child())
-            context = copy_context()
-            context.run(_set_config_context, child_config)
-            func_to_check = (
-                self._run if self.__class__._arun is BaseTool._arun else self._arun
-            )
-            if signature(func_to_check).parameters.get("run_manager"):
-                tool_kwargs["run_manager"] = run_manager
-            if config_param := _get_runnable_config_param(func_to_check):
-                tool_kwargs[config_param] = config
+            try:
+                tool_args, tool_kwargs = self._to_args_and_kwargs(tool_input)
+                child_config = patch_config(config, callbacks=run_manager.get_child())
+                context = copy_context()
+                context.run(_set_config_context, child_config)
+                func_to_check = (
+                    self._run if self.__class__._arun is BaseTool._arun else self._arun
+                )
+                if signature(func_to_check).parameters.get("run_manager"):
+                    tool_kwargs["run_manager"] = run_manager
+                if config_param := _get_runnable_config_param(func_to_check):
+                    tool_kwargs[config_param] = config
 
-            coro = context.run(self._arun, *tool_args, **tool_kwargs)
-            if asyncio_accepts_context():
-                response = await asyncio.create_task(coro, context=context)  # type: ignore
-            else:
-                response = await coro
-            if self.response_format == "content_and_artifact":
-                if not isinstance(response, tuple) or len(response) != 2:
-                    raise ValueError(
-                        "Since response_format='content_and_artifact' "
-                        "a two-tuple of the message content and raw tool output is "
-                        f"expected. Instead generated response of type: "
-                        f"{type(response)}."
+                coro = context.run(self._arun, *tool_args, **tool_kwargs)
+                if asyncio_accepts_context():
+                    response = await asyncio.create_task(coro, context=context)  # type: ignore
+                else:
+                    response = await coro
+                if self.response_format == "content_and_artifact":
+                    if not isinstance(response, tuple) or len(response) != 2:
+                        raise ValueError(
+                            "Since response_format='content_and_artifact' "
+                            "a two-tuple of the message content and raw tool output is "
+                            f"expected. Instead generated response of type: "
+                            f"{type(response)}."
+                        )
+                    content, artifact = response
+                else:
+                    content = response
+                status = "success"
+            except ValidationError as e:
+                if not self.handle_validation_error:
+                    error_to_raise = e
+                else:
+                    content = _handle_validation_error(
+                        e, flag=self.handle_validation_error
                     )
-                content, artifact = response
-            else:
-                content = response
-            status = "success"
-        except ValidationError as e:
-            if not self.handle_validation_error:
+                status = "error"
+            except ToolException as e:
+                if not self.handle_tool_error:
+                    error_to_raise = e
+                else:
+                    content = _handle_tool_error(e, flag=self.handle_tool_error)
+                status = "error"
+            except Exception as e:
+                raise ToolException(str(e)) from e
+            except KeyboardInterrupt as e:
                 error_to_raise = e
-            else:
-                content = _handle_validation_error(e, flag=self.handle_validation_error)
-            status = "error"
-        except Exception as e:
+                status = "error"
+        except ToolException as e:
             if not self.handle_tool_error:
                 error_to_raise = e
             else:
-                e = convert_exception_to_tool_exception(e)
                 content = _handle_tool_error(e, flag=self.handle_tool_error)
-            status = "error"
-        except KeyboardInterrupt as e:
-            error_to_raise = e
             status = "error"
 
         if error_to_raise:
