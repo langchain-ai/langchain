@@ -37,7 +37,7 @@ except ImportError:
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables import Runnable, RunnableLambda
-from langchain_core.tools import BaseTool, tool
+from langchain_core.tools import BaseTool, Tool, tool
 from langchain_core.utils.function_calling import (
     _convert_typed_dict_to_openai_function,
     convert_to_openai_function,
@@ -294,6 +294,27 @@ def test_convert_to_openai_function(
     runnable_expected = expected.copy()
     runnable_expected["parameters"] = parameters
     assert actual == runnable_expected
+
+    # Test simple Tool
+    def my_function(input_string: str) -> str:
+        pass
+
+    tool = Tool(
+        name="dummy_function",
+        func=my_function,
+        description="test description",
+    )
+    actual = convert_to_openai_function(tool)
+    expected = {
+        "name": "dummy_function",
+        "description": "test description",
+        "parameters": {
+            "properties": {"__arg1": {"title": "__arg1", "type": "string"}},
+            "required": ["__arg1"],
+            "type": "object",
+        },
+    }
+    assert actual == expected
 
 
 @pytest.mark.xfail(reason="Direct pydantic v2 models not yet supported")
