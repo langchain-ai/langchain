@@ -88,8 +88,8 @@ class AzureContentSafetyTextTool(BaseTool):
         """
         Perform sentiment analysis on the provided text.
 
-        This method uses the Azure Content Safety Client to analyze the text and determine its sentiment 
-        and safety categories.
+        This method uses the Azure Content Safety Client to analyze
+        the text and determine its sentiment and safety categories.
 
         Args:
             text (str): The text to be analyzed.
@@ -97,10 +97,8 @@ class AzureContentSafetyTextTool(BaseTool):
         Returns:
             Dict: The analysis results containing sentiment and safety categories.
         """
-        try:
-            from azure.ai.contentsafety.models import AnalyzeTextOptions
-        except:
-            pass
+        
+        from azure.ai.contentsafety.models import AnalyzeTextOptions
 
         request = AnalyzeTextOptions(text=text)
         response = self.content_safety_client.analyze_text(request)
@@ -115,12 +113,15 @@ class AzureContentSafetyTextTool(BaseTool):
         """
         Analyze the given query using the tool.
 
-        This method calls `_sentiment_analysis` to process the query and returns the result. It raises 
-        a RuntimeError if an exception occurs during analysis.
+        This method calls `_sentiment_analysis` to process the 
+        query and returns the result. It raises a RuntimeError if an 
+        exception occurs during analysis.
 
         Args:
-            query (str): The query text to be analyzed.
-            run_manager (Optional[CallbackManagerForToolRun], optional): A callback manager for tracking the tool run. Defaults to None.
+            query (str): 
+                The query text to be analyzed.
+            run_manager (Optional[CallbackManagerForToolRun], optional): 
+                A callback manager for tracking the tool run. Defaults to None.
 
         Returns:
             str: The result of the sentiment analysis.
