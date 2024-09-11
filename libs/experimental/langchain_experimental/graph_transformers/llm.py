@@ -749,6 +749,9 @@ class LLMGraphTransformer:
             if isinstance(parsed_json, dict):
                 parsed_json = [parsed_json]
             for rel in parsed_json:
+                # It's possible some returned dicts don't have the "head" or "tail_type" key, ignore these as well as those who have `head` as "".
+                if ("head" not in rel) or (rel["head"] == "") or ("tail_type" not in rel):
+                    continue
                 # Nodes need to be deduplicated using a set
                 nodes_set.add((rel["head"], rel["head_type"]))
                 nodes_set.add((rel["tail"], rel["tail_type"]))
