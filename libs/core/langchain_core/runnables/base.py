@@ -82,7 +82,7 @@ from langchain_core.runnables.utils import (
 )
 from langchain_core.utils.aiter import aclosing, atee, py_anext
 from langchain_core.utils.iter import safetee
-from langchain_core.utils.pydantic import create_model
+from langchain_core.utils.pydantic import create_model_v2
 
 if TYPE_CHECKING:
     from langchain_core.callbacks.manager import (
@@ -345,9 +345,9 @@ class Runnable(Generic[Input, Output], ABC):
         if inspect.isclass(root_type) and issubclass(root_type, BaseModel):
             return root_type
 
-        return create_model(
+        return create_model_v2(
             self.get_name("Input"),
-            __root__=root_type,
+            root=root_type,
             # create model needs access to appropriate type annotations to be
             # able to construct the pydantic model.
             # When we create the model, we pass information about the namespace
@@ -355,7 +355,7 @@ class Runnable(Generic[Input, Output], ABC):
             # be resolved correctly as well.
             # self.__class__.__module__ handles the case when the Runnable is
             # being sub-classed in a different module.
-            __module_name=self.__class__.__module__,
+            module_name=self.__class__.__module__,
         )
 
     def get_input_jsonschema(
@@ -413,9 +413,9 @@ class Runnable(Generic[Input, Output], ABC):
         if inspect.isclass(root_type) and issubclass(root_type, BaseModel):
             return root_type
 
-        return create_model(
+        return create_model_v2(
             self.get_name("Output"),
-            __root__=root_type,
+            root=root_type,
             # create model needs access to appropriate type annotations to be
             # able to construct the pydantic model.
             # When we create the model, we pass information about the namespace
@@ -423,7 +423,7 @@ class Runnable(Generic[Input, Output], ABC):
             # be resolved correctly as well.
             # self.__class__.__module__ handles the case when the Runnable is
             # being sub-classed in a different module.
-            __module_name=self.__class__.__module__,
+            module_name=self.__class__.__module__,
         )
 
     def get_output_jsonschema(
@@ -477,9 +477,9 @@ class Runnable(Generic[Input, Output], ABC):
         include = include or []
         config_specs = self.config_specs
         configurable = (
-            create_model(  # type: ignore[call-overload]
+            create_model_v2(  # type: ignore[call-overload]
                 "Configurable",
-                **{
+                field_definitions={
                     spec.id: (
                         spec.annotation,
                         Field(
@@ -502,8 +502,8 @@ class Runnable(Generic[Input, Output], ABC):
                 if field_name in [i for i in include if i != "configurable"]
             },
         }
-        model = create_model(  # type: ignore[call-overload]
-            self.get_name("Config"), **all_fields
+        model = create_model_v2(  # type: ignore[call-overload]
+            self.get_name("Config"), field_definitions=all_fields
         )
         return model
 
@@ -530,14 +530,14 @@ class Runnable(Generic[Input, Output], ABC):
         try:
             input_node = graph.add_node(self.get_input_schema(config))
         except TypeError:
-            input_node = graph.add_node(create_model(self.get_name("Input")))
+            input_node = graph.add_node(create_model_v2(self.get_name("Input")))
         runnable_node = graph.add_node(
             self, metadata=config.get("metadata") if config else None
         )
         try:
             output_node = graph.add_node(self.get_output_schema(config))
         except TypeError:
-            output_node = graph.add_node(create_model(self.get_name("Output")))
+            output_node = graph.add_node(create_model_v2(self.get_name("Output")))
         graph.add_edge(input_node, runnable_node)
         graph.add_edge(runnable_node, output_node)
         return graph
@@ -2583,9 +2583,9 @@ def _seq_input_schema(
         next_input_schema = _seq_input_schema(steps[1:], config)
         if not issubclass(next_input_schema, RootModel):
             # it's a dict as expected
-            return create_model(  # type: ignore[call-overload]
+            return create_model_v2(  # type: ignore[call-overload]
                 "RunnableSequenceInput",
-                **{
+                field_definitions={
                     k: (v.annotation, v.default)
                     for k, v in next_input_schema.model_fields.items()
                     if k not in first.mapper.steps__
@@ -2610,9 +2610,9 @@ def _seq_output_schema(
         prev_output_schema = _seq_output_schema(steps[:-1], config)
         if not issubclass(prev_output_schema, RootModel):
             # it's a dict as expected
-            return create_model(  # type: ignore[call-overload]
+            return create_model_v2(  # type: ignore[call-overload]
                 "RunnableSequenceOutput",
-                **{
+                field_definitions={
                     **{
                         k: (v.annotation, v.default)
                         for k, v in prev_output_schema.model_fields.items()
@@ -2628,9 +2628,9 @@ def _seq_output_schema(
         if not issubclass(prev_output_schema, RootModel):
             # it's a dict as expected
             if isinstance(last.keys, list):
-                return create_model(  # type: ignore[call-overload]
+                return create_model_v2(  # type: ignore[call-overload]
                     "RunnableSequenceOutput",
-                    **{
+                    field_definitions={
                         k: (v.annotation, v.default)
                         for k, v in prev_output_schema.model_fields.items()
                         if k in last.keys
@@ -2638,9 +2638,8 @@ def _seq_output_schema(
                 )
             else:
                 field = prev_output_schema.model_fields[last.keys]
-                return create_model(  # type: ignore[call-overload]
-                    "RunnableSequenceOutput",
-                    __root__=(field.annotation, field.default),
+                return create_model_v2(  # type: ignore[call-overload]
+                    "RunnableSequenceOutput", root=(field.annotation, field.default)
                 )
 
     return last.get_output_schema(config)
@@ -3582,9 +3581,9 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
             for s in self.steps__.values()
         ):
             # This is correct, but pydantic typings/mypy don't think so.
-            return create_model(  # type: ignore[call-overload]
+            return create_model_v2(  # type: ignore[call-overload]
                 self.get_name("Input"),
-                **{
+                field_definitions={
                     k: (v.annotation, v.default)
                     for step in self.steps__.values()
                     for k, v in step.get_input_schema(config).model_fields.items()
@@ -3606,7 +3605,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
             The output schema of the Runnable.
         """
         fields = {k: (v.OutputType, ...) for k, v in self.steps__.items()}
-        return create_model(self.get_name("Output"), **fields)
+        return create_model_v2(self.get_name("Output"), field_definitions=fields)
 
     @property
     def config_specs(self) -> List[ConfigurableFieldSpec]:
@@ -4076,13 +4075,13 @@ class RunnableGenerator(Runnable[Input, Output]):
         if inspect.isclass(root_type) and issubclass(root_type, BaseModel):
             return root_type
 
-        return create_model(
+        return create_model_v2(
             self.get_name("Input"),
-            __root__=root_type,
+            root=root_type,
             # To create the schema, we need to provide the module
             # where the underlying function is defined.
             # This allows pydantic to resolve type annotations appropriately.
-            __module_name=module,
+            module_name=module,
         )
 
     @property
@@ -4111,13 +4110,13 @@ class RunnableGenerator(Runnable[Input, Output]):
         if inspect.isclass(root_type) and issubclass(root_type, BaseModel):
             return root_type
 
-        return create_model(
+        return create_model_v2(
             self.get_name("Output"),
-            __root__=root_type,
+            root=root_type,
             # To create the schema, we need to provide the module
             # where the underlying function is defined.
             # This allows pydantic to resolve type annotations appropriately.
-            __module_name=module,
+            module_name=module,
         )
 
     def __eq__(self, other: Any) -> bool:
@@ -4366,25 +4365,25 @@ class RunnableLambda(Runnable[Input, Output]):
             ):
                 fields = {item[1:-1]: (Any, ...) for item in items}
                 # It's a dict, lol
-                return create_model(self.get_name("Input"), **fields)
+                return create_model_v2(self.get_name("Input"), field_definitions=fields)
             else:
                 module = getattr(func, "__module__", None)
-                return create_model(
+                return create_model_v2(
                     self.get_name("Input"),
-                    __root__=List[Any],
+                    root=List[Any],
                     # To create the schema, we need to provide the module
                     # where the underlying function is defined.
                     # This allows pydantic to resolve type annotations appropriately.
-                    __module_name=module,
+                    module_name=module,
                 )
 
         if self.InputType != Any:
             return super().get_input_schema(config)
 
         if dict_keys := get_function_first_arg_dict_keys(func):
-            return create_model(
+            return create_model_v2(
                 self.get_name("Input"),
-                **{key: (Any, ...) for key in dict_keys},  # type: ignore
+                field_definitions={key: (Any, ...) for key in dict_keys},
             )
 
         return super().get_input_schema(config)
@@ -4425,13 +4424,13 @@ class RunnableLambda(Runnable[Input, Output]):
         if inspect.isclass(root_type) and issubclass(root_type, BaseModel):
             return root_type
 
-        return create_model(
+        return create_model_v2(
             self.get_name("Output"),
-            __root__=root_type,
+            root=root_type,
             # To create the schema, we need to provide the module
             # where the underlying function is defined.
             # This allows pydantic to resolve type annotations appropriately.
-            __module_name=module,
+            module_name=module,
         )
 
     @property
@@ -4945,9 +4944,9 @@ class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
     ) -> Type[BaseModel]:
-        return create_model(
+        return create_model_v2(
             self.get_name("Input"),
-            __root__=(
+            root=(
                 List[self.bound.get_input_schema(config)],  # type: ignore
                 None,
             ),
@@ -4958,7 +4957,7 @@ class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
             # be resolved correctly as well.
             # self.__class__.__module__ handles the case when the Runnable is
             # being sub-classed in a different module.
-            __module_name=self.__class__.__module__,
+            module_name=self.__class__.__module__,
         )
 
     @property
@@ -4969,9 +4968,9 @@ class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
         self, config: Optional[RunnableConfig] = None
     ) -> Type[BaseModel]:
         schema = self.bound.get_output_schema(config)
-        return create_model(
+        return create_model_v2(
             self.get_name("Output"),
-            __root__=List[schema],  # type: ignore[valid-type]
+            root=List[schema],  # type: ignore[valid-type]
             # create model needs access to appropriate type annotations to be
             # able to construct the pydantic model.
             # When we create the model, we pass information about the namespace
@@ -4979,7 +4978,7 @@ class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
             # be resolved correctly as well.
             # self.__class__.__module__ handles the case when the Runnable is
             # being sub-classed in a different module.
-            __module_name=self.__class__.__module__,
+            module_name=self.__class__.__module__,
         )
 
     @property
