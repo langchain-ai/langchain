@@ -740,7 +740,6 @@ def _handle_tool_error(
     flag: Optional[Union[Literal[True], str, Callable[[ToolException], str]]],
 ) -> str:
     if isinstance(flag, bool):
-        print(e.args)
         if e.args:
             content = e.args[0]
         else:
