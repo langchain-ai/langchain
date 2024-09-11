@@ -344,7 +344,7 @@ def test_structured_tool_types_parsed_pydantic_v1() -> None:
 
 
 def test_structured_tool_types_parsed_pydantic_mixed() -> None:
-    """Test the non-primitive types are correctly passed to structured tools."""
+    """Test handling of tool with mixed Pydantic version arguments."""
 
     class SomeBaseModel(BaseModelV1):
         foo: str
