@@ -33,7 +33,7 @@ install-py-deps:
 	python3 -m venv .venv
 	$(PYTHON) -m pip install --upgrade pip
 	$(PYTHON) -m pip install --upgrade uv
-	$(PYTHON) -m uv pip install -r --pre vercel_requirements.txt
+	$(PYTHON) -m uv pip install --pre -r vercel_requirements.txt
 	$(PYTHON) -m uv pip install --pre --editable $(PARTNER_DEPS_LIST)
 
 generate-files:
