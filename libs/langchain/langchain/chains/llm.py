@@ -17,7 +17,6 @@ from langchain_core.language_models import (
     BaseLanguageModel,
     LanguageModelInput,
 )
-from langchain_core.load.dump import dumpd
 from langchain_core.messages import BaseMessage
 from langchain_core.output_parsers import BaseLLMOutputParser, StrOutputParser
 from langchain_core.outputs import ChatGeneration, Generation, LLMResult
@@ -240,7 +239,7 @@ class LLMChain(Chain):
             callbacks, self.callbacks, self.verbose
         )
         run_manager = callback_manager.on_chain_start(
-            dumpd(self),
+            None,
             {"input_list": input_list},
         )
         try:
@@ -260,7 +259,7 @@ class LLMChain(Chain):
             callbacks, self.callbacks, self.verbose
         )
         run_manager = await callback_manager.on_chain_start(
-            dumpd(self),
+            None,
             {"input_list": input_list},
         )
         try:

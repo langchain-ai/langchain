@@ -1040,7 +1040,7 @@
   	PromptTemplate(PromptTemplate)
   	FakeListLLM(FakeListLLM)
   	Parallel_as_list_as_str_Input(Parallel<as_list,as_str>Input)
-  	Parallel_as_list_as_str_Output([Parallel_as_list_as_str_Output]):::last
+  	Parallel_as_list_as_str_Output([Parallel<as_list,as_str>Output]):::last
   	CommaSeparatedListOutputParser(CommaSeparatedListOutputParser)
   	conditional_str_parser_input(conditional_str_parser_input)
   	conditional_str_parser_output(conditional_str_parser_output)
@@ -1067,14 +1067,14 @@
   '''
   %%{init: {'flowchart': {'curve': 'linear'}}}%%
   graph TD;
-  	__start__([__start__]):::first
+  	__start__([<p>__start__</p>]):::first
   	outer_1(outer_1)
   	inner_1_inner_1(inner_1)
   	inner_1_inner_2(inner_2<hr/><small><em>__interrupt = before</em></small>)
   	inner_2_inner_1(inner_1)
   	inner_2_inner_2(inner_2)
   	outer_2(outer_2)
-  	__end__([__end__]):::last
+  	__end__([<p>__end__</p>]):::last
   	__start__ --> outer_1;
   	inner_1_inner_2 --> outer_2;
   	inner_2_inner_2 --> outer_2;
@@ -1097,13 +1097,13 @@
   '''
   %%{init: {'flowchart': {'curve': 'linear'}}}%%
   graph TD;
-  	__start__([__start__]):::first
+  	__start__([<p>__start__</p>]):::first
   	parent_1(parent_1)
   	child_child_1_grandchild_1(grandchild_1)
   	child_child_1_grandchild_2(grandchild_2<hr/><small><em>__interrupt = before</em></small>)
   	child_child_2(child_2)
   	parent_2(parent_2)
-  	__end__([__end__]):::last
+  	__end__([<p>__end__</p>]):::last
   	__start__ --> parent_1;
   	child_child_2 --> parent_2;
   	parent_1 --> child_child_1_grandchild_1;
