@@ -38,6 +38,7 @@ from pydantic import (
     validate_arguments,
 )
 from pydantic.v1 import BaseModel as BaseModelV1
+from pydantic.v1 import validate_arguments as validate_arguments_v1
 from typing_extensions import Annotated
 
 from langchain_core._api import deprecated
@@ -164,6 +165,28 @@ def _infer_arg_descriptions(
     return description, arg_descriptions
 
 
+def _is_pydantic_annotation(annotation: Any, pydantic_version: str = "v2") -> bool:
+    """Determine if a type annotation is a Pydantic model."""
+    base_model_class = BaseModelV1 if pydantic_version == "v1" else BaseModel
+    try:
+        return issubclass(annotation, base_model_class)
+    except TypeError:
+        return False
+
+
+def _function_annotations_are_pydantic_v1(signature: inspect.Signature) -> bool:
+    """Determine if all Pydantic annotations in a function signature are from V1."""
+    any_v1_annotations = any(
+        _is_pydantic_annotation(parameter.annotation, pydantic_version="v1")
+        for parameter in signature.parameters.values()
+    )
+    any_v2_annotations = any(
+        _is_pydantic_annotation(parameter.annotation, pydantic_version="v2")
+        for parameter in signature.parameters.values()
+    )
+    return any_v1_annotations and not any_v2_annotations
+
+
 class _SchemaConfig:
     """Configuration for the pydantic model.
 
@@ -208,15 +231,18 @@ def create_schema_from_function(
     Returns:
         A pydantic model with the same arguments as the function.
     """
-    # https://docs.pydantic.dev/latest/usage/validation_decorator/
-    with warnings.catch_warnings():
-        # We are using deprecated functionality here.
-        # This code should be re-written to simply construct a pydantic model
-        # using inspect.signature and create_model.
-        warnings.simplefilter("ignore", category=PydanticDeprecationWarning)
-        validated = validate_arguments(func, config=_SchemaConfig)  # type: ignore
-
     sig = inspect.signature(func)
+
+    if _function_annotations_are_pydantic_v1(sig):
+        validated = validate_arguments_v1(func, config=_SchemaConfig)  # type: ignore
+    else:
+        # https://docs.pydantic.dev/latest/usage/validation_decorator/
+        with warnings.catch_warnings():
+            # We are using deprecated functionality here.
+            # This code should be re-written to simply construct a pydantic model
+            # using inspect.signature and create_model.
+            warnings.simplefilter("ignore", category=PydanticDeprecationWarning)
+            validated = validate_arguments(func, config=_SchemaConfig)  # type: ignore
 
     # Let's ignore `self` and `cls` arguments for class and instance methods
     if func.__qualname__ and "." in func.__qualname__:

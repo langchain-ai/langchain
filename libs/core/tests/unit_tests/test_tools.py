@@ -317,6 +317,25 @@ def test_structured_tool_types_parsed() -> None:
     assert result == expected
 
 
+def test_structured_tool_types_parsed_pydantic_v1() -> None:
+    """Test the non-primitive types are correctly passed to structured tools."""
+
+    class SomeBaseModel(BaseModelV1):
+        foo: str
+
+    @tool
+    def structured_tool(some_base_model: SomeBaseModel) -> dict:
+        """Return the arguments directly."""
+        return {"some_base_model": some_base_model}
+
+    assert isinstance(structured_tool, StructuredTool)
+
+    args = {"some_base_model": SomeBaseModel(foo="bar").dict()}
+    result = structured_tool.run(args)
+    expected = {"some_base_model": SomeBaseModel(foo="bar")}
+    assert result == expected
+
+
 def test_base_tool_inheritance_base_schema() -> None:
     """Test schema is correctly inferred when inheriting from BaseTool."""
 
