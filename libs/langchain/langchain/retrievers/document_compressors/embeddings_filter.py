@@ -4,8 +4,7 @@ import numpy as np
 from langchain_core.callbacks.manager import Callbacks
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.utils import pre_init
-from pydantic import ConfigDict, Field
+from pydantic import ConfigDict, Field, model_validator
 
 from langchain.retrievers.document_compressors.base import (
     BaseDocumentCompressor,
@@ -36,7 +35,7 @@ class EmbeddingsFilter(BaseDocumentCompressor):
     k: Optional[int] = 20
     """The number of relevant documents to return. Can be set to None, in which case
     `similarity_threshold` must be specified. Defaults to 20."""
-    similarity_threshold: Optional[float]
+    similarity_threshold: Optional[float] = None
     """Threshold for determining when two documents are similar enough
     to be considered redundant. Defaults to None, must be specified if `k` is set
     to None."""
@@ -45,10 +44,11 @@ class EmbeddingsFilter(BaseDocumentCompressor):
         arbitrary_types_allowed=True,
     )
 
-    @pre_init
+    @model_validator(mode="before")
+    @classmethod
     def validate_params(cls, values: Dict) -> Dict:
         """Validate similarity parameters."""
-        if values["k"] is None and values["similarity_threshold"] is None:
+        if values.get("k") is None and values.get("similarity_threshold") is None:
             raise ValueError("Must specify one of `k` or `similarity_threshold`.")
         return values
 
