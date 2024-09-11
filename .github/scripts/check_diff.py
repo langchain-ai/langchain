@@ -95,6 +95,7 @@ def add_dependents(dirs_to_eval: Set[str], dependents: dict) -> List[str]:
         # handle core manually because it has so many dependents
         if "core" in dir_:
             updated.add(dir_)
+            updated.update(all_package_dirs())
             continue
         pkg = "langchain-" + dir_.split("/")[-1]
         updated.update(dependents[pkg])
@@ -133,7 +134,7 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
 
 
 def _get_configs_for_multi_dirs(
-    job: str, dirs_to_run: List[str], dependents: dict
+    job: str, dirs_to_run: Dict[str, Set[str]], dependents: dict
 ) -> List[Dict[str, str]]:
     if job == "lint":
         dirs = add_dependents(
@@ -231,7 +232,6 @@ if __name__ == "__main__":
 
     # we now have dirs_by_job
     # todo: clean this up
-
     map_job_to_configs = {
         job: _get_configs_for_multi_dirs(job, dirs_to_run, dependents)
         for job in [
