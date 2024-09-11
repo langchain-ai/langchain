@@ -15,7 +15,7 @@ class AzureContentSafetyTextTool(BaseTool):
     A tool that interacts with the Azure AI Content Safety API.
 
     This tool queries the Azure AI Content Safety API to analyze text for harmful
-    content and identify sentiment. It requires an API key and endpoint, 
+    content and identify sentiment. It requires an API key and endpoint,
     which can be set up as described in the following guide:
 
     https://learn.microsoft.com/python/api/overview/azure/ai-contentsafety-readme?view=azure-python
@@ -34,7 +34,7 @@ class AzureContentSafetyTextTool(BaseTool):
             Analyzes the provided text to assess its sentiment and safety,
             returning the analysis results.
 
-        _run(query: str, 
+        _run(query: str,
             run_manager: Optional[CallbackManagerForToolRun] = None) -> str:
             Uses the tool to analyze the given query and returns the result.
             Raises a RuntimeError if an exception occurs.
@@ -48,7 +48,7 @@ class AzureContentSafetyTextTool(BaseTool):
     description: str = (
         "A wrapper around Azure AI Content Safety. "
         "Useful for when you need to identify the sentiment of text and whether"
-        " or not a text is harmful." 
+        " or not a text is harmful."
         "Input must be text (str)."
     )
 
@@ -70,7 +70,7 @@ class AzureContentSafetyTextTool(BaseTool):
                 be fetched from the environment variable 'CONTENT_SAFETY_API_KEY'.
             content_safety_endpoint (Optional[str]):
                 The endpoint URL for Azure Content Safety API. If not provided, it
-                will be fetched from the environment variable 
+                will be fetched from the environment variable
                 'CONTENT_SAFETY_ENDPOINT'.
 
         Raises:
@@ -78,12 +78,10 @@ class AzureContentSafetyTextTool(BaseTool):
             ValueError: If API key or endpoint is not provided and environment
                 variables are missing.
         """
-        content_safety_key = content_safety_key or os.environ[
-            "CONTENT_SAFETY_API_KEY"
-        ]
-        content_safety_endpoint = content_safety_endpoint or os.environ[
-            "CONTENT_SAFETY_ENDPOINT"
-        ]
+        content_safety_key = content_safety_key or os.environ["CONTENT_SAFETY_API_KEY"]
+        content_safety_endpoint = (
+            content_safety_endpoint or os.environ["CONTENT_SAFETY_ENDPOINT"]
+        )
         try:
             import azure.ai.contentsafety as sdk
             from azure.core.credentials import AzureKeyCredential
@@ -150,7 +148,4 @@ class AzureContentSafetyTextTool(BaseTool):
         try:
             return self._sentiment_analysis(query)
         except Exception as e:
-            raise RuntimeError(
-                f"Error while running AzureContentSafetyTextTool: {e}"
-            )
-
+            raise RuntimeError(f"Error while running AzureContentSafetyTextTool: {e}")
