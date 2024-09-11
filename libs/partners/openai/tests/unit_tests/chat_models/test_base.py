@@ -694,3 +694,20 @@ def test_get_num_tokens_from_messages() -> None:
     expected = 176
     actual = llm.get_num_tokens_from_messages(messages)
     assert expected == actual
+
+
+def test_schema_from_with_structured_output() -> None:
+    """Test schema from with_structured_output."""
+
+    class Foo(BaseModel):
+        bar: Any
+
+    model_chat = ChatOpenAI(api_key="foo")
+
+    model = model_chat.with_structured_output(Foo, method="json_schema", strict=True)
+
+    assert model.get_output_schema().schema() == {
+        "properties": {"bar": {"title": "Bar"}},
+        "title": "Foo",
+        "type": "object",
+    }
