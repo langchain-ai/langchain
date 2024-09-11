@@ -5,7 +5,6 @@ import requests
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
-from langchain_core.pydantic_v1 import Extra
 from langchain_core.utils import get_from_dict_or_env, pre_init
 
 
@@ -16,7 +15,7 @@ class SVEndpointHandler:
     :param str host_url: Base URL of the DaaS API service
     """
 
-    API_BASE_PATH = "/api/predict"
+    API_BASE_PATH: str = "/api/predict"
 
     def __init__(self, host_url: str):
         """
@@ -190,6 +189,7 @@ class Sambaverse(LLM):
                 "top_p": 1.0,
                 "repetition_penalty": 1.0,
                 "top_k": 50,
+                "process_prompt": False
             },
         )
     """
@@ -210,9 +210,7 @@ class Sambaverse(LLM):
     """Streaming flag to get streamed response."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -388,7 +386,7 @@ class Sambaverse(LLM):
             prompt: The prompt to pass into the model.
             stop: Optional list of stop words to use when generating.
             run_manager: Callback manager for the run.
-            **kwargs: Additional keyword arguments. directly passed
+            kwargs: Additional keyword arguments. directly passed
                 to the sambaverse model in API call.
 
         Returns:
@@ -425,7 +423,7 @@ class Sambaverse(LLM):
             stop: Stop words to use when generating. Model output is cut off at the
                 first occurrence of any of the stop substrings.
             run_manager: Callback manager for the run.
-            **kwargs: Additional keyword arguments. directly passed
+            kwargs: Additional keyword arguments. directly passed
                 to the sambaverse model in API call.
 
         Returns:
@@ -452,7 +450,7 @@ class Sambaverse(LLM):
             stop: Stop words to use when generating. Model output is cut off at the
                 first occurrence of any of the stop substrings.
             run_manager: Callback manager for the run.
-            **kwargs: Additional keyword arguments. directly passed
+            kwargs: Additional keyword arguments. directly passed
                 to the sambaverse model in API call.
 
         Returns:
@@ -516,7 +514,7 @@ class SSEndpointHandler:
         response: requests.Response,
     ) -> Generator[Dict, None, None]:
         """Process the streaming response"""
-        if "nlp" in self.api_base_uri:
+        if "api/predict/nlp" in self.api_base_uri:
             try:
                 import sseclient
             except ImportError:
@@ -537,14 +535,15 @@ class SSEndpointHandler:
                 yield chunk
             if close_conn:
                 client.close()
-        elif "generic" in self.api_base_uri:
+        elif (
+            "api/v2/predict/generic" in self.api_base_uri
+            or "api/predict/generic" in self.api_base_uri
+        ):
             try:
                 for line in response.iter_lines():
                     chunk = json.loads(line)
                     if "status_code" not in chunk:
                         chunk["status_code"] = response.status_code
-                    if chunk["status_code"] == 200 and chunk.get("error"):
-                        chunk["result"] = {"responses": [{"stream_token": ""}]}
                     yield chunk
             except Exception as e:
                 raise RuntimeError(f"Error processing streaming response: {e}")
@@ -585,12 +584,18 @@ class SSEndpointHandler:
         """
         if isinstance(input, str):
             input = [input]
-        if "nlp" in self.api_base_uri:
+        if "api/predict/nlp" in self.api_base_uri:
             if params:
                 data = {"inputs": input, "params": json.loads(params)}
             else:
                 data = {"inputs": input}
-        elif "generic" in self.api_base_uri:
+        elif "api/v2/predict/generic" in self.api_base_uri:
+            items = [{"id": f"item{i}", "value": item} for i, item in enumerate(input)]
+            if params:
+                data = {"items": items, "params": json.loads(params)}
+            else:
+                data = {"items": items}
+        elif "api/predict/generic" in self.api_base_uri:
             if params:
                 data = {"instances": input, "params": json.loads(params)}
             else:
@@ -625,14 +630,22 @@ class SSEndpointHandler:
         :returns: Prediction results
         :type: dict
         """
-        if "nlp" in self.api_base_uri:
+        if "api/predict/nlp" in self.api_base_uri:
             if isinstance(input, str):
                 input = [input]
             if params:
                 data = {"inputs": input, "params": json.loads(params)}
             else:
                 data = {"inputs": input}
-        elif "generic" in self.api_base_uri:
+        elif "api/v2/predict/generic" in self.api_base_uri:
+            if isinstance(input, str):
+                input = [input]
+            items = [{"id": f"item{i}", "value": item} for i, item in enumerate(input)]
+            if params:
+                data = {"items": items, "params": json.loads(params)}
+            else:
+                data = {"items": items}
+        elif "api/predict/generic" in self.api_base_uri:
             if isinstance(input, list):
                 input = input[0]
             if params:
@@ -672,7 +685,7 @@ class SambaStudio(LLM):
     Example:
     .. code-block:: python
 
-        from langchain_community.llms.sambanova  import Sambaverse
+        from langchain_community.llms.sambanova  import SambaStudio
         SambaStudio(
             sambastudio_base_url="your-SambaStudio-environment-URL",
             sambastudio_base_uri="your-SambaStudio-base-URI",
@@ -687,6 +700,8 @@ class SambaStudio(LLM):
                 "top_p": 1.0,
                 "repetition_penalty": 1,
                 "top_k": 50,
+                #"process_prompt": False,
+                #"select_expert": "Meta-Llama-3-8B-Instruct"
             },
         )
     """
@@ -713,9 +728,7 @@ class SambaStudio(LLM):
     """Streaming flag to get streamed response."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -741,7 +754,7 @@ class SambaStudio(LLM):
             values,
             "sambastudio_base_uri",
             "SAMBASTUDIO_BASE_URI",
-            default="api/predict/nlp",
+            default="api/predict/generic",
         )
         values["sambastudio_project_id"] = get_from_dict_or_env(
             values, "sambastudio_project_id", "SAMBASTUDIO_PROJECT_ID"
@@ -772,10 +785,13 @@ class SambaStudio(LLM):
         # _model_kwargs["stop_sequences"] = ",".join(
         #    f'"{x}"' for x in _stop_sequences
         # )
-        tuning_params_dict = {
-            k: {"type": type(v).__name__, "value": str(v)}
-            for k, v in (_model_kwargs.items())
-        }
+        if "api/v2/predict/generic" in self.sambastudio_base_uri:
+            tuning_params_dict = _model_kwargs
+        else:
+            tuning_params_dict = {
+                k: {"type": type(v).__name__, "value": str(v)}
+                for k, v in (_model_kwargs.items())
+            }
         # _model_kwargs["stop_sequences"] = _kwarg_stop_sequences
         tuning_params = json.dumps(tuning_params_dict)
         return tuning_params
@@ -816,9 +832,11 @@ class SambaStudio(LLM):
                     f"Sambanova /complete call failed with status code "
                     f"{response['status_code']}.\n response {response}"
                 )
-        if "nlp" in self.sambastudio_base_uri:
+        if "api/predict/nlp" in self.sambastudio_base_uri:
             return response["data"][0]["completion"]
-        elif "generic" in self.sambastudio_base_uri:
+        elif "api/v2/predict/generic" in self.sambastudio_base_uri:
+            return response["items"][0]["value"]["completion"]
+        elif "api/predict/generic" in self.sambastudio_base_uri:
             return response["predictions"][0]["completion"]
         else:
             raise ValueError(
@@ -887,10 +905,15 @@ class SambaStudio(LLM):
                         f"{chunk['status_code']}."
                         f"{chunk}."
                     )
-            if "nlp" in self.sambastudio_base_uri:
+            if "api/predict/nlp" in self.sambastudio_base_uri:
                 text = json.loads(chunk["data"])["stream_token"]
-            elif "generic" in self.sambastudio_base_uri:
-                text = chunk["result"]["responses"][0]["stream_token"]
+            elif "api/v2/predict/generic" in self.sambastudio_base_uri:
+                text = chunk["result"]["items"][0]["value"]["stream_token"]
+            elif "api/predict/generic" in self.sambastudio_base_uri:
+                if len(chunk["result"]["responses"]) > 0:
+                    text = chunk["result"]["responses"][0]["stream_token"]
+                else:
+                    text = ""
             else:
                 raise ValueError(
                     f"handling of endpoint uri: {self.sambastudio_base_uri}"
@@ -948,7 +971,7 @@ class SambaStudio(LLM):
             stop: Stop words to use when generating. Model output is cut off at the
                 first occurrence of any of the stop substrings.
             run_manager: Callback manager for the run.
-            **kwargs: Additional keyword arguments. directly passed
+            kwargs: Additional keyword arguments. directly passed
                 to the sambaverse model in API call.
 
         Returns:

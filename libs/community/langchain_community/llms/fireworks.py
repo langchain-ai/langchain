@@ -29,7 +29,7 @@ def _stream_response_to_generation_chunk(
 
 @deprecated(
     since="0.0.26",
-    removal="0.3",
+    removal="1.0",
     alternative_import="langchain_fireworks.Fireworks",
 )
 class Fireworks(BaseLLM):

@@ -6,7 +6,6 @@ from typing import Any, Dict, List, Optional
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import Extra
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.utils import pre_init
 
@@ -43,6 +42,7 @@ def create_index(
         sparse_encoder: Sparse encoder to use.
         ids: List of ids to use for the documents.
         metadatas: List of metadata to use for the documents.
+        namespace: Namespace value for index partition.
     """
     batch_size = 32
     _iterator = range(0, len(contexts), batch_size)
@@ -115,10 +115,8 @@ class PineconeHybridSearchRetriever(BaseRetriever):
     """Namespace value for index partition."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
         arbitrary_types_allowed = True
+        extra = "forbid"
 
     def add_texts(
         self,
@@ -175,8 +173,9 @@ class PineconeHybridSearchRetriever(BaseRetriever):
         final_result = []
         for res in result["matches"]:
             context = res["metadata"].pop("context")
-            final_result.append(
-                Document(page_content=context, metadata=res["metadata"])
-            )
+            metadata = res["metadata"]
+            if "score" not in metadata and "score" in res:
+                metadata["score"] = res["score"]
+            final_result.append(Document(page_content=context, metadata=metadata))
         # return search results as json
         return final_result

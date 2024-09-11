@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union, cast
 
 from langchain_core.callbacks import Callbacks
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.runnables.config import RunnableConfig
 from langchain_core.runnables.utils import create_model
 
@@ -25,7 +25,7 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
     Example:
         .. code-block:: python
 
-            from langchain.chains import StuffDocumentsChain, LLMChain
+            from langchain.chains import MapRerankDocumentsChain, LLMChain
             from langchain_core.prompts import PromptTemplate
             from langchain_community.llms import OpenAI
             from langchain.output_parsers.regex import RegexParser
@@ -39,7 +39,7 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
             prompt_template = (
                 "Use the following context to tell me the chemical formula "
                 "for water. Output both your answer and a score of how confident "
-                "you are. Context: {content}"
+                "you are. Context: {context}"
             )
             output_parser = RegexParser(
                 regex=r"(.*?)\nScore: (.*)",
@@ -75,10 +75,8 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
     Intermediate steps include the results of calling llm_chain on each document."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
         arbitrary_types_allowed = True
+        extra = "forbid"
 
     def get_output_schema(
         self, config: Optional[RunnableConfig] = None

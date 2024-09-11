@@ -52,7 +52,18 @@ logger = logging.getLogger(__name__)
 
 
 class RunInfo(TypedDict):
-    """Information about a run."""
+    """Information about a run.
+
+    This is used to keep track of the metadata associated with a run.
+
+    Parameters:
+        name: The name of the run.
+        tags: The tags associated with the run.
+        metadata: The metadata associated with the run.
+        run_type: The type of the run.
+        inputs: The inputs to the run.
+        parent_run_id: The ID of the parent run.
+    """
 
     name: str
     tags: List[str]
@@ -62,14 +73,15 @@ class RunInfo(TypedDict):
     parent_run_id: Optional[UUID]
 
 
-def _assign_name(name: Optional[str], serialized: Dict[str, Any]) -> str:
+def _assign_name(name: Optional[str], serialized: Optional[Dict[str, Any]]) -> str:
     """Assign a name to a run."""
     if name is not None:
         return name
-    if "name" in serialized:
-        return serialized["name"]
-    elif "id" in serialized:
-        return serialized["id"][-1]
+    if serialized is not None:
+        if "name" in serialized:
+            return serialized["name"]
+        elif "id" in serialized:
+            return serialized["id"][-1]
     return "Unnamed"
 
 
@@ -150,7 +162,19 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
     async def tap_output_aiter(
         self, run_id: UUID, output: AsyncIterator[T]
     ) -> AsyncIterator[T]:
-        """Tap the output aiter."""
+        """Tap the output aiter.
+
+        This method is used to tap the output of a Runnable that produces
+        an async iterator. It is used to generate stream events for the
+        output of the Runnable.
+
+        Args:
+            run_id: The ID of the run.
+            output: The output of the Runnable.
+
+        Yields:
+            T: The output of the Runnable.
+        """
         sentinel = object()
         # atomic check and set
         tap = self.is_tapped.setdefault(run_id, sentinel)
@@ -192,7 +216,15 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 yield chunk
 
     def tap_output_iter(self, run_id: UUID, output: Iterator[T]) -> Iterator[T]:
-        """Tap the output aiter."""
+        """Tap the output aiter.
+
+        Args:
+            run_id: The ID of the run.
+            output: The output of the Runnable.
+
+        Yields:
+            T: The output of the Runnable.
+        """
         sentinel = object()
         # atomic check and set
         tap = self.is_tapped.setdefault(run_id, sentinel)

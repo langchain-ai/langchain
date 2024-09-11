@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-import os
 import warnings
 from typing import (
     Any,
@@ -21,18 +20,8 @@ from typing import (
 import openai
 import tiktoken
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import (
-    BaseModel,
-    Extra,
-    Field,
-    SecretStr,
-    root_validator,
-)
-from langchain_core.utils import (
-    convert_to_secret_str,
-    get_from_dict_or_env,
-    get_pydantic_field_names,
-)
+from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
+from langchain_core.utils import from_env, get_pydantic_field_names, secret_from_env
 
 logger = logging.getLogger(__name__)
 
@@ -99,21 +88,85 @@ def _process_batched_chunked_embeddings(
 
 
 class OpenAIEmbeddings(BaseModel, Embeddings):
-    """OpenAI embedding models.
+    """OpenAI embedding model integration.
 
-    To use, you should have the
-    environment variable ``OPENAI_API_KEY`` set with your API key or pass it
-    as a named parameter to the constructor.
+    Setup:
+        Install ``langchain_openai`` and set environment variable ``OPENAI_API_KEY``.
 
-    In order to use the library with Microsoft Azure endpoints, use
-    AzureOpenAIEmbeddings.
+        .. code-block:: bash
 
-    Example:
+            pip install -U langchain_openai
+            export OPENAI_API_KEY="your-api-key"
+
+    Key init args — embedding params:
+        model: str
+            Name of OpenAI model to use.
+        dimensions: Optional[int] = None
+            The number of dimensions the resulting output embeddings should have.
+            Only supported in `text-embedding-3` and later models.
+
+    Key init args — client params:
+        api_key: Optional[SecretStr] = None
+            OpenAI API key.
+        organization: Optional[str] = None
+            OpenAI organization ID. If not passed in will be read
+            from env var OPENAI_ORG_ID.
+        max_retries: int = 2
+            Maximum number of retries to make when generating.
+        request_timeout: Optional[Union[float, Tuple[float, float], Any]] = None
+            Timeout for requests to OpenAI completion API
+
+    See full list of supported init args and their descriptions in the params section.
+
+    Instantiate:
         .. code-block:: python
 
             from langchain_openai import OpenAIEmbeddings
 
-            model = OpenAIEmbeddings(model="text-embedding-3-large")
+            embed = OpenAIEmbeddings(
+                model="text-embedding-3-large"
+                # With the `text-embedding-3` class
+                # of models, you can specify the size
+                # of the embeddings you want returned.
+                # dimensions=1024
+            )
+
+    Embed single text:
+        .. code-block:: python
+
+            input_text = "The meaning of life is 42"
+            vector = embeddings.embed_query("hello")
+            print(vector[:3])
+
+        .. code-block:: python
+
+            [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
+
+    Embed multiple texts:
+        .. code-block:: python
+
+            vectors = embeddings.embed_documents(["hello", "goodbye"])
+            # Showing only the first 3 coordinates
+            print(len(vectors))
+            print(vectors[0][:3])
+
+        .. code-block:: python
+
+            2
+            [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
+
+    Async:
+        .. code-block:: python
+
+            await embed.aembed_query(input_text)
+            print(vector[:3])
+
+            # multiple:
+            # await embed.aembed_documents(input_texts)
+
+        .. code-block:: python
+
+            [-0.009100092574954033, 0.005071679595857859, -0.0029193938244134188]
     """
 
     client: Any = Field(default=None, exclude=True)  #: :meta private:
@@ -127,21 +180,37 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     # to support Azure OpenAI Service custom deployment names
     deployment: Optional[str] = model
     # TODO: Move to AzureOpenAIEmbeddings.
-    openai_api_version: Optional[str] = Field(default=None, alias="api_version")
+    openai_api_version: Optional[str] = Field(
+        default_factory=from_env("OPENAI_API_VERSION", default=None),
+        alias="api_version",
+    )
     """Automatically inferred from env var `OPENAI_API_VERSION` if not provided."""
     # to support Azure OpenAI Service custom endpoints
-    openai_api_base: Optional[str] = Field(default=None, alias="base_url")
+    openai_api_base: Optional[str] = Field(
+        alias="base_url", default_factory=from_env("OPENAI_API_BASE", default=None)
+    )
     """Base URL path for API requests, leave blank if not using a proxy or service
         emulator."""
     # to support Azure OpenAI Service custom endpoints
-    openai_api_type: Optional[str] = None
+    openai_api_type: Optional[str] = Field(
+        default_factory=from_env("OPENAI_API_TYPE", default=None)
+    )
     # to support explicit proxy for OpenAI
-    openai_proxy: Optional[str] = None
+    openai_proxy: Optional[str] = Field(
+        default_factory=from_env("OPENAI_PROXY", default=None)
+    )
     embedding_ctx_length: int = 8191
     """The maximum number of tokens to embed at once."""
-    openai_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
+    openai_api_key: Optional[SecretStr] = Field(
+        alias="api_key", default_factory=secret_from_env("OPENAI_API_KEY", default=None)
+    )
     """Automatically inferred from env var `OPENAI_API_KEY` if not provided."""
-    openai_organization: Optional[str] = Field(default=None, alias="organization")
+    openai_organization: Optional[str] = Field(
+        alias="organization",
+        default_factory=from_env(
+            ["OPENAI_ORG_ID", "OPENAI_ORGANIZATION"], default=None
+        ),
+    )
     """Automatically inferred from env var `OPENAI_ORG_ID` if not provided."""
     allowed_special: Union[Literal["all"], Set[str], None] = None
     disallowed_special: Union[Literal["all"], Set[str], Sequence[str], None] = None
@@ -197,7 +266,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     class Config:
         """Configuration for this pydantic object."""
 
-        extra = Extra.forbid
+        extra = "forbid"
         allow_population_by_field_name = True
 
     @root_validator(pre=True)
@@ -226,44 +295,9 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         values["model_kwargs"] = extra
         return values
 
-    @root_validator()
+    @root_validator(pre=False, skip_on_failure=True, allow_reuse=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        openai_api_key = get_from_dict_or_env(
-            values, "openai_api_key", "OPENAI_API_KEY"
-        )
-        values["openai_api_key"] = (
-            convert_to_secret_str(openai_api_key) if openai_api_key else None
-        )
-        values["openai_api_base"] = values["openai_api_base"] or os.getenv(
-            "OPENAI_API_BASE"
-        )
-        values["openai_api_type"] = get_from_dict_or_env(
-            values, "openai_api_type", "OPENAI_API_TYPE", default=""
-        )
-        values["openai_proxy"] = get_from_dict_or_env(
-            values, "openai_proxy", "OPENAI_PROXY", default=""
-        )
-        if values["openai_api_type"] in ("azure", "azure_ad", "azuread"):
-            default_api_version = "2023-05-15"
-            # Azure OpenAI embedding models allow a maximum of 16 texts
-            # at a time in each batch
-            # See: https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#embeddings
-            values["chunk_size"] = min(values["chunk_size"], 16)
-        else:
-            default_api_version = ""
-        values["openai_api_version"] = get_from_dict_or_env(
-            values,
-            "openai_api_version",
-            "OPENAI_API_VERSION",
-            default=default_api_version,
-        )
-        # Check OPENAI_ORGANIZATION for backwards compatibility.
-        values["openai_organization"] = (
-            values["openai_organization"]
-            or os.getenv("OPENAI_ORG_ID")
-            or os.getenv("OPENAI_ORGANIZATION")
-        )
         if values["openai_api_type"] in ("azure", "azure_ad", "azuread"):
             raise ValueError(
                 "If you are using Azure, "
@@ -282,12 +316,44 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             "default_headers": values["default_headers"],
             "default_query": values["default_query"],
         }
+
+        if values["openai_proxy"] and (
+            values["http_client"] or values["http_async_client"]
+        ):
+            openai_proxy = values["openai_proxy"]
+            http_client = values["http_client"]
+            http_async_client = values["http_async_client"]
+            raise ValueError(
+                "Cannot specify 'openai_proxy' if one of "
+                "'http_client'/'http_async_client' is already specified. Received:\n"
+                f"{openai_proxy=}\n{http_client=}\n{http_async_client=}"
+            )
         if not values.get("client"):
+            if values["openai_proxy"] and not values["http_client"]:
+                try:
+                    import httpx
+                except ImportError as e:
+                    raise ImportError(
+                        "Could not import httpx python package. "
+                        "Please install it with `pip install httpx`."
+                    ) from e
+                values["http_client"] = httpx.Client(proxy=values["openai_proxy"])
             sync_specific = {"http_client": values["http_client"]}
             values["client"] = openai.OpenAI(
                 **client_params, **sync_specific
             ).embeddings
         if not values.get("async_client"):
+            if values["openai_proxy"] and not values["http_async_client"]:
+                try:
+                    import httpx
+                except ImportError as e:
+                    raise ImportError(
+                        "Could not import httpx python package. "
+                        "Please install it with `pip install httpx`."
+                    ) from e
+                values["http_async_client"] = httpx.AsyncClient(
+                    proxy=values["openai_proxy"]
+                )
             async_specific = {"http_client": values["http_async_client"]}
             values["async_client"] = openai.AsyncOpenAI(
                 **client_params, **async_specific

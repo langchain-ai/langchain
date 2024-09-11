@@ -12,7 +12,7 @@ PAGE_1 = """
 Hello.
 <a href="relative">Relative</a>
 <a href="/relative-base">Relative base.</a>
-<a href="http://cnn.com">Aboslute</a>
+<a href="http://cnn.com">Absolute</a>
 <a href="//same.foo">Test</a>
 </body>
 </html>

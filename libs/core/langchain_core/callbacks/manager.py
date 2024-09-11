@@ -1354,7 +1354,7 @@ class CallbackManager(BaseCallbackManager):
 
     def on_chain_start(
         self,
-        serialized: Dict[str, Any],
+        serialized: Optional[Dict[str, Any]],
         inputs: Union[Dict[str, Any], Any],
         run_id: Optional[UUID] = None,
         **kwargs: Any,
@@ -1362,7 +1362,7 @@ class CallbackManager(BaseCallbackManager):
         """Run when chain starts running.
 
         Args:
-            serialized (Dict[str, Any]): The serialized chain.
+            serialized (Optional[Dict[str, Any]]): The serialized chain.
             inputs (Union[Dict[str, Any], Any]): The inputs to the chain.
             run_id (UUID, optional): The ID of the run. Defaults to None.
             **kwargs (Any): Additional keyword arguments.
@@ -1398,7 +1398,7 @@ class CallbackManager(BaseCallbackManager):
 
     def on_tool_start(
         self,
-        serialized: Dict[str, Any],
+        serialized: Optional[Dict[str, Any]],
         input_str: str,
         run_id: Optional[UUID] = None,
         parent_run_id: Optional[UUID] = None,
@@ -1453,7 +1453,7 @@ class CallbackManager(BaseCallbackManager):
 
     def on_retriever_start(
         self,
-        serialized: Dict[str, Any],
+        serialized: Optional[Dict[str, Any]],
         query: str,
         run_id: Optional[UUID] = None,
         parent_run_id: Optional[UUID] = None,
@@ -1462,7 +1462,7 @@ class CallbackManager(BaseCallbackManager):
         """Run when the retriever starts running.
 
         Args:
-            serialized (Dict[str, Any]): The serialized retriever.
+            serialized (Optional[Dict[str, Any]]): The serialized retriever.
             query (str): The query.
             run_id (UUID, optional): The ID of the run. Defaults to None.
             parent_run_id (UUID, optional): The ID of the parent run. Defaults to None.
@@ -1612,15 +1612,74 @@ class CallbackManagerForChainGroup(CallbackManager):
     def copy(self) -> CallbackManagerForChainGroup:
         """Copy the callback manager."""
         return self.__class__(
-            handlers=self.handlers,
-            inheritable_handlers=self.inheritable_handlers,
+            handlers=self.handlers.copy(),
+            inheritable_handlers=self.inheritable_handlers.copy(),
             parent_run_id=self.parent_run_id,
-            tags=self.tags,
-            inheritable_tags=self.inheritable_tags,
-            metadata=self.metadata,
-            inheritable_metadata=self.inheritable_metadata,
+            tags=self.tags.copy(),
+            inheritable_tags=self.inheritable_tags.copy(),
+            metadata=self.metadata.copy(),
+            inheritable_metadata=self.inheritable_metadata.copy(),
             parent_run_manager=self.parent_run_manager,
         )
+
+    def merge(
+        self: CallbackManagerForChainGroup, other: BaseCallbackManager
+    ) -> CallbackManagerForChainGroup:
+        """Merge the group callback manager with another callback manager.
+
+        Overwrites the merge method in the base class to ensure that the
+        parent run manager is preserved. Keeps the parent_run_manager
+        from the current object.
+
+        Returns:
+            CallbackManagerForChainGroup: A copy of the current object with the
+                handlers, tags, and other attributes merged from the other object.
+
+        Example: Merging two callback managers.
+
+            .. code-block:: python
+
+                from langchain_core.callbacks.manager import CallbackManager, trace_as_chain_group
+                from langchain_core.callbacks.stdout import StdOutCallbackHandler
+
+                manager = CallbackManager(handlers=[StdOutCallbackHandler()], tags=["tag2"])
+                with trace_as_chain_group("My Group Name", tags=["tag1"]) as group_manager:
+                    merged_manager = group_manager.merge(manager)
+                    print(type(merged_manager))
+                    # <class 'langchain_core.callbacks.manager.CallbackManagerForChainGroup'>
+
+                    print(merged_manager.handlers)
+                    # [
+                    #    <langchain_core.callbacks.stdout.LangChainTracer object at ...>,
+                    #    <langchain_core.callbacks.streaming_stdout.StdOutCallbackHandler object at ...>,
+                    # ]
+
+                    print(merged_manager.tags)
+                    #    ['tag2', 'tag1']
+
+        """  # noqa: E501
+        manager = self.__class__(
+            parent_run_id=self.parent_run_id or other.parent_run_id,
+            handlers=[],
+            inheritable_handlers=[],
+            tags=list(set(self.tags + other.tags)),
+            inheritable_tags=list(set(self.inheritable_tags + other.inheritable_tags)),
+            metadata={
+                **self.metadata,
+                **other.metadata,
+            },
+            parent_run_manager=self.parent_run_manager,
+        )
+
+        handlers = self.handlers + other.handlers
+        inheritable_handlers = self.inheritable_handlers + other.inheritable_handlers
+
+        for handler in handlers:
+            manager.add_handler(handler)
+
+        for handler in inheritable_handlers:
+            manager.add_handler(handler, inherit=True)
+        return manager
 
     def on_chain_end(self, outputs: Union[Dict[str, Any], Any], **kwargs: Any) -> None:
         """Run when traced chain group ends.
@@ -1781,7 +1840,7 @@ class AsyncCallbackManager(BaseCallbackManager):
 
     async def on_chain_start(
         self,
-        serialized: Dict[str, Any],
+        serialized: Optional[Dict[str, Any]],
         inputs: Union[Dict[str, Any], Any],
         run_id: Optional[UUID] = None,
         **kwargs: Any,
@@ -1789,7 +1848,7 @@ class AsyncCallbackManager(BaseCallbackManager):
         """Async run when chain starts running.
 
         Args:
-            serialized (Dict[str, Any]): The serialized chain.
+            serialized (Optional[Dict[str, Any]]): The serialized chain.
             inputs (Union[Dict[str, Any], Any]): The inputs to the chain.
             run_id (UUID, optional): The ID of the run. Defaults to None.
             **kwargs (Any): Additional keyword arguments.
@@ -1827,7 +1886,7 @@ class AsyncCallbackManager(BaseCallbackManager):
 
     async def on_tool_start(
         self,
-        serialized: Dict[str, Any],
+        serialized: Optional[Dict[str, Any]],
         input_str: str,
         run_id: Optional[UUID] = None,
         parent_run_id: Optional[UUID] = None,
@@ -1836,7 +1895,7 @@ class AsyncCallbackManager(BaseCallbackManager):
         """Run when the tool starts running.
 
         Args:
-            serialized (Dict[str, Any]): The serialized tool.
+            serialized (Optional[Dict[str, Any]]): The serialized tool.
             input_str (str): The input to the tool.
             run_id (UUID, optional): The ID of the run. Defaults to None.
             parent_run_id (UUID, optional): The ID of the parent run.
@@ -1916,7 +1975,7 @@ class AsyncCallbackManager(BaseCallbackManager):
 
     async def on_retriever_start(
         self,
-        serialized: Dict[str, Any],
+        serialized: Optional[Dict[str, Any]],
         query: str,
         run_id: Optional[UUID] = None,
         parent_run_id: Optional[UUID] = None,
@@ -1925,7 +1984,7 @@ class AsyncCallbackManager(BaseCallbackManager):
         """Run when the retriever starts running.
 
         Args:
-            serialized (Dict[str, Any]): The serialized retriever.
+            serialized (Optional[Dict[str, Any]]): The serialized retriever.
             query (str): The query.
             run_id (UUID, optional): The ID of the run. Defaults to None.
             parent_run_id (UUID, optional): The ID of the parent run. Defaults to None.
@@ -2040,15 +2099,74 @@ class AsyncCallbackManagerForChainGroup(AsyncCallbackManager):
     def copy(self) -> AsyncCallbackManagerForChainGroup:
         """Copy the async callback manager."""
         return self.__class__(
-            handlers=self.handlers,
-            inheritable_handlers=self.inheritable_handlers,
+            handlers=self.handlers.copy(),
+            inheritable_handlers=self.inheritable_handlers.copy(),
             parent_run_id=self.parent_run_id,
-            tags=self.tags,
-            inheritable_tags=self.inheritable_tags,
-            metadata=self.metadata,
-            inheritable_metadata=self.inheritable_metadata,
+            tags=self.tags.copy(),
+            inheritable_tags=self.inheritable_tags.copy(),
+            metadata=self.metadata.copy(),
+            inheritable_metadata=self.inheritable_metadata.copy(),
             parent_run_manager=self.parent_run_manager,
         )
+
+    def merge(
+        self: AsyncCallbackManagerForChainGroup, other: BaseCallbackManager
+    ) -> AsyncCallbackManagerForChainGroup:
+        """Merge the group callback manager with another callback manager.
+
+        Overwrites the merge method in the base class to ensure that the
+        parent run manager is preserved. Keeps the parent_run_manager
+        from the current object.
+
+        Returns:
+            AsyncCallbackManagerForChainGroup: A copy of the current AsyncCallbackManagerForChainGroup
+                with the handlers, tags, etc. of the other callback manager merged in.
+
+        Example: Merging two callback managers.
+
+            .. code-block:: python
+
+                from langchain_core.callbacks.manager import CallbackManager, atrace_as_chain_group
+                from langchain_core.callbacks.stdout import StdOutCallbackHandler
+
+                manager = CallbackManager(handlers=[StdOutCallbackHandler()], tags=["tag2"])
+                async with atrace_as_chain_group("My Group Name", tags=["tag1"]) as group_manager:
+                    merged_manager = group_manager.merge(manager)
+                    print(type(merged_manager))
+                    # <class 'langchain_core.callbacks.manager.AsyncCallbackManagerForChainGroup'>
+
+                    print(merged_manager.handlers)
+                    # [
+                    #    <langchain_core.callbacks.stdout.LangChainTracer object at ...>,
+                    #    <langchain_core.callbacks.streaming_stdout.StdOutCallbackHandler object at ...>,
+                    # ]
+
+                    print(merged_manager.tags)
+                    #    ['tag2', 'tag1']
+
+        """  # noqa: E501
+        manager = self.__class__(
+            parent_run_id=self.parent_run_id or other.parent_run_id,
+            handlers=[],
+            inheritable_handlers=[],
+            tags=list(set(self.tags + other.tags)),
+            inheritable_tags=list(set(self.inheritable_tags + other.inheritable_tags)),
+            metadata={
+                **self.metadata,
+                **other.metadata,
+            },
+            parent_run_manager=self.parent_run_manager,
+        )
+
+        handlers = self.handlers + other.handlers
+        inheritable_handlers = self.inheritable_handlers + other.inheritable_handlers
+
+        for handler in handlers:
+            manager.add_handler(handler)
+
+        for handler in inheritable_handlers:
+            manager.add_handler(handler, inherit=True)
+        return manager
 
     async def on_chain_end(
         self, outputs: Union[Dict[str, Any], Any], **kwargs: Any
@@ -2341,7 +2459,7 @@ async def adispatch_custom_event(
         LangChain from automatically propagating the config object on the user's
         behalf.
 
-    .. versionadded:: 0.2.14
+    .. versionadded:: 0.2.15
     """
     from langchain_core.runnables.config import (
         ensure_config,
@@ -2410,7 +2528,7 @@ def dispatch_custom_event(
             foo_ = RunnableLambda(foo)
             foo_.invoke({"a": "1"}, {"callbacks": [CustomCallbackManager()]})
 
-    .. versionadded:: 0.2.14
+    .. versionadded:: 0.2.15
     """
     from langchain_core.runnables.config import (
         ensure_config,

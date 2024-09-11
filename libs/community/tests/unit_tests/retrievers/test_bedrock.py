@@ -33,6 +33,11 @@ def test_create_client(amazon_retriever: AmazonKnowledgeBasesRetriever) -> None:
         amazon_retriever.create_client({})
 
 
+def test_standard_params(amazon_retriever: AmazonKnowledgeBasesRetriever) -> None:
+    ls_params = amazon_retriever._get_ls_params()
+    assert ls_params == {"ls_retriever_name": "amazonknowledgebases"}
+
+
 def test_get_relevant_documents(
     amazon_retriever: AmazonKnowledgeBasesRetriever, mock_client: MagicMock
 ) -> None:

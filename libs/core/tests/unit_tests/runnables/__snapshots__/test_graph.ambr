@@ -813,8 +813,11 @@
                 
                         ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
                 
+                
                 Example: A ToolMessage where only part of the tool output is sent to the model
-                    and the full output is passed in to raw_output.
+                    and the full output is passed in to artifact.
+                
+                    .. versionadded:: 0.2.17
                 
                     .. code-block:: python
                 
@@ -828,7 +831,7 @@
                 
                         ToolMessage(
                             content=tool_output["stdout"],
-                            raw_output=tool_output,
+                            artifact=tool_output,
                             tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL',
                         )
                 
@@ -840,6 +843,9 @@
                 'additional_kwargs': dict({
                   'title': 'Additional Kwargs',
                   'type': 'object',
+                }),
+                'artifact': dict({
+                  'title': 'Artifact',
                 }),
                 'content': dict({
                   'anyOf': list([
@@ -870,12 +876,18 @@
                   'title': 'Name',
                   'type': 'string',
                 }),
-                'raw_output': dict({
-                  'title': 'Raw Output',
-                }),
                 'response_metadata': dict({
                   'title': 'Response Metadata',
                   'type': 'object',
+                }),
+                'status': dict({
+                  'default': 'success',
+                  'enum': list([
+                    'success',
+                    'error',
+                  ]),
+                  'title': 'Status',
+                  'type': 'string',
                 }),
                 'tool_call_id': dict({
                   'title': 'Tool Call Id',
@@ -1028,7 +1040,7 @@
   	PromptTemplate(PromptTemplate)
   	FakeListLLM(FakeListLLM)
   	Parallel_as_list_as_str_Input(Parallel<as_list,as_str>Input)
-  	Parallel_as_list_as_str_Output([Parallel_as_list_as_str_Output]):::last
+  	Parallel_as_list_as_str_Output([Parallel<as_list,as_str>Output]):::last
   	CommaSeparatedListOutputParser(CommaSeparatedListOutputParser)
   	conditional_str_parser_input(conditional_str_parser_input)
   	conditional_str_parser_output(conditional_str_parser_output)
@@ -1045,6 +1057,63 @@
   	Parallel_as_list_as_str_Input --> conditional_str_parser_input;
   	conditional_str_parser_output --> Parallel_as_list_as_str_Output;
   	FakeListLLM --> Parallel_as_list_as_str_Input;
+  	classDef default fill:#f2f0ff,line-height:1.2
+  	classDef first fill-opacity:0
+  	classDef last fill:#bfb6fc
+  
+  '''
+# ---
+# name: test_parallel_subgraph_mermaid[mermaid]
+  '''
+  %%{init: {'flowchart': {'curve': 'linear'}}}%%
+  graph TD;
+  	__start__([<p>__start__</p>]):::first
+  	outer_1(outer_1)
+  	inner_1_inner_1(inner_1)
+  	inner_1_inner_2(inner_2<hr/><small><em>__interrupt = before</em></small>)
+  	inner_2_inner_1(inner_1)
+  	inner_2_inner_2(inner_2)
+  	outer_2(outer_2)
+  	__end__([<p>__end__</p>]):::last
+  	__start__ --> outer_1;
+  	inner_1_inner_2 --> outer_2;
+  	inner_2_inner_2 --> outer_2;
+  	outer_1 --> inner_1_inner_1;
+  	outer_1 --> inner_2_inner_1;
+  	outer_2 --> __end__;
+  	subgraph inner_1
+  	inner_1_inner_1 --> inner_1_inner_2;
+  	end
+  	subgraph inner_2
+  	inner_2_inner_1 --> inner_2_inner_2;
+  	end
+  	classDef default fill:#f2f0ff,line-height:1.2
+  	classDef first fill-opacity:0
+  	classDef last fill:#bfb6fc
+  
+  '''
+# ---
+# name: test_double_nested_subgraph_mermaid[mermaid]
+  '''
+  %%{init: {'flowchart': {'curve': 'linear'}}}%%
+  graph TD;
+  	__start__([<p>__start__</p>]):::first
+  	parent_1(parent_1)
+  	child_child_1_grandchild_1(grandchild_1)
+  	child_child_1_grandchild_2(grandchild_2<hr/><small><em>__interrupt = before</em></small>)
+  	child_child_2(child_2)
+  	parent_2(parent_2)
+  	__end__([<p>__end__</p>]):::last
+  	__start__ --> parent_1;
+  	child_child_2 --> parent_2;
+  	parent_1 --> child_child_1_grandchild_1;
+  	parent_2 --> __end__;
+  	subgraph child
+  	child_child_1_grandchild_2 --> child_child_2;
+  	subgraph child_1
+  	child_child_1_grandchild_1 --> child_child_1_grandchild_2;
+  	end
+  	end
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc
@@ -1084,4 +1153,66 @@
   	classDef last fill:#bfb6fc
   
   '''
+# ---
+# name: test_trim
+  dict({
+    'edges': list([
+      dict({
+        'source': '__start__',
+        'target': 'ask_question',
+      }),
+      dict({
+        'source': 'ask_question',
+        'target': 'answer_question',
+      }),
+      dict({
+        'conditional': True,
+        'source': 'answer_question',
+        'target': 'ask_question',
+      }),
+      dict({
+        'conditional': True,
+        'source': 'answer_question',
+        'target': '__end__',
+      }),
+    ]),
+    'nodes': list([
+      dict({
+        'data': '__start__',
+        'id': '__start__',
+        'type': 'schema',
+      }),
+      dict({
+        'data': dict({
+          'id': list([
+            'langchain',
+            'schema',
+            'output_parser',
+            'StrOutputParser',
+          ]),
+          'name': 'ask_question',
+        }),
+        'id': 'ask_question',
+        'type': 'runnable',
+      }),
+      dict({
+        'data': dict({
+          'id': list([
+            'langchain',
+            'schema',
+            'output_parser',
+            'StrOutputParser',
+          ]),
+          'name': 'answer_question',
+        }),
+        'id': 'answer_question',
+        'type': 'runnable',
+      }),
+      dict({
+        'data': '__end__',
+        'id': '__end__',
+        'type': 'schema',
+      }),
+    ]),
+  })
 # ---

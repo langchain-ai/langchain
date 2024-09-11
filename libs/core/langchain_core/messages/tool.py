@@ -21,8 +21,11 @@ class ToolMessage(BaseMessage):
 
             ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
 
+
     Example: A ToolMessage where only part of the tool output is sent to the model
-        and the full output is passed in to raw_output.
+        and the full output is passed in to artifact.
+
+        .. versionadded:: 0.2.17
 
         .. code-block:: python
 
@@ -36,7 +39,7 @@ class ToolMessage(BaseMessage):
 
             ToolMessage(
                 content=tool_output["stdout"],
-                raw_output=tool_output,
+                artifact=tool_output,
                 tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL',
             )
 
@@ -47,19 +50,24 @@ class ToolMessage(BaseMessage):
 
     tool_call_id: str
     """Tool call that this message is responding to."""
-    # TODO: Add is_error param?
-    # is_error: bool = False
-    # """Whether the tool errored."""
 
     type: Literal["tool"] = "tool"
     """The type of the message (used for serialization). Defaults to "tool"."""
 
-    raw_output: Any = None
-    """The raw output of the tool.
+    artifact: Any = None
+    """Artifact of the Tool execution which is not meant to be sent to the model.
     
-    **Not part of the payload sent to the model.** Should only be specified if it is 
-    different from the message content, i.e. if only a subset of the full tool output
-    is being passed as message content.
+    Should only be specified if it is different from the message content, e.g. if only 
+    a subset of the full tool output is being passed as message content but the full
+    output is needed in other parts of the code.
+    
+    .. versionadded:: 0.2.17
+    """
+
+    status: Literal["success", "error"] = "success"
+    """Status of the tool invocation.
+
+    .. versionadded:: 0.2.24
     """
 
     @classmethod
@@ -75,7 +83,7 @@ class ToolMessage(BaseMessage):
 
         Args:
             content: The string contents of the message.
-            **kwargs: Additional fields to pass to the message
+            kwargs: Additional fields to pass to the message
         """
         super().__init__(content=content, **kwargs)
 
@@ -106,7 +114,7 @@ class ToolMessageChunk(ToolMessage, BaseMessageChunk):
             return self.__class__(
                 tool_call_id=self.tool_call_id,
                 content=merge_content(self.content, other.content),
-                raw_output=merge_obj(self.raw_output, other.raw_output),
+                artifact=merge_obj(self.artifact, other.artifact),
                 additional_kwargs=merge_dicts(
                     self.additional_kwargs, other.additional_kwargs
                 ),
@@ -114,6 +122,7 @@ class ToolMessageChunk(ToolMessage, BaseMessageChunk):
                     self.response_metadata, other.response_metadata
                 ),
                 id=self.id,
+                status=_merge_status(self.status, other.status),
             )
 
         return super().__add__(other)
@@ -232,25 +241,25 @@ def default_tool_parser(
     """Best-effort parsing of tools."""
     tool_calls = []
     invalid_tool_calls = []
-    for tool_call in raw_tool_calls:
-        if "function" not in tool_call:
+    for raw_tool_call in raw_tool_calls:
+        if "function" not in raw_tool_call:
             continue
         else:
-            function_name = tool_call["function"]["name"]
+            function_name = raw_tool_call["function"]["name"]
             try:
-                function_args = json.loads(tool_call["function"]["arguments"])
-                parsed = ToolCall(
+                function_args = json.loads(raw_tool_call["function"]["arguments"])
+                parsed = tool_call(
                     name=function_name or "",
                     args=function_args or {},
-                    id=tool_call.get("id"),
+                    id=raw_tool_call.get("id"),
                 )
                 tool_calls.append(parsed)
             except json.JSONDecodeError:
                 invalid_tool_calls.append(
-                    InvalidToolCall(
+                    invalid_tool_call(
                         name=function_name,
-                        args=tool_call["function"]["arguments"],
-                        id=tool_call.get("id"),
+                        args=raw_tool_call["function"]["arguments"],
+                        id=raw_tool_call.get("id"),
                         error=None,
                     )
                 )
@@ -267,7 +276,7 @@ def default_tool_chunk_parser(raw_tool_calls: List[dict]) -> List[ToolCallChunk]
         else:
             function_args = tool_call["function"]["arguments"]
             function_name = tool_call["function"]["name"]
-        parsed = ToolCallChunk(
+        parsed = tool_call_chunk(
             name=function_name,
             args=function_args,
             id=tool_call.get("id"),
@@ -275,3 +284,9 @@ def default_tool_chunk_parser(raw_tool_calls: List[dict]) -> List[ToolCallChunk]
         )
         tool_call_chunks.append(parsed)
     return tool_call_chunks
+
+
+def _merge_status(
+    left: Literal["success", "error"], right: Literal["success", "error"]
+) -> Literal["success", "error"]:
+    return "error" if "error" in (left, right) else "success"

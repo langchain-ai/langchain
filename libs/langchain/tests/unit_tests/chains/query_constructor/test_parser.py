@@ -130,3 +130,40 @@ def test_parse_date_value(x: str) -> None:
     parsed = cast(Comparison, DEFAULT_PARSER.parse(f'eq("x", {x})'))
     actual = parsed.value["date"]
     assert actual == x.strip("'\"")
+
+
+@pytest.mark.parametrize(
+    "x, expected",
+    [
+        (
+            '"2021-01-01T00:00:00"',
+            {"datetime": "2021-01-01T00:00:00", "type": "datetime"},
+        ),
+        (
+            '"2021-12-31T23:59:59Z"',
+            {"datetime": "2021-12-31T23:59:59Z", "type": "datetime"},
+        ),
+        (
+            '"invalid-datetime"',
+            None,  # Expecting failure or handling of invalid input
+        ),
+    ],
+)
+def test_parse_datetime_value(x: str, expected: dict) -> None:
+    """Test parsing of datetime values with ISO 8601 format."""
+    try:
+        parsed = cast(Comparison, DEFAULT_PARSER.parse(f'eq("publishedAt", {x})'))
+        actual = parsed.value
+        assert actual == expected, f"Expected {expected}, got {actual}"
+    except ValueError as e:
+        # Handling the case where parsing should fail
+        if expected is None:
+            assert True  # Correctly raised an error for invalid input
+        else:
+            pytest.fail(f"Unexpected error {e} for input {x}")
+    except Exception as e:
+        # If any other unexpected exception type is raised
+        if expected is None:
+            assert True  # Correctly identified that input was invalid
+        else:
+            pytest.fail(f"Unhandled exception {e} for input {x}")

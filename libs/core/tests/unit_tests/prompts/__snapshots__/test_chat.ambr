@@ -457,8 +457,11 @@
           
                   ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
           
+          
           Example: A ToolMessage where only part of the tool output is sent to the model
-              and the full output is passed in to raw_output.
+              and the full output is passed in to artifact.
+          
+              .. versionadded:: 0.2.17
           
               .. code-block:: python
           
@@ -472,7 +475,7 @@
           
                   ToolMessage(
                       content=tool_output["stdout"],
-                      raw_output=tool_output,
+                      artifact=tool_output,
                       tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL',
                   )
           
@@ -484,6 +487,9 @@
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
             'type': 'object',
+          }),
+          'artifact': dict({
+            'title': 'Artifact',
           }),
           'content': dict({
             'anyOf': list([
@@ -514,12 +520,18 @@
             'title': 'Name',
             'type': 'string',
           }),
-          'raw_output': dict({
-            'title': 'Raw Output',
-          }),
           'response_metadata': dict({
             'title': 'Response Metadata',
             'type': 'object',
+          }),
+          'status': dict({
+            'default': 'success',
+            'enum': list([
+              'success',
+              'error',
+            ]),
+            'title': 'Status',
+            'type': 'string',
           }),
           'tool_call_id': dict({
             'title': 'Tool Call Id',
@@ -1062,8 +1074,11 @@
           
                   ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
           
+          
           Example: A ToolMessage where only part of the tool output is sent to the model
-              and the full output is passed in to raw_output.
+              and the full output is passed in to artifact.
+          
+              .. versionadded:: 0.2.17
           
               .. code-block:: python
           
@@ -1077,7 +1092,7 @@
           
                   ToolMessage(
                       content=tool_output["stdout"],
-                      raw_output=tool_output,
+                      artifact=tool_output,
                       tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL',
                   )
           
@@ -1089,6 +1104,9 @@
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
             'type': 'object',
+          }),
+          'artifact': dict({
+            'title': 'Artifact',
           }),
           'content': dict({
             'anyOf': list([
@@ -1119,12 +1137,18 @@
             'title': 'Name',
             'type': 'string',
           }),
-          'raw_output': dict({
-            'title': 'Raw Output',
-          }),
           'response_metadata': dict({
             'title': 'Response Metadata',
             'type': 'object',
+          }),
+          'status': dict({
+            'default': 'success',
+            'enum': list([
+              'success',
+              'error',
+            ]),
+            'title': 'Status',
+            'type': 'string',
           }),
           'tool_call_id': dict({
             'title': 'Tool Call Id',
@@ -1208,5 +1232,457 @@
     ]),
     'title': 'PromptInput',
     'type': 'object',
+  })
+# ---
+# name: test_chat_prompt_w_msgs_placeholder_ser_des[chat_prompt]
+  dict({
+    'id': list([
+      'langchain',
+      'prompts',
+      'chat',
+      'ChatPromptTemplate',
+    ]),
+    'kwargs': dict({
+      'input_variables': list([
+        'bar',
+      ]),
+      'messages': list([
+        dict({
+          'id': list([
+            'langchain',
+            'prompts',
+            'chat',
+            'SystemMessagePromptTemplate',
+          ]),
+          'kwargs': dict({
+            'prompt': dict({
+              'id': list([
+                'langchain',
+                'prompts',
+                'prompt',
+                'PromptTemplate',
+              ]),
+              'kwargs': dict({
+                'input_variables': list([
+                ]),
+                'template': 'foo',
+                'template_format': 'f-string',
+              }),
+              'lc': 1,
+              'name': 'PromptTemplate',
+              'type': 'constructor',
+            }),
+          }),
+          'lc': 1,
+          'type': 'constructor',
+        }),
+        dict({
+          'id': list([
+            'langchain',
+            'prompts',
+            'chat',
+            'MessagesPlaceholder',
+          ]),
+          'kwargs': dict({
+            'variable_name': 'bar',
+          }),
+          'lc': 1,
+          'type': 'constructor',
+        }),
+        dict({
+          'id': list([
+            'langchain',
+            'prompts',
+            'chat',
+            'HumanMessagePromptTemplate',
+          ]),
+          'kwargs': dict({
+            'prompt': dict({
+              'id': list([
+                'langchain',
+                'prompts',
+                'prompt',
+                'PromptTemplate',
+              ]),
+              'kwargs': dict({
+                'input_variables': list([
+                ]),
+                'template': 'baz',
+                'template_format': 'f-string',
+              }),
+              'lc': 1,
+              'name': 'PromptTemplate',
+              'type': 'constructor',
+            }),
+          }),
+          'lc': 1,
+          'type': 'constructor',
+        }),
+      ]),
+    }),
+    'lc': 1,
+    'name': 'ChatPromptTemplate',
+    'type': 'constructor',
+  })
+# ---
+# name: test_chat_prompt_w_msgs_placeholder_ser_des[placholder]
+  dict({
+    'id': list([
+      'langchain',
+      'prompts',
+      'chat',
+      'MessagesPlaceholder',
+    ]),
+    'kwargs': dict({
+      'variable_name': 'bar',
+    }),
+    'lc': 1,
+    'type': 'constructor',
+  })
+# ---
+# name: test_chat_tmpl_serdes
+  dict({
+    'id': list([
+      'langchain',
+      'prompts',
+      'chat',
+      'ChatPromptTemplate',
+    ]),
+    'kwargs': dict({
+      'input_variables': list([
+        'foo',
+        'more_history',
+        'my_image',
+        'my_other_image',
+        'name',
+      ]),
+      'messages': list([
+        dict({
+          'id': list([
+            'langchain',
+            'prompts',
+            'chat',
+            'SystemMessagePromptTemplate',
+          ]),
+          'kwargs': dict({
+            'prompt': dict({
+              'id': list([
+                'langchain',
+                'prompts',
+                'prompt',
+                'PromptTemplate',
+              ]),
+              'kwargs': dict({
+                'input_variables': list([
+                  'name',
+                ]),
+                'template': 'You are an AI assistant named {name}.',
+                'template_format': 'f-string',
+              }),
+              'lc': 1,
+              'name': 'PromptTemplate',
+              'type': 'constructor',
+            }),
+          }),
+          'lc': 1,
+          'type': 'constructor',
+        }),
+        dict({
+          'id': list([
+            'langchain',
+            'prompts',
+            'chat',
+            'SystemMessagePromptTemplate',
+          ]),
+          'kwargs': dict({
+            'prompt': list([
+              dict({
+                'id': list([
+                  'langchain',
+                  'prompts',
+                  'prompt',
+                  'PromptTemplate',
+                ]),
+                'kwargs': dict({
+                  'input_variables': list([
+                    'name',
+                  ]),
+                  'template': 'You are an AI assistant named {name}.',
+                  'template_format': 'f-string',
+                }),
+                'lc': 1,
+                'name': 'PromptTemplate',
+                'type': 'constructor',
+              }),
+            ]),
+          }),
+          'lc': 1,
+          'type': 'constructor',
+        }),
+        dict({
+          'id': list([
+            'langchain',
+            'prompts',
+            'chat',
+            'SystemMessagePromptTemplate',
+          ]),
+          'kwargs': dict({
+            'prompt': dict({
+              'id': list([
+                'langchain',
+                'prompts',
+                'prompt',
+                'PromptTemplate',
+              ]),
+              'kwargs': dict({
+                'input_variables': list([
+                  'foo',
+                ]),
+                'template': 'you are {foo}',
+                'template_format': 'f-string',
+              }),
+              'lc': 1,
+              'name': 'PromptTemplate',
+              'type': 'constructor',
+            }),
+          }),
+          'lc': 1,
+          'type': 'constructor',
+        }),
+        dict({
+          'id': list([
+            'langchain',
+            'prompts',
+            'chat',
+            'HumanMessagePromptTemplate',
+          ]),
+          'kwargs': dict({
+            'prompt': list([
+              dict({
+                'id': list([
+                  'langchain',
+                  'prompts',
+                  'prompt',
+                  'PromptTemplate',
+                ]),
+                'kwargs': dict({
+                  'input_variables': list([
+                  ]),
+                  'template': 'hello',
+                  'template_format': 'f-string',
+                }),
+                'lc': 1,
+                'name': 'PromptTemplate',
+                'type': 'constructor',
+              }),
+              dict({
+                'id': list([
+                  'langchain',
+                  'prompts',
+                  'prompt',
+                  'PromptTemplate',
+                ]),
+                'kwargs': dict({
+                  'input_variables': list([
+                  ]),
+                  'template': "What's in this image?",
+                  'template_format': 'f-string',
+                }),
+                'lc': 1,
+                'name': 'PromptTemplate',
+                'type': 'constructor',
+              }),
+              dict({
+                'id': list([
+                  'langchain',
+                  'prompts',
+                  'prompt',
+                  'PromptTemplate',
+                ]),
+                'kwargs': dict({
+                  'input_variables': list([
+                  ]),
+                  'template': "What's in this image?",
+                  'template_format': 'f-string',
+                }),
+                'lc': 1,
+                'name': 'PromptTemplate',
+                'type': 'constructor',
+              }),
+              dict({
+                'id': list([
+                  'langchain',
+                  'prompts',
+                  'image',
+                  'ImagePromptTemplate',
+                ]),
+                'kwargs': dict({
+                  'input_variables': list([
+                    'my_image',
+                  ]),
+                  'template': dict({
+                    'url': 'data:image/jpeg;base64,{my_image}',
+                  }),
+                }),
+                'lc': 1,
+                'name': 'ImagePromptTemplate',
+                'type': 'constructor',
+              }),
+              dict({
+                'id': list([
+                  'langchain',
+                  'prompts',
+                  'image',
+                  'ImagePromptTemplate',
+                ]),
+                'kwargs': dict({
+                  'input_variables': list([
+                    'my_image',
+                  ]),
+                  'template': dict({
+                    'url': 'data:image/jpeg;base64,{my_image}',
+                  }),
+                }),
+                'lc': 1,
+                'name': 'ImagePromptTemplate',
+                'type': 'constructor',
+              }),
+              dict({
+                'id': list([
+                  'langchain',
+                  'prompts',
+                  'image',
+                  'ImagePromptTemplate',
+                ]),
+                'kwargs': dict({
+                  'input_variables': list([
+                    'my_other_image',
+                  ]),
+                  'template': dict({
+                    'url': '{my_other_image}',
+                  }),
+                }),
+                'lc': 1,
+                'name': 'ImagePromptTemplate',
+                'type': 'constructor',
+              }),
+              dict({
+                'id': list([
+                  'langchain',
+                  'prompts',
+                  'image',
+                  'ImagePromptTemplate',
+                ]),
+                'kwargs': dict({
+                  'input_variables': list([
+                    'my_other_image',
+                  ]),
+                  'template': dict({
+                    'detail': 'medium',
+                    'url': '{my_other_image}',
+                  }),
+                }),
+                'lc': 1,
+                'name': 'ImagePromptTemplate',
+                'type': 'constructor',
+              }),
+              dict({
+                'id': list([
+                  'langchain',
+                  'prompts',
+                  'image',
+                  'ImagePromptTemplate',
+                ]),
+                'kwargs': dict({
+                  'input_variables': list([
+                  ]),
+                  'template': dict({
+                    'url': 'https://www.langchain.com/image.png',
+                  }),
+                }),
+                'lc': 1,
+                'name': 'ImagePromptTemplate',
+                'type': 'constructor',
+              }),
+              dict({
+                'id': list([
+                  'langchain',
+                  'prompts',
+                  'image',
+                  'ImagePromptTemplate',
+                ]),
+                'kwargs': dict({
+                  'input_variables': list([
+                  ]),
+                  'template': dict({
+                    'url': 'data:image/jpeg;base64,foobar',
+                  }),
+                }),
+                'lc': 1,
+                'name': 'ImagePromptTemplate',
+                'type': 'constructor',
+              }),
+              dict({
+                'id': list([
+                  'langchain',
+                  'prompts',
+                  'image',
+                  'ImagePromptTemplate',
+                ]),
+                'kwargs': dict({
+                  'input_variables': list([
+                  ]),
+                  'template': dict({
+                    'url': 'data:image/jpeg;base64,foobar',
+                  }),
+                }),
+                'lc': 1,
+                'name': 'ImagePromptTemplate',
+                'type': 'constructor',
+              }),
+            ]),
+          }),
+          'lc': 1,
+          'type': 'constructor',
+        }),
+        dict({
+          'id': list([
+            'langchain',
+            'prompts',
+            'chat',
+            'MessagesPlaceholder',
+          ]),
+          'kwargs': dict({
+            'optional': True,
+            'variable_name': 'chat_history',
+          }),
+          'lc': 1,
+          'type': 'constructor',
+        }),
+        dict({
+          'id': list([
+            'langchain',
+            'prompts',
+            'chat',
+            'MessagesPlaceholder',
+          ]),
+          'kwargs': dict({
+            'variable_name': 'more_history',
+          }),
+          'lc': 1,
+          'type': 'constructor',
+        }),
+      ]),
+      'optional_variables': list([
+        'chat_history',
+      ]),
+      'partial_variables': dict({
+        'chat_history': list([
+        ]),
+      }),
+    }),
+    'lc': 1,
+    'name': 'ChatPromptTemplate',
+    'type': 'constructor',
   })
 # ---

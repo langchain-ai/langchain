@@ -11,8 +11,9 @@ from langchain_milvus.utils.sparse import BaseSparseEmbedding
 
 
 class MilvusCollectionHybridSearchRetriever(BaseRetriever):
-    """This is a hybrid search retriever
+    """Hybrid search retriever
     that uses Milvus Collection to retrieve documents based on multiple fields.
+
     For more information, please refer to:
     https://milvus.io/docs/release_notes.md#Multi-Embedding---Hybrid-Search
     """

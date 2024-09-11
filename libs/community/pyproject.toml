@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-community"
-version = "0.2.7"
+version = "0.2.16"
 description = "Community contributed LangChain integrations."
 authors = []
 license = "MIT"
@@ -24,17 +24,21 @@ skip = ".git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package
 ignore-regex = ".*(Stati Uniti|Tense=Pres).*"
 ignore-words-list = "momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure,damon,crate,aadd,symbl,precesses,accademia,nin,cann"
 
+[tool.poetry.urls]
+"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/community"
+"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-community%3D%3D0%22&expanded=true"
+
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = "^0.2.12"
-langchain = "^0.2.7"
+langchain-core = "^0.2.38"
+langchain = "^0.2.16"
 SQLAlchemy = ">=1.4,<3"
 requests = "^2"
 PyYAML = ">=5.3"
 aiohttp = "^3.8.3"
 tenacity = "^8.1.0,!=8.4.0"
 dataclasses-json = ">= 0.5.7, < 0.7"
-langsmith = "^0.1.0"
+langsmith = "^0.1.112"
 [[tool.poetry.dependencies.numpy]]
 version = "^1"
 python = "<3.12"
@@ -91,15 +95,6 @@ codespell = "^2.2.0"
 [tool.poetry.group.test_integration.dependencies]
 pytest-vcr = "^1.0.2"
 vcrpy = "^6"
-wrapt = "^1.15.0"
-openai = "^1"
-python-dotenv = "^1.0.0"
-cassio = "^0.1.6"
-tiktoken = ">=0.3.2,<0.6.0"
-anthropic = "^0.3.11"
-fireworks-ai = "^0.9.0"
-vdms = "^0.0.20"
-exllamav2 = "^0.0.18"
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.5"
@@ -128,14 +123,6 @@ develop = true
 
 [tool.poetry.group.test.dependencies.langchain-standard-tests]
 path = "../standard-tests"
-develop = true
-
-[tool.poetry.group.test_integration.dependencies.langchain-core]
-path = "../core"
-develop = true
-
-[tool.poetry.group.test_integration.dependencies.langchain]
-path = "../langchain"
 develop = true
 
 [tool.poetry.group.dev.dependencies.langchain-core]

@@ -11,7 +11,11 @@ from langchain_core.callbacks import (
     CallbackManagerForRetrieverRun,
 )
 from langchain_core.documents import Document
-from langchain_core.vectorstores import VectorStore, VectorStoreRetriever
+from langchain_core.vectorstores import (
+    InMemoryVectorStore,
+    VectorStore,
+    VectorStoreRetriever,
+)
 
 from langchain_community.chains import PebbloRetrievalQA
 from langchain_community.chains.pebblo_retrieval.models import (
@@ -19,7 +23,6 @@ from langchain_community.chains.pebblo_retrieval.models import (
     ChainInput,
     SemanticContext,
 )
-from langchain_community.vectorstores.chroma import Chroma
 from langchain_community.vectorstores.pinecone import Pinecone
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
@@ -49,8 +52,8 @@ def unsupported_retriever() -> FakeRetriever:
     """
     retriever = FakeRetriever()
     retriever.search_kwargs = {}
-    # Set the class of vectorstore to Chroma
-    retriever.vectorstore.__class__ = Chroma
+    # Set the class of vectorstore
+    retriever.vectorstore.__class__ = InMemoryVectorStore
     return retriever
 
 
