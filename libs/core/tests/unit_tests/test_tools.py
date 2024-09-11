@@ -23,7 +23,6 @@ from typing import (
 
 import pytest
 from pydantic import BaseModel, Field, ValidationError
-from pydantic import BaseModel as BaseModelProper
 from typing_extensions import Annotated, TypedDict, TypeVar
 
 from langchain_core import tools
@@ -1562,7 +1561,7 @@ def test_fn_injected_arg_with_schema(tool_: Callable) -> None:
 def generate_models() -> List[Any]:
     """Generate a list of base models depending on the pydantic version."""
 
-    class FooProper(BaseModelProper):
+    class FooProper(BaseModel):
         a: int
         b: str
 
