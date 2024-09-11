@@ -59,6 +59,7 @@ def get_from_dict_or_env(
     else:
         return get_from_env(key_for_err, env_key, default=default)
 
+
 def get_from_env(
         key: str,
         env_key: str,
