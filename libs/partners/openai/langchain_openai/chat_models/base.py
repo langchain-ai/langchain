@@ -1417,7 +1417,10 @@ class BaseChatOpenAI(BaseChatModel):
             response_format = _convert_to_openai_response_format(schema, strict=strict)
             llm = self.bind(response_format=response_format)
             output_parser = (
-                cast(Runnable, _oai_structured_outputs_parser.with_types(output_type=schema))
+                cast(
+                    Runnable,
+                    _oai_structured_outputs_parser.with_types(output_type=schema),
+                )
                 if is_pydantic_schema
                 else JsonOutputParser()
             )
