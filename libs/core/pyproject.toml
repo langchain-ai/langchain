@@ -14,9 +14,15 @@ repository = "https://github.com/langchain-ai/langchain"
 [tool.mypy]
 disallow_untyped_defs = "True"
 exclude = [ "notebooks", "examples", "example_data", "langchain_core/pydantic", "tests/unit_tests/utils/test_function_calling.py",]
+
 [[tool.mypy.overrides]]
 module = [ "numpy", "pytest",]
 ignore_missing_imports = true
+
+
+[[tool.mypy.overrides]]
+module = "tests.unit_tests.runnables.test_lint_base.py"
+strict = true
 
 [tool.poetry.urls]
 "Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/core"
