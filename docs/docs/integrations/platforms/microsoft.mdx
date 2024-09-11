@@ -436,6 +436,8 @@ See a [usage example](/docs/integrations/tools/azure_ai_services).
 from langchain_community.agent_toolkits import azure_ai_services
 ```
 
+#### Azure AI Services individual tools
+
 The `azure_ai_services` toolkit includes the following tools:
 
 - Image Analysis: [AzureAiServicesImageAnalysisTool](https://python.langchain.com/v0.2/api_reference/community/tools/langchain_community.tools.azure_ai_services.image_analysis.AzureAiServicesImageAnalysisTool.html)
@@ -460,6 +462,23 @@ See a [usage example](/docs/integrations/tools/office365).
 from langchain_community.agent_toolkits import O365Toolkit
 ```
 
+#### Office 365 individual tools
+
+You can use individual tools from the Office 365 Toolkit:
+- `O365CreateDraftMessage`: tool for creating a draft email in Office 365
+- `O365SearchEmails`: tool for searching email messages in Office 365
+- `O365SearchEvents`: tool for searching calendar events in Office 365
+- `O365SendEvent`: tool for sending calendar events in Office 365
+- `O365SendMessage`: tool for sending an email in Office 365
+
+```python
+from langchain_community.tools.office365 import O365CreateDraftMessage
+from langchain_community.tools.office365 import O365SearchEmails
+from langchain_community.tools.office365 import O365SearchEvents
+from langchain_community.tools.office365 import O365SendEvent
+from langchain_community.tools.office365 import O365SendMessage
+```
+
 ### Microsoft Azure PowerBI
 
 We need to install `azure-identity` python package.
@@ -474,6 +493,20 @@ See a [usage example](/docs/integrations/tools/powerbi).
 from langchain_community.agent_toolkits import PowerBIToolkit
 from langchain_community.utilities.powerbi import PowerBIDataset
 ```
+
+#### PowerBI individual tools
+
+You can use individual tools from the Azure PowerBI Toolkit:
+- `InfoPowerBITool`: tool for getting metadata about a PowerBI Dataset
+- `ListPowerBITool`: tool for getting tables names
+- `QueryPowerBITool`: tool for querying a PowerBI Dataset
+
+```python
+from langchain_community.tools.powerbi.tool import InfoPowerBITool
+from langchain_community.tools.powerbi.tool import ListPowerBITool
+from langchain_community.tools.powerbi.tool import QueryPowerBITool
+```
+
 
 ### PlayWright Browser Toolkit
 
