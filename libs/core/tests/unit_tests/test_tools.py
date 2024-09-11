@@ -23,7 +23,7 @@ from typing import (
 
 import pytest
 from pydantic import BaseModel, Field, ValidationError
-from pydantic import BaseModel as BaseModelProper
+from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import Annotated, TypedDict, TypeVar
 
 from langchain_core import tools
@@ -73,6 +73,14 @@ def test_unnamed_decorator() -> None:
 
 
 class _MockSchema(BaseModel):
+    """Return the arguments directly."""
+
+    arg1: int
+    arg2: bool
+    arg3: Optional[dict] = None
+
+
+class _MockSchemaV1(BaseModelV1):
     """Return the arguments directly."""
 
     arg1: int
@@ -168,6 +176,13 @@ def test_decorator_with_specified_schema() -> None:
 
     assert isinstance(tool_func, BaseTool)
     assert tool_func.args_schema == _MockSchema
+
+    @tool(args_schema=_MockSchemaV1)
+    def tool_func_v1(arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
+        return f"{arg1} {arg2} {arg3}"
+
+    assert isinstance(tool_func_v1, BaseTool)
+    assert tool_func_v1.args_schema == _MockSchemaV1
 
 
 def test_decorated_function_schema_equivalent() -> None:
@@ -300,6 +315,51 @@ def test_structured_tool_types_parsed() -> None:
         "some_base_model": SomeBaseModel(foo="bar"),
     }
     assert result == expected
+
+
+def test_structured_tool_types_parsed_pydantic_v1() -> None:
+    """Test the non-primitive types are correctly passed to structured tools."""
+
+    class SomeBaseModel(BaseModelV1):
+        foo: str
+
+    class AnotherBaseModel(BaseModelV1):
+        bar: str
+
+    @tool
+    def structured_tool(some_base_model: SomeBaseModel) -> AnotherBaseModel:
+        """Return the arguments directly."""
+        return AnotherBaseModel(bar=some_base_model.foo)
+
+    assert isinstance(structured_tool, StructuredTool)
+
+    expected = AnotherBaseModel(bar="baz")
+    for arg in [
+        SomeBaseModel(foo="baz"),
+        SomeBaseModel(foo="baz").dict(),
+    ]:
+        args = {"some_base_model": arg}
+        result = structured_tool.run(args)
+        assert result == expected
+
+
+def test_structured_tool_types_parsed_pydantic_mixed() -> None:
+    """Test handling of tool with mixed Pydantic version arguments."""
+
+    class SomeBaseModel(BaseModelV1):
+        foo: str
+
+    class AnotherBaseModel(BaseModel):
+        bar: str
+
+    with pytest.raises(NotImplementedError):
+
+        @tool
+        def structured_tool(
+            some_base_model: SomeBaseModel, another_base_model: AnotherBaseModel
+        ) -> None:
+            """Return the arguments directly."""
+            pass
 
 
 def test_base_tool_inheritance_base_schema() -> None:
@@ -1562,7 +1622,7 @@ def test_fn_injected_arg_with_schema(tool_: Callable) -> None:
 def generate_models() -> List[Any]:
     """Generate a list of base models depending on the pydantic version."""
 
-    class FooProper(BaseModelProper):
+    class FooProper(BaseModel):
         a: int
         b: str
 
