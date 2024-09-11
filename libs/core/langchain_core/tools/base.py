@@ -571,13 +571,14 @@ class ChildTool(BaseTool):
             else:
                 content = _handle_validation_error(e, flag=self.handle_validation_error)
             status = "error"
-        except ToolException as e:
+        except Exception as e:
+            e = ToolException(e)
             if not self.handle_tool_error:
                 error_to_raise = e
             else:
                 content = _handle_tool_error(e, flag=self.handle_tool_error)
             status = "error"
-        except (Exception, KeyboardInterrupt) as e:
+        except KeyboardInterrupt as e:
             error_to_raise = e
             status = "error"
 
@@ -687,13 +688,14 @@ class ChildTool(BaseTool):
             else:
                 content = _handle_validation_error(e, flag=self.handle_validation_error)
             status = "error"
-        except ToolException as e:
+        except Exception as e:
+            e = ToolException(e)
             if not self.handle_tool_error:
                 error_to_raise = e
             else:
                 content = _handle_tool_error(e, flag=self.handle_tool_error)
             status = "error"
-        except (Exception, KeyboardInterrupt) as e:
+        except KeyboardInterrupt as e:
             error_to_raise = e
             status = "error"
 

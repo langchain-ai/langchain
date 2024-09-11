@@ -2,9 +2,9 @@ import inspect
 from typing import Any, Callable, Dict, Literal, Optional, Type, Union, get_type_hints
 
 from langchain_core.callbacks import Callbacks
-from langchain_core.pydantic_v1 import BaseModel, Field, create_model
+from langchain_core.pydantic_v1 import BaseModel, Field, ValidationError, create_model
 from langchain_core.runnables import Runnable
-from langchain_core.tools.base import BaseTool
+from langchain_core.tools.base import BaseTool, ToolException
 from langchain_core.tools.simple import Tool
 from langchain_core.tools.structured import StructuredTool
 
@@ -17,6 +17,12 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
+    handle_tool_error: Optional[
+        Union[bool, str, Callable[[ToolException], str]]
+    ] = False,
+    handle_validation_error: Optional[
+        Union[bool, str, Callable[[ValidationError], str]]
+    ] = False,
 ) -> Callable:
     """Make tools out of functions, can be used with or without arguments.
 
@@ -41,6 +47,15 @@ def tool(
         error_on_invalid_docstring: if ``parse_docstring`` is provided, configure
             whether to raise ValueError on invalid Google Style docstrings.
             Defaults to True.
+        handle_tool_error: Handle the content of the ToolException thrown. If False
+            do nothing, If True returns 'Tool execution error'. If string then
+            returns that string directly, if callable converts error to string to be returned.
+            Defaults to False.
+        handle_validation_error: Handle the content of the ValidationError thrown. If False
+            do nothing, If True returns 'Tool input validation error'. If string then
+            returns that string directly, if callable converts error to string to be returned.
+            Defaults to False.
+
 
     Returns:
         The tool.
@@ -137,7 +152,7 @@ def tool(
                     monkey: The baz.
                 \"\"\"
                 return bar
-    """
+    """  # noqa: E501
 
     def _make_with_name(tool_name: str) -> Callable:
         def _make_tool(dec_func: Union[Callable, Runnable]) -> BaseTool:
@@ -184,6 +199,8 @@ def tool(
                     response_format=response_format,
                     parse_docstring=parse_docstring,
                     error_on_invalid_docstring=error_on_invalid_docstring,
+                    handle_tool_error=handle_tool_error,
+                    handle_validation_error=handle_validation_error,
                 )
             # If someone doesn't want a schema applied, we must treat it as
             # a simple string->string function
