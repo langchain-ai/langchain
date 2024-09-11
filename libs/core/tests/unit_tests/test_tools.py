@@ -2,12 +2,15 @@
 
 import inspect
 import json
+import pytest
 import sys
 import textwrap
 import threading
 from datetime import datetime
 from enum import Enum
 from functools import partial
+from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel as BaseModelProper
 from typing import (
     Any,
     Callable,
@@ -20,10 +23,6 @@ from typing import (
     Type,
     Union,
 )
-
-import pytest
-from pydantic import BaseModel, Field, ValidationError
-from pydantic import BaseModel as BaseModelProper
 from typing_extensions import Annotated, TypedDict, TypeVar
 
 from langchain_core import tools
@@ -54,7 +53,6 @@ from langchain_core.tools.base import (
 )
 from langchain_core.utils.function_calling import convert_to_openai_function
 from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION, _create_subset_model
-from langchain_core.utils.pydantic import TypeBaseModel as TypeBaseModel
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
 from tests.unit_tests.pydantic_utils import _schema
 
@@ -1978,3 +1976,19 @@ def test_imports() -> None:
     ]
     for module_name in expected_all:
         assert hasattr(tools, module_name) and getattr(tools, module_name) is not None
+
+
+def test_structured_tool_direct_init() -> None:
+    def foo(bar: str) -> str:
+        return bar
+
+    async def asyncFoo(bar: str) -> str:
+        return bar
+
+    class fooSchema(BaseModel):
+        bar: str = Field(..., description="The bar")
+
+    tool = StructuredTool(name="foo", args_schema=fooSchema, coroutine=asyncFoo)
+
+    with pytest.raises(NotImplementedError):
+        assert tool.invoke("hello") == "hello"
