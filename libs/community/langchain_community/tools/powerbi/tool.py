@@ -31,7 +31,7 @@ class QueryPowerBITool(BaseTool):
 
     Example Input: "How many rows are in table1?"
     """  # noqa: E501
-    llm_chain: Any
+    llm_chain: Any = None
     powerbi: PowerBIDataset = Field(exclude=True)
     examples: Optional[str] = DEFAULT_FEWSHOT_EXAMPLES
     session_cache: Dict[str, Any] = Field(default_factory=dict, exclude=True)

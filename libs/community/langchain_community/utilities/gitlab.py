@@ -15,8 +15,8 @@ if TYPE_CHECKING:
 class GitLabAPIWrapper(BaseModel):
     """Wrapper for GitLab API."""
 
-    gitlab: Any  #: :meta private:
-    gitlab_repo_instance: Any  #: :meta private:
+    gitlab: Any = None  #: :meta private:
+    gitlab_repo_instance: Any = None  #: :meta private:
     gitlab_repository: Optional[str] = None
     """The name of the GitLab repository, in the form {username}/{repo-name}."""
     gitlab_personal_access_token: Optional[str] = None

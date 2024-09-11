@@ -123,7 +123,7 @@ class QianfanLLMEndpoint(LLM):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """extra params for model invoke using with `do`."""
 
-    client: Any
+    client: Any = None
 
     qianfan_ak: Optional[SecretStr] = Field(default=None, alias="api_key")
     qianfan_sk: Optional[SecretStr] = Field(default=None, alias="secret_key")

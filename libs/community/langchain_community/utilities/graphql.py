@@ -14,7 +14,7 @@ class GraphQLAPIWrapper(BaseModel):
     custom_headers: Optional[Dict[str, str]] = None
     fetch_schema_from_transport: Optional[bool] = None
     graphql_endpoint: str
-    gql_client: Any  #: :meta private:
+    gql_client: Any = None  #: :meta private:
     gql_function: Callable[[str], Any]  #: :meta private:
 
     model_config = ConfigDict(

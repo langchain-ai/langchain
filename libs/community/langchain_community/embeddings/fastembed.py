@@ -38,12 +38,12 @@ class FastEmbedEmbeddings(BaseModel, Embeddings):
     Unknown behavior for values > 512.
     """
 
-    cache_dir: Optional[str]
+    cache_dir: Optional[str] = None
     """The path to the cache directory.
     Defaults to `local_cache` in the parent directory
     """
 
-    threads: Optional[int]
+    threads: Optional[int] = None
     """The number of threads single onnxruntime session can use.
     Defaults to None
     """
@@ -65,7 +65,7 @@ class FastEmbedEmbeddings(BaseModel, Embeddings):
     Defaults to `None`.
     """
 
-    _model: Any  # : :meta private:
+    _model: Any = None  # : :meta private:
 
     model_config = ConfigDict(extra="allow", protected_namespaces=())
 

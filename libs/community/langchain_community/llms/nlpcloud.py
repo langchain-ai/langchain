@@ -19,7 +19,7 @@ class NLPCloud(LLM):
             nlpcloud = NLPCloud(model="finetuned-gpt-neox-20b")
     """
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     model_name: str = "finetuned-gpt-neox-20b"
     """Model name to use."""
     gpu: bool = True

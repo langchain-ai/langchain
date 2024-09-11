@@ -239,7 +239,7 @@ class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetr
     """
 
     # type is SearchServiceClient but can't be set due to optional imports
-    _client: Any
+    _client: Any = None
     _serving_config: str
 
     model_config = ConfigDict(
@@ -405,7 +405,7 @@ class GoogleVertexAIMultiTurnSearchRetriever(
     """Vertex AI Search Conversation ID."""
 
     # type is ConversationalSearchServiceClient but can't be set due to optional imports
-    _client: Any
+    _client: Any = None
     _serving_config: str
 
     model_config = ConfigDict(

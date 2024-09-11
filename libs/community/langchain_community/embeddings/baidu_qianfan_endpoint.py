@@ -71,7 +71,7 @@ class QianfanEmbeddingsEndpoint(BaseModel, Embeddings):
     endpoint: str = ""
     """Endpoint of the Qianfan Embedding, required if custom model used."""
 
-    client: Any
+    client: Any = None
     """Qianfan client"""
 
     init_kwargs: Dict[str, Any] = Field(default_factory=dict)

@@ -43,11 +43,11 @@ class EdenAiTextToSpeechTool(EdenaiTool):
 
     # optional params see api documentation for more info
     return_type: Literal["url", "wav"] = "url"
-    rate: Optional[int]
-    pitch: Optional[int]
-    volume: Optional[int]
-    audio_format: Optional[str]
-    sampling_rate: Optional[int]
+    rate: Optional[int] = None
+    pitch: Optional[int] = None
+    volume: Optional[int] = None
+    audio_format: Optional[str] = None
+    sampling_rate: Optional[int] = None
     voice_models: Dict[str, str] = Field(default_factory=dict)
 
     voice: Literal["MALE", "FEMALE"]

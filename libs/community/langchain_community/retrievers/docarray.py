@@ -38,7 +38,7 @@ class DocArrayRetriever(BaseRetriever):
         top_k: Number of documents to return
     """
 
-    index: Any
+    index: Any = None
     embeddings: Embeddings
     search_field: str
     content_field: str

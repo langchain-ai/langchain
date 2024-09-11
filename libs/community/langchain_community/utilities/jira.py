@@ -10,8 +10,8 @@ from pydantic import BaseModel, ConfigDict, model_validator
 class JiraAPIWrapper(BaseModel):
     """Wrapper for Jira API."""
 
-    jira: Any  #: :meta private:
-    confluence: Any
+    jira: Any = None  #: :meta private:
+    confluence: Any = None
     jira_username: Optional[str] = None
     jira_api_token: Optional[str] = None
     jira_instance_url: Optional[str] = None
