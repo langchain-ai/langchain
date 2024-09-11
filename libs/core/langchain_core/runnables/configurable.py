@@ -376,7 +376,6 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
         Returns:
             List[ConfigurableFieldSpec]: The configuration specs.
         """
-        # TODO(0.3): This change removes field_info which isn't needed in pydantic 2
         config_specs = []
 
         for field_name, spec in self.fields.items():

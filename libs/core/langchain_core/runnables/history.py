@@ -375,9 +375,6 @@ class RunnableWithMessageHistory(RunnableBindingBase):
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
     ) -> Type[BaseModel]:
-        # TODO(0.3): Verify that this change was correct
-        # Not enough tests and unclear on why the previous implementation was
-        # necessary.
         from langchain_core.messages import BaseMessage
 
         fields: Dict = {}
