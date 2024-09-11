@@ -15,6 +15,9 @@ from langchain_community.tools.azure_cognitive_services.text2speech import (
 from langchain_community.tools.azure_cognitive_services.text_analytics_health import (
     AzureCogsTextAnalyticsHealthTool,
 )
+from langchain_community.tools.azure_cognitive_services.content_safety import (
+    AzureContentSafetyTextTool,
+)
 
 __all__ = [
     "AzureCogsImageAnalysisTool",
@@ -22,4 +25,5 @@ __all__ = [
     "AzureCogsSpeech2TextTool",
     "AzureCogsText2SpeechTool",
     "AzureCogsTextAnalyticsHealthTool",
+    "AzureContentSafetyTextTool",
 ]
