@@ -398,6 +398,7 @@ module.exports = {
         { type: "doc", id: "contributing/documentation/style_guide", className: "hidden" },
         { type: "doc", id: "contributing/documentation/setup", className: "hidden" },
         "contributing/testing",
+        "contributing/review_process",
         "contributing/faq",
       ],
       collapsible: false,

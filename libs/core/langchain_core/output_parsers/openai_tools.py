@@ -55,7 +55,7 @@ def parse_tool_call(
                 f"Function {raw_tool_call['function']['name']} arguments:\n\n"
                 f"{raw_tool_call['function']['arguments']}\n\nare not valid JSON. "
                 f"Received JSONDecodeError {e}"
-            )
+            ) from e
     parsed = {
         "name": raw_tool_call["function"]["name"] or "",
         "args": function_args or {},

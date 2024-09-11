@@ -22,6 +22,7 @@ def RunTypeEnum() -> Type[RunTypeEnumDep]:
         "RunTypeEnum is deprecated. Please directly use a string instead"
         " (e.g. 'llm', 'chain', 'tool').",
         DeprecationWarning,
+        stacklevel=2,
     )
     return RunTypeEnumDep
 

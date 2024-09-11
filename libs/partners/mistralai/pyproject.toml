@@ -4,8 +4,8 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "gigachain-mistralai"
-version = "0.1.12"
-description = "An integration package connecting Mistral and GigaChain"
+version = "0.1.13"
+description = "An integration package connecting Mistral and LangChain"
 authors = []
 readme = "README.md"
 repository = "https://github.com/ai-forever/gigachain"
@@ -23,7 +23,7 @@ disallow_untyped_defs = "True"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-gigachain-core = "^0.2.26"
+gigachain-core = "^0.2.38"
 tokenizers = ">=0.15.1,<1"
 httpx = ">=0.25.2,<1"
 httpx-sse = ">=0.3.1,<1"
@@ -57,6 +57,7 @@ optional = true
 [tool.poetry.group.test.dependencies]
 pytest = "^7.3.0"
 pytest-asyncio = "^0.21.1"
+pytest-watcher = "^0.3.4"
 
 [tool.poetry.group.test_integration.dependencies]
 

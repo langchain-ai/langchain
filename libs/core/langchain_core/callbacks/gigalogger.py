@@ -29,22 +29,22 @@ def create_gigalogger_handler() -> Any:
             from langfuse.callback import (  # type: ignore[import-untyped]
                 CallbackHandler as LangFuseCallback,
             )
-        except ImportError:
+        except ImportError as e:
             raise ImportError(
                 "Could not import langfuse python package. "
                 "For correct work of gigalogger langfuse is required. "
                 "Please install it with `pip install langfuse`."
-            )
+            ) from e
 
         try:
             pk = os.environ["GIGALOGGER_PUBLIC_KEY"]
             sk = os.environ["GIGALOGGER_SECRET_KEY"]
-        except KeyError:
+        except KeyError as e:
             INITIALIZED = True
             raise GigaLoggerInitializeException(
                 "Set 'GIGALOGGER_PUBLIC_KEY' and 'GIGALOGGER_SECRET_KEY' "
                 "environment variables."
-            )
+            ) from e
         HANDLER = LangFuseCallback(
             public_key=pk,
             secret_key=sk,
@@ -59,7 +59,7 @@ def create_gigalogger_handler() -> Any:
                 "Failed to authenticate in GigaLogger. "
                 "Check your public and secret key. "
                 f"Additional message: '{repr(e)}'"
-            )
+            ) from e
         finally:
             INITIALIZED = True
         return HANDLER

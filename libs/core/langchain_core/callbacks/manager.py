@@ -2351,12 +2351,12 @@ def _configure(
                 from langfuse.callback import (  # type: ignore[import-untyped]
                     CallbackHandler as LangFuseCallback,
                 )
-            except ImportError:
+            except ImportError as e:
                 raise ImportError(
                     "Could not import langfuse python package. "
                     "For correct work of gigalogger langfuse is required. "
                     "Please install it with `pip install langfuse`."
-                )
+                ) from e
             if not any(
                 isinstance(handler, LangFuseCallback)
                 for handler in callback_manager.handlers

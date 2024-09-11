@@ -23,9 +23,6 @@ IGNORED_PARTNERS = [
     # specifically in huggingface jobs
     # https://github.com/langchain-ai/langchain/issues/25558
     "huggingface",
-    # remove ai21 because of breaking changes in sdk version 2.14.0
-    # that have not been fixed yet
-    "ai21",
 ]
 
 
@@ -198,7 +195,6 @@ if __name__ == "__main__":
             dirs_to_run["test"].add("libs/partners/mistralai")
             dirs_to_run["test"].add("libs/partners/openai")
             dirs_to_run["test"].add("libs/partners/anthropic")
-            dirs_to_run["test"].add("libs/partners/ai21")
             dirs_to_run["test"].add("libs/partners/fireworks")
             dirs_to_run["test"].add("libs/partners/groq")
 
