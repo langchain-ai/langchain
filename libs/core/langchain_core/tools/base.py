@@ -572,7 +572,6 @@ class ChildTool(BaseTool):
                 content = _handle_validation_error(e, flag=self.handle_validation_error)
             status = "error"
         except Exception as e:
-            e = ToolException(e)
             if not self.handle_tool_error:
                 error_to_raise = e
             else:
@@ -689,7 +688,6 @@ class ChildTool(BaseTool):
                 content = _handle_validation_error(e, flag=self.handle_validation_error)
             status = "error"
         except Exception as e:
-            e = ToolException(e)
             if not self.handle_tool_error:
                 error_to_raise = e
             else:
@@ -742,6 +740,7 @@ def _handle_tool_error(
     flag: Optional[Union[Literal[True], str, Callable[[ToolException], str]]],
 ) -> str:
     if isinstance(flag, bool):
+        print(e.args)
         if e.args:
             content = e.args[0]
         else:
