@@ -174,7 +174,9 @@ def _is_pydantic_annotation(annotation: Any, pydantic_version: str = "v2") -> bo
         return False
 
 
-def _function_annotations_are_pydantic_v1(signature: inspect.Signature) -> bool:
+def _function_annotations_are_pydantic_v1(
+    signature: inspect.Signature, func: Callable
+) -> bool:
     """Determine if all Pydantic annotations in a function signature are from V1."""
     any_v1_annotations = any(
         _is_pydantic_annotation(parameter.annotation, pydantic_version="v1")
@@ -184,6 +186,11 @@ def _function_annotations_are_pydantic_v1(signature: inspect.Signature) -> bool:
         _is_pydantic_annotation(parameter.annotation, pydantic_version="v2")
         for parameter in signature.parameters.values()
     )
+    if any_v1_annotations and any_v2_annotations:
+        raise NotImplementedError(
+            f"Function {func} contains a mix of Pydantic v1 and v2 annotations. "
+            "Only one version of Pydantic annotations per function is supported."
+        )
     return any_v1_annotations and not any_v2_annotations
 
 
@@ -233,7 +240,7 @@ def create_schema_from_function(
     """
     sig = inspect.signature(func)
 
-    if _function_annotations_are_pydantic_v1(sig):
+    if _function_annotations_are_pydantic_v1(sig, func):
         validated = validate_arguments_v1(func, config=_SchemaConfig)  # type: ignore
     else:
         # https://docs.pydantic.dev/latest/usage/validation_decorator/

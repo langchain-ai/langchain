@@ -343,6 +343,25 @@ def test_structured_tool_types_parsed_pydantic_v1() -> None:
         assert result == expected
 
 
+def test_structured_tool_types_parsed_pydantic_mixed() -> None:
+    """Test the non-primitive types are correctly passed to structured tools."""
+
+    class SomeBaseModel(BaseModelV1):
+        foo: str
+
+    class AnotherBaseModel(BaseModel):
+        bar: str
+
+    with pytest.raises(NotImplementedError):
+
+        @tool
+        def structured_tool(
+            some_base_model: SomeBaseModel, another_base_model: AnotherBaseModel
+        ) -> None:
+            """Return the arguments directly."""
+            pass
+
+
 def test_base_tool_inheritance_base_schema() -> None:
     """Test schema is correctly inferred when inheriting from BaseTool."""
 
