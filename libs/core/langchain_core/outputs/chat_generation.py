@@ -5,7 +5,7 @@ from typing import List, Literal, Union
 from pydantic import model_validator
 from typing_extensions import Self
 
-from langchain_core.messages import BaseMessage, BaseMessageChunk
+from langchain_core.messages import AnyMessage, BaseMessageChunk
 from langchain_core.outputs.generation import Generation
 from langchain_core.utils._merge import merge_dicts
 
@@ -26,7 +26,7 @@ class ChatGeneration(Generation):
 
     text: str = ""
     """*SHOULD NOT BE SET DIRECTLY* The text contents of the output message."""
-    message: BaseMessage
+    message: AnyMessage
     """The message output by the chat model."""
     # Override type to be ChatGeneration, ignore mypy error as this is intentional
     type: Literal["ChatGeneration"] = "ChatGeneration"  # type: ignore[assignment]
