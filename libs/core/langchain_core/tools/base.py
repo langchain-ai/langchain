@@ -928,7 +928,7 @@ def _is_message_content_block(obj: Any) -> bool:
 
 def _stringify(content: Any) -> str:
     try:
-        return json.dumps(content)
+        return json.dumps(content, ensure_ascii=False)
     except Exception:
         return str(content)
 

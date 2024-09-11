@@ -49,44 +49,7 @@
                     "template": "You are a nice assistant.",
                     "template_format": "f-string"
                   },
-                  "name": "PromptTemplate",
-                  "graph": {
-                    "nodes": [
-                      {
-                        "id": 0,
-                        "type": "schema",
-                        "data": "PromptInput"
-                      },
-                      {
-                        "id": 1,
-                        "type": "runnable",
-                        "data": {
-                          "id": [
-                            "langchain",
-                            "prompts",
-                            "prompt",
-                            "PromptTemplate"
-                          ],
-                          "name": "PromptTemplate"
-                        }
-                      },
-                      {
-                        "id": 2,
-                        "type": "schema",
-                        "data": "PromptTemplateOutput"
-                      }
-                    ],
-                    "edges": [
-                      {
-                        "source": 0,
-                        "target": 1
-                      },
-                      {
-                        "source": 1,
-                        "target": 2
-                      }
-                    ]
-                  }
+                  "name": "PromptTemplate"
                 }
               }
             },
@@ -116,87 +79,13 @@
                     "template": "{question}",
                     "template_format": "f-string"
                   },
-                  "name": "PromptTemplate",
-                  "graph": {
-                    "nodes": [
-                      {
-                        "id": 0,
-                        "type": "schema",
-                        "data": "PromptInput"
-                      },
-                      {
-                        "id": 1,
-                        "type": "runnable",
-                        "data": {
-                          "id": [
-                            "langchain",
-                            "prompts",
-                            "prompt",
-                            "PromptTemplate"
-                          ],
-                          "name": "PromptTemplate"
-                        }
-                      },
-                      {
-                        "id": 2,
-                        "type": "schema",
-                        "data": "PromptTemplateOutput"
-                      }
-                    ],
-                    "edges": [
-                      {
-                        "source": 0,
-                        "target": 1
-                      },
-                      {
-                        "source": 1,
-                        "target": 2
-                      }
-                    ]
-                  }
+                  "name": "PromptTemplate"
                 }
               }
             }
           ]
         },
-        "name": "ChatPromptTemplate",
-        "graph": {
-          "nodes": [
-            {
-              "id": 0,
-              "type": "schema",
-              "data": "PromptInput"
-            },
-            {
-              "id": 1,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain",
-                  "prompts",
-                  "chat",
-                  "ChatPromptTemplate"
-                ],
-                "name": "ChatPromptTemplate"
-              }
-            },
-            {
-              "id": 2,
-              "type": "schema",
-              "data": "ChatPromptTemplateOutput"
-            }
-          ],
-          "edges": [
-            {
-              "source": 0,
-              "target": 1
-            },
-            {
-              "source": 1,
-              "target": 2
-            }
-          ]
-        }
+        "name": "ChatPromptTemplate"
       },
       "middle": [
         {
@@ -209,44 +98,7 @@
             "FakeListChatModel"
           ],
           "repr": "FakeListChatModel(responses=['foo, bar'])",
-          "name": "FakeListChatModel",
-          "graph": {
-            "nodes": [
-              {
-                "id": 0,
-                "type": "schema",
-                "data": "FakeListChatModelInput"
-              },
-              {
-                "id": 1,
-                "type": "runnable",
-                "data": {
-                  "id": [
-                    "langchain_core",
-                    "language_models",
-                    "fake_chat_models",
-                    "FakeListChatModel"
-                  ],
-                  "name": "FakeListChatModel"
-                }
-              },
-              {
-                "id": 2,
-                "type": "schema",
-                "data": "FakeListChatModelOutput"
-              }
-            ],
-            "edges": [
-              {
-                "source": 0,
-                "target": 1
-              },
-              {
-                "source": 1,
-                "target": 2
-              }
-            ]
-          }
+          "name": "FakeListChatModel"
         }
       ],
       "last": {
@@ -259,118 +111,10 @@
           "CommaSeparatedListOutputParser"
         ],
         "kwargs": {},
-        "name": "CommaSeparatedListOutputParser",
-        "graph": {
-          "nodes": [
-            {
-              "id": 0,
-              "type": "schema",
-              "data": "CommaSeparatedListOutputParserInput"
-            },
-            {
-              "id": 1,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain",
-                  "output_parsers",
-                  "list",
-                  "CommaSeparatedListOutputParser"
-                ],
-                "name": "CommaSeparatedListOutputParser"
-              }
-            },
-            {
-              "id": 2,
-              "type": "schema",
-              "data": "CommaSeparatedListOutputParserOutput"
-            }
-          ],
-          "edges": [
-            {
-              "source": 0,
-              "target": 1
-            },
-            {
-              "source": 1,
-              "target": 2
-            }
-          ]
-        }
+        "name": "CommaSeparatedListOutputParser"
       }
     },
-    "name": "RunnableSequence",
-    "graph": {
-      "nodes": [
-        {
-          "id": 0,
-          "type": "schema",
-          "data": "PromptInput"
-        },
-        {
-          "id": 1,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain",
-              "prompts",
-              "chat",
-              "ChatPromptTemplate"
-            ],
-            "name": "ChatPromptTemplate"
-          }
-        },
-        {
-          "id": 2,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain_core",
-              "language_models",
-              "fake_chat_models",
-              "FakeListChatModel"
-            ],
-            "name": "FakeListChatModel"
-          }
-        },
-        {
-          "id": 3,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain",
-              "output_parsers",
-              "list",
-              "CommaSeparatedListOutputParser"
-            ],
-            "name": "CommaSeparatedListOutputParser"
-          }
-        },
-        {
-          "id": 4,
-          "type": "schema",
-          "data": "CommaSeparatedListOutputParserOutput"
-        }
-      ],
-      "edges": [
-        {
-          "source": 0,
-          "target": 1
-        },
-        {
-          "source": 1,
-          "target": 2
-        },
-        {
-          "source": 3,
-          "target": 4
-        },
-        {
-          "source": 2,
-          "target": 3
-        }
-      ]
-    }
+    "name": "RunnableSequence"
   }
   '''
 # ---
@@ -436,44 +180,7 @@
                       "template": "You are a nicer assistant.",
                       "template_format": "f-string"
                     },
-                    "name": "PromptTemplate",
-                    "graph": {
-                      "nodes": [
-                        {
-                          "id": 0,
-                          "type": "schema",
-                          "data": "PromptInput"
-                        },
-                        {
-                          "id": 1,
-                          "type": "runnable",
-                          "data": {
-                            "id": [
-                              "langchain",
-                              "prompts",
-                              "prompt",
-                              "PromptTemplate"
-                            ],
-                            "name": "PromptTemplate"
-                          }
-                        },
-                        {
-                          "id": 2,
-                          "type": "schema",
-                          "data": "PromptTemplateOutput"
-                        }
-                      ],
-                      "edges": [
-                        {
-                          "source": 0,
-                          "target": 1
-                        },
-                        {
-                          "source": 1,
-                          "target": 2
-                        }
-                      ]
-                    }
+                    "name": "PromptTemplate"
                   }
                 }
               },
@@ -503,87 +210,13 @@
                       "template": "{question}",
                       "template_format": "f-string"
                     },
-                    "name": "PromptTemplate",
-                    "graph": {
-                      "nodes": [
-                        {
-                          "id": 0,
-                          "type": "schema",
-                          "data": "PromptInput"
-                        },
-                        {
-                          "id": 1,
-                          "type": "runnable",
-                          "data": {
-                            "id": [
-                              "langchain",
-                              "prompts",
-                              "prompt",
-                              "PromptTemplate"
-                            ],
-                            "name": "PromptTemplate"
-                          }
-                        },
-                        {
-                          "id": 2,
-                          "type": "schema",
-                          "data": "PromptTemplateOutput"
-                        }
-                      ],
-                      "edges": [
-                        {
-                          "source": 0,
-                          "target": 1
-                        },
-                        {
-                          "source": 1,
-                          "target": 2
-                        }
-                      ]
-                    }
+                    "name": "PromptTemplate"
                   }
                 }
               }
             ]
           },
-          "name": "ChatPromptTemplate",
-          "graph": {
-            "nodes": [
-              {
-                "id": 0,
-                "type": "schema",
-                "data": "PromptInput"
-              },
-              {
-                "id": 1,
-                "type": "runnable",
-                "data": {
-                  "id": [
-                    "langchain",
-                    "prompts",
-                    "chat",
-                    "ChatPromptTemplate"
-                  ],
-                  "name": "ChatPromptTemplate"
-                }
-              },
-              {
-                "id": 2,
-                "type": "schema",
-                "data": "ChatPromptTemplateOutput"
-              }
-            ],
-            "edges": [
-              {
-                "source": 0,
-                "target": 1
-              },
-              {
-                "source": 1,
-                "target": 2
-              }
-            ]
-          }
+          "name": "ChatPromptTemplate"
         },
         {
           "lc": 1,
@@ -595,44 +228,7 @@
             "FakeListChatModel"
           ],
           "repr": "FakeListChatModel(responses=['baz, qux'])",
-          "name": "FakeListChatModel",
-          "graph": {
-            "nodes": [
-              {
-                "id": 0,
-                "type": "schema",
-                "data": "FakeListChatModelInput"
-              },
-              {
-                "id": 1,
-                "type": "runnable",
-                "data": {
-                  "id": [
-                    "langchain_core",
-                    "language_models",
-                    "fake_chat_models",
-                    "FakeListChatModel"
-                  ],
-                  "name": "FakeListChatModel"
-                }
-              },
-              {
-                "id": 2,
-                "type": "schema",
-                "data": "FakeListChatModelOutput"
-              }
-            ],
-            "edges": [
-              {
-                "source": 0,
-                "target": 1
-              },
-              {
-                "source": 1,
-                "target": 2
-              }
-            ]
-          }
+          "name": "FakeListChatModel"
         }
       ],
       "last": {
@@ -645,135 +241,10 @@
           "CommaSeparatedListOutputParser"
         ],
         "kwargs": {},
-        "name": "CommaSeparatedListOutputParser",
-        "graph": {
-          "nodes": [
-            {
-              "id": 0,
-              "type": "schema",
-              "data": "CommaSeparatedListOutputParserInput"
-            },
-            {
-              "id": 1,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain",
-                  "output_parsers",
-                  "list",
-                  "CommaSeparatedListOutputParser"
-                ],
-                "name": "CommaSeparatedListOutputParser"
-              }
-            },
-            {
-              "id": 2,
-              "type": "schema",
-              "data": "CommaSeparatedListOutputParserOutput"
-            }
-          ],
-          "edges": [
-            {
-              "source": 0,
-              "target": 1
-            },
-            {
-              "source": 1,
-              "target": 2
-            }
-          ]
-        }
+        "name": "CommaSeparatedListOutputParser"
       }
     },
-    "name": "RunnableSequence",
-    "graph": {
-      "nodes": [
-        {
-          "id": 0,
-          "type": "schema",
-          "data": "LambdaInput"
-        },
-        {
-          "id": 1,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain_core",
-              "runnables",
-              "base",
-              "RunnableLambda"
-            ],
-            "name": "Lambda"
-          }
-        },
-        {
-          "id": 2,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain",
-              "prompts",
-              "chat",
-              "ChatPromptTemplate"
-            ],
-            "name": "ChatPromptTemplate"
-          }
-        },
-        {
-          "id": 3,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain_core",
-              "language_models",
-              "fake_chat_models",
-              "FakeListChatModel"
-            ],
-            "name": "FakeListChatModel"
-          }
-        },
-        {
-          "id": 4,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain",
-              "output_parsers",
-              "list",
-              "CommaSeparatedListOutputParser"
-            ],
-            "name": "CommaSeparatedListOutputParser"
-          }
-        },
-        {
-          "id": 5,
-          "type": "schema",
-          "data": "CommaSeparatedListOutputParserOutput"
-        }
-      ],
-      "edges": [
-        {
-          "source": 0,
-          "target": 1
-        },
-        {
-          "source": 1,
-          "target": 2
-        },
-        {
-          "source": 2,
-          "target": 3
-        },
-        {
-          "source": 4,
-          "target": 5
-        },
-        {
-          "source": 3,
-          "target": 4
-        }
-      ]
-    }
+    "name": "RunnableSequence"
   }
   '''
 # ---
@@ -827,44 +298,7 @@
                     "template": "You are a nice assistant.",
                     "template_format": "f-string"
                   },
-                  "name": "PromptTemplate",
-                  "graph": {
-                    "nodes": [
-                      {
-                        "id": 0,
-                        "type": "schema",
-                        "data": "PromptInput"
-                      },
-                      {
-                        "id": 1,
-                        "type": "runnable",
-                        "data": {
-                          "id": [
-                            "langchain",
-                            "prompts",
-                            "prompt",
-                            "PromptTemplate"
-                          ],
-                          "name": "PromptTemplate"
-                        }
-                      },
-                      {
-                        "id": 2,
-                        "type": "schema",
-                        "data": "PromptTemplateOutput"
-                      }
-                    ],
-                    "edges": [
-                      {
-                        "source": 0,
-                        "target": 1
-                      },
-                      {
-                        "source": 1,
-                        "target": 2
-                      }
-                    ]
-                  }
+                  "name": "PromptTemplate"
                 }
               }
             },
@@ -894,87 +328,13 @@
                     "template": "{question}",
                     "template_format": "f-string"
                   },
-                  "name": "PromptTemplate",
-                  "graph": {
-                    "nodes": [
-                      {
-                        "id": 0,
-                        "type": "schema",
-                        "data": "PromptInput"
-                      },
-                      {
-                        "id": 1,
-                        "type": "runnable",
-                        "data": {
-                          "id": [
-                            "langchain",
-                            "prompts",
-                            "prompt",
-                            "PromptTemplate"
-                          ],
-                          "name": "PromptTemplate"
-                        }
-                      },
-                      {
-                        "id": 2,
-                        "type": "schema",
-                        "data": "PromptTemplateOutput"
-                      }
-                    ],
-                    "edges": [
-                      {
-                        "source": 0,
-                        "target": 1
-                      },
-                      {
-                        "source": 1,
-                        "target": 2
-                      }
-                    ]
-                  }
+                  "name": "PromptTemplate"
                 }
               }
             }
           ]
         },
-        "name": "ChatPromptTemplate",
-        "graph": {
-          "nodes": [
-            {
-              "id": 0,
-              "type": "schema",
-              "data": "PromptInput"
-            },
-            {
-              "id": 1,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain",
-                  "prompts",
-                  "chat",
-                  "ChatPromptTemplate"
-                ],
-                "name": "ChatPromptTemplate"
-              }
-            },
-            {
-              "id": 2,
-              "type": "schema",
-              "data": "ChatPromptTemplateOutput"
-            }
-          ],
-          "edges": [
-            {
-              "source": 0,
-              "target": 1
-            },
-            {
-              "source": 1,
-              "target": 2
-            }
-          ]
-        }
+        "name": "ChatPromptTemplate"
       },
       "middle": [
         {
@@ -987,44 +347,7 @@
             "FakeListChatModel"
           ],
           "repr": "FakeListChatModel(responses=['foo, bar'])",
-          "name": "FakeListChatModel",
-          "graph": {
-            "nodes": [
-              {
-                "id": 0,
-                "type": "schema",
-                "data": "FakeListChatModelInput"
-              },
-              {
-                "id": 1,
-                "type": "runnable",
-                "data": {
-                  "id": [
-                    "langchain_core",
-                    "language_models",
-                    "fake_chat_models",
-                    "FakeListChatModel"
-                  ],
-                  "name": "FakeListChatModel"
-                }
-              },
-              {
-                "id": 2,
-                "type": "schema",
-                "data": "FakeListChatModelOutput"
-              }
-            ],
-            "edges": [
-              {
-                "source": 0,
-                "target": 1
-              },
-              {
-                "source": 1,
-                "target": 2
-              }
-            ]
-          }
+          "name": "FakeListChatModel"
         },
         {
           "lc": 1,
@@ -1036,44 +359,7 @@
             "CommaSeparatedListOutputParser"
           ],
           "kwargs": {},
-          "name": "CommaSeparatedListOutputParser",
-          "graph": {
-            "nodes": [
-              {
-                "id": 0,
-                "type": "schema",
-                "data": "CommaSeparatedListOutputParserInput"
-              },
-              {
-                "id": 1,
-                "type": "runnable",
-                "data": {
-                  "id": [
-                    "langchain",
-                    "output_parsers",
-                    "list",
-                    "CommaSeparatedListOutputParser"
-                  ],
-                  "name": "CommaSeparatedListOutputParser"
-                }
-              },
-              {
-                "id": 2,
-                "type": "schema",
-                "data": "CommaSeparatedListOutputParserOutput"
-              }
-            ],
-            "edges": [
-              {
-                "source": 0,
-                "target": 1
-              },
-              {
-                "source": 1,
-                "target": 2
-              }
-            ]
-          }
+          "name": "CommaSeparatedListOutputParser"
         },
         {
           "lc": 1,
@@ -1124,44 +410,7 @@
                       "template": "You are a nicer assistant.",
                       "template_format": "f-string"
                     },
-                    "name": "PromptTemplate",
-                    "graph": {
-                      "nodes": [
-                        {
-                          "id": 0,
-                          "type": "schema",
-                          "data": "PromptInput"
-                        },
-                        {
-                          "id": 1,
-                          "type": "runnable",
-                          "data": {
-                            "id": [
-                              "langchain",
-                              "prompts",
-                              "prompt",
-                              "PromptTemplate"
-                            ],
-                            "name": "PromptTemplate"
-                          }
-                        },
-                        {
-                          "id": 2,
-                          "type": "schema",
-                          "data": "PromptTemplateOutput"
-                        }
-                      ],
-                      "edges": [
-                        {
-                          "source": 0,
-                          "target": 1
-                        },
-                        {
-                          "source": 1,
-                          "target": 2
-                        }
-                      ]
-                    }
+                    "name": "PromptTemplate"
                   }
                 }
               },
@@ -1191,87 +440,13 @@
                       "template": "{question}",
                       "template_format": "f-string"
                     },
-                    "name": "PromptTemplate",
-                    "graph": {
-                      "nodes": [
-                        {
-                          "id": 0,
-                          "type": "schema",
-                          "data": "PromptInput"
-                        },
-                        {
-                          "id": 1,
-                          "type": "runnable",
-                          "data": {
-                            "id": [
-                              "langchain",
-                              "prompts",
-                              "prompt",
-                              "PromptTemplate"
-                            ],
-                            "name": "PromptTemplate"
-                          }
-                        },
-                        {
-                          "id": 2,
-                          "type": "schema",
-                          "data": "PromptTemplateOutput"
-                        }
-                      ],
-                      "edges": [
-                        {
-                          "source": 0,
-                          "target": 1
-                        },
-                        {
-                          "source": 1,
-                          "target": 2
-                        }
-                      ]
-                    }
+                    "name": "PromptTemplate"
                   }
                 }
               }
             ]
           },
-          "name": "ChatPromptTemplate",
-          "graph": {
-            "nodes": [
-              {
-                "id": 0,
-                "type": "schema",
-                "data": "PromptInput"
-              },
-              {
-                "id": 1,
-                "type": "runnable",
-                "data": {
-                  "id": [
-                    "langchain",
-                    "prompts",
-                    "chat",
-                    "ChatPromptTemplate"
-                  ],
-                  "name": "ChatPromptTemplate"
-                }
-              },
-              {
-                "id": 2,
-                "type": "schema",
-                "data": "ChatPromptTemplateOutput"
-              }
-            ],
-            "edges": [
-              {
-                "source": 0,
-                "target": 1
-              },
-              {
-                "source": 1,
-                "target": 2
-              }
-            ]
-          }
+          "name": "ChatPromptTemplate"
         },
         {
           "lc": 1,
@@ -1283,44 +458,7 @@
             "FakeListChatModel"
           ],
           "repr": "FakeListChatModel(responses=['baz, qux'])",
-          "name": "FakeListChatModel",
-          "graph": {
-            "nodes": [
-              {
-                "id": 0,
-                "type": "schema",
-                "data": "FakeListChatModelInput"
-              },
-              {
-                "id": 1,
-                "type": "runnable",
-                "data": {
-                  "id": [
-                    "langchain_core",
-                    "language_models",
-                    "fake_chat_models",
-                    "FakeListChatModel"
-                  ],
-                  "name": "FakeListChatModel"
-                }
-              },
-              {
-                "id": 2,
-                "type": "schema",
-                "data": "FakeListChatModelOutput"
-              }
-            ],
-            "edges": [
-              {
-                "source": 0,
-                "target": 1
-              },
-              {
-                "source": 1,
-                "target": 2
-              }
-            ]
-          }
+          "name": "FakeListChatModel"
         }
       ],
       "last": {
@@ -1333,186 +471,10 @@
           "CommaSeparatedListOutputParser"
         ],
         "kwargs": {},
-        "name": "CommaSeparatedListOutputParser",
-        "graph": {
-          "nodes": [
-            {
-              "id": 0,
-              "type": "schema",
-              "data": "CommaSeparatedListOutputParserInput"
-            },
-            {
-              "id": 1,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain",
-                  "output_parsers",
-                  "list",
-                  "CommaSeparatedListOutputParser"
-                ],
-                "name": "CommaSeparatedListOutputParser"
-              }
-            },
-            {
-              "id": 2,
-              "type": "schema",
-              "data": "CommaSeparatedListOutputParserOutput"
-            }
-          ],
-          "edges": [
-            {
-              "source": 0,
-              "target": 1
-            },
-            {
-              "source": 1,
-              "target": 2
-            }
-          ]
-        }
+        "name": "CommaSeparatedListOutputParser"
       }
     },
-    "name": "RunnableSequence",
-    "graph": {
-      "nodes": [
-        {
-          "id": 0,
-          "type": "schema",
-          "data": "PromptInput"
-        },
-        {
-          "id": 1,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain",
-              "prompts",
-              "chat",
-              "ChatPromptTemplate"
-            ],
-            "name": "ChatPromptTemplate"
-          }
-        },
-        {
-          "id": 2,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain_core",
-              "language_models",
-              "fake_chat_models",
-              "FakeListChatModel"
-            ],
-            "name": "FakeListChatModel"
-          }
-        },
-        {
-          "id": 3,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain",
-              "output_parsers",
-              "list",
-              "CommaSeparatedListOutputParser"
-            ],
-            "name": "CommaSeparatedListOutputParser"
-          }
-        },
-        {
-          "id": 4,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain_core",
-              "runnables",
-              "base",
-              "RunnableLambda"
-            ],
-            "name": "Lambda"
-          }
-        },
-        {
-          "id": 5,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain",
-              "prompts",
-              "chat",
-              "ChatPromptTemplate"
-            ],
-            "name": "ChatPromptTemplate"
-          }
-        },
-        {
-          "id": 6,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain_core",
-              "language_models",
-              "fake_chat_models",
-              "FakeListChatModel"
-            ],
-            "name": "FakeListChatModel"
-          }
-        },
-        {
-          "id": 7,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain",
-              "output_parsers",
-              "list",
-              "CommaSeparatedListOutputParser"
-            ],
-            "name": "CommaSeparatedListOutputParser"
-          }
-        },
-        {
-          "id": 8,
-          "type": "schema",
-          "data": "CommaSeparatedListOutputParserOutput"
-        }
-      ],
-      "edges": [
-        {
-          "source": 0,
-          "target": 1
-        },
-        {
-          "source": 1,
-          "target": 2
-        },
-        {
-          "source": 2,
-          "target": 3
-        },
-        {
-          "source": 3,
-          "target": 4
-        },
-        {
-          "source": 4,
-          "target": 5
-        },
-        {
-          "source": 5,
-          "target": 6
-        },
-        {
-          "source": 7,
-          "target": 8
-        },
-        {
-          "source": 6,
-          "target": 7
-        }
-      ]
-    }
+    "name": "RunnableSequence"
   }
   '''
 # ---
@@ -1870,44 +832,7 @@
                     "template": "You are a nice assistant.",
                     "template_format": "f-string"
                   },
-                  "name": "PromptTemplate",
-                  "graph": {
-                    "nodes": [
-                      {
-                        "id": 0,
-                        "type": "schema",
-                        "data": "PromptInput"
-                      },
-                      {
-                        "id": 1,
-                        "type": "runnable",
-                        "data": {
-                          "id": [
-                            "langchain",
-                            "prompts",
-                            "prompt",
-                            "PromptTemplate"
-                          ],
-                          "name": "PromptTemplate"
-                        }
-                      },
-                      {
-                        "id": 2,
-                        "type": "schema",
-                        "data": "PromptTemplateOutput"
-                      }
-                    ],
-                    "edges": [
-                      {
-                        "source": 0,
-                        "target": 1
-                      },
-                      {
-                        "source": 1,
-                        "target": 2
-                      }
-                    ]
-                  }
+                  "name": "PromptTemplate"
                 }
               }
             },
@@ -1937,87 +862,13 @@
                     "template": "{question}",
                     "template_format": "f-string"
                   },
-                  "name": "PromptTemplate",
-                  "graph": {
-                    "nodes": [
-                      {
-                        "id": 0,
-                        "type": "schema",
-                        "data": "PromptInput"
-                      },
-                      {
-                        "id": 1,
-                        "type": "runnable",
-                        "data": {
-                          "id": [
-                            "langchain",
-                            "prompts",
-                            "prompt",
-                            "PromptTemplate"
-                          ],
-                          "name": "PromptTemplate"
-                        }
-                      },
-                      {
-                        "id": 2,
-                        "type": "schema",
-                        "data": "PromptTemplateOutput"
-                      }
-                    ],
-                    "edges": [
-                      {
-                        "source": 0,
-                        "target": 1
-                      },
-                      {
-                        "source": 1,
-                        "target": 2
-                      }
-                    ]
-                  }
+                  "name": "PromptTemplate"
                 }
               }
             }
           ]
         },
-        "name": "ChatPromptTemplate",
-        "graph": {
-          "nodes": [
-            {
-              "id": 0,
-              "type": "schema",
-              "data": "PromptInput"
-            },
-            {
-              "id": 1,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain",
-                  "prompts",
-                  "chat",
-                  "ChatPromptTemplate"
-                ],
-                "name": "ChatPromptTemplate"
-              }
-            },
-            {
-              "id": 2,
-              "type": "schema",
-              "data": "ChatPromptTemplateOutput"
-            }
-          ],
-          "edges": [
-            {
-              "source": 0,
-              "target": 1
-            },
-            {
-              "source": 1,
-              "target": 2
-            }
-          ]
-        }
+        "name": "ChatPromptTemplate"
       },
       "middle": [
         {
@@ -2030,44 +881,7 @@
             "FakeStreamingListLLM"
           ],
           "repr": "FakeStreamingListLLM(responses=['first item, second item, third item'])",
-          "name": "FakeStreamingListLLM",
-          "graph": {
-            "nodes": [
-              {
-                "id": 0,
-                "type": "schema",
-                "data": "FakeStreamingListLLMInput"
-              },
-              {
-                "id": 1,
-                "type": "runnable",
-                "data": {
-                  "id": [
-                    "langchain_core",
-                    "language_models",
-                    "fake",
-                    "FakeStreamingListLLM"
-                  ],
-                  "name": "FakeStreamingListLLM"
-                }
-              },
-              {
-                "id": 2,
-                "type": "schema",
-                "data": "FakeStreamingListLLMOutput"
-              }
-            ],
-            "edges": [
-              {
-                "source": 0,
-                "target": 1
-              },
-              {
-                "source": 1,
-                "target": 2
-              }
-            ]
-          }
+          "name": "FakeStreamingListLLM"
         },
         {
           "lc": 1,
@@ -2080,45 +894,7 @@
             "FakeSplitIntoListParser"
           ],
           "kwargs": {},
-          "name": "FakeSplitIntoListParser",
-          "graph": {
-            "nodes": [
-              {
-                "id": 0,
-                "type": "schema",
-                "data": "FakeSplitIntoListParserInput"
-              },
-              {
-                "id": 1,
-                "type": "runnable",
-                "data": {
-                  "id": [
-                    "tests",
-                    "unit_tests",
-                    "runnables",
-                    "test_runnable",
-                    "FakeSplitIntoListParser"
-                  ],
-                  "name": "FakeSplitIntoListParser"
-                }
-              },
-              {
-                "id": 2,
-                "type": "schema",
-                "data": "FakeSplitIntoListParserOutput"
-              }
-            ],
-            "edges": [
-              {
-                "source": 0,
-                "target": 1
-              },
-              {
-                "source": 1,
-                "target": 2
-              }
-            ]
-          }
+          "name": "FakeSplitIntoListParser"
         }
       ],
       "last": {
@@ -2141,176 +917,13 @@
               "FakeStreamingListLLM"
             ],
             "repr": "FakeStreamingListLLM(responses=['this', 'is', 'a', 'test'])",
-            "name": "FakeStreamingListLLM",
-            "graph": {
-              "nodes": [
-                {
-                  "id": 0,
-                  "type": "schema",
-                  "data": "FakeStreamingListLLMInput"
-                },
-                {
-                  "id": 1,
-                  "type": "runnable",
-                  "data": {
-                    "id": [
-                      "langchain_core",
-                      "language_models",
-                      "fake",
-                      "FakeStreamingListLLM"
-                    ],
-                    "name": "FakeStreamingListLLM"
-                  }
-                },
-                {
-                  "id": 2,
-                  "type": "schema",
-                  "data": "FakeStreamingListLLMOutput"
-                }
-              ],
-              "edges": [
-                {
-                  "source": 0,
-                  "target": 1
-                },
-                {
-                  "source": 1,
-                  "target": 2
-                }
-              ]
-            }
+            "name": "FakeStreamingListLLM"
           }
         },
-        "name": "RunnableEach<FakeStreamingListLLM>",
-        "graph": {
-          "nodes": [
-            {
-              "id": 0,
-              "type": "schema",
-              "data": "FakeStreamingListLLMInput"
-            },
-            {
-              "id": 1,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain_core",
-                  "language_models",
-                  "fake",
-                  "FakeStreamingListLLM"
-                ],
-                "name": "FakeStreamingListLLM"
-              }
-            },
-            {
-              "id": 2,
-              "type": "schema",
-              "data": "FakeStreamingListLLMOutput"
-            }
-          ],
-          "edges": [
-            {
-              "source": 0,
-              "target": 1
-            },
-            {
-              "source": 1,
-              "target": 2
-            }
-          ]
-        }
+        "name": "RunnableEach<FakeStreamingListLLM>"
       }
     },
-    "name": "RunnableSequence",
-    "graph": {
-      "nodes": [
-        {
-          "id": 0,
-          "type": "schema",
-          "data": "PromptInput"
-        },
-        {
-          "id": 1,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain",
-              "prompts",
-              "chat",
-              "ChatPromptTemplate"
-            ],
-            "name": "ChatPromptTemplate"
-          }
-        },
-        {
-          "id": 2,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain_core",
-              "language_models",
-              "fake",
-              "FakeStreamingListLLM"
-            ],
-            "name": "FakeStreamingListLLM"
-          }
-        },
-        {
-          "id": 3,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "tests",
-              "unit_tests",
-              "runnables",
-              "test_runnable",
-              "FakeSplitIntoListParser"
-            ],
-            "name": "FakeSplitIntoListParser"
-          }
-        },
-        {
-          "id": 4,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain_core",
-              "language_models",
-              "fake",
-              "FakeStreamingListLLM"
-            ],
-            "name": "FakeStreamingListLLM"
-          }
-        },
-        {
-          "id": 5,
-          "type": "schema",
-          "data": "FakeStreamingListLLMOutput"
-        }
-      ],
-      "edges": [
-        {
-          "source": 0,
-          "target": 1
-        },
-        {
-          "source": 1,
-          "target": 2
-        },
-        {
-          "source": 2,
-          "target": 3
-        },
-        {
-          "source": 4,
-          "target": 5
-        },
-        {
-          "source": 3,
-          "target": 4
-        }
-      ]
-    }
+    "name": "RunnableSequence"
   }
   '''
 # ---
@@ -2372,106 +985,11 @@
                   }
                 }
               },
-              "name": "RunnableParallel<question>",
-              "graph": {
-                "nodes": [
-                  {
-                    "id": 0,
-                    "type": "schema",
-                    "data": "Parallel<question>Input"
-                  },
-                  {
-                    "id": 1,
-                    "type": "schema",
-                    "data": "Parallel<question>Output"
-                  },
-                  {
-                    "id": 2,
-                    "type": "runnable",
-                    "data": {
-                      "id": [
-                        "langchain_core",
-                        "runnables",
-                        "base",
-                        "RunnableLambda"
-                      ],
-                      "name": "Lambda"
-                    }
-                  }
-                ],
-                "edges": [
-                  {
-                    "source": 0,
-                    "target": 2
-                  },
-                  {
-                    "source": 2,
-                    "target": 1
-                  }
-                ]
-              }
+              "name": "RunnableParallel<question>"
             }
           }
         },
-        "name": "RunnableParallel<key,input>",
-        "graph": {
-          "nodes": [
-            {
-              "id": 0,
-              "type": "schema",
-              "data": "Parallel<key,input>Input"
-            },
-            {
-              "id": 1,
-              "type": "schema",
-              "data": "Parallel<key,input>Output"
-            },
-            {
-              "id": 2,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain_core",
-                  "runnables",
-                  "base",
-                  "RunnableLambda"
-                ],
-                "name": "Lambda"
-              }
-            },
-            {
-              "id": 3,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain_core",
-                  "runnables",
-                  "base",
-                  "RunnableLambda"
-                ],
-                "name": "Lambda"
-              }
-            }
-          ],
-          "edges": [
-            {
-              "source": 0,
-              "target": 2
-            },
-            {
-              "source": 2,
-              "target": 1
-            },
-            {
-              "source": 0,
-              "target": 3
-            },
-            {
-              "source": 3,
-              "target": 1
-            }
-          ]
-        }
+        "name": "RunnableParallel<key,input>"
       },
       "last": {
         "lc": 1,
@@ -2485,155 +1003,7 @@
         "repr": "RunnableLambda(router)"
       }
     },
-    "name": "RunnableSequence",
-    "graph": {
-      "nodes": [
-        {
-          "id": 0,
-          "type": "schema",
-          "data": "Parallel<key,input>Input"
-        },
-        {
-          "id": 1,
-          "type": "schema",
-          "data": "Parallel<key,input>Output"
-        },
-        {
-          "id": 2,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain_core",
-              "runnables",
-              "base",
-              "RunnableLambda"
-            ],
-            "name": "Lambda"
-          }
-        },
-        {
-          "id": 3,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain_core",
-              "runnables",
-              "base",
-              "RunnableLambda"
-            ],
-            "name": "Lambda"
-          }
-        },
-        {
-          "id": 4,
-          "type": "schema",
-          "data": "router_input"
-        },
-        {
-          "id": 5,
-          "type": "schema",
-          "data": "router_output"
-        },
-        {
-          "id": 6,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain",
-              "prompts",
-              "chat",
-              "ChatPromptTemplate"
-            ],
-            "name": "ChatPromptTemplate"
-          }
-        },
-        {
-          "id": 7,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain_core",
-              "language_models",
-              "fake",
-              "FakeListLLM"
-            ],
-            "name": "FakeListLLM"
-          }
-        },
-        {
-          "id": 8,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain",
-              "prompts",
-              "chat",
-              "ChatPromptTemplate"
-            ],
-            "name": "ChatPromptTemplate"
-          }
-        },
-        {
-          "id": 9,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain_core",
-              "language_models",
-              "fake",
-              "FakeListLLM"
-            ],
-            "name": "FakeListLLM"
-          }
-        }
-      ],
-      "edges": [
-        {
-          "source": 0,
-          "target": 2
-        },
-        {
-          "source": 2,
-          "target": 1
-        },
-        {
-          "source": 0,
-          "target": 3
-        },
-        {
-          "source": 3,
-          "target": 1
-        },
-        {
-          "source": 6,
-          "target": 7
-        },
-        {
-          "source": 4,
-          "target": 6
-        },
-        {
-          "source": 7,
-          "target": 5
-        },
-        {
-          "source": 8,
-          "target": 9
-        },
-        {
-          "source": 4,
-          "target": 8
-        },
-        {
-          "source": 9,
-          "target": 5
-        },
-        {
-          "source": 1,
-          "target": 4
-        }
-      ]
-    }
+    "name": "RunnableSequence"
   }
   '''
 # ---
@@ -2724,44 +1094,7 @@
                     "template": "You are a nice assistant.",
                     "template_format": "f-string"
                   },
-                  "name": "PromptTemplate",
-                  "graph": {
-                    "nodes": [
-                      {
-                        "id": 0,
-                        "type": "schema",
-                        "data": "PromptInput"
-                      },
-                      {
-                        "id": 1,
-                        "type": "runnable",
-                        "data": {
-                          "id": [
-                            "langchain",
-                            "prompts",
-                            "prompt",
-                            "PromptTemplate"
-                          ],
-                          "name": "PromptTemplate"
-                        }
-                      },
-                      {
-                        "id": 2,
-                        "type": "schema",
-                        "data": "PromptTemplateOutput"
-                      }
-                    ],
-                    "edges": [
-                      {
-                        "source": 0,
-                        "target": 1
-                      },
-                      {
-                        "source": 1,
-                        "target": 2
-                      }
-                    ]
-                  }
+                  "name": "PromptTemplate"
                 }
               }
             },
@@ -2791,87 +1124,13 @@
                     "template": "{question}",
                     "template_format": "f-string"
                   },
-                  "name": "PromptTemplate",
-                  "graph": {
-                    "nodes": [
-                      {
-                        "id": 0,
-                        "type": "schema",
-                        "data": "PromptInput"
-                      },
-                      {
-                        "id": 1,
-                        "type": "runnable",
-                        "data": {
-                          "id": [
-                            "langchain",
-                            "prompts",
-                            "prompt",
-                            "PromptTemplate"
-                          ],
-                          "name": "PromptTemplate"
-                        }
-                      },
-                      {
-                        "id": 2,
-                        "type": "schema",
-                        "data": "PromptTemplateOutput"
-                      }
-                    ],
-                    "edges": [
-                      {
-                        "source": 0,
-                        "target": 1
-                      },
-                      {
-                        "source": 1,
-                        "target": 2
-                      }
-                    ]
-                  }
+                  "name": "PromptTemplate"
                 }
               }
             }
           ]
         },
-        "name": "ChatPromptTemplate",
-        "graph": {
-          "nodes": [
-            {
-              "id": 0,
-              "type": "schema",
-              "data": "PromptInput"
-            },
-            {
-              "id": 1,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain",
-                  "prompts",
-                  "chat",
-                  "ChatPromptTemplate"
-                ],
-                "name": "ChatPromptTemplate"
-              }
-            },
-            {
-              "id": 2,
-              "type": "schema",
-              "data": "ChatPromptTemplateOutput"
-            }
-          ],
-          "edges": [
-            {
-              "source": 0,
-              "target": 1
-            },
-            {
-              "source": 1,
-              "target": 2
-            }
-          ]
-        }
+        "name": "ChatPromptTemplate"
       },
       "last": {
         "lc": 1,
@@ -2883,101 +1142,10 @@
           "FakeListChatModel"
         ],
         "repr": "FakeListChatModel(responses=['foo'])",
-        "name": "FakeListChatModel",
-        "graph": {
-          "nodes": [
-            {
-              "id": 0,
-              "type": "schema",
-              "data": "FakeListChatModelInput"
-            },
-            {
-              "id": 1,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain_core",
-                  "language_models",
-                  "fake_chat_models",
-                  "FakeListChatModel"
-                ],
-                "name": "FakeListChatModel"
-              }
-            },
-            {
-              "id": 2,
-              "type": "schema",
-              "data": "FakeListChatModelOutput"
-            }
-          ],
-          "edges": [
-            {
-              "source": 0,
-              "target": 1
-            },
-            {
-              "source": 1,
-              "target": 2
-            }
-          ]
-        }
+        "name": "FakeListChatModel"
       }
     },
-    "name": "RunnableSequence",
-    "graph": {
-      "nodes": [
-        {
-          "id": 0,
-          "type": "schema",
-          "data": "PromptInput"
-        },
-        {
-          "id": 1,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain",
-              "prompts",
-              "chat",
-              "ChatPromptTemplate"
-            ],
-            "name": "ChatPromptTemplate"
-          }
-        },
-        {
-          "id": 2,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain_core",
-              "language_models",
-              "fake_chat_models",
-              "FakeListChatModel"
-            ],
-            "name": "FakeListChatModel"
-          }
-        },
-        {
-          "id": 3,
-          "type": "schema",
-          "data": "FakeListChatModelOutput"
-        }
-      ],
-      "edges": [
-        {
-          "source": 0,
-          "target": 1
-        },
-        {
-          "source": 2,
-          "target": 3
-        },
-        {
-          "source": 1,
-          "target": 2
-        }
-      ]
-    }
+    "name": "RunnableSequence"
   }
   '''
 # ---
@@ -3036,44 +1204,7 @@
                     "template": "You are a nice assistant.",
                     "template_format": "f-string"
                   },
-                  "name": "PromptTemplate",
-                  "graph": {
-                    "nodes": [
-                      {
-                        "id": 0,
-                        "type": "schema",
-                        "data": "PromptInput"
-                      },
-                      {
-                        "id": 1,
-                        "type": "runnable",
-                        "data": {
-                          "id": [
-                            "langchain",
-                            "prompts",
-                            "prompt",
-                            "PromptTemplate"
-                          ],
-                          "name": "PromptTemplate"
-                        }
-                      },
-                      {
-                        "id": 2,
-                        "type": "schema",
-                        "data": "PromptTemplateOutput"
-                      }
-                    ],
-                    "edges": [
-                      {
-                        "source": 0,
-                        "target": 1
-                      },
-                      {
-                        "source": 1,
-                        "target": 2
-                      }
-                    ]
-                  }
+                  "name": "PromptTemplate"
                 }
               }
             },
@@ -3103,87 +1234,13 @@
                     "template": "{question}",
                     "template_format": "f-string"
                   },
-                  "name": "PromptTemplate",
-                  "graph": {
-                    "nodes": [
-                      {
-                        "id": 0,
-                        "type": "schema",
-                        "data": "PromptInput"
-                      },
-                      {
-                        "id": 1,
-                        "type": "runnable",
-                        "data": {
-                          "id": [
-                            "langchain",
-                            "prompts",
-                            "prompt",
-                            "PromptTemplate"
-                          ],
-                          "name": "PromptTemplate"
-                        }
-                      },
-                      {
-                        "id": 2,
-                        "type": "schema",
-                        "data": "PromptTemplateOutput"
-                      }
-                    ],
-                    "edges": [
-                      {
-                        "source": 0,
-                        "target": 1
-                      },
-                      {
-                        "source": 1,
-                        "target": 2
-                      }
-                    ]
-                  }
+                  "name": "PromptTemplate"
                 }
               }
             }
           ]
         },
-        "name": "ChatPromptTemplate",
-        "graph": {
-          "nodes": [
-            {
-              "id": 0,
-              "type": "schema",
-              "data": "PromptInput"
-            },
-            {
-              "id": 1,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain",
-                  "prompts",
-                  "chat",
-                  "ChatPromptTemplate"
-                ],
-                "name": "ChatPromptTemplate"
-              }
-            },
-            {
-              "id": 2,
-              "type": "schema",
-              "data": "ChatPromptTemplateOutput"
-            }
-          ],
-          "edges": [
-            {
-              "source": 0,
-              "target": 1
-            },
-            {
-              "source": 1,
-              "target": 2
-            }
-          ]
-        }
+        "name": "ChatPromptTemplate"
       },
       "middle": [
         {
@@ -3196,44 +1253,7 @@
             "FakeListChatModel"
           ],
           "repr": "FakeListChatModel(responses=['foo, bar'])",
-          "name": "FakeListChatModel",
-          "graph": {
-            "nodes": [
-              {
-                "id": 0,
-                "type": "schema",
-                "data": "FakeListChatModelInput"
-              },
-              {
-                "id": 1,
-                "type": "runnable",
-                "data": {
-                  "id": [
-                    "langchain_core",
-                    "language_models",
-                    "fake_chat_models",
-                    "FakeListChatModel"
-                  ],
-                  "name": "FakeListChatModel"
-                }
-              },
-              {
-                "id": 2,
-                "type": "schema",
-                "data": "FakeListChatModelOutput"
-              }
-            ],
-            "edges": [
-              {
-                "source": 0,
-                "target": 1
-              },
-              {
-                "source": 1,
-                "target": 2
-              }
-            ]
-          }
+          "name": "FakeListChatModel"
         }
       ],
       "last": {
@@ -3246,118 +1266,10 @@
           "CommaSeparatedListOutputParser"
         ],
         "kwargs": {},
-        "name": "CommaSeparatedListOutputParser",
-        "graph": {
-          "nodes": [
-            {
-              "id": 0,
-              "type": "schema",
-              "data": "CommaSeparatedListOutputParserInput"
-            },
-            {
-              "id": 1,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain",
-                  "output_parsers",
-                  "list",
-                  "CommaSeparatedListOutputParser"
-                ],
-                "name": "CommaSeparatedListOutputParser"
-              }
-            },
-            {
-              "id": 2,
-              "type": "schema",
-              "data": "CommaSeparatedListOutputParserOutput"
-            }
-          ],
-          "edges": [
-            {
-              "source": 0,
-              "target": 1
-            },
-            {
-              "source": 1,
-              "target": 2
-            }
-          ]
-        }
+        "name": "CommaSeparatedListOutputParser"
       }
     },
-    "name": "RunnableSequence",
-    "graph": {
-      "nodes": [
-        {
-          "id": 0,
-          "type": "schema",
-          "data": "PromptInput"
-        },
-        {
-          "id": 1,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain",
-              "prompts",
-              "chat",
-              "ChatPromptTemplate"
-            ],
-            "name": "ChatPromptTemplate"
-          }
-        },
-        {
-          "id": 2,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain_core",
-              "language_models",
-              "fake_chat_models",
-              "FakeListChatModel"
-            ],
-            "name": "FakeListChatModel"
-          }
-        },
-        {
-          "id": 3,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain",
-              "output_parsers",
-              "list",
-              "CommaSeparatedListOutputParser"
-            ],
-            "name": "CommaSeparatedListOutputParser"
-          }
-        },
-        {
-          "id": 4,
-          "type": "schema",
-          "data": "CommaSeparatedListOutputParserOutput"
-        }
-      ],
-      "edges": [
-        {
-          "source": 0,
-          "target": 1
-        },
-        {
-          "source": 1,
-          "target": 2
-        },
-        {
-          "source": 3,
-          "target": 4
-        },
-        {
-          "source": 2,
-          "target": 3
-        }
-      ]
-    }
+    "name": "RunnableSequence"
   }
   '''
 # ---
@@ -3422,44 +1334,7 @@
                     "template": "You are a nice assistant.",
                     "template_format": "f-string"
                   },
-                  "name": "PromptTemplate",
-                  "graph": {
-                    "nodes": [
-                      {
-                        "id": 0,
-                        "type": "schema",
-                        "data": "PromptInput"
-                      },
-                      {
-                        "id": 1,
-                        "type": "runnable",
-                        "data": {
-                          "id": [
-                            "langchain",
-                            "prompts",
-                            "prompt",
-                            "PromptTemplate"
-                          ],
-                          "name": "PromptTemplate"
-                        }
-                      },
-                      {
-                        "id": 2,
-                        "type": "schema",
-                        "data": "PromptTemplateOutput"
-                      }
-                    ],
-                    "edges": [
-                      {
-                        "source": 0,
-                        "target": 1
-                      },
-                      {
-                        "source": 1,
-                        "target": 2
-                      }
-                    ]
-                  }
+                  "name": "PromptTemplate"
                 }
               }
             },
@@ -3489,87 +1364,13 @@
                     "template": "{question}",
                     "template_format": "f-string"
                   },
-                  "name": "PromptTemplate",
-                  "graph": {
-                    "nodes": [
-                      {
-                        "id": 0,
-                        "type": "schema",
-                        "data": "PromptInput"
-                      },
-                      {
-                        "id": 1,
-                        "type": "runnable",
-                        "data": {
-                          "id": [
-                            "langchain",
-                            "prompts",
-                            "prompt",
-                            "PromptTemplate"
-                          ],
-                          "name": "PromptTemplate"
-                        }
-                      },
-                      {
-                        "id": 2,
-                        "type": "schema",
-                        "data": "PromptTemplateOutput"
-                      }
-                    ],
-                    "edges": [
-                      {
-                        "source": 0,
-                        "target": 1
-                      },
-                      {
-                        "source": 1,
-                        "target": 2
-                      }
-                    ]
-                  }
+                  "name": "PromptTemplate"
                 }
               }
             }
           ]
         },
-        "name": "ChatPromptTemplate",
-        "graph": {
-          "nodes": [
-            {
-              "id": 0,
-              "type": "schema",
-              "data": "PromptInput"
-            },
-            {
-              "id": 1,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain",
-                  "prompts",
-                  "chat",
-                  "ChatPromptTemplate"
-                ],
-                "name": "ChatPromptTemplate"
-              }
-            },
-            {
-              "id": 2,
-              "type": "schema",
-              "data": "ChatPromptTemplateOutput"
-            }
-          ],
-          "edges": [
-            {
-              "source": 0,
-              "target": 1
-            },
-            {
-              "source": 1,
-              "target": 2
-            }
-          ]
-        }
+        "name": "ChatPromptTemplate"
       },
       "last": {
         "lc": 1,
@@ -3581,101 +1382,10 @@
           "FakeListChatModel"
         ],
         "repr": "FakeListChatModel(responses=['foo'])",
-        "name": "FakeListChatModel",
-        "graph": {
-          "nodes": [
-            {
-              "id": 0,
-              "type": "schema",
-              "data": "FakeListChatModelInput"
-            },
-            {
-              "id": 1,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain_core",
-                  "language_models",
-                  "fake_chat_models",
-                  "FakeListChatModel"
-                ],
-                "name": "FakeListChatModel"
-              }
-            },
-            {
-              "id": 2,
-              "type": "schema",
-              "data": "FakeListChatModelOutput"
-            }
-          ],
-          "edges": [
-            {
-              "source": 0,
-              "target": 1
-            },
-            {
-              "source": 1,
-              "target": 2
-            }
-          ]
-        }
+        "name": "FakeListChatModel"
       }
     },
-    "name": "RunnableSequence",
-    "graph": {
-      "nodes": [
-        {
-          "id": 0,
-          "type": "schema",
-          "data": "PromptInput"
-        },
-        {
-          "id": 1,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain",
-              "prompts",
-              "chat",
-              "ChatPromptTemplate"
-            ],
-            "name": "ChatPromptTemplate"
-          }
-        },
-        {
-          "id": 2,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain_core",
-              "language_models",
-              "fake_chat_models",
-              "FakeListChatModel"
-            ],
-            "name": "FakeListChatModel"
-          }
-        },
-        {
-          "id": 3,
-          "type": "schema",
-          "data": "FakeListChatModelOutput"
-        }
-      ],
-      "edges": [
-        {
-          "source": 0,
-          "target": 1
-        },
-        {
-          "source": 2,
-          "target": 3
-        },
-        {
-          "source": 1,
-          "target": 2
-        }
-      ]
-    }
+    "name": "RunnableSequence"
   }
   '''
 # ---
@@ -3734,44 +1444,7 @@
                     "template": "You are a nice assistant.",
                     "template_format": "f-string"
                   },
-                  "name": "PromptTemplate",
-                  "graph": {
-                    "nodes": [
-                      {
-                        "id": 0,
-                        "type": "schema",
-                        "data": "PromptInput"
-                      },
-                      {
-                        "id": 1,
-                        "type": "runnable",
-                        "data": {
-                          "id": [
-                            "langchain",
-                            "prompts",
-                            "prompt",
-                            "PromptTemplate"
-                          ],
-                          "name": "PromptTemplate"
-                        }
-                      },
-                      {
-                        "id": 2,
-                        "type": "schema",
-                        "data": "PromptTemplateOutput"
-                      }
-                    ],
-                    "edges": [
-                      {
-                        "source": 0,
-                        "target": 1
-                      },
-                      {
-                        "source": 1,
-                        "target": 2
-                      }
-                    ]
-                  }
+                  "name": "PromptTemplate"
                 }
               }
             },
@@ -3801,87 +1474,13 @@
                     "template": "{question}",
                     "template_format": "f-string"
                   },
-                  "name": "PromptTemplate",
-                  "graph": {
-                    "nodes": [
-                      {
-                        "id": 0,
-                        "type": "schema",
-                        "data": "PromptInput"
-                      },
-                      {
-                        "id": 1,
-                        "type": "runnable",
-                        "data": {
-                          "id": [
-                            "langchain",
-                            "prompts",
-                            "prompt",
-                            "PromptTemplate"
-                          ],
-                          "name": "PromptTemplate"
-                        }
-                      },
-                      {
-                        "id": 2,
-                        "type": "schema",
-                        "data": "PromptTemplateOutput"
-                      }
-                    ],
-                    "edges": [
-                      {
-                        "source": 0,
-                        "target": 1
-                      },
-                      {
-                        "source": 1,
-                        "target": 2
-                      }
-                    ]
-                  }
+                  "name": "PromptTemplate"
                 }
               }
             }
           ]
         },
-        "name": "ChatPromptTemplate",
-        "graph": {
-          "nodes": [
-            {
-              "id": 0,
-              "type": "schema",
-              "data": "PromptInput"
-            },
-            {
-              "id": 1,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain",
-                  "prompts",
-                  "chat",
-                  "ChatPromptTemplate"
-                ],
-                "name": "ChatPromptTemplate"
-              }
-            },
-            {
-              "id": 2,
-              "type": "schema",
-              "data": "ChatPromptTemplateOutput"
-            }
-          ],
-          "edges": [
-            {
-              "source": 0,
-              "target": 1
-            },
-            {
-              "source": 1,
-              "target": 2
-            }
-          ]
-        }
+        "name": "ChatPromptTemplate"
       },
       "last": {
         "lc": 1,
@@ -3893,101 +1492,10 @@
           "FakeListLLM"
         ],
         "repr": "FakeListLLM(responses=['foo', 'bar'])",
-        "name": "FakeListLLM",
-        "graph": {
-          "nodes": [
-            {
-              "id": 0,
-              "type": "schema",
-              "data": "FakeListLLMInput"
-            },
-            {
-              "id": 1,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain_core",
-                  "language_models",
-                  "fake",
-                  "FakeListLLM"
-                ],
-                "name": "FakeListLLM"
-              }
-            },
-            {
-              "id": 2,
-              "type": "schema",
-              "data": "FakeListLLMOutput"
-            }
-          ],
-          "edges": [
-            {
-              "source": 0,
-              "target": 1
-            },
-            {
-              "source": 1,
-              "target": 2
-            }
-          ]
-        }
+        "name": "FakeListLLM"
       }
     },
-    "name": "RunnableSequence",
-    "graph": {
-      "nodes": [
-        {
-          "id": 0,
-          "type": "schema",
-          "data": "PromptInput"
-        },
-        {
-          "id": 1,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain",
-              "prompts",
-              "chat",
-              "ChatPromptTemplate"
-            ],
-            "name": "ChatPromptTemplate"
-          }
-        },
-        {
-          "id": 2,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain_core",
-              "language_models",
-              "fake",
-              "FakeListLLM"
-            ],
-            "name": "FakeListLLM"
-          }
-        },
-        {
-          "id": 3,
-          "type": "schema",
-          "data": "FakeListLLMOutput"
-        }
-      ],
-      "edges": [
-        {
-          "source": 0,
-          "target": 1
-        },
-        {
-          "source": 2,
-          "target": 3
-        },
-        {
-          "source": 1,
-          "target": 2
-        }
-      ]
-    }
+    "name": "RunnableSequence"
   }
   '''
 # ---
@@ -4052,44 +1560,7 @@
                     "template": "You are a nice assistant.",
                     "template_format": "f-string"
                   },
-                  "name": "PromptTemplate",
-                  "graph": {
-                    "nodes": [
-                      {
-                        "id": 0,
-                        "type": "schema",
-                        "data": "PromptInput"
-                      },
-                      {
-                        "id": 1,
-                        "type": "runnable",
-                        "data": {
-                          "id": [
-                            "langchain",
-                            "prompts",
-                            "prompt",
-                            "PromptTemplate"
-                          ],
-                          "name": "PromptTemplate"
-                        }
-                      },
-                      {
-                        "id": 2,
-                        "type": "schema",
-                        "data": "PromptTemplateOutput"
-                      }
-                    ],
-                    "edges": [
-                      {
-                        "source": 0,
-                        "target": 1
-                      },
-                      {
-                        "source": 1,
-                        "target": 2
-                      }
-                    ]
-                  }
+                  "name": "PromptTemplate"
                 }
               }
             },
@@ -4119,87 +1590,13 @@
                     "template": "{question}",
                     "template_format": "f-string"
                   },
-                  "name": "PromptTemplate",
-                  "graph": {
-                    "nodes": [
-                      {
-                        "id": 0,
-                        "type": "schema",
-                        "data": "PromptInput"
-                      },
-                      {
-                        "id": 1,
-                        "type": "runnable",
-                        "data": {
-                          "id": [
-                            "langchain",
-                            "prompts",
-                            "prompt",
-                            "PromptTemplate"
-                          ],
-                          "name": "PromptTemplate"
-                        }
-                      },
-                      {
-                        "id": 2,
-                        "type": "schema",
-                        "data": "PromptTemplateOutput"
-                      }
-                    ],
-                    "edges": [
-                      {
-                        "source": 0,
-                        "target": 1
-                      },
-                      {
-                        "source": 1,
-                        "target": 2
-                      }
-                    ]
-                  }
+                  "name": "PromptTemplate"
                 }
               }
             }
           ]
         },
-        "name": "ChatPromptTemplate",
-        "graph": {
-          "nodes": [
-            {
-              "id": 0,
-              "type": "schema",
-              "data": "PromptInput"
-            },
-            {
-              "id": 1,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain",
-                  "prompts",
-                  "chat",
-                  "ChatPromptTemplate"
-                ],
-                "name": "ChatPromptTemplate"
-              }
-            },
-            {
-              "id": 2,
-              "type": "schema",
-              "data": "ChatPromptTemplateOutput"
-            }
-          ],
-          "edges": [
-            {
-              "source": 0,
-              "target": 1
-            },
-            {
-              "source": 1,
-              "target": 2
-            }
-          ]
-        }
+        "name": "ChatPromptTemplate"
       },
       "middle": [
         {
@@ -4212,44 +1609,7 @@
             "FakeListLLM"
           ],
           "repr": "FakeListLLM(responses=['foo', 'bar'])",
-          "name": "FakeListLLM",
-          "graph": {
-            "nodes": [
-              {
-                "id": 0,
-                "type": "schema",
-                "data": "FakeListLLMInput"
-              },
-              {
-                "id": 1,
-                "type": "runnable",
-                "data": {
-                  "id": [
-                    "langchain_core",
-                    "language_models",
-                    "fake",
-                    "FakeListLLM"
-                  ],
-                  "name": "FakeListLLM"
-                }
-              },
-              {
-                "id": 2,
-                "type": "schema",
-                "data": "FakeListLLMOutput"
-              }
-            ],
-            "edges": [
-              {
-                "source": 0,
-                "target": 1
-              },
-              {
-                "source": 1,
-                "target": 2
-              }
-            ]
-          }
+          "name": "FakeListLLM"
         }
       ],
       "last": {
@@ -4264,78 +1624,7 @@
         "repr": "RunnableLambda(afunc=passthrough)"
       }
     },
-    "name": "RunnableSequence",
-    "graph": {
-      "nodes": [
-        {
-          "id": 0,
-          "type": "schema",
-          "data": "PromptInput"
-        },
-        {
-          "id": 1,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain",
-              "prompts",
-              "chat",
-              "ChatPromptTemplate"
-            ],
-            "name": "ChatPromptTemplate"
-          }
-        },
-        {
-          "id": 2,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain_core",
-              "language_models",
-              "fake",
-              "FakeListLLM"
-            ],
-            "name": "FakeListLLM"
-          }
-        },
-        {
-          "id": 3,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain_core",
-              "runnables",
-              "base",
-              "RunnableLambda"
-            ],
-            "name": "passthrough"
-          }
-        },
-        {
-          "id": 4,
-          "type": "schema",
-          "data": "passthrough_output"
-        }
-      ],
-      "edges": [
-        {
-          "source": 0,
-          "target": 1
-        },
-        {
-          "source": 1,
-          "target": 2
-        },
-        {
-          "source": 3,
-          "target": 4
-        },
-        {
-          "source": 2,
-          "target": 3
-        }
-      ]
-    }
+    "name": "RunnableSequence"
   }
   '''
 # ---
@@ -4394,44 +1683,7 @@
                     "template": "You are a nice assistant.",
                     "template_format": "f-string"
                   },
-                  "name": "PromptTemplate",
-                  "graph": {
-                    "nodes": [
-                      {
-                        "id": 0,
-                        "type": "schema",
-                        "data": "PromptInput"
-                      },
-                      {
-                        "id": 1,
-                        "type": "runnable",
-                        "data": {
-                          "id": [
-                            "langchain",
-                            "prompts",
-                            "prompt",
-                            "PromptTemplate"
-                          ],
-                          "name": "PromptTemplate"
-                        }
-                      },
-                      {
-                        "id": 2,
-                        "type": "schema",
-                        "data": "PromptTemplateOutput"
-                      }
-                    ],
-                    "edges": [
-                      {
-                        "source": 0,
-                        "target": 1
-                      },
-                      {
-                        "source": 1,
-                        "target": 2
-                      }
-                    ]
-                  }
+                  "name": "PromptTemplate"
                 }
               }
             },
@@ -4461,87 +1713,13 @@
                     "template": "{question}",
                     "template_format": "f-string"
                   },
-                  "name": "PromptTemplate",
-                  "graph": {
-                    "nodes": [
-                      {
-                        "id": 0,
-                        "type": "schema",
-                        "data": "PromptInput"
-                      },
-                      {
-                        "id": 1,
-                        "type": "runnable",
-                        "data": {
-                          "id": [
-                            "langchain",
-                            "prompts",
-                            "prompt",
-                            "PromptTemplate"
-                          ],
-                          "name": "PromptTemplate"
-                        }
-                      },
-                      {
-                        "id": 2,
-                        "type": "schema",
-                        "data": "PromptTemplateOutput"
-                      }
-                    ],
-                    "edges": [
-                      {
-                        "source": 0,
-                        "target": 1
-                      },
-                      {
-                        "source": 1,
-                        "target": 2
-                      }
-                    ]
-                  }
+                  "name": "PromptTemplate"
                 }
               }
             }
           ]
         },
-        "name": "ChatPromptTemplate",
-        "graph": {
-          "nodes": [
-            {
-              "id": 0,
-              "type": "schema",
-              "data": "PromptInput"
-            },
-            {
-              "id": 1,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain",
-                  "prompts",
-                  "chat",
-                  "ChatPromptTemplate"
-                ],
-                "name": "ChatPromptTemplate"
-              }
-            },
-            {
-              "id": 2,
-              "type": "schema",
-              "data": "ChatPromptTemplateOutput"
-            }
-          ],
-          "edges": [
-            {
-              "source": 0,
-              "target": 1
-            },
-            {
-              "source": 1,
-              "target": 2
-            }
-          ]
-        }
+        "name": "ChatPromptTemplate"
       },
       "middle": [
         {
@@ -4554,44 +1732,7 @@
             "FakeStreamingListLLM"
           ],
           "repr": "FakeStreamingListLLM(responses=['bear, dog, cat', 'tomato, lettuce, onion'])",
-          "name": "FakeStreamingListLLM",
-          "graph": {
-            "nodes": [
-              {
-                "id": 0,
-                "type": "schema",
-                "data": "FakeStreamingListLLMInput"
-              },
-              {
-                "id": 1,
-                "type": "runnable",
-                "data": {
-                  "id": [
-                    "langchain_core",
-                    "language_models",
-                    "fake",
-                    "FakeStreamingListLLM"
-                  ],
-                  "name": "FakeStreamingListLLM"
-                }
-              },
-              {
-                "id": 2,
-                "type": "schema",
-                "data": "FakeStreamingListLLMOutput"
-              }
-            ],
-            "edges": [
-              {
-                "source": 0,
-                "target": 1
-              },
-              {
-                "source": 1,
-                "target": 2
-              }
-            ]
-          }
+          "name": "FakeStreamingListLLM"
         }
       ],
       "last": {
@@ -4604,118 +1745,10 @@
           "CommaSeparatedListOutputParser"
         ],
         "kwargs": {},
-        "name": "CommaSeparatedListOutputParser",
-        "graph": {
-          "nodes": [
-            {
-              "id": 0,
-              "type": "schema",
-              "data": "CommaSeparatedListOutputParserInput"
-            },
-            {
-              "id": 1,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain",
-                  "output_parsers",
-                  "list",
-                  "CommaSeparatedListOutputParser"
-                ],
-                "name": "CommaSeparatedListOutputParser"
-              }
-            },
-            {
-              "id": 2,
-              "type": "schema",
-              "data": "CommaSeparatedListOutputParserOutput"
-            }
-          ],
-          "edges": [
-            {
-              "source": 0,
-              "target": 1
-            },
-            {
-              "source": 1,
-              "target": 2
-            }
-          ]
-        }
+        "name": "CommaSeparatedListOutputParser"
       }
     },
-    "name": "RunnableSequence",
-    "graph": {
-      "nodes": [
-        {
-          "id": 0,
-          "type": "schema",
-          "data": "PromptInput"
-        },
-        {
-          "id": 1,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain",
-              "prompts",
-              "chat",
-              "ChatPromptTemplate"
-            ],
-            "name": "ChatPromptTemplate"
-          }
-        },
-        {
-          "id": 2,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain_core",
-              "language_models",
-              "fake",
-              "FakeStreamingListLLM"
-            ],
-            "name": "FakeStreamingListLLM"
-          }
-        },
-        {
-          "id": 3,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain",
-              "output_parsers",
-              "list",
-              "CommaSeparatedListOutputParser"
-            ],
-            "name": "CommaSeparatedListOutputParser"
-          }
-        },
-        {
-          "id": 4,
-          "type": "schema",
-          "data": "CommaSeparatedListOutputParserOutput"
-        }
-      ],
-      "edges": [
-        {
-          "source": 0,
-          "target": 1
-        },
-        {
-          "source": 1,
-          "target": 2
-        },
-        {
-          "source": 3,
-          "target": 4
-        },
-        {
-          "source": 2,
-          "target": 3
-        }
-      ]
-    }
+    "name": "RunnableSequence"
   }
   '''
 # ---
@@ -4788,106 +1821,11 @@
                   }
                 }
               },
-              "name": "RunnableParallel<question>",
-              "graph": {
-                "nodes": [
-                  {
-                    "id": 0,
-                    "type": "schema",
-                    "data": "Parallel<question>Input"
-                  },
-                  {
-                    "id": 1,
-                    "type": "schema",
-                    "data": "Parallel<question>Output"
-                  },
-                  {
-                    "id": 2,
-                    "type": "runnable",
-                    "data": {
-                      "id": [
-                        "langchain_core",
-                        "runnables",
-                        "base",
-                        "RunnableLambda"
-                      ],
-                      "name": "Lambda"
-                    }
-                  }
-                ],
-                "edges": [
-                  {
-                    "source": 0,
-                    "target": 2
-                  },
-                  {
-                    "source": 2,
-                    "target": 1
-                  }
-                ]
-              }
+              "name": "RunnableParallel<question>"
             }
           }
         },
-        "name": "RunnableParallel<key,input>",
-        "graph": {
-          "nodes": [
-            {
-              "id": 0,
-              "type": "schema",
-              "data": "Parallel<key,input>Input"
-            },
-            {
-              "id": 1,
-              "type": "schema",
-              "data": "Parallel<key,input>Output"
-            },
-            {
-              "id": 2,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain_core",
-                  "runnables",
-                  "base",
-                  "RunnableLambda"
-                ],
-                "name": "Lambda"
-              }
-            },
-            {
-              "id": 3,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain_core",
-                  "runnables",
-                  "base",
-                  "RunnableLambda"
-                ],
-                "name": "Lambda"
-              }
-            }
-          ],
-          "edges": [
-            {
-              "source": 0,
-              "target": 2
-            },
-            {
-              "source": 2,
-              "target": 1
-            },
-            {
-              "source": 0,
-              "target": 3
-            },
-            {
-              "source": 3,
-              "target": 1
-            }
-          ]
-        }
+        "name": "RunnableParallel<key,input>"
       },
       "last": {
         "lc": 1,
@@ -4950,87 +1888,13 @@
                               "template": "You are a math genius. Answer the question: {question}",
                               "template_format": "f-string"
                             },
-                            "name": "PromptTemplate",
-                            "graph": {
-                              "nodes": [
-                                {
-                                  "id": 0,
-                                  "type": "schema",
-                                  "data": "PromptInput"
-                                },
-                                {
-                                  "id": 1,
-                                  "type": "runnable",
-                                  "data": {
-                                    "id": [
-                                      "langchain",
-                                      "prompts",
-                                      "prompt",
-                                      "PromptTemplate"
-                                    ],
-                                    "name": "PromptTemplate"
-                                  }
-                                },
-                                {
-                                  "id": 2,
-                                  "type": "schema",
-                                  "data": "PromptTemplateOutput"
-                                }
-                              ],
-                              "edges": [
-                                {
-                                  "source": 0,
-                                  "target": 1
-                                },
-                                {
-                                  "source": 1,
-                                  "target": 2
-                                }
-                              ]
-                            }
+                            "name": "PromptTemplate"
                           }
                         }
                       }
                     ]
                   },
-                  "name": "ChatPromptTemplate",
-                  "graph": {
-                    "nodes": [
-                      {
-                        "id": 0,
-                        "type": "schema",
-                        "data": "PromptInput"
-                      },
-                      {
-                        "id": 1,
-                        "type": "runnable",
-                        "data": {
-                          "id": [
-                            "langchain",
-                            "prompts",
-                            "chat",
-                            "ChatPromptTemplate"
-                          ],
-                          "name": "ChatPromptTemplate"
-                        }
-                      },
-                      {
-                        "id": 2,
-                        "type": "schema",
-                        "data": "ChatPromptTemplateOutput"
-                      }
-                    ],
-                    "edges": [
-                      {
-                        "source": 0,
-                        "target": 1
-                      },
-                      {
-                        "source": 1,
-                        "target": 2
-                      }
-                    ]
-                  }
+                  "name": "ChatPromptTemplate"
                 },
                 "last": {
                   "lc": 1,
@@ -5042,101 +1906,10 @@
                     "FakeListLLM"
                   ],
                   "repr": "FakeListLLM(responses=['4'])",
-                  "name": "FakeListLLM",
-                  "graph": {
-                    "nodes": [
-                      {
-                        "id": 0,
-                        "type": "schema",
-                        "data": "FakeListLLMInput"
-                      },
-                      {
-                        "id": 1,
-                        "type": "runnable",
-                        "data": {
-                          "id": [
-                            "langchain_core",
-                            "language_models",
-                            "fake",
-                            "FakeListLLM"
-                          ],
-                          "name": "FakeListLLM"
-                        }
-                      },
-                      {
-                        "id": 2,
-                        "type": "schema",
-                        "data": "FakeListLLMOutput"
-                      }
-                    ],
-                    "edges": [
-                      {
-                        "source": 0,
-                        "target": 1
-                      },
-                      {
-                        "source": 1,
-                        "target": 2
-                      }
-                    ]
-                  }
+                  "name": "FakeListLLM"
                 }
               },
-              "name": "RunnableSequence",
-              "graph": {
-                "nodes": [
-                  {
-                    "id": 0,
-                    "type": "schema",
-                    "data": "PromptInput"
-                  },
-                  {
-                    "id": 1,
-                    "type": "runnable",
-                    "data": {
-                      "id": [
-                        "langchain",
-                        "prompts",
-                        "chat",
-                        "ChatPromptTemplate"
-                      ],
-                      "name": "ChatPromptTemplate"
-                    }
-                  },
-                  {
-                    "id": 2,
-                    "type": "runnable",
-                    "data": {
-                      "id": [
-                        "langchain_core",
-                        "language_models",
-                        "fake",
-                        "FakeListLLM"
-                      ],
-                      "name": "FakeListLLM"
-                    }
-                  },
-                  {
-                    "id": 3,
-                    "type": "schema",
-                    "data": "FakeListLLMOutput"
-                  }
-                ],
-                "edges": [
-                  {
-                    "source": 0,
-                    "target": 1
-                  },
-                  {
-                    "source": 2,
-                    "target": 3
-                  },
-                  {
-                    "source": 1,
-                    "target": 2
-                  }
-                ]
-              }
+              "name": "RunnableSequence"
             },
             "english": {
               "lc": 1,
@@ -5188,87 +1961,13 @@
                               "template": "You are an english major. Answer the question: {question}",
                               "template_format": "f-string"
                             },
-                            "name": "PromptTemplate",
-                            "graph": {
-                              "nodes": [
-                                {
-                                  "id": 0,
-                                  "type": "schema",
-                                  "data": "PromptInput"
-                                },
-                                {
-                                  "id": 1,
-                                  "type": "runnable",
-                                  "data": {
-                                    "id": [
-                                      "langchain",
-                                      "prompts",
-                                      "prompt",
-                                      "PromptTemplate"
-                                    ],
-                                    "name": "PromptTemplate"
-                                  }
-                                },
-                                {
-                                  "id": 2,
-                                  "type": "schema",
-                                  "data": "PromptTemplateOutput"
-                                }
-                              ],
-                              "edges": [
-                                {
-                                  "source": 0,
-                                  "target": 1
-                                },
-                                {
-                                  "source": 1,
-                                  "target": 2
-                                }
-                              ]
-                            }
+                            "name": "PromptTemplate"
                           }
                         }
                       }
                     ]
                   },
-                  "name": "ChatPromptTemplate",
-                  "graph": {
-                    "nodes": [
-                      {
-                        "id": 0,
-                        "type": "schema",
-                        "data": "PromptInput"
-                      },
-                      {
-                        "id": 1,
-                        "type": "runnable",
-                        "data": {
-                          "id": [
-                            "langchain",
-                            "prompts",
-                            "chat",
-                            "ChatPromptTemplate"
-                          ],
-                          "name": "ChatPromptTemplate"
-                        }
-                      },
-                      {
-                        "id": 2,
-                        "type": "schema",
-                        "data": "ChatPromptTemplateOutput"
-                      }
-                    ],
-                    "edges": [
-                      {
-                        "source": 0,
-                        "target": 1
-                      },
-                      {
-                        "source": 1,
-                        "target": 2
-                      }
-                    ]
-                  }
+                  "name": "ChatPromptTemplate"
                 },
                 "last": {
                   "lc": 1,
@@ -5280,229 +1979,17 @@
                     "FakeListLLM"
                   ],
                   "repr": "FakeListLLM(responses=['2'])",
-                  "name": "FakeListLLM",
-                  "graph": {
-                    "nodes": [
-                      {
-                        "id": 0,
-                        "type": "schema",
-                        "data": "FakeListLLMInput"
-                      },
-                      {
-                        "id": 1,
-                        "type": "runnable",
-                        "data": {
-                          "id": [
-                            "langchain_core",
-                            "language_models",
-                            "fake",
-                            "FakeListLLM"
-                          ],
-                          "name": "FakeListLLM"
-                        }
-                      },
-                      {
-                        "id": 2,
-                        "type": "schema",
-                        "data": "FakeListLLMOutput"
-                      }
-                    ],
-                    "edges": [
-                      {
-                        "source": 0,
-                        "target": 1
-                      },
-                      {
-                        "source": 1,
-                        "target": 2
-                      }
-                    ]
-                  }
+                  "name": "FakeListLLM"
                 }
               },
-              "name": "RunnableSequence",
-              "graph": {
-                "nodes": [
-                  {
-                    "id": 0,
-                    "type": "schema",
-                    "data": "PromptInput"
-                  },
-                  {
-                    "id": 1,
-                    "type": "runnable",
-                    "data": {
-                      "id": [
-                        "langchain",
-                        "prompts",
-                        "chat",
-                        "ChatPromptTemplate"
-                      ],
-                      "name": "ChatPromptTemplate"
-                    }
-                  },
-                  {
-                    "id": 2,
-                    "type": "runnable",
-                    "data": {
-                      "id": [
-                        "langchain_core",
-                        "language_models",
-                        "fake",
-                        "FakeListLLM"
-                      ],
-                      "name": "FakeListLLM"
-                    }
-                  },
-                  {
-                    "id": 3,
-                    "type": "schema",
-                    "data": "FakeListLLMOutput"
-                  }
-                ],
-                "edges": [
-                  {
-                    "source": 0,
-                    "target": 1
-                  },
-                  {
-                    "source": 2,
-                    "target": 3
-                  },
-                  {
-                    "source": 1,
-                    "target": 2
-                  }
-                ]
-              }
+              "name": "RunnableSequence"
             }
           }
         },
-        "name": "RouterRunnable",
-        "graph": {
-          "nodes": [
-            {
-              "id": 0,
-              "type": "schema",
-              "data": "RouterRunnableInput"
-            },
-            {
-              "id": 1,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain",
-                  "schema",
-                  "runnable",
-                  "RouterRunnable"
-                ],
-                "name": "RouterRunnable"
-              }
-            },
-            {
-              "id": 2,
-              "type": "schema",
-              "data": "RouterRunnableOutput"
-            }
-          ],
-          "edges": [
-            {
-              "source": 0,
-              "target": 1
-            },
-            {
-              "source": 1,
-              "target": 2
-            }
-          ]
-        }
+        "name": "RouterRunnable"
       }
     },
-    "name": "RunnableSequence",
-    "graph": {
-      "nodes": [
-        {
-          "id": 0,
-          "type": "schema",
-          "data": "Parallel<key,input>Input"
-        },
-        {
-          "id": 1,
-          "type": "schema",
-          "data": "Parallel<key,input>Output"
-        },
-        {
-          "id": 2,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain_core",
-              "runnables",
-              "base",
-              "RunnableLambda"
-            ],
-            "name": "Lambda"
-          }
-        },
-        {
-          "id": 3,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain_core",
-              "runnables",
-              "base",
-              "RunnableLambda"
-            ],
-            "name": "Lambda"
-          }
-        },
-        {
-          "id": 4,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain",
-              "schema",
-              "runnable",
-              "RouterRunnable"
-            ],
-            "name": "RouterRunnable"
-          }
-        },
-        {
-          "id": 5,
-          "type": "schema",
-          "data": "RouterRunnableOutput"
-        }
-      ],
-      "edges": [
-        {
-          "source": 0,
-          "target": 2
-        },
-        {
-          "source": 2,
-          "target": 1
-        },
-        {
-          "source": 0,
-          "target": 3
-        },
-        {
-          "source": 3,
-          "target": 1
-        },
-        {
-          "source": 4,
-          "target": 5
-        },
-        {
-          "source": 1,
-          "target": 4
-        }
-      ]
-    }
+    "name": "RunnableSequence"
   }
   '''
 # ---
@@ -17060,44 +13547,7 @@
                     "RunnablePassthrough"
                   ],
                   "kwargs": {},
-                  "name": "RunnablePassthrough",
-                  "graph": {
-                    "nodes": [
-                      {
-                        "id": 0,
-                        "type": "schema",
-                        "data": "PassthroughInput"
-                      },
-                      {
-                        "id": 1,
-                        "type": "runnable",
-                        "data": {
-                          "id": [
-                            "langchain",
-                            "schema",
-                            "runnable",
-                            "RunnablePassthrough"
-                          ],
-                          "name": "Passthrough"
-                        }
-                      },
-                      {
-                        "id": 2,
-                        "type": "schema",
-                        "data": "PassthroughOutput"
-                      }
-                    ],
-                    "edges": [
-                      {
-                        "source": 0,
-                        "target": 1
-                      },
-                      {
-                        "source": 1,
-                        "target": 2
-                      }
-                    ]
-                  }
+                  "name": "RunnablePassthrough"
                 },
                 "last": {
                   "lc": 1,
@@ -17111,61 +13561,7 @@
                   "repr": "RunnableLambda(...)"
                 }
               },
-              "name": "RunnableSequence",
-              "graph": {
-                "nodes": [
-                  {
-                    "id": 0,
-                    "type": "schema",
-                    "data": "PassthroughInput"
-                  },
-                  {
-                    "id": 1,
-                    "type": "runnable",
-                    "data": {
-                      "id": [
-                        "langchain",
-                        "schema",
-                        "runnable",
-                        "RunnablePassthrough"
-                      ],
-                      "name": "Passthrough"
-                    }
-                  },
-                  {
-                    "id": 2,
-                    "type": "runnable",
-                    "data": {
-                      "id": [
-                        "langchain_core",
-                        "runnables",
-                        "base",
-                        "RunnableLambda"
-                      ],
-                      "name": "Lambda"
-                    }
-                  },
-                  {
-                    "id": 3,
-                    "type": "schema",
-                    "data": "LambdaOutput"
-                  }
-                ],
-                "edges": [
-                  {
-                    "source": 0,
-                    "target": 1
-                  },
-                  {
-                    "source": 2,
-                    "target": 3
-                  },
-                  {
-                    "source": 1,
-                    "target": 2
-                  }
-                ]
-              }
+              "name": "RunnableSequence"
             },
             "documents": {
               "lc": 1,
@@ -17199,103 +13595,10 @@
                     "FakeRetriever"
                   ],
                   "repr": "FakeRetriever()",
-                  "name": "FakeRetriever",
-                  "graph": {
-                    "nodes": [
-                      {
-                        "id": 0,
-                        "type": "schema",
-                        "data": "FakeRetrieverInput"
-                      },
-                      {
-                        "id": 1,
-                        "type": "runnable",
-                        "data": {
-                          "id": [
-                            "tests",
-                            "unit_tests",
-                            "runnables",
-                            "test_runnable",
-                            "FakeRetriever"
-                          ],
-                          "name": "FakeRetriever"
-                        }
-                      },
-                      {
-                        "id": 2,
-                        "type": "schema",
-                        "data": "FakeRetrieverOutput"
-                      }
-                    ],
-                    "edges": [
-                      {
-                        "source": 0,
-                        "target": 1
-                      },
-                      {
-                        "source": 1,
-                        "target": 2
-                      }
-                    ]
-                  }
+                  "name": "FakeRetriever"
                 }
               },
-              "name": "RunnableSequence",
-              "graph": {
-                "nodes": [
-                  {
-                    "id": 0,
-                    "type": "schema",
-                    "data": "LambdaInput"
-                  },
-                  {
-                    "id": 1,
-                    "type": "runnable",
-                    "data": {
-                      "id": [
-                        "langchain_core",
-                        "runnables",
-                        "base",
-                        "RunnableLambda"
-                      ],
-                      "name": "Lambda"
-                    }
-                  },
-                  {
-                    "id": 2,
-                    "type": "runnable",
-                    "data": {
-                      "id": [
-                        "tests",
-                        "unit_tests",
-                        "runnables",
-                        "test_runnable",
-                        "FakeRetriever"
-                      ],
-                      "name": "FakeRetriever"
-                    }
-                  },
-                  {
-                    "id": 3,
-                    "type": "schema",
-                    "data": "FakeRetrieverOutput"
-                  }
-                ],
-                "edges": [
-                  {
-                    "source": 0,
-                    "target": 1
-                  },
-                  {
-                    "source": 2,
-                    "target": 3
-                  },
-                  {
-                    "source": 1,
-                    "target": 2
-                  }
-                ]
-              }
+              "name": "RunnableSequence"
             },
             "just_to_test_lambda": {
               "lc": 1,
@@ -17310,121 +13613,7 @@
             }
           }
         },
-        "name": "RunnableParallel<question,documents,just_to_test_lambda>",
-        "graph": {
-          "nodes": [
-            {
-              "id": 0,
-              "type": "schema",
-              "data": "Parallel<question,documents,just_to_test_lambda>Input"
-            },
-            {
-              "id": 1,
-              "type": "schema",
-              "data": "Parallel<question,documents,just_to_test_lambda>Output"
-            },
-            {
-              "id": 2,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain",
-                  "schema",
-                  "runnable",
-                  "RunnablePassthrough"
-                ],
-                "name": "Passthrough"
-              }
-            },
-            {
-              "id": 3,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain_core",
-                  "runnables",
-                  "base",
-                  "RunnableLambda"
-                ],
-                "name": "Lambda"
-              }
-            },
-            {
-              "id": 4,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain_core",
-                  "runnables",
-                  "base",
-                  "RunnableLambda"
-                ],
-                "name": "Lambda"
-              }
-            },
-            {
-              "id": 5,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "tests",
-                  "unit_tests",
-                  "runnables",
-                  "test_runnable",
-                  "FakeRetriever"
-                ],
-                "name": "FakeRetriever"
-              }
-            },
-            {
-              "id": 6,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain_core",
-                  "runnables",
-                  "base",
-                  "RunnableLambda"
-                ],
-                "name": "Lambda"
-              }
-            }
-          ],
-          "edges": [
-            {
-              "source": 2,
-              "target": 3
-            },
-            {
-              "source": 0,
-              "target": 2
-            },
-            {
-              "source": 3,
-              "target": 1
-            },
-            {
-              "source": 4,
-              "target": 5
-            },
-            {
-              "source": 0,
-              "target": 4
-            },
-            {
-              "source": 5,
-              "target": 1
-            },
-            {
-              "source": 0,
-              "target": 6
-            },
-            {
-              "source": 6,
-              "target": 1
-            }
-          ]
-        }
+        "name": "RunnableParallel<question,documents,just_to_test_lambda>"
       },
       "middle": [
         {
@@ -17466,44 +13655,7 @@
                       "template": "You are a nice assistant.",
                       "template_format": "f-string"
                     },
-                    "name": "PromptTemplate",
-                    "graph": {
-                      "nodes": [
-                        {
-                          "id": 0,
-                          "type": "schema",
-                          "data": "PromptInput"
-                        },
-                        {
-                          "id": 1,
-                          "type": "runnable",
-                          "data": {
-                            "id": [
-                              "langchain",
-                              "prompts",
-                              "prompt",
-                              "PromptTemplate"
-                            ],
-                            "name": "PromptTemplate"
-                          }
-                        },
-                        {
-                          "id": 2,
-                          "type": "schema",
-                          "data": "PromptTemplateOutput"
-                        }
-                      ],
-                      "edges": [
-                        {
-                          "source": 0,
-                          "target": 1
-                        },
-                        {
-                          "source": 1,
-                          "target": 2
-                        }
-                      ]
-                    }
+                    "name": "PromptTemplate"
                   }
                 }
               },
@@ -17534,87 +13686,13 @@
                       "template": "Context:\n{documents}\n\nQuestion:\n{question}",
                       "template_format": "f-string"
                     },
-                    "name": "PromptTemplate",
-                    "graph": {
-                      "nodes": [
-                        {
-                          "id": 0,
-                          "type": "schema",
-                          "data": "PromptInput"
-                        },
-                        {
-                          "id": 1,
-                          "type": "runnable",
-                          "data": {
-                            "id": [
-                              "langchain",
-                              "prompts",
-                              "prompt",
-                              "PromptTemplate"
-                            ],
-                            "name": "PromptTemplate"
-                          }
-                        },
-                        {
-                          "id": 2,
-                          "type": "schema",
-                          "data": "PromptTemplateOutput"
-                        }
-                      ],
-                      "edges": [
-                        {
-                          "source": 0,
-                          "target": 1
-                        },
-                        {
-                          "source": 1,
-                          "target": 2
-                        }
-                      ]
-                    }
+                    "name": "PromptTemplate"
                   }
                 }
               }
             ]
           },
-          "name": "ChatPromptTemplate",
-          "graph": {
-            "nodes": [
-              {
-                "id": 0,
-                "type": "schema",
-                "data": "PromptInput"
-              },
-              {
-                "id": 1,
-                "type": "runnable",
-                "data": {
-                  "id": [
-                    "langchain",
-                    "prompts",
-                    "chat",
-                    "ChatPromptTemplate"
-                  ],
-                  "name": "ChatPromptTemplate"
-                }
-              },
-              {
-                "id": 2,
-                "type": "schema",
-                "data": "ChatPromptTemplateOutput"
-              }
-            ],
-            "edges": [
-              {
-                "source": 0,
-                "target": 1
-              },
-              {
-                "source": 1,
-                "target": 2
-              }
-            ]
-          }
+          "name": "ChatPromptTemplate"
         },
         {
           "lc": 1,
@@ -17626,44 +13704,7 @@
             "FakeListChatModel"
           ],
           "repr": "FakeListChatModel(responses=['foo, bar'])",
-          "name": "FakeListChatModel",
-          "graph": {
-            "nodes": [
-              {
-                "id": 0,
-                "type": "schema",
-                "data": "FakeListChatModelInput"
-              },
-              {
-                "id": 1,
-                "type": "runnable",
-                "data": {
-                  "id": [
-                    "langchain_core",
-                    "language_models",
-                    "fake_chat_models",
-                    "FakeListChatModel"
-                  ],
-                  "name": "FakeListChatModel"
-                }
-              },
-              {
-                "id": 2,
-                "type": "schema",
-                "data": "FakeListChatModelOutput"
-              }
-            ],
-            "edges": [
-              {
-                "source": 0,
-                "target": 1
-              },
-              {
-                "source": 1,
-                "target": 2
-              }
-            ]
-          }
+          "name": "FakeListChatModel"
         }
       ],
       "last": {
@@ -17676,221 +13717,10 @@
           "CommaSeparatedListOutputParser"
         ],
         "kwargs": {},
-        "name": "CommaSeparatedListOutputParser",
-        "graph": {
-          "nodes": [
-            {
-              "id": 0,
-              "type": "schema",
-              "data": "CommaSeparatedListOutputParserInput"
-            },
-            {
-              "id": 1,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain",
-                  "output_parsers",
-                  "list",
-                  "CommaSeparatedListOutputParser"
-                ],
-                "name": "CommaSeparatedListOutputParser"
-              }
-            },
-            {
-              "id": 2,
-              "type": "schema",
-              "data": "CommaSeparatedListOutputParserOutput"
-            }
-          ],
-          "edges": [
-            {
-              "source": 0,
-              "target": 1
-            },
-            {
-              "source": 1,
-              "target": 2
-            }
-          ]
-        }
+        "name": "CommaSeparatedListOutputParser"
       }
     },
-    "name": "RunnableSequence",
-    "graph": {
-      "nodes": [
-        {
-          "id": 0,
-          "type": "schema",
-          "data": "Parallel<question,documents,just_to_test_lambda>Input"
-        },
-        {
-          "id": 1,
-          "type": "schema",
-          "data": "Parallel<question,documents,just_to_test_lambda>Output"
-        },
-        {
-          "id": 2,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain",
-              "schema",
-              "runnable",
-              "RunnablePassthrough"
-            ],
-            "name": "Passthrough"
-          }
-        },
-        {
-          "id": 3,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain_core",
-              "runnables",
-              "base",
-              "RunnableLambda"
-            ],
-            "name": "Lambda"
-          }
-        },
-        {
-          "id": 4,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain_core",
-              "runnables",
-              "base",
-              "RunnableLambda"
-            ],
-            "name": "Lambda"
-          }
-        },
-        {
-          "id": 5,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "tests",
-              "unit_tests",
-              "runnables",
-              "test_runnable",
-              "FakeRetriever"
-            ],
-            "name": "FakeRetriever"
-          }
-        },
-        {
-          "id": 6,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain_core",
-              "runnables",
-              "base",
-              "RunnableLambda"
-            ],
-            "name": "Lambda"
-          }
-        },
-        {
-          "id": 7,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain",
-              "prompts",
-              "chat",
-              "ChatPromptTemplate"
-            ],
-            "name": "ChatPromptTemplate"
-          }
-        },
-        {
-          "id": 8,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain_core",
-              "language_models",
-              "fake_chat_models",
-              "FakeListChatModel"
-            ],
-            "name": "FakeListChatModel"
-          }
-        },
-        {
-          "id": 9,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain",
-              "output_parsers",
-              "list",
-              "CommaSeparatedListOutputParser"
-            ],
-            "name": "CommaSeparatedListOutputParser"
-          }
-        },
-        {
-          "id": 10,
-          "type": "schema",
-          "data": "CommaSeparatedListOutputParserOutput"
-        }
-      ],
-      "edges": [
-        {
-          "source": 2,
-          "target": 3
-        },
-        {
-          "source": 0,
-          "target": 2
-        },
-        {
-          "source": 3,
-          "target": 1
-        },
-        {
-          "source": 4,
-          "target": 5
-        },
-        {
-          "source": 0,
-          "target": 4
-        },
-        {
-          "source": 5,
-          "target": 1
-        },
-        {
-          "source": 0,
-          "target": 6
-        },
-        {
-          "source": 6,
-          "target": 1
-        },
-        {
-          "source": 1,
-          "target": 7
-        },
-        {
-          "source": 7,
-          "target": 8
-        },
-        {
-          "source": 9,
-          "target": 10
-        },
-        {
-          "source": 8,
-          "target": 9
-        }
-      ]
-    }
+    "name": "RunnableSequence"
   }
   '''
 # ---
@@ -17954,44 +13784,7 @@
                     "template": "You are a nice assistant.",
                     "template_format": "f-string"
                   },
-                  "name": "PromptTemplate",
-                  "graph": {
-                    "nodes": [
-                      {
-                        "id": 0,
-                        "type": "schema",
-                        "data": "PromptInput"
-                      },
-                      {
-                        "id": 1,
-                        "type": "runnable",
-                        "data": {
-                          "id": [
-                            "langchain",
-                            "prompts",
-                            "prompt",
-                            "PromptTemplate"
-                          ],
-                          "name": "PromptTemplate"
-                        }
-                      },
-                      {
-                        "id": 2,
-                        "type": "schema",
-                        "data": "PromptTemplateOutput"
-                      }
-                    ],
-                    "edges": [
-                      {
-                        "source": 0,
-                        "target": 1
-                      },
-                      {
-                        "source": 1,
-                        "target": 2
-                      }
-                    ]
-                  }
+                  "name": "PromptTemplate"
                 }
               }
             },
@@ -18021,87 +13814,13 @@
                     "template": "{question}",
                     "template_format": "f-string"
                   },
-                  "name": "PromptTemplate",
-                  "graph": {
-                    "nodes": [
-                      {
-                        "id": 0,
-                        "type": "schema",
-                        "data": "PromptInput"
-                      },
-                      {
-                        "id": 1,
-                        "type": "runnable",
-                        "data": {
-                          "id": [
-                            "langchain",
-                            "prompts",
-                            "prompt",
-                            "PromptTemplate"
-                          ],
-                          "name": "PromptTemplate"
-                        }
-                      },
-                      {
-                        "id": 2,
-                        "type": "schema",
-                        "data": "PromptTemplateOutput"
-                      }
-                    ],
-                    "edges": [
-                      {
-                        "source": 0,
-                        "target": 1
-                      },
-                      {
-                        "source": 1,
-                        "target": 2
-                      }
-                    ]
-                  }
+                  "name": "PromptTemplate"
                 }
               }
             }
           ]
         },
-        "name": "ChatPromptTemplate",
-        "graph": {
-          "nodes": [
-            {
-              "id": 0,
-              "type": "schema",
-              "data": "PromptInput"
-            },
-            {
-              "id": 1,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain",
-                  "prompts",
-                  "chat",
-                  "ChatPromptTemplate"
-                ],
-                "name": "ChatPromptTemplate"
-              }
-            },
-            {
-              "id": 2,
-              "type": "schema",
-              "data": "ChatPromptTemplateOutput"
-            }
-          ],
-          "edges": [
-            {
-              "source": 0,
-              "target": 1
-            },
-            {
-              "source": 1,
-              "target": 2
-            }
-          ]
-        }
+        "name": "ChatPromptTemplate"
       },
       "middle": [
         {
@@ -18137,44 +13856,7 @@
                 "FakeListChatModel"
               ],
               "repr": "FakeListChatModel(responses=[\"i'm a chatbot\"])",
-              "name": "FakeListChatModel",
-              "graph": {
-                "nodes": [
-                  {
-                    "id": 0,
-                    "type": "schema",
-                    "data": "FakeListChatModelInput"
-                  },
-                  {
-                    "id": 1,
-                    "type": "runnable",
-                    "data": {
-                      "id": [
-                        "langchain_core",
-                        "language_models",
-                        "fake_chat_models",
-                        "FakeListChatModel"
-                      ],
-                      "name": "FakeListChatModel"
-                    }
-                  },
-                  {
-                    "id": 2,
-                    "type": "schema",
-                    "data": "FakeListChatModelOutput"
-                  }
-                ],
-                "edges": [
-                  {
-                    "source": 0,
-                    "target": 1
-                  },
-                  {
-                    "source": 1,
-                    "target": 2
-                  }
-                ]
-              }
+              "name": "FakeListChatModel"
             },
             "llm": {
               "lc": 1,
@@ -18186,210 +13868,14 @@
                 "FakeListLLM"
               ],
               "repr": "FakeListLLM(responses=[\"i'm a textbot\"])",
-              "name": "FakeListLLM",
-              "graph": {
-                "nodes": [
-                  {
-                    "id": 0,
-                    "type": "schema",
-                    "data": "FakeListLLMInput"
-                  },
-                  {
-                    "id": 1,
-                    "type": "runnable",
-                    "data": {
-                      "id": [
-                        "langchain_core",
-                        "language_models",
-                        "fake",
-                        "FakeListLLM"
-                      ],
-                      "name": "FakeListLLM"
-                    }
-                  },
-                  {
-                    "id": 2,
-                    "type": "schema",
-                    "data": "FakeListLLMOutput"
-                  }
-                ],
-                "edges": [
-                  {
-                    "source": 0,
-                    "target": 1
-                  },
-                  {
-                    "source": 1,
-                    "target": 2
-                  }
-                ]
-              }
+              "name": "FakeListLLM"
             }
           }
         },
-        "name": "RunnableParallel<chat,llm>",
-        "graph": {
-          "nodes": [
-            {
-              "id": 0,
-              "type": "schema",
-              "data": "Parallel<chat,llm>Input"
-            },
-            {
-              "id": 1,
-              "type": "schema",
-              "data": "Parallel<chat,llm>Output"
-            },
-            {
-              "id": 2,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain_core",
-                  "language_models",
-                  "fake_chat_models",
-                  "FakeListChatModel"
-                ],
-                "name": "FakeListChatModel"
-              }
-            },
-            {
-              "id": 3,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain_core",
-                  "language_models",
-                  "fake",
-                  "FakeListLLM"
-                ],
-                "name": "FakeListLLM"
-              }
-            }
-          ],
-          "edges": [
-            {
-              "source": 0,
-              "target": 2
-            },
-            {
-              "source": 2,
-              "target": 1
-            },
-            {
-              "source": 0,
-              "target": 3
-            },
-            {
-              "source": 3,
-              "target": 1
-            }
-          ]
-        }
+        "name": "RunnableParallel<chat,llm>"
       }
     },
-    "name": "RunnableSequence",
-    "graph": {
-      "nodes": [
-        {
-          "id": 0,
-          "type": "schema",
-          "data": "PromptInput"
-        },
-        {
-          "id": 1,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain",
-              "prompts",
-              "chat",
-              "ChatPromptTemplate"
-            ],
-            "name": "ChatPromptTemplate"
-          }
-        },
-        {
-          "id": 2,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain_core",
-              "runnables",
-              "base",
-              "RunnableLambda"
-            ],
-            "name": "Lambda"
-          }
-        },
-        {
-          "id": 3,
-          "type": "schema",
-          "data": "Parallel<chat,llm>Input"
-        },
-        {
-          "id": 4,
-          "type": "schema",
-          "data": "Parallel<chat,llm>Output"
-        },
-        {
-          "id": 5,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain_core",
-              "language_models",
-              "fake_chat_models",
-              "FakeListChatModel"
-            ],
-            "name": "FakeListChatModel"
-          }
-        },
-        {
-          "id": 6,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain_core",
-              "language_models",
-              "fake",
-              "FakeListLLM"
-            ],
-            "name": "FakeListLLM"
-          }
-        }
-      ],
-      "edges": [
-        {
-          "source": 0,
-          "target": 1
-        },
-        {
-          "source": 1,
-          "target": 2
-        },
-        {
-          "source": 3,
-          "target": 5
-        },
-        {
-          "source": 5,
-          "target": 4
-        },
-        {
-          "source": 3,
-          "target": 6
-        },
-        {
-          "source": 6,
-          "target": 4
-        },
-        {
-          "source": 2,
-          "target": 3
-        }
-      ]
-    }
+    "name": "RunnableSequence"
   }
   '''
 # ---
@@ -18443,44 +13929,7 @@
                     "template": "You are a nice assistant.",
                     "template_format": "f-string"
                   },
-                  "name": "PromptTemplate",
-                  "graph": {
-                    "nodes": [
-                      {
-                        "id": 0,
-                        "type": "schema",
-                        "data": "PromptInput"
-                      },
-                      {
-                        "id": 1,
-                        "type": "runnable",
-                        "data": {
-                          "id": [
-                            "langchain",
-                            "prompts",
-                            "prompt",
-                            "PromptTemplate"
-                          ],
-                          "name": "PromptTemplate"
-                        }
-                      },
-                      {
-                        "id": 2,
-                        "type": "schema",
-                        "data": "PromptTemplateOutput"
-                      }
-                    ],
-                    "edges": [
-                      {
-                        "source": 0,
-                        "target": 1
-                      },
-                      {
-                        "source": 1,
-                        "target": 2
-                      }
-                    ]
-                  }
+                  "name": "PromptTemplate"
                 }
               }
             },
@@ -18510,87 +13959,13 @@
                     "template": "{question}",
                     "template_format": "f-string"
                   },
-                  "name": "PromptTemplate",
-                  "graph": {
-                    "nodes": [
-                      {
-                        "id": 0,
-                        "type": "schema",
-                        "data": "PromptInput"
-                      },
-                      {
-                        "id": 1,
-                        "type": "runnable",
-                        "data": {
-                          "id": [
-                            "langchain",
-                            "prompts",
-                            "prompt",
-                            "PromptTemplate"
-                          ],
-                          "name": "PromptTemplate"
-                        }
-                      },
-                      {
-                        "id": 2,
-                        "type": "schema",
-                        "data": "PromptTemplateOutput"
-                      }
-                    ],
-                    "edges": [
-                      {
-                        "source": 0,
-                        "target": 1
-                      },
-                      {
-                        "source": 1,
-                        "target": 2
-                      }
-                    ]
-                  }
+                  "name": "PromptTemplate"
                 }
               }
             }
           ]
         },
-        "name": "ChatPromptTemplate",
-        "graph": {
-          "nodes": [
-            {
-              "id": 0,
-              "type": "schema",
-              "data": "PromptInput"
-            },
-            {
-              "id": 1,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain",
-                  "prompts",
-                  "chat",
-                  "ChatPromptTemplate"
-                ],
-                "name": "ChatPromptTemplate"
-              }
-            },
-            {
-              "id": 2,
-              "type": "schema",
-              "data": "ChatPromptTemplateOutput"
-            }
-          ],
-          "edges": [
-            {
-              "source": 0,
-              "target": 1
-            },
-            {
-              "source": 1,
-              "target": 2
-            }
-          ]
-        }
+        "name": "ChatPromptTemplate"
       },
       "middle": [
         {
@@ -18636,44 +14011,7 @@
                     "FakeListChatModel"
                   ],
                   "repr": "FakeListChatModel(responses=[\"i'm a chatbot\"])",
-                  "name": "FakeListChatModel",
-                  "graph": {
-                    "nodes": [
-                      {
-                        "id": 0,
-                        "type": "schema",
-                        "data": "FakeListChatModelInput"
-                      },
-                      {
-                        "id": 1,
-                        "type": "runnable",
-                        "data": {
-                          "id": [
-                            "langchain_core",
-                            "language_models",
-                            "fake_chat_models",
-                            "FakeListChatModel"
-                          ],
-                          "name": "FakeListChatModel"
-                        }
-                      },
-                      {
-                        "id": 2,
-                        "type": "schema",
-                        "data": "FakeListChatModelOutput"
-                      }
-                    ],
-                    "edges": [
-                      {
-                        "source": 0,
-                        "target": 1
-                      },
-                      {
-                        "source": 1,
-                        "target": 2
-                      }
-                    ]
-                  }
+                  "name": "FakeListChatModel"
                 },
                 "kwargs": {
                   "stop": [
@@ -18681,45 +14019,7 @@
                   ]
                 }
               },
-              "name": "FakeListChatModel",
-              "graph": {
-                "nodes": [
-                  {
-                    "id": 0,
-                    "type": "schema",
-                    "data": "FakeListChatModelInput"
-                  },
-                  {
-                    "id": 1,
-                    "type": "runnable",
-                    "data": {
-                      "id": [
-                        "langchain_core",
-                        "language_models",
-                        "fake_chat_models",
-                        "FakeListChatModel"
-                      ],
-                      "name": "FakeListChatModel"
-                    },
-                    "metadata": {}
-                  },
-                  {
-                    "id": 2,
-                    "type": "schema",
-                    "data": "FakeListChatModelOutput"
-                  }
-                ],
-                "edges": [
-                  {
-                    "source": 0,
-                    "target": 1
-                  },
-                  {
-                    "source": 1,
-                    "target": 2
-                  }
-                ]
-              }
+              "name": "FakeListChatModel"
             },
             "llm": {
               "lc": 1,
@@ -18731,44 +14031,7 @@
                 "FakeListLLM"
               ],
               "repr": "FakeListLLM(responses=[\"i'm a textbot\"])",
-              "name": "FakeListLLM",
-              "graph": {
-                "nodes": [
-                  {
-                    "id": 0,
-                    "type": "schema",
-                    "data": "FakeListLLMInput"
-                  },
-                  {
-                    "id": 1,
-                    "type": "runnable",
-                    "data": {
-                      "id": [
-                        "langchain_core",
-                        "language_models",
-                        "fake",
-                        "FakeListLLM"
-                      ],
-                      "name": "FakeListLLM"
-                    }
-                  },
-                  {
-                    "id": 2,
-                    "type": "schema",
-                    "data": "FakeListLLMOutput"
-                  }
-                ],
-                "edges": [
-                  {
-                    "source": 0,
-                    "target": 1
-                  },
-                  {
-                    "source": 1,
-                    "target": 2
-                  }
-                ]
-              }
+              "name": "FakeListLLM"
             },
             "passthrough": {
               "lc": 1,
@@ -18783,213 +14046,10 @@
             }
           }
         },
-        "name": "RunnableParallel<chat,llm,passthrough>",
-        "graph": {
-          "nodes": [
-            {
-              "id": 0,
-              "type": "schema",
-              "data": "Parallel<chat,llm,passthrough>Input"
-            },
-            {
-              "id": 1,
-              "type": "schema",
-              "data": "Parallel<chat,llm,passthrough>Output"
-            },
-            {
-              "id": 2,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain_core",
-                  "language_models",
-                  "fake_chat_models",
-                  "FakeListChatModel"
-                ],
-                "name": "FakeListChatModel"
-              },
-              "metadata": {}
-            },
-            {
-              "id": 3,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain_core",
-                  "language_models",
-                  "fake",
-                  "FakeListLLM"
-                ],
-                "name": "FakeListLLM"
-              }
-            },
-            {
-              "id": 4,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain_core",
-                  "runnables",
-                  "base",
-                  "RunnableLambda"
-                ],
-                "name": "Lambda"
-              }
-            }
-          ],
-          "edges": [
-            {
-              "source": 0,
-              "target": 2
-            },
-            {
-              "source": 2,
-              "target": 1
-            },
-            {
-              "source": 0,
-              "target": 3
-            },
-            {
-              "source": 3,
-              "target": 1
-            },
-            {
-              "source": 0,
-              "target": 4
-            },
-            {
-              "source": 4,
-              "target": 1
-            }
-          ]
-        }
+        "name": "RunnableParallel<chat,llm,passthrough>"
       }
     },
-    "name": "RunnableSequence",
-    "graph": {
-      "nodes": [
-        {
-          "id": 0,
-          "type": "schema",
-          "data": "PromptInput"
-        },
-        {
-          "id": 1,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain",
-              "prompts",
-              "chat",
-              "ChatPromptTemplate"
-            ],
-            "name": "ChatPromptTemplate"
-          }
-        },
-        {
-          "id": 2,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain_core",
-              "runnables",
-              "base",
-              "RunnableLambda"
-            ],
-            "name": "Lambda"
-          }
-        },
-        {
-          "id": 3,
-          "type": "schema",
-          "data": "Parallel<chat,llm,passthrough>Input"
-        },
-        {
-          "id": 4,
-          "type": "schema",
-          "data": "Parallel<chat,llm,passthrough>Output"
-        },
-        {
-          "id": 5,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain_core",
-              "language_models",
-              "fake_chat_models",
-              "FakeListChatModel"
-            ],
-            "name": "FakeListChatModel"
-          },
-          "metadata": {}
-        },
-        {
-          "id": 6,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain_core",
-              "language_models",
-              "fake",
-              "FakeListLLM"
-            ],
-            "name": "FakeListLLM"
-          }
-        },
-        {
-          "id": 7,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain_core",
-              "runnables",
-              "base",
-              "RunnableLambda"
-            ],
-            "name": "Lambda"
-          }
-        }
-      ],
-      "edges": [
-        {
-          "source": 0,
-          "target": 1
-        },
-        {
-          "source": 1,
-          "target": 2
-        },
-        {
-          "source": 3,
-          "target": 5
-        },
-        {
-          "source": 5,
-          "target": 4
-        },
-        {
-          "source": 3,
-          "target": 6
-        },
-        {
-          "source": 6,
-          "target": 4
-        },
-        {
-          "source": 3,
-          "target": 7
-        },
-        {
-          "source": 7,
-          "target": 4
-        },
-        {
-          "source": 2,
-          "target": 3
-        }
-      ]
-    }
+    "name": "RunnableSequence"
   }
   '''
 # ---
