@@ -23,6 +23,7 @@ from typing import (
 
 import pytest
 from pydantic import BaseModel, Field, ValidationError
+from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import Annotated, TypedDict, TypeVar
 
 from langchain_core import tools
@@ -72,6 +73,14 @@ def test_unnamed_decorator() -> None:
 
 
 class _MockSchema(BaseModel):
+    """Return the arguments directly."""
+
+    arg1: int
+    arg2: bool
+    arg3: Optional[dict] = None
+
+
+class _MockSchemaV1(BaseModelV1):
     """Return the arguments directly."""
 
     arg1: int
@@ -167,6 +176,13 @@ def test_decorator_with_specified_schema() -> None:
 
     assert isinstance(tool_func, BaseTool)
     assert tool_func.args_schema == _MockSchema
+
+    @tool(args_schema=_MockSchemaV1)
+    def tool_func_v1(arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
+        return f"{arg1} {arg2} {arg3}"
+
+    assert isinstance(tool_func_v1, BaseTool)
+    assert tool_func_v1.args_schema == _MockSchemaV1
 
 
 def test_decorated_function_schema_equivalent() -> None:
