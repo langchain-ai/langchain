@@ -9,6 +9,7 @@ from langchain_core.tools import BaseTool
 
 logger = logging.getLogger(__name__)
 
+
 class AzureContentSafetyTextTool(BaseTool):
     """
     A tool that interacts with the Azure AI Content Safety API.
@@ -33,7 +34,8 @@ class AzureContentSafetyTextTool(BaseTool):
             Analyzes the provided text to assess its sentiment and safety,
             returning the analysis results.
 
-        _run(query: str, run_manager: Optional[CallbackManagerForToolRun] = None) -> str:
+        _run(query: str, 
+            run_manager: Optional[CallbackManagerForToolRun] = None) -> str:
             Uses the tool to analyze the given query and returns the result.
             Raises a RuntimeError if an exception occurs.
     """
@@ -46,7 +48,8 @@ class AzureContentSafetyTextTool(BaseTool):
     description: str = (
         "A wrapper around Azure AI Content Safety. "
         "Useful for when you need to identify the sentiment of text and whether"
-        " or not a text is harmful. Input should be text."
+        " or not a text is harmful." 
+        "Input must be text (str)."
     )
 
     def __init__(
@@ -67,7 +70,8 @@ class AzureContentSafetyTextTool(BaseTool):
                 be fetched from the environment variable 'CONTENT_SAFETY_API_KEY'.
             content_safety_endpoint (Optional[str]):
                 The endpoint URL for Azure Content Safety API. If not provided, it
-                will be fetched from the environment variable 'CONTENT_SAFETY_ENDPOINT'.
+                will be fetched from the environment variable 
+                'CONTENT_SAFETY_ENDPOINT'.
 
         Raises:
             ImportError: If the 'azure-ai-contentsafety' package is not installed.
