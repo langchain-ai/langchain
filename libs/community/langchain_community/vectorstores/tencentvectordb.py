@@ -144,7 +144,7 @@ class TencentVectorDB(VectorStore):
 
     In order to use this you need to have a database instance.
     See the following documentation for details:
-    https://cloud.tencent.com/document/product/1709/94951
+    https://cloud.tencent.com/document/product/1709/104489
     """
 
     field_id: str = "id"
