@@ -126,7 +126,7 @@ class AzureContentSafetyTextTool(BaseTool):
         self,
         query: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> str:
+    ) -> Dict:
         """
         Analyze the given query using the tool.
 
