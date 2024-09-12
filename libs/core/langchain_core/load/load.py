@@ -50,8 +50,8 @@ class Reviver:
                 to allow to be deserialized. Defaults to None.
             secrets_from_env: Whether to load secrets from the environment.
                 Defaults to True.
-            additional_import_mappings: A dictionary of mappings for additional namespaces.
-                You can use this to override default mappings or add additional mappings.
+            additional_import_mappings: A dictionary of additional namespace mappings
+                You can use this to override default mappings or add new mappings.
                 Defaults to None.
         """
         self.secrets_from_env = secrets_from_env
@@ -166,8 +166,8 @@ def loads(
             to allow to be deserialized. Defaults to None.
         secrets_from_env: Whether to load secrets from the environment.
             Defaults to True.
-        additional_import_mappings: A dictionary of mappings for additional namespaces.
-            You can use this to override default mappings or add additional mappings.
+        additional_import_mappings: A dictionary of additional namespace mappings
+            You can use this to override default mappings or add new mappings.
             Defaults to None.
 
     Returns:
@@ -202,8 +202,8 @@ def load(
             to allow to be deserialized. Defaults to None.
         secrets_from_env: Whether to load secrets from the environment.
             Defaults to True.
-        additional_import_mappings: A dictionary of mappings for additional namespaces.
-            You can use this to override default mappings or add additional mappings.
+        additional_import_mappings: A dictionary of additional namespace mappings
+            You can use this to override default mappings or add new mappings.
             Defaults to None.
 
     Returns:
