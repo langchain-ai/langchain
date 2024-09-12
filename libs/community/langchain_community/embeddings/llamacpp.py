@@ -20,7 +20,7 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
 
     client: Any  #: :meta private:
     model_path: str
-
+    pooling_type:int
     n_ctx: int = Field(512, alias="n_ctx")
     """Token context window."""
 
@@ -79,6 +79,7 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
             "n_batch",
             "verbose",
             "device",
+            "pooling_type",
         ]
         model_params = {k: values[k] for k in model_param_names}
         # For backwards compatibility, only include if non-null.
