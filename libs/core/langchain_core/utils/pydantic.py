@@ -549,7 +549,7 @@ def create_model_v2(
     *,
     module_name: Optional[str] = None,
     field_definitions: Optional[Dict[str, Any]] = None,
-    root: Optional[Type[BaseModel]] = None,
+    root: Optional[Any] = None,
 ) -> Type[BaseModel]:
     """Create a pydantic model with the given field definitions.
 
@@ -591,6 +591,8 @@ def create_model_v2(
                 **kwargs,
             )
         return named_root_model
+
+    field_definitions = field_definitions or {}
 
     # No root, just field definitions
     names = set(field_definitions.keys())
