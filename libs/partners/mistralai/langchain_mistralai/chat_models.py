@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import os
 import re
 import uuid
 from operator import itemgetter
@@ -358,13 +359,15 @@ def _convert_message_to_mistral_chat_message(
 class ChatMistralAI(BaseChatModel):
     """A chat model that uses the MistralAI API."""
 
-    client: httpx.Client = Field(default=None)  #: :meta private:
-    async_client: httpx.AsyncClient = Field(default=None)  #: :meta private:
+    client: httpx.Client = Field(default=None, exclude=True)  #: :meta private:
+    async_client: httpx.AsyncClient = Field(
+        default=None, exclude=True
+    )  #: :meta private:
     mistral_api_key: Optional[SecretStr] = Field(
         alias="api_key",
         default_factory=secret_from_env("MISTRAL_API_KEY", default=None),
     )
-    endpoint: str = "https://api.mistral.ai/v1"
+    endpoint: Optional[str] = Field(default=None, alias="base_url")
     max_retries: int = 5
     timeout: int = 120
     max_concurrent_requests: int = 64
@@ -472,10 +475,17 @@ class ChatMistralAI(BaseChatModel):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate api key, python package exists, temperature, and top_p."""
         api_key_str = values["mistral_api_key"].get_secret_value()
+
         # todo: handle retries
+        base_url_str = (
+            values.get("endpoint")
+            or os.environ.get("MISTRAL_BASE_URL")
+            or "https://api.mistral.ai/v1"
+        )
+        values["endpoint"] = base_url_str
         if not values.get("client"):
             values["client"] = httpx.Client(
-                base_url=values["endpoint"],
+                base_url=base_url_str,
                 headers={
                     "Content-Type": "application/json",
                     "Accept": "application/json",
@@ -486,7 +496,7 @@ class ChatMistralAI(BaseChatModel):
         # todo: handle retries and max_concurrency
         if not values.get("async_client"):
             values["async_client"] = httpx.AsyncClient(
-                base_url=values["endpoint"],
+                base_url=base_url_str,
                 headers={
                     "Content-Type": "application/json",
                     "Accept": "application/json",

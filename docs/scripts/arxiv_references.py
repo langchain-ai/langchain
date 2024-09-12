@@ -397,7 +397,7 @@ class ArxivAPIWrapper(BaseModel):
 
 
 def _format_doc_url(doc_path: str) -> str:
-    return f"https://{LANGCHAIN_PYTHON_URL}/{doc_path}"
+    return f"https://{LANGCHAIN_PYTHON_URL}/v0.2/{doc_path}"
 
 
 def _format_api_ref_url(doc_path: str, compact: bool = False) -> str:
@@ -523,10 +523,9 @@ This page contains `arXiv` papers referenced in the LangChain Documentation, API
  Templates, and Cookbooks.
 
 From the opposite direction, scientists use `LangChain` in research and reference it in the research papers. 
-Here you find papers that reference:
-- [LangChain](https://arxiv.org/search/?query=langchain&searchtype=all&source=header)
-- [LangGraph](https://arxiv.org/search/?query=langgraph&searchtype=all&source=header)
-- [LangSmith](https://arxiv.org/search/?query=langsmith&searchtype=all&source=header)
+
+`arXiv` papers with references to:
+ [LangChain](https://arxiv.org/search/?query=langchain&searchtype=all&source=header) | [LangGraph](https://arxiv.org/search/?query=langgraph&searchtype=all&source=header) | [LangSmith](https://arxiv.org/search/?query=langsmith&searchtype=all&source=header)
 
 ## Summary
 
@@ -564,7 +563,7 @@ Here you find papers that reference:
                 refs += [
                     "`Cookbook:` "
                     + ", ".join(
-                        f"[{key}]({url})"
+                        f"[{str(key).replace('_', ' ').title()}]({url})"
                         for key, url in paper.referencing_cookbook2url.items()
                     )
                 ]
@@ -572,7 +571,7 @@ Here you find papers that reference:
 
             title_link = f"[{paper.title}]({paper.url})"
             f.write(
-                f"| {' | '.join([f'`{paper.arxiv_id}` {title_link}', ', '.join(paper.authors), paper.published_date, refs_str])}\n"
+                f"| {' | '.join([f'`{paper.arxiv_id}` {title_link}', ', '.join(paper.authors), paper.published_date.replace('-', '&#8209;'), refs_str])}\n"
             )
 
         for paper in papers:
@@ -607,9 +606,8 @@ Here you find papers that reference:
                 f"""
 ## {paper.title}
 
-- **arXiv id:** [{paper.arxiv_id}]({paper.url})  **Published Date:** {paper.published_date}
-- **Title:** {paper.title}
 - **Authors:** {', '.join(paper.authors)}
+- **arXiv id:** [{paper.arxiv_id}]({paper.url})  **Published Date:** {paper.published_date}
 - **LangChain:**
 
 {refs}

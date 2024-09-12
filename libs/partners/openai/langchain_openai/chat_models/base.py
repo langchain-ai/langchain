@@ -443,7 +443,7 @@ class BaseChatOpenAI(BaseChatModel):
         )
         return values
 
-    @root_validator(pre=False, skip_on_failure=True)
+    @root_validator(pre=False, skip_on_failure=True, allow_reuse=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         if values["n"] < 1:
@@ -757,7 +757,7 @@ class BaseChatOpenAI(BaseChatModel):
             )
             return
         if self.include_response_headers:
-            raw_response = self.async_client.with_raw_response.create(**payload)
+            raw_response = await self.async_client.with_raw_response.create(**payload)
             response = raw_response.parse()
             base_generation_info = {"headers": dict(raw_response.headers)}
         else:
@@ -947,7 +947,7 @@ class BaseChatOpenAI(BaseChatModel):
                 else:
                     # Cast str(value) in case the message value is not a string
                     # This occurs with function messages
-                    num_tokens += len(encoding.encode(value))
+                    num_tokens += len(encoding.encode(str(value)))
                 if key == "name":
                     num_tokens += tokens_per_name
         # every reply is primed with <im_start>assistant
@@ -1102,19 +1102,15 @@ class BaseChatOpenAI(BaseChatModel):
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
         """Model wrapper that returns outputs formatted to match the given schema.
 
-        .. versionchanged:: 0.1.21
-
-            Support for ``strict`` argument added.
-            Support for ``method`` = "json_schema" added.
-
         Args:
             schema:
                 The output schema. Can be passed in as:
 
-                    - an OpenAI function/tool schema,
-                    - a JSON Schema,
-                    - a TypedDict class (support added in 0.1.20),
-                    - or a Pydantic class.
+                - an OpenAI function/tool schema,
+                - a JSON Schema,
+                - a TypedDict class (support added in 0.1.20),
+                - or a Pydantic class.
+
                 If ``schema`` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
@@ -1122,25 +1118,20 @@ class BaseChatOpenAI(BaseChatModel):
                 for more on how to properly specify types and descriptions of
                 schema fields when specifying a Pydantic or TypedDict class.
 
-                .. versionchanged:: 0.1.20
+            method: The method for steering model generation, one of:
 
-                        Added support for TypedDict class.
-
-            method:
-                The method for steering model generation, one of:
-                    - "function_calling":
-                        Uses OpenAI's tool-calling (formerly called function calling)
-                        API: https://platform.openai.com/docs/guides/function-calling
-                    - "json_schema":
-                        Uses OpenAI's Structured Output API:
-                        https://platform.openai.com/docs/guides/structured-outputs
-                        Supported for "gpt-4o-mini", "gpt-4o-2024-08-06", and later
-                        models.
-                    - "json_mode":
-                        Uses OpenAI's JSON mode. Note that if using JSON mode then you
-                        must include instructions for formatting the output into the
-                        desired schema into the model call:
-                        https://platform.openai.com/docs/guides/structured-outputs/json-mode
+                - "function_calling":
+                    Uses OpenAI's tool-calling (formerly called function calling)
+                    API: https://platform.openai.com/docs/guides/function-calling
+                - "json_schema":
+                    Uses OpenAI's Structured Output API: https://platform.openai.com/docs/guides/structured-outputs
+                    Supported for "gpt-4o-mini", "gpt-4o-2024-08-06", and later
+                    models.
+                - "json_mode":
+                    Uses OpenAI's JSON mode. Note that if using JSON mode then you
+                    must include instructions for formatting the output into the
+                    desired schema into the model call:
+                    https://platform.openai.com/docs/guides/structured-outputs/json-mode
 
                 Learn more about the differences between the methods and which models
                 support which methods here:
@@ -1148,14 +1139,6 @@ class BaseChatOpenAI(BaseChatModel):
                 - https://platform.openai.com/docs/guides/structured-outputs/structured-outputs-vs-json-mode
                 - https://platform.openai.com/docs/guides/structured-outputs/function-calling-vs-response-format
 
-                .. versionchanged:: 0.1.21
-
-                        Added support for "json_schema".
-
-                .. note:: Planned breaking change in version `0.2.0`
-
-                    ``method`` default will be changed to "json_schema" from
-                    "function_calling".
             include_raw:
                 If False then only the parsed structured output is returned. If
                 an error occurs during model output parsing it will be raised. If True
@@ -1164,6 +1147,7 @@ class BaseChatOpenAI(BaseChatModel):
                 will be caught and returned as well. The final output is always a dict
                 with keys "raw", "parsed", and "parsing_error".
             strict:
+
                 - True:
                     Model output is guaranteed to exactly match the schema.
                     The input schema will also be validated according to
@@ -1178,12 +1162,6 @@ class BaseChatOpenAI(BaseChatModel):
                 "function_calling" or "json_mode" defaults to None. Can only be
                 non-null if ``method`` is "function_calling" or "json_schema".
 
-                .. versionadded:: 0.1.21
-
-                .. note:: Planned breaking change in version `0.2.0`
-
-                    ``strict`` will default to True when ``method`` is
-                    "function_calling" as of version `0.2.0`.
             kwargs: Additional keyword args aren't supported.
 
         Returns:
@@ -1196,6 +1174,23 @@ class BaseChatOpenAI(BaseChatModel):
             - "raw": BaseMessage
             - "parsed": None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
             - "parsing_error": Optional[BaseException]
+
+        .. versionchanged:: 0.1.20
+
+            Added support for TypedDict class ``schema``.
+
+        .. versionchanged:: 0.1.21
+
+            Support for ``strict`` argument added.
+            Support for ``method`` = "json_schema" added.
+
+        .. note:: Planned breaking changes in version `0.2.0`
+
+            - ``method`` default will be changed to "json_schema" from
+                "function_calling".
+            - ``strict`` will default to True when ``method`` is
+                "function_calling" as of version `0.2.0`.
+
 
         .. dropdown:: Example: schema=Pydantic class, method="function_calling", include_raw=False, strict=True
 

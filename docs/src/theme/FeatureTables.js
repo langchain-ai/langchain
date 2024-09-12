@@ -204,6 +204,17 @@ const FEATURE_TABLES = {
                 "multimodal": false,
                 "local": false,
                 "apiLink": "https://python.langchain.com/v0.2/api_reference/upstage/chat_models/langchain_upstage.chat_models.ChatUpstage.html"
+            },
+            {
+                "name": "ChatDatabricks",
+                "package": "langchain-databricks",
+                "link": "databricks",
+                "structured_output": true,
+                "tool_calling": true,
+                "json_mode": false, 
+                "multimodal": false,
+                "local": false,
+                "apiLink": "https://python.langchain.com/v0.2/api_reference/upstage/chat_models/langchain_databricks.chat_models.ChatDatabricks.html"
             }
         ],
     },
@@ -346,6 +357,12 @@ const FEATURE_TABLES = {
                 link: "cohere",
                 package: "langchain-nomic",
                 apiLink: "https://python.langchain.com/v0.2/api_reference/nomic/embeddings/langchain_nomic.embeddings.NomicEmbeddings.html"
+            },
+            {
+                name: "Databricks",
+                link: "databricks",
+                package: "langchain-databricks",
+                apiLink: "https://python.langchain.com/v0.2/api_reference/nomic/embeddings/langchain_databricks.embeddings.DatabricksEmbeddings.html"
             },
         ]
     },
@@ -890,7 +907,7 @@ const FEATURE_TABLES = {
             {title: "Passes Standard Tests", formatter: (item) => item.passesStandardTests ? "✅" : "❌"},
             {title: "Multi Tenancy", formatter: (item) => item.multiTenancy ? "✅" : "❌"},
             {title: "IDs in add Documents", formatter: (item) => item.idsInAddDocuments ? "✅" : "❌"},
-            {title: "Local/Cloud", formatter: (item) => item.local ? "Local" : "Cloud"},
+            // {title: "Local/Cloud", formatter: (item) => item.local ? "Local" : "Cloud"},
         ],
         items: [
             {
@@ -946,12 +963,25 @@ const FEATURE_TABLES = {
                 idsInAddDocuments: false,
             },
             {
+                name: "DatabricksVectorSearch",
+                link: "databricks_vector_search",
+                deleteById: true,
+                filtering: true,
+                searchByVector: true,
+                searchWithScore: true,
+                async: true,
+                passesStandardTests: false,
+                multiTenancy: false,
+                local: false,
+                idsInAddDocuments: false,
+            },
+            {
                 name: "ElasticsearchStore",
                 link: "elasticsearch",
                 deleteById: true,
                 filtering: true,
                 searchByVector: true,
-                searchWithScore: false,
+                searchWithScore: true,
                 async: true,
                 passesStandardTests: false,
                 multiTenancy: false,
@@ -973,7 +1003,7 @@ const FEATURE_TABLES = {
             },
             {
                 name: "InMemoryVectorStore",
-                link: "in_memory",
+                link: "https://python.langchain.com/v0.2/api_reference/core/vectorstores/langchain_core.vectorstores.in_memory.InMemoryVectorStore.html",
                 deleteById: true,
                 filtering: true,
                 searchByVector: false,
@@ -1012,7 +1042,7 @@ const FEATURE_TABLES = {
             },
             {
                 name: "PGVector",
-                link: "pg_vector",
+                link: "pgvector",
                 deleteById: true,
                 filtering: true,
                 searchByVector: true,

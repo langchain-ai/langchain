@@ -519,10 +519,10 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
             generation_info = (
                 dict(finish_reason=finish_reason) if finish_reason is not None else None
             )
-
-            yield ChatGenerationChunk(message=chunk_m, generation_info=generation_info)
             if run_manager:
                 await run_manager.on_llm_new_token(content)
+
+            yield ChatGenerationChunk(message=chunk_m, generation_info=generation_info)
 
     def bind_functions(
         self,

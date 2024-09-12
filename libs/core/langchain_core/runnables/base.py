@@ -3917,7 +3917,7 @@ class RunnableGenerator(Runnable[Input, Output]):
 
     @property
     def InputType(self) -> Any:
-        func = getattr(self, "_transform", None) or getattr(self, "_atransform")
+        func = getattr(self, "_transform", None) or self._atransform
         try:
             params = inspect.signature(func).parameters
             first_param = next(iter(params.values()), None)
@@ -3930,7 +3930,7 @@ class RunnableGenerator(Runnable[Input, Output]):
 
     @property
     def OutputType(self) -> Any:
-        func = getattr(self, "_transform", None) or getattr(self, "_atransform")
+        func = getattr(self, "_transform", None) or self._atransform
         try:
             sig = inspect.signature(func)
             return (
@@ -4154,7 +4154,7 @@ class RunnableLambda(Runnable[Input, Output]):
     @property
     def InputType(self) -> Any:
         """The type of the input to this Runnable."""
-        func = getattr(self, "func", None) or getattr(self, "afunc")
+        func = getattr(self, "func", None) or self.afunc
         try:
             params = inspect.signature(func).parameters
             first_param = next(iter(params.values()), None)
@@ -4176,7 +4176,7 @@ class RunnableLambda(Runnable[Input, Output]):
         Returns:
             The input schema for this Runnable.
         """
-        func = getattr(self, "func", None) or getattr(self, "afunc")
+        func = getattr(self, "func", None) or self.afunc
 
         if isinstance(func, itemgetter):
             # This is terrible, but afaict it's not possible to access _items
@@ -4214,7 +4214,7 @@ class RunnableLambda(Runnable[Input, Output]):
         Returns:
             The type of the output of this Runnable.
         """
-        func = getattr(self, "func", None) or getattr(self, "afunc")
+        func = getattr(self, "func", None) or self.afunc
         try:
             sig = inspect.signature(func)
             if sig.return_annotation != inspect.Signature.empty:
@@ -5334,12 +5334,13 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):
     `RunnableWithFallbacks`) that add additional functionality.
 
     These methods include:
-    - `bind`: Bind kwargs to pass to the underlying Runnable when running it.
-    - `with_config`: Bind config to pass to the underlying Runnable when running it.
-    - `with_listeners`:  Bind lifecycle listeners to the underlying Runnable.
-    - `with_types`: Override the input and output types of the underlying Runnable.
-    - `with_retry`: Bind a retry policy to the underlying Runnable.
-    - `with_fallbacks`: Bind a fallback policy to the underlying Runnable.
+
+    - ``bind``: Bind kwargs to pass to the underlying Runnable when running it.
+    - ``with_config``: Bind config to pass to the underlying Runnable when running it.
+    - ``with_listeners``:  Bind lifecycle listeners to the underlying Runnable.
+    - ``with_types``: Override the input and output types of the underlying Runnable.
+    - ``with_retry``: Bind a retry policy to the underlying Runnable.
+    - ``with_fallbacks``: Bind a fallback policy to the underlying Runnable.
 
     Example:
 
