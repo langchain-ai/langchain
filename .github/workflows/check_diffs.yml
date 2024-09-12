@@ -78,6 +78,7 @@ jobs:
     uses: ./.github/workflows/_test_pydantic.yml
     with:
       working-directory: ${{ matrix.job-configs.working-directory }}
+      pydantic-version: ${{ matrix.job-configs.pydantic-version }}
     secrets: inherit
 
   test-doc-imports:
