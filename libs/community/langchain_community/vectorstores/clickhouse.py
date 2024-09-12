@@ -310,7 +310,10 @@ class Clickhouse(VectorStore):
         try:
             self.client.command("SET allow_experimental_json_type=1")
         except:
-            logger.debug(f"Clickhouse version={self.client.server_version} - There is no allow_experimental_json_type parameter.")
+            logger.debug(
+                f"Clickhouse version={self.client.server_version} - "
+                "There is no allow_experimental_json_type parameter."
+            )
 
         self.client.command("SET allow_experimental_object_type=1")
         if self.config.index_type:
