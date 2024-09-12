@@ -500,8 +500,8 @@ def create_model(
     )
 
 
-# Deprecated and not used by the code base.
-_OK_TO_OVERWRITE = {
+# These are reserved by pydantic.
+_RESERVED_NAMES = {
     "construct",
     "copy",
     "dict",
@@ -514,10 +514,6 @@ _OK_TO_OVERWRITE = {
     "schema_json",
     "update_forward_refs",
     "validate",
-}
-
-# These are reserved by pydantic.
-_RESERVED_NAMES = {
     "model_computed_fields",
     "model_config",
     "model_construct",
@@ -620,13 +616,7 @@ def create_model_v2(
     # No root, just field definitions
     names = set(field_definitions.keys())
 
-    # Likely common names that Pydantic will throw a run time warning about,
-    # but these names should be safe to override.
-    if _OK_TO_OVERWRITE & names:
-        # Capture warnings
-        capture_warnings = True
-    else:
-        capture_warnings = False
+    capture_warnings = False
 
     for name in names:
         # Also if any non-reserved name is used (e.g., model_id or model_name)
