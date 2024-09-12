@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from abc import ABC, abstractmethod
+from functools import cached_property
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -103,6 +104,10 @@ class BasePromptTemplate(
         arbitrary_types_allowed=True,
     )
 
+    @cached_property
+    def _serialized(self) -> dict[str, Any]:
+        return dumpd(self)
+
     @property
     def OutputType(self) -> Any:
         """Return the output type of the prompt."""
@@ -190,7 +195,7 @@ class BasePromptTemplate(
             input,
             config,
             run_type="prompt",
-            serialized=dumpd(self),
+            serialized=self._serialized,
         )
 
     async def ainvoke(
@@ -215,7 +220,7 @@ class BasePromptTemplate(
             input,
             config,
             run_type="prompt",
-            serialized=dumpd(self),
+            serialized=self._serialized,
         )
 
     @abstractmethod

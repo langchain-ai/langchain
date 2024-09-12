@@ -317,6 +317,10 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             values["callbacks"] = values.pop("callback_manager", None)
         return values
 
+    @functools.cached_property
+    def _serialized(self) -> dict[str, Any]:
+        return dumpd(self)
+
     # --- Runnable methods ---
 
     @property
@@ -544,7 +548,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 self.metadata,
             )
             (run_manager,) = callback_manager.on_llm_start(
-                dumpd(self),
+                self._serialized,
                 [prompt],
                 invocation_params=params,
                 options=options,
@@ -609,7 +613,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             self.metadata,
         )
         (run_manager,) = await callback_manager.on_llm_start(
-            dumpd(self),
+            self._serialized,
             [prompt],
             invocation_params=params,
             options=options,
@@ -931,7 +935,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         if (self.cache is None and get_llm_cache() is None) or self.cache is False:
             run_managers = [
                 callback_manager.on_llm_start(
-                    dumpd(self),
+                    self._serialized,
                     [prompt],
                     invocation_params=params,
                     options=options,
@@ -950,7 +954,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         if len(missing_prompts) > 0:
             run_managers = [
                 callback_managers[idx].on_llm_start(
-                    dumpd(self),
+                    self._serialized,
                     [prompts[idx]],
                     invocation_params=params,
                     options=options,
@@ -1168,7 +1172,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             run_managers = await asyncio.gather(
                 *[
                     callback_manager.on_llm_start(
-                        dumpd(self),
+                        self._serialized,
                         [prompt],
                         invocation_params=params,
                         options=options,
@@ -1194,7 +1198,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             run_managers = await asyncio.gather(
                 *[
                     callback_managers[idx].on_llm_start(
-                        dumpd(self),
+                        self._serialized,
                         [prompts[idx]],
                         invocation_params=params,
                         options=options,
