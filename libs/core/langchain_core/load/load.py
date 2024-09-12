@@ -96,7 +96,7 @@ class Reviver:
         ):
             [*namespace, name] = value["id"]
 
-            mapping_key = tuple(namespace + [name])
+            mapping_key = tuple(value["id"])
 
             if namespace[0] not in self.valid_namespaces:
                 raise ValueError(f"Invalid namespace: {value}")
