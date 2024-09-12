@@ -1,5 +1,11 @@
 import inspect
 
+_INTERNAL_PREFIXES = [
+    "langchain",  # For example langchain-core, langchain, langchain-anthropic
+    "langserve",
+    "langgraph",
+]
+
 
 def is_caller_internal(depth: int = 2) -> bool:
     """Return whether the caller at `depth` of this function is internal."""
@@ -18,6 +24,9 @@ def is_caller_internal(depth: int = 2) -> bool:
         if caller_module is None:
             return False
         caller_module_name = caller_module.__name__
-        return caller_module_name.startswith("langchain")
+
+        for prefix in _INTERNAL_PREFIXES:
+            if caller_module_name.startswith(prefix):
+                return True
     finally:
         del frame
