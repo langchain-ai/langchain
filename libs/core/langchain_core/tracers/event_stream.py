@@ -73,14 +73,15 @@ class RunInfo(TypedDict):
     parent_run_id: Optional[UUID]
 
 
-def _assign_name(name: Optional[str], serialized: Dict[str, Any]) -> str:
+def _assign_name(name: Optional[str], serialized: Optional[Dict[str, Any]]) -> str:
     """Assign a name to a run."""
     if name is not None:
         return name
-    if "name" in serialized:
-        return serialized["name"]
-    elif "id" in serialized:
-        return serialized["id"][-1]
+    if serialized is not None:
+        if "name" in serialized:
+            return serialized["name"]
+        elif "id" in serialized:
+            return serialized["id"][-1]
     return "Unnamed"
 
 

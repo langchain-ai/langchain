@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from abc import ABC, abstractmethod
+from functools import cached_property
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -21,6 +22,7 @@ import yaml
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from typing_extensions import Self
 
+from langchain_core.load import dumpd
 from langchain_core.output_parsers.base import BaseOutputParser
 from langchain_core.prompt_values import (
     ChatPromptValueConcrete,
@@ -101,6 +103,10 @@ class BasePromptTemplate(
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
     )
+
+    @cached_property
+    def _serialized(self) -> dict[str, Any]:
+        return dumpd(self)
 
     @property
     def OutputType(self) -> Any:
@@ -189,6 +195,7 @@ class BasePromptTemplate(
             input,
             config,
             run_type="prompt",
+            serialized=self._serialized,
         )
 
     async def ainvoke(
@@ -213,6 +220,7 @@ class BasePromptTemplate(
             input,
             config,
             run_type="prompt",
+            serialized=self._serialized,
         )
 
     @abstractmethod
