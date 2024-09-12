@@ -39,8 +39,6 @@ from pydantic.json_schema import (
 )
 from pydantic_core import core_schema
 
-from langchain_core._api import deprecated
-
 
 def get_pydantic_major_version() -> int:
     """Get the major version of Pydantic."""
@@ -470,11 +468,6 @@ def _create_model_cached(
     )
 
 
-@deprecated(
-    since="0.3.0",
-    alternative="Use create_model_v2 instead.",
-    message="This is an internal API that is meant to be used by langchain packages.",
-)
 def create_model(
     __model_name: str,
     __module_name: Optional[str] = None,
@@ -482,9 +475,7 @@ def create_model(
 ) -> Type[BaseModel]:
     """Create a pydantic model with the given field definitions.
 
-    Attention:
-        Please do not use outside of langchain packages. This API
-        is subject to change at any time.
+    Please use create_model_v2 instead of this function.
 
     Args:
         __model_name: The name of the model.

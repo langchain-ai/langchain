@@ -891,7 +891,7 @@ def test_chat_prompt_template_variable_names() -> None:
 
     # Verify value errors raised from illegal names
     with pytest.raises(ValueError):
-        ChatPromptTemplate([("system", "{_private}")])
+        ChatPromptTemplate([("system", "{_private}")]).get_input_schema()
 
     with pytest.raises(ValueError):
-        ChatPromptTemplate([("system", "{model_json_schema}")])
+        ChatPromptTemplate([("system", "{model_json_schema}")]).get_input_schema()
