@@ -686,11 +686,43 @@ def test_openai_proxy() -> None:
         assert proxy.port == 8080
 
 
-def test_openai_response_headers_invoke() -> None:
+def test_openai_response_headers() -> None:
     """Test ChatOpenAI response headers."""
     chat_openai = ChatOpenAI(include_response_headers=True)
-    result = chat_openai.invoke("I'm Pickle Rick")
+    query = "I'm Pickle Rick"
+    result = chat_openai.invoke(query, max_tokens=10)
     headers = result.response_metadata["headers"]
+    assert headers
+    assert isinstance(headers, dict)
+    assert "content-type" in headers
+
+    # Stream
+    full: Optional[BaseMessageChunk] = None
+    for chunk in chat_openai.stream(query, max_tokens=10):
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessage)
+    headers = full.response_metadata["headers"]
+    assert headers
+    assert isinstance(headers, dict)
+    assert "content-type" in headers
+
+
+async def test_openai_response_headers_async() -> None:
+    """Test ChatOpenAI response headers."""
+    chat_openai = ChatOpenAI(include_response_headers=True)
+    query = "I'm Pickle Rick"
+    result = await chat_openai.ainvoke(query, max_tokens=10)
+    headers = result.response_metadata["headers"]
+    assert headers
+    assert isinstance(headers, dict)
+    assert "content-type" in headers
+
+    # Stream
+    full: Optional[BaseMessageChunk] = None
+    async for chunk in chat_openai.astream(query, max_tokens=10):
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessage)
+    headers = full.response_metadata["headers"]
     assert headers
     assert isinstance(headers, dict)
     assert "content-type" in headers

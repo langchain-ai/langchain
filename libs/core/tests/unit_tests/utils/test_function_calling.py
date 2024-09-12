@@ -37,7 +37,7 @@ except ImportError:
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables import Runnable, RunnableLambda
-from langchain_core.tools import BaseTool, tool
+from langchain_core.tools import BaseTool, StructuredTool, Tool, tool
 from langchain_core.utils.function_calling import (
     _convert_typed_dict_to_openai_function,
     convert_to_openai_function,
@@ -109,6 +109,20 @@ def dummy_tool() -> BaseTool:
             pass
 
     return DummyFunction()
+
+
+@pytest.fixture()
+def dummy_structured_tool() -> StructuredTool:
+    class Schema(BaseModel):
+        arg1: int = Field(..., description="foo")
+        arg2: Literal["bar", "baz"] = Field(..., description="one of 'bar', 'baz'")
+
+    return StructuredTool.from_function(
+        lambda x: None,
+        name="dummy_function",
+        description="dummy function",
+        args_schema=Schema,
+    )
 
 
 @pytest.fixture()
@@ -233,6 +247,7 @@ class DummyWithClassMethod:
 def test_convert_to_openai_function(
     pydantic: Type[BaseModel],
     function: Callable,
+    dummy_structured_tool: StructuredTool,
     dummy_tool: BaseTool,
     json_schema: Dict,
     Annotated_function: Callable,
@@ -263,6 +278,7 @@ def test_convert_to_openai_function(
     for fn in (
         pydantic,
         function,
+        dummy_structured_tool,
         dummy_tool,
         json_schema,
         expected,
@@ -294,6 +310,27 @@ def test_convert_to_openai_function(
     runnable_expected = expected.copy()
     runnable_expected["parameters"] = parameters
     assert actual == runnable_expected
+
+    # Test simple Tool
+    def my_function(input_string: str) -> str:
+        pass
+
+    tool = Tool(
+        name="dummy_function",
+        func=my_function,
+        description="test description",
+    )
+    actual = convert_to_openai_function(tool)
+    expected = {
+        "name": "dummy_function",
+        "description": "test description",
+        "parameters": {
+            "properties": {"__arg1": {"title": "__arg1", "type": "string"}},
+            "required": ["__arg1"],
+            "type": "object",
+        },
+    }
+    assert actual == expected
 
 
 @pytest.mark.xfail(reason="Direct pydantic v2 models not yet supported")
@@ -755,4 +792,23 @@ def test_convert_union_type_py_39() -> None:
     result = convert_to_openai_function(magic_function)
     assert result["parameters"]["properties"]["input"] == {
         "anyOf": [{"type": "integer"}, {"type": "number"}]
+    }
+
+
+def test_convert_to_openai_function_no_args() -> None:
+    @tool
+    def empty_tool() -> str:
+        """No args"""
+        return "foo"
+
+    actual = convert_to_openai_function(empty_tool, strict=True)
+    assert actual == {
+        "name": "empty_tool",
+        "description": "No args",
+        "parameters": {
+            "properties": {},
+            "additionalProperties": False,
+            "type": "object",
+        },
+        "strict": True,
     }
