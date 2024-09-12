@@ -96,16 +96,15 @@ class Reviver:
         ):
             [*namespace, name] = value["id"]
 
+            mapping_key = tuple(namespace + [name])
+
             if namespace[0] not in self.valid_namespaces:
                 raise ValueError(f"Invalid namespace: {value}")
-
             # The root namespace "langchain" is not a valid identifier.
-            if len(namespace) == 1 and namespace[0] == "langchain":
+            elif len(namespace) == 1 and namespace[0] == "langchain":
                 raise ValueError(f"Invalid namespace: {value}")
-
-            # If namespace is in mapping, used custom path
-            mapping_key = tuple(namespace + [name])
-            if (
+            # Default namespace that has explicit import path
+            elif (
                 namespace[0] in DEFAULT_NAMESPACES
                 and mapping_key in ALL_SERIALIZABLE_MAPPINGS
             ):
