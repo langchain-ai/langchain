@@ -387,9 +387,7 @@ class ChatGroq(BaseChatModel):
 
         client_params: Dict[str, Any] = {
             "api_key": (
-                self.groq_api_key.get_secret_value()
-                if self.groq_api_key
-                else None
+                self.groq_api_key.get_secret_value() if self.groq_api_key else None
             ),
             "base_url": self.groq_api_base,
             "timeout": self.request_timeout,
