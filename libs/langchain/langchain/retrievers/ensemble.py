@@ -24,7 +24,6 @@ from langchain_core.callbacks import (
     CallbackManagerForRetrieverRun,
 )
 from langchain_core.documents import Document
-from langchain_core.load.dump import dumpd
 from langchain_core.retrievers import BaseRetriever, RetrieverLike
 from langchain_core.runnables import RunnableConfig
 from langchain_core.runnables.config import ensure_config, patch_config
@@ -107,9 +106,9 @@ class EnsembleRetriever(BaseRetriever):
             local_metadata=self.metadata,
         )
         run_manager = callback_manager.on_retriever_start(
-            dumpd(self),
+            None,
             input,
-            name=config.get("run_name"),
+            name=config.get("run_name") or self.get_name(),
             **kwargs,
         )
         try:
@@ -140,9 +139,9 @@ class EnsembleRetriever(BaseRetriever):
             local_metadata=self.metadata,
         )
         run_manager = await callback_manager.on_retriever_start(
-            dumpd(self),
+            None,
             input,
-            name=config.get("run_name"),
+            name=config.get("run_name") or self.get_name(),
             **kwargs,
         )
         try:
