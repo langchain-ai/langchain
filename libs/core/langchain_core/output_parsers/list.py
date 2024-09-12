@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import re
+import csv
+from io import StringIO
 from abc import abstractmethod
 from collections import deque
 from typing import AsyncIterator, Deque, Iterator, List, TypeVar, Union
@@ -145,7 +147,8 @@ class CommaSeparatedListOutputParser(ListOutputParser):
         """Return the format instructions for the comma-separated list output."""
         return (
             "Your response should be a list of comma separated values, "
-            "eg: `foo, bar, baz` or `foo,bar,baz`"
+            "with each value enclosed in double quotes if it contains a comma. "
+            "For example: `\"foo, bar\", \"baz\"`"
         )
 
     def parse(self, text: str) -> List[str]:
@@ -157,7 +160,8 @@ class CommaSeparatedListOutputParser(ListOutputParser):
         Returns:
             A list of strings.
         """
-        return [part.strip() for part in text.split(",")]
+        reader = csv.reader(StringIO(text), quotechar='"', delimiter=',', skipinitialspace=True)
+        return [item for sublist in reader for item in sublist]
 
     @property
     def _type(self) -> str:
