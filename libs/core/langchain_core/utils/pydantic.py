@@ -5,12 +5,38 @@ from __future__ import annotations
 import inspect
 import textwrap
 import warnings
-from functools import wraps
-from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union, overload
+from contextlib import nullcontext
+from functools import lru_cache, wraps
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+    overload,
+)
 
 import pydantic
-from pydantic import BaseModel, PydanticDeprecationWarning, root_validator
-from pydantic.json_schema import GenerateJsonSchema, JsonSchemaValue
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    PydanticDeprecationWarning,
+    RootModel,
+    root_validator,
+)
+from pydantic import (
+    create_model as _create_model_base,
+)
+from pydantic.json_schema import (
+    DEFAULT_REF_TEMPLATE,
+    GenerateJsonSchema,
+    JsonSchemaMode,
+    JsonSchemaValue,
+)
 from pydantic_core import core_schema
 
 
@@ -355,3 +381,249 @@ elif PYDANTIC_MAJOR_VERSION == 1:
         return model.__fields__  # type: ignore
 else:
     raise ValueError(f"Unsupported Pydantic version: {PYDANTIC_MAJOR_VERSION}")
+
+_SchemaConfig = ConfigDict(
+    arbitrary_types_allowed=True, frozen=True, protected_namespaces=()
+)
+
+NO_DEFAULT = object()
+
+
+def _create_root_model(
+    name: str,
+    type_: Any,
+    module_name: Optional[str] = None,
+    default_: object = NO_DEFAULT,
+) -> Type[BaseModel]:
+    """Create a base class."""
+
+    def schema(
+        cls: Type[BaseModel],
+        by_alias: bool = True,
+        ref_template: str = DEFAULT_REF_TEMPLATE,
+    ) -> Dict[str, Any]:
+        # Complains about schema not being defined in superclass
+        schema_ = super(cls, cls).schema(  # type: ignore[misc]
+            by_alias=by_alias, ref_template=ref_template
+        )
+        schema_["title"] = name
+        return schema_
+
+    def model_json_schema(
+        cls: Type[BaseModel],
+        by_alias: bool = True,
+        ref_template: str = DEFAULT_REF_TEMPLATE,
+        schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
+        mode: JsonSchemaMode = "validation",
+    ) -> Dict[str, Any]:
+        # Complains about model_json_schema not being defined in superclass
+        schema_ = super(cls, cls).model_json_schema(  # type: ignore[misc]
+            by_alias=by_alias,
+            ref_template=ref_template,
+            schema_generator=schema_generator,
+            mode=mode,
+        )
+        schema_["title"] = name
+        return schema_
+
+    base_class_attributes = {
+        "__annotations__": {"root": type_},
+        "model_config": ConfigDict(arbitrary_types_allowed=True),
+        "schema": classmethod(schema),
+        "model_json_schema": classmethod(model_json_schema),
+        "__module__": module_name or "langchain_core.runnables.utils",
+    }
+
+    if default_ is not NO_DEFAULT:
+        base_class_attributes["root"] = default_
+    with warnings.catch_warnings():
+        if isinstance(type_, type) and issubclass(type_, BaseModelV1):
+            warnings.filterwarnings(
+                action="ignore", category=PydanticDeprecationWarning
+            )
+        custom_root_type = type(name, (RootModel,), base_class_attributes)
+    return cast(Type[BaseModel], custom_root_type)
+
+
+@lru_cache(maxsize=256)
+def _create_root_model_cached(
+    model_name: str,
+    type_: Any,
+    *,
+    module_name: Optional[str] = None,
+    default_: object = NO_DEFAULT,
+) -> Type[BaseModel]:
+    return _create_root_model(
+        model_name, type_, default_=default_, module_name=module_name
+    )
+
+
+@lru_cache(maxsize=256)
+def _create_model_cached(
+    __model_name: str,
+    **field_definitions: Any,
+) -> Type[BaseModel]:
+    return _create_model_base(
+        __model_name, __config__=_SchemaConfig, **field_definitions
+    )
+
+
+def create_model(
+    __model_name: str,
+    __module_name: Optional[str] = None,
+    **field_definitions: Any,
+) -> Type[BaseModel]:
+    """Create a pydantic model with the given field definitions.
+
+    Please use create_model_v2 instead of this function.
+
+    Args:
+        __model_name: The name of the model.
+        __module_name: The name of the module where the model is defined.
+            This is used by Pydantic to resolve any forward references.
+        **field_definitions: The field definitions for the model.
+
+    Returns:
+        Type[BaseModel]: The created model.
+    """
+    kwargs = {}
+    if "__root__" in field_definitions:
+        kwargs["root"] = field_definitions.pop("__root__")
+
+    return create_model_v2(
+        __model_name,
+        module_name=__module_name,
+        field_definitions=field_definitions,
+        **kwargs,
+    )
+
+
+# Deprecated and not used by the code base.
+_OK_TO_OVERWRITE = {
+    "construct",
+    "copy",
+    "dict",
+    "from_orm",
+    "json",
+    "parse_file",
+    "parse_obj",
+    "parse_raw",
+    "schema",
+    "schema_json",
+    "update_forward_refs",
+    "validate",
+}
+
+# These are reserved by pydantic.
+_RESERVED_NAMES = {
+    "model_computed_fields",
+    "model_config",
+    "model_construct",
+    "model_copy",
+    "model_dump",
+    "model_dump_json",
+    "model_extra",
+    "model_fields",
+    "model_fields_set",
+    "model_json_schema",
+    "model_parametrized_name",
+    "model_post_init",
+    "model_rebuild",
+    "model_validate",
+    "model_validate_json",
+    "model_validate_strings",
+}
+
+
+def create_model_v2(
+    model_name: str,
+    *,
+    module_name: Optional[str] = None,
+    field_definitions: Optional[Dict[str, Any]] = None,
+    root: Optional[Any] = None,
+) -> Type[BaseModel]:
+    """Create a pydantic model with the given field definitions.
+
+    Attention:
+        Please do not use outside of langchain packages. This API
+        is subject to change at any time.
+
+    Args:
+        model_name: The name of the model.
+        module_name: The name of the module where the model is defined.
+            This is used by Pydantic to resolve any forward references.
+        field_definitions: The field definitions for the model.
+        root: Type for a root model (RootModel)
+
+    Returns:
+        Type[BaseModel]: The created model.
+    """
+    field_definitions = cast(Dict[str, Any], field_definitions or {})  # type: ignore[no-redef]
+
+    if root:
+        if field_definitions:
+            raise NotImplementedError(
+                "When specifying __root__ no other "
+                f"fields should be provided. Got {field_definitions}"
+            )
+
+        if isinstance(root, tuple):
+            kwargs = {"type_": root[0], "default_": root[1]}
+        else:
+            kwargs = {"type_": root}
+
+        try:
+            named_root_model = _create_root_model_cached(
+                model_name, module_name=module_name, **kwargs
+            )
+        except TypeError:
+            # something in the arguments into _create_root_model_cached is not hashable
+            named_root_model = _create_root_model(
+                model_name,
+                module_name=module_name,
+                **kwargs,
+            )
+        return named_root_model
+
+    # No root, just field definitions
+    names = set(field_definitions.keys())
+
+    if _RESERVED_NAMES & names:
+        raise ValueError(
+            f"The following names are reserved by Pydantic: {_RESERVED_NAMES & names} "
+            f"and cannot be used as a field name. Try to use a different name."
+        )
+
+    # Likely common names that Pydantic will throw a run time warning about,
+    # but these names should be safe to override.
+    if _OK_TO_OVERWRITE & names:
+        # Capture warnings
+        capture_warnings = True
+    else:
+        capture_warnings = False
+
+    for name in names:
+        # Also if any non-reserved name is used (e.g., model_id or model_name)
+        if name.startswith("model"):
+            capture_warnings = True
+
+        if name.startswith("_"):  # Private attribute
+            # Pydantic 2 treats fields starting with `_` as private attributes.
+            # For now, we will raise an error if a field name starts with `_`.
+            # We will try to remove this restriction in the future.
+            raise ValueError(
+                f"Unable to use the field name {name} as "
+                f"it is prefixed with a `_` attribute. "
+                f"Please remove the `_` prefix."
+            )
+
+    with warnings.catch_warnings() if capture_warnings else nullcontext():  # type: ignore[attr-defined]
+        if capture_warnings:
+            warnings.filterwarnings(action="ignore")
+        try:
+            return _create_model_cached(model_name, **field_definitions)
+        except TypeError:
+            # something in field definitions is not hashable
+            return _create_model_base(
+                model_name, __config__=_SchemaConfig, **field_definitions
+            )
