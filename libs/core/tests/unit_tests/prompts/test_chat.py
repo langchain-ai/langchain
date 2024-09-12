@@ -893,7 +893,7 @@ def test_chat_prompt_template_variable_names() -> None:
     assert ChatPromptTemplate(
         [("system", "{_private}")]
     ).get_input_schema().model_json_schema() == {
-        "properties": {"_private": {"title": " Private", "type": "string"}},
+        "properties": {"_private": {"title": "Private", "type": "string"}},
         "required": ["_private"],
         "title": "PromptInput",
         "type": "object",
