@@ -39,6 +39,8 @@ from pydantic.json_schema import (
 )
 from pydantic_core import core_schema
 
+from langchain_core._api import deprecated
+
 
 def get_pydantic_major_version() -> int:
     """Get the major version of Pydantic."""
@@ -466,9 +468,6 @@ def _create_model_cached(
     return _create_model_base(
         __model_name, __config__=_SchemaConfig, **field_definitions
     )
-
-
-from langchain_core._api import deprecated
 
 
 @deprecated(
