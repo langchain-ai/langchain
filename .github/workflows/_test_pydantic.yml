@@ -26,7 +26,7 @@ jobs:
       run:
         working-directory: ${{ inputs.working-directory }}
     runs-on: ubuntu-latest
-    name: "make test # python: ${{ inputs.python-version }} # pydantic: ${{ inputs.pydantic-version }}"
+    name: "make test # pydantic: ${{ inputs.pydantic-version }}, python: ${{ inputs.python-version }}, "
     steps:
       - uses: actions/checkout@v4
 

@@ -40,6 +40,7 @@ jobs:
       compile-integration-tests: ${{ steps.set-matrix.outputs.compile-integration-tests }}
       dependencies: ${{ steps.set-matrix.outputs.dependencies }}
       test-doc-imports: ${{ steps.set-matrix.outputs.test-doc-imports }}
+      test-pydantic: ${{ steps.set-matrix.outputs.test-pydantic }}
   lint:
     name: cd ${{ matrix.job-configs.working-directory }}
     needs: [ build ]

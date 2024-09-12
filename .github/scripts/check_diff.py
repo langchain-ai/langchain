@@ -110,7 +110,7 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
             core_poetry_lock_data = tomllib.load(f)
         for package in core_poetry_lock_data["package"]:
             if package["name"] == "pydantic":
-                core_pydantic_max_minor = package["version"].split(".")[1]
+                core_max_pydantic_minor = package["version"].split(".")[1]
                 break
 
         with open(f"./{dir_}/poetry.lock", "rb") as f:
@@ -118,13 +118,13 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
 
         for package in dir_poetry_lock_data["package"]:
             if package["name"] == "pydantic":
-                dir_pydantic_max_minor = package["version"].split(".")[1]
+                dir_max_pydantic_minor = package["version"].split(".")[1]
                 break
 
-        core_pydantic_min_minor = get_min_version_from_toml(
+        core_min_pydantic_minor = get_min_version_from_toml(
             "./libs/core/pyproject.toml", "release", include=["pydantic"]
         )["pydantic"].split(".")[1]
-        dir_pydantic_min_minor = (
+        dir_min_pydantic_minor = (
             get_min_version_from_toml(
                 f"./{dir_}/pyproject.toml", "release", include=["pydantic"]
             )
@@ -132,17 +132,20 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
             .split(".")[1]
         )
 
-        pydantic_max_minor = min(
-            int(dir_pydantic_max_minor), int(core_pydantic_max_minor)
+        max_pydantic_minor = min(
+            int(dir_max_pydantic_minor), int(core_max_pydantic_minor)
         )
-        pydantic_min_minor = max(
-            int(dir_pydantic_min_minor), int(core_pydantic_min_minor)
+        min_pydantic_minor = max(
+            int(dir_min_pydantic_minor), int(core_min_pydantic_minor)
         )
 
-        return [
+        configs = [
             {"working-directory": dir_, "pydantic-version": f"2.{v}"}
-            for v in range(pydantic_min_minor, pydantic_max_minor + 1)
+            for v in range(min_pydantic_minor, max_pydantic_minor + 1)
         ]
+        if not configs:
+            raise ValueError(min_pydantic_minor, max_pydantic_minor)
+        return configs
 
     if dir_ == "libs/core":
         py_versions = ["3.9", "3.10", "3.11", "3.12"]
