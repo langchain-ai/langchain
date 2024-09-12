@@ -3,11 +3,24 @@
 from __future__ import annotations
 
 import inspect
-import pydantic
 import textwrap
 import warnings
 from contextlib import nullcontext
 from functools import lru_cache, wraps
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+    overload,
+)
+
+import pydantic
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -25,18 +38,6 @@ from pydantic.json_schema import (
     JsonSchemaValue,
 )
 from pydantic_core import core_schema
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Type,
-    TypeVar,
-    Union,
-    cast,
-    overload,
-)
 
 
 def get_pydantic_major_version() -> int:

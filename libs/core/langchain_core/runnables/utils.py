@@ -29,7 +29,6 @@ from typing import (
     Union,
 )
 
-from pydantic import ConfigDict
 from typing_extensions import TypeGuard
 
 from langchain_core.runnables.schema import StreamEvent

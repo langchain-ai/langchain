@@ -866,18 +866,15 @@ async def test_chat_tmpl_serdes(snapshot: SnapshotAssertion) -> None:
     assert load(dumpd(template)) == template
 
 
-def test_chat_prompt_template() -> None:
+def test_chat_prompt_template_variable_names() -> None:
     """This test was written for an edge case that triggers a warning from Pydantic.
 
     Verify that no run time warnings are raised.
     """
-    from langchain_core.prompts import ChatPromptTemplate
-
     with pytest.warns(None) as record:
-        prompt = ChatPromptTemplate([("system", "{model_json_schema}")])
-        foo = prompt.get_input_schema()
+        prompt = ChatPromptTemplate([("system", "{schema}")])
+        prompt.get_input_schema()
 
-    # If warnings were captured, print them
     if record:
         error_msg = []
         for warning in record:
@@ -887,5 +884,14 @@ def test_chat_prompt_template() -> None:
                 f"Warning location: {warning.filename}:{warning.lineno}"
             )
         msg = "\n".join(error_msg)
+    else:
+        msg = ""
 
-        raise AssertionError(msg)
+    assert list(record) == [], msg
+
+    # Verify value errors raised from illegal names
+    with pytest.raises(ValueError):
+        ChatPromptTemplate([("system", "{_private}")])
+
+    with pytest.raises(ValueError):
+        ChatPromptTemplate([("system", "{model_json_schema}")])
