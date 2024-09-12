@@ -620,7 +620,7 @@ files = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.0.dev1"
+version = "0.3.0.dev5"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -629,7 +629,7 @@ develop = true
 
 [package.dependencies]
 jsonpatch = "^1.33"
-langsmith = "^0.1.75"
+langsmith = "^0.1.117"
 packaging = ">=23.2,<25"
 pydantic = "^2.7.4"
 PyYAML = ">=5.3"
@@ -642,13 +642,13 @@ url = "../../core"
 
 [[package]]
 name = "langsmith"
-version = "0.1.115"
+version = "0.1.118"
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "langsmith-0.1.115-py3-none-any.whl", hash = "sha256:04e35cfd4c2d4ff1ea10bb577ff43957b05ebb3d9eb4e06e200701f4a2b4ac9f"},
-    {file = "langsmith-0.1.115.tar.gz", hash = "sha256:3b775377d858d32354f3ee0dd1ed637068cfe9a1f13e7b3bfa82db1615cdffc9"},
+    {file = "langsmith-0.1.118-py3-none-any.whl", hash = "sha256:f017127b3efb037da5e46ff4f8583e8192e7955191737240c327f3eadc144d7c"},
+    {file = "langsmith-0.1.118.tar.gz", hash = "sha256:ff1ca06c92c6081250244ebbce5d0bb347b9d898d2e9b60a13b11f0f0720f09f"},
 ]
 
 [package.dependencies]
@@ -2056,4 +2056,4 @@ fastembed = ["fastembed"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0"
-content-hash = "5ee9ce7ba2e1f6f2cc0ef47c529c25da7c1e67cf49768624789eeeddfe40be6d"
+content-hash = "97912fb88d52004e107efe17259b1e31e03bf5134d5b28694cfe6b65b8402c1a"
