@@ -1,4 +1,14 @@
-from typing import Any, AsyncIterator, Callable, Dict, Iterator, List, Mapping, Optional
+from typing import (
+    Any,
+    AsyncIterator,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Union,
+)
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -14,7 +24,6 @@ from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
-    ChatMessage,
     HumanMessage,
     SystemMessage,
 )
@@ -27,6 +36,7 @@ from langchain_core.utils import (
 from langchain_core.utils.utils import build_extra_kwargs, convert_to_secret_str
 
 try:
+    from reka import ChatMessage
     from reka.client import AsyncReka, Reka
 except ImportError:
     raise ValueError(
@@ -42,20 +52,28 @@ REKA_MODELS = [
 DEFAULT_REKA_MODEL = "reka-flash"
 
 
-def get_role(message: BaseMessage) -> str:
-    """Get the role of the message."""
-    if isinstance(message, (ChatMessage, HumanMessage)):
-        return "user"
-    elif isinstance(message, AIMessage):
-        return "assistant"
-    elif isinstance(message, SystemMessage):
-        return "system"
+def process_content_item(item: Dict[str, Any]) -> Dict[str, Any]:
+    """Process a single content item."""
+    if item["type"] == "image_url":
+        image_url = item["image_url"]
+        if isinstance(image_url, dict) and "url" in image_url:
+            # If it's in LangChain format, extract the URL value
+            item["image_url"] = image_url["url"]
+    return item
+
+
+def process_content(content: Union[str, List[Dict[str, Any]]]) -> List[Dict[str, Any]]:
+    """Process content to handle both text and media inputs, returning a list of content items."""
+    if isinstance(content, str):
+        return [{"type": "text", "text": content}]
+    elif isinstance(content, list):
+        return [process_content_item(item) for item in content]
     else:
-        raise ValueError(f"Got unknown type {message}")
+        raise ValueError("Invalid content format")
 
 
-def process_messages_for_reka(messages: List[BaseMessage]) -> List[Dict[str, str]]:
-    """Process messages for Reka format."""
+def convert_to_reka_messages(messages: List[Any]) -> List[ChatMessage]:
+    """Convert LangChain messages to Reka ChatMessage format."""
     reka_messages = []
     system_message = None
 
@@ -65,12 +83,20 @@ def process_messages_for_reka(messages: List[BaseMessage]) -> List[Dict[str, str
                 system_message = message.content
             else:
                 raise ValueError("Multiple system messages are not supported.")
-        else:
-            content = message.content
-            if system_message and isinstance(message, HumanMessage):
-                content = f"{system_message}\n{content}"
+        elif isinstance(message, HumanMessage):
+            content = process_content(message.content)
+            if system_message:
+                if isinstance(content[0], dict) and content[0].get("type") == "text":
+                    content[0]["text"] = f"{system_message}\n{content[0]['text']}"
+                else:
+                    content.insert(0, {"type": "text", "text": system_message})
                 system_message = None
-            reka_messages.append({"role": get_role(message), "content": content})
+            reka_messages.append(ChatMessage(content=content, role="user"))
+        elif isinstance(message, AIMessage):
+            content = process_content(message.content)
+            reka_messages.append(ChatMessage(content=content, role="assistant"))
+        else:
+            raise ValueError(f"Unsupported message type: {type(message)}")
 
     return reka_messages
 
@@ -118,8 +144,6 @@ class RekaCommon(BaseLanguageModel):
         )
 
         try:
-            from reka.client import AsyncReka, Reka
-
             values["client"] = Reka(
                 api_key=values["reka_api_key"].get_secret_value(),
             )
@@ -166,7 +190,7 @@ class ChatReka(BaseChatModel, RekaCommon):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        reka_messages = process_messages_for_reka(messages)
+        reka_messages = convert_to_reka_messages(messages)
         params = {**self._default_params, **kwargs}
         if stop:
             params["stop"] = stop
@@ -187,12 +211,14 @@ class ChatReka(BaseChatModel, RekaCommon):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
-        reka_messages = process_messages_for_reka(messages)
+        reka_messages = convert_to_reka_messages(messages)
         params = {**self._default_params, **kwargs}
         if stop:
             params["stop"] = stop
 
-        stream = self.async_client.chat.create_stream(messages=reka_messages, **params)
+        stream = await self.async_client.chat.create_stream(
+            messages=reka_messages, **params
+        )
 
         async for chunk in stream:
             content = chunk.responses[0].chunk.content
@@ -213,7 +239,7 @@ class ChatReka(BaseChatModel, RekaCommon):
                 self._stream(messages, stop=stop, run_manager=run_manager, **kwargs)
             )
 
-        reka_messages = process_messages_for_reka(messages)
+        reka_messages = convert_to_reka_messages(messages)
         params = {**self._default_params, **kwargs}
         if stop:
             params["stop"] = stop
@@ -234,7 +260,7 @@ class ChatReka(BaseChatModel, RekaCommon):
                 self._astream(messages, stop=stop, run_manager=run_manager, **kwargs)
             )
 
-        reka_messages = process_messages_for_reka(messages)
+        reka_messages = convert_to_reka_messages(messages)
         params = {**self._default_params, **kwargs}
         if stop:
             params["stop"] = stop
