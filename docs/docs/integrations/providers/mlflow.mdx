@@ -6,7 +6,7 @@
 
 ## Installation and Setup
 
-Install `mlflow` with MLflow Deployments dependencies:
+Install `mlflow` with MLflow GenAI dependencies:
 
 ```sh
 pip install 'mlflow[genai]'
@@ -39,7 +39,7 @@ endpoints:
         openai_api_key: $OPENAI_API_KEY
 ```
 
-Start the deployments server:
+Start the gateway server:
 
 ```sh
 mlflow gateway start --config-path /path/to/config.yaml
