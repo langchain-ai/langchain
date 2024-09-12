@@ -19,62 +19,137 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.utils import get_from_dict_or_env, pre_init
+from langchain_core.pydantic_v1 import Field, SecretStr
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 
 
 class ChatSambaNovaCloud(BaseChatModel):
     """
     SambaNova Cloud chat model.
-    To use, you should have the environment variables
-    ``SAMBANOVA_URL`` set with your SambaNova Cloud URL.
-    ``SAMBANOVA_API_KEY`` set with your SambaNova Cloud API Key.
-    http://cloud.sambanova.ai/
-    Example:
-    .. code-block:: python
-        ChatSambaNovaCloud(
-            base_url = SambaNova cloud endpoint URL,
-            api_key = set with your SambaNova cloud API key,
-            model = model name,
-            streaming = set True for streaming
-            max_tokens = max number of tokens to generate,
-            temperature = model temperature,
-            top_p = model top p,
-            top_k = model top k,
-            stream_options = include usage to get generation metrics
-        )
+
+    Setup:
+        To use, you should have the environment variables
+        ``SAMBANOVA_URL`` set with your SambaNova Cloud URL.
+        ``SAMBANOVA_API_KEY`` set with your SambaNova Cloud API Key.
+        http://cloud.sambanova.ai/
+        Example:
+        .. code-block:: python
+            ChatSambaNovaCloud(
+                sambanova_url = SambaNova cloud endpoint URL,
+                sambanova_api_key = set with your SambaNova cloud API key,
+                model = model name,
+                streaming = set True for use streaming API
+                max_tokens = max number of tokens to generate,
+                temperature = model temperature,
+                top_p = model top p,
+                top_k = model top k,
+                stream_options = include usage to get generation metrics
+            )
+
+    Key init args — completion params:
+        model: str
+            The name of the model to use, e.g., llama3-8b.
+        streaming: bool
+            Whether to use streaming or not
+        max_tokens: int
+            max tokens to generate
+        temperature: float
+            model temperature
+        top_p: float
+            model top p
+        top_k: int
+            model top k
+        stream_options: dict
+            stream options, include usage to get generation metrics
+
+    Key init args — client params:
+        sambanova_url: str
+            SambaNova Cloud Url
+        sambanova_api_key: str
+            SambaNova Cloud api key
+
+    Instantiate:
+        .. code-block:: python
+
+            from langchain_community.chat_models import ChatSambaNovaCloud
+
+            chat = ChatSambaNovaCloud(
+                sambanova_url = SambaNova cloud endpoint URL,
+                sambanova_api_key = set with your SambaNova cloud API key,
+                model = model name,
+                streaming = set True for streaming
+                max_tokens = max number of tokens to generate,
+                temperature = model temperature,
+                top_p = model top p,
+                top_k = model top k,
+                stream_options = include usage to get generation metrics
+            )
+    Invoke:
+        .. code-block:: python
+            messages = [
+                SystemMessage(content="your are an AI assistant."),
+                HumanMessage(content="tell me a joke."),
+            ]
+            response = chat.invoke(messages)
+
+    Stream:
+        .. code-block:: python
+
+        for chunk in chat.stream(messages):
+            print(chunk.content, end="", flush=True)
+
+    Async:
+        .. code-block:: python
+
+        response = chat.ainvoke(messages)
+        await response
+
+
+    Response metadata
+        .. code-block:: python
+
+        response = chat.invoke(messages)
+        print(response.response_metadata)
     """
 
-    base_url: str = ""
+    sambanova_url: str = Field(default="", alias="base_url")
     """SambaNova Cloud Url"""
 
-    api_key: str = ""
+    sambanova_api_key: SecretStr = Field(default="", alias="api_key")
     """SambaNova Cloud api key"""
 
-    model: str = "llama3-8b"
+    model: str = Field(default="llama3-8b")
     """The name of the model"""
 
-    streaming: bool = False
+    streaming: bool = Field(default=False)
     """Whether to use streaming or not"""
 
-    max_tokens: int = 1024
+    max_tokens: int = Field(default=1024)
     """max tokens to generate"""
 
-    temperature: float = 0.7
+    temperature: float = Field(default=0.7)
     """model temperature"""
 
-    top_p: float = 0.0
+    top_p: float = Field(default=0.0)
     """model top p"""
 
-    top_k: int = 1
+    top_k: int = Field(default=1)
     """model top k"""
 
-    stream_options: dict = {"include_usage": True}
+    stream_options: dict = Field(default={"include_usage": True})
     """stream options, include usage to get generation metrics"""
+
+    class Config:
+        allow_population_by_field_name = True
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
         """Return whether this model can be serialized by Langchain."""
-        return True
+        return False
+
+    @property
+    def lc_secrets(self) -> Dict[str, str]:
+        return {"sambanova_api_key": "sambanova_api_key"}
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:
@@ -103,11 +178,13 @@ class ChatSambaNovaCloud(BaseChatModel):
         """Validate that api key and python package exists in environment."""
         values["base_url"] = get_from_dict_or_env(
             values,
-            "base_url",
+            "sambanova_url",
             "SAMBANOVA_URL",
             default="https://api.sambanova.ai/v1/chat/completions",
         )
-        values["api_key"] = get_from_dict_or_env(values, "api_key", "SAMBANOVA_API_KEY")
+        values["api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(values, "sambanova_api_key", "SAMBANOVA_API_KEY")
+        )
         return values
 
     def _handle_request(
@@ -134,9 +211,9 @@ class ChatSambaNovaCloud(BaseChatModel):
         }
         http_session = requests.Session()
         response = http_session.post(
-            self.base_url,
+            self.sambanova_url,
             headers={
-                "Authorization": f"Bearer {self.api_key}",
+                "Authorization": f"Bearer {self.sambanova_api_key.get_secret_value()}",
                 "Content-Type": "application/json",
             },
             json=data,
@@ -189,9 +266,9 @@ class ChatSambaNovaCloud(BaseChatModel):
         }
         http_session = requests.Session()
         response = http_session.post(
-            self.base_url,
+            self.sambanova_url,
             headers={
-                "Authorization": f"Bearer {self.api_key}",
+                "Authorization": f"Bearer {self.sambanova_api_key.get_secret_value()}",
                 "Content-Type": "application/json",
             },
             json=data,
@@ -352,9 +429,7 @@ class ChatSambaNovaCloud(BaseChatModel):
         """
         messages_dicts = self._create_message_dicts(messages)
         finish_reason = None
-        count = 0
         for partial_response in self._handle_streaming_request(messages_dicts, stop):
-            count += 1
             if len(partial_response["choices"]) > 0:
                 finish_reason = partial_response["choices"][0].get("finish_reason")
                 content = partial_response["choices"][0]["delta"]["content"]
