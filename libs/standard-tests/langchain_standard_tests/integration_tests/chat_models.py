@@ -321,9 +321,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         )
         assert isinstance(setup_result, Joke)
 
-        joke_result = chat.invoke(
-            "Give me the setup to a joke about cats, include the punchline."
-        )
+        joke_result = chat.invoke("Give me a joke about cats, include the punchline.")
         assert isinstance(joke_result, Joke)
 
     def test_tool_message_histories_string_content(self, model: BaseChatModel) -> None:
