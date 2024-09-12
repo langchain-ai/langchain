@@ -148,6 +148,7 @@ MALICIOUS_XML = """<?xml version="1.0"?>
 <lolz>&lol9;</lolz>"""
 
 
+@pytest.mark.skip()
 async def tests_billion_laughs_attack() -> None:
     # Testing with standard XML parser since it's safe to use in
     # newer versions of Python

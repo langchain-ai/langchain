@@ -453,11 +453,7 @@
                 'type': dict({
                   'const': 'ai',
                   'default': 'ai',
-                  'enum': list([
-                    'ai',
-                  ]),
                   'title': 'Type',
-                  'type': 'string',
                 }),
                 'usage_metadata': dict({
                   'anyOf': list([
@@ -569,11 +565,7 @@
                 'type': dict({
                   'const': 'AIMessageChunk',
                   'default': 'AIMessageChunk',
-                  'enum': list([
-                    'AIMessageChunk',
-                  ]),
                   'title': 'Type',
-                  'type': 'string',
                 }),
                 'usage_metadata': dict({
                   'anyOf': list([
@@ -657,11 +649,7 @@
                 'type': dict({
                   'const': 'chat',
                   'default': 'chat',
-                  'enum': list([
-                    'chat',
-                  ]),
                   'title': 'Type',
-                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -735,11 +723,7 @@
                 'type': dict({
                   'const': 'ChatMessageChunk',
                   'default': 'ChatMessageChunk',
-                  'enum': list([
-                    'ChatMessageChunk',
-                  ]),
                   'title': 'Type',
-                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -810,11 +794,7 @@
                 'type': dict({
                   'const': 'function',
                   'default': 'function',
-                  'enum': list([
-                    'function',
-                  ]),
                   'title': 'Type',
-                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -876,11 +856,7 @@
                 'type': dict({
                   'const': 'FunctionMessageChunk',
                   'default': 'FunctionMessageChunk',
-                  'enum': list([
-                    'FunctionMessageChunk',
-                  ]),
                   'title': 'Type',
-                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -978,11 +954,7 @@
                 'type': dict({
                   'const': 'human',
                   'default': 'human',
-                  'enum': list([
-                    'human',
-                  ]),
                   'title': 'Type',
-                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -1056,11 +1028,7 @@
                 'type': dict({
                   'const': 'HumanMessageChunk',
                   'default': 'HumanMessageChunk',
-                  'enum': list([
-                    'HumanMessageChunk',
-                  ]),
                   'title': 'Type',
-                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -1123,11 +1091,7 @@
                 }),
                 'type': dict({
                   'const': 'invalid_tool_call',
-                  'enum': list([
-                    'invalid_tool_call',
-                  ]),
                   'title': 'Type',
-                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -1222,11 +1186,7 @@
                 'type': dict({
                   'const': 'system',
                   'default': 'system',
-                  'enum': list([
-                    'system',
-                  ]),
                   'title': 'Type',
-                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -1295,11 +1255,7 @@
                 'type': dict({
                   'const': 'SystemMessageChunk',
                   'default': 'SystemMessageChunk',
-                  'enum': list([
-                    'SystemMessageChunk',
-                  ]),
                   'title': 'Type',
-                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -1347,11 +1303,7 @@
                 }),
                 'type': dict({
                   'const': 'tool_call',
-                  'enum': list([
-                    'tool_call',
-                  ]),
                   'title': 'Type',
-                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -1429,11 +1381,7 @@
                 }),
                 'type': dict({
                   'const': 'tool_call_chunk',
-                  'enum': list([
-                    'tool_call_chunk',
-                  ]),
                   'title': 'Type',
-                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -1561,11 +1509,7 @@
                 'type': dict({
                   'const': 'tool',
                   'default': 'tool',
-                  'enum': list([
-                    'tool',
-                  ]),
                   'title': 'Type',
-                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -1652,11 +1596,7 @@
                 'type': dict({
                   'const': 'ToolMessageChunk',
                   'default': 'ToolMessageChunk',
-                  'enum': list([
-                    'ToolMessageChunk',
-                  ]),
                   'title': 'Type',
-                  'type': 'string',
                 }),
               }),
               'required': list([
