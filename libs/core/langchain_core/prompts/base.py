@@ -29,7 +29,7 @@ from langchain_core.prompt_values import (
 )
 from langchain_core.runnables import RunnableConfig, RunnableSerializable
 from langchain_core.runnables.config import ensure_config
-from langchain_core.runnables.utils import create_model
+from langchain_core.utils.pydantic import create_model_v2
 
 if TYPE_CHECKING:
     from langchain_core.documents import Document
@@ -125,8 +125,9 @@ class BasePromptTemplate(
         optional_input_variables = {
             k: (self.input_types.get(k, str), None) for k in self.optional_variables
         }
-        return create_model(
-            "PromptInput", **{**required_input_variables, **optional_input_variables}
+        return create_model_v2(
+            "PromptInput",
+            field_definitions={**required_input_variables, **optional_input_variables},
         )
 
     def _validate_input(self, inner_input: Any) -> Dict:
