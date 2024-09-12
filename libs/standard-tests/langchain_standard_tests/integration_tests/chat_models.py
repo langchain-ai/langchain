@@ -302,6 +302,30 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(chunk, dict)  # for mypy
         assert set(chunk.keys()) == {"setup", "punchline"}
 
+    def test_structured_output_optional_param(self, model: BaseChatModel) -> None:
+        """Test to verify structured output with an optional param."""
+        if not self.has_tool_calling:
+            pytest.skip("Test requires tool calling.")
+
+        class Joke(BaseModel):
+            """Joke to tell user."""
+
+            setup: str = Field(description="question to set up a joke")
+            punchline: Optional[str] = Field(
+                default=None, description="answer to resolve the joke"
+            )
+
+        chat = model.with_structured_output(Joke)  # type: ignore[arg-type]
+        setup_result = chat.invoke(
+            "Give me the setup to a joke about cats, no punchline."
+        )
+        assert isinstance(setup_result, Joke)
+
+        joke_result = chat.invoke(
+            "Give me the setup to a joke about cats, include the punchline."
+        )
+        assert isinstance(joke_result, Joke)
+
     def test_tool_message_histories_string_content(self, model: BaseChatModel) -> None:
         """
         Test that message histories are compatible with string tool contents
