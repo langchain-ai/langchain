@@ -3,23 +3,11 @@
 from __future__ import annotations
 
 import inspect
+import pydantic
 import textwrap
 import warnings
+from contextlib import nullcontext
 from functools import lru_cache, wraps
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Type,
-    TypeVar,
-    Union,
-    cast,
-    overload,
-)
-
-import pydantic
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -37,6 +25,18 @@ from pydantic.json_schema import (
     JsonSchemaValue,
 )
 from pydantic_core import core_schema
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+    overload,
+)
 
 
 def get_pydantic_major_version() -> int:
@@ -507,6 +507,43 @@ def create_model(
     )
 
 
+# Deprecated and not used by the code base.
+_OK_TO_OVERWRITE = {
+    "construct",
+    "copy",
+    "dict",
+    "from_orm",
+    "json",
+    "parse_file",
+    "parse_obj",
+    "parse_raw",
+    "schema",
+    "schema_json",
+    "update_forward_refs",
+    "validate",
+}
+
+# These are reserved by pydantic.
+_RESERVED_NAMES = {
+    "model_computed_fields",
+    "model_config",
+    "model_construct",
+    "model_copy",
+    "model_dump",
+    "model_dump_json",
+    "model_extra",
+    "model_fields",
+    "model_fields_set",
+    "model_json_schema",
+    "model_parametrized_name",
+    "model_post_init",
+    "model_rebuild",
+    "model_validate",
+    "model_validate_json",
+    "model_validate_strings",
+}
+
+
 def create_model_v2(
     model_name: str,
     *,
@@ -524,7 +561,8 @@ def create_model_v2(
         model_name: The name of the model.
         module_name: The name of the module where the model is defined.
             This is used by Pydantic to resolve any forward references.
-        **field_definitions: The field definitions for the model.
+        field_definitions: The field definitions for the model.
+        root: Type for a root model (RootModel)
 
     Returns:
         Type[BaseModel]: The created model.
@@ -553,10 +591,46 @@ def create_model_v2(
                 **kwargs,
             )
         return named_root_model
-    try:
-        return _create_model_cached(model_name, **field_definitions)
-    except TypeError:
-        # something in field definitions is not hashable
-        return _create_model_base(
-            model_name, __config__=_SchemaConfig, **field_definitions
+
+    # No root, just field definitions
+    names = set(field_definitions.keys())
+
+    if _RESERVED_NAMES & names:
+        raise ValueError(
+            f"The following names are reserved by Pydantic: {_RESERVED_NAMES & names} "
+            f"and cannot be used as a field name. Try to use a different name."
         )
+
+    # Likely common names that Pydantic will throw a run time warning about,
+    # but these names should be safe to override.
+    if _OK_TO_OVERWRITE & names:
+        # Capture warnings
+        capture_warnings = True
+    else:
+        capture_warnings = False
+
+    for name in names:
+        # Also if any non-reserved name is used (e.g., model_id or model_name)
+        if name.startswith("model"):
+            capture_warnings = True
+
+        if name.startswith("_"):  # Private attribute
+            # Pydantic 2 treats fields starting with `_` as private attributes.
+            # For now, we will raise an error if a field name starts with `_`.
+            # We will try to remove this restriction in the future.
+            raise ValueError(
+                f"Unable to use the field name {name} as "
+                f"it is prefixed with a `_` attribute. "
+                f"Please remove the `_` prefix."
+            )
+
+    with warnings.catch_warnings() if capture_warnings else nullcontext():
+        if capture_warnings:
+            warnings.filterwarnings(action="ignore")
+        try:
+            return _create_model_cached(model_name, **field_definitions)
+        except TypeError:
+            # something in field definitions is not hashable
+            return _create_model_base(
+                model_name, __config__=_SchemaConfig, **field_definitions
+            )
