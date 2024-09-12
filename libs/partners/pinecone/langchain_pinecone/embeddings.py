@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from typing import Any, Dict, Iterable, List, Optional
 
@@ -85,6 +86,15 @@ class PineconeEmbeddings(BaseModel, Embeddings):
                     values[key] = value
         return values
 
+    async def _init_async_client(self, api_key: str) -> None:
+        self._async_client = aiohttp.ClientSession(
+            headers={
+                "Api-Key": api_key,
+                "Content-Type": "application/json",
+                "X-Pinecone-API-Version": "2024-07",
+            }
+        )
+
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate that Pinecone version and credentials exist in environment."""
@@ -94,13 +104,8 @@ class PineconeEmbeddings(BaseModel, Embeddings):
 
         # initialize async client
         if not self._async_client:
-            self._async_client = aiohttp.ClientSession(
-                headers={
-                    "Api-Key": api_key_str,
-                    "Content-Type": "application/json",
-                    "X-Pinecone-API-Version": "2024-07",
-                }
-            )
+            asyncio.run(self._init_async_client(api_key_str))
+
         return self
 
     def _get_batch_iterator(self, texts: List[str]) -> Iterable:
