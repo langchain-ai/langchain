@@ -1,3 +1,4 @@
+import inspect
 import json  # type: ignore[import-not-found]
 import logging
 import os
@@ -211,20 +212,31 @@ class HuggingFaceEndpoint(LLM):
                     "Please check your API token."
                 ) from e
 
+        
         from huggingface_hub import AsyncInferenceClient, InferenceClient
 
+        # Instantiate clients with supported kwargs
+        sync_supported_kwargs = set(inspect.signature(InferenceClient).parameters)
         values["client"] = InferenceClient(
             model=values["model"],
             timeout=values["timeout"],
             token=huggingfacehub_api_token,
-            **values["server_kwargs"],
+            **{key: value for key, value in values["server_kwargs"].items() if key in sync_supported_kwargs},
         )
+        async_supported_kwargs = set(inspect.signature(AsyncInferenceClient).parameters)
         values["async_client"] = AsyncInferenceClient(
             model=values["model"],
             timeout=values["timeout"],
             token=huggingfacehub_api_token,
-            **values["server_kwargs"],
+            **{key: value for key, value in values["server_kwargs"].items() if key in async_supported_kwargs},
         )
+
+        # Warn on unused ignored kwargs
+        ignored_kwargs = set(values["server_kwargs"].keys()) - sync_supported_kwargs - async_supported_kwargs
+        if len(ignored_kwargs) > 0:
+            logger.warning(
+                f"Ignoring following parameters as they are not supported by the InferenceClient or AsyncInferenceClient: {ignored_kwargs}."
+            )
 
         return values
 
