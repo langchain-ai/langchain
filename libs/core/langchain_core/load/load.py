@@ -19,6 +19,7 @@ DEFAULT_NAMESPACES = [
     "langchain_anthropic",
     "langchain_groq",
     "langchain_google_genai",
+    "langchain_aws",
 ]
 
 ALL_SERIALIZABLE_MAPPINGS = {
@@ -96,16 +97,11 @@ class Reviver:
             if len(namespace) == 1 and namespace[0] == "langchain":
                 raise ValueError(f"Invalid namespace: {value}")
 
-            # If namespace is in known namespaces, try to use mapping
-            if namespace[0] in DEFAULT_NAMESPACES:
-                # Get the importable path
-                key = tuple(namespace + [name])
-                if key not in ALL_SERIALIZABLE_MAPPINGS:
-                    raise ValueError(
-                        "Trying to deserialize something that cannot "
-                        "be deserialized in current version of langchain-core: "
-                        f"{key}"
-                    )
+            # If namespace is in mapping, used custom path
+            if (
+                namespace[0] in DEFAULT_NAMESPACES
+                and (key := tuple(namespace + [name])) in ALL_SERIALIZABLE_MAPPINGS
+            ):
                 import_path = ALL_SERIALIZABLE_MAPPINGS[key]
                 # Split into module and name
                 import_dir, import_obj = import_path[:-1], import_path[-1]
