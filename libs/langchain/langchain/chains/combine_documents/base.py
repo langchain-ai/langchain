@@ -247,9 +247,9 @@ class AnalyzeDocumentChain(Chain):
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
     ) -> Type[BaseModel]:
-        return create_model(
+        return create_model_v2(
             "AnalyzeDocumentChain",
-            **{self.input_key: (str, None)},  # type: ignore[call-overload]
+            field_definitions={self.input_key: (str, None)},  # type: ignore[call-overload]
         )
 
     def get_output_schema(
