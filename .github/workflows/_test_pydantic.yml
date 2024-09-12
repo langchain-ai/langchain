@@ -8,6 +8,7 @@ on:
         type: string
         description: "From which folder this pipeline executes"
       python-version:
+        required: false
         type: string
         description: "Python version to use"
         default: "3.11"
