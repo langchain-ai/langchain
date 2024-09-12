@@ -1,4 +1,5 @@
 import sys
+from typing import Optional
 
 if sys.version_info >= (3, 11):
     import tomllib
@@ -46,7 +47,7 @@ def get_min_version(version: str) -> str:
     raise ValueError(f"Unrecognized version format: {version}")
 
 
-def get_min_version_from_toml(toml_path: str, versions_for: str):
+def get_min_version_from_toml(toml_path: str, versions_for: str, *, include: Optional[list] = None):
     # Parse the TOML file
     with open(toml_path, "rb") as file:
         toml_data = tomllib.load(file)
@@ -65,6 +66,8 @@ def get_min_version_from_toml(toml_path: str, versions_for: str):
             continue
         # Check if the lib is present in the dependencies
         if lib in dependencies:
+            if include and lib not in include:
+                continue
             # Get the version string
             version_string = dependencies[lib]
 

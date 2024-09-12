@@ -2,11 +2,12 @@ import glob
 import json
 import os
 import sys
-import tomllib
 from collections import defaultdict
-from typing import Dict, List, Set, Optional
+from typing import Dict, List, Set
 from pathlib import Path
-import requests
+import tomllib
+
+from .get_min_versions import get_min_version_from_toml
 
 
 LANGCHAIN_DIRS = [
@@ -105,13 +106,27 @@ def add_dependents(dirs_to_eval: Set[str], dependents: dict) -> List[str]:
 
 def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
     if job == "test-pydantic":
-        if (pydantic_version := _get_latest_version("pydantic")) and pydantic_version.startswith("2."):
-            latest_pydantic_minor = pydantic_version.split(".")[1]
-        else:
-            # Fallback to latest 2.x version as of 09.12.24
-            latest_pydantic_minor = 9
-        return [{"working-directory": dir_, "pydantic-version": f"2.{v}"} for v in
-                range(5, latest_pydantic_minor + 1)]
+        with open("/libs/core/poetry.lock", 'r') as f:
+            poetry_lock_data = tomllib.load(f)
+        for package in poetry_lock_data['package']:
+            if package['name'] == "pydantic":
+                core_pydantic_max_minor = package['version'].split(".")[1]
+        with open(dir_ + "/poetry.lock", 'r') as f:
+            poetry_lock_data = tomllib.load(f)
+        for package in poetry_lock_data['package']:
+            if package['name'] == "pydantic":
+                dir_pydantic_max_minor = package['version'].split(".")[1]
+
+        core_pydantic_min_minor = get_min_version_from_toml("/libs/core/pyproject.toml", "release", include=["pydantic"])['pydantic'].split(".")[1]
+        dir_pydantic_min_minor = get_min_version_from_toml(dir_ + "/pyproject.toml", "release", include=["pydantic"]).get("pydantic", "0.0.0").split(".")[1]
+
+        pydantic_max_minor = min(int(dir_pydantic_max_minor), int(core_pydantic_max_minor))
+        pydantic_min_minor = max(int(dir_pydantic_min_minor), int(core_pydantic_min_minor))
+
+        return [
+            {"working-directory": dir_, "pydantic-version": f"2.{v}"}
+            for v in range(pydantic_min_minor, pydantic_max_minor + 1)
+        ]
 
     if dir_ == "libs/core":
         py_versions = ["3.9", "3.10", "3.11", "3.12"]
@@ -132,10 +147,7 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
     else:
         py_versions = ["3.9", "3.12"]
 
-    return [
-        {"working-directory": dir_, "python-version": py_v}
-        for py_v in py_versions
-    ]
+    return [{"working-directory": dir_, "python-version": py_v} for py_v in py_versions]
 
 
 def _get_configs_for_multi_dirs(
@@ -146,31 +158,18 @@ def _get_configs_for_multi_dirs(
             dirs_to_run["lint"] | dirs_to_run["test"] | dirs_to_run["extended-test"],
             dependents,
         )
-    elif job in ["test", "compile-integration-tests", "dependencies"]:
+    elif job in ["test", "compile-integration-tests", "dependencies", "test-pydantic"]:
         dirs = add_dependents(
             dirs_to_run["test"] | dirs_to_run["extended-test"], dependents
         )
     elif job == "extended-tests":
         dirs = list(dirs_to_run["extended-test"])
-    elif job == "test-pydantic":
-        dirs = list(dirs_to_run["test"])
     else:
         raise ValueError(f"Unknown job: {job}")
 
     return [
         config for dir_ in dirs for config in _get_configs_for_single_dir(job, dir_)
     ]
-
-
-def _get_latest_version(package_name: str) -> Optional[str]:
-    url = f"https://pypi.org/pypi/{package_name}/json"
-    response = requests.get(url)
-    if response.status_code == 200:
-        data = response.json()
-        return data['info']['version']
-    else:
-        raise None
-
 
 
 if __name__ == "__main__":
