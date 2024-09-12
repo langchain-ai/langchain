@@ -212,7 +212,6 @@ class HuggingFaceEndpoint(LLM):
                     "Please check your API token."
                 ) from e
 
-        
         from huggingface_hub import AsyncInferenceClient, InferenceClient
 
         # Instantiate clients with supported kwargs
