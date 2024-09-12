@@ -63,10 +63,14 @@ class Reviver:
             else DEFAULT_NAMESPACES
         )
         self.additional_import_mappings = additional_import_mappings or dict()
-        self.import_mappings = {
-            **ALL_SERIALIZABLE_MAPPINGS,
-            **self.additional_import_mappings,
-        } if self.additional_import_mappings else ALL_SERIALIZABLE_MAPPINGS
+        self.import_mappings = (
+            {
+                **ALL_SERIALIZABLE_MAPPINGS,
+                **self.additional_import_mappings,
+            }
+            if self.additional_import_mappings
+            else ALL_SERIALIZABLE_MAPPINGS
+        )
 
     def __call__(self, value: Dict[str, Any]) -> Any:
         if (
