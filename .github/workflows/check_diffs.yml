@@ -31,6 +31,7 @@ jobs:
         uses: Ana06/get-changed-files@v2.2.0
       - id: set-matrix
         run: |
+          python -m pip install packaging
           python .github/scripts/check_diff.py ${{ steps.files.outputs.all }} >> $GITHUB_OUTPUT
     outputs:
       lint: ${{ steps.set-matrix.outputs.lint }}
