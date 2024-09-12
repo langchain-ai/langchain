@@ -22,9 +22,9 @@ from langchain_core.runnables.passthrough import RunnablePassthrough
 from langchain_core.runnables.utils import (
     ConfigurableFieldSpec,
     Output,
-    create_model,
     get_unique_config_specs,
 )
+from langchain_core.utils.pydantic import create_model_v2
 
 if TYPE_CHECKING:
     from langchain_core.language_models.base import LanguageModelLike
@@ -386,10 +386,15 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         elif self.input_messages_key:
             fields[self.input_messages_key] = (Sequence[BaseMessage], ...)
         else:
-            fields["__root__"] = (Sequence[BaseMessage], ...)
-        return create_model(  # type: ignore[call-overload]
+            return create_model_v2(
+                "RunnableWithChatHistoryInput",
+                module_name=self.__class__.__module__,
+                root=(Sequence[BaseMessage], ...),
+            )
+        return create_model_v2(  # type: ignore[call-overload]
             "RunnableWithChatHistoryInput",
-            **fields,
+            field_definitions=fields,
+            module_name=self.__class__.__module__,
         )
 
     @property
@@ -419,10 +424,10 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         if inspect.isclass(root_type) and issubclass(root_type, BaseModel):
             return root_type
 
-        return create_model(
+        return create_model_v2(
             "RunnableWithChatHistoryOutput",
-            __root__=root_type,
-            __module_name=self.__class__.__module__,
+            root=root_type,
+            module_name=self.__class__.__module__,
         )
 
     def _is_not_async(self, *args: Sequence[Any], **kwargs: Dict[str, Any]) -> bool:

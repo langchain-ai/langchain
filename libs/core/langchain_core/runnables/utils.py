@@ -6,7 +6,6 @@ import ast
 import asyncio
 import inspect
 import textwrap
-import warnings
 from functools import lru_cache
 from inspect import signature
 from itertools import groupby
@@ -26,23 +25,16 @@ from typing import (
     Protocol,
     Sequence,
     Set,
-    Type,
     TypeVar,
     Union,
-    cast,
 )
 
-from pydantic import BaseModel, ConfigDict, PydanticDeprecationWarning, RootModel
-from pydantic import create_model as _create_model_base  # pydantic :ignore
-from pydantic.json_schema import (
-    DEFAULT_REF_TEMPLATE,
-    GenerateJsonSchema,
-    JsonSchemaMode,
-)
-from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import TypeGuard
 
 from langchain_core.runnables.schema import StreamEvent
+
+# Re-export create-model for backwards compatibility
+from langchain_core.utils.pydantic import create_model as create_model
 
 Input = TypeVar("Input", contravariant=True)
 # Output type should implement __concat__, as eg str, list, dict do
@@ -705,141 +697,6 @@ class _RootEventFilter:
             )
 
         return include
-
-
-_SchemaConfig = ConfigDict(arbitrary_types_allowed=True, frozen=True)
-
-NO_DEFAULT = object()
-
-
-def _create_root_model(
-    name: str,
-    type_: Any,
-    module_name: Optional[str] = None,
-    default_: object = NO_DEFAULT,
-) -> Type[BaseModel]:
-    """Create a base class."""
-
-    def schema(
-        cls: Type[BaseModel],
-        by_alias: bool = True,
-        ref_template: str = DEFAULT_REF_TEMPLATE,
-    ) -> Dict[str, Any]:
-        # Complains about schema not being defined in superclass
-        schema_ = super(cls, cls).schema(  # type: ignore[misc]
-            by_alias=by_alias, ref_template=ref_template
-        )
-        schema_["title"] = name
-        return schema_
-
-    def model_json_schema(
-        cls: Type[BaseModel],
-        by_alias: bool = True,
-        ref_template: str = DEFAULT_REF_TEMPLATE,
-        schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
-        mode: JsonSchemaMode = "validation",
-    ) -> Dict[str, Any]:
-        # Complains about model_json_schema not being defined in superclass
-        schema_ = super(cls, cls).model_json_schema(  # type: ignore[misc]
-            by_alias=by_alias,
-            ref_template=ref_template,
-            schema_generator=schema_generator,
-            mode=mode,
-        )
-        schema_["title"] = name
-        return schema_
-
-    base_class_attributes = {
-        "__annotations__": {"root": type_},
-        "model_config": ConfigDict(arbitrary_types_allowed=True),
-        "schema": classmethod(schema),
-        "model_json_schema": classmethod(model_json_schema),
-        "__module__": module_name or "langchain_core.runnables.utils",
-    }
-
-    if default_ is not NO_DEFAULT:
-        base_class_attributes["root"] = default_
-    with warnings.catch_warnings():
-        if isinstance(type_, type) and issubclass(type_, BaseModelV1):
-            warnings.filterwarnings(
-                action="ignore", category=PydanticDeprecationWarning
-            )
-        custom_root_type = type(name, (RootModel,), base_class_attributes)
-    return cast(Type[BaseModel], custom_root_type)
-
-
-@lru_cache(maxsize=256)
-def _create_root_model_cached(
-    __model_name: str,
-    type_: Any,
-    default_: object = NO_DEFAULT,
-    module_name: Optional[str] = None,
-) -> Type[BaseModel]:
-    return _create_root_model(
-        __model_name, type_, default_=default_, module_name=module_name
-    )
-
-
-def create_model(
-    __model_name: str,
-    __module_name: Optional[str] = None,
-    **field_definitions: Any,
-) -> Type[BaseModel]:
-    """Create a pydantic model with the given field definitions.
-
-    Args:
-        __model_name: The name of the model.
-        __module_name: The name of the module where the model is defined.
-            This is used by Pydantic to resolve any forward references.
-        **field_definitions: The field definitions for the model.
-
-    Returns:
-        Type[BaseModel]: The created model.
-    """
-
-    # Move this to caching path
-    if "__root__" in field_definitions:
-        if len(field_definitions) > 1:
-            raise NotImplementedError(
-                "When specifying __root__ no other "
-                f"fields should be provided. Got {field_definitions}"
-            )
-
-        arg = field_definitions["__root__"]
-        if isinstance(arg, tuple):
-            kwargs = {"type_": arg[0], "default_": arg[1]}
-        else:
-            kwargs = {"type_": arg}
-
-        try:
-            named_root_model = _create_root_model_cached(
-                __model_name, module_name=__module_name, **kwargs
-            )
-        except TypeError:
-            # something in the arguments into _create_root_model_cached is not hashable
-            named_root_model = _create_root_model(
-                __model_name,
-                module_name=__module_name,
-                **kwargs,
-            )
-        return named_root_model
-    try:
-        return _create_model_cached(__model_name, **field_definitions)
-    except TypeError:
-        # something in field definitions is not hashable
-        return _create_model_base(
-            __model_name, __config__=_SchemaConfig, **field_definitions
-        )
-
-
-@lru_cache(maxsize=256)
-def _create_model_cached(
-    __model_name: str,
-    **field_definitions: Any,
-) -> Type[BaseModel]:
-    return _create_model_base(
-        __model_name, __config__=_SchemaConfig, **field_definitions
-    )
 
 
 def is_async_generator(

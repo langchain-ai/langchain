@@ -41,10 +41,10 @@ from langchain_core.runnables.graph import Graph
 from langchain_core.runnables.utils import (
     AddableDict,
     ConfigurableFieldSpec,
-    create_model,
 )
 from langchain_core.utils.aiter import atee, py_anext
 from langchain_core.utils.iter import safetee
+from langchain_core.utils.pydantic import create_model_v2
 
 if TYPE_CHECKING:
     from langchain_core.callbacks.manager import (
@@ -442,9 +442,8 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
             for name, field_info in map_output_schema.model_fields.items():
                 fields[name] = (field_info.annotation, field_info.default)
 
-            return create_model(  # type: ignore[call-overload]
-                "RunnableAssignOutput",
-                **fields,
+            return create_model_v2(  # type: ignore[call-overload]
+                "RunnableAssignOutput", field_definitions=fields
             )
         elif not issubclass(map_output_schema, RootModel):
             # ie. only map output is a dict

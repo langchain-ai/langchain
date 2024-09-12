@@ -87,7 +87,7 @@ def tool(
         .. code-block:: python
 
             {
-                "title": "fooSchema",
+                "title": "foo",
                 "description": "The foo.",
                 "type": "object",
                 "properties": {

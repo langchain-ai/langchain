@@ -45,6 +45,7 @@ lint_tests: PYTHON_FILES=tests
 lint_tests: MYPY_CACHE=.mypy_cache_test
 
 lint lint_diff lint_package lint_tests:
+	./scripts/check_pydantic.sh .
 	./scripts/lint_imports.sh .
 	./scripts/check_pickle.sh .
 	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff check $(PYTHON_FILES)

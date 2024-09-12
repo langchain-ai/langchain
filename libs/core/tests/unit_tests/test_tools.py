@@ -23,7 +23,7 @@ from typing import (
 
 import pytest
 from pydantic import BaseModel, Field, ValidationError
-from pydantic import BaseModel as BaseModelProper
+from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import Annotated, TypedDict, TypeVar
 
 from langchain_core import tools
@@ -73,6 +73,14 @@ def test_unnamed_decorator() -> None:
 
 
 class _MockSchema(BaseModel):
+    """Return the arguments directly."""
+
+    arg1: int
+    arg2: bool
+    arg3: Optional[dict] = None
+
+
+class _MockSchemaV1(BaseModelV1):
     """Return the arguments directly."""
 
     arg1: int
@@ -168,6 +176,13 @@ def test_decorator_with_specified_schema() -> None:
 
     assert isinstance(tool_func, BaseTool)
     assert tool_func.args_schema == _MockSchema
+
+    @tool(args_schema=_MockSchemaV1)
+    def tool_func_v1(arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
+        return f"{arg1} {arg2} {arg3}"
+
+    assert isinstance(tool_func_v1, BaseTool)
+    assert tool_func_v1.args_schema == _MockSchemaV1
 
 
 def test_decorated_function_schema_equivalent() -> None:
@@ -302,6 +317,51 @@ def test_structured_tool_types_parsed() -> None:
     assert result == expected
 
 
+def test_structured_tool_types_parsed_pydantic_v1() -> None:
+    """Test the non-primitive types are correctly passed to structured tools."""
+
+    class SomeBaseModel(BaseModelV1):
+        foo: str
+
+    class AnotherBaseModel(BaseModelV1):
+        bar: str
+
+    @tool
+    def structured_tool(some_base_model: SomeBaseModel) -> AnotherBaseModel:
+        """Return the arguments directly."""
+        return AnotherBaseModel(bar=some_base_model.foo)
+
+    assert isinstance(structured_tool, StructuredTool)
+
+    expected = AnotherBaseModel(bar="baz")
+    for arg in [
+        SomeBaseModel(foo="baz"),
+        SomeBaseModel(foo="baz").dict(),
+    ]:
+        args = {"some_base_model": arg}
+        result = structured_tool.run(args)
+        assert result == expected
+
+
+def test_structured_tool_types_parsed_pydantic_mixed() -> None:
+    """Test handling of tool with mixed Pydantic version arguments."""
+
+    class SomeBaseModel(BaseModelV1):
+        foo: str
+
+    class AnotherBaseModel(BaseModel):
+        bar: str
+
+    with pytest.raises(NotImplementedError):
+
+        @tool
+        def structured_tool(
+            some_base_model: SomeBaseModel, another_base_model: AnotherBaseModel
+        ) -> None:
+            """Return the arguments directly."""
+            pass
+
+
 def test_base_tool_inheritance_base_schema() -> None:
     """Test schema is correctly inferred when inheriting from BaseTool."""
 
@@ -359,7 +419,7 @@ def test_structured_tool_from_function_docstring() -> None:
             "baz": {"title": "Baz", "type": "string"},
         },
         "description": inspect.getdoc(foo),
-        "title": "fooSchema",
+        "title": "foo",
         "type": "object",
         "required": ["bar", "baz"],
     }
@@ -401,7 +461,7 @@ def test_structured_tool_from_function_docstring_complex_args() -> None:
             },
         },
         "description": inspect.getdoc(foo),
-        "title": "fooSchema",
+        "title": "foo",
         "type": "object",
         "required": ["bar", "baz"],
     }
@@ -502,7 +562,7 @@ def test_structured_tool_from_function_with_run_manager() -> None:
             "baz": {"title": "Baz", "type": "string"},
         },
         "description": inspect.getdoc(foo),
-        "title": "fooSchema",
+        "title": "foo",
         "type": "object",
         "required": ["bar", "baz"],
     }
@@ -734,7 +794,7 @@ def test_structured_tool_from_function() -> None:
     }
 
     assert _schema(structured_tool.args_schema) == {
-        "title": "fooSchema",
+        "title": "foo",
         "type": "object",
         "description": inspect.getdoc(foo),
         "properties": {
@@ -1063,7 +1123,7 @@ def test_tool_arg_descriptions() -> None:
     foo1 = tool(foo)
     args_schema = _schema(foo1.args_schema)  # type: ignore
     assert args_schema == {
-        "title": "fooSchema",
+        "title": "foo",
         "type": "object",
         "description": inspect.getdoc(foo),
         "properties": {
@@ -1077,7 +1137,7 @@ def test_tool_arg_descriptions() -> None:
     foo2 = tool(foo, parse_docstring=True)
     args_schema = _schema(foo2.args_schema)  # type: ignore
     expected = {
-        "title": "fooSchema",
+        "title": "foo",
         "description": "The foo.",
         "type": "object",
         "properties": {
@@ -1166,7 +1226,7 @@ def test_tool_annotated_descriptions() -> None:
     foo1 = tool(foo)
     args_schema = _schema(foo1.args_schema)  # type: ignore
     assert args_schema == {
-        "title": "fooSchema",
+        "title": "foo",
         "type": "object",
         "description": inspect.getdoc(foo),
         "properties": {
@@ -1389,7 +1449,7 @@ def injected_tool_with_schema(x: int, y: str) -> str:
 @pytest.mark.parametrize("tool_", [InjectedTool()])
 def test_tool_injected_arg_without_schema(tool_: BaseTool) -> None:
     assert _schema(tool_.get_input_schema()) == {
-        "title": "fooSchema",
+        "title": "foo",
         "description": "foo.\n\nArgs:\n    x: abc\n    y: 123",
         "type": "object",
         "properties": {
@@ -1428,11 +1488,51 @@ def test_tool_injected_arg_without_schema(tool_: BaseTool) -> None:
 
 @pytest.mark.parametrize(
     "tool_",
-    [injected_tool, injected_tool_with_schema, InjectedToolWithSchema()],
+    [injected_tool_with_schema, InjectedToolWithSchema()],
 )
 def test_tool_injected_arg_with_schema(tool_: BaseTool) -> None:
     assert _schema(tool_.get_input_schema()) == {
         "title": "fooSchema",
+        "description": "foo.",
+        "type": "object",
+        "properties": {
+            "x": {"description": "abc", "title": "X", "type": "integer"},
+            "y": {"description": "123", "title": "Y", "type": "string"},
+        },
+        "required": ["x", "y"],
+    }
+    assert _schema(tool_.tool_call_schema) == {
+        "title": "foo",
+        "description": "foo.",
+        "type": "object",
+        "properties": {"x": {"description": "abc", "title": "X", "type": "integer"}},
+        "required": ["x"],
+    }
+    assert tool_.invoke({"x": 5, "y": "bar"}) == "bar"
+    assert tool_.invoke(
+        {"name": "foo", "args": {"x": 5, "y": "bar"}, "id": "123", "type": "tool_call"}
+    ) == ToolMessage("bar", tool_call_id="123", name="foo")
+    expected_error = (
+        ValidationError if not isinstance(tool_, InjectedTool) else TypeError
+    )
+    with pytest.raises(expected_error):
+        tool_.invoke({"x": 5})
+
+    assert convert_to_openai_function(tool_) == {
+        "name": "foo",
+        "description": "foo.",
+        "parameters": {
+            "type": "object",
+            "properties": {"x": {"type": "integer", "description": "abc"}},
+            "required": ["x"],
+        },
+    }
+
+
+def test_tool_injected_arg() -> None:
+    tool_ = injected_tool
+    assert _schema(tool_.get_input_schema()) == {
+        "title": "foo",
         "description": "foo.",
         "type": "object",
         "properties": {
@@ -1492,7 +1592,7 @@ def test_tool_inherited_injected_arg() -> None:
 
     tool_ = InheritedInjectedArgTool()
     assert tool_.get_input_schema().model_json_schema() == {
-        "title": "fooSchema",
+        "title": "fooSchema",  # Matches the title from the provided schema
         "description": "foo.",
         "type": "object",
         "properties": {
@@ -1501,6 +1601,7 @@ def test_tool_inherited_injected_arg() -> None:
         },
         "required": ["y", "x"],
     }
+    # Should not include `y` since it's annotated as an injected tool arg
     assert tool_.tool_call_schema.model_json_schema() == {
         "title": "foo",
         "description": "foo.",
@@ -1562,7 +1663,7 @@ def test_fn_injected_arg_with_schema(tool_: Callable) -> None:
 def generate_models() -> List[Any]:
     """Generate a list of base models depending on the pydantic version."""
 
-    class FooProper(BaseModelProper):
+    class FooProper(BaseModel):
         a: int
         b: str
 
