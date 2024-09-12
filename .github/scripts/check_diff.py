@@ -106,16 +106,20 @@ def add_dependents(dirs_to_eval: Set[str], dependents: dict) -> List[str]:
 
 def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
     if job == "test-pydantic":
-        with open("./libs/core/poetry.lock", "r") as f:
-            poetry_lock_data = tomllib.load(f)
-        for package in poetry_lock_data["package"]:
+        with open("./libs/core/poetry.lock", "rb") as f:
+            core_poetry_lock_data = tomllib.load(f)
+        for package in core_poetry_lock_data["package"]:
             if package["name"] == "pydantic":
                 core_pydantic_max_minor = package["version"].split(".")[1]
-        with open(f"./{dir_}/poetry.lock", "r") as f:
-            poetry_lock_data = tomllib.load(f)
-        for package in poetry_lock_data["package"]:
+                break
+
+        with open(f"./{dir_}/poetry.lock", "rb") as f:
+            dir_poetry_lock_data = tomllib.load(f)
+
+        for package in dir_poetry_lock_data["package"]:
             if package["name"] == "pydantic":
                 dir_pydantic_max_minor = package["version"].split(".")[1]
+                break
 
         core_pydantic_min_minor = get_min_version_from_toml(
             "./libs/core/pyproject.toml", "release", include=["pydantic"]
