@@ -5392,3 +5392,29 @@ def test_pydantic_protected_namespaces() -> None:
 
         class CustomChatModel(RunnableSerializable):
             model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+
+
+def test_schema_for_prompt_and_chat_model() -> None:
+    """Testing that schema is generated properly when using variable names
+
+    that collide with pydantic attributes.
+    """
+    prompt = ChatPromptTemplate([("system", "{model_json_schema}, {_private}")])
+    chat_res = "i'm a chatbot"
+    # sleep to better simulate a real stream
+    chat = FakeListChatModel(responses=[chat_res], sleep=0.01)
+    chain = prompt | chat
+    assert (
+        chain.invoke({"model_json_schema": "hello", "_private": "goodbye"}).content
+        == chat_res
+    )
+
+    assert chain.get_input_jsonschema() == {
+        "properties": {
+            "model_json_schema": {"title": "Model Json Schema", "type": "string"},
+            "_private": {"title": "Private", "type": "string"},
+        },
+        "required": ["_private", "model_json_schema"],
+        "title": "PromptInput",
+        "type": "object",
+    }

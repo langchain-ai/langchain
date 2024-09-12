@@ -54,6 +54,7 @@ PYDANTIC_MAJOR_VERSION = get_pydantic_major_version()
 
 
 if PYDANTIC_MAJOR_VERSION == 1:
+    from pydantic.fields import Field, FieldInfo
     from pydantic.fields import FieldInfo as FieldInfoV1
 
     PydanticBaseModel = pydantic.BaseModel
@@ -464,7 +465,9 @@ def _create_model_cached(
     **field_definitions: Any,
 ) -> Type[BaseModel]:
     return _create_model_base(
-        __model_name, __config__=_SchemaConfig, **field_definitions
+        __model_name,
+        __config__=_SchemaConfig,
+        **_remap_field_definitions(field_definitions),
     )
 
 
@@ -535,6 +538,36 @@ _RESERVED_NAMES = {
 }
 
 
+def _remap_field_definitions(field_definitions: Dict[str, Any]) -> Dict[str, Any]:
+    """This remaps fields to avoid colliding with internal pydantic fields."""
+    from pydantic import Field
+    from pydantic.fields import FieldInfo
+
+    remapped = {}
+    for key, value in field_definitions.items():
+        if key.startswith("_") or key in _RESERVED_NAMES:
+            # Let's add a prefix to avoid colliding with internal pydantic fields
+            if isinstance(value, FieldInfo):
+                raise NotImplementedError(
+                    f"Remapping for fields starting with '_' or fields with a name "
+                    f"matching a reserved name {_RESERVED_NAMES} is not supported if "
+                    f" the field is a pydantic Field instance. Got {key}."
+                )
+            type_, default_ = value
+            remapped[f"private_{key}"] = (
+                type_,
+                Field(
+                    default=default_,
+                    alias=key,
+                    serialization_alias=key,
+                    title=key.lstrip("_").replace("_", " ").title(),
+                ),
+            )
+        else:
+            remapped[key] = value
+    return remapped
+
+
 def create_model_v2(
     model_name: str,
     *,
@@ -588,12 +621,6 @@ def create_model_v2(
     # No root, just field definitions
     names = set(field_definitions.keys())
 
-    if _RESERVED_NAMES & names:
-        raise ValueError(
-            f"The following names are reserved by Pydantic: {_RESERVED_NAMES & names} "
-            f"and cannot be used as a field name. Try to use a different name."
-        )
-
     # Likely common names that Pydantic will throw a run time warning about,
     # but these names should be safe to override.
     if _OK_TO_OVERWRITE & names:
@@ -607,16 +634,6 @@ def create_model_v2(
         if name.startswith("model"):
             capture_warnings = True
 
-        if name.startswith("_"):  # Private attribute
-            # Pydantic 2 treats fields starting with `_` as private attributes.
-            # For now, we will raise an error if a field name starts with `_`.
-            # We will try to remove this restriction in the future.
-            raise ValueError(
-                f"Unable to use the field name {name} as "
-                f"it is prefixed with a `_` attribute. "
-                f"Please remove the `_` prefix."
-            )
-
     with warnings.catch_warnings() if capture_warnings else nullcontext():  # type: ignore[attr-defined]
         if capture_warnings:
             warnings.filterwarnings(action="ignore")
@@ -625,5 +642,7 @@ def create_model_v2(
         except TypeError:
             # something in field definitions is not hashable
             return _create_model_base(
-                model_name, __config__=_SchemaConfig, **field_definitions
+                model_name,
+                __config__=_SchemaConfig,
+                **_remap_field_definitions(field_definitions),
             )

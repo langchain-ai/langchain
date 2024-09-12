@@ -699,23 +699,6 @@ class _RootEventFilter:
         return include
 
 
-
-def _remap_field_definitions(field_definitions: Dict[str, Any]) -> Dict[str, Any]:
-    """This remaps fields to avoid colliding with internal pydantic fields."""
-    remapped = {}
-    for key, value in field_definitions.items():
-        if key.startswith("_"):
-            # Let's add a prefix to avoid colliding with internal pydantic fields
-            if isinstance(value, FieldInfo):
-                raise NotImplementedError(
-                    f"Remapping for fields starting with '_' is not supported if"
-                    f" the field is a pydantic Field instance. Got {key}"
-                )
-            remapped[f"private_{key}"] = Field(
-                default=value, alias=key, serialization_alias=key
-            )
-    return remapped
-
 def is_async_generator(
     func: Any,
 ) -> TypeGuard[Callable[..., AsyncIterator]]:
