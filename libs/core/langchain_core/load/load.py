@@ -21,6 +21,8 @@ DEFAULT_NAMESPACES = [
     "langchain_google_genai",
     "langchain_aws",
 ]
+# Namespaces for which only deserializing via the SERIALIZABLE_MAPPING is allowed.
+# Load by path is not allowed.
 DISALLOW_LOAD_FROM_PATH = [
     "langchain_community",
     "langchain",
