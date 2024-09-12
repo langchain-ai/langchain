@@ -151,5 +151,17 @@ def test_simple_deserialization_with_additional_imports() -> None:
         "lc": 1,
         "type": "constructor",
     }
-    new_foo = load(serialized_foo, valid_namespaces=["tests"], additional_import_mappings={("tests", "unit_tests", "load", "test_serializable", "Foo"): ("tests", "unit_tests", "load", "test_serializable", "Foo2")})
+    new_foo = load(
+        serialized_foo,
+        valid_namespaces=["tests"],
+        additional_import_mappings={
+            ("tests", "unit_tests", "load", "test_serializable", "Foo"): (
+                "tests",
+                "unit_tests",
+                "load",
+                "test_serializable",
+                "Foo2",
+            )
+        },
+    )
     assert isinstance(new_foo, Foo2)

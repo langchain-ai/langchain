@@ -36,7 +36,9 @@ class Reviver:
         secrets_map: Optional[Dict[str, str]] = None,
         valid_namespaces: Optional[List[str]] = None,
         secrets_from_env: bool = True,
-        additional_import_mappings: Optional[Dict[Tuple[str, ...], Tuple[str, ...]]] = None,
+        additional_import_mappings: Optional[
+            Dict[Tuple[str, ...], Tuple[str, ...]]
+        ] = None,
     ) -> None:
         """Initialize the reviver.
 
@@ -65,7 +67,6 @@ class Reviver:
             **ALL_SERIALIZABLE_MAPPINGS,
             **additional_import_mappings,
         }
-
 
     def __call__(self, value: Dict[str, Any]) -> Any:
         if (
@@ -173,7 +174,10 @@ def loads(
         Revived LangChain objects.
     """
     return json.loads(
-        text, object_hook=Reviver(secrets_map, valid_namespaces, secrets_from_env, additional_import_mappings)
+        text,
+        object_hook=Reviver(
+            secrets_map, valid_namespaces, secrets_from_env, additional_import_mappings
+        ),
     )
 
 
@@ -205,7 +209,9 @@ def load(
     Returns:
         Revived LangChain objects.
     """
-    reviver = Reviver(secrets_map, valid_namespaces, secrets_from_env, additional_import_mappings)
+    reviver = Reviver(
+        secrets_map, valid_namespaces, secrets_from_env, additional_import_mappings
+    )
 
     def _load(obj: Any) -> Any:
         if isinstance(obj, dict):
