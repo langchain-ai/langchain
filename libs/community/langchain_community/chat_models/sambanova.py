@@ -20,7 +20,7 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import Field, SecretStr
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
 
 class ChatSambaNovaCloud(BaseChatModel):
@@ -109,7 +109,7 @@ class ChatSambaNovaCloud(BaseChatModel):
         response = chat.invoke(messages)
         print(response.response_metadata["usage"]["prompt_tokens"]
         print(response.response_metadata["usage"]["total_tokens"]
-      
+
     Response metadata
         .. code-block:: python
 
@@ -117,10 +117,10 @@ class ChatSambaNovaCloud(BaseChatModel):
         print(response.response_metadata)
     """
 
-    sambanova_url: str = Field(default="", alias="base_url")
+    sambanova_url: str = Field(default="")
     """SambaNova Cloud Url"""
 
-    sambanova_api_key: SecretStr = Field(default="", alias="api_key")
+    sambanova_api_key: SecretStr = Field(default="")
     """SambaNova Cloud api key"""
 
     model: str = Field(default="llama3-8b")
@@ -178,19 +178,18 @@ class ChatSambaNovaCloud(BaseChatModel):
         """Get the type of language model used by this chat model."""
         return "sambanovacloud-chatmodel"
 
-    @pre_init
-    def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that api key and python package exists in environment."""
-        values["base_url"] = get_from_dict_or_env(
-            values,
+    def __init__(self, **kwargs: Any) -> None:
+        """init and validate environment variables"""
+        kwargs["sambanova_url"] = get_from_dict_or_env(
+            kwargs,
             "sambanova_url",
             "SAMBANOVA_URL",
             default="https://api.sambanova.ai/v1/chat/completions",
         )
-        values["api_key"] = convert_to_secret_str(
-            get_from_dict_or_env(values, "sambanova_api_key", "SAMBANOVA_API_KEY")
+        kwargs["sambanova_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(kwargs, "sambanova_api_key", "SAMBANOVA_API_KEY")
         )
-        return values
+        super().__init__(**kwargs)
 
     def _handle_request(
         self, messages_dicts: List[Dict], stop: Optional[List[str]] = None
