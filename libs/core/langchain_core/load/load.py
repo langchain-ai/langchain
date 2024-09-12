@@ -21,7 +21,10 @@ DEFAULT_NAMESPACES = [
     "langchain_google_genai",
     "langchain_aws",
 ]
-DISALLOW_LOAD_FROM_PATH = ["langchain_community"]
+DISALLOW_LOAD_FROM_PATH = [
+    "langchain_community",
+    "langchain",
+]
 
 ALL_SERIALIZABLE_MAPPINGS = {
     **SERIALIZABLE_MAPPING,
