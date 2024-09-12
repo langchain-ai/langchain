@@ -104,7 +104,12 @@ class ChatSambaNovaCloud(BaseChatModel):
         response = chat.ainvoke(messages)
         await response
 
-
+    Token usage:
+        .. code-block:: python
+        response = chat.invoke(messages)
+        print(response.response_metadata["usage"]["prompt_tokens"]
+        print(response.response_metadata["usage"]["total_tokens"]
+      
     Response metadata
         .. code-block:: python
 
