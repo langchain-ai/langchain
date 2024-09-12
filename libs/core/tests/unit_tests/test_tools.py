@@ -1877,10 +1877,10 @@ def test__is_message_content_type(obj: Any, expected: bool) -> None:
 @pytest.mark.parametrize("use_v1_namespace", [True, False])
 @pytest.mark.filterwarnings("error")
 def test__get_all_basemodel_annotations_v2(use_v1_namespace: bool) -> None:
-    A = TypeVar("A")
-
     if use_v1_namespace:
         from pydantic.v1 import BaseModel as BM1
+
+        A = TypeVar("A")
 
         class ModelA(BM1, Generic[A], extra="allow"):
             a: A
@@ -1888,9 +1888,11 @@ def test__get_all_basemodel_annotations_v2(use_v1_namespace: bool) -> None:
         from pydantic import BaseModel as BM2
         from pydantic import ConfigDict
 
-        class ModelA(BM2, Generic[A], extra="allow"):  # type: ignore[no-redef]
+        A = TypeVar("A", bound=object)
+
+        class ModelA(BM2, Generic[A]):  # type: ignore[no-redef]
             a: A
-            model_config = ConfigDict(arbitrary_types_allowed=True)
+            model_config = ConfigDict(arbitrary_types_allowed=True, extra="allow")
 
     class ModelB(ModelA[str]):
         b: Annotated[ModelA[Dict[str, Any]], "foo"]
