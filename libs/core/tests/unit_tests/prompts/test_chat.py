@@ -871,7 +871,7 @@ def test_chat_prompt_template_variable_names() -> None:
 
     Verify that no run time warnings are raised.
     """
-    with pytest.warns(None) as record:
+    with pytest.warns(None) as record:  # type: ignore
         prompt = ChatPromptTemplate([("system", "{schema}")])
         prompt.get_input_schema()
 

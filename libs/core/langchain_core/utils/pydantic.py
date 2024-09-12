@@ -567,6 +567,8 @@ def create_model_v2(
     Returns:
         Type[BaseModel]: The created model.
     """
+    field_definitions = cast(Dict[str, Any], field_definitions or {})  # type: ignore[no-redef]
+
     if root:
         if field_definitions:
             raise NotImplementedError(
@@ -591,8 +593,6 @@ def create_model_v2(
                 **kwargs,
             )
         return named_root_model
-
-    field_definitions = field_definitions or {}
 
     # No root, just field definitions
     names = set(field_definitions.keys())
@@ -626,7 +626,7 @@ def create_model_v2(
                 f"Please remove the `_` prefix."
             )
 
-    with warnings.catch_warnings() if capture_warnings else nullcontext():
+    with warnings.catch_warnings() if capture_warnings else nullcontext():  # type: ignore[attr-defined]
         if capture_warnings:
             warnings.filterwarnings(action="ignore")
         try:
