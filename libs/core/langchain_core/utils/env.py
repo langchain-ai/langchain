@@ -28,7 +28,7 @@ def get_from_dict_or_env(
     data: Dict[str, Any],
     key: Union[str, List[str]],
     env_key: str,
-        default: Optional[Union[str, object]] = _get_from_env_default_sentinel,
+    default: Optional[Union[str, object]] = _get_from_env_default_sentinel,
 ) -> str:
     """Get a value from a dictionary or an environment variable.
 
@@ -61,9 +61,9 @@ def get_from_dict_or_env(
 
 
 def get_from_env(
-        key: str,
-        env_key: str,
-        default: Optional[Union[str, object]] = _get_from_env_default_sentinel,
+    key: str,
+    env_key: str,
+    default: Optional[Union[str, object]] = _get_from_env_default_sentinel,
 ) -> str:
     """Get a value from a dictionary or an environment variable.
     Args:
