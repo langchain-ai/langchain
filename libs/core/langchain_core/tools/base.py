@@ -307,7 +307,7 @@ def create_schema_from_function(
             valid_properties.append(field)
 
     return _create_subset_model(
-        f"{model_name}Schema",
+        model_name,
         inferred_model,
         list(valid_properties),
         descriptions=arg_descriptions,

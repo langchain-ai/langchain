@@ -419,7 +419,7 @@ def test_structured_tool_from_function_docstring() -> None:
             "baz": {"title": "Baz", "type": "string"},
         },
         "description": inspect.getdoc(foo),
-        "title": "fooSchema",
+        "title": "foo",
         "type": "object",
         "required": ["bar", "baz"],
     }
@@ -461,7 +461,7 @@ def test_structured_tool_from_function_docstring_complex_args() -> None:
             },
         },
         "description": inspect.getdoc(foo),
-        "title": "fooSchema",
+        "title": "foo",
         "type": "object",
         "required": ["bar", "baz"],
     }
@@ -562,7 +562,7 @@ def test_structured_tool_from_function_with_run_manager() -> None:
             "baz": {"title": "Baz", "type": "string"},
         },
         "description": inspect.getdoc(foo),
-        "title": "fooSchema",
+        "title": "foo",
         "type": "object",
         "required": ["bar", "baz"],
     }
@@ -794,7 +794,7 @@ def test_structured_tool_from_function() -> None:
     }
 
     assert _schema(structured_tool.args_schema) == {
-        "title": "fooSchema",
+        "title": "foo",
         "type": "object",
         "description": inspect.getdoc(foo),
         "properties": {
@@ -1123,7 +1123,7 @@ def test_tool_arg_descriptions() -> None:
     foo1 = tool(foo)
     args_schema = _schema(foo1.args_schema)  # type: ignore
     assert args_schema == {
-        "title": "fooSchema",
+        "title": "foo",
         "type": "object",
         "description": inspect.getdoc(foo),
         "properties": {
@@ -1137,7 +1137,7 @@ def test_tool_arg_descriptions() -> None:
     foo2 = tool(foo, parse_docstring=True)
     args_schema = _schema(foo2.args_schema)  # type: ignore
     expected = {
-        "title": "fooSchema",
+        "title": "foo",
         "description": "The foo.",
         "type": "object",
         "properties": {
@@ -1226,7 +1226,7 @@ def test_tool_annotated_descriptions() -> None:
     foo1 = tool(foo)
     args_schema = _schema(foo1.args_schema)  # type: ignore
     assert args_schema == {
-        "title": "fooSchema",
+        "title": "foo",
         "type": "object",
         "description": inspect.getdoc(foo),
         "properties": {
@@ -1449,7 +1449,7 @@ def injected_tool_with_schema(x: int, y: str) -> str:
 @pytest.mark.parametrize("tool_", [InjectedTool()])
 def test_tool_injected_arg_without_schema(tool_: BaseTool) -> None:
     assert _schema(tool_.get_input_schema()) == {
-        "title": "fooSchema",
+        "title": "foo",
         "description": "foo.\n\nArgs:\n    x: abc\n    y: 123",
         "type": "object",
         "properties": {
@@ -1488,11 +1488,51 @@ def test_tool_injected_arg_without_schema(tool_: BaseTool) -> None:
 
 @pytest.mark.parametrize(
     "tool_",
-    [injected_tool, injected_tool_with_schema, InjectedToolWithSchema()],
+    [injected_tool_with_schema, InjectedToolWithSchema()],
 )
 def test_tool_injected_arg_with_schema(tool_: BaseTool) -> None:
     assert _schema(tool_.get_input_schema()) == {
         "title": "fooSchema",
+        "description": "foo.",
+        "type": "object",
+        "properties": {
+            "x": {"description": "abc", "title": "X", "type": "integer"},
+            "y": {"description": "123", "title": "Y", "type": "string"},
+        },
+        "required": ["x", "y"],
+    }
+    assert _schema(tool_.tool_call_schema) == {
+        "title": "foo",
+        "description": "foo.",
+        "type": "object",
+        "properties": {"x": {"description": "abc", "title": "X", "type": "integer"}},
+        "required": ["x"],
+    }
+    assert tool_.invoke({"x": 5, "y": "bar"}) == "bar"
+    assert tool_.invoke(
+        {"name": "foo", "args": {"x": 5, "y": "bar"}, "id": "123", "type": "tool_call"}
+    ) == ToolMessage("bar", tool_call_id="123", name="foo")
+    expected_error = (
+        ValidationError if not isinstance(tool_, InjectedTool) else TypeError
+    )
+    with pytest.raises(expected_error):
+        tool_.invoke({"x": 5})
+
+    assert convert_to_openai_function(tool_) == {
+        "name": "foo",
+        "description": "foo.",
+        "parameters": {
+            "type": "object",
+            "properties": {"x": {"type": "integer", "description": "abc"}},
+            "required": ["x"],
+        },
+    }
+
+
+def test_tool_injected_arg() -> None:
+    tool_ = injected_tool
+    assert _schema(tool_.get_input_schema()) == {
+        "title": "foo",
         "description": "foo.",
         "type": "object",
         "properties": {
@@ -1552,7 +1592,7 @@ def test_tool_inherited_injected_arg() -> None:
 
     tool_ = InheritedInjectedArgTool()
     assert tool_.get_input_schema().model_json_schema() == {
-        "title": "fooSchema",
+        "title": "fooSchema",  # Matches the title from the provided schema
         "description": "foo.",
         "type": "object",
         "properties": {
@@ -1561,6 +1601,7 @@ def test_tool_inherited_injected_arg() -> None:
         },
         "required": ["y", "x"],
     }
+    # Should not include `y` since it's annotated as an injected tool arg
     assert tool_.tool_call_schema.model_json_schema() == {
         "title": "foo",
         "description": "foo.",
