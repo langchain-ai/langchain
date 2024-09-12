@@ -4,8 +4,9 @@ import os
 import sys
 import tomllib
 from collections import defaultdict
-from typing import Dict, List, Set
+from typing import Dict, List, Set, Optional
 from pathlib import Path
+import requests
 
 
 LANGCHAIN_DIRS = [
@@ -103,32 +104,37 @@ def add_dependents(dirs_to_eval: Set[str], dependents: dict) -> List[str]:
 
 
 def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
-    if dir_ == "libs/core":
-        return [
-            {"working-directory": dir_, "python-version": f"3.{v}"}
-            for v in range(9, 13)
-        ]
-    min_python = "3.9"
-    max_python = "3.12"
+    if job == "test-pydantic":
+        if (pydantic_version := _get_latest_version("pydantic")) and pydantic_version.startswith("2."):
+            latest_pydantic_minor = pydantic_version.split(".")[1]
+        else:
+            # Fallback to latest 2.x version as of 09.12.24
+            latest_pydantic_minor = 9
+        return [{"working-directory": dir_, "pydantic-version": f"2.{v}"} for v in
+                range(5, latest_pydantic_minor + 1)]
 
+    if dir_ == "libs/core":
+        py_versions = ["3.9", "3.10", "3.11", "3.12"]
     # custom logic for specific directories
-    if dir_ == "libs/partners/milvus":
+    elif dir_ == "libs/partners/milvus":
         # milvus poetry doesn't allow 3.12 because they
         # declare deps in funny way
-        max_python = "3.11"
+        py_versions = ["3.9", "3.11"]
 
-    if dir_ in ["libs/community", "libs/langchain"] and job == "extended-tests":
+    elif dir_ in ["libs/community", "libs/langchain"] and job == "extended-tests":
         # community extended test resolution in 3.12 is slow
         # even in uv
-        max_python = "3.11"
+        py_versions = ["3.9", "3.11"]
 
-    if dir_ == "libs/community" and job == "compile-integration-tests":
+    elif dir_ == "libs/community" and job == "compile-integration-tests":
         # community integration deps are slow in 3.12
-        max_python = "3.11"
+        py_versions = ["3.9", "3.11"]
+    else:
+        py_versions = ["3.9", "3.12"]
 
     return [
-        {"working-directory": dir_, "python-version": min_python},
-        {"working-directory": dir_, "python-version": max_python},
+        {"working-directory": dir_, "python-version": py_v}
+        for py_v in py_versions
     ]
 
 
@@ -146,12 +152,25 @@ def _get_configs_for_multi_dirs(
         )
     elif job == "extended-tests":
         dirs = list(dirs_to_run["extended-test"])
+    elif job == "test-pydantic":
+        dirs = list(dirs_to_run["test"])
     else:
         raise ValueError(f"Unknown job: {job}")
 
     return [
         config for dir_ in dirs for config in _get_configs_for_single_dir(job, dir_)
     ]
+
+
+def _get_latest_version(package_name: str) -> Optional[str]:
+    url = f"https://pypi.org/pypi/{package_name}/json"
+    response = requests.get(url)
+    if response.status_code == 200:
+        data = response.json()
+        return data['info']['version']
+    else:
+        raise None
+
 
 
 if __name__ == "__main__":
@@ -169,6 +188,7 @@ if __name__ == "__main__":
         dirs_to_run["lint"] = all_package_dirs()
         dirs_to_run["test"] = all_package_dirs()
         dirs_to_run["extended-test"] = set(LANGCHAIN_DIRS)
+
     for file in files:
         if any(
             file.startswith(dir_)
@@ -186,6 +206,7 @@ if __name__ == "__main__":
         if any(file.startswith(dir_) for dir_ in LANGCHAIN_DIRS):
             # add that dir and all dirs after in LANGCHAIN_DIRS
             # for extended testing
+
             found = False
             for dir_ in LANGCHAIN_DIRS:
                 if dir_ == "libs/core" and IGNORE_CORE_DEPENDENTS:
@@ -240,6 +261,7 @@ if __name__ == "__main__":
             "extended-tests",
             "compile-integration-tests",
             "dependencies",
+            "test-pydantic",
         ]
     }
     map_job_to_configs["test-doc-imports"] = (

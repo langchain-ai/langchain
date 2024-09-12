@@ -67,6 +67,19 @@ jobs:
       python-version: ${{ matrix.job-configs.python-version }}
     secrets: inherit
 
+  test-pydantic:
+    name: cd ${{ matrix.job-configs.working-directory }}
+    needs: [ build ]
+    if: ${{ needs.build.outputs.test-pydantic != '[]' }}
+    strategy:
+      matrix:
+        job-configs: ${{ fromJson(needs.build.outputs.test-pydantic) }}
+      fail-fast: false
+    uses: ./.github/workflows/_test_pydantic.yml
+    with:
+      working-directory: ${{ matrix.job-configs.working-directory }}
+    secrets: inherit
+
   test-doc-imports:
     needs: [ build ]
     if: ${{ needs.build.outputs.test-doc-imports != '[]' }}
