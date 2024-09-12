@@ -3,24 +3,11 @@
 from __future__ import annotations
 
 import inspect
+import pydantic
 import textwrap
 import warnings
 from contextlib import nullcontext
 from functools import lru_cache, wraps
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Type,
-    TypeVar,
-    Union,
-    cast,
-    overload,
-)
-
-import pydantic
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -38,6 +25,18 @@ from pydantic.json_schema import (
     JsonSchemaValue,
 )
 from pydantic_core import core_schema
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+    overload,
+)
 
 
 def get_pydantic_major_version() -> int:
@@ -500,37 +499,17 @@ def create_model(
     )
 
 
-# These are reserved by pydantic.
-_RESERVED_NAMES = {
-    "construct",
-    "copy",
-    "dict",
-    "from_orm",
-    "json",
-    "parse_file",
-    "parse_obj",
-    "parse_raw",
-    "schema",
-    "schema_json",
-    "update_forward_refs",
-    "validate",
-    "model_computed_fields",
-    "model_config",
-    "model_construct",
-    "model_copy",
-    "model_dump",
-    "model_dump_json",
-    "model_extra",
-    "model_fields",
-    "model_fields_set",
-    "model_json_schema",
-    "model_parametrized_name",
-    "model_post_init",
-    "model_rebuild",
-    "model_validate",
-    "model_validate_json",
-    "model_validate_strings",
-}
+# Reserved names should capture all the `public` names / methods that are
+# used by BaseModel internally. This will keep the reserved names up-to-date.
+# For reference, the reserved names are:
+# "construct", "copy", "dict", "from_orm", "json", "parse_file", "parse_obj",
+# "parse_raw", "schema", "schema_json", "update_forward_refs", "validate",
+# "model_computed_fields", "model_config", "model_construct", "model_copy",
+# "model_dump", "model_dump_json", "model_extra", "model_fields",
+# "model_fields_set", "model_json_schema", "model_parametrized_name",
+# "model_post_init", "model_rebuild", "model_validate", "model_validate_json",
+# "model_validate_strings"
+_RESERVED_NAMES = {key for key in dir(BaseModel) if not key.startswith("_")}
 
 
 def _remap_field_definitions(field_definitions: Dict[str, Any]) -> Dict[str, Any]:
