@@ -107,7 +107,6 @@ class HuggingFacePipeline(BaseLLM):
             if model_kwargs is None:
                 model_kwargs = {}
             model_kwargs["device_map"] = device_map
-            device = None
         _model_kwargs = model_kwargs or {}
         tokenizer = AutoTokenizer.from_pretrained(model_id, **_model_kwargs)
 
@@ -230,6 +229,7 @@ class HuggingFacePipeline(BaseLLM):
             model=model,
             tokenizer=tokenizer,
             device=device,
+            device_map=device_map,
             batch_size=batch_size,
             model_kwargs=_model_kwargs,
             **_pipeline_kwargs,
@@ -272,6 +272,7 @@ class HuggingFacePipeline(BaseLLM):
         text_generations: List[str] = []
         pipeline_kwargs = kwargs.get("pipeline_kwargs", {})
         skip_prompt = kwargs.get("skip_prompt", False)
+
         for i in range(0, len(prompts), self.batch_size):
             batch_prompts = prompts[i : i + self.batch_size]
 
