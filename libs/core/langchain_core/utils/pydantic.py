@@ -464,7 +464,9 @@ def _create_model_cached(
     **field_definitions: Any,
 ) -> Type[BaseModel]:
     return _create_model_base(
-        __model_name, __config__=_SchemaConfig, **field_definitions
+        __model_name,
+        __config__=_SchemaConfig,
+        **_remap_field_definitions(field_definitions),
     )
 
 
@@ -498,41 +500,47 @@ def create_model(
     )
 
 
-# Deprecated and not used by the code base.
-_OK_TO_OVERWRITE = {
-    "construct",
-    "copy",
-    "dict",
-    "from_orm",
-    "json",
-    "parse_file",
-    "parse_obj",
-    "parse_raw",
-    "schema",
-    "schema_json",
-    "update_forward_refs",
-    "validate",
-}
+# Reserved names should capture all the `public` names / methods that are
+# used by BaseModel internally. This will keep the reserved names up-to-date.
+# For reference, the reserved names are:
+# "construct", "copy", "dict", "from_orm", "json", "parse_file", "parse_obj",
+# "parse_raw", "schema", "schema_json", "update_forward_refs", "validate",
+# "model_computed_fields", "model_config", "model_construct", "model_copy",
+# "model_dump", "model_dump_json", "model_extra", "model_fields",
+# "model_fields_set", "model_json_schema", "model_parametrized_name",
+# "model_post_init", "model_rebuild", "model_validate", "model_validate_json",
+# "model_validate_strings"
+_RESERVED_NAMES = {key for key in dir(BaseModel) if not key.startswith("_")}
 
-# These are reserved by pydantic.
-_RESERVED_NAMES = {
-    "model_computed_fields",
-    "model_config",
-    "model_construct",
-    "model_copy",
-    "model_dump",
-    "model_dump_json",
-    "model_extra",
-    "model_fields",
-    "model_fields_set",
-    "model_json_schema",
-    "model_parametrized_name",
-    "model_post_init",
-    "model_rebuild",
-    "model_validate",
-    "model_validate_json",
-    "model_validate_strings",
-}
+
+def _remap_field_definitions(field_definitions: Dict[str, Any]) -> Dict[str, Any]:
+    """This remaps fields to avoid colliding with internal pydantic fields."""
+    from pydantic import Field
+    from pydantic.fields import FieldInfo
+
+    remapped = {}
+    for key, value in field_definitions.items():
+        if key.startswith("_") or key in _RESERVED_NAMES:
+            # Let's add a prefix to avoid colliding with internal pydantic fields
+            if isinstance(value, FieldInfo):
+                raise NotImplementedError(
+                    f"Remapping for fields starting with '_' or fields with a name "
+                    f"matching a reserved name {_RESERVED_NAMES} is not supported if "
+                    f" the field is a pydantic Field instance. Got {key}."
+                )
+            type_, default_ = value
+            remapped[f"private_{key}"] = (
+                type_,
+                Field(
+                    default=default_,
+                    alias=key,
+                    serialization_alias=key,
+                    title=key.lstrip("_").replace("_", " ").title(),
+                ),
+            )
+        else:
+            remapped[key] = value
+    return remapped
 
 
 def create_model_v2(
@@ -588,34 +596,12 @@ def create_model_v2(
     # No root, just field definitions
     names = set(field_definitions.keys())
 
-    if _RESERVED_NAMES & names:
-        raise ValueError(
-            f"The following names are reserved by Pydantic: {_RESERVED_NAMES & names} "
-            f"and cannot be used as a field name. Try to use a different name."
-        )
-
-    # Likely common names that Pydantic will throw a run time warning about,
-    # but these names should be safe to override.
-    if _OK_TO_OVERWRITE & names:
-        # Capture warnings
-        capture_warnings = True
-    else:
-        capture_warnings = False
+    capture_warnings = False
 
     for name in names:
         # Also if any non-reserved name is used (e.g., model_id or model_name)
         if name.startswith("model"):
             capture_warnings = True
-
-        if name.startswith("_"):  # Private attribute
-            # Pydantic 2 treats fields starting with `_` as private attributes.
-            # For now, we will raise an error if a field name starts with `_`.
-            # We will try to remove this restriction in the future.
-            raise ValueError(
-                f"Unable to use the field name {name} as "
-                f"it is prefixed with a `_` attribute. "
-                f"Please remove the `_` prefix."
-            )
 
     with warnings.catch_warnings() if capture_warnings else nullcontext():  # type: ignore[attr-defined]
         if capture_warnings:
@@ -625,5 +611,7 @@ def create_model_v2(
         except TypeError:
             # something in field definitions is not hashable
             return _create_model_base(
-                model_name, __config__=_SchemaConfig, **field_definitions
+                model_name,
+                __config__=_SchemaConfig,
+                **_remap_field_definitions(field_definitions),
             )

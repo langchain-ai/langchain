@@ -220,15 +220,6 @@ def test_create_model_v2() -> None:
 
     assert list(record) == []
 
-    # Used by pydantic, not OK to re-use
-    with pytest.raises(ValueError):
-        create_model_v2("Foo", field_definitions={"model_json_schema": (int, None)})
-
-    # Private attributes raise an error for now since pydantic 2 considers them
-    # to be private attributes.
-    with pytest.raises(ValueError):
-        create_model_v2("Foo", field_definitions={"_a": (int, None)})
-
     with pytest.warns(None) as record:  # type: ignore
         # Verify that we can use non-English characters
         field_name = "もしもし"
