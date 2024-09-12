@@ -30,3 +30,5 @@ def is_caller_internal(depth: int = 2) -> bool:
                 return True
     finally:
         del frame
+
+    return False
