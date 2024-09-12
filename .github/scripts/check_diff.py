@@ -140,7 +140,7 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
         )
 
         configs = [
-            {"working-directory": dir_, "pydantic-version": f"2.{v}"}
+            {"working-directory": dir_, "pydantic-version": f"2.{v}.0"}
             for v in range(min_pydantic_minor, max_pydantic_minor + 1)
         ]
         return configs
