@@ -143,8 +143,6 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
             {"working-directory": dir_, "pydantic-version": f"2.{v}"}
             for v in range(min_pydantic_minor, max_pydantic_minor + 1)
         ]
-        if not configs:
-            raise ValueError(min_pydantic_minor, max_pydantic_minor)
         return configs
 
     if dir_ == "libs/core":

@@ -44,7 +44,7 @@ jobs:
 
       - name: Overwrite pydantic version
         shell: bash
-        run: poetry run pip install pydantic==${{ inputs.pydantic-version }}
+        run: poetry run pip install pydantic~=${{ inputs.pydantic-version }}
 
       - name: Run core tests
         shell: bash
