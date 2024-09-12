@@ -27,7 +27,7 @@ from langchain_core.runnables import (
     ensure_config,
     run_in_executor,
 )
-from langchain_core.runnables.utils import create_model
+from langchain_core.utils.pydantic import create_model_v2
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -110,16 +110,16 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
         self, config: Optional[RunnableConfig] = None
     ) -> Type[BaseModel]:
         # This is correct, but pydantic typings/mypy don't think so.
-        return create_model(  # type: ignore[call-overload]
-            "ChainInput", **{k: (Any, None) for k in self.input_keys}
+        return create_model_v2(  # type: ignore[call-overload]
+            "ChainInput", field_definitions={k: (Any, None) for k in self.input_keys}
         )
 
     def get_output_schema(
         self, config: Optional[RunnableConfig] = None
     ) -> Type[BaseModel]:
         # This is correct, but pydantic typings/mypy don't think so.
-        return create_model(  # type: ignore[call-overload]
-            "ChainOutput", **{k: (Any, None) for k in self.output_keys}
+        return create_model_v2(  # type: ignore[call-overload]
+            "ChainOutput", field_definitions={k: (Any, None) for k in self.output_keys}
         )
 
     def invoke(
