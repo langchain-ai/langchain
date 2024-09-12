@@ -54,7 +54,6 @@ PYDANTIC_MAJOR_VERSION = get_pydantic_major_version()
 
 
 if PYDANTIC_MAJOR_VERSION == 1:
-    from pydantic.fields import Field, FieldInfo
     from pydantic.fields import FieldInfo as FieldInfoV1
 
     PydanticBaseModel = pydantic.BaseModel
