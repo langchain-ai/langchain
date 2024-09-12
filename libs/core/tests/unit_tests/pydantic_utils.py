@@ -57,12 +57,15 @@ def remove_all_none_default(schema: Any) -> None:
             remove_all_none_default(item)
 
 
-def _remove_enum_description(obj: Any) -> None:
+def _remove_enum(obj: Any) -> None:
     """Remove the description from enums."""
     if isinstance(obj, dict):
         if "enum" in obj:
             if "description" in obj and obj["description"] == "An enumeration.":
                 del obj["description"]
+            if "type" in obj:
+                del obj["type"]
+            del obj["enum"]
         for value in obj.values():
             _remove_enum_description(value)
     elif isinstance(obj, list):

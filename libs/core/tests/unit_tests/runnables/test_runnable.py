@@ -338,9 +338,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                     "type": {
                         "const": "Document",
                         "default": "Document",
-                        "enum": ["Document"],
                         "title": "Type",
-                        "type": "string",
                     },
                 },
                 "required": ["page_content"],
