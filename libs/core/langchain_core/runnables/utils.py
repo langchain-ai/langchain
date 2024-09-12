@@ -32,8 +32,9 @@ from typing import (
     cast,
 )
 
-from pydantic import BaseModel, ConfigDict, PydanticDeprecationWarning, RootModel
+from pydantic import BaseModel, ConfigDict, Field, PydanticDeprecationWarning, RootModel
 from pydantic import create_model as _create_model_base  # pydantic :ignore
+from pydantic.fields import FieldInfo
 from pydantic.json_schema import (
     DEFAULT_REF_TEMPLATE,
     GenerateJsonSchema,
@@ -780,6 +781,23 @@ def _create_root_model_cached(
     )
 
 
+def _remap_field_definitions(field_definitions: Dict[str, Any]) -> Dict[str, Any]:
+    """This remaps fields to avoid colliding with internal pydantic fields."""
+    remapped = {}
+    for key, value in field_definitions.items():
+        if key.startswith("_"):
+            # Let's add a prefix to avoid colliding with internal pydantic fields
+            if isinstance(value, FieldInfo):
+                raise NotImplementedError(
+                    f"Remapping for fields starting with '_' is not supported if"
+                    f" the field is a pydantic Field instance. Got {key}"
+                )
+            remapped[f"private_{key}"] = Field(
+                default=value, alias=key, serialization_alias=key
+            )
+    return remapped
+
+
 def create_model(
     __model_name: str,
     __module_name: Optional[str] = None,
@@ -828,7 +846,9 @@ def create_model(
     except TypeError:
         # something in field definitions is not hashable
         return _create_model_base(
-            __model_name, __config__=_SchemaConfig, **field_definitions
+            __model_name,
+            __config__=_SchemaConfig,
+            **_remap_field_definitions(field_definitions),
         )
 
 
@@ -837,8 +857,9 @@ def _create_model_cached(
     __model_name: str,
     **field_definitions: Any,
 ) -> Type[BaseModel]:
+    field_definitions_ = _remap_field_definitions(field_definitions)
     return _create_model_base(
-        __model_name, __config__=_SchemaConfig, **field_definitions
+        __model_name, __config__=_SchemaConfig, **field_definitions_
     )
 
 
