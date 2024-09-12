@@ -1,4 +1,5 @@
 """Test tool utils."""
+
 import unittest
 from typing import Any, Type
 from unittest.mock import MagicMock, Mock
@@ -42,7 +43,7 @@ def test_single_input_agent_raises_error_on_structured_tool(
     with pytest.raises(
         ValueError,
         match=f"{agent_cls.__name__} does not support"  # type: ignore
-        f" multi-input tool {the_tool.name}.",
+        f" multi-input tool the_tool.",
     ):
         agent_cls.from_llm_and_tools(MagicMock(), [the_tool])  # type: ignore
 

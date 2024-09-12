@@ -8,7 +8,7 @@ import threading
 from datetime import datetime
 from queue import Queue
 from time import mktime
-from typing import Any, Dict, Generator, Iterator, List, Mapping, Optional, Type
+from typing import Any, Dict, Generator, Iterator, List, Mapping, Optional, Type, cast
 from urllib.parse import urlencode, urlparse, urlunparse
 from wsgiref.handlers import format_date_time
 
@@ -26,31 +26,52 @@ from langchain_core.messages import (
     BaseMessageChunk,
     ChatMessage,
     ChatMessageChunk,
+    FunctionMessageChunk,
     HumanMessage,
     HumanMessageChunk,
     SystemMessage,
+    ToolMessageChunk,
+)
+from langchain_core.output_parsers.openai_tools import (
+    make_invalid_tool_call,
+    parse_tool_call,
 )
 from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,
     ChatResult,
 )
-from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.utils import (
     get_from_dict_or_env,
     get_pydantic_field_names,
 )
+from langchain_core.utils.pydantic import get_fields
+from pydantic import ConfigDict, Field, model_validator
 
 logger = logging.getLogger(__name__)
 
+SPARK_API_URL = "wss://spark-api.xf-yun.com/v3.5/chat"
+SPARK_LLM_DOMAIN = "generalv3.5"
 
-def _convert_message_to_dict(message: BaseMessage) -> dict:
+
+def convert_message_to_dict(message: BaseMessage) -> dict:
+    message_dict: Dict[str, Any]
     if isinstance(message, ChatMessage):
         message_dict = {"role": "user", "content": message.content}
     elif isinstance(message, HumanMessage):
         message_dict = {"role": "user", "content": message.content}
     elif isinstance(message, AIMessage):
         message_dict = {"role": "assistant", "content": message.content}
+        if "function_call" in message.additional_kwargs:
+            message_dict["function_call"] = message.additional_kwargs["function_call"]
+            # If function call only, content is None not empty string
+            if message_dict["content"] == "":
+                message_dict["content"] = None
+        if "tool_calls" in message.additional_kwargs:
+            message_dict["tool_calls"] = message.additional_kwargs["tool_calls"]
+            # If tool calls only, content is None not empty string
+            if message_dict["content"] == "":
+                message_dict["content"] = None
     elif isinstance(message, SystemMessage):
         message_dict = {"role": "system", "content": message.content}
     else:
@@ -59,14 +80,35 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     return message_dict
 
 
-def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
+def convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     msg_role = _dict["role"]
     msg_content = _dict["content"]
     if msg_role == "user":
         return HumanMessage(content=msg_content)
     elif msg_role == "assistant":
+        invalid_tool_calls = []
+        additional_kwargs: Dict = {}
+        if function_call := _dict.get("function_call"):
+            additional_kwargs["function_call"] = dict(function_call)
+        tool_calls = []
+        if raw_tool_calls := _dict.get("tool_calls"):
+            additional_kwargs["tool_calls"] = raw_tool_calls
+            for raw_tool_call in _dict["tool_calls"]:
+                try:
+                    tool_calls.append(parse_tool_call(raw_tool_call, return_id=True))
+                except Exception as e:
+                    invalid_tool_calls.append(
+                        make_invalid_tool_call(raw_tool_call, str(e))
+                    )
+        else:
+            additional_kwargs = {}
         content = msg_content or ""
-        return AIMessage(content=content)
+        return AIMessage(
+            content=content,
+            additional_kwargs=additional_kwargs,
+            tool_calls=tool_calls,
+            invalid_tool_calls=invalid_tool_calls,
+        )
     elif msg_role == "system":
         return SystemMessage(content=msg_content)
     else:
@@ -76,12 +118,24 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
 def _convert_delta_to_message_chunk(
     _dict: Mapping[str, Any], default_class: Type[BaseMessageChunk]
 ) -> BaseMessageChunk:
-    msg_role = _dict["role"]
-    msg_content = _dict.get("content", "")
+    msg_role = cast(str, _dict.get("role"))
+    msg_content = cast(str, _dict.get("content") or "")
+    additional_kwargs: Dict = {}
+    if _dict.get("function_call"):
+        function_call = dict(_dict["function_call"])
+        if "name" in function_call and function_call["name"] is None:
+            function_call["name"] = ""
+        additional_kwargs["function_call"] = function_call
+    if _dict.get("tool_calls"):
+        additional_kwargs["tool_calls"] = _dict["tool_calls"]
     if msg_role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=msg_content)
     elif msg_role == "assistant" or default_class == AIMessageChunk:
-        return AIMessageChunk(content=msg_content)
+        return AIMessageChunk(content=msg_content, additional_kwargs=additional_kwargs)
+    elif msg_role == "function" or default_class == FunctionMessageChunk:
+        return FunctionMessageChunk(content=msg_content, name=_dict["name"])
+    elif msg_role == "tool" or default_class == ToolMessageChunk:
+        return ToolMessageChunk(content=msg_content, tool_call_id=_dict["tool_call_id"])
     elif msg_role or default_class == ChatMessageChunk:
         return ChatMessageChunk(content=msg_content, role=msg_role)
     else:
@@ -89,34 +143,116 @@ def _convert_delta_to_message_chunk(
 
 
 class ChatSparkLLM(BaseChatModel):
-    """iFlyTek Spark large language model.
+    """IFlyTek Spark chat model integration.
 
-    To use, you should pass `app_id`, `api_key`, `api_secret`
-    as a named parameter to the constructor OR set environment
-    variables ``IFLYTEK_SPARK_APP_ID``, ``IFLYTEK_SPARK_API_KEY`` and
-    ``IFLYTEK_SPARK_API_SECRET``
+    Setup:
+        To use, you should have the environment variable``IFLYTEK_SPARK_API_KEY``,
+        ``IFLYTEK_SPARK_API_SECRET`` and ``IFLYTEK_SPARK_APP_ID``.
 
-    Example:
+    Key init args — completion params:
+        model: Optional[str]
+            Name of IFLYTEK SPARK model to use.
+        temperature: Optional[float]
+            Sampling temperature.
+        top_k: Optional[float]
+            What search sampling control to use.
+        streaming: Optional[bool]
+             Whether to stream the results or not.
+
+    Key init args — client params:
+        api_key: Optional[str]
+            IFLYTEK SPARK API KEY. If not passed in will be read from env var IFLYTEK_SPARK_API_KEY.
+        api_secret: Optional[str]
+            IFLYTEK SPARK API SECRET. If not passed in will be read from env var IFLYTEK_SPARK_API_SECRET.
+        api_url: Optional[str]
+            Base URL for API requests.
+        timeout: Optional[int]
+            Timeout for requests.
+
+    See full list of supported init args and their descriptions in the params section.
+
+    Instantiate:
         .. code-block:: python
 
-        client = ChatSparkLLM(
-            spark_app_id="<app_id>",
-            spark_api_key="<api_key>",
-            spark_api_secret="<api_secret>"
-        )
+            from langchain_community.chat_models import ChatSparkLLM
 
-    Extra infos:
-        1. Get app_id, api_key, api_secret from the iFlyTek Open Platform Console:
-            https://console.xfyun.cn/services/bm35
-        2. By default, iFlyTek Spark LLM V3.0 is invoked.
-            If you need to invoke other versions, please configure the corresponding
-            parameters(spark_api_url and spark_llm_domain) according to the document:
-            https://www.xfyun.cn/doc/spark/Web.html
-        3. It is necessary to ensure that the app_id used has a license for
-            the corresponding model version.
-        4. If you encounter problems during use, try getting help at:
-            https://console.xfyun.cn/workorder/commit
-    """
+            chat = ChatSparkLLM(
+                api_key="your-api-key",
+                api_secret="your-api-secret",
+                model='Spark4.0 Ultra',
+                # temperature=...,
+                # other params...
+            )
+
+    Invoke:
+        .. code-block:: python
+
+            messages = [
+                ("system", "你是一名专业的翻译家，可以将用户的中文翻译为英文。"),
+                ("human", "我喜欢编程。"),
+            ]
+            chat.invoke(messages)
+
+        .. code-block:: python
+
+            AIMessage(
+                content='I like programming.',
+                response_metadata={
+                    'token_usage': {
+                        'question_tokens': 3,
+                        'prompt_tokens': 16,
+                        'completion_tokens': 4,
+                        'total_tokens': 20
+                    }
+                },
+                id='run-af8b3531-7bf7-47f0-bfe8-9262cb2a9d47-0'
+            )
+
+    Stream:
+        .. code-block:: python
+
+            for chunk in chat.stream(messages):
+                print(chunk)
+
+        .. code-block:: python
+
+            content='I' id='run-fdbb57c2-2d32-4516-b894-6c5a67605d83'
+            content=' like programming' id='run-fdbb57c2-2d32-4516-b894-6c5a67605d83'
+            content='.' id='run-fdbb57c2-2d32-4516-b894-6c5a67605d83'
+
+        .. code-block:: python
+
+            stream = chat.stream(messages)
+            full = next(stream)
+            for chunk in stream:
+                full += chunk
+            full
+
+        .. code-block:: python
+
+            AIMessageChunk(
+                content='I like programming.',
+                id='run-aca2fa82-c2e4-4835-b7e2-865ddd3c46cb'
+            )
+
+    Response metadata
+        .. code-block:: python
+
+            ai_msg = chat.invoke(messages)
+            ai_msg.response_metadata
+
+        .. code-block:: python
+
+            {
+                'token_usage': {
+                    'question_tokens': 3,
+                    'prompt_tokens': 16,
+                    'completion_tokens': 4,
+                    'total_tokens': 20
+                }
+            }
+
+    """  # noqa: E501
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -134,25 +270,39 @@ class ChatSparkLLM(BaseChatModel):
         }
 
     client: Any = None  #: :meta private:
-    spark_app_id: Optional[str] = None
+    spark_app_id: Optional[str] = Field(default=None, alias="app_id")
+    """Automatically inferred from env var `IFLYTEK_SPARK_APP_ID` 
+        if not provided."""
     spark_api_key: Optional[str] = Field(default=None, alias="api_key")
-    spark_api_secret: Optional[str] = None
-    spark_api_url: Optional[str] = None
-    spark_llm_domain: Optional[str] = None
+    """Automatically inferred from env var `IFLYTEK_SPARK_API_KEY` 
+        if not provided."""
+    spark_api_secret: Optional[str] = Field(default=None, alias="api_secret")
+    """Automatically inferred from env var `IFLYTEK_SPARK_API_SECRET` 
+        if not provided."""
+    spark_api_url: Optional[str] = Field(default=None, alias="api_url")
+    """Base URL path for API requests, leave blank if not using a proxy or service 
+        emulator."""
+    spark_llm_domain: Optional[str] = Field(default=None, alias="model")
+    """Model name to use."""
     spark_user_id: str = "lc_user"
     streaming: bool = False
+    """Whether to stream the results or not."""
     request_timeout: int = Field(30, alias="timeout")
+    """request timeout for chat http requests"""
     temperature: float = Field(default=0.5)
+    """What sampling temperature to use."""
     top_k: int = 4
+    """What search sampling control to use."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    """Holds any model parameters valid for API call not explicitly specified."""
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
-        allow_population_by_field_name = True
-
-    @root_validator(pre=True)
-    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})
@@ -178,38 +328,45 @@ class ChatSparkLLM(BaseChatModel):
 
         return values
 
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         values["spark_app_id"] = get_from_dict_or_env(
             values,
-            "spark_app_id",
+            ["spark_app_id", "app_id"],
             "IFLYTEK_SPARK_APP_ID",
         )
         values["spark_api_key"] = get_from_dict_or_env(
             values,
-            "spark_api_key",
+            ["spark_api_key", "api_key"],
             "IFLYTEK_SPARK_API_KEY",
         )
         values["spark_api_secret"] = get_from_dict_or_env(
             values,
-            "spark_api_secret",
+            ["spark_api_secret", "api_secret"],
             "IFLYTEK_SPARK_API_SECRET",
         )
         values["spark_api_url"] = get_from_dict_or_env(
             values,
             "spark_api_url",
             "IFLYTEK_SPARK_API_URL",
-            "wss://spark-api.xf-yun.com/v3.1/chat",
+            SPARK_API_URL,
         )
         values["spark_llm_domain"] = get_from_dict_or_env(
             values,
             "spark_llm_domain",
             "IFLYTEK_SPARK_LLM_DOMAIN",
-            "generalv3",
+            SPARK_LLM_DOMAIN,
         )
+
         # put extra params into model_kwargs
-        values["model_kwargs"]["temperature"] = values["temperature"] or cls.temperature
-        values["model_kwargs"]["top_k"] = values["top_k"] or cls.top_k
+        default_values = {
+            name: field.default
+            for name, field in get_fields(cls).items()
+            if field.default is not None
+        }
+        values["model_kwargs"]["temperature"] = default_values.get("temperature")
+        values["model_kwargs"]["top_k"] = default_values.get("top_k")
 
         values["client"] = _SparkLLMClient(
             app_id=values["spark_app_id"],
@@ -231,10 +388,10 @@ class ChatSparkLLM(BaseChatModel):
         default_chunk_class = AIMessageChunk
 
         self.client.arun(
-            [_convert_message_to_dict(m) for m in messages],
+            [convert_message_to_dict(m) for m in messages],
             self.spark_user_id,
             self.model_kwargs,
-            self.streaming,
+            streaming=True,
         )
         for content in self.client.subscribe(timeout=self.request_timeout):
             if "data" not in content:
@@ -251,16 +408,17 @@ class ChatSparkLLM(BaseChatModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        if self.streaming:
+        if stream or self.streaming:
             stream_iter = self._stream(
                 messages=messages, stop=stop, run_manager=run_manager, **kwargs
             )
             return generate_from_stream(stream_iter)
 
         self.client.arun(
-            [_convert_message_to_dict(m) for m in messages],
+            [convert_message_to_dict(m) for m in messages],
             self.spark_user_id,
             self.model_kwargs,
             False,
@@ -273,7 +431,7 @@ class ChatSparkLLM(BaseChatModel):
             if "data" not in content:
                 continue
             completion = content["data"]
-        message = _convert_dict_to_message(completion)
+        message = convert_dict_to_message(completion)
         generations = [ChatGeneration(message=message)]
         return ChatResult(generations=generations, llm_output=llm_output)
 
@@ -307,12 +465,10 @@ class _SparkLLMClient:
                 "Please install it with `pip install websocket-client`."
             )
 
-        self.api_url = (
-            "wss://spark-api.xf-yun.com/v3.1/chat" if not api_url else api_url
-        )
+        self.api_url = SPARK_API_URL if not api_url else api_url
         self.app_id = app_id
         self.model_kwargs = model_kwargs
-        self.spark_domain = spark_domain or "generalv3"
+        self.spark_domain = spark_domain or SPARK_LLM_DOMAIN
         self.queue: Queue[Dict] = Queue()
         self.blocking_message = {"content": "", "role": "assistant"}
         self.api_key = api_key

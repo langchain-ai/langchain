@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence, Union
 import requests
 from langchain_core._api.deprecation import deprecated
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from pydantic import BaseModel, model_validator
 
 from langchain_community.document_loaders.base import BaseLoader
 
@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 @deprecated(
     since="0.0.24",
-    removal="0.3.0",
+    removal="1.0",
     alternative_import="docugami_langchain.DocugamiLoader",
 )
 class DocugamiLoader(BaseLoader, BaseModel):
@@ -44,13 +44,13 @@ class DocugamiLoader(BaseLoader, BaseModel):
     access_token: Optional[str] = os.environ.get("DOCUGAMI_API_KEY")
     """The Docugami API access token to use."""
 
-    max_text_length = 4096
+    max_text_length: int = 4096
     """Max length of chunk text returned."""
 
     min_text_length: int = 32
     """Threshold under which chunks are appended to next to avoid over-chunking."""
 
-    max_metadata_length = 512
+    max_metadata_length: int = 512
     """Max length of metadata text returned."""
 
     include_xml_tags: bool = False
@@ -69,10 +69,10 @@ class DocugamiLoader(BaseLoader, BaseModel):
     """Set to False if you want to full whitespace formatting in the original
     XML doc, including indentation."""
 
-    docset_id: Optional[str]
+    docset_id: Optional[str] = None
     """The Docugami API docset ID to use."""
 
-    document_ids: Optional[Sequence[str]]
+    document_ids: Optional[Sequence[str]] = None
     """The Docugami API document IDs to use."""
 
     file_paths: Optional[Sequence[Union[Path, str]]]
@@ -81,8 +81,9 @@ class DocugamiLoader(BaseLoader, BaseModel):
     include_project_metadata_in_doc_metadata: bool = True
     """Set to True if you want to include the project metadata in the doc metadata."""
 
-    @root_validator
-    def validate_local_or_remote(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_local_or_remote(cls, values: Dict[str, Any]) -> Any:
         """Validate that either local file paths are given, or remote API docset ID.
 
         Args:

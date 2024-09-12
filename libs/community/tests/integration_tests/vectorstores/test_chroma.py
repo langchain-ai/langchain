@@ -1,4 +1,5 @@
 """Test Chroma functionality."""
+
 import uuid
 
 import pytest

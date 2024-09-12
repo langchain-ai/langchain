@@ -83,6 +83,7 @@ const config = {
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         docs: {
+          editUrl: "https://github.com/langchain-ai/langchain/edit/master/docs/",
           sidebarPath: require.resolve("./sidebars.js"),
           remarkPlugins: [
             [require("@docusaurus/remark-plugin-npm2yarn"), { sync: true }],
@@ -124,8 +125,11 @@ const config = {
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
       announcementBar: {
-        content: 'LangChain 0.2 is out! Leave feedback on the v0.2 docs <a href="https://github.com/langchain-ai/langchain/discussions/21716">here</a>. You can view the v0.1 docs <a href="/v0.1/docs/get_started/introduction/">here</a>.',
+        content:
+          'Share your thoughts on AI agents. <a target="_blank" href="https://langchain.typeform.com/state-of-agents">Take the 3-min survey</a>.',
         isCloseable: true,
+        backgroundColor: "rgba(53, 151, 147, 0.1)",
+        textColor: "rgb(53, 151, 147)",
       },
       docs: {
         sidebar: {
@@ -164,9 +168,19 @@ const config = {
             label: "Integrations",
           },
           {
-            href: "https://api.python.langchain.com",
-            label: "API Reference",
+            type: "dropdown",
+            label: "API reference",
             position: "left",
+            items: [
+              {
+                label: "Latest",
+                to: "https://python.langchain.com/v0.2/api_reference/reference.html",
+              },
+              {
+                label: "Legacy",
+                href: "https://api.python.langchain.com/"
+              }
+            ]
           },
           {
             type: "dropdown",
@@ -182,11 +196,6 @@ const config = {
                 type: "doc",
                 docId: "contributing/index",
                 label: "Contributing",
-              },
-              {
-                type: "docSidebar",
-                sidebarId: "templates",
-                label: "Templates",
               },
               {
                 label: "Cookbooks",
@@ -237,18 +246,6 @@ const config = {
                 label: "LangSmith Docs",
               },
               {
-                href: "https://github.com/langchain-ai/langserve",
-                label: "LangServe GitHub",
-              },
-              {
-                href: "https://github.com/langchain-ai/langchain/tree/master/templates",
-                label: "Templates GitHub",
-              },
-              {
-                label: "Templates Hub",
-                href: "https://templates.langchain.com",
-              },
-              {
                 href: "https://smith.langchain.com/hub",
                 label: "LangChain Hub",
               },
@@ -279,10 +276,6 @@ const config = {
             title: "Community",
             items: [
               {
-                label: "Discord",
-                href: "https://discord.gg/cU2adEyC7w",
-              },
-              {
                 label: "Twitter",
                 href: "https://twitter.com/LangChainAI",
               },
@@ -291,6 +284,10 @@ const config = {
           {
             title: "GitHub",
             items: [
+              {
+                label: "Organization",
+                href: "https://github.com/langchain-ai",
+              },
               {
                 label: "Python",
                 href: "https://github.com/langchain-ai/langchain",

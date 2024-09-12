@@ -1,6 +1,5 @@
 """Test `Kinetica` chat models"""
 
-
 import logging
 from typing import Any
 
@@ -12,9 +11,10 @@ LOG = logging.getLogger(__name__)
 
 
 class TestChatKinetica:
-    test_ctx_json = """
+    test_ctx_json: str = """
     {
         "payload":{
+            "question": "foo",
             "context":[
                 {
                     "table":"demo.test_profiles",

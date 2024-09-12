@@ -1,4 +1,5 @@
 """Wrapper around in-memory storage."""
+
 from __future__ import annotations
 
 from typing import Any, Dict, List, Literal, Optional
@@ -15,7 +16,7 @@ class DocArrayInMemorySearch(DocArrayIndex):
     """In-memory `DocArray` storage for exact search.
 
     To use it, you should have the ``docarray`` package with version >=0.32.0 installed.
-    You can install it with `pip install "langchain[docarray]"`.
+    You can install it with `pip install docarray`.
     """
 
     @classmethod
@@ -58,9 +59,7 @@ class DocArrayInMemorySearch(DocArrayIndex):
             embedding (Embeddings): Embedding function.
             metadatas (Optional[List[Dict[Any, Any]]]): Metadata for each text
                 if it exists. Defaults to None.
-            metric (str): metric for exact nearest-neighbor search.
-                Can be one of: "cosine_sim", "euclidean_dist" and "sqeuclidean_dist".
-                Defaults to "cosine_sim".
+            **kwargs: Other keyword arguments to be passed to the from_params method.
 
         Returns:
             DocArrayInMemorySearch Vector Store

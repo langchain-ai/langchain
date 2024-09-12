@@ -14,10 +14,13 @@
     AIMessage, HumanMessage, BaseMessage
 
 """  # noqa: E501
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from typing import List, Sequence, Union
+
+from pydantic import BaseModel, Field
 
 from langchain_core.messages import (
     AIMessage,
@@ -25,8 +28,6 @@ from langchain_core.messages import (
     HumanMessage,
     get_buffer_string,
 )
-from langchain_core.pydantic_v1 import BaseModel, Field
-from langchain_core.runnables import run_in_executor
 
 
 class BaseChatMessageHistory(ABC):
@@ -102,6 +103,8 @@ class BaseChatMessageHistory(ABC):
         In general, fetching messages may involve IO to the underlying
         persistence layer.
         """
+        from langchain_core.runnables.config import run_in_executor
+
         return await run_in_executor(None, lambda: self.messages)
 
     def add_user_message(self, message: Union[HumanMessage, str]) -> None:
@@ -114,7 +117,7 @@ class BaseChatMessageHistory(ABC):
         This method may be deprecated in a future release.
 
         Args:
-            message: The human message to add
+            message: The human message to add to the store.
         """
         if isinstance(message, HumanMessage):
             self.add_message(message)
@@ -143,6 +146,10 @@ class BaseChatMessageHistory(ABC):
 
         Args:
             message: A BaseMessage object to store.
+
+        Raises:
+            NotImplementedError: If the sub-class has not implemented an efficient
+                add_messages method.
         """
         if type(self).add_messages != BaseChatMessageHistory.add_messages:
             # This means that the sub-class has implemented an efficient add_messages
@@ -161,17 +168,19 @@ class BaseChatMessageHistory(ABC):
         in an efficient manner to avoid unnecessary round-trips to the underlying store.
 
         Args:
-            messages: A list of BaseMessage objects to store.
+            messages: A sequence of BaseMessage objects to store.
         """
         for message in messages:
             self.add_message(message)
 
     async def aadd_messages(self, messages: Sequence[BaseMessage]) -> None:
-        """Add a list of messages.
+        """Async add a list of messages.
 
         Args:
-            messages: A list of BaseMessage objects to store.
+            messages: A sequence of BaseMessage objects to store.
         """
+        from langchain_core.runnables.config import run_in_executor
+
         await run_in_executor(None, self.add_messages, messages)
 
     @abstractmethod
@@ -179,7 +188,9 @@ class BaseChatMessageHistory(ABC):
         """Remove all messages from the store"""
 
     async def aclear(self) -> None:
-        """Remove all messages from the store"""
+        """Async remove all messages from the store"""
+        from langchain_core.runnables.config import run_in_executor
+
         await run_in_executor(None, self.clear)
 
     def __str__(self) -> str:
@@ -190,24 +201,44 @@ class BaseChatMessageHistory(ABC):
 class InMemoryChatMessageHistory(BaseChatMessageHistory, BaseModel):
     """In memory implementation of chat message history.
 
-    Stores messages in an in memory list.
+    Stores messages in a memory list.
     """
 
     messages: List[BaseMessage] = Field(default_factory=list)
+    """A list of messages stored in memory."""
 
     async def aget_messages(self) -> List[BaseMessage]:
+        """Async version of getting messages.
+
+        Can over-ride this method to provide an efficient async implementation.
+        In general, fetching messages may involve IO to the underlying
+        persistence layer.
+
+        Returns:
+            List of messages.
+        """
         return self.messages
 
     def add_message(self, message: BaseMessage) -> None:
-        """Add a self-created message to the store"""
+        """Add a self-created message to the store.
+
+        Args:
+            message: The message to add.
+        """
         self.messages.append(message)
 
     async def aadd_messages(self, messages: Sequence[BaseMessage]) -> None:
-        """Add messages to the store"""
+        """Async add messages to the store.
+
+        Args:
+            messages: The messages to add.
+        """
         self.add_messages(messages)
 
     def clear(self) -> None:
+        """Clear all messages from the store."""
         self.messages = []
 
     async def aclear(self) -> None:
+        """Async clear all messages from the store."""
         self.clear()

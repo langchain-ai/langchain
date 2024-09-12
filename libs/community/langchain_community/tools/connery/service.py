@@ -1,9 +1,9 @@
 import json
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import requests
-from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.utils.env import get_from_dict_or_env
+from pydantic import BaseModel, model_validator
 
 from langchain_community.tools.connery.models import Action
 from langchain_community.tools.connery.tool import ConneryAction
@@ -20,8 +20,9 @@ class ConneryService(BaseModel):
     runner_url: Optional[str] = None
     api_key: Optional[str] = None
 
-    @root_validator()
-    def validate_attributes(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_attributes(cls, values: Dict) -> Any:
         """
         Validate the attributes of the ConneryService class.
         Parameters:

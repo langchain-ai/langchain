@@ -293,6 +293,8 @@ class Language(str, Enum):
     LUA = "lua"
     PERL = "perl"
     HASKELL = "haskell"
+    ELIXIR = "elixir"
+    POWERSHELL = "powershell"
 
 
 @dataclass(frozen=True)

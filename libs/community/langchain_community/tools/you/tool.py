@@ -5,8 +5,8 @@ from langchain_core.callbacks import (
     CallbackManagerForToolRun,
 )
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel, Field
 
 from langchain_community.utilities.you import YouSearchAPIWrapper
 
@@ -20,8 +20,8 @@ class YouInput(BaseModel):
 class YouSearchTool(BaseTool):
     """Tool that searches the you.com API."""
 
-    name = "you_search"
-    description = (
+    name: str = "you_search"
+    description: str = (
         "The YOU APIs make LLMs and search experiences more factual and"
         "up to date with realtime web data."
     )

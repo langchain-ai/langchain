@@ -15,6 +15,15 @@ from .core import (
 
 
 def load(prompt_path: str, configuration: str = "default") -> Prompty:
+    """Load a prompty file and return a Prompty object.
+
+    Args:
+        prompt_path: The path to the prompty file.
+        configuration: The configuration to use. Defaults to "default".
+
+    Returns:
+        The Prompty object.
+    """
     file_path = Path(prompt_path)
     if not file_path.is_absolute():
         # get caller's path (take into account trace frame)
@@ -113,6 +122,15 @@ def prepare(
     prompt: Prompty,
     inputs: Dict[str, Any] = {},
 ) -> Any:
+    """Prepare the inputs for the prompty.
+
+    Args:
+        prompt: The Prompty object.
+        inputs: The inputs to the prompty. Defaults to {}.
+
+    Returns:
+        The prepared inputs.
+    """
     invoker = InvokerFactory()
 
     inputs = param_hoisting(inputs, prompt.sample)
@@ -153,6 +171,18 @@ def run(
     parameters: Dict[str, Any] = {},
     raw: bool = False,
 ) -> Any:
+    """Run the prompty.
+
+    Args:
+        prompt: The Prompty object.
+        content: The content to run the prompty on.
+        configuration: The configuration to use. Defaults to {}.
+        parameters: The parameters to use. Defaults to {}.
+        raw: Whether to return the raw output. Defaults to False.
+
+    Returns:
+        The result of running the prompty.
+    """
     invoker = InvokerFactory()
 
     if configuration != {}:
@@ -195,6 +225,21 @@ def execute(
     raw: bool = False,
     connection: str = "default",
 ) -> Any:
+    """Execute a prompty.
+
+    Args:
+        prompt: The prompt to execute.
+            Can be a path to a prompty file or a Prompty object.
+        configuration: The configuration to use. Defaults to {}.
+        parameters: The parameters to use. Defaults to {}.
+        inputs: The inputs to the prompty. Defaults to {}.
+        raw: Whether to return the raw output. Defaults to False.
+        connection: The connection to use. Defaults to "default".
+
+    Returns:
+        The result of executing the prompty.
+    """
+
     if isinstance(prompt, str):
         prompt = load(prompt, connection)
 

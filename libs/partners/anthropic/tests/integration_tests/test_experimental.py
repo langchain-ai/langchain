@@ -4,7 +4,7 @@ from enum import Enum
 from typing import List, Optional
 
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 
 from langchain_anthropic.experimental import ChatAnthropicTools
 
@@ -18,7 +18,7 @@ BIG_MODEL_NAME = "claude-3-opus-20240229"
 
 def test_stream() -> None:
     """Test streaming tokens from Anthropic."""
-    llm = ChatAnthropicTools(model_name=MODEL_NAME)
+    llm = ChatAnthropicTools(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
     for token in llm.stream("I'm Pickle Rick"):
         assert isinstance(token.content, str)
@@ -26,7 +26,7 @@ def test_stream() -> None:
 
 async def test_astream() -> None:
     """Test streaming tokens from Anthropic."""
-    llm = ChatAnthropicTools(model_name=MODEL_NAME)
+    llm = ChatAnthropicTools(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
     async for token in llm.astream("I'm Pickle Rick"):
         assert isinstance(token.content, str)
@@ -34,7 +34,7 @@ async def test_astream() -> None:
 
 async def test_abatch() -> None:
     """Test streaming tokens from ChatAnthropicTools."""
-    llm = ChatAnthropicTools(model_name=MODEL_NAME)
+    llm = ChatAnthropicTools(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
     result = await llm.abatch(["I'm Pickle Rick", "I'm not Pickle Rick"])
     for token in result:
@@ -43,7 +43,7 @@ async def test_abatch() -> None:
 
 async def test_abatch_tags() -> None:
     """Test batch tokens from ChatAnthropicTools."""
-    llm = ChatAnthropicTools(model_name=MODEL_NAME)
+    llm = ChatAnthropicTools(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
     result = await llm.abatch(
         ["I'm Pickle Rick", "I'm not Pickle Rick"], config={"tags": ["foo"]}
@@ -54,7 +54,7 @@ async def test_abatch_tags() -> None:
 
 def test_batch() -> None:
     """Test batch tokens from ChatAnthropicTools."""
-    llm = ChatAnthropicTools(model_name=MODEL_NAME)
+    llm = ChatAnthropicTools(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
     result = llm.batch(["I'm Pickle Rick", "I'm not Pickle Rick"])
     for token in result:
@@ -63,7 +63,7 @@ def test_batch() -> None:
 
 async def test_ainvoke() -> None:
     """Test invoke tokens from ChatAnthropicTools."""
-    llm = ChatAnthropicTools(model_name=MODEL_NAME)
+    llm = ChatAnthropicTools(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
     result = await llm.ainvoke("I'm Pickle Rick", config={"tags": ["foo"]})
     assert isinstance(result.content, str)
@@ -71,7 +71,7 @@ async def test_ainvoke() -> None:
 
 def test_invoke() -> None:
     """Test invoke tokens from ChatAnthropicTools."""
-    llm = ChatAnthropicTools(model_name=MODEL_NAME)
+    llm = ChatAnthropicTools(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
     result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
     assert isinstance(result.content, str)
@@ -79,7 +79,7 @@ def test_invoke() -> None:
 
 def test_system_invoke() -> None:
     """Test invoke tokens with a system message"""
-    llm = ChatAnthropicTools(model_name=MODEL_NAME)
+    llm = ChatAnthropicTools(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
     prompt = ChatPromptTemplate.from_messages(
         [
@@ -108,7 +108,7 @@ def test_with_structured_output() -> None:
         name: str
         age: int
 
-    chain = ChatAnthropicTools(
+    chain = ChatAnthropicTools(  # type: ignore[call-arg, call-arg]
         model_name=BIG_MODEL_NAME,
         temperature=0,
         default_headers={"anthropic-beta": "tools-2024-04-04"},
@@ -153,7 +153,7 @@ def test_anthropic_complex_structured_output() -> None:
         ]
     )
 
-    llm = ChatAnthropicTools(
+    llm = ChatAnthropicTools(  # type: ignore[call-arg, call-arg]
         temperature=0,
         model_name=BIG_MODEL_NAME,
         default_headers={"anthropic-beta": "tools-2024-04-04"},

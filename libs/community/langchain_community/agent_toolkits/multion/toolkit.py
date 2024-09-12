@@ -1,11 +1,13 @@
 """MultiOn agent."""
+
 from __future__ import annotations
 
 from typing import List
 
-from langchain_core.tools import BaseToolkit
+from langchain_core.tools import BaseTool
+from langchain_core.tools.base import BaseToolkit
+from pydantic import ConfigDict
 
-from langchain_community.tools import BaseTool
 from langchain_community.tools.multion.close_session import MultionCloseSession
 from langchain_community.tools.multion.create_session import MultionCreateSession
 from langchain_community.tools.multion.update_session import MultionUpdateSession
@@ -24,10 +26,9 @@ class MultionToolkit(BaseToolkit):
         See https://python.langchain.com/docs/security for more information.
     """
 
-    class Config:
-        """Pydantic config."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""

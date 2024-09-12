@@ -2,8 +2,8 @@ from typing import Any, Dict, List, Mapping, Optional, Tuple
 
 import requests
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, ConfigDict, model_validator
 
 
 class MosaicMLInstructorEmbeddings(BaseModel, Embeddings):
@@ -41,13 +41,13 @@ class MosaicMLInstructorEmbeddings(BaseModel, Embeddings):
 
     mosaicml_api_token: Optional[str] = None
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
-        extra = Extra.forbid
-
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that api key and python package exists in environment."""
         mosaicml_api_token = get_from_dict_or_env(
             values, "mosaicml_api_token", "MOSAICML_API_TOKEN"

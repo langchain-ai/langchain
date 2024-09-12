@@ -1,4 +1,5 @@
 """Base classes for chain routing."""
+
 from __future__ import annotations
 
 from abc import ABC
@@ -9,7 +10,7 @@ from langchain_core.callbacks import (
     CallbackManagerForChainRun,
     Callbacks,
 )
-from langchain_core.pydantic_v1 import Extra
+from pydantic import ConfigDict
 
 from langchain.chains.base import Chain
 
@@ -60,11 +61,10 @@ class MultiRouteChain(Chain):
     """If True, use default_chain when an invalid destination name is provided. 
     Defaults to False."""
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
     @property
     def input_keys(self) -> List[str]:

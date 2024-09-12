@@ -7,9 +7,9 @@ from langchain_core.callbacks import (
     CallbackManagerForRetrieverRun,
 )
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import Field
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.vectorstores import VectorStore
+from pydantic import ConfigDict, Field
 
 
 def _get_hours_passed(time: datetime.datetime, ref_time: datetime.datetime) -> float:
@@ -46,10 +46,9 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever):
     None assigns no salience to documents not fetched from the vector store.
     """
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     def _document_get_date(self, field: str, document: Document) -> datetime.datetime:
         """Return the value of the date field of a document."""

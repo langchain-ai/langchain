@@ -8,8 +8,8 @@ import aiohttp
 import numpy as np
 import requests
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, ConfigDict, model_validator
 
 __all__ = ["InfinityEmbeddings"]
 
@@ -44,13 +44,13 @@ class InfinityEmbeddings(BaseModel, Embeddings):
     """Infinity client."""
 
     # LLM call kwargs
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
-        extra = Extra.forbid
-
-    @root_validator(allow_reuse=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that api key and python package exists in environment."""
 
         values["infinity_api_url"] = get_from_dict_or_env(
@@ -289,7 +289,7 @@ class TinyAsyncOpenAIInfinityEmbeddingClient:  #: :meta private:
                     f"Infinity returned an unexpected response with status "
                     f"{response.status}: {response.text}"
                 )
-            embedding = (await response.json())["embeddings"]
+            embedding = (await response.json())["data"]
             return [e["embedding"] for e in embedding]
 
     async def aembed(self, model: str, texts: List[str]) -> List[List[float]]:
@@ -315,7 +315,7 @@ class TinyAsyncOpenAIInfinityEmbeddingClient:  #: :meta private:
                 *[
                     self._async_request(
                         session=session,
-                        **self._kwargs_post_request(model=model, texts=t),
+                        kwargs=self._kwargs_post_request(model=model, texts=t),
                     )
                     for t in perm_texts_batched
                 ]

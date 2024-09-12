@@ -1,4 +1,5 @@
 """Toolkit for interacting with a Power BI dataset."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, List, Optional, Union
@@ -12,10 +13,10 @@ from langchain_core.prompts.chat import (
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
-from langchain_core.pydantic_v1 import Field
-from langchain_core.tools import BaseToolkit
+from langchain_core.tools import BaseTool
+from langchain_core.tools.base import BaseToolkit
+from pydantic import ConfigDict, Field
 
-from langchain_community.tools import BaseTool
 from langchain_community.tools.powerbi.prompt import (
     QUESTION_TO_QUERY_BASE,
     SINGLE_QUESTION_TO_QUERY,
@@ -43,6 +44,15 @@ class PowerBIToolkit(BaseToolkit):
         code are appropriately scoped to the application.
 
         See https://python.langchain.com/docs/security for more information.
+
+    Parameters:
+        powerbi: The Power BI dataset.
+        llm: The language model to use.
+        examples: Optional. The examples for the prompt. Default is None.
+        max_iterations: Optional. The maximum iterations to run. Default is 5.
+        callback_manager: Optional. The callback manager. Default is None.
+        output_token_limit: Optional. The output token limit. Default is None.
+        tiktoken_model_name: Optional. The TikToken model name. Default is None.
     """
 
     powerbi: PowerBIDataset = Field(exclude=True)
@@ -53,10 +63,9 @@ class PowerBIToolkit(BaseToolkit):
     output_token_limit: Optional[int] = None
     tiktoken_model_name: Optional[str] = None
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""

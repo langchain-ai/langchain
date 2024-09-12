@@ -49,7 +49,7 @@ class KineticaLoader(BaseLoader):
         except ImportError:
             raise ImportError(
                 "Could not import Kinetica python API. "
-                "Please install it with `pip install gpudb==7.2.0.1`."
+                "Please install it with `pip install gpudb==7.2.0.9`."
             )
 
         try:

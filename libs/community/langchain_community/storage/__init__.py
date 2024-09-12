@@ -22,11 +22,15 @@ if TYPE_CHECKING:
         AstraDBByteStore,
         AstraDBStore,
     )
-    from langchain_community.storage.mongodb import (
-        MongoDBStore,
+    from langchain_community.storage.cassandra import (
+        CassandraByteStore,
     )
+    from langchain_community.storage.mongodb import MongoDBByteStore, MongoDBStore
     from langchain_community.storage.redis import (
         RedisStore,
+    )
+    from langchain_community.storage.sql import (
+        SQLStore,
     )
     from langchain_community.storage.upstash_redis import (
         UpstashRedisByteStore,
@@ -36,8 +40,11 @@ if TYPE_CHECKING:
 __all__ = [
     "AstraDBByteStore",
     "AstraDBStore",
+    "CassandraByteStore",
     "MongoDBStore",
+    "MongoDBByteStore",
     "RedisStore",
+    "SQLStore",
     "UpstashRedisByteStore",
     "UpstashRedisStore",
 ]
@@ -45,8 +52,11 @@ __all__ = [
 _module_lookup = {
     "AstraDBByteStore": "langchain_community.storage.astradb",
     "AstraDBStore": "langchain_community.storage.astradb",
+    "CassandraByteStore": "langchain_community.storage.cassandra",
     "MongoDBStore": "langchain_community.storage.mongodb",
+    "MongoDBByteStore": "langchain_community.storage.mongodb",
     "RedisStore": "langchain_community.storage.redis",
+    "SQLStore": "langchain_community.storage.sql",
     "UpstashRedisByteStore": "langchain_community.storage.upstash_redis",
     "UpstashRedisStore": "langchain_community.storage.upstash_redis",
 }

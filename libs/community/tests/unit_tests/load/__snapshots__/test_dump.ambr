@@ -71,6 +71,7 @@
       "LLMChain"
     ],
     "kwargs": {
+      "verbose": false,
       "prompt": {
         "lc": 1,
         "type": "constructor",
@@ -139,7 +140,7 @@
           "model_name": "davinci",
           "temperature": 0.5,
           "max_tokens": 256,
-          "top_p": 1,
+          "top_p": 1.0,
           "n": 1,
           "best_of": 1,
           "openai_api_key": {
@@ -298,6 +299,7 @@
       "LLMChain"
     ],
     "kwargs": {
+      "verbose": false,
       "prompt": {
         "lc": 1,
         "type": "constructor",
@@ -587,6 +589,7 @@
       "LLMChain"
     ],
     "kwargs": {
+      "verbose": false,
       "prompt": {
         "lc": 1,
         "type": "constructor",
@@ -655,7 +658,7 @@
           "model_name": "davinci",
           "temperature": 0.5,
           "max_tokens": 256,
-          "top_p": 1,
+          "top_p": 1.0,
           "n": 1,
           "best_of": 1,
           "openai_api_key": {
@@ -817,7 +820,7 @@
       "model_name": "davinci",
       "temperature": 0.7,
       "max_tokens": 256,
-      "top_p": 1,
+      "top_p": 1.0,
       "n": 1,
       "best_of": 1,
       "openai_api_key": {

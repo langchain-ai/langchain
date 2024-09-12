@@ -1,4 +1,5 @@
 """Wrapper around Together AI's Completion API."""
+
 import logging
 from typing import Any, Dict, List, Optional
 
@@ -9,8 +10,8 @@ from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models.llms import LLM
-from langchain_core.pydantic_v1 import Extra, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from pydantic import ConfigDict, SecretStr, model_validator
 
 from langchain_community.utilities.requests import Requests
 
@@ -18,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 @deprecated(
-    since="0.0.12", removal="0.3", alternative_import="langchain_together.Together"
+    since="0.0.12", removal="1.0", alternative_import="langchain_together.Together"
 )
 class Together(LLM):
     """LLM models from `Together`.
@@ -65,13 +66,13 @@ class Together(LLM):
         the response for each token generation step.
     """
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
-        extra = Extra.forbid
-
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that api key exists in environment."""
         values["together_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(values, "together_api_key", "TOGETHER_API_KEY")

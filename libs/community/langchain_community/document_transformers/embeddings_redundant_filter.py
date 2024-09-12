@@ -1,10 +1,11 @@
 """Transform documents"""
+
 from typing import Any, Callable, List, Sequence
 
 import numpy as np
 from langchain_core.documents import BaseDocumentTransformer, Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from langchain_community.utils.math import cosine_similarity
 
@@ -75,6 +76,20 @@ def _get_embeddings_from_stateful_docs(
     return embedded_documents
 
 
+async def _aget_embeddings_from_stateful_docs(
+    embeddings: Embeddings, documents: Sequence[_DocumentWithState]
+) -> List[List[float]]:
+    if len(documents) and "embedded_doc" in documents[0].state:
+        embedded_documents = [doc.state["embedded_doc"] for doc in documents]
+    else:
+        embedded_documents = await embeddings.aembed_documents(
+            [d.page_content for d in documents]
+        )
+        for doc, embedding in zip(documents, embedded_documents):
+            doc.state["embedded_doc"] = embedding
+    return embedded_documents
+
+
 def _filter_cluster_embeddings(
     embedded_documents: List[List[float]],
     num_clusters: int,
@@ -138,10 +153,9 @@ class EmbeddingsRedundantFilter(BaseDocumentTransformer, BaseModel):
     """Threshold for determining when two documents are similar enough
     to be considered redundant."""
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     def transform_documents(
         self, documents: Sequence[Document], **kwargs: Any
@@ -188,10 +202,9 @@ class EmbeddingsClusteringFilter(BaseDocumentTransformer, BaseModel):
     clusters.
     """
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     def transform_documents(
         self, documents: Sequence[Document], **kwargs: Any

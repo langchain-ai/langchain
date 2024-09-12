@@ -61,6 +61,22 @@ store = UpstashVectorStore(
 See [Upstash Vector documentation](https://upstash.com/docs/vector/features/embeddingmodels)
 for more detail on embedding models.
 
+## Namespaces
+You can use namespaces to partition your data in the index. Namespaces are useful when you want to query over huge amount of data, and you want to partition the data to make the queries faster. When you use namespaces, there won't be post-filtering on the results which will make the query results more precise.
+
+```python
+from langchain_community.vectorstores.upstash import UpstashVectorStore
+import os
+
+os.environ["UPSTASH_VECTOR_REST_URL"] = "<UPSTASH_VECTOR_REST_URL>"
+os.environ["UPSTASH_VECTOR_REST_TOKEN"] = "<UPSTASH_VECTOR_REST_TOKEN>"
+
+store = UpstashVectorStore(
+    embedding=embeddings
+    namespace="my_namespace"
+)
+```
+
 ### Inserting Vectors
 
 ```python

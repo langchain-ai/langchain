@@ -7,7 +7,7 @@ import os
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Set
+from typing import Any, Dict
 
 from pydantic.v1 import BaseModel, root_validator
 
@@ -17,6 +17,7 @@ _ROOT_DIR = Path(os.path.abspath(__file__)).parents[2]
 DOCS_DIR = _ROOT_DIR / "docs" / "docs"
 CODE_DIR = _ROOT_DIR / "libs"
 TEMPLATES_DIR = _ROOT_DIR / "templates"
+COOKBOOKS_DIR = _ROOT_DIR / "cookbook"
 ARXIV_ID_PATTERN = r"https://arxiv\.org/(abs|pdf)/(\d+\.\d+)"
 LANGCHAIN_PYTHON_URL = "python.langchain.com"
 
@@ -29,6 +30,7 @@ class ArxivPaper:
     referencing_doc2url: dict[str, str]
     referencing_api_ref2url: dict[str, str]
     referencing_template2url: dict[str, str]
+    referencing_cookbook2url: dict[str, str]
     title: str
     authors: list[str]
     abstract: str
@@ -50,7 +52,6 @@ def search_documentation_for_arxiv_references(docs_dir: Path) -> dict[str, set[s
     arxiv_url_pattern = re.compile(ARXIV_ID_PATTERN)
     exclude_strings = {"file_path", "metadata", "link", "loader", "PyPDFLoader"}
 
-    # loop all the files (ipynb, mdx, md) in the docs folder
     files = (
         p.resolve()
         for p in Path(docs_dir).glob("**/*")
@@ -74,39 +75,6 @@ def search_documentation_for_arxiv_references(docs_dir: Path) -> dict[str, set[s
                     else:
                         arxiv_id2file_names[arxiv_id].add(file_name)
     return arxiv_id2file_names
-
-
-def convert_module_name_and_members_to_urls(
-    arxiv_id2module_name_and_members: dict[str, set[str]],
-) -> dict[str, set[str]]:
-    arxiv_id2urls = {}
-    for arxiv_id, module_name_and_members in arxiv_id2module_name_and_members.items():
-        urls = set()
-        for module_name_and_member in module_name_and_members:
-            module_name, type_and_member = module_name_and_member.split(":")
-            if "$" in type_and_member:
-                type, member = type_and_member.split("$")
-            else:
-                type = type_and_member
-                member = ""
-            _namespace_parts = module_name.split(".")
-            if type == "module":
-                first_namespace_part = _namespace_parts[0]
-                if first_namespace_part.startswith("langchain_"):
-                    first_namespace_part = first_namespace_part.replace(
-                        "langchain_", ""
-                    )
-                url = f"{first_namespace_part}_api_reference.html#module-{module_name}"
-            elif type in ["class", "function"]:
-                second_namespace_part = _namespace_parts[1]
-                url = f"{second_namespace_part}/{module_name}.{member}.html#{module_name}.{member}"
-            else:
-                raise ValueError(
-                    f"Unknown type: {type} in the {module_name_and_member}."
-                )
-            urls.add(url)
-        arxiv_id2urls[arxiv_id] = urls
-    return arxiv_id2urls
 
 
 def search_code_for_arxiv_references(code_dir: Path) -> dict[str, set[str]]:
@@ -220,7 +188,6 @@ def search_code_for_arxiv_references(code_dir: Path) -> dict[str, set[str]]:
 
 def search_templates_for_arxiv_references(templates_dir: Path) -> dict[str, set[str]]:
     arxiv_url_pattern = re.compile(ARXIV_ID_PATTERN)
-    # exclude_strings = {"file_path", "metadata", "link", "loader", "PyPDFLoader"}
 
     # loop all the Readme.md files since they are parsed into LangChain documentation
     # exclude the Readme.md in the root folder
@@ -234,8 +201,6 @@ def search_templates_for_arxiv_references(templates_dir: Path) -> dict[str, set[
         with open(file, "r", encoding="utf-8") as f:
             lines = f.readlines()
             for line in lines:
-                # if any(exclude_string in line for exclude_string in exclude_strings):
-                #     continue
                 matches = arxiv_url_pattern.search(line)
                 if matches:
                     arxiv_id = matches.group(2)
@@ -245,6 +210,58 @@ def search_templates_for_arxiv_references(templates_dir: Path) -> dict[str, set[
                     else:
                         arxiv_id2template_names[arxiv_id].add(template_name)
     return arxiv_id2template_names
+
+
+def search_cookbooks_for_arxiv_references(cookbooks_dir: Path) -> dict[str, set[str]]:
+    arxiv_url_pattern = re.compile(ARXIV_ID_PATTERN)
+    files = (p.resolve() for p in Path(cookbooks_dir).glob("**/*.ipynb"))
+    arxiv_id2cookbook_names: dict[str, set[str]] = {}
+    for file in files:
+        with open(file, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+            for line in lines:
+                matches = arxiv_url_pattern.search(line)
+                if matches:
+                    arxiv_id = matches.group(2)
+                    cookbook_name = file.stem
+                    if arxiv_id not in arxiv_id2cookbook_names:
+                        arxiv_id2cookbook_names[arxiv_id] = {cookbook_name}
+                    else:
+                        arxiv_id2cookbook_names[arxiv_id].add(cookbook_name)
+    return arxiv_id2cookbook_names
+
+
+def convert_module_name_and_members_to_urls(
+    arxiv_id2module_name_and_members: dict[str, set[str]],
+) -> dict[str, set[str]]:
+    arxiv_id2urls = {}
+    for arxiv_id, module_name_and_members in arxiv_id2module_name_and_members.items():
+        urls = set()
+        for module_name_and_member in module_name_and_members:
+            module_name, type_and_member = module_name_and_member.split(":")
+            if "$" in type_and_member:
+                type_, member = type_and_member.split("$")
+            else:
+                type_ = type_and_member
+                member = ""
+            _namespace_parts = module_name.split(".")
+            if type_ == "module":
+                first_namespace_part = _namespace_parts[0]
+                if first_namespace_part.startswith("langchain_"):
+                    first_namespace_part = first_namespace_part.replace(
+                        "langchain_", ""
+                    )
+                url = f"{first_namespace_part}_api_reference.html#module-{module_name}"
+            elif type_ in ["class", "function"]:
+                second_namespace_part = _namespace_parts[1]
+                url = f"{second_namespace_part}/{module_name}.{member}.html#{module_name}.{member}"
+            else:
+                raise ValueError(
+                    f"Unknown type: {type_} in the {module_name_and_member}."
+                )
+            urls.add(url)
+        arxiv_id2urls[arxiv_id] = urls
+    return arxiv_id2urls
 
 
 def _get_doc_path(file_parts: tuple[str, ...], file_extension) -> str:
@@ -283,60 +300,6 @@ def _get_module_name(file_parts: tuple[str, ...]) -> str:
         if el.startswith("langchain"):
             break
     return ".".join(ns_parts)
-
-
-def compound_urls(
-    arxiv_id2file_names: dict[str, set[str]],
-    arxiv_id2code_urls: dict[str, set[str]],
-    arxiv_id2templates: dict[str, set[str]],
-) -> dict[str, dict[str, set[str]]]:
-    # format urls and verify that the urls are correct
-    arxiv_id2file_names_new = {}
-    for arxiv_id, file_names in arxiv_id2file_names.items():
-        key2urls = {
-            key: _format_doc_url(key)
-            for key in file_names
-            if _is_url_ok(_format_doc_url(key))
-        }
-        if key2urls:
-            arxiv_id2file_names_new[arxiv_id] = key2urls
-
-    arxiv_id2code_urls_new = {}
-    for arxiv_id, code_urls in arxiv_id2code_urls.items():
-        key2urls = {
-            key: _format_api_ref_url(key)
-            for key in code_urls
-            if _is_url_ok(_format_api_ref_url(key))
-        }
-        if key2urls:
-            arxiv_id2code_urls_new[arxiv_id] = key2urls
-
-    arxiv_id2templates_new = {}
-    for arxiv_id, templates in arxiv_id2templates.items():
-        key2urls = {
-            key: _format_template_url(key)
-            for key in templates
-            if _is_url_ok(_format_template_url(key))
-        }
-        if key2urls:
-            arxiv_id2templates_new[arxiv_id] = key2urls
-
-    arxiv_id2type2key2urls = dict.fromkeys(
-        arxiv_id2file_names_new | arxiv_id2code_urls_new | arxiv_id2templates_new
-    )
-    arxiv_id2type2key2urls = {k: {} for k in arxiv_id2type2key2urls}
-    for arxiv_id, key2urls in arxiv_id2file_names_new.items():
-        arxiv_id2type2key2urls[arxiv_id]["docs"] = key2urls
-    for arxiv_id, key2urls in arxiv_id2code_urls_new.items():
-        arxiv_id2type2key2urls[arxiv_id]["apis"] = key2urls
-    for arxiv_id, key2urls in arxiv_id2templates_new.items():
-        arxiv_id2type2key2urls[arxiv_id]["templates"] = key2urls
-
-    # reverse sort by the arxiv_id (the newest papers first)
-    ret = dict(
-        sorted(arxiv_id2type2key2urls.items(), key=lambda item: item[0], reverse=True)
-    )
-    return ret
 
 
 def _is_url_ok(url: str) -> bool:
@@ -424,6 +387,9 @@ class ArxivAPIWrapper(BaseModel):
                 referencing_template2url=type2key2urls["templates"]
                 if "templates" in type2key2urls
                 else {},
+                referencing_cookbook2url=type2key2urls["cookbooks"]
+                if "cookbooks" in type2key2urls
+                else {},
             )
             for result, type2key2urls in zip(results, arxiv_id2type2key2urls.values())
         ]
@@ -431,7 +397,7 @@ class ArxivAPIWrapper(BaseModel):
 
 
 def _format_doc_url(doc_path: str) -> str:
-    return f"https://{LANGCHAIN_PYTHON_URL}/{doc_path}"
+    return f"https://{LANGCHAIN_PYTHON_URL}/v0.2/{doc_path}"
 
 
 def _format_api_ref_url(doc_path: str, compact: bool = False) -> str:
@@ -443,20 +409,94 @@ def _format_template_url(template_name: str) -> str:
     return f"https://{LANGCHAIN_PYTHON_URL}/docs/templates/{template_name}"
 
 
+def _format_cookbook_url(cookbook_name: str) -> str:
+    return f"https://github.com/langchain-ai/langchain/blob/master/cookbook/{cookbook_name}.ipynb"
+
+
 def _compact_module_full_name(doc_path: str) -> str:
     # agents/langchain_core.agents.AgentAction.html#langchain_core.agents.AgentAction
     module = doc_path.split("#")[1].replace("module-", "")
     if module.count(".") > 2:
         # langchain_community.llms.oci_data_science_model_deployment_endpoint.OCIModelDeploymentTGI
-        # -> langchain_community.llms...OCIModelDeploymentTGI
+        # -> langchain_community...OCIModelDeploymentTGI
         module_parts = module.split(".")
-        module = f"{module_parts[0]}.{module_parts[1]}...{module_parts[-1]}"
+        module = f"{module_parts[0]}...{module_parts[-1]}"
     return module
+
+
+def compound_urls(
+    arxiv_id2file_names: dict[str, set[str]],
+    arxiv_id2code_urls: dict[str, set[str]],
+    arxiv_id2templates: dict[str, set[str]],
+    arxiv_id2cookbooks: dict[str, set[str]],
+) -> dict[str, dict[str, set[str]]]:
+    # format urls and verify that the urls are correct
+    arxiv_id2file_names_new = {}
+    for arxiv_id, file_names in arxiv_id2file_names.items():
+        key2urls = {
+            key: _format_doc_url(key)
+            for key in file_names
+            if _is_url_ok(_format_doc_url(key))
+        }
+        if key2urls:
+            arxiv_id2file_names_new[arxiv_id] = key2urls
+
+    arxiv_id2code_urls_new = {}
+    for arxiv_id, code_urls in arxiv_id2code_urls.items():
+        key2urls = {
+            key: _format_api_ref_url(key)
+            for key in code_urls
+            if _is_url_ok(_format_api_ref_url(key))
+        }
+        if key2urls:
+            arxiv_id2code_urls_new[arxiv_id] = key2urls
+
+    arxiv_id2templates_new = {}
+    for arxiv_id, templates in arxiv_id2templates.items():
+        key2urls = {
+            key: _format_template_url(key)
+            for key in templates
+            if _is_url_ok(_format_template_url(key))
+        }
+        if key2urls:
+            arxiv_id2templates_new[arxiv_id] = key2urls
+
+    arxiv_id2cookbooks_new = {}
+    for arxiv_id, cookbooks in arxiv_id2cookbooks.items():
+        key2urls = {
+            key: _format_cookbook_url(key)
+            for key in cookbooks
+            if _is_url_ok(_format_cookbook_url(key))
+        }
+        if key2urls:
+            arxiv_id2cookbooks_new[arxiv_id] = key2urls
+
+    arxiv_id2type2key2urls = dict.fromkeys(
+        arxiv_id2file_names_new
+        | arxiv_id2code_urls_new
+        | arxiv_id2templates_new
+        | arxiv_id2cookbooks_new
+    )
+    arxiv_id2type2key2urls = {k: {} for k in arxiv_id2type2key2urls}
+    for arxiv_id, key2urls in arxiv_id2file_names_new.items():
+        arxiv_id2type2key2urls[arxiv_id]["docs"] = key2urls
+    for arxiv_id, key2urls in arxiv_id2code_urls_new.items():
+        arxiv_id2type2key2urls[arxiv_id]["apis"] = key2urls
+    for arxiv_id, key2urls in arxiv_id2templates_new.items():
+        arxiv_id2type2key2urls[arxiv_id]["templates"] = key2urls
+    for arxiv_id, key2urls in arxiv_id2cookbooks_new.items():
+        arxiv_id2type2key2urls[arxiv_id]["cookbooks"] = key2urls
+
+    # reverse sort by the arxiv_id (the newest papers first)
+    ret = dict(
+        sorted(arxiv_id2type2key2urls.items(), key=lambda item: item[0], reverse=True)
+    )
+    return ret
 
 
 def log_results(arxiv_id2type2key2urls):
     arxiv_ids = arxiv_id2type2key2urls.keys()
-    doc_number, api_number, templates_number = 0, 0, 0
+    doc_number, api_number, templates_number, cookbooks_number = 0, 0, 0, 0
     for type2key2url in arxiv_id2type2key2urls.values():
         if "docs" in type2key2url:
             doc_number += len(type2key2url["docs"])
@@ -464,26 +504,35 @@ def log_results(arxiv_id2type2key2urls):
             api_number += len(type2key2url["apis"])
         if "templates" in type2key2url:
             templates_number += len(type2key2url["templates"])
+        if "cookbooks" in type2key2url:
+            cookbooks_number += len(type2key2url["cookbooks"])
     logger.warning(
         f"Found {len(arxiv_ids)} arXiv references in the {doc_number} docs, {api_number} API Refs,"
-        f" and {templates_number} Templates."
+        f" {templates_number} Templates, and {cookbooks_number} Cookbooks."
     )
 
 
 def generate_arxiv_references_page(file_name: Path, papers: list[ArxivPaper]) -> None:
     with open(file_name, "w") as f:
         # Write the table headers
-        f.write("""# arXiv
+        f.write(
+            """# arXiv
             
 LangChain implements the latest research in the field of Natural Language Processing.
 This page contains `arXiv` papers referenced in the LangChain Documentation, API Reference,
-and Templates.
+ Templates, and Cookbooks.
+
+From the opposite direction, scientists use `LangChain` in research and reference it in the research papers. 
+
+`arXiv` papers with references to:
+ [LangChain](https://arxiv.org/search/?query=langchain&searchtype=all&source=header) | [LangGraph](https://arxiv.org/search/?query=langgraph&searchtype=all&source=header) | [LangSmith](https://arxiv.org/search/?query=langsmith&searchtype=all&source=header)
 
 ## Summary
 
 | arXiv id / Title | Authors | Published date 🔻 | LangChain Documentation|
 |------------------|---------|-------------------|------------------------|
-""")
+"""
+        )
         for paper in papers:
             refs = []
             if paper.referencing_doc2url:
@@ -510,11 +559,19 @@ and Templates.
                         for key, url in paper.referencing_template2url.items()
                     )
                 ]
+            if paper.referencing_cookbook2url:
+                refs += [
+                    "`Cookbook:` "
+                    + ", ".join(
+                        f"[{str(key).replace('_', ' ').title()}]({url})"
+                        for key, url in paper.referencing_cookbook2url.items()
+                    )
+                ]
             refs_str = ", ".join(refs)
 
             title_link = f"[{paper.title}]({paper.url})"
             f.write(
-                f"| {' | '.join([f'`{paper.arxiv_id}` {title_link}', ', '.join(paper.authors), paper.published_date, refs_str])}\n"
+                f"| {' | '.join([f'`{paper.arxiv_id}` {title_link}', ', '.join(paper.authors), paper.published_date.replace('-', '&#8209;'), refs_str])}\n"
             )
 
         for paper in papers:
@@ -533,23 +590,31 @@ and Templates.
                 if paper.referencing_template2url
                 else ""
             )
-            refs = "\n".join(
-                [el for el in [docs_refs, api_ref_refs, template_refs] if el]
+            cookbook_refs = (
+                f"   - **Cookbook:** {', '.join(f'[{key}]({url})' for key, url in paper.referencing_cookbook2url.items())}"
+                if paper.referencing_cookbook2url
+                else ""
             )
-            f.write(f"""
+            refs = "\n".join(
+                [
+                    el
+                    for el in [docs_refs, api_ref_refs, template_refs, cookbook_refs]
+                    if el
+                ]
+            )
+            f.write(
+                f"""
 ## {paper.title}
 
-- **arXiv id:** {paper.arxiv_id}
-- **Title:** {paper.title}
 - **Authors:** {', '.join(paper.authors)}
-- **Published Date:** {paper.published_date}
-- **URL:** {paper.url}
+- **arXiv id:** [{paper.arxiv_id}]({paper.url})  **Published Date:** {paper.published_date}
 - **LangChain:**
 
 {refs}
 
 **Abstract:** {paper.abstract}
-                """)
+                """
+            )
 
     logger.warning(f"Created the {file_name} file with {len(papers)} arXiv references.")
 
@@ -562,8 +627,9 @@ def main():
     )
     arxiv_id2file_names = search_documentation_for_arxiv_references(DOCS_DIR)
     arxiv_id2templates = search_templates_for_arxiv_references(TEMPLATES_DIR)
+    arxiv_id2cookbooks = search_cookbooks_for_arxiv_references(COOKBOOKS_DIR)
     arxiv_id2type2key2urls = compound_urls(
-        arxiv_id2file_names, arxiv_id2code_urls, arxiv_id2templates
+        arxiv_id2file_names, arxiv_id2code_urls, arxiv_id2templates, arxiv_id2cookbooks
     )
     log_results(arxiv_id2type2key2urls)
 
