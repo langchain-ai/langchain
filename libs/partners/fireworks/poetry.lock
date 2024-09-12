@@ -667,7 +667,7 @@ files = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.0.dev4"
+version = "0.3.0.dev5"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -676,7 +676,7 @@ develop = true
 
 [package.dependencies]
 jsonpatch = "^1.33"
-langsmith = "^0.1.112"
+langsmith = "^0.1.117"
 packaging = ">=23.2,<25"
 pydantic = "^2.7.4"
 PyYAML = ">=5.3"
@@ -1695,4 +1695,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0"
-content-hash = "2a324e4a90491192ea7b6b846a799acbcbcf7c8ea8fa00e0534e00d447d3ecbc"
+content-hash = "9fd45aa6c8db9fc54fc39ac68a97c3c71d8903bb19a2fa706564569b2d1c76f6"
