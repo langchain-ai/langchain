@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional, Tuple, Type
 from langchain_core.callbacks import Callbacks
 from langchain_core.documents import Document
 from langchain_core.runnables.config import RunnableConfig
-from langchain_core.utils.pydantic import create_model_v2
+from langchain_core.runnables.utils import create_model
 from pydantic import BaseModel, ConfigDict, model_validator
 
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
@@ -105,9 +105,9 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
         self, config: Optional[RunnableConfig] = None
     ) -> Type[BaseModel]:
         if self.return_intermediate_steps:
-            return create_model_v2(
+            return create_model(
                 "MapReduceDocumentsOutput",
-                field_definitions={
+                **{
                     self.output_key: (str, None),
                     "intermediate_steps": (List[str], None),
                 },  # type: ignore[call-overload]

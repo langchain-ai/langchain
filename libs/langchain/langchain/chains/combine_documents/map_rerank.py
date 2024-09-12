@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union, cast
 from langchain_core.callbacks import Callbacks
 from langchain_core.documents import Document
 from langchain_core.runnables.config import RunnableConfig
-from langchain_core.utils.pydantic import create_model_v2
+from langchain_core.runnables.utils import create_model
 from pydantic import BaseModel, ConfigDict, model_validator
 from typing_extensions import Self
 
@@ -91,7 +91,7 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
         if self.metadata_keys:
             schema.update({key: (Any, None) for key in self.metadata_keys})
 
-        return create_model_v2("MapRerankOutput", field_definitions=schema)
+        return create_model("MapRerankOutput", **schema)
 
     @property
     def output_keys(self) -> List[str]:

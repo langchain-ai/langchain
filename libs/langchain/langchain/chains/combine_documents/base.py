@@ -11,7 +11,7 @@ from langchain_core.callbacks import (
 from langchain_core.documents import Document
 from langchain_core.prompts import BasePromptTemplate, PromptTemplate
 from langchain_core.runnables.config import RunnableConfig
-from langchain_core.utils.pydantic import create_model_v2
+from langchain_core.runnables.utils import create_model
 from langchain_text_splitters import RecursiveCharacterTextSplitter, TextSplitter
 from pydantic import BaseModel, Field
 
@@ -48,17 +48,17 @@ class BaseCombineDocumentsChain(Chain, ABC):
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
     ) -> Type[BaseModel]:
-        return create_model_v2(
+        return create_model(
             "CombineDocumentsInput",
-            field_definitions={self.input_key: (List[Document], None)},  # type: ignore[call-overload]
+            **{self.input_key: (List[Document], None)},  # type: ignore[call-overload]
         )
 
     def get_output_schema(
         self, config: Optional[RunnableConfig] = None
     ) -> Type[BaseModel]:
-        return create_model_v2(
+        return create_model(
             "CombineDocumentsOutput",
-            field_definitions={self.output_key: (str, None)},  # type: ignore[call-overload]
+            **{self.output_key: (str, None)},  # type: ignore[call-overload]
         )
 
     @property
@@ -247,9 +247,9 @@ class AnalyzeDocumentChain(Chain):
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
     ) -> Type[BaseModel]:
-        return create_model_v2(
+        return create_model(
             "AnalyzeDocumentChain",
-            field_definitions={self.input_key: (str, None)},  # type: ignore[call-overload]
+            **{self.input_key: (str, None)},  # type: ignore[call-overload]
         )
 
     def get_output_schema(
