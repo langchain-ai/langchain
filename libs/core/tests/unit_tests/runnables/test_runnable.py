@@ -308,7 +308,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
         "title": "FakeRetrieverInput",
         "type": "string",
     }
-    assert fake_ret.get_output_jsonschema() == {
+    assert _normalize_schema(fake_ret.get_output_jsonschema()) == {
         "$defs": {
             "Document": {
                 "description": "Class for storing a piece of text and "
