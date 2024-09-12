@@ -742,7 +742,7 @@ python-dateutil = ">=2.7"
 
 [[package]]
 name = "gigachain-core"
-version = "0.2.35"
+version = "0.2.38"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -752,7 +752,7 @@ develop = true
 [package.dependencies]
 jsonpatch = "^1.33"
 langfuse = "^2.41.0"
-langsmith = "^0.1.75"
+langsmith = "^0.1.112"
 packaging = ">=23.2,<25"
 pydantic = [
     {version = ">=1,<3", markers = "python_full_version < \"3.12.4\""},
@@ -1388,31 +1388,6 @@ files = [
 ]
 
 [[package]]
-name = "langchain-core"
-version = "0.2.38"
-description = "Building applications with LLMs through composability"
-optional = false
-python-versions = ">=3.8.1,<4.0"
-files = []
-develop = true
-
-[package.dependencies]
-jsonpatch = "^1.33"
-langsmith = "^0.1.75"
-packaging = ">=23.2,<25"
-pydantic = [
-    {version = ">=1,<3", markers = "python_full_version < \"3.12.4\""},
-    {version = ">=2.7.4,<3.0.0", markers = "python_full_version >= \"3.12.4\""},
-]
-PyYAML = ">=5.3"
-tenacity = "^8.1.0,!=8.4.0"
-typing-extensions = ">=4.7"
-
-[package.source]
-type = "directory"
-url = "../core"
-
-[[package]]
 name = "langcodes"
 version = "3.4.0"
 description = "Tools for labeling human languages with IETF language tags"
@@ -1457,13 +1432,13 @@ openai = ["openai (>=0.27.8)"]
 
 [[package]]
 name = "langsmith"
-version = "0.1.110"
+version = "0.1.118"
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "langsmith-0.1.110-py3-none-any.whl", hash = "sha256:316d279e3853f5e90e462f9c035eeb468d042f2a21a269c1102d65f3dccdc334"},
-    {file = "langsmith-0.1.110.tar.gz", hash = "sha256:9a619dfe22a67a05a05091f0677b9c842499faec5f051b31afcd901b6627d0a3"},
+    {file = "langsmith-0.1.118-py3-none-any.whl", hash = "sha256:f017127b3efb037da5e46ff4f8583e8192e7955191737240c327f3eadc144d7c"},
+    {file = "langsmith-0.1.118.tar.gz", hash = "sha256:ff1ca06c92c6081250244ebbce5d0bb347b9d898d2e9b60a13b11f0f0720f09f"},
 ]
 
 [package.dependencies]
@@ -4010,4 +3985,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "24740c1e1905b083ea4a58bcb38a15305fcc12e2864b61b0e3f93ebbbbc03149"
+content-hash = "288cfe7953d4323f76f9255604ad26e0e4360efbfda2e79db26ad56983444b33"
