@@ -47,7 +47,7 @@ def migrate(
 
     final_code = run.apply_pattern(
         "langchain_all_migrations()",
-        args,
+        ctx.args,
         grit_dir=get_gritdir_path(),
     )
 
