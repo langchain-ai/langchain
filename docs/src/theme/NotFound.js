@@ -2,7 +2,7 @@ import React from 'react';
 import Translate, {translate} from '@docusaurus/Translate';
 import {PageMetadata} from '@docusaurus/theme-common';
 import Layout from '@theme/Layout';
-import suggestedLinks from './removed_pages_v01.json'
+import suggestedLinks from '@theme/removed_pages_v01.json'
 
 import {useLocation} from 'react-router-dom';
 
