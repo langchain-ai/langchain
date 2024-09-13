@@ -51,26 +51,17 @@
     "langchain_community.document_loaders.blob_loaders.schema.BlobLoader",
     "langchain_core.document_loaders.BlobLoader"
   ],
-  [
-    "langchain_community.tools.BaseTool",
-    "langchain_core.tools.BaseTool"
-  ],
+  ["langchain_community.tools.BaseTool", "langchain_core.tools.BaseTool"],
   [
     "langchain_community.tools.StructuredTool",
     "langchain_core.tools.StructuredTool"
   ],
-  [
-    "langchain_community.tools.Tool",
-    "langchain_core.tools.Tool"
-  ],
+  ["langchain_community.tools.Tool", "langchain_core.tools.Tool"],
   [
     "langchain_community.tools.format_tool_to_openai_function",
     "langchain_core.utils.function_calling.format_tool_to_openai_function"
   ],
-  [
-    "langchain_community.tools.tool",
-    "langchain_core.tools.tool"
-  ],
+  ["langchain_community.tools.tool", "langchain_core.tools.tool"],
   [
     "langchain_community.tools.convert_to_openai.format_tool_to_openai_function",
     "langchain_core.utils.function_calling.format_tool_to_openai_function"
