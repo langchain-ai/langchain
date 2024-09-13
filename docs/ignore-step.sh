@@ -8,7 +8,7 @@ if [ "$VERCEL_ENV" == "production" ] || \
     [ "$VERCEL_GIT_COMMIT_REF" == "master" ] || \
     [ "$VERCEL_GIT_COMMIT_REF" == "v0.1" ] || \
     [ "$VERCEL_GIT_COMMIT_REF" == "v0.2" ] || \
-    [ "$VERCEL_GIT_COMMIT_REF" == "v0.3" ]
+    [ "$VERCEL_GIT_COMMIT_REF" == "v0.3rc" ]
 then 
      echo "✅ Production build - proceeding with build"
      exit 1
