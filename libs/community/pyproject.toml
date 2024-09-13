@@ -43,7 +43,6 @@ tenacity = "^8.1.0,!=8.4.0"
 dataclasses-json = ">= 0.5.7, < 0.7"
 pydantic-settings = "^2.4.0"
 langsmith = "^0.1.112"
-pydantic = "^2.7.4"
 
 [[tool.poetry.dependencies.numpy]]
 version = "^1"
