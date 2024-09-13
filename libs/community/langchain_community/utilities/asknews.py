@@ -12,8 +12,8 @@ from pydantic import BaseModel, ConfigDict, model_validator
 class AskNewsAPIWrapper(BaseModel):
     """Wrapper for AskNews API."""
 
-    asknews_sync: Any  #: :meta private:
-    asknews_async: Any  #: :meta private:
+    asknews_sync: Any = None  #: :meta private:
+    asknews_async: Any = None  #: :meta private:
     asknews_client_id: Optional[str] = None
     """Client ID for the AskNews API."""
     asknews_client_secret: Optional[str] = None

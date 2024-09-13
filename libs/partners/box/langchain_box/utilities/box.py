@@ -485,7 +485,7 @@ class _BoxAPIWrapper(BaseModel):
     """character_limit is an int that caps the number of characters to
        return per document."""
 
-    _box: Optional[box_sdk_gen.BoxClient]
+    _box: Optional[box_sdk_gen.BoxClient] = None
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,

@@ -17,7 +17,7 @@ class ModelScopeEmbeddings(BaseModel, Embeddings):
             embed = ModelScopeEmbeddings(model_id=model_id, model_revision="v1.0.0")
     """
 
-    embed: Any
+    embed: Any = None
     model_id: str = "damo/nlp_corom_sentence-embedding_english-base"
     """Model name to use."""
     model_revision: Optional[str] = None

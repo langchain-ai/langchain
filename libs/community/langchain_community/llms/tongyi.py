@@ -238,7 +238,7 @@ class Tongyi(BaseLLM):
     def lc_secrets(self) -> Dict[str, str]:
         return {"dashscope_api_key": "DASHSCOPE_API_KEY"}
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     model_name: str = Field(default="qwen-plus", alias="model")
 
     """Model name to use."""

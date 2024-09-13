@@ -35,7 +35,7 @@ class SVMRetriever(BaseRetriever):
 
     embeddings: Embeddings
     """Embeddings model to use."""
-    index: Any
+    index: Any = None
     """Index of embeddings."""
     texts: List[str]
     """List of texts to index."""

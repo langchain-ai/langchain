@@ -30,7 +30,7 @@ class PredictionGuard(LLM):
                                     })
     """
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     model: Optional[str] = "MPT-7B-Instruct"
     """Model name to use."""
 

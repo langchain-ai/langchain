@@ -22,7 +22,7 @@ class GoogleFinanceAPIWrapper(BaseModel):
         google_Finance.run('langchain')
     """
 
-    serp_search_engine: Any
+    serp_search_engine: Any = None
     serp_api_key: Optional[SecretStr] = None
 
     model_config = ConfigDict(

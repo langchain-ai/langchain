@@ -4,16 +4,15 @@ echo "VERCEL_ENV: $VERCEL_ENV"
 echo "VERCEL_GIT_COMMIT_REF: $VERCEL_GIT_COMMIT_REF"
 
 
-if [ "$VERCEL_ENV" == "production" ] || [ "$VERCEL_GIT_COMMIT_REF" == "master" ] || [ "$VERCEL_GIT_COMMIT_REF" == "v0.1" ]; then 
-    echo "✅ Production build - proceeding with build"
-    exit 1; 
+if [ "$VERCEL_ENV" == "production" ] || \
+    [ "$VERCEL_GIT_COMMIT_REF" == "master" ] || \
+    [ "$VERCEL_GIT_COMMIT_REF" == "v0.1" ] || \
+    [ "$VERCEL_GIT_COMMIT_REF" == "v0.2" ] || \
+    [ "$VERCEL_GIT_COMMIT_REF" == "v0.3rc" ]
+then 
+     echo "✅ Production build - proceeding with build"
+     exit 1
 fi 
-
-# TODO: remove this for v0.3 launch
-# exit 0 if git commit ref is v0.3rc
-echo "🛑 v0.3rc build is ignored currently"
-exit 0; 
-# end TODO
 
 
 echo "Checking for changes in docs/"

@@ -16,7 +16,7 @@ class OpenWeatherMapAPIWrapper(BaseModel):
     3. pip install pyowm
     """
 
-    owm: Any
+    owm: Any = None
     openweathermap_api_key: Optional[str] = None
 
     model_config = ConfigDict(

@@ -40,7 +40,7 @@ class SerpAPIWrapper(BaseModel):
             serpapi = SerpAPIWrapper()
     """
 
-    search_engine: Any  #: :meta private:
+    search_engine: Any = None  #: :meta private:
     params: dict = Field(
         default={
             "engine": "google",

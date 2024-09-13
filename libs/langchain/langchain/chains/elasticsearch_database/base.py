@@ -40,7 +40,7 @@ class ElasticsearchDatabaseChain(Chain):
     """Chain for creating the ES query."""
     answer_chain: Runnable
     """Chain for answering the user question."""
-    database: Any
+    database: Any = None
     """Elasticsearch database to connect to of type elasticsearch.Elasticsearch."""
     top_k: int = 10
     """Number of results to return from the query"""

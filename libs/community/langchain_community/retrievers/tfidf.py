@@ -17,11 +17,11 @@ class TFIDFRetriever(BaseRetriever):
     https://github.com/asvskartheek/Text-Retrieval/blob/master/TF-IDF%20Search%20Engine%20(SKLEARN).ipynb
     """
 
-    vectorizer: Any
+    vectorizer: Any = None
     """TF-IDF vectorizer."""
     docs: List[Document]
     """Documents."""
-    tfidf_array: Any
+    tfidf_array: Any = None
     """TF-IDF array."""
     k: int = 4
     """Number of documents to return."""

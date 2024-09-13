@@ -802,21 +802,17 @@ class ChatAnthropic(BaseChatModel):
         ] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
-        """Bind tool-like objects to this chat model.
+        r"""Bind tool-like objects to this chat model.
 
         Args:
             tools: A list of tool definitions to bind to this chat model.
                 Supports Anthropic format tool schemas and any tool definition handled
                 by :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`.
-            tool_choice: Which tool to require the model to call.
-                Options are:
-                    - name of the tool (str): calls corresponding tool;
-                    - ``"auto"`` or None: automatically selects a tool (including no tool);
-                    - ``"any"``: force at least one tool to be called;
-                    - or a dict of the form:
-                        ``{"type": "tool", "name": "tool_name"}``,
-                        or ``{"type: "any"}``,
-                        or ``{"type: "auto"}``;
+            tool_choice: Which tool to require the model to call. Options are:
+
+                - name of the tool as a string or as dict ``{"type": "tool", "name": "<<tool_name>>"}``: calls corresponding tool;
+                - ``"auto"``, ``{"type: "auto"}``, or None: automatically selects a tool (including no tool);
+                - ``"any"`` or ``{"type: "any"}``: force at least one tool to be called;
             kwargs: Any additional parameters are passed directly to
                 ``self.bind(**kwargs)``.
 
@@ -927,12 +923,14 @@ class ChatAnthropic(BaseChatModel):
                 llm_with_tools.invoke("what is the weather like in San Francisco",)
 
             This outputs:
-            .. code-block:: pycon
+
+            .. code-block:: python
 
                 AIMessage(content=[{'text': "Certainly! I can help you find out the current weather in San Francisco. To get this information, I'll use the GetWeather function. Let me fetch that data for you right away.", 'type': 'text'}, {'id': 'toolu_01TS5h8LNo7p5imcG7yRiaUM', 'input': {'location': 'San Francisco, CA'}, 'name': 'GetWeather', 'type': 'tool_use'}], response_metadata={'id': 'msg_01Xg7Wr5inFWgBxE5jH9rpRo', 'model': 'claude-3-5-sonnet-20240620', 'stop_reason': 'tool_use', 'stop_sequence': None, 'usage': {'input_tokens': 171, 'output_tokens': 96, 'cache_creation_input_tokens': 1470, 'cache_read_input_tokens': 0}}, id='run-b36a5b54-5d69-470e-a1b0-b932d00b089e-0', tool_calls=[{'name': 'GetWeather', 'args': {'location': 'San Francisco, CA'}, 'id': 'toolu_01TS5h8LNo7p5imcG7yRiaUM', 'type': 'tool_call'}], usage_metadata={'input_tokens': 171, 'output_tokens': 96, 'total_tokens': 267})
 
             If we invoke the tool again, we can see that the "usage" information in the AIMessage.response_metadata shows that we had a cache hit:
-            .. code-block:: pycon
+
+            .. code-block:: python
 
                 AIMessage(content=[{'text': 'To get the current weather in San Francisco, I can use the GetWeather function. Let me check that for you.', 'type': 'text'}, {'id': 'toolu_01HtVtY1qhMFdPprx42qU2eA', 'input': {'location': 'San Francisco, CA'}, 'name': 'GetWeather', 'type': 'tool_use'}], response_metadata={'id': 'msg_016RfWHrRvW6DAGCdwB6Ac64', 'model': 'claude-3-5-sonnet-20240620', 'stop_reason': 'tool_use', 'stop_sequence': None, 'usage': {'input_tokens': 171, 'output_tokens': 82, 'cache_creation_input_tokens': 0, 'cache_read_input_tokens': 1470}}, id='run-88b1f825-dcb7-4277-ac27-53df55d22001-0', tool_calls=[{'name': 'GetWeather', 'args': {'location': 'San Francisco, CA'}, 'id': 'toolu_01HtVtY1qhMFdPprx42qU2eA', 'type': 'tool_call'}], usage_metadata={'input_tokens': 171, 'output_tokens': 82, 'total_tokens': 253})
 

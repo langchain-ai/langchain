@@ -6,6 +6,7 @@ import json
 import uuid
 import warnings
 from abc import ABC, abstractmethod
+from functools import cached_property
 from operator import itemgetter
 from typing import (
     TYPE_CHECKING,
@@ -247,6 +248,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         arbitrary_types_allowed=True,
     )
 
+    @cached_property
+    def _serialized(self) -> dict[str, Any]:
+        return dumpd(self)
+
     # --- Runnable methods ---
 
     @property
@@ -378,7 +383,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 self.metadata,
             )
             (run_manager,) = callback_manager.on_chat_model_start(
-                dumpd(self),
+                self._serialized,
                 [messages],
                 invocation_params=params,
                 options=options,
@@ -450,7 +455,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             self.metadata,
         )
         (run_manager,) = await callback_manager.on_chat_model_start(
-            dumpd(self),
+            self._serialized,
             [messages],
             invocation_params=params,
             options=options,
@@ -551,7 +556,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             param_string = str(sorted([(k, v) for k, v in params.items()]))
             # This code is not super efficient as it goes back and forth between
             # json and dict.
-            serialized_repr = dumpd(self)
+            serialized_repr = self._serialized
             _cleanup_llm_representation(serialized_repr, 1)
             llm_string = json.dumps(serialized_repr, sort_keys=True)
             return llm_string + "---" + param_string
@@ -613,7 +618,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             self.metadata,
         )
         run_managers = callback_manager.on_chat_model_start(
-            dumpd(self),
+            self._serialized,
             messages,
             invocation_params=params,
             options=options,
@@ -705,7 +710,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         )
 
         run_managers = await callback_manager.on_chat_model_start(
-            dumpd(self),
+            self._serialized,
             messages,
             invocation_params=params,
             options=options,

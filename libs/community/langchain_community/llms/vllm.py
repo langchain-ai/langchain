@@ -72,7 +72,7 @@ class VLLM(BaseLLM):
     vllm_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `vllm.LLM` call not explicitly specified."""
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:

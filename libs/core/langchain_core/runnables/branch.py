@@ -16,7 +16,6 @@ from typing import (
 
 from pydantic import BaseModel, ConfigDict
 
-from langchain_core.load.dump import dumpd
 from langchain_core.runnables.base import (
     Runnable,
     RunnableLike,
@@ -215,9 +214,9 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         config = ensure_config(config)
         callback_manager = get_callback_manager_for_config(config)
         run_manager = callback_manager.on_chain_start(
-            dumpd(self),
+            None,
             input,
-            name=config.get("run_name"),
+            name=config.get("run_name") or self.get_name(),
             run_id=config.pop("run_id", None),
         )
 
@@ -254,7 +253,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         except BaseException as e:
             run_manager.on_chain_error(e)
             raise
-        run_manager.on_chain_end(dumpd(output))
+        run_manager.on_chain_end(output)
         return output
 
     async def ainvoke(
@@ -264,9 +263,9 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         config = ensure_config(config)
         callback_manager = get_async_callback_manager_for_config(config)
         run_manager = await callback_manager.on_chain_start(
-            dumpd(self),
+            None,
             input,
-            name=config.get("run_name"),
+            name=config.get("run_name") or self.get_name(),
             run_id=config.pop("run_id", None),
         )
         try:
@@ -302,7 +301,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         except BaseException as e:
             await run_manager.on_chain_error(e)
             raise
-        await run_manager.on_chain_end(dumpd(output))
+        await run_manager.on_chain_end(output)
         return output
 
     def stream(
@@ -328,9 +327,9 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         config = ensure_config(config)
         callback_manager = get_callback_manager_for_config(config)
         run_manager = callback_manager.on_chain_start(
-            dumpd(self),
+            None,
             input,
-            name=config.get("run_name"),
+            name=config.get("run_name") or self.get_name(),
             run_id=config.pop("run_id", None),
         )
         final_output: Optional[Output] = None
@@ -415,9 +414,9 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         config = ensure_config(config)
         callback_manager = get_async_callback_manager_for_config(config)
         run_manager = await callback_manager.on_chain_start(
-            dumpd(self),
+            None,
             input,
-            name=config.get("run_name"),
+            name=config.get("run_name") or self.get_name(),
             run_id=config.pop("run_id", None),
         )
         final_output: Optional[Output] = None
