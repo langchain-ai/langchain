@@ -337,7 +337,7 @@ def _convert_chunk_to_generation_chunk(
 
 def _update_token_usage(
     overall_token_usage: Union[int, dict], new_usage: Union[int, dict]
-):
+) -> Union[int, dict]:
     # Token usage is either ints or dictionaries
     # `reasoning_tokens` is nested inside `completion_tokens_details`
     if isinstance(new_usage, int):
