@@ -12,6 +12,8 @@ def test_importable_all() -> None:
         if relative_path.endswith(".typed"):
             continue
         module_name = relative_path.split(".")[0]
+        if module_name.startswith("pydantic_v1"):
+            continue
         module = importlib.import_module("langchain_core." + module_name)
         all_ = getattr(module, "__all__", [])
         for cls_ in all_:
@@ -41,6 +43,10 @@ def test_importable_all_via_subprocess() -> None:
     for path in glob.glob("../core/langchain_core/*"):
         relative_path = Path(path).parts[-1]
         if relative_path.endswith(".typed"):
+            continue
+        # pydantic_v1 has been deprecated and intentionally
+        # raises an ImportError when imported.
+        if relative_path.startswith("pydantic_v1"):
             continue
         module_name = relative_path.split(".")[0]
         module_names.append(module_name)
