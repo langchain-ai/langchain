@@ -18,7 +18,7 @@ warn_deprecated(
         "`from langchain_core.pydantic_v1 import BaseModel`\n"
         "with: `from pydantic import BaseModel`\n"
         "or the v1 compatibility namespace if you are working in a code base "
-        "that has not been fully upgraded to pydantic 2 yet. "
+        "th has not been fully upgraded to pydantic 2 yet. "
         "\tfrom pydantic.v1 import BaseModel\n"
     ),
 )
