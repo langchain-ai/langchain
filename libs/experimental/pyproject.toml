@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-experimental"
-version = "0.3.0.dev1"
+version = "0.3.0"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -22,8 +22,8 @@ exclude = ["notebooks", "examples", "example_data"]
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-langchain-core = "^0.3.0.dev4"
-langchain-community = "^0.3.0.dev1"
+langchain-core = "^0.3.0"
+langchain-community = "^0.3.0"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "T201"]
