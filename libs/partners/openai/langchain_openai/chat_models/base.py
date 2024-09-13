@@ -65,7 +65,6 @@ from langchain_core.messages import (
 from langchain_core.messages.ai import UsageMetadata
 from langchain_core.messages.tool import tool_call_chunk
 from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
-from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
     PydanticToolsParser,
@@ -1421,7 +1420,7 @@ class BaseChatOpenAI(BaseChatModel):
                 strict=strict,
             )
             if is_pydantic_schema:
-                output_parser: OutputParserLike = PydanticToolsParser(
+                output_parser: Runnable = PydanticToolsParser(
                     tools=[schema],  # type: ignore[list-item]
                     first_tool_only=True,  # type: ignore[list-item]
                 )
@@ -1445,11 +1444,12 @@ class BaseChatOpenAI(BaseChatModel):
             strict = strict if strict is not None else True
             response_format = _convert_to_openai_response_format(schema, strict=strict)
             llm = self.bind(response_format=response_format)
-            output_parser = (
-                cast(Runnable, _oai_structured_outputs_parser)
-                if is_pydantic_schema
-                else JsonOutputParser()
-            )
+            if is_pydantic_schema:
+                output_parser = _oai_structured_outputs_parser.with_types(
+                    output_type=cast(type, schema)
+                )
+            else:
+                output_parser = JsonOutputParser()
         else:
             raise ValueError(
                 f"Unrecognized method argument. Expected one of 'function_calling' or "
