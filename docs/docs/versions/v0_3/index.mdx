@@ -3,6 +3,8 @@ sidebar_label: v0.3
 ---
 # Overview of LangChain v0.3
 
+*Last updated: 09.13.24*
+
 ## What's changed
 
 * All packages have been upgraded from Pydantic 1 to Pydantic 2 internally. Use of Pydantic 2 in user code is fully supported with all packages without the need for bridges like `langchain_core.pydantic_v1` or `pydantic.v1`.
@@ -28,11 +30,11 @@ If you're using `langchain` / `langchain-community` / `langchain-core` 0.0 or 0.
 
 If you're using `langgraph`, upgrade to `langgraph>=0.2.20,<0.3`. This will work with either 0.2 or 0.3 versions of all the base packages.
 
-Here is a complete list of all packages that have been released and what we recommend upgrading your dependencies to:
+Here is a complete list of all packages that have been released and what we recommend upgrading your version constraints to:
 
 ### Base packages
 
-| Package                                | Latest  | Recommended constraint     |
+| Package                                | Latest | Recommended constraint     |
 | -------------------------------------- | ------- | -------------------------- |
 | langchain                              | 0.3.0   | >=0.3,<0.4                 |
 | langchain-community                    | 0.3.0   | >=0.3,<0.4                 |
@@ -44,13 +46,15 @@ Here is a complete list of all packages that have been released and what we reco
 
 | Package                                | Latest  | Recommended constraint     |
 | -------------------------------------- | ------- | -------------------------- |
-| langchain-airbyte                      | 0.2.0   | >=0.2,<0.3                 |  # TODO: delete
+| langchain-ai21                         | 0.2.0   | >=0.2,<0.3                 |
 | langchain-aws                          | 0.2.0   | >=0.2,<0.3                 |
 | langchain-anthropic                    | 0.2.0   | >=0.2,<0.3                 |
+| langchain-astradb                      | 0.4.1   | >=0.4.1,<0.5               |
 | langchain-azure-dynamic-sessions       | 0.1.1   | >=0.1.1,<0.2               |
 | langchain-box                          | 0.2.0   | >=0.2,<0.3                 |
 | langchain-chroma                       | 0.1.4   | >=0.1.4,<0.2               |
-| langchain-couchbase                    | 0.2.0   | >=0.2,<0.3                 |  # TODO: delete
+| langchain-cohere                       | 0.2.0   | >=0.2,<0.3                 |
+| langchain-elasticsearch                | 0.2.3   | >=0.2.3,<0.3               |
 | langchain-exa                          | 0.2.0   | >=0.2,<0.3                 |
 | langchain-fireworks                    | 0.2.0   | >=0.2,<0.3                 |
 | langchain-groq                         | 0.2.0   | >=0.2,<0.3                 |
@@ -60,17 +64,18 @@ Here is a complete list of all packages that have been released and what we reco
 | langchain-huggingface                  | 0.1.0   | >=0.1,<0.2                 |
 | langchain-milvus                       | 0.1.6   | >=0.1.6,<0.2               |
 | langchain-mistralai                    | 0.2.0   | >=0.2,<0.3                 |
-| langchain-mongodb                      | 0.2.0   | >=0.2,<0.3                 |
-| langchain-nomic                        | 0.2.0   | >=0.2,<0.3                 |
+| langchain-mongodb                      | 0.1.10  | >=0.1.10,<0.2              |
+| langchain-nomic                        | 0.1.3   | >=0.1.3,<0.2               |
 | langchain-ollama                       | 0.2.0   | >=0.2,<0.3                 |
 | langchain-openai                       | 0.2.0   | >=0.2,<0.3                 |
 | langchain-pinecone                     | 0.2.0   | >=0.2,<0.3                 |
 | langchain-postgres                     | 0.0.13  | >=0.0.13,<0.1              |
 | langchain-prompty                      | 0.1.0   | >=0.1,<0.2                 |
 | langchain-qdrant                       | 0.2.0   | >=0.2,<0.3                 |
-| langchain-robocorp                     | 0.1.0   | >=0.1,<0.2                 |
-| langchain-unstructured                 | 0.2.0   | >=0.2,<0.3                 |
+| langchain-together                     | 0.2.0   | >=0.2,<0.3                 |
+| langchain-unstructured                 | 0.1.4   | >=0.1.4,<0.2               |
 | langchain-voyageai                     | 0.2.0   | >=0.2,<0.3                 |
+| langchain-weaviate                     | 0.1.0   | >=0.1,<0.2                 |
 
 Once you've updated to recent versions of the packages, you may need to address the following issues stemming from the internal switch from Pydantic v1 to Pydantic v2:
 
@@ -194,37 +199,4 @@ class FooParser(BaseOutputParser):
     ...
 
 FooParser.model_rebuild()
-```
-
-## `Schema` suffix removal
-
-In previous versions of LangChain, the suffix `Schema` was automatically added to the names of tools if a tool name was not
-specified. This name was used to generate the schema for the tool which was sent to chat models as the JSON Schema for the tool.
-
-We do not expect most users to be affected by this change.
-
-For example, the tool
-
-```python
-from langchain_core.tools import tool
-
-@tool
-def add(x: int, y: int) -> int:
-    """Add x and y."""
-    return x + y
-```
-
-would have been named `addSchema` in previous versions of LangChain. In 0.3, the name of the tool will be `add`.
-
-```python
-add.args_schema.model_json_schema()
-```
-
-```
-{'description': 'Add x and y.',
-'properties': {'x': {'title': 'X', 'type': 'integer'},
-'y': {'title': 'Y', 'type': 'integer'}},
-'required': ['x', 'y'],
-'title': 'add',
-'type': 'object'}
 ```
