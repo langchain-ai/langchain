@@ -4,7 +4,6 @@ from pathlib import Path
 
 import typer
 from gritql import run
-from typer import Option
 
 
 def get_gritdir_path() -> Path:
