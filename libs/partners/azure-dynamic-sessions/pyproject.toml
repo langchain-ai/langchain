@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-azure-dynamic-sessions"
-version = "0.1.0"
+version = "0.2.0"
 description = "An integration package connecting Azure Container Apps dynamic sessions and LangChain"
 authors = []
 readme = "README.md"
@@ -20,7 +20,7 @@ disallow_untyped_defs = "True"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-langchain-core = "^0.3.0.dev"
+langchain-core = "^0.3.0"
 azure-identity = "^1.16.0"
 requests = "^2.31.0"
 
@@ -68,6 +68,11 @@ syrupy = "^4.0.2"
 pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
 python-dotenv = "^1.0.1"
+# TODO: hack to fix 3.9 builds
+cffi = [
+    { version = "<1.17.1", python = "<3.10" },
+    { version = "*", python = ">=3.10" },
+]
 
 [tool.poetry.group.test_integration.dependencies]
 pytest = "^7.3.0"
@@ -80,6 +85,11 @@ codespell = "^2.2.0"
 ruff = "^0.5"
 python-dotenv = "^1.0.1"
 pytest = "^7.3.0"
+# TODO: hack to fix 3.9 builds
+cffi = [
+    { version = "<1.17.1", python = "<3.10" },
+    { version = "*", python = ">=3.10" },
+]
 
 [tool.poetry.group.dev.dependencies]
 ipykernel = "^6.29.4"
