@@ -15,6 +15,10 @@ on:
         required: true
         type: string
         description: "Python version to use"
+    outputs:
+      installed-python-version:
+        description: "Full Python version that was installed"
+
 
 env:
   POETRY_VERSION: "1.7.1"
@@ -31,12 +35,12 @@ jobs:
 
       - name: Set up Python ${{ inputs.python-version }} + Poetry ${{ env.POETRY_VERSION }}
         uses: "./.github/actions/poetry_setup"
+        id: setup-python
         with:
           python-version: ${{ inputs.python-version }}
           poetry-version: ${{ env.POETRY_VERSION }}
           working-directory: ${{ inputs.working-directory }}
           cache-key: core
-
       - name: Install dependencies
         shell: bash
         run: poetry install --with test
@@ -72,11 +76,7 @@ jobs:
         shell: bash
         run: |
           poetry run pip install packaging tomli
-          # Get environment info in JSON format
-          env_info=$(poetry env info --json)
-          # Extract the Python version using jq
-          python_version=$(echo "$env_info" | jq -r '.python') 
-          min_versions="$(poetry run python $GITHUB_WORKSPACE/.github/scripts/get_min_versions.py pyproject.toml pull_request $python_version)"
+          min_versions="$(poetry run python $GITHUB_WORKSPACE/.github/scripts/get_min_versions.py pyproject.toml pull_request ${{ steps.setup-python.outputs.installed-python-version }})"
           echo "min-versions=$min_versions" >> "$GITHUB_OUTPUT"
           echo "min-versions=$min_versions"
 
