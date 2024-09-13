@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+import rich
 import typer
 from gritql import run
 
@@ -19,7 +20,7 @@ def migrate(
 
     Any undocumented arguments will be passed to the Grit CLI.
     """
-    print(
+    rich.print(
         "✈️ This script will help you migrate to a recent version LangChain. "
         "This migration script will attempt to replace old imports in the code "
         "with new ones.\n\n"
@@ -41,8 +42,8 @@ def migrate(
         "🛡️ Backup your code prior to running the migration script -- it will "
         "modify your files!\n\n"
     )
-    print("-" * 10)
-    print()
+    rich.print("-" * 10)
+    rich.print()
 
     final_code = run.apply_pattern(
         "langchain_all_migrations()",
