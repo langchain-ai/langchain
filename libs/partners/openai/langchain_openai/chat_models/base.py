@@ -1419,7 +1419,9 @@ class BaseChatOpenAI(BaseChatModel):
             output_parser = (
                 cast(
                     Runnable,
-                    _oai_structured_outputs_parser.with_types(output_type=cast(PydanticBaseModel, schema)),
+                    _oai_structured_outputs_parser.with_types(
+                        output_type=cast(PydanticBaseModel, schema)
+                    ),
                 )
                 if is_pydantic_schema
                 else JsonOutputParser()
