@@ -130,7 +130,9 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
     return [{"working-directory": dir_, "python-version": py_v} for py_v in py_versions]
 
 
-def _get_pydantic_test_configs(dir_: str, *, python_version: str = "3.11") -> List[Dict[str, str]]:
+def _get_pydantic_test_configs(
+    dir_: str, *, python_version: str = "3.11"
+) -> List[Dict[str, str]]:
     with open("./libs/core/poetry.lock", "rb") as f:
         core_poetry_lock_data = tomllib.load(f)
     for package in core_poetry_lock_data["package"]:
@@ -163,14 +165,21 @@ def _get_pydantic_test_configs(dir_: str, *, python_version: str = "3.11") -> Li
     }
 
     max_pydantic_minor = min(
-        int(dir_max_pydantic_minor), int(core_max_pydantic_minor),
+        int(dir_max_pydantic_minor),
+        int(core_max_pydantic_minor),
     )
     min_pydantic_minor = max(
-        int(dir_min_pydantic_minor), int(core_min_pydantic_minor), *custom_mins.get(dir_, [])
+        int(dir_min_pydantic_minor),
+        int(core_min_pydantic_minor),
+        *custom_mins.get(dir_, []),
     )
 
     configs = [
-        {"working-directory": dir_, "pydantic-version": f"2.{v}.0", "python-version": python_version}
+        {
+            "working-directory": dir_,
+            "pydantic-version": f"2.{v}.0",
+            "python-version": python_version,
+        }
         for v in range(min_pydantic_minor, max_pydantic_minor + 1)
     ]
     return configs

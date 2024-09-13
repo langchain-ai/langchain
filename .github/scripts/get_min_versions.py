@@ -51,7 +51,11 @@ def get_min_version(version: str) -> str:
 
 
 def get_min_version_from_toml(
-    toml_path: str, versions_for: str, python_version: str, *, include: Optional[list] = None
+    toml_path: str,
+    versions_for: str,
+    python_version: str,
+    *,
+    include: Optional[list] = None,
 ):
     # Parse the TOML file
     with open(toml_path, "rb") as file:
@@ -79,7 +83,13 @@ def get_min_version_from_toml(
             if isinstance(version_string, dict):
                 version_string = version_string["version"]
             if isinstance(version_string, list):
-                version_string = [vs for vs in version_string if check_python_version(python_version, vs["python"])][0]["version"]
+                version_string = int(
+                    [
+                        vs
+                        for vs in version_string
+                        if check_python_version(python_version, vs["python"])
+                    ][0]["version"]
+                )
 
             # Use parse_version to get the minimum supported version from version_string
             min_version = get_min_version(version_string)
@@ -88,6 +98,7 @@ def get_min_version_from_toml(
             min_versions[lib] = min_version
 
     return min_versions
+
 
 def check_python_version(version_string, constraint_string):
     """
