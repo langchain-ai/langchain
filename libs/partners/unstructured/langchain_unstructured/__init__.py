@@ -3,7 +3,7 @@ from importlib import metadata
 from langchain_unstructured.document_loaders import UnstructuredLoader
 
 try:
-    __version__ = metadata.version(__package__)
+    __version__ = metadata.version("gigachain_unstructured")
 except metadata.PackageNotFoundError:
     # Case where package metadata is not available.
     __version__ = ""

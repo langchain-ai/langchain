@@ -5,7 +5,7 @@ from langchain_ollama.embeddings import OllamaEmbeddings
 from langchain_ollama.llms import OllamaLLM
 
 try:
-    __version__ = metadata.version(__package__)
+    __version__ = metadata.version("gigachain_ollama")
 except metadata.PackageNotFoundError:
     # Case where package metadata is not available.
     __version__ = ""

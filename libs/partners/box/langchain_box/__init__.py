@@ -5,7 +5,7 @@ from langchain_box.retrievers import BoxRetriever
 from langchain_box.utilities import BoxAuth, BoxAuthType, _BoxAPIWrapper
 
 try:
-    __version__ = metadata.version(__package__)
+    __version__ = metadata.version("gigachain_box")
 except metadata.PackageNotFoundError:
     # Case where package metadata is not available.
     __version__ = ""
