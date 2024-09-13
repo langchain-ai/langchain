@@ -38,8 +38,8 @@ PyYAML = ">=5.3"
 packaging = ">=23.2,<25"
 typing-extensions = ">=4.7"
 pydantic = [
-  { version = "^2.5.2", python = "<3.12.4" },
-  { version = "^2.7.4", python = ">=3.12.4" },
+    { version = "^2.5.2", python = "<3.12.4" },
+    { version = "^2.7.4", python = ">=3.12.4" },
 ]
 
 
@@ -60,7 +60,7 @@ markers = [
     "compile: mark placeholder test used to compile integration tests without running them",
 ]
 asyncio_mode = "auto"
-filterwarnings =  [
+filterwarnings = [
     "ignore::langchain_core._api.beta_decorator.LangChainBetaWarning",
 ]
 

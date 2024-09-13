@@ -65,7 +65,6 @@ from langchain_core.messages import (
 from langchain_core.messages.ai import UsageMetadata
 from langchain_core.messages.tool import tool_call_chunk
 from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
-from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
     PydanticToolsParser,
@@ -332,6 +331,33 @@ def _convert_chunk_to_generation_chunk(
     return generation_chunk
 
 
+def _update_token_usage(
+    overall_token_usage: Union[int, dict], new_usage: Union[int, dict]
+) -> Union[int, dict]:
+    # Token usage is either ints or dictionaries
+    # `reasoning_tokens` is nested inside `completion_tokens_details`
+    if isinstance(new_usage, int):
+        if not isinstance(overall_token_usage, int):
+            raise ValueError(
+                f"Got different types for token usage: "
+                f"{type(new_usage)} and {type(overall_token_usage)}"
+            )
+        return new_usage + overall_token_usage
+    elif isinstance(new_usage, dict):
+        if not isinstance(overall_token_usage, dict):
+            raise ValueError(
+                f"Got different types for token usage: "
+                f"{type(new_usage)} and {type(overall_token_usage)}"
+            )
+        return {
+            k: _update_token_usage(overall_token_usage.get(k, 0), v)
+            for k, v in new_usage.items()
+        }
+    else:
+        warnings.warn(f"Unexpected type for token usage: {type(new_usage)}")
+        return new_usage
+
+
 class _FunctionCall(TypedDict):
     name: str
 
@@ -545,7 +571,9 @@ class BaseChatOpenAI(BaseChatModel):
             if token_usage is not None:
                 for k, v in token_usage.items():
                     if k in overall_token_usage:
-                        overall_token_usage[k] += v
+                        overall_token_usage[k] = _update_token_usage(
+                            overall_token_usage[k], v
+                        )
                     else:
                         overall_token_usage[k] = v
             if system_fingerprint is None:
@@ -1376,7 +1404,7 @@ class BaseChatOpenAI(BaseChatModel):
                 strict=strict,
             )
             if is_pydantic_schema:
-                output_parser: OutputParserLike = PydanticToolsParser(
+                output_parser: Runnable = PydanticToolsParser(
                     tools=[schema],  # type: ignore[list-item]
                     first_tool_only=True,  # type: ignore[list-item]
                 )
@@ -1400,11 +1428,12 @@ class BaseChatOpenAI(BaseChatModel):
             strict = strict if strict is not None else True
             response_format = _convert_to_openai_response_format(schema, strict=strict)
             llm = self.bind(response_format=response_format)
-            output_parser = (
-                cast(Runnable, _oai_structured_outputs_parser)
-                if is_pydantic_schema
-                else JsonOutputParser()
-            )
+            if is_pydantic_schema:
+                output_parser = _oai_structured_outputs_parser.with_types(
+                    output_type=cast(type, schema)
+                )
+            else:
+                output_parser = JsonOutputParser()
         else:
             raise ValueError(
                 f"Unrecognized method argument. Expected one of 'function_calling' or "

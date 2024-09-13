@@ -310,9 +310,11 @@ class EnsembleRetriever(BaseRetriever):
         for doc_list, weight in zip(doc_lists, self.weights):
             for rank, doc in enumerate(doc_list, start=1):
                 rrf_score[
-                    doc.page_content
-                    if self.id_key is None
-                    else doc.metadata[self.id_key]
+                    (
+                        doc.page_content
+                        if self.id_key is None
+                        else doc.metadata[self.id_key]
+                    )
                 ] += weight / (rank + self.c)
 
         # Docs are deduplicated by their contents then sorted by their scores
@@ -320,9 +322,11 @@ class EnsembleRetriever(BaseRetriever):
         sorted_docs = sorted(
             unique_by_key(
                 all_docs,
-                lambda doc: doc.page_content
-                if self.id_key is None
-                else doc.metadata[self.id_key],
+                lambda doc: (
+                    doc.page_content
+                    if self.id_key is None
+                    else doc.metadata[self.id_key]
+                ),
             ),
             reverse=True,
             key=lambda doc: rrf_score[
