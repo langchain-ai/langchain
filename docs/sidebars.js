@@ -72,8 +72,8 @@ module.exports = {
       collapsed: false,
       collapsible: false,
       items: [
+        "versions/v0_3/overview",
         "versions/overview",
-        "versions/release_policy",
         {
           type: 'doc',
           id: "how_to/pydantic_compatibility",
@@ -103,6 +103,7 @@ module.exports = {
             className: 'hidden',
           }],
         },
+        "versions/release_policy",
       ],
     },
     "security"
