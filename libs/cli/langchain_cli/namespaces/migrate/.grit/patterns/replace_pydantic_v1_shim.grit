@@ -1,0 +1,12 @@
+language python
+
+// This migration is generated automatically - do not manually edit this file
+pattern replace_pydantic_v1_shim() {
+    `from $IMPORT import $...` where {
+        $IMPORT <: contains `pydantic_v1`,
+        $IMPORT => `pydantic`
+    },
+}
+
+// Add this for invoking directly
+ replace_pydantic_v1_shim()

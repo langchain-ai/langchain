@@ -15,8 +15,6 @@ def get_gritdir_path() -> Path:
 
 def migrate(
     ctx: typer.Context,
-    diff: bool = Option(False, help="Show diff instead of applying changes."),
-    grit_help: bool = Option(False, help="Show the help for the underlying grit tool."),
 ) -> None:
     """Migrate langchain to the most recent version.
 
@@ -46,11 +44,6 @@ def migrate(
     )
     print("-" * 10)
     print()
-
-    if grit_help:
-        args = ["--help"]
-    else:
-        args = ctx.args
 
     final_code = run.apply_pattern(
         "langchain_all_migrations()",
