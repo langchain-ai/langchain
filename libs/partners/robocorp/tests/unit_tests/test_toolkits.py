@@ -8,11 +8,11 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_function,
     convert_to_openai_tool,
 )
+from pydantic import __version__
 
 from langchain_robocorp.toolkits import ActionServerToolkit
 
 from ._fixtures import FakeChatLLMT
-from pydantic import __version__
 
 # Get the version tuple (it may contain a suffix like 'rc1')
 VERSION_TUPLE = tuple(int(x) if x.isdigit() else x for x in __version__.split("."))
