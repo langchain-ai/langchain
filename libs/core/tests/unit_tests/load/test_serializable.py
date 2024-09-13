@@ -2,7 +2,7 @@ from typing import Dict
 
 from pydantic import ConfigDict, Field
 
-from langchain_core.load import Serializable, dumpd
+from langchain_core.load import Serializable, dumpd, load
 from langchain_core.load.serializable import _is_field_useful
 
 

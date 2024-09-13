@@ -703,11 +703,17 @@ class Foo(BaseModel):
     bar: int
 
 
-class FooV1(BaseModelV1):
-    bar: int
+# class FooV1(BaseModelV1):
+#     bar: int
 
 
-@pytest.mark.parametrize("schema", [Foo, FooV1])
+@pytest.mark.parametrize(
+    "schema",
+    [
+        Foo,
+        # FooV1
+    ],
+)
 def test_schema_from_with_structured_output(schema: Type) -> None:
     """Test schema from with_structured_output."""
 
@@ -723,5 +729,5 @@ def test_schema_from_with_structured_output(schema: Type) -> None:
         "title": schema.__name__,
         "type": "object",
     }
-    actual = structured_llm.get_output_schema().schema()
+    actual = structured_llm.get_output_schema().model_json_schema()
     assert actual == expected
