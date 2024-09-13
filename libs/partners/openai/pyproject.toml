@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-openai"
-version = "0.2.0.dev2"
+version = "0.2.0"
 description = "An integration package connecting OpenAI and LangChain"
 authors = []
 readme = "README.md"
@@ -23,7 +23,7 @@ ignore_missing_imports = true
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-langchain-core = { version = "^0.3.0.dev1", allow-prereleases = true }
+langchain-core = "^0.3"
 openai = "^1.40.0"
 tiktoken = ">=0.7,<1"
 
