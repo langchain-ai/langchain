@@ -3,7 +3,7 @@ name: CI / cd . / make spell_check
 
 on:
   push:
-    branches: [master, v0.1]
+    branches: [master, v0.1, v0.2]
   pull_request:
 
 permissions:
