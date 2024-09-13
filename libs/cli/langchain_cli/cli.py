@@ -1,16 +1,12 @@
-from typing import Optional
-
 import typer
-from gritql import run
-from typing_extensions import Annotated
-
+from langchain_cli._version import __version__
 from langchain_cli.namespaces import app as app_namespace
 from langchain_cli.namespaces import integration as integration_namespace
 from langchain_cli.namespaces import template as template_namespace
 from langchain_cli.namespaces.migrate import main as migrate_namespace
 from langchain_cli.utils.packages import get_langserve_export, get_package_root
-
-__version__ = "0.0.22rc0"
+from typing import Optional
+from typing_extensions import Annotated
 
 app = typer.Typer(no_args_is_help=True, add_completion=False)
 app.add_typer(
@@ -23,24 +19,11 @@ app.add_typer(
     help=integration_namespace.__doc__,
 )
 
-
-@app.command(
-    context_settings={
-        # Let Grit handle the arguments
-        "allow_extra_args": True,
-        "ignore_unknown_options": True,
-    },
-    # Grit embeds its own help
-    add_help_option=False,
+app.add_typer(
+    migrate_namespace.app,
+    name="migrate",
+    help=migrate_namespace.__doc__,
 )
-def migrate(ctx: typer.Context):
-    final_code = run.apply_pattern(
-        "langchain_all_migrations()",
-        ctx.args,
-        grit_dir=migrate_namespace.get_gritdir_path(),
-    )
-
-    raise typer.Exit(code=final_code)
 
 
 def version_callback(show_version: bool) -> None:
