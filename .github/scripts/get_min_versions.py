@@ -19,7 +19,6 @@ MIN_VERSION_LIBS = [
     "langchain",
     "langchain-text-splitters",
     "SQLAlchemy",
-    "pydantic",
 ]
 
 SKIP_IF_PULL_REQUEST = ["langchain-core"]
