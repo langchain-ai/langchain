@@ -103,9 +103,12 @@ pytest-socket = "^0.6.0"
 syrupy = "^4.0.2"
 requests-mock = "^1.11.0"
 # TODO: hack to fix 3.9 builds
-cffi = [{version = "<1.17.1", python="<3.10"}, {version = "*", python=">=3.10"}]
 
-[tool.poetry.group.codespell.dependencies]
+
+[tool.poetry.group.codespell.dependencies]cffi = [
+    { version = "<1.17.1", python = "<3.10" },
+    { version = "*", python = ">=3.10" },
+]
 codespell = "^2.2.0"
 
 [tool.poetry.group.test_integration.dependencies]
@@ -115,9 +118,12 @@ vcrpy = "^6"
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.5"
 # TODO: hack to fix 3.9 builds
-cffi = [{version = "<1.17.1", python="<3.10"}, {version = "*", python=">=3.10"}]
 
-[tool.poetry.group.dev.dependencies]
+
+[tool.poetry.group.dev.dependencies]cffi = [
+    { version = "<1.17.1", python = "<3.10" },
+    { version = "*", python = ">=3.10" },
+]
 jupyter = "^1.0.0"
 setuptools = "^67.6.1"
 
