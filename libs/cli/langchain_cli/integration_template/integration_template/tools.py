@@ -62,7 +62,7 @@ class __ModuleName__Tool(BaseTool):
         .. code-block:: python
 
             # TODO: output of invocation
-    """ # noqa: E501
+    """  # noqa: E501
 
     # TODO: Set tool name and description
     name: str = "TODO: Tool name"
