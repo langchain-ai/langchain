@@ -280,7 +280,10 @@ def format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
     Returns:
         The function description.
     """
-    if tool.tool_call_schema:
+    from langchain_core.tools import simple
+
+    is_simple_oai_tool = isinstance(tool, simple.Tool) and not tool.args_schema
+    if tool.tool_call_schema and not is_simple_oai_tool:
         return convert_pydantic_to_openai_function(
             tool.tool_call_schema, name=tool.name, description=tool.description
         )
@@ -602,9 +605,13 @@ def _recursive_set_additional_properties_false(
     schema: Dict[str, Any],
 ) -> Dict[str, Any]:
     if isinstance(schema, dict):
-        # Check if 'required' is a key at the current level
-        if "required" in schema:
+        # Check if 'required' is a key at the current level or if the schema is empty,
+        # in which case additionalProperties still needs to be specified.
+        if "required" in schema or (
+            "properties" in schema and not schema["properties"]
+        ):
             schema["additionalProperties"] = False
+
         # Recursively check 'properties' and 'items' if they exist
         if "properties" in schema:
             for value in schema["properties"].values():

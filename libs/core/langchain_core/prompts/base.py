@@ -19,6 +19,7 @@ from typing import (
 
 import yaml
 
+from langchain_core.load import dumpd
 from langchain_core.output_parsers.base import BaseOutputParser
 from langchain_core.prompt_values import (
     ChatPromptValueConcrete,
@@ -188,6 +189,7 @@ class BasePromptTemplate(
             input,
             config,
             run_type="prompt",
+            serialized=dumpd(self),
         )
 
     async def ainvoke(
@@ -212,6 +214,7 @@ class BasePromptTemplate(
             input,
             config,
             run_type="prompt",
+            serialized=dumpd(self),
         )
 
     @abstractmethod

@@ -120,7 +120,7 @@ def test_milvus_max_marginal_relevance_search() -> None:
         output,
         [
             Document(page_content="foo", metadata={"page": 0}),
-            Document(page_content="baz", metadata={"page": 2}),
+            Document(page_content="bar", metadata={"page": 1}),
         ],
     )
 
@@ -135,7 +135,7 @@ def test_milvus_max_marginal_relevance_search_with_dynamic_field() -> None:
         output,
         [
             Document(page_content="foo", metadata={"page": 0}),
-            Document(page_content="baz", metadata={"page": 2}),
+            Document(page_content="bar", metadata={"page": 1}),
         ],
     )
 
