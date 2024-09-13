@@ -18,6 +18,7 @@ from langchain_core.messages import (
 )
 from langchain_core.messages.ai import UsageMetadata
 from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel as BaseModelV2
 
 from langchain_openai import ChatOpenAI
 from langchain_openai.chat_models.base import (
@@ -694,3 +695,31 @@ def test_get_num_tokens_from_messages() -> None:
     expected = 176
     actual = llm.get_num_tokens_from_messages(messages)
     assert expected == actual
+
+
+class Foo(BaseModel):
+    bar: int
+
+
+class FooV2(BaseModelV2):
+    bar: int
+
+
+@pytest.mark.parametrize("schema", [Foo, FooV2])
+def test_schema_from_with_structured_output(schema: Type) -> None:
+    """Test schema from with_structured_output."""
+
+    llm = ChatOpenAI()
+
+    structured_llm = llm.with_structured_output(
+        schema, method="json_schema", strict=True
+    )
+
+    expected = {
+        "properties": {"bar": {"title": "Bar", "type": "integer"}},
+        "required": ["bar"],
+        "title": schema.__name__,
+        "type": "object",
+    }
+    actual = structured_llm.get_output_schema().schema()
+    assert actual == expected
