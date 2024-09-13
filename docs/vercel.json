@@ -5,8 +5,8 @@
   "trailingSlash": true,
   "rewrites": [
     {
-      "source": "/v0.2/docs/integrations(/?)",
-      "destination": "/v0.2/docs/integrations/platforms/"
+      "source": "/docs/integrations(/?)",
+      "destination": "/docs/integrations/platforms/"
     },
     {
       "source": "/v0.1",
@@ -17,110 +17,46 @@
       "destination": "https://langchain-v01.vercel.app/v0.1/:path*"
     },
     {
-      "source": "/robots.txt(/?)",
-      "destination": "/v0.2/robots.txt/"
+      "source": "/v0.2",
+      "destination": "https://langchain-v02.vercel.app/v0.2"
     },
     {
-      "source": "/sitemap.xml(/?)",
-      "destination": "/v0.2/sitemap.xml/"
+      "source": "/v0.2/:path(.*/?)*",
+      "destination": "https://langchain-v02.vercel.app/v0.2/:path*"
     }
   ],
   "redirects": [
-    {
-      "source": "/v0.2/docs/versions/packages(/?)",
-      "destination": "/v0.2/docs/versions/release_policy/"
-    },
-    {
-      "source": "/v0.2/docs/integrations/llms/llm_caching(/?)",
-      "destination": "/v0.2/docs/integrations/llm_caching/"
-    },
     {
       "source": "/docs/how_to/tool_calls_multi_modal(/?)",
       "destination": "/docs/how_to/multimodal_inputs/"
     },
     {
-      "source": "/v0.2/docs/langsmith(/?)",
+      "source": "/docs/langsmith(/?)",
       "destination": "https://docs.smith.langchain.com/"
     },
     {
-      "source": "/v0.2/docs/langgraph(/?)",
+      "source": "/docs/langgraph(/?)",
       "destination": "https://langchain-ai.github.io/langgraph"
     },
     {
       "source": "/",
-      "destination": "/v0.2/docs/introduction/"
+      "destination": "/docs/introduction/"
     },
     {
       "source": "/docs(/?)",
-      "destination": "/v0.2/docs/introduction/"
+      "destination": "/docs/introduction/"
     },
     {
       "source": "/docs/get_started/introduction(/?)",
-      "destination": "/v0.2/docs/introduction/"
+      "destination": "/docs/introduction/"
     },
     {
-      "source": "/docs/integrations/:path(.*/?)*",
-      "destination": "/v0.2/docs/integrations/:path*"
-    },
-    {
-      "source": "/docs/:path(.*/?)*",
-      "destination": "/v0.1/docs/:path*"
-    },
-    {
-      "source": "/cookbook(/?)",
-      "destination": "/v0.1/docs/cookbook/"
-    },
-    {
-      "source": "/v0.2/docs/how_to/migrate_chains(/?)",
-      "destination": "/v0.2/docs/versions/migrating_chains"
-    },
-    {
-      "source": "/v0.2/docs/integrations/tools/search_tools/",
-      "destination": "/v0.2/docs/integrations/tools#search"
-    },
-    {
-      "source": "/v0.2/docs/integrations/toolkits/airbyte_structured_qa/",
-      "destination": "/v0.2/docs/integrations/document_loaders/airbyte/"
-    },
-    {
-      "source": "/v0.2/docs/integrations/tools/connery_toolkit/",
-      "destination": "/v0.2/docs/integrations/tools/connery/"
-    },
-    {
-      "source": "/v0.2/docs/integrations/tools/polygon_toolkit/",
-      "destination": "/v0.2/docs/integrations/tools/polygon/"
-    },
-    {
-      "source": "/v0.2/docs/integrations/toolkits/document_comparison_toolkit(/?)",
-      "destination": "/v0.2/docs/tutorials/rag/"
-    },
-    {
-      "source": "/v0.2/docs/integrations/toolkits/:path(.*/?)*",
-      "destination": "/v0.2/docs/integrations/tools/:path*"
-    },
-    {
-      "source": "/v0.2/docs/integrations/toolkits/spark/",
-      "destination": "/v0.2/docs/integrations/tools/spark_sql/"
-    },
-    {
-      "source": "/v0.2/docs/integrations/toolkits/xorbits/",
-      "destination": "/v0.2/docs/integrations/tools#search"
-    },
-    {
-      "source": "/v0.2/docs/integrations/document_loaders/notiondb/",
-      "destination": "/v0.2/docs/integrations/document_loaders/notion/"
-    },
-    {
-      "source": "/v0.2/docs/integrations/chat/ollama_functions/",
-      "destination": "https://python.langchain.com/v0.1/docs/integrations/chat/ollama_functions/"
+      "source": "/docs/how_to/migrate_chains(/?)",
+      "destination": "/docs/versions/migrating_chains"
     },
     {
       "source": "/v0.2/docs/templates/:path(.*/?)*",
       "destination": "https://github.com/langchain-ai/langchain/tree/master/templates/:path*"
-    },
-    {
-      "source": "/v0.2/docs/integrations/text_embedding/nemo/",
-      "destination": "/v0.2/docs/integrations/text_embedding/nvidia_ai_endpoints/"
     }
   ]
 }
