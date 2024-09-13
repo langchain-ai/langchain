@@ -48,7 +48,6 @@ jobs:
         shell: bash
         run: |
           poetry run pip install packaging tomli
-          echo "Python version ${{ steps.setup-python.outputs.installed-python-version }}"
           python_version="$(poetry run python --version | awk '{print $2}')"
           min_versions="$(poetry run python $GITHUB_WORKSPACE/.github/scripts/get_min_versions.py pyproject.toml pull_request $python_version)"
           echo "min-versions=$min_versions" >> "$GITHUB_OUTPUT"
