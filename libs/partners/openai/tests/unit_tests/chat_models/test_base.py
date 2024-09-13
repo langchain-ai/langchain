@@ -18,7 +18,6 @@ from langchain_core.messages import (
 )
 from langchain_core.messages.ai import UsageMetadata
 from pydantic import BaseModel
-from pydantic.v1 import BaseModel as BaseModelV1
 
 from langchain_openai import ChatOpenAI
 from langchain_openai.chat_models.base import (
@@ -710,7 +709,7 @@ class Foo(BaseModel):
 @pytest.mark.parametrize(
     "schema",
     [
-        Foo,
+        Foo
         # FooV1
     ],
 )
