@@ -1087,26 +1087,26 @@ test = ["ipykernel", "pre-commit", "pytest (<8)", "pytest-cov", "pytest-timeout"
 
 [[package]]
 name = "langchain"
-version = "0.3.0.dev1"
+version = "0.3.0.dev2"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = "<4.0,>=3.9"
 files = [
-    {file = "langchain-0.3.0.dev1-py3-none-any.whl", hash = "sha256:a57ec978b48915cfdbf6f7a683bc7b7c8b8dba2bbb8646f821740f42670430e9"},
-    {file = "langchain-0.3.0.dev1.tar.gz", hash = "sha256:27696f01e59aa772da082f5adff9d5f58b6edabe85392a54967456727c941362"},
+    {file = "langchain-0.3.0.dev2-py3-none-any.whl", hash = "sha256:f84d318aed04a01a700659c90063a8f3cb0cf2c055d312ad6aaae177ab709963"},
+    {file = "langchain-0.3.0.dev2.tar.gz", hash = "sha256:08d6617518fee66163ae21f7dfb535bf336cfcfa9f3d91c25f0eace76355d50b"},
 ]
 
 [package.dependencies]
 aiohttp = ">=3.8.3,<4.0.0"
 async-timeout = {version = ">=4.0.0,<5.0.0", markers = "python_version < \"3.11\""}
-langchain-core = ">=0.3.0.dev2,<0.4.0"
+langchain-core = ">=0.3.0.dev5,<0.4.0"
 langchain-text-splitters = ">=0.3.0.dev1,<0.4.0"
 langsmith = ">=0.1.17,<0.2.0"
 numpy = [
     {version = ">=1,<2", markers = "python_version < \"3.12\""},
     {version = ">=1.26.0,<2.0.0", markers = "python_version >= \"3.12\""},
 ]
-pydantic = ">=1,<3"
+pydantic = ">=2.7.4,<3.0.0"
 PyYAML = ">=5.3"
 requests = ">=2,<3"
 SQLAlchemy = ">=1.4,<3"
@@ -1114,7 +1114,7 @@ tenacity = ">=8.1.0,<8.4.0 || >8.4.0,<9.0.0"
 
 [[package]]
 name = "langchain-community"
-version = "0.3.0.dev1"
+version = "0.3.0.dev2"
 description = "Community contributed LangChain integrations."
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -1124,8 +1124,8 @@ develop = true
 [package.dependencies]
 aiohttp = "^3.8.3"
 dataclasses-json = ">= 0.5.7, < 0.7"
-langchain = "^0.3.0.dev1"
-langchain-core = "^0.3.0.dev2"
+langchain = "^0.3.0.dev2"
+langchain-core = "^0.3.0.dev5"
 langsmith = "^0.1.112"
 numpy = [
     {version = ">=1,<2", markers = "python_version < \"3.12\""},
@@ -1143,7 +1143,7 @@ url = "../../community"
 
 [[package]]
 name = "langchain-core"
-version = "0.3.0.dev4"
+version = "0.3.0"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -1154,7 +1154,10 @@ develop = true
 jsonpatch = "^1.33"
 langsmith = "^0.1.117"
 packaging = ">=23.2,<25"
-pydantic = "^2.7.4"
+pydantic = [
+    {version = ">=2.5.2,<3.0.0", markers = "python_full_version < \"3.12.4\""},
+    {version = ">=2.7.4,<3.0.0", markers = "python_full_version >= \"3.12.4\""},
+]
 PyYAML = ">=5.3"
 tenacity = "^8.1.0,!=8.4.0"
 typing-extensions = ">=4.7"
@@ -3660,4 +3663,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0"
-content-hash = "ab774e0ccb40b389e92a260d142447d8bb6de876906d9b2f084fd7f16b8e7eee"
+content-hash = "935cfcef42083ca2d00fab8dc58837c2911041ea1526c684a54c4a1404648d39"
