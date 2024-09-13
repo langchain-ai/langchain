@@ -1,30 +1,48 @@
 ---
-sidebar_label: Overview of v0.3
+sidebar_label: v0.3
 ---
 # Overview of LangChain v0.3
 
-## What’s new in LangChain?
-
-The following features have been added during the development of 0.2.x:
-
-- We’ve recently revamped our integration docs and API reference. Read more [here](https://blog.langchain.dev/langchain-integration-docs-revamped/).
-- We’ve continued to migrate key integrations to their own `langchain-x` packages outside of `langchain-community`. This allows us to better manage the dependencies of, test, and version these integrations. You can see all the latest integration packages in the [API reference](https://python.langchain.com/v0.2/api_reference/reference.html#integrations).
-- We’ve simplified how to define and use tools. Read more [here](https://blog.langchain.dev/improving-core-tool-interfaces-and-docs-in-langchain/).
-- We’ve added a number of key utilities for interacting with chat models: [universal model constructor](https://python.langchain.com/v0.2/docs/how_to/chat_models_universal_init/), [rate limiter](https://python.langchain.com/v0.2/docs/how_to/chat_model_rate_limiting/), [message utilities](https://python.langchain.com/v0.2/docs/how_to/#messages),
-- We've added the ability to [dispatch custom events](https://python.langchain.com/v0.2/docs/how_to/callbacks_custom_events/).
-- We have marked as deprecated a number of legacy chains and added migration guides for all of them. These are slated for removal in langchain 1.0. See the deprecated chains and associated [migration guides here](https://python.langchain.com/v0.2/docs/versions/migrating_chains/).
-
 ## What's changed
 
-* As of the 0.3 release, LangChain has been upgraded to use Pydantic 2 internally. Pydantic v2 will be fully supported across new packages without the need for any bridges like `langchain_core.pydantic_v1`.
+* All packages have been upgraded from Pydantic 1 to Pydantic 2 internally. Use of Pydantic 2 in user code is fully supported with all packages without the need for bridges like `langchain_core.pydantic_v1` or `pydantic.v1`.
 * Pydantic 1 will no longer be supported as it reached its end-of-life in June 2024.
 * Python 3.8 will no longer be supported as its end-of-life is October 2024.
 
+## What’s new?
+
+The following features have been added during the development of 0.2.x:
+
+- Moved more integrations from `langchain-community` to their own `langchain-x` packages. This is a non-breaking change, as the legacy implementations are left in `langchain-community` and marked as deprecated. This allows us to better manage the dependencies of, test, and version these integrations. You can see all the latest integration packages in the [API reference](https://python.langchain.com/v0.2/api_reference/reference.html#integrations).
+- Simplified tool definition and usage. Read more [here](https://blog.langchain.dev/improving-core-tool-interfaces-and-docs-in-langchain/).
+- Added utilities for interacting with chat models: [universal model constructor](https://python.langchain.com/v0.2/docs/how_to/chat_models_universal_init/), [rate limiter](https://python.langchain.com/v0.2/docs/how_to/chat_model_rate_limiting/), [message utilities](https://python.langchain.com/v0.2/docs/how_to/#messages),
+- Added the ability to [dispatch custom events](https://python.langchain.com/v0.2/docs/how_to/callbacks_custom_events/).
+- Revamped integration docs and API reference. Read more [here](https://blog.langchain.dev/langchain-integration-docs-revamped/).
+- Marked as deprecated a number of legacy chains and added migration guides for all of them. These are slated for removal in `langchain` 1.0.0. See the deprecated chains and associated [migration guides here](https://python.langchain.com/v0.2/docs/versions/migrating_chains/).
+
 ## How to update your code
 
-If you're using LangChain 0.0, or 0.1, we recommend that you first [upgrade to 0.2](https://python.langchain.com/v0.2/docs/versions/v0_2/). The langchain-cli will help you to migrate many imports automatically.
+If you're using `langchain` / `langchain-community` / `langchain-core` 0.0 or 0.1, we recommend that you first [upgrade to 0.2](https://python.langchain.com/v0.2/docs/versions/v0_2/). The `langchain-cli` will help you to migrate many imports automatically.
 
-If you're using LangChain 0.2, update your packages to use `langchain-core>=0.3`. We've released 0.3 versions of langchain-core, langchain, langchain-community and langserve. `langgraph>=0.2.20` will work with either langchain-core 0.2 or 0.3.
+Here is a complete list of all packages that have been released and what we recommend upgrading your dependencies to:
+Base packages:
+
+langchain: 0.3.0
+langchain-core: 0.3.0
+langchain-community: 0.3.0
+langchain-text-splitters: 0.3.0
+langchain-experimental: 0.3.0
+
+Integration packages:
+langchain-openai: 0.2.0
+langchain-anthropic: 0.2.0
+langchain-
+
+If you're using `langchain` / `langchain-community` / `langchain-core` / `langserve` 0.2, update your application to use `>=0.3,<0.4` versions of these.
+
+If you're using `langgraph`, upgrade to `langgraph>=0.2.20,<0.3`. This will work with either langchain-core 0.2 or 0.3.
+
+If you're using integration packages (`langchain-x`)
 
 The breaking changes in this release were:
 
