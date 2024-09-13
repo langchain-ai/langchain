@@ -67,7 +67,7 @@ def get_min_version_from_toml(
     min_versions = {}
 
     # Iterate over the libs in MIN_VERSION_LIBS
-    for lib in MIN_VERSION_LIBS:
+    for lib in set(MIN_VERSION_LIBS + (include or [])):
         if versions_for == "pull_request" and lib in SKIP_IF_PULL_REQUEST:
             # some libs only get checked on release because of simultaneous
             # changes
