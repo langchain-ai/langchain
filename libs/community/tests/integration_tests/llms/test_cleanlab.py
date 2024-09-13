@@ -6,12 +6,14 @@ Set the ``CLEANLAB_API_KEY`` environment variable with the above API key."""
 
 from langchain_community.llms.cleanlab import CleanlabTLM
 
+
 def test_cleanlab_call() -> None:
     """Test valid call to Cleanlab."""
-    llm = CleanlabTLM(quality_preset = 'best')  # type: ignore[call-arg]
+    llm = CleanlabTLM(quality_preset="best")  # type: ignore[call-arg]
     output = llm.invoke("Say foo:")
     assert llm._llm_type == "cleanlab"
     assert isinstance(output, str)
+
 
 async def test_cleanlab_acall() -> None:
     """Test aysync call to Cleanlab."""
@@ -21,6 +23,7 @@ async def test_cleanlab_acall() -> None:
     assert llm._llm_type == "cleanlab"
     assert isinstance(output, str)
 
+
 def test_cleanlab_generate() -> None:
     """Test valid generation call to Cleanlab."""
     llm = CleanlabTLM()
@@ -29,4 +32,6 @@ def test_cleanlab_generate() -> None:
     assert llm._llm_type == "cleanlab"
     assert isinstance(output, LLMResult)
     assert isinstance(output.generations[0][0].text, str)
-    assert isinstance(output.generations[0][0].generation_info['trustworthiness_score'], float)
+    assert isinstance(
+        output.generations[0][0].generation_info["trustworthiness_score"], float
+    )

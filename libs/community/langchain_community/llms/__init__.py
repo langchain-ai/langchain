@@ -143,10 +143,12 @@ def _import_clarifai() -> Type[BaseLLM]:
 
     return Clarifai
 
+
 def _import_cleanlab() -> Type[BaseLLM]:
     from langchain_community.llms.cleanlab import CleanlabTLM
 
     return CleanlabTLM
+
 
 def _import_cohere() -> Type[BaseLLM]:
     from langchain_community.llms.cohere import Cohere

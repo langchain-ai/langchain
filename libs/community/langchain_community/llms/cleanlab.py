@@ -1,15 +1,19 @@
 import logging
 from typing import Any, Dict, List, Mapping, Optional
 
-from langchain_core.callbacks import CallbackManagerForLLMRun, AsyncCallbackManagerForLLMRun
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain_core.language_models.llms import BaseLLM
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator, PrivateAttr
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 from langchain_core.outputs import Generation, LLMResult
+from langchain_core.pydantic_v1 import Field, PrivateAttr, SecretStr
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
 logger = logging.getLogger(__name__)
+
 
 class CleanlabTLM(BaseLLM):
     """Cleanlab's Trustworthy Large Language Model.
@@ -28,7 +32,8 @@ class CleanlabTLM(BaseLLM):
                 quality_preset="best"
             )
     """
-    _client: Any = PrivateAttr() # :meta private:
+
+    _client: Any = PrivateAttr()  # :meta private:
 
     cleanlab_api_key: Optional[SecretStr] = Field(default=None)
     """Cleanlab API key. Get it here: https://app.cleanlab.ai"""
@@ -54,15 +59,18 @@ class CleanlabTLM(BaseLLM):
             get_from_dict_or_env(values, "cleanlab_api_key", "CLEANLAB_API_KEY")
         )
         values["cleanlab_api_key"] = cleanlab_api_key
-        
+
         try:
             from cleanlab_studio import Studio
+
             studio = Studio(api_key=cleanlab_api_key.get_secret_value())
             # Check for user overrides in options dict
-            use_options = values['options'] is not None
+            use_options = values["options"] is not None
             # Initialize TLM
-            cls._client = studio.TLM(quality_preset=values['quality_preset'], 
-            options=values['options'] if use_options else None)
+            cls._client = studio.TLM(
+                quality_preset=values["quality_preset"],
+                options=values["options"] if use_options else None,
+            )
         except ImportError:
             raise ImportError(
                 "Could not import cleanlab-studio python package. "
@@ -87,7 +95,7 @@ class CleanlabTLM(BaseLLM):
             "model": "gpt-4o-mini",
         }
         return {**default_params}
-    
+
     @property
     def _llm_type(self) -> str:
         """Return type of llm."""
@@ -111,10 +119,19 @@ class CleanlabTLM(BaseLLM):
             trustworthiness_score = resp["trustworthiness_score"]
             if stop is not None:
                 text = enforce_stop_tokens(text, stop)
-            generations.append([Generation(text=text, generation_info={"trustworthiness_score": trustworthiness_score})])
+            generations.append(
+                [
+                    Generation(
+                        text=text,
+                        generation_info={
+                            "trustworthiness_score": trustworthiness_score
+                        },
+                    )
+                ]
+            )
 
         return LLMResult(generations=generations)
-    
+
     async def _agenerate(
         self,
         prompts: List[str],
@@ -132,6 +149,15 @@ class CleanlabTLM(BaseLLM):
             trustworthiness_score = resp["trustworthiness_score"]
             if stop is not None:
                 text = enforce_stop_tokens(text, stop)
-            generations.append([Generation(text=text, generation_info={"trustworthiness_score": trustworthiness_score})])
+            generations.append(
+                [
+                    Generation(
+                        text=text,
+                        generation_info={
+                            "trustworthiness_score": trustworthiness_score
+                        },
+                    )
+                ]
+            )
 
         return LLMResult(generations=generations)
