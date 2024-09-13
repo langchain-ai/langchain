@@ -1,4 +1,4 @@
-name: test
+name: test pydantic intermediate versions
 
 on:
   workflow_call:
@@ -8,9 +8,14 @@ on:
         type: string
         description: "From which folder this pipeline executes"
       python-version:
-        required: true
+        required: false
         type: string
         description: "Python version to use"
+        default: "3.11"
+      pydantic-version:
+        required: true
+        type: string
+        description: "Pydantic version to test."
 
 env:
   POETRY_VERSION: "1.7.1"
@@ -21,47 +26,30 @@ jobs:
       run:
         working-directory: ${{ inputs.working-directory }}
     runs-on: ubuntu-latest
-    name: "make test #${{ inputs.python-version }}"
+    name: "make test # pydantic: ~=${{ inputs.pydantic-version }}, python: ${{ inputs.python-version }}, "
     steps:
       - uses: actions/checkout@v4
 
       - name: Set up Python ${{ inputs.python-version }} + Poetry ${{ env.POETRY_VERSION }}
         uses: "./.github/actions/poetry_setup"
-        id: setup-python
         with:
           python-version: ${{ inputs.python-version }}
           poetry-version: ${{ env.POETRY_VERSION }}
           working-directory: ${{ inputs.working-directory }}
           cache-key: core
+
       - name: Install dependencies
         shell: bash
         run: poetry install --with test
+
+      - name: Overwrite pydantic version
+        shell: bash
+        run: poetry run pip install pydantic~=${{ inputs.pydantic-version }}
 
       - name: Run core tests
         shell: bash
         run: |
           make test
-
-      - name: Get minimum versions
-        working-directory: ${{ inputs.working-directory }}
-        id: min-version
-        shell: bash
-        run: |
-          poetry run pip install packaging tomli
-          echo "Python version ${{ steps.setup-python.outputs.installed-python-version }}"
-          python_version="$(poetry run python --version | awk '{print $2}')"
-          min_versions="$(poetry run python $GITHUB_WORKSPACE/.github/scripts/get_min_versions.py pyproject.toml pull_request $python_version)"
-          echo "min-versions=$min_versions" >> "$GITHUB_OUTPUT"
-          echo "min-versions=$min_versions"
-
-      - name: Run unit tests with minimum dependency versions
-        if: ${{ steps.min-version.outputs.min-versions != '' }}
-        env:
-          MIN_VERSIONS: ${{ steps.min-version.outputs.min-versions }}
-        run: |
-          poetry run pip install --force-reinstall $MIN_VERSIONS --editable .
-          make tests
-        working-directory: ${{ inputs.working-directory }}
 
       - name: Ensure the tests did not create any additional files
         shell: bash
@@ -74,4 +62,3 @@ jobs:
           # grep will exit non-zero if the target message isn't found,
           # and `set -e` above will cause the step to fail.
           echo "$STATUS" | grep 'nothing to commit, working tree clean'
-          

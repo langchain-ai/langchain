@@ -308,7 +308,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
         "title": "FakeRetrieverInput",
         "type": "string",
     }
-    assert fake_ret.get_output_jsonschema() == {
+    assert _normalize_schema(fake_ret.get_output_jsonschema()) == {
         "$defs": {
             "Document": {
                 "description": "Class for storing a piece of text and "
@@ -338,9 +338,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                     "type": {
                         "const": "Document",
                         "default": "Document",
-                        "enum": ["Document"],
                         "title": "Type",
-                        "type": "string",
                     },
                 },
                 "required": ["page_content"],
@@ -373,10 +371,10 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
         ]
     )
 
-    assert chat_prompt.get_input_jsonschema() == snapshot(
+    assert _normalize_schema(chat_prompt.get_input_jsonschema()) == snapshot(
         name="chat_prompt_input_schema"
     )
-    assert chat_prompt.get_output_jsonschema() == snapshot(
+    assert _normalize_schema(chat_prompt.get_output_jsonschema()) == snapshot(
         name="chat_prompt_output_schema"
     )
 
@@ -392,7 +390,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
 
     prompt_mapper = PromptTemplate.from_template("Hello, {name}!").map()
 
-    assert prompt_mapper.get_input_jsonschema() == {
+    assert _normalize_schema(prompt_mapper.get_input_jsonschema()) == {
         "$defs": {
             "PromptInput": {
                 "properties": {"name": {"title": "Name", "type": "string"}},
