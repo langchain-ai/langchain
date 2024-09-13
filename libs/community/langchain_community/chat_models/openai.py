@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import os
 import sys
+import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -152,14 +153,25 @@ def _update_token_usage(
     # Token usage is either ints or dictionaries
     # `reasoning_tokens` is nested inside `completion_tokens_details`
     if isinstance(new_usage, int):
-        return new_usage
+        if not isinstance(overall_token_usage, int):
+            raise ValueError(
+                f"Got different types for token usage: "
+                f"{type(new_usage)} and {type(overall_token_usage)}"
+            )
+        return new_usage + overall_token_usage
     elif isinstance(new_usage, dict):
+        if not isinstance(overall_token_usage, dict):
+            raise ValueError(
+                f"Got different types for token usage: "
+                f"{type(new_usage)} and {type(overall_token_usage)}"
+            )
         return {
             k: _update_token_usage(overall_token_usage.get(k, 0), v)
             for k, v in new_usage.items()
         }
     else:
-        raise TypeError(f"Unexpected type for token usage: {type(new_usage)}")
+        warnings.warn(f"Unexpected type for token usage: {type(new_usage)}")
+        return new_usage
 
 
 @deprecated(
