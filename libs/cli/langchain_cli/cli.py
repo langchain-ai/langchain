@@ -20,7 +20,7 @@ app.add_typer(
 )
 
 app.add_typer(
-    migrate_namespace.app,
+    migrate_namespace.migrate_cli,
     name="migrate",
     help=migrate_namespace.__doc__,
 )

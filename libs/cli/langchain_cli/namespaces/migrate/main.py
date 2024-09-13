@@ -10,10 +10,10 @@ def get_gritdir_path() -> Path:
     return script_dir / ".grit"
 
 
-app = typer.Typer(add_completion=True, no_args_is_help=True)
+migrate_cli = typer.Typer(add_completion=False, no_args_is_help=True)
 
 
-@app.callback(
+@migrate_cli.callback(
     context_settings={
         # Let Grit handle the arguments
         "allow_extra_args": True,
@@ -23,13 +23,12 @@ app = typer.Typer(add_completion=True, no_args_is_help=True)
 def migrate(
     ctx: typer.Context,
     diff: bool = Option(False, help="Show diff instead of applying changes."),
-    # grit_help: bool = Option(False, help="Show the help for the underlying grit tool."),
+    grit_help: bool = Option(False, help="Show the help for the underlying grit tool."),
 ) -> None:
     """Migrate langchain to the most recent version.
 
     Any undocumented arguments will be passed to the Grit CLI.
     """
-    print('here')
     if not diff:
         if not typer.confirm(
             "✈️ This script will help you migrate to a recent version LangChain. "
