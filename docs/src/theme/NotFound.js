@@ -2,14 +2,21 @@ import React from 'react';
 import Translate, {translate} from '@docusaurus/Translate';
 import {PageMetadata} from '@docusaurus/theme-common';
 import Layout from '@theme/Layout';
-import suggestedLinks from './suggested_links.json'
+import suggestedLinks from './removed_pages_v01.json'
 
 import {useLocation} from 'react-router-dom';
 
+function LegacyBadge() {
+  return (
+    <span className="badge badge--secondary">LEGACY</span>
+  );
+}
+
 export default function NotFound() {
   const location = useLocation();
-  console.log(location.pathname);
-  const links = suggestedLinks[location.pathname] || [];
+  const pathname = `${location.pathname}/`;
+  const {canonical, alternative} = suggestedLinks[pathname] || {};
+
   return (
     <>
       <PageMetadata
@@ -23,37 +30,34 @@ export default function NotFound() {
           <div className="row">
             <div className="col col--6 col--offset-3">
               <h1 className="hero__title">
-                <Translate
-                  id="theme.NotFound.title"
-                  description="The title of the 404 page">
-                  Page Not Found
-                </Translate>
+                  {canonical ? 'Page Moved' : alternative ? 'Page Removed' : 'Page Not Found'}
               </h1>
-              <p>
-                <Translate
-                  id="theme.NotFound.p1"
-                  description="The first paragraph of the 404 page">
-                  We could not find what you were looking for.
-                </Translate>
-              </p>
-              {links && (
+              {
+                canonical ? (
+                  <h3>You can find the new location <a href={canonical}>here</a>.</h3>
+                ) : alternative ? (
+                  <p>The page you were looking for has been removed.</p>
+                ) : (
+                  <p>We could not find what you were looking for.</p>
+                )
+              }
+              {alternative && (
                 <p>
-                  Did you mean one of the following links?
-                  <ul>
-                  {links.map((link, index) => (
-                    <li key={index}>
-                      <a href={link}>{link}</a>
-                    </li>
-                  ))}
-                </ul></p>
+                  <details>
+                    <summary>Alternative pages</summary>
+                      <ul>
+                        {alternative.map((alt, index) => (
+                          <li key={index}>
+                            <a href={alt}>{alt}</a>{alt.startsWith('/v0.1/') && <>{' '}<LegacyBadge/></>}
+                          </li>
+                        ))}
+                      </ul>
+                  </details>
+                </p>
               )}
               <p>
-                <Translate
-                  id="theme.NotFound.p2"
-                  description="The 2nd paragraph of the 404 page">
                   Please contact the owner of the site that linked you to the
-                  original URL and let them know their link is broken.
-                </Translate>
+                  original URL and let them know their link {canonical ? 'has moved.' : alternative ? 'has been removed.' : 'is broken.'}
               </p>
             </div>
           </div>
