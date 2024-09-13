@@ -18,13 +18,14 @@ from typing import (
     Optional,
     Tuple,
     Type,
+    TypeVar,
     Union,
 )
 
 import pytest
 from pydantic import BaseModel, Field, ValidationError
 from pydantic.v1 import BaseModel as BaseModelV1
-from typing_extensions import Annotated, TypedDict, TypeVar
+from typing_extensions import Annotated, TypedDict
 
 from langchain_core import tools
 from langchain_core.callbacks import (
