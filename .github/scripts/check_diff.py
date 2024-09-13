@@ -95,7 +95,6 @@ def add_dependents(dirs_to_eval: Set[str], dependents: dict) -> List[str]:
         # handle core manually because it has so many dependents
         if "core" in dir_:
             updated.add(dir_)
-            updated.update(all_package_dirs())
             continue
         pkg = "langchain-" + dir_.split("/")[-1]
         updated.update(dependents[pkg])
