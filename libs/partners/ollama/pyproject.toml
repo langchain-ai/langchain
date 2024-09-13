@@ -3,9 +3,9 @@ requires = [ "poetry-core>=1.0.0",]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
-name = "langgigachainchain-ollama"
+name = "gigachainchain-ollama"
 version = "0.1.3"
-description = "An integration package connecting Ollama and LangChain"
+description = "An integration package connecting Ollama and GigaChain"
 authors = []
 readme = "README.md"
 repository = "https://github.com/ai-forever/gigachain"
@@ -70,18 +70,18 @@ ruff = "^0.1.8"
 [tool.poetry.group.typing.dependencies]
 mypy = "^1.7.1"
 
-[tool.poetry.group.test.dependencies.langchain-core]
+[tool.poetry.group.test.dependencies.gigachain-core]
 path = "../../core"
 develop = true
 
-[tool.poetry.group.test.dependencies.langchain-standard-tests]
+[tool.poetry.group.test.dependencies.gigachain-standard-tests]
 path = "../../standard-tests"
 develop = true
 
-[tool.poetry.group.typing.dependencies.langchain-core]
+[tool.poetry.group.typing.dependencies.gigachain-core]
 path = "../../core"
 develop = true
 
-[tool.poetry.group.dev.dependencies.langchain-core]
+[tool.poetry.group.dev.dependencies.gigachain-core]
 path = "../../core"
 develop = true
