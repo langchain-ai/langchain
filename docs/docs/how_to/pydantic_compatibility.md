@@ -175,4 +175,4 @@ If you need OpenAPI docs, your options are to either install Pydantic 1:
 or else to use the `APIHandler` object in LangChain to manually create the
 routes for your API.
 
-See: https://python.langchain.com/v0.2/docs/langserve/#pydantic
+See: https://python.langchain.com/docs/langserve/#pydantic
