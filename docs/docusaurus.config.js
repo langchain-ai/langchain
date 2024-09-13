@@ -219,12 +219,16 @@ const config = {
           },
           {
             type: "dropdown",
-            label: "v0.2",
+            label: "v0.3",
             position: "right",
             items: [
               {
-                label: "v0.2",
+                label: "v0.3",
                 href: "/docs/introduction"
+              },
+              {
+                label: "v0.2",
+                href: "https://python.langchain.com/v0.2/docs/introduction"
               },
               {
                 label: "v0.1",
