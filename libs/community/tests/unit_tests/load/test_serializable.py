@@ -45,6 +45,12 @@ def import_all_modules(package_name: str) -> dict:
     for importer, modname, ispkg in pkgutil.walk_packages(
         package.__path__, package.__name__ + "."
     ):
+        if modname.startswith("langchain_core.pydantic_v1") or modname.startswith(
+            "langchain.pydantic_v1"
+        ):
+            # These are deprecated and should not be imported as they
+            # intentionally raise an import error
+            continue
         try:
             module = importlib.import_module(modname)
         except ModuleNotFoundError:
@@ -138,8 +144,15 @@ def test_serializable_mapping() -> None:
 
     for k, import_path in serializable_modules.items():
         import_dir, import_obj = import_path[:-1], import_path[-1]
+        module = ".".join(import_dir)
+        if module.startswith("langchain_core.pydantic_v1") or module.startswith(
+            "langchain.pydantic_v1"
+        ):
+            # These are deprecated and should not be imported as they
+            # intentionally raise an import error
+            continue
         # Import module
-        mod = importlib.import_module(".".join(import_dir))
+        mod = importlib.import_module(module)
         # Import class
         cls = getattr(mod, import_obj)
         assert list(k) == cls.lc_id()
