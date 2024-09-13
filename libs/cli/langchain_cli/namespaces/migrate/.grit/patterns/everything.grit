@@ -11,6 +11,7 @@ pattern langchain_all_migrations() {
     langchain_migrate_openai(),
     langchain_migrate_pinecone(),
     langchain_migrate_anthropic()
+    replace_pydantic_v1_shim()
   }
 }
 
