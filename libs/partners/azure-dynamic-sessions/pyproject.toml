@@ -68,6 +68,11 @@ syrupy = "^4.0.2"
 pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
 python-dotenv = "^1.0.1"
+# TODO: hack to fix 3.9 builds
+cffi = [
+    { version = "<1.17.1", python = "<3.10" },
+    { version = "*", python = ">=3.10" },
+]
 
 [tool.poetry.group.test_integration.dependencies]
 pytest = "^7.3.0"
@@ -80,6 +85,11 @@ codespell = "^2.2.0"
 ruff = "^0.5"
 python-dotenv = "^1.0.1"
 pytest = "^7.3.0"
+# TODO: hack to fix 3.9 builds
+cffi = [
+    { version = "<1.17.1", python = "<3.10" },
+    { version = "*", python = ">=3.10" },
+]
 
 [tool.poetry.group.dev.dependencies]
 ipykernel = "^6.29.4"
