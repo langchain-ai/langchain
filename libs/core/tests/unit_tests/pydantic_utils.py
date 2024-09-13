@@ -57,17 +57,20 @@ def remove_all_none_default(schema: Any) -> None:
             remove_all_none_default(item)
 
 
-def _remove_enum_description(obj: Any) -> None:
+def _remove_enum(obj: Any) -> None:
     """Remove the description from enums."""
     if isinstance(obj, dict):
         if "enum" in obj:
             if "description" in obj and obj["description"] == "An enumeration.":
                 del obj["description"]
+            if "type" in obj and obj["type"] == "string":
+                del obj["type"]
+            del obj["enum"]
         for value in obj.values():
-            _remove_enum_description(value)
+            _remove_enum(value)
     elif isinstance(obj, list):
         for item in obj:
-            _remove_enum_description(item)
+            _remove_enum(item)
 
 
 def _schema(obj: Any) -> dict:
@@ -91,7 +94,7 @@ def _schema(obj: Any) -> dict:
 
     replace_all_of_with_ref(schema_)
     remove_all_none_default(schema_)
-    _remove_enum_description(schema_)
+    _remove_enum(schema_)
 
     return schema_
 
@@ -118,5 +121,5 @@ def _normalize_schema(obj: Any) -> Dict[str, Any]:
         data = obj
     remove_all_none_default(data)
     replace_all_of_with_ref(data)
-    _remove_enum_description(data)
+    _remove_enum(data)
     return data

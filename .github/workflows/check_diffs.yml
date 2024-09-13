@@ -31,6 +31,7 @@ jobs:
         uses: Ana06/get-changed-files@v2.2.0
       - id: set-matrix
         run: |
+          python -m pip install packaging
           python .github/scripts/check_diff.py ${{ steps.files.outputs.all }} >> $GITHUB_OUTPUT
     outputs:
       lint: ${{ steps.set-matrix.outputs.lint }}
@@ -39,6 +40,7 @@ jobs:
       compile-integration-tests: ${{ steps.set-matrix.outputs.compile-integration-tests }}
       dependencies: ${{ steps.set-matrix.outputs.dependencies }}
       test-doc-imports: ${{ steps.set-matrix.outputs.test-doc-imports }}
+      test-pydantic: ${{ steps.set-matrix.outputs.test-pydantic }}
   lint:
     name: cd ${{ matrix.job-configs.working-directory }}
     needs: [ build ]
@@ -65,6 +67,20 @@ jobs:
     with:
       working-directory: ${{ matrix.job-configs.working-directory }}
       python-version: ${{ matrix.job-configs.python-version }}
+    secrets: inherit
+
+  test-pydantic:
+    name: cd ${{ matrix.job-configs.working-directory }}
+    needs: [ build ]
+    if: ${{ needs.build.outputs.test-pydantic != '[]' }}
+    strategy:
+      matrix:
+        job-configs: ${{ fromJson(needs.build.outputs.test-pydantic) }}
+      fail-fast: false
+    uses: ./.github/workflows/_test_pydantic.yml
+    with:
+      working-directory: ${{ matrix.job-configs.working-directory }}
+      pydantic-version: ${{ matrix.job-configs.pydantic-version }}
     secrets: inherit
 
   test-doc-imports:

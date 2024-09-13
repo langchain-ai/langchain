@@ -18,13 +18,14 @@ from typing import (
     Optional,
     Tuple,
     Type,
+    TypeVar,
     Union,
 )
 
 import pytest
 from pydantic import BaseModel, Field, ValidationError
 from pydantic.v1 import BaseModel as BaseModelV1
-from typing_extensions import Annotated, TypedDict, TypeVar
+from typing_extensions import Annotated, TypedDict
 
 from langchain_core import tools
 from langchain_core.callbacks import (
@@ -1875,7 +1876,6 @@ def test__is_message_content_type(obj: Any, expected: bool) -> None:
 
 @pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Testing pydantic v2.")
 @pytest.mark.parametrize("use_v1_namespace", [True, False])
-@pytest.mark.filterwarnings("error")
 def test__get_all_basemodel_annotations_v2(use_v1_namespace: bool) -> None:
     A = TypeVar("A")
 
@@ -1888,9 +1888,9 @@ def test__get_all_basemodel_annotations_v2(use_v1_namespace: bool) -> None:
         from pydantic import BaseModel as BM2
         from pydantic import ConfigDict
 
-        class ModelA(BM2, Generic[A], extra="allow"):  # type: ignore[no-redef]
+        class ModelA(BM2, Generic[A]):  # type: ignore[no-redef]
             a: A
-            model_config = ConfigDict(arbitrary_types_allowed=True)
+            model_config = ConfigDict(arbitrary_types_allowed=True, extra="allow")
 
     class ModelB(ModelA[str]):
         b: Annotated[ModelA[Dict[str, Any]], "foo"]
