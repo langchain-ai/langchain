@@ -157,7 +157,7 @@ jobs:
           echo "$STATUS" | grep 'nothing to commit, working tree clean'
   ci_success:
     name: "CI Success"
-    needs: [build, lint, test, compile-integration-tests, extended-tests, test-doc-imports]
+    needs: [build, lint, test, compile-integration-tests, extended-tests, test-doc-imports, test-pydantic]
     if: |
       always()
     runs-on: ubuntu-latest
