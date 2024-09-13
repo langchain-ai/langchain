@@ -23,10 +23,6 @@ inputs:
     description: Directory whose poetry.lock file should be cached
     required: true
 
-outputs:
-  installed-python-version:
-    description: Full Python version that was installed
-
 runs:
   using: composite
   steps:
@@ -35,10 +31,6 @@ runs:
       id: setup-python
       with:
         python-version: ${{ inputs.python-version }}
-
-    - name: Record installed python version
-      shell: bash
-      run: echo "installed-python-version=${{ steps.setup-python.outputs.python-version }}" >> "$GITHUB_OUTPUT"
 
     - uses: actions/cache@v4
       id: cache-bin-poetry
