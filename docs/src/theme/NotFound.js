@@ -14,7 +14,6 @@ function LegacyBadge() {
 export default function NotFound() {
   const location = useLocation();
   const pathname = location.pathname.endsWith('/') ? location.pathname : location.pathname + '/'; // Ensure the path matches the keys in suggestedLinks
-  console.log(pathname);
   const {canonical, alternative} = suggestedLinks[pathname] || {};
 
   return (
