@@ -161,7 +161,7 @@ def _get_pydantic_test_configs(
 
     custom_mins = {
         # depends on pydantic-settings 2.4 which requires pydantic 2.7
-        "libs/community": "7",
+        "libs/community": 7,
     }
 
     max_pydantic_minor = min(

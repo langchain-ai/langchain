@@ -83,13 +83,12 @@ def get_min_version_from_toml(
             if isinstance(version_string, dict):
                 version_string = version_string["version"]
             if isinstance(version_string, list):
-                version_string = int(
-                    [
-                        vs
-                        for vs in version_string
-                        if check_python_version(python_version, vs["python"])
-                    ][0]["version"]
-                )
+                version_string = [
+                    vs
+                    for vs in version_string
+                    if check_python_version(python_version, vs["python"])
+                ][0]["version"]
+
 
             # Use parse_version to get the minimum supported version from version_string
             min_version = get_min_version(version_string)
