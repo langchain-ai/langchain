@@ -73,11 +73,6 @@ jobs:
           make tests
         working-directory: ${{ inputs.working-directory }}
 
-      - name: Clear the output file
-        shell: bash
-        run: |
-          > $GITHUB_OUTPUT
-      
       - name: Ensure the tests did not create any additional files
         shell: bash
         run: |
