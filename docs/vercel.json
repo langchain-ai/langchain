@@ -27,6 +27,10 @@
   ],
   "redirects": [
     {
+      "source": "/docs/versions/overview(/?)",
+      "destination": "/docs/versions/v0_2/overview/"
+    },
+    {
       "source": "/docs/how_to/tool_calls_multi_modal(/?)",
       "destination": "/docs/how_to/multimodal_inputs/"
     },
