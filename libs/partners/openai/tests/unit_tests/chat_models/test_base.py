@@ -18,6 +18,7 @@ from langchain_core.messages import (
 )
 from langchain_core.messages.ai import UsageMetadata
 from pydantic import BaseModel
+from pydantic.v1 import BaseModel as BaseModelV1
 
 from langchain_openai import ChatOpenAI
 from langchain_openai.chat_models.base import (
@@ -702,11 +703,11 @@ class Foo(BaseModel):
     bar: int
 
 
-class FooV2(BaseModelV2):
+class FooV1(BaseModelV1):
     bar: int
 
 
-@pytest.mark.parametrize("schema", [Foo, FooV2])
+@pytest.mark.parametrize("schema", [Foo, FooV1])
 def test_schema_from_with_structured_output(schema: Type) -> None:
     """Test schema from with_structured_output."""
 
