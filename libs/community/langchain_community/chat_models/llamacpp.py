@@ -67,7 +67,7 @@ class ChatLlamaCpp(BaseChatModel):
 
     """
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
 
     model_path: str
     """The path to the Llama model file."""

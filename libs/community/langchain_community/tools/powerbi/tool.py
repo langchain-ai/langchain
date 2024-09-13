@@ -9,7 +9,7 @@ from langchain_core.callbacks import (
     CallbackManagerForToolRun,
 )
 from langchain_core.tools import BaseTool
-from pydantic import ConfigDict, Field, validator
+from pydantic import ConfigDict, Field, model_validator
 
 from langchain_community.chat_models.openai import _import_tiktoken
 from langchain_community.tools.powerbi.prompt import (
@@ -31,7 +31,7 @@ class QueryPowerBITool(BaseTool):
 
     Example Input: "How many rows are in table1?"
     """  # noqa: E501
-    llm_chain: Any
+    llm_chain: Any = None
     powerbi: PowerBIDataset = Field(exclude=True)
     examples: Optional[str] = DEFAULT_FEWSHOT_EXAMPLES
     session_cache: Dict[str, Any] = Field(default_factory=dict, exclude=True)
@@ -43,18 +43,20 @@ class QueryPowerBITool(BaseTool):
         arbitrary_types_allowed=True,
     )
 
-    @validator("llm_chain")
+    @model_validator(mode="before")
+    @classmethod
     def validate_llm_chain_input_variables(  # pylint: disable=E0213
-        cls, llm_chain: Any
-    ) -> Any:
+        cls, values: dict
+    ) -> dict:
         """Make sure the LLM chain has the correct input variables."""
+        llm_chain = values["llm_chain"]
         for var in llm_chain.prompt.input_variables:
             if var not in ["tool_input", "tables", "schemas", "examples"]:
                 raise ValueError(
                     "LLM chain for QueryPowerBITool must have input variables ['tool_input', 'tables', 'schemas', 'examples'], found %s",  # noqa: E501 # pylint: disable=C0301
                     llm_chain.prompt.input_variables,
                 )
-        return llm_chain
+        return values
 
     def _check_cache(self, tool_input: str) -> Optional[str]:
         """Check if the input is present in the cache.

@@ -346,7 +346,7 @@ class QianfanChatEndpoint(BaseChatModel):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """extra params for model invoke using with `do`."""
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
 
     # It could be empty due to the use of Console API
     # And they're not list here

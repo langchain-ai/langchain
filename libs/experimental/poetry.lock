@@ -1532,7 +1532,7 @@ files = [
 
 [[package]]
 name = "langchain"
-version = "0.2.16"
+version = "0.3.0.dev1"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -1542,8 +1542,8 @@ develop = true
 [package.dependencies]
 aiohttp = "^3.8.3"
 async-timeout = {version = "^4.0.0", markers = "python_version < \"3.11\""}
-langchain-core = "^0.3.0.dev"
-langchain-text-splitters = "^0.2.0"
+langchain-core = "^0.3.0.dev2"
+langchain-text-splitters = "^0.3.0.dev1"
 langsmith = "^0.1.17"
 numpy = [
     {version = ">=1,<2", markers = "python_version < \"3.12\""},
@@ -1571,9 +1571,9 @@ develop = true
 [package.dependencies]
 aiohttp = "^3.8.3"
 dataclasses-json = ">= 0.5.7, < 0.7"
-langchain = "^0.2.16"
-langchain-core = "^0.3.0.dev"
-langsmith = "^0.1.0"
+langchain = "^0.3.0.dev1"
+langchain-core = "^0.3.0.dev2"
+langsmith = "^0.1.112"
 numpy = [
     {version = ">=1,<2", markers = "python_version < \"3.12\""},
     {version = ">=1.26.0,<2.0.0", markers = "python_version >= \"3.12\""},
@@ -1590,7 +1590,7 @@ url = "../community"
 
 [[package]]
 name = "langchain-core"
-version = "0.3.0.dev1"
+version = "0.3.0.dev4"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -1599,7 +1599,7 @@ develop = true
 
 [package.dependencies]
 jsonpatch = "^1.33"
-langsmith = "^0.1.75"
+langsmith = "^0.1.112"
 packaging = ">=23.2,<25"
 pydantic = "^2.7.4"
 PyYAML = ">=5.3"
@@ -1612,7 +1612,7 @@ url = "../core"
 
 [[package]]
 name = "langchain-openai"
-version = "0.1.23"
+version = "0.2.0.dev2"
 description = "An integration package connecting OpenAI and LangChain"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -1620,7 +1620,7 @@ files = []
 develop = true
 
 [package.dependencies]
-langchain-core = "^0.3.0.dev"
+langchain-core = "^0.3.0.dev1"
 openai = "^1.40.0"
 tiktoken = ">=0.7,<1"
 
@@ -1630,7 +1630,7 @@ url = "../partners/openai"
 
 [[package]]
 name = "langchain-text-splitters"
-version = "0.2.4"
+version = "0.3.0.dev1"
 description = "LangChain text splitting utilities"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -3771,4 +3771,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0"
-content-hash = "636a7291000f4f38d392d3e04a2f9902cf4a9dcf7d7f55e5bd8f1f8335673704"
+content-hash = "4ee22c79e316e5e2fadd726f715b4cb8ace00e7f24d361d2e24e0c53288bdc89"

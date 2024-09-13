@@ -288,7 +288,10 @@ def format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
     Returns:
         The function description.
     """
-    if tool.tool_call_schema:
+    from langchain_core.tools import simple
+
+    is_simple_oai_tool = isinstance(tool, simple.Tool) and not tool.args_schema
+    if tool.tool_call_schema and not is_simple_oai_tool:
         return convert_pydantic_to_openai_function(
             tool.tool_call_schema, name=tool.name, description=tool.description
         )
@@ -476,7 +479,7 @@ def tool_example_to_messages(
         .. code-block:: python
 
             from typing import List, Optional
-            from langchain_core.pydantic_v1 import BaseModel, Field
+            from pydantic import BaseModel, Field
             from langchain_openai import ChatOpenAI
 
             class Person(BaseModel):

@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Type, Union
 
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from langchain_community.utilities.cassandra_database import CassandraDatabase
 
@@ -19,6 +19,10 @@ class BaseCassandraDatabaseTool(BaseModel):
     """Base tool for interacting with an Apache Cassandra database."""
 
     db: CassandraDatabase = Field(exclude=True)
+
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
 
 class _QueryCassandraDatabaseToolInput(BaseModel):

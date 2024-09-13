@@ -61,7 +61,7 @@ class SagemakerEndpointCrossEncoder(BaseModel, BaseCrossEncoder):
                credentials_profile_name=credentials_profile_name
            )
    """
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
 
     endpoint_name: str = ""
     """The name of the endpoint from the deployed Sagemaker model.
@@ -90,8 +90,7 @@ class SagemakerEndpointCrossEncoder(BaseModel, BaseCrossEncoder):
    """
 
     model_config = ConfigDict(
-        arbitrary_types_allowed=True,
-        extra="forbid",
+        arbitrary_types_allowed=True, extra="forbid", protected_namespaces=()
     )
 
     @model_validator(mode="before")

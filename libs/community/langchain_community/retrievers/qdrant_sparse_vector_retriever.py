@@ -36,7 +36,7 @@ from langchain_community.vectorstores.qdrant import Qdrant, QdrantException
 class QdrantSparseVectorRetriever(BaseRetriever):
     """Qdrant sparse vector retriever."""
 
-    client: Any
+    client: Any = None
     """'qdrant_client' instance to use."""
     collection_name: str
     """Qdrant collection name."""

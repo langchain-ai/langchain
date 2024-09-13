@@ -100,11 +100,11 @@ def package_row(name: str) -> str:
         "db", "DB"
     ).replace("Db", "DB").replace("ai", "AI").replace("Ai", "AI")
     provider = f"[{title}]({link})" if link else title
-    return f"| {provider} | [langchain-{name}](https://python.langchain.com/v0.2/api_reference/{name.replace('-', '_')}/) | ![PyPI - Downloads](https://img.shields.io/pypi/dm/langchain-{name}?style=flat-square&label=%20&color=blue) | ![PyPI - Version](https://img.shields.io/pypi/v/langchain-{name}?style=flat-square&label=%20&color=orange) | {js} |"
+    return f"| {provider} | [langchain-{name}](https://python.langchain.com/api_reference/{name.replace('-', '_')}/) | ![PyPI - Downloads](https://img.shields.io/pypi/dm/langchain-{name}?style=flat-square&label=%20&color=blue) | ![PyPI - Version](https://img.shields.io/pypi/v/langchain-{name}?style=flat-square&label=%20&color=orange) | {js} |"
 
 
 def table() -> str:
-    header = """| Provider | Package | Downloads | Latest | [JS](https://js.langchain.com/v0.2/docs/integrations/platforms/) |
+    header = """| Provider | Package | Downloads | Latest | [JS](https://js.langchain.com/docs/integrations/platforms/) |
 | :--- | :---: | :---: | :---: | :---: |
 """
     return header + "\n".join(package_row(name) for name in sorted(ALL_PACKAGES))

@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain"
-version = "0.3.0.dev1"
+version = "0.3.0.dev2"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -33,10 +33,10 @@ langchain-server = "langchain.server:main"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-langchain-core = { version = "^0.3.0.dev2", allow-prereleases = true }
+langchain-core = { version = "^0.3.0.dev5", allow-prereleases = true }
 langchain-text-splitters = { version = "^0.3.0.dev1", allow-prereleases = true }
 langsmith = "^0.1.17"
-pydantic = ">=1,<3"
+pydantic = "^2.7.4"
 SQLAlchemy = ">=1.4,<3"
 requests = "^2"
 PyYAML = ">=5.3"
@@ -64,6 +64,11 @@ markers = [
     "compile: mark placeholder test used to compile integration tests without running them",
 ]
 asyncio_mode = "auto"
+filterwarnings =  [
+    "ignore::langchain_core._api.beta_decorator.LangChainBetaWarning",
+    "ignore::langchain_core._api.deprecation.LangChainDeprecationWarning:tests",
+    "ignore::langchain_core._api.deprecation.LangChainPendingDeprecationWarning:tests",
+]
 
 [tool.poetry.dependencies.async-timeout]
 version = "^4.0.0"
@@ -102,6 +107,8 @@ pytest-mock = "^3.10.0"
 pytest-socket = "^0.6.0"
 syrupy = "^4.0.2"
 requests-mock = "^1.11.0"
+# TODO: hack to fix 3.9 builds
+cffi = [{version = "<1.17.1", python="<3.10"}, {version = "*", python=">=3.10"}]
 
 [tool.poetry.group.codespell.dependencies]
 codespell = "^2.2.0"
@@ -115,6 +122,8 @@ langchainhub = "^0.1.16"
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.5"
+# TODO: hack to fix 3.9 builds
+cffi = [{version = "<1.17.1", python="<3.10"}, {version = "*", python=">=3.10"}]
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^1.10"

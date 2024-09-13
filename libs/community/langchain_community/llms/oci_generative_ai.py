@@ -101,8 +101,7 @@ class OCIGenAIBase(BaseModel, ABC):
     """Whether to stream back partial progress"""
 
     model_config = ConfigDict(
-        extra="forbid",
-        arbitrary_types_allowed=True,
+        extra="forbid", arbitrary_types_allowed=True, protected_namespaces=()
     )
 
     @pre_init

@@ -1349,23 +1349,6 @@
       'history': dict({
         'default': None,
         'items': dict({
-          'discriminator': dict({
-            'mapping': dict({
-              'AIMessageChunk': '#/$defs/AIMessageChunk',
-              'ChatMessageChunk': '#/$defs/ChatMessageChunk',
-              'FunctionMessageChunk': '#/$defs/FunctionMessageChunk',
-              'HumanMessageChunk': '#/$defs/HumanMessageChunk',
-              'SystemMessageChunk': '#/$defs/SystemMessageChunk',
-              'ToolMessageChunk': '#/$defs/ToolMessageChunk',
-              'ai': '#/$defs/AIMessage',
-              'chat': '#/$defs/ChatMessage',
-              'function': '#/$defs/FunctionMessage',
-              'human': '#/$defs/HumanMessage',
-              'system': '#/$defs/SystemMessage',
-              'tool': '#/$defs/ToolMessage',
-            }),
-            'propertyName': 'type',
-          }),
           'oneOf': list([
             dict({
               '$ref': '#/$defs/AIMessage',
@@ -2769,23 +2752,6 @@
     'properties': dict({
       'history': dict({
         'items': dict({
-          'discriminator': dict({
-            'mapping': dict({
-              'AIMessageChunk': '#/$defs/AIMessageChunk',
-              'ChatMessageChunk': '#/$defs/ChatMessageChunk',
-              'FunctionMessageChunk': '#/$defs/FunctionMessageChunk',
-              'HumanMessageChunk': '#/$defs/HumanMessageChunk',
-              'SystemMessageChunk': '#/$defs/SystemMessageChunk',
-              'ToolMessageChunk': '#/$defs/ToolMessageChunk',
-              'ai': '#/$defs/AIMessage',
-              'chat': '#/$defs/ChatMessage',
-              'function': '#/$defs/FunctionMessage',
-              'human': '#/$defs/HumanMessage',
-              'system': '#/$defs/SystemMessage',
-              'tool': '#/$defs/ToolMessage',
-            }),
-            'propertyName': 'type',
-          }),
           'oneOf': list([
             dict({
               '$ref': '#/$defs/AIMessage',
@@ -2843,43 +2809,6 @@
 # ---
 # name: test_chat_prompt_w_msgs_placeholder_ser_des[chat_prompt]
   dict({
-    'graph': dict({
-      'edges': list([
-        dict({
-          'source': 0,
-          'target': 1,
-        }),
-        dict({
-          'source': 1,
-          'target': 2,
-        }),
-      ]),
-      'nodes': list([
-        dict({
-          'data': 'PromptInput',
-          'id': 0,
-          'type': 'schema',
-        }),
-        dict({
-          'data': dict({
-            'id': list([
-              'langchain',
-              'prompts',
-              'chat',
-              'ChatPromptTemplate',
-            ]),
-            'name': 'ChatPromptTemplate',
-          }),
-          'id': 1,
-          'type': 'runnable',
-        }),
-        dict({
-          'data': 'ChatPromptTemplateOutput',
-          'id': 2,
-          'type': 'schema',
-        }),
-      ]),
-    }),
     'id': list([
       'langchain',
       'prompts',
@@ -2900,43 +2829,6 @@
           ]),
           'kwargs': dict({
             'prompt': dict({
-              'graph': dict({
-                'edges': list([
-                  dict({
-                    'source': 0,
-                    'target': 1,
-                  }),
-                  dict({
-                    'source': 1,
-                    'target': 2,
-                  }),
-                ]),
-                'nodes': list([
-                  dict({
-                    'data': 'PromptInput',
-                    'id': 0,
-                    'type': 'schema',
-                  }),
-                  dict({
-                    'data': dict({
-                      'id': list([
-                        'langchain',
-                        'prompts',
-                        'prompt',
-                        'PromptTemplate',
-                      ]),
-                      'name': 'PromptTemplate',
-                    }),
-                    'id': 1,
-                    'type': 'runnable',
-                  }),
-                  dict({
-                    'data': 'PromptTemplateOutput',
-                    'id': 2,
-                    'type': 'schema',
-                  }),
-                ]),
-              }),
               'id': list([
                 'langchain',
                 'prompts',
@@ -2979,43 +2871,6 @@
           ]),
           'kwargs': dict({
             'prompt': dict({
-              'graph': dict({
-                'edges': list([
-                  dict({
-                    'source': 0,
-                    'target': 1,
-                  }),
-                  dict({
-                    'source': 1,
-                    'target': 2,
-                  }),
-                ]),
-                'nodes': list([
-                  dict({
-                    'data': 'PromptInput',
-                    'id': 0,
-                    'type': 'schema',
-                  }),
-                  dict({
-                    'data': dict({
-                      'id': list([
-                        'langchain',
-                        'prompts',
-                        'prompt',
-                        'PromptTemplate',
-                      ]),
-                      'name': 'PromptTemplate',
-                    }),
-                    'id': 1,
-                    'type': 'runnable',
-                  }),
-                  dict({
-                    'data': 'PromptTemplateOutput',
-                    'id': 2,
-                    'type': 'schema',
-                  }),
-                ]),
-              }),
               'id': list([
                 'langchain',
                 'prompts',
@@ -3060,43 +2915,6 @@
 # ---
 # name: test_chat_tmpl_serdes
   dict({
-    'graph': dict({
-      'edges': list([
-        dict({
-          'source': 0,
-          'target': 1,
-        }),
-        dict({
-          'source': 1,
-          'target': 2,
-        }),
-      ]),
-      'nodes': list([
-        dict({
-          'data': 'PromptInput',
-          'id': 0,
-          'type': 'schema',
-        }),
-        dict({
-          'data': dict({
-            'id': list([
-              'langchain',
-              'prompts',
-              'chat',
-              'ChatPromptTemplate',
-            ]),
-            'name': 'ChatPromptTemplate',
-          }),
-          'id': 1,
-          'type': 'runnable',
-        }),
-        dict({
-          'data': 'ChatPromptTemplateOutput',
-          'id': 2,
-          'type': 'schema',
-        }),
-      ]),
-    }),
     'id': list([
       'langchain',
       'prompts',
@@ -3121,43 +2939,6 @@
           ]),
           'kwargs': dict({
             'prompt': dict({
-              'graph': dict({
-                'edges': list([
-                  dict({
-                    'source': 0,
-                    'target': 1,
-                  }),
-                  dict({
-                    'source': 1,
-                    'target': 2,
-                  }),
-                ]),
-                'nodes': list([
-                  dict({
-                    'data': 'PromptInput',
-                    'id': 0,
-                    'type': 'schema',
-                  }),
-                  dict({
-                    'data': dict({
-                      'id': list([
-                        'langchain',
-                        'prompts',
-                        'prompt',
-                        'PromptTemplate',
-                      ]),
-                      'name': 'PromptTemplate',
-                    }),
-                    'id': 1,
-                    'type': 'runnable',
-                  }),
-                  dict({
-                    'data': 'PromptTemplateOutput',
-                    'id': 2,
-                    'type': 'schema',
-                  }),
-                ]),
-              }),
               'id': list([
                 'langchain',
                 'prompts',
@@ -3189,43 +2970,6 @@
           'kwargs': dict({
             'prompt': list([
               dict({
-                'graph': dict({
-                  'edges': list([
-                    dict({
-                      'source': 0,
-                      'target': 1,
-                    }),
-                    dict({
-                      'source': 1,
-                      'target': 2,
-                    }),
-                  ]),
-                  'nodes': list([
-                    dict({
-                      'data': 'PromptInput',
-                      'id': 0,
-                      'type': 'schema',
-                    }),
-                    dict({
-                      'data': dict({
-                        'id': list([
-                          'langchain',
-                          'prompts',
-                          'prompt',
-                          'PromptTemplate',
-                        ]),
-                        'name': 'PromptTemplate',
-                      }),
-                      'id': 1,
-                      'type': 'runnable',
-                    }),
-                    dict({
-                      'data': 'PromptTemplateOutput',
-                      'id': 2,
-                      'type': 'schema',
-                    }),
-                  ]),
-                }),
                 'id': list([
                   'langchain',
                   'prompts',
@@ -3257,43 +3001,6 @@
           ]),
           'kwargs': dict({
             'prompt': dict({
-              'graph': dict({
-                'edges': list([
-                  dict({
-                    'source': 0,
-                    'target': 1,
-                  }),
-                  dict({
-                    'source': 1,
-                    'target': 2,
-                  }),
-                ]),
-                'nodes': list([
-                  dict({
-                    'data': 'PromptInput',
-                    'id': 0,
-                    'type': 'schema',
-                  }),
-                  dict({
-                    'data': dict({
-                      'id': list([
-                        'langchain',
-                        'prompts',
-                        'prompt',
-                        'PromptTemplate',
-                      ]),
-                      'name': 'PromptTemplate',
-                    }),
-                    'id': 1,
-                    'type': 'runnable',
-                  }),
-                  dict({
-                    'data': 'PromptTemplateOutput',
-                    'id': 2,
-                    'type': 'schema',
-                  }),
-                ]),
-              }),
               'id': list([
                 'langchain',
                 'prompts',
@@ -3325,43 +3032,6 @@
           'kwargs': dict({
             'prompt': list([
               dict({
-                'graph': dict({
-                  'edges': list([
-                    dict({
-                      'source': 0,
-                      'target': 1,
-                    }),
-                    dict({
-                      'source': 1,
-                      'target': 2,
-                    }),
-                  ]),
-                  'nodes': list([
-                    dict({
-                      'data': 'PromptInput',
-                      'id': 0,
-                      'type': 'schema',
-                    }),
-                    dict({
-                      'data': dict({
-                        'id': list([
-                          'langchain',
-                          'prompts',
-                          'prompt',
-                          'PromptTemplate',
-                        ]),
-                        'name': 'PromptTemplate',
-                      }),
-                      'id': 1,
-                      'type': 'runnable',
-                    }),
-                    dict({
-                      'data': 'PromptTemplateOutput',
-                      'id': 2,
-                      'type': 'schema',
-                    }),
-                  ]),
-                }),
                 'id': list([
                   'langchain',
                   'prompts',
@@ -3379,43 +3049,6 @@
                 'type': 'constructor',
               }),
               dict({
-                'graph': dict({
-                  'edges': list([
-                    dict({
-                      'source': 0,
-                      'target': 1,
-                    }),
-                    dict({
-                      'source': 1,
-                      'target': 2,
-                    }),
-                  ]),
-                  'nodes': list([
-                    dict({
-                      'data': 'PromptInput',
-                      'id': 0,
-                      'type': 'schema',
-                    }),
-                    dict({
-                      'data': dict({
-                        'id': list([
-                          'langchain',
-                          'prompts',
-                          'prompt',
-                          'PromptTemplate',
-                        ]),
-                        'name': 'PromptTemplate',
-                      }),
-                      'id': 1,
-                      'type': 'runnable',
-                    }),
-                    dict({
-                      'data': 'PromptTemplateOutput',
-                      'id': 2,
-                      'type': 'schema',
-                    }),
-                  ]),
-                }),
                 'id': list([
                   'langchain',
                   'prompts',
@@ -3433,43 +3066,6 @@
                 'type': 'constructor',
               }),
               dict({
-                'graph': dict({
-                  'edges': list([
-                    dict({
-                      'source': 0,
-                      'target': 1,
-                    }),
-                    dict({
-                      'source': 1,
-                      'target': 2,
-                    }),
-                  ]),
-                  'nodes': list([
-                    dict({
-                      'data': 'PromptInput',
-                      'id': 0,
-                      'type': 'schema',
-                    }),
-                    dict({
-                      'data': dict({
-                        'id': list([
-                          'langchain',
-                          'prompts',
-                          'prompt',
-                          'PromptTemplate',
-                        ]),
-                        'name': 'PromptTemplate',
-                      }),
-                      'id': 1,
-                      'type': 'runnable',
-                    }),
-                    dict({
-                      'data': 'PromptTemplateOutput',
-                      'id': 2,
-                      'type': 'schema',
-                    }),
-                  ]),
-                }),
                 'id': list([
                   'langchain',
                   'prompts',
@@ -3487,43 +3083,6 @@
                 'type': 'constructor',
               }),
               dict({
-                'graph': dict({
-                  'edges': list([
-                    dict({
-                      'source': 0,
-                      'target': 1,
-                    }),
-                    dict({
-                      'source': 1,
-                      'target': 2,
-                    }),
-                  ]),
-                  'nodes': list([
-                    dict({
-                      'data': 'PromptInput',
-                      'id': 0,
-                      'type': 'schema',
-                    }),
-                    dict({
-                      'data': dict({
-                        'id': list([
-                          'langchain',
-                          'prompts',
-                          'image',
-                          'ImagePromptTemplate',
-                        ]),
-                        'name': 'ImagePromptTemplate',
-                      }),
-                      'id': 1,
-                      'type': 'runnable',
-                    }),
-                    dict({
-                      'data': 'ImagePromptTemplateOutput',
-                      'id': 2,
-                      'type': 'schema',
-                    }),
-                  ]),
-                }),
                 'id': list([
                   'langchain',
                   'prompts',
@@ -3543,43 +3102,6 @@
                 'type': 'constructor',
               }),
               dict({
-                'graph': dict({
-                  'edges': list([
-                    dict({
-                      'source': 0,
-                      'target': 1,
-                    }),
-                    dict({
-                      'source': 1,
-                      'target': 2,
-                    }),
-                  ]),
-                  'nodes': list([
-                    dict({
-                      'data': 'PromptInput',
-                      'id': 0,
-                      'type': 'schema',
-                    }),
-                    dict({
-                      'data': dict({
-                        'id': list([
-                          'langchain',
-                          'prompts',
-                          'image',
-                          'ImagePromptTemplate',
-                        ]),
-                        'name': 'ImagePromptTemplate',
-                      }),
-                      'id': 1,
-                      'type': 'runnable',
-                    }),
-                    dict({
-                      'data': 'ImagePromptTemplateOutput',
-                      'id': 2,
-                      'type': 'schema',
-                    }),
-                  ]),
-                }),
                 'id': list([
                   'langchain',
                   'prompts',
@@ -3599,43 +3121,6 @@
                 'type': 'constructor',
               }),
               dict({
-                'graph': dict({
-                  'edges': list([
-                    dict({
-                      'source': 0,
-                      'target': 1,
-                    }),
-                    dict({
-                      'source': 1,
-                      'target': 2,
-                    }),
-                  ]),
-                  'nodes': list([
-                    dict({
-                      'data': 'PromptInput',
-                      'id': 0,
-                      'type': 'schema',
-                    }),
-                    dict({
-                      'data': dict({
-                        'id': list([
-                          'langchain',
-                          'prompts',
-                          'image',
-                          'ImagePromptTemplate',
-                        ]),
-                        'name': 'ImagePromptTemplate',
-                      }),
-                      'id': 1,
-                      'type': 'runnable',
-                    }),
-                    dict({
-                      'data': 'ImagePromptTemplateOutput',
-                      'id': 2,
-                      'type': 'schema',
-                    }),
-                  ]),
-                }),
                 'id': list([
                   'langchain',
                   'prompts',
@@ -3655,43 +3140,6 @@
                 'type': 'constructor',
               }),
               dict({
-                'graph': dict({
-                  'edges': list([
-                    dict({
-                      'source': 0,
-                      'target': 1,
-                    }),
-                    dict({
-                      'source': 1,
-                      'target': 2,
-                    }),
-                  ]),
-                  'nodes': list([
-                    dict({
-                      'data': 'PromptInput',
-                      'id': 0,
-                      'type': 'schema',
-                    }),
-                    dict({
-                      'data': dict({
-                        'id': list([
-                          'langchain',
-                          'prompts',
-                          'image',
-                          'ImagePromptTemplate',
-                        ]),
-                        'name': 'ImagePromptTemplate',
-                      }),
-                      'id': 1,
-                      'type': 'runnable',
-                    }),
-                    dict({
-                      'data': 'ImagePromptTemplateOutput',
-                      'id': 2,
-                      'type': 'schema',
-                    }),
-                  ]),
-                }),
                 'id': list([
                   'langchain',
                   'prompts',
@@ -3712,43 +3160,6 @@
                 'type': 'constructor',
               }),
               dict({
-                'graph': dict({
-                  'edges': list([
-                    dict({
-                      'source': 0,
-                      'target': 1,
-                    }),
-                    dict({
-                      'source': 1,
-                      'target': 2,
-                    }),
-                  ]),
-                  'nodes': list([
-                    dict({
-                      'data': 'PromptInput',
-                      'id': 0,
-                      'type': 'schema',
-                    }),
-                    dict({
-                      'data': dict({
-                        'id': list([
-                          'langchain',
-                          'prompts',
-                          'image',
-                          'ImagePromptTemplate',
-                        ]),
-                        'name': 'ImagePromptTemplate',
-                      }),
-                      'id': 1,
-                      'type': 'runnable',
-                    }),
-                    dict({
-                      'data': 'ImagePromptTemplateOutput',
-                      'id': 2,
-                      'type': 'schema',
-                    }),
-                  ]),
-                }),
                 'id': list([
                   'langchain',
                   'prompts',
@@ -3767,43 +3178,6 @@
                 'type': 'constructor',
               }),
               dict({
-                'graph': dict({
-                  'edges': list([
-                    dict({
-                      'source': 0,
-                      'target': 1,
-                    }),
-                    dict({
-                      'source': 1,
-                      'target': 2,
-                    }),
-                  ]),
-                  'nodes': list([
-                    dict({
-                      'data': 'PromptInput',
-                      'id': 0,
-                      'type': 'schema',
-                    }),
-                    dict({
-                      'data': dict({
-                        'id': list([
-                          'langchain',
-                          'prompts',
-                          'image',
-                          'ImagePromptTemplate',
-                        ]),
-                        'name': 'ImagePromptTemplate',
-                      }),
-                      'id': 1,
-                      'type': 'runnable',
-                    }),
-                    dict({
-                      'data': 'ImagePromptTemplateOutput',
-                      'id': 2,
-                      'type': 'schema',
-                    }),
-                  ]),
-                }),
                 'id': list([
                   'langchain',
                   'prompts',
@@ -3822,43 +3196,6 @@
                 'type': 'constructor',
               }),
               dict({
-                'graph': dict({
-                  'edges': list([
-                    dict({
-                      'source': 0,
-                      'target': 1,
-                    }),
-                    dict({
-                      'source': 1,
-                      'target': 2,
-                    }),
-                  ]),
-                  'nodes': list([
-                    dict({
-                      'data': 'PromptInput',
-                      'id': 0,
-                      'type': 'schema',
-                    }),
-                    dict({
-                      'data': dict({
-                        'id': list([
-                          'langchain',
-                          'prompts',
-                          'image',
-                          'ImagePromptTemplate',
-                        ]),
-                        'name': 'ImagePromptTemplate',
-                      }),
-                      'id': 1,
-                      'type': 'runnable',
-                    }),
-                    dict({
-                      'data': 'ImagePromptTemplateOutput',
-                      'id': 2,
-                      'type': 'schema',
-                    }),
-                  ]),
-                }),
                 'id': list([
                   'langchain',
                   'prompts',

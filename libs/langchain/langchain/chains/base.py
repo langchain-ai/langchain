@@ -18,7 +18,6 @@ from langchain_core.callbacks import (
     CallbackManagerForChainRun,
     Callbacks,
 )
-from langchain_core.load.dump import dumpd
 from langchain_core.memory import BaseMemory
 from langchain_core.outputs import RunInfo
 from langchain_core.runnables import (
@@ -32,8 +31,8 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    field_validator,
     model_validator,
-    validator,
 )
 
 from langchain.schema import RUN_KEY
@@ -150,7 +149,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
         new_arg_supported = inspect.signature(self._call).parameters.get("run_manager")
 
         run_manager = callback_manager.on_chain_start(
-            dumpd(self),
+            None,
             inputs,
             run_id,
             name=run_name,
@@ -202,7 +201,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
         )
         new_arg_supported = inspect.signature(self._acall).parameters.get("run_manager")
         run_manager = await callback_manager.on_chain_start(
-            dumpd(self),
+            None,
             inputs,
             run_id,
             name=run_name,
@@ -248,7 +247,8 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
             values["callbacks"] = values.pop("callback_manager", None)
         return values
 
-    @validator("verbose", pre=True, always=True)
+    @field_validator("verbose", mode="before")
+    @classmethod
     def set_verbose(cls, verbose: Optional[bool]) -> bool:
         """Set the chain verbosity.
 

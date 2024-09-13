@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from abc import ABC, abstractmethod
+from functools import cached_property
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -21,6 +22,7 @@ import yaml
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from typing_extensions import Self
 
+from langchain_core.load import dumpd
 from langchain_core.output_parsers.base import BaseOutputParser
 from langchain_core.prompt_values import (
     ChatPromptValueConcrete,
@@ -29,7 +31,7 @@ from langchain_core.prompt_values import (
 )
 from langchain_core.runnables import RunnableConfig, RunnableSerializable
 from langchain_core.runnables.config import ensure_config
-from langchain_core.runnables.utils import create_model
+from langchain_core.utils.pydantic import create_model_v2
 
 if TYPE_CHECKING:
     from langchain_core.documents import Document
@@ -102,6 +104,10 @@ class BasePromptTemplate(
         arbitrary_types_allowed=True,
     )
 
+    @cached_property
+    def _serialized(self) -> dict[str, Any]:
+        return dumpd(self)
+
     @property
     def OutputType(self) -> Any:
         """Return the output type of the prompt."""
@@ -125,8 +131,9 @@ class BasePromptTemplate(
         optional_input_variables = {
             k: (self.input_types.get(k, str), None) for k in self.optional_variables
         }
-        return create_model(
-            "PromptInput", **{**required_input_variables, **optional_input_variables}
+        return create_model_v2(
+            "PromptInput",
+            field_definitions={**required_input_variables, **optional_input_variables},
         )
 
     def _validate_input(self, inner_input: Any) -> Dict:
@@ -188,6 +195,7 @@ class BasePromptTemplate(
             input,
             config,
             run_type="prompt",
+            serialized=self._serialized,
         )
 
     async def ainvoke(
@@ -212,6 +220,7 @@ class BasePromptTemplate(
             input,
             config,
             run_type="prompt",
+            serialized=self._serialized,
         )
 
     @abstractmethod

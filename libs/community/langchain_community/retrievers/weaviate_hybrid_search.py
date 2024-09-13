@@ -16,7 +16,7 @@ class WeaviateHybridSearchRetriever(BaseRetriever):
       https://weaviate.io/blog/hybrid-search-explained
     """
 
-    client: Any
+    client: Any = None
     """keyword arguments to pass to the Weaviate client."""
     index_name: str
     """The name of the index to use."""

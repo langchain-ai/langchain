@@ -28,8 +28,8 @@ class OpenAIModerationChain(Chain):
             moderation = OpenAIModerationChain()
     """
 
-    client: Any  #: :meta private:
-    async_client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
+    async_client: Any = None  #: :meta private:
     model_name: Optional[str] = None
     """Moderation model name to use."""
     error: bool = False

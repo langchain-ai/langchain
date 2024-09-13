@@ -23,7 +23,7 @@ class HuggingFaceCrossEncoder(BaseModel, BaseCrossEncoder):
             )
     """
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     model_name: str = DEFAULT_MODEL_NAME
     """Model name to use."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
@@ -45,9 +45,7 @@ class HuggingFaceCrossEncoder(BaseModel, BaseCrossEncoder):
             self.model_name, **self.model_kwargs
         )
 
-    model_config = ConfigDict(
-        extra="forbid",
-    )
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
 
     def score(self, text_pairs: List[Tuple[str, str]]) -> List[float]:
         """Compute similarity scores using a HuggingFace transformer model.

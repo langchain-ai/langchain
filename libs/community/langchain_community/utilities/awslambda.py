@@ -21,7 +21,7 @@ class LambdaWrapper(BaseModel):
 
     """
 
-    lambda_client: Any  #: :meta private:
+    lambda_client: Any = None  #: :meta private:
     """The configured boto3 client"""
     function_name: Optional[str] = None
     """The name of your lambda function"""

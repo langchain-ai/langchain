@@ -72,7 +72,10 @@ def create_qa_with_structure_chain(
             f"Should be one of `pydantic` or `base`."
         )
     if isinstance(schema, type) and is_basemodel_subclass(schema):
-        schema_dict = cast(dict, schema.schema())
+        if hasattr(schema, "model_json_schema"):
+            schema_dict = cast(dict, schema.model_json_schema())
+        else:
+            schema_dict = cast(dict, schema.schema())
     else:
         schema_dict = cast(dict, schema)
     function = {

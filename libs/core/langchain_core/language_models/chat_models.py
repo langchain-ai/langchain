@@ -6,6 +6,7 @@ import json
 import uuid
 import warnings
 from abc import ABC, abstractmethod
+from functools import cached_property
 from operator import itemgetter
 from typing import (
     TYPE_CHECKING,
@@ -195,20 +196,14 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     """  # noqa: E501
 
-    # TODO(0.3): Figure out how to re-apply deprecated decorator
-    # callback_manager: Optional[BaseCallbackManager] = deprecated(
-    #     name="callback_manager", since="0.1.7", removal="1.0", alternative="callbacks"
-    # )(
-    #     Field(
-    #         default=None,
-    #         exclude=True,
-    #         description="Callback manager to add to the run trace.",
-    #     )
-    # )
-    callback_manager: Optional[BaseCallbackManager] = Field(
-        default=None,
-        exclude=True,
-        description="Callback manager to add to the run trace.",
+    callback_manager: Optional[BaseCallbackManager] = deprecated(
+        name="callback_manager", since="0.1.7", removal="1.0", alternative="callbacks"
+    )(
+        Field(
+            default=None,
+            exclude=True,
+            description="Callback manager to add to the run trace.",
+        )
     )
 
     rate_limiter: Optional[BaseRateLimiter] = Field(default=None, exclude=True)
@@ -252,6 +247,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
     )
+
+    @cached_property
+    def _serialized(self) -> dict[str, Any]:
+        return dumpd(self)
 
     # --- Runnable methods ---
 
@@ -384,7 +383,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 self.metadata,
             )
             (run_manager,) = callback_manager.on_chat_model_start(
-                dumpd(self),
+                self._serialized,
                 [messages],
                 invocation_params=params,
                 options=options,
@@ -456,7 +455,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             self.metadata,
         )
         (run_manager,) = await callback_manager.on_chat_model_start(
-            dumpd(self),
+            self._serialized,
             [messages],
             invocation_params=params,
             options=options,
@@ -557,7 +556,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             param_string = str(sorted([(k, v) for k, v in params.items()]))
             # This code is not super efficient as it goes back and forth between
             # json and dict.
-            serialized_repr = dumpd(self)
+            serialized_repr = self._serialized
             _cleanup_llm_representation(serialized_repr, 1)
             llm_string = json.dumps(serialized_repr, sort_keys=True)
             return llm_string + "---" + param_string
@@ -619,7 +618,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             self.metadata,
         )
         run_managers = callback_manager.on_chat_model_start(
-            dumpd(self),
+            self._serialized,
             messages,
             invocation_params=params,
             options=options,
@@ -711,7 +710,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         )
 
         run_managers = await callback_manager.on_chat_model_start(
-            dumpd(self),
+            self._serialized,
             messages,
             invocation_params=params,
             options=options,
@@ -1180,7 +1179,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         Example: Pydantic schema (include_raw=False):
             .. code-block:: python
 
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
 
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
@@ -1200,7 +1199,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         Example: Pydantic schema (include_raw=True):
             .. code-block:: python
 
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
 
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
@@ -1220,7 +1219,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         Example: Dict schema (include_raw=False):
             .. code-block:: python
 
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
                 from langchain_core.utils.function_calling import convert_to_openai_tool
 
                 class AnswerWithJustification(BaseModel):

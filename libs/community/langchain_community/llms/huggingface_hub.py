@@ -43,7 +43,7 @@ class HuggingFaceHub(LLM):
             hf = HuggingFaceHub(repo_id="gpt2", huggingfacehub_api_token="my-api-key")
     """
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     repo_id: Optional[str] = None
     """Model name to use. 
     If not provided, the default model for the chosen task will be used."""

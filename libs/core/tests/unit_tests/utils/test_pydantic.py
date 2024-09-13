@@ -8,6 +8,7 @@ from pydantic import ConfigDict
 from langchain_core.utils.pydantic import (
     PYDANTIC_MAJOR_VERSION,
     _create_subset_model_v2,
+    create_model_v2,
     get_fields,
     is_basemodel_instance,
     is_basemodel_subclass,
@@ -194,3 +195,35 @@ def test_fields_pydantic_v1_from_2() -> None:
 
     fields = get_fields(Foo)
     assert fields == {"x": Foo.__fields__["x"]}
+
+
+def test_create_model_v2() -> None:
+    """Test that create model v2 works as expected."""
+
+    with pytest.warns(None) as record:  # type: ignore
+        foo = create_model_v2("Foo", field_definitions={"a": (int, None)})
+        foo.model_json_schema()
+
+    assert list(record) == []
+
+    # schema is used by pydantic, but OK to re-use
+    with pytest.warns(None) as record:  # type: ignore
+        foo = create_model_v2("Foo", field_definitions={"schema": (int, None)})
+        foo.model_json_schema()
+
+    assert list(record) == []
+
+    # From protected namespaces, but definitely OK to use.
+    with pytest.warns(None) as record:  # type: ignore
+        foo = create_model_v2("Foo", field_definitions={"model_id": (int, None)})
+        foo.model_json_schema()
+
+    assert list(record) == []
+
+    with pytest.warns(None) as record:  # type: ignore
+        # Verify that we can use non-English characters
+        field_name = "もしもし"
+        foo = create_model_v2("Foo", field_definitions={field_name: (int, None)})
+        foo.model_json_schema()
+
+    assert list(record) == []

@@ -17,7 +17,7 @@ class ModelScopeEmbeddings(BaseModel, Embeddings):
             embed = ModelScopeEmbeddings(model_id=model_id, model_revision="v1.0.0")
     """
 
-    embed: Any
+    embed: Any = None
     model_id: str = "damo/nlp_corom_sentence-embedding_english-base"
     """Model name to use."""
     model_revision: Optional[str] = None
@@ -39,9 +39,7 @@ class ModelScopeEmbeddings(BaseModel, Embeddings):
             model_revision=self.model_revision,
         )
 
-    model_config = ConfigDict(
-        extra="forbid",
-    )
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Compute doc embeddings using a modelscope embedding model.

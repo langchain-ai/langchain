@@ -59,7 +59,7 @@ class BaichuanTextEmbeddings(BaseModel, Embeddings):
             vectors = embeddings.embed_query(text)
     """  # noqa: E501
 
-    session: Any  #: :meta private:
+    session: Any = None  #: :meta private:
     model_name: str = Field(default="Baichuan-Text-Embedding", alias="model")
     """The model used to embed the documents."""
     baichuan_api_key: SecretStr = Field(
@@ -70,9 +70,7 @@ class BaichuanTextEmbeddings(BaseModel, Embeddings):
     chunk_size: int = 16
     """Chunk size when multiple texts are input"""
 
-    model_config = ConfigDict(
-        populate_by_name=True,
-    )
+    model_config = ConfigDict(populate_by_name=True, protected_namespaces=())
 
     @model_validator(mode="after")
     def validate_environment(self) -> Self:

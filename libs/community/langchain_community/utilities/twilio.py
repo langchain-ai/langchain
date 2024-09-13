@@ -26,7 +26,7 @@ class TwilioAPIWrapper(BaseModel):
             twilio.run('test', '+12484345508')
     """
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     account_sid: Optional[str] = None
     """Twilio account string identifier."""
     auth_token: Optional[str] = None

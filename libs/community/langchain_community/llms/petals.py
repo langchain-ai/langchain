@@ -29,10 +29,10 @@ class Petals(LLM):
 
     """
 
-    client: Any
+    client: Any = None
     """The client to use for the API calls."""
 
-    tokenizer: Any
+    tokenizer: Any = None
     """The tokenizer to use for the API calls."""
 
     model_name: str = "bigscience/bloom-petals"

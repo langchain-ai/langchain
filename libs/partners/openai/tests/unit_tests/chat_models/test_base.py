@@ -633,7 +633,9 @@ def test_bind_tools_tool_choice(tool_choice: Any, strict: Optional[bool]) -> Non
     )
 
 
-@pytest.mark.parametrize("schema", [GenerateUsername, GenerateUsername.schema()])
+@pytest.mark.parametrize(
+    "schema", [GenerateUsername, GenerateUsername.model_json_schema()]
+)
 @pytest.mark.parametrize("method", ["json_schema", "function_calling", "json_mode"])
 @pytest.mark.parametrize("include_raw", [True, False])
 @pytest.mark.parametrize("strict", [True, False, None])
