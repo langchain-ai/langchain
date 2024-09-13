@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-text-splitters"
-version = "0.3.0.dev1"
+version = "0.3.0"
 description = "LangChain text splitting utilities"
 authors = []
 license = "MIT"
@@ -23,7 +23,7 @@ ignore_missing_imports = "True"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-langchain-core = { version = "^0.3.0.dev1", allow-prereleases = true }
+langchain-core = "^0.3.0"
 
 [tool.ruff.lint]
 select = [ "E", "F", "I", "T201",]
