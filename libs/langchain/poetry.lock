@@ -1991,7 +1991,7 @@ url = "../standard-tests"
 
 [[package]]
 name = "langchain-text-splitters"
-version = "0.3.0.dev1"
+version = "0.3.0"
 description = "LangChain text splitting utilities"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -1999,7 +1999,7 @@ files = []
 develop = true
 
 [package.dependencies]
-langchain-core = "^0.3.0.dev1"
+langchain-core = "^0.3.0"
 
 [package.source]
 type = "directory"
@@ -4722,4 +4722,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0"
-content-hash = "a2d41ca77c3c3d5b321d450e90762654ce535198d5aae72fdc327a47cb94a8f9"
+content-hash = "1cc5af74e349e4b828875d8e40e17c24245ceeb1f3df13ac53c702c97af85a80"
