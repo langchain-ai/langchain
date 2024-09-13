@@ -16,9 +16,11 @@ LANGCHAIN_DIRS = [
     "libs/experimental",
 ]
 
-# for 0.3rc, we are ignoring core dependents
-# in order to be able to get CI to pass for individual PRs.
-IGNORE_CORE_DEPENDENTS = True
+# when set to True, we are ignoring core dependents
+# in order to be able to get CI to pass for each individual
+# package that depends on core
+# e.g. if you touch core, we don't then add textsplitters/etc to CI
+IGNORE_CORE_DEPENDENTS = False
 
 # ignored partners are removed from dependents
 # but still run if directly edited
@@ -133,7 +135,7 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
 
 
 def _get_configs_for_multi_dirs(
-    job: str, dirs_to_run: List[str], dependents: dict
+    job: str, dirs_to_run: Dict[str, Set[str]], dependents: dict
 ) -> List[Dict[str, str]]:
     if job == "lint":
         dirs = add_dependents(
@@ -231,7 +233,6 @@ if __name__ == "__main__":
 
     # we now have dirs_by_job
     # todo: clean this up
-
     map_job_to_configs = {
         job: _get_configs_for_multi_dirs(job, dirs_to_run, dependents)
         for job in [
