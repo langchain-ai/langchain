@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-prompty"
-version = "0.0.3"
+version = "0.1.0"
 description = "An integration package connecting Prompty and LangChain"
 authors = []
 readme = "README.md"
@@ -13,9 +13,8 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-langchain-core = "^0.3.0.dev4"
+langchain-core = "^0.3.0"
 pyyaml = "^6.0.1"
-types-pyyaml = "^6.0.12.20240311"
 
 [tool.poetry.group.test]
 optional = true
@@ -50,6 +49,7 @@ ruff = "^0.1.5"
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^0.991"
+types-pyyaml = "^6.0.12.20240311"
 langchain-core = { path = "../../core", develop = true }
 
 [tool.poetry.group.dev]
