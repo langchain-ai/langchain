@@ -171,7 +171,7 @@ def _get_pydantic_test_configs(
     min_pydantic_minor = max(
         int(dir_min_pydantic_minor),
         int(core_min_pydantic_minor),
-        *custom_mins.get(dir_, []),
+        custom_mins.get(dir_, 0),
     )
 
     configs = [
