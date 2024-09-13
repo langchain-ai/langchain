@@ -6,7 +6,7 @@ from io import BufferedReader, BytesIO
 from pathlib import PurePath
 from typing import Any, Dict, Generator, List, Literal, Optional, Union, cast
 
-from pydantic import ConfigDict, Field, model_validator
+from pydantic import ConfigDict, Field, field_validator, model_validator
 
 from langchain_core.load.serializable import Serializable
 
@@ -39,6 +39,13 @@ class BaseMedia(Serializable):
 
     metadata: dict = Field(default_factory=dict)
     """Arbitrary metadata associated with the content."""
+
+    @field_validator("id", mode="before")
+    def cast_id_to_str(cls, id_value: Any) -> Optional[str]:
+        if id_value is not None:
+            return str(id_value)
+        else:
+            return id_value
 
 
 class Blob(BaseMedia):

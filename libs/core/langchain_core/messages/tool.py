@@ -118,7 +118,7 @@ class ToolMessage(BaseMessage):
             pass
 
         tool_call_id = values["tool_call_id"]
-        if isinstance(tool_call_id, UUID):
+        if isinstance(tool_call_id, (UUID, int, float)):
             values["tool_call_id"] = str(tool_call_id)
         return values
 

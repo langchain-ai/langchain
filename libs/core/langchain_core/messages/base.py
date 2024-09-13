@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union, cast
 
-from pydantic import ConfigDict, Field
+from pydantic import ConfigDict, Field, field_validator
 
 from langchain_core.load.serializable import Serializable
 from langchain_core.utils import get_bolded_text
@@ -55,6 +55,13 @@ class BaseMessage(Serializable):
     model_config = ConfigDict(
         extra="allow",
     )
+
+    @field_validator("id", mode="before")
+    def cast_id_to_str(cls, id_value: Any) -> Optional[str]:
+        if id_value is not None:
+            return str(id_value)
+        else:
+            return id_value
 
     def __init__(
         self, content: Union[str, List[Union[str, Dict]]], **kwargs: Any

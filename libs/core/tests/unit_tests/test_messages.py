@@ -3,13 +3,13 @@ import uuid
 from typing import List, Type, Union
 
 import pytest
-from pydantic import ValidationError
 
 from langchain_core.documents import Document
 from langchain_core.load import dumpd, load
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
+    BaseMessage,
     ChatMessage,
     ChatMessageChunk,
     FunctionMessage,
@@ -31,6 +31,16 @@ from langchain_core.messages.tool import invalid_tool_call as create_invalid_too
 from langchain_core.messages.tool import tool_call as create_tool_call
 from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
 from langchain_core.utils._merge import merge_lists
+
+
+def test_message_init() -> None:
+    for doc in [
+        BaseMessage(type="foo", content="bar"),
+        BaseMessage(type="foo", content="bar", id=None),
+        BaseMessage(type="foo", content="bar", id="1"),
+        BaseMessage(type="foo", content="bar", id=1),
+    ]:
+        assert isinstance(doc, BaseMessage)
 
 
 def test_message_chunks() -> None:
@@ -1001,9 +1011,6 @@ def test_tool_message_content() -> None:
 
 def test_tool_message_tool_call_id() -> None:
     ToolMessage("foo", tool_call_id="1")
-
-    # Currently we only handle UUID->str coercion manually.
     ToolMessage("foo", tool_call_id=uuid.uuid4())
-
-    with pytest.raises(ValidationError):
-        ToolMessage("foo", tool_call_id=1)
+    ToolMessage("foo", tool_call_id=1)
+    ToolMessage("foo", tool_call_id=1.0)
