@@ -335,6 +335,20 @@ def _convert_chunk_to_generation_chunk(
     return generation_chunk
 
 
+def _update_token_usage(
+    overall_token_usage: Union[int, dict], new_usage: Union[int, dict]
+):
+    if isinstance(new_usage, int):
+        return new_usage
+    elif isinstance(new_usage, dict):
+        return {
+            k: _update_token_usage(overall_token_usage.get(k, 0), v)
+            for k, v in new_usage.items()
+        }
+    else:
+        raise TypeError(f"Unexpected type for token usage: {type(new_usage)}")
+
+
 class _FunctionCall(TypedDict):
     name: str
 
@@ -561,7 +575,9 @@ class BaseChatOpenAI(BaseChatModel):
             if token_usage is not None:
                 for k, v in token_usage.items():
                     if k in overall_token_usage:
-                        overall_token_usage[k] += v
+                        overall_token_usage[k] = _update_token_usage(
+                            overall_token_usage[k], v
+                        )
                     else:
                         overall_token_usage[k] = v
             if system_fingerprint is None:

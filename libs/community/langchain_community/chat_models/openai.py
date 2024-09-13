@@ -146,6 +146,20 @@ def _convert_delta_to_message_chunk(
         return default_class(content=content)  # type: ignore[call-arg]
 
 
+def _update_token_usage(
+    overall_token_usage: Union[int, dict], new_usage: Union[int, dict]
+):
+    if isinstance(new_usage, int):
+        return new_usage
+    elif isinstance(new_usage, dict):
+        return {
+            k: _update_token_usage(overall_token_usage.get(k, 0), v)
+            for k, v in new_usage.items()
+        }
+    else:
+        raise TypeError(f"Unexpected type for token usage: {type(new_usage)}")
+
+
 @deprecated(
     since="0.0.10", removal="1.0", alternative_import="langchain_openai.ChatOpenAI"
 )
@@ -374,7 +388,9 @@ class ChatOpenAI(BaseChatModel):
             if token_usage is not None:
                 for k, v in token_usage.items():
                     if k in overall_token_usage:
-                        overall_token_usage[k] += v
+                        overall_token_usage[k] = _update_token_usage(
+                            overall_token_usage[k], v
+                        )
                     else:
                         overall_token_usage[k] = v
             if system_fingerprint is None:
