@@ -15,10 +15,6 @@ on:
         required: true
         type: string
         description: "Python version to use"
-    outputs:
-      installed-python-version:
-        description: "Full Python version that was installed"
-
 
 env:
   POETRY_VERSION: "1.7.1"
