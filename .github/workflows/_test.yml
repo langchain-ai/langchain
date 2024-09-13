@@ -54,18 +54,6 @@ jobs:
         run: |
           make test
 
-      - name: Ensure the tests did not create any additional files
-        shell: bash
-        run: |
-          set -eu
-
-          STATUS="$(git status)"
-          echo "$STATUS"
-
-          # grep will exit non-zero if the target message isn't found,
-          # and `set -e` above will cause the step to fail.
-          echo "$STATUS" | grep 'nothing to commit, working tree clean'
-          
       - name: Get minimum versions
         working-directory: ${{ inputs.working-directory }}
         id: min-version
@@ -84,3 +72,21 @@ jobs:
           poetry run pip install --force-reinstall $MIN_VERSIONS --editable .
           make tests
         working-directory: ${{ inputs.working-directory }}
+
+      - name: Clear the output file
+        shell: bash
+        run: |
+          > $GITHUB_OUTPUT
+      
+      - name: Ensure the tests did not create any additional files
+        shell: bash
+        run: |
+          set -eu
+
+          STATUS="$(git status)"
+          echo "$STATUS"
+
+          # grep will exit non-zero if the target message isn't found,
+          # and `set -e` above will cause the step to fail.
+          echo "$STATUS" | grep 'nothing to commit, working tree clean'
+          
