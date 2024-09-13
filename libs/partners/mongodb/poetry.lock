@@ -738,7 +738,7 @@ files = [
 
 [[package]]
 name = "langchain"
-version = "0.3.0.dev1"
+version = "0.3.0"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -748,8 +748,8 @@ develop = true
 [package.dependencies]
 aiohttp = "^3.8.3"
 async-timeout = {version = "^4.0.0", markers = "python_version < \"3.11\""}
-langchain-core = "^0.3.0.dev2"
-langchain-text-splitters = "^0.3.0.dev1"
+langchain-core = "^0.3.0"
+langchain-text-splitters = "^0.3.0"
 langsmith = "^0.1.17"
 numpy = [
     {version = ">=1,<2", markers = "python_version < \"3.12\""},
@@ -767,7 +767,7 @@ url = "../../langchain"
 
 [[package]]
 name = "langchain-core"
-version = "0.3.0.dev4"
+version = "0.3.0"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -778,7 +778,10 @@ develop = true
 jsonpatch = "^1.33"
 langsmith = "^0.1.117"
 packaging = ">=23.2,<25"
-pydantic = "^2.7.4"
+pydantic = [
+    {version = ">=2.5.2,<3.0.0", markers = "python_full_version < \"3.12.4\""},
+    {version = ">=2.7.4,<3.0.0", markers = "python_full_version >= \"3.12.4\""},
+]
 PyYAML = ">=5.3"
 tenacity = "^8.1.0,!=8.4.0"
 typing-extensions = ">=4.7"
@@ -789,7 +792,7 @@ url = "../../core"
 
 [[package]]
 name = "langchain-openai"
-version = "0.2.0.dev2"
+version = "0.2.0"
 description = "An integration package connecting OpenAI and LangChain"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -797,7 +800,7 @@ files = []
 develop = true
 
 [package.dependencies]
-langchain-core = "^0.3.0.dev1"
+langchain-core = "^0.3"
 openai = "^1.40.0"
 tiktoken = ">=0.7,<1"
 
@@ -807,7 +810,7 @@ url = "../openai"
 
 [[package]]
 name = "langchain-text-splitters"
-version = "0.3.0.dev1"
+version = "0.3.0"
 description = "LangChain text splitting utilities"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -815,7 +818,7 @@ files = []
 develop = true
 
 [package.dependencies]
-langchain-core = "^0.3.0.dev1"
+langchain-core = "^0.3.0"
 
 [package.source]
 type = "directory"
@@ -2145,4 +2148,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0"
-content-hash = "4e1601bc96b19da0b8690e286645baedfa1fcbdf4df32e3e8983a34e522b1efb"
+content-hash = "a5a15aad857e5b5a0fb2d86fb472ba631ef9dd78a7eca695d03282f450f50fb3"
