@@ -14,7 +14,8 @@ from typing import (
     cast,
 )
 
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel, ConfigDict
+
 from langchain_core.runnables.base import (
     Runnable,
     RunnableLike,
@@ -133,10 +134,14 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             runnable = coerce_to_runnable(runnable)
             _branches.append((condition, runnable))
 
-        super().__init__(branches=_branches, default=default_)  # type: ignore[call-arg]
+        super().__init__(
+            branches=_branches,
+            default=default_,
+        )  # type: ignore[call-arg]
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -158,7 +163,10 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         )
 
         for runnable in runnables:
-            if runnable.get_input_schema(config).schema().get("type") is not None:
+            if (
+                runnable.get_input_schema(config).model_json_schema().get("type")
+                is not None
+            ):
                 return runnable.get_input_schema(config)
 
         return super().get_input_schema(config)

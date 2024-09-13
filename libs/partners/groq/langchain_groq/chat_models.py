@@ -64,12 +64,6 @@ from langchain_core.output_parsers.openai_tools import (
     parse_tool_call,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import (
-    BaseModel,
-    Field,
-    SecretStr,
-    root_validator,
-)
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import (
@@ -82,6 +76,14 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_tool,
 )
 from langchain_core.utils.pydantic import is_basemodel_subclass
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    SecretStr,
+    model_validator,
+)
+from typing_extensions import Self
 
 
 class ChatGroq(BaseChatModel):
@@ -224,7 +226,7 @@ class ChatGroq(BaseChatModel):
     Tool calling:
         .. code-block:: python
 
-            from langchain_core.pydantic_v1 import BaseModel, Field
+            from pydantic import BaseModel, Field
 
             class GetWeather(BaseModel):
                 '''Get the current weather in a given location'''
@@ -255,7 +257,7 @@ class ChatGroq(BaseChatModel):
 
             from typing import Optional
 
-            from langchain_core.pydantic_v1 import BaseModel, Field
+            from pydantic import BaseModel, Field
 
             class Joke(BaseModel):
                 '''Joke to tell user.'''
@@ -342,13 +344,13 @@ class ChatGroq(BaseChatModel):
     """Optional httpx.AsyncClient. Only used for async invocations. Must specify
         http_client as well if you'd like a custom client for sync invocations."""
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
-        allow_population_by_field_name = True
-
-    @root_validator(pre=True)
-    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})
@@ -373,40 +375,38 @@ class ChatGroq(BaseChatModel):
         values["model_kwargs"] = extra
         return values
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="after")
+    def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
-        if values["n"] < 1:
+        if self.n < 1:
             raise ValueError("n must be at least 1.")
-        if values["n"] > 1 and values["streaming"]:
+        if self.n > 1 and self.streaming:
             raise ValueError("n must be 1 when streaming.")
-        if values["temperature"] == 0:
-            values["temperature"] = 1e-8
+        if self.temperature == 0:
+            self.temperature = 1e-8
 
-        client_params = {
+        client_params: Dict[str, Any] = {
             "api_key": (
-                values["groq_api_key"].get_secret_value()
-                if values["groq_api_key"]
-                else None
+                self.groq_api_key.get_secret_value() if self.groq_api_key else None
             ),
-            "base_url": values["groq_api_base"],
-            "timeout": values["request_timeout"],
-            "max_retries": values["max_retries"],
-            "default_headers": values["default_headers"],
-            "default_query": values["default_query"],
+            "base_url": self.groq_api_base,
+            "timeout": self.request_timeout,
+            "max_retries": self.max_retries,
+            "default_headers": self.default_headers,
+            "default_query": self.default_query,
         }
 
         try:
             import groq
 
-            sync_specific = {"http_client": values["http_client"]}
-            if not values.get("client"):
-                values["client"] = groq.Groq(
+            sync_specific: Dict[str, Any] = {"http_client": self.http_client}
+            if not self.client:
+                self.client = groq.Groq(
                     **client_params, **sync_specific
                 ).chat.completions
-            if not values.get("async_client"):
-                async_specific = {"http_client": values["http_async_client"]}
-                values["async_client"] = groq.AsyncGroq(
+            if not self.async_client:
+                async_specific: Dict[str, Any] = {"http_client": self.http_async_client}
+                self.async_client = groq.AsyncGroq(
                     **client_params, **async_specific
                 ).chat.completions
         except ImportError:
@@ -414,7 +414,7 @@ class ChatGroq(BaseChatModel):
                 "Could not import groq python package. "
                 "Please install it with `pip install groq`."
             )
-        return values
+        return self
 
     #
     # Serializable class method overrides
@@ -508,7 +508,7 @@ class ChatGroq(BaseChatModel):
         default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
         for chunk in self.client.create(messages=message_dicts, **params):
             if not isinstance(chunk, dict):
-                chunk = chunk.dict()
+                chunk = chunk.model_dump()
             if len(chunk["choices"]) == 0:
                 continue
             choice = chunk["choices"][0]
@@ -546,7 +546,7 @@ class ChatGroq(BaseChatModel):
             messages=message_dicts, **params
         ):
             if not isinstance(chunk, dict):
-                chunk = chunk.dict()
+                chunk = chunk.model_dump()
             if len(chunk["choices"]) == 0:
                 continue
             choice = chunk["choices"][0]
@@ -591,7 +591,7 @@ class ChatGroq(BaseChatModel):
     def _create_chat_result(self, response: Union[dict, BaseModel]) -> ChatResult:
         generations = []
         if not isinstance(response, dict):
-            response = response.dict()
+            response = response.model_dump()
         token_usage = response.get("usage", {})
         for res in response["choices"]:
             message = _convert_dict_to_message(res["message"])
@@ -834,7 +834,7 @@ class ChatGroq(BaseChatModel):
                 from typing import Optional
 
                 from langchain_groq import ChatGroq
-                from langchain_core.pydantic_v1 import BaseModel, Field
+                from pydantic import BaseModel, Field
 
 
                 class AnswerWithJustification(BaseModel):
@@ -865,7 +865,7 @@ class ChatGroq(BaseChatModel):
             .. code-block:: python
 
                 from langchain_groq import ChatGroq
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
 
 
                 class AnswerWithJustification(BaseModel):
@@ -952,7 +952,7 @@ class ChatGroq(BaseChatModel):
             .. code-block::
 
                 from langchain_groq import ChatGroq
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
 
                 class AnswerWithJustification(BaseModel):
                     answer: str

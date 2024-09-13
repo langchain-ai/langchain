@@ -6,7 +6,7 @@ from typing import Any, Dict, Iterable, List, Optional
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import BaseMessage, get_buffer_string
 from langchain_core.prompts import BasePromptTemplate
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from langchain.chains.llm import LLMChain
 from langchain.memory.chat_memory import BaseChatMemory
@@ -245,8 +245,9 @@ class SQLiteEntityStore(BaseEntityStore):
     table_name: str = "memory_store"
     conn: Any = None
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     def __init__(
         self,

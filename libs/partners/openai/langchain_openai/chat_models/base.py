@@ -72,15 +72,10 @@ from langchain_core.output_parsers.openai_tools import (
     parse_tool_call,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough, chain
 from langchain_core.runnables.config import run_in_executor
 from langchain_core.tools import BaseTool
-from langchain_core.utils import (
-    convert_to_secret_str,
-    get_from_dict_or_env,
-    get_pydantic_field_names,
-)
+from langchain_core.utils import get_pydantic_field_names
 from langchain_core.utils.function_calling import (
     convert_to_openai_function,
     convert_to_openai_tool,
@@ -90,7 +85,9 @@ from langchain_core.utils.pydantic import (
     TypeBaseModel,
     is_basemodel_subclass,
 )
-from langchain_core.utils.utils import build_extra_kwargs
+from langchain_core.utils.utils import build_extra_kwargs, from_env, secret_from_env
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
+from typing_extensions import Self
 
 logger = logging.getLogger(__name__)
 
@@ -387,15 +384,18 @@ class BaseChatOpenAI(BaseChatModel):
     """What sampling temperature to use."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
-    openai_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
-    """Automatically inferred from env var `OPENAI_API_KEY` if not provided."""
+    openai_api_key: Optional[SecretStr] = Field(
+        alias="api_key", default_factory=secret_from_env("OPENAI_API_KEY", default=None)
+    )
     openai_api_base: Optional[str] = Field(default=None, alias="base_url")
     """Base URL path for API requests, leave blank if not using a proxy or service 
         emulator."""
     openai_organization: Optional[str] = Field(default=None, alias="organization")
     """Automatically inferred from env var `OPENAI_ORG_ID` if not provided."""
     # to support explicit proxy for OpenAI
-    openai_proxy: Optional[str] = None
+    openai_proxy: Optional[str] = Field(
+        default_factory=from_env("OPENAI_PROXY", default=None)
+    )
     request_timeout: Union[float, Tuple[float, float], Any, None] = Field(
         default=None, alias="timeout"
     )
@@ -454,13 +454,11 @@ class BaseChatOpenAI(BaseChatModel):
     include_response_headers: bool = False
     """Whether to include response headers in the output message response_metadata."""
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(populate_by_name=True)
 
-        allow_population_by_field_name = True
-
-    @root_validator(pre=True)
-    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})
@@ -469,56 +467,43 @@ class BaseChatOpenAI(BaseChatModel):
         )
         return values
 
-    @root_validator(pre=False, skip_on_failure=True, allow_reuse=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="after")
+    def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
-        if values["n"] < 1:
+        if self.n < 1:
             raise ValueError("n must be at least 1.")
-        if values["n"] > 1 and values["streaming"]:
+        if self.n > 1 and self.streaming:
             raise ValueError("n must be 1 when streaming.")
 
-        values["openai_api_key"] = convert_to_secret_str(
-            get_from_dict_or_env(values, "openai_api_key", "OPENAI_API_KEY")
-        )
         # Check OPENAI_ORGANIZATION for backwards compatibility.
-        values["openai_organization"] = (
-            values["openai_organization"]
+        self.openai_organization = (
+            self.openai_organization
             or os.getenv("OPENAI_ORG_ID")
             or os.getenv("OPENAI_ORGANIZATION")
         )
-        values["openai_api_base"] = values["openai_api_base"] or os.getenv(
-            "OPENAI_API_BASE"
-        )
-        values["openai_proxy"] = get_from_dict_or_env(
-            values, "openai_proxy", "OPENAI_PROXY", default=""
-        )
-
-        client_params = {
+        self.openai_api_base = self.openai_api_base or os.getenv("OPENAI_API_BASE")
+        client_params: dict = {
             "api_key": (
-                values["openai_api_key"].get_secret_value()
-                if values["openai_api_key"]
-                else None
+                self.openai_api_key.get_secret_value() if self.openai_api_key else None
             ),
-            "organization": values["openai_organization"],
-            "base_url": values["openai_api_base"],
-            "timeout": values["request_timeout"],
-            "max_retries": values["max_retries"],
-            "default_headers": values["default_headers"],
-            "default_query": values["default_query"],
+            "organization": self.openai_organization,
+            "base_url": self.openai_api_base,
+            "timeout": self.request_timeout,
+            "max_retries": self.max_retries,
+            "default_headers": self.default_headers,
+            "default_query": self.default_query,
         }
-        if values["openai_proxy"] and (
-            values["http_client"] or values["http_async_client"]
-        ):
-            openai_proxy = values["openai_proxy"]
-            http_client = values["http_client"]
-            http_async_client = values["http_async_client"]
+        if self.openai_proxy and (self.http_client or self.http_async_client):
+            openai_proxy = self.openai_proxy
+            http_client = self.http_client
+            http_async_client = self.http_async_client
             raise ValueError(
                 "Cannot specify 'openai_proxy' if one of "
                 "'http_client'/'http_async_client' is already specified. Received:\n"
                 f"{openai_proxy=}\n{http_client=}\n{http_async_client=}"
             )
-        if not values.get("client"):
-            if values["openai_proxy"] and not values["http_client"]:
+        if not self.client:
+            if self.openai_proxy and not self.http_client:
                 try:
                     import httpx
                 except ImportError as e:
@@ -526,12 +511,12 @@ class BaseChatOpenAI(BaseChatModel):
                         "Could not import httpx python package. "
                         "Please install it with `pip install httpx`."
                     ) from e
-                values["http_client"] = httpx.Client(proxy=values["openai_proxy"])
-            sync_specific = {"http_client": values["http_client"]}
-            values["root_client"] = openai.OpenAI(**client_params, **sync_specific)
-            values["client"] = values["root_client"].chat.completions
-        if not values.get("async_client"):
-            if values["openai_proxy"] and not values["http_async_client"]:
+                self.http_client = httpx.Client(proxy=self.openai_proxy)
+            sync_specific = {"http_client": self.http_client}
+            self.root_client = openai.OpenAI(**client_params, **sync_specific)  # type: ignore[arg-type]
+            self.client = self.root_client.chat.completions
+        if not self.async_client:
+            if self.openai_proxy and not self.http_async_client:
                 try:
                     import httpx
                 except ImportError as e:
@@ -539,15 +524,14 @@ class BaseChatOpenAI(BaseChatModel):
                         "Could not import httpx python package. "
                         "Please install it with `pip install httpx`."
                     ) from e
-                values["http_async_client"] = httpx.AsyncClient(
-                    proxy=values["openai_proxy"]
-                )
-            async_specific = {"http_client": values["http_async_client"]}
-            values["root_async_client"] = openai.AsyncOpenAI(
-                **client_params, **async_specific
+                self.http_async_client = httpx.AsyncClient(proxy=self.openai_proxy)
+            async_specific = {"http_client": self.http_async_client}
+            self.root_async_client = openai.AsyncOpenAI(
+                **client_params,
+                **async_specific,  # type: ignore[arg-type]
             )
-            values["async_client"] = values["root_async_client"].chat.completions
-        return values
+            self.async_client = self.root_async_client.chat.completions
+        return self
 
     @property
     def _default_params(self) -> Dict[str, Any]:
@@ -1234,7 +1218,7 @@ class BaseChatOpenAI(BaseChatModel):
                 from typing import Optional
 
                 from langchain_openai import ChatOpenAI
-                from langchain_core.pydantic_v1 import BaseModel, Field
+                from pydantic import BaseModel, Field
 
 
                 class AnswerWithJustification(BaseModel):
@@ -1265,7 +1249,7 @@ class BaseChatOpenAI(BaseChatModel):
             .. code-block:: python
 
                 from langchain_openai import ChatOpenAI
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
 
 
                 class AnswerWithJustification(BaseModel):
@@ -1355,7 +1339,7 @@ class BaseChatOpenAI(BaseChatModel):
             .. code-block::
 
                 from langchain_openai import ChatOpenAI
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
 
                 class AnswerWithJustification(BaseModel):
                     answer: str
@@ -1658,7 +1642,7 @@ class ChatOpenAI(BaseChatOpenAI):
 
         .. code-block:: python
 
-            from langchain_core.pydantic_v1 import BaseModel, Field
+            from pydantic import BaseModel, Field
 
 
             class GetWeather(BaseModel):
@@ -1744,7 +1728,7 @@ class ChatOpenAI(BaseChatOpenAI):
 
             from typing import Optional
 
-            from langchain_core.pydantic_v1 import BaseModel, Field
+            from pydantic import BaseModel, Field
 
 
             class Joke(BaseModel):

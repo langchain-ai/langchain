@@ -12,8 +12,8 @@ license = "MIT"
 "Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-prompty%3D%3D0%22&expanded=true"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
-langchain-core = "^0.2.36"
+python = ">=3.9,<4.0"
+langchain-core = "^0.3.0.dev4"
 pyyaml = "^6.0.1"
 types-pyyaml = "^6.0.12.20240311"
 

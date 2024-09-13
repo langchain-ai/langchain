@@ -1,4 +1,5 @@
 from typing import List
+from typing import Optional as Optional
 
 from langchain_core.output_parsers.transform import BaseTransformOutputParser
 
@@ -24,3 +25,6 @@ class StrOutputParser(BaseTransformOutputParser[str]):
     def parse(self, text: str) -> str:
         """Returns the input text with no changes."""
         return text
+
+
+StrOutputParser.model_rebuild()

@@ -1,10 +1,10 @@
 [build-system]
-requires = [ "poetry-core>=1.0.0",]
+requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-fireworks"
-version = "0.1.7"
+version = "0.2.0.dev2"
 description = "An integration package connecting Fireworks and LangChain"
 authors = []
 readme = "README.md"
@@ -19,22 +19,26 @@ disallow_untyped_defs = "True"
 "Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-fireworks%3D%3D0%22&expanded=true"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
-langchain-core = "^0.2.26"
+python = ">=3.9,<4.0"
+langchain-core = { version = "^0.3.0.dev5", allow-prereleases = true }
 fireworks-ai = ">=0.13.0"
 openai = "^1.10.0"
 requests = "^2"
 aiohttp = "^3.9.1"
 
 [tool.ruff.lint]
-select = [ "E", "F", "I", "T201",]
+select = ["E", "F", "I", "T201"]
 
 [tool.coverage.run]
-omit = [ "tests/*",]
+omit = ["tests/*"]
 
 [tool.pytest.ini_options]
 addopts = "--snapshot-warn-unused --strict-markers --strict-config --durations=5"
-markers = [ "requires: mark tests as requiring a specific library", "asyncio: mark tests as requiring asyncio", "compile: mark placeholder test used to compile integration tests without running them",]
+markers = [
+    "requires: mark tests as requiring a specific library",
+    "asyncio: mark tests as requiring asyncio",
+    "compile: mark placeholder test used to compile integration tests without running them",
+]
 asyncio_mode = "auto"
 
 [tool.poetry.group.test]

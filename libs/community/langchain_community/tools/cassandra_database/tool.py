@@ -6,8 +6,8 @@ import traceback
 from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Type, Union
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel, ConfigDict, Field
 
 from langchain_community.utilities.cassandra_database import CassandraDatabase
 
@@ -20,8 +20,9 @@ class BaseCassandraDatabaseTool(BaseModel):
 
     db: CassandraDatabase = Field(exclude=True)
 
-    class Config(BaseTool.Config):
-        pass
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
 
 class _QueryCassandraDatabaseToolInput(BaseModel):

@@ -7,10 +7,6 @@ on:
         required: true
         type: string
         description: "From which folder this pipeline executes"
-      langchain-location:
-        required: false
-        type: string
-        description: "Relative path to the langchain library folder"
       python-version:
         required: true
         type: string
@@ -31,28 +27,41 @@ jobs:
 
       - name: Set up Python ${{ inputs.python-version }} + Poetry ${{ env.POETRY_VERSION }}
         uses: "./.github/actions/poetry_setup"
+        id: setup-python
         with:
           python-version: ${{ inputs.python-version }}
           poetry-version: ${{ env.POETRY_VERSION }}
           working-directory: ${{ inputs.working-directory }}
           cache-key: core
-
       - name: Install dependencies
         shell: bash
         run: poetry install --with test
-
-      - name: Install langchain editable
-        working-directory: ${{ inputs.working-directory }}
-        if: ${{ inputs.langchain-location }}
-        env:
-          LANGCHAIN_LOCATION: ${{ inputs.langchain-location }}
-        run: |
-          poetry run pip install -e "$LANGCHAIN_LOCATION"
 
       - name: Run core tests
         shell: bash
         run: |
           make test
+
+      - name: Get minimum versions
+        working-directory: ${{ inputs.working-directory }}
+        id: min-version
+        shell: bash
+        run: |
+          poetry run pip install packaging tomli
+          echo "Python version ${{ steps.setup-python.outputs.installed-python-version }}"
+          python_version="$(poetry run python --version | awk '{print $2}')"
+          min_versions="$(poetry run python $GITHUB_WORKSPACE/.github/scripts/get_min_versions.py pyproject.toml pull_request $python_version)"
+          echo "min-versions=$min_versions" >> "$GITHUB_OUTPUT"
+          echo "min-versions=$min_versions"
+
+      - name: Run unit tests with minimum dependency versions
+        if: ${{ steps.min-version.outputs.min-versions != '' }}
+        env:
+          MIN_VERSIONS: ${{ steps.min-version.outputs.min-versions }}
+        run: |
+          poetry run pip install --force-reinstall $MIN_VERSIONS --editable .
+          make tests
+        working-directory: ${{ inputs.working-directory }}
 
       - name: Ensure the tests did not create any additional files
         shell: bash
@@ -66,20 +75,3 @@ jobs:
           # and `set -e` above will cause the step to fail.
           echo "$STATUS" | grep 'nothing to commit, working tree clean'
           
-      - name: Get minimum versions
-        working-directory: ${{ inputs.working-directory }}
-        id: min-version
-        run: |
-          poetry run pip install packaging tomli
-          min_versions="$(poetry run python $GITHUB_WORKSPACE/.github/scripts/get_min_versions.py pyproject.toml pull_request)"
-          echo "min-versions=$min_versions" >> "$GITHUB_OUTPUT"
-          echo "min-versions=$min_versions"
-
-      - name: Run unit tests with minimum dependency versions
-        if: ${{ steps.min-version.outputs.min-versions != '' }}
-        env:
-          MIN_VERSIONS: ${{ steps.min-version.outputs.min-versions }}
-        run: |
-          poetry run pip install --force-reinstall $MIN_VERSIONS --editable .
-          make tests
-        working-directory: ${{ inputs.working-directory }}

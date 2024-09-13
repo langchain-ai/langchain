@@ -65,7 +65,7 @@ def test_example_id_assignment_threadsafe() -> None:
 def test_tracer_with_run_tree_parent() -> None:
     mock_session = unittest.mock.MagicMock()
     client = Client(session=mock_session, api_key="test")
-    parent = RunTree(name="parent", inputs={"input": "foo"}, client=client)
+    parent = RunTree(name="parent", inputs={"input": "foo"}, _client=client)
     run_id = uuid.uuid4()
     tracer = LangChainTracer(client=client)
     tracer.order_map[parent.id] = (parent.trace_id, parent.dotted_order)

@@ -1,10 +1,10 @@
 [build-system]
-requires = [ "poetry-core>=1.0.0",]
+requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-core"
-version = "0.2.40"
+version = "0.3.0.dev5"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -12,10 +12,17 @@ readme = "README.md"
 repository = "https://github.com/langchain-ai/langchain"
 
 [tool.mypy]
-disallow_untyped_defs = "True"
-exclude = [ "notebooks", "examples", "example_data", "langchain_core/pydantic", "tests/unit_tests/utils/test_function_calling.py",]
+exclude = [
+    "notebooks",
+    "examples",
+    "example_data",
+    "langchain_core/pydantic",
+    "tests/unit_tests/utils/test_function_calling.py",
+]
+"disallow_untyped_defs" = "True"
+
 [[tool.mypy.overrides]]
-module = [ "numpy", "pytest",]
+module = ["numpy", "pytest"]
 ignore_missing_imports = true
 
 [tool.poetry.urls]
@@ -23,34 +30,39 @@ ignore_missing_imports = true
 "Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-core%3D%3D0%22&expanded=true"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
-langsmith = "^0.1.112"
+python = ">=3.9,<4.0"
+langsmith = "^0.1.117"
 tenacity = "^8.1.0,!=8.4.0"
 jsonpatch = "^1.33"
 PyYAML = ">=5.3"
 packaging = ">=23.2,<25"
 typing-extensions = ">=4.7"
-[[tool.poetry.dependencies.pydantic]]
-version = ">=1,<3"
-python = "<3.12.4"
+pydantic = [
+    { version = "^2.5.2", python = "<3.12.4" },
+    { version = "^2.7.4", python = ">=3.12.4" },
+]
 
-[[tool.poetry.dependencies.pydantic]]
-version = "^2.7.4"
-python = ">=3.12.4"
 
 [tool.poetry.extras]
 
 [tool.ruff.lint]
-select = [ "B", "E", "F", "I", "T201", "UP",]
-ignore = [ "UP006", "UP007",]
+select = ["B", "E", "F", "I", "T201", "UP"]
+ignore = ["UP006", "UP007"]
 
 [tool.coverage.run]
-omit = [ "tests/*",]
+omit = ["tests/*"]
 
 [tool.pytest.ini_options]
 addopts = "--snapshot-warn-unused --strict-markers --strict-config --durations=5"
-markers = [ "requires: mark tests as requiring a specific library", "asyncio: mark tests as requiring asyncio", "compile: mark placeholder test used to compile integration tests without running them",]
+markers = [
+    "requires: mark tests as requiring a specific library",
+    "asyncio: mark tests as requiring asyncio",
+    "compile: mark placeholder test used to compile integration tests without running them",
+]
 asyncio_mode = "auto"
+filterwarnings = [
+    "ignore::langchain_core._api.beta_decorator.LangChainBetaWarning",
+]
 
 [tool.poetry.group.lint]
 optional = true
@@ -68,9 +80,9 @@ optional = true
 optional = true
 
 [tool.ruff.lint.per-file-ignores]
-"tests/unit_tests/prompts/test_chat.py" = [ "E501",]
-"tests/unit_tests/runnables/test_runnable.py" = [ "E501",]
-"tests/unit_tests/runnables/test_graph.py" = [ "E501",]
+"tests/unit_tests/prompts/test_chat.py" = ["E501"]
+"tests/unit_tests/runnables/test_runnable.py" = ["E501"]
+"tests/unit_tests/runnables/test_graph.py" = ["E501"]
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.5"

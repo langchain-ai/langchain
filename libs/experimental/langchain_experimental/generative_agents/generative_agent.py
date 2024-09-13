@@ -5,9 +5,9 @@ from typing import Any, Dict, List, Optional, Tuple
 from langchain.chains import LLMChain
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import PromptTemplate
+from pydantic import BaseModel, ConfigDict, Field
 
 from langchain_experimental.generative_agents.memory import GenerativeAgentMemory
-from langchain_experimental.pydantic_v1 import BaseModel, Field
 
 
 class GenerativeAgent(BaseModel):
@@ -35,8 +35,9 @@ class GenerativeAgent(BaseModel):
     daily_summaries: List[str] = Field(default_factory=list)  # : :meta private:
     """Summary of the events in the plan that the agent took."""
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     # LLM-related methods
     @staticmethod
