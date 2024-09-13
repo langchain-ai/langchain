@@ -3,7 +3,6 @@ import uuid
 from typing import List, Type, Union
 
 import pytest
-from pydantic import ValidationError
 
 from langchain_core.documents import Document
 from langchain_core.load import dumpd, load
@@ -1012,9 +1011,6 @@ def test_tool_message_content() -> None:
 
 def test_tool_message_tool_call_id() -> None:
     ToolMessage("foo", tool_call_id="1")
-
-    # Currently we only handle UUID->str coercion manually.
     ToolMessage("foo", tool_call_id=uuid.uuid4())
-
-    with pytest.raises(ValidationError):
-        ToolMessage("foo", tool_call_id=1)
+    ToolMessage("foo", tool_call_id=1)
+    ToolMessage("foo", tool_call_id=1.0)
