@@ -8,7 +8,7 @@ from langchain_core.utils import (
     get_pydantic_field_names,
     secret_from_env,
 )
-from pydantic import BaseModel, ConfigDict, Field, Secret, model_validator
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
 from langchain_community.utils.openai import is_openai_v1
@@ -31,7 +31,7 @@ class DallEAPIWrapper(BaseModel):
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
     model_name: str = Field(default="dall-e-2", alias="model")
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
-    openai_api_key: Secret[str] = Field(
+    openai_api_key: SecretStr = Field(
         alias="api_key",
         default_factory=secret_from_env(
             "OPENAI_API_KEY",

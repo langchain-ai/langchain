@@ -209,7 +209,9 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
         }
     )
     graph = sequence.get_graph()
-    assert _normalize_schema(graph.to_json(with_schemas=True)) == snapshot(name="graph_with_schema")
+    assert _normalize_schema(graph.to_json(with_schemas=True)) == snapshot(
+        name="graph_with_schema"
+    )
     assert _normalize_schema(graph.to_json()) == snapshot(name="graph_no_schemas")
     assert graph.draw_ascii() == snapshot(name="ascii")
     assert graph.draw_mermaid() == snapshot(name="mermaid")
