@@ -16,8 +16,10 @@ LANGCHAIN_DIRS = [
     "libs/experimental",
 ]
 
-# for 0.3rc, we are ignoring core dependents
-# in order to be able to get CI to pass for individual PRs.
+# when set to True, we are ignoring core dependents
+# in order to be able to get CI to pass for each individual
+# package that depends on core
+# e.g. if you touch core, we don't then add textsplitters/etc to CI
 IGNORE_CORE_DEPENDENTS = False
 
 # ignored partners are removed from dependents
