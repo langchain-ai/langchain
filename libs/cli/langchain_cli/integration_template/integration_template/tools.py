@@ -5,8 +5,8 @@ from typing import Optional, Type
 from langchain_core.callbacks import (
     CallbackManagerForToolRun,
 )
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel
 
 
 class __ModuleName__Input(BaseModel):
@@ -62,7 +62,7 @@ class __ModuleName__Tool(BaseTool):
         .. code-block:: python
 
             # TODO: output of invocation
-    """ # noqa: E501
+    """  # noqa: E501
 
     # TODO: Set tool name and description
     name: str = "TODO: Tool name"

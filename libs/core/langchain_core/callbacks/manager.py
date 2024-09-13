@@ -1354,7 +1354,7 @@ class CallbackManager(BaseCallbackManager):
 
     def on_chain_start(
         self,
-        serialized: Dict[str, Any],
+        serialized: Optional[Dict[str, Any]],
         inputs: Union[Dict[str, Any], Any],
         run_id: Optional[UUID] = None,
         **kwargs: Any,
@@ -1362,7 +1362,7 @@ class CallbackManager(BaseCallbackManager):
         """Run when chain starts running.
 
         Args:
-            serialized (Dict[str, Any]): The serialized chain.
+            serialized (Optional[Dict[str, Any]]): The serialized chain.
             inputs (Union[Dict[str, Any], Any]): The inputs to the chain.
             run_id (UUID, optional): The ID of the run. Defaults to None.
             **kwargs (Any): Additional keyword arguments.
@@ -1398,7 +1398,7 @@ class CallbackManager(BaseCallbackManager):
 
     def on_tool_start(
         self,
-        serialized: Dict[str, Any],
+        serialized: Optional[Dict[str, Any]],
         input_str: str,
         run_id: Optional[UUID] = None,
         parent_run_id: Optional[UUID] = None,
@@ -1453,7 +1453,7 @@ class CallbackManager(BaseCallbackManager):
 
     def on_retriever_start(
         self,
-        serialized: Dict[str, Any],
+        serialized: Optional[Dict[str, Any]],
         query: str,
         run_id: Optional[UUID] = None,
         parent_run_id: Optional[UUID] = None,
@@ -1462,7 +1462,7 @@ class CallbackManager(BaseCallbackManager):
         """Run when the retriever starts running.
 
         Args:
-            serialized (Dict[str, Any]): The serialized retriever.
+            serialized (Optional[Dict[str, Any]]): The serialized retriever.
             query (str): The query.
             run_id (UUID, optional): The ID of the run. Defaults to None.
             parent_run_id (UUID, optional): The ID of the parent run. Defaults to None.
@@ -1840,7 +1840,7 @@ class AsyncCallbackManager(BaseCallbackManager):
 
     async def on_chain_start(
         self,
-        serialized: Dict[str, Any],
+        serialized: Optional[Dict[str, Any]],
         inputs: Union[Dict[str, Any], Any],
         run_id: Optional[UUID] = None,
         **kwargs: Any,
@@ -1848,7 +1848,7 @@ class AsyncCallbackManager(BaseCallbackManager):
         """Async run when chain starts running.
 
         Args:
-            serialized (Dict[str, Any]): The serialized chain.
+            serialized (Optional[Dict[str, Any]]): The serialized chain.
             inputs (Union[Dict[str, Any], Any]): The inputs to the chain.
             run_id (UUID, optional): The ID of the run. Defaults to None.
             **kwargs (Any): Additional keyword arguments.
@@ -1886,7 +1886,7 @@ class AsyncCallbackManager(BaseCallbackManager):
 
     async def on_tool_start(
         self,
-        serialized: Dict[str, Any],
+        serialized: Optional[Dict[str, Any]],
         input_str: str,
         run_id: Optional[UUID] = None,
         parent_run_id: Optional[UUID] = None,
@@ -1895,7 +1895,7 @@ class AsyncCallbackManager(BaseCallbackManager):
         """Run when the tool starts running.
 
         Args:
-            serialized (Dict[str, Any]): The serialized tool.
+            serialized (Optional[Dict[str, Any]]): The serialized tool.
             input_str (str): The input to the tool.
             run_id (UUID, optional): The ID of the run. Defaults to None.
             parent_run_id (UUID, optional): The ID of the parent run.
@@ -1975,7 +1975,7 @@ class AsyncCallbackManager(BaseCallbackManager):
 
     async def on_retriever_start(
         self,
-        serialized: Dict[str, Any],
+        serialized: Optional[Dict[str, Any]],
         query: str,
         run_id: Optional[UUID] = None,
         parent_run_id: Optional[UUID] = None,
@@ -1984,7 +1984,7 @@ class AsyncCallbackManager(BaseCallbackManager):
         """Run when the retriever starts running.
 
         Args:
-            serialized (Dict[str, Any]): The serialized retriever.
+            serialized (Optional[Dict[str, Any]]): The serialized retriever.
             query (str): The query.
             run_id (UUID, optional): The ID of the run. Defaults to None.
             parent_run_id (UUID, optional): The ID of the parent run. Defaults to None.
