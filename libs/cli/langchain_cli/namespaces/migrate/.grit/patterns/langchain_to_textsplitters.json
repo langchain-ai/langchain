@@ -7,14 +7,8 @@
     "langchain.text_splitter.TextSplitter",
     "langchain_text_splitters.TextSplitter"
   ],
-  [
-    "langchain.text_splitter.Tokenizer",
-    "langchain_text_splitters.Tokenizer"
-  ],
-  [
-    "langchain.text_splitter.Language",
-    "langchain_text_splitters.Language"
-  ],
+  ["langchain.text_splitter.Tokenizer", "langchain_text_splitters.Tokenizer"],
+  ["langchain.text_splitter.Language", "langchain_text_splitters.Language"],
   [
     "langchain.text_splitter.RecursiveCharacterTextSplitter",
     "langchain_text_splitters.RecursiveCharacterTextSplitter"
@@ -55,14 +49,8 @@
     "langchain.text_splitter.ElementType",
     "langchain_text_splitters.ElementType"
   ],
-  [
-    "langchain.text_splitter.HeaderType",
-    "langchain_text_splitters.HeaderType"
-  ],
-  [
-    "langchain.text_splitter.LineType",
-    "langchain_text_splitters.LineType"
-  ],
+  ["langchain.text_splitter.HeaderType", "langchain_text_splitters.HeaderType"],
+  ["langchain.text_splitter.LineType", "langchain_text_splitters.LineType"],
   [
     "langchain.text_splitter.HTMLHeaderTextSplitter",
     "langchain_text_splitters.HTMLHeaderTextSplitter"
