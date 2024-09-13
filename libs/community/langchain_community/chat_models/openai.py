@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import os
 import sys
+import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -144,6 +145,33 @@ def _convert_delta_to_message_chunk(
         return ChatMessageChunk(content=content, role=role)  # type: ignore[arg-type]
     else:
         return default_class(content=content)  # type: ignore[call-arg]
+
+
+def _update_token_usage(
+    overall_token_usage: Union[int, dict], new_usage: Union[int, dict]
+) -> Union[int, dict]:
+    # Token usage is either ints or dictionaries
+    # `reasoning_tokens` is nested inside `completion_tokens_details`
+    if isinstance(new_usage, int):
+        if not isinstance(overall_token_usage, int):
+            raise ValueError(
+                f"Got different types for token usage: "
+                f"{type(new_usage)} and {type(overall_token_usage)}"
+            )
+        return new_usage + overall_token_usage
+    elif isinstance(new_usage, dict):
+        if not isinstance(overall_token_usage, dict):
+            raise ValueError(
+                f"Got different types for token usage: "
+                f"{type(new_usage)} and {type(overall_token_usage)}"
+            )
+        return {
+            k: _update_token_usage(overall_token_usage.get(k, 0), v)
+            for k, v in new_usage.items()
+        }
+    else:
+        warnings.warn(f"Unexpected type for token usage: {type(new_usage)}")
+        return new_usage
 
 
 @deprecated(
@@ -374,7 +402,9 @@ class ChatOpenAI(BaseChatModel):
             if token_usage is not None:
                 for k, v in token_usage.items():
                     if k in overall_token_usage:
-                        overall_token_usage[k] += v
+                        overall_token_usage[k] = _update_token_usage(
+                            overall_token_usage[k], v
+                        )
                     else:
                         overall_token_usage[k] = v
             if system_fingerprint is None:
