@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import warnings
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
@@ -10,6 +11,7 @@ from uuid import UUID
 
 from langsmith import Client
 from langsmith import utils as ls_utils
+from pydantic import PydanticDeprecationWarning
 from tenacity import (
     Retrying,
     retry_if_exception_type,
@@ -32,7 +34,12 @@ _EXECUTOR: Optional[ThreadPoolExecutor] = None
 
 
 def log_error_once(method: str, exception: Exception) -> None:
-    """Log an error once."""
+    """Log an error once.
+
+    Args:
+        method: The method that raised the exception.
+        exception: The exception that was raised.
+    """
     global _LOGGED
     if (method, type(exception)) in _LOGGED:
         return
@@ -64,11 +71,16 @@ def _get_executor() -> ThreadPoolExecutor:
 
 
 def _run_to_dict(run: Run) -> dict:
-    return {
-        **run.dict(exclude={"child_runs", "inputs", "outputs"}),
-        "inputs": run.inputs.copy() if run.inputs is not None else None,
-        "outputs": run.outputs.copy() if run.outputs is not None else None,
-    }
+    # TODO: Update once langsmith moves to Pydantic V2 and we can swap run.dict for
+    # run.model_dump
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=PydanticDeprecationWarning)
+
+        return {
+            **run.dict(exclude={"child_runs", "inputs", "outputs"}),
+            "inputs": run.inputs.copy() if run.inputs is not None else None,
+            "outputs": run.outputs.copy() if run.outputs is not None else None,
+        }
 
 
 class LangChainTracer(BaseTracer):
@@ -82,7 +94,15 @@ class LangChainTracer(BaseTracer):
         tags: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize the LangChain tracer."""
+        """Initialize the LangChain tracer.
+
+        Args:
+            example_id: The example ID.
+            project_name: The project name. Defaults to the tracer project.
+            client: The client. Defaults to the global client.
+            tags: The tags. Defaults to an empty list.
+            kwargs: Additional keyword arguments.
+        """
         super().__init__(**kwargs)
         self.example_id = (
             UUID(example_id) if isinstance(example_id, str) else example_id
@@ -104,7 +124,21 @@ class LangChainTracer(BaseTracer):
         name: Optional[str] = None,
         **kwargs: Any,
     ) -> Run:
-        """Start a trace for an LLM run."""
+        """Start a trace for an LLM run.
+
+        Args:
+            serialized: The serialized model.
+            messages: The messages.
+            run_id: The run ID.
+            tags: The tags. Defaults to None.
+            parent_run_id: The parent run ID. Defaults to None.
+            metadata: The metadata. Defaults to None.
+            name: The name. Defaults to None.
+            kwargs: Additional keyword arguments.
+
+        Returns:
+            Run: The run.
+        """
         start_time = datetime.now(timezone.utc)
         if metadata:
             kwargs.update({"metadata": metadata})
@@ -125,12 +159,25 @@ class LangChainTracer(BaseTracer):
         return chat_model_run
 
     def _persist_run(self, run: Run) -> None:
-        run_ = run.copy()
+        # TODO: Update once langsmith moves to Pydantic V2 and we can swap run.copy for
+        # run.model_copy
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=PydanticDeprecationWarning)
+
+            run_ = run.copy()
         run_.reference_example_id = self.example_id
         self.latest_run = run_
 
     def get_run_url(self) -> str:
-        """Get the LangSmith root run URL"""
+        """Get the LangSmith root run URL.
+
+        Returns:
+            str: The LangSmith root run URL.
+
+        Raises:
+            ValueError: If no traced run is found.
+            ValueError: If the run URL cannot be found.
+        """
         if not self.latest_run:
             raise ValueError("No traced run found.")
         # If this is the first run in a project, the project may not yet be created.

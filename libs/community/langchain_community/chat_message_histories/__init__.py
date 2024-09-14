@@ -43,6 +43,9 @@ if TYPE_CHECKING:
     from langchain_community.chat_message_histories.in_memory import (
         ChatMessageHistory,
     )
+    from langchain_community.chat_message_histories.kafka import (
+        KafkaChatMessageHistory,
+    )
     from langchain_community.chat_message_histories.momento import (
         MomentoChatMessageHistory,
     )
@@ -109,6 +112,7 @@ __all__ = [
     "XataChatMessageHistory",
     "ZepChatMessageHistory",
     "ZepCloudChatMessageHistory",
+    "KafkaChatMessageHistory",
 ]
 
 _module_lookup = {
@@ -134,6 +138,7 @@ _module_lookup = {
     "XataChatMessageHistory": "langchain_community.chat_message_histories.xata",
     "ZepChatMessageHistory": "langchain_community.chat_message_histories.zep",
     "ZepCloudChatMessageHistory": "langchain_community.chat_message_histories.zep_cloud",  # noqa: E501
+    "KafkaChatMessageHistory": "langchain_community.chat_message_histories.kafka",
 }
 
 

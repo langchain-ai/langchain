@@ -13,6 +13,7 @@ from typing import (
     Iterable,
     List,
     Optional,
+    Pattern,
     Tuple,
     Type,
 )
@@ -125,7 +126,7 @@ class HanaDB(VectorStore):
                 f'"{self.metadata_column}" NCLOB, '
                 f'"{self.vector_column}" REAL_VECTOR '
             )
-            if self.vector_column_length == -1:
+            if self.vector_column_length in [-1, 0]:
                 sql_str += ");"
             else:
                 sql_str += f"({self.vector_column_length}));"
@@ -186,10 +187,13 @@ class HanaDB(VectorStore):
                             f"Column {column_name} has the wrong type: {rows[0][0]}"
                         )
                 # Check length, if parameter was provided
-                if column_length is not None:
+                # Length can either be -1 (QRC01+02-24) or 0 (QRC03-24 onwards)
+                # to indicate no length constraint being present.
+                if column_length is not None and column_length > 0:
                     if rows[0][1] != column_length:
                         raise AttributeError(
-                            f"Column {column_name} has the wrong length: {rows[0][1]}"
+                            f"Column {column_name} has the wrong length: {rows[0][1]} "
+                            f"expected: {column_length}"
                         )
             else:
                 raise AttributeError(f"Column {column_name} does not exist")
@@ -220,7 +224,7 @@ class HanaDB(VectorStore):
         return embedding
 
     # Compile pattern only once, for better performance
-    _compiled_pattern = re.compile("^[_a-zA-Z][_a-zA-Z0-9]*$")
+    _compiled_pattern: Pattern = re.compile("^[_a-zA-Z][_a-zA-Z0-9]*$")
 
     @staticmethod
     def _sanitize_metadata_keys(metadata: dict) -> dict:
@@ -527,10 +531,18 @@ class HanaDB(VectorStore):
                     if special_op in COMPARISONS_TO_SQL:
                         operator = COMPARISONS_TO_SQL[special_op]
                         if isinstance(special_val, bool):
-                            query_tuple.append("true" if filter_value else "false")
+                            query_tuple.append("true" if special_val else "false")
                         elif isinstance(special_val, float):
                             sql_param = "CAST(? as float)"
                             query_tuple.append(special_val)
+                        elif (
+                            isinstance(special_val, dict)
+                            and "type" in special_val
+                            and special_val["type"] == "date"
+                        ):
+                            # Date type
+                            sql_param = "CAST(? as DATE)"
+                            query_tuple.append(special_val["date"])
                         else:
                             query_tuple.append(special_val)
                     # "$between"

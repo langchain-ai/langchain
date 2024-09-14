@@ -20,7 +20,9 @@ if TYPE_CHECKING:
     from langchain_community.document_compressors.rankllm_rerank import (
         RankLLMRerank,
     )
-
+    from langchain_community.document_compressors.volcengine_rerank import (
+        VolcengineRerank,
+    )
 
 _module_lookup = {
     "LLMLinguaCompressor": "langchain_community.document_compressors.llmlingua_filter",
@@ -29,6 +31,7 @@ _module_lookup = {
     "RankLLMRerank": "langchain_community.document_compressors.rankllm_rerank",
     "FlashrankRerank": "langchain_community.document_compressors.flashrank_rerank",
     "DashScopeRerank": "langchain_community.document_compressors.dashscope_rerank",
+    "VolcengineRerank": "langchain_community.document_compressors.volcengine_rerank",
 }
 
 
@@ -46,4 +49,5 @@ __all__ = [
     "JinaRerank",
     "RankLLMRerank",
     "DashScopeRerank",
+    "VolcengineRerank",
 ]

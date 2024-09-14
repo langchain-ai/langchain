@@ -1,9 +1,11 @@
 from typing import Any, Dict, List, Tuple
+from typing import Optional as Optional
+
+from pydantic import model_validator
 
 from langchain_core.prompt_values import PromptValue
 from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.prompts.chat import BaseChatPromptTemplate
-from langchain_core.pydantic_v1 import root_validator
 
 
 def _get_inputs(inputs: dict, input_variables: List[str]) -> dict:
@@ -14,13 +16,14 @@ class PipelinePromptTemplate(BasePromptTemplate):
     """Prompt template for composing multiple prompt templates together.
 
     This can be useful when you want to reuse parts of prompts.
+
     A PipelinePrompt consists of two main parts:
         - final_prompt: This is the final prompt that is returned
         - pipeline_prompts: This is a list of tuples, consisting
-            of a string (`name`) and a Prompt Template.
-            Each PromptTemplate will be formatted and then passed
-            to future prompt templates as a variable with
-            the same name as `name`
+          of a string (`name`) and a Prompt Template.
+          Each PromptTemplate will be formatted and then passed
+          to future prompt templates as a variable with
+          the same name as `name`
     """
 
     final_prompt: BasePromptTemplate
@@ -33,8 +36,9 @@ class PipelinePromptTemplate(BasePromptTemplate):
         """Get the namespace of the langchain object."""
         return ["langchain", "prompts", "pipeline"]
 
-    @root_validator(pre=True)
-    def get_input_variables(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def get_input_variables(cls, values: Dict) -> Any:
         """Get input variables."""
         created_variables = set()
         all_variables = set()
@@ -45,6 +49,14 @@ class PipelinePromptTemplate(BasePromptTemplate):
         return values
 
     def format_prompt(self, **kwargs: Any) -> PromptValue:
+        """Format the prompt with the inputs.
+
+        Args:
+            kwargs: Any arguments to be passed to the prompt template.
+
+        Returns:
+            A formatted string.
+        """
         for k, prompt in self.pipeline_prompts:
             _inputs = _get_inputs(kwargs, prompt.input_variables)
             if isinstance(prompt, BaseChatPromptTemplate):
@@ -55,6 +67,14 @@ class PipelinePromptTemplate(BasePromptTemplate):
         return self.final_prompt.format_prompt(**_inputs)
 
     async def aformat_prompt(self, **kwargs: Any) -> PromptValue:
+        """Async format the prompt with the inputs.
+
+        Args:
+            kwargs: Any arguments to be passed to the prompt template.
+
+        Returns:
+            A formatted string.
+        """
         for k, prompt in self.pipeline_prompts:
             _inputs = _get_inputs(kwargs, prompt.input_variables)
             if isinstance(prompt, BaseChatPromptTemplate):
@@ -65,11 +85,30 @@ class PipelinePromptTemplate(BasePromptTemplate):
         return await self.final_prompt.aformat_prompt(**_inputs)
 
     def format(self, **kwargs: Any) -> str:
+        """Format the prompt with the inputs.
+
+        Args:
+            kwargs: Any arguments to be passed to the prompt template.
+
+        Returns:
+            A formatted string.
+        """
         return self.format_prompt(**kwargs).to_string()
 
     async def aformat(self, **kwargs: Any) -> str:
+        """Async format the prompt with the inputs.
+
+        Args:
+            kwargs: Any arguments to be passed to the prompt template.
+
+        Returns:
+            A formatted string.
+        """
         return (await self.aformat_prompt(**kwargs)).to_string()
 
     @property
     def _prompt_type(self) -> str:
         raise ValueError
+
+
+PipelinePromptTemplate.model_rebuild()

@@ -15,6 +15,9 @@ from langchain.retrievers.document_compressors.cross_encoder_rerank import (
 from langchain.retrievers.document_compressors.embeddings_filter import (
     EmbeddingsFilter,
 )
+from langchain.retrievers.document_compressors.listwise_rerank import (
+    LLMListwiseRerank,
+)
 
 _module_lookup = {
     "FlashrankRerank": "langchain_community.document_compressors.flashrank_rerank",
@@ -31,6 +34,7 @@ def __getattr__(name: str) -> Any:
 __all__ = [
     "DocumentCompressorPipeline",
     "EmbeddingsFilter",
+    "LLMListwiseRerank",
     "LLMChainExtractor",
     "LLMChainFilter",
     "CohereRerank",

@@ -29,6 +29,7 @@ def test_required_dependencies(poetry_conf: Mapping[str, Any]) -> None:
 
     is_required = {
         package_name: isinstance(requirements, str)
+        or isinstance(requirements, list)
         or not requirements.get("optional", False)
         for package_name, requirements in dependencies.items()
     }
@@ -78,6 +79,7 @@ def test_test_group_dependencies(poetry_conf: Mapping[str, Any]) -> None:
             "duckdb-engine",
             "freezegun",
             "langchain-core",
+            "langchain-standard-tests",
             "langchain-text-splitters",
             "langchain-openai",
             "lark",
@@ -92,5 +94,7 @@ def test_test_group_dependencies(poetry_conf: Mapping[str, Any]) -> None:
             "responses",
             "syrupy",
             "requests-mock",
+            # TODO: temporary hack since cffi 1.17.1 doesn't work with py 3.9.
+            "cffi",
         ]
     )

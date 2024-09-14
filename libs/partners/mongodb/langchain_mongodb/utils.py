@@ -1,6 +1,13 @@
-"""
-Tools for the Maximal Marginal Relevance (MMR) reranking.
-Duplicated from langchain_community to avoid cross-dependencies.
+"""Various Utility Functions
+
+- Tools for handling bson.ObjectId
+
+The help IDs live as ObjectId in MongoDB and str in Langchain and JSON.
+
+
+- Tools for the Maximal Marginal Relevance (MMR) reranking
+
+These are duplicated from langchain_community to avoid cross-dependencies.
 
 Functions "maximal_marginal_relevance" and "cosine_similarity"
 are duplicated in this utility respectively from modules:
@@ -8,8 +15,11 @@ are duplicated in this utility respectively from modules:
     - "libs/community/langchain_community/utils/math.py"
 """
 
+from __future__ import annotations
+
 import logging
-from typing import List, Union
+from datetime import date, datetime
+from typing import Any, Dict, List, Union
 
 import numpy as np
 
@@ -31,7 +41,7 @@ def cosine_similarity(X: Matrix, Y: Matrix) -> np.ndarray:
             f"and Y has shape {Y.shape}."
         )
     try:
-        import simsimd as simd  # type: ignore
+        import simsimd as simd
 
         X = np.array(X, dtype=np.float32)
         Y = np.array(Y, dtype=np.float32)
@@ -57,7 +67,37 @@ def maximal_marginal_relevance(
     lambda_mult: float = 0.5,
     k: int = 4,
 ) -> List[int]:
-    """Calculate maximal marginal relevance."""
+    """Compute Maximal Marginal Relevance (MMR).
+
+    MMR is a technique used to select documents that are both relevant to the query
+    and diverse among themselves. This function returns the indices
+    of the top-k embeddings that maximize the marginal relevance.
+
+    Args:
+        query_embedding (np.ndarray): The embedding vector of the query.
+        embedding_list (list of np.ndarray): A list containing the embedding vectors
+            of the candidate documents.
+        lambda_mult (float, optional): The trade-off parameter between
+            relevance and diversity. Defaults to 0.5.
+        k (int, optional): The number of embeddings to select. Defaults to 4.
+
+    Returns:
+        list of int: The indices of the embeddings that maximize the marginal relevance.
+
+    Notes:
+        The Maximal Marginal Relevance (MMR) is computed using the following formula:
+
+    MMR = argmax_{D_i ∈ R \ S} [λ * Sim(D_i, Q) - (1 - λ) * max_{D_j ∈ S} Sim(D_i, D_j)]
+
+        where:
+        - R is the set of candidate documents,
+        - S is the set of selected documents,
+        - Q is the query embedding,
+        - Sim(D_i, Q) is the similarity between document D_i and the query,
+        - Sim(D_i, D_j) is the similarity between documents D_i and D_j,
+        - λ is the trade-off parameter.
+    """
+
     if min(k, len(embedding_list)) <= 0:
         return []
     if query_embedding.ndim == 1:
@@ -83,3 +123,61 @@ def maximal_marginal_relevance(
         idxs.append(idx_to_add)
         selected = np.append(selected, [embedding_list[idx_to_add]], axis=0)
     return idxs
+
+
+def str_to_oid(str_repr: str) -> Any | str:
+    """Attempt to cast string representation of id to MongoDB's internal BSON ObjectId.
+
+    To be consistent with ObjectId, input must be a 24 character hex string.
+    If it is not, MongoDB will happily use the string in the main _id index.
+    Importantly, the str representation that comes out of MongoDB will have this form.
+
+    Args:
+        str_repr: id as string.
+
+    Returns:
+        ObjectID
+    """
+    from bson import ObjectId
+    from bson.errors import InvalidId
+
+    try:
+        return ObjectId(str_repr)
+    except InvalidId:
+        logger.debug(
+            "ObjectIds must be 12-character byte or 24-character hex strings. "
+            "Examples: b'heres12bytes', '6f6e6568656c6c6f68656768'"
+        )
+        return str_repr
+
+
+def oid_to_str(oid: Any) -> str:
+    """Convert MongoDB's internal BSON ObjectId into a simple str for compatibility.
+
+    Instructive helper to show where data is coming out of MongoDB.
+
+    Args:
+        oid: bson.ObjectId
+
+    Returns:
+        24 character hex string.
+    """
+    return str(oid)
+
+
+def make_serializable(
+    obj: Dict[str, Any],
+) -> None:
+    """Recursively cast values in a dict to a form able to json.dump"""
+
+    from bson import ObjectId
+
+    for k, v in obj.items():
+        if isinstance(v, dict):
+            make_serializable(v)
+        elif isinstance(v, list) and v and isinstance(v[0], (ObjectId, date, datetime)):
+            obj[k] = [oid_to_str(item) for item in v]
+        elif isinstance(v, ObjectId):
+            obj[k] = oid_to_str(v)
+        elif isinstance(v, (datetime, date)):
+            obj[k] = v.isoformat()

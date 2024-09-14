@@ -4,7 +4,17 @@ from typing import Any, AsyncGenerator, Generator, List, Tuple
 import pytest
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from sqlalchemy import Column, Integer, Text
-from sqlalchemy.orm import DeclarativeBase
+
+try:
+    from sqlalchemy.orm import DeclarativeBase
+
+    class Base(DeclarativeBase):
+        pass
+except ImportError:
+    # for sqlalchemy < 2
+    from sqlalchemy.ext.declarative import declarative_base
+
+    Base = declarative_base()  # type:ignore
 
 from langchain_community.chat_message_histories import SQLChatMessageHistory
 from langchain_community.chat_message_histories.sql import DefaultMessageConverter
@@ -198,9 +208,6 @@ async def test_async_clear_messages(
 
 
 def test_model_no_session_id_field_error(con_str: str) -> None:
-    class Base(DeclarativeBase):
-        pass
-
     class Model(Base):
         __tablename__ = "test_table"
         id = Column(Integer, primary_key=True)

@@ -8,13 +8,13 @@ from langchain_core.tracers.schemas import Run
 
 
 class RunCollectorCallbackHandler(BaseTracer):
-    """
-    Tracer that collects all nested runs in a list.
+    """Tracer that collects all nested runs in a list.
 
     This tracer is useful for inspection and evaluation purposes.
 
     Parameters
     ----------
+    name : str, default="run-collector_callback_handler"
     example_id : Optional[Union[UUID, str]], default=None
         The ID of the example being traced. It can be either a UUID or a string.
     """
@@ -31,6 +31,8 @@ class RunCollectorCallbackHandler(BaseTracer):
         ----------
         example_id : Optional[Union[UUID, str]], default=None
             The ID of the example being traced. It can be either a UUID or a string.
+        **kwargs : Any
+            Additional keyword arguments
         """
         super().__init__(**kwargs)
         self.example_id = (

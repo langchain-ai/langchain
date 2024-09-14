@@ -1,28 +1,46 @@
 import unittest
-from typing import List, Type
+import uuid
+from typing import List, Type, Union
 
 import pytest
 
+from langchain_core.documents import Document
+from langchain_core.load import dumpd, load
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
+    BaseMessage,
     ChatMessage,
     ChatMessageChunk,
     FunctionMessage,
     FunctionMessageChunk,
     HumanMessage,
     HumanMessageChunk,
+    RemoveMessage,
     SystemMessage,
-    ToolCall,
-    ToolCallChunk,
     ToolMessage,
     convert_to_messages,
     get_buffer_string,
+    merge_content,
     message_chunk_to_message,
+    message_to_dict,
     messages_from_dict,
     messages_to_dict,
 )
+from langchain_core.messages.tool import invalid_tool_call as create_invalid_tool_call
+from langchain_core.messages.tool import tool_call as create_tool_call
+from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
 from langchain_core.utils._merge import merge_lists
+
+
+def test_message_init() -> None:
+    for doc in [
+        BaseMessage(type="foo", content="bar"),
+        BaseMessage(type="foo", content="bar", id=None),
+        BaseMessage(type="foo", content="bar", id="1"),
+        BaseMessage(type="foo", content="bar", id=1),
+    ]:
+        assert isinstance(doc, BaseMessage)
 
 
 def test_message_chunks() -> None:
@@ -75,50 +93,72 @@ def test_message_chunks() -> None:
     assert (
         AIMessageChunk(
             content="",
-            tool_call_chunks=[ToolCallChunk(name="tool1", args="", id="1", index=0)],
-        )
-        + AIMessageChunk(
-            content="",
             tool_call_chunks=[
-                ToolCallChunk(name=None, args='{"arg1": "val', id=None, index=0)
+                create_tool_call_chunk(name="tool1", args="", id="1", index=0)
             ],
         )
         + AIMessageChunk(
             content="",
-            tool_call_chunks=[ToolCallChunk(name=None, args='ue}"', id=None, index=0)],
+            tool_call_chunks=[
+                create_tool_call_chunk(
+                    name=None, args='{"arg1": "val', id=None, index=0
+                )
+            ],
+        )
+        + AIMessageChunk(
+            content="",
+            tool_call_chunks=[
+                create_tool_call_chunk(name=None, args='ue}"', id=None, index=0)
+            ],
         )
     ) == AIMessageChunk(
         content="",
         tool_call_chunks=[
-            ToolCallChunk(name="tool1", args='{"arg1": "value}"', id="1", index=0)
+            create_tool_call_chunk(
+                name="tool1", args='{"arg1": "value}"', id="1", index=0
+            )
         ],
     )
 
     assert (
         AIMessageChunk(
             content="",
-            tool_call_chunks=[ToolCallChunk(name="tool1", args="", id="1", index=0)],
+            tool_call_chunks=[
+                create_tool_call_chunk(name="tool1", args="", id="1", index=0)
+            ],
         )
         + AIMessageChunk(
             content="",
-            tool_call_chunks=[ToolCallChunk(name="tool1", args="a", id=None, index=1)],
+            tool_call_chunks=[
+                create_tool_call_chunk(name="tool1", args="a", id=None, index=1)
+            ],
         )
         # Don't merge if `index` field does not match.
     ) == AIMessageChunk(
         content="",
         tool_call_chunks=[
-            ToolCallChunk(name="tool1", args="", id="1", index=0),
-            ToolCallChunk(name="tool1", args="a", id=None, index=1),
+            create_tool_call_chunk(name="tool1", args="", id="1", index=0),
+            create_tool_call_chunk(name="tool1", args="a", id=None, index=1),
         ],
     )
 
     ai_msg_chunk = AIMessageChunk(content="")
     tool_calls_msg_chunk = AIMessageChunk(
         content="",
-        tool_call_chunks=[ToolCallChunk(name="tool1", args="a", id=None, index=1)],
+        tool_call_chunks=[
+            create_tool_call_chunk(name="tool1", args="a", id=None, index=1)
+        ],
     )
     assert ai_msg_chunk + tool_calls_msg_chunk == tool_calls_msg_chunk
     assert tool_calls_msg_chunk + ai_msg_chunk == tool_calls_msg_chunk
+
+    ai_msg_chunk = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            create_tool_call_chunk(name="tool1", args="", id="1", index=0)
+        ],
+    )
+    assert ai_msg_chunk.tool_calls == [create_tool_call(name="tool1", args={}, id="1")]
 
     # Test token usage
     left = AIMessageChunk(
@@ -203,6 +243,35 @@ def test_complex_ai_message_chunks() -> None:
         )
     ), "Concatenating when both content arrays are dicts with separate indexes should not merge"  # noqa: E501
 
+    assert (
+        AIMessageChunk(content=[{"index": 0, "text": "I am", "type": "text_block"}])
+        + AIMessageChunk(
+            content=[{"index": 0, "text": " indeed.", "type": "text_block"}]
+        )
+        == AIMessageChunk(
+            content=[{"index": 0, "text": "I am indeed.", "type": "text_block"}]
+        )
+    ), "Concatenating when both content arrays are dicts with the same index and type should merge"  # noqa: E501
+
+    assert (
+        AIMessageChunk(content=[{"index": 0, "text": "I am", "type": "text_block"}])
+        + AIMessageChunk(
+            content=[{"index": 0, "text": " indeed.", "type": "text_block_delta"}]
+        )
+        == AIMessageChunk(
+            content=[{"index": 0, "text": "I am indeed.", "type": "text_block"}]
+        )
+    ), "Concatenating when both content arrays are dicts with the same index and different types should merge without updating type"  # noqa: E501
+
+    assert (
+        AIMessageChunk(content=[{"index": 0, "text": "I am", "type": "text_block"}])
+        + AIMessageChunk(content="", response_metadata={"extra": "value"})
+        == AIMessageChunk(
+            content=[{"index": 0, "text": "I am", "type": "text_block"}],
+            response_metadata={"extra": "value"},
+        )
+    ), "Concatenating when one content is an array and one is an empty string should not add a new item, but should concat other fields"  # noqa: E501
+
 
 def test_function_message_chunks() -> None:
     assert FunctionMessageChunk(
@@ -217,7 +286,7 @@ def test_function_message_chunks() -> None:
         )
 
 
-def test_ani_message_chunks() -> None:
+def test_ai_message_chunks() -> None:
     assert AIMessageChunk(example=True, content="I am") + AIMessageChunk(
         example=True, content=" indeed."
     ) == AIMessageChunk(
@@ -309,11 +378,11 @@ def test_multiple_msg() -> None:
     msgs = [
         AIMessage(
             content="",
-            tool_calls=[ToolCall(name="a", args={"b": 1}, id=None)],
+            tool_calls=[create_tool_call(name="a", args={"b": 1}, id=None)],
         ),
         AIMessage(
             content="",
-            tool_calls=[ToolCall(name="c", args={"c": 2}, id=None)],
+            tool_calls=[create_tool_call(name="c", args={"c": 2}, id=None)],
         ),
     ]
     assert messages_from_dict(messages_to_dict(msgs)) == msgs
@@ -351,26 +420,30 @@ def test_message_chunk_to_message() -> None:
     chunk = AIMessageChunk(
         content="I am",
         tool_call_chunks=[
-            ToolCallChunk(name="tool1", args='{"a": 1}', id="1", index=0),
-            ToolCallChunk(name="tool2", args='{"b": ', id="2", index=0),
-            ToolCallChunk(name="tool3", args=None, id="3", index=0),
-            ToolCallChunk(name="tool4", args="abc", id="4", index=0),
+            create_tool_call_chunk(name="tool1", args='{"a": 1}', id="1", index=0),
+            create_tool_call_chunk(name="tool2", args='{"b": ', id="2", index=0),
+            create_tool_call_chunk(name="tool3", args=None, id="3", index=0),
+            create_tool_call_chunk(name="tool4", args="abc", id="4", index=0),
         ],
     )
     expected = AIMessage(
         content="I am",
         tool_calls=[
-            {"name": "tool1", "args": {"a": 1}, "id": "1"},
-            {"name": "tool2", "args": {}, "id": "2"},
+            create_tool_call(**{"name": "tool1", "args": {"a": 1}, "id": "1"}),  # type: ignore[arg-type]
+            create_tool_call(**{"name": "tool2", "args": {}, "id": "2"}),  # type: ignore[arg-type]
         ],
         invalid_tool_calls=[
-            {"name": "tool3", "args": None, "id": "3", "error": None},
-            {"name": "tool4", "args": "abc", "id": "4", "error": None},
+            create_invalid_tool_call(
+                **{"name": "tool3", "args": None, "id": "3", "error": None}
+            ),
+            create_invalid_tool_call(
+                **{"name": "tool4", "args": "abc", "id": "4", "error": None}
+            ),
         ],
     )
     assert message_chunk_to_message(chunk) == expected
-    assert AIMessage(**expected.dict()) == expected
-    assert AIMessageChunk(**chunk.dict()) == chunk
+    assert AIMessage(**expected.model_dump()) == expected
+    assert AIMessageChunk(**chunk.model_dump()) == chunk
 
 
 def test_tool_calls_merge() -> None:
@@ -594,12 +667,42 @@ def test_tool_calls_merge() -> None:
                 },
             ]
         },
+        tool_call_chunks=[
+            {
+                "name": "person",
+                "args": '{"name": "jane", "age": 2}',
+                "id": "call_CwGAsESnXehQEjiAIWzinlva",
+                "index": 0,
+                "type": "tool_call_chunk",
+            },
+            {
+                "name": "person",
+                "args": '{"name": "bob", "age": 3}',
+                "id": "call_zXSIylHvc5x3JUAPcHZR5GZI",
+                "index": 1,
+                "type": "tool_call_chunk",
+            },
+        ],
+        tool_calls=[
+            {
+                "name": "person",
+                "args": {"name": "jane", "age": 2},
+                "id": "call_CwGAsESnXehQEjiAIWzinlva",
+                "type": "tool_call",
+            },
+            {
+                "name": "person",
+                "args": {"name": "bob", "age": 3},
+                "id": "call_zXSIylHvc5x3JUAPcHZR5GZI",
+                "type": "tool_call",
+            },
+        ],
     )
 
 
 def test_convert_to_messages() -> None:
     # dicts
-    assert convert_to_messages(
+    actual = convert_to_messages(
         [
             {"role": "system", "content": "You are a helpful assistant."},
             {"role": "user", "content": "Hello!"},
@@ -616,12 +719,25 @@ def test_convert_to_messages() -> None:
                 "role": "assistant",
                 "content": "",
                 "tool_calls": [
-                    {"name": "greet", "args": {"name": "Jane"}, "id": "tool_id"}
+                    {
+                        "name": "greet",
+                        "args": {"name": "Jane"},
+                        "id": "tool_id",
+                        "type": "tool_call",
+                    }
                 ],
             },
             {"role": "tool", "tool_call_id": "tool_id", "content": "Hi!"},
+            {
+                "role": "tool",
+                "tool_call_id": "tool_id2",
+                "content": "Bye!",
+                "artifact": {"foo": 123},
+            },
+            {"role": "remove", "id": "message_to_remove", "content": ""},
         ]
-    ) == [
+    )
+    expected = [
         SystemMessage(content="You are a helpful assistant."),
         HumanMessage(content="Hello!"),
         AIMessage(content="Hi!", id="ai1"),
@@ -636,10 +752,15 @@ def test_convert_to_messages() -> None:
         FunctionMessage(name="greet", content="Hi!"),
         AIMessage(
             content="",
-            tool_calls=[ToolCall(name="greet", args={"name": "Jane"}, id="tool_id")],
+            tool_calls=[
+                create_tool_call(name="greet", args={"name": "Jane"}, id="tool_id")
+            ],
         ),
         ToolMessage(tool_call_id="tool_id", content="Hi!"),
+        ToolMessage(tool_call_id="tool_id2", content="Bye!", artifact={"foo": 123}),
+        RemoveMessage(id="message_to_remove"),
     ]
+    assert expected == actual
 
     # tuples
     assert convert_to_messages(
@@ -706,32 +827,190 @@ def test_message_name_chat(MessageClass: Type) -> None:
 
 
 def test_merge_tool_calls() -> None:
-    tool_call_1 = ToolCallChunk(name="tool1", args="", id="1", index=0)
-    tool_call_2 = ToolCallChunk(name=None, args='{"arg1": "val', id=None, index=0)
-    tool_call_3 = ToolCallChunk(name=None, args='ue}"', id=None, index=0)
+    tool_call_1 = create_tool_call_chunk(name="tool1", args="", id="1", index=0)
+    tool_call_2 = create_tool_call_chunk(
+        name=None, args='{"arg1": "val', id=None, index=0
+    )
+    tool_call_3 = create_tool_call_chunk(name=None, args='ue}"', id=None, index=0)
     merged = merge_lists([tool_call_1], [tool_call_2])
     assert merged is not None
-    assert merged == [{"name": "tool1", "args": '{"arg1": "val', "id": "1", "index": 0}]
+    assert merged == [
+        {
+            "name": "tool1",
+            "args": '{"arg1": "val',
+            "id": "1",
+            "index": 0,
+            "type": "tool_call_chunk",
+        }
+    ]
     merged = merge_lists(merged, [tool_call_3])
     assert merged is not None
     assert merged == [
-        {"name": "tool1", "args": '{"arg1": "value}"', "id": "1", "index": 0}
+        {
+            "name": "tool1",
+            "args": '{"arg1": "value}"',
+            "id": "1",
+            "index": 0,
+            "type": "tool_call_chunk",
+        }
     ]
 
-    left = ToolCallChunk(name="tool1", args='{"arg1": "value1"}', id="1", index=None)
-    right = ToolCallChunk(name="tool2", args='{"arg2": "value2"}', id="1", index=None)
+    left = create_tool_call_chunk(
+        name="tool1", args='{"arg1": "value1"}', id="1", index=None
+    )
+    right = create_tool_call_chunk(
+        name="tool2", args='{"arg2": "value2"}', id="1", index=None
+    )
     merged = merge_lists([left], [right])
     assert merged is not None
     assert len(merged) == 2
 
-    left = ToolCallChunk(name="tool1", args='{"arg1": "value1"}', id=None, index=None)
-    right = ToolCallChunk(name="tool1", args='{"arg2": "value2"}', id=None, index=None)
+    left = create_tool_call_chunk(
+        name="tool1", args='{"arg1": "value1"}', id=None, index=None
+    )
+    right = create_tool_call_chunk(
+        name="tool1", args='{"arg2": "value2"}', id=None, index=None
+    )
     merged = merge_lists([left], [right])
     assert merged is not None
     assert len(merged) == 2
 
-    left = ToolCallChunk(name="tool1", args='{"arg1": "value1"}', id="1", index=0)
-    right = ToolCallChunk(name="tool2", args='{"arg2": "value2"}', id=None, index=1)
+    left = create_tool_call_chunk(
+        name="tool1", args='{"arg1": "value1"}', id="1", index=0
+    )
+    right = create_tool_call_chunk(
+        name="tool2", args='{"arg2": "value2"}', id=None, index=1
+    )
     merged = merge_lists([left], [right])
     assert merged is not None
     assert len(merged) == 2
+
+
+def test_tool_message_serdes() -> None:
+    message = ToolMessage(
+        "foo", artifact={"bar": {"baz": 123}}, tool_call_id="1", status="error"
+    )
+    ser_message = {
+        "lc": 1,
+        "type": "constructor",
+        "id": ["langchain", "schema", "messages", "ToolMessage"],
+        "kwargs": {
+            "content": "foo",
+            "type": "tool",
+            "tool_call_id": "1",
+            "artifact": {"bar": {"baz": 123}},
+            "status": "error",
+        },
+    }
+    assert dumpd(message) == ser_message
+    assert load(dumpd(message)) == message
+
+
+class BadObject:
+    """"""
+
+
+def test_tool_message_ser_non_serializable() -> None:
+    bad_obj = BadObject()
+    message = ToolMessage("foo", artifact=bad_obj, tool_call_id="1")
+    ser_message = {
+        "lc": 1,
+        "type": "constructor",
+        "id": ["langchain", "schema", "messages", "ToolMessage"],
+        "kwargs": {
+            "content": "foo",
+            "type": "tool",
+            "tool_call_id": "1",
+            "artifact": {
+                "lc": 1,
+                "type": "not_implemented",
+                "id": ["tests", "unit_tests", "test_messages", "BadObject"],
+                "repr": repr(bad_obj),
+            },
+            "status": "success",
+        },
+    }
+    assert dumpd(message) == ser_message
+    with pytest.raises(NotImplementedError):
+        load(dumpd(ser_message))
+
+
+def test_tool_message_to_dict() -> None:
+    message = ToolMessage("foo", artifact={"bar": {"baz": 123}}, tool_call_id="1")
+    expected = {
+        "type": "tool",
+        "data": {
+            "content": "foo",
+            "additional_kwargs": {},
+            "response_metadata": {},
+            "artifact": {"bar": {"baz": 123}},
+            "type": "tool",
+            "name": None,
+            "id": None,
+            "tool_call_id": "1",
+            "status": "success",
+        },
+    }
+    actual = message_to_dict(message)
+    assert actual == expected
+
+
+def test_tool_message_repr() -> None:
+    message = ToolMessage("foo", artifact={"bar": {"baz": 123}}, tool_call_id="1")
+    expected = (
+        "ToolMessage(content='foo', tool_call_id='1', artifact={'bar': {'baz': 123}})"
+    )
+    actual = repr(message)
+    assert expected == actual
+
+
+def test_tool_message_str() -> None:
+    message = ToolMessage("foo", artifact={"bar": {"baz": 123}}, tool_call_id="1")
+    expected = "content='foo' tool_call_id='1' artifact={'bar': {'baz': 123}}"
+    actual = str(message)
+    assert expected == actual
+
+
+@pytest.mark.parametrize(
+    ["first", "others", "expected"],
+    [
+        ("", [""], ""),
+        ("", [[]], [""]),
+        ([], [""], []),
+        ([], [[]], []),
+        ("foo", [""], "foo"),
+        ("foo", [[]], ["foo"]),
+        (["foo"], [""], ["foo"]),
+        (["foo"], [[]], ["foo"]),
+        ("foo", ["bar"], "foobar"),
+        ("foo", [["bar"]], ["foo", "bar"]),
+        (["foo"], ["bar"], ["foobar"]),
+        (["foo"], [["bar"]], ["foo", "bar"]),
+    ],
+)
+def test_merge_content(
+    first: Union[list, str], others: list, expected: Union[list, str]
+) -> None:
+    actual = merge_content(first, *others)
+    assert actual == expected
+
+
+def test_tool_message_content() -> None:
+    ToolMessage("foo", tool_call_id="1")
+    ToolMessage(["foo"], tool_call_id="1")
+    ToolMessage([{"foo": "bar"}], tool_call_id="1")
+
+    assert ToolMessage(("a", "b", "c"), tool_call_id="1").content == ["a", "b", "c"]  # type: ignore[arg-type]
+    assert ToolMessage(5, tool_call_id="1").content == "5"  # type: ignore[arg-type]
+    assert ToolMessage(5.1, tool_call_id="1").content == "5.1"  # type: ignore[arg-type]
+    assert ToolMessage({"foo": "bar"}, tool_call_id="1").content == "{'foo': 'bar'}"  # type: ignore[arg-type]
+    assert (
+        ToolMessage(Document("foo"), tool_call_id="1").content == "page_content='foo'"  # type: ignore[arg-type]
+    )
+
+
+def test_tool_message_tool_call_id() -> None:
+    ToolMessage("foo", tool_call_id="1")
+    ToolMessage("foo", tool_call_id=uuid.uuid4())
+    ToolMessage("foo", tool_call_id=1)
+    ToolMessage("foo", tool_call_id=1.0)

@@ -5,7 +5,9 @@ from json import JSONDecodeError
 from typing import Any, List, Optional, Type, TypeVar, Union
 
 import jsonpatch  # type: ignore[import]
-import pydantic  # pydantic: ignore
+import pydantic
+from pydantic import SkipValidation
+from typing_extensions import Annotated
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers.format_instructions import JSON_FORMAT_INSTRUCTIONS
@@ -22,7 +24,7 @@ if PYDANTIC_MAJOR_VERSION < 2:
     PydanticBaseModel = pydantic.BaseModel
 
 else:
-    from pydantic.v1 import BaseModel  # pydantic: ignore
+    from pydantic.v1 import BaseModel
 
     # Union type needs to be last assignment to PydanticBaseModel to make mypy happy.
     PydanticBaseModel = Union[BaseModel, pydantic.BaseModel]  # type: ignore
@@ -40,7 +42,9 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
     describing the difference between the previous and the current object.
     """
 
-    pydantic_object: Optional[Type[TBaseModel]] = None  # type: ignore
+    pydantic_object: Annotated[Optional[Type[TBaseModel]], SkipValidation()] = None  # type: ignore
+    """The Pydantic object to use for validation. 
+    If None, no validation is performed."""
 
     def _diff(self, prev: Optional[Any], next: Any) -> Any:
         return jsonpatch.make_patch(prev, next).patch
@@ -50,10 +54,26 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
             if issubclass(pydantic_object, pydantic.BaseModel):
                 return pydantic_object.model_json_schema()
             elif issubclass(pydantic_object, pydantic.v1.BaseModel):
-                return pydantic_object.schema()
-        return pydantic_object.schema()
+                return pydantic_object.model_json_schema()
+        return pydantic_object.model_json_schema()
 
     def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
+        """Parse the result of an LLM call to a JSON object.
+
+        Args:
+            result: The result of the LLM call.
+            partial: Whether to parse partial JSON objects.
+                If True, the output will be a JSON object containing
+                all the keys that have been returned so far.
+                If False, the output will be the full JSON object.
+                Default is False.
+
+        Returns:
+            The parsed JSON object.
+
+        Raises:
+            OutputParserException: If the output is not valid JSON.
+        """
         text = result[0].text
         text = text.strip()
         if partial:
@@ -69,9 +89,22 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
                 raise OutputParserException(msg, llm_output=text) from e
 
     def parse(self, text: str) -> Any:
+        """Parse the output of an LLM call to a JSON object.
+
+        Args:
+            text: The output of the LLM call.
+
+        Returns:
+            The parsed JSON object.
+        """
         return self.parse_result([Generation(text=text)])
 
     def get_format_instructions(self) -> str:
+        """Return the format instructions for the JSON output.
+
+        Returns:
+            The format instructions for the JSON output.
+        """
         if self.pydantic_object is None:
             return "Return a JSON object."
         else:

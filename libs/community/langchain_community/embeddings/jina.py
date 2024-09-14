@@ -5,13 +5,21 @@ from urllib.parse import urlparse
 
 import requests
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from pydantic import BaseModel, SecretStr, model_validator
 
 JINA_API_URL: str = "https://api.jina.ai/v1/embeddings"
 
 
 def is_local(url: str) -> bool:
+    """Check if a URL is a local file.
+
+    Args:
+        url (str): The URL to check.
+
+    Returns:
+        bool: True if the URL is a local file, False otherwise.
+    """
     url_parsed = urlparse(url)
     if url_parsed.scheme in ("file", ""):  # Possibly a local file
         return exists(url_parsed.path)
@@ -19,6 +27,14 @@ def is_local(url: str) -> bool:
 
 
 def get_bytes_str(file_path: str) -> str:
+    """Get the bytes string of a file.
+
+    Args:
+        file_path (str): The path to the file.
+
+    Returns:
+        str: The bytes string of the file.
+    """
     with open(file_path, "rb") as image_file:
         return base64.b64encode(image_file.read()).decode("utf-8")
 
@@ -30,8 +46,9 @@ class JinaEmbeddings(BaseModel, Embeddings):
     model_name: str = "jina-embeddings-v2-base-en"
     jina_api_key: Optional[SecretStr] = None
 
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that auth token exists in environment."""
         try:
             jina_api_key = convert_to_secret_str(

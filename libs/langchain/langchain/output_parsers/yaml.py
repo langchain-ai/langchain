@@ -5,7 +5,7 @@ from typing import Type, TypeVar
 import yaml
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import BaseOutputParser
-from langchain_core.pydantic_v1 import BaseModel, ValidationError
+from pydantic import BaseModel, ValidationError
 
 from langchain.output_parsers.format_instructions import YAML_FORMAT_INSTRUCTIONS
 
@@ -35,7 +35,10 @@ class YamlOutputParser(BaseOutputParser[T]):
                 yaml_str = text
 
             json_object = yaml.safe_load(yaml_str)
-            return self.pydantic_object.parse_obj(json_object)
+            if hasattr(self.pydantic_object, "model_validate"):
+                return self.pydantic_object.model_validate(json_object)
+            else:
+                return self.pydantic_object.parse_obj(json_object)
 
         except (yaml.YAMLError, ValidationError) as e:
             name = self.pydantic_object.__name__
@@ -60,3 +63,7 @@ class YamlOutputParser(BaseOutputParser[T]):
     @property
     def _type(self) -> str:
         return "yaml"
+
+    @property
+    def OutputType(self) -> Type[T]:
+        return self.pydantic_object

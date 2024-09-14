@@ -1,5 +1,6 @@
 from typing import Optional
 
+from pydantic import BaseModel
 from syrupy import SnapshotAssertion
 
 from langchain_core.language_models import FakeListLLM
@@ -8,6 +9,9 @@ from langchain_core.output_parsers.string import StrOutputParser
 from langchain_core.output_parsers.xml import XMLOutputParser
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.runnables.base import Runnable, RunnableConfig
+from langchain_core.runnables.graph import Edge, Graph, Node
+from langchain_core.runnables.graph_mermaid import _escape_node_label
+from tests.unit_tests.pydantic_utils import _normalize_schema
 
 
 def test_graph_single_runnable(snapshot: SnapshotAssertion) -> None:
@@ -15,10 +19,10 @@ def test_graph_single_runnable(snapshot: SnapshotAssertion) -> None:
     graph = StrOutputParser().get_graph()
     first_node = graph.first_node()
     assert first_node is not None
-    assert first_node.data.schema() == runnable.input_schema.schema()  # type: ignore[union-attr]
+    assert first_node.data.model_json_schema() == runnable.get_input_jsonschema()  # type: ignore[union-attr]
     last_node = graph.last_node()
     assert last_node is not None
-    assert last_node.data.schema() == runnable.output_schema.schema()  # type: ignore[union-attr]
+    assert last_node.data.model_json_schema() == runnable.get_output_jsonschema()  # type: ignore[union-attr]
     assert len(graph.nodes) == 3
     assert len(graph.edges) == 2
     assert graph.edges[0].source == first_node.id
@@ -26,13 +30,49 @@ def test_graph_single_runnable(snapshot: SnapshotAssertion) -> None:
     assert graph.draw_ascii() == snapshot(name="ascii")
     assert graph.draw_mermaid() == snapshot(name="mermaid")
 
+    graph.trim_first_node()
+    first_node = graph.first_node()
+    assert first_node is not None
+    assert first_node.data == runnable
+
+    graph.trim_last_node()
+    last_node = graph.last_node()
+    assert last_node is not None
+    assert last_node.data == runnable
+
+
+def test_trim(snapshot: SnapshotAssertion) -> None:
+    runnable = StrOutputParser()
+
+    class Schema(BaseModel):
+        a: int
+
+    graph = Graph()
+    start = graph.add_node(Schema, id="__start__")
+    ask = graph.add_node(runnable, id="ask_question")
+    answer = graph.add_node(runnable, id="answer_question")
+    end = graph.add_node(Schema, id="__end__")
+    graph.add_edge(start, ask)
+    graph.add_edge(ask, answer)
+    graph.add_edge(answer, ask, conditional=True)
+    graph.add_edge(answer, end, conditional=True)
+
+    assert _normalize_schema(graph.to_json()) == snapshot
+    assert graph.first_node() is start
+    assert graph.last_node() is end
+    # can't trim start or end node
+    graph.trim_first_node()
+    assert graph.first_node() is start
+    graph.trim_last_node()
+    assert graph.last_node() is end
+
 
 def test_graph_sequence(snapshot: SnapshotAssertion) -> None:
     fake_llm = FakeListLLM(responses=["a"])
     prompt = PromptTemplate.from_template("Hello, {name}!")
     list_parser = CommaSeparatedListOutputParser()
 
-    sequence = prompt | fake_llm | list_parser
+    sequence = prompt | fake_llm.with_config(metadata={"key": 2}) | list_parser
     graph = sequence.get_graph()
     assert graph.to_json() == {
         "nodes": [
@@ -56,6 +96,7 @@ def test_graph_sequence(snapshot: SnapshotAssertion) -> None:
                     "id": ["langchain_core", "language_models", "fake", "FakeListLLM"],
                     "name": "FakeListLLM",
                 },
+                "metadata": {"key": 2},
             },
             {
                 "id": 3,
@@ -92,6 +133,7 @@ def test_graph_sequence(snapshot: SnapshotAssertion) -> None:
                     "title": "PromptInput",
                     "type": "object",
                     "properties": {"name": {"title": "Name", "type": "string"}},
+                    "required": ["name"],
                 },
             },
             {
@@ -109,6 +151,7 @@ def test_graph_sequence(snapshot: SnapshotAssertion) -> None:
                     "id": ["langchain_core", "language_models", "fake", "FakeListLLM"],
                     "name": "FakeListLLM",
                 },
+                "metadata": {"key": 2},
             },
             {
                 "id": 3,
@@ -166,529 +209,143 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
         }
     )
     graph = sequence.get_graph()
-    assert graph.to_json(with_schemas=True) == {
-        "nodes": [
-            {
-                "id": 0,
-                "type": "schema",
-                "data": {
-                    "title": "PromptInput",
-                    "type": "object",
-                    "properties": {"name": {"title": "Name", "type": "string"}},
-                },
-            },
-            {
-                "id": 1,
-                "type": "runnable",
-                "data": {
-                    "id": ["langchain", "prompts", "prompt", "PromptTemplate"],
-                    "name": "PromptTemplate",
-                },
-            },
-            {
-                "id": 2,
-                "type": "runnable",
-                "data": {
-                    "id": ["langchain_core", "language_models", "fake", "FakeListLLM"],
-                    "name": "FakeListLLM",
-                },
-            },
-            {
-                "id": 3,
-                "type": "schema",
-                "data": {
-                    "title": "RunnableParallel<as_list,as_str>Input",
-                    "anyOf": [
-                        {"type": "string"},
-                        {"$ref": "#/definitions/AIMessage"},
-                        {"$ref": "#/definitions/HumanMessage"},
-                        {"$ref": "#/definitions/ChatMessage"},
-                        {"$ref": "#/definitions/SystemMessage"},
-                        {"$ref": "#/definitions/FunctionMessage"},
-                        {"$ref": "#/definitions/ToolMessage"},
-                    ],
-                    "definitions": {
-                        "ToolCall": {
-                            "title": "ToolCall",
-                            "type": "object",
-                            "properties": {
-                                "name": {"title": "Name", "type": "string"},
-                                "args": {"title": "Args", "type": "object"},
-                                "id": {"title": "Id", "type": "string"},
-                            },
-                            "required": ["name", "args", "id"],
-                        },
-                        "InvalidToolCall": {
-                            "title": "InvalidToolCall",
-                            "type": "object",
-                            "properties": {
-                                "name": {"title": "Name", "type": "string"},
-                                "args": {"title": "Args", "type": "string"},
-                                "id": {"title": "Id", "type": "string"},
-                                "error": {"title": "Error", "type": "string"},
-                            },
-                            "required": ["name", "args", "id", "error"],
-                        },
-                        "UsageMetadata": {
-                            "title": "UsageMetadata",
-                            "type": "object",
-                            "properties": {
-                                "input_tokens": {
-                                    "title": "Input Tokens",
-                                    "type": "integer",
-                                },
-                                "output_tokens": {
-                                    "title": "Output Tokens",
-                                    "type": "integer",
-                                },
-                                "total_tokens": {
-                                    "title": "Total Tokens",
-                                    "type": "integer",
-                                },
-                            },
-                            "required": [
-                                "input_tokens",
-                                "output_tokens",
-                                "total_tokens",
-                            ],
-                        },
-                        "AIMessage": {
-                            "title": "AIMessage",
-                            "description": "Message from an AI.",
-                            "type": "object",
-                            "properties": {
-                                "content": {
-                                    "title": "Content",
-                                    "anyOf": [
-                                        {"type": "string"},
-                                        {
-                                            "type": "array",
-                                            "items": {
-                                                "anyOf": [
-                                                    {"type": "string"},
-                                                    {"type": "object"},
-                                                ]
-                                            },
-                                        },
-                                    ],
-                                },
-                                "additional_kwargs": {
-                                    "title": "Additional Kwargs",
-                                    "type": "object",
-                                },
-                                "response_metadata": {
-                                    "title": "Response Metadata",
-                                    "type": "object",
-                                },
-                                "type": {
-                                    "title": "Type",
-                                    "default": "ai",
-                                    "enum": ["ai"],
-                                    "type": "string",
-                                },
-                                "name": {"title": "Name", "type": "string"},
-                                "id": {"title": "Id", "type": "string"},
-                                "example": {
-                                    "title": "Example",
-                                    "default": False,
-                                    "type": "boolean",
-                                },
-                                "tool_calls": {
-                                    "title": "Tool Calls",
-                                    "default": [],
-                                    "type": "array",
-                                    "items": {"$ref": "#/definitions/ToolCall"},
-                                },
-                                "invalid_tool_calls": {
-                                    "title": "Invalid Tool Calls",
-                                    "default": [],
-                                    "type": "array",
-                                    "items": {"$ref": "#/definitions/InvalidToolCall"},
-                                },
-                                "usage_metadata": {
-                                    "$ref": "#/definitions/UsageMetadata"
-                                },
-                            },
-                            "required": ["content"],
-                        },
-                        "HumanMessage": {
-                            "title": "HumanMessage",
-                            "description": "Message from a human.",
-                            "type": "object",
-                            "properties": {
-                                "content": {
-                                    "title": "Content",
-                                    "anyOf": [
-                                        {"type": "string"},
-                                        {
-                                            "type": "array",
-                                            "items": {
-                                                "anyOf": [
-                                                    {"type": "string"},
-                                                    {"type": "object"},
-                                                ]
-                                            },
-                                        },
-                                    ],
-                                },
-                                "additional_kwargs": {
-                                    "title": "Additional Kwargs",
-                                    "type": "object",
-                                },
-                                "response_metadata": {
-                                    "title": "Response Metadata",
-                                    "type": "object",
-                                },
-                                "type": {
-                                    "title": "Type",
-                                    "default": "human",
-                                    "enum": ["human"],
-                                    "type": "string",
-                                },
-                                "name": {"title": "Name", "type": "string"},
-                                "id": {"title": "Id", "type": "string"},
-                                "example": {
-                                    "title": "Example",
-                                    "default": False,
-                                    "type": "boolean",
-                                },
-                            },
-                            "required": ["content"],
-                        },
-                        "ChatMessage": {
-                            "title": "ChatMessage",
-                            "description": "Message that can be assigned an arbitrary speaker (i.e. role).",  # noqa: E501
-                            "type": "object",
-                            "properties": {
-                                "content": {
-                                    "title": "Content",
-                                    "anyOf": [
-                                        {"type": "string"},
-                                        {
-                                            "type": "array",
-                                            "items": {
-                                                "anyOf": [
-                                                    {"type": "string"},
-                                                    {"type": "object"},
-                                                ]
-                                            },
-                                        },
-                                    ],
-                                },
-                                "additional_kwargs": {
-                                    "title": "Additional Kwargs",
-                                    "type": "object",
-                                },
-                                "response_metadata": {
-                                    "title": "Response Metadata",
-                                    "type": "object",
-                                },
-                                "type": {
-                                    "title": "Type",
-                                    "default": "chat",
-                                    "enum": ["chat"],
-                                    "type": "string",
-                                },
-                                "name": {"title": "Name", "type": "string"},
-                                "id": {"title": "Id", "type": "string"},
-                                "role": {"title": "Role", "type": "string"},
-                            },
-                            "required": ["content", "role"],
-                        },
-                        "SystemMessage": {
-                            "title": "SystemMessage",
-                            "description": "Message for priming AI behavior, usually passed in as the first of a sequence\nof input messages.",  # noqa: E501
-                            "type": "object",
-                            "properties": {
-                                "content": {
-                                    "title": "Content",
-                                    "anyOf": [
-                                        {"type": "string"},
-                                        {
-                                            "type": "array",
-                                            "items": {
-                                                "anyOf": [
-                                                    {"type": "string"},
-                                                    {"type": "object"},
-                                                ]
-                                            },
-                                        },
-                                    ],
-                                },
-                                "additional_kwargs": {
-                                    "title": "Additional Kwargs",
-                                    "type": "object",
-                                },
-                                "response_metadata": {
-                                    "title": "Response Metadata",
-                                    "type": "object",
-                                },
-                                "type": {
-                                    "title": "Type",
-                                    "default": "system",
-                                    "enum": ["system"],
-                                    "type": "string",
-                                },
-                                "name": {"title": "Name", "type": "string"},
-                                "id": {"title": "Id", "type": "string"},
-                            },
-                            "required": ["content"],
-                        },
-                        "FunctionMessage": {
-                            "title": "FunctionMessage",
-                            "description": "Message for passing the result of executing a function back to a model.",  # noqa: E501
-                            "type": "object",
-                            "properties": {
-                                "content": {
-                                    "title": "Content",
-                                    "anyOf": [
-                                        {"type": "string"},
-                                        {
-                                            "type": "array",
-                                            "items": {
-                                                "anyOf": [
-                                                    {"type": "string"},
-                                                    {"type": "object"},
-                                                ]
-                                            },
-                                        },
-                                    ],
-                                },
-                                "additional_kwargs": {
-                                    "title": "Additional Kwargs",
-                                    "type": "object",
-                                },
-                                "response_metadata": {
-                                    "title": "Response Metadata",
-                                    "type": "object",
-                                },
-                                "type": {
-                                    "title": "Type",
-                                    "default": "function",
-                                    "enum": ["function"],
-                                    "type": "string",
-                                },
-                                "name": {"title": "Name", "type": "string"},
-                                "id": {"title": "Id", "type": "string"},
-                            },
-                            "required": ["content", "name"],
-                        },
-                        "ToolMessage": {
-                            "title": "ToolMessage",
-                            "description": "Message for passing the result of executing a tool back to a model.",  # noqa: E501
-                            "type": "object",
-                            "properties": {
-                                "content": {
-                                    "title": "Content",
-                                    "anyOf": [
-                                        {"type": "string"},
-                                        {
-                                            "type": "array",
-                                            "items": {
-                                                "anyOf": [
-                                                    {"type": "string"},
-                                                    {"type": "object"},
-                                                ]
-                                            },
-                                        },
-                                    ],
-                                },
-                                "additional_kwargs": {
-                                    "title": "Additional Kwargs",
-                                    "type": "object",
-                                },
-                                "response_metadata": {
-                                    "title": "Response Metadata",
-                                    "type": "object",
-                                },
-                                "type": {
-                                    "title": "Type",
-                                    "default": "tool",
-                                    "enum": ["tool"],
-                                    "type": "string",
-                                },
-                                "name": {"title": "Name", "type": "string"},
-                                "id": {"title": "Id", "type": "string"},
-                                "tool_call_id": {
-                                    "title": "Tool Call Id",
-                                    "type": "string",
-                                },
-                            },
-                            "required": ["content", "tool_call_id"],
-                        },
-                    },
-                },
-            },
-            {
-                "id": 4,
-                "type": "schema",
-                "data": {
-                    "title": "RunnableParallel<as_list,as_str>Output",
-                    "type": "object",
-                    "properties": {
-                        "as_list": {
-                            "title": "As List",
-                            "type": "array",
-                            "items": {"type": "string"},
-                        },
-                        "as_str": {"title": "As Str"},
-                    },
-                },
-            },
-            {
-                "id": 5,
-                "type": "runnable",
-                "data": {
-                    "id": [
-                        "langchain",
-                        "output_parsers",
-                        "list",
-                        "CommaSeparatedListOutputParser",
-                    ],
-                    "name": "CommaSeparatedListOutputParser",
-                },
-            },
-            {
-                "id": 6,
-                "type": "schema",
-                "data": {"title": "conditional_str_parser_input", "type": "string"},
-            },
-            {
-                "id": 7,
-                "type": "schema",
-                "data": {"title": "conditional_str_parser_output"},
-            },
-            {
-                "id": 8,
-                "type": "runnable",
-                "data": {
-                    "id": ["langchain", "schema", "output_parser", "StrOutputParser"],
-                    "name": "StrOutputParser",
-                },
-            },
-            {
-                "id": 9,
-                "type": "runnable",
-                "data": {
-                    "id": [
-                        "langchain_core",
-                        "output_parsers",
-                        "xml",
-                        "XMLOutputParser",
-                    ],
-                    "name": "XMLOutputParser",
-                },
-            },
-        ],
-        "edges": [
-            {"source": 0, "target": 1},
-            {"source": 1, "target": 2},
-            {"source": 3, "target": 5},
-            {"source": 5, "target": 4},
-            {"source": 6, "target": 8},
-            {"source": 8, "target": 7},
-            {"source": 6, "target": 9},
-            {"source": 9, "target": 7},
-            {"source": 3, "target": 6},
-            {"source": 7, "target": 4},
-            {"source": 2, "target": 3},
-        ],
-    }
-    assert graph.to_json() == {
-        "nodes": [
-            {
-                "id": 0,
-                "type": "schema",
-                "data": "PromptInput",
-            },
-            {
-                "id": 1,
-                "type": "runnable",
-                "data": {
-                    "id": ["langchain", "prompts", "prompt", "PromptTemplate"],
-                    "name": "PromptTemplate",
-                },
-            },
-            {
-                "id": 2,
-                "type": "runnable",
-                "data": {
-                    "id": ["langchain_core", "language_models", "fake", "FakeListLLM"],
-                    "name": "FakeListLLM",
-                },
-            },
-            {
-                "id": 3,
-                "type": "schema",
-                "data": "Parallel<as_list,as_str>Input",
-            },
-            {
-                "id": 4,
-                "type": "schema",
-                "data": "Parallel<as_list,as_str>Output",
-            },
-            {
-                "id": 5,
-                "type": "runnable",
-                "data": {
-                    "id": [
-                        "langchain",
-                        "output_parsers",
-                        "list",
-                        "CommaSeparatedListOutputParser",
-                    ],
-                    "name": "CommaSeparatedListOutputParser",
-                },
-            },
-            {
-                "id": 6,
-                "type": "schema",
-                "data": "conditional_str_parser_input",
-            },
-            {
-                "id": 7,
-                "type": "schema",
-                "data": "conditional_str_parser_output",
-            },
-            {
-                "id": 8,
-                "type": "runnable",
-                "data": {
-                    "id": ["langchain", "schema", "output_parser", "StrOutputParser"],
-                    "name": "StrOutputParser",
-                },
-            },
-            {
-                "id": 9,
-                "type": "runnable",
-                "data": {
-                    "id": [
-                        "langchain_core",
-                        "output_parsers",
-                        "xml",
-                        "XMLOutputParser",
-                    ],
-                    "name": "XMLOutputParser",
-                },
-            },
-        ],
-        "edges": [
-            {"source": 0, "target": 1},
-            {"source": 1, "target": 2},
-            {"source": 3, "target": 5},
-            {"source": 5, "target": 4},
-            {"source": 6, "target": 8},
-            {"source": 8, "target": 7},
-            {"source": 6, "target": 9},
-            {"source": 9, "target": 7},
-            {"source": 3, "target": 6},
-            {"source": 7, "target": 4},
-            {"source": 2, "target": 3},
-        ],
-    }
+    assert _normalize_schema(graph.to_json(with_schemas=True)) == snapshot(
+        name="graph_with_schema"
+    )
+    assert _normalize_schema(graph.to_json()) == snapshot(name="graph_no_schemas")
     assert graph.draw_ascii() == snapshot(name="ascii")
     assert graph.draw_mermaid() == snapshot(name="mermaid")
     assert graph.draw_mermaid(with_styles=False) == snapshot(name="mermaid-simple")
+
+
+def test_parallel_subgraph_mermaid(snapshot: SnapshotAssertion) -> None:
+    empty_data = BaseModel
+    nodes = {
+        "__start__": Node(
+            id="__start__", name="__start__", data=empty_data, metadata=None
+        ),
+        "outer_1": Node(id="outer_1", name="outer_1", data=empty_data, metadata=None),
+        "inner_1:inner_1": Node(
+            id="inner_1:inner_1", name="inner_1", data=empty_data, metadata=None
+        ),
+        "inner_1:inner_2": Node(
+            id="inner_1:inner_2",
+            name="inner_2",
+            data=empty_data,
+            metadata={"__interrupt": "before"},
+        ),
+        "inner_2:inner_1": Node(
+            id="inner_2:inner_1", name="inner_1", data=empty_data, metadata=None
+        ),
+        "inner_2:inner_2": Node(
+            id="inner_2:inner_2", name="inner_2", data=empty_data, metadata=None
+        ),
+        "outer_2": Node(id="outer_2", name="outer_2", data=empty_data, metadata=None),
+        "__end__": Node(id="__end__", name="__end__", data=empty_data, metadata=None),
+    }
+    edges = [
+        Edge(
+            source="inner_1:inner_1",
+            target="inner_1:inner_2",
+            data=None,
+            conditional=False,
+        ),
+        Edge(
+            source="inner_2:inner_1",
+            target="inner_2:inner_2",
+            data=None,
+            conditional=False,
+        ),
+        Edge(source="__start__", target="outer_1", data=None, conditional=False),
+        Edge(
+            source="inner_1:inner_2",
+            target="outer_2",
+            data=None,
+            conditional=False,
+        ),
+        Edge(
+            source="inner_2:inner_2",
+            target="outer_2",
+            data=None,
+            conditional=False,
+        ),
+        Edge(
+            source="outer_1",
+            target="inner_1:inner_1",
+            data=None,
+            conditional=False,
+        ),
+        Edge(
+            source="outer_1",
+            target="inner_2:inner_1",
+            data=None,
+            conditional=False,
+        ),
+        Edge(source="outer_2", target="__end__", data=None, conditional=False),
+    ]
+    graph = Graph(nodes, edges)
+    assert graph.draw_mermaid() == snapshot(name="mermaid")
+
+
+def test_double_nested_subgraph_mermaid(snapshot: SnapshotAssertion) -> None:
+    empty_data = BaseModel
+    nodes = {
+        "__start__": Node(
+            id="__start__", name="__start__", data=empty_data, metadata=None
+        ),
+        "parent_1": Node(
+            id="parent_1", name="parent_1", data=empty_data, metadata=None
+        ),
+        "child:child_1:grandchild_1": Node(
+            id="child:child_1:grandchild_1",
+            name="grandchild_1",
+            data=empty_data,
+            metadata=None,
+        ),
+        "child:child_1:grandchild_2": Node(
+            id="child:child_1:grandchild_2",
+            name="grandchild_2",
+            data=empty_data,
+            metadata={"__interrupt": "before"},
+        ),
+        "child:child_2": Node(
+            id="child:child_2", name="child_2", data=empty_data, metadata=None
+        ),
+        "parent_2": Node(
+            id="parent_2", name="parent_2", data=empty_data, metadata=None
+        ),
+        "__end__": Node(id="__end__", name="__end__", data=empty_data, metadata=None),
+    }
+    edges = [
+        Edge(
+            source="child:child_1:grandchild_1",
+            target="child:child_1:grandchild_2",
+            data=None,
+            conditional=False,
+        ),
+        Edge(
+            source="child:child_1:grandchild_2",
+            target="child:child_2",
+            data=None,
+            conditional=False,
+        ),
+        Edge(source="__start__", target="parent_1", data=None, conditional=False),
+        Edge(
+            source="child:child_2",
+            target="parent_2",
+            data=None,
+            conditional=False,
+        ),
+        Edge(
+            source="parent_1",
+            target="child:child_1:grandchild_1",
+            data=None,
+            conditional=False,
+        ),
+        Edge(source="parent_2", target="__end__", data=None, conditional=False),
+    ]
+    graph = Graph(nodes, edges)
+    assert graph.draw_mermaid() == snapshot(name="mermaid")
 
 
 def test_runnable_get_graph_with_invalid_input_type() -> None:
@@ -733,3 +390,11 @@ def test_runnable_get_graph_with_invalid_output_type() -> None:
     assert runnable.invoke(1) == 1
     # check whether runnable.get_graph works
     runnable.get_graph()
+
+
+def test_graph_mermaid_escape_node_label() -> None:
+    """Test that node labels are correctly preprocessed for draw_mermaid"""
+    assert _escape_node_label("foo") == "foo"
+    assert _escape_node_label("foo-bar") == "foo-bar"
+    assert _escape_node_label("foo_1") == "foo_1"
+    assert _escape_node_label("#foo*&!") == "_foo___"

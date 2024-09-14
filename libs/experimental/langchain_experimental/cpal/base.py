@@ -1,11 +1,13 @@
 """
 CPAL Chain and its subchains
 """
+
 from __future__ import annotations
 
 import json
 from typing import Any, ClassVar, Dict, List, Optional, Type
 
+import pydantic
 from langchain.base_language import BaseLanguageModel
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
@@ -13,7 +15,6 @@ from langchain.output_parsers import PydanticOutputParser
 from langchain_core.callbacks.manager import CallbackManagerForChainRun
 from langchain_core.prompts.prompt import PromptTemplate
 
-from langchain_experimental import pydantic_v1 as pydantic
 from langchain_experimental.cpal.constants import Constant
 from langchain_experimental.cpal.models import (
     CausalModel,
@@ -40,9 +41,9 @@ class _BaseStoryElementChain(Chain):
     chain: LLMChain
     input_key: str = Constant.narrative_input.value  #: :meta private:
     output_key: str = Constant.chain_answer.value  #: :meta private:
-    pydantic_model: ClassVar[
-        Optional[Type[pydantic.BaseModel]]
-    ] = None  #: :meta private:
+    pydantic_model: ClassVar[Optional[Type[pydantic.BaseModel]]] = (
+        None  #: :meta private:
+    )
     template: ClassVar[Optional[str]] = None  #: :meta private:
 
     @classmethod

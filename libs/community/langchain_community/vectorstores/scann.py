@@ -41,9 +41,10 @@ class ScaNN(VectorStore):
             from langchain_community.embeddings import HuggingFaceEmbeddings
             from langchain_community.vectorstores import ScaNN
 
+            model_name = "sentence-transformers/all-mpnet-base-v2"
             db = ScaNN.from_texts(
                 ['foo', 'bar', 'barz', 'qux'],
-                HuggingFaceEmbeddings())
+                HuggingFaceEmbeddings(model_name=model_name))
             db.similarity_search('foo?', k=1)
     """
 
@@ -493,7 +494,13 @@ class ScaNN(VectorStore):
 
         # load docstore and index_to_docstore_id
         with open(path / "{index_name}.pkl".format(index_name=index_name), "rb") as f:
-            docstore, index_to_docstore_id = pickle.load(f)
+            (
+                docstore,
+                index_to_docstore_id,
+            ) = pickle.load(  # ignore[pickle]: explicit-opt-in
+                f
+            )
+
         return cls(embedding, index, docstore, index_to_docstore_id, **kwargs)
 
     def _select_relevance_score_fn(self) -> Callable[[float], float]:

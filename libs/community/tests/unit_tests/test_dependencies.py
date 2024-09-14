@@ -29,6 +29,7 @@ def test_required_dependencies(poetry_conf: Mapping[str, Any]) -> None:
 
     is_required = {
         package_name: isinstance(requirements, str)
+        or isinstance(requirements, list)
         or not requirements.get("optional", False)
         for package_name, requirements in dependencies.items()
     }
@@ -47,6 +48,7 @@ def test_required_dependencies(poetry_conf: Mapping[str, Any]) -> None:
             "numpy",
             "python",
             "requests",
+            "pydantic-settings",
             "tenacity",
             "langchain",
         ]
@@ -77,6 +79,7 @@ def test_test_group_dependencies(poetry_conf: Mapping[str, Any]) -> None:
             "duckdb-engine",
             "freezegun",
             "langchain-core",
+            "langchain-standard-tests",
             "langchain",
             "lark",
             "pandas",
@@ -90,6 +93,9 @@ def test_test_group_dependencies(poetry_conf: Mapping[str, Any]) -> None:
             "responses",
             "syrupy",
             "requests-mock",
+            # TODO: Hack to get around cffi 1.17.1 not working with py3.9, remove when
+            # fix is released.
+            "cffi",
         ]
     )
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 from json import JSONDecodeError
 from time import sleep
@@ -19,10 +20,11 @@ from typing import (
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.callbacks import CallbackManager
 from langchain_core.load import dumpd
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.runnables import RunnableConfig, RunnableSerializable, ensure_config
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_tool
+from pydantic import BaseModel, Field, model_validator
+from typing_extensions import Self
 
 if TYPE_CHECKING:
     import openai
@@ -33,18 +35,34 @@ if TYPE_CHECKING:
 
 
 class OpenAIAssistantFinish(AgentFinish):
-    """AgentFinish with run and thread metadata."""
+    """AgentFinish with run and thread metadata.
+
+    Parameters:
+        run_id: Run id.
+        thread_id: Thread id.
+    """
 
     run_id: str
     thread_id: str
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
+        """Check if the class is serializable by LangChain.
+
+        Returns:
+            False
+        """
         return False
 
 
 class OpenAIAssistantAction(AgentAction):
-    """AgentAction with info needed to submit custom tool output to existing run."""
+    """AgentAction with info needed to submit custom tool output to existing run.
+
+    Parameters:
+        tool_call_id: Tool call id.
+        run_id: Run id.
+        thread_id: Thread id
+    """
 
     tool_call_id: str
     run_id: str
@@ -52,6 +70,11 @@ class OpenAIAssistantAction(AgentAction):
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
+        """Check if the class is serializable by LangChain.
+
+        Returns:
+            False
+        """
         return False
 
 
@@ -210,14 +233,14 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
     as_agent: bool = False
     """Use as a LangChain agent, compatible with the AgentExecutor."""
 
-    @root_validator()
-    def validate_async_client(cls, values: dict) -> dict:
-        if values["async_client"] is None:
+    @model_validator(mode="after")
+    def validate_async_client(self) -> Self:
+        if self.async_client is None:
             import openai
 
-            api_key = values["client"].api_key
-            values["async_client"] = openai.AsyncOpenAI(api_key=api_key)
-        return values
+            api_key = self.client.api_key
+            self.async_client = openai.AsyncOpenAI(api_key=api_key)
+        return self
 
     @classmethod
     def create_assistant(
@@ -238,7 +261,8 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
             tools: Assistant tools. Can be passed in OpenAI format or as BaseTools.
             model: Assistant model to use.
             client: OpenAI or AzureOpenAI client.
-                Will create default OpenAI client if not specified.
+                Will create a default OpenAI client if not specified.
+            kwargs: Additional arguments.
 
         Returns:
             OpenAIAssistantRunnable configured to run using the created assistant.
@@ -249,7 +273,6 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
             instructions=instructions,
             tools=[_get_assistants_tool(tool) for tool in tools],  # type: ignore
             model=model,
-            file_ids=kwargs.get("file_ids"),
         )
         return cls(assistant_id=assistant.id, client=client, **kwargs)
 
@@ -264,7 +287,6 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
                 thread_id: Existing thread to use.
                 run_id: Existing run to use. Should only be supplied when providing
                     the tool output for a required action after an initial invocation.
-                file_ids: File ids to include in new run. Used for retrieval.
                 message_metadata: Metadata to associate with new message.
                 thread_metadata: Metadata to associate with new thread. Only relevant
                     when new thread being created.
@@ -272,12 +294,12 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
                 model: Override Assistant model for this run.
                 tools: Override Assistant tools for this run.
                 run_metadata: Metadata to associate with new run.
-            config: Runnable config:
+            config: Runnable config. Defaults to None.
 
         Return:
             If self.as_agent, will return
-                Union[List[OpenAIAssistantAction], OpenAIAssistantFinish]. Otherwise,
-                will return OpenAI types
+                Union[List[OpenAIAssistantAction], OpenAIAssistantFinish].
+                Otherwise, will return OpenAI types
                 Union[List[ThreadMessage], List[RequiredActionFunctionToolCall]].
         """
 
@@ -304,7 +326,6 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
                         {
                             "role": "user",
                             "content": input["content"],
-                            "file_ids": input.get("file_ids", []),
                             "metadata": input.get("message_metadata"),
                         }
                     ],
@@ -317,7 +338,6 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
                     input["thread_id"],
                     content=input["content"],
                     role="user",
-                    file_ids=input.get("file_ids", []),
                     metadata=input.get("message_metadata"),
                 )
                 run = self._create_run(input)
@@ -351,7 +371,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
         ] = None,
         **kwargs: Any,
     ) -> OpenAIAssistantRunnable:
-        """Create an AsyncOpenAI Assistant and instantiate the Runnable.
+        """Async create an AsyncOpenAI Assistant and instantiate the Runnable.
 
         Args:
             name: Assistant name.
@@ -359,7 +379,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
             tools: Assistant tools. Can be passed in OpenAI format or as BaseTools.
             model: Assistant model to use.
             async_client: AsyncOpenAI client.
-            Will create default async_client if not specified.
+                Will create default async_client if not specified.
 
         Returns:
             AsyncOpenAIAssistantRunnable configured to run using the created assistant.
@@ -371,7 +391,6 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
             instructions=instructions,
             tools=openai_tools,  # type: ignore
             model=model,
-            file_ids=kwargs.get("file_ids"),
         )
         return cls(assistant_id=assistant.id, async_client=async_client, **kwargs)
 
@@ -386,20 +405,20 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
                 thread_id: Existing thread to use.
                 run_id: Existing run to use. Should only be supplied when providing
                     the tool output for a required action after an initial invocation.
-                file_ids: File ids to include in new run. Used for retrieval.
-                message_metadata: Metadata to associate with new message.
+                message_metadata: Metadata to associate with a new message.
                 thread_metadata: Metadata to associate with new thread. Only relevant
-                    when new thread being created.
+                    when a new thread is created.
                 instructions: Additional run instructions.
                 model: Override Assistant model for this run.
                 tools: Override Assistant tools for this run.
                 run_metadata: Metadata to associate with new run.
-            config: Runnable config:
+            config: Runnable config. Defaults to None.
+            kwargs: Additional arguments.
 
         Return:
             If self.as_agent, will return
-                Union[List[OpenAIAssistantAction], OpenAIAssistantFinish]. Otherwise,
-                will return OpenAI types
+                Union[List[OpenAIAssistantAction], OpenAIAssistantFinish].
+                Otherwise, will return OpenAI types
                 Union[List[ThreadMessage], List[RequiredActionFunctionToolCall]].
         """
 
@@ -415,7 +434,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
         try:
             # Being run within AgentExecutor and there are tool outputs to submit.
             if self.as_agent and input.get("intermediate_steps"):
-                tool_outputs = self._parse_intermediate_steps(
+                tool_outputs = await self._aparse_intermediate_steps(
                     input["intermediate_steps"]
                 )
                 run = await self.async_client.beta.threads.runs.submit_tool_outputs(
@@ -428,7 +447,6 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
                         {
                             "role": "user",
                             "content": input["content"],
-                            "file_ids": input.get("file_ids", []),
                             "metadata": input.get("message_metadata"),
                         }
                     ],
@@ -441,7 +459,6 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
                     input["thread_id"],
                     content=input["content"],
                     role="user",
-                    file_ids=input.get("file_ids", []),
                     metadata=input.get("message_metadata"),
                 )
                 run = await self._acreate_run(input)
@@ -469,9 +486,11 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
     ) -> dict:
         last_action, last_output = intermediate_steps[-1]
         run = self._wait_for_run(last_action.run_id, last_action.thread_id)
-        required_tool_call_ids = {
-            tc.id for tc in run.required_action.submit_tool_outputs.tool_calls
-        }
+        required_tool_call_ids = set()
+        if run.required_action:
+            required_tool_call_ids = {
+                tc.id for tc in run.required_action.submit_tool_outputs.tool_calls
+            }
         tool_outputs = [
             {"output": str(output), "tool_call_id": action.tool_call_id}
             for action, output in intermediate_steps
@@ -597,9 +616,11 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
     ) -> dict:
         last_action, last_output = intermediate_steps[-1]
         run = await self._wait_for_run(last_action.run_id, last_action.thread_id)
-        required_tool_call_ids = {
-            tc.id for tc in run.required_action.submit_tool_outputs.tool_calls
-        }
+        required_tool_call_ids = set()
+        if run.required_action:
+            required_tool_call_ids = {
+                tc.id for tc in run.required_action.submit_tool_outputs.tool_calls
+            }
         tool_outputs = [
             {"output": str(output), "tool_call_id": action.tool_call_id}
             for action, output in intermediate_steps
@@ -719,5 +740,5 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
             )
             in_progress = run.status in ("in_progress", "queued")
             if in_progress:
-                sleep(self.check_every_ms / 1000)
+                await asyncio.sleep(self.check_every_ms / 1000)
         return run

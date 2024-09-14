@@ -133,10 +133,16 @@ class AsyncHtmlLoader(BaseLoader):
         async with aiohttp.ClientSession(trust_env=self.trust_env) as session:
             for i in range(retries):
                 try:
+                    kwargs: Dict = dict(
+                        headers=self.session.headers,
+                        cookies=self.session.cookies.get_dict(),
+                        **self.requests_kwargs,
+                    )
+                    if not self.session.verify:
+                        kwargs["ssl"] = False
                     async with session.get(
                         url,
-                        headers=self.session.headers,
-                        ssl=None if self.session.verify else False,
+                        **kwargs,
                     ) as response:
                         try:
                             text = await response.text()
@@ -144,7 +150,7 @@ class AsyncHtmlLoader(BaseLoader):
                             logger.error(f"Failed to decode content from {url}")
                             text = ""
                         return text
-                except aiohttp.ClientConnectionError as e:
+                except (aiohttp.ClientConnectionError, TimeoutError) as e:
                     if i == retries - 1 and self.ignore_load_errors:
                         logger.warning(f"Error fetching {url} after {retries} retries.")
                         return ""
