@@ -21,9 +21,11 @@ def migrate(
     Any undocumented arguments will be passed to the Grit CLI.
     """
     rich.print(
-        "✈️ This script will help you migrate to a recent version LangChain. "
+        "✈️ This script will help you migrate to a LangChain 0.3. "
         "This migration script will attempt to replace old imports in the code "
-        "with new ones.\n\n"
+        "with new ones. "
+        "If you need to migrate to LangChain 0.2, please downgrade to version 0.0.29 "
+        "of the langchain-cli.\n\n"
         "🔄 You will need to run the migration script TWICE to migrate (e.g., "
         "to update llms import from langchain, the script will first move them to "
         "corresponding imports from the community package, and on the second "
