@@ -9,8 +9,9 @@ from langchain_core.tools import BaseTool, StructuredTool
 from langchain_core.tools.base import BaseToolkit
 from typing_extensions import Self
 
+from databricks.sdk import WorkspaceClient
+
 if TYPE_CHECKING:
-    from databricks.sdk import WorkspaceClient
     from databricks.sdk.service.catalog import FunctionInfo
 
 from langchain_community.tools.databricks._execution import execute_function
