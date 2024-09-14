@@ -1,4 +1,5 @@
 """Base class for all loaders that uses O365 Package"""
+
 from __future__ import annotations
 
 import logging
@@ -6,16 +7,16 @@ import os
 import tempfile
 from abc import abstractmethod
 from enum import Enum
-from pathlib import Path
-from typing import TYPE_CHECKING, Dict, Iterable, List, Sequence, Union
+from pathlib import Path, PurePath
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Sequence, Union
 
-from langchain_core.pydantic_v1 import (
+from pydantic import (
     BaseModel,
-    BaseSettings,
     Field,
     FilePath,
     SecretStr,
 )
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from langchain_community.document_loaders.base import BaseLoader
 from langchain_community.document_loaders.blob_loaders.file_system import (
@@ -33,13 +34,12 @@ CHUNK_SIZE = 1024 * 1024 * 5
 
 
 class _O365Settings(BaseSettings):
-    client_id: str = Field(..., env="O365_CLIENT_ID")
-    client_secret: SecretStr = Field(..., env="O365_CLIENT_SECRET")
+    client_id: str = Field(..., alias="O365_CLIENT_ID")
+    client_secret: SecretStr = Field(..., alias="O365_CLIENT_SECRET")
 
-    class Config:
-        env_prefix = ""
-        case_sentive = False
-        env_file = ".env"
+    model_config = SettingsConfigDict(
+        case_sensitive=False, env_file=".env", env_prefix=""
+    )
 
 
 class _O365TokenStorage(BaseSettings):
@@ -59,9 +59,9 @@ def fetch_mime_types(file_types: Sequence[_FileType]) -> Dict[str, str]:
         if file_type.value == "doc":
             mime_types_mapping[file_type.value] = "application/msword"
         elif file_type.value == "docx":
-            mime_types_mapping[
-                file_type.value
-            ] = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"  # noqa: E501
+            mime_types_mapping[file_type.value] = (
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document"  # noqa: E501
+            )
         elif file_type.value == "pdf":
             mime_types_mapping[file_type.value] = "application/pdf"
     return mime_types_mapping
@@ -70,7 +70,7 @@ def fetch_mime_types(file_types: Sequence[_FileType]) -> Dict[str, str]:
 class O365BaseLoader(BaseLoader, BaseModel):
     """Base class for all loaders that uses O365 Package"""
 
-    settings: _O365Settings = Field(default_factory=_O365Settings)
+    settings: _O365Settings = Field(default_factory=_O365Settings)  # type: ignore[arg-type]
     """Settings for the Office365 API client."""
     auth_with_token: bool = False
     """Whether to authenticate with a token or not. Defaults to False."""
@@ -108,14 +108,32 @@ class O365BaseLoader(BaseLoader, BaseModel):
         """
         file_mime_types = self._fetch_mime_types
         items = folder.get_items()
+        metadata_dict: Dict[str, Dict[str, Any]] = {}
         with tempfile.TemporaryDirectory() as temp_dir:
             os.makedirs(os.path.dirname(temp_dir), exist_ok=True)
             for file in items:
                 if file.is_file:
                     if file.mime_type in list(file_mime_types.values()):
                         file.download(to_path=temp_dir, chunk_size=self.chunk_size)
+                        metadata_dict[file.name] = {
+                            "source": file.web_url,
+                            "mime_type": file.mime_type,
+                            "created": file.created,
+                            "modified": file.modified,
+                            "created_by": str(file.created_by),
+                            "modified_by": str(file.modified_by),
+                            "description": file.description,
+                            "id": str(file.object_id),
+                        }
+
             loader = FileSystemBlobLoader(path=temp_dir)
-            yield from loader.yield_blobs()
+            for blob in loader.yield_blobs():
+                if not isinstance(blob.path, PurePath):
+                    raise NotImplementedError("Expected blob path to be a PurePath")
+                if blob.path:
+                    file_metadata_ = metadata_dict.get(str(blob.path.name), {})
+                    blob.metadata.update(file_metadata_)
+                yield blob
         if self.recursive:
             for subfolder in folder.get_child_folders():
                 yield from self._load_from_folder(subfolder)
@@ -139,6 +157,7 @@ class O365BaseLoader(BaseLoader, BaseModel):
             the files loaded from the drive using the specified object_ids.
         """
         file_mime_types = self._fetch_mime_types
+        metadata_dict: Dict[str, Dict[str, Any]] = {}
         with tempfile.TemporaryDirectory() as temp_dir:
             for object_id in object_ids:
                 file = drive.get_item(object_id)
@@ -151,8 +170,25 @@ class O365BaseLoader(BaseLoader, BaseModel):
                 if file.is_file:
                     if file.mime_type in list(file_mime_types.values()):
                         file.download(to_path=temp_dir, chunk_size=self.chunk_size)
+                        metadata_dict[file.name] = {
+                            "source": file.web_url,
+                            "mime_type": file.mime_type,
+                            "created": file.created,
+                            "modified": file.modified,
+                            "created_by": str(file.created_by),
+                            "modified_by": str(file.modified_by),
+                            "description": file.description,
+                            "id": str(file.object_id),
+                        }
+
             loader = FileSystemBlobLoader(path=temp_dir)
-            yield from loader.yield_blobs()
+            for blob in loader.yield_blobs():
+                if not isinstance(blob.path, PurePath):
+                    raise NotImplementedError("Expected blob path to be a PurePath")
+                if blob.path:
+                    file_metadata_ = metadata_dict.get(str(blob.path.name), {})
+                    blob.metadata.update(file_metadata_)
+                yield blob
 
     def _auth(self) -> Account:
         """Authenticates the OneDrive API client

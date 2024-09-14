@@ -1,36 +1,17 @@
 #!/bin/bash
 
-yum -y update
-yum install gcc bzip2-devel libffi-devel zlib-devel wget tar gzip -y
+set -e
 
-# install quarto
-wget -q https://github.com/quarto-dev/quarto-cli/releases/download/v1.3.450/quarto-1.3.450-linux-amd64.tar.gz
-tar -xzf quarto-1.3.450-linux-amd64.tar.gz
-export PATH=$PATH:$(pwd)/quarto-1.3.450/bin/
+make install-vercel-deps
 
+make build
 
-# setup python env
-python3 -m venv .venv
-source .venv/bin/activate
-python3 -m pip install --upgrade pip
-python3 -m pip install -r vercel_requirements.txt
+rm -rf docs
+mv build/output-new/docs ./
 
-# autogenerate integrations tables
-python3 scripts/model_feat_table.py
+mkdir static/api_reference
 
-# copy in external files
-mkdir docs/templates
-cp ../templates/docs/INDEX.md docs/templates/index.md
-python3 scripts/copy_templates.py
+git clone --depth=1 https://github.com/baskaryan/langchain-api-docs-build.git
 
-cp ../cookbook/README.md src/pages/cookbook.mdx
+mv -r langchain-api-docs-build/api_reference_build/html/* static/api_reference/
 
-wget -q https://raw.githubusercontent.com/langchain-ai/langserve/main/README.md -O docs/langserve.md
-python3 scripts/resolve_local_links.py docs/langserve.md https://github.com/langchain-ai/langserve/tree/main/
-
-wget -q https://raw.githubusercontent.com/langchain-ai/langgraph/main/README.md -O docs/langgraph.md
-python3 scripts/resolve_local_links.py docs/langgraph.md https://github.com/langchain-ai/langgraph/tree/main/
-
-# render
-quarto render docs/
-python3 scripts/generate_api_reference_links.py --docs_dir docs

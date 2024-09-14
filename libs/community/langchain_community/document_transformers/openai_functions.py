@@ -1,10 +1,11 @@
 """Document transformers that use OpenAI Functions models"""
+
 from typing import Any, Dict, Optional, Sequence, Type, Union
 
 from langchain_core.documents import BaseDocumentTransformer, Document
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel
 
 
 class OpenAIMetadataTagger(BaseDocumentTransformer, BaseModel):
@@ -57,7 +58,7 @@ class OpenAIMetadataTagger(BaseDocumentTransformer, BaseModel):
         new_documents = []
 
         for document in documents:
-            extracted_metadata: Dict = self.tagging_chain.run(document.page_content)  # type: ignore[assignment]  # noqa: E501
+            extracted_metadata: Dict = self.tagging_chain.run(document.page_content)  # type: ignore[assignment]
             new_document = Document(
                 page_content=document.page_content,
                 metadata={**extracted_metadata, **document.metadata},

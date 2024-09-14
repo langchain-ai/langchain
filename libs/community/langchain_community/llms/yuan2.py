@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Mapping, Optional, Set
 import requests
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from langchain_core.pydantic_v1 import Field
+from pydantic import Field
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
@@ -26,7 +26,7 @@ class Yuan2(LLM):
                 top_k=40,
             )
             print(yuan_llm)
-            print(yuan_llm("你是谁？"))
+            print(yuan_llm.invoke("你是谁？"))
     """
 
     infer_api: str = "http://127.0.0.1:8000/yuan"
@@ -137,7 +137,7 @@ class Yuan2(LLM):
         Example:
             .. code-block:: python
 
-                response = yuan_llm("你能做什么?")
+                response = yuan_llm.invoke("你能做什么?")
         """
 
         if self.use_history:

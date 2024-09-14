@@ -1,8 +1,9 @@
 """Util that calls Lambda."""
+
 import json
 from typing import Any, Dict, Optional
 
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from pydantic import BaseModel, ConfigDict, model_validator
 
 
 class LambdaWrapper(BaseModel):
@@ -20,7 +21,7 @@ class LambdaWrapper(BaseModel):
 
     """
 
-    lambda_client: Any  #: :meta private:
+    lambda_client: Any = None  #: :meta private:
     """The configured boto3 client"""
     function_name: Optional[str] = None
     """The name of your lambda function"""
@@ -29,13 +30,13 @@ class LambdaWrapper(BaseModel):
     awslambda_tool_description: Optional[str] = None
     """If passing to an agent as a tool, the description"""
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
-        extra = Extra.forbid
-
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that python package exists in environment."""
 
         try:
@@ -47,8 +48,6 @@ class LambdaWrapper(BaseModel):
             )
 
         values["lambda_client"] = boto3.client("lambda")
-        values["function_name"] = values["function_name"]
-
         return values
 
     def run(self, query: str) -> str:
@@ -60,7 +59,7 @@ class LambdaWrapper(BaseModel):
             query: an input to passed to the lambda
                 function as the ``body`` of a JSON
                 object.
-        """  # noqa: E501
+        """
         res = self.lambda_client.invoke(
             FunctionName=self.function_name,
             InvocationType="RequestResponse",

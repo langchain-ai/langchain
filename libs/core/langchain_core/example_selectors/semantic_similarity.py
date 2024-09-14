@@ -1,12 +1,14 @@
 """Example selector that selects examples based on SemanticSimilarity."""
+
 from __future__ import annotations
 
 from abc import ABC
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type
 
+from pydantic import BaseModel, ConfigDict
+
 from langchain_core.documents import Document
 from langchain_core.example_selectors.base import BaseExampleSelector
-from langchain_core.pydantic_v1 import BaseModel, Extra
 from langchain_core.vectorstores import VectorStore
 
 if TYPE_CHECKING:
@@ -14,7 +16,15 @@ if TYPE_CHECKING:
 
 
 def sorted_values(values: Dict[str, str]) -> List[Any]:
-    """Return a list of values in dict sorted by key."""
+    """Return a list of values in dict sorted by key.
+
+    Args:
+        values: A dictionary with keys as input variables
+            and values as their values.
+
+    Returns:
+        A list of values in dict sorted by key.
+    """
     return [values[val] for val in sorted(values)]
 
 
@@ -22,7 +32,7 @@ class _VectorStoreExampleSelector(BaseExampleSelector, BaseModel, ABC):
     """Example selector that selects examples based on SemanticSimilarity."""
 
     vectorstore: VectorStore
-    """VectorStore than contains information about examples."""
+    """VectorStore that contains information about examples."""
     k: int = 4
     """Number of examples to select."""
     example_keys: Optional[List[str]] = None
@@ -33,11 +43,10 @@ class _VectorStoreExampleSelector(BaseExampleSelector, BaseModel, ABC):
     vectorstore_kwargs: Optional[Dict[str, Any]] = None
     """Extra arguments passed to similarity_search function of the vectorstore."""
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
     @staticmethod
     def _example_to_text(
@@ -58,14 +67,30 @@ class _VectorStoreExampleSelector(BaseExampleSelector, BaseModel, ABC):
         return examples
 
     def add_example(self, example: Dict[str, str]) -> str:
-        """Add new example to vectorstore."""
+        """Add a new example to vectorstore.
+
+        Args:
+            example: A dictionary with keys as input variables
+                and values as their values.
+
+        Returns:
+            The ID of the added example.
+        """
         ids = self.vectorstore.add_texts(
             [self._example_to_text(example, self.input_keys)], metadatas=[example]
         )
         return ids[0]
 
     async def aadd_example(self, example: Dict[str, str]) -> str:
-        """Add new example to vectorstore."""
+        """Async add new example to vectorstore.
+
+        Args:
+            example: A dictionary with keys as input variables
+                and values as their values.
+
+        Returns:
+            The ID of the added example.
+        """
         ids = await self.vectorstore.aadd_texts(
             [self._example_to_text(example, self.input_keys)], metadatas=[example]
         )
@@ -73,10 +98,17 @@ class _VectorStoreExampleSelector(BaseExampleSelector, BaseModel, ABC):
 
 
 class SemanticSimilarityExampleSelector(_VectorStoreExampleSelector):
-    """Example selector that selects examples based on SemanticSimilarity."""
+    """Select examples based on semantic similarity."""
 
     def select_examples(self, input_variables: Dict[str, str]) -> List[dict]:
-        """Select which examples to use based on semantic similarity."""
+        """Select examples based on semantic similarity.
+
+        Args:
+            input_variables: The input variables to use for search.
+
+        Returns:
+            The selected examples.
+        """
         # Get the docs with the highest similarity.
         vectorstore_kwargs = self.vectorstore_kwargs or {}
         example_docs = self.vectorstore.similarity_search(
@@ -87,7 +119,14 @@ class SemanticSimilarityExampleSelector(_VectorStoreExampleSelector):
         return self._documents_to_examples(example_docs)
 
     async def aselect_examples(self, input_variables: Dict[str, str]) -> List[dict]:
-        """Select which examples to use based on semantic similarity."""
+        """Asynchronously select examples based on semantic similarity.
+
+        Args:
+            input_variables: The input variables to use for search.
+
+        Returns:
+            The selected examples.
+        """
         # Get the docs with the highest similarity.
         vectorstore_kwargs = self.vectorstore_kwargs or {}
         example_docs = await self.vectorstore.asimilarity_search(
@@ -118,7 +157,7 @@ class SemanticSimilarityExampleSelector(_VectorStoreExampleSelector):
             examples: List of examples to use in the prompt.
             embeddings: An initialized embedding API interface, e.g. OpenAIEmbeddings().
             vectorstore_cls: A vector store DB interface class, e.g. FAISS.
-            k: Number of examples to select
+            k: Number of examples to select. Default is 4.
             input_keys: If provided, the search is based on the input variables
                 instead of all variables.
             example_keys: If provided, keys to filter examples to.
@@ -154,7 +193,7 @@ class SemanticSimilarityExampleSelector(_VectorStoreExampleSelector):
         vectorstore_kwargs: Optional[dict] = None,
         **vectorstore_cls_kwargs: Any,
     ) -> SemanticSimilarityExampleSelector:
-        """Create k-shot example selector using example list and embeddings.
+        """Async create k-shot example selector using example list and embeddings.
 
         Reshuffles examples dynamically based on query similarity.
 
@@ -162,7 +201,7 @@ class SemanticSimilarityExampleSelector(_VectorStoreExampleSelector):
             examples: List of examples to use in the prompt.
             embeddings: An initialized embedding API interface, e.g. OpenAIEmbeddings().
             vectorstore_cls: A vector store DB interface class, e.g. FAISS.
-            k: Number of examples to select
+            k: Number of examples to select. Default is 4.
             input_keys: If provided, the search is based on the input variables
                 instead of all variables.
             example_keys: If provided, keys to filter examples to.
@@ -187,7 +226,7 @@ class SemanticSimilarityExampleSelector(_VectorStoreExampleSelector):
 
 
 class MaxMarginalRelevanceExampleSelector(_VectorStoreExampleSelector):
-    """ExampleSelector that selects examples based on Max Marginal Relevance.
+    """Select examples based on Max Marginal Relevance.
 
     This was shown to improve performance in this paper:
     https://arxiv.org/pdf/2211.13892.pdf
@@ -197,6 +236,14 @@ class MaxMarginalRelevanceExampleSelector(_VectorStoreExampleSelector):
     """Number of examples to fetch to rerank."""
 
     def select_examples(self, input_variables: Dict[str, str]) -> List[dict]:
+        """Select examples based on Max Marginal Relevance.
+
+        Args:
+            input_variables: The input variables to use for search.
+
+        Returns:
+            The selected examples.
+        """
         example_docs = self.vectorstore.max_marginal_relevance_search(
             self._example_to_text(input_variables, self.input_keys),
             k=self.k,
@@ -205,6 +252,14 @@ class MaxMarginalRelevanceExampleSelector(_VectorStoreExampleSelector):
         return self._documents_to_examples(example_docs)
 
     async def aselect_examples(self, input_variables: Dict[str, str]) -> List[dict]:
+        """Asynchronously select examples based on Max Marginal Relevance.
+
+        Args:
+            input_variables: The input variables to use for search.
+
+        Returns:
+            The selected examples.
+        """
         example_docs = await self.vectorstore.amax_marginal_relevance_search(
             self._example_to_text(input_variables, self.input_keys),
             k=self.k,
@@ -233,8 +288,9 @@ class MaxMarginalRelevanceExampleSelector(_VectorStoreExampleSelector):
             examples: List of examples to use in the prompt.
             embeddings: An initialized embedding API interface, e.g. OpenAIEmbeddings().
             vectorstore_cls: A vector store DB interface class, e.g. FAISS.
-            k: Number of examples to select
+            k: Number of examples to select. Default is 4.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+                Default is 20.
             input_keys: If provided, the search is based on the input variables
                 instead of all variables.
             example_keys: If provided, keys to filter examples to.
@@ -272,7 +328,8 @@ class MaxMarginalRelevanceExampleSelector(_VectorStoreExampleSelector):
         vectorstore_kwargs: Optional[dict] = None,
         **vectorstore_cls_kwargs: Any,
     ) -> MaxMarginalRelevanceExampleSelector:
-        """Create k-shot example selector using example list and embeddings.
+        """Asynchronously create k-shot example selector using example list and
+        embeddings.
 
         Reshuffles examples dynamically based on Max Marginal Relevance.
 
@@ -280,8 +337,9 @@ class MaxMarginalRelevanceExampleSelector(_VectorStoreExampleSelector):
             examples: List of examples to use in the prompt.
             embeddings: An initialized embedding API interface, e.g. OpenAIEmbeddings().
             vectorstore_cls: A vector store DB interface class, e.g. FAISS.
-            k: Number of examples to select
+            k: Number of examples to select. Default is 4.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+                Default is 20.
             input_keys: If provided, the search is based on the input variables
                 instead of all variables.
             example_keys: If provided, keys to filter examples to.

@@ -35,46 +35,8 @@
             }
           }
         },
-        "name": "RunnableParallel<buz>",
-        "graph": {
-          "nodes": [
-            {
-              "id": 0,
-              "type": "schema",
-              "data": "Parallel<buz>Input"
-            },
-            {
-              "id": 1,
-              "type": "schema",
-              "data": "Parallel<buz>Output"
-            },
-            {
-              "id": 2,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain_core",
-                  "runnables",
-                  "base",
-                  "RunnableLambda"
-                ],
-                "name": "RunnableLambda"
-              }
-            }
-          ],
-          "edges": [
-            {
-              "source": 0,
-              "target": 2
-            },
-            {
-              "source": 2,
-              "target": 1
-            }
-          ]
-        }
+        "name": "RunnableParallel<buz>"
       },
-      "middle": [],
       "last": {
         "lc": 1,
         "type": "constructor",
@@ -109,49 +71,10 @@
                     "buz"
                   ],
                   "template": "what did baz say to {buz}",
-                  "template_format": "f-string",
-                  "partial_variables": {}
+                  "template_format": "f-string"
                 },
-                "name": "PromptTemplate",
-                "graph": {
-                  "nodes": [
-                    {
-                      "id": 0,
-                      "type": "schema",
-                      "data": "PromptInput"
-                    },
-                    {
-                      "id": 1,
-                      "type": "runnable",
-                      "data": {
-                        "id": [
-                          "langchain",
-                          "prompts",
-                          "prompt",
-                          "PromptTemplate"
-                        ],
-                        "name": "PromptTemplate"
-                      }
-                    },
-                    {
-                      "id": 2,
-                      "type": "schema",
-                      "data": "PromptTemplateOutput"
-                    }
-                  ],
-                  "edges": [
-                    {
-                      "source": 0,
-                      "target": 1
-                    },
-                    {
-                      "source": 1,
-                      "target": 2
-                    }
-                  ]
-                }
+                "name": "PromptTemplate"
               },
-              "middle": [],
               "last": {
                 "lc": 1,
                 "type": "not_implemented",
@@ -162,102 +85,10 @@
                   "FakeListLLM"
                 ],
                 "repr": "FakeListLLM(responses=['foo'], i=1)",
-                "name": "FakeListLLM",
-                "graph": {
-                  "nodes": [
-                    {
-                      "id": 0,
-                      "type": "schema",
-                      "data": "FakeListLLMInput"
-                    },
-                    {
-                      "id": 1,
-                      "type": "runnable",
-                      "data": {
-                        "id": [
-                          "langchain_core",
-                          "language_models",
-                          "fake",
-                          "FakeListLLM"
-                        ],
-                        "name": "FakeListLLM"
-                      }
-                    },
-                    {
-                      "id": 2,
-                      "type": "schema",
-                      "data": "FakeListLLMOutput"
-                    }
-                  ],
-                  "edges": [
-                    {
-                      "source": 0,
-                      "target": 1
-                    },
-                    {
-                      "source": 1,
-                      "target": 2
-                    }
-                  ]
-                }
-              },
-              "name": null
+                "name": "FakeListLLM"
+              }
             },
-            "name": "RunnableSequence",
-            "graph": {
-              "nodes": [
-                {
-                  "id": 0,
-                  "type": "schema",
-                  "data": "PromptInput"
-                },
-                {
-                  "id": 1,
-                  "type": "runnable",
-                  "data": {
-                    "id": [
-                      "langchain",
-                      "prompts",
-                      "prompt",
-                      "PromptTemplate"
-                    ],
-                    "name": "PromptTemplate"
-                  }
-                },
-                {
-                  "id": 2,
-                  "type": "runnable",
-                  "data": {
-                    "id": [
-                      "langchain_core",
-                      "language_models",
-                      "fake",
-                      "FakeListLLM"
-                    ],
-                    "name": "FakeListLLM"
-                  }
-                },
-                {
-                  "id": 3,
-                  "type": "schema",
-                  "data": "FakeListLLMOutput"
-                }
-              ],
-              "edges": [
-                {
-                  "source": 0,
-                  "target": 1
-                },
-                {
-                  "source": 2,
-                  "target": 3
-                },
-                {
-                  "source": 1,
-                  "target": 2
-                }
-              ]
-            }
+            "name": "RunnableSequence"
           },
           "fallbacks": [
             {
@@ -284,49 +115,10 @@
                       "buz"
                     ],
                     "template": "what did baz say to {buz}",
-                    "template_format": "f-string",
-                    "partial_variables": {}
+                    "template_format": "f-string"
                   },
-                  "name": "PromptTemplate",
-                  "graph": {
-                    "nodes": [
-                      {
-                        "id": 0,
-                        "type": "schema",
-                        "data": "PromptInput"
-                      },
-                      {
-                        "id": 1,
-                        "type": "runnable",
-                        "data": {
-                          "id": [
-                            "langchain",
-                            "prompts",
-                            "prompt",
-                            "PromptTemplate"
-                          ],
-                          "name": "PromptTemplate"
-                        }
-                      },
-                      {
-                        "id": 2,
-                        "type": "schema",
-                        "data": "PromptTemplateOutput"
-                      }
-                    ],
-                    "edges": [
-                      {
-                        "source": 0,
-                        "target": 1
-                      },
-                      {
-                        "source": 1,
-                        "target": 2
-                      }
-                    ]
-                  }
+                  "name": "PromptTemplate"
                 },
-                "middle": [],
                 "last": {
                   "lc": 1,
                   "type": "not_implemented",
@@ -337,102 +129,10 @@
                     "FakeListLLM"
                   ],
                   "repr": "FakeListLLM(responses=['bar'])",
-                  "name": "FakeListLLM",
-                  "graph": {
-                    "nodes": [
-                      {
-                        "id": 0,
-                        "type": "schema",
-                        "data": "FakeListLLMInput"
-                      },
-                      {
-                        "id": 1,
-                        "type": "runnable",
-                        "data": {
-                          "id": [
-                            "langchain_core",
-                            "language_models",
-                            "fake",
-                            "FakeListLLM"
-                          ],
-                          "name": "FakeListLLM"
-                        }
-                      },
-                      {
-                        "id": 2,
-                        "type": "schema",
-                        "data": "FakeListLLMOutput"
-                      }
-                    ],
-                    "edges": [
-                      {
-                        "source": 0,
-                        "target": 1
-                      },
-                      {
-                        "source": 1,
-                        "target": 2
-                      }
-                    ]
-                  }
-                },
-                "name": null
+                  "name": "FakeListLLM"
+                }
               },
-              "name": "RunnableSequence",
-              "graph": {
-                "nodes": [
-                  {
-                    "id": 0,
-                    "type": "schema",
-                    "data": "PromptInput"
-                  },
-                  {
-                    "id": 1,
-                    "type": "runnable",
-                    "data": {
-                      "id": [
-                        "langchain",
-                        "prompts",
-                        "prompt",
-                        "PromptTemplate"
-                      ],
-                      "name": "PromptTemplate"
-                    }
-                  },
-                  {
-                    "id": 2,
-                    "type": "runnable",
-                    "data": {
-                      "id": [
-                        "langchain_core",
-                        "language_models",
-                        "fake",
-                        "FakeListLLM"
-                      ],
-                      "name": "FakeListLLM"
-                    }
-                  },
-                  {
-                    "id": 3,
-                    "type": "schema",
-                    "data": "FakeListLLMOutput"
-                  }
-                ],
-                "edges": [
-                  {
-                    "source": 0,
-                    "target": 1
-                  },
-                  {
-                    "source": 2,
-                    "target": 3
-                  },
-                  {
-                    "source": 1,
-                    "target": 2
-                  }
-                ]
-              }
+              "name": "RunnableSequence"
             }
           ],
           "exceptions_to_handle": [
@@ -445,105 +145,12 @@
               ],
               "repr": "<class 'Exception'>"
             }
-          ],
-          "exception_key": null
-        },
-        "name": "RunnableWithFallbacks",
-        "graph": {
-          "nodes": [
-            {
-              "id": 0,
-              "type": "schema",
-              "data": "PromptInput"
-            },
-            {
-              "id": 1,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain",
-                  "schema",
-                  "runnable",
-                  "RunnableWithFallbacks"
-                ],
-                "name": "RunnableWithFallbacks"
-              }
-            },
-            {
-              "id": 2,
-              "type": "schema",
-              "data": "FakeListLLMOutput"
-            }
-          ],
-          "edges": [
-            {
-              "source": 0,
-              "target": 1
-            },
-            {
-              "source": 1,
-              "target": 2
-            }
           ]
-        }
-      },
-      "name": null
+        },
+        "name": "RunnableWithFallbacks"
+      }
     },
-    "name": "RunnableSequence",
-    "graph": {
-      "nodes": [
-        {
-          "id": 0,
-          "type": "schema",
-          "data": "Parallel<buz>Input"
-        },
-        {
-          "id": 1,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain_core",
-              "runnables",
-              "base",
-              "RunnableLambda"
-            ],
-            "name": "RunnableLambda"
-          }
-        },
-        {
-          "id": 2,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain",
-              "schema",
-              "runnable",
-              "RunnableWithFallbacks"
-            ],
-            "name": "RunnableWithFallbacks"
-          }
-        },
-        {
-          "id": 3,
-          "type": "schema",
-          "data": "FakeListLLMOutput"
-        }
-      ],
-      "edges": [
-        {
-          "source": 0,
-          "target": 1
-        },
-        {
-          "source": 2,
-          "target": 3
-        },
-        {
-          "source": 1,
-          "target": 2
-        }
-      ]
-    }
+    "name": "RunnableSequence"
   }
   '''
 # ---
@@ -579,92 +186,13 @@
                 "runnable",
                 "RunnablePassthrough"
               ],
-              "kwargs": {
-                "func": null,
-                "afunc": null,
-                "input_type": null
-              },
-              "name": "RunnablePassthrough",
-              "graph": {
-                "nodes": [
-                  {
-                    "id": 0,
-                    "type": "schema",
-                    "data": "PassthroughInput"
-                  },
-                  {
-                    "id": 1,
-                    "type": "runnable",
-                    "data": {
-                      "id": [
-                        "langchain",
-                        "schema",
-                        "runnable",
-                        "RunnablePassthrough"
-                      ],
-                      "name": "RunnablePassthrough"
-                    }
-                  },
-                  {
-                    "id": 2,
-                    "type": "schema",
-                    "data": "PassthroughOutput"
-                  }
-                ],
-                "edges": [
-                  {
-                    "source": 0,
-                    "target": 1
-                  },
-                  {
-                    "source": 1,
-                    "target": 2
-                  }
-                ]
-              }
+              "kwargs": {},
+              "name": "RunnablePassthrough"
             }
           }
         },
-        "name": "RunnableParallel<text>",
-        "graph": {
-          "nodes": [
-            {
-              "id": 0,
-              "type": "schema",
-              "data": "Parallel<text>Input"
-            },
-            {
-              "id": 1,
-              "type": "schema",
-              "data": "Parallel<text>Output"
-            },
-            {
-              "id": 2,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain",
-                  "schema",
-                  "runnable",
-                  "RunnablePassthrough"
-                ],
-                "name": "RunnablePassthrough"
-              }
-            }
-          ],
-          "edges": [
-            {
-              "source": 0,
-              "target": 2
-            },
-            {
-              "source": 2,
-              "target": 1
-            }
-          ]
-        }
+        "name": "RunnableParallel<text>"
       },
-      "middle": [],
       "last": {
         "lc": 1,
         "type": "constructor",
@@ -712,102 +240,10 @@
           ],
           "exception_key": "exception"
         },
-        "name": "RunnableWithFallbacks",
-        "graph": {
-          "nodes": [
-            {
-              "id": 0,
-              "type": "schema",
-              "data": "_raise_error_input"
-            },
-            {
-              "id": 1,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain",
-                  "schema",
-                  "runnable",
-                  "RunnableWithFallbacks"
-                ],
-                "name": "RunnableWithFallbacks"
-              }
-            },
-            {
-              "id": 2,
-              "type": "schema",
-              "data": "_raise_error_output"
-            }
-          ],
-          "edges": [
-            {
-              "source": 0,
-              "target": 1
-            },
-            {
-              "source": 1,
-              "target": 2
-            }
-          ]
-        }
-      },
-      "name": null
+        "name": "RunnableWithFallbacks"
+      }
     },
-    "name": "RunnableSequence",
-    "graph": {
-      "nodes": [
-        {
-          "id": 0,
-          "type": "schema",
-          "data": "Parallel<text>Input"
-        },
-        {
-          "id": 1,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain",
-              "schema",
-              "runnable",
-              "RunnablePassthrough"
-            ],
-            "name": "RunnablePassthrough"
-          }
-        },
-        {
-          "id": 2,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain",
-              "schema",
-              "runnable",
-              "RunnableWithFallbacks"
-            ],
-            "name": "RunnableWithFallbacks"
-          }
-        },
-        {
-          "id": 3,
-          "type": "schema",
-          "data": "_raise_error_output"
-        }
-      ],
-      "edges": [
-        {
-          "source": 0,
-          "target": 1
-        },
-        {
-          "source": 2,
-          "target": 3
-        },
-        {
-          "source": 1,
-          "target": 2
-        }
-      ]
-    }
+    "name": "RunnableSequence"
   }
   '''
 # ---
@@ -833,44 +269,7 @@
           "FakeListLLM"
         ],
         "repr": "FakeListLLM(responses=['foo'], i=1)",
-        "name": "FakeListLLM",
-        "graph": {
-          "nodes": [
-            {
-              "id": 0,
-              "type": "schema",
-              "data": "FakeListLLMInput"
-            },
-            {
-              "id": 1,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain_core",
-                  "language_models",
-                  "fake",
-                  "FakeListLLM"
-                ],
-                "name": "FakeListLLM"
-              }
-            },
-            {
-              "id": 2,
-              "type": "schema",
-              "data": "FakeListLLMOutput"
-            }
-          ],
-          "edges": [
-            {
-              "source": 0,
-              "target": 1
-            },
-            {
-              "source": 1,
-              "target": 2
-            }
-          ]
-        }
+        "name": "FakeListLLM"
       },
       "fallbacks": [
         {
@@ -883,44 +282,7 @@
             "FakeListLLM"
           ],
           "repr": "FakeListLLM(responses=['bar'])",
-          "name": "FakeListLLM",
-          "graph": {
-            "nodes": [
-              {
-                "id": 0,
-                "type": "schema",
-                "data": "FakeListLLMInput"
-              },
-              {
-                "id": 1,
-                "type": "runnable",
-                "data": {
-                  "id": [
-                    "langchain_core",
-                    "language_models",
-                    "fake",
-                    "FakeListLLM"
-                  ],
-                  "name": "FakeListLLM"
-                }
-              },
-              {
-                "id": 2,
-                "type": "schema",
-                "data": "FakeListLLMOutput"
-              }
-            ],
-            "edges": [
-              {
-                "source": 0,
-                "target": 1
-              },
-              {
-                "source": 1,
-                "target": 2
-              }
-            ]
-          }
+          "name": "FakeListLLM"
         }
       ],
       "exceptions_to_handle": [
@@ -933,47 +295,9 @@
           ],
           "repr": "<class 'Exception'>"
         }
-      ],
-      "exception_key": null
-    },
-    "name": "RunnableWithFallbacks",
-    "graph": {
-      "nodes": [
-        {
-          "id": 0,
-          "type": "schema",
-          "data": "FakeListLLMInput"
-        },
-        {
-          "id": 1,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain",
-              "schema",
-              "runnable",
-              "RunnableWithFallbacks"
-            ],
-            "name": "RunnableWithFallbacks"
-          }
-        },
-        {
-          "id": 2,
-          "type": "schema",
-          "data": "FakeListLLMOutput"
-        }
-      ],
-      "edges": [
-        {
-          "source": 0,
-          "target": 1
-        },
-        {
-          "source": 1,
-          "target": 2
-        }
       ]
-    }
+    },
+    "name": "RunnableWithFallbacks"
   }
   '''
 # ---
@@ -999,44 +323,7 @@
           "FakeListLLM"
         ],
         "repr": "FakeListLLM(responses=['foo'], i=1)",
-        "name": "FakeListLLM",
-        "graph": {
-          "nodes": [
-            {
-              "id": 0,
-              "type": "schema",
-              "data": "FakeListLLMInput"
-            },
-            {
-              "id": 1,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain_core",
-                  "language_models",
-                  "fake",
-                  "FakeListLLM"
-                ],
-                "name": "FakeListLLM"
-              }
-            },
-            {
-              "id": 2,
-              "type": "schema",
-              "data": "FakeListLLMOutput"
-            }
-          ],
-          "edges": [
-            {
-              "source": 0,
-              "target": 1
-            },
-            {
-              "source": 1,
-              "target": 2
-            }
-          ]
-        }
+        "name": "FakeListLLM"
       },
       "fallbacks": [
         {
@@ -1049,44 +336,7 @@
             "FakeListLLM"
           ],
           "repr": "FakeListLLM(responses=['baz'], i=1)",
-          "name": "FakeListLLM",
-          "graph": {
-            "nodes": [
-              {
-                "id": 0,
-                "type": "schema",
-                "data": "FakeListLLMInput"
-              },
-              {
-                "id": 1,
-                "type": "runnable",
-                "data": {
-                  "id": [
-                    "langchain_core",
-                    "language_models",
-                    "fake",
-                    "FakeListLLM"
-                  ],
-                  "name": "FakeListLLM"
-                }
-              },
-              {
-                "id": 2,
-                "type": "schema",
-                "data": "FakeListLLMOutput"
-              }
-            ],
-            "edges": [
-              {
-                "source": 0,
-                "target": 1
-              },
-              {
-                "source": 1,
-                "target": 2
-              }
-            ]
-          }
+          "name": "FakeListLLM"
         },
         {
           "lc": 1,
@@ -1098,44 +348,7 @@
             "FakeListLLM"
           ],
           "repr": "FakeListLLM(responses=['bar'])",
-          "name": "FakeListLLM",
-          "graph": {
-            "nodes": [
-              {
-                "id": 0,
-                "type": "schema",
-                "data": "FakeListLLMInput"
-              },
-              {
-                "id": 1,
-                "type": "runnable",
-                "data": {
-                  "id": [
-                    "langchain_core",
-                    "language_models",
-                    "fake",
-                    "FakeListLLM"
-                  ],
-                  "name": "FakeListLLM"
-                }
-              },
-              {
-                "id": 2,
-                "type": "schema",
-                "data": "FakeListLLMOutput"
-              }
-            ],
-            "edges": [
-              {
-                "source": 0,
-                "target": 1
-              },
-              {
-                "source": 1,
-                "target": 2
-              }
-            ]
-          }
+          "name": "FakeListLLM"
         }
       ],
       "exceptions_to_handle": [
@@ -1148,47 +361,9 @@
           ],
           "repr": "<class 'Exception'>"
         }
-      ],
-      "exception_key": null
-    },
-    "name": "RunnableWithFallbacks",
-    "graph": {
-      "nodes": [
-        {
-          "id": 0,
-          "type": "schema",
-          "data": "FakeListLLMInput"
-        },
-        {
-          "id": 1,
-          "type": "runnable",
-          "data": {
-            "id": [
-              "langchain",
-              "schema",
-              "runnable",
-              "RunnableWithFallbacks"
-            ],
-            "name": "RunnableWithFallbacks"
-          }
-        },
-        {
-          "id": 2,
-          "type": "schema",
-          "data": "FakeListLLMOutput"
-        }
-      ],
-      "edges": [
-        {
-          "source": 0,
-          "target": 1
-        },
-        {
-          "source": 1,
-          "target": 2
-        }
       ]
-    }
+    },
+    "name": "RunnableWithFallbacks"
   }
   '''
 # ---

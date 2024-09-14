@@ -1,10 +1,11 @@
 """Test OCI Generative AI LLM service"""
+
 from unittest.mock import MagicMock
 
 import pytest
 from pytest import MonkeyPatch
 
-from langchain_community.llms import OCIGenAI
+from langchain_community.llms.oci_generative_ai import OCIGenAI
 
 
 class MockResponseDict(dict):
@@ -16,12 +17,17 @@ class MockResponseDict(dict):
 @pytest.mark.parametrize(
     "test_model_id", ["cohere.command", "cohere.command-light", "meta.llama-2-70b-chat"]
 )
-def test_llm_call(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
-    """Test valid call to OCI Generative AI LLM service."""
+def test_llm_complete(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
+    """Test valid completion call to OCI Generative AI LLM service."""
     oci_gen_ai_client = MagicMock()
     llm = OCIGenAI(model_id=test_model_id, client=oci_gen_ai_client)
 
-    provider = llm._get_provider()
+    model_id = llm.model_id
+
+    if model_id is None:
+        raise ValueError("Model ID is required for OCI Generative AI LLM service.")
+
+    provider = model_id.split(".")[0].lower()
 
     def mocked_response(*args):  # type: ignore[no-untyped-def]
         response_text = "This is the completion."
@@ -71,6 +77,5 @@ def test_llm_call(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
             )
 
     monkeypatch.setattr(llm.client, "generate_text", mocked_response)
-
     output = llm.invoke("This is a prompt.", temperature=0.2)
     assert output == "This is the completion."

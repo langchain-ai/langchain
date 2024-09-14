@@ -1,13 +1,16 @@
 """Prompt template that contains few shot examples."""
+
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
+
+from pydantic import ConfigDict, model_validator
+from typing_extensions import Self
 
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.prompts.string import (
     DEFAULT_FORMATTER_MAPPING,
     StringPromptTemplate,
 )
-from langchain_core.pydantic_v1 import Extra, root_validator
 
 
 class FewShotPromptWithTemplates(StringPromptTemplate):
@@ -27,9 +30,6 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
     suffix: StringPromptTemplate
     """A PromptTemplate to put after the examples."""
 
-    input_variables: List[str]
-    """A list of the names of the variables the prompt template expects."""
-
     example_separator: str = "\n\n"
     """String separator used to join the prefix, the examples, and suffix."""
 
@@ -47,8 +47,9 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
         """Get the namespace of the langchain object."""
         return ["langchain", "prompts", "few_shot_with_templates"]
 
-    @root_validator(pre=True)
-    def check_examples_and_selector(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def check_examples_and_selector(cls, values: Dict) -> Any:
         """Check that one and only one of examples/example_selector are provided."""
         examples = values.get("examples", None)
         example_selector = values.get("example_selector", None)
@@ -64,15 +65,15 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
 
         return values
 
-    @root_validator()
-    def template_is_valid(cls, values: Dict) -> Dict:
+    @model_validator(mode="after")
+    def template_is_valid(self) -> Self:
         """Check that prefix, suffix, and input variables are consistent."""
-        if values["validate_template"]:
-            input_variables = values["input_variables"]
-            expected_input_variables = set(values["suffix"].input_variables)
-            expected_input_variables |= set(values["partial_variables"])
-            if values["prefix"] is not None:
-                expected_input_variables |= set(values["prefix"].input_variables)
+        if self.validate_template:
+            input_variables = self.input_variables
+            expected_input_variables = set(self.suffix.input_variables)
+            expected_input_variables |= set(self.partial_variables)
+            if self.prefix is not None:
+                expected_input_variables |= set(self.prefix.input_variables)
             missing_vars = expected_input_variables.difference(input_variables)
             if missing_vars:
                 raise ValueError(
@@ -80,18 +81,17 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
                     f"prefix/suffix expected {expected_input_variables}"
                 )
         else:
-            values["input_variables"] = sorted(
-                set(values["suffix"].input_variables)
-                | set(values["prefix"].input_variables if values["prefix"] else [])
-                - set(values["partial_variables"])
+            self.input_variables = sorted(
+                set(self.suffix.input_variables)
+                | set(self.prefix.input_variables if self.prefix else [])
+                - set(self.partial_variables)
             )
-        return values
+        return self
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
     def _get_examples(self, **kwargs: Any) -> List[dict]:
         if self.examples is not None:
@@ -158,6 +158,14 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
         return DEFAULT_FORMATTER_MAPPING[self.template_format](template, **kwargs)
 
     async def aformat(self, **kwargs: Any) -> str:
+        """Async format the prompt with the inputs.
+
+        Args:
+            kwargs: Any arguments to be passed to the prompt template.
+
+        Returns:
+            A formatted string.
+        """
         kwargs = self._merge_partial_and_user_variables(**kwargs)
         # Get the examples to use.
         examples = await self._aget_examples(**kwargs)
@@ -199,6 +207,14 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
         return "few_shot_with_templates"
 
     def save(self, file_path: Union[Path, str]) -> None:
+        """Save the prompt to a file.
+
+        Args:
+            file_path: The path to save the prompt to.
+
+        Raises:
+            ValueError: If example_selector is provided.
+        """
         if self.example_selector:
             raise ValueError("Saving an example selector is not currently supported")
         return super().save(file_path)

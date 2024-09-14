@@ -3,11 +3,10 @@ from abc import ABC, abstractmethod
 from itertools import islice
 from typing import Any, Dict, Iterable, List, Optional
 
-from langchain_community.utilities.redis import get_client
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import BaseMessage, get_buffer_string
 from langchain_core.prompts import BasePromptTemplate
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from langchain.chains.llm import LLMChain
 from langchain.memory.chat_memory import BaseChatMemory
@@ -182,6 +181,14 @@ class RedisEntityStore(BaseEntityStore):
         super().__init__(*args, **kwargs)
 
         try:
+            from langchain_community.utilities.redis import get_client
+        except ImportError:
+            raise ImportError(
+                "Could not import langchain_community.utilities.redis.get_client. "
+                "Please install it with `pip install langchain-community`."
+            )
+
+        try:
             self.redis_client = get_client(redis_url=url, decode_responses=True)
         except redis.exceptions.ConnectionError as error:
             logger.error(error)
@@ -238,10 +245,9 @@ class SQLiteEntityStore(BaseEntityStore):
     table_name: str = "memory_store"
     conn: Any = None
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     def __init__(
         self,

@@ -50,20 +50,23 @@ def riva_tts_stub_init_patch(
 @pytest.fixture
 def tts() -> RivaTTS:
     """Initialize a copy of the runnable."""
-    return RivaTTS(**CONFIG)
+    return RivaTTS(**CONFIG)  # type: ignore[arg-type]
 
 
 @pytest.mark.requires("riva.client")
 def test_init(tts: RivaTTS) -> None:
     """Test that ASR accepts valid arguments."""
     for key, expected_val in CONFIG.items():
-        assert getattr(tts, key, None) == expected_val
+        if key == "url":
+            assert str(tts.url) == expected_val + "/"  # type: ignore
+        else:
+            assert getattr(tts, key, None) == expected_val
 
 
 @pytest.mark.requires("riva.client")
 def test_init_defaults() -> None:
     """Ensure the runnable can be loaded with no arguments."""
-    _ = RivaTTS()
+    _ = RivaTTS()  # type: ignore[call-arg]
 
 
 @pytest.mark.requires("riva.client")

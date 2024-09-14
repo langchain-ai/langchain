@@ -13,14 +13,13 @@ from typing import (
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import (
+from langchain_core.retrievers import BaseRetriever
+from pydantic import (
     BaseModel,
-    Extra,
     Field,
-    root_validator,
+    model_validator,
     validator,
 )
-from langchain_core.retrievers import BaseRetriever
 from typing_extensions import Annotated
 
 
@@ -68,7 +67,7 @@ Dates are also represented as str.
 
 
 # Unexpected keyword argument "extra" for "__init_subclass__" of "object"
-class Highlight(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
+class Highlight(BaseModel, extra="allow"):  # type: ignore[call-arg]
     """Information that highlights the keywords in the excerpt."""
 
     BeginOffset: int
@@ -82,7 +81,7 @@ class Highlight(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
 
 
 # Unexpected keyword argument "extra" for "__init_subclass__" of "object"
-class TextWithHighLights(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
+class TextWithHighLights(BaseModel, extra="allow"):  # type: ignore[call-arg]
     """Text with highlights."""
 
     Text: str
@@ -93,7 +92,7 @@ class TextWithHighLights(BaseModel, extra=Extra.allow):  # type: ignore[call-arg
 
 # Unexpected keyword argument "extra" for "__init_subclass__" of "object"
 class AdditionalResultAttributeValue(  # type: ignore[call-arg]
-    BaseModel, extra=Extra.allow
+    BaseModel, extra="allow"
 ):
     """Value of an additional result attribute."""
 
@@ -102,7 +101,7 @@ class AdditionalResultAttributeValue(  # type: ignore[call-arg]
 
 
 # Unexpected keyword argument "extra" for "__init_subclass__" of "object"
-class AdditionalResultAttribute(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
+class AdditionalResultAttribute(BaseModel, extra="allow"):  # type: ignore[call-arg]
     """Additional result attribute."""
 
     Key: str
@@ -117,7 +116,7 @@ class AdditionalResultAttribute(BaseModel, extra=Extra.allow):  # type: ignore[c
 
 
 # Unexpected keyword argument "extra" for "__init_subclass__" of "object"
-class DocumentAttributeValue(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
+class DocumentAttributeValue(BaseModel, extra="allow"):  # type: ignore[call-arg]
     """Value of a document attribute."""
 
     DateValue: Optional[str]
@@ -148,7 +147,7 @@ class DocumentAttributeValue(BaseModel, extra=Extra.allow):  # type: ignore[call
 
 
 # Unexpected keyword argument "extra" for "__init_subclass__" of "object"
-class DocumentAttribute(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
+class DocumentAttribute(BaseModel, extra="allow"):  # type: ignore[call-arg]
     """Document attribute."""
 
     Key: str
@@ -158,7 +157,7 @@ class DocumentAttribute(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
 
 
 # Unexpected keyword argument "extra" for "__init_subclass__" of "object"
-class ResultItem(BaseModel, ABC, extra=Extra.allow):  # type: ignore[call-arg]
+class ResultItem(BaseModel, ABC, extra="allow"):  # type: ignore[call-arg]
     """Base class of a result item."""
 
     Id: Optional[str]
@@ -288,7 +287,7 @@ class RetrieveResultItem(ResultItem):
 
 
 # Unexpected keyword argument "extra" for "__init_subclass__" of "object"
-class QueryResult(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
+class QueryResult(BaseModel, extra="allow"):  # type: ignore[call-arg]
     """`Amazon Kendra Query API` search result.
 
     It is composed of:
@@ -302,7 +301,7 @@ class QueryResult(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
 
 
 # Unexpected keyword argument "extra" for "__init_subclass__" of "object"
-class RetrieveResult(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
+class RetrieveResult(BaseModel, extra="allow"):  # type: ignore[call-arg]
     """`Amazon Kendra Retrieve API` search result.
 
     It is composed of:
@@ -344,6 +343,10 @@ class AmazonKendraRetriever(BaseRetriever):
         attribute_filter: Additional filtering of results based on metadata
             See: https://docs.aws.amazon.com/kendra/latest/APIReference
 
+        document_relevance_override_configurations: Overrides relevance tuning
+            configurations of fields/attributes set at the index level
+            See: https://docs.aws.amazon.com/kendra/latest/APIReference
+
         page_content_formatter: generates the Document page_content
             allowing access to all result item attributes. By default, it uses
             the item's title and excerpt.
@@ -367,6 +370,7 @@ class AmazonKendraRetriever(BaseRetriever):
     credentials_profile_name: Optional[str] = None
     top_k: int = 3
     attribute_filter: Optional[Dict] = None
+    document_relevance_override_configurations: Optional[List[Dict]] = None
     page_content_formatter: Callable[[ResultItem], str] = combined_text
     client: Any
     user_context: Optional[Dict] = None
@@ -378,8 +382,13 @@ class AmazonKendraRetriever(BaseRetriever):
             raise ValueError(f"top_k ({value}) cannot be negative.")
         return value
 
-    @root_validator(pre=True)
-    def create_client(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def create_client(cls, values: Dict[str, Any]) -> Any:
+        top_k = values.get("top_k")
+        if top_k is not None and top_k < 0:
+            raise ValueError(f"top_k ({top_k}) cannot be negative.")
+
         if values.get("client") is not None:
             return values
 
@@ -400,7 +409,7 @@ class AmazonKendraRetriever(BaseRetriever):
 
             return values
         except ImportError:
-            raise ModuleNotFoundError(
+            raise ImportError(
                 "Could not import boto3 python package. "
                 "Please install it with `pip install boto3`."
             )
@@ -421,6 +430,10 @@ class AmazonKendraRetriever(BaseRetriever):
         }
         if self.attribute_filter is not None:
             kendra_kwargs["AttributeFilter"] = self.attribute_filter
+        if self.document_relevance_override_configurations is not None:
+            kendra_kwargs["DocumentRelevanceOverrideConfigurations"] = (
+                self.document_relevance_override_configurations
+            )
         if self.user_context is not None:
             kendra_kwargs["UserContext"] = self.user_context
 

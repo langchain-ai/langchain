@@ -1,8 +1,11 @@
 """Test Cassandra functionality."""
-import asyncio
-import time
-from typing import List, Optional, Type
 
+import asyncio
+import os
+import time
+from typing import Iterable, List, Optional, Tuple, Type, Union
+
+import pytest
 from langchain_core.documents import Document
 
 from langchain_community.vectorstores import Cassandra
@@ -19,13 +22,22 @@ def _vectorstore_from_texts(
     metadatas: Optional[List[dict]] = None,
     embedding_class: Type[Embeddings] = ConsistentFakeEmbeddings,
     drop: bool = True,
+    metadata_indexing: Union[Tuple[str, Iterable[str]], str] = "all",
+    table_name: str = "vector_test_table",
 ) -> Cassandra:
     from cassandra.cluster import Cluster
 
     keyspace = "vector_test_keyspace"
-    table_name = "vector_test_table"
     # get db connection
-    cluster = Cluster()
+    if "CASSANDRA_CONTACT_POINTS" in os.environ:
+        contact_points = [
+            cp.strip()
+            for cp in os.environ["CASSANDRA_CONTACT_POINTS"].split(",")
+            if cp.strip()
+        ]
+    else:
+        contact_points = None
+    cluster = Cluster(contact_points)
     session = cluster.connect()
     # ensure keyspace exists
     session.execute(
@@ -45,6 +57,7 @@ def _vectorstore_from_texts(
         session=session,
         keyspace=keyspace,
         table_name=table_name,
+        metadata_indexing=metadata_indexing,
     )
 
 
@@ -53,13 +66,22 @@ async def _vectorstore_from_texts_async(
     metadatas: Optional[List[dict]] = None,
     embedding_class: Type[Embeddings] = ConsistentFakeEmbeddings,
     drop: bool = True,
+    metadata_indexing: Union[Tuple[str, Iterable[str]], str] = "all",
+    table_name: str = "vector_test_table",
 ) -> Cassandra:
     from cassandra.cluster import Cluster
 
     keyspace = "vector_test_keyspace"
-    table_name = "vector_test_table"
     # get db connection
-    cluster = Cluster()
+    if "CASSANDRA_CONTACT_POINTS" in os.environ:
+        contact_points = [
+            cp.strip()
+            for cp in os.environ["CASSANDRA_CONTACT_POINTS"].split(",")
+            if cp.strip()
+        ]
+    else:
+        contact_points = None
+    cluster = Cluster(contact_points)
     session = cluster.connect()
     # ensure keyspace exists
     session.execute(
@@ -268,3 +290,29 @@ async def test_cassandra_adelete() -> None:
     await asyncio.sleep(0.3)
     output = docsearch.similarity_search("foo", k=10)
     assert len(output) == 0
+
+
+def test_cassandra_metadata_indexing() -> None:
+    """Test comparing metadata indexing policies."""
+    texts = ["foo"]
+    metadatas = [{"field1": "a", "field2": "b"}]
+    vstore_all = _vectorstore_from_texts(texts, metadatas=metadatas)
+    vstore_f1 = _vectorstore_from_texts(
+        texts,
+        metadatas=metadatas,
+        metadata_indexing=("allowlist", ["field1"]),
+        table_name="vector_test_table_indexing",
+    )
+
+    output_all = vstore_all.similarity_search("bar", k=2)
+    output_f1 = vstore_f1.similarity_search("bar", filter={"field1": "a"}, k=2)
+    output_f1_no = vstore_f1.similarity_search("bar", filter={"field1": "Z"}, k=2)
+    assert len(output_all) == 1
+    assert output_all[0].metadata == metadatas[0]
+    assert len(output_f1) == 1
+    assert output_f1[0].metadata == metadatas[0]
+    assert len(output_f1_no) == 0
+
+    with pytest.raises(ValueError):
+        # "Non-indexed metadata fields cannot be used in queries."
+        vstore_f1.similarity_search("bar", filter={"field2": "b"}, k=2)

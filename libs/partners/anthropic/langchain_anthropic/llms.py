@@ -17,16 +17,20 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.language_models import BaseLanguageModel
+from langchain_core.language_models import BaseLanguageModel, LangSmithParams
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
 from langchain_core.prompt_values import PromptValue
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import (
-    get_from_dict_or_env,
     get_pydantic_field_names,
 )
-from langchain_core.utils.utils import build_extra_kwargs, convert_to_secret_str
+from langchain_core.utils.utils import (
+    build_extra_kwargs,
+    from_env,
+    secret_from_env,
+)
+from pydantic import ConfigDict, Field, SecretStr, model_validator
+from typing_extensions import Self
 
 
 class _AnthropicCommon(BaseLanguageModel):
@@ -56,17 +60,34 @@ class _AnthropicCommon(BaseLanguageModel):
     max_retries: int = 2
     """Number of retries allowed for requests sent to the Anthropic Completion API."""
 
-    anthropic_api_url: Optional[str] = None
+    anthropic_api_url: Optional[str] = Field(
+        alias="base_url",
+        default_factory=from_env(
+            "ANTHROPIC_API_URL",
+            default="https://api.anthropic.com",
+        ),
+    )
+    """Base URL for API requests. Only specify if using a proxy or service emulator.
 
-    anthropic_api_key: Optional[SecretStr] = None
+    If a value isn't passed in, will attempt to read the value from
+    ANTHROPIC_API_URL. If not set, the default value of 'https://api.anthropic.com' will
+    be used.
+    """
+
+    anthropic_api_key: SecretStr = Field(
+        alias="api_key",
+        default_factory=secret_from_env("ANTHROPIC_API_KEY", default=""),
+    )
+    """Automatically read from env var `ANTHROPIC_API_KEY` if not provided."""
 
     HUMAN_PROMPT: Optional[str] = None
     AI_PROMPT: Optional[str] = None
     count_tokens: Optional[Callable[[str], int]] = None
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
 
-    @root_validator(pre=True)
-    def build_extra(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: Dict) -> Any:
         extra = values.get("model_kwargs", {})
         all_required_field_names = get_pydantic_field_names(cls)
         values["model_kwargs"] = build_extra_kwargs(
@@ -74,36 +95,25 @@ class _AnthropicCommon(BaseLanguageModel):
         )
         return values
 
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="after")
+    def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
-        values["anthropic_api_key"] = convert_to_secret_str(
-            get_from_dict_or_env(values, "anthropic_api_key", "ANTHROPIC_API_KEY")
+        self.client = anthropic.Anthropic(
+            base_url=self.anthropic_api_url,
+            api_key=self.anthropic_api_key.get_secret_value(),
+            timeout=self.default_request_timeout,
+            max_retries=self.max_retries,
         )
-        # Get custom api url from environment.
-        values["anthropic_api_url"] = get_from_dict_or_env(
-            values,
-            "anthropic_api_url",
-            "ANTHROPIC_API_URL",
-            default="https://api.anthropic.com",
+        self.async_client = anthropic.AsyncAnthropic(
+            base_url=self.anthropic_api_url,
+            api_key=self.anthropic_api_key.get_secret_value(),
+            timeout=self.default_request_timeout,
+            max_retries=self.max_retries,
         )
-
-        values["client"] = anthropic.Anthropic(
-            base_url=values["anthropic_api_url"],
-            api_key=values["anthropic_api_key"].get_secret_value(),
-            timeout=values["default_request_timeout"],
-            max_retries=values["max_retries"],
-        )
-        values["async_client"] = anthropic.AsyncAnthropic(
-            base_url=values["anthropic_api_url"],
-            api_key=values["anthropic_api_key"].get_secret_value(),
-            timeout=values["default_request_timeout"],
-            max_retries=values["max_retries"],
-        )
-        values["HUMAN_PROMPT"] = anthropic.HUMAN_PROMPT
-        values["AI_PROMPT"] = anthropic.AI_PROMPT
-        values["count_tokens"] = values["client"].count_tokens
-        return values
+        self.HUMAN_PROMPT = anthropic.HUMAN_PROMPT
+        self.AI_PROMPT = anthropic.AI_PROMPT
+        self.count_tokens = self.client.count_tokens
+        return self
 
     @property
     def _default_params(self) -> Mapping[str, Any]:
@@ -152,14 +162,14 @@ class AnthropicLLM(LLM, _AnthropicCommon):
             model = AnthropicLLM()
     """
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        populate_by_name=True,
+        arbitrary_types_allowed=True,
+    )
 
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
-
-    @root_validator()
-    def raise_warning(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def raise_warning(cls, values: Dict) -> Any:
         """Raise warning that this class is deprecated."""
         warnings.warn(
             "This Anthropic LLM is deprecated. "
@@ -195,6 +205,19 @@ class AnthropicLLM(LLM, _AnthropicCommon):
             "default_request_timeout": self.default_request_timeout,
             "max_retries": self.max_retries,
         }
+
+    def _get_ls_params(
+        self, stop: Optional[List[str]] = None, **kwargs: Any
+    ) -> LangSmithParams:
+        """Get standard params for tracing."""
+        params = super()._get_ls_params(stop=stop, **kwargs)
+        identifying_params = self._identifying_params
+        if max_tokens := kwargs.get(
+            "max_tokens_to_sample",
+            identifying_params.get("max_tokens"),
+        ):
+            params["ls_max_tokens"] = max_tokens
+        return params
 
     def _wrap_prompt(self, prompt: str) -> str:
         if not self.HUMAN_PROMPT or not self.AI_PROMPT:
@@ -232,7 +255,7 @@ class AnthropicLLM(LLM, _AnthropicCommon):
 
                 prompt = "What are the biggest risks facing humanity?"
                 prompt = f"\n\nHuman: {prompt}\n\nAssistant:"
-                response = model(prompt)
+                response = model.invoke(prompt)
 
         """
         if self.streaming:
@@ -360,6 +383,8 @@ class AnthropicLLM(LLM, _AnthropicCommon):
         return self.count_tokens(text)
 
 
-@deprecated(since="0.1.0", removal="0.2.0", alternative="AnthropicLLM")
+@deprecated(since="0.1.0", removal="0.3.0", alternative="AnthropicLLM")
 class Anthropic(AnthropicLLM):
+    """Anthropic large language model."""
+
     pass

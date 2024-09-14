@@ -7,7 +7,7 @@ from typing import (
 )
 
 from langchain_core._api import deprecated
-from langchain_core.pydantic_v1 import Field
+from pydantic import PrivateAttr
 
 from langchain_anthropic.chat_models import ChatAnthropic
 
@@ -55,6 +55,7 @@ def _get_type(parameter: Dict[str, Any]) -> str:
 
 
 def get_system_message(tools: List[Dict]) -> str:
+    """Generate a system message that describes the available tools."""
     tools_data: List[Dict] = [
         {
             "tool_name": tool["name"],
@@ -145,7 +146,7 @@ def _xml_to_tool_calls(elem: Any, tools: List[Dict]) -> List[Dict[str, Any]]:
 
 @deprecated(
     "0.1.5",
-    removal="0.2.0",
+    removal="0.3.0",
     alternative="ChatAnthropic",
     message=(
         "Tool-calling is now officially supported by the Anthropic API so this "
@@ -155,4 +156,4 @@ def _xml_to_tool_calls(elem: Any, tools: List[Dict]) -> List[Dict[str, Any]]:
 class ChatAnthropicTools(ChatAnthropic):
     """Chat model for interacting with Anthropic functions."""
 
-    _xmllib: Any = Field(default=None)
+    _xmllib: Any = PrivateAttr(default=None)

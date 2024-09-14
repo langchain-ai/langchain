@@ -1,4 +1,5 @@
 """SQLAlchemy wrapper around a database."""
+
 from __future__ import annotations
 
 from typing import Any, Dict, Iterable, List, Literal, Optional, Sequence, Union
@@ -14,7 +15,7 @@ from sqlalchemy import (
     select,
     text,
 )
-from sqlalchemy.engine import Engine, Result
+from sqlalchemy.engine import URL, Engine, Result
 from sqlalchemy.exc import ProgrammingError, SQLAlchemyError
 from sqlalchemy.schema import CreateTable
 from sqlalchemy.sql.expression import Executable
@@ -128,7 +129,10 @@ class SQLDatabase:
 
     @classmethod
     def from_uri(
-        cls, database_uri: str, engine_args: Optional[dict] = None, **kwargs: Any
+        cls,
+        database_uri: Union[str, URL],
+        engine_args: Optional[dict] = None,
+        **kwargs: Any,
     ) -> SQLDatabase:
         """Construct a SQLAlchemy engine from URI."""
         _engine_args = engine_args or {}
@@ -189,7 +193,7 @@ class SQLDatabase:
         try:
             from databricks import sql  # noqa: F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "databricks-sql-connector package not found, please install with"
                 " `pip install databricks-sql-connector`"
             )
@@ -198,10 +202,10 @@ class SQLDatabase:
             from dbruntime.databricks_repl_context import get_context
 
             context = get_context()
-        except ImportError:
-            pass
+            default_host = context.browserHostName
+        except (ImportError, AttributeError):
+            default_host = None
 
-        default_host = context.browserHostName if context else None
         if host is None:
             host = get_from_env("host", "DATABRICKS_HOST", default_host)
 
@@ -267,7 +271,7 @@ class SQLDatabase:
             uri = make_cnosdb_langchain_uri(url, user, password, tenant, database)
             return cls.from_uri(database_uri=uri)
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "cnos-connector package not found, please install with"
                 " `pip install cnos-connector`"
             )
@@ -283,7 +287,7 @@ class SQLDatabase:
             return sorted(self._include_tables)
         return sorted(self._all_tables - self._ignore_tables)
 
-    @deprecated("0.0.1", alternative="get_usable_table_name", removal="0.2.0")
+    @deprecated("0.0.1", alternative="get_usable_table_names", removal="1.0")
     def get_table_names(self) -> Iterable[str]:
         """Get names of tables available."""
         return self.get_usable_table_names()
@@ -334,7 +338,7 @@ class SQLDatabase:
                 continue
 
             # Ignore JSON datatyped columns
-            for k, v in table.columns.items():
+            for k, v in table.columns.items():  # AttributeError: items in sqlalchemy v1
                 if type(v.type) is NullType:
                     table._columns.remove(v)
 

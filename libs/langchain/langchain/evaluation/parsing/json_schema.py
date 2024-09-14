@@ -1,7 +1,8 @@
 from typing import Any, Union
 
+from langchain_core.utils.json import parse_json_markdown
+
 from langchain.evaluation.schema import StringEvaluator
-from langchain.output_parsers.json import parse_json_markdown
 
 
 class JsonSchemaEvaluator(StringEvaluator):
@@ -35,7 +36,7 @@ class JsonSchemaEvaluator(StringEvaluator):
         """Initializes the JsonSchemaEvaluator.
 
         Args:
-            **kwargs: Additional keyword arguments.
+            kwargs: Additional keyword arguments.
 
         Raises:
             ImportError: If the jsonschema package is not installed.
@@ -73,7 +74,7 @@ class JsonSchemaEvaluator(StringEvaluator):
         return node
 
     def _validate(self, prediction: Any, schema: Any) -> dict:
-        from jsonschema import ValidationError, validate  # noqa: F401
+        from jsonschema import ValidationError, validate
 
         try:
             validate(instance=prediction, schema=schema)

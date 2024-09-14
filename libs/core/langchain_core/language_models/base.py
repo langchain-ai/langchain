@@ -5,8 +5,10 @@ from functools import lru_cache
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     Dict,
     List,
+    Literal,
     Mapping,
     Optional,
     Sequence,
@@ -16,9 +18,10 @@ from typing import (
     Union,
 )
 
-from typing_extensions import TypeAlias
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+from typing_extensions import TypeAlias, TypedDict
 
-from langchain_core._api import beta, deprecated
+from langchain_core._api import deprecated
 from langchain_core.messages import (
     AnyMessage,
     BaseMessage,
@@ -26,7 +29,6 @@ from langchain_core.messages import (
     get_buffer_string,
 )
 from langchain_core.prompt_values import PromptValue
-from langchain_core.pydantic_v1 import BaseModel, Field, validator
 from langchain_core.runnables import Runnable, RunnableSerializable
 from langchain_core.utils import get_pydantic_field_names
 
@@ -36,16 +38,38 @@ if TYPE_CHECKING:
     from langchain_core.outputs import LLMResult
 
 
+class LangSmithParams(TypedDict, total=False):
+    """LangSmith parameters for tracing."""
+
+    ls_provider: str
+    """Provider of the model."""
+    ls_model_name: str
+    """Name of the model."""
+    ls_model_type: Literal["chat", "llm"]
+    """Type of the model. Should be 'chat' or 'llm'."""
+    ls_temperature: Optional[float]
+    """Temperature for generation."""
+    ls_max_tokens: Optional[int]
+    """Max tokens for generation."""
+    ls_stop: Optional[List[str]]
+    """Stop words for generation."""
+
+
 @lru_cache(maxsize=None)  # Cache the tokenizer
 def get_tokenizer() -> Any:
+    """Get a GPT-2 tokenizer instance.
+
+    This function is cached to avoid re-loading the tokenizer
+    every time it is called.
+    """
     try:
         from transformers import GPT2TokenizerFast  # type: ignore[import]
-    except ImportError:
+    except ImportError as e:
         raise ImportError(
             "Could not import transformers python package. "
             "This is needed in order to calculate get_token_ids. "
             "Please install it with `pip install transformers`."
-        )
+        ) from e
     # create a GPT-2 tokenizer instance
     return GPT2TokenizerFast.from_pretrained("gpt2")
 
@@ -76,7 +100,7 @@ class BaseLanguageModel(
 ):
     """Abstract base class for interfacing with language models.
 
-    All language model wrappers inherit from BaseLanguageModel.
+    All language model wrappers inherited from BaseLanguageModel.
     """
 
     cache: Union[BaseCache, bool, None] = None
@@ -89,7 +113,7 @@ class BaseLanguageModel(
     
     Caching is not currently supported for streaming methods of models.
     """
-    verbose: bool = Field(default_factory=_get_verbosity)
+    verbose: bool = Field(default_factory=_get_verbosity, exclude=True, repr=False)
     """Whether to print out response text."""
     callbacks: Callbacks = Field(default=None, exclude=True)
     """Callbacks to add to the run trace."""
@@ -97,12 +121,26 @@ class BaseLanguageModel(
     """Tags to add to the run trace."""
     metadata: Optional[Dict[str, Any]] = Field(default=None, exclude=True)
     """Metadata to add to the run trace."""
+    custom_get_token_ids: Optional[Callable[[str], List[int]]] = Field(
+        default=None, exclude=True
+    )
+    """Optional encoder to use for counting tokens."""
 
-    @validator("verbose", pre=True, always=True)
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
+
+    @field_validator("verbose", mode="before")
     def set_verbose(cls, verbose: Optional[bool]) -> bool:
         """If verbose is None, set it.
 
         This allows users to pass in None as verbose to access the global setting.
+
+        Args:
+            verbose: The verbosity setting to use.
+
+        Returns:
+            The verbosity setting to use.
         """
         if verbose is None:
             return _get_verbosity()
@@ -196,14 +234,15 @@ class BaseLanguageModel(
                 prompt and additional model provider-specific output.
         """
 
-    @beta()
     def with_structured_output(
         self, schema: Union[Dict, Type[BaseModel]], **kwargs: Any
     ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
-        """Implement this if there is a way of steering the model to generate responses that match a given schema."""  # noqa: E501
+        """Not implemented on this class."""
+        # Implement this on child class if there is a way of steering the model to
+        # generate responses that match a given schema.
         raise NotImplementedError()
 
-    @deprecated("0.1.7", alternative="invoke", removal="0.2.0")
+    @deprecated("0.1.7", alternative="invoke", removal="1.0")
     @abstractmethod
     def predict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
@@ -224,7 +263,7 @@ class BaseLanguageModel(
             Top model prediction as a string.
         """
 
-    @deprecated("0.1.7", alternative="invoke", removal="0.2.0")
+    @deprecated("0.1.7", alternative="invoke", removal="1.0")
     @abstractmethod
     def predict_messages(
         self,
@@ -249,7 +288,7 @@ class BaseLanguageModel(
             Top model prediction as a message.
         """
 
-    @deprecated("0.1.7", alternative="ainvoke", removal="0.2.0")
+    @deprecated("0.1.7", alternative="ainvoke", removal="1.0")
     @abstractmethod
     async def apredict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
@@ -270,7 +309,7 @@ class BaseLanguageModel(
             Top model prediction as a string.
         """
 
-    @deprecated("0.1.7", alternative="ainvoke", removal="0.2.0")
+    @deprecated("0.1.7", alternative="ainvoke", removal="1.0")
     @abstractmethod
     async def apredict_messages(
         self,
@@ -310,12 +349,15 @@ class BaseLanguageModel(
             A list of ids corresponding to the tokens in the text, in order they occur
                 in the text.
         """
-        return _get_token_ids_default_method(text)
+        if self.custom_get_token_ids is not None:
+            return self.custom_get_token_ids(text)
+        else:
+            return _get_token_ids_default_method(text)
 
     def get_num_tokens(self, text: str) -> int:
         """Get the number of tokens present in the text.
 
-        Useful for checking if an input will fit in a model's context window.
+        Useful for checking if an input fits in a model's context window.
 
         Args:
             text: The string input to tokenize.
@@ -328,7 +370,7 @@ class BaseLanguageModel(
     def get_num_tokens_from_messages(self, messages: List[BaseMessage]) -> int:
         """Get the number of tokens in the messages.
 
-        Useful for checking if an input will fit in a model's context window.
+        Useful for checking if an input fits in a model's context window.
 
         Args:
             messages: The message inputs to tokenize.

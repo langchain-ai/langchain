@@ -1,10 +1,11 @@
 """Tool for the identification of prompt injection attacks."""
+
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Any, Union
 
-from langchain.pydantic_v1 import Field, root_validator
-from langchain.tools.base import BaseTool
+from langchain_core.tools import BaseTool
+from pydantic import Field, model_validator
 
 if TYPE_CHECKING:
     from transformers import Pipeline
@@ -23,7 +24,7 @@ class PromptInjectionException(ValueError):
 
 
 def _model_default_factory(
-    model_name: str = "laiyer/deberta-v3-base-prompt-injection",
+    model_name: str = "protectai/deberta-v3-base-prompt-injection-v2",
 ) -> Pipeline:
     try:
         from transformers import (
@@ -64,7 +65,7 @@ class HuggingFaceInjectionIdentifier(BaseTool):
     
     Can be specified as transformers Pipeline or string. String should correspond to the
         model name of a text-classification transformers model. Defaults to 
-        ``laiyer/deberta-v3-base-prompt-injection`` model.
+        ``protectai/deberta-v3-base-prompt-injection-v2`` model.
     """
     threshold: float = Field(
         description="Threshold for prompt injection detection.", default=0.5
@@ -80,8 +81,9 @@ class HuggingFaceInjectionIdentifier(BaseTool):
     
     Defaults to ``INJECTION``. Value depends on the model used."""
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: dict) -> dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: dict) -> Any:
         if isinstance(values.get("model"), str):
             values["model"] = _model_default_factory(model_name=values["model"])
         return values

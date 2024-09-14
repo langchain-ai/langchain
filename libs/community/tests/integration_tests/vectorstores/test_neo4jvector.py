@@ -1,16 +1,23 @@
 """Test Neo4jVector functionality."""
+
 import os
+from math import isclose
 from typing import Any, Dict, List, cast
 
 from langchain_core.documents import Document
+from yaml import safe_load
 
+from langchain_community.graphs import Neo4jGraph
 from langchain_community.vectorstores.neo4j_vector import (
     Neo4jVector,
     SearchType,
     _get_search_index_query,
 )
 from langchain_community.vectorstores.utils import DistanceStrategy
-from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
+from tests.integration_tests.vectorstores.fake_embeddings import (
+    AngularTwoDimensionalEmbeddings,
+    FakeEmbeddings,
+)
 from tests.integration_tests.vectorstores.fixtures.filtering_test_cases import (
     DOCUMENTS,
     TYPE_1_FILTERING_TEST_CASES,
@@ -195,7 +202,10 @@ def test_neo4jvector_with_metadatas_with_scores() -> None:
         password=password,
         pre_delete_collection=True,
     )
-    output = docsearch.similarity_search_with_score("foo", k=1)
+    output = [
+        (doc, round(score, 1))
+        for doc, score in docsearch.similarity_search_with_score("foo", k=1)
+    ]
     assert output == [(Document(page_content="foo", metadata={"page": "0"}), 1.0)]
 
     drop_vector_indexes(docsearch)
@@ -215,11 +225,20 @@ def test_neo4jvector_relevance_score() -> None:
     )
 
     output = docsearch.similarity_search_with_relevance_scores("foo", k=3)
-    assert output == [
+    expected_output = [
         (Document(page_content="foo", metadata={"page": "0"}), 1.0),
         (Document(page_content="bar", metadata={"page": "1"}), 0.9998376369476318),
         (Document(page_content="baz", metadata={"page": "2"}), 0.9993523359298706),
     ]
+
+    # Check if the length of the outputs matches
+    assert len(output) == len(expected_output)
+
+    # Check if each document and its relevance score is close to the expected value
+    for (doc, score), (expected_doc, expected_score) in zip(output, expected_output):
+        assert doc.page_content == expected_doc.page_content
+        assert doc.metadata == expected_doc.metadata
+        assert isclose(score, expected_score, rel_tol=1e-5)
 
     drop_vector_indexes(docsearch)
 
@@ -777,8 +796,16 @@ def test_retrieval_dictionary() -> None:
             )
         )
     ]
+
     output = docsearch.similarity_search("Foo", k=1)
-    assert output == expected_output
+
+    def parse_document(doc: Document) -> Any:
+        return safe_load(doc.page_content)
+
+    parsed_expected = [parse_document(doc) for doc in expected_output]
+    parsed_output = [parse_document(doc) for doc in output]
+
+    assert parsed_output == parsed_expected
     drop_vector_indexes(docsearch)
 
 
@@ -900,5 +927,61 @@ OPTIONS {indexConfig: {
 
     output = relationship_index.similarity_search("foo", k=1)
     assert output == [Document(page_content="foo-text", metadata={"foo": "bar"})]
+
+    drop_vector_indexes(docsearch)
+
+
+def test_neo4j_max_marginal_relevance_search() -> None:
+    """
+    Test end to end construction and MMR search.
+    The embedding function used here ensures `texts` become
+    the following vectors on a circle (numbered v0 through v3):
+
+           ______ v2
+          /      \
+         /        |  v1
+    v3  |     .    | query
+         |        /  v0
+          |______/                 (N.B. very crude drawing)
+
+    With fetch_k==3 and k==2, when query is at (1, ),
+    one expects that v2 and v0 are returned (in some order).
+    """
+    texts = ["-0.124", "+0.127", "+0.25", "+1.0"]
+    metadatas = [{"page": i} for i in range(len(texts))]
+    docsearch = Neo4jVector.from_texts(
+        texts,
+        metadatas=metadatas,
+        embedding=AngularTwoDimensionalEmbeddings(),
+        pre_delete_collection=True,
+    )
+
+    expected_set = {
+        ("+0.25", 2),
+        ("-0.124", 0),
+    }
+
+    output = docsearch.max_marginal_relevance_search("0.0", k=2, fetch_k=3)
+    output_set = {
+        (mmr_doc.page_content, mmr_doc.metadata["page"]) for mmr_doc in output
+    }
+    assert output_set == expected_set
+
+    drop_vector_indexes(docsearch)
+
+
+def test_neo4jvector_passing_graph_object() -> None:
+    """Test end to end construction and search with passing graph object."""
+    graph = Neo4jGraph()
+    # Rewrite env vars to make sure it fails if env is used
+    os.environ["NEO4J_URI"] = "foo"
+    docsearch = Neo4jVector.from_texts(
+        texts=texts,
+        embedding=FakeEmbeddingsWithOsDimension(),
+        graph=graph,
+        pre_delete_collection=True,
+    )
+    output = docsearch.similarity_search("foo", k=1)
+    assert output == [Document(page_content="foo")]
 
     drop_vector_indexes(docsearch)

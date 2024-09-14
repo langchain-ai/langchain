@@ -19,7 +19,10 @@ from langchain_text_splitters.base import split_text_on_tokens
 from langchain_text_splitters.character import CharacterTextSplitter
 from langchain_text_splitters.html import HTMLHeaderTextSplitter, HTMLSectionSplitter
 from langchain_text_splitters.json import RecursiveJsonSplitter
-from langchain_text_splitters.markdown import MarkdownHeaderTextSplitter
+from langchain_text_splitters.markdown import (
+    ExperimentalMarkdownSyntaxTextSplitter,
+    MarkdownHeaderTextSplitter,
+)
 from langchain_text_splitters.python import PythonCodeTextSplitter
 
 FAKE_PYTHON_TEXT = """
@@ -115,6 +118,50 @@ def test_character_text_splitter_keep_separator_regex(
 @pytest.mark.parametrize(
     "separator, is_separator_regex", [(re.escape("."), True), (".", False)]
 )
+def test_character_text_splitter_keep_separator_regex_start(
+    separator: str, is_separator_regex: bool
+) -> None:
+    """Test splitting by characters while keeping the separator
+    that is a regex special character and placing it at the start of each chunk.
+    """
+    text = "foo.bar.baz.123"
+    splitter = CharacterTextSplitter(
+        separator=separator,
+        chunk_size=1,
+        chunk_overlap=0,
+        keep_separator="start",
+        is_separator_regex=is_separator_regex,
+    )
+    output = splitter.split_text(text)
+    expected_output = ["foo", ".bar", ".baz", ".123"]
+    assert output == expected_output
+
+
+@pytest.mark.parametrize(
+    "separator, is_separator_regex", [(re.escape("."), True), (".", False)]
+)
+def test_character_text_splitter_keep_separator_regex_end(
+    separator: str, is_separator_regex: bool
+) -> None:
+    """Test splitting by characters while keeping the separator
+    that is a regex special character and placing it at the end of each chunk.
+    """
+    text = "foo.bar.baz.123"
+    splitter = CharacterTextSplitter(
+        separator=separator,
+        chunk_size=1,
+        chunk_overlap=0,
+        keep_separator="end",
+        is_separator_regex=is_separator_regex,
+    )
+    output = splitter.split_text(text)
+    expected_output = ["foo.", "bar.", "baz.", "123"]
+    assert output == expected_output
+
+
+@pytest.mark.parametrize(
+    "separator, is_separator_regex", [(re.escape("."), True), (".", False)]
+)
 def test_character_text_splitter_discard_separator_regex(
     separator: str, is_separator_regex: bool
 ) -> None:
@@ -131,6 +178,30 @@ def test_character_text_splitter_discard_separator_regex(
     output = splitter.split_text(text)
     expected_output = ["foo", "bar", "baz", "123"]
     assert output == expected_output
+
+
+def test_recursive_character_text_splitter_keep_separators() -> None:
+    split_tags = [",", "."]
+    query = "Apple,banana,orange and tomato."
+    # start
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=10,
+        chunk_overlap=0,
+        separators=split_tags,
+        keep_separator="start",
+    )
+    result = splitter.split_text(query)
+    assert result == ["Apple", ",banana", ",orange and tomato", "."]
+
+    # end
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=10,
+        chunk_overlap=0,
+        separators=split_tags,
+        keep_separator="end",
+    )
+    result = splitter.split_text(query)
+    assert result == ["Apple,", "banana,", "orange and tomato."]
 
 
 def test_character_text_splitting_args() -> None:
@@ -1220,6 +1291,242 @@ def test_md_header_text_splitter_fenced_code_block_interleaved(
     assert output == expected_output
 
 
+@pytest.mark.parametrize("characters", ["\ufeff"])
+def test_md_header_text_splitter_with_invisible_characters(characters: str) -> None:
+    """Test markdown splitter by header: Fenced code block."""
+
+    markdown_document = (
+        f"{characters}# Foo\n\n" "foo()\n" f"{characters}## Bar\n\n" "bar()"
+    )
+
+    headers_to_split_on = [
+        ("#", "Header 1"),
+        ("##", "Header 2"),
+    ]
+
+    markdown_splitter = MarkdownHeaderTextSplitter(
+        headers_to_split_on=headers_to_split_on,
+    )
+    output = markdown_splitter.split_text(markdown_document)
+
+    expected_output = [
+        Document(
+            page_content="foo()",
+            metadata={"Header 1": "Foo"},
+        ),
+        Document(
+            page_content="bar()",
+            metadata={"Header 1": "Foo", "Header 2": "Bar"},
+        ),
+    ]
+
+    assert output == expected_output
+
+
+EXPERIMENTAL_MARKDOWN_DOCUMENT = (
+    "# My Header 1\n"
+    "Content for header 1\n"
+    "## Header 2\n"
+    "Content for header 2\n"
+    "```python\n"
+    "def func_definition():\n"
+    "   print('Keep the whitespace consistent')\n"
+    "```\n"
+    "# Header 1 again\n"
+    "We should also split on the horizontal line\n"
+    "----\n"
+    "This will be a new doc but with the same header metadata\n\n"
+    "And it includes a new paragraph"
+)
+
+
+def test_experimental_markdown_syntax_text_splitter() -> None:
+    """Test experimental markdown syntax splitter."""
+
+    markdown_splitter = ExperimentalMarkdownSyntaxTextSplitter()
+    output = markdown_splitter.split_text(EXPERIMENTAL_MARKDOWN_DOCUMENT)
+
+    expected_output = [
+        Document(
+            page_content="Content for header 1\n",
+            metadata={"Header 1": "My Header 1"},
+        ),
+        Document(
+            page_content="Content for header 2\n",
+            metadata={"Header 1": "My Header 1", "Header 2": "Header 2"},
+        ),
+        Document(
+            page_content=(
+                "```python\ndef func_definition():\n   "
+                "print('Keep the whitespace consistent')\n```\n"
+            ),
+            metadata={
+                "Code": "python",
+                "Header 1": "My Header 1",
+                "Header 2": "Header 2",
+            },
+        ),
+        Document(
+            page_content="We should also split on the horizontal line\n",
+            metadata={"Header 1": "Header 1 again"},
+        ),
+        Document(
+            page_content=(
+                "This will be a new doc but with the same header metadata\n\n"
+                "And it includes a new paragraph"
+            ),
+            metadata={"Header 1": "Header 1 again"},
+        ),
+    ]
+
+    assert output == expected_output
+
+
+def test_experimental_markdown_syntax_text_splitter_header_configuration() -> None:
+    """Test experimental markdown syntax splitter."""
+
+    headers_to_split_on = [("#", "Encabezamiento 1")]
+
+    markdown_splitter = ExperimentalMarkdownSyntaxTextSplitter(
+        headers_to_split_on=headers_to_split_on
+    )
+    output = markdown_splitter.split_text(EXPERIMENTAL_MARKDOWN_DOCUMENT)
+
+    expected_output = [
+        Document(
+            page_content="Content for header 1\n## Header 2\nContent for header 2\n",
+            metadata={"Encabezamiento 1": "My Header 1"},
+        ),
+        Document(
+            page_content=(
+                "```python\ndef func_definition():\n   "
+                "print('Keep the whitespace consistent')\n```\n"
+            ),
+            metadata={"Code": "python", "Encabezamiento 1": "My Header 1"},
+        ),
+        Document(
+            page_content="We should also split on the horizontal line\n",
+            metadata={"Encabezamiento 1": "Header 1 again"},
+        ),
+        Document(
+            page_content=(
+                "This will be a new doc but with the same header metadata\n\n"
+                "And it includes a new paragraph"
+            ),
+            metadata={"Encabezamiento 1": "Header 1 again"},
+        ),
+    ]
+
+    assert output == expected_output
+
+
+def test_experimental_markdown_syntax_text_splitter_with_headers() -> None:
+    """Test experimental markdown syntax splitter."""
+
+    markdown_splitter = ExperimentalMarkdownSyntaxTextSplitter(strip_headers=False)
+    output = markdown_splitter.split_text(EXPERIMENTAL_MARKDOWN_DOCUMENT)
+
+    expected_output = [
+        Document(
+            page_content="# My Header 1\nContent for header 1\n",
+            metadata={"Header 1": "My Header 1"},
+        ),
+        Document(
+            page_content="## Header 2\nContent for header 2\n",
+            metadata={"Header 1": "My Header 1", "Header 2": "Header 2"},
+        ),
+        Document(
+            page_content=(
+                "```python\ndef func_definition():\n   "
+                "print('Keep the whitespace consistent')\n```\n"
+            ),
+            metadata={
+                "Code": "python",
+                "Header 1": "My Header 1",
+                "Header 2": "Header 2",
+            },
+        ),
+        Document(
+            page_content=(
+                "# Header 1 again\nWe should also split on the horizontal line\n"
+            ),
+            metadata={"Header 1": "Header 1 again"},
+        ),
+        Document(
+            page_content=(
+                "This will be a new doc but with the same header metadata\n\n"
+                "And it includes a new paragraph"
+            ),
+            metadata={"Header 1": "Header 1 again"},
+        ),
+    ]
+
+    assert output == expected_output
+
+
+def test_experimental_markdown_syntax_text_splitter_split_lines() -> None:
+    """Test experimental markdown syntax splitter."""
+
+    markdown_splitter = ExperimentalMarkdownSyntaxTextSplitter(return_each_line=True)
+    output = markdown_splitter.split_text(EXPERIMENTAL_MARKDOWN_DOCUMENT)
+
+    expected_output = [
+        Document(
+            page_content="Content for header 1", metadata={"Header 1": "My Header 1"}
+        ),
+        Document(
+            page_content="Content for header 2",
+            metadata={"Header 1": "My Header 1", "Header 2": "Header 2"},
+        ),
+        Document(
+            page_content="```python",
+            metadata={
+                "Code": "python",
+                "Header 1": "My Header 1",
+                "Header 2": "Header 2",
+            },
+        ),
+        Document(
+            page_content="def func_definition():",
+            metadata={
+                "Code": "python",
+                "Header 1": "My Header 1",
+                "Header 2": "Header 2",
+            },
+        ),
+        Document(
+            page_content="   print('Keep the whitespace consistent')",
+            metadata={
+                "Code": "python",
+                "Header 1": "My Header 1",
+                "Header 2": "Header 2",
+            },
+        ),
+        Document(
+            page_content="```",
+            metadata={
+                "Code": "python",
+                "Header 1": "My Header 1",
+                "Header 2": "Header 2",
+            },
+        ),
+        Document(
+            page_content="We should also split on the horizontal line",
+            metadata={"Header 1": "Header 1 again"},
+        ),
+        Document(
+            page_content="This will be a new doc but with the same header metadata",
+            metadata={"Header 1": "Header 1 again"},
+        ),
+        Document(
+            page_content="And it includes a new paragraph",
+            metadata={"Header 1": "Header 1 again"},
+        ),
+    ]
+
+    assert output == expected_output
+
+
 def test_solidity_code_splitter() -> None:
     splitter = RecursiveCharacterTextSplitter.from_language(
         Language.SOL, chunk_size=CHUNK_SIZE, chunk_overlap=0
@@ -1543,6 +1850,90 @@ def test_happy_path_splitting_based_on_header_with_whitespace_chars() -> None:
     assert docs[2].metadata["Header 2"] == "Baz"
 
 
+@pytest.mark.requires("lxml")
+@pytest.mark.requires("bs4")
+def test_section_splitter_accepts_a_relative_path() -> None:
+    html_string = """<html><body><p>Foo</p></body></html>"""
+    test_file = Path("tests/test_data/test_splitter.xslt")
+    assert test_file.is_file()
+
+    sec_splitter = HTMLSectionSplitter(
+        headers_to_split_on=[("h1", "Header 1"), ("h2", "Header 2")],
+        xslt_path=test_file.as_posix(),
+    )
+
+    sec_splitter.split_text(html_string)
+
+
+@pytest.mark.requires("lxml")
+@pytest.mark.requires("bs4")
+def test_section_splitter_accepts_an_absolute_path() -> None:
+    html_string = """<html><body><p>Foo</p></body></html>"""
+    test_file = Path("tests/test_data/test_splitter.xslt").absolute()
+    assert test_file.is_absolute()
+    assert test_file.is_file()
+
+    sec_splitter = HTMLSectionSplitter(
+        headers_to_split_on=[("h1", "Header 1"), ("h2", "Header 2")],
+        xslt_path=test_file.as_posix(),
+    )
+
+    sec_splitter.split_text(html_string)
+
+
+@pytest.mark.requires("lxml")
+@pytest.mark.requires("bs4")
+def test_happy_path_splitting_with_duplicate_header_tag() -> None:
+    # arrange
+    html_string = """<!DOCTYPE html>
+        <html>
+        <body>
+            <div>
+                <h1>Foo</h1>
+                <p>Some intro text about Foo.</p>
+                <div>
+                    <h2>Bar main section</h2>
+                    <p>Some intro text about Bar.</p>
+                    <h3>Bar subsection 1</h3>
+                    <p>Some text about the first subtopic of Bar.</p>
+                    <h3>Bar subsection 2</h3>
+                    <p>Some text about the second subtopic of Bar.</p>
+                </div>
+                <div>
+                    <h2>Foo</h2>
+                    <p>Some text about Baz</p>
+                </div>
+                <h1>Foo</h1>
+                <br>
+                <p>Some concluding text about Foo</p>
+            </div>
+        </body>
+        </html>"""
+
+    sec_splitter = HTMLSectionSplitter(
+        headers_to_split_on=[("h1", "Header 1"), ("h2", "Header 2")]
+    )
+
+    docs = sec_splitter.split_text(html_string)
+
+    assert len(docs) == 4
+    assert docs[0].page_content == "Foo \n Some intro text about Foo."
+    assert docs[0].metadata["Header 1"] == "Foo"
+
+    assert docs[1].page_content == (
+        "Bar main section \n Some intro text about Bar. \n "
+        "Bar subsection 1 \n Some text about the first subtopic of Bar. \n "
+        "Bar subsection 2 \n Some text about the second subtopic of Bar."
+    )
+    assert docs[1].metadata["Header 2"] == "Bar main section"
+
+    assert docs[2].page_content == "Foo \n Some text about Baz"
+    assert docs[2].metadata["Header 2"] == "Foo"
+
+    assert docs[3].page_content == "Foo \n \n Some concluding text about Foo"
+    assert docs[3].metadata["Header 1"] == "Foo"
+
+
 def test_split_json() -> None:
     """Test json text splitter"""
     max_chunk = 800
@@ -1586,3 +1977,77 @@ def test_split_json_with_lists() -> None:
     texts_list = splitter.split_text(json_data=test_data_list, convert_lists=True)
 
     assert len(texts_list) >= len(texts)
+
+
+def test_split_json_many_calls() -> None:
+    x = {"a": 1, "b": 2}
+    y = {"c": 3, "d": 4}
+
+    splitter = RecursiveJsonSplitter()
+    chunk0 = splitter.split_json(x)
+    assert chunk0 == [{"a": 1, "b": 2}]
+
+    chunk1 = splitter.split_json(y)
+    assert chunk1 == [{"c": 3, "d": 4}]
+
+    # chunk0 is now altered by creating chunk1
+    assert chunk0 == [{"a": 1, "b": 2}]
+
+    chunk0_output = [{"a": 1, "b": 2}]
+    chunk1_output = [{"c": 3, "d": 4}]
+
+    assert chunk0 == chunk0_output
+    assert chunk1 == chunk1_output
+
+
+def test_powershell_code_splitter_short_code() -> None:
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.POWERSHELL, chunk_size=60, chunk_overlap=0
+    )
+    code = """
+# Check if a file exists
+$filePath = "C:\\temp\\file.txt"
+if (Test-Path $filePath) {
+    # File exists
+} else {
+    # File does not exist
+}
+    """
+
+    chunks = splitter.split_text(code)
+    assert chunks == [
+        '# Check if a file exists\n$filePath = "C:\\temp\\file.txt"',
+        "if (Test-Path $filePath) {\n    # File exists\n} else {",
+        "# File does not exist\n}",
+    ]
+
+
+def test_powershell_code_splitter_longer_code() -> None:
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.POWERSHELL, chunk_size=60, chunk_overlap=0
+    )
+    code = """
+# Get a list of all processes and export to CSV
+$processes = Get-Process
+$processes | Export-Csv -Path "C:\\temp\\processes.csv" -NoTypeInformation
+
+# Read the CSV file and display its content
+$csvContent = Import-Csv -Path "C:\\temp\\processes.csv"
+$csvContent | ForEach-Object {
+    $_.ProcessName
+}
+
+# End of script
+    """
+
+    chunks = splitter.split_text(code)
+    assert chunks == [
+        "# Get a list of all processes and export to CSV",
+        "$processes = Get-Process",
+        '$processes | Export-Csv -Path "C:\\temp\\processes.csv"',
+        "-NoTypeInformation",
+        "# Read the CSV file and display its content",
+        '$csvContent = Import-Csv -Path "C:\\temp\\processes.csv"',
+        "$csvContent | ForEach-Object {\n    $_.ProcessName\n}",
+        "# End of script",
+    ]

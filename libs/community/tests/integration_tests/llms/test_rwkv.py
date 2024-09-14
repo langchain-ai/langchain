@@ -1,5 +1,6 @@
 # flake8: noqa
 """Test rwkv wrapper."""
+
 import os
 from urllib.request import urlretrieve
 
@@ -31,5 +32,5 @@ def test_rwkv_inference() -> None:
     """Test valid gpt4all inference."""
     model_path = _download_model()
     llm = RWKV(model=model_path, tokens_path="20B_tokenizer.json", strategy="cpu fp32")
-    output = llm("Say foo:")
+    output = llm.invoke("Say foo:")
     assert isinstance(output, str)

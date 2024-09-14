@@ -2,45 +2,10 @@
 
 All functionality related to [Google Cloud Platform](https://cloud.google.com/) and other `Google` products.
 
-## LLMs
+## Chat models
 
 We recommend individual developers to start with Gemini API (`langchain-google-genai`) and move to Vertex AI (`langchain-google-vertexai`) when they need access to commercial support and higher rate limits. If you’re already Cloud-friendly or Cloud-native, then you can get started in Vertex AI straight away.
-Please, find more information [here](https://ai.google.dev/gemini-api/docs/migrate-to-cloud).
-
-### Google Generative AI
-
-Access GoogleAI `Gemini` models such as `gemini-pro` and `gemini-pro-vision` through the `GoogleGenerativeAI` class.
-
-Install python package.
-
-```bash
-pip install langchain-google-genai
-```
-
-See a [usage example](/docs/integrations/llms/google_ai).
-
-```python
-from langchain_google_genai import GoogleGenerativeAI
-```
-
-### Vertex AI Model Garden
-
-Access `PaLM` and hundreds of OSS models via `Vertex AI Model Garden` service.
-
-We need to install `langchain-google-vertexai` python package.
-
-```bash
-pip install langchain-google-vertexai
-```
-
-See a [usage example](/docs/integrations/llms/google_vertex_ai_palm#vertex-model-garden).
-
-```python
-from langchain_google_vertexai import VertexAIModelGarden
-```
-
-
-## Chat models
+Please see [here](https://ai.google.dev/gemini-api/docs/migrate-to-cloud) for more information.
 
 ### Google Generative AI
 
@@ -93,7 +58,7 @@ The value of image_url can be any of the following:
 
 ### Vertex AI
 
-Access PaLM chat models like `chat-bison` and `codechat-bison` via Google Cloud.
+Access chat models like `Gemini` via Google Cloud.
 
 We need to install `langchain-google-vertexai` python package.
 
@@ -107,9 +72,213 @@ See a [usage example](/docs/integrations/chat/google_vertex_ai_palm).
 from langchain_google_vertexai import ChatVertexAI
 ```
 
+### Chat Anthropic on Vertex AI Model Garden
+
+See a [usage example](/docs/integrations/llms/google_vertex_ai_palm).
+
+```python
+from langchain_google_vertexai.model_garden import ChatAnthropicVertex
+```
+
+### Chat Llama on Vertex AI Model Garden
+
+```python
+from langchain_google_vertexai.model_garden_maas.llama import VertexModelGardenLlama
+```
+
+### Chat Mistral on Vertex AI Model Garden
+
+```python
+from langchain_google_vertexai.model_garden_maas.mistral import VertexModelGardenMistral
+```
+
+### Chat Gemma local from Hugging Face
+
+>Local `Gemma` model loaded from `HuggingFace`.
+
+We need to install `langchain-google-vertexai` python package.
+
+```bash
+pip install langchain-google-vertexai
+```
+
+```python
+from langchain_google_vertexai.gemma import GemmaChatLocalHF
+```
+
+### Chat Gemma local from Kaggle
+
+>Local `Gemma` model loaded from `Kaggle`.
+
+We need to install `langchain-google-vertexai` python package.
+
+```bash
+pip install langchain-google-vertexai
+```
+
+```python
+from langchain_google_vertexai.gemma import GemmaChatLocalKaggle
+```
+
+### Chat Gemma on Vertex AI Model Garden
+
+We need to install `langchain-google-vertexai` python package.
+
+```bash
+pip install langchain-google-vertexai
+```
+
+```python
+from langchain_google_vertexai.gemma import GemmaChatVertexAIModelGarden
+```
+
+### Vertex AI image captioning chat
+
+>Implementation of the `Image Captioning model` as a chat.
+
+We need to install `langchain-google-vertexai` python package.
+
+```bash
+pip install langchain-google-vertexai
+```
+
+```python
+from langchain_google_vertexai.vision_models import VertexAIImageCaptioningChat
+```
+
+### Vertex AI image editor chat
+
+>Given an image and a prompt, edit the image. Currently only supports mask-free editing.
+
+We need to install `langchain-google-vertexai` python package.
+
+```bash
+pip install langchain-google-vertexai
+```
+
+```python
+from langchain_google_vertexai.vision_models import VertexAIImageEditorChat
+```
+
+### Vertex AI image generator chat
+
+>Generates an image from a prompt.
+
+We need to install `langchain-google-vertexai` python package.
+
+```bash
+pip install langchain-google-vertexai
+```
+
+```python
+from langchain_google_vertexai.vision_models import VertexAIImageGeneratorChat
+```
+
+### Vertex AI visual QnA chat
+
+>Chat implementation of a visual QnA model
+
+We need to install `langchain-google-vertexai` python package.
+
+```bash
+pip install langchain-google-vertexai
+```
+
+```python
+from langchain_google_vertexai.vision_models import VertexAIVisualQnAChat
+```
+
+## LLMs
+
+### Google Generative AI
+
+Access GoogleAI `Gemini` models such as `gemini-pro` and `gemini-pro-vision` through the `GoogleGenerativeAI` class.
+
+Install python package.
+
+```bash
+pip install langchain-google-genai
+```
+
+See a [usage example](/docs/integrations/llms/google_ai).
+
+```python
+from langchain_google_genai import GoogleGenerativeAI
+```
+
+### Vertex AI Model Garden
+
+Access `PaLM` and hundreds of OSS models via `Vertex AI Model Garden` service.
+
+We need to install `langchain-google-vertexai` python package.
+
+```bash
+pip install langchain-google-vertexai
+```
+
+See a [usage example](/docs/integrations/llms/google_vertex_ai_palm#vertex-model-garden).
+
+```python
+from langchain_google_vertexai import VertexAIModelGarden
+```
+
+### Gemma local from Hugging Face
+
+>Local `Gemma` model loaded from `HuggingFace`.
+
+We need to install `langchain-google-vertexai` python package.
+
+```bash
+pip install langchain-google-vertexai
+```
+
+```python
+from langchain_google_vertexai.gemma import GemmaLocalHF
+```
+
+### Gemma local from Kaggle
+
+>Local `Gemma` model loaded from `Kaggle`.
+
+We need to install `langchain-google-vertexai` python package.
+
+```bash
+pip install langchain-google-vertexai
+```
+
+```python
+from langchain_google_vertexai.gemma import GemmaLocalKaggle
+```
+
+### Gemma on Vertex AI Model Garden
+
+We need to install `langchain-google-vertexai` python package.
+
+```bash
+pip install langchain-google-vertexai
+```
+
+```python
+from langchain_google_vertexai.gemma import GemmaVertexAIModelGarden
+```
+
+### Vertex AI image captioning
+
+>Implementation of the `Image Captioning model` as an LLM.
+
+We need to install `langchain-google-vertexai` python package.
+
+```bash
+pip install langchain-google-vertexai
+```
+
+```python
+from langchain_google_vertexai.vision_models import VertexAIImageCaptioning
+```
+
 ## Embedding models
 
-### Google Generative AI Embeddings
+### Google Generative AI embedding
 
 See a [usage example](/docs/integrations/text_embedding/google_generative_ai).
 
@@ -127,6 +296,18 @@ export GOOGLE_API_KEY=your-api-key
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 ```
 
+### Google Generative AI server-side embedding
+
+Install the python package:
+
+```bash
+pip install langchain-google-genai
+```
+
+```python
+from langchain_google_genai.google_vector_store import ServerSideEmbedding
+```
+
 ### Vertex AI
 
 We need to install `langchain-google-vertexai` python package.
@@ -139,6 +320,18 @@ See a [usage example](/docs/integrations/text_embedding/google_vertex_ai_palm).
 
 ```python
 from langchain_google_vertexai import VertexAIEmbeddings
+```
+
+### Palm embedding
+
+We need to install `langchain-community` python package.
+
+```bash
+pip install langchain-community
+```
+
+```python
+from langchain_community.embeddings.google_palm import GooglePalmEmbeddings
 ```
 
 ## Document Loaders
@@ -163,21 +356,22 @@ from langchain_google_alloydb_pg import AlloyDBEngine, AlloyDBLoader
 
 > [Google Cloud BigQuery](https://cloud.google.com/bigquery) is a serverless and cost-effective enterprise data warehouse that works across clouds and scales with your data in Google Cloud.
 
-We need to install `google-cloud-bigquery` python package.
+We need to install `langchain-google-community` with Big Query dependencies:
 
 ```bash
-pip install google-cloud-bigquery
+pip install langchain-google-community[bigquery]
 ```
 
 See a [usage example](/docs/integrations/document_loaders/google_bigquery).
 
 ```python
-from langchain_community.document_loaders import BigQueryLoader
+from langchain_google_community import BigQueryLoader
 ```
 
 ### Bigtable
 
 > [Google Cloud Bigtable](https://cloud.google.com/bigtable/docs) is Google's fully managed NoSQL Big Data database service in Google Cloud.
+
 Install the python package:
 
 ```bash
@@ -193,6 +387,7 @@ from langchain_google_bigtable import BigtableLoader
 ### Cloud SQL for MySQL
 
 > [Google Cloud SQL for MySQL](https://cloud.google.com/sql) is a fully-managed database service that helps you set up, maintain, manage, and administer your MySQL relational databases on Google Cloud.
+
 Install the python package:
 
 ```bash
@@ -202,12 +397,13 @@ pip install langchain-google-cloud-sql-mysql
 See [usage example](/docs/integrations/document_loaders/google_cloud_sql_mysql).
 
 ```python
-from langchain_google_cloud_sql_mysql import MySQLEngine, MySQLDocumentLoader
+from langchain_google_cloud_sql_mysql import MySQLEngine, MySQLLoader
 ```
 
 ### Cloud SQL for SQL Server
 
 > [Google Cloud SQL for SQL Server](https://cloud.google.com/sql) is a fully-managed database service that helps you set up, maintain, manage, and administer your SQL Server databases on Google Cloud.
+
 Install the python package:
 
 ```bash
@@ -223,6 +419,7 @@ from langchain_google_cloud_sql_mssql import MSSQLEngine, MSSQLLoader
 ### Cloud SQL for PostgreSQL
 
 > [Google Cloud SQL for PostgreSQL](https://cloud.google.com/sql) is a fully-managed database service that helps you set up, maintain, manage, and administer your PostgreSQL relational databases on Google Cloud.
+
 Install the python package:
 
 ```bash
@@ -239,10 +436,10 @@ from langchain_google_cloud_sql_pg import PostgresEngine, PostgresLoader
 
 >[Cloud Storage](https://en.wikipedia.org/wiki/Google_Cloud_Storage) is a managed service for storing unstructured data in Google Cloud.
 
-We need to install `google-cloud-storage` python package.
+We need to install `langchain-google-community` with Google Cloud Storage dependencies.
 
 ```bash
-pip install google-cloud-storage
+pip install langchain-google-community[gcs]
 ```
 
 There are two loaders for the `Google Cloud Storage`: the `Directory` and the `File` loaders.
@@ -250,12 +447,24 @@ There are two loaders for the `Google Cloud Storage`: the `Directory` and the `F
 See a [usage example](/docs/integrations/document_loaders/google_cloud_storage_directory).
 
 ```python
-from langchain_community.document_loaders import GCSDirectoryLoader
+from langchain_google_community import GCSDirectoryLoader
 ```
 See a [usage example](/docs/integrations/document_loaders/google_cloud_storage_file).
 
 ```python
-from langchain_community.document_loaders import GCSFileLoader
+from langchain_google_community import GCSFileLoader
+```
+
+### Cloud Vision loader
+
+Install the python package:
+
+```bash
+pip install langchain-google-community[vision]
+```
+
+```python
+from langchain_google_community.vision import CloudVisionLoader
 ```
 
 ### El Carro for Oracle Workloads
@@ -280,21 +489,22 @@ from langchain_google_el_carro import ElCarroLoader
 
 Currently, only `Google Docs` are supported.
 
-We need to install several python packages.
+We need to install `langchain-google-community` with Google Drive dependencies.
 
 ```bash
-pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib
+pip install langchain-google-community[drive]
 ```
 
 See a [usage example and authorization instructions](/docs/integrations/document_loaders/google_drive).
 
 ```python
-from langchain_community.document_loaders import GoogleDriveLoader
+from langchain_google_community import GoogleDriveLoader
 ```
 
 ### Firestore (Native Mode)
 
 > [Google Cloud Firestore](https://cloud.google.com/firestore/docs/) is a NoSQL document database built for automatic scaling, high performance, and ease of application development.
+
 Install the python package:
 
 ```bash
@@ -311,6 +521,7 @@ from langchain_google_firestore import FirestoreLoader
 
 > [Google Cloud Firestore in Datastore mode](https://cloud.google.com/datastore/docs) is a NoSQL document database built for automatic scaling, high performance, and ease of application development.
 > Firestore is the newest version of Datastore and introduces several improvements over Datastore.
+
 Install the python package:
 
 ```bash
@@ -326,6 +537,7 @@ from langchain_google_datastore import DatastoreLoader
 ### Memorystore for Redis
 
 > [Google Cloud Memorystore for Redis](https://cloud.google.com/memorystore/docs/redis) is a fully managed Redis service for Google Cloud. Applications running on Google Cloud can achieve extreme performance by leveraging the highly scalable, available, secure Redis service without the burden of managing complex Redis deployments.
+
 Install the python package:
 
 ```bash
@@ -335,12 +547,13 @@ pip install langchain-google-memorystore-redis
 See [usage example](/docs/integrations/document_loaders/google_memorystore_redis).
 
 ```python
-from langchain_google_memorystore_redis import MemorystoreLoader
+from langchain_google_memorystore_redis import MemorystoreDocumentLoader
 ```
 
 ### Spanner
 
 > [Google Cloud Spanner](https://cloud.google.com/spanner/docs) is a fully managed, mission-critical, relational database service on Google Cloud that offers transactional consistency at global scale, automatic, synchronous replication for high availability, and support for two SQL dialects: GoogleSQL (ANSI 2011 with extensions) and PostgreSQL.
+
 Install the python package:
 
 ```bash
@@ -359,16 +572,16 @@ from langchain_google_spanner import SpannerLoader
 
 This document loader transcribes audio files and outputs the text results as Documents.
 
-First, we need to install the python package.
+First, we need to install `langchain-google-community` with speech-to-text dependencies.
 
 ```bash
-pip install google-cloud-speech
+pip install langchain-google-community[speech]
 ```
 
 See a [usage example and authorization instructions](/docs/integrations/document_loaders/google_speech_to_text).
 
 ```python
-from langchain_community.document_loaders import GoogleSpeechToTextLoader
+from langchain_google_community import SpeechToTextLoader
 ```
 
 ## Document Transformers
@@ -386,15 +599,14 @@ We can get it either programmatically or copy from the `Prediction endpoint` sec
 tab in the Google Cloud Console.
 
 ```bash
-pip install google-cloud-documentai
-pip install google-cloud-documentai-toolbox
+pip install langchain-google-community[docai]
 ```
 
 See a [usage example](/docs/integrations/document_transformers/google_docai).
 
 ```python
-from langchain_community.document_loaders.blob_loaders import Blob
-from langchain_community.document_loaders.parsers import DocAIParser
+from langchain_core.document_loaders.blob_loaders import Blob
+from langchain_google_community import DocAIParser
 ```
 
 ### Google Translate
@@ -405,18 +617,16 @@ from langchain_community.document_loaders.parsers import DocAIParser
 
 The `GoogleTranslateTransformer` allows you to translate text and HTML with the [Google Cloud Translation API](https://cloud.google.com/translate).
 
-To use it, you should have the `google-cloud-translate` python package installed, and a Google Cloud project with the [Translation API enabled](https://cloud.google.com/translate/docs/setup). This transformer uses the [Advanced edition (v3)](https://cloud.google.com/translate/docs/intro-to-v3).
-
-First, we need to install the python package.
+First, we need to install the `langchain-google-community` with translate dependencies.
 
 ```bash
-pip install google-cloud-translate
+pip install langchain-google-community[translate]
 ```
 
 See a [usage example and authorization instructions](/docs/integrations/document_transformers/google_translate).
 
 ```python
-from langchain_community.document_transformers import GoogleTranslateTransformer
+from langchain_google_community import GoogleTranslateTransformer
 ```
 
 ## Vector Stores
@@ -462,6 +672,7 @@ from langchain.vectorstores import BigQueryVectorSearch
 ### Memorystore for Redis
 
 > [Google Cloud Memorystore for Redis](https://cloud.google.com/memorystore/docs/redis) is a fully managed Redis service for Google Cloud. Applications running on Google Cloud can achieve extreme performance by leveraging the highly scalable, available, secure Redis service without the burden of managing complex Redis deployments.
+
 Install the python package:
 
 ```bash
@@ -477,6 +688,7 @@ from langchain_google_memorystore_redis import RedisVectorStore
 ### Spanner
 
 > [Google Cloud Spanner](https://cloud.google.com/spanner/docs) is a fully managed, mission-critical, relational database service on Google Cloud that offers transactional consistency at global scale, automatic, synchronous replication for high availability, and support for two SQL dialects: GoogleSQL (ANSI 2011 with extensions) and PostgreSQL.
+
 Install the python package:
 
 ```bash
@@ -492,6 +704,7 @@ from langchain_google_spanner import SpannerVectorStore
 ### Firestore (Native Mode)
 
 > [Google Cloud Firestore](https://cloud.google.com/firestore/docs/) is a NoSQL document database built for automatic scaling, high performance, and ease of application development.
+
 Install the python package:
 
 ```bash
@@ -501,12 +714,13 @@ pip install langchain-google-firestore
 See [usage example](/docs/integrations/vectorstores/google_firestore).
 
 ```python
-from langchain_google_firestore import FirestoreVectorstore
+from langchain_google_firestore import FirestoreVectorStore
 ```
 
 ### Cloud SQL for MySQL
 
 > [Google Cloud SQL for MySQL](https://cloud.google.com/sql) is a fully-managed database service that helps you set up, maintain, manage, and administer your MySQL relational databases on Google Cloud.
+
 Install the python package:
 
 ```bash
@@ -522,6 +736,7 @@ from langchain_google_cloud_sql_mysql import MySQLEngine, MySQLVectorStore
 ### Cloud SQL for PostgreSQL
 
 > [Google Cloud SQL for PostgreSQL](https://cloud.google.com/sql) is a fully-managed database service that helps you set up, maintain, manage, and administer your PostgreSQL relational databases on Google Cloud.
+
 Install the python package:
 
 ```bash
@@ -551,6 +766,52 @@ See a [usage example](/docs/integrations/vectorstores/google_vertex_ai_vector_se
 
 ```python
 from langchain_google_vertexai import VectorSearchVectorStore
+```
+
+### Vertex AI Vector Search with DataStore
+
+> VectorSearch with DatasTore document storage.
+
+Install the python package:
+
+```bash
+pip install langchain-google-vertexai
+```
+
+See a [usage example](/docs/integrations/vectorstores/google_vertex_ai_vector_search/#optional--you-can-also-create-vectore-and-store-chunks-in-a-datastore).
+
+```python
+from langchain_google_vertexai import VectorSearchVectorStoreDatastore
+```
+
+### VectorSearchVectorStoreGCS 
+
+> Alias of `VectorSearchVectorStore` for consistency 
+> with the rest of vector stores with different document storage backends.
+
+Install the python package:
+
+```bash
+pip install langchain-google-vertexai
+```
+
+```python
+from langchain_google_vertexai import VectorSearchVectorStoreGCS
+```
+
+### Google Generative AI Vector Store 
+
+> Currently, it computes the embedding vectors on the server side.
+> For more information visit [Guide](https://developers.generativeai.google/guide).
+
+Install the python package:
+
+```bash
+pip install langchain-google-genai
+```
+
+```python
+from langchain_google_genai.google_vector_store import GoogleVectorStore
 ```
 
 ### ScaNN
@@ -585,7 +846,7 @@ from langchain_community.vectorstores import ScaNN
 We need to install several python packages.
 
 ```bash
-pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib
+pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib langchain-googledrive
 ```
 
 See a [usage example and authorization instructions](/docs/integrations/retrievers/google_drive).
@@ -599,16 +860,38 @@ from langchain_googledrive.retrievers import GoogleDriveRetriever
 > [Vertex AI Search](https://cloud.google.com/generative-ai-app-builder/docs/introduction)
 > from Google Cloud allows developers to quickly build generative AI powered search engines for customers and employees.
 
+See a [usage example](/docs/integrations/retrievers/google_vertex_ai_search).
+
+Note: `GoogleVertexAISearchRetriever` is deprecated, use `VertexAIMultiTurnSearchRetriever`,
+`VertexAISearchSummaryTool`, and `VertexAISearchRetriever` (see below).
+
+#### GoogleVertexAISearchRetriever
+
 We need to install the `google-cloud-discoveryengine` python package.
 
 ```bash
 pip install google-cloud-discoveryengine
 ```
 
-See a [usage example](/docs/integrations/retrievers/google_vertex_ai_search).
+```python
+from langchain_community.retrievers import GoogleVertexAISearchRetriever
+```
+
+#### VertexAIMultiTurnSearchRetriever
 
 ```python
-from langchain.retrievers import GoogleVertexAISearchRetriever
+from langchain_google_community import VertexAIMultiTurnSearchRetriever
+```
+#### VertexAISearchRetriever
+
+```python
+from langchain_google_community import VertexAIMultiTurnSearchRetriever
+```
+
+#### VertexAISearchSummaryTool
+
+```python
+from langchain_google_community import VertexAISearchSummaryTool
 ```
 
 ### Document AI Warehouse
@@ -617,6 +900,7 @@ from langchain.retrievers import GoogleVertexAISearchRetriever
 > from Google Cloud allows enterprises to search, store, govern, and manage documents and their AI-extracted
 > data and metadata in a single platform.
 
+Note: `GoogleDocumentAIWarehouseRetriever` is deprecated, use `DocumentAIWarehouseRetriever` (see below).
 ```python
 from langchain.retrievers import GoogleDocumentAIWarehouseRetriever
 docai_wh_retriever = GoogleDocumentAIWarehouseRetriever(
@@ -628,6 +912,10 @@ documents = docai_wh_retriever.invoke(
 )
 ```
 
+```python
+from langchain_google_community.documentai_warehouse import DocumentAIWarehouseRetriever
+```
+
 ## Tools
 
 ### Text-to-Speech
@@ -637,16 +925,16 @@ documents = docai_wh_retriever.invoke(
 > It applies DeepMind’s groundbreaking research in WaveNet and Google’s powerful neural networks
 > to deliver the highest fidelity possible.
 
-We need to install a python package.
+We need to install python packages.
 
 ```bash
-pip install google-cloud-text-to-speech
+pip install google-cloud-text-to-speech langchain-google-community
 ```
 
 See a [usage example and authorization instructions](/docs/integrations/tools/google_cloud_texttospeech).
 
 ```python
-from langchain.tools import GoogleCloudTextToSpeechTool
+from langchain_google_community import TextToSpeechTool
 ```
 
 ### Google Drive
@@ -655,13 +943,14 @@ We need to install several python packages.
 
 ```bash
 pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib
+pip install langchain-googledrive
 ```
 
 See a [usage example and authorization instructions](/docs/integrations/tools/google_drive).
 
 ```python
-from langchain_community.utilities.google_drive import GoogleDriveAPIWrapper
-from langchain_community.tools.google_drive.tool import GoogleDriveSearchTool
+from langchain_googledrive.utilities.google_drive import GoogleDriveAPIWrapper
+from langchain_googledrive.tools.google_drive.tool import GoogleDriveSearchTool
 ```
 
 ### Google Finance
@@ -739,7 +1028,7 @@ from langchain_community.utilities.google_scholar import GoogleScholarAPIWrapper
 `GOOGLE_API_KEY` and `GOOGLE_CSE_ID` respectively.
 
 ```python
-from langchain_community.utilities import GoogleSearchAPIWrapper
+from langchain_google_community import GoogleSearchAPIWrapper
 ```
 
 For a more detailed walkthrough of this wrapper, see [this notebook](/docs/integrations/tools/google_search).
@@ -750,6 +1039,23 @@ We can easily load this wrapper as a Tool (to use with an Agent). We can do this
 from langchain.agents import load_tools
 tools = load_tools(["google-search"])
 ```
+
+#### GoogleSearchResults
+
+Tool that queries the `Google Search` API (via `GoogleSearchAPIWrapper`) and gets back JSON.
+
+```python
+from langchain_community.tools import GoogleSearchResults
+```
+
+#### GoogleSearchRun
+
+Tool that queries the `Google Search` API (via `GoogleSearchAPIWrapper`).
+
+```python
+from langchain_community.tools import GoogleSearchRun
+```
+
 
 ### Google Trends
 
@@ -773,16 +1079,28 @@ from langchain_community.utilities.google_trends import GoogleTrendsAPIWrapper
 > [Google Gmail](https://en.wikipedia.org/wiki/Gmail) is a free email service provided by Google.
 This toolkit works with emails through the `Gmail API`.
 
-We need to install several python packages.
+We need to install `langchain-google-community` with required dependencies:
 
 ```bash
-pip install google-api-python-client google-auth-oauthlib google-auth-httplib2
+pip install langchain-google-community[gmail]
 ```
 
-See a [usage example and authorization instructions](/docs/integrations/toolkits/gmail).
+See a [usage example and authorization instructions](/docs/integrations/tools/gmail).
 
 ```python
-from langchain_community.agent_toolkits import GmailToolkit
+from langchain_google_community import GmailToolkit
+```
+
+#### GMail individual tools
+
+You can use individual tools from GMail Toolkit.
+
+```python
+from langchain_google_community.gmail.create_draft import GmailCreateDraft
+from langchain_google_community.gmail.get_message import GmailGetMessage
+from langchain_google_community.gmail.get_thread import GmailGetThread
+from langchain_google_community.gmail.search import GmailSearch
+from langchain_google_community.gmail.send_message import GmailSendMessage
 ```
 
 ## Memory
@@ -806,6 +1124,7 @@ from langchain_google_alloydb_pg import AlloyDBEngine, AlloyDBChatMessageHistory
 ### Cloud SQL for PostgreSQL
 
 > [Cloud SQL for PostgreSQL](https://cloud.google.com/sql) is a fully-managed database service that helps you set up, maintain, manage, and administer your PostgreSQL relational databases on Google Cloud.
+
 Install the python package:
 
 ```bash
@@ -822,6 +1141,7 @@ from langchain_google_cloud_sql_pg import PostgresEngine, PostgresChatMessageHis
 ### Cloud SQL for MySQL
 
 > [Cloud SQL for MySQL](https://cloud.google.com/sql) is a fully-managed database service that helps you set up, maintain, manage, and administer your MySQL relational databases on Google Cloud.
+
 Install the python package:
 
 ```bash
@@ -837,6 +1157,7 @@ from langchain_google_cloud_sql_mysql import MySQLEngine, MySQLChatMessageHistor
 ### Cloud SQL for SQL Server
 
 > [Cloud SQL for SQL Server](https://cloud.google.com/sql) is a fully-managed database service that helps you set up, maintain, manage, and administer your SQL Server databases on Google Cloud.
+
 Install the python package:
 
 ```bash
@@ -852,6 +1173,7 @@ from langchain_google_cloud_sql_mssql import MSSQLEngine, MSSQLChatMessageHistor
 ### Spanner
 
 > [Google Cloud Spanner](https://cloud.google.com/spanner/docs) is a fully managed, mission-critical, relational database service on Google Cloud that offers transactional consistency at global scale, automatic, synchronous replication for high availability, and support for two SQL dialects: GoogleSQL (ANSI 2011 with extensions) and PostgreSQL.
+
 Install the python package:
 
 ```bash
@@ -867,6 +1189,7 @@ from langchain_google_spanner import SpannerChatMessageHistory
 ### Memorystore for Redis
 
 > [Google Cloud Memorystore for Redis](https://cloud.google.com/memorystore/docs/redis) is a fully managed Redis service for Google Cloud. Applications running on Google Cloud can achieve extreme performance by leveraging the highly scalable, available, secure Redis service without the burden of managing complex Redis deployments.
+
 Install the python package:
 
 ```bash
@@ -882,6 +1205,7 @@ from langchain_google_memorystore_redis import MemorystoreChatMessageHistory
 ### Bigtable
 
 > [Google Cloud Bigtable](https://cloud.google.com/bigtable/docs) is Google's fully managed NoSQL Big Data database service in Google Cloud.
+
 Install the python package:
 
 ```bash
@@ -897,6 +1221,7 @@ from langchain_google_bigtable import BigtableChatMessageHistory
 ### Firestore (Native Mode)
 
 > [Google Cloud Firestore](https://cloud.google.com/firestore/docs/) is a NoSQL document database built for automatic scaling, high performance, and ease of application development.
+
 Install the python package:
 
 ```bash
@@ -913,6 +1238,7 @@ from langchain_google_firestore import FirestoreChatMessageHistory
 
 > [Google Cloud Firestore in Datastore mode](https://cloud.google.com/datastore/docs) is a NoSQL document database built for automatic scaling, high performance, and ease of application development.
 > Firestore is the newest version of Datastore and introduces several improvements over Datastore.
+
 Install the python package:
 
 ```bash
@@ -941,6 +1267,22 @@ See [usage example](/docs/integrations/memory/google_el_carro).
 from langchain_google_el_carro import ElCarroChatMessageHistory
 ```
 
+## Callbacks
+
+### Vertex AI callback handler
+
+>Callback Handler that tracks `VertexAI` info.
+
+We need to install `langchain-google-vertexai` python package.
+
+```bash
+pip install langchain-google-vertexai
+```
+
+```python
+from langchain_google_vertexai.callbacks import VertexAICallbackHandler
+```
+
 ## Chat Loaders
 
 ### GMail
@@ -948,16 +1290,40 @@ from langchain_google_el_carro import ElCarroChatMessageHistory
 > [Gmail](https://en.wikipedia.org/wiki/Gmail) is a free email service provided by Google.
 This loader works with emails through the `Gmail API`.
 
-We need to install several python packages.
+We need to install `langchain-google-community` with underlying dependencies.
 
 ```bash
-pip install google-api-python-client google-auth-oauthlib google-auth-httplib2
+pip install langchain-google-community[gmail]
 ```
 
 See a [usage example and authorization instructions](/docs/integrations/chat_loaders/gmail).
 
 ```python
-from langchain_community.chat_loaders.gmail import GMailLoader
+from langchain_google_community import GMailLoader
+```
+
+## Evaluators
+
+We need to install `langchain-google-vertexai` python package.
+
+```bash
+pip install langchain-google-vertexai
+```
+
+### VertexPairWiseStringEvaluator
+
+>Pair-wise evaluation of the perplexity of a predicted string.
+
+```python
+from langchain_google_vertexai.evaluators.evaluation import VertexPairWiseStringEvaluator
+```
+
+### VertexStringEvaluator
+
+>Evaluate the perplexity of a predicted string.
+
+```python
+from langchain_google_vertexai.evaluators.evaluation import VertexPairWiseStringEvaluator
 ```
 
 ## 3rd Party Integrations

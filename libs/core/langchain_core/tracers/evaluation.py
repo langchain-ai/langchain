@@ -1,4 +1,5 @@
 """A tracer that runs evaluators over completed runs."""
+
 from __future__ import annotations
 
 import logging
@@ -64,7 +65,7 @@ class EvaluatorCallbackHandler(BaseTracer):
         The LangSmith project name to be organize eval chain runs under.
     """
 
-    name = "evaluator_callback_handler"
+    name: str = "evaluator_callback_handler"
 
     def __init__(
         self,
@@ -103,7 +104,7 @@ class EvaluatorCallbackHandler(BaseTracer):
     def _evaluate_in_project(self, run: Run, evaluator: langsmith.RunEvaluator) -> None:
         """Evaluate the run in the project.
 
-        Parameters
+        Args:
         ----------
         run : Run
             The run to be evaluated.
@@ -143,11 +144,7 @@ class EvaluatorCallbackHandler(BaseTracer):
         example_id = str(run.reference_example_id)
         with self.lock:
             for res in eval_results:
-                run_id = (
-                    str(getattr(res, "target_run_id"))
-                    if hasattr(res, "target_run_id")
-                    else str(run.id)
-                )
+                run_id = str(getattr(res, "target_run_id", run.id))
                 self.logged_eval_results.setdefault((run_id, example_id), []).append(
                     res
                 )
@@ -178,11 +175,9 @@ class EvaluatorCallbackHandler(BaseTracer):
             source_info_: Dict[str, Any] = {}
             if res.evaluator_info:
                 source_info_ = {**res.evaluator_info, **source_info_}
-            run_id_ = (
-                getattr(res, "target_run_id")
-                if hasattr(res, "target_run_id") and res.target_run_id is not None
-                else run.id
-            )
+            run_id_ = getattr(res, "target_run_id", None)
+            if run_id_ is None:
+                run_id_ = run.id
             self.client.create_feedback(
                 run_id_,
                 res.key,
@@ -199,7 +194,7 @@ class EvaluatorCallbackHandler(BaseTracer):
     def _persist_run(self, run: Run) -> None:
         """Run the evaluator on the run.
 
-        Parameters
+        Args:
         ----------
         run : Run
             The run to be evaluated.

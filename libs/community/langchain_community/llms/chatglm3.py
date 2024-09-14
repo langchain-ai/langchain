@@ -11,7 +11,7 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain_core.pydantic_v1 import Field
+from pydantic import Field
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
@@ -106,7 +106,7 @@ class ChatGLM3(LLM):
         Example:
             .. code-block:: python
 
-                response = chatglm_llm("Who are you?")
+                response = chatglm_llm.invoke("Who are you?")
         """
         import httpx
 

@@ -1,11 +1,10 @@
+# Plate chain
 
-# plate-chain
-
-This template enables parsing of data from laboratory plates. 
+This template enables parsing of data from `laboratory plates`. 
 
 In the context of biochemistry or molecular biology, laboratory plates are commonly used tools to hold samples in a grid-like format. 
 
-This can parse the resulting data into standardized (e.g., JSON) format for further processing.
+This can parse the resulting data into standardized (e.g., `JSON`) format for further processing.
 
 ## Environment Setup
 

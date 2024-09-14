@@ -5,7 +5,7 @@ from typing import Optional
 
 import pytest
 from langchain_core.exceptions import OutputParserException
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 
 from langchain.output_parsers.yaml import YamlOutputParser
 
@@ -93,3 +93,9 @@ def test_yaml_output_parser_fail() -> None:
         assert "Failed to parse TestModel from completion" in str(e)
     else:
         assert False, "Expected OutputParserException"
+
+
+def test_yaml_output_parser_output_type() -> None:
+    """Test YamlOutputParser OutputType."""
+    yaml_parser = YamlOutputParser(pydantic_object=TestModel)
+    assert yaml_parser.OutputType is TestModel

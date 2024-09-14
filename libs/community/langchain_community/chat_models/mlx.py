@@ -27,8 +27,7 @@ DEFAULT_SYSTEM_PROMPT = """You are a helpful, respectful, and honest assistant."
 
 
 class ChatMLX(BaseChatModel):
-    """
-    Wrapper for using MLX LLM's as ChatModels.
+    """MLX chat models.
 
     Works with `MLXPipeline` LLM.
 
@@ -150,7 +149,7 @@ class ChatMLX(BaseChatModel):
             from mlx_lm.utils import generate_step
 
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import mlx_lm python package. "
                 "Please install it with `pip install mlx_lm`."
             )
@@ -187,9 +186,9 @@ class ChatMLX(BaseChatModel):
             # yield text, if any
             if text:
                 chunk = ChatGenerationChunk(message=AIMessageChunk(content=text))
-                yield chunk
                 if run_manager:
                     run_manager.on_llm_new_token(text, chunk=chunk)
+                yield chunk
 
             # break if stop sequence found
             if token == eos_token_id or (stop is not None and text in stop):

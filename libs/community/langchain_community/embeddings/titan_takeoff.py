@@ -1,29 +1,32 @@
 from enum import Enum
-from typing import Any, List, Optional, Set, Union
+from typing import Any, Dict, List, Optional, Set, Union
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class TakeoffEmbeddingException(Exception):
-    """Exceptions experienced with interfacing with Takeoff Embedding Wrapper"""
+    """Custom exception for interfacing with Takeoff Embedding class."""
 
 
 class MissingConsumerGroup(TakeoffEmbeddingException):
     """Exception raised when no consumer group is provided on initialization of
-    TitanTakeoffEmbed or in embed request"""
+    TitanTakeoffEmbed or in embed request."""
 
 
 class Device(str, Enum):
-    """The device to use for inference, cuda or cpu"""
+    """Device to use for inference, cuda or cpu."""
 
     cuda = "cuda"
     cpu = "cpu"
 
 
 class ReaderConfig(BaseModel):
-    class Config:
-        protected_namespaces = ()
+    """Configuration for the reader to be deployed in Takeoff."""
+
+    model_config = ConfigDict(
+        protected_namespaces=(),
+    )
 
     model_name: str
     """The name of the model to use"""
@@ -36,10 +39,9 @@ class ReaderConfig(BaseModel):
 
 
 class TitanTakeoffEmbed(Embeddings):
-    """Titan Takeoff Embed is a wrapper to interface with Takeoff Inference API
-    for embedding models
+    """Interface with Takeoff Inference API for embedding models.
 
-    You can use this wrapper to send embedding requests and to deploy embedding
+    Use it to send embedding requests and to deploy embedding
     readers with Takeoff.
 
     Examples:
@@ -141,11 +143,12 @@ class TitanTakeoffEmbed(Embeddings):
 
     def _embed(
         self, input: Union[List[str], str], consumer_group: Optional[str]
-    ) -> dict:
+    ) -> Dict[str, Any]:
         """Embed text.
 
         Args:
-            input (List[str]): prompt/document or list of prompts/documents to embed
+            input (Union[List[str], str]): prompt/document or list of prompts/documents
+            to embed
             consumer_group (Optional[str]): what consumer group to send the embedding
             request to. If not specified and there is only one
             consumer group specified during initialization, it will be used. If there

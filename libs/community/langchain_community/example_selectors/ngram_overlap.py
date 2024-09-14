@@ -3,12 +3,13 @@
 https://www.nltk.org/_modules/nltk/translate/bleu_score.html
 https://aclanthology.org/P02-1040.pdf
 """
-from typing import Dict, List
+
+from typing import Any, Dict, List
 
 import numpy as np
 from langchain_core.example_selectors import BaseExampleSelector
 from langchain_core.prompts import PromptTemplate
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from pydantic import BaseModel, model_validator
 
 
 def ngram_overlap_score(source: List[str], example: List[str]) -> float:
@@ -64,8 +65,9 @@ class NGramOverlapExampleSelector(BaseExampleSelector, BaseModel):
     and excludes examples with no ngram overlap with input.
     """
 
-    @root_validator(pre=True)
-    def check_dependencies(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def check_dependencies(cls, values: Dict) -> Any:
         """Check that valid dependencies exist."""
         try:
             from nltk.translate.bleu_score import (  # noqa: F401

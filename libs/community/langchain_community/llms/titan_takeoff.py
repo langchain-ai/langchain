@@ -4,7 +4,7 @@ from typing import Any, Iterator, List, Optional
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
@@ -17,8 +17,11 @@ class Device(str, Enum):
 
 
 class ReaderConfig(BaseModel):
-    class Config:
-        protected_namespaces = ()
+    """Configuration for the reader to be deployed in Titan Takeoff API."""
+
+    model_config = ConfigDict(
+        protected_namespaces=(),
+    )
 
     model_name: str
     """The name of the model to use"""
@@ -135,7 +138,7 @@ class TitanTakeoff(LLM):
             ImportError: If you haven't installed takeoff-client, you will
             get an ImportError. To remedy run `pip install 'takeoff-client==0.4.0'`
         """
-        super().__init__(
+        super().__init__(  # type: ignore[call-arg]
             base_url=base_url, port=port, mgmt_port=mgmt_port, streaming=streaming
         )
         try:

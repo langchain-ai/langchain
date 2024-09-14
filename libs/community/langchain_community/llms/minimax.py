@@ -1,4 +1,5 @@
 """Wrapper around Minimax APIs."""
+
 from __future__ import annotations
 
 import logging
@@ -14,8 +15,8 @@ from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models.llms import LLM
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
+from pydantic import BaseModel, Field, SecretStr, model_validator
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
@@ -23,15 +24,16 @@ logger = logging.getLogger(__name__)
 
 
 class _MinimaxEndpointClient(BaseModel):
-    """An API client that talks to a Minimax llm endpoint."""
+    """API client for the Minimax LLM endpoint."""
 
     host: str
     group_id: str
     api_key: SecretStr
     api_url: str
 
-    @root_validator(pre=True, allow_reuse=True)
-    def set_api_url(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def set_api_url(cls, values: Dict[str, Any]) -> Any:
         if "api_url" not in values:
             host = values["host"]
             group_id = values["group_id"]
@@ -71,7 +73,7 @@ class MinimaxCommon(BaseModel):
     minimax_group_id: Optional[str] = None
     minimax_api_key: Optional[SecretStr] = None
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["minimax_api_key"] = convert_to_secret_str(
@@ -87,7 +89,7 @@ class MinimaxCommon(BaseModel):
             "MINIMAX_API_HOST",
             default="https://api.minimax.chat",
         )
-        values["_client"] = _MinimaxEndpointClient(
+        values["_client"] = _MinimaxEndpointClient(  # type: ignore[call-arg]
             host=values["minimax_api_host"],
             api_key=values["minimax_api_key"],
             group_id=values["minimax_group_id"],
@@ -117,7 +119,8 @@ class MinimaxCommon(BaseModel):
 
 
 class Minimax(MinimaxCommon, LLM):
-    """Wrapper around Minimax large language models.
+    """Minimax large language models.
+
     To use, you should have the environment variable
     ``MINIMAX_API_KEY`` and ``MINIMAX_GROUP_ID`` set with your API key,
     or pass them as a named parameter to the constructor.
