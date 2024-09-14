@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-mongodb"
-version = "0.2.0.dev1"
+version = "0.2.0"
 description = "An integration package connecting MongoDB and LangChain"
 authors = []
 readme = "README.md"
@@ -21,7 +21,7 @@ disallow_untyped_defs = "True"
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
 pymongo = ">=4.6.1,<5.0"
-langchain-core = { version = "^0.3.0.dev4", allow-prereleases = true }
+langchain-core = "^0.3"
 
 [[tool.poetry.dependencies.numpy]]
 version = "^1"
