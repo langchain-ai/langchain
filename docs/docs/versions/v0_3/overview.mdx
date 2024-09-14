@@ -1,0 +1,187 @@
+---
+sidebar_label: Overview of v0.3
+---
+# Overview of LangChain v0.3
+
+## What’s new in LangChain?
+
+The following features have been added during the development of 0.2.x:
+
+- We’ve recently revamped our integration docs and API reference. Read more [here](https://blog.langchain.dev/langchain-integration-docs-revamped/).
+- We’ve continued to migrate key integrations to their own `langchain-x` packages outside of `langchain-community`. This allows us to better manage the dependencies of, test, and version these integrations. You can see all the latest integration packages in the [API reference](https://python.langchain.com/v0.2/api_reference/reference.html#integrations).
+- We’ve simplified how to define and use tools. Read more [here](https://blog.langchain.dev/improving-core-tool-interfaces-and-docs-in-langchain/).
+- We’ve added a number of key utilities for interacting with chat models: [universal model constructor](https://python.langchain.com/v0.2/docs/how_to/chat_models_universal_init/), [rate limiter](https://python.langchain.com/v0.2/docs/how_to/chat_model_rate_limiting/), [message utilities](https://python.langchain.com/v0.2/docs/how_to/#messages),
+- We've added the ability to [dispatch custom events](https://python.langchain.com/v0.2/docs/how_to/callbacks_custom_events/).
+- We have marked as deprecated a number of legacy chains and added migration guides for all of them. These are slated for removal in langchain 1.0. See the deprecated chains and associated [migration guides here](https://python.langchain.com/v0.2/docs/versions/migrating_chains/).
+
+## What's changed
+
+* As of the 0.3 release, LangChain has been upgraded to use Pydantic 2 internally. Pydantic v2 will be fully supported across new packages without the need for any bridges like `langchain_core.pydantic_v1`.
+* Pydantic 1 will no longer be supported as it reached its end-of-life in June 2024.
+* Python 3.8 will no longer be supported as its end-of-life is October 2024.
+
+## How to update your code
+
+If you're using LangChain 0.0, or 0.1, we recommend that you first [upgrade to 0.2](https://python.langchain.com/v0.2/docs/versions/v0_2/). The langchain-cli will help you to migrate many imports automatically.
+
+If you're using LangChain 0.2, update your packages to use `langchain-core>=0.3`. We've released 0.3 versions of langchain-core, langchain, langchain-community and langserve. `langgraph>=0.2.20` will work with either langchain-core 0.2 or 0.3.
+
+The breaking changes in this release were:
+
+1. The internal switch from Pydantic v1 to Pydantic v2.
+2. The removal of the automatic addition of the suffix `Schema` to the names of tools.
+
+Once you've updated to recent versions of the packages, you may need to address the following issues stemming from the internal switch from Pydantic v1 to Pydantic v2:
+
+- If your code depends on Pydantic aside from LangChain, you will need to use `pydantic>=2,<3`.  See [Pydantic’s migration guide](https://docs.pydantic.dev/latest/migration/) for help migrating your non-LangChain code to Pydantic v2 if you use pydantic v1.
+- There are a number of side effects to LangChain components caused by the internal switch from Pydantic v1 to v2. We have listed some of the common cases below together with the recommended solutions.
+
+If you're still using deprecated LangChain please follow the [migration guides here](https://python.langchain.com/v0.2/docs/versions/migrating_chains/).
+
+## Common issues when transitioning to Pydantic 2
+
+### 1. Do not use the langchain_core.pydantic_v1 namespace
+
+Replace any usage of `langchain_core.pydantic_v1` or `langchain.pydantic_v1` with
+direct imports from `pydantic`.
+
+For example,
+
+```python
+from langchain_core.pydantic_v1 import BaseModel
+```
+
+to:
+
+```python
+from pydantic import BaseModel
+```
+
+### 2. Passing Pydantic objects to LangChain APIs
+
+Users using the following APIs:
+
+* `BaseChatModel.bind_tools`
+* `BaseChatModel.with_structured_output`
+* `Tool.from_function`
+* `StructuredTool.from_function`
+
+should ensure that they are passing Pydantic 2 objects to these APIs rather than
+Pydantic 1 objects (created via the `pydantic.v1` namespace of pydantic 2).
+
+:::caution
+While `v1` objets may be accepted by some of these APIs, users are advised to
+use Pydantic 2 objects to avoid future issues.
+:::
+
+### 3. Sub-classing LangChain models
+
+Any sub-classing from existing LangChain models (e.g., `BaseTool`, `BaseChatModel`, `LLM`)
+should upgrade to use Pydantic 2 features.
+
+For example, any user code that's relying on Pydantic 1 features (e.g., `validator`) should
+be updated to the Pydantic 2 equivalent (e.g., `field_validator`), and any references to
+`pydantic.v1`, `langchain_core.pydantic_v1`, `langchain.pydantic_v1` should be replaced
+with imports from `pydantic`.
+
+```python
+from pydantic.v1 import validator, Field # if pydantic 2 is installed
+# from pydantic import validator, Field # if pydantic 1 is installed
+# from langchain_core.pydantic_v1 import validator, Field
+# from langchain.pydantic_v1 import validator, Field
+
+class CustomTool(BaseTool): # BaseTool is v1 code
+    x: int = Field(default=1)
+
+    def _run(*args, **kwargs):
+        return "hello"
+
+    @validator('x') # v1 code
+    @classmethod
+    def validate_x(cls, x: int) -> int:
+        return 1
+```
+
+Should change to:
+
+```python
+from pydantic import Field, field_validator # pydantic v2
+from langchain_core.pydantic_v1 import BaseTool
+
+class CustomTool(BaseTool): # BaseTool is v1 code
+    x: int = Field(default=1)
+
+    def _run(*args, **kwargs):
+        return "hello"
+
+    @field_validator('x') # v2 code
+    @classmethod
+    def validate_x(cls, x: int) -> int:
+        return 1
+
+
+CustomTool(
+    name='custom_tool',
+    description="hello",
+    x=1,
+)
+```
+
+### 4. model_rebuild()
+
+When sub-classing from LangChain models, users may need to add relevant imports
+to the file and rebuild the model.
+
+```python
+from langchain_core.output_parsers import BaseOutputParser
+
+
+class FooParser(BaseOutputParser):
+    ...
+```
+
+New code:
+
+```python
+from typing import Optional as Optional
+
+from langchain_core.output_parsers import BaseOutputParser
+
+class FooParser(BaseOutputParser):
+    ...
+
+FooParser.model_rebuild()
+```
+
+## `Schema` suffix removal
+
+In previous versions of LangChain, the suffix `Schema` was automatically added to the names of tools if a tool name was not
+specified. This name was used to generate the schema for the tool which was sent to chat models as the JSON Schema for the tool.
+
+We do not expect most users to be affected by this change.
+
+For example, the tool
+
+```python
+from langchain_core.tools import tool
+
+@tool
+def add(x: int, y: int) -> int:
+    """Add x and y."""
+    return x + y
+```
+
+would have been named `addSchema` in previous versions of LangChain. In 0.3, the name of the tool will be `add`.
+
+```python
+add.args_schema.model_json_schema()
+```
+
+```
+{'description': 'Add x and y.',
+'properties': {'x': {'title': 'X', 'type': 'integer'},
+'y': {'title': 'Y', 'type': 'integer'}},
+'required': ['x', 'y'],
+'title': 'add',
+'type': 'object'}
+```

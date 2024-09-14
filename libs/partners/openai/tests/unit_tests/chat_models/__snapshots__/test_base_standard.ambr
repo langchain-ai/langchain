@@ -19,7 +19,6 @@
         'lc': 1,
         'type': 'secret',
       }),
-      'openai_proxy': '',
       'request_timeout': 60.0,
       'stop': list([
       ]),

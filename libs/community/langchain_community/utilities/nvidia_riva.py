@@ -25,7 +25,8 @@ from typing import (
 
 from langchain_core.messages import AnyMessage, BaseMessage
 from langchain_core.prompt_values import PromptValue
-from langchain_core.pydantic_v1 import (
+from langchain_core.runnables import RunnableConfig, RunnableSerializable
+from pydantic import (
     AnyHttpUrl,
     BaseModel,
     Field,
@@ -33,7 +34,6 @@ from langchain_core.pydantic_v1 import (
     root_validator,
     validator,
 )
-from langchain_core.runnables import RunnableConfig, RunnableSerializable
 
 if TYPE_CHECKING:
     import riva.client
@@ -110,7 +110,7 @@ class RivaAuthMixin(BaseModel):
     """Configuration for the authentication to a Riva service connection."""
 
     url: Union[AnyHttpUrl, str] = Field(
-        AnyHttpUrl("http://localhost:50051", scheme="http"),
+        AnyHttpUrl("http://localhost:50051"),
         description="The full URL where the Riva service can be found.",
         examples=["http://localhost:50051", "https://user@pass:riva.example.com"],
     )
