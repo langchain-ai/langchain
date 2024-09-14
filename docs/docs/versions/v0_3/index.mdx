@@ -27,17 +27,26 @@ If you're using `langchain` / `langchain-community` / `langchain-core` 0.0 or 0.
 
 If you're using `langgraph`, upgrade to `langgraph>=0.2.20,<0.3`. This will work with either 0.2 or 0.3 versions of all the base packages.
 
-Here is a complete list of all packages that have been released and what we recommend upgrading your version constraints to:
+Here is a complete list of all packages that have been released and what we recommend upgrading your version constraints to.
+Any package that now requires `langchain-core` 0.3 had a minor version bump.
+Any package that is now compatible with both `langchain-core` 0.2 and 0.3 had a patch version bump.
 
 ### Base packages
 
-| Package                                | Latest | Recommended constraint     |
+| Package                                | Latest  | Recommended constraint     |
 | -------------------------------------- | ------- | -------------------------- |
 | langchain                              | 0.3.0   | >=0.3,<0.4                 |
 | langchain-community                    | 0.3.0   | >=0.3,<0.4                 |
 | langchain-text-splitters               | 0.3.0   | >=0.3,<0.4                 |
 | langchain-core                         | 0.3.0   | >=0.3,<0.4                 |
 | langchain-experimental                 | 0.3.0   | >=0.3,<0.4                 |
+
+### Downstream packages
+
+| Package                                | Latest  | Recommended constraint     |
+| -------------------------------------- | ------- | -------------------------- |
+| langgraph                              | 0.2.20  | >=0.2.20,<0.3              |
+| langserve                              | 0.3.0   | >=0.3,<0.4                 |
 
 ### Integration packages
 
@@ -47,11 +56,11 @@ Here is a complete list of all packages that have been released and what we reco
 | langchain-aws                          | 0.2.0   | >=0.2,<0.3                 |
 | langchain-anthropic                    | 0.2.0   | >=0.2,<0.3                 |
 | langchain-astradb                      | 0.4.1   | >=0.4.1,<0.5               |
-| langchain-azure-dynamic-sessions       | 0.1.1   | >=0.1.1,<0.2               |
+| langchain-azure-dynamic-sessions       | 0.2.0   | >=0.2,<0.3                 |
 | langchain-box                          | 0.2.0   | >=0.2,<0.3                 |
 | langchain-chroma                       | 0.1.4   | >=0.1.4,<0.2               |
 | langchain-cohere                       | 0.2.0   | >=0.2,<0.3                 |
-| langchain-elasticsearch                | 0.2.3   | >=0.2.3,<0.3               |
+| langchain-elasticsearch                | 0.3.0   | >=0.3,<0.4                 |
 | langchain-exa                          | 0.2.0   | >=0.2,<0.3                 |
 | langchain-fireworks                    | 0.2.0   | >=0.2,<0.3                 |
 | langchain-groq                         | 0.2.0   | >=0.2,<0.3                 |
@@ -68,6 +77,7 @@ Here is a complete list of all packages that have been released and what we reco
 | langchain-pinecone                     | 0.2.0   | >=0.2,<0.3                 |
 | langchain-postgres                     | 0.0.13  | >=0.0.13,<0.1              |
 | langchain-prompty                      | 0.1.0   | >=0.1,<0.2                 |
+| langchain-redis                        | 0.1.0   | >=0.1,<0.2                 |
 | langchain-qdrant                       | 0.2.0   | >=0.2,<0.3                 |
 | langchain-together                     | 0.2.0   | >=0.2,<0.3                 |
 | langchain-unstructured                 | 0.1.4   | >=0.1.4,<0.2               |
