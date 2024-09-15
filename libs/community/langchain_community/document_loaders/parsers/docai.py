@@ -137,7 +137,6 @@ class DocAIParser(BaseBlobParser):
         try:
             from google.cloud import documentai
             from google.cloud.documentai_v1.types import (
-                IndividualPageSelector,
                 OcrConfig,
                 ProcessOptions,
             )
@@ -159,7 +158,7 @@ class DocAIParser(BaseBlobParser):
             else None
         )
         individual_page_selector = (
-            IndividualPageSelector(pages=page_range) if page_range else None
+            ProcessOptions.IndividualPageSelector(pages=page_range) if page_range else None
         )
 
         response = self._client.process_document(
