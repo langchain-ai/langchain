@@ -223,7 +223,7 @@ const config = {
             position: "right",
             items: [
               {
-                label: "v0.3",
+                label: "Latest",
                 href: "https://python.langchain.com/docs/introduction/"
               },
               {
