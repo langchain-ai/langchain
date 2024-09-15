@@ -276,7 +276,7 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
                         proxy=values.get("openai_proxy")
                     )
                 values["async_client"] = openai.AsyncOpenAI(
-                    **client_params, **async_specific, **sync_specific
+                    **client_params, **async_specific
                 ).embeddings
         except ImportError:
             raise ImportError(
