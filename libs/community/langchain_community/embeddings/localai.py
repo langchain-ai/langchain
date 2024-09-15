@@ -289,12 +289,6 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
     def _invocation_params(self) -> Dict:
         openai_args = {
             "model": self.model,
-            # "request_timeout": self.request_timeout,
-            # "headers": self.headers,
-            # "api_key": self.openai_api_key,
-            # "organization": self.openai_organization,
-            # "api_base": self.openai_api_base,
-            # "api_version": self.openai_api_version,
             **self.model_kwargs,
         }
         return openai_args
