@@ -2910,5 +2910,17 @@ const suggestedLinks = {
   "/docs/contributing/documentation/": {"canonical": "/docs/contributing/documentation/", "alternative": ["/v0.1/docs/contributing/documentation/technical_logistics/"]},
   "/docs/expression_language/cookbook/": {"canonical": "/docs/how_to/#langchain-expression-language-lcel", "alternative": ["/v0.1/docs/expression_language/"]},
   "/docs/integrations/text_embedding/solar/": {"canonical": "/docs/integrations/text_embedding/upstage/"},
-  "/docs/integrations/chat/solar/": {"canonical": "/docs/integrations/chat/upstage/"}
+  "/docs/integrations/chat/solar/": {"canonical": "/docs/integrations/chat/upstage/"},
+  // custom ones
+
+  "/docs/modules/model_io/chat/llm_chain/": {
+    "canonical": "/docs/tutorials/llm_chain/"
+  },
+
+  "/docs/modules/agents/toolkits/": {
+    "canonical": "/docs/integrations/tools/",
+    "alternative": [
+      "/v0.1/docs/integrations/toolkits/"
+    ]
+  }
 }
