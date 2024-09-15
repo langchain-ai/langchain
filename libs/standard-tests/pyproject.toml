@@ -11,8 +11,8 @@ license = "MIT"
 "Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/standard-tests"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
-langchain-core = ">=0.1.40,<0.3"
+python = ">=3.9,<4.0"
+langchain-core = { version = ">=0.3.0.dev1", allow-prereleases = true }
 pytest = ">=7,<9"
 httpx = "^0.27.0"
 syrupy = "^4"
@@ -47,10 +47,10 @@ langchain-core = { path = "../core", develop = true }
 
 [tool.ruff.lint]
 select = [
-    "E",    # pycodestyle
-    "F",    # pyflakes
-    "I",    # isort
-    "T201", # print
+  "E",    # pycodestyle
+  "F",    # pyflakes
+  "I",    # isort
+  "T201", # print
 ]
 
 [tool.mypy]

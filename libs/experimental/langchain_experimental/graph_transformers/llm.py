@@ -12,8 +12,8 @@ from langchain_core.prompts import (
     HumanMessagePromptTemplate,
     PromptTemplate,
 )
-from langchain_core.pydantic_v1 import BaseModel, Field, create_model
 from langchain_core.runnables import RunnableConfig
+from pydantic import BaseModel, Field, create_model
 
 examples = [
     {
@@ -159,7 +159,7 @@ def optional_enum_field(
     if enum_values and llm_type == "openai-chat":
         return Field(
             ...,
-            enum=enum_values,
+            enum=enum_values,  # type: ignore[call-arg]
             description=f"{description}. Available options are {enum_values}",
             **field_kwargs,
         )
