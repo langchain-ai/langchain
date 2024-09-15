@@ -20,10 +20,11 @@ from typing import (
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.callbacks import CallbackManager
 from langchain_core.load import dumpd
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.runnables import RunnableConfig, RunnableSerializable, ensure_config
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_tool
+from pydantic import BaseModel, Field, model_validator
+from typing_extensions import Self
 
 if TYPE_CHECKING:
     import openai
@@ -232,14 +233,14 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
     as_agent: bool = False
     """Use as a LangChain agent, compatible with the AgentExecutor."""
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def validate_async_client(cls, values: dict) -> dict:
-        if values["async_client"] is None:
+    @model_validator(mode="after")
+    def validate_async_client(self) -> Self:
+        if self.async_client is None:
             import openai
 
-            api_key = values["client"].api_key
-            values["async_client"] = openai.AsyncOpenAI(api_key=api_key)
-        return values
+            api_key = self.client.api_key
+            self.async_client = openai.AsyncOpenAI(api_key=api_key)
+        return self
 
     @classmethod
     def create_assistant(

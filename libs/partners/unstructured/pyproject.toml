@@ -13,8 +13,8 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-unstructured-client = { version = ">=0.25.0,<1" }
-langchain-core = "^0.2.38"
+langchain-core = "^0.3.0.dev"
+unstructured-client = { version = "^0.25.0" }
 unstructured = { version = "^0.15.7", optional = true, python = "<3.13", extras = [
   "all-docs",
 ] }
@@ -30,6 +30,8 @@ pytest = "^7.4.3"
 pytest-asyncio = "^0.23.2"
 pytest-socket = "^0.7.0"
 langchain-core = { path = "../../core", develop = true }
+# TODO: hack to fix 3.9 builds
+cffi = [{version = "<1.17.1", python="<3.10"}, {version = "*", python=">=3.10"}]
 
 [tool.poetry.group.codespell]
 optional = true
@@ -47,6 +49,8 @@ optional = true
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.5"
+# TODO: hack to fix 3.9 builds
+cffi = [{version = "<1.17.1", python="<3.10"}, {version = "*", python=">=3.10"}]
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^1.7.1"

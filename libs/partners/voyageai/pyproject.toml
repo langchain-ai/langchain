@@ -12,9 +12,10 @@ license = "MIT"
 "Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-voyageai%3D%3D0%22&expanded=true"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
-langchain-core = ">=0.1.52,<0.3"
+python = ">=3.9,<4.0"
+langchain-core = "^0.3.0.dev"
 voyageai = ">=0.2.1,<1"
+pydantic = ">=2,<3"
 
 [tool.poetry.group.test]
 optional = true
@@ -54,7 +55,7 @@ optional = true
 ruff = "^0.1.5"
 
 [tool.poetry.group.typing.dependencies]
-mypy = "^0.991"
+mypy = "^1.10"
 langchain-core = { path = "../../core", develop = true }
 
 [tool.poetry.group.dev]

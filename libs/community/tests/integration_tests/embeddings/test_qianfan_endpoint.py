@@ -2,7 +2,7 @@
 
 from typing import cast
 
-from langchain_core.pydantic_v1 import SecretStr
+from pydantic import SecretStr
 
 from langchain_community.embeddings.baidu_qianfan_endpoint import (
     QianfanEmbeddingsEndpoint,
