@@ -3,10 +3,7 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, List, Optional, Union
 
-from langchain_core.embeddings import Embeddings
-
-from langchain_milvus.utils.sparse import BaseSparseEmbedding
-from langchain_milvus.vectorstores.milvus import Milvus
+from langchain_milvus.vectorstores.milvus import EmbeddingType, Milvus
 
 logger = logging.getLogger(__name__)
 
@@ -101,7 +98,7 @@ class Zilliz(Milvus):
             try:
                 # If no index params, use a default AutoIndex based one
                 if self.index_params is None:
-                    self.index_params = {
+                    self.index_params: Dict[str, Any] = {
                         "metric_type": "L2",
                         "index_type": "AUTOINDEX",
                         "params": {},
@@ -142,13 +139,13 @@ class Zilliz(Milvus):
     def from_texts(
         cls,
         texts: List[str],
-        embedding: Union[Embeddings, BaseSparseEmbedding],
+        embedding: Union[EmbeddingType, List[EmbeddingType]],  # type: ignore
         metadatas: Optional[List[dict]] = None,
         collection_name: str = "LangChainCollection",
         connection_args: Optional[Dict[str, Any]] = None,
         consistency_level: str = "Session",
-        index_params: Optional[dict] = None,
-        search_params: Optional[dict] = None,
+        index_params: Optional[Union[dict, List[dict]]] = None,
+        search_params: Optional[Union[dict, List[dict]]] = None,
         drop_old: bool = False,
         *,
         ids: Optional[List[str]] = None,

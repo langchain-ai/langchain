@@ -28,6 +28,20 @@ class FakeEmbeddings(Embeddings):
         return self.embed_query(text)
 
 
+class FixedValuesEmbeddings(Embeddings):
+    """Fake embeddings class with fixed values for document and query embeddings"""
+
+    def __init__(self, *, documents_base_val: float = 1.0, query_val: float = 1.0):
+        self.documents_val = documents_base_val
+        self.query_val = query_val
+
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        return [[self.documents_val + i] * 10 for i in range(len(texts))]
+
+    def embed_query(self, text: str) -> List[float]:
+        return [float(self.query_val)] * 10
+
+
 def assert_docs_equal_without_pk(
     docs1: List[Document], docs2: List[Document], pk_field: str = "pk"
 ) -> None:

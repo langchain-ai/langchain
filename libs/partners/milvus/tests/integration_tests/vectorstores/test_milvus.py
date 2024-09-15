@@ -10,6 +10,7 @@ from langchain_milvus.utils.sparse import BM25SparseEmbedding
 from langchain_milvus.vectorstores import Milvus
 from tests.integration_tests.utils import (
     FakeEmbeddings,
+    FixedValuesEmbeddings,
     assert_docs_equal_without_pk,
     fake_texts,
 )
@@ -46,6 +47,22 @@ def _milvus_from_texts(
         ids=ids,
         # connection_args={"uri": "http://127.0.0.1:19530"},
         connection_args={"uri": db_path},
+        drop_old=drop,
+        consistency_level="Strong",
+        **kwargs,
+    )
+
+
+def _milvus_multi_vector_from_texts(
+    metadatas: Optional[List[dict]] = None,
+    drop: bool = True,
+    **kwargs: Any,
+) -> Milvus:
+    return Milvus.from_texts(
+        texts=fake_texts,
+        embedding=[FakeEmbeddings(), FakeEmbeddings()],
+        metadatas=metadatas,
+        connection_args={"uri": "./milvus_demo.db"},
         drop_old=drop,
         consistency_level="Strong",
         **kwargs,
@@ -409,6 +426,106 @@ def test_milvus_array_field(temp_milvus_db: Any) -> None:
     assert len(output) == 2
 
 
+def test_milvus_multi_vector_embeddings() -> None:
+    sparse_embedding_func = BM25SparseEmbedding(corpus=fake_texts)
+    dense_embedding_func_1 = FakeEmbeddings()
+    dense_embeddings_func_2 = FakeEmbeddings()
+    docsearch = Milvus.from_texts(
+        embedding=[
+            sparse_embedding_func,
+            dense_embedding_func_1,
+            dense_embeddings_func_2,
+        ],
+        texts=fake_texts,
+        connection_args={"uri": "./milvus_demo.db"},
+        drop_old=True,
+    )
+    output = docsearch.similarity_search(query=fake_texts[0], k=1)
+    assert_docs_equal_without_pk(output, [Document(page_content=fake_texts[0])])
+
+
+def test_milvus_multi_vector_with_index_params() -> None:
+    """Test setting index params which are different from the defaults."""
+    index_param_1 = {
+        "metric_type": "COSINE",
+        "index_type": "HNSW",
+    }
+    index_param_2 = {
+        "metric_type": "IP",
+        "index_type": "HNSW",
+    }
+
+    docsearch = Milvus.from_texts(
+        texts=fake_texts,
+        embedding=[FakeEmbeddings(), FakeEmbeddings()],
+        index_params=[index_param_1, index_param_2],
+        vector_field=["vec_field_1", "vec_field_2"],
+        connection_args={"uri": "./milvus_demo.db"},
+        drop_old=True,
+    )
+
+    assert docsearch.col is not None
+    assert isinstance(docsearch.index_params, list) and len(docsearch.index_params) == 2
+    assert (
+        isinstance(docsearch.search_params, list) and len(docsearch.search_params) == 2
+    )
+
+    index_1 = docsearch.col.indexes[0]
+    assert index_1.field_name == "vec_field_1"
+    assert index_1.params["metric_type"] == "COSINE"
+    assert docsearch.search_params[0]["metric_type"] == "COSINE"
+
+    index_2 = docsearch.col.indexes[1]
+    assert index_2.field_name == "vec_field_2"
+    assert index_2.params["metric_type"] == "IP"
+    assert docsearch.search_params[1]["metric_type"] == "IP"
+
+
+def test_milvus_multi_vector_search_with_ranker() -> None:
+    """Test hybrid search with specified ranker"""
+
+    index_param_1 = {
+        "metric_type": "L2",
+        "index_type": "HNSW",
+    }
+    index_param_2 = {
+        "metric_type": "L2",
+        "index_type": "HNSW",
+    }
+
+    # Force the query vector to always be identical
+    # to the embeddings of the *first* document
+    embedding_1 = FixedValuesEmbeddings(documents_base_val=0.0, query_val=float(0))
+    # Force the query to always be identical to the embeddings of the *last* document
+    embedding_2 = FixedValuesEmbeddings(
+        documents_base_val=0.0, query_val=float(len(fake_texts))
+    )
+    docsearch = Milvus.from_texts(
+        embedding=[embedding_1, embedding_2],
+        texts=fake_texts,
+        index_params=[index_param_1, index_param_2],
+        connection_args={"uri": "./milvus_demo.db"},
+        drop_old=True,
+    )
+
+    query = fake_texts[0]
+    output = docsearch.similarity_search(
+        query=query,
+        ranker_type="weighted",
+        ranker_params={"weights": [1.0, 0.0]},  # Count for first embeddings only
+        k=1,
+    )
+    assert_docs_equal_without_pk(output, [Document(page_content=fake_texts[0])])
+
+    output = docsearch.similarity_search(
+        query=query,
+        ranker_type="weighted",
+        ranker_params={"weights": [0.0, 1.0]},  # Count for second embeddings only
+        k=1,
+    )
+    assert_docs_equal_without_pk(output, [Document(page_content=fake_texts[-1])])
+
+
 # if __name__ == "__main__":
 #     test_milvus()
 #     test_milvus_vector_search()
@@ -428,3 +545,6 @@ def test_milvus_array_field(temp_milvus_db: Any) -> None:
 #     test_milvus_enable_dynamic_field_with_partition_key()
 #     test_milvus_sparse_embeddings()
 #     test_milvus_array_field()
+#     test_milvus_multi_vector_embeddings()
+#     test_milvus_multi_vector_with_index_params()
+#     test_milvus_multi_vector_search_with_ranker()

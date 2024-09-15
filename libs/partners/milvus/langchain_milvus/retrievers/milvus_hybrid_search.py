@@ -146,6 +146,16 @@ class MilvusCollectionHybridSearchRetriever(BaseRetriever):
             documents.append(doc)
         return documents
 
+    def hybrid_search(
+        self,
+        query: str,
+    ) -> List[SearchResult]:
+        requests = self._build_ann_search_requests(query)
+        search_result = self.collection.hybrid_search(
+            requests, self.rerank, limit=self.top_k, output_fields=self.output_fields
+        )
+        return search_result
+
     def _get_relevant_documents(
         self,
         query: str,
@@ -153,9 +163,6 @@ class MilvusCollectionHybridSearchRetriever(BaseRetriever):
         run_manager: CallbackManagerForRetrieverRun,
         **kwargs: Any,
     ) -> List[Document]:
-        requests = self._build_ann_search_requests(query)
-        search_result = self.collection.hybrid_search(
-            requests, self.rerank, limit=self.top_k, output_fields=self.output_fields
-        )
+        search_result = self.hybrid_search(query)
         documents = self._process_search_result(search_result)
         return documents
