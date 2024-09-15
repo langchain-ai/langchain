@@ -140,31 +140,16 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
                 openai_api_key="random-string",
                 openai_api_base="http://localhost:8080"
             )
-
-    Specifying proxy:
-        .. code-block:: python
-
-            from langchain_community.embeddings import LocalAIEmbeddings
-            import openai
-            import httpx
-            openai = LocalAIEmbeddings(
-                openai_api_key="random-string",
-                client=openai.OpenAI(
-                    base_url="http://localhost:8080",
-                    http_client=openai.DefaultHttpxClient(
-                        proxies="http://localhost:8899",
-                        transport=httpx.HTTPTransport(local_address="0.0.0.0"),
-                    ),
-                    api_key="random-string").embeddings
-            )
     """
 
-    client: Any = None #: :meta private:
-    async_client: Any = None #: :meta private:
+    client: Any = None  #: :meta private:
+    async_client: Any = None  #: :meta private:
     model: str = "text-embedding-ada-002"
     deployment: str = model
     openai_api_version: Optional[str] = None
     openai_api_base: Optional[str] = None
+    # to support explicit proxy for LocalAI
+    openai_proxy: Optional[str] = None
     embedding_ctx_length: int = 8191
     """The maximum number of tokens to embed at once."""
     openai_api_key: Optional[str] = None
@@ -224,7 +209,12 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
             "OPENAI_API_BASE",
             default="",
         )
-
+        values["openai_proxy"] = get_from_dict_or_env(
+            values,
+            "openai_proxy",
+            "OPENAI_PROXY",
+            default="",
+        )
         default_api_version = ""
         values["openai_api_version"] = get_from_dict_or_env(
             values,
@@ -238,6 +228,14 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
             "OPENAI_ORGANIZATION",
             default="",
         )
+        if values.get("openai_proxy") and (
+            values.get("client") or values.get("async_client")
+        ):
+            raise ValueError(
+                "Cannot specify 'openai_proxy' if one of "
+                "'client'/'async_client' is already specified. Received:\n"
+                f"{values.get('openai_proxy')=}"
+            )
         try:
             import openai
 
@@ -247,14 +245,39 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
                 "base_url": values["openai_api_base"],
                 "timeout": values["request_timeout"],
                 "max_retries": values["max_retries"],
-                # "default_headers": values["default_headers"],
-                # "default_query": values["default_query"],
-                # "http_client": values["http_client"],
             }
             if not values.get("client"):
-                values["client"] = openai.OpenAI(**client_params).embeddings
+                sync_specific = {}
+                if values.get("openai_proxy"):
+                    try:
+                        import httpx
+                    except ImportError as e:
+                        raise ImportError(
+                            "Could not import httpx python package. "
+                            "Please install it with `pip install httpx`."
+                        ) from e
+                    sync_specific["http_client"] = httpx.Client(
+                        proxy=values.get("openai_proxy")
+                    )
+                values["client"] = openai.OpenAI(
+                    **client_params, **sync_specific
+                ).embeddings
             if not values.get("async_client"):
-                values["async_client"] = openai.AsyncOpenAI(**client_params).embeddings
+                async_specific = {}
+                if values.get("openai_proxy"):
+                    try:
+                        import httpx
+                    except ImportError as e:
+                        raise ImportError(
+                            "Could not import httpx python package. "
+                            "Please install it with `pip install httpx`."
+                        ) from e
+                    async_specific["http_client"] = httpx.AsyncClient(
+                        proxy=values.get("openai_proxy")
+                    )
+                values["async_client"] = openai.AsyncOpenAI(
+                    **client_params, **async_specific, **sync_specific
+                ).embeddings
         except ImportError:
             raise ImportError(
                 "Could not import openai python package. "
