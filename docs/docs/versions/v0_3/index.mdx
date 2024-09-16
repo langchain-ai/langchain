@@ -213,10 +213,16 @@ class FooParser(BaseOutputParser):
 FooParser.model_rebuild()
 ```
 
-
 ## Migrate using langchain-cli
 
-The `langchain-cli` can help migrate your code to new imports automatically. As of 0.0.31, the `langchain-cli` relies on [gritql](https://about.grit.io/) for applying code mods.
+The `langchain-cli` can help update deprecated LangChain imports in your code automatically.
+
+Please note that the `langchain-cli` only handles deprecated LangChain imports and cannot
+help to upgrade your code from pydantic 1 to pydantic 2.
+
+For help with the Pydantic 1 to 2 migration itself please refer to the [Pydantic Migration Guidelines](https://docs.pydantic.dev/latest/migration/).
+
+As of 0.0.31, the `langchain-cli` relies on [gritql](https://about.grit.io/) for applying code mods.
 
 ## Installation
 
