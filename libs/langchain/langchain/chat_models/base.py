@@ -109,6 +109,7 @@ def init_chat_model(
             - google_vertexai (langchain-google-vertexai)
             - google_genai (langchain-google-genai)
             - bedrock (langchain-aws)
+            - bedrock_converse (langchain-aws)
             - cohere (langchain-cohere)
             - fireworks (langchain-fireworks)
             - together (langchain-together)
@@ -126,6 +127,7 @@ def init_chat_model(
             - gemini... -> google_vertexai
             - command... -> cohere
             - accounts/fireworks... -> fireworks
+            - mistral... -> mistralai
         configurable_fields: Which model parameters are
             configurable:
 
@@ -276,8 +278,10 @@ def init_chat_model(
 
     .. versionchanged:: 0.2.12
 
-        Support for Ollama via langchain-ollama package added. Previously
+        Support for ChatOllama via langchain-ollama package added. Previously
         langchain-community version of Ollama (now deprecated) was installed by default.
+        
+        Support for ChatBedrockConverse added (model_provider="bedrock_converse").
 
     """  # noqa: E501
     if not model and not configurable_fields:
@@ -436,6 +440,8 @@ def _attempt_infer_model_provider(model_name: str) -> Optional[str]:
         return "google_vertexai"
     elif model_name.startswith("amazon."):
         return "bedrock"
+    elif model_name.startswith("mistral"):
+        return "mistralai"
     else:
         return None
 
