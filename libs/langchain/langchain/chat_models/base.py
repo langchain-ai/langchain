@@ -97,12 +97,12 @@ def init_chat_model(
     """Initialize a ChatModel from the model name and provider.
 
     Must have the integration package corresponding to the model provider installed.
-    
+
     Args:
         model: The name of the model, e.g. "gpt-4o", "claude-3-opus-20240229".
         model_provider: The model provider. Supported model_provider values and the
             corresponding integration package:
-            
+
             - openai (langchain-openai)
             - anthropic (langchain-anthropic)
             - azure_openai (langchain-openai)
@@ -119,7 +119,7 @@ def init_chat_model(
 
             Will attempt to infer model_provider from model if not specified. The
             following providers will be inferred based on these model prefixes:
-            
+
             - gpt-3... or gpt-4... -> openai
             - claude... -> anthropic
             - amazon.... -> bedrock
@@ -128,7 +128,7 @@ def init_chat_model(
             - accounts/fireworks... -> fireworks
         configurable_fields: Which model parameters are
             configurable:
-            
+
             - None: No configurable fields.
             - "any": All fields are configurable. *See Security Note below.*
             - Union[List[str], Tuple[str, ...]]: Specified fields are configurable.
@@ -162,7 +162,7 @@ def init_chat_model(
 
     .. dropdown:: Init non-configurable model
         :open:
-    
+
         .. code-block:: python
 
             # pip install langchain langchain-openai langchain-anthropic langchain-google-vertexai
@@ -178,7 +178,7 @@ def init_chat_model(
 
 
     .. dropdown:: Partially configurable model with no default
-    
+
         .. code-block:: python
 
             # pip install langchain langchain-openai langchain-anthropic
@@ -200,7 +200,7 @@ def init_chat_model(
             # claude-3.5 sonnet response
 
     .. dropdown:: Fully configurable model with a default
-    
+
         .. code-block:: python
 
             # pip install langchain langchain-openai langchain-anthropic
@@ -230,7 +230,7 @@ def init_chat_model(
             # Claude-3.5 sonnet response with temperature 0.6
 
     .. dropdown:: Bind tools to a configurable model
-    
+
         You can call any ChatModel declarative methods on a configurable model in the
         same way that you would with a normal model.
 
@@ -267,7 +267,7 @@ def init_chat_model(
                 config={"configurable": {"model": "claude-3-5-sonnet-20240620"}}
             )
             # Claude-3.5 sonnet response with tools
-    
+
     .. versionadded:: 0.2.7
 
     .. versionchanged:: 0.2.8
