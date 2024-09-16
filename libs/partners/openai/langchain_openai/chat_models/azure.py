@@ -31,12 +31,13 @@ from langchain_core.output_parsers.openai_tools import (
     PydanticToolsParser,
 )
 from langchain_core.outputs import ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import from_env, secret_from_env
 from langchain_core.utils.function_calling import convert_to_openai_tool
 from langchain_core.utils.pydantic import is_basemodel_subclass
+from pydantic import BaseModel, Field, SecretStr, model_validator
+from typing_extensions import Self
 
 from langchain_openai.chat_models.base import BaseChatOpenAI
 
@@ -250,7 +251,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
     Tool calling:
         .. code-block:: python
 
-            from langchain_core.pydantic_v1 import BaseModel, Field
+            from pydantic import BaseModel, Field
 
 
             class GetWeather(BaseModel):
@@ -305,7 +306,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
             from typing import Optional
 
-            from langchain_core.pydantic_v1 import BaseModel, Field
+            from pydantic import BaseModel, Field
 
 
             class Joke(BaseModel):
@@ -494,7 +495,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
         default_factory=from_env("OPENAI_API_VERSION", default=None),
     )
     """Automatically inferred from env var `OPENAI_API_VERSION` if not provided."""
-    # Check OPENAI_KEY for backwards compatibility.
+    # Check OPENAI_API_KEY for backwards compatibility.
     # TODO: Remove OPENAI_API_KEY support to avoid possible conflict when using
     # other forms of azure credentials.
     openai_api_key: Optional[SecretStr] = Field(
@@ -565,31 +566,31 @@ class AzureChatOpenAI(BaseChatOpenAI):
     def is_lc_serializable(cls) -> bool:
         return True
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="after")
+    def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
-        if values["n"] < 1:
+        if self.n < 1:
             raise ValueError("n must be at least 1.")
-        if values["n"] > 1 and values["streaming"]:
+        if self.n > 1 and self.streaming:
             raise ValueError("n must be 1 when streaming.")
 
         # Check OPENAI_ORGANIZATION for backwards compatibility.
-        values["openai_organization"] = (
-            values["openai_organization"]
+        self.openai_organization = (
+            self.openai_organization
             or os.getenv("OPENAI_ORG_ID")
             or os.getenv("OPENAI_ORGANIZATION")
         )
         # For backwards compatibility. Before openai v1, no distinction was made
         # between azure_endpoint and base_url (openai_api_base).
-        openai_api_base = values["openai_api_base"]
-        if openai_api_base and values["validate_base_url"]:
+        openai_api_base = self.openai_api_base
+        if openai_api_base and self.validate_base_url:
             if "/openai" not in openai_api_base:
                 raise ValueError(
                     "As of openai>=1.0.0, Azure endpoints should be specified via "
                     "the `azure_endpoint` param not `openai_api_base` "
                     "(or alias `base_url`)."
                 )
-            if values["deployment_name"]:
+            if self.deployment_name:
                 raise ValueError(
                     "As of openai>=1.0.0, if `azure_deployment` (or alias "
                     "`deployment_name`) is specified then "
@@ -602,39 +603,36 @@ class AzureChatOpenAI(BaseChatOpenAI):
                     "Or you can equivalently specify:\n\n"
                     'base_url="https://xxx.openai.azure.com/openai/deployments/my-deployment"'
                 )
-        client_params = {
-            "api_version": values["openai_api_version"],
-            "azure_endpoint": values["azure_endpoint"],
-            "azure_deployment": values["deployment_name"],
+        client_params: dict = {
+            "api_version": self.openai_api_version,
+            "azure_endpoint": self.azure_endpoint,
+            "azure_deployment": self.deployment_name,
             "api_key": (
-                values["openai_api_key"].get_secret_value()
-                if values["openai_api_key"]
-                else None
+                self.openai_api_key.get_secret_value() if self.openai_api_key else None
             ),
             "azure_ad_token": (
-                values["azure_ad_token"].get_secret_value()
-                if values["azure_ad_token"]
-                else None
+                self.azure_ad_token.get_secret_value() if self.azure_ad_token else None
             ),
-            "azure_ad_token_provider": values["azure_ad_token_provider"],
-            "organization": values["openai_organization"],
-            "base_url": values["openai_api_base"],
-            "timeout": values["request_timeout"],
-            "max_retries": values["max_retries"],
-            "default_headers": values["default_headers"],
-            "default_query": values["default_query"],
+            "azure_ad_token_provider": self.azure_ad_token_provider,
+            "organization": self.openai_organization,
+            "base_url": self.openai_api_base,
+            "timeout": self.request_timeout,
+            "max_retries": self.max_retries,
+            "default_headers": self.default_headers,
+            "default_query": self.default_query,
         }
-        if not values.get("client"):
-            sync_specific = {"http_client": values["http_client"]}
-            values["root_client"] = openai.AzureOpenAI(**client_params, **sync_specific)
-            values["client"] = values["root_client"].chat.completions
-        if not values.get("async_client"):
-            async_specific = {"http_client": values["http_async_client"]}
-            values["root_async_client"] = openai.AsyncAzureOpenAI(
-                **client_params, **async_specific
+        if not self.client:
+            sync_specific = {"http_client": self.http_client}
+            self.root_client = openai.AzureOpenAI(**client_params, **sync_specific)  # type: ignore[arg-type]
+            self.client = self.root_client.chat.completions
+        if not self.async_client:
+            async_specific = {"http_client": self.http_async_client}
+            self.root_async_client = openai.AsyncAzureOpenAI(
+                **client_params,
+                **async_specific,  # type: ignore[arg-type]
             )
-            values["async_client"] = values["root_async_client"].chat.completions
-        return values
+            self.async_client = self.root_async_client.chat.completions
+        return self
 
     def bind_tools(
         self,
@@ -735,7 +733,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 from typing import Optional
 
                 from langchain_openai import AzureChatOpenAI
-                from langchain_core.pydantic_v1 import BaseModel, Field
+                from pydantic import BaseModel, Field
 
 
                 class AnswerWithJustification(BaseModel):
@@ -766,7 +764,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
             .. code-block:: python
 
                 from langchain_openai import AzureChatOpenAI
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
 
 
                 class AnswerWithJustification(BaseModel):
@@ -853,7 +851,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
             .. code-block::
 
                 from langchain_openai import AzureChatOpenAI
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
 
                 class AnswerWithJustification(BaseModel):
                     answer: str

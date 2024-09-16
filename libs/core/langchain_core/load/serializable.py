@@ -10,9 +10,8 @@ from typing import (
     cast,
 )
 
+from pydantic import BaseModel, ConfigDict
 from typing_extensions import NotRequired
-
-from langchain_core.pydantic_v1 import BaseModel
 
 
 class BaseSerialized(TypedDict):
@@ -80,7 +79,7 @@ def try_neq_default(value: Any, key: str, model: BaseModel) -> bool:
         Exception: If the key is not in the model.
     """
     try:
-        return model.__fields__[key].get_default() != value
+        return model.model_fields[key].get_default() != value
     except Exception:
         return True
 
@@ -161,16 +160,25 @@ class Serializable(BaseModel, ABC):
         For example, for the class `langchain.llms.openai.OpenAI`, the id is
         ["langchain", "llms", "openai", "OpenAI"].
         """
-        return [*cls.get_lc_namespace(), cls.__name__]
+        # Pydantic generics change the class name. So we need to do the following
+        if (
+            "origin" in cls.__pydantic_generic_metadata__
+            and cls.__pydantic_generic_metadata__["origin"] is not None
+        ):
+            original_name = cls.__pydantic_generic_metadata__["origin"].__name__
+        else:
+            original_name = cls.__name__
+        return [*cls.get_lc_namespace(), original_name]
 
-    class Config:
-        extra = "ignore"
+    model_config = ConfigDict(
+        extra="ignore",
+    )
 
     def __repr_args__(self) -> Any:
         return [
             (k, v)
             for k, v in super().__repr_args__()
-            if (k not in self.__fields__ or try_neq_default(v, k, self))
+            if (k not in self.model_fields or try_neq_default(v, k, self))
         ]
 
     def to_json(self) -> Union[SerializedConstructor, SerializedNotImplemented]:
@@ -184,12 +192,15 @@ class Serializable(BaseModel, ABC):
 
         secrets = dict()
         # Get latest values for kwargs if there is an attribute with same name
-        lc_kwargs = {
-            k: getattr(self, k, v)
-            for k, v in self
-            if not (self.__exclude_fields__ or {}).get(k, False)  # type: ignore
-            and _is_field_useful(self, k, v)
-        }
+        lc_kwargs = {}
+        for k, v in self:
+            if not _is_field_useful(self, k, v):
+                continue
+            # Do nothing if the field is excluded
+            if k in self.model_fields and self.model_fields[k].exclude:
+                continue
+
+            lc_kwargs[k] = getattr(self, k, v)
 
         # Merge the lc_secrets and lc_attributes from every class in the MRO
         for cls in [None, *self.__class__.mro()]:
@@ -221,8 +232,10 @@ class Serializable(BaseModel, ABC):
             # that are not present in the fields.
             for key in list(secrets):
                 value = secrets[key]
-                if key in this.__fields__:
-                    secrets[this.__fields__[key].alias] = value
+                if key in this.model_fields:
+                    alias = this.model_fields[key].alias
+                    if alias is not None:
+                        secrets[alias] = value
             lc_kwargs.update(this.lc_attributes)
 
         # include all secrets, even if not specified in kwargs
@@ -259,15 +272,30 @@ def _is_field_useful(inst: Serializable, key: str, value: Any) -> bool:
         If the field is not required and the value is None, it is useful if the
         default value is different from the value.
     """
-    field = inst.__fields__.get(key)
+    field = inst.model_fields.get(key)
     if not field:
         return False
+
+    if field.is_required():
+        return True
+
     # Handle edge case: a value cannot be converted to a boolean (e.g. a
     # Pandas DataFrame).
     try:
         value_is_truthy = bool(value)
     except Exception as _:
         value_is_truthy = False
+
+    if value_is_truthy:
+        return True
+
+    # Value is still falsy here!
+    if field.default_factory is dict and isinstance(value, dict):
+        return False
+
+    # Value is still falsy here!
+    if field.default_factory is list and isinstance(value, list):
+        return False
 
     # Handle edge case: inequality of two objects does not evaluate to a bool (e.g. two
     # Pandas DataFrames).
@@ -282,7 +310,8 @@ def _is_field_useful(inst: Serializable, key: str, value: Any) -> bool:
             except Exception as _:
                 value_neq_default = False
 
-    return field.required is True or value_is_truthy or value_neq_default
+    # If value is falsy and does not match the default
+    return value_is_truthy or value_neq_default
 
 
 def _replace_secrets(

@@ -1,6 +1,7 @@
 from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
 import pytest
+from pydantic import BaseModel
 
 from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
@@ -9,7 +10,6 @@ from langchain_core.chat_history import InMemoryChatMessageHistory
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import Runnable
 from langchain_core.runnables.base import RunnableBinding, RunnableLambda
 from langchain_core.runnables.config import RunnableConfig
@@ -454,9 +454,45 @@ def test_get_input_schema_input_dict() -> None:
     )
 
 
+def test_get_output_schema() -> None:
+    """Test get output schema."""
+    runnable = RunnableLambda(
+        lambda input: {
+            "output": [
+                AIMessage(
+                    content="you said: "
+                    + "\n".join(
+                        [
+                            str(m.content)
+                            for m in input["history"]
+                            if isinstance(m, HumanMessage)
+                        ]
+                        + [input["input"]]
+                    )
+                )
+            ]
+        }
+    )
+    get_session_history = _get_get_session_history()
+    with_history = RunnableWithMessageHistory(
+        runnable,
+        get_session_history,
+        input_messages_key="input",
+        history_messages_key="history",
+        output_messages_key="output",
+    )
+    output_type = with_history.get_output_schema()
+
+    assert _schema(output_type) == {
+        "title": "RunnableWithChatHistoryOutput",
+        "type": "object",
+    }
+
+
 def test_get_input_schema_input_messages() -> None:
-    class RunnableWithChatHistoryInput(BaseModel):
-        __root__: Sequence[BaseMessage]
+    from pydantic import RootModel
+
+    RunnableWithMessageHistoryInput = RootModel[Sequence[BaseMessage]]
 
     runnable = RunnableLambda(
         lambda messages: {
@@ -478,9 +514,9 @@ def test_get_input_schema_input_messages() -> None:
     with_history = RunnableWithMessageHistory(
         runnable, get_session_history, output_messages_key="output"
     )
-    assert _schema(with_history.get_input_schema()) == _schema(
-        RunnableWithChatHistoryInput
-    )
+    expected_schema = _schema(RunnableWithMessageHistoryInput)
+    expected_schema["title"] = "RunnableWithChatHistoryInput"
+    assert _schema(with_history.get_input_schema()) == expected_schema
 
 
 def test_using_custom_config_specs() -> None:
