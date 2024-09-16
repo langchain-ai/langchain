@@ -13,16 +13,18 @@ from typing import (
     Union,
 )
 
+from pydantic import BaseModel
+
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.load.load import load
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables.base import Runnable, RunnableBindingBase, RunnableLambda
 from langchain_core.runnables.passthrough import RunnablePassthrough
 from langchain_core.runnables.utils import (
     ConfigurableFieldSpec,
-    create_model,
+    Output,
     get_unique_config_specs,
 )
+from langchain_core.utils.pydantic import create_model_v2
 
 if TYPE_CHECKING:
     from langchain_core.language_models.base import LanguageModelLike
@@ -96,7 +98,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         from langchain_core.documents import Document
         from langchain_core.messages import BaseMessage, AIMessage
         from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-        from langchain_core.pydantic_v1 import BaseModel, Field
+        from pydantic import BaseModel, Field
         from langchain_core.runnables import (
             RunnableLambda,
             ConfigurableFieldSpec,
@@ -361,6 +363,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             history_factory_config=_config_specs,
             **kwargs,
         )
+        self._history_chain = history_chain
 
     @property
     def config_specs(self) -> List[ConfigurableFieldSpec]:
@@ -372,28 +375,60 @@ class RunnableWithMessageHistory(RunnableBindingBase):
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
     ) -> Type[BaseModel]:
-        super_schema = super().get_input_schema(config)
-        if super_schema.__custom_root_type__ or not super_schema.schema().get(
-            "properties"
-        ):
-            from langchain_core.messages import BaseMessage
+        from langchain_core.messages import BaseMessage
 
-            fields: Dict = {}
-            if self.input_messages_key and self.history_messages_key:
-                fields[self.input_messages_key] = (
-                    Union[str, BaseMessage, Sequence[BaseMessage]],
-                    ...,
-                )
-            elif self.input_messages_key:
-                fields[self.input_messages_key] = (Sequence[BaseMessage], ...)
-            else:
-                fields["__root__"] = (Sequence[BaseMessage], ...)
-            return create_model(  # type: ignore[call-overload]
-                "RunnableWithChatHistoryInput",
-                **fields,
+        fields: Dict = {}
+        if self.input_messages_key and self.history_messages_key:
+            fields[self.input_messages_key] = (
+                Union[str, BaseMessage, Sequence[BaseMessage]],
+                ...,
             )
+        elif self.input_messages_key:
+            fields[self.input_messages_key] = (Sequence[BaseMessage], ...)
         else:
-            return super_schema
+            return create_model_v2(
+                "RunnableWithChatHistoryInput",
+                module_name=self.__class__.__module__,
+                root=(Sequence[BaseMessage], ...),
+            )
+        return create_model_v2(  # type: ignore[call-overload]
+            "RunnableWithChatHistoryInput",
+            field_definitions=fields,
+            module_name=self.__class__.__module__,
+        )
+
+    @property
+    def OutputType(self) -> Type[Output]:
+        output_type = self._history_chain.OutputType
+        return output_type
+
+    def get_output_schema(
+        self, config: Optional[RunnableConfig] = None
+    ) -> Type[BaseModel]:
+        """Get a pydantic model that can be used to validate output to the Runnable.
+
+        Runnables that leverage the configurable_fields and configurable_alternatives
+        methods will have a dynamic output schema that depends on which
+        configuration the Runnable is invoked with.
+
+        This method allows to get an output schema for a specific configuration.
+
+        Args:
+            config: A config to use when generating the schema.
+
+        Returns:
+            A pydantic model that can be used to validate output.
+        """
+        root_type = self.OutputType
+
+        if inspect.isclass(root_type) and issubclass(root_type, BaseModel):
+            return root_type
+
+        return create_model_v2(
+            "RunnableWithChatHistoryOutput",
+            root=root_type,
+            module_name=self.__class__.__module__,
+        )
 
     def _is_not_async(self, *args: Sequence[Any], **kwargs: Dict[str, Any]) -> bool:
         return False

@@ -9,7 +9,7 @@ require("dotenv").config();
 const baseLightCodeBlockTheme = require("prism-react-renderer/themes/vsLight");
 const baseDarkCodeBlockTheme = require("prism-react-renderer/themes/vsDark");
 
-const baseUrl = "/v0.2/";
+const baseUrl = "/";
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
@@ -125,8 +125,11 @@ const config = {
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
       announcementBar: {
-        content: 'LangChain 0.2 is out! Leave feedback on the v0.2 docs <a href="https://github.com/langchain-ai/langchain/discussions/21716">here</a>. You can view the v0.1 docs <a href="/v0.1/docs/get_started/introduction/">here</a>.',
+        content:
+          'Share your thoughts on AI agents. <a target="_blank" href="https://langchain.typeform.com/state-of-agents">Take the 3-min survey</a>.',
         isCloseable: true,
+        backgroundColor: "rgba(53, 151, 147, 0.1)",
+        textColor: "rgb(53, 151, 147)",
       },
       docs: {
         sidebar: {
@@ -171,7 +174,7 @@ const config = {
             items: [
               {
                 label: "Latest",
-                to: "https://python.langchain.com/v0.2/api_reference/reference.html",
+                to: "https://python.langchain.com/api_reference/reference.html",
               },
               {
                 label: "Legacy",
@@ -216,12 +219,16 @@ const config = {
           },
           {
             type: "dropdown",
-            label: "v0.2",
+            label: "v0.3",
             position: "right",
             items: [
               {
-                label: "v0.2",
+                label: "v0.3",
                 href: "/docs/introduction"
+              },
+              {
+                label: "v0.2",
+                href: "https://python.langchain.com/v0.2/docs/introduction"
               },
               {
                 label: "v0.1",
@@ -323,7 +330,7 @@ const config = {
         // this is linked to erick@langchain.dev currently
         apiKey: "6c01842d6a88772ed2236b9c85806441",
 
-        indexName: "python-langchain-0.2",
+        indexName: "python-langchain-latest",
 
         contextualSearch: false,
       },

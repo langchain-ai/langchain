@@ -33,8 +33,8 @@ install-py-deps:
 	python3 -m venv .venv
 	$(PYTHON) -m pip install --upgrade pip
 	$(PYTHON) -m pip install --upgrade uv
-	$(PYTHON) -m uv pip install -r vercel_requirements.txt
-	$(PYTHON) -m uv pip install --editable $(PARTNER_DEPS_LIST)
+	$(PYTHON) -m uv pip install --pre -r vercel_requirements.txt
+	$(PYTHON) -m uv pip install --pre --editable $(PARTNER_DEPS_LIST)
 
 generate-files:
 	mkdir -p $(INTERMEDIATE_DIR)
@@ -73,6 +73,8 @@ append-related:
 generate-references:
 	$(PYTHON) scripts/generate_api_reference_links.py --docs_dir $(OUTPUT_NEW_DOCS_DIR)
 
+update-md: generate-files md-sync
+
 build: install-py-deps generate-files copy-infra render md-sync append-related
 
 vercel-build: install-vercel-deps build generate-references
@@ -84,10 +86,6 @@ vercel-build: install-vercel-deps build generate-references
 	mv langchain-api-docs-build/api_reference_build/html/* static/api_reference/
 	rm -rf langchain-api-docs-build
 	NODE_OPTIONS="--max-old-space-size=5000" yarn run docusaurus build
-	mv build v0.2
-	mkdir build
-	mv v0.2 build
-	mv build/v0.2/404.html build
 
 start:
 	cd $(OUTPUT_NEW_DIR) && yarn && yarn start --port=$(PORT)

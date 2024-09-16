@@ -7,8 +7,8 @@ import json
 from typing import Any, List, Optional
 
 import requests
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel
 
 FINANCIAL_DATASETS_BASE_URL = "https://api.financialdatasets.ai/"
 

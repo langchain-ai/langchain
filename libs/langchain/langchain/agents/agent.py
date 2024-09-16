@@ -40,11 +40,12 @@ from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.prompts.few_shot import FewShotPromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
-from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.runnables import Runnable, RunnableConfig, ensure_config
 from langchain_core.runnables.utils import AddableDict
 from langchain_core.tools import BaseTool
 from langchain_core.utils.input import get_color_mapping
+from pydantic import BaseModel, ConfigDict, model_validator
+from typing_extensions import Self
 
 from langchain.agents.agent_iterator import AgentExecutorIterator
 from langchain.agents.agent_types import AgentType
@@ -175,7 +176,7 @@ class BaseSingleActionAgent(BaseModel):
         Returns:
             Dict: Dictionary representation of agent.
         """
-        _dict = super().dict()
+        _dict = super().model_dump()
         try:
             _type = self._agent_type
         except NotImplementedError:
@@ -323,7 +324,7 @@ class BaseMultiActionAgent(BaseModel):
 
     def dict(self, **kwargs: Any) -> Dict:
         """Return dictionary representation of agent."""
-        _dict = super().dict()
+        _dict = super().model_dump()
         try:
             _dict["_type"] = str(self._agent_type)
         except NotImplementedError:
@@ -420,8 +421,9 @@ class RunnableAgent(BaseSingleActionAgent):
         individual LLM tokens will not be available in stream_log.
     """
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     @property
     def return_values(self) -> List[str]:
@@ -528,8 +530,9 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
         individual LLM tokens will not be available in stream_log.
     """
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     @property
     def return_values(self) -> List[str]:
@@ -854,8 +857,8 @@ class Agent(BaseSingleActionAgent):
         """
         return list(set(self.llm_chain.input_keys) - {"agent_scratchpad"})
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def validate_prompt(cls, values: Dict) -> Dict:
+    @model_validator(mode="after")
+    def validate_prompt(self) -> Self:
         """Validate that prompt matches format.
 
         Args:
@@ -868,7 +871,7 @@ class Agent(BaseSingleActionAgent):
             ValueError: If `agent_scratchpad` is not in prompt.input_variables
              and prompt is not a FewShotPromptTemplate or a PromptTemplate.
         """
-        prompt = values["llm_chain"].prompt
+        prompt = self.llm_chain.prompt
         if "agent_scratchpad" not in prompt.input_variables:
             logger.warning(
                 "`agent_scratchpad` should be a variable in prompt.input_variables."
@@ -881,7 +884,7 @@ class Agent(BaseSingleActionAgent):
                 prompt.suffix += "\n{agent_scratchpad}"
             else:
                 raise ValueError(f"Got unexpected prompt type {type(prompt)}")
-        return values
+        return self
 
     @property
     @abstractmethod
@@ -1120,8 +1123,8 @@ class AgentExecutor(Chain):
             **kwargs,
         )
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def validate_tools(cls, values: Dict) -> Dict:
+    @model_validator(mode="after")
+    def validate_tools(self) -> Self:
         """Validate that tools are compatible with agent.
 
         Args:
@@ -1133,19 +1136,20 @@ class AgentExecutor(Chain):
         Raises:
             ValueError: If allowed tools are different than provided tools.
         """
-        agent = values["agent"]
-        tools = values["tools"]
-        allowed_tools = agent.get_allowed_tools()
+        agent = self.agent
+        tools = self.tools
+        allowed_tools = agent.get_allowed_tools()  # type: ignore
         if allowed_tools is not None:
             if set(allowed_tools) != set([tool.name for tool in tools]):
                 raise ValueError(
                     f"Allowed tools ({allowed_tools}) different than "
                     f"provided tools ({[tool.name for tool in tools]})"
                 )
-        return values
+        return self
 
-    @root_validator(pre=True)
-    def validate_runnable_agent(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_runnable_agent(cls, values: Dict) -> Any:
         """Convert runnable to agent if passed in.
 
         Args:
