@@ -2,11 +2,12 @@ import json
 from typing import Any, AsyncIterator, Iterator, Tuple
 
 import pytest
+from pydantic import BaseModel
 
+from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers.json import (
     SimpleJsonOutputParser,
 )
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.utils.function_calling import convert_to_openai_function
 from langchain_core.utils.json import parse_json_markdown, parse_partial_json
 from tests.unit_tests.pydantic_utils import _schema
@@ -531,7 +532,7 @@ async def test_partial_text_json_output_parser_diff_async() -> None:
 
 def test_raises_error() -> None:
     parser = SimpleJsonOutputParser()
-    with pytest.raises(Exception):
+    with pytest.raises(OutputParserException):
         parser.invoke("hi")
 
 

@@ -32,10 +32,10 @@ from langchain_core.callbacks import (
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.exceptions import LangChainException
-from langchain_core.pydantic_v1 import root_validator
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.utils import get_from_env
 from langchain_core.vectorstores import VectorStore
+from pydantic import ConfigDict, model_validator
 
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
@@ -265,7 +265,6 @@ class AzureSearch(VectorStore):
         self,
         azure_search_endpoint: str,
         azure_search_key: str,
-        azure_ad_access_token: Optional[str],
         index_name: str,
         embedding_function: Union[Callable, Embeddings],
         search_type: str = "hybrid",
@@ -281,6 +280,7 @@ class AzureSearch(VectorStore):
         *,
         vector_search_dimensions: Optional[int] = None,
         additional_search_client_options: Optional[Dict[str, Any]] = None,
+        azure_ad_access_token: Optional[str] = None,
         **kwargs: Any,
     ):
         try:
@@ -1284,6 +1284,11 @@ class AzureSearch(VectorStore):
                     page_content=result.pop(FIELDS_CONTENT),
                     metadata={
                         **(
+                            {FIELDS_ID: result.pop(FIELDS_ID)}
+                            if FIELDS_ID in result
+                            else {}
+                        ),
+                        **(
                             json.loads(result[FIELDS_METADATA])
                             if FIELDS_METADATA in result
                             else {
@@ -1293,14 +1298,18 @@ class AzureSearch(VectorStore):
                             }
                         ),
                         **{
-                            "captions": {
-                                "text": result.get("@search.captions", [{}])[0].text,
-                                "highlights": result.get("@search.captions", [{}])[
-                                    0
-                                ].highlights,
-                            }
-                            if result.get("@search.captions")
-                            else {},
+                            "captions": (
+                                {
+                                    "text": result.get("@search.captions", [{}])[
+                                        0
+                                    ].text,
+                                    "highlights": result.get("@search.captions", [{}])[
+                                        0
+                                    ].highlights,
+                                }
+                                if result.get("@search.captions")
+                                else {}
+                            ),
                             "answers": semantic_answers_dict.get(
                                 result.get(FIELDS_ID, ""),
                                 "",
@@ -1363,6 +1372,11 @@ class AzureSearch(VectorStore):
                     page_content=result.pop(FIELDS_CONTENT),
                     metadata={
                         **(
+                            {FIELDS_ID: result.pop(FIELDS_ID)}
+                            if FIELDS_ID in result
+                            else {}
+                        ),
+                        **(
                             json.loads(result[FIELDS_METADATA])
                             if FIELDS_METADATA in result
                             else {
@@ -1372,14 +1386,18 @@ class AzureSearch(VectorStore):
                             }
                         ),
                         **{
-                            "captions": {
-                                "text": result.get("@search.captions", [{}])[0].text,
-                                "highlights": result.get("@search.captions", [{}])[
-                                    0
-                                ].highlights,
-                            }
-                            if result.get("@search.captions")
-                            else {},
+                            "captions": (
+                                {
+                                    "text": result.get("@search.captions", [{}])[
+                                        0
+                                    ].text,
+                                    "highlights": result.get("@search.captions", [{}])[
+                                        0
+                                    ].highlights,
+                                }
+                                if result.get("@search.captions")
+                                else {}
+                            ),
                             "answers": semantic_answers_dict.get(
                                 result.get(FIELDS_ID, ""),
                                 "",
@@ -1411,10 +1429,10 @@ class AzureSearch(VectorStore):
         azure_search = cls(
             azure_search_endpoint,
             azure_search_key,
-            azure_ad_access_token,
             index_name,
             embedding,
             fields=fields,
+            azure_ad_access_token=azure_ad_access_token,
             **kwargs,
         )
         azure_search.add_texts(texts, metadatas, **kwargs)
@@ -1437,10 +1455,10 @@ class AzureSearch(VectorStore):
         azure_search = cls(
             azure_search_endpoint,
             azure_search_key,
-            azure_ad_access_token,
             index_name,
             embedding,
             fields=fields,
+            azure_ad_access_token=azure_ad_access_token,
             **kwargs,
         )
         await azure_search.aadd_texts(texts, metadatas, **kwargs)
@@ -1562,11 +1580,13 @@ class AzureSearchVectorStoreRetriever(BaseRetriever):
         "semantic_hybrid_score_threshold",
     )
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
-    @root_validator(pre=True)
-    def validate_search_type(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_search_type(cls, values: Dict) -> Any:
         """Validate search type."""
         if "search_type" in values:
             search_type = values["search_type"]
@@ -1752,16 +1772,26 @@ def _reorder_results_with_maximal_marginal_relevance(
 
 
 def _result_to_document(result: Dict) -> Document:
+    # Fields metadata
+    if FIELDS_METADATA in result:
+        if isinstance(result[FIELDS_METADATA], dict):
+            fields_metadata = result[FIELDS_METADATA]
+        else:
+            fields_metadata = json.loads(result[FIELDS_METADATA])
+    else:
+        fields_metadata = {
+            key: value for key, value in result.items() if key != FIELDS_CONTENT_VECTOR
+        }
+    # IDs
+    if FIELDS_ID in result:
+        fields_id = {FIELDS_ID: result.pop(FIELDS_ID)}
+    else:
+        fields_id = {}
     return Document(
         page_content=result.pop(FIELDS_CONTENT),
-        metadata=(
-            result[FIELDS_METADATA]
-            if isinstance(result[FIELDS_METADATA], dict)
-            else json.loads(result[FIELDS_METADATA])
-        )
-        if FIELDS_METADATA in result
-        else {
-            key: value for key, value in result.items() if key != FIELDS_CONTENT_VECTOR
+        metadata={
+            **fields_id,
+            **fields_metadata,
         },
     )
 

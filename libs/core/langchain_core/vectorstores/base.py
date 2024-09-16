@@ -42,8 +42,9 @@ from typing import (
     TypeVar,
 )
 
+from pydantic import ConfigDict, Field, model_validator
+
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.retrievers import BaseRetriever, LangSmithRetrieverParams
 from langchain_core.runnables.config import run_in_executor
 
@@ -558,7 +559,8 @@ class VectorStore(ABC):
         ):
             warnings.warn(
                 "Relevance scores must be between"
-                f" 0 and 1, got {docs_and_similarities}"
+                f" 0 and 1, got {docs_and_similarities}",
+                stacklevel=2,
             )
 
         if score_threshold is not None:
@@ -568,7 +570,7 @@ class VectorStore(ABC):
                 if similarity >= score_threshold
             ]
             if len(docs_and_similarities) == 0:
-                warnings.warn(
+                logger.warning(
                     "No relevant docs were retrieved using the relevance score"
                     f" threshold {score_threshold}"
                 )
@@ -605,7 +607,8 @@ class VectorStore(ABC):
         ):
             warnings.warn(
                 "Relevance scores must be between"
-                f" 0 and 1, got {docs_and_similarities}"
+                f" 0 and 1, got {docs_and_similarities}",
+                stacklevel=2,
             )
 
         if score_threshold is not None:
@@ -615,7 +618,7 @@ class VectorStore(ABC):
                 if similarity >= score_threshold
             ]
             if len(docs_and_similarities) == 0:
-                warnings.warn(
+                logger.warning(
                     "No relevant docs were retrieved using the relevance score"
                     f" threshold {score_threshold}"
                 )
@@ -982,11 +985,13 @@ class VectorStoreRetriever(BaseRetriever):
         "mmr",
     )
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
-    @root_validator(pre=True)
-    def validate_search_type(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_search_type(cls, values: Dict) -> Any:
         """Validate search type.
 
         Args:

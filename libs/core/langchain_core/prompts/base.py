@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from abc import ABC, abstractmethod
+from functools import cached_property
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -18,17 +19,19 @@ from typing import (
 )
 
 import yaml
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+from typing_extensions import Self
 
+from langchain_core.load import dumpd
 from langchain_core.output_parsers.base import BaseOutputParser
 from langchain_core.prompt_values import (
     ChatPromptValueConcrete,
     PromptValue,
     StringPromptValue,
 )
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.runnables import RunnableConfig, RunnableSerializable
 from langchain_core.runnables.config import ensure_config
-from langchain_core.runnables.utils import create_model
+from langchain_core.utils.pydantic import create_model_v2
 
 if TYPE_CHECKING:
     from langchain_core.documents import Document
@@ -64,28 +67,26 @@ class BasePromptTemplate(
     tags: Optional[List[str]] = None
     """Tags to be used for tracing."""
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def validate_variable_names(cls, values: Dict) -> Dict:
+    @model_validator(mode="after")
+    def validate_variable_names(self) -> Self:
         """Validate variable names do not include restricted names."""
-        if "stop" in values["input_variables"]:
+        if "stop" in self.input_variables:
             raise ValueError(
                 "Cannot have an input variable named 'stop', as it is used internally,"
                 " please rename."
             )
-        if "stop" in values["partial_variables"]:
+        if "stop" in self.partial_variables:
             raise ValueError(
                 "Cannot have an partial variable named 'stop', as it is used "
                 "internally, please rename."
             )
 
-        overall = set(values["input_variables"]).intersection(
-            values["partial_variables"]
-        )
+        overall = set(self.input_variables).intersection(self.partial_variables)
         if overall:
             raise ValueError(
                 f"Found overlapping input and partial variables: {overall}"
             )
-        return values
+        return self
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
@@ -99,8 +100,13 @@ class BasePromptTemplate(
         Returns True."""
         return True
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
+
+    @cached_property
+    def _serialized(self) -> dict[str, Any]:
+        return dumpd(self)
 
     @property
     def OutputType(self) -> Any:
@@ -125,8 +131,9 @@ class BasePromptTemplate(
         optional_input_variables = {
             k: (self.input_types.get(k, str), None) for k in self.optional_variables
         }
-        return create_model(
-            "PromptInput", **{**required_input_variables, **optional_input_variables}
+        return create_model_v2(
+            "PromptInput",
+            field_definitions={**required_input_variables, **optional_input_variables},
         )
 
     def _validate_input(self, inner_input: Any) -> Dict:
@@ -142,11 +149,18 @@ class BasePromptTemplate(
                 )
         missing = set(self.input_variables).difference(inner_input)
         if missing:
-            raise KeyError(
+            msg = (
                 f"Input to {self.__class__.__name__} is missing variables {missing}. "
                 f" Expected: {self.input_variables}"
                 f" Received: {list(inner_input.keys())}"
             )
+            example_key = missing.pop()
+            msg += (
+                f"\nNote: if you intended {{{example_key}}} to be part of the string"
+                " and not a variable, please escape it with double curly braces like: "
+                f"'{{{{{example_key}}}}}'."
+            )
+            raise KeyError(msg)
         return inner_input
 
     def _format_prompt_with_error_handling(self, inner_input: Dict) -> PromptValue:
@@ -181,6 +195,7 @@ class BasePromptTemplate(
             input,
             config,
             run_type="prompt",
+            serialized=self._serialized,
         )
 
     async def ainvoke(
@@ -205,6 +220,7 @@ class BasePromptTemplate(
             input,
             config,
             run_type="prompt",
+            serialized=self._serialized,
         )
 
     @abstractmethod
@@ -303,7 +319,7 @@ class BasePromptTemplate(
         Raises:
             NotImplementedError: If the prompt type is not implemented.
         """
-        prompt_dict = super().dict(**kwargs)
+        prompt_dict = super().model_dump(**kwargs)
         try:
             prompt_dict["_type"] = self._prompt_type
         except NotImplementedError:

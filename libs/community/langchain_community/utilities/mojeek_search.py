@@ -2,7 +2,7 @@ import json
 from typing import List
 
 import requests
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 
 
 class MojeekSearchAPIWrapper(BaseModel):

@@ -54,7 +54,10 @@ def test_load(mocker: MockerFixture) -> None:
             "<body><p>Test Content</p></body></html>"
         ),
     )
-    loader = OneNoteLoader(object_ids=["test_id"], access_token="access_token")
+    loader = OneNoteLoader(
+        object_ids=["test_id"],
+        access_token="access_token",
+    )
     documents = loader.load()
     assert documents == [
         Document(

@@ -31,14 +31,14 @@ from langchain_core.output_parsers.json import JsonOutputParser
 from langchain_core.output_parsers.pydantic import PydanticOutputParser
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.prompts import SystemMessagePromptTemplate
-from langchain_core.pydantic_v1 import (
-    BaseModel,
-)
 from langchain_core.runnables import Runnable, RunnableLambda
 from langchain_core.runnables.base import RunnableMap
 from langchain_core.runnables.passthrough import RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils.pydantic import is_basemodel_instance, is_basemodel_subclass
+from pydantic import (
+    BaseModel,
+)
 
 DEFAULT_SYSTEM_TEMPLATE = """You have access to the following tools:
 
@@ -83,14 +83,14 @@ def convert_to_ollama_tool(tool: Any) -> Dict:
     """Convert a tool to an Ollama tool."""
     description = None
     if _is_pydantic_class(tool):
-        schema = tool.construct().schema()
+        schema = tool.model_construct().model_json_schema()
         name = schema["title"]
     elif isinstance(tool, BaseTool):
-        schema = tool.tool_call_schema.schema()
+        schema = tool.tool_call_schema.model_json_schema()
         name = tool.get_name()
         description = tool.description
     elif is_basemodel_instance(tool):
-        schema = tool.get_input_schema().schema()
+        schema = tool.get_input_schema().model_json_schema()
         name = tool.get_name()
         description = tool.description
     elif isinstance(tool, dict) and "name" in tool and "parameters" in tool:
@@ -192,7 +192,7 @@ class OllamaFunctions(ChatOllama):
             .. code-block:: python
 
                 from langchain_experimental.llms import OllamaFunctions
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
 
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
@@ -213,7 +213,7 @@ class OllamaFunctions(ChatOllama):
             .. code-block:: python
 
                 from langchain_experimental.llms import OllamaFunctions
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
 
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
@@ -234,7 +234,7 @@ class OllamaFunctions(ChatOllama):
             .. code-block:: python
 
                 from langchain_experimental.llms import OllamaFunctions, convert_to_ollama_tool
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
 
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''

@@ -1,13 +1,14 @@
 import os
 import re
 from contextlib import AbstractContextManager, nullcontext
+from copy import deepcopy
 from typing import Any, Callable, Dict, Optional, Tuple, Type, Union
 from unittest.mock import patch
 
 import pytest
+from pydantic import SecretStr
 
 from langchain_core import utils
-from langchain_core.pydantic_v1 import SecretStr
 from langchain_core.utils import (
     check_package_version,
     from_env,
@@ -120,9 +121,45 @@ def test_merge_dicts(
     else:
         err = nullcontext()
 
+    left_copy = deepcopy(left)
+    right_copy = deepcopy(right)
     with err:
         actual = merge_dicts(left, right)
         assert actual == expected
+        # no mutation
+        assert left == left_copy
+        assert right == right_copy
+
+
+@pytest.mark.parametrize(
+    ("left", "right", "expected"),
+    (
+        # 'type' special key handling
+        ({"type": "foo"}, {"type": "foo"}, {"type": "foo"}),
+        (
+            {"type": "foo"},
+            {"type": "bar"},
+            pytest.raises(ValueError, match="Unable to merge."),
+        ),
+    ),
+)
+@pytest.mark.xfail(reason="Refactors to make in 0.3")
+def test_merge_dicts_0_3(
+    left: dict, right: dict, expected: Union[dict, AbstractContextManager]
+) -> None:
+    if isinstance(expected, AbstractContextManager):
+        err = expected
+    else:
+        err = nullcontext()
+
+    left_copy = deepcopy(left)
+    right_copy = deepcopy(right)
+    with err:
+        actual = merge_dicts(left, right)
+        assert actual == expected
+        # no mutation
+        assert left == left_copy
+        assert right == right_copy
 
 
 @pytest.mark.parametrize(
@@ -184,8 +221,8 @@ def test_guard_import_failure(
 
 @pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Requires pydantic 2")
 def test_get_pydantic_field_names_v1_in_2() -> None:
-    from pydantic.v1 import BaseModel as PydanticV1BaseModel  # pydantic: ignore
-    from pydantic.v1 import Field  # pydantic: ignore
+    from pydantic.v1 import BaseModel as PydanticV1BaseModel
+    from pydantic.v1 import Field
 
     class PydanticV1Model(PydanticV1BaseModel):
         field1: str
@@ -199,7 +236,7 @@ def test_get_pydantic_field_names_v1_in_2() -> None:
 
 @pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Requires pydantic 2")
 def test_get_pydantic_field_names_v2_in_2() -> None:
-    from pydantic import BaseModel, Field  # pydantic: ignore
+    from pydantic import BaseModel, Field
 
     class PydanticModel(BaseModel):
         field1: str
@@ -213,7 +250,7 @@ def test_get_pydantic_field_names_v2_in_2() -> None:
 
 @pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 1, reason="Requires pydantic 1")
 def test_get_pydantic_field_names_v1() -> None:
-    from pydantic import BaseModel, Field  # pydantic: ignore
+    from pydantic import BaseModel, Field
 
     class PydanticModel(BaseModel):
         field1: str
@@ -328,7 +365,7 @@ def test_secret_from_env_with_custom_error_message(
 def test_using_secret_from_env_as_default_factory(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from langchain_core.pydantic_v1 import BaseModel, Field
+    from pydantic import BaseModel, Field
 
     class Foo(BaseModel):
         secret: SecretStr = Field(default_factory=secret_from_env("TEST_KEY"))
