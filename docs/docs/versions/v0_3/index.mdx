@@ -23,7 +23,7 @@ The following features have been added during the development of 0.2.x:
 
 ## How to update your code
 
-If you're using `langchain` / `langchain-community` / `langchain-core` 0.0 or 0.1, we recommend that you first [upgrade to 0.2](https://python.langchain.com/v0.2/docs/versions/v0_2/). The `langchain-cli` will help you to migrate many imports automatically.
+If you're using `langchain` / `langchain-community` / `langchain-core` 0.0 or 0.1, we recommend that you first [upgrade to 0.2](https://python.langchain.com/v0.2/docs/versions/v0_2/).
 
 If you're using `langgraph`, upgrade to `langgraph>=0.2.20,<0.3`. This will work with either 0.2 or 0.3 versions of all the base packages.
 
@@ -31,22 +31,27 @@ Here is a complete list of all packages that have been released and what we reco
 Any package that now requires `langchain-core` 0.3 had a minor version bump.
 Any package that is now compatible with both `langchain-core` 0.2 and 0.3 had a patch version bump.
 
+You can use the `langchain-cli` to update deprecated imports automatically.
+The CLI will handle updating deprecated imports that were introduced in LangChain 0.0.x and LangChain 0.1, as
+well as updating the `langchain_core.pydantic_v1` and `langchain.pydantic_v1` imports.
+
+
 ### Base packages
 
-| Package                                | Latest  | Recommended constraint     |
-| -------------------------------------- | ------- | -------------------------- |
-| langchain                              | 0.3.0   | >=0.3,<0.4                 |
-| langchain-community                    | 0.3.0   | >=0.3,<0.4                 |
-| langchain-text-splitters               | 0.3.0   | >=0.3,<0.4                 |
-| langchain-core                         | 0.3.0   | >=0.3,<0.4                 |
-| langchain-experimental                 | 0.3.0   | >=0.3,<0.4                 |
+| Package                  | Latest | Recommended constraint |
+|--------------------------|--------|------------------------|
+| langchain                | 0.3.0  | >=0.3,<0.4             |
+| langchain-community      | 0.3.0  | >=0.3,<0.4             |
+| langchain-text-splitters | 0.3.0  | >=0.3,<0.4             |
+| langchain-core           | 0.3.0  | >=0.3,<0.4             |
+| langchain-experimental   | 0.3.0  | >=0.3,<0.4             |
 
 ### Downstream packages
 
-| Package                                | Latest  | Recommended constraint     |
-| -------------------------------------- | ------- | -------------------------- |
-| langgraph                              | 0.2.20  | >=0.2.20,<0.3              |
-| langserve                              | 0.3.0   | >=0.3,<0.4                 |
+| Package   | Latest | Recommended constraint |
+|-----------|--------|------------------------|
+| langgraph | 0.2.20 | >=0.2.20,<0.3          |
+| langserve | 0.3.0  | >=0.3,<0.4             |
 
 ### Integration packages
 
@@ -185,6 +190,8 @@ CustomTool(
 When sub-classing from LangChain models, users may need to add relevant imports
 to the file and rebuild the model.
 
+You can read more about `model_rebuild` [here](https://docs.pydantic.dev/latest/concepts/models/#rebuilding-model-schema).
+
 ```python
 from langchain_core.output_parsers import BaseOutputParser
 
@@ -204,4 +211,52 @@ class FooParser(BaseOutputParser):
     ...
 
 FooParser.model_rebuild()
+```
+
+
+## Migrate using langchain-cli
+
+The `langchain-cli` can help migrate your code to new imports automatically. As of 0.0.31, the `langchain-cli` relies on [gritql](https://about.grit.io/) for applying code mods.
+
+## Installation
+
+```bash
+pip install -U langchain-cli
+langchain-cli --version # <-- Make sure the version is at least 0.0.31
+```
+
+## Usage
+
+Given that the migration script is not perfect, you should make sure you have a backup of your code first (e.g., using version control like `git`).
+
+The `langchain-cli` will handle the `langchain_core.pydantic_v1` deprecation introduced in LangChain 0.3 as well
+as older deprecations (e.g.,`from langchain.chat_models import ChatOpenAI` which should be `from langchain_openai import ChatOpenAI`),
+
+You will need to run the migration script **twice** as it only applies one import replacement per run.
+
+For example, say that your code is still using the old import `from langchain.chat_models import ChatOpenAI`:
+
+After the first run, you’ll get: `from langchain_community.chat_models import ChatOpenAI`
+After the second run, you’ll get: `from langchain_openai import ChatOpenAI`
+
+```bash
+# Run a first time
+# Will replace from langchain.chat_models import ChatOpenAI
+langchain-cli migrate --help [path to code] # Help
+langchain-cli migrate [path to code] # Apply
+
+# Run a second time to apply more import replacements
+langchain-cli migrate --diff [path to code] # Preview
+langchain-cli migrate [path to code] # Apply
+```
+
+### Other options
+
+```bash
+# See help menu
+langchain-cli migrate --help
+# Preview Changes without applying
+langchain-cli migrate --diff [path to code]
+# Approve changes interactively
+langchain-cli migrate --interactive [path to code]
 ```
