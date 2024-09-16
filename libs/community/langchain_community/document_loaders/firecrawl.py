@@ -69,8 +69,7 @@ class FireCrawlLoader(BaseLoader):
         url: str,
         *,
         api_key: Optional[str] = None,
-        api_url: Optional[str] = None,
-        mode: Literal["crawl", "scrape"] = "crawl",
+        mode: Literal["crawl", "scrape", "map"] = "crawl",
         params: Optional[dict] = None,
     ):
         """Initialize with API key and url.
@@ -82,8 +81,8 @@ class FireCrawlLoader(BaseLoader):
             api_url: The Firecrawl API URL. If not specified will be read from env var
                 FIRECRAWL_API_URL or defaults to https://api.firecrawl.dev.
             mode: The mode to run the loader in. Default is "crawl".
-                 Options include "scrape" (single url) and
-                 "crawl" (all accessible sub pages).
+                 Options include "scrape" (single url), "crawl" (all accessible sub pages),
+                 "map" (returns list of links that are semantically related).
             params: The parameters to pass to the Firecrawl API.
                 Examples include crawlerOptions.
                 For more details, visit: https://github.com/mendableai/firecrawl-py
@@ -95,12 +94,16 @@ class FireCrawlLoader(BaseLoader):
             raise ImportError(
                 "`firecrawl` package not found, please run `pip install firecrawl-py`"
             )
-        if mode not in ("crawl", "scrape"):
+        if mode not in ("crawl", "scrape", "search", "map"):
             raise ValueError(
-                f"Unrecognized mode '{mode}'. Expected one of 'crawl', 'scrape'."
+                f"Unrecognized mode '{mode}'. Expected one of 'crawl', 'scrape', 'search', 'map'."
             )
-        api_key = api_key or get_from_env("api_key", "FIRECRAWL_API_KEY")
-        self.firecrawl = FirecrawlApp(api_key=api_key, api_url=api_url)
+
+        if not url:
+            raise ValueError("Url must be provided")
+
+        api_key = api_key or get_from_env("api_key", "FIREWALL_API_KEY")
+        self.firecrawl = FirecrawlApp(api_key=api_key)
         self.url = url
         self.mode = mode
         self.params = params
@@ -109,16 +112,30 @@ class FireCrawlLoader(BaseLoader):
         if self.mode == "scrape":
             firecrawl_docs = [self.firecrawl.scrape_url(self.url, params=self.params)]
         elif self.mode == "crawl":
-            firecrawl_docs = self.firecrawl.crawl_url(self.url, params=self.params)
+            if not self.url:
+                raise ValueError("URL is required for crawl mode")
+            crawl_response = self.firecrawl.crawl_url(self.url, params=self.params)
+            firecrawl_docs = crawl_response.get("data", [])
+        elif self.mode == "map":
+            if not self.url:
+                raise ValueError("URL is required for map mode")
+            firecrawl_docs = self.firecrawl.map_url(self.url, params=self.params)
+        elif self.mode == "search":
+            raise ValueError("Search mode is not supported in this version, you must downgrade to use it.")
         else:
             raise ValueError(
-                f"Unrecognized mode '{self.mode}'. Expected one of 'crawl', 'scrape'."
+                f"Unrecognized mode '{self.mode}'. Expected one of 'crawl', 'scrape' or 'map'."
             )
         for doc in firecrawl_docs:
-            metadata = doc.get("metadata", {})
-            if (self.params is not None) and self.params.get(
-                "extractorOptions", {}
-            ).get("mode") == "llm-extraction":
-                metadata["llm_extraction"] = doc.get("llm_extraction")
-
-            yield Document(page_content=doc.get("markdown", ""), metadata=metadata)
+            if self.mode == "map":
+                page_content = doc
+                metadata = {}
+            else:
+                page_content = doc.get("markdown") or doc.get("html") or doc.get("rawHtml", "")
+                metadata = doc.get("metadata", {})
+            if not page_content:
+                continue
+            yield Document(
+                page_content=page_content,
+                metadata=metadata,
+            )
