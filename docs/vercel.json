@@ -31,7 +31,7 @@
       "destination": "/docs/how_to/custom_tools/"
     },
     {
-      "source": "/docs/expression_language",
+      "source": "/docs/expression_language(/?)",
       "destination": "/docs/concepts/#langchain-expression-language-lcel"
     },
     {
