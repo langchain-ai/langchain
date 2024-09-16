@@ -36,7 +36,6 @@ api_docs_build:
 API_PKG ?= text-splitters
 
 api_docs_quick_preview:
-	poetry run pip install "pydantic<2"
 	poetry run python docs/api_reference/create_api_rst.py $(API_PKG)
 	cd docs/api_reference && poetry run make html
 	poetry run python docs/api_reference/scripts/custom_formatter.py docs/api_reference/_build/html/

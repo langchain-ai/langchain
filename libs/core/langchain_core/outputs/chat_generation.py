@@ -1,10 +1,12 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Literal, Union
+from typing import List, Literal, Union
+
+from pydantic import model_validator
+from typing_extensions import Self
 
 from langchain_core.messages import BaseMessage, BaseMessageChunk
 from langchain_core.outputs.generation import Generation
-from langchain_core.pydantic_v1 import root_validator
 from langchain_core.utils._merge import merge_dicts
 
 
@@ -30,8 +32,8 @@ class ChatGeneration(Generation):
     type: Literal["ChatGeneration"] = "ChatGeneration"  # type: ignore[assignment]
     """Type is used exclusively for serialization purposes."""
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def set_text(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="after")
+    def set_text(self) -> Self:
         """Set the text attribute to be the contents of the message.
 
         Args:
@@ -45,12 +47,12 @@ class ChatGeneration(Generation):
         """
         try:
             text = ""
-            if isinstance(values["message"].content, str):
-                text = values["message"].content
+            if isinstance(self.message.content, str):
+                text = self.message.content
             # HACK: Assumes text in content blocks in OpenAI format.
             # Uses first text block.
-            elif isinstance(values["message"].content, list):
-                for block in values["message"].content:
+            elif isinstance(self.message.content, list):
+                for block in self.message.content:
                     if isinstance(block, str):
                         text = block
                         break
@@ -61,10 +63,10 @@ class ChatGeneration(Generation):
                         pass
             else:
                 pass
-            values["text"] = text
+            self.text = text
         except (KeyError, AttributeError) as e:
             raise ValueError("Error while initializing ChatGeneration") from e
-        return values
+        return self
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:

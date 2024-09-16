@@ -26,11 +26,11 @@ from abc import ABC, abstractmethod
 from inspect import signature
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+from pydantic import ConfigDict
 from typing_extensions import TypedDict
 
 from langchain_core._api import deprecated
 from langchain_core.documents import Document
-from langchain_core.load.dump import dumpd
 from langchain_core.runnables import (
     Runnable,
     RunnableConfig,
@@ -126,8 +126,9 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
                     return [self.docs[i] for i in results.argsort()[-self.k :][::-1]]
     """  # noqa: E501
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     _new_arg_supported: bool = False
     _expects_other_args: bool = False
@@ -235,9 +236,9 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
             local_metadata=self.metadata,
         )
         run_manager = callback_manager.on_retriever_start(
-            dumpd(self),
+            None,
             input,
-            name=config.get("run_name"),
+            name=config.get("run_name") or self.get_name(),
             run_id=kwargs.pop("run_id", None),
         )
         try:
@@ -298,9 +299,9 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
             local_metadata=self.metadata,
         )
         run_manager = await callback_manager.on_retriever_start(
-            dumpd(self),
+            None,
             input,
-            name=config.get("run_name"),
+            name=config.get("run_name") or self.get_name(),
             run_id=kwargs.pop("run_id", None),
         )
         try:

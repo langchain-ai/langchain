@@ -15,7 +15,7 @@ from langchain_core.messages import (
     SystemMessage,
     ToolCall,
 )
-from langchain_core.pydantic_v1 import SecretStr
+from pydantic import SecretStr
 
 from langchain_mistralai.chat_models import (  # type: ignore[import]
     ChatMistralAI,
