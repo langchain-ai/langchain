@@ -126,10 +126,8 @@ const config = {
     ({
       announcementBar: {
         content:
-          'Share your thoughts on AI agents. <a target="_blank" href="https://langchain.typeform.com/state-of-agents">Take the 3-min survey</a>.',
-        isCloseable: true,
-        backgroundColor: "rgba(53, 151, 147, 0.1)",
-        textColor: "rgb(53, 151, 147)",
+          'A newer LangChain version is out! Check out the <a href="https://python.langchain.com/docs/introduction">latest version</a>.',
+        isCloseable: false,
       },
       docs: {
         sidebar: {

@@ -3,18 +3,10 @@
 
 import React from 'react';
 import clsx from 'clsx';
-import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Link from '@docusaurus/Link';
 import Translate from '@docusaurus/Translate';
-import {
-  useActivePlugin,
-  useDocVersionSuggestions,
-} from '@docusaurus/plugin-content-docs/client';
 import {ThemeClassNames} from '@docusaurus/theme-common';
-import {
-  useDocsPreferredVersion,
-  useDocsVersion,
-} from '@docusaurus/theme-common/internal';
+import { useLocalPathname } from '@docusaurus/theme-common/internal';
 function UnreleasedVersionLabel({siteTitle, versionMetadata}) {
   return (
     <Translate
@@ -79,123 +71,40 @@ function LatestVersionSuggestionLabel({versionLabel, to, onClick}) {
     </Translate>
   );
 }
-function DocVersionBannerEnabled({className, versionMetadata}) {
-  const {
-    siteConfig: {title: siteTitle},
-  } = useDocusaurusContext();
-  const {pluginId} = useActivePlugin({failfast: true});
-  const getVersionMainDoc = (version) =>
-    version.docs.find((doc) => doc.id === version.mainDocId);
-  const {savePreferredVersionName} = useDocsPreferredVersion(pluginId);
-  const {latestDocSuggestion, latestVersionSuggestion} =
-    useDocVersionSuggestions(pluginId);
-  // Try to link to same doc in latest version (not always possible), falling
-  // back to main doc of latest version
-  const latestVersionSuggestedDoc =
-    latestDocSuggestion ?? getVersionMainDoc(latestVersionSuggestion);
-  return (
-    <div
-      className={clsx(
-        className,
-        ThemeClassNames.docs.docVersionBanner,
-        'alert alert--warning margin-bottom--md',
-      )}
-      role="alert">
-      <div>
-        <BannerLabel siteTitle={siteTitle} versionMetadata={versionMetadata} />
-      </div>
-      <div className="margin-top--md">
-        <LatestVersionSuggestionLabel
-          versionLabel={latestVersionSuggestion.label}
-          to={latestVersionSuggestedDoc.path}
-          onClick={() => savePreferredVersionName(latestVersionSuggestion.name)}
-        />
-      </div>
-    </div>
-  );
-}
-
-function LatestDocVersionBanner({className, versionMetadata}) {
-  const {
-    siteConfig: {title: siteTitle},
-  } = useDocusaurusContext();
-  const {pluginId} = useActivePlugin({failfast: true});
-  const getVersionMainDoc = (version) =>
-    version.docs.find((doc) => doc.id === version.mainDocId);
-  const {savePreferredVersionName} = useDocsPreferredVersion(pluginId);
-  const {latestDocSuggestion, latestVersionSuggestion} =
-    useDocVersionSuggestions(pluginId);
-  // Try to link to same doc in latest version (not always possible), falling
-  // back to main doc of latest version
-  const latestVersionSuggestedDoc =
-    latestDocSuggestion ?? getVersionMainDoc(latestVersionSuggestion);
-  const canaryPath = `/docs/0.2.x/${latestVersionSuggestedDoc.path.slice("/docs/".length)}`;
-  return (
-    <div
-      className={clsx(
-        className,
-        ThemeClassNames.docs.docVersionBanner,
-        'alert alert--info margin-bottom--md',
-      )}
-      role="alert">
-      <div>
-        <Translate
-          id="theme.docs.versions.unmaintainedVersionLabel"
-          description="The label used to encourage the user to view the experimental 0.2.x version"
-          values={{
-            siteTitle,
-            versionLabel: <b>{versionMetadata.label}</b>,
-          }}>
-          {
-            'This is a stable version of documentation for {siteTitle}\'s version {versionLabel}.'
-          }
-        </Translate>
-      </div>
-      <div className="margin-top--md">
-        <Translate
-          id="theme.docs.versions.latestVersionSuggestionLabel"
-          description="The label used to tell the user to check the experimental version"
-          values={{
-            versionLabel: <b>{versionMetadata.label}</b>,
-            latestVersionLink: (
-              <b>
-                <Link to={canaryPath} onClick={() => savePreferredVersionName("0.2.x")}>
-                  <Translate
-                    id="theme.docs.versions.latestVersionLinkLabel"
-                    description="The label used for the latest version suggestion link label">
-                    this experimental version
-                  </Translate>
-                </Link>
-              </b>
-            ),
-          }}>
-          {
-            'You can also check out {latestVersionLink} for an updated experience.'
-          }
-        </Translate>
-      </div>
-    </div>
-  );
-}
 
 export default function DocVersionBanner({className}) {
-  const versionMetadata = useDocsVersion();
+  const versionMetadata = {
+    badge: false,
+    banner: 'unmaintained',
+    isLast: false,
+    label: 'v0.2',
+    noIndex: false,
+    pluginId: 'default',
+    version: 'Latest',
+  }
+  console.log({versionMetadata});
+  const localPathname = useLocalPathname();
   if (versionMetadata.banner) {
     return (
-      <DocVersionBannerEnabled
-        className={className}
-        versionMetadata={versionMetadata}
-      />
+      <div
+        className={clsx(
+          className,
+          ThemeClassNames.docs.docVersionBanner,
+          'alert alert--warning margin-bottom--md',
+        )}
+        role="alert">
+        <div>
+          <BannerLabel siteTitle={"LangChain"} versionMetadata={versionMetadata} />
+        </div>
+        <div className="margin-top--md">
+          <LatestVersionSuggestionLabel
+            versionLabel={"Latest"}
+            to={`https://python.langchain.com${localPathname}`}
+            onClick={() => {}}
+          />
+        </div>
+      </div>
     );
-  } else if (versionMetadata.isLast) {
-    // Uncomment when we are ready to direct people to new build
-    // return (
-    //   <LatestDocVersionBanner
-    //     className={className}
-    //     versionMetadata={versionMetadata}
-    //   />
-    // );
-    return null;
   }
   return null;
 }

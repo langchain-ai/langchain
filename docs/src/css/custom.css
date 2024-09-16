@@ -248,16 +248,26 @@ nav, h1, h2, h3, h4 {
     no-repeat;
 }
 
-div[class^=announcementBar_] {
-  height:40px !important;
-  font-size: 20px !important;
-}
+div[class^='announcementBar_'] {
+  font-size: 20px;
 
-[data-theme='dark'] div[class^=announcementBar_] {
-  background-color: #1b1b1b;
-  color: #fff;
-}
+  /*
+  --site-announcement-bar-stripe-color1: hsl(
+    var(--site-primary-hue-saturation) 85%
+  );
+  --site-announcement-bar-stripe-color2: hsl(
+    var(--site-primary-hue-saturation) 95%
+  );
+   */
+  --site-announcement-bar-stripe-color1: rgb(197,186,254);
+  --site-announcement-bar-stripe-color2: rgb(255,246,224);
 
-[data-theme='dark'] div[class^=announcementBar_] button {
-  color: #fff;
+  background: repeating-linear-gradient(
+    -35deg,
+    var(--site-announcement-bar-stripe-color1),
+    var(--site-announcement-bar-stripe-color1) 20px,
+    var(--site-announcement-bar-stripe-color2) 10px,
+    var(--site-announcement-bar-stripe-color2) 40px
+  );
+  font-weight: bold;
 }
