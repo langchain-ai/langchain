@@ -425,7 +425,7 @@ class PDFPlumberParser(BaseBlobParser):
 
         images = []
         for img in page.images:
-            if img["stream"]["Filter"].name in _PDF_FILTER_WITHOUT_LOSS:
+            if img["stream"]["Filter"] in _PDF_FILTER_WITHOUT_LOSS:
                 images.append(
                     np.frombuffer(img["stream"].get_data(), dtype=np.uint8).reshape(
                         img["stream"]["Height"], img["stream"]["Width"], -1
