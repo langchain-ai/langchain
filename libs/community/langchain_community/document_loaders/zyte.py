@@ -1,5 +1,3 @@
-"""Loader that uses unstructured to load HTML files."""
-
 import asyncio
 import logging
 from base64 import b64decode
