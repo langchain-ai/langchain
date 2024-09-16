@@ -55,7 +55,10 @@ class VoyageAIEmbeddings(BaseModel, Embeddings):
         model = values.get("model")
         batch_size = values.get("batch_size")
         if batch_size is None:
-            values["batch_size"] = 72 if model in ["voyage-2", "voyage-02"] else 7
+            values["batch_size"] = 72 if model in ["voyage-2",
+                                                   "voyage-02"] else (
+                30 if model == "voyage-3-lite" else (
+                    10 if model == "voyage-3" else 7))
         return values
 
     @model_validator(mode="after")
