@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-milvus"
-version = "0.1.5"
+version = "0.1.6"
 description = "An integration package connecting Milvus and LangChain"
 authors = []
 readme = "README.md"
@@ -26,8 +26,9 @@ ignore_missing_imports = "True"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-langchain-core = "^0.3.0.dev"
+langchain-core = "^0.3"
 pymilvus = "^2.4.3"
+
 [[tool.poetry.dependencies.scipy]]
 version = "^1.7"
 python = "<3.12"
