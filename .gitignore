@@ -167,6 +167,7 @@ docs/.docusaurus/
 docs/.cache-loader/
 docs/_dist
 docs/api_reference/*api_reference.rst
+docs/api_reference/*.md
 docs/api_reference/_build
 docs/api_reference/*/
 !docs/api_reference/_static/

@@ -46,15 +46,16 @@ from langchain_core.output_parsers.openai_tools import (
     parse_tool_call,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import (
-    BaseModel,
-    Field,
-    root_validator,
-)
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_tool
 from langchain_core.utils.pydantic import is_basemodel_subclass
+from pydantic import (
+    BaseModel,
+    Field,
+    model_validator,
+)
+from typing_extensions import Self
 
 
 class ChatLlamaCpp(BaseChatModel):
@@ -66,7 +67,7 @@ class ChatLlamaCpp(BaseChatModel):
 
     """
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
 
     model_path: str
     """The path to the Llama model file."""
@@ -172,8 +173,8 @@ class ChatLlamaCpp(BaseChatModel):
     verbose: bool = True
     """Print verbose output to stderr."""
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="after")
+    def validate_environment(self) -> Self:
         """Validate that llama-cpp-python library is installed."""
         try:
             from llama_cpp import Llama, LlamaGrammar
@@ -184,7 +185,7 @@ class ChatLlamaCpp(BaseChatModel):
                 "use this embedding model: pip install llama-cpp-python"
             )
 
-        model_path = values["model_path"]
+        model_path = self.model_path
         model_param_names = [
             "rope_freq_scale",
             "rope_freq_base",
@@ -203,35 +204,35 @@ class ChatLlamaCpp(BaseChatModel):
             "last_n_tokens_size",
             "verbose",
         ]
-        model_params = {k: values[k] for k in model_param_names}
+        model_params = {k: getattr(self, k) for k in model_param_names}
         # For backwards compatibility, only include if non-null.
-        if values["n_gpu_layers"] is not None:
-            model_params["n_gpu_layers"] = values["n_gpu_layers"]
+        if self.n_gpu_layers is not None:
+            model_params["n_gpu_layers"] = self.n_gpu_layers
 
-        model_params.update(values["model_kwargs"])
+        model_params.update(self.model_kwargs)
 
         try:
-            values["client"] = Llama(model_path, **model_params)
+            self.client = Llama(model_path, **model_params)
         except Exception as e:
             raise ValueError(
                 f"Could not load Llama model from path: {model_path}. "
                 f"Received error {e}"
             )
 
-        if values["grammar"] and values["grammar_path"]:
-            grammar = values["grammar"]
-            grammar_path = values["grammar_path"]
+        if self.grammar and self.grammar_path:
+            grammar = self.grammar
+            grammar_path = self.grammar_path
             raise ValueError(
                 "Can only pass in one of grammar and grammar_path. Received "
                 f"{grammar=} and {grammar_path=}."
             )
-        elif isinstance(values["grammar"], str):
-            values["grammar"] = LlamaGrammar.from_string(values["grammar"])
-        elif values["grammar_path"]:
-            values["grammar"] = LlamaGrammar.from_file(values["grammar_path"])
+        elif isinstance(self.grammar, str):
+            self.grammar = LlamaGrammar.from_string(self.grammar)
+        elif self.grammar_path:
+            self.grammar = LlamaGrammar.from_file(self.grammar_path)
         else:
             pass
-        return values
+        return self
 
     def _get_parameters(self, stop: Optional[List[str]]) -> Dict[str, Any]:
         """
@@ -433,7 +434,7 @@ class ChatLlamaCpp(BaseChatModel):
             .. code-block:: python
 
                 from langchain_community.chat_models import ChatLlamaCpp
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
 
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
@@ -465,7 +466,7 @@ class ChatLlamaCpp(BaseChatModel):
             .. code-block:: python
 
                 from langchain_community.chat_models import ChatLlamaCpp
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
 
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
@@ -497,7 +498,7 @@ class ChatLlamaCpp(BaseChatModel):
             .. code-block:: python
 
                 from langchain_community.chat_models import ChatLlamaCpp
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
                 from langchain_core.utils.function_calling import convert_to_openai_tool
 
                 class AnswerWithJustification(BaseModel):

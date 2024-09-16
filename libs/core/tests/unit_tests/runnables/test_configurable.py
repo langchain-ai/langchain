@@ -1,8 +1,9 @@
 from typing import Any, Dict, Optional
 
 import pytest
+from pydantic import ConfigDict, Field, model_validator
+from typing_extensions import Self
 
-from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.runnables import (
     ConfigurableField,
     RunnableConfig,
@@ -14,19 +15,21 @@ class MyRunnable(RunnableSerializable[str, str]):
     my_property: str = Field(alias="my_property_alias")
     _my_hidden_property: str = ""
 
-    class Config:
-        allow_population_by_field_name = True
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
-    @root_validator(pre=True)
-    def my_error(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def my_error(cls, values: Dict[str, Any]) -> Any:
         if "_my_hidden_property" in values:
             raise ValueError("Cannot set _my_hidden_property")
         return values
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        values["_my_hidden_property"] = values["my_property"]
-        return values
+    @model_validator(mode="after")
+    def build_extra(self) -> Self:
+        self._my_hidden_property = self.my_property
+        return self
 
     def invoke(self, input: str, config: Optional[RunnableConfig] = None) -> Any:
         return input + self._my_hidden_property

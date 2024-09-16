@@ -10,6 +10,7 @@ Some examples of what you can do with these functions include:
 from __future__ import annotations
 
 import inspect
+import json
 from functools import partial
 from typing import (
     TYPE_CHECKING,
@@ -28,6 +29,9 @@ from typing import (
     overload,
 )
 
+from pydantic import Discriminator, Field, Tag
+from typing_extensions import Annotated
+
 from langchain_core.messages.ai import AIMessage, AIMessageChunk
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk
 from langchain_core.messages.chat import ChatMessage, ChatMessageChunk
@@ -44,13 +48,36 @@ if TYPE_CHECKING:
     from langchain_core.prompt_values import PromptValue
     from langchain_core.runnables.base import Runnable
 
-AnyMessage = Union[
-    AIMessage,
-    HumanMessage,
-    ChatMessage,
-    SystemMessage,
-    FunctionMessage,
-    ToolMessage,
+
+def _get_type(v: Any) -> str:
+    """Get the type associated with the object for serialization purposes."""
+    if isinstance(v, dict) and "type" in v:
+        return v["type"]
+    elif hasattr(v, "type"):
+        return v.type
+    else:
+        raise TypeError(
+            f"Expected either a dictionary with a 'type' key or an object "
+            f"with a 'type' attribute. Instead got type {type(v)}."
+        )
+
+
+AnyMessage = Annotated[
+    Union[
+        Annotated[AIMessage, Tag(tag="ai")],
+        Annotated[HumanMessage, Tag(tag="human")],
+        Annotated[ChatMessage, Tag(tag="chat")],
+        Annotated[SystemMessage, Tag(tag="system")],
+        Annotated[FunctionMessage, Tag(tag="function")],
+        Annotated[ToolMessage, Tag(tag="tool")],
+        Annotated[AIMessageChunk, Tag(tag="AIMessageChunk")],
+        Annotated[HumanMessageChunk, Tag(tag="HumanMessageChunk")],
+        Annotated[ChatMessageChunk, Tag(tag="ChatMessageChunk")],
+        Annotated[SystemMessageChunk, Tag(tag="SystemMessageChunk")],
+        Annotated[FunctionMessageChunk, Tag(tag="FunctionMessageChunk")],
+        Annotated[ToolMessageChunk, Tag(tag="ToolMessageChunk")],
+    ],
+    Field(discriminator=Discriminator(_get_type)),
 ]
 
 
@@ -213,7 +240,23 @@ def _create_message_from_message_type(
     if id is not None:
         kwargs["id"] = id
     if tool_calls is not None:
-        kwargs["tool_calls"] = tool_calls
+        kwargs["tool_calls"] = []
+        for tool_call in tool_calls:
+            # Convert OpenAI-format tool call to LangChain format.
+            if "function" in tool_call:
+                args = tool_call["function"]["arguments"]
+                if isinstance(args, str):
+                    args = json.loads(args, strict=False)
+                kwargs["tool_calls"].append(
+                    {
+                        "name": tool_call["function"]["name"],
+                        "args": args,
+                        "id": tool_call["id"],
+                        "type": "tool_call",
+                    }
+                )
+            else:
+                kwargs["tool_calls"].append(tool_call)
     if message_type in ("human", "user"):
         message: BaseMessage = HumanMessage(content=content, **kwargs)
     elif message_type in ("ai", "assistant"):
@@ -229,7 +272,7 @@ def _create_message_from_message_type(
         message = RemoveMessage(**kwargs)
     else:
         raise ValueError(
-            f"Unexpected message type: {message_type}. Use one of 'human',"
+            f"Unexpected message type: '{message_type}'. Use one of 'human',"
             f" 'user', 'ai', 'assistant', 'function', 'tool', or 'system'."
         )
     return message
@@ -271,11 +314,12 @@ def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
                 msg_type = msg_kwargs.pop("role")
             except KeyError:
                 msg_type = msg_kwargs.pop("type")
-            msg_content = msg_kwargs.pop("content")
-        except KeyError:
+            # None msg content is not allowed
+            msg_content = msg_kwargs.pop("content") or ""
+        except KeyError as e:
             raise ValueError(
                 f"Message dict must contain 'role' and 'content' keys, got {message}"
-            )
+            ) from e
         _message = _create_message_from_message_type(
             msg_type, msg_content, **msg_kwargs
         )
@@ -326,9 +370,7 @@ def _runnable_support(func: Callable) -> Callable:
         if messages is not None:
             return func(messages, **kwargs)
         else:
-            return RunnableLambda(
-                partial(func, **kwargs), name=getattr(func, "__name__")
-            )
+            return RunnableLambda(partial(func, **kwargs), name=func.__name__)
 
     wrapped.__doc__ = func.__doc__
     return wrapped
@@ -425,6 +467,8 @@ def filter_messages(
 @_runnable_support
 def merge_message_runs(
     messages: Union[Iterable[MessageLikeRepresentation], PromptValue],
+    *,
+    chunk_separator: str = "\n",
 ) -> List[BaseMessage]:
     """Merge consecutive Messages of the same type.
 
@@ -433,13 +477,16 @@ def merge_message_runs(
 
     Args:
         messages: Sequence Message-like objects to merge.
+        chunk_separator: Specify the string to be inserted between message chunks.
+        Default is "\n".
 
     Returns:
         List of BaseMessages with consecutive runs of message types merged into single
-        messages. If two messages being merged both have string contents, the merged
-        content is a concatenation of the two strings with a new-line separator. If at
-        least one of the messages has a list of content blocks, the merged content is a
-        list of content blocks.
+        messages. By default, if two messages being merged both have string contents,
+        the merged content is a concatenation of the two strings with a new-line separator.
+        The separator inserted between message chunks can be controlled by specifying
+        any string with ``chunk_separator``. If at least one of the messages has a list of
+        content blocks, the merged content is a list of content blocks.
 
     Example:
         .. code-block:: python
@@ -494,7 +541,7 @@ def merge_message_runs(
     messages = convert_to_messages(messages)
     merged: List[BaseMessage] = []
     for msg in messages:
-        curr = msg.copy(deep=True)
+        curr = msg.model_copy(deep=True)
         last = merged.pop() if merged else None
         if not last:
             merged.append(curr)
@@ -509,7 +556,7 @@ def merge_message_runs(
                 and last_chunk.content
                 and curr_chunk.content
             ):
-                last_chunk.content += "\n"
+                last_chunk.content += chunk_separator
             merged.append(_chunk_to_msg(last_chunk + curr_chunk))
     return merged
 
@@ -768,7 +815,7 @@ def trim_messages(
         raise ValueError
     messages = convert_to_messages(messages)
     if hasattr(token_counter, "get_num_tokens_from_messages"):
-        list_token_counter = getattr(token_counter, "get_num_tokens_from_messages")
+        list_token_counter = token_counter.get_num_tokens_from_messages
     elif callable(token_counter):
         if (
             list(inspect.signature(token_counter).parameters.values())[0].annotation
@@ -781,7 +828,7 @@ def trim_messages(
             list_token_counter = token_counter  # type: ignore[assignment]
     else:
         raise ValueError(
-            f"'token_counter' expected ot be a model that implements "
+            f"'token_counter' expected to be a model that implements "
             f"'get_num_tokens_from_messages()' or a function. Received object of type "
             f"{type(token_counter)}."
         )
@@ -845,7 +892,7 @@ def _first_max_tokens(
     if idx < len(messages) - 1 and partial_strategy:
         included_partial = False
         if isinstance(messages[idx].content, list):
-            excluded = messages[idx].copy(deep=True)
+            excluded = messages[idx].model_copy(deep=True)
             num_block = len(excluded.content)
             if partial_strategy == "last":
                 excluded.content = list(reversed(excluded.content))
@@ -859,7 +906,7 @@ def _first_max_tokens(
             if included_partial and partial_strategy == "last":
                 excluded.content = list(reversed(excluded.content))
         if not included_partial:
-            excluded = messages[idx].copy(deep=True)
+            excluded = messages[idx].model_copy(deep=True)
             if isinstance(excluded.content, list) and any(
                 isinstance(block, str) or block["type"] == "text"
                 for block in messages[idx].content
@@ -950,11 +997,11 @@ _CHUNK_MSG_MAP = {v: k for k, v in _MSG_CHUNK_MAP.items()}
 
 def _msg_to_chunk(message: BaseMessage) -> BaseMessageChunk:
     if message.__class__ in _MSG_CHUNK_MAP:
-        return _MSG_CHUNK_MAP[message.__class__](**message.dict(exclude={"type"}))
+        return _MSG_CHUNK_MAP[message.__class__](**message.model_dump(exclude={"type"}))
 
     for msg_cls, chunk_cls in _MSG_CHUNK_MAP.items():
         if isinstance(message, msg_cls):
-            return chunk_cls(**message.dict(exclude={"type"}))
+            return chunk_cls(**message.model_dump(exclude={"type"}))
 
     raise ValueError(
         f"Unrecognized message class {message.__class__}. Supported classes are "
@@ -965,11 +1012,11 @@ def _msg_to_chunk(message: BaseMessage) -> BaseMessageChunk:
 def _chunk_to_msg(chunk: BaseMessageChunk) -> BaseMessage:
     if chunk.__class__ in _CHUNK_MSG_MAP:
         return _CHUNK_MSG_MAP[chunk.__class__](
-            **chunk.dict(exclude={"type", "tool_call_chunks"})
+            **chunk.model_dump(exclude={"type", "tool_call_chunks"})
         )
     for chunk_cls, msg_cls in _CHUNK_MSG_MAP.items():
         if isinstance(chunk, chunk_cls):
-            return msg_cls(**chunk.dict(exclude={"type", "tool_call_chunks"}))
+            return msg_cls(**chunk.model_dump(exclude={"type", "tool_call_chunks"}))
 
     raise ValueError(
         f"Unrecognized message chunk class {chunk.__class__}. Supported classes are "

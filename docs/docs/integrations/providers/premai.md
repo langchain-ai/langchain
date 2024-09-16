@@ -286,7 +286,7 @@ In order to pass tools and let the LLM choose the tool it needs to call, we need
 
 ```python
 from langchain_core.tools import tool
-from langchain_core.pydantic_v1 import BaseModel, Field 
+from pydantic import BaseModel, Field 
 
 # Define the schema for function arguments
 class OperationInput(BaseModel):
@@ -319,7 +319,7 @@ def multiply(a: int, b: int) -> int:
 
 ### Binding tool schemas with our LLM
 
-We will now use the `bind_tools` method to convert our above functions to a "tool" and binding it with the model. This means we are going to pass these tool informations everytime we invoke the model. 
+We will now use the `bind_tools` method to convert our above functions to a "tool" and binding it with the model. This means we are going to pass these tool information everytime we invoke the model. 
 
 ```python
 tools = [add, multiply]

@@ -10,9 +10,9 @@ from importlib.metadata import version
 from typing import Any, Callable, Dict, Optional, Sequence, Set, Tuple, Union, overload
 
 from packaging.version import parse
+from pydantic import SecretStr
 from requests import HTTPError, Response
 
-from langchain_core.pydantic_v1 import SecretStr
 from langchain_core.utils.pydantic import (
     is_pydantic_v1_subclass,
 )
@@ -131,12 +131,12 @@ def guard_import(
     """
     try:
         module = importlib.import_module(module_name, package)
-    except (ImportError, ModuleNotFoundError):
+    except (ImportError, ModuleNotFoundError) as e:
         pip_name = pip_name or module_name.split(".")[0].replace("_", "-")
         raise ImportError(
             f"Could not import {module_name} python package. "
             f"Please install it with `pip install {pip_name}`."
-        )
+        ) from e
     return module
 
 
@@ -235,7 +235,8 @@ def build_extra_kwargs(
             warnings.warn(
                 f"""WARNING! {field_name} is not default parameter.
                 {field_name} was transferred to model_kwargs.
-                Please confirm that {field_name} is what you intended."""
+                Please confirm that {field_name} is what you intended.""",
+                stacklevel=7,
             )
             extra_kwargs[field_name] = values.pop(field_name)
 
@@ -301,7 +302,9 @@ def from_env(
 
 
 @overload
-def from_env(key: str, /, *, default: None) -> Callable[[], Optional[str]]: ...
+def from_env(
+    key: Union[str, Sequence[str]], /, *, default: None
+) -> Callable[[], Optional[str]]: ...
 
 
 def from_env(
@@ -350,7 +353,7 @@ def from_env(
 
 
 @overload
-def secret_from_env(key: str, /) -> Callable[[], SecretStr]: ...
+def secret_from_env(key: Union[str, Sequence[str]], /) -> Callable[[], SecretStr]: ...
 
 
 @overload
@@ -359,7 +362,7 @@ def secret_from_env(key: str, /, *, default: str) -> Callable[[], SecretStr]: ..
 
 @overload
 def secret_from_env(
-    key: str, /, *, default: None
+    key: Union[str, Sequence[str]], /, *, default: None
 ) -> Callable[[], Optional[SecretStr]]: ...
 
 
@@ -368,7 +371,7 @@ def secret_from_env(key: str, /, *, error_message: str) -> Callable[[], SecretSt
 
 
 def secret_from_env(
-    key: str,
+    key: Union[str, Sequence[str]],
     /,
     *,
     default: Union[str, _NoDefaultType, None] = _NoDefault,
@@ -389,9 +392,14 @@ def secret_from_env(
 
     def get_secret_from_env() -> Optional[SecretStr]:
         """Get a value from an environment variable."""
-        if key in os.environ:
-            return SecretStr(os.environ[key])
-        elif isinstance(default, str):
+        if isinstance(key, (list, tuple)):
+            for k in key:
+                if k in os.environ:
+                    return SecretStr(os.environ[k])
+        if isinstance(key, str):
+            if key in os.environ:
+                return SecretStr(os.environ[key])
+        if isinstance(default, str):
             return SecretStr(default)
         elif isinstance(default, type(None)):
             return None

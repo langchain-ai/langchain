@@ -18,12 +18,12 @@ from typing import (
 )
 
 import pytest
+from pydantic import BaseModel
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun, Callbacks
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.documents import Document
 from langchain_core.language_models import FakeStreamingListLLM, GenericFakeChatModel
-from langchain_core.load import dumpd
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -33,7 +33,6 @@ from langchain_core.messages import (
 )
 from langchain_core.prompt_values import ChatPromptValue
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import (
     ConfigurableField,
@@ -1889,6 +1888,25 @@ async def test_runnable_with_message_history() -> None:
         input_messages_key="question",
         history_messages_key="history",
     )
+
+    # patch with_message_history._get_output_messages to listen for errors
+    # so we can raise them in this main thread
+    raised_errors = []
+
+    def collect_errors(fn):  # type: ignore
+        nonlocal raised_errors
+
+        def _get_output_messages(*args, **kwargs):  # type: ignore
+            try:
+                return fn(*args, **kwargs)
+            except Exception as e:
+                raised_errors.append(e)
+                raise e
+
+        return _get_output_messages
+
+    old_ref = with_message_history._get_output_messages
+    with_message_history.__dict__["_get_output_messages"] = collect_errors(old_ref)
     await with_message_history.with_config(
         {"configurable": {"session_id": "session-123"}}
     ).ainvoke({"question": "hello"})
@@ -1911,6 +1929,7 @@ async def test_runnable_with_message_history() -> None:
             AIMessage(content="world", id="ai4"),
         ]
     }
+    assert not raised_errors
 
 
 EXPECTED_EVENTS = [
@@ -2060,7 +2079,7 @@ class StreamingRunnable(Runnable[Input, Output]):
         config = ensure_config(config)
         callback_manager = get_callback_manager_for_config(config)
         run_manager = callback_manager.on_chain_start(
-            dumpd(self),
+            None,
             input,
             name=config.get("run_name", self.get_name()),
             run_id=config.get("run_id"),

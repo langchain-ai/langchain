@@ -22,8 +22,9 @@ from typing import (
 )
 from uuid import UUID, uuid4
 
-from langchain_core.pydantic_v1 import BaseModel
-from langchain_core.utils.pydantic import is_basemodel_subclass
+from pydantic import BaseModel
+
+from langchain_core.utils.pydantic import _IgnoreUnserializable, is_basemodel_subclass
 
 if TYPE_CHECKING:
     from langchain_core.runnables.base import Runnable as RunnableType
@@ -235,7 +236,9 @@ def node_data_json(
         json = (
             {
                 "type": "schema",
-                "data": node.data.schema(),
+                "data": node.data.model_json_schema(
+                    schema_generator=_IgnoreUnserializable
+                ),
             }
             if with_schemas
             else {
@@ -537,7 +540,7 @@ class Graph:
         *,
         with_styles: bool = True,
         curve_style: CurveStyle = CurveStyle.LINEAR,
-        node_colors: NodeStyles = NodeStyles(),
+        node_colors: Optional[NodeStyles] = None,
         wrap_label_n_words: int = 9,
     ) -> str:
         """Draw the graph as a Mermaid syntax string.
@@ -573,7 +576,7 @@ class Graph:
         self,
         *,
         curve_style: CurveStyle = CurveStyle.LINEAR,
-        node_colors: NodeStyles = NodeStyles(),
+        node_colors: Optional[NodeStyles] = None,
         wrap_label_n_words: int = 9,
         output_file_path: Optional[str] = None,
         draw_method: MermaidDrawMethod = MermaidDrawMethod.API,

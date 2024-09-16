@@ -1,4 +1,5 @@
 # mypy: disable-error-code="annotation-unchecked"
+import sys
 from typing import (
     Any,
     Callable,
@@ -33,10 +34,11 @@ try:
 except ImportError:
     TypingAnnotated = ExtensionsAnnotated
 
+from pydantic import BaseModel, Field
+
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables import Runnable, RunnableLambda
-from langchain_core.tools import BaseTool, tool
+from langchain_core.tools import BaseTool, StructuredTool, Tool, tool
 from langchain_core.utils.function_calling import (
     _convert_typed_dict_to_openai_function,
     convert_to_openai_function,
@@ -108,6 +110,20 @@ def dummy_tool() -> BaseTool:
             pass
 
     return DummyFunction()
+
+
+@pytest.fixture()
+def dummy_structured_tool() -> StructuredTool:
+    class Schema(BaseModel):
+        arg1: int = Field(..., description="foo")
+        arg2: Literal["bar", "baz"] = Field(..., description="one of 'bar', 'baz'")
+
+    return StructuredTool.from_function(
+        lambda x: None,
+        name="dummy_function",
+        description="dummy function",
+        args_schema=Schema,
+    )
 
 
 @pytest.fixture()
@@ -232,6 +248,7 @@ class DummyWithClassMethod:
 def test_convert_to_openai_function(
     pydantic: Type[BaseModel],
     function: Callable,
+    dummy_structured_tool: StructuredTool,
     dummy_tool: BaseTool,
     json_schema: Dict,
     Annotated_function: Callable,
@@ -262,6 +279,7 @@ def test_convert_to_openai_function(
     for fn in (
         pydantic,
         function,
+        dummy_structured_tool,
         dummy_tool,
         json_schema,
         expected,
@@ -294,6 +312,42 @@ def test_convert_to_openai_function(
     runnable_expected["parameters"] = parameters
     assert actual == runnable_expected
 
+    # Test simple Tool
+    def my_function(input_string: str) -> str:
+        pass
+
+    tool = Tool(
+        name="dummy_function",
+        func=my_function,
+        description="test description",
+    )
+    actual = convert_to_openai_function(tool)
+    expected = {
+        "name": "dummy_function",
+        "description": "test description",
+        "parameters": {
+            "properties": {"__arg1": {"title": "__arg1", "type": "string"}},
+            "required": ["__arg1"],
+            "type": "object",
+        },
+    }
+    assert actual == expected
+
+
+@pytest.mark.xfail(reason="Direct pydantic v2 models not yet supported")
+def test_convert_to_openai_function_nested_v2() -> None:
+    class NestedV2(BaseModelV2Maybe):
+        nested_v2_arg1: int = FieldV2Maybe(..., description="foo")
+        nested_v2_arg2: Literal["bar", "baz"] = FieldV2Maybe(
+            ..., description="one of 'bar', 'baz'"
+        )
+
+    def my_function(arg1: NestedV2) -> None:
+        """dummy function"""
+        pass
+
+    convert_to_openai_function(my_function)
+
 
 def test_convert_to_openai_function_nested() -> None:
     class Nested(BaseModel):
@@ -302,56 +356,81 @@ def test_convert_to_openai_function_nested() -> None:
             ..., description="one of 'bar', 'baz'"
         )
 
-    class NestedV2(BaseModelV2Maybe):
-        nested_v2_arg1: int = FieldV2Maybe(..., description="foo")
-        nested_v2_arg2: Literal["bar", "baz"] = FieldV2Maybe(
-            ..., description="one of 'bar', 'baz'"
-        )
-
-    def my_function(arg1: Nested, arg2: NestedV2) -> None:
+    def my_function(arg1: Nested) -> None:
         """dummy function"""
         pass
 
-        expected = {
-            "name": "my_function",
-            "description": "dummy function",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "arg1": {
-                        "type": "object",
-                        "properties": {
-                            "nested_arg1": {"type": "integer", "description": "foo"},
-                            "nested_arg2": {
-                                "type": "string",
-                                "enum": ["bar", "baz"],
-                                "description": "one of 'bar', 'baz'",
-                            },
+    expected = {
+        "name": "my_function",
+        "description": "dummy function",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "arg1": {
+                    "type": "object",
+                    "properties": {
+                        "nested_arg1": {"type": "integer", "description": "foo"},
+                        "nested_arg2": {
+                            "type": "string",
+                            "enum": ["bar", "baz"],
+                            "description": "one of 'bar', 'baz'",
                         },
-                        "required": ["nested_arg1", "nested_arg2"],
                     },
-                    "arg2": {
-                        "type": "object",
-                        "properties": {
-                            "nested_v2_arg1": {"type": "integer", "description": "foo"},
-                            "nested_v2_arg2": {
-                                "type": "string",
-                                "enum": ["bar", "baz"],
-                                "description": "one of 'bar', 'baz'",
-                            },
-                        },
-                        "required": ["nested_v2_arg1", "nested_v2_arg2"],
-                    },
+                    "required": ["nested_arg1", "nested_arg2"],
                 },
-                "required": ["arg1", "arg2"],
             },
-        }
+            "required": ["arg1"],
+        },
+    }
 
-        actual = convert_to_openai_function(my_function)
-        assert actual == expected
+    actual = convert_to_openai_function(my_function)
+    assert actual == expected
 
 
-@pytest.mark.xfail(reason="Pydantic converts Optional[str] to str in .schema()")
+def test_convert_to_openai_function_nested_strict() -> None:
+    class Nested(BaseModel):
+        nested_arg1: int = Field(..., description="foo")
+        nested_arg2: Literal["bar", "baz"] = Field(
+            ..., description="one of 'bar', 'baz'"
+        )
+
+    def my_function(arg1: Nested) -> None:
+        """dummy function"""
+        pass
+
+    expected = {
+        "name": "my_function",
+        "description": "dummy function",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "arg1": {
+                    "type": "object",
+                    "properties": {
+                        "nested_arg1": {"type": "integer", "description": "foo"},
+                        "nested_arg2": {
+                            "type": "string",
+                            "enum": ["bar", "baz"],
+                            "description": "one of 'bar', 'baz'",
+                        },
+                    },
+                    "required": ["nested_arg1", "nested_arg2"],
+                    "additionalProperties": False,
+                },
+            },
+            "required": ["arg1"],
+            "additionalProperties": False,
+        },
+        "strict": True,
+    }
+
+    actual = convert_to_openai_function(my_function, strict=True)
+    assert actual == expected
+
+
+@pytest.mark.xfail(
+    reason="Pydantic converts Optional[str] to str in .model_json_schema()"
+)
 def test_function_optional_param() -> None:
     @tool
     def func5(
@@ -411,17 +490,17 @@ def test_multiple_tool_calls() -> None:
         {
             "id": messages[2].tool_call_id,
             "type": "function",
-            "function": {"name": "FakeCall", "arguments": '{"data": "ToolCall1"}'},
+            "function": {"name": "FakeCall", "arguments": '{"data":"ToolCall1"}'},
         },
         {
             "id": messages[3].tool_call_id,
             "type": "function",
-            "function": {"name": "FakeCall", "arguments": '{"data": "ToolCall2"}'},
+            "function": {"name": "FakeCall", "arguments": '{"data":"ToolCall2"}'},
         },
         {
             "id": messages[4].tool_call_id,
             "type": "function",
-            "function": {"name": "FakeCall", "arguments": '{"data": "ToolCall3"}'},
+            "function": {"name": "FakeCall", "arguments": '{"data":"ToolCall3"}'},
         },
     ]
 
@@ -442,7 +521,7 @@ def test_tool_outputs() -> None:
         {
             "id": messages[2].tool_call_id,
             "type": "function",
-            "function": {"name": "FakeCall", "arguments": '{"data": "ToolCall1"}'},
+            "function": {"name": "FakeCall", "arguments": '{"data":"ToolCall1"}'},
         },
     ]
     assert messages[2].content == "Output1"
@@ -698,7 +777,42 @@ def test__convert_typed_dict_to_openai_function(
 @pytest.mark.parametrize("typed_dict", [ExtensionsTypedDict, TypingTypedDict])
 def test__convert_typed_dict_to_openai_function_fail(typed_dict: Type) -> None:
     class Tool(typed_dict):
-        arg1: MutableSet  # Pydantic doesn't support
+        arg1: MutableSet  # Pydantic 2 supports this, but pydantic v1 does not.
 
+    # Error should be raised since we're using v1 code path here
     with pytest.raises(TypeError):
         _convert_typed_dict_to_openai_function(Tool)
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 10), reason="Requires python version >= 3.10 to run."
+)
+def test_convert_union_type_py_39() -> None:
+    @tool
+    def magic_function(input: int | float) -> str:
+        """Compute a magic function."""
+        pass
+
+    result = convert_to_openai_function(magic_function)
+    assert result["parameters"]["properties"]["input"] == {
+        "anyOf": [{"type": "integer"}, {"type": "number"}]
+    }
+
+
+def test_convert_to_openai_function_no_args() -> None:
+    @tool
+    def empty_tool() -> str:
+        """No args"""
+        return "foo"
+
+    actual = convert_to_openai_function(empty_tool, strict=True)
+    assert actual == {
+        "name": "empty_tool",
+        "description": "No args",
+        "parameters": {
+            "properties": {},
+            "additionalProperties": False,
+            "type": "object",
+        },
+        "strict": True,
+    }
