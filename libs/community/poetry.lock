@@ -1094,7 +1094,7 @@ url = "../langchain"
 
 [[package]]
 name = "gigachain-core"
-version = "0.2.38"
+version = "0.2.38post2"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -4426,4 +4426,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "3f4745fd309be50682346badac216389e19ce0251831e3041003e6381624f5e7"
+content-hash = "f109c0bbeedab31b9ee396c966c68aed22c4f2f17ade64a233ad50509bb8f9e8"
