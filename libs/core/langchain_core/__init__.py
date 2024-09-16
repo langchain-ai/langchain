@@ -16,7 +16,7 @@ from langchain_core._api import (
 )
 
 try:
-    __version__ = metadata.version(__package__)
+    __version__ = metadata.version("gigachain_core")
 except metadata.PackageNotFoundError:
     # Case where package metadata is not available.
     __version__ = ""

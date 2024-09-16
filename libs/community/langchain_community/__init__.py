@@ -9,7 +9,7 @@ from langchain_core.__gigachain_core import _check_gigachain_core_version
 _check_gigachain_core_version()
 
 try:
-    __version__ = metadata.version(__package__)
+    __version__ = metadata.version("gigachain_community")
 except metadata.PackageNotFoundError:
     # Case where package metadata is not available.
     __version__ = ""

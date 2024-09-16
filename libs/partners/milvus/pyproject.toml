@@ -85,14 +85,14 @@ mypy = "^0.991"
 types-requests = "^2"
 simsimd = "^5.0.0"
 
-[tool.poetry.group.test.dependencies.langchain-core]
+[tool.poetry.group.test.dependencies.gigachain-core]
 path = "../../core"
 develop = true
 
-[tool.poetry.group.typing.dependencies.langchain-core]
+[tool.poetry.group.typing.dependencies.gigachain-core]
 path = "../../core"
 develop = true
 
-[tool.poetry.group.dev.dependencies.langchain-core]
+[tool.poetry.group.dev.dependencies.gigachain-core]
 path = "../../core"
 develop = true

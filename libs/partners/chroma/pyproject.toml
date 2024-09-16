@@ -98,7 +98,7 @@ mypy = "^1.10"
 types-requests = "^2.31.0.20240406"
 
 
-[tool.poetry.group.test.dependencies.langchain-core]
+[tool.poetry.group.test.dependencies.gigachain-core]
 path = "../../core"
 develop = true
 
