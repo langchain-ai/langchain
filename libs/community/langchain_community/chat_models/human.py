@@ -15,7 +15,7 @@ from langchain_core.messages import (
     messages_to_dict,
 )
 from langchain_core.outputs import ChatGeneration, ChatResult
-from langchain_core.pydantic_v1 import Field
+from pydantic import Field
 
 from langchain_community.llms.utils import enforce_stop_tokens
 

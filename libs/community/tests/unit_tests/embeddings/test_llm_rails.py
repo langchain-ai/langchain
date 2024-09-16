@@ -1,6 +1,6 @@
 """Test LLMRailsEmbeddings embeddings"""
 
-from langchain_core.pydantic_v1 import SecretStr
+from pydantic import SecretStr
 from pytest import CaptureFixture
 
 from langchain_community.embeddings import LLMRailsEmbeddings

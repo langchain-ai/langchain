@@ -7,6 +7,7 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
+from pydantic import ConfigDict
 
 
 class NeuralDBVectorStore(VectorStore):
@@ -30,9 +31,9 @@ class NeuralDBVectorStore(VectorStore):
     db: Any = None  #: :meta private:
     """NeuralDB instance"""
 
-    class Config:
-        extra = "forbid"
-        underscore_attrs_are_private = True
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @staticmethod
     def _verify_thirdai_library(thirdai_key: Optional[str] = None):  # type: ignore[no-untyped-def]
@@ -330,9 +331,9 @@ class NeuralDBClientVectorStore(VectorStore):
     db: Any = None  #: :meta private:
     """NeuralDB Client instance"""
 
-    class Config:
-        extra = "forbid"
-        underscore_attrs_are_private = True
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     def similarity_search(
         self, query: str, k: int = 10, **kwargs: Any

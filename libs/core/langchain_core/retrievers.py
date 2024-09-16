@@ -26,6 +26,7 @@ from abc import ABC, abstractmethod
 from inspect import signature
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+from pydantic import ConfigDict
 from typing_extensions import TypedDict
 
 from langchain_core._api import deprecated
@@ -125,8 +126,9 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
                     return [self.docs[i] for i in results.argsort()[-self.k :][::-1]]
     """  # noqa: E501
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     _new_arg_supported: bool = False
     _expects_other_args: bool = False

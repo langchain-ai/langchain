@@ -8,13 +8,6 @@
       'AzureChatOpenAI',
     ]),
     'kwargs': dict({
-      'azure_ad_token': dict({
-        'id': list([
-          'AZURE_OPENAI_AD_TOKEN',
-        ]),
-        'lc': 1,
-        'type': 'secret',
-      }),
       'azure_endpoint': 'https://test.azure.com',
       'deployment_name': 'test',
       'max_retries': 2,

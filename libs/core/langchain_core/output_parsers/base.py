@@ -13,8 +13,6 @@ from typing import (
     Union,
 )
 
-from typing_extensions import get_args
-
 from langchain_core.language_models import LanguageModelOutput
 from langchain_core.messages import AnyMessage, BaseMessage
 from langchain_core.outputs import ChatGeneration, Generation
@@ -166,10 +164,11 @@ class BaseOutputParser(
         Raises:
             TypeError: If the class doesn't have an inferable OutputType.
         """
-        for cls in self.__class__.__orig_bases__:  # type: ignore[attr-defined]
-            type_args = get_args(cls)
-            if type_args and len(type_args) == 1:
-                return type_args[0]
+        for base in self.__class__.mro():
+            if hasattr(base, "__pydantic_generic_metadata__"):
+                metadata = base.__pydantic_generic_metadata__
+                if "args" in metadata and len(metadata["args"]) > 0:
+                    return metadata["args"][0]
 
         raise TypeError(
             f"Runnable {self.__class__.__name__} doesn't have an inferable OutputType. "
