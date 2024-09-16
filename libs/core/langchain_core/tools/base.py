@@ -188,7 +188,7 @@ def create_return_schema_from_function(
         try:
             if isinstance(return_type, type) and issubclass(return_type, BaseModel):
                 return return_type
-        except TypeError as e: # It's normal for testing
+        except TypeError: # It's normal for testing
             return None
 
     return None
