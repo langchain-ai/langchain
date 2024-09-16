@@ -16,6 +16,7 @@ def get_gritdir_path() -> Path:
 
 def migrate(
     ctx: typer.Context,
+    # Using diff instead of dry-run for backwards compatibility with the old CLI
     diff: bool = Option(
         False,
         "--diff",
