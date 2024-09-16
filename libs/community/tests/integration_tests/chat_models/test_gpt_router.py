@@ -8,7 +8,7 @@ from langchain_core.callbacks import (
 )
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.outputs import ChatGeneration, LLMResult
-from langchain_core.pydantic_v1 import SecretStr
+from pydantic import SecretStr
 from pytest import CaptureFixture
 
 from langchain_community.chat_models.gpt_router import GPTRouter, GPTRouterModel
@@ -16,9 +16,9 @@ from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
 def test_api_key_is_string() -> None:
-    gpt_router = GPTRouter(
+    gpt_router = GPTRouter(  # type: ignore[call-arg]
         gpt_router_api_base="https://example.com",
-        gpt_router_api_key="secret-api-key",
+        gpt_router_api_key="secret-api-key",  # type: ignore[arg-type]
     )
     assert isinstance(gpt_router.gpt_router_api_key, SecretStr)
 
@@ -26,9 +26,9 @@ def test_api_key_is_string() -> None:
 def test_api_key_masked_when_passed_via_constructor(
     capsys: CaptureFixture,
 ) -> None:
-    gpt_router = GPTRouter(
+    gpt_router = GPTRouter(  # type: ignore[call-arg]
         gpt_router_api_base="https://example.com",
-        gpt_router_api_key="secret-api-key",
+        gpt_router_api_key="secret-api-key",  # type: ignore[arg-type]
     )
     print(gpt_router.gpt_router_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()

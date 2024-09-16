@@ -10,7 +10,7 @@ You can use the dev container configuration in this folder to build and run the 
 You may use the button above, or follow these steps to open this repo in a Codespace:
 1. Click the **Code** drop-down menu at the top of https://github.com/langchain-ai/langchain.
 1. Click on the **Codespaces** tab.
-1. Click **Create codespace on master** .
+1. Click **Create codespace on master**.
 
 For more info, check out the [GitHub documentation](https://docs.github.com/en/free-pro-team@latest/github/developing-online-with-codespaces/creating-a-codespace#creating-a-codespace).
   

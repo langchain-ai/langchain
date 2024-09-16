@@ -10,9 +10,10 @@ from langchain_core.callbacks.manager import (
 from langchain_core.language_models.llms import LLM
 from langchain_core.load.serializable import Serializable
 from langchain_core.outputs import GenerationChunk, LLMResult
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
+from langchain_core.utils import pre_init
 from langchain_core.utils.env import get_from_dict_or_env
 from langchain_core.utils.utils import convert_to_secret_str
+from pydantic import Field, SecretStr
 
 
 def _stream_response_to_generation_chunk(stream_response: Any) -> GenerationChunk:
@@ -66,7 +67,7 @@ class BaseFriendli(Serializable):
     # is used by default.
     top_p: Optional[float] = None
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate if personal access token is provided in environment."""
         try:

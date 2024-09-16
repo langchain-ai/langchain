@@ -1,4 +1,5 @@
 """Generate **synthetic data** using LLM and few-shot template."""
+
 from typing import Any, Dict, List, Optional
 
 from langchain.chains.base import Chain

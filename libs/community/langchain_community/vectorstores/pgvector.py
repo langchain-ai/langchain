@@ -20,7 +20,7 @@ from typing import (
 import numpy as np
 import sqlalchemy
 from langchain_core._api import deprecated, warn_deprecated
-from sqlalchemy import SQLColumnExpression, delete, func
+from sqlalchemy import delete, func
 from sqlalchemy.dialects.postgresql import JSON, JSONB, UUID
 from sqlalchemy.orm import Session, relationship
 
@@ -28,6 +28,12 @@ try:
     from sqlalchemy.orm import declarative_base
 except ImportError:
     from sqlalchemy.ext.declarative import declarative_base
+
+try:
+    from sqlalchemy import SQLColumnExpression
+except ImportError:
+    # for sqlalchemy < 2
+    SQLColumnExpression = Any  # type: ignore
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
@@ -218,7 +224,7 @@ def _results_to_docs(docs_and_scores: Any) -> List[Document]:
         "Please read the guidelines in the doc-string of this class "
         "to follow prior to migrating as there are some differences "
         "between the implementations. "
-        "See https://github.com/langchain-ai/langchain-postgres for details about"
+        "See <https://github.com/langchain-ai/langchain-postgres> for details about"
         "the new implementation."
     ),
     alternative="from langchain_postgres import PGVector;",
@@ -268,22 +274,22 @@ class PGVector(VectorStore):
             disabling creation is useful when using ReadOnly Databases.
 
     Example:
-        .. code-block:: python
 
-            from langchain_community.vectorstores import PGVector
-            from langchain_community.embeddings.openai import OpenAIEmbeddings
+       .. code-block:: python
 
-            CONNECTION_STRING = "postgresql+psycopg2://hwc@localhost:5432/test3"
-            COLLECTION_NAME = "state_of_the_union_test"
-            embeddings = OpenAIEmbeddings()
-            vectorestore = PGVector.from_documents(
-                embedding=embeddings,
-                documents=docs,
-                collection_name=COLLECTION_NAME,
-                connection_string=CONNECTION_STRING,
-                use_jsonb=True,
-            )
-    """
+           from langchain_community.vectorstores import PGVector
+           from langchain_community.embeddings.openai import OpenAIEmbeddings
+           CONNECTION_STRING = "postgresql+psycopg2://hwc@localhost:5432/test3"
+           COLLECTION_NAME = "state_of_the_union_test"
+           embeddings = OpenAIEmbeddings()
+           vectorestore = PGVector.from_documents(
+               embedding=embeddings,
+               documents=docs,
+               collection_name=COLLECTION_NAME,
+               connection_string=CONNECTION_STRING,
+               use_jsonb=True,
+
+    """  # noqa: E501
 
     def __init__(
         self,
@@ -455,7 +461,7 @@ class PGVector(VectorStore):
         return self.CollectionStore.get_by_name(session, self.collection_name)
 
     @classmethod
-    def __from(
+    def _from(
         cls,
         texts: List[str],
         embeddings: List[List[float]],
@@ -623,7 +629,7 @@ class PGVector(VectorStore):
         k: int = 4,
         filter: Optional[dict] = None,
     ) -> List[Tuple[Document, float]]:
-        results = self.__query_collection(embedding=embedding, k=k, filter=filter)
+        results = self._query_collection(embedding=embedding, k=k, filter=filter)
 
         return self._results_to_docs_and_scores(results)
 
@@ -733,7 +739,7 @@ class PGVector(VectorStore):
             if operator in {"$in"}:
                 return queried_field.in_([str(val) for val in filter_value])
             elif operator in {"$nin"}:
-                return queried_field.nin_([str(val) for val in filter_value])
+                return queried_field.not_in([str(val) for val in filter_value])
             elif operator in {"$like"}:
                 return queried_field.like(filter_value)
             elif operator in {"$ilike"}:
@@ -922,7 +928,7 @@ class PGVector(VectorStore):
                 f"Invalid type: Expected a dictionary but got type: {type(filters)}"
             )
 
-    def __query_collection(
+    def _query_collection(
         self,
         embedding: List[float],
         k: int = 4,
@@ -1008,7 +1014,7 @@ class PGVector(VectorStore):
         """
         embeddings = embedding.embed_documents(list(texts))
 
-        return cls.__from(
+        return cls._from(
             texts,
             embeddings,
             embedding,
@@ -1054,7 +1060,7 @@ class PGVector(VectorStore):
         texts = [t[0] for t in text_embeddings]
         embeddings = [t[1] for t in text_embeddings]
 
-        return cls.__from(
+        return cls._from(
             texts,
             embeddings,
             embedding,
@@ -1218,7 +1224,7 @@ class PGVector(VectorStore):
             List[Tuple[Document, float]]: List of Documents selected by maximal marginal
                 relevance to the query and score for each.
         """
-        results = self.__query_collection(embedding=embedding, k=fetch_k, filter=filter)
+        results = self._query_collection(embedding=embedding, k=fetch_k, filter=filter)
 
         embedding_list = [result.EmbeddingStore.embedding for result in results]
 

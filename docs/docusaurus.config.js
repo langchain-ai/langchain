@@ -9,6 +9,8 @@ require("dotenv").config();
 const baseLightCodeBlockTheme = require("prism-react-renderer/themes/vsLight");
 const baseDarkCodeBlockTheme = require("prism-react-renderer/themes/vsDark");
 
+const baseUrl = "/";
+
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: "🦜️🔗 LangChain",
@@ -18,10 +20,10 @@ const config = {
   url: "https://python.langchain.com",
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: "/v0.2/",
+  baseUrl: baseUrl,
   trailingSlash: true,
-  onBrokenLinks: "warn",
-  onBrokenMarkdownLinks: "warn",
+  onBrokenLinks: "throw",
+  onBrokenMarkdownLinks: "throw",
 
   themes: ["@docusaurus/theme-mermaid"],
   markdown: {
@@ -81,6 +83,7 @@ const config = {
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         docs: {
+          editUrl: "https://github.com/langchain-ai/langchain/edit/master/docs/",
           sidebarPath: require.resolve("./sidebars.js"),
           remarkPlugins: [
             [require("@docusaurus/remark-plugin-npm2yarn"), { sync: true }],
@@ -101,6 +104,9 @@ const config = {
                 // eslint-disable-next-line no-param-reassign
                 subItem.label = subItem.label.replace(/\//g, "/\u200B");
               }
+              if (args.item.className) {
+                subItem.className = args.item.className;
+              }
             });
             return sidebarItems;
           },
@@ -119,8 +125,11 @@ const config = {
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
       announcementBar: {
-        content: 'You are viewing the <strong>preview</strong> LangChain v0.2 docs. View the <a href="/v0.1/docs/get_started/introduction/">stable 0.1 docs here</a>.',
+        content:
+          'Share your thoughts on AI agents. <a target="_blank" href="https://langchain.typeform.com/state-of-agents">Take the 3-min survey</a>.',
         isCloseable: true,
+        backgroundColor: "rgba(53, 151, 147, 0.1)",
+        textColor: "rgb(53, 151, 147)",
       },
       docs: {
         sidebar: {
@@ -159,9 +168,19 @@ const config = {
             label: "Integrations",
           },
           {
-            href: "https://api.python.langchain.com",
-            label: "API Reference",
+            type: "dropdown",
+            label: "API reference",
             position: "left",
+            items: [
+              {
+                label: "Latest",
+                to: "https://python.langchain.com/api_reference/reference.html",
+              },
+              {
+                label: "Legacy",
+                href: "https://api.python.langchain.com/"
+              }
+            ]
           },
           {
             type: "dropdown",
@@ -175,18 +194,8 @@ const config = {
               },
               {
                 type: "doc",
-                docId: "packages",
-                label: "Versioning",
-              },
-              {
-                type: "doc",
                 docId: "contributing/index",
                 label: "Contributing",
-              },
-              {
-                type: "docSidebar",
-                sidebarId: "templates",
-                label: "Templates",
               },
               {
                 label: "Cookbooks",
@@ -195,13 +204,36 @@ const config = {
               {
                 type: "doc",
                 docId: "additional_resources/tutorials",
-                label: "Tutorials"
+                label: "3rd party tutorials"
               },
               {
                 type: "doc",
                 docId: "additional_resources/youtube",
                 label: "YouTube"
               },
+              {
+                to: "/docs/additional_resources/arxiv_references",
+                label: "arXiv"
+              },
+            ]
+          },
+          {
+            type: "dropdown",
+            label: "v0.3",
+            position: "right",
+            items: [
+              {
+                label: "v0.3",
+                href: "/docs/introduction"
+              },
+              {
+                label: "v0.2",
+                href: "https://python.langchain.com/v0.2/docs/introduction"
+              },
+              {
+                label: "v0.1",
+                href: "https://python.langchain.com/v0.1/docs/get_started/introduction"
+              }
             ]
           },
           {
@@ -216,18 +248,6 @@ const config = {
               {
                 href: "https://docs.smith.langchain.com/",
                 label: "LangSmith Docs",
-              },
-              {
-                href: "https://github.com/langchain-ai/langserve",
-                label: "LangServe GitHub",
-              },
-              {
-                href: "https://github.com/langchain-ai/langchain/tree/master/templates",
-                label: "Templates GitHub",
-              },
-              {
-                label: "Templates Hub",
-                href: "https://templates.langchain.com",
               },
               {
                 href: "https://smith.langchain.com/hub",
@@ -260,10 +280,6 @@ const config = {
             title: "Community",
             items: [
               {
-                label: "Discord",
-                href: "https://discord.gg/cU2adEyC7w",
-              },
-              {
                 label: "Twitter",
                 href: "https://twitter.com/LangChainAI",
               },
@@ -272,6 +288,10 @@ const config = {
           {
             title: "GitHub",
             items: [
+              {
+                label: "Organization",
+                href: "https://github.com/langchain-ai",
+              },
               {
                 label: "Python",
                 href: "https://github.com/langchain-ai/langchain",
@@ -310,14 +330,14 @@ const config = {
         // this is linked to erick@langchain.dev currently
         apiKey: "6c01842d6a88772ed2236b9c85806441",
 
-        indexName: "python-langchain",
+        indexName: "python-langchain-latest",
 
-        contextualSearch: true,
+        contextualSearch: false,
       },
     }),
 
   scripts: [
-    "/js/google_analytics.js",
+    baseUrl + "js/google_analytics.js",
     {
       src: "https://www.googletagmanager.com/gtag/js?id=G-9B66JQQH2F",
       async: true,

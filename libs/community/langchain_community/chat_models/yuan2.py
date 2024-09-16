@@ -1,4 +1,5 @@
 """ChatYuan2 wrapper."""
+
 from __future__ import annotations
 
 import logging
@@ -39,11 +40,12 @@ from langchain_core.messages import (
     SystemMessageChunk,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.utils import (
     get_from_dict_or_env,
     get_pydantic_field_names,
+    pre_init,
 )
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from tenacity import (
     before_sleep_log,
     retry,
@@ -74,7 +76,7 @@ class ChatYuan2(BaseChatModel):
             chat = ChatYuan2()
     """
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
 
     model_name: str = Field(default="yuan2", alias="model")
@@ -91,7 +93,9 @@ class ChatYuan2(BaseChatModel):
     )
     """Base URL path for API requests, an OpenAI compatible API server."""
 
-    request_timeout: Optional[Union[float, Tuple[float, float]]] = None
+    request_timeout: Optional[Union[float, Tuple[float, float]]] = Field(
+        default=None, alias="timeout"
+    )
     """Timeout for requests to yuan2 completion API. Default is 600 seconds."""
 
     max_retries: int = 6
@@ -109,7 +113,7 @@ class ChatYuan2(BaseChatModel):
     top_p: Optional[float] = 0.9
     """The top-p value to use for sampling."""
 
-    stop: Optional[List[str]] = ["<eod>"]
+    stop: Optional[List[str]] = Field(default=["<eod>"], alias="stop_sequences")
     """A list of strings to stop generation when encountered."""
 
     repeat_last_n: Optional[int] = 64
@@ -118,10 +122,9 @@ class ChatYuan2(BaseChatModel):
     repeat_penalty: Optional[float] = 1.18
     """The penalty to apply to repeated tokens."""
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        allow_population_by_field_name = True
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
@@ -139,8 +142,9 @@ class ChatYuan2(BaseChatModel):
 
         return attributes
 
-    @root_validator(pre=True)
-    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})
@@ -165,7 +169,7 @@ class ChatYuan2(BaseChatModel):
         values["model_kwargs"] = extra
         return values
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["yuan2_api_key"] = get_from_dict_or_env(
@@ -437,9 +441,9 @@ def _convert_delta_to_message_chunk(
     elif role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
     elif role or default_class == ChatMessageChunk:
-        return ChatMessageChunk(content=content, role=role)
+        return ChatMessageChunk(content=content, role=role)  # type: ignore[arg-type]
     else:
-        return default_class(content=content)
+        return default_class(content=content)  # type: ignore[call-arg]
 
 
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
@@ -451,7 +455,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     elif role == "system":
         return SystemMessage(content=_dict.get("content", ""))
     else:
-        return ChatMessage(content=_dict.get("content", ""), role=role)
+        return ChatMessage(content=_dict.get("content", ""), role=role)  # type: ignore[arg-type]
 
 
 def _convert_message_to_dict(message: BaseMessage) -> dict:

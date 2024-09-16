@@ -1,11 +1,12 @@
 """Util that calls Arxiv."""
+
 import logging
 import os
 import re
 from typing import Any, Dict, Iterator, List, Optional
 
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from pydantic import BaseModel, model_validator
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +49,7 @@ class ArxivAPIWrapper(BaseModel):
                 load_all_available_meta = False,
                 doc_content_chars_max = 40000
             )
-            arxiv.run("tree of thought llm)
+            arxiv.run("tree of thought llm")
     """
 
     arxiv_search: Any  #: :meta private:
@@ -72,8 +73,9 @@ class ArxivAPIWrapper(BaseModel):
                 return False
         return True
 
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that the python package exists in environment."""
         try:
             import arxiv
@@ -103,7 +105,7 @@ class ArxivAPIWrapper(BaseModel):
 
         Args:
             query: a plaintext search query
-        """  # noqa: E501
+        """
         try:
             if self.is_arxiv_identifier(query):
                 results = self.arxiv_search(
@@ -142,7 +144,7 @@ class ArxivAPIWrapper(BaseModel):
 
         Args:
             query: a plaintext search query
-        """  # noqa: E501
+        """
         try:
             if self.is_arxiv_identifier(query):
                 results = self.arxiv_search(

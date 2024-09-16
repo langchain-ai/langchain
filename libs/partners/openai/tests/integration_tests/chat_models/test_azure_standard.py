@@ -19,15 +19,19 @@ DEPLOYMENT_NAME = os.environ.get(
 
 
 class TestOpenAIStandard(ChatModelIntegrationTests):
-    @pytest.fixture
+    @property
     def chat_model_class(self) -> Type[BaseChatModel]:
         return AzureChatOpenAI
 
-    @pytest.fixture
+    @property
     def chat_model_params(self) -> dict:
         return {
             "deployment_name": DEPLOYMENT_NAME,
             "openai_api_version": OPENAI_API_VERSION,
             "azure_endpoint": OPENAI_API_BASE,
-            "openai_api_key": OPENAI_API_KEY,
+            "api_key": OPENAI_API_KEY,
         }
+
+    @pytest.mark.xfail(reason="Not yet supported.")
+    def test_usage_metadata_streaming(self, model: BaseChatModel) -> None:
+        super().test_usage_metadata_streaming(model)

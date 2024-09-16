@@ -1,4 +1,5 @@
 """Question answering over a graph."""
+
 from __future__ import annotations
 
 import re
@@ -9,7 +10,7 @@ from langchain.chains.llm import LLMChain
 from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
-from langchain_core.pydantic_v1 import Field
+from pydantic import Field
 
 from langchain_community.chains.graph_qa.prompts import (
     CYPHER_QA_PROMPT,
@@ -72,6 +73,37 @@ class KuzuQAChain(Chain):
     input_key: str = "query"  #: :meta private:
     output_key: str = "result"  #: :meta private:
 
+    allow_dangerous_requests: bool = False
+    """Forced user opt-in to acknowledge that the chain can make dangerous requests.
+
+    *Security note*: Make sure that the database connection uses credentials
+        that are narrowly-scoped to only include necessary permissions.
+        Failure to do so may result in data corruption or loss, since the calling
+        code may attempt commands that would result in deletion, mutation
+        of data if appropriately prompted or reading sensitive data if such
+        data is present in the database.
+        The best way to guard against such negative outcomes is to (as appropriate)
+        limit the permissions granted to the credentials used with this tool.
+
+        See https://python.langchain.com/docs/security for more information.
+    """
+
+    def __init__(self, **kwargs: Any) -> None:
+        """Initialize the chain."""
+        super().__init__(**kwargs)
+        if self.allow_dangerous_requests is not True:
+            raise ValueError(
+                "In order to use this chain, you must acknowledge that it can make "
+                "dangerous requests by setting `allow_dangerous_requests` to `True`."
+                "You must narrowly scope the permissions of the database connection "
+                "to only include necessary permissions. Failure to do so may result "
+                "in data corruption or loss or reading sensitive data if such data is "
+                "present in the database."
+                "Only use this chain if you understand the risks and have taken the "
+                "necessary precautions. "
+                "See https://python.langchain.com/docs/security for more information."
+            )
+
     @property
     def input_keys(self) -> List[str]:
         """Return the input keys.
@@ -92,15 +124,36 @@ class KuzuQAChain(Chain):
     @classmethod
     def from_llm(
         cls,
-        llm: BaseLanguageModel,
+        llm: Optional[BaseLanguageModel] = None,
         *,
         qa_prompt: BasePromptTemplate = CYPHER_QA_PROMPT,
         cypher_prompt: BasePromptTemplate = KUZU_GENERATION_PROMPT,
+        cypher_llm: Optional[BaseLanguageModel] = None,
+        qa_llm: Optional[BaseLanguageModel] = None,
         **kwargs: Any,
     ) -> KuzuQAChain:
         """Initialize from LLM."""
-        qa_chain = LLMChain(llm=llm, prompt=qa_prompt)
-        cypher_generation_chain = LLMChain(llm=llm, prompt=cypher_prompt)
+        if not cypher_llm and not llm:
+            raise ValueError("Either `llm` or `cypher_llm` parameters must be provided")
+        if not qa_llm and not llm:
+            raise ValueError(
+                "Either `llm` or `qa_llm` parameters must be provided along with"
+                " `cypher_llm`"
+            )
+        if cypher_llm and qa_llm and llm:
+            raise ValueError(
+                "You can specify up to two of 'cypher_llm', 'qa_llm'"
+                ", and 'llm', but not all three simultaneously."
+            )
+
+        qa_chain = LLMChain(
+            llm=qa_llm or llm,  # type: ignore[arg-type]
+            prompt=qa_prompt,
+        )
+        cypher_generation_chain = LLMChain(
+            llm=cypher_llm or llm,  # type: ignore[arg-type]
+            prompt=cypher_prompt,
+        )
 
         return cls(
             qa_chain=qa_chain,

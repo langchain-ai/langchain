@@ -1,3 +1,23 @@
+"""
+This file contains a mapping between the lc_namespace path for a given
+subclass that implements from Serializable to the namespace
+where that class is actually located.
+
+This mapping helps maintain the ability to serialize and deserialize
+well-known LangChain objects even if they are moved around in the codebase
+across different LangChain versions.
+
+For example,
+
+The code for AIMessage class is located in langchain_core.messages.ai.AIMessage,
+This message is associated with the lc_namespace
+["langchain", "schema", "messages", "AIMessage"],
+because this code was originally in langchain.schema.messages.AIMessage.
+
+The mapping allows us to deserialize an AIMessage created with an older
+version of LangChain where the code was in a different location.
+"""
+
 from typing import Dict, Tuple
 
 # First value is the value that it is serialized as
@@ -56,6 +76,12 @@ SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "messages",
         "tool",
         "ToolMessage",
+    ),
+    ("langchain", "schema", "messages", "RemoveMessage"): (
+        "langchain_core",
+        "messages",
+        "modifier",
+        "RemoveMessage",
     ),
     ("langchain", "schema", "agent", "AgentAction"): (
         "langchain_core",
@@ -245,6 +271,11 @@ SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "chat_models",
         "ChatAnthropic",
     ),
+    ("langchain_groq", "chat_models", "ChatGroq"): (
+        "langchain_groq",
+        "chat_models",
+        "ChatGroq",
+    ),
     ("langchain", "chat_models", "fireworks", "ChatFireworks"): (
         "langchain_fireworks",
         "chat_models",
@@ -260,6 +291,22 @@ SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "langchain_google_vertexai",
         "chat_models",
         "ChatVertexAI",
+    ),
+    ("langchain", "chat_models", "mistralai", "ChatMistralAI"): (
+        "langchain_mistralai",
+        "chat_models",
+        "ChatMistralAI",
+    ),
+    ("langchain", "chat_models", "bedrock", "ChatBedrock"): (
+        "langchain_aws",
+        "chat_models",
+        "bedrock",
+        "ChatBedrock",
+    ),
+    ("langchain_google_genai", "chat_models", "ChatGoogleGenerativeAI"): (
+        "langchain_google_genai",
+        "chat_models",
+        "ChatGoogleGenerativeAI",
     ),
     ("langchain", "schema", "output", "ChatGenerationChunk"): (
         "langchain_core",

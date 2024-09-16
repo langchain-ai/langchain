@@ -16,7 +16,7 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import Field
+from pydantic import Field
 from requests import Response
 from requests.exceptions import HTTPError
 
@@ -213,7 +213,7 @@ class ChatMaritalk(BaseChatModel):
             if response.status_code == 200:
                 return response.json().get("answer", "No answer found")
             else:
-                raise MaritalkHTTPError(response)
+                raise MaritalkHTTPError(response)  # type: ignore[arg-type]
 
         except ImportError:
             raise ImportError(
@@ -301,7 +301,7 @@ class ChatMaritalk(BaseChatModel):
                 async with client.stream(
                     "POST",
                     "https://chat.maritaca.ai/api/chat/inference",
-                    data=json.dumps(data),
+                    data=json.dumps(data),  # type: ignore[arg-type]
                     headers=headers,
                     timeout=None,
                 ) as response:
@@ -323,7 +323,7 @@ class ChatMaritalk(BaseChatModel):
                                         yield chunk
 
                     else:
-                        raise MaritalkHTTPError(response)
+                        raise MaritalkHTTPError(response)  # type: ignore[arg-type]
 
         except ImportError:
             raise ImportError(

@@ -2,10 +2,11 @@ from typing import Any, Dict, List, Mapping, Optional
 
 import requests
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.utils import get_from_dict_or_env, pre_init
+from pydantic import BaseModel, ConfigDict
 
 DEFAULT_MODEL_ID = "sentence-transformers/clip-ViT-B-32"
+MAX_BATCH_SIZE = 1024
 
 
 class DeepInfraEmbeddings(BaseModel, Embeddings):
@@ -47,15 +48,15 @@ class DeepInfraEmbeddings(BaseModel, Embeddings):
     """Instruction used to embed the query."""
     model_kwargs: Optional[dict] = None
     """Other model keyword args"""
-
     deepinfra_api_token: Optional[str] = None
+    """API token for Deep Infra. If not provided, the token is 
+    fetched from the environment variable 'DEEPINFRA_API_TOKEN'."""
+    batch_size: int = MAX_BATCH_SIZE
+    """Batch size for embedding requests."""
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
 
-        extra = Extra.forbid
-
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         deepinfra_api_token = get_from_dict_or_env(
@@ -103,6 +104,8 @@ class DeepInfraEmbeddings(BaseModel, Embeddings):
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Embed documents using a Deep Infra deployed embedding model.
+        For larger batches, the input list of texts is chunked into smaller
+        batches to avoid exceeding the maximum request size.
 
         Args:
             texts: The list of texts to embed.
@@ -110,8 +113,17 @@ class DeepInfraEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
+
+        embeddings = []
         instruction_pairs = [f"{self.embed_instruction}{text}" for text in texts]
-        embeddings = self._embed(instruction_pairs)
+
+        chunks = [
+            instruction_pairs[i : i + self.batch_size]
+            for i in range(0, len(instruction_pairs), self.batch_size)
+        ]
+        for chunk in chunks:
+            embeddings += self._embed(chunk)
+
         return embeddings
 
     def embed_query(self, text: str) -> List[float]:

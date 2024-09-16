@@ -1,4 +1,5 @@
 """A unit test meant to catch accidental introduction of non-optional dependencies."""
+
 from pathlib import Path
 from typing import Any, Dict, Mapping
 
@@ -28,6 +29,7 @@ def test_required_dependencies(poetry_conf: Mapping[str, Any]) -> None:
 
     is_required = {
         package_name: isinstance(requirements, str)
+        or isinstance(requirements, list)
         or not requirements.get("optional", False)
         for package_name, requirements in dependencies.items()
     }
@@ -41,7 +43,6 @@ def test_required_dependencies(poetry_conf: Mapping[str, Any]) -> None:
             "SQLAlchemy",
             "aiohttp",
             "async-timeout",
-            "dataclasses-json",
             "langchain-core",
             "langchain-text-splitters",
             "langsmith",
@@ -56,7 +57,9 @@ def test_required_dependencies(poetry_conf: Mapping[str, Any]) -> None:
     unrequired_dependencies = [
         package_name for package_name, required in is_required.items() if not required
     ]
-    in_extras = [dep for group in poetry_conf["extras"].values() for dep in group]
+    in_extras = [
+        dep for group in poetry_conf.get("extras", {}).values() for dep in group
+    ]
     assert set(unrequired_dependencies) == set(in_extras)
 
 
@@ -76,7 +79,9 @@ def test_test_group_dependencies(poetry_conf: Mapping[str, Any]) -> None:
             "duckdb-engine",
             "freezegun",
             "langchain-core",
+            "langchain-standard-tests",
             "langchain-text-splitters",
+            "langchain-openai",
             "lark",
             "pandas",
             "pytest",
@@ -89,26 +94,7 @@ def test_test_group_dependencies(poetry_conf: Mapping[str, Any]) -> None:
             "responses",
             "syrupy",
             "requests-mock",
+            # TODO: temporary hack since cffi 1.17.1 doesn't work with py 3.9.
+            "cffi",
         ]
     )
-
-
-@pytest.mark.community
-def test_imports() -> None:
-    """Test that you can import all top level things okay."""
-    from langchain_community.callbacks import OpenAICallbackHandler  # noqa: F401
-    from langchain_community.chat_models import ChatOpenAI  # noqa: F401
-    from langchain_community.document_loaders import BSHTMLLoader  # noqa: F401
-    from langchain_community.embeddings import OpenAIEmbeddings  # noqa: F401
-    from langchain_community.llms import OpenAI  # noqa: F401
-    from langchain_community.retrievers import VespaRetriever  # noqa: F401
-    from langchain_community.tools import DuckDuckGoSearchResults  # noqa: F401
-    from langchain_community.utilities import (
-        SearchApiAPIWrapper,  # noqa: F401
-        SerpAPIWrapper,  # noqa: F401
-    )
-    from langchain_community.vectorstores import FAISS  # noqa: F401
-    from langchain_core.prompts import BasePromptTemplate  # noqa: F401
-
-    from langchain.agents import OpenAIFunctionsAgent  # noqa: F401
-    from langchain.chains import LLMChain  # noqa: F401

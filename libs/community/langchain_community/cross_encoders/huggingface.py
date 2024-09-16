@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Tuple
 
-from langchain_core.pydantic_v1 import BaseModel, Extra, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from langchain_community.cross_encoders.base import BaseCrossEncoder
 
@@ -23,7 +23,7 @@ class HuggingFaceCrossEncoder(BaseModel, BaseCrossEncoder):
             )
     """
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     model_name: str = DEFAULT_MODEL_NAME
     """Model name to use."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
@@ -45,10 +45,7 @@ class HuggingFaceCrossEncoder(BaseModel, BaseCrossEncoder):
             self.model_name, **self.model_kwargs
         )
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
 
     def score(self, text_pairs: List[Tuple[str, str]]) -> List[float]:
         """Compute similarity scores using a HuggingFace transformer model.
@@ -60,4 +57,8 @@ class HuggingFaceCrossEncoder(BaseModel, BaseCrossEncoder):
             List of scores, one for each pair.
         """
         scores = self.client.predict(text_pairs)
+        # Some models e.g bert-multilingual-passage-reranking-msmarco
+        # gives two score not_relevant and relevant as compare with the query.
+        if len(scores.shape) > 1:  # we are going to get the relevant scores
+            scores = map(lambda x: x[1], scores)
         return scores

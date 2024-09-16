@@ -32,9 +32,9 @@ from langchain_core.messages import (
     SystemMessageChunk,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str
 from langchain_core.utils.env import get_from_dict_or_env
+from pydantic import Field, SecretStr, model_validator
 
 from langchain_community.adapters.openai import convert_message_to_dict
 
@@ -58,7 +58,7 @@ def _convert_delta_to_message_chunk(
     elif role or default_class == ChatMessageChunk:
         return ChatMessageChunk(content=content, role=role)
     else:
-        return default_class(content=content)
+        return default_class(content=content)  # type: ignore[call-arg]
 
 
 def convert_dict_to_message(_dict: Any) -> BaseMessage:
@@ -81,7 +81,7 @@ def convert_dict_to_message(_dict: Any) -> BaseMessage:
 
 @deprecated(
     since="0.0.26",
-    removal="0.3",
+    removal="1.0",
     alternative_import="langchain_fireworks.ChatFireworks",
 )
 class ChatFireworks(BaseChatModel):
@@ -112,8 +112,9 @@ class ChatFireworks(BaseChatModel):
         """Get the namespace of the langchain object."""
         return ["langchain", "chat_models", "fireworks"]
 
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that api key in environment."""
         try:
             import fireworks.client

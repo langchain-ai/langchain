@@ -36,7 +36,7 @@ def test_numeric_field_schema_creation() -> None:
 
 def test_redis_vector_field_validation() -> None:
     """Test validation for RedisVectorField's datatype."""
-    from langchain_core.pydantic_v1 import ValidationError
+    from pydantic import ValidationError
 
     with pytest.raises(ValidationError):
         RedisVectorField(
@@ -58,7 +58,7 @@ def test_flat_vector_field_defaults() -> None:
         "algorithm": "FLAT",
     }
 
-    flat_vector = FlatVectorField(**flat_vector_field_data)
+    flat_vector = FlatVectorField(**flat_vector_field_data)  # type: ignore[arg-type]
     assert flat_vector.datatype == "FLOAT32"
     assert flat_vector.distance_metric == "COSINE"
     assert flat_vector.initial_cap is None
@@ -75,7 +75,7 @@ def test_flat_vector_field_optional_values() -> None:
         "block_size": 10,
     }
 
-    flat_vector = FlatVectorField(**flat_vector_field_data)
+    flat_vector = FlatVectorField(**flat_vector_field_data)  # type: ignore[arg-type]
     assert flat_vector.initial_cap == 1000
     assert flat_vector.block_size == 10
 
@@ -88,7 +88,7 @@ def test_hnsw_vector_field_defaults() -> None:
         "algorithm": "HNSW",
     }
 
-    hnsw_vector = HNSWVectorField(**hnsw_vector_field_data)
+    hnsw_vector = HNSWVectorField(**hnsw_vector_field_data)  # type: ignore[arg-type]
     assert hnsw_vector.datatype == "FLOAT32"
     assert hnsw_vector.distance_metric == "COSINE"
     assert hnsw_vector.initial_cap is None
@@ -110,7 +110,7 @@ def test_hnsw_vector_field_optional_values() -> None:
         "ef_runtime": 15,
         "epsilon": 0.05,
     }
-    hnsw_vector = HNSWVectorField(**hnsw_vector_field_data)
+    hnsw_vector = HNSWVectorField(**hnsw_vector_field_data)  # type: ignore[arg-type]
     assert hnsw_vector.initial_cap == 2000
     assert hnsw_vector.m == 10
     assert hnsw_vector.ef_construction == 250

@@ -1,4 +1,5 @@
 """Wrapper around LLMRails vector database."""
+
 from __future__ import annotations
 
 import json
@@ -10,8 +11,8 @@ from typing import Any, Iterable, List, Optional, Tuple
 import requests
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import Field
 from langchain_core.vectorstores import VectorStore, VectorStoreRetriever
+from pydantic import Field
 
 
 class LLMRails(VectorStore):

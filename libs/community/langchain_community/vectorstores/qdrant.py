@@ -22,6 +22,7 @@ from typing import (
 )
 
 import numpy as np
+from langchain_core._api.deprecation import deprecated
 from langchain_core.embeddings import Embeddings
 from langchain_core.runnables.config import run_in_executor
 from langchain_core.vectorstores import VectorStore
@@ -65,6 +66,7 @@ def sync_call_fallback(method: Callable) -> Callable:
     return wrapper
 
 
+@deprecated(since="0.0.37", removal="1.0", alternative_import="langchain_qdrant.Qdrant")
 class Qdrant(VectorStore):
     """`Qdrant` vector store.
 
@@ -81,8 +83,8 @@ class Qdrant(VectorStore):
             qdrant = Qdrant(client, collection_name, embedding_function)
     """
 
-    CONTENT_KEY = "page_content"
-    METADATA_KEY = "metadata"
+    CONTENT_KEY: str = "page_content"
+    METADATA_KEY: str = "metadata"
     VECTOR_NAME = None
 
     def __init__(
@@ -1677,7 +1679,7 @@ class Qdrant(VectorStore):
                     f"Existing Qdrant collection {collection_name} uses named vectors. "
                     f"If you want to reuse it, please set `vector_name` to any of the "
                     f"existing named vectors: "
-                    f"{', '.join(current_vector_config.keys())}."  # noqa
+                    f"{', '.join(current_vector_config.keys())}."
                     f"If you want to recreate the collection, set `force_recreate` "
                     f"parameter to `True`."
                 )
@@ -1842,7 +1844,7 @@ class Qdrant(VectorStore):
                     f"Existing Qdrant collection {collection_name} uses named vectors. "
                     f"If you want to reuse it, please set `vector_name` to any of the "
                     f"existing named vectors: "
-                    f"{', '.join(current_vector_config.keys())}."  # noqa
+                    f"{', '.join(current_vector_config.keys())}."
                     f"If you want to recreate the collection, set `force_recreate` "
                     f"parameter to `True`."
                 )

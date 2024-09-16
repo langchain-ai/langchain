@@ -55,7 +55,7 @@ class RecursiveJsonSplitter:
         Split json into maximum size dictionaries while preserving structure.
         """
         current_path = current_path or []
-        chunks = chunks or [{}]
+        chunks = chunks if chunks is not None else [{}]
         if isinstance(data, dict):
             for key, value in data.items():
                 new_path = current_path + [key]

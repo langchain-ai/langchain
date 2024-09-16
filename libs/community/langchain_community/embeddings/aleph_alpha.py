@@ -1,8 +1,8 @@
 from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, model_validator
 
 
 class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
@@ -37,7 +37,7 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
     compress_to_size: Optional[int] = None
     """Should the returned embeddings come back as an original 5120-dim vector, 
     or should it be compressed to 128-dim."""
-    normalize: Optional[bool] = None
+    normalize: bool = False
     """Should returned embeddings be normalized"""
     contextual_control_threshold: Optional[int] = None
     """Attention control parameters only apply to those tokens that have 
@@ -80,8 +80,9 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
     nice to other users
     by de-prioritizing your request below concurrent ones."""
 
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that api key and python package exists in environment."""
         aleph_alpha_api_key = get_from_dict_or_env(
             values, "aleph_alpha_api_key", "ALEPH_ALPHA_API_KEY"

@@ -1,13 +1,18 @@
 from __future__ import annotations
 
 import logging
-from typing import Optional
+from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
+from pydantic import BaseModel, Field, HttpUrl
 
 from langchain_community.tools.edenai.edenai_base_tool import EdenaiTool
 
 logger = logging.getLogger(__name__)
+
+
+class IDParsingInput(BaseModel):
+    query: HttpUrl = Field(description="url of the document to parse")
 
 
 class EdenAiParsingIDTool(EdenaiTool):
@@ -22,16 +27,17 @@ class EdenAiParsingIDTool(EdenaiTool):
 
     """
 
-    name = "edenai_identity_parsing"
+    name: str = "edenai_identity_parsing"
 
-    description = (
+    description: str = (
         "A wrapper around edenai Services Identity parsing. "
         "Useful for when you have to extract information from an ID Document "
         "Input should be the string url of the document to parse."
     )
+    args_schema: Type[BaseModel] = IDParsingInput
 
-    feature = "ocr"
-    subfeature = "identity_parser"
+    feature: str = "ocr"
+    subfeature: str = "identity_parser"
 
     language: Optional[str] = None
     """

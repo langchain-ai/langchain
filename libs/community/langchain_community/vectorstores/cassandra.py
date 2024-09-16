@@ -24,7 +24,7 @@ if typing.TYPE_CHECKING:
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.vectorstores import VectorStore
+from langchain_core.vectorstores import VectorStore, VectorStoreRetriever
 
 from langchain_community.utilities.cassandra import SetupMode
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
@@ -33,35 +33,6 @@ CVST = TypeVar("CVST", bound="Cassandra")
 
 
 class Cassandra(VectorStore):
-    """Apache Cassandra(R) for vector-store workloads.
-
-    To use it, you need a recent installation of the `cassio` library
-    and a Cassandra cluster / Astra DB instance supporting vector capabilities.
-
-    Visit the cassio.org website for extensive quickstarts and code examples.
-
-    Example:
-        .. code-block:: python
-
-                from langchain_community.vectorstores import Cassandra
-                from langchain_community.embeddings.openai import OpenAIEmbeddings
-
-                embeddings = OpenAIEmbeddings()
-                session = ...             # create your Cassandra session object
-                keyspace = 'my_keyspace'  # the keyspace should exist already
-                table_name = 'my_vector_store'
-                vectorstore = Cassandra(embeddings, session, keyspace, table_name)
-
-    Args:
-        embedding: Embedding function to use.
-        session: Cassandra driver session. If not provided, it is resolved from cassio.
-        keyspace: Cassandra key space. If not provided, it is resolved from cassio.
-        table_name: Cassandra table (required).
-        ttl_seconds: Optional time-to-live for the added texts.
-        body_index_options: Optional options used to create the body index.
-            Eg. body_index_options = [cassio.table.cql.STANDARD_ANALYZER]
-    """
-
     _embedding_dimension: Union[int, None]
 
     def _get_embedding_dimension(self) -> int:
@@ -88,7 +59,50 @@ class Cassandra(VectorStore):
         *,
         body_index_options: Optional[List[Tuple[str, Any]]] = None,
         setup_mode: SetupMode = SetupMode.SYNC,
+        metadata_indexing: Union[Tuple[str, Iterable[str]], str] = "all",
     ) -> None:
+        """Apache Cassandra(R) for vector-store workloads.
+
+        To use it, you need a recent installation of the `cassio` library
+        and a Cassandra cluster / Astra DB instance supporting vector capabilities.
+
+        Visit the cassio.org website for extensive quickstarts and code examples.
+
+        Example:
+            .. code-block:: python
+
+                    from langchain_community.vectorstores import Cassandra
+                    from langchain_openai import OpenAIEmbeddings
+
+                    embeddings = OpenAIEmbeddings()
+                    session = ...             # create your Cassandra session object
+                    keyspace = 'my_keyspace'  # the keyspace should exist already
+                    table_name = 'my_vector_store'
+                    vectorstore = Cassandra(embeddings, session, keyspace, table_name)
+
+        Args:
+            embedding: Embedding function to use.
+            session: Cassandra driver session. If not provided, it is resolved from
+                cassio.
+            keyspace: Cassandra keyspace. If not provided, it is resolved from cassio.
+            table_name: Cassandra table (required).
+            ttl_seconds: Optional time-to-live for the added texts.
+            body_index_options: Optional options used to create the body index.
+                Eg. body_index_options = [cassio.table.cql.STANDARD_ANALYZER]
+            setup_mode: mode used to create the Cassandra table (SYNC,
+                ASYNC or OFF).
+            metadata_indexing: Optional specification of a metadata indexing policy,
+                i.e. to fine-tune which of the metadata fields are indexed.
+                It can be a string ("all" or "none"), or a 2-tuple. The following
+                means that all fields except 'f1', 'f2' ... are NOT indexed:
+                    metadata_indexing=("allowlist", ["f1", "f2", ...])
+                The following means all fields EXCEPT 'g1', 'g2', ... are indexed:
+                    metadata_indexing("denylist", ["g1", "g2", ...])
+                The default is to index every metadata field.
+                Note: if you plan to have massive unique text metadata entries,
+                consider not indexing them for performance
+                (and to overcome max-length limitations).
+        """
         try:
             from cassio.table import MetadataVectorCassandraTable
         except (ImportError, ModuleNotFoundError):
@@ -123,7 +137,7 @@ class Cassandra(VectorStore):
             keyspace=keyspace,
             table=table_name,
             vector_dimension=embedding_dimension,
-            metadata_indexing="all",
+            metadata_indexing=metadata_indexing,
             primary_key_type="TEXT",
             skip_provisioning=setup_mode == SetupMode.OFF,
             **kwargs,
@@ -164,9 +178,19 @@ class Cassandra(VectorStore):
         await self.table.aclear()
 
     def delete_by_document_id(self, document_id: str) -> None:
+        """Delete by document ID.
+
+        Args:
+            document_id: the document ID to delete.
+        """
         return self.table.delete(row_id=document_id)
 
     async def adelete_by_document_id(self, document_id: str) -> None:
+        """Delete by document ID.
+
+        Args:
+            document_id: the document ID to delete.
+        """
         return await self.table.adelete(row_id=document_id)
 
     def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
@@ -370,8 +394,8 @@ class Cassandra(VectorStore):
         """Return docs most similar to embedding vector.
 
         Args:
-            embedding (str): Embedding to look up documents similar to.
-            k (int): Number of Documents to return. Defaults to 4.
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
             filter: Filter on the metadata to apply.
             body_search: Document textual search terms to apply.
                 Only supported by Astra DB at the moment.
@@ -399,6 +423,17 @@ class Cassandra(VectorStore):
         filter: Optional[Dict[str, str]] = None,
         body_search: Optional[Union[str, List[str]]] = None,
     ) -> List[Tuple[Document, float, str]]:
+        """Return docs most similar to query.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Filter on the metadata to apply.
+            body_search: Document textual search terms to apply.
+                Only supported by Astra DB at the moment.
+        Returns:
+            List of (Document, score, id), the most similar to the query vector.
+        """
         embedding_vector = self.embedding.embed_query(query)
         return self.similarity_search_with_score_id_by_vector(
             embedding=embedding_vector,
@@ -414,6 +449,17 @@ class Cassandra(VectorStore):
         filter: Optional[Dict[str, str]] = None,
         body_search: Optional[Union[str, List[str]]] = None,
     ) -> List[Tuple[Document, float, str]]:
+        """Return docs most similar to query.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Filter on the metadata to apply.
+            body_search: Document textual search terms to apply.
+                Only supported by Astra DB at the moment.
+        Returns:
+            List of (Document, score, id), the most similar to the query vector.
+        """
         embedding_vector = await self.embedding.aembed_query(query)
         return await self.asimilarity_search_with_score_id_by_vector(
             embedding=embedding_vector,
@@ -461,8 +507,8 @@ class Cassandra(VectorStore):
         """Return docs most similar to embedding vector.
 
         Args:
-            embedding (str): Embedding to look up documents similar to.
-            k (int): Number of Documents to return. Defaults to 4.
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
             filter: Filter on the metadata to apply.
             body_search: Document textual search terms to apply.
                 Only supported by Astra DB at the moment.
@@ -491,6 +537,17 @@ class Cassandra(VectorStore):
         body_search: Optional[Union[str, List[str]]] = None,
         **kwargs: Any,
     ) -> List[Document]:
+        """Return docs most similar to query.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Filter on the metadata to apply.
+            body_search: Document textual search terms to apply.
+                Only supported by Astra DB at the moment.
+        Returns:
+            List of Document, the most similar to the query vector.
+        """
         embedding_vector = self.embedding.embed_query(query)
         return self.similarity_search_by_vector(
             embedding_vector,
@@ -507,6 +564,17 @@ class Cassandra(VectorStore):
         body_search: Optional[Union[str, List[str]]] = None,
         **kwargs: Any,
     ) -> List[Document]:
+        """Return docs most similar to query.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Filter on the metadata to apply.
+            body_search: Document textual search terms to apply.
+                Only supported by Astra DB at the moment.
+        Returns:
+            List of Document, the most similar to the query vector.
+        """
         embedding_vector = await self.embedding.aembed_query(query)
         return await self.asimilarity_search_by_vector(
             embedding_vector,
@@ -523,6 +591,17 @@ class Cassandra(VectorStore):
         body_search: Optional[Union[str, List[str]]] = None,
         **kwargs: Any,
     ) -> List[Document]:
+        """Return docs most similar to embedding vector.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Filter on the metadata to apply.
+            body_search: Document textual search terms to apply.
+                Only supported by Astra DB at the moment.
+        Returns:
+            List of Document, the most similar to the query vector.
+        """
         return [
             doc
             for doc, _ in self.similarity_search_with_score_by_vector(
@@ -541,6 +620,17 @@ class Cassandra(VectorStore):
         body_search: Optional[Union[str, List[str]]] = None,
         **kwargs: Any,
     ) -> List[Document]:
+        """Return docs most similar to embedding vector.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Filter on the metadata to apply.
+            body_search: Document textual search terms to apply.
+                Only supported by Astra DB at the moment.
+        Returns:
+            List of Document, the most similar to the query vector.
+        """
         return [
             doc
             for doc, _ in await self.asimilarity_search_with_score_by_vector(
@@ -558,6 +648,17 @@ class Cassandra(VectorStore):
         filter: Optional[Dict[str, str]] = None,
         body_search: Optional[Union[str, List[str]]] = None,
     ) -> List[Tuple[Document, float]]:
+        """Return docs most similar to query.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Filter on the metadata to apply.
+            body_search: Document textual search terms to apply.
+                Only supported by Astra DB at the moment.
+        Returns:
+            List of (Document, score), the most similar to the query vector.
+        """
         embedding_vector = self.embedding.embed_query(query)
         return self.similarity_search_with_score_by_vector(
             embedding_vector,
@@ -573,6 +674,17 @@ class Cassandra(VectorStore):
         filter: Optional[Dict[str, str]] = None,
         body_search: Optional[Union[str, List[str]]] = None,
     ) -> List[Tuple[Document, float]]:
+        """Return docs most similar to query.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Filter on the metadata to apply.
+            body_search: Document textual search terms to apply.
+                Only supported by Astra DB at the moment.
+        Returns:
+            List of (Document, score), the most similar to the query vector.
+        """
         embedding_vector = await self.embedding.aembed_query(query)
         return await self.asimilarity_search_with_score_by_vector(
             embedding_vector,
@@ -785,6 +897,7 @@ class Cassandra(VectorStore):
         batch_size: int = 16,
         ttl_seconds: Optional[int] = None,
         body_index_options: Optional[List[Tuple[str, Any]]] = None,
+        metadata_indexing: Union[Tuple[str, Iterable[str]], str] = "all",
         **kwargs: Any,
     ) -> CVST:
         """Create a Cassandra vectorstore from raw texts.
@@ -815,6 +928,7 @@ class Cassandra(VectorStore):
             table_name=table_name,
             ttl_seconds=ttl_seconds,
             body_index_options=body_index_options,
+            metadata_indexing=metadata_indexing,
         )
         store.add_texts(
             texts=texts, metadatas=metadatas, ids=ids, batch_size=batch_size
@@ -835,6 +949,7 @@ class Cassandra(VectorStore):
         concurrency: int = 16,
         ttl_seconds: Optional[int] = None,
         body_index_options: Optional[List[Tuple[str, Any]]] = None,
+        metadata_indexing: Union[Tuple[str, Iterable[str]], str] = "all",
         **kwargs: Any,
     ) -> CVST:
         """Create a Cassandra vectorstore from raw texts.
@@ -866,6 +981,7 @@ class Cassandra(VectorStore):
             ttl_seconds=ttl_seconds,
             setup_mode=SetupMode.ASYNC,
             body_index_options=body_index_options,
+            metadata_indexing=metadata_indexing,
         )
         await store.aadd_texts(
             texts=texts, metadatas=metadatas, ids=ids, concurrency=concurrency
@@ -885,6 +1001,7 @@ class Cassandra(VectorStore):
         batch_size: int = 16,
         ttl_seconds: Optional[int] = None,
         body_index_options: Optional[List[Tuple[str, Any]]] = None,
+        metadata_indexing: Union[Tuple[str, Iterable[str]], str] = "all",
         **kwargs: Any,
     ) -> CVST:
         """Create a Cassandra vectorstore from a document list.
@@ -920,6 +1037,7 @@ class Cassandra(VectorStore):
             batch_size=batch_size,
             ttl_seconds=ttl_seconds,
             body_index_options=body_index_options,
+            metadata_indexing=metadata_indexing,
             **kwargs,
         )
 
@@ -936,6 +1054,7 @@ class Cassandra(VectorStore):
         concurrency: int = 16,
         ttl_seconds: Optional[int] = None,
         body_index_options: Optional[List[Tuple[str, Any]]] = None,
+        metadata_indexing: Union[Tuple[str, Iterable[str]], str] = "all",
         **kwargs: Any,
     ) -> CVST:
         """Create a Cassandra vectorstore from a document list.
@@ -971,5 +1090,80 @@ class Cassandra(VectorStore):
             concurrency=concurrency,
             ttl_seconds=ttl_seconds,
             body_index_options=body_index_options,
+            metadata_indexing=metadata_indexing,
+            **kwargs,
+        )
+
+    def as_retriever(
+        self,
+        search_type: str = "similarity",
+        search_kwargs: Optional[Dict[str, Any]] = None,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> VectorStoreRetriever:
+        """Return VectorStoreRetriever initialized from this VectorStore.
+
+        Args:
+            search_type: Defines the type of search that
+                the Retriever should perform.
+                Can be "similarity" (default), "mmr", or
+                "similarity_score_threshold".
+            search_kwargs: Keyword arguments to pass to the
+                search function. Can include things like:
+                    k: Amount of documents to return (Default: 4)
+                    score_threshold: Minimum relevance threshold
+                        for similarity_score_threshold
+                    fetch_k: Amount of documents to pass to MMR algorithm (Default: 20)
+                    lambda_mult: Diversity of results returned by MMR;
+                        1 for minimum diversity and 0 for maximum. (Default: 0.5)
+                    filter: Filter by document metadata
+            tags: List of tags associated with the retriever.
+            metadata: Metadata associated with the retriever.
+            kwargs: Other arguments passed to the VectorStoreRetriever init.
+
+        Returns:
+            Retriever for VectorStore.
+
+        Examples:
+
+        .. code-block:: python
+
+            # Retrieve more documents with higher diversity
+            # Useful if your dataset has many similar documents
+            docsearch.as_retriever(
+                search_type="mmr",
+                search_kwargs={'k': 6, 'lambda_mult': 0.25}
+            )
+
+            # Fetch more documents for the MMR algorithm to consider
+            # But only return the top 5
+            docsearch.as_retriever(
+                search_type="mmr",
+                search_kwargs={'k': 5, 'fetch_k': 50}
+            )
+
+            # Only retrieve documents that have a relevance score
+            # Above a certain threshold
+            docsearch.as_retriever(
+                search_type="similarity_score_threshold",
+                search_kwargs={'score_threshold': 0.8}
+            )
+
+            # Only get the single most similar document from the dataset
+            docsearch.as_retriever(search_kwargs={'k': 1})
+
+            # Use a filter to only retrieve documents from a specific paper
+            docsearch.as_retriever(
+                search_kwargs={'filter': {'paper_title':'GPT-4 Technical Report'}}
+            )
+        """
+        _tags = tags or [] + self._get_retriever_tags()
+        return VectorStoreRetriever(
+            vectorstore=self,
+            search_type=search_type,
+            search_kwargs=search_kwargs or {},
+            tags=_tags,
+            metadata=metadata,
             **kwargs,
         )

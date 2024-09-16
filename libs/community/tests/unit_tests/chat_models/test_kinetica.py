@@ -1,6 +1,5 @@
 """Test `Kinetica` chat models"""
 
-
 import logging
 from typing import Any
 
@@ -12,9 +11,10 @@ LOG = logging.getLogger(__name__)
 
 
 class TestChatKinetica:
-    test_ctx_json = """
+    test_ctx_json: str = """
     {
         "payload":{
+            "question": "foo",
             "context":[
                 {
                     "table":"demo.test_profiles",
@@ -55,7 +55,7 @@ class TestChatKinetica:
 
         monkeypatch.setattr(ChatKinetica, "_execute_sql", patch_execute_sql)
 
-        kinetica_llm = ChatKinetica()
+        kinetica_llm = ChatKinetica()  # type: ignore[call-arg]
 
         test_messages = kinetica_llm.load_messages_from_context("test")
         LOG.info(f"test_messages: {test_messages}")

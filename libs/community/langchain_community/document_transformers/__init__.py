@@ -45,6 +45,9 @@ if TYPE_CHECKING:
     from langchain_community.document_transformers.long_context_reorder import (
         LongContextReorder,
     )
+    from langchain_community.document_transformers.markdownify import (
+        MarkdownifyTransformer,
+    )
     from langchain_community.document_transformers.nuclia_text_transform import (
         NucliaTextTransformer,
     )
@@ -62,6 +65,7 @@ __all__ = [
     "GoogleTranslateTransformer",
     "Html2TextTransformer",
     "LongContextReorder",
+    "MarkdownifyTransformer",
     "NucliaTextTransformer",
     "OpenAIMetadataTagger",
     "get_stateful_documents",
@@ -77,6 +81,7 @@ _module_lookup = {
     "GoogleTranslateTransformer": "langchain_community.document_transformers.google_translate",  # noqa: E501
     "Html2TextTransformer": "langchain_community.document_transformers.html2text",
     "LongContextReorder": "langchain_community.document_transformers.long_context_reorder",  # noqa: E501
+    "MarkdownifyTransformer": "langchain_community.document_transformers.markdownify",
     "NucliaTextTransformer": "langchain_community.document_transformers.nuclia_text_transform",  # noqa: E501
     "OpenAIMetadataTagger": "langchain_community.document_transformers.openai_functions",  # noqa: E501
     "get_stateful_documents": "langchain_community.document_transformers.embeddings_redundant_filter",  # noqa: E501
@@ -88,6 +93,3 @@ def __getattr__(name: str) -> Any:
         module = importlib.import_module(_module_lookup[name])
         return getattr(module, name)
     raise AttributeError(f"module {__name__} has no attribute {name}")
-
-
-__all__ = list(_module_lookup.keys())

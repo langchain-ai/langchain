@@ -1,18 +1,20 @@
 """Chain for interacting with Elasticsearch Database."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
-from langchain_core.output_parsers import BaseLLMOutputParser
+from langchain_core.output_parsers import BaseOutputParser, StrOutputParser
 from langchain_core.output_parsers.json import SimpleJsonOutputParser
 from langchain_core.prompts import BasePromptTemplate
-from langchain_core.pydantic_v1 import Extra, root_validator
+from langchain_core.runnables import Runnable
+from pydantic import ConfigDict, model_validator
+from typing_extensions import Self
 
 from langchain.chains.base import Chain
 from langchain.chains.elasticsearch_database.prompts import ANSWER_PROMPT, DSL_PROMPT
-from langchain.chains.llm import LLMChain
 
 if TYPE_CHECKING:
     from elasticsearch import Elasticsearch
@@ -34,11 +36,11 @@ class ElasticsearchDatabaseChain(Chain):
             db_chain = ElasticsearchDatabaseChain.from_llm(OpenAI(), database)
     """
 
-    query_chain: LLMChain
+    query_chain: Runnable
     """Chain for creating the ES query."""
-    answer_chain: LLMChain
+    answer_chain: Runnable
     """Chain for answering the user question."""
-    database: Any
+    database: Any = None
     """Elasticsearch database to connect to of type elasticsearch.Elasticsearch."""
     top_k: int = 10
     """Number of results to return from the query"""
@@ -50,19 +52,18 @@ class ElasticsearchDatabaseChain(Chain):
     return_intermediate_steps: bool = False
     """Whether or not to return the intermediate steps along with the final answer."""
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
-
-    @root_validator()
-    def validate_indices(cls, values: dict) -> dict:
-        if values["include_indices"] and values["ignore_indices"]:
+    @model_validator(mode="after")
+    def validate_indices(self) -> Self:
+        if self.include_indices and self.ignore_indices:
             raise ValueError(
                 "Cannot specify both 'include_indices' and 'ignore_indices'."
             )
-        return values
+        return self
 
     @property
     def input_keys(self) -> List[str]:
@@ -136,9 +137,9 @@ class ElasticsearchDatabaseChain(Chain):
         intermediate_steps: List = []
         try:
             intermediate_steps.append(query_inputs)  # input: es generation
-            es_cmd = self.query_chain.run(
-                callbacks=_run_manager.get_child(),
-                **query_inputs,
+            es_cmd = self.query_chain.invoke(
+                query_inputs,
+                config={"callbacks": _run_manager.get_child()},
             )
 
             _run_manager.on_text(es_cmd, color="green", verbose=self.verbose)
@@ -155,9 +156,9 @@ class ElasticsearchDatabaseChain(Chain):
             _run_manager.on_text("\nAnswer:", verbose=self.verbose)
             answer_inputs: dict = {"data": result, "input": input_text}
             intermediate_steps.append(answer_inputs)  # input: final answer
-            final_result = self.answer_chain.run(
-                callbacks=_run_manager.get_child(),
-                **answer_inputs,
+            final_result = self.answer_chain.invoke(
+                answer_inputs,
+                config={"callbacks": _run_manager.get_child()},
             )
 
             intermediate_steps.append(final_result)  # output: final answer
@@ -184,7 +185,7 @@ class ElasticsearchDatabaseChain(Chain):
         *,
         query_prompt: Optional[BasePromptTemplate] = None,
         answer_prompt: Optional[BasePromptTemplate] = None,
-        query_output_parser: Optional[BaseLLMOutputParser] = None,
+        query_output_parser: Optional[BaseOutputParser] = None,
         **kwargs: Any,
     ) -> ElasticsearchDatabaseChain:
         """Convenience method to construct ElasticsearchDatabaseChain from an LLM.
@@ -196,15 +197,13 @@ class ElasticsearchDatabaseChain(Chain):
             answer_prompt: The prompt to use for answering user question given data.
             query_output_parser: The output parser to use for parsing model-generated
                 ES query. Defaults to SimpleJsonOutputParser.
-            **kwargs: Additional arguments to pass to the constructor.
+            kwargs: Additional arguments to pass to the constructor.
         """
         query_prompt = query_prompt or DSL_PROMPT
         query_output_parser = query_output_parser or SimpleJsonOutputParser()
-        query_chain = LLMChain(
-            llm=llm, prompt=query_prompt, output_parser=query_output_parser
-        )
+        query_chain = query_prompt | llm | query_output_parser
         answer_prompt = answer_prompt or ANSWER_PROMPT
-        answer_chain = LLMChain(llm=llm, prompt=answer_prompt)
+        answer_chain = answer_prompt | llm | StrOutputParser()
         return cls(
             query_chain=query_chain,
             answer_chain=answer_chain,

@@ -8,8 +8,8 @@ import requests
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
-from langchain_core.pydantic_v1 import Extra
 from langchain_core.utils import get_pydantic_field_names
+from pydantic import ConfigDict
 
 
 class Llamafile(LLM):
@@ -113,10 +113,9 @@ class Llamafile(LLM):
     mirostat_eta: float = 0.1
     """Set the Mirostat learning rate, parameter eta. Default: 0.1."""
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @property
     def _llm_type(self) -> str:

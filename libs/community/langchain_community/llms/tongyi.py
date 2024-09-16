@@ -24,8 +24,8 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
-from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.utils import get_from_dict_or_env, pre_init
+from pydantic import Field
 from requests.exceptions import HTTPError
 from tenacity import (
     before_sleep_log,
@@ -55,17 +55,17 @@ def _create_retry_decorator(llm: Tongyi) -> Callable[[Any], Any]:
 
 def check_response(resp: Any) -> Any:
     """Check the response from the completion call."""
-    if resp.status_code == 200:
+    if resp["status_code"] == 200:
         return resp
-    elif resp.status_code in [400, 401]:
+    elif resp["status_code"] in [400, 401]:
         raise ValueError(
-            f"status_code: {resp.status_code} \n "
-            f"code: {resp.code} \n message: {resp.message}"
+            f"status_code: {resp['status_code']} \n "
+            f"code: {resp['code']} \n message: {resp['message']}"
         )
     else:
         raise HTTPError(
-            f"HTTP error occurred: status_code: {resp.status_code} \n "
-            f"code: {resp.code} \n message: {resp.message}",
+            f"HTTP error occurred: status_code: {resp['status_code']} \n "
+            f"code: {resp['code']} \n message: {resp['message']}",
             response=resp,
         )
 
@@ -158,25 +158,88 @@ async def agenerate_with_last_element_mark(
 
 
 class Tongyi(BaseLLM):
-    """Tongyi Qwen large language models.
+    """Tongyi completion model integration.
 
-    To use, you should have the ``dashscope`` python package installed, and the
-    environment variable ``DASHSCOPE_API_KEY`` set with your API key, or pass
-    it as a named parameter to the constructor.
+    Setup:
+        Install ``dashscope`` and set environment variables ``DASHSCOPE_API_KEY``.
 
-    Example:
+        .. code-block:: bash
+
+            pip install dashscope
+            export DASHSCOPE_API_KEY="your-api-key"
+
+    Key init args — completion params:
+        model: str
+            Name of Tongyi model to use.
+        top_p: float
+            Total probability mass of tokens to consider at each step.
+        streaming: bool
+            Whether to stream the results or not.
+
+    Key init args — client params:
+        api_key: Optional[str]
+            Dashscope API KEY. If not passed in will be read from env var DASHSCOPE_API_KEY.
+        max_retries: int
+            Maximum number of retries to make when generating.
+
+    See full list of supported init args and their descriptions in the params section.
+
+    Instantiate:
         .. code-block:: python
 
             from langchain_community.llms import Tongyi
-            tongyi = tongyi()
-    """
+
+            llm = Tongyi(
+                model="qwen-max",
+                # top_p="...",
+                # api_key="...",
+                # other params...
+            )
+
+    Invoke:
+        .. code-block:: python
+
+            input_text = "用50个字左右阐述，生命的意义在于"
+            llm.invoke(input_text)
+
+        .. code-block:: python
+
+            '探索、成长、连接与爱——在有限的时间里，不断学习、体验、贡献并寻找与世界和谐共存之道，让每一刻充满价值与意义。'
+
+    Stream:
+        .. code-block:: python
+
+            for chunk in llm.stream(input_text):
+                print(chunk)
+
+        .. code-block:: python
+
+            探索 | 、 | 成长 | 、连接与爱。 | 在有限的时间里，寻找个人价值， | 贡献于他人，共同体验世界的美好 | ，让世界因自己的存在而更 | 温暖。
+
+    Async:
+        .. code-block:: python
+
+            await llm.ainvoke(input_text)
+
+            # stream:
+            # async for chunk in llm.astream(input_text):
+            #    print(chunk)
+
+            # batch:
+            # await llm.abatch([input_text])
+
+        .. code-block:: python
+
+            '探索、成长、连接与爱。在有限的时间里，寻找个人价值，贡献于他人和社会，体验丰富多彩的情感与经历，不断学习进步，让世界因自己的存在而更美好。'
+
+    """  # noqa: E501
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
         return {"dashscope_api_key": "DASHSCOPE_API_KEY"}
 
-    client: Any  #: :meta private:
-    model_name: str = "qwen-plus"
+    client: Any = None  #: :meta private:
+    model_name: str = Field(default="qwen-plus", alias="model")
 
     """Model name to use."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
@@ -184,7 +247,7 @@ class Tongyi(BaseLLM):
     top_p: float = 0.8
     """Total probability mass of tokens to consider at each step."""
 
-    dashscope_api_key: Optional[str] = None
+    dashscope_api_key: Optional[str] = Field(default=None, alias="api_key")
     """Dashscope api key provide by Alibaba Cloud."""
 
     streaming: bool = False
@@ -198,11 +261,11 @@ class Tongyi(BaseLLM):
         """Return type of llm."""
         return "tongyi"
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["dashscope_api_key"] = get_from_dict_or_env(
-            values, "dashscope_api_key", "DASHSCOPE_API_KEY"
+            values, ["dashscope_api_key", "api_key"], "DASHSCOPE_API_KEY"
         )
         try:
             import dashscope

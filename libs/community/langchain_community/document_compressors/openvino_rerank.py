@@ -5,7 +5,7 @@ import numpy as np
 from langchain_core.callbacks import Callbacks
 from langchain_core.documents import Document
 from langchain_core.documents.compressor import BaseDocumentCompressor
-from langchain_core.pydantic_v1 import Field
+from pydantic import Field
 
 
 class RerankRequest:
@@ -21,9 +21,9 @@ class OpenVINOReranker(BaseDocumentCompressor):
     OpenVINO rerank models.
     """
 
-    ov_model: Any
+    ov_model: Any = None
     """OpenVINO model object."""
-    tokenizer: Any
+    tokenizer: Any = None
     """Tokenizer for embedding model."""
     model_name_or_path: str
     """HuggingFace model id."""
@@ -114,9 +114,19 @@ class OpenVINOReranker(BaseDocumentCompressor):
         passages = request.passages
 
         query_passage_pairs = [[query, passage["text"]] for passage in passages]
-        input_tensors = self.tokenizer(
-            query_passage_pairs, padding=True, truncation=True, return_tensors="pt"
-        )
+        length = self.ov_model.request.inputs[0].get_partial_shape()[1]
+        if length.is_dynamic:
+            input_tensors = self.tokenizer(
+                query_passage_pairs, padding=True, truncation=True, return_tensors="pt"
+            )
+        else:
+            input_tensors = self.tokenizer(
+                query_passage_pairs,
+                padding="max_length",
+                max_length=length.get_length(),
+                truncation=True,
+                return_tensors="pt",
+            )
 
         outputs = self.ov_model(**input_tensors, return_dict=True)
         if outputs[0].shape[1] > 1:

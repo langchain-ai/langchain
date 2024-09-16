@@ -1,34 +1,44 @@
 import json
+import uuid
 from operator import itemgetter
 from typing import (
     Any,
     Callable,
     Dict,
     List,
-    Literal,
     Optional,
     Sequence,
     Type,
     TypedDict,
     TypeVar,
     Union,
-    overload,
 )
 
 from langchain_community.chat_models.ollama import ChatOllama
-from langchain_core.callbacks import CallbackManagerForLLMRun
+from langchain_core._api import deprecated
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain_core.language_models import LanguageModelInput
-from langchain_core.messages import AIMessage, BaseMessage
+from langchain_core.messages import (
+    AIMessage,
+    BaseMessage,
+    ToolCall,
+)
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.json import JsonOutputParser
 from langchain_core.output_parsers.pydantic import PydanticOutputParser
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.prompts import SystemMessagePromptTemplate
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import Runnable, RunnableLambda
 from langchain_core.runnables.base import RunnableMap
 from langchain_core.runnables.passthrough import RunnablePassthrough
 from langchain_core.tools import BaseTool
+from langchain_core.utils.pydantic import is_basemodel_instance, is_basemodel_subclass
+from pydantic import (
+    BaseModel,
+)
 
 DEFAULT_SYSTEM_TEMPLATE = """You have access to the following tools:
 
@@ -60,28 +70,41 @@ DEFAULT_RESPONSE_FUNCTION = {
 }
 
 _BM = TypeVar("_BM", bound=BaseModel)
-_DictOrPydanticClass = Union[Dict[str, Any], Type[_BM]]
 _DictOrPydantic = Union[Dict, _BM]
 
 
 def _is_pydantic_class(obj: Any) -> bool:
     return isinstance(obj, type) and (
-        issubclass(obj, BaseModel) or BaseModel in obj.__bases__
+        is_basemodel_subclass(obj) or BaseModel in obj.__bases__
     )
 
 
 def convert_to_ollama_tool(tool: Any) -> Dict:
     """Convert a tool to an Ollama tool."""
+    description = None
     if _is_pydantic_class(tool):
-        schema = tool.construct().schema()
-        definition = {"name": schema["title"], "properties": schema["properties"]}
-        if "required" in schema:
-            definition["required"] = schema["required"]
+        schema = tool.model_construct().model_json_schema()
+        name = schema["title"]
+    elif isinstance(tool, BaseTool):
+        schema = tool.tool_call_schema.model_json_schema()
+        name = tool.get_name()
+        description = tool.description
+    elif is_basemodel_instance(tool):
+        schema = tool.get_input_schema().model_json_schema()
+        name = tool.get_name()
+        description = tool.description
+    elif isinstance(tool, dict) and "name" in tool and "parameters" in tool:
+        return tool.copy()
+    else:
+        raise ValueError(
+            f"""Cannot convert {tool} to an Ollama tool. 
+            {tool} needs to be a Pydantic class, model, or a dict."""
+        )
+    definition = {"name": name, "parameters": schema}
+    if description:
+        definition["description"] = description
 
-        return definition
-    raise ValueError(
-        f"Cannot convert {tool} to an Ollama tool. {tool} needs to be a Pydantic model."
-    )
+    return definition
 
 
 class _AllReturnType(TypedDict):
@@ -94,19 +117,25 @@ def parse_response(message: BaseMessage) -> str:
     """Extract `function_call` from `AIMessage`."""
     if isinstance(message, AIMessage):
         kwargs = message.additional_kwargs
-        if "function_call" in kwargs:
+        tool_calls = message.tool_calls
+        if len(tool_calls) > 0:
+            tool_call = tool_calls[-1]
+            args = tool_call.get("args")
+            return json.dumps(args)
+        elif "function_call" in kwargs:
             if "arguments" in kwargs["function_call"]:
                 return kwargs["function_call"]["arguments"]
             raise ValueError(
                 f"`arguments` missing from `function_call` within AIMessage: {message}"
             )
-        raise ValueError(
-            "`function_call` missing from `additional_kwargs` "
-            f"within AIMessage: {message}"
-        )
+        else:
+            raise ValueError("`tool_calls` missing from AIMessage: {message}")
     raise ValueError(f"`message` is not an instance of `AIMessage`: {message}")
 
 
+@deprecated(  # type: ignore[arg-type]
+    since="0.0.64", removal="1.0", alternative_import="langchain_ollama.ChatOllama"
+)
 class OllamaFunctions(ChatOllama):
     """Function chat model that uses Ollama API."""
 
@@ -122,33 +151,13 @@ class OllamaFunctions(ChatOllama):
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         return self.bind(functions=tools, **kwargs)
 
-    @overload
     def with_structured_output(
         self,
-        schema: Optional[_DictOrPydanticClass] = None,
-        *,
-        include_raw: Literal[True] = True,
-        **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, _AllReturnType]:
-        ...
-
-    @overload
-    def with_structured_output(
-        self,
-        schema: Optional[_DictOrPydanticClass] = None,
-        *,
-        include_raw: Literal[False] = False,
-        **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
-        ...
-
-    def with_structured_output(
-        self,
-        schema: Optional[_DictOrPydanticClass] = None,
+        schema: Union[Dict, Type[BaseModel]],
         *,
         include_raw: bool = False,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
+    ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
         """Model wrapper that returns outputs formatted to match the given schema.
 
         Args:
@@ -183,7 +192,7 @@ class OllamaFunctions(ChatOllama):
             .. code-block:: python
 
                 from langchain_experimental.llms import OllamaFunctions
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
 
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
@@ -204,7 +213,7 @@ class OllamaFunctions(ChatOllama):
             .. code-block:: python
 
                 from langchain_experimental.llms import OllamaFunctions
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
 
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
@@ -225,7 +234,7 @@ class OllamaFunctions(ChatOllama):
             .. code-block:: python
 
                 from langchain_experimental.llms import OllamaFunctions, convert_to_ollama_tool
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
 
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
@@ -254,8 +263,8 @@ class OllamaFunctions(ChatOllama):
             )
         llm = self.bind_tools(tools=[schema], format="json")
         if is_pydantic_schema:
-            output_parser: OutputParserLike = PydanticOutputParser(
-                pydantic_object=schema
+            output_parser: OutputParserLike = PydanticOutputParser(  # type: ignore[type-var]
+                pydantic_object=schema  # type: ignore[arg-type]
             )
         else:
             output_parser = JsonOutputParser()
@@ -293,6 +302,101 @@ class OllamaFunctions(ChatOllama):
                     "matching function in `functions`."
                 )
             del kwargs["function_call"]
+        functions = [convert_to_ollama_tool(fn) for fn in functions]
+        functions.append(DEFAULT_RESPONSE_FUNCTION)
+        system_message_prompt_template = SystemMessagePromptTemplate.from_template(
+            self.tool_system_prompt_template
+        )
+        system_message = system_message_prompt_template.format(
+            tools=json.dumps(functions, indent=2)
+        )
+        response_message = super()._generate(
+            [system_message] + messages, stop=stop, run_manager=run_manager, **kwargs
+        )
+        chat_generation_content = response_message.generations[0].text
+        if not isinstance(chat_generation_content, str):
+            raise ValueError("OllamaFunctions does not support non-string output.")
+        try:
+            parsed_chat_result = json.loads(chat_generation_content)
+        except json.JSONDecodeError:
+            raise ValueError(
+                f"""'{self.model}' did not respond with valid JSON. 
+                Please try again. 
+                Response: {chat_generation_content}"""
+            )
+        called_tool_name = (
+            parsed_chat_result["tool"] if "tool" in parsed_chat_result else None
+        )
+        called_tool = next(
+            (fn for fn in functions if fn["name"] == called_tool_name), None
+        )
+        if (
+            called_tool is None
+            or called_tool["name"] == DEFAULT_RESPONSE_FUNCTION["name"]
+        ):
+            if (
+                "tool_input" in parsed_chat_result
+                and "response" in parsed_chat_result["tool_input"]
+            ):
+                response = parsed_chat_result["tool_input"]["response"]
+            elif "response" in parsed_chat_result:
+                response = parsed_chat_result["response"]
+            else:
+                raise ValueError(
+                    f"Failed to parse a response from {self.model} output: "
+                    f"{chat_generation_content}"
+                )
+            return ChatResult(
+                generations=[
+                    ChatGeneration(
+                        message=AIMessage(
+                            content=response,
+                        )
+                    )
+                ]
+            )
+
+        called_tool_arguments = (
+            parsed_chat_result["tool_input"]
+            if "tool_input" in parsed_chat_result
+            else {}
+        )
+
+        response_message_with_functions = AIMessage(
+            content="",
+            tool_calls=[
+                ToolCall(
+                    name=called_tool_name,
+                    args=called_tool_arguments if called_tool_arguments else {},
+                    id=f"call_{str(uuid.uuid4()).replace('-', '')}",
+                )
+            ],
+        )
+
+        return ChatResult(
+            generations=[ChatGeneration(message=response_message_with_functions)]
+        )
+
+    async def _agenerate(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        functions = kwargs.get("functions", [])
+        if "functions" in kwargs:
+            del kwargs["functions"]
+        if "function_call" in kwargs:
+            functions = [
+                fn for fn in functions if fn["name"] == kwargs["function_call"]["name"]
+            ]
+            if not functions:
+                raise ValueError(
+                    "If `function_call` is specified, you must also pass a "
+                    "matching function in `functions`."
+                )
+            del kwargs["function_call"]
         elif not functions:
             functions.append(DEFAULT_RESPONSE_FUNCTION)
         if _is_pydantic_class(functions[0]):
@@ -303,7 +407,7 @@ class OllamaFunctions(ChatOllama):
         system_message = system_message_prompt_template.format(
             tools=json.dumps(functions, indent=2)
         )
-        response_message = super()._generate(
+        response_message = await super()._agenerate(
             [system_message] + messages, stop=stop, run_manager=run_manager, **kwargs
         )
         chat_generation_content = response_message.generations[0].text
@@ -349,7 +453,6 @@ class OllamaFunctions(ChatOllama):
                 },
             },
         )
-
         return ChatResult(
             generations=[ChatGeneration(message=response_message_with_functions)]
         )

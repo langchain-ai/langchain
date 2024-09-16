@@ -28,9 +28,14 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import BaseLLM, create_base_retry_decorator
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
-from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.utils import get_from_dict_or_env, get_pydantic_field_names
+from langchain_core.utils import (
+    get_from_dict_or_env,
+    get_pydantic_field_names,
+    pre_init,
+)
+from langchain_core.utils.pydantic import get_fields
 from langchain_core.utils.utils import build_extra_kwargs
+from pydantic import ConfigDict, Field, model_validator
 
 from langchain_community.utils.openai import is_openai_v1
 
@@ -254,13 +259,13 @@ class BaseOpenAI(BaseLLM):
             return OpenAIChat(**data)
         return super().__new__(cls)
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
-        allow_population_by_field_name = True
-
-    @root_validator(pre=True)
-    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})
@@ -269,7 +274,7 @@ class BaseOpenAI(BaseLLM):
         )
         return values
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         if values["n"] < 1:
@@ -604,7 +609,7 @@ class BaseOpenAI(BaseLLM):
         if self.openai_proxy:
             import openai
 
-            openai.proxy = {"http": self.openai_proxy, "https": self.openai_proxy}  # type: ignore[assignment]  # noqa: E501
+            openai.proxy = {"http": self.openai_proxy, "https": self.openai_proxy}  # type: ignore[assignment]
         return {**openai_creds, **self._default_params}
 
     @property
@@ -661,6 +666,8 @@ class BaseOpenAI(BaseLLM):
                 max_tokens = openai.modelname_to_contextsize("gpt-3.5-turbo-instruct")
         """
         model_token_mapping = {
+            "gpt-4o": 128_000,
+            "gpt-4o-2024-05-13": 128_000,
             "gpt-4": 8192,
             "gpt-4-0314": 8192,
             "gpt-4-0613": 8192,
@@ -725,9 +732,7 @@ class BaseOpenAI(BaseLLM):
         return self.max_context_size - num_tokens
 
 
-@deprecated(
-    since="0.0.10", removal="0.3.0", alternative_import="langchain_openai.OpenAI"
-)
+@deprecated(since="0.0.10", removal="1.0", alternative_import="langchain_openai.OpenAI")
 class OpenAI(BaseOpenAI):
     """OpenAI large language models.
 
@@ -755,7 +760,7 @@ class OpenAI(BaseOpenAI):
 
 
 @deprecated(
-    since="0.0.10", removal="0.3.0", alternative_import="langchain_openai.AzureOpenAI"
+    since="0.0.10", removal="1.0", alternative_import="langchain_openai.AzureOpenAI"
 )
 class AzureOpenAI(BaseOpenAI):
     """Azure-specific OpenAI large language models.
@@ -798,7 +803,7 @@ class AzureOpenAI(BaseOpenAI):
 
         For more: 
         https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id.
-    """  # noqa: E501
+    """
     azure_ad_token_provider: Union[Callable[[], str], None] = None
     """A function that returns an Azure Active Directory token.
 
@@ -816,7 +821,7 @@ class AzureOpenAI(BaseOpenAI):
         """Get the namespace of the langchain object."""
         return ["langchain", "llms", "openai"]
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         if values["n"] < 1:
@@ -963,7 +968,7 @@ class AzureOpenAI(BaseOpenAI):
 
 @deprecated(
     since="0.0.1",
-    removal="0.3.0",
+    removal="1.0",
     alternative_import="langchain_openai.ChatOpenAI",
 )
 class OpenAIChat(BaseLLM):
@@ -1009,10 +1014,11 @@ class OpenAIChat(BaseLLM):
     disallowed_special: Union[Literal["all"], Collection[str]] = "all"
     """Set of special tokens that are not allowed。"""
 
-    @root_validator(pre=True)
-    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
-        all_required_field_names = {field.alias for field in cls.__fields__.values()}
+        all_required_field_names = {field.alias for field in get_fields(cls).values()}
 
         extra = values.get("model_kwargs", {})
         for field_name in list(values):
@@ -1023,7 +1029,7 @@ class OpenAIChat(BaseLLM):
         values["model_kwargs"] = extra
         return values
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         openai_api_key = get_from_dict_or_env(
@@ -1053,7 +1059,7 @@ class OpenAIChat(BaseLLM):
             if openai_organization:
                 openai.organization = openai_organization
             if openai_proxy:
-                openai.proxy = {"http": openai_proxy, "https": openai_proxy}  # type: ignore[assignment]  # noqa: E501
+                openai.proxy = {"http": openai_proxy, "https": openai_proxy}  # type: ignore[assignment]
         except ImportError:
             raise ImportError(
                 "Could not import openai python package. "

@@ -1,4 +1,5 @@
 """Chain that does self-ask with search."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Sequence, Union
@@ -6,9 +7,9 @@ from typing import TYPE_CHECKING, Any, Sequence, Union
 from langchain_core._api import deprecated
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
-from langchain_core.pydantic_v1 import Field
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import BaseTool, Tool
+from pydantic import Field
 
 from langchain.agents.agent import Agent, AgentExecutor, AgentOutputParser
 from langchain.agents.agent_types import AgentType
@@ -23,7 +24,7 @@ if TYPE_CHECKING:
     from langchain_community.utilities.serpapi import SerpAPIWrapper
 
 
-@deprecated("0.1.0", alternative="create_self_ask_with_search", removal="0.3.0")
+@deprecated("0.1.0", alternative="create_self_ask_with_search", removal="1.0")
 class SelfAskWithSearchAgent(Agent):
     """Agent for the self-ask-with-search paper."""
 
@@ -66,7 +67,7 @@ class SelfAskWithSearchAgent(Agent):
         return ""
 
 
-@deprecated("0.1.0", removal="0.3.0")
+@deprecated("0.1.0", removal="1.0")
 class SelfAskWithSearchChain(AgentExecutor):
     """[Deprecated] Chain that does self-ask with search."""
 
@@ -117,7 +118,7 @@ def create_self_ask_with_search_agent(
             )
 
             prompt = hub.pull("hwchase17/self-ask-with-search")
-            model = ChatAnthropic()
+            model = ChatAnthropic(model="claude-3-haiku-20240307")
             tools = [...]  # Should just be one tool with name `Intermediate Answer`
 
             agent = create_self_ask_with_search_agent(model, tools, prompt)

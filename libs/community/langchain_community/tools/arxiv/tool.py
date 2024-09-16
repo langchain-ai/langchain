@@ -3,8 +3,8 @@
 from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel, Field
 
 from langchain_community.utilities.arxiv import ArxivAPIWrapper
 
@@ -27,7 +27,7 @@ class ArxivQueryRun(BaseTool):
         "from scientific articles on arxiv.org. "
         "Input should be a search query."
     )
-    api_wrapper: ArxivAPIWrapper = Field(default_factory=ArxivAPIWrapper)
+    api_wrapper: ArxivAPIWrapper = Field(default_factory=ArxivAPIWrapper)  # type: ignore[arg-type]
     args_schema: Type[BaseModel] = ArxivInput
 
     def _run(

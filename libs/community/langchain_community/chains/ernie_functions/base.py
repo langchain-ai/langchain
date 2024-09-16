@@ -1,4 +1,5 @@
 """Methods for creating chains that use Ernie function-calling APIs."""
+
 import inspect
 from typing import (
     Any,
@@ -21,8 +22,9 @@ from langchain_core.output_parsers import (
     BaseOutputParser,
 )
 from langchain_core.prompts import BasePromptTemplate
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import Runnable
+from langchain_core.utils.pydantic import is_basemodel_subclass
+from pydantic import BaseModel
 
 from langchain_community.output_parsers.ernie_functions import (
     JsonOutputFunctionsParser,
@@ -93,7 +95,7 @@ def _get_python_function_arguments(function: Callable, arg_descriptions: dict) -
     for arg, arg_type in annotations.items():
         if arg == "return":
             continue
-        if isinstance(arg_type, type) and issubclass(arg_type, BaseModel):
+        if isinstance(arg_type, type) and is_basemodel_subclass(arg_type):
             # Mypy error:
             # "type" has no attribute "schema"
             properties[arg] = arg_type.schema()  # type: ignore[attr-defined]
@@ -155,7 +157,7 @@ def convert_to_ernie_function(
     """
     if isinstance(function, dict):
         return function
-    elif isinstance(function, type) and issubclass(function, BaseModel):
+    elif isinstance(function, type) and is_basemodel_subclass(function):
         return cast(Dict, convert_pydantic_to_ernie_function(function))
     elif callable(function):
         return convert_python_function_to_ernie_function(function)
@@ -184,16 +186,16 @@ def get_ernie_output_parser(
             only the function arguments and not the function name.
     """
     function_names = [convert_to_ernie_function(f)["name"] for f in functions]
-    if isinstance(functions[0], type) and issubclass(functions[0], BaseModel):
+    if isinstance(functions[0], type) and is_basemodel_subclass(functions[0]):
         if len(functions) > 1:
             pydantic_schema: Union[Dict, Type[BaseModel]] = {
                 name: fn for name, fn in zip(function_names, functions)
             }
         else:
             pydantic_schema = functions[0]
-        output_parser: Union[
-            BaseOutputParser, BaseGenerationOutputParser
-        ] = PydanticOutputFunctionsParser(pydantic_schema=pydantic_schema)
+        output_parser: Union[BaseOutputParser, BaseGenerationOutputParser] = (
+            PydanticOutputFunctionsParser(pydantic_schema=pydantic_schema)
+        )
     else:
         output_parser = JsonOutputFunctionsParser(args_only=len(functions) <= 1)
     return output_parser
@@ -241,7 +243,7 @@ def create_ernie_fn_runnable(
                 from langchain.chains.ernie_functions import create_ernie_fn_chain
                 from langchain_community.chat_models import ErnieBotChat
                 from langchain_core.prompts import ChatPromptTemplate
-                from langchain.pydantic_v1 import BaseModel, Field
+                from pydantic import BaseModel, Field
 
 
                 class RecordPerson(BaseModel):
@@ -315,7 +317,7 @@ def create_structured_output_runnable(
             from langchain.chains.ernie_functions import create_structured_output_chain
             from langchain_community.chat_models import ErnieBotChat
             from langchain_core.prompts import ChatPromptTemplate
-            from langchain.pydantic_v1 import BaseModel, Field
+            from pydantic import BaseModel, Field
 
             class Dog(BaseModel):
                 \"\"\"Identifying information about a dog.\"\"\"
@@ -376,7 +378,7 @@ def create_ernie_fn_chain(
     output_key: str = "function",
     output_parser: Optional[BaseLLMOutputParser] = None,
     **kwargs: Any,
-) -> LLMChain:
+) -> LLMChain:  # type: ignore[valid-type]
     """[Legacy] Create an LLM chain that uses Ernie functions.
 
     Args:
@@ -413,7 +415,7 @@ def create_ernie_fn_chain(
                 from langchain_community.chat_models import ErnieBotChat
                 from langchain_core.prompts import ChatPromptTemplate
 
-                from langchain.pydantic_v1 import BaseModel, Field
+                from pydantic import BaseModel, Field
 
 
                 class RecordPerson(BaseModel):
@@ -453,7 +455,7 @@ def create_ernie_fn_chain(
     }
     if len(ernie_functions) == 1:
         llm_kwargs["function_call"] = {"name": ernie_functions[0]["name"]}
-    llm_chain = LLMChain(
+    llm_chain = LLMChain(  # type: ignore[misc]
         llm=llm,
         prompt=prompt,
         output_parser=output_parser,
@@ -472,7 +474,7 @@ def create_structured_output_chain(
     output_key: str = "function",
     output_parser: Optional[BaseLLMOutputParser] = None,
     **kwargs: Any,
-) -> LLMChain:
+) -> LLMChain:  # type: ignore[valid-type]
     """[Legacy] Create an LLMChain that uses an Ernie function to get a structured output.
 
     Args:
@@ -500,7 +502,7 @@ def create_structured_output_chain(
                 from langchain_community.chat_models import ErnieBotChat
                 from langchain_core.prompts import ChatPromptTemplate
 
-                from langchain.pydantic_v1 import BaseModel, Field
+                from pydantic import BaseModel, Field
 
                 class Dog(BaseModel):
                     \"\"\"Identifying information about a dog.\"\"\"

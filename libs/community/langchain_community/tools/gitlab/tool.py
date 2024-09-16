@@ -7,11 +7,12 @@ To use this tool, you must first set as environment variables:
     GITLAB_REPOSITORY -> format: {owner}/{repo}
 
 """
+
 from typing import Optional
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import Field
 from langchain_core.tools import BaseTool
+from pydantic import Field
 
 from langchain_community.utilities.gitlab import GitLabAPIWrapper
 
@@ -19,7 +20,7 @@ from langchain_community.utilities.gitlab import GitLabAPIWrapper
 class GitLabAction(BaseTool):
     """Tool for interacting with the GitLab API."""
 
-    api_wrapper: GitLabAPIWrapper = Field(default_factory=GitLabAPIWrapper)
+    api_wrapper: GitLabAPIWrapper = Field(default_factory=GitLabAPIWrapper)  # type: ignore[arg-type]
     mode: str
     name: str = ""
     description: str = ""

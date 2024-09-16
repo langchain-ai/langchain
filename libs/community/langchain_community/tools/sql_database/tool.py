@@ -1,10 +1,11 @@
 # flake8: noqa
 """Tools for interacting with a SQL database."""
+
 from typing import Any, Dict, Optional, Sequence, Type, Union
 
 from sqlalchemy.engine import Result
 
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from pydantic import BaseModel, Field, root_validator, model_validator, ConfigDict
 
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.callbacks import (
@@ -22,8 +23,9 @@ class BaseSQLDatabaseTool(BaseModel):
 
     db: SQLDatabase = Field(exclude=True)
 
-    class Config(BaseTool.Config):
-        pass
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
 
 class _QuerySQLDataBaseToolInput(BaseModel):
@@ -116,13 +118,14 @@ class QuerySQLCheckerTool(BaseSQLDatabaseTool, BaseTool):
     """
     args_schema: Type[BaseModel] = _QuerySQLCheckerToolInput
 
-    @root_validator(pre=True)
-    def initialize_llm_chain(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def initialize_llm_chain(cls, values: Dict[str, Any]) -> Any:
         if "llm_chain" not in values:
             from langchain.chains.llm import LLMChain
 
             values["llm_chain"] = LLMChain(
-                llm=values.get("llm"),
+                llm=values.get("llm"),  # type: ignore[arg-type]
                 prompt=PromptTemplate(
                     template=QUERY_CHECKER, input_variables=["dialect", "query"]
                 ),

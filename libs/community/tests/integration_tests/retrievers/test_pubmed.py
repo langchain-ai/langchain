@@ -1,4 +1,5 @@
 """Integration test for PubMed API Wrapper."""
+
 from typing import List
 
 import pytest
@@ -9,7 +10,7 @@ from langchain_community.retrievers import PubMedRetriever
 
 @pytest.fixture
 def retriever() -> PubMedRetriever:
-    return PubMedRetriever()
+    return PubMedRetriever()  # type: ignore[call-arg]
 
 
 def assert_docs(docs: List[Document]) -> None:

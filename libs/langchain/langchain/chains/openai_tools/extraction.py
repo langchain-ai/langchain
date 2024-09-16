@@ -4,9 +4,9 @@ from langchain_core._api import deprecated
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers.openai_tools import PydanticToolsParser
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import Runnable
 from langchain_core.utils.function_calling import convert_pydantic_to_openai_function
+from pydantic import BaseModel
 
 _EXTRACTION_TEMPLATE = """Extract and save the relevant entities mentioned \
 in the following passage together with their properties.
@@ -20,19 +20,19 @@ If a property is not present and is not required in the function parameters, do 
         "LangChain has introduced a method called `with_structured_output` that"
         "is available on ChatModels capable of tool calling."
         "You can read more about the method here: "
-        "https://python.langchain.com/docs/modules/model_io/chat/structured_output/"
+        "<https://python.langchain.com/docs/modules/model_io/chat/structured_output/>. "
         "Please follow our extraction use case documentation for more guidelines"
         "on how to do information extraction with LLMs."
-        "https://python.langchain.com/docs/use_cases/extraction/."
+        "<https://python.langchain.com/docs/use_cases/extraction/>. "
         "with_structured_output does not currently support a list of pydantic schemas. "
         "If this is a blocker or if you notice other issues, please provide "
         "feedback here:"
-        "https://github.com/langchain-ai/langchain/discussions/18154"
+        "<https://github.com/langchain-ai/langchain/discussions/18154>"
     ),
-    removal="0.3.0",
+    removal="1.0",
     alternative=(
         """
-            from langchain_core.pydantic_v1 import BaseModel, Field
+            from pydantic import BaseModel, Field
             from langchain_anthropic import ChatAnthropic
     
             class Joke(BaseModel):

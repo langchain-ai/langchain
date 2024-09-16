@@ -2,13 +2,13 @@ import json
 from typing import List
 
 import requests
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 
 
 class MojeekSearchAPIWrapper(BaseModel):
     api_key: str
     search_kwargs: dict = Field(default_factory=dict)
-    api_url = "https://api.mojeek.com/search"
+    api_url: str = "https://api.mojeek.com/search"
 
     def run(self, query: str) -> str:
         search_results = self._search(query)

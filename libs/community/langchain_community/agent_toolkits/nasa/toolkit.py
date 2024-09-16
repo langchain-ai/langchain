@@ -1,8 +1,8 @@
 from typing import Dict, List
 
-from langchain_core.tools import BaseToolkit
+from langchain_core.tools import BaseTool
+from langchain_core.tools.base import BaseToolkit
 
-from langchain_community.tools import BaseTool
 from langchain_community.tools.nasa.prompt import (
     NASA_CAPTIONS_PROMPT,
     NASA_MANIFEST_PROMPT,
@@ -14,7 +14,11 @@ from langchain_community.utilities.nasa import NasaAPIWrapper
 
 
 class NasaToolkit(BaseToolkit):
-    """Nasa Toolkit."""
+    """Nasa Toolkit.
+
+    Parameters:
+        tools: List[BaseTool]. The tools in the toolkit. Default is an empty list.
+    """
 
     tools: List[BaseTool] = []
 
@@ -51,7 +55,7 @@ class NasaToolkit(BaseToolkit):
             )
             for action in operations
         ]
-        return cls(tools=tools)
+        return cls(tools=tools)  # type: ignore[arg-type]
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""

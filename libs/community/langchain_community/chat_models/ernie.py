@@ -13,8 +13,8 @@ from langchain_core.messages import (
     HumanMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatResult
-from langchain_core.pydantic_v1 import root_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import model_validator
 
 logger = logging.getLogger(__name__)
 
@@ -108,8 +108,9 @@ class ErnieBotChat(BaseChatModel):
 
     _lock = threading.Lock()
 
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         values["ernie_api_base"] = get_from_dict_or_env(
             values, "ernie_api_base", "ERNIE_API_BASE", "https://aip.baidubce.com"
         )

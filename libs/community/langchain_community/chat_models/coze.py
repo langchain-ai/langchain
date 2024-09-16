@@ -19,11 +19,11 @@ from langchain_core.messages import (
     HumanMessageChunk,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import (
     convert_to_secret_str,
     get_from_dict_or_env,
 )
+from pydantic import ConfigDict, Field, SecretStr, model_validator
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +69,7 @@ def _convert_delta_to_message_chunk(_dict: Mapping[str, Any]) -> BaseMessageChun
     elif role == "assistant":
         return AIMessageChunk(content=content)
     else:
-        return ChatMessageChunk(content=content, role=role)
+        return ChatMessageChunk(content=content, role=role)  # type: ignore[arg-type]
 
 
 class ChatCoze(BaseChatModel):
@@ -111,13 +111,13 @@ class ChatCoze(BaseChatModel):
     "Streaming response" will provide real-time response of the model to the client, and
     the client needs to assemble the final reply based on the type of message. """
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
-        allow_population_by_field_name = True
-
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         values["coze_api_base"] = get_from_dict_or_env(
             values,
             "coze_api_base",

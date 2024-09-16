@@ -1,10 +1,11 @@
 """Base class for Office 365 tools."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from langchain_core.pydantic_v1 import Field
 from langchain_core.tools import BaseTool
+from pydantic import Field
 
 from langchain_community.tools.office365.utils import authenticate
 

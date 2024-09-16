@@ -1,7 +1,6 @@
+# RAG - Pinecone
 
-# rag-pinecone
-
-This template performs RAG using Pinecone and OpenAI.
+This template performs RAG using `Pinecone` and `OpenAI`.
 
 ## Environment Setup
 
@@ -33,6 +32,7 @@ And add the following code to your `server.py` file:
 ```python
 from rag_pinecone import chain as rag_pinecone_chain
 
+# Be careful with this, in the console, when you create the project add_routes(app, rag_pinecone_chain, path="\rag-pinecone") appears with a backslash, the correct route is "/rag-pinecone"
 add_routes(app, rag_pinecone_chain, path="/rag-pinecone")
 ```
 
