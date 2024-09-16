@@ -85,7 +85,7 @@ export default function DocVersionBanner({className}) {
   const localPathname = useLocalPathname();
   const localPathnameFormatted = localPathname.endsWith('/') ? localPathname : `${localPathname}/`;
   const suggestedTo = suggestedLinks[localPathnameFormatted]?.canonical || localPathnameFormatted;
-  const suggestedUrl = suggestedUrl.startsWith("/docs") ? `https://python.langchain.com${suggestedTo}` : suggestedTo;
+  const suggestedUrl = suggestedTo.startsWith("/docs") ? `https://python.langchain.com${suggestedTo}` : suggestedTo;
   if (versionMetadata.banner) {
     return (
       <div
