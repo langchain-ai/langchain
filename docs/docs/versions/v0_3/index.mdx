@@ -23,13 +23,18 @@ The following features have been added during the development of 0.2.x:
 
 ## How to update your code
 
-If you're using `langchain` / `langchain-community` / `langchain-core` 0.0 or 0.1, we recommend that you first [upgrade to 0.2](https://python.langchain.com/v0.2/docs/versions/v0_2/). The `langchain-cli` will help you to migrate many imports automatically.
+If you're using `langchain` / `langchain-community` / `langchain-core` 0.0 or 0.1, we recommend that you first [upgrade to 0.2](https://python.langchain.com/v0.2/docs/versions/v0_2/).
 
 If you're using `langgraph`, upgrade to `langgraph>=0.2.20,<0.3`. This will work with either 0.2 or 0.3 versions of all the base packages.
 
 Here is a complete list of all packages that have been released and what we recommend upgrading your version constraints to.
 Any package that now requires `langchain-core` 0.3 had a minor version bump.
 Any package that is now compatible with both `langchain-core` 0.2 and 0.3 had a patch version bump.
+
+You can use the `langchain-cli` to update deprecated imports automatically.
+The CLI will handle updating deprecated imports that were introduced in LangChain 0.0.x and LangChain 0.1, as
+well as updating the `langchain_core.pydantic_v1` and `langchain.pydantic_v1` imports.
+
 
 ### Base packages
 
@@ -224,9 +229,12 @@ langchain-cli --version # <-- Make sure the version is at least 0.0.31
 
 Given that the migration script is not perfect, you should make sure you have a backup of your code first (e.g., using version control like `git`).
 
+The `langchain-cli` will handle the `langchain_core.pydantic_v1` deprecation introduced in LangChain 0.3 as well
+as older deprecations (e.g.,`from langchain.chat_models import ChatOpenAI` which should be `from langchain_openai import ChatOpenAI`),
+
 You will need to run the migration script **twice** as it only applies one import replacement per run.
 
-For example, say your code still uses `from langchain.chat_models import ChatOpenAI`:
+For example, say that your code is still using the old import `from langchain.chat_models import ChatOpenAI`:
 
 After the first run, you’ll get: `from langchain_community.chat_models import ChatOpenAI`
 After the second run, you’ll get: `from langchain_openai import ChatOpenAI`
