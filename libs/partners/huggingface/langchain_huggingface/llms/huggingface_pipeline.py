@@ -336,7 +336,6 @@ class HuggingFacePipeline(BaseLLM):
 
         stopping_criteria = StoppingCriteriaList([StopOnTokens()])
 
-        inputs = self.pipeline.tokenizer(prompt, return_tensors="pt")
         streamer = TextIteratorStreamer(
             self.pipeline.tokenizer,
             timeout=60.0,
@@ -344,12 +343,12 @@ class HuggingFacePipeline(BaseLLM):
             skip_special_tokens=True,
         )
         generation_kwargs = dict(
-            inputs,
+            text_inputs= prompt,
             streamer=streamer,
             stopping_criteria=stopping_criteria,
             **pipeline_kwargs,
         )
-        t1 = Thread(target=self.pipeline.model.generate, kwargs=generation_kwargs)
+        t1 = Thread(target=self.pipeline, kwargs=generation_kwargs)
         t1.start()
 
         for char in streamer:
