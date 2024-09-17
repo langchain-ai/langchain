@@ -27,6 +27,18 @@
   ],
   "redirects": [
     {
+      "source": "/docs/modules/agents/tools/custom_tools(/?)",
+      "destination": "/docs/how_to/custom_tools/"
+    },
+    {
+      "source": "/docs/expression_language(/?)",
+      "destination": "/docs/concepts/#langchain-expression-language-lcel"
+    },
+    {
+      "source": "/docs/expression_language/interface(/?)",
+      "destination": "/docs/concepts/#runnable-interface"
+    },
+    {
       "source": "/docs/versions/overview(/?)",
       "destination": "/docs/versions/v0_2/overview/"
     },
