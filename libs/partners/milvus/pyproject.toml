@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-milvus"
-version = "0.1.6"
+version = "0.1.5"
 description = "An integration package connecting Milvus and LangChain"
 authors = []
 readme = "README.md"
