@@ -1,10 +1,11 @@
-from typing import Any, Dict, Iterator, List, Optional
+from typing import Iterator, List, Optional
 
 from box_sdk_gen import FileBaseTypeField  # type: ignore
 from langchain_core.document_loaders.base import BaseLoader
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import BaseModel, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.utils import from_env
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+from typing_extensions import Self
 
 from langchain_box.utilities import BoxAuth, _BoxAPIWrapper
 
@@ -148,7 +149,9 @@ class BoxLoader(BaseLoader, BaseModel):
 
     """
 
-    box_developer_token: Optional[str] = None
+    box_developer_token: Optional[str] = Field(
+        default_factory=from_env("BOX_DEVELOPER_TOKEN", default=None)
+    )
     """String containing the Box Developer Token generated in the developer console"""
 
     box_auth: Optional[BoxAuth] = None
@@ -170,54 +173,49 @@ class BoxLoader(BaseLoader, BaseModel):
     """character_limit is an int that caps the number of characters to
        return per document."""
 
-    _box: Optional[_BoxAPIWrapper]
+    _box: Optional[_BoxAPIWrapper] = None
 
-    class Config:
-        arbitrary_types_allowed = True
-        extra = "allow"
-        use_enum_values = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="allow",
+        use_enum_values=True,
+    )
 
-    @root_validator(allow_reuse=True)
-    def validate_box_loader_inputs(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="after")
+    def validate_box_loader_inputs(self) -> Self:
         _box = None
 
         """Validate that has either box_file_ids or box_folder_id."""
-        if not values.get("box_file_ids") and not values.get("box_folder_id"):
+        if not self.box_file_ids and not self.box_folder_id:
             raise ValueError("You must provide box_file_ids or box_folder_id.")
 
         """Validate that we don't have both box_file_ids and box_folder_id."""
-        if values.get("box_file_ids") and values.get("box_folder_id"):
+        if self.box_file_ids and self.box_folder_id:
             raise ValueError(
                 "You must provide either box_file_ids or box_folder_id, not both."
             )
 
         """Validate that we have either a box_developer_token or box_auth."""
-        if not values.get("box_auth"):
-            if not get_from_dict_or_env(
-                values, "box_developer_token", "BOX_DEVELOPER_TOKEN"
-            ):
+        if not self.box_auth:
+            if not self.box_developer_token:
                 raise ValueError(
                     "you must provide box_developer_token or a box_auth "
                     "generated with langchain_box.utilities.BoxAuth"
                 )
             else:
-                token = get_from_dict_or_env(
-                    values, "box_developer_token", "BOX_DEVELOPER_TOKEN"
-                )
-
                 _box = _BoxAPIWrapper(  # type: ignore[call-arg]
-                    box_developer_token=token,
-                    character_limit=values.get("character_limit"),
+                    box_developer_token=self.box_developer_token,
+                    character_limit=self.character_limit,
                 )
         else:
             _box = _BoxAPIWrapper(  # type: ignore[call-arg]
-                box_auth=values.get("box_auth"),
-                character_limit=values.get("character_limit"),
+                box_auth=self.box_auth,
+                character_limit=self.character_limit,
             )
 
-        values["_box"] = _box
+        self._box = _box
 
-        return values
+        return self
 
     def _get_files_from_folder(self, folder_id):  # type: ignore[no-untyped-def]
         folder_content = self.box.get_folder_items(folder_id)

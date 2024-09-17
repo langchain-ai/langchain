@@ -283,7 +283,7 @@ class _TracerCore(ABC):
 
     def _complete_llm_run(self, response: LLMResult, run_id: UUID) -> Run:
         llm_run = self._get_run(run_id, run_type={"llm", "chat_model"})
-        llm_run.outputs = response.dict()
+        llm_run.outputs = response.model_dump()
         for i, generations in enumerate(response.generations):
             for j, generation in enumerate(generations):
                 output_generation = llm_run.outputs["generations"][i][j]
