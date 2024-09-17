@@ -1,0 +1,4 @@
+pdfminer-six>=20221105,<20240706
+pymupdf>=1.22.3,<2
+pypdf>=3.4.0,<5
+pypdfium2>=4.10.0,<5
