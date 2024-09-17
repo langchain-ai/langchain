@@ -2114,7 +2114,7 @@ def _oai_structured_outputs_parser(ai_msg: AIMessage) -> PydanticBaseModel:
     else:
         raise ValueError(
             "Structured Output response does not have a 'parsed' field nor a 'refusal' "
-            "field."
+            "field. Received message:\n\n{ai_msg}"
         )
 
 
