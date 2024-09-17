@@ -595,10 +595,10 @@ tool_call = ai_msg.tool_calls[0]
 # -> ToolCall(args={...}, id=..., ...)
 tool_message = tool.invoke(tool_call)
 # -> ToolMessage(
-    content="tool result foobar...",
-    tool_call_id=...,
-    name="tool_name"
-)
+#      content="tool result foobar...",
+#      tool_call_id=...,
+#      name="tool_name"
+#    )
 ```
 
 If you are invoking the tool this way and want to include an [artifact](/docs/concepts/#toolmessage) for the ToolMessage, you will need to have the tool return two things.
@@ -716,8 +716,6 @@ During run-time LangChain configures an appropriate callback manager (e.g., [Cal
 #### Passing callbacks
 
 The `callbacks` property is available on most objects throughout the API (Models, Tools, Agents, etc.) in two different places:
-
-The callbacks are available on most objects throughout the API (Models, Tools, Agents, etc.) in two different places:
 
 - **Request time callbacks**: Passed at the time of the request in addition to the input data.
     Available on all standard `Runnable` objects. These callbacks are INHERITED by all children

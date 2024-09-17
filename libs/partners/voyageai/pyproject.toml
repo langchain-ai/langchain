@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-voyageai"
-version = "0.1.1"
+version = "0.1.2"
 description = "An integration package connecting VoyageAI and LangChain"
 authors = []
 readme = "README.md"
@@ -13,7 +13,7 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-langchain-core = "^0.3.0.dev"
+langchain-core = "^0.3.0"
 voyageai = ">=0.2.1,<1"
 pydantic = ">=2,<3"
 
