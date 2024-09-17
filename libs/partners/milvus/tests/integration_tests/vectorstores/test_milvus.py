@@ -318,7 +318,13 @@ def test_milvus_sparse_embeddings() -> None:
         "in a surreal world of nightmares and illusions, where the boundaries between "
         "reality and fantasy blur.",
     ]
-    sparse_embedding_func = BM25SparseEmbedding(corpus=texts)
+    try:
+        sparse_embedding_func = BM25SparseEmbedding(corpus=texts)
+    except LookupError:
+        import nltk  # type: ignore[import]
+
+        nltk.download("punkt_tab")
+        sparse_embedding_func = BM25SparseEmbedding(corpus=texts)
     docsearch = Milvus.from_texts(
         embedding=sparse_embedding_func,
         texts=texts,
