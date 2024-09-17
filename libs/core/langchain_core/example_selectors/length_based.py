@@ -3,9 +3,11 @@
 import re
 from typing import Callable, Dict, List
 
+from pydantic import BaseModel, Field, model_validator
+from typing_extensions import Self
+
 from langchain_core.example_selectors.base import BaseExampleSelector
 from langchain_core.prompts.prompt import PromptTemplate
-from langchain_core.pydantic_v1 import BaseModel, validator
 
 
 def _get_length_based(text: str) -> int:
@@ -27,7 +29,7 @@ class LengthBasedExampleSelector(BaseExampleSelector, BaseModel):
     max_length: int = 2048
     """Max length for the prompt, beyond which examples are cut."""
 
-    example_text_lengths: List[int] = []  #: :meta private:
+    example_text_lengths: List[int] = Field(default_factory=list)  # :meta private:
     """Length of each example."""
 
     def add_example(self, example: Dict[str, str]) -> None:
@@ -51,17 +53,14 @@ class LengthBasedExampleSelector(BaseExampleSelector, BaseModel):
 
         self.add_example(example)
 
-    @validator("example_text_lengths", always=True)
-    def calculate_example_text_lengths(cls, v: List[int], values: Dict) -> List[int]:
-        """Calculate text lengths if they don't exist."""
-        # Check if text lengths were passed in
-        if v:
-            return v
-        # If they were not, calculate them
-        example_prompt = values["example_prompt"]
-        get_text_length = values["get_text_length"]
-        string_examples = [example_prompt.format(**eg) for eg in values["examples"]]
-        return [get_text_length(eg) for eg in string_examples]
+    @model_validator(mode="after")
+    def post_init(self) -> Self:
+        """Validate that the examples are formatted correctly."""
+        if self.example_text_lengths:
+            return self
+        string_examples = [self.example_prompt.format(**eg) for eg in self.examples]
+        self.example_text_lengths = [self.get_text_length(eg) for eg in string_examples]
+        return self
 
     def select_examples(self, input_variables: Dict[str, str]) -> List[dict]:
         """Select which examples to use based on the input lengths.

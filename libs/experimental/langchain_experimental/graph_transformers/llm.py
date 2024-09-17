@@ -12,8 +12,8 @@ from langchain_core.prompts import (
     HumanMessagePromptTemplate,
     PromptTemplate,
 )
-from langchain_core.pydantic_v1 import BaseModel, Field, create_model
 from langchain_core.runnables import RunnableConfig
+from pydantic import BaseModel, Field, create_model
 
 examples = [
     {
@@ -159,7 +159,7 @@ def optional_enum_field(
     if enum_values and llm_type == "openai-chat":
         return Field(
             ...,
-            enum=enum_values,
+            enum=enum_values,  # type: ignore[call-arg]
             description=f"{description}. Available options are {enum_values}",
             **field_kwargs,
         )
@@ -749,12 +749,20 @@ class LLMGraphTransformer:
             if isinstance(parsed_json, dict):
                 parsed_json = [parsed_json]
             for rel in parsed_json:
+                # Check if mandatory properties are there
+                if (
+                    not rel.get("head")
+                    or not rel.get("tail")
+                    or not rel.get("relation")
+                ):
+                    continue
                 # Nodes need to be deduplicated using a set
-                nodes_set.add((rel["head"], rel["head_type"]))
-                nodes_set.add((rel["tail"], rel["tail_type"]))
+                # Use default Node label for nodes if missing
+                nodes_set.add((rel["head"], rel.get("head_type", "Node")))
+                nodes_set.add((rel["tail"], rel.get("tail_type", "Node")))
 
-                source_node = Node(id=rel["head"], type=rel["head_type"])
-                target_node = Node(id=rel["tail"], type=rel["tail_type"])
+                source_node = Node(id=rel["head"], type=rel.get("head_type", "Node"))
+                target_node = Node(id=rel["tail"], type=rel.get("tail_type", "Node"))
                 relationships.append(
                     Relationship(
                         source=source_node, target=target_node, type=rel["relation"]

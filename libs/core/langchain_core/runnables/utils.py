@@ -25,16 +25,16 @@ from typing import (
     Protocol,
     Sequence,
     Set,
-    Type,
     TypeVar,
     Union,
 )
 
 from typing_extensions import TypeGuard
 
-from langchain_core.pydantic_v1 import BaseConfig, BaseModel
-from langchain_core.pydantic_v1 import create_model as _create_model_base
 from langchain_core.runnables.schema import StreamEvent
+
+# Re-export create-model for backwards compatibility
+from langchain_core.utils.pydantic import create_model as create_model
 
 Input = TypeVar("Input", contravariant=True)
 # Output type should implement __concat__, as eg str, list, dict do
@@ -350,7 +350,7 @@ def get_function_first_arg_dict_keys(func: Callable) -> Optional[List[str]]:
         tree = ast.parse(textwrap.dedent(code))
         visitor = IsFunctionArgDict()
         visitor.visit(tree)
-        return list(visitor.keys) if visitor.keys else None
+        return sorted(visitor.keys) if visitor.keys else None
     except (SyntaxError, TypeError, OSError, SystemError):
         return None
 
@@ -697,43 +697,6 @@ class _RootEventFilter:
             )
 
         return include
-
-
-class _SchemaConfig(BaseConfig):
-    arbitrary_types_allowed = True
-    frozen = True
-
-
-def create_model(
-    __model_name: str,
-    **field_definitions: Any,
-) -> Type[BaseModel]:
-    """Create a pydantic model with the given field definitions.
-
-    Args:
-        __model_name: The name of the model.
-        **field_definitions: The field definitions for the model.
-
-    Returns:
-        Type[BaseModel]: The created model.
-    """
-    try:
-        return _create_model_cached(__model_name, **field_definitions)
-    except TypeError:
-        # something in field definitions is not hashable
-        return _create_model_base(
-            __model_name, __config__=_SchemaConfig, **field_definitions
-        )
-
-
-@lru_cache(maxsize=256)
-def _create_model_cached(
-    __model_name: str,
-    **field_definitions: Any,
-) -> Type[BaseModel]:
-    return _create_model_base(
-        __model_name, __config__=_SchemaConfig, **field_definitions
-    )
 
 
 def is_async_generator(

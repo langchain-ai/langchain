@@ -27,6 +27,7 @@ from typing import (
 )
 
 import yaml
+from pydantic import ConfigDict, Field, model_validator
 from tenacity import (
     RetryCallState,
     before_sleep_log,
@@ -62,7 +63,6 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult, RunInfo
 from langchain_core.prompt_values import ChatPromptValue, PromptValue, StringPromptValue
-from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.runnables import RunnableConfig, ensure_config, get_config_list
 from langchain_core.runnables.config import run_in_executor
 
@@ -300,11 +300,13 @@ class BaseLLM(BaseLanguageModel[str], ABC):
     callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
     """[DEPRECATED]"""
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
-    @root_validator(pre=True)
-    def raise_deprecation(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def raise_deprecation(cls, values: Dict) -> Any:
         """Raise deprecation warning if callback_manager is used."""
         if values.get("callback_manager") is not None:
             warnings.warn(
@@ -314,6 +316,10 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             )
             values["callbacks"] = values.pop("callback_manager", None)
         return values
+
+    @functools.cached_property
+    def _serialized(self) -> dict[str, Any]:
+        return dumpd(self)
 
     # --- Runnable methods ---
 
@@ -542,7 +548,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 self.metadata,
             )
             (run_manager,) = callback_manager.on_llm_start(
-                dumpd(self),
+                self._serialized,
                 [prompt],
                 invocation_params=params,
                 options=options,
@@ -607,7 +613,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             self.metadata,
         )
         (run_manager,) = await callback_manager.on_llm_start(
-            dumpd(self),
+            self._serialized,
             [prompt],
             invocation_params=params,
             options=options,
@@ -929,7 +935,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         if (self.cache is None and get_llm_cache() is None) or self.cache is False:
             run_managers = [
                 callback_manager.on_llm_start(
-                    dumpd(self),
+                    self._serialized,
                     [prompt],
                     invocation_params=params,
                     options=options,
@@ -948,7 +954,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         if len(missing_prompts) > 0:
             run_managers = [
                 callback_managers[idx].on_llm_start(
-                    dumpd(self),
+                    self._serialized,
                     [prompts[idx]],
                     invocation_params=params,
                     options=options,
@@ -1166,7 +1172,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             run_managers = await asyncio.gather(
                 *[
                     callback_manager.on_llm_start(
-                        dumpd(self),
+                        self._serialized,
                         [prompt],
                         invocation_params=params,
                         options=options,
@@ -1192,7 +1198,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             run_managers = await asyncio.gather(
                 *[
                     callback_managers[idx].on_llm_start(
-                        dumpd(self),
+                        self._serialized,
                         [prompts[idx]],
                         invocation_params=params,
                         options=options,

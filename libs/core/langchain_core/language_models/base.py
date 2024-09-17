@@ -18,6 +18,7 @@ from typing import (
     Union,
 )
 
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from typing_extensions import TypeAlias, TypedDict
 
 from langchain_core._api import deprecated
@@ -28,7 +29,6 @@ from langchain_core.messages import (
     get_buffer_string,
 )
 from langchain_core.prompt_values import PromptValue
-from langchain_core.pydantic_v1 import BaseModel, Field, validator
 from langchain_core.runnables import Runnable, RunnableSerializable
 from langchain_core.utils import get_pydantic_field_names
 
@@ -113,7 +113,7 @@ class BaseLanguageModel(
     
     Caching is not currently supported for streaming methods of models.
     """
-    verbose: bool = Field(default_factory=_get_verbosity)
+    verbose: bool = Field(default_factory=_get_verbosity, exclude=True, repr=False)
     """Whether to print out response text."""
     callbacks: Callbacks = Field(default=None, exclude=True)
     """Callbacks to add to the run trace."""
@@ -126,7 +126,11 @@ class BaseLanguageModel(
     )
     """Optional encoder to use for counting tokens."""
 
-    @validator("verbose", pre=True, always=True, allow_reuse=True)
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
+
+    @field_validator("verbose", mode="before")
     def set_verbose(cls, verbose: Optional[bool]) -> bool:
         """If verbose is None, set it.
 

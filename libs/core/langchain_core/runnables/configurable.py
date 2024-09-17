@@ -18,9 +18,11 @@ from typing import (
     Union,
     cast,
 )
+from typing import Mapping as Mapping
 from weakref import WeakValueDictionary
 
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel, ConfigDict
+
 from langchain_core.runnables.base import Runnable, RunnableSerializable
 from langchain_core.runnables.config import (
     RunnableConfig,
@@ -58,8 +60,9 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
 
     config: Optional[RunnableConfig] = None
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -373,28 +376,32 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
         Returns:
             List[ConfigurableFieldSpec]: The configuration specs.
         """
-        return get_unique_config_specs(
-            [
-                (
+        config_specs = []
+
+        for field_name, spec in self.fields.items():
+            if isinstance(spec, ConfigurableField):
+                config_specs.append(
                     ConfigurableFieldSpec(
                         id=spec.id,
                         name=spec.name,
                         description=spec.description
-                        or self.default.__fields__[field_name].field_info.description,
+                        or self.default.model_fields[field_name].description,
                         annotation=spec.annotation
-                        or self.default.__fields__[field_name].annotation,
+                        or self.default.model_fields[field_name].annotation,
                         default=getattr(self.default, field_name),
                         is_shared=spec.is_shared,
                     )
-                    if isinstance(spec, ConfigurableField)
-                    else make_options_spec(
-                        spec, self.default.__fields__[field_name].field_info.description
+                )
+            else:
+                config_specs.append(
+                    make_options_spec(
+                        spec, self.default.model_fields[field_name].description
                     )
                 )
-                for field_name, spec in self.fields.items()
-            ]
-            + list(self.default.config_specs)
-        )
+
+        config_specs.extend(self.default.config_specs)
+
+        return get_unique_config_specs(config_specs)
 
     def configurable_fields(
         self, **kwargs: AnyConfigurableField
@@ -436,7 +443,7 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
             init_params = {
                 k: v
                 for k, v in self.default.__dict__.items()
-                if k in self.default.__fields__
+                if k in self.default.model_fields
             }
             return (
                 self.default.__class__(**{**init_params, **configurable}),
@@ -444,6 +451,9 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
             )
         else:
             return (self.default, config)
+
+
+RunnableConfigurableFields.model_rebuild()
 
 
 # Before Python 3.11 native StrEnum is not available

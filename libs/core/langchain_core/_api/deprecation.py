@@ -144,7 +144,7 @@ def deprecated(
         _package: str = package,
     ) -> T:
         """Implementation of the decorator returned by `deprecated`."""
-        from langchain_core.utils.pydantic import FieldInfoV1
+        from langchain_core.utils.pydantic import FieldInfoV1, FieldInfoV2
 
         def emit_warning() -> None:
             """Emit the warning."""
@@ -238,6 +238,25 @@ def deprecated(
                         exclude=obj.exclude,
                     ),
                 )
+        elif isinstance(obj, FieldInfoV2):
+            wrapped = None
+            if not _obj_type:
+                _obj_type = "attribute"
+            if not _name:
+                raise ValueError(f"Field {obj} must have a name to be deprecated.")
+            old_doc = obj.description
+
+            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:
+                return cast(
+                    T,
+                    FieldInfoV2(
+                        default=obj.default,
+                        default_factory=obj.default_factory,
+                        description=new_doc,
+                        alias=obj.alias,
+                        exclude=obj.exclude,
+                    ),
+                )
 
         elif isinstance(obj, property):
             if not _obj_type:
@@ -314,9 +333,26 @@ def deprecated(
             old_doc = ""
 
         # Modify the docstring to include a deprecation notice.
+        if (
+            _alternative
+            and _alternative.split(".")[-1].lower() == _alternative.split(".")[-1]
+        ):
+            _alternative = f":meth:`~{_alternative}`"
+        elif _alternative:
+            _alternative = f":class:`~{_alternative}`"
+
+        if (
+            _alternative_import
+            and _alternative_import.split(".")[-1].lower()
+            == _alternative_import.split(".")[-1]
+        ):
+            _alternative_import = f":meth:`~{_alternative_import}`"
+        elif _alternative_import:
+            _alternative_import = f":class:`~{_alternative_import}`"
+
         components = [
             _message,
-            f"Use ``{_alternative}`` instead." if _alternative else "",
+            f"Use {_alternative} instead." if _alternative else "",
             f"Use ``{_alternative_import}`` instead." if _alternative_import else "",
             _addendum,
         ]
