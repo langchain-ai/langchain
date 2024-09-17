@@ -242,6 +242,7 @@ class LLMChain(Chain):
         run_manager = callback_manager.on_chain_start(
             None,
             {"input_list": input_list},
+            name=self.get_name(),
         )
         try:
             response = self.generate(input_list, run_manager=run_manager)
@@ -262,6 +263,7 @@ class LLMChain(Chain):
         run_manager = await callback_manager.on_chain_start(
             None,
             {"input_list": input_list},
+            name=self.get_name(),
         )
         try:
             response = await self.agenerate(input_list, run_manager=run_manager)

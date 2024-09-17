@@ -8,7 +8,6 @@ from typing import (
     Collection,
     Iterable,
     Iterator,
-    List,
     Optional,
 )
 
@@ -68,7 +67,7 @@ class Node(Serializable):
     """Text contained by the node."""
     metadata: dict = Field(default_factory=dict)
     """Metadata for the node."""
-    links: List[Link] = Field(default_factory=list)
+    links: list[Link] = Field(default_factory=list)
     """Links associated with the node."""
 
 
@@ -189,7 +188,7 @@ class GraphVectorStore(VectorStore):
         *,
         ids: Optional[Iterable[str]] = None,
         **kwargs: Any,
-    ) -> List[str]:
+    ) -> list[str]:
         """Run more texts through the embeddings and add to the vectorstore.
 
         The Links present in the metadata field `links` will be extracted to create
@@ -237,7 +236,7 @@ class GraphVectorStore(VectorStore):
         *,
         ids: Optional[Iterable[str]] = None,
         **kwargs: Any,
-    ) -> List[str]:
+    ) -> list[str]:
         """Run more texts through the embeddings and add to the vectorstore.
 
         The Links present in the metadata field `links` will be extracted to create
@@ -282,7 +281,7 @@ class GraphVectorStore(VectorStore):
         self,
         documents: Iterable[Document],
         **kwargs: Any,
-    ) -> List[str]:
+    ) -> list[str]:
         """Run more documents through the embeddings and add to the vectorstore.
 
         The Links present in the document metadata field `links` will be extracted to
@@ -332,7 +331,7 @@ class GraphVectorStore(VectorStore):
         self,
         documents: Iterable[Document],
         **kwargs: Any,
-    ) -> List[str]:
+    ) -> list[str]:
         """Run more documents through the embeddings and add to the vectorstore.
 
         The Links present in the document metadata field `links` will be extracted to
@@ -535,7 +534,7 @@ class GraphVectorStore(VectorStore):
 
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
-    ) -> List[Document]:
+    ) -> list[Document]:
         return list(self.traversal_search(query, k=k, depth=0))
 
     def max_marginal_relevance_search(
@@ -545,7 +544,7 @@ class GraphVectorStore(VectorStore):
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> list[Document]:
         return list(
             self.mmr_traversal_search(
                 query, k=k, fetch_k=fetch_k, lambda_mult=lambda_mult, depth=0
@@ -554,10 +553,10 @@ class GraphVectorStore(VectorStore):
 
     async def asimilarity_search(
         self, query: str, k: int = 4, **kwargs: Any
-    ) -> List[Document]:
+    ) -> list[Document]:
         return [doc async for doc in self.atraversal_search(query, k=k, depth=0)]
 
-    def search(self, query: str, search_type: str, **kwargs: Any) -> List[Document]:
+    def search(self, query: str, search_type: str, **kwargs: Any) -> list[Document]:
         if search_type == "similarity":
             return self.similarity_search(query, **kwargs)
         elif search_type == "similarity_score_threshold":
@@ -580,7 +579,7 @@ class GraphVectorStore(VectorStore):
 
     async def asearch(
         self, query: str, search_type: str, **kwargs: Any
-    ) -> List[Document]:
+    ) -> list[Document]:
         if search_type == "similarity":
             return await self.asimilarity_search(query, **kwargs)
         elif search_type == "similarity_score_threshold":
@@ -679,7 +678,7 @@ class GraphVectorStoreRetriever(VectorStoreRetriever):
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
-    ) -> List[Document]:
+    ) -> list[Document]:
         if self.search_type == "traversal":
             return list(self.vectorstore.traversal_search(query, **self.search_kwargs))
         elif self.search_type == "mmr_traversal":
@@ -691,7 +690,7 @@ class GraphVectorStoreRetriever(VectorStoreRetriever):
 
     async def _aget_relevant_documents(
         self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
-    ) -> List[Document]:
+    ) -> list[Document]:
         if self.search_type == "traversal":
             return [
                 doc
