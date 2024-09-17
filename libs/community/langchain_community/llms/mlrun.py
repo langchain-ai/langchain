@@ -8,7 +8,7 @@ from langchain_core.pydantic_v1 import Field
 from langchain_core.runnables import RunnableConfig
 
 
-class Mlrun(LLM):
+class MLRun(LLM):
     """A class for interacting with Langchain, while using models served by mlrun.
     This class is used to interact with models served by mlrun, or just gated by mlrun.
     """
@@ -32,7 +32,7 @@ class Mlrun(LLM):
     def _llm_type(self) -> str:
         """Get the type of language model used by this chat model.
         Used for logging purposes only."""
-        return "Mlrun"
+        return "MLRun"
 
     def _call(
         self,

@@ -7,7 +7,7 @@ from typing import Any, Dict, Union
 import mlrun
 import pytest
 from langchain_core.language_models.llms import LLM
-from libs.community.langchain_community.llms.mlrun import Mlrun
+from libs.community.langchain_community.llms.mlrun import MLRun
 from mlrun.serving.v2_serving import V2ModelServer
 
 import langchain_community.llms
@@ -135,7 +135,7 @@ def test_huggingface() -> None:
     server = serving_func.to_mock_server()
     # Initialize the Mlrun class with the server and the model name
     # and test the functions with various inputs and parameters
-    llm = Mlrun(server, "huggingface-langchain-model")
+    llm = MLRun(server, "huggingface-langchain-model")
     invoke_result = llm.invoke("how old are you?")
     assert invoke_result
     invoke_result_params = llm.invoke(
@@ -193,7 +193,7 @@ def test_openai():
     server = serving_func.to_mock_server()
     # Initialize the Mlrun class with the server and the model name
     # and test the functions with various inputs and parameters
-    llm = Mlrun(server, "openai-langchain-model")
+    llm = MLRun(server, "openai-langchain-model")
     invoke_result = llm.invoke(prompt)
     assert invoke_result
     invoke_result_params = llm.invoke(
@@ -267,7 +267,7 @@ def test_ollama(ollama_fixture: Any) -> None:
     # Create a mock server instead of deploying it
     # and test the functions with various inputs and parameters
     server = serving_func.to_mock_server()
-    llm = Mlrun(server, "ollama-langchain-model")
+    llm = MLRun(server, "ollama-langchain-model")
     invoke_result = llm.invoke(prompt)
     assert invoke_result
     invoke_result_params = llm.invoke(

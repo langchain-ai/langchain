@@ -356,6 +356,12 @@ def _import_mlflow_ai_gateway() -> Type[BaseLLM]:
     return MlflowAIGateway
 
 
+def _import_mlrun() -> Type[BaseLLM]:
+    from langchain_community.llms.mlrun import MLRun
+
+    return MLRun
+
+
 def _import_mlx_pipeline() -> Type[BaseLLM]:
     from langchain_community.llms.mlx_pipeline import MLXPipeline
 
@@ -767,6 +773,8 @@ def __getattr__(name: str) -> Any:
         return _import_mlflow()
     elif name == "MlflowAIGateway":
         return _import_mlflow_ai_gateway()
+    elif name == "MLRun":
+        return _import_mlrun()
     elif name == "MLXPipeline":
         return _import_mlx_pipeline()
     elif name == "Modal":
@@ -927,6 +935,7 @@ __all__ = [
     "Minimax",
     "Mlflow",
     "MlflowAIGateway",
+    "MLRun"
     "MLXPipeline",
     "Modal",
     "MosaicML",
@@ -1030,6 +1039,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "mlflow": _import_mlflow,
         "mlflow-chat": _import_mlflow_chat,  # deprecated / only for back compat
         "mlflow-ai-gateway": _import_mlflow_ai_gateway,
+        "mlrun": _import_mlrun,
         "mlx_pipeline": _import_mlx_pipeline,
         "modal": _import_modal,
         "mosaic": _import_mosaicml,
