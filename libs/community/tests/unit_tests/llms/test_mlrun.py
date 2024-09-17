@@ -11,19 +11,14 @@ from libs.community.langchain_community.llms.mlrun import Mlrun
 from mlrun.serving.v2_serving import V2ModelServer
 
 import langchain_community.llms
-
+# Some default models to test, can be changed to any model, we prefer small ones
 _HUGGINGFACE_MODEL = "Qwen/Qwen2-0.5B-Instruct"
 _OPENAI_MODEL = "gpt-3.5-turbo-instruct"
 _OLLAMA_MODEL = "qwen:0.5b"
 _OLLAMA_DELETE_MODEL_POST_TEST = False
 
-langchain_model_server_path = str(
-    pathlib.Path(__file__).parent.parent.parent.parent.parent
-    / "mlrun/mlrun/frameworks/langchain/model_server.py"
-)
-
-
 # Until the full model server will be available in an official mlrun release
+# we will use the following server to test the Mlrun class
 class LangChainModelServer(V2ModelServer):
     """
     LangChain Model serving class, short testing version
@@ -53,6 +48,7 @@ class LangChainModelServer(V2ModelServer):
         self.llm = llm
         self.init_kwargs = init_kwargs or {}
         self.generation_kwargs = generation_kwargs or {}
+        self.model = None
 
     def load(self):
         """
@@ -116,16 +112,18 @@ def test_huggingface() -> None:
     pipe = pipeline(
         "text-generation", model=model, tokenizer=tokenizer, max_new_tokens=max_tokens
     )
-
+    # Create a project
     project = mlrun.get_or_create_project(
         name="huggingface-model-server-example", context="./"
     )
+    # Create a serving function
     serving_func = project.set_function(
         func=__file__,
         name="huggingface-langchain-model-server",
         kind="serving",
         image="mlrun/mlrun",
     )
+    # Add the hf pipeline to the serving function
     serving_func.add_model(
         "huggingface-langchain-model",
         class_name="LangChainModelServer",
@@ -133,7 +131,10 @@ def test_huggingface() -> None:
         init_kwargs={"pipeline": pipe},
         model_path=".",
     )
+    # Create a mock server instead of deploying it
     server = serving_func.to_mock_server()
+    # Initialize the Mlrun class with the server and the model name
+    # and test the functions with various inputs and parameters
     llm = Mlrun(server, "huggingface-langchain-model")
     invoke_result = llm.invoke("how old are you?")
     assert invoke_result
@@ -162,22 +163,25 @@ def skip_openai() -> bool:
 
 @pytest.mark.requires("mlrun")
 @pytest.mark.skipif(skip_openai(), reason="OpenAI API credentials not set")
-def test_openai() -> None:
+def test_openai():
     """
     Test the langchain model server with an openai model
     """
     prompt = "How far is the moon"
     question_len = len(prompt.split(" "))
     max_tokens = 10
+    # Create a project
     project = mlrun.get_or_create_project(
         name="openai-model-server-example", context="./"
     )
+    # Create a serving function
     serving_func = project.set_function(
         func=__file__,
         name="openai-langchain-model-server",
         kind="serving",
         image="mlrun/mlrun",
     )
+    # Add the openai model to the serving function
     serving_func.add_model(
         "openai-langchain-model",
         llm="OpenAI",
@@ -185,7 +189,10 @@ def test_openai() -> None:
         init_kwargs={"model": _OPENAI_MODEL},
         model_path=".",
     )
+    # Create a mock server instead of deploying it
     server = serving_func.to_mock_server()
+    # Initialize the Mlrun class with the server and the model name
+    # and test the functions with various inputs and parameters
     llm = Mlrun(server, "openai-langchain-model")
     invoke_result = llm.invoke(prompt)
     assert invoke_result
@@ -238,15 +245,18 @@ def test_ollama(ollama_fixture: Any) -> None:
     prompt = "How far is the moon"
     question_len = len(prompt.split(" "))
     max_tokens = 10
+    # Create a project
     project = mlrun.get_or_create_project(
         name="ollama-model-server-example", context="./"
     )
+    # Create a serving function
     serving_func = project.set_function(
         func=__file__,
         name="ollama-langchain-model-server",
         kind="serving",
         image="mlrun/mlrun",
     )
+    # Add the ollama model to the serving function
     serving_func.add_model(
         "ollama-langchain-model",
         llm="Ollama",
@@ -254,6 +264,8 @@ def test_ollama(ollama_fixture: Any) -> None:
         init_kwargs={"model": _OLLAMA_MODEL},
         model_path=".",
     )
+    # Create a mock server instead of deploying it
+    # and test the functions with various inputs and parameters
     server = serving_func.to_mock_server()
     llm = Mlrun(server, "ollama-langchain-model")
     invoke_result = llm.invoke(prompt)

@@ -9,10 +9,14 @@ from langchain_core.runnables import RunnableConfig
 
 
 class Mlrun(LLM):
-    """A class for interacting with Langchain, while using models served by mlrun."""
+    """A class for interacting with Langchain, while using models served by mlrun.
+    This class is used to interact with models served by mlrun, or just gated by mlrun.
+    """
 
     llm: Any = Field(default=None)
+    """The deployed mlrun model server object (nuclio function)."""
     name: str = Field(default=None)
+    """The name to give to the model."""
 
     def __init__(
         self,
@@ -47,6 +51,10 @@ class Mlrun(LLM):
     ) -> str:
         """
         call the llm invoke function, routed through mlrun model server.
+
+        :param input:  The input to the model.
+        :param config: The configuration to use while running the model.
+        :param stop:   The stop words to use while running the model.
         """
         # Convert the input to the correct format
         input = self._convert_input(input)
@@ -100,6 +108,10 @@ class Mlrun(LLM):
     ) -> List[str]:
         """
         call the llm batch function, routed through mlrun model server.
+
+        :param inputs:            The inputs to the model.
+        :param config:            The configuration to use while running the model.
+        :param return_exceptions: Whether to return exceptions or not.
         """
         # Convert all inputs to the correct format and list them
         inputs = [self._convert_input(input) for input in inputs]
