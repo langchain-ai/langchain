@@ -807,14 +807,14 @@ class ChatAnthropic(BaseChatModel):
         Args:
             tools: A list of tool definitions to bind to this chat model.
                 Supports Anthropic format tool schemas and any tool definition handled
-                by :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`.
+                by :meth:`~langchain_core.utils.function_calling.convert_to_openai_tool`.
             tool_choice: Which tool to require the model to call. Options are:
 
                 - name of the tool as a string or as dict ``{"type": "tool", "name": "<<tool_name>>"}``: calls corresponding tool;
                 - ``"auto"``, ``{"type: "auto"}``, or None: automatically selects a tool (including no tool);
                 - ``"any"`` or ``{"type: "any"}``: force at least one tool to be called;
             kwargs: Any additional parameters are passed directly to
-                ``self.bind(**kwargs)``.
+                :meth:`~langchain_anthropic.chat_models.ChatAnthropic.bind`.
 
         Example:
             .. code-block:: python
@@ -833,7 +833,7 @@ class ChatAnthropic(BaseChatModel):
                     product: str = Field(..., description="The product to look up.")
 
 
-                llm = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
+                llm = ChatAnthropic(model="claude-3-5-sonnet-20240620", temperature=0)
                 llm_with_tools = llm.bind_tools([GetWeather, GetPrice])
                 llm_with_tools.invoke("what is the weather like in San Francisco",)
                 # -> AIMessage(
@@ -841,7 +841,7 @@ class ChatAnthropic(BaseChatModel):
                 #         {'text': '<thinking>\nBased on the user\'s question, the relevant function to call is GetWeather, which requires the "location" parameter.\n\nThe user has directly specified the location as "San Francisco". Since San Francisco is a well known city, I can reasonably infer they mean San Francisco, CA without needing the state specified.\n\nAll the required parameters are provided, so I can proceed with the API call.\n</thinking>', 'type': 'text'},
                 #         {'text': None, 'type': 'tool_use', 'id': 'toolu_01SCgExKzQ7eqSkMHfygvYuu', 'name': 'GetWeather', 'input': {'location': 'San Francisco, CA'}}
                 #     ],
-                #     response_metadata={'id': 'msg_01GM3zQtoFv8jGQMW7abLnhi', 'model': 'claude-3-opus-20240229', 'stop_reason': 'tool_use', 'stop_sequence': None, 'usage': {'input_tokens': 487, 'output_tokens': 145}},
+                #     response_metadata={'id': 'msg_01GM3zQtoFv8jGQMW7abLnhi', 'model': 'claude-3-5-sonnet-20240620', 'stop_reason': 'tool_use', 'stop_sequence': None, 'usage': {'input_tokens': 487, 'output_tokens': 145}},
                 #     id='run-87b1331e-9251-4a68-acef-f0a018b639cc-0'
                 # )
 
@@ -862,7 +862,7 @@ class ChatAnthropic(BaseChatModel):
                     product: str = Field(..., description="The product to look up.")
 
 
-                llm = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
+                llm = ChatAnthropic(model="claude-3-5-sonnet-20240620", temperature=0)
                 llm_with_tools = llm.bind_tools([GetWeather, GetPrice], tool_choice="any")
                 llm_with_tools.invoke("what is the weather like in San Francisco",)
 
@@ -884,7 +884,7 @@ class ChatAnthropic(BaseChatModel):
                     product: str = Field(..., description="The product to look up.")
 
 
-                llm = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
+                llm = ChatAnthropic(model="claude-3-5-sonnet-20240620", temperature=0)
                 llm_with_tools = llm.bind_tools([GetWeather, GetPrice], tool_choice="GetWeather")
                 llm_with_tools.invoke("what is the weather like in San Francisco",)
 
@@ -915,7 +915,7 @@ class ChatAnthropic(BaseChatModel):
                 # We need to pass in extra headers to enable use of the beta cache
                 # control API.
                 llm = ChatAnthropic(
-                    model="claude-3-opus-20240229",
+                    model="claude-3-5-sonnet-20240620",
                     temperature=0,
                     extra_headers={"anthropic-beta": "prompt-caching-2024-07-31"}
                 )
@@ -961,24 +961,20 @@ class ChatAnthropic(BaseChatModel):
         """Model wrapper that returns outputs formatted to match the given schema.
 
         Args:
-            schema:
-                The output schema. Can be passed in as:
-                    - an Anthropic tool schema,
-                    - an OpenAI function/tool schema,
-                    - a JSON Schema,
-                    - a TypedDict class (support added in 0.1.22),
-                    - or a Pydantic class.
+            schema: The output schema. Can be passed in as:
+
+                - an Anthropic tool schema,
+                - an OpenAI function/tool schema,
+                - a JSON Schema,
+                - a TypedDict class,
+                - or a Pydantic class.
+
                 If ``schema`` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
-                dict and will not be validated. See :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`
+                dict and will not be validated. See :meth:`~langchain_core.utils.function_calling.convert_to_openai_tool`
                 for more on how to properly specify types and descriptions of
                 schema fields when specifying a Pydantic or TypedDict class.
-
-                .. versionchanged:: 0.1.22
-
-                        Added support for TypedDict class.
-
             include_raw:
                 If False then only the parsed structured output is returned. If
                 an error occurs during model output parsing it will be raised. If True
@@ -986,9 +982,10 @@ class ChatAnthropic(BaseChatModel):
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
                 with keys "raw", "parsed", and "parsing_error".
+            kwargs: Additional keyword arguments are ignored.
 
         Returns:
-            A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
+            A Runnable that takes same inputs as a :class:`~langchain_core.language_models.chat.BaseChatModel`.
 
             If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs
             an instance of ``schema`` (i.e., a Pydantic object).
@@ -1011,7 +1008,7 @@ class ChatAnthropic(BaseChatModel):
                     answer: str
                     justification: str
 
-                llm = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
+                llm = ChatAnthropic(model="claude-3-5-sonnet-20240620", temperature=0)
                 structured_llm = llm.with_structured_output(AnswerWithJustification)
 
                 structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
@@ -1032,7 +1029,7 @@ class ChatAnthropic(BaseChatModel):
                     answer: str
                     justification: str
 
-                llm = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
+                llm = ChatAnthropic(model="claude-3-5-sonnet-20240620", temperature=0)
                 structured_llm = llm.with_structured_output(AnswerWithJustification, include_raw=True)
 
                 structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
@@ -1059,7 +1056,7 @@ class ChatAnthropic(BaseChatModel):
                         "required": ["answer", "justification"]
                     }
                 }
-                llm = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
+                llm = ChatAnthropic(model="claude-3-5-sonnet-20240620", temperature=0)
                 structured_llm = llm.with_structured_output(schema)
 
                 structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
@@ -1067,6 +1064,10 @@ class ChatAnthropic(BaseChatModel):
                 #     'answer': 'They weigh the same',
                 #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
                 # }
+
+        .. versionchanged:: 0.1.22
+
+                Added support for TypedDict class as `schema`.
 
         """  # noqa: E501
 
