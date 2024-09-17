@@ -9,8 +9,9 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
-from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.utils import get_from_dict_or_env, get_pydantic_field_names
+from langchain_core.utils import from_env, get_pydantic_field_names
+from pydantic import ConfigDict, Field, model_validator
+from typing_extensions import Self
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +72,9 @@ class HuggingFaceEndpoint(LLM):
     should be pass as env variable in `HF_INFERENCE_ENDPOINT`"""
     repo_id: Optional[str] = None
     """Repo to use. If endpoint_url is not specified then this needs to given"""
-    huggingfacehub_api_token: Optional[str] = None
+    huggingfacehub_api_token: Optional[str] = Field(
+        default_factory=from_env("HUGGINGFACEHUB_API_TOKEN", default=None)
+    )
     max_new_tokens: int = 512
     """Maximum number of generated tokens"""
     top_k: Optional[int] = None
@@ -112,19 +115,19 @@ class HuggingFaceEndpoint(LLM):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `call` not explicitly specified"""
     model: str
-    client: Any
-    async_client: Any
+    client: Any = None  #: :meta private:
+    async_client: Any = None  #: :meta private:
     task: Optional[str] = None
     """Task to call the model with.
     Should be a task that returns `generated_text` or `summary_text`."""
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
-        extra = "forbid"
-
-    @root_validator(pre=True)
-    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})
@@ -182,8 +185,8 @@ class HuggingFaceEndpoint(LLM):
             )
         return values
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="after")
+    def validate_environment(self) -> Self:
         """Validate that package is installed and that the API token is valid."""
         try:
             from huggingface_hub import login  # type: ignore[import]
@@ -194,12 +197,8 @@ class HuggingFaceEndpoint(LLM):
                 "Please install it with `pip install huggingface_hub`."
             )
 
-        values["huggingfacehub_api_token"] = get_from_dict_or_env(
-            values, "huggingfacehub_api_token", "HUGGINGFACEHUB_API_TOKEN", None
-        )
-
-        huggingfacehub_api_token = get_from_dict_or_env(
-            values, "huggingfacehub_api_token", "HF_TOKEN", None
+        huggingfacehub_api_token = self.huggingfacehub_api_token or os.getenv(
+            "HF_TOKEN"
         )
 
         if huggingfacehub_api_token is not None:
@@ -213,20 +212,20 @@ class HuggingFaceEndpoint(LLM):
 
         from huggingface_hub import AsyncInferenceClient, InferenceClient
 
-        values["client"] = InferenceClient(
-            model=values["model"],
-            timeout=values["timeout"],
+        self.client = InferenceClient(
+            model=self.model,
+            timeout=self.timeout,
             token=huggingfacehub_api_token,
-            **values["server_kwargs"],
+            **self.server_kwargs,
         )
-        values["async_client"] = AsyncInferenceClient(
-            model=values["model"],
-            timeout=values["timeout"],
+        self.async_client = AsyncInferenceClient(
+            model=self.model,
+            timeout=self.timeout,
             token=huggingfacehub_api_token,
-            **values["server_kwargs"],
+            **self.server_kwargs,
         )
 
-        return values
+        return self
 
     @property
     def _default_params(self) -> Dict[str, Any]:

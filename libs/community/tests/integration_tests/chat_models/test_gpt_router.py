@@ -8,7 +8,7 @@ from langchain_core.callbacks import (
 )
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.outputs import ChatGeneration, LLMResult
-from langchain_core.pydantic_v1 import SecretStr
+from pydantic import SecretStr
 from pytest import CaptureFixture
 
 from langchain_community.chat_models.gpt_router import GPTRouter, GPTRouterModel

@@ -20,7 +20,6 @@ from langchain_core.language_models import BaseLanguageModel
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
 from langchain_core.prompt_values import PromptValue
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import (
     check_package_version,
     get_from_dict_or_env,
@@ -28,6 +27,7 @@ from langchain_core.utils import (
     pre_init,
 )
 from langchain_core.utils.utils import build_extra_kwargs, convert_to_secret_str
+from pydantic import ConfigDict, Field, SecretStr, model_validator
 
 
 class _AnthropicCommon(BaseLanguageModel):
@@ -66,8 +66,9 @@ class _AnthropicCommon(BaseLanguageModel):
     count_tokens: Optional[Callable[[str], int]] = None
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
 
-    @root_validator(pre=True)
-    def build_extra(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: Dict) -> Any:
         extra = values.get("model_kwargs", {})
         all_required_field_names = get_pydantic_field_names(cls)
         values["model_kwargs"] = build_extra_kwargs(
@@ -180,9 +181,10 @@ class Anthropic(LLM, _AnthropicCommon):
             response = model.invoke(prompt)
     """
 
-    class Config:
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        populate_by_name=True,
+        arbitrary_types_allowed=True,
+    )
 
     @pre_init
     def raise_warning(cls, values: Dict) -> Dict:

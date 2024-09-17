@@ -6,8 +6,9 @@ from typing import Any, Dict, List, Optional
 import box_sdk_gen  # type: ignore
 import requests
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import BaseModel, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.utils import from_env
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+from typing_extensions import Self
 
 
 class DocumentFiles(Enum):
@@ -312,17 +313,25 @@ class BoxAuth(BaseModel):
     """``langchain_box.utilities.BoxAuthType``. Enum describing how to
        authenticate against Box"""
 
-    box_developer_token: Optional[str] = None
+    box_developer_token: Optional[str] = Field(
+        default_factory=from_env("BOX_DEVELOPER_TOKEN", default=None)
+    )
     """ If using ``BoxAuthType.TOKEN``, provide your token here"""
 
-    box_jwt_path: Optional[str] = None
+    box_jwt_path: Optional[str] = Field(
+        default_factory=from_env("BOX_JWT_PATH", default=None)
+    )
     """If using ``BoxAuthType.JWT``, provide local path to your
        JWT configuration file"""
 
-    box_client_id: Optional[str] = None
+    box_client_id: Optional[str] = Field(
+        default_factory=from_env("BOX_CLIENT_ID", default=None)
+    )
     """If using ``BoxAuthType.CCG``, provide your app's client ID"""
 
-    box_client_secret: Optional[str] = None
+    box_client_secret: Optional[str] = Field(
+        default_factory=from_env("BOX_CLIENT_SECRET", default=None)
+    )
     """If using ``BoxAuthType.CCG``, provide your app's client secret"""
 
     box_enterprise_id: Optional[str] = None
@@ -336,137 +345,122 @@ class BoxAuth(BaseModel):
     _box_client: Optional[box_sdk_gen.BoxClient] = None
     _custom_header: Dict = dict({"x-box-ai-library": "langchain"})
 
-    class Config:
-        arbitrary_types_allowed = True
-        use_enum_values = True
-        extra = "allow"
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        use_enum_values=True,
+        extra="allow",
+    )
 
-    @root_validator()
-    def validate_box_auth_inputs(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="after")
+    def validate_box_auth_inputs(self) -> Self:
         """Validate auth_type is set"""
-        if not values.get("auth_type"):
+        if not self.auth_type:
             raise ValueError("Auth type must be set.")
 
         """Validate that TOKEN auth type provides box_developer_token."""
-        if values.get("auth_type") == "token":
-            if not get_from_dict_or_env(
-                values, "box_developer_token", "BOX_DEVELOPER_TOKEN"
-            ):
-                raise ValueError(
-                    f"{values.get('auth_type')} requires box_developer_token to be set"
-                )
+        if self.auth_type == "token" and not self.box_developer_token:
+            raise ValueError(f"{self.auth_type} requires box_developer_token to be set")
 
         """Validate that JWT auth type provides box_jwt_path."""
-        if values.get("auth_type") == "jwt":
-            if not get_from_dict_or_env(values, "box_jwt_path", "BOX_JWT_PATH"):
-                raise ValueError(
-                    f"{values.get('auth_type')} requires box_jwt_path to be set"
-                )
+        if self.auth_type == "jwt" and not self.box_jwt_path:
+            raise ValueError(f"{self.auth_type} requires box_jwt_path to be set")
 
         """Validate that CCG auth type provides box_client_id and
            box_client_secret and either box_enterprise_id or box_user_id."""
-        if values.get("auth_type") == "ccg":
+        if self.auth_type == "ccg":
             if (
-                not get_from_dict_or_env(values, "box_client_id", "BOX_CLIENT_ID")
-                or not get_from_dict_or_env(
-                    values, "box_client_secret", "BOX_CLIENT_SECRET"
-                )
-                or (
-                    not values.get("box_enterprise_id")
-                    and not values.get("box_user_id")
-                )
+                not self.box_client_id
+                or not self.box_client_secret
+                or (not self.box_enterprise_id and not self.box_user_id)
             ):
                 raise ValueError(
-                    f"{values.get('auth_type')} requires box_client_id, \
-                        box_client_secret, and box_enterprise_id."
+                    f"{self.auth_type} requires box_client_id, \
+                        box_client_secret, and box_enterprise_id/box_user_id."
                 )
 
-        return values
+        return self
 
     def _authorize(self) -> None:
-        match self.auth_type:
-            case "token":
-                try:
-                    auth = box_sdk_gen.BoxDeveloperTokenAuth(
-                        token=self.box_developer_token
-                    )
-                    self._box_client = box_sdk_gen.BoxClient(
-                        auth=auth
-                    ).with_extra_headers(extra_headers=self._custom_header)
-
-                except box_sdk_gen.BoxSDKError as bse:
-                    raise RuntimeError(
-                        f"Error getting client from developer token: {bse.message}"
-                    )
-                except Exception as ex:
-                    raise ValueError(
-                        f"Invalid Box developer token. Please verify your \
-                            token and try again.\n{ex}"
-                    ) from ex
-
-            case "jwt":
-                try:
-                    jwt_config = box_sdk_gen.JWTConfig.from_config_file(
-                        config_file_path=self.box_jwt_path
-                    )
-                    auth = box_sdk_gen.BoxJWTAuth(config=jwt_config)
-
-                    self._box_client = box_sdk_gen.BoxClient(
-                        auth=auth
-                    ).with_extra_headers(extra_headers=self._custom_header)
-
-                    if self.box_user_id is not None:
-                        user_auth = auth.with_user_subject(self.box_user_id)
-                        self._box_client = box_sdk_gen.BoxClient(
-                            auth=user_auth
-                        ).with_extra_headers(extra_headers=self._custom_header)
-
-                except box_sdk_gen.BoxSDKError as bse:
-                    raise RuntimeError(
-                        f"Error getting client from jwt token: {bse.message}"
-                    )
-                except Exception as ex:
-                    raise ValueError(
-                        "Error authenticating. Please verify your JWT config \
-                            and try again."
-                    ) from ex
-
-            case "ccg":
-                try:
-                    if self.box_user_id is not None:
-                        ccg_config = box_sdk_gen.CCGConfig(
-                            client_id=self.box_client_id,
-                            client_secret=self.box_client_secret,
-                            user_id=self.box_user_id,
-                        )
-                    else:
-                        ccg_config = box_sdk_gen.CCGConfig(
-                            client_id=self.box_client_id,
-                            client_secret=self.box_client_secret,
-                            enterprise_id=self.box_enterprise_id,
-                        )
-                    auth = box_sdk_gen.BoxCCGAuth(config=ccg_config)
-
-                    self._box_client = box_sdk_gen.BoxClient(
-                        auth=auth
-                    ).with_extra_headers(extra_headers=self._custom_header)
-
-                except box_sdk_gen.BoxSDKError as bse:
-                    raise RuntimeError(
-                        f"Error getting client from ccg token: {bse.message}"
-                    )
-                except Exception as ex:
-                    raise ValueError(
-                        "Error authenticating. Please verify you are providing a \
-                            valid client id, secret and either a valid user ID or \
-                                enterprise ID."
-                    ) from ex
-
-            case _:
-                raise ValueError(
-                    f"{self.auth_type} is not a valid auth_type. Value must be \
-                TOKEN, CCG, or JWT."
+        if self.auth_type == "token":
+            try:
+                auth = box_sdk_gen.BoxDeveloperTokenAuth(token=self.box_developer_token)
+                self._box_client = box_sdk_gen.BoxClient(auth=auth).with_extra_headers(
+                    extra_headers=self._custom_header
                 )
+
+            except box_sdk_gen.BoxSDKError as bse:
+                raise RuntimeError(
+                    f"Error getting client from developer token: {bse.message}"
+                )
+            except Exception as ex:
+                raise ValueError(
+                    f"Invalid Box developer token. Please verify your \
+                        token and try again.\n{ex}"
+                ) from ex
+
+        elif self.auth_type == "jwt":
+            try:
+                jwt_config = box_sdk_gen.JWTConfig.from_config_file(
+                    config_file_path=self.box_jwt_path
+                )
+                auth = box_sdk_gen.BoxJWTAuth(config=jwt_config)
+
+                self._box_client = box_sdk_gen.BoxClient(auth=auth).with_extra_headers(
+                    extra_headers=self._custom_header
+                )
+
+                if self.box_user_id is not None:
+                    user_auth = auth.with_user_subject(self.box_user_id)
+                    self._box_client = box_sdk_gen.BoxClient(
+                        auth=user_auth
+                    ).with_extra_headers(extra_headers=self._custom_header)
+
+            except box_sdk_gen.BoxSDKError as bse:
+                raise RuntimeError(
+                    f"Error getting client from jwt token: {bse.message}"
+                )
+            except Exception as ex:
+                raise ValueError(
+                    "Error authenticating. Please verify your JWT config \
+                        and try again."
+                ) from ex
+
+        elif self.auth_type == "ccg":
+            try:
+                if self.box_user_id is not None:
+                    ccg_config = box_sdk_gen.CCGConfig(
+                        client_id=self.box_client_id,
+                        client_secret=self.box_client_secret,
+                        user_id=self.box_user_id,
+                    )
+                else:
+                    ccg_config = box_sdk_gen.CCGConfig(
+                        client_id=self.box_client_id,
+                        client_secret=self.box_client_secret,
+                        enterprise_id=self.box_enterprise_id,
+                    )
+                auth = box_sdk_gen.BoxCCGAuth(config=ccg_config)
+
+                self._box_client = box_sdk_gen.BoxClient(auth=auth).with_extra_headers(
+                    extra_headers=self._custom_header
+                )
+
+            except box_sdk_gen.BoxSDKError as bse:
+                raise RuntimeError(
+                    f"Error getting client from ccg token: {bse.message}"
+                )
+            except Exception as ex:
+                raise ValueError(
+                    "Error authenticating. Please verify you are providing a \
+                        valid client id, secret and either a valid user ID or \
+                            enterprise ID."
+                ) from ex
+
+        else:
+            raise ValueError(
+                f"{self.auth_type} is not a valid auth_type. Value must be \
+            TOKEN, CCG, or JWT."
+            )
 
     def get_client(self) -> box_sdk_gen.BoxClient:
         """Instantiate the Box SDK."""
@@ -479,7 +473,9 @@ class BoxAuth(BaseModel):
 class _BoxAPIWrapper(BaseModel):
     """Wrapper for Box API."""
 
-    box_developer_token: Optional[str] = None
+    box_developer_token: Optional[str] = Field(
+        default_factory=from_env("BOX_DEVELOPER_TOKEN", default=None)
+    )
     """String containing the Box Developer Token generated in the developer console"""
 
     box_auth: Optional[BoxAuth] = None
@@ -489,30 +485,29 @@ class _BoxAPIWrapper(BaseModel):
     """character_limit is an int that caps the number of characters to
        return per document."""
 
-    _box: Optional[box_sdk_gen.BoxClient]
+    _box: Optional[box_sdk_gen.BoxClient] = None
 
-    class Config:
-        arbitrary_types_allowed = True
-        use_enum_values = True
-        extra = "allow"
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        use_enum_values=True,
+        extra="allow",
+    )
 
-    @root_validator(allow_reuse=True)
-    def validate_box_api_inputs(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        values["_box"] = None
+    @model_validator(mode="after")
+    def validate_box_api_inputs(self) -> Self:
+        self._box = None
 
         """Validate that TOKEN auth type provides box_developer_token."""
-        if not values.get("box_auth"):
-            if not get_from_dict_or_env(
-                values, "box_developer_token", "BOX_DEVELOPER_TOKEN"
-            ):
+        if not self.box_auth:
+            if not self.box_developer_token:
                 raise ValueError(
                     "You must configure either box_developer_token of box_auth"
                 )
         else:
-            box_auth = values.get("box_auth")
-            values["_box"] = box_auth.get_client()  #  type: ignore[union-attr]
+            box_auth = self.box_auth
+            self._box = box_auth.get_client()  #  type: ignore[union-attr]
 
-        return values
+        return self
 
     def get_box_client(self) -> box_sdk_gen.BoxClient:
         box_auth = BoxAuth(

@@ -12,6 +12,7 @@ from typing import (
     cast,
 )
 
+from pydantic import ConfigDict
 from typing_extensions import TypedDict
 
 from langchain_core.runnables.base import (
@@ -83,8 +84,9 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
             runnables={key: coerce_to_runnable(r) for key, r in runnables.items()}
         )
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     @classmethod
     def is_lc_serializable(cls) -> bool:

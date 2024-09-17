@@ -5,7 +5,9 @@ from json import JSONDecodeError
 from typing import Any, List, Optional, Type, TypeVar, Union
 
 import jsonpatch  # type: ignore[import]
-import pydantic  # pydantic: ignore
+import pydantic
+from pydantic import SkipValidation
+from typing_extensions import Annotated
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers.format_instructions import JSON_FORMAT_INSTRUCTIONS
@@ -22,7 +24,7 @@ if PYDANTIC_MAJOR_VERSION < 2:
     PydanticBaseModel = pydantic.BaseModel
 
 else:
-    from pydantic.v1 import BaseModel  # pydantic: ignore
+    from pydantic.v1 import BaseModel
 
     # Union type needs to be last assignment to PydanticBaseModel to make mypy happy.
     PydanticBaseModel = Union[BaseModel, pydantic.BaseModel]  # type: ignore
@@ -40,7 +42,7 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
     describing the difference between the previous and the current object.
     """
 
-    pydantic_object: Optional[Type[TBaseModel]] = None  # type: ignore
+    pydantic_object: Annotated[Optional[Type[TBaseModel]], SkipValidation()] = None  # type: ignore
     """The Pydantic object to use for validation. 
     If None, no validation is performed."""
 
@@ -52,8 +54,8 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
             if issubclass(pydantic_object, pydantic.BaseModel):
                 return pydantic_object.model_json_schema()
             elif issubclass(pydantic_object, pydantic.v1.BaseModel):
-                return pydantic_object.schema()
-        return pydantic_object.schema()
+                return pydantic_object.model_json_schema()
+        return pydantic_object.model_json_schema()
 
     def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
         """Parse the result of an LLM call to a JSON object.

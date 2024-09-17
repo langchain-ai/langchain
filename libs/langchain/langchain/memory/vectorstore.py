@@ -3,8 +3,8 @@
 from typing import Any, Dict, List, Optional, Sequence, Union
 
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import Field
 from langchain_core.vectorstores import VectorStoreRetriever
+from pydantic import Field
 
 from langchain.memory.chat_memory import BaseMemory
 from langchain.memory.utils import get_prompt_input_key
