@@ -71,7 +71,7 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
     runnables: Mapping[str, Runnable[Any, Output]]
 
     @property
-    def config_specs(self) -> List[ConfigurableFieldSpec]:
+    def config_specs(self) -> list[ConfigurableFieldSpec]:
         return get_unique_config_specs(
             spec for step in self.runnables.values() for spec in step.config_specs
         )
@@ -94,7 +94,7 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
         return True
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "schema", "runnable"]
 
@@ -125,12 +125,12 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
 
     def batch(
         self,
-        inputs: List[RouterInput],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: list[RouterInput],
+        config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
         *,
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
-    ) -> List[Output]:
+    ) -> list[Output]:
         if not inputs:
             return []
 
@@ -160,12 +160,12 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
 
     async def abatch(
         self,
-        inputs: List[RouterInput],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: list[RouterInput],
+        config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
         *,
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
-    ) -> List[Output]:
+    ) -> list[Output]:
         if not inputs:
             return []
 

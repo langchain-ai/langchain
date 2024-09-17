@@ -6,14 +6,11 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Dict,
     List,
     Literal,
     Mapping,
     Optional,
     Sequence,
-    Set,
-    Type,
     TypeVar,
     Union,
 )
@@ -51,7 +48,7 @@ class LangSmithParams(TypedDict, total=False):
     """Temperature for generation."""
     ls_max_tokens: Optional[int]
     """Max tokens for generation."""
-    ls_stop: Optional[List[str]]
+    ls_stop: Optional[list[str]]
     """Stop words for generation."""
 
 
@@ -74,7 +71,7 @@ def get_tokenizer() -> Any:
     return GPT2TokenizerFast.from_pretrained("gpt2")
 
 
-def _get_token_ids_default_method(text: str) -> List[int]:
+def _get_token_ids_default_method(text: str) -> list[int]:
     """Encode the text into token IDs."""
     # get the cached tokenizer
     tokenizer = get_tokenizer()
@@ -117,11 +114,11 @@ class BaseLanguageModel(
     """Whether to print out response text."""
     callbacks: Callbacks = Field(default=None, exclude=True)
     """Callbacks to add to the run trace."""
-    tags: Optional[List[str]] = Field(default=None, exclude=True)
+    tags: Optional[list[str]] = Field(default=None, exclude=True)
     """Tags to add to the run trace."""
-    metadata: Optional[Dict[str, Any]] = Field(default=None, exclude=True)
+    metadata: Optional[dict[str, Any]] = Field(default=None, exclude=True)
     """Metadata to add to the run trace."""
-    custom_get_token_ids: Optional[Callable[[str], List[int]]] = Field(
+    custom_get_token_ids: Optional[Callable[[str], list[int]]] = Field(
         default=None, exclude=True
     )
     """Optional encoder to use for counting tokens."""
@@ -167,8 +164,8 @@ class BaseLanguageModel(
     @abstractmethod
     def generate_prompt(
         self,
-        prompts: List[PromptValue],
-        stop: Optional[List[str]] = None,
+        prompts: list[PromptValue],
+        stop: Optional[list[str]] = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> LLMResult:
@@ -202,8 +199,8 @@ class BaseLanguageModel(
     @abstractmethod
     async def agenerate_prompt(
         self,
-        prompts: List[PromptValue],
-        stop: Optional[List[str]] = None,
+        prompts: list[PromptValue],
+        stop: Optional[list[str]] = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> LLMResult:
@@ -235,8 +232,8 @@ class BaseLanguageModel(
         """
 
     def with_structured_output(
-        self, schema: Union[Dict, Type[BaseModel]], **kwargs: Any
-    ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
+        self, schema: Union[dict, type[BaseModel]], **kwargs: Any
+    ) -> Runnable[LanguageModelInput, Union[dict, BaseModel]]:
         """Not implemented on this class."""
         # Implement this on child class if there is a way of steering the model to
         # generate responses that match a given schema.
@@ -267,7 +264,7 @@ class BaseLanguageModel(
     @abstractmethod
     def predict_messages(
         self,
-        messages: List[BaseMessage],
+        messages: list[BaseMessage],
         *,
         stop: Optional[Sequence[str]] = None,
         **kwargs: Any,
@@ -313,7 +310,7 @@ class BaseLanguageModel(
     @abstractmethod
     async def apredict_messages(
         self,
-        messages: List[BaseMessage],
+        messages: list[BaseMessage],
         *,
         stop: Optional[Sequence[str]] = None,
         **kwargs: Any,
@@ -339,7 +336,7 @@ class BaseLanguageModel(
         """Get the identifying parameters."""
         return self.lc_attributes
 
-    def get_token_ids(self, text: str) -> List[int]:
+    def get_token_ids(self, text: str) -> list[int]:
         """Return the ordered ids of the tokens in a text.
 
         Args:
@@ -367,7 +364,7 @@ class BaseLanguageModel(
         """
         return len(self.get_token_ids(text))
 
-    def get_num_tokens_from_messages(self, messages: List[BaseMessage]) -> int:
+    def get_num_tokens_from_messages(self, messages: list[BaseMessage]) -> int:
         """Get the number of tokens in the messages.
 
         Useful for checking if an input fits in a model's context window.
@@ -381,7 +378,7 @@ class BaseLanguageModel(
         return sum([self.get_num_tokens(get_buffer_string([m])) for m in messages])
 
     @classmethod
-    def _all_required_field_names(cls) -> Set:
+    def _all_required_field_names(cls) -> set:
         """DEPRECATED: Kept for backwards compatibility.
 
         Use get_pydantic_field_names.

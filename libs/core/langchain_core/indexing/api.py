@@ -11,14 +11,11 @@ from typing import (
     AsyncIterable,
     AsyncIterator,
     Callable,
-    Dict,
     Iterable,
     Iterator,
-    List,
     Literal,
     Optional,
     Sequence,
-    Set,
     TypedDict,
     TypeVar,
     Union,
@@ -71,7 +68,7 @@ class _HashedDocument(Document):
 
     @model_validator(mode="before")
     @classmethod
-    def calculate_hashes(cls, values: Dict[str, Any]) -> Any:
+    def calculate_hashes(cls, values: dict[str, Any]) -> Any:
         """Root validator to calculate content and metadata hash."""
         content = values.get("page_content", "")
         metadata = values.get("metadata", {})
@@ -125,7 +122,7 @@ class _HashedDocument(Document):
         )
 
 
-def _batch(size: int, iterable: Iterable[T]) -> Iterator[List[T]]:
+def _batch(size: int, iterable: Iterable[T]) -> Iterator[list[T]]:
     """Utility batching function."""
     it = iter(iterable)
     while True:
@@ -135,9 +132,9 @@ def _batch(size: int, iterable: Iterable[T]) -> Iterator[List[T]]:
         yield chunk
 
 
-async def _abatch(size: int, iterable: AsyncIterable[T]) -> AsyncIterator[List[T]]:
+async def _abatch(size: int, iterable: AsyncIterable[T]) -> AsyncIterator[list[T]]:
     """Utility batching function."""
-    batch: List[T] = []
+    batch: list[T] = []
     async for element in iterable:
         if len(batch) < size:
             batch.append(element)
@@ -171,7 +168,7 @@ def _deduplicate_in_order(
     hashed_documents: Iterable[_HashedDocument],
 ) -> Iterator[_HashedDocument]:
     """Deduplicate a list of hashed documents while preserving order."""
-    seen: Set[str] = set()
+    seen: set[str] = set()
 
     for hashed_doc in hashed_documents:
         if hashed_doc.hash_ not in seen:
@@ -349,7 +346,7 @@ def index(
         uids = []
         docs_to_index = []
         uids_to_refresh = []
-        seen_docs: Set[str] = set()
+        seen_docs: set[str] = set()
         for hashed_doc, doc_exists in zip(hashed_docs, exists_batch):
             if doc_exists:
                 if force_update:
@@ -589,7 +586,7 @@ async def aindex(
         uids: list[str] = []
         docs_to_index: list[Document] = []
         uids_to_refresh = []
-        seen_docs: Set[str] = set()
+        seen_docs: set[str] = set()
         for hashed_doc, doc_exists in zip(hashed_docs, exists_batch):
             if doc_exists:
                 if force_update:

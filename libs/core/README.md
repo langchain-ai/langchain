@@ -53,7 +53,7 @@ LangChain Core compiles LCEL sequences to an _optimized execution plan_, with au
 
 For more check out the [LCEL docs](https://python.langchain.com/docs/expression_language/).
 
-![Diagram outlining the hierarchical organization of the LangChain framework, displaying the interconnected parts across multiple layers.](../../docs/static/svg/langchain_stack_062024.svg "LangChain Framework Overview")
+![Diagram outlining the hierarchical organization of the LangChain framework, displaying the interconnected parts across multiple layers.](https://raw.githubusercontent.com/langchain-ai/langchain/e1d113ea84a2edcf4a7709fc5be0e972ea74a5d9/docs/static/svg/langchain_stack_062024.svg "LangChain Framework Overview")
 
 For more advanced use cases, also check out [LangGraph](https://github.com/langchain-ai/langgraph), which is a graph-based runner for cyclic and recursive LLM workflows.
 

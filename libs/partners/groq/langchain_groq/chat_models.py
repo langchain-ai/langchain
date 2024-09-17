@@ -23,6 +23,7 @@ from typing import (
     cast,
 )
 
+from langchain_core._api import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -650,6 +651,11 @@ class ChatGroq(BaseChatModel):
             combined["system_fingerprint"] = system_fingerprint
         return combined
 
+    @deprecated(
+        since="0.2.1",
+        alternative="langchain_groq.chat_models.ChatGroq.bind_tools",
+        removal="0.3.0",
+    )
     def bind_functions(
         self,
         functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
@@ -674,8 +680,8 @@ class ChatGroq(BaseChatModel):
                 Must be the name of the single provided function or
                 "auto" to automatically determine which function to call
                 (if any).
-            **kwargs: Any additional parameters to pass to the
-                :class:`~langchain.runnable.Runnable` constructor.
+            **kwargs: Any additional parameters to pass to
+                :meth:`~langchain_groq.chat_models.ChatGroq.bind`.
         """
 
         formatted_functions = [convert_to_openai_function(fn) for fn in functions]
