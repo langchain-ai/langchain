@@ -509,7 +509,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         def random_image() -> str:
             """Return a random image."""
-            ...
+            return ""
 
         model.bind_tools([random_image]).invoke(messages)
 
