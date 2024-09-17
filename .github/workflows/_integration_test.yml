@@ -1,3 +1,6 @@
+# Ignore changes to this file. Hijacking just to allow
+# testing of workflow dispatch on new workflow off of branch.
+
 name: Extended tests
 
 on:
