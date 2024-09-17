@@ -19,7 +19,7 @@ test tests:
 	poetry run pytest --disable-socket --allow-unix-socket $(TEST_FILE)
 
 integration_tests:
-	poetry run pytest $(TEST_FILE)
+	poetry run pytest -m runs $(TEST_FILE)
 
 test_watch:
 	poetry run ptw --disable-socket --allow-unix-socket --snapshot-update --now . -- -vv tests/unit_tests
