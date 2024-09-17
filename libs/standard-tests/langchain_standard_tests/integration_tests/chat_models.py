@@ -489,7 +489,12 @@ class ChatModelIntegrationTests(ChatModelTests):
         image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
         messages = [
             HumanMessage("get a random image using the tool and describe the weather"),
-            AIMessage([], tool_calls=[{"type": "tool_call", "id": "1", "name": "random_image", "args": {}}]),
+            AIMessage(
+                [],
+                tool_calls=[
+                    {"type": "tool_call", "id": "1", "name": "random_image", "args": {}}
+                ],
+            ),
             ToolMessage(
                 content=[
                     {
@@ -499,7 +504,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                 ],
                 tool_call_id="1",
                 name="random_image",
-            )
+            ),
         ]
 
         def random_image() -> str:
