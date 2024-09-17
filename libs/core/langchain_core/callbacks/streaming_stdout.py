@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import sys
-from typing import TYPE_CHECKING, Any, Dict, List
+from typing import TYPE_CHECKING, Any
 
 from langchain_core.callbacks.base import BaseCallbackHandler
 
@@ -17,7 +17,7 @@ class StreamingStdOutCallbackHandler(BaseCallbackHandler):
     """Callback handler for streaming. Only works with LLMs that support streaming."""
 
     def on_llm_start(
-        self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
+        self, serialized: dict[str, Any], prompts: list[str], **kwargs: Any
     ) -> None:
         """Run when LLM starts running.
 
@@ -29,8 +29,8 @@ class StreamingStdOutCallbackHandler(BaseCallbackHandler):
 
     def on_chat_model_start(
         self,
-        serialized: Dict[str, Any],
-        messages: List[List[BaseMessage]],
+        serialized: dict[str, Any],
+        messages: list[list[BaseMessage]],
         **kwargs: Any,
     ) -> None:
         """Run when LLM starts running.
@@ -68,7 +68,7 @@ class StreamingStdOutCallbackHandler(BaseCallbackHandler):
         """
 
     def on_chain_start(
-        self, serialized: Dict[str, Any], inputs: Dict[str, Any], **kwargs: Any
+        self, serialized: dict[str, Any], inputs: dict[str, Any], **kwargs: Any
     ) -> None:
         """Run when a chain starts running.
 
@@ -78,7 +78,7 @@ class StreamingStdOutCallbackHandler(BaseCallbackHandler):
             **kwargs (Any): Additional keyword arguments.
         """
 
-    def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
+    def on_chain_end(self, outputs: dict[str, Any], **kwargs: Any) -> None:
         """Run when a chain ends running.
 
         Args:
@@ -95,7 +95,7 @@ class StreamingStdOutCallbackHandler(BaseCallbackHandler):
         """
 
     def on_tool_start(
-        self, serialized: Dict[str, Any], input_str: str, **kwargs: Any
+        self, serialized: dict[str, Any], input_str: str, **kwargs: Any
     ) -> None:
         """Run when the tool starts running.
 

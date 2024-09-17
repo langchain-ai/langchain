@@ -41,8 +41,8 @@ python = ">=3.12.4"
 [tool.poetry.extras]
 
 [tool.ruff.lint]
-select = [ "B", "E", "F", "I", "T201", "UP",]
-ignore = [ "UP006", "UP007",]
+select = ["B", "E", "F", "I", "T201", "UP"]
+ignore = ["UP007"]
 
 [tool.coverage.run]
 omit = [ "tests/*",]

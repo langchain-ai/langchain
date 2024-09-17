@@ -16,7 +16,6 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
-    Tuple,
     Union,
     cast,
 )
@@ -45,7 +44,7 @@ class ChevronError(SyntaxError):
 #
 
 
-def grab_literal(template: str, l_del: str) -> Tuple[str, str]:
+def grab_literal(template: str, l_del: str) -> tuple[str, str]:
     """Parse a literal from the template.
 
     Args:
@@ -124,7 +123,7 @@ def r_sa_check(template: str, tag_type: str, is_standalone: bool) -> bool:
         return False
 
 
-def parse_tag(template: str, l_del: str, r_del: str) -> Tuple[Tuple[str, str], str]:
+def parse_tag(template: str, l_del: str, r_del: str) -> tuple[tuple[str, str], str]:
     """Parse a tag from a template.
 
     Args:
@@ -201,7 +200,7 @@ def parse_tag(template: str, l_del: str, r_del: str) -> Tuple[Tuple[str, str], s
 
 def tokenize(
     template: str, def_ldel: str = "{{", def_rdel: str = "}}"
-) -> Iterator[Tuple[str, str]]:
+) -> Iterator[tuple[str, str]]:
     """Tokenize a mustache template.
 
     Tokenizes a mustache template in a generator fashion,
@@ -427,13 +426,13 @@ def _get_partial(name: str, partials_dict: Mapping[str, str]) -> str:
 #
 # The main rendering function
 #
-g_token_cache: Dict[str, List[Tuple[str, str]]] = {}
+g_token_cache: dict[str, list[tuple[str, str]]] = {}
 
 EMPTY_DICT: MappingProxyType[str, str] = MappingProxyType({})
 
 
 def render(
-    template: Union[str, List[Tuple[str, str]]] = "",
+    template: Union[str, list[tuple[str, str]]] = "",
     data: Mapping[str, Any] = EMPTY_DICT,
     partials_dict: Mapping[str, str] = EMPTY_DICT,
     padding: str = "",
@@ -490,7 +489,7 @@ def render(
     if isinstance(template, Sequence) and not isinstance(template, str):
         # Then we don't need to tokenize it
         # But it does need to be a generator
-        tokens: Iterator[Tuple[str, str]] = (token for token in template)
+        tokens: Iterator[tuple[str, str]] = (token for token in template)
     else:
         if template in g_token_cache:
             tokens = (token for token in g_token_cache[template])
@@ -561,7 +560,7 @@ def render(
             if callable(scope):
                 # Generate template text from tags
                 text = ""
-                tags: List[Tuple[str, str]] = []
+                tags: list[tuple[str, str]] = []
                 for token in tokens:
                     if token == ("end", key):
                         break

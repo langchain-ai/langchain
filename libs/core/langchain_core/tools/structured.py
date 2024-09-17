@@ -6,11 +6,8 @@ from typing import (
     Any,
     Awaitable,
     Callable,
-    Dict,
-    List,
     Literal,
     Optional,
-    Type,
     Union,
 )
 
@@ -50,7 +47,7 @@ class StructuredTool(BaseTool):
     # TODO: Is this needed?
     async def ainvoke(
         self,
-        input: Union[str, Dict, ToolCall],
+        input: Union[str, dict, ToolCall],
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Any:
@@ -112,7 +109,7 @@ class StructuredTool(BaseTool):
         name: Optional[str] = None,
         description: Optional[str] = None,
         return_direct: bool = False,
-        args_schema: Optional[Type[BaseModel]] = None,
+        args_schema: Optional[type[BaseModel]] = None,
         infer_schema: bool = True,
         *,
         response_format: Literal["content", "content_and_artifact"] = "content",
@@ -209,7 +206,7 @@ class StructuredTool(BaseTool):
         )
 
 
-def _filter_schema_args(func: Callable) -> List[str]:
+def _filter_schema_args(func: Callable) -> list[str]:
     filter_args = list(FILTERED_ARGS)
     if config_param := _get_runnable_config_param(func):
         filter_args.append(config_param)
