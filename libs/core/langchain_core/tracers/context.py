@@ -6,10 +6,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Generator,
-    List,
     Optional,
-    Tuple,
-    Type,
     Union,
     cast,
 )
@@ -53,7 +50,7 @@ def tracing_v2_enabled(
     project_name: Optional[str] = None,
     *,
     example_id: Optional[Union[str, UUID]] = None,
-    tags: Optional[List[str]] = None,
+    tags: Optional[list[str]] = None,
     client: Optional[LangSmithClient] = None,
 ) -> Generator[LangChainTracer, None, None]:
     """Instruct LangChain to log all runs in context to LangSmith.
@@ -169,11 +166,11 @@ def _get_tracer_project() -> str:
     )
 
 
-_configure_hooks: List[
-    Tuple[
+_configure_hooks: list[
+    tuple[
         ContextVar[Optional[BaseCallbackHandler]],
         bool,
-        Optional[Type[BaseCallbackHandler]],
+        Optional[type[BaseCallbackHandler]],
         Optional[str],
     ]
 ] = []
@@ -182,7 +179,7 @@ _configure_hooks: List[
 def register_configure_hook(
     context_var: ContextVar[Optional[Any]],
     inheritable: bool,
-    handle_class: Optional[Type[BaseCallbackHandler]] = None,
+    handle_class: Optional[type[BaseCallbackHandler]] = None,
     env_var: Optional[str] = None,
 ) -> None:
     """Register a configure hook.

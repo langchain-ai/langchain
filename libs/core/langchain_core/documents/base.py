@@ -4,7 +4,7 @@ import contextlib
 import mimetypes
 from io import BufferedReader, BytesIO
 from pathlib import PurePath
-from typing import Any, Dict, Generator, List, Literal, Optional, Union, cast
+from typing import Any, Generator, Literal, Optional, Union, cast
 
 from pydantic import ConfigDict, Field, field_validator, model_validator
 
@@ -138,7 +138,7 @@ class Blob(BaseMedia):
 
     @model_validator(mode="before")
     @classmethod
-    def check_blob_is_valid(cls, values: Dict[str, Any]) -> Any:
+    def check_blob_is_valid(cls, values: dict[str, Any]) -> Any:
         """Verify that either data or path is provided."""
         if "data" not in values and "path" not in values:
             raise ValueError("Either data or path must be provided")
@@ -285,7 +285,7 @@ class Document(BaseMedia):
         return True
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "schema", "document"]
 

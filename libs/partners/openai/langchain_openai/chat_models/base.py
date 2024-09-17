@@ -33,6 +33,7 @@ from urllib.parse import urlparse
 
 import openai
 import tiktoken
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -966,6 +967,11 @@ class BaseChatOpenAI(BaseChatModel):
         num_tokens += 3
         return num_tokens
 
+    @deprecated(
+        since="0.2.1",
+        alternative="langchain_openai.chat_models.base.ChatOpenAI.bind_tools",
+        removal="0.3.0",
+    )
     def bind_functions(
         self,
         functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
@@ -1033,22 +1039,18 @@ class BaseChatOpenAI(BaseChatModel):
 
         Assumes model is compatible with OpenAI tool-calling API.
 
-        .. versionchanged:: 0.1.21
-
-            Support for ``strict`` argument added.
-
         Args:
             tools: A list of tool definitions to bind to this chat model.
                 Supports any tool definition handled by
                 :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`.
-            tool_choice: Which tool to require the model to call.
-                Options are:
-                    - str of the form ``"<<tool_name>>"``: calls <<tool_name>> tool.
-                    - ``"auto"``: automatically selects a tool (including no tool).
-                    - ``"none"``: does not call a tool.
-                    - ``"any"`` or ``"required"`` or ``True``: force at least one tool to be called.
-                    - dict of the form ``{"type": "function", "function": {"name": <<tool_name>>}}``: calls <<tool_name>> tool.
-                    - ``False`` or ``None``: no effect, default OpenAI behavior.
+            tool_choice: Which tool to require the model to call. Options are:
+
+                - str of the form ``"<<tool_name>>"``: calls <<tool_name>> tool.
+                - ``"auto"``: automatically selects a tool (including no tool).
+                - ``"none"``: does not call a tool.
+                - ``"any"`` or ``"required"`` or ``True``: force at least one tool to be called.
+                - dict of the form ``{"type": "function", "function": {"name": <<tool_name>>}}``: calls <<tool_name>> tool.
+                - ``False`` or ``None``: no effect, default OpenAI behavior.
             strict: If True, model output is guaranteed to exactly match the JSON Schema
                 provided in the tool definition. If True, the input schema will be
                 validated according to
@@ -1056,11 +1058,13 @@ class BaseChatOpenAI(BaseChatModel):
                 If False, input schema will not be validated and model output will not
                 be validated.
                 If None, ``strict`` argument will not be passed to the model.
-
-                .. versionadded:: 0.1.21
-
             kwargs: Any additional parameters are passed directly to
-                ``self.bind(**kwargs)``.
+                :meth:`~langchain_openai.chat_models.base.ChatOpenAI.bind`.
+
+        .. versionchanged:: 0.1.21
+
+            Support for ``strict`` argument added.
+
         """  # noqa: E501
 
         formatted_tools = [

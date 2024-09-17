@@ -194,35 +194,35 @@ def _format_messages(
 
             # populate content
             content = []
-            for item in message.content:
-                if isinstance(item, str):
-                    content.append({"type": "text", "text": item})
-                elif isinstance(item, dict):
-                    if "type" not in item:
-                        raise ValueError("Dict content item must have a type key")
-                    elif item["type"] == "image_url":
+            for block in message.content:
+                if isinstance(block, str):
+                    content.append({"type": "text", "text": block})
+                elif isinstance(block, dict):
+                    if "type" not in block:
+                        raise ValueError("Dict content block must have a type key")
+                    elif block["type"] == "image_url":
                         # convert format
-                        source = _format_image(item["image_url"]["url"])
+                        source = _format_image(block["image_url"]["url"])
                         content.append({"type": "image", "source": source})
-                    elif item["type"] == "tool_use":
+                    elif block["type"] == "tool_use":
                         # If a tool_call with the same id as a tool_use content block
                         # exists, the tool_call is preferred.
-                        if isinstance(message, AIMessage) and item["id"] in [
+                        if isinstance(message, AIMessage) and block["id"] in [
                             tc["id"] for tc in message.tool_calls
                         ]:
                             overlapping = [
                                 tc
                                 for tc in message.tool_calls
-                                if tc["id"] == item["id"]
+                                if tc["id"] == block["id"]
                             ]
                             content.extend(
                                 _lc_tool_calls_to_anthropic_tool_use_blocks(overlapping)
                             )
                         else:
-                            item.pop("text", None)
-                            content.append(item)
-                    elif item["type"] == "text":
-                        text = item.get("text", "")
+                            block.pop("text", None)
+                            content.append(block)
+                    elif block["type"] == "text":
+                        text = block.get("text", "")
                         # Only add non-empty strings for now as empty ones are not
                         # accepted.
                         # https://github.com/anthropics/anthropic-sdk-python/issues/461
@@ -230,28 +230,44 @@ def _format_messages(
                             content.append(
                                 {
                                     k: v
-                                    for k, v in item.items()
+                                    for k, v in block.items()
                                     if k in ("type", "text", "cache_control")
                                 }
                             )
+                    elif block["type"] == "tool_result":
+                        tool_content = _format_messages(
+                            [HumanMessage(block["content"])]
+                        )[1][0]["content"]
+                        content.append({**block, **{"content": tool_content}})
                     else:
-                        content.append(item)
+                        content.append(block)
                 else:
                     raise ValueError(
-                        f"Content items must be str or dict, instead was: {type(item)}"
+                        f"Content blocks must be str or dict, instead was: "
+                        f"{type(block)}"
                     )
-        elif isinstance(message, AIMessage) and message.tool_calls:
-            content = (
-                []
-                if not message.content
-                else [{"type": "text", "text": message.content}]
-            )
-            # Note: Anthropic can't have invalid tool calls as presently defined,
-            # since the model already returns dicts args not JSON strings, and invalid
-            # tool calls are those with invalid JSON for args.
-            content += _lc_tool_calls_to_anthropic_tool_use_blocks(message.tool_calls)
         else:
             content = message.content
+
+        # Ensure all tool_calls have a tool_use content block
+        if isinstance(message, AIMessage) and message.tool_calls:
+            content = content or []
+            content = (
+                [{"type": "text", "text": message.content}]
+                if isinstance(content, str) and content
+                else content
+            )
+            tool_use_ids = [
+                cast(dict, block)["id"]
+                for block in content
+                if cast(dict, block)["type"] == "tool_use"
+            ]
+            missing_tool_calls = [
+                tc for tc in message.tool_calls if tc["id"] not in tool_use_ids
+            ]
+            cast(list, content).extend(
+                _lc_tool_calls_to_anthropic_tool_use_blocks(missing_tool_calls)
+            )
 
         formatted_messages.append({"role": role, "content": content})
     return system, formatted_messages
@@ -807,14 +823,14 @@ class ChatAnthropic(BaseChatModel):
         Args:
             tools: A list of tool definitions to bind to this chat model.
                 Supports Anthropic format tool schemas and any tool definition handled
-                by :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`.
+                by :meth:`~langchain_core.utils.function_calling.convert_to_openai_tool`.
             tool_choice: Which tool to require the model to call. Options are:
 
                 - name of the tool as a string or as dict ``{"type": "tool", "name": "<<tool_name>>"}``: calls corresponding tool;
                 - ``"auto"``, ``{"type: "auto"}``, or None: automatically selects a tool (including no tool);
                 - ``"any"`` or ``{"type: "any"}``: force at least one tool to be called;
             kwargs: Any additional parameters are passed directly to
-                ``self.bind(**kwargs)``.
+                :meth:`~langchain_anthropic.chat_models.ChatAnthropic.bind`.
 
         Example:
             .. code-block:: python
@@ -833,7 +849,7 @@ class ChatAnthropic(BaseChatModel):
                     product: str = Field(..., description="The product to look up.")
 
 
-                llm = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
+                llm = ChatAnthropic(model="claude-3-5-sonnet-20240620", temperature=0)
                 llm_with_tools = llm.bind_tools([GetWeather, GetPrice])
                 llm_with_tools.invoke("what is the weather like in San Francisco",)
                 # -> AIMessage(
@@ -841,7 +857,7 @@ class ChatAnthropic(BaseChatModel):
                 #         {'text': '<thinking>\nBased on the user\'s question, the relevant function to call is GetWeather, which requires the "location" parameter.\n\nThe user has directly specified the location as "San Francisco". Since San Francisco is a well known city, I can reasonably infer they mean San Francisco, CA without needing the state specified.\n\nAll the required parameters are provided, so I can proceed with the API call.\n</thinking>', 'type': 'text'},
                 #         {'text': None, 'type': 'tool_use', 'id': 'toolu_01SCgExKzQ7eqSkMHfygvYuu', 'name': 'GetWeather', 'input': {'location': 'San Francisco, CA'}}
                 #     ],
-                #     response_metadata={'id': 'msg_01GM3zQtoFv8jGQMW7abLnhi', 'model': 'claude-3-opus-20240229', 'stop_reason': 'tool_use', 'stop_sequence': None, 'usage': {'input_tokens': 487, 'output_tokens': 145}},
+                #     response_metadata={'id': 'msg_01GM3zQtoFv8jGQMW7abLnhi', 'model': 'claude-3-5-sonnet-20240620', 'stop_reason': 'tool_use', 'stop_sequence': None, 'usage': {'input_tokens': 487, 'output_tokens': 145}},
                 #     id='run-87b1331e-9251-4a68-acef-f0a018b639cc-0'
                 # )
 
@@ -862,7 +878,7 @@ class ChatAnthropic(BaseChatModel):
                     product: str = Field(..., description="The product to look up.")
 
 
-                llm = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
+                llm = ChatAnthropic(model="claude-3-5-sonnet-20240620", temperature=0)
                 llm_with_tools = llm.bind_tools([GetWeather, GetPrice], tool_choice="any")
                 llm_with_tools.invoke("what is the weather like in San Francisco",)
 
@@ -884,7 +900,7 @@ class ChatAnthropic(BaseChatModel):
                     product: str = Field(..., description="The product to look up.")
 
 
-                llm = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
+                llm = ChatAnthropic(model="claude-3-5-sonnet-20240620", temperature=0)
                 llm_with_tools = llm.bind_tools([GetWeather, GetPrice], tool_choice="GetWeather")
                 llm_with_tools.invoke("what is the weather like in San Francisco",)
 
@@ -915,7 +931,7 @@ class ChatAnthropic(BaseChatModel):
                 # We need to pass in extra headers to enable use of the beta cache
                 # control API.
                 llm = ChatAnthropic(
-                    model="claude-3-opus-20240229",
+                    model="claude-3-5-sonnet-20240620",
                     temperature=0,
                     extra_headers={"anthropic-beta": "prompt-caching-2024-07-31"}
                 )
@@ -961,24 +977,20 @@ class ChatAnthropic(BaseChatModel):
         """Model wrapper that returns outputs formatted to match the given schema.
 
         Args:
-            schema:
-                The output schema. Can be passed in as:
-                    - an Anthropic tool schema,
-                    - an OpenAI function/tool schema,
-                    - a JSON Schema,
-                    - a TypedDict class (support added in 0.1.22),
-                    - or a Pydantic class.
+            schema: The output schema. Can be passed in as:
+
+                - an Anthropic tool schema,
+                - an OpenAI function/tool schema,
+                - a JSON Schema,
+                - a TypedDict class,
+                - or a Pydantic class.
+
                 If ``schema`` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
-                dict and will not be validated. See :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`
+                dict and will not be validated. See :meth:`~langchain_core.utils.function_calling.convert_to_openai_tool`
                 for more on how to properly specify types and descriptions of
                 schema fields when specifying a Pydantic or TypedDict class.
-
-                .. versionchanged:: 0.1.22
-
-                        Added support for TypedDict class.
-
             include_raw:
                 If False then only the parsed structured output is returned. If
                 an error occurs during model output parsing it will be raised. If True
@@ -986,9 +998,10 @@ class ChatAnthropic(BaseChatModel):
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
                 with keys "raw", "parsed", and "parsing_error".
+            kwargs: Additional keyword arguments are ignored.
 
         Returns:
-            A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
+            A Runnable that takes same inputs as a :class:`~langchain_core.language_models.chat.BaseChatModel`.
 
             If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs
             an instance of ``schema`` (i.e., a Pydantic object).
@@ -1011,7 +1024,7 @@ class ChatAnthropic(BaseChatModel):
                     answer: str
                     justification: str
 
-                llm = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
+                llm = ChatAnthropic(model="claude-3-5-sonnet-20240620", temperature=0)
                 structured_llm = llm.with_structured_output(AnswerWithJustification)
 
                 structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
@@ -1032,7 +1045,7 @@ class ChatAnthropic(BaseChatModel):
                     answer: str
                     justification: str
 
-                llm = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
+                llm = ChatAnthropic(model="claude-3-5-sonnet-20240620", temperature=0)
                 structured_llm = llm.with_structured_output(AnswerWithJustification, include_raw=True)
 
                 structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
@@ -1059,7 +1072,7 @@ class ChatAnthropic(BaseChatModel):
                         "required": ["answer", "justification"]
                     }
                 }
-                llm = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
+                llm = ChatAnthropic(model="claude-3-5-sonnet-20240620", temperature=0)
                 structured_llm = llm.with_structured_output(schema)
 
                 structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
@@ -1067,6 +1080,10 @@ class ChatAnthropic(BaseChatModel):
                 #     'answer': 'They weigh the same',
                 #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
                 # }
+
+        .. versionchanged:: 0.1.22
+
+                Added support for TypedDict class as `schema`.
 
         """  # noqa: E501
 

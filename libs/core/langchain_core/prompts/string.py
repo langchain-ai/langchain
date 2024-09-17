@@ -5,7 +5,7 @@ from __future__ import annotations
 import warnings
 from abc import ABC
 from string import Formatter
-from typing import Any, Callable, Dict, List, Set, Tuple, Type
+from typing import Any, Callable, Dict
 
 from pydantic import BaseModel, create_model
 
@@ -60,7 +60,7 @@ def jinja2_formatter(template: str, **kwargs: Any) -> str:
     return SandboxedEnvironment().from_string(template).render(**kwargs)
 
 
-def validate_jinja2(template: str, input_variables: List[str]) -> None:
+def validate_jinja2(template: str, input_variables: list[str]) -> None:
     """
     Validate that the input variables are valid for the template.
     Issues a warning if missing or extra variables are found.
@@ -85,7 +85,7 @@ def validate_jinja2(template: str, input_variables: List[str]) -> None:
         warnings.warn(warning_message.strip(), stacklevel=7)
 
 
-def _get_jinja2_variables_from_template(template: str) -> Set[str]:
+def _get_jinja2_variables_from_template(template: str) -> set[str]:
     try:
         from jinja2 import Environment, meta
     except ImportError as e:
@@ -114,7 +114,7 @@ def mustache_formatter(template: str, **kwargs: Any) -> str:
 
 def mustache_template_vars(
     template: str,
-) -> Set[str]:
+) -> set[str]:
     """Get the variables from a mustache template.
 
     Args:
@@ -123,7 +123,7 @@ def mustache_template_vars(
     Returns:
         The variables from the template.
     """
-    vars: Set[str] = set()
+    vars: set[str] = set()
     section_depth = 0
     for type, key in mustache.tokenize(template):
         if type == "end":
@@ -144,7 +144,7 @@ Defs = Dict[str, "Defs"]
 
 def mustache_schema(
     template: str,
-) -> Type[BaseModel]:
+) -> type[BaseModel]:
     """Get the variables from a mustache template.
 
     Args:
@@ -154,8 +154,8 @@ def mustache_schema(
         The variables from the template as a Pydantic model.
     """
     fields = {}
-    prefix: Tuple[str, ...] = ()
-    section_stack: List[Tuple[str, ...]] = []
+    prefix: tuple[str, ...] = ()
+    section_stack: list[tuple[str, ...]] = []
     for type, key in mustache.tokenize(template):
         if key == ".":
             continue
@@ -178,7 +178,7 @@ def mustache_schema(
     return _create_model_recursive("PromptInput", defs)
 
 
-def _create_model_recursive(name: str, defs: Defs) -> Type:
+def _create_model_recursive(name: str, defs: Defs) -> type:
     return create_model(  # type: ignore[call-overload]
         name,
         **{
@@ -188,20 +188,20 @@ def _create_model_recursive(name: str, defs: Defs) -> Type:
     )
 
 
-DEFAULT_FORMATTER_MAPPING: Dict[str, Callable] = {
+DEFAULT_FORMATTER_MAPPING: dict[str, Callable] = {
     "f-string": formatter.format,
     "mustache": mustache_formatter,
     "jinja2": jinja2_formatter,
 }
 
-DEFAULT_VALIDATOR_MAPPING: Dict[str, Callable] = {
+DEFAULT_VALIDATOR_MAPPING: dict[str, Callable] = {
     "f-string": formatter.validate_input_variables,
     "jinja2": validate_jinja2,
 }
 
 
 def check_valid_template(
-    template: str, template_format: str, input_variables: List[str]
+    template: str, template_format: str, input_variables: list[str]
 ) -> None:
     """Check that template string is valid.
 
@@ -230,7 +230,7 @@ def check_valid_template(
         ) from exc
 
 
-def get_template_variables(template: str, template_format: str) -> List[str]:
+def get_template_variables(template: str, template_format: str) -> list[str]:
     """Get the variables from the template.
 
     Args:
@@ -262,7 +262,7 @@ class StringPromptTemplate(BasePromptTemplate, ABC):
     """String prompt that exposes the format method, returning a prompt."""
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "prompts", "base"]
 

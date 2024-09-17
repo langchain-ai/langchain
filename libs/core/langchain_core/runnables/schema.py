@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Literal, Sequence, Union
+from typing import Any, Literal, Sequence, Union
 
 from typing_extensions import NotRequired, TypedDict
 
@@ -110,7 +110,7 @@ class BaseStreamEvent(TypedDict):
     Each child Runnable that gets invoked as part of the execution of a parent Runnable
     is assigned its own unique ID.
     """
-    tags: NotRequired[List[str]]
+    tags: NotRequired[list[str]]
     """Tags associated with the Runnable that generated this event.
     
     Tags are always inherited from parent Runnables.
@@ -118,7 +118,7 @@ class BaseStreamEvent(TypedDict):
     Tags can either be bound to a Runnable using `.with_config({"tags":  ["hello"]})`
     or passed at run time using `.astream_events(..., {"tags": ["hello"]})`.
     """
-    metadata: NotRequired[Dict[str, Any]]
+    metadata: NotRequired[dict[str, Any]]
     """Metadata associated with the Runnable that generated this event.
     
     Metadata can either be bound to a Runnable using 
