@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Callable, Dict, Optional, Union
+from typing import Callable, Optional, Union
 
 import openai
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import from_env, secret_from_env
+from pydantic import Field, SecretStr, model_validator
+from typing_extensions import Self, cast
 
 from langchain_openai.embeddings.base import OpenAIEmbeddings
 
@@ -154,21 +155,21 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
     chunk_size: int = 2048
     """Maximum number of texts to embed in each batch"""
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="after")
+    def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
         # For backwards compatibility. Before openai v1, no distinction was made
         # between azure_endpoint and base_url (openai_api_base).
-        openai_api_base = values["openai_api_base"]
-        if openai_api_base and values["validate_base_url"]:
+        openai_api_base = self.openai_api_base
+        if openai_api_base and self.validate_base_url:
             if "/openai" not in openai_api_base:
-                values["openai_api_base"] += "/openai"
+                self.openai_api_base = cast(str, self.openai_api_base) + "/openai"
                 raise ValueError(
                     "As of openai>=1.0.0, Azure endpoints should be specified via "
                     "the `azure_endpoint` param not `openai_api_base` "
                     "(or alias `base_url`). "
                 )
-            if values["deployment"]:
+            if self.deployment:
                 raise ValueError(
                     "As of openai>=1.0.0, if `deployment` (or alias "
                     "`azure_deployment`) is specified then "
@@ -176,39 +177,37 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
                     "Instead use `deployment` (or alias `azure_deployment`) "
                     "and `azure_endpoint`."
                 )
-        client_params = {
-            "api_version": values["openai_api_version"],
-            "azure_endpoint": values["azure_endpoint"],
-            "azure_deployment": values["deployment"],
+        client_params: dict = {
+            "api_version": self.openai_api_version,
+            "azure_endpoint": self.azure_endpoint,
+            "azure_deployment": self.deployment,
             "api_key": (
-                values["openai_api_key"].get_secret_value()
-                if values["openai_api_key"]
-                else None
+                self.openai_api_key.get_secret_value() if self.openai_api_key else None
             ),
             "azure_ad_token": (
-                values["azure_ad_token"].get_secret_value()
-                if values["azure_ad_token"]
-                else None
+                self.azure_ad_token.get_secret_value() if self.azure_ad_token else None
             ),
-            "azure_ad_token_provider": values["azure_ad_token_provider"],
-            "organization": values["openai_organization"],
-            "base_url": values["openai_api_base"],
-            "timeout": values["request_timeout"],
-            "max_retries": values["max_retries"],
-            "default_headers": values["default_headers"],
-            "default_query": values["default_query"],
+            "azure_ad_token_provider": self.azure_ad_token_provider,
+            "organization": self.openai_organization,
+            "base_url": self.openai_api_base,
+            "timeout": self.request_timeout,
+            "max_retries": self.max_retries,
+            "default_headers": self.default_headers,
+            "default_query": self.default_query,
         }
-        if not values.get("client"):
-            sync_specific = {"http_client": values["http_client"]}
-            values["client"] = openai.AzureOpenAI(
-                **client_params, **sync_specific
+        if not self.client:
+            sync_specific: dict = {"http_client": self.http_client}
+            self.client = openai.AzureOpenAI(
+                **client_params,  # type: ignore[arg-type]
+                **sync_specific,
             ).embeddings
-        if not values.get("async_client"):
-            async_specific = {"http_client": values["http_async_client"]}
-            values["async_client"] = openai.AsyncAzureOpenAI(
-                **client_params, **async_specific
+        if not self.async_client:
+            async_specific: dict = {"http_client": self.http_async_client}
+            self.async_client = openai.AsyncAzureOpenAI(
+                **client_params,  # type: ignore[arg-type]
+                **async_specific,
             ).embeddings
-        return values
+        return self
 
     @property
     def _llm_type(self) -> str:

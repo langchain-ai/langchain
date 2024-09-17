@@ -7,6 +7,7 @@ from langchain.chains.base import Chain
 from langchain_core.callbacks.manager import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.vectorstores import VectorStore
+from pydantic import BaseModel, ConfigDict, Field
 
 from langchain_experimental.autonomous_agents.baby_agi.task_creation import (
     TaskCreationChain,
@@ -17,7 +18,6 @@ from langchain_experimental.autonomous_agents.baby_agi.task_execution import (
 from langchain_experimental.autonomous_agents.baby_agi.task_prioritization import (
     TaskPrioritizationChain,
 )
-from langchain_experimental.pydantic_v1 import BaseModel, Field
 
 
 # This class has a metaclass conflict: both `Chain` and `BaseModel` define a metaclass
@@ -51,8 +51,9 @@ class BabyAGI(Chain, BaseModel):  # type: ignore[misc]
     vectorstore: VectorStore = Field(init=False)
     max_iterations: Optional[int] = None
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     def add_task(self, task: Dict) -> None:
         self.task_list.append(task)

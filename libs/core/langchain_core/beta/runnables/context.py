@@ -18,6 +18,8 @@ from typing import (
     Union,
 )
 
+from pydantic import ConfigDict
+
 from langchain_core._api.beta_decorator import beta
 from langchain_core.runnables.base import (
     Runnable,
@@ -229,8 +231,9 @@ class ContextSet(RunnableSerializable):
 
     keys: Mapping[str, Optional[Runnable]]
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     def __init__(
         self,

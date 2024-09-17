@@ -5,8 +5,8 @@ from uuid import uuid4
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import root_validator
 from langchain_core.retrievers import BaseRetriever
+from pydantic import ConfigDict, model_validator
 
 
 class WeaviateHybridSearchRetriever(BaseRetriever):
@@ -16,7 +16,7 @@ class WeaviateHybridSearchRetriever(BaseRetriever):
       https://weaviate.io/blog/hybrid-search-explained
     """
 
-    client: Any
+    client: Any = None
     """keyword arguments to pass to the Weaviate client."""
     index_name: str
     """The name of the index to use."""
@@ -31,11 +31,12 @@ class WeaviateHybridSearchRetriever(BaseRetriever):
     create_schema_if_missing: bool = True
     """Whether to create the schema if it doesn't exist."""
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def validate_client(
         cls,
         values: Dict[str, Any],
-    ) -> Dict[str, Any]:
+    ) -> Any:
         try:
             import weaviate
         except ImportError:
@@ -65,8 +66,9 @@ class WeaviateHybridSearchRetriever(BaseRetriever):
 
         return values
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     # added text_key
     def add_documents(self, docs: List[Document], **kwargs: Any) -> List[str]:

@@ -6,8 +6,8 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, Optional
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import Field
 from langchain_core.tools import BaseTool
+from pydantic import Field
 
 from langchain_community.tools.ainetwork.utils import authenticate
 

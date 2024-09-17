@@ -1,0 +1,70 @@
+[
+  [
+    "langchain.text_splitter.TokenTextSplitter",
+    "langchain_text_splitters.TokenTextSplitter"
+  ],
+  [
+    "langchain.text_splitter.TextSplitter",
+    "langchain_text_splitters.TextSplitter"
+  ],
+  ["langchain.text_splitter.Tokenizer", "langchain_text_splitters.Tokenizer"],
+  ["langchain.text_splitter.Language", "langchain_text_splitters.Language"],
+  [
+    "langchain.text_splitter.RecursiveCharacterTextSplitter",
+    "langchain_text_splitters.RecursiveCharacterTextSplitter"
+  ],
+  [
+    "langchain.text_splitter.RecursiveJsonSplitter",
+    "langchain_text_splitters.RecursiveJsonSplitter"
+  ],
+  [
+    "langchain.text_splitter.LatexTextSplitter",
+    "langchain_text_splitters.LatexTextSplitter"
+  ],
+  [
+    "langchain.text_splitter.PythonCodeTextSplitter",
+    "langchain_text_splitters.PythonCodeTextSplitter"
+  ],
+  [
+    "langchain.text_splitter.KonlpyTextSplitter",
+    "langchain_text_splitters.KonlpyTextSplitter"
+  ],
+  [
+    "langchain.text_splitter.SpacyTextSplitter",
+    "langchain_text_splitters.SpacyTextSplitter"
+  ],
+  [
+    "langchain.text_splitter.NLTKTextSplitter",
+    "langchain_text_splitters.NLTKTextSplitter"
+  ],
+  [
+    "langchain.text_splitter.split_text_on_tokens",
+    "langchain_text_splitters.split_text_on_tokens"
+  ],
+  [
+    "langchain.text_splitter.SentenceTransformersTokenTextSplitter",
+    "langchain_text_splitters.SentenceTransformersTokenTextSplitter"
+  ],
+  [
+    "langchain.text_splitter.ElementType",
+    "langchain_text_splitters.ElementType"
+  ],
+  ["langchain.text_splitter.HeaderType", "langchain_text_splitters.HeaderType"],
+  ["langchain.text_splitter.LineType", "langchain_text_splitters.LineType"],
+  [
+    "langchain.text_splitter.HTMLHeaderTextSplitter",
+    "langchain_text_splitters.HTMLHeaderTextSplitter"
+  ],
+  [
+    "langchain.text_splitter.MarkdownHeaderTextSplitter",
+    "langchain_text_splitters.MarkdownHeaderTextSplitter"
+  ],
+  [
+    "langchain.text_splitter.MarkdownTextSplitter",
+    "langchain_text_splitters.MarkdownTextSplitter"
+  ],
+  [
+    "langchain.text_splitter.CharacterTextSplitter",
+    "langchain_text_splitters.CharacterTextSplitter"
+  ]
+]

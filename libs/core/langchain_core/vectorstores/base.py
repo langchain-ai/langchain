@@ -42,8 +42,9 @@ from typing import (
     TypeVar,
 )
 
+from pydantic import ConfigDict, Field, model_validator
+
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.retrievers import BaseRetriever, LangSmithRetrieverParams
 from langchain_core.runnables.config import run_in_executor
 
@@ -984,11 +985,13 @@ class VectorStoreRetriever(BaseRetriever):
         "mmr",
     )
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
-    @root_validator(pre=True)
-    def validate_search_type(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_search_type(cls, values: Dict) -> Any:
         """Validate search type.
 
         Args:

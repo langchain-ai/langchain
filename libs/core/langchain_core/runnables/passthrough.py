@@ -21,7 +21,8 @@ from typing import (
     cast,
 )
 
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel, RootModel
+
 from langchain_core.runnables.base import (
     Other,
     Runnable,
@@ -40,10 +41,10 @@ from langchain_core.runnables.graph import Graph
 from langchain_core.runnables.utils import (
     AddableDict,
     ConfigurableFieldSpec,
-    create_model,
 )
 from langchain_core.utils.aiter import atee, py_anext
 from langchain_core.utils.iter import safetee
+from langchain_core.utils.pydantic import create_model_v2
 
 if TYPE_CHECKING:
     from langchain_core.callbacks.manager import (
@@ -227,7 +228,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
             A Runnable that merges the Dict input with the output produced by the
             mapping argument.
         """
-        return RunnableAssign(RunnableParallel(kwargs))
+        return RunnableAssign(RunnableParallel[Dict[str, Any]](kwargs))
 
     def invoke(
         self, input: Other, config: Optional[RunnableConfig] = None, **kwargs: Any
@@ -419,7 +420,7 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
         self, config: Optional[RunnableConfig] = None
     ) -> Type[BaseModel]:
         map_input_schema = self.mapper.get_input_schema(config)
-        if not map_input_schema.__custom_root_type__:
+        if not issubclass(map_input_schema, RootModel):
             # ie. it's a dict
             return map_input_schema
 
@@ -430,20 +431,21 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
     ) -> Type[BaseModel]:
         map_input_schema = self.mapper.get_input_schema(config)
         map_output_schema = self.mapper.get_output_schema(config)
-        if (
-            not map_input_schema.__custom_root_type__
-            and not map_output_schema.__custom_root_type__
+        if not issubclass(map_input_schema, RootModel) and not issubclass(
+            map_output_schema, RootModel
         ):
-            # ie. both are dicts
-            return create_model(  # type: ignore[call-overload]
-                "RunnableAssignOutput",
-                **{
-                    k: (v.type_, v.default)
-                    for s in (map_input_schema, map_output_schema)
-                    for k, v in s.__fields__.items()
-                },
+            fields = {}
+
+            for name, field_info in map_input_schema.model_fields.items():
+                fields[name] = (field_info.annotation, field_info.default)
+
+            for name, field_info in map_output_schema.model_fields.items():
+                fields[name] = (field_info.annotation, field_info.default)
+
+            return create_model_v2(  # type: ignore[call-overload]
+                "RunnableAssignOutput", field_definitions=fields
             )
-        elif not map_output_schema.__custom_root_type__:
+        elif not issubclass(map_output_schema, RootModel):
             # ie. only map output is a dict
             # ie. input type is either unknown or inferred incorrectly
             return map_output_schema

@@ -21,8 +21,8 @@ from langchain_core.outputs import (
     ChatGeneration,
     ChatResult,
 )
-from langchain_core.pydantic_v1 import BaseModel, SecretStr
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
+from pydantic import BaseModel, SecretStr
 from tenacity import (
     before_sleep_log,
     retry,

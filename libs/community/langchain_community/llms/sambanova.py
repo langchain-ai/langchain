@@ -6,6 +6,7 @@ from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
 from langchain_core.utils import get_from_dict_or_env, pre_init
+from pydantic import ConfigDict
 
 
 class SSEndpointHandler:
@@ -270,8 +271,9 @@ class SambaStudio(LLM):
     streaming: Optional[bool] = False
     """Streaming flag to get streamed response."""
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
