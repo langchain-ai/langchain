@@ -9,29 +9,32 @@ from langchain_core.runnables import RunnableConfig
 
 
 class MLRun(LLM):
-    """A class for interacting with Langchain, while using models served by mlrun.
+    """
+    A class for interacting with Langchain, while using models served by mlrun.
     This class is used to interact with models served by mlrun, or just gated by mlrun.
     """
 
-    llm: Any = Field(default=None)
+    mlrun_function: Any = Field(default=None)
     """The deployed mlrun model server object (nuclio function)."""
-    name: str = Field(default=None)
+    model_name: str = Field(default=None)
     """The name to give to the model."""
 
     def __init__(
         self,
-        nuclio_function: Any,
-        name: str,
+        mlrun_function: Union[str, mlrun.runtimes.RemoteRuntime, mlrun.serving.server.GraphServer],
+        model_name: str,
         **kwargs: dict,
     ):
         super().__init__(**kwargs)
-        self.llm = nuclio_function
-        self.name = name
+        self.mlrun_function = mlrun_function
+        self.model_name = model_name
 
     @property
     def _llm_type(self) -> str:
-        """Get the type of language model used by this chat model.
-        Used for logging purposes only."""
+        """
+        Get the type of language model used by this chat model.
+        Used for logging purposes only.
+        """
         return "MLRun"
 
     def _call(
@@ -60,9 +63,9 @@ class MLRun(LLM):
         input = self._convert_input(input)
         # Check if the model server is a mock server or a real server
         # and call the correct function
-        if isinstance(self.llm, mlrun.serving.server.GraphServer):
-            response = self.llm.test(
-                path=f"/v2/models/{self.name}/predict",
+        if isinstance(self.mlrun_function, mlrun.serving.server.GraphServer):
+            response = self.mlrun_function.test(
+                path=f"/v2/models/{self.model_name}/predict",
                 body={
                     "inputs": [input],
                     "stop": stop,
@@ -73,8 +76,8 @@ class MLRun(LLM):
             )
             return response if type(response) is str else response["outputs"]
         else:
-            response = self.llm.invoke(
-                path=f"/v2/models/{self.name}/predict",
+            response = self.mlrun_function.invoke(
+                path=f"/v2/models/{self.model_name}/predict",
                 body={
                     "inputs": [input],
                     "stop": stop,
@@ -117,9 +120,9 @@ class MLRun(LLM):
         inputs = [self._convert_input(input) for input in inputs]
         # Check if the model server is a mock server or a real server
         # and call the correct function
-        if isinstance(self.llm, mlrun.serving.server.GraphServer):
-            response = self.llm.test(
-                path=f"/v2/models/{self.name}/predict",
+        if isinstance(self.mlrun_function, mlrun.serving.server.GraphServer):
+            response = self.mlrun_function.test(
+                path=f"/v2/models/{self.model_name}/predict",
                 body={
                     "inputs": inputs,
                     "config": config,
@@ -130,8 +133,8 @@ class MLRun(LLM):
             )
             return response
         else:
-            response = self.llm.invoke(
-                path=f"/v2/models/{self.name}/predict",
+            response = self.mlrun_function.invoke(
+                path=f"/v2/models/{self.model_name}/predict",
                 body={
                     "inputs": inputs,
                     "config": config,
