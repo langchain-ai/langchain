@@ -1,5 +1,6 @@
 import sys
 import uuid
+import warnings
 from functools import partial
 from operator import itemgetter
 from typing import (
@@ -17,8 +18,10 @@ from typing import (
 )
 from uuid import UUID
 
+import pydantic
 import pytest
 from freezegun import freeze_time
+from pydantic import BaseModel, Field
 from pytest_mock import MockerFixture
 from syrupy import SnapshotAssertion
 from typing_extensions import TypedDict
@@ -57,7 +60,6 @@ from langchain_core.prompts import (
     PromptTemplate,
     SystemMessagePromptTemplate,
 )
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import (
     AddableDict,
@@ -89,8 +91,10 @@ from langchain_core.tracers import (
     RunLogPatch,
 )
 from langchain_core.tracers.context import collect_runs
-from tests.unit_tests.pydantic_utils import _schema
+from tests.unit_tests.pydantic_utils import _normalize_schema, _schema
 from tests.unit_tests.stubs import AnyStr, _AnyIdAIMessage, _AnyIdAIMessageChunk
+
+PYDANTIC_VERSION = tuple(map(int, pydantic.__version__.split(".")))
 
 
 class FakeTracer(BaseTracer):
@@ -225,42 +229,47 @@ class FakeRetriever(BaseRetriever):
 def test_schemas(snapshot: SnapshotAssertion) -> None:
     fake = FakeRunnable()  # str -> int
 
-    assert _schema(fake.input_schema) == {
+    assert fake.get_input_jsonschema() == {
         "title": "FakeRunnableInput",
         "type": "string",
     }
-    assert _schema(fake.output_schema) == {
+    assert fake.get_output_jsonschema() == {
         "title": "FakeRunnableOutput",
         "type": "integer",
     }
-    assert _schema(fake.config_schema(include=["tags", "metadata", "run_name"])) == {
+    assert fake.get_config_jsonschema(include=["tags", "metadata", "run_name"]) == {
+        "properties": {
+            "metadata": {"default": None, "title": "Metadata", "type": "object"},
+            "run_name": {"default": None, "title": "Run Name", "type": "string"},
+            "tags": {
+                "default": None,
+                "items": {"type": "string"},
+                "title": "Tags",
+                "type": "array",
+            },
+        },
         "title": "FakeRunnableConfig",
         "type": "object",
-        "properties": {
-            "metadata": {"title": "Metadata", "type": "object"},
-            "run_name": {"title": "Run Name", "type": "string"},
-            "tags": {"items": {"type": "string"}, "title": "Tags", "type": "array"},
-        },
     }
 
     fake_bound = FakeRunnable().bind(a="b")  # str -> int
 
-    assert _schema(fake_bound.input_schema) == {
+    assert fake_bound.get_input_jsonschema() == {
         "title": "FakeRunnableInput",
         "type": "string",
     }
-    assert _schema(fake_bound.output_schema) == {
+    assert fake_bound.get_output_jsonschema() == {
         "title": "FakeRunnableOutput",
         "type": "integer",
     }
 
     fake_w_fallbacks = FakeRunnable().with_fallbacks((fake,))  # str -> int
 
-    assert _schema(fake_w_fallbacks.input_schema) == {
+    assert fake_w_fallbacks.get_input_jsonschema() == {
         "title": "FakeRunnableInput",
         "type": "string",
     }
-    assert _schema(fake_w_fallbacks.output_schema) == {
+    assert fake_w_fallbacks.get_output_jsonschema() == {
         "title": "FakeRunnableOutput",
         "type": "integer",
     }
@@ -270,11 +279,11 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
 
     typed_lambda = RunnableLambda(typed_lambda_impl)  # str -> int
 
-    assert _schema(typed_lambda.input_schema) == {
+    assert typed_lambda.get_input_jsonschema() == {
         "title": "typed_lambda_impl_input",
         "type": "string",
     }
-    assert _schema(typed_lambda.output_schema) == {
+    assert typed_lambda.get_output_jsonschema() == {
         "title": "typed_lambda_impl_output",
         "type": "integer",
     }
@@ -284,52 +293,67 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
 
     typed_async_lambda: Runnable = RunnableLambda(typed_async_lambda_impl)  # str -> int
 
-    assert _schema(typed_async_lambda.input_schema) == {
+    assert typed_async_lambda.get_input_jsonschema() == {
         "title": "typed_async_lambda_impl_input",
         "type": "string",
     }
-    assert _schema(typed_async_lambda.output_schema) == {
+    assert typed_async_lambda.get_output_jsonschema() == {
         "title": "typed_async_lambda_impl_output",
         "type": "integer",
     }
 
     fake_ret = FakeRetriever()  # str -> List[Document]
 
-    assert _schema(fake_ret.input_schema) == {
+    assert fake_ret.get_input_jsonschema() == {
         "title": "FakeRetrieverInput",
         "type": "string",
     }
-    assert _schema(fake_ret.output_schema) == {
-        "title": "FakeRetrieverOutput",
-        "type": "array",
-        "items": {"$ref": "#/definitions/Document"},
-        "definitions": {
+    assert _normalize_schema(fake_ret.get_output_jsonschema()) == {
+        "$defs": {
             "Document": {
-                "title": "Document",
-                "description": AnyStr(),
-                "type": "object",
+                "description": "Class for storing a piece of text and "
+                "associated metadata.\n"
+                "\n"
+                "Example:\n"
+                "\n"
+                "    .. code-block:: python\n"
+                "\n"
+                "        from langchain_core.documents "
+                "import Document\n"
+                "\n"
+                "        document = Document(\n"
+                '            page_content="Hello, '
+                'world!",\n'
+                '            metadata={"source": '
+                '"https://example.com"}\n'
+                "        )",
                 "properties": {
-                    "page_content": {"title": "Page Content", "type": "string"},
-                    "metadata": {"title": "Metadata", "type": "object"},
                     "id": {
+                        "anyOf": [{"type": "string"}, {"type": "null"}],
+                        "default": None,
                         "title": "Id",
-                        "type": "string",
                     },
+                    "metadata": {"title": "Metadata", "type": "object"},
+                    "page_content": {"title": "Page Content", "type": "string"},
                     "type": {
-                        "title": "Type",
-                        "enum": ["Document"],
+                        "const": "Document",
                         "default": "Document",
-                        "type": "string",
+                        "title": "Type",
                     },
                 },
                 "required": ["page_content"],
+                "title": "Document",
+                "type": "object",
             }
         },
+        "items": {"$ref": "#/$defs/Document"},
+        "title": "FakeRetrieverOutput",
+        "type": "array",
     }
 
     fake_llm = FakeListLLM(responses=["a"])  # str -> List[List[str]]
 
-    assert _schema(fake_llm.input_schema) == snapshot
+    assert _schema(fake_llm.input_schema) == snapshot(name="fake_llm_input_schema")
     assert _schema(fake_llm.output_schema) == {
         "title": "FakeListLLMOutput",
         "type": "string",
@@ -337,8 +361,8 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
 
     fake_chat = FakeListChatModel(responses=["a"])  # str -> List[List[str]]
 
-    assert _schema(fake_chat.input_schema) == snapshot
-    assert _schema(fake_chat.output_schema) == snapshot
+    assert _schema(fake_chat.input_schema) == snapshot(name="fake_chat_input_schema")
+    assert _schema(fake_chat.output_schema) == snapshot(name="fake_chat_output_schema")
 
     chat_prompt = ChatPromptTemplate.from_messages(
         [
@@ -347,27 +371,27 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
         ]
     )
 
-    assert _schema(chat_prompt.input_schema) == snapshot(
+    assert _normalize_schema(chat_prompt.get_input_jsonschema()) == snapshot(
         name="chat_prompt_input_schema"
     )
-    assert _schema(chat_prompt.output_schema) == snapshot(
+    assert _normalize_schema(chat_prompt.get_output_jsonschema()) == snapshot(
         name="chat_prompt_output_schema"
     )
 
     prompt = PromptTemplate.from_template("Hello, {name}!")
 
-    assert _schema(prompt.input_schema) == {
+    assert prompt.get_input_jsonschema() == {
         "title": "PromptInput",
         "type": "object",
         "properties": {"name": {"title": "Name", "type": "string"}},
         "required": ["name"],
     }
-    assert _schema(prompt.output_schema) == snapshot
+    assert _schema(prompt.output_schema) == snapshot(name="prompt_output_schema")
 
     prompt_mapper = PromptTemplate.from_template("Hello, {name}!").map()
 
-    assert _schema(prompt_mapper.input_schema) == {
-        "definitions": {
+    assert _normalize_schema(prompt_mapper.get_input_jsonschema()) == {
+        "$defs": {
             "PromptInput": {
                 "properties": {"name": {"title": "Name", "type": "string"}},
                 "required": ["name"],
@@ -375,15 +399,20 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                 "type": "object",
             }
         },
-        "items": {"$ref": "#/definitions/PromptInput"},
-        "type": "array",
+        "default": None,
+        "items": {"$ref": "#/$defs/PromptInput"},
         "title": "RunnableEach<PromptTemplate>Input",
+        "type": "array",
     }
-    assert _schema(prompt_mapper.output_schema) == snapshot
+    assert _schema(prompt_mapper.output_schema) == snapshot(
+        name="prompt_mapper_output_schema"
+    )
 
     list_parser = CommaSeparatedListOutputParser()
 
-    assert _schema(list_parser.input_schema) == snapshot
+    assert _schema(list_parser.input_schema) == snapshot(
+        name="list_parser_input_schema"
+    )
     assert _schema(list_parser.output_schema) == {
         "title": "CommaSeparatedListOutputParserOutput",
         "type": "array",
@@ -392,13 +421,13 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
 
     seq = prompt | fake_llm | list_parser
 
-    assert _schema(seq.input_schema) == {
+    assert seq.get_input_jsonschema() == {
         "title": "PromptInput",
         "type": "object",
         "properties": {"name": {"title": "Name", "type": "string"}},
         "required": ["name"],
     }
-    assert _schema(seq.output_schema) == {
+    assert seq.get_output_jsonschema() == {
         "type": "array",
         "items": {"type": "string"},
         "title": "CommaSeparatedListOutputParserOutput",
@@ -407,21 +436,28 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
     router: Runnable = RouterRunnable({})
 
     assert _schema(router.input_schema) == {
-        "title": "RouterRunnableInput",
         "$ref": "#/definitions/RouterInput",
         "definitions": {
             "RouterInput": {
-                "title": "RouterInput",
-                "type": "object",
+                "description": "Router input.\n"
+                "\n"
+                "Attributes:\n"
+                "    key: The key to route "
+                "on.\n"
+                "    input: The input to pass "
+                "to the selected Runnable.",
                 "properties": {
-                    "key": {"title": "Key", "type": "string"},
                     "input": {"title": "Input"},
+                    "key": {"title": "Key", "type": "string"},
                 },
                 "required": ["key", "input"],
+                "title": "RouterInput",
+                "type": "object",
             }
         },
+        "title": "RouterRunnableInput",
     }
-    assert _schema(router.output_schema) == {"title": "RouterRunnableOutput"}
+    assert router.get_output_jsonschema() == {"title": "RouterRunnableOutput"}
 
     seq_w_map: Runnable = (
         prompt
@@ -433,13 +469,13 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
         }
     )
 
-    assert _schema(seq_w_map.input_schema) == {
+    assert seq_w_map.get_input_jsonschema() == {
         "title": "PromptInput",
         "type": "object",
         "properties": {"name": {"title": "Name", "type": "string"}},
         "required": ["name"],
     }
-    assert _schema(seq_w_map.output_schema) == {
+    assert seq_w_map.get_output_jsonschema() == {
         "title": "RunnableParallel<original,as_list,length>Output",
         "type": "object",
         "properties": {
@@ -451,6 +487,20 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                 "items": {"type": "string"},
             },
         },
+        "required": ["original", "as_list", "length"],
+    }
+
+    # Add a test for schema of runnable assign
+    def foo(x: int) -> int:
+        return x
+
+    foo_ = RunnableLambda(foo)
+
+    assert foo_.assign(bar=lambda x: "foo").get_output_schema().model_json_schema() == {
+        "properties": {"bar": {"title": "Bar"}, "root": {"title": "Root"}},
+        "required": ["root", "bar"],
+        "title": "RunnableAssignOutput",
+        "type": "object",
     }
 
 
@@ -465,12 +515,13 @@ def test_passthrough_assign_schema() -> None:
         | fake_llm
     )
 
-    assert _schema(seq_w_assign.input_schema) == {
+    assert seq_w_assign.get_input_jsonschema() == {
         "properties": {"question": {"title": "Question", "type": "string"}},
         "title": "RunnableSequenceInput",
         "type": "object",
+        "required": ["question"],
     }
-    assert _schema(seq_w_assign.output_schema) == {
+    assert seq_w_assign.get_output_jsonschema() == {
         "title": "FakeListLLMOutput",
         "type": "string",
     }
@@ -482,50 +533,55 @@ def test_passthrough_assign_schema() -> None:
 
     # fallback to RunnableAssign.input_schema if next runnable doesn't have
     # expected dict input_schema
-    assert _schema(invalid_seq_w_assign.input_schema) == {
+    assert invalid_seq_w_assign.get_input_jsonschema() == {
         "properties": {"question": {"title": "Question"}},
         "title": "RunnableParallel<context>Input",
         "type": "object",
+        "required": ["question"],
     }
 
 
 @pytest.mark.skipif(
     sys.version_info < (3, 9), reason="Requires python version >= 3.9 to run."
 )
-def test_lambda_schemas() -> None:
+def test_lambda_schemas(snapshot: SnapshotAssertion) -> None:
     first_lambda = lambda x: x["hello"]  # noqa: E731
-    assert _schema(RunnableLambda(first_lambda).input_schema) == {
+    assert RunnableLambda(first_lambda).get_input_jsonschema() == {
         "title": "RunnableLambdaInput",
         "type": "object",
         "properties": {"hello": {"title": "Hello"}},
+        "required": ["hello"],
     }
 
     second_lambda = lambda x, y: (x["hello"], x["bye"], y["bah"])  # noqa: E731
-    assert _schema(RunnableLambda(second_lambda).input_schema) == {  # type: ignore[arg-type]
+    assert RunnableLambda(second_lambda).get_input_jsonschema() == {  # type: ignore[arg-type]
         "title": "RunnableLambdaInput",
         "type": "object",
         "properties": {"hello": {"title": "Hello"}, "bye": {"title": "Bye"}},
+        "required": ["bye", "hello"],
     }
 
     def get_value(input):  # type: ignore[no-untyped-def]
         return input["variable_name"]
 
-    assert _schema(RunnableLambda(get_value).input_schema) == {
+    assert RunnableLambda(get_value).get_input_jsonschema() == {
         "title": "get_value_input",
         "type": "object",
         "properties": {"variable_name": {"title": "Variable Name"}},
+        "required": ["variable_name"],
     }
 
     async def aget_value(input):  # type: ignore[no-untyped-def]
         return (input["variable_name"], input.get("another"))
 
-    assert _schema(RunnableLambda(aget_value).input_schema) == {
+    assert RunnableLambda(aget_value).get_input_jsonschema() == {
         "title": "aget_value_input",
         "type": "object",
         "properties": {
             "another": {"title": "Another"},
             "variable_name": {"title": "Variable Name"},
         },
+        "required": ["another", "variable_name"],
     }
 
     async def aget_values(input):  # type: ignore[no-untyped-def]
@@ -535,13 +591,14 @@ def test_lambda_schemas() -> None:
             "byebye": input["yo"],
         }
 
-    assert _schema(RunnableLambda(aget_values).input_schema) == {
+    assert RunnableLambda(aget_values).get_input_jsonschema() == {
         "title": "aget_values_input",
         "type": "object",
         "properties": {
             "variable_name": {"title": "Variable Name"},
             "yo": {"title": "Yo"},
         },
+        "required": ["variable_name", "yo"],
     }
 
     class InputType(TypedDict):
@@ -561,47 +618,37 @@ def test_lambda_schemas() -> None:
         }
 
     assert (
-        _schema(
+        _normalize_schema(
             RunnableLambda(
                 aget_values_typed  # type: ignore[arg-type]
-            ).input_schema
+            ).get_input_jsonschema()
         )
-        == {
-            "title": "aget_values_typed_input",
-            "$ref": "#/definitions/InputType",
-            "definitions": {
-                "InputType": {
-                    "properties": {
-                        "variable_name": {
-                            "title": "Variable " "Name",
-                            "type": "string",
+        == _normalize_schema(
+            {
+                "$defs": {
+                    "InputType": {
+                        "properties": {
+                            "variable_name": {
+                                "title": "Variable " "Name",
+                                "type": "string",
+                            },
+                            "yo": {"title": "Yo", "type": "integer"},
                         },
-                        "yo": {"title": "Yo", "type": "integer"},
-                    },
-                    "required": ["variable_name", "yo"],
-                    "title": "InputType",
-                    "type": "object",
-                }
-            },
-        }
+                        "required": ["variable_name", "yo"],
+                        "title": "InputType",
+                        "type": "object",
+                    }
+                },
+                "allOf": [{"$ref": "#/$defs/InputType"}],
+                "title": "aget_values_typed_input",
+            }
+        )
     )
 
-    assert _schema(RunnableLambda(aget_values_typed).output_schema) == {  # type: ignore[arg-type]
-        "title": "aget_values_typed_output",
-        "$ref": "#/definitions/OutputType",
-        "definitions": {
-            "OutputType": {
-                "properties": {
-                    "bye": {"title": "Bye", "type": "string"},
-                    "byebye": {"title": "Byebye", "type": "integer"},
-                    "hello": {"title": "Hello", "type": "string"},
-                },
-                "required": ["hello", "bye", "byebye"],
-                "title": "OutputType",
-                "type": "object",
-            }
-        },
-    }
+    if PYDANTIC_VERSION >= (2, 9):
+        assert _normalize_schema(
+            RunnableLambda(aget_values_typed).get_output_jsonschema()  # type: ignore
+        ) == snapshot(name="schema8")
 
 
 def test_with_types_with_type_generics() -> None:
@@ -620,6 +667,25 @@ def test_with_types_with_type_generics() -> None:
         output_type=Sequence[int],  # type: ignore[arg-type]
         input_type=Sequence[int],  # type: ignore[arg-type]
     )
+
+
+def test_schema_with_itemgetter() -> None:
+    """Test runnable with itemgetter."""
+    foo = RunnableLambda(itemgetter("hello"))
+    assert _schema(foo.input_schema) == {
+        "properties": {"hello": {"title": "Hello"}},
+        "required": ["hello"],
+        "title": "RunnableLambdaInput",
+        "type": "object",
+    }
+    prompt = ChatPromptTemplate.from_template("what is {language}?")
+    chain: Runnable = {"language": itemgetter("language")} | prompt
+    assert _schema(chain.input_schema) == {
+        "properties": {"language": {"title": "Language"}},
+        "required": ["language"],
+        "title": "RunnableParallel<language>Input",
+        "type": "object",
+    }
 
 
 def test_schema_complex_seq() -> None:
@@ -643,26 +709,27 @@ def test_schema_complex_seq() -> None:
         | StrOutputParser()
     )
 
-    assert _schema(chain2.input_schema) == {
+    assert chain2.get_input_jsonschema() == {
         "title": "RunnableParallel<city,language>Input",
         "type": "object",
         "properties": {
             "person": {"title": "Person", "type": "string"},
             "language": {"title": "Language"},
         },
+        "required": ["person", "language"],
     }
 
-    assert _schema(chain2.output_schema) == {
+    assert chain2.get_output_jsonschema() == {
         "title": "StrOutputParserOutput",
         "type": "string",
     }
 
-    assert _schema(chain2.with_types(input_type=str).input_schema) == {
+    assert chain2.with_types(input_type=str).get_input_jsonschema() == {
         "title": "RunnableSequenceInput",
         "type": "string",
     }
 
-    assert _schema(chain2.with_types(input_type=int).output_schema) == {
+    assert chain2.with_types(input_type=int).get_output_jsonschema() == {
         "title": "StrOutputParserOutput",
         "type": "string",
     }
@@ -670,7 +737,7 @@ def test_schema_complex_seq() -> None:
     class InputType(BaseModel):
         person: str
 
-    assert _schema(chain2.with_types(input_type=InputType).input_schema) == {
+    assert chain2.with_types(input_type=InputType).get_input_jsonschema() == {
         "title": "InputType",
         "type": "object",
         "properties": {"person": {"title": "Person", "type": "string"}},
@@ -678,7 +745,7 @@ def test_schema_complex_seq() -> None:
     }
 
 
-def test_configurable_fields() -> None:
+def test_configurable_fields(snapshot: SnapshotAssertion) -> None:
     fake_llm = FakeListLLM(responses=["a"])  # str -> List[List[str]]
 
     assert fake_llm.invoke("...") == "a"
@@ -693,26 +760,10 @@ def test_configurable_fields() -> None:
 
     assert fake_llm_configurable.invoke("...") == "a"
 
-    assert _schema(fake_llm_configurable.config_schema()) == {
-        "title": "RunnableConfigurableFieldsConfig",
-        "type": "object",
-        "properties": {"configurable": {"$ref": "#/definitions/Configurable"}},
-        "definitions": {
-            "Configurable": {
-                "title": "Configurable",
-                "type": "object",
-                "properties": {
-                    "llm_responses": {
-                        "title": "LLM Responses",
-                        "description": "A list of fake responses for this LLM",
-                        "default": ["a"],
-                        "type": "array",
-                        "items": {"type": "string"},
-                    }
-                },
-            }
-        },
-    }
+    if PYDANTIC_VERSION >= (2, 9):
+        assert _normalize_schema(
+            fake_llm_configurable.get_config_jsonschema()
+        ) == snapshot(name="schema2")
 
     fake_llm_configured = fake_llm_configurable.with_config(
         configurable={"llm_responses": ["b"]}
@@ -736,25 +787,10 @@ def test_configurable_fields() -> None:
         text="Hello, John!"
     )
 
-    assert _schema(prompt_configurable.config_schema()) == {
-        "title": "RunnableConfigurableFieldsConfig",
-        "type": "object",
-        "properties": {"configurable": {"$ref": "#/definitions/Configurable"}},
-        "definitions": {
-            "Configurable": {
-                "title": "Configurable",
-                "type": "object",
-                "properties": {
-                    "prompt_template": {
-                        "title": "Prompt Template",
-                        "description": "The prompt template for this chain",
-                        "default": "Hello, {name}!",
-                        "type": "string",
-                    }
-                },
-            }
-        },
-    }
+    if PYDANTIC_VERSION >= (2, 9):
+        assert _normalize_schema(
+            prompt_configurable.get_config_jsonschema()
+        ) == snapshot(name="schema3")
 
     prompt_configured = prompt_configurable.with_config(
         configurable={"prompt_template": "Hello, {name}! {name}!"}
@@ -764,11 +800,9 @@ def test_configurable_fields() -> None:
         text="Hello, John! John!"
     )
 
-    assert _schema(
-        prompt_configurable.with_config(
-            configurable={"prompt_template": "Hello {name} in {lang}"}
-        ).input_schema
-    ) == {
+    assert prompt_configurable.with_config(
+        configurable={"prompt_template": "Hello {name} in {lang}"}
+    ).get_input_jsonschema() == {
         "title": "PromptInput",
         "type": "object",
         "properties": {
@@ -782,32 +816,10 @@ def test_configurable_fields() -> None:
 
     assert chain_configurable.invoke({"name": "John"}) == "a"
 
-    assert _schema(chain_configurable.config_schema()) == {
-        "title": "RunnableSequenceConfig",
-        "type": "object",
-        "properties": {"configurable": {"$ref": "#/definitions/Configurable"}},
-        "definitions": {
-            "Configurable": {
-                "title": "Configurable",
-                "type": "object",
-                "properties": {
-                    "llm_responses": {
-                        "title": "LLM Responses",
-                        "description": "A list of fake responses for this LLM",
-                        "default": ["a"],
-                        "type": "array",
-                        "items": {"type": "string"},
-                    },
-                    "prompt_template": {
-                        "title": "Prompt Template",
-                        "description": "The prompt template for this chain",
-                        "default": "Hello, {name}!",
-                        "type": "string",
-                    },
-                },
-            }
-        },
-    }
+    if PYDANTIC_VERSION >= (2, 9):
+        assert _normalize_schema(
+            chain_configurable.get_config_jsonschema()
+        ) == snapshot(name="schema4")
 
     assert (
         chain_configurable.with_config(
@@ -819,14 +831,12 @@ def test_configurable_fields() -> None:
         == "c"
     )
 
-    assert _schema(
-        chain_configurable.with_config(
-            configurable={
-                "prompt_template": "A very good morning to you, {name} {lang}!",
-                "llm_responses": ["c"],
-            }
-        ).input_schema
-    ) == {
+    assert chain_configurable.with_config(
+        configurable={
+            "prompt_template": "A very good morning to you, {name} {lang}!",
+            "llm_responses": ["c"],
+        }
+    ).get_input_jsonschema() == {
         "title": "PromptInput",
         "type": "object",
         "properties": {
@@ -851,38 +861,10 @@ def test_configurable_fields() -> None:
         "llm3": "a",
     }
 
-    assert _schema(chain_with_map_configurable.config_schema()) == {
-        "title": "RunnableSequenceConfig",
-        "type": "object",
-        "properties": {"configurable": {"$ref": "#/definitions/Configurable"}},
-        "definitions": {
-            "Configurable": {
-                "title": "Configurable",
-                "type": "object",
-                "properties": {
-                    "llm_responses": {
-                        "title": "LLM Responses",
-                        "description": "A list of fake responses for this LLM",
-                        "default": ["a"],
-                        "type": "array",
-                        "items": {"type": "string"},
-                    },
-                    "other_responses": {
-                        "title": "Other Responses",
-                        "default": ["a"],
-                        "type": "array",
-                        "items": {"type": "string"},
-                    },
-                    "prompt_template": {
-                        "title": "Prompt Template",
-                        "description": "The prompt template for this chain",
-                        "default": "Hello, {name}!",
-                        "type": "string",
-                    },
-                },
-            }
-        },
-    }
+    if PYDANTIC_VERSION >= (2, 9):
+        assert _normalize_schema(
+            chain_with_map_configurable.get_config_jsonschema()
+        ) == snapshot(name="schema5")
 
     assert chain_with_map_configurable.with_config(
         configurable={
@@ -904,7 +886,7 @@ def test_configurable_alts_factory() -> None:
     assert fake_llm.with_config(configurable={"llm": "chat"}).invoke("...") == "b"
 
 
-def test_configurable_fields_prefix_keys() -> None:
+def test_configurable_fields_prefix_keys(snapshot: SnapshotAssertion) -> None:
     fake_chat = FakeListChatModel(responses=["b"]).configurable_fields(
         responses=ConfigurableFieldMultiOption(
             id="responses",
@@ -952,71 +934,13 @@ def test_configurable_fields_prefix_keys() -> None:
 
     chain = prompt | fake_llm
 
-    assert _schema(chain.config_schema()) == {
-        "title": "RunnableSequenceConfig",
-        "type": "object",
-        "properties": {"configurable": {"$ref": "#/definitions/Configurable"}},
-        "definitions": {
-            "LLM": {
-                "title": "LLM",
-                "description": "An enumeration.",
-                "enum": ["chat", "default"],
-                "type": "string",
-            },
-            "Chat_Responses": {
-                "title": "Chat Responses",
-                "description": "An enumeration.",
-                "enum": ["hello", "bye", "helpful"],
-                "type": "string",
-            },
-            "Prompt_Template": {
-                "title": "Prompt Template",
-                "description": "An enumeration.",
-                "enum": ["hello", "good_morning"],
-                "type": "string",
-            },
-            "Configurable": {
-                "title": "Configurable",
-                "type": "object",
-                "properties": {
-                    "prompt_template": {
-                        "title": "Prompt Template",
-                        "description": "The prompt template for this chain",
-                        "default": "hello",
-                        "allOf": [{"$ref": "#/definitions/Prompt_Template"}],
-                    },
-                    "llm": {
-                        "title": "LLM",
-                        "default": "default",
-                        "allOf": [{"$ref": "#/definitions/LLM"}],
-                    },
-                    # not prefixed because marked as shared
-                    "chat_sleep": {
-                        "title": "Chat Sleep",
-                        "type": "number",
-                    },
-                    # prefixed for "chat" option
-                    "llm==chat/responses": {
-                        "title": "Chat Responses",
-                        "default": ["hello", "bye"],
-                        "type": "array",
-                        "items": {"$ref": "#/definitions/Chat_Responses"},
-                    },
-                    # prefixed for "default" option
-                    "llm==default/responses": {
-                        "title": "LLM Responses",
-                        "description": "A list of fake responses for this LLM",
-                        "default": ["a"],
-                        "type": "array",
-                        "items": {"type": "string"},
-                    },
-                },
-            },
-        },
-    }
+    if PYDANTIC_VERSION >= (2, 9):
+        assert _normalize_schema(_schema(chain.config_schema())) == snapshot(
+            name="schema6"
+        )
 
 
-def test_configurable_fields_example() -> None:
+def test_configurable_fields_example(snapshot: SnapshotAssertion) -> None:
     fake_chat = FakeListChatModel(responses=["b"]).configurable_fields(
         responses=ConfigurableFieldMultiOption(
             id="chat_responses",
@@ -1062,61 +986,10 @@ def test_configurable_fields_example() -> None:
 
     assert chain_configurable.invoke({"name": "John"}) == "a"
 
-    assert _schema(chain_configurable.config_schema()) == {
-        "title": "RunnableSequenceConfig",
-        "type": "object",
-        "properties": {"configurable": {"$ref": "#/definitions/Configurable"}},
-        "definitions": {
-            "LLM": {
-                "title": "LLM",
-                "description": "An enumeration.",
-                "enum": ["chat", "default"],
-                "type": "string",
-            },
-            "Chat_Responses": {
-                "description": "An enumeration.",
-                "enum": ["hello", "bye", "helpful"],
-                "title": "Chat Responses",
-                "type": "string",
-            },
-            "Prompt_Template": {
-                "description": "An enumeration.",
-                "enum": ["hello", "good_morning"],
-                "title": "Prompt Template",
-                "type": "string",
-            },
-            "Configurable": {
-                "title": "Configurable",
-                "type": "object",
-                "properties": {
-                    "chat_responses": {
-                        "default": ["hello", "bye"],
-                        "items": {"$ref": "#/definitions/Chat_Responses"},
-                        "title": "Chat Responses",
-                        "type": "array",
-                    },
-                    "llm": {
-                        "title": "LLM",
-                        "default": "default",
-                        "allOf": [{"$ref": "#/definitions/LLM"}],
-                    },
-                    "llm_responses": {
-                        "title": "LLM Responses",
-                        "description": "A list of fake responses for this LLM",
-                        "default": ["a"],
-                        "type": "array",
-                        "items": {"type": "string"},
-                    },
-                    "prompt_template": {
-                        "title": "Prompt Template",
-                        "description": "The prompt template for this chain",
-                        "default": "hello",
-                        "allOf": [{"$ref": "#/definitions/Prompt_Template"}],
-                    },
-                },
-            },
-        },
-    }
+    if PYDANTIC_VERSION >= (2, 9):
+        assert _normalize_schema(
+            chain_configurable.get_config_jsonschema()
+        ) == snapshot(name="schema7")
 
     assert (
         chain_configurable.with_config(configurable={"llm": "chat"}).invoke(
@@ -2200,6 +2073,7 @@ async def test_prompt_with_llm(
                     ],
                     "llm_output": None,
                     "run": None,
+                    "type": "LLMResult",
                 },
             },
             {
@@ -2413,6 +2287,7 @@ async def test_prompt_with_llm_parser(
                     ],
                     "llm_output": None,
                     "run": None,
+                    "type": "LLMResult",
                 },
             },
             {
@@ -2803,13 +2678,15 @@ Question:
     }
     assert chat_spy.call_args.args[1] == ChatPromptValue(
         messages=[
-            SystemMessage(content="You are a nice assistant."),
+            SystemMessage(
+                content="You are a nice assistant.",
+                additional_kwargs={},
+                response_metadata={},
+            ),
             HumanMessage(
-                content="""Context:
-[Document(page_content='foo'), Document(page_content='bar')]
-
-Question:
-What is your name?"""
+                content="Context:\n[Document(metadata={}, page_content='foo'), Document(metadata={}, page_content='bar')]\n\nQuestion:\nWhat is your name?",
+                additional_kwargs={},
+                response_metadata={},
             ),
         ]
     )
@@ -3146,7 +3023,7 @@ def test_map_stream() -> None:
 
     chain_pick_one = chain.pick("llm")
 
-    assert _schema(chain_pick_one.output_schema) == {
+    assert chain_pick_one.get_output_jsonschema() == {
         "title": "RunnableSequenceOutput",
         "type": "string",
     }
@@ -3169,13 +3046,14 @@ def test_map_stream() -> None:
         ["llm", "hello"]
     )
 
-    assert _schema(chain_pick_two.output_schema) == {
+    assert chain_pick_two.get_output_jsonschema() == {
         "title": "RunnableSequenceOutput",
         "type": "object",
         "properties": {
             "hello": {"title": "Hello", "type": "string"},
             "llm": {"title": "Llm", "type": "string"},
         },
+        "required": ["llm", "hello"],
     }
 
     stream = chain_pick_two.stream({"question": "What is your name?"})
@@ -3193,6 +3071,12 @@ def test_map_stream() -> None:
         {"llm": "i"},
         {"chat": _AnyIdAIMessageChunk(content="i")},
     ]
+    if not (  # TODO(Rewrite properly) statement above
+        streamed_chunks[0] == {"llm": "i"}
+        or {"chat": _AnyIdAIMessageChunk(content="i")}
+    ):
+        raise AssertionError(f"Got an unexpected chunk: {streamed_chunks[0]}")
+
     assert len(streamed_chunks) == len(llm_res) + len(chat_res)
 
 
@@ -3534,19 +3418,20 @@ def test_deep_stream_assign() -> None:
 
     chain_with_assign = chain.assign(hello=itemgetter("str") | llm)
 
-    assert _schema(chain_with_assign.input_schema) == {
+    assert chain_with_assign.get_input_jsonschema() == {
         "title": "PromptInput",
         "type": "object",
         "properties": {"question": {"title": "Question", "type": "string"}},
         "required": ["question"],
     }
-    assert _schema(chain_with_assign.output_schema) == {
+    assert chain_with_assign.get_output_jsonschema() == {
         "title": "RunnableSequenceOutput",
         "type": "object",
         "properties": {
             "str": {"title": "Str", "type": "string"},
             "hello": {"title": "Hello", "type": "string"},
         },
+        "required": ["str", "hello"],
     }
 
     chunks = []
@@ -3585,19 +3470,20 @@ def test_deep_stream_assign() -> None:
         hello=itemgetter("str") | llm,
     )
 
-    assert _schema(chain_with_assign_shadow.input_schema) == {
+    assert chain_with_assign_shadow.get_input_jsonschema() == {
         "title": "PromptInput",
         "type": "object",
         "properties": {"question": {"title": "Question", "type": "string"}},
         "required": ["question"],
     }
-    assert _schema(chain_with_assign_shadow.output_schema) == {
+    assert chain_with_assign_shadow.get_output_jsonschema() == {
         "title": "RunnableSequenceOutput",
         "type": "object",
         "properties": {
             "str": {"title": "Str"},
             "hello": {"title": "Hello", "type": "string"},
         },
+        "required": ["str", "hello"],
     }
 
     chunks = []
@@ -3660,19 +3546,20 @@ async def test_deep_astream_assign() -> None:
         hello=itemgetter("str") | llm,
     )
 
-    assert _schema(chain_with_assign.input_schema) == {
+    assert chain_with_assign.get_input_jsonschema() == {
         "title": "PromptInput",
         "type": "object",
         "properties": {"question": {"title": "Question", "type": "string"}},
         "required": ["question"],
     }
-    assert _schema(chain_with_assign.output_schema) == {
+    assert chain_with_assign.get_output_jsonschema() == {
         "title": "RunnableSequenceOutput",
         "type": "object",
         "properties": {
             "str": {"title": "Str", "type": "string"},
             "hello": {"title": "Hello", "type": "string"},
         },
+        "required": ["str", "hello"],
     }
 
     chunks = []
@@ -3711,19 +3598,20 @@ async def test_deep_astream_assign() -> None:
         hello=itemgetter("str") | llm,
     )
 
-    assert _schema(chain_with_assign_shadow.input_schema) == {
+    assert chain_with_assign_shadow.get_input_jsonschema() == {
         "title": "PromptInput",
         "type": "object",
         "properties": {"question": {"title": "Question", "type": "string"}},
         "required": ["question"],
     }
-    assert _schema(chain_with_assign_shadow.output_schema) == {
+    assert chain_with_assign_shadow.get_output_jsonschema() == {
         "title": "RunnableSequenceOutput",
         "type": "object",
         "properties": {
             "str": {"title": "Str"},
             "hello": {"title": "Hello", "type": "string"},
         },
+        "required": ["str", "hello"],
     }
 
     chunks = []
@@ -4365,7 +4253,10 @@ def test_runnable_branch_init_coercion(branches: Sequence[Any]) -> None:
         assert isinstance(body, Runnable)
 
     assert isinstance(runnable.default, Runnable)
-    assert _schema(runnable.input_schema) == {"title": "RunnableBranchInput"}
+    assert _schema(runnable.input_schema) == {
+        "title": "RunnableBranchInput",
+        "type": "integer",
+    }
 
 
 def test_runnable_branch_invoke_call_counts(mocker: MockerFixture) -> None:
@@ -4712,7 +4603,7 @@ async def test_tool_from_runnable() -> None:
         {"question": "What up"}
     )
     assert chain_tool.description.endswith(repr(chain))
-    assert _schema(chain_tool.args_schema) == _schema(chain.input_schema)
+    assert _schema(chain_tool.args_schema) == chain.get_input_jsonschema()
     assert _schema(chain_tool.args_schema) == {
         "properties": {"question": {"title": "Question", "type": "string"}},
         "title": "PromptInput",
@@ -4731,8 +4622,8 @@ async def test_runnable_gen() -> None:
 
     runnable = RunnableGenerator(gen)
 
-    assert _schema(runnable.input_schema) == {"title": "gen_input"}
-    assert _schema(runnable.output_schema) == {
+    assert runnable.get_input_jsonschema() == {"title": "gen_input"}
+    assert runnable.get_output_jsonschema() == {
         "title": "gen_output",
         "type": "integer",
     }
@@ -4783,8 +4674,8 @@ async def test_runnable_gen_context_config() -> None:
 
     runnable = RunnableGenerator(gen)
 
-    assert _schema(runnable.input_schema) == {"title": "gen_input"}
-    assert _schema(runnable.output_schema) == {
+    assert runnable.get_input_jsonschema() == {"title": "gen_input"}
+    assert runnable.get_output_jsonschema() == {
         "title": "gen_output",
         "type": "integer",
     }
@@ -4917,11 +4808,11 @@ async def test_runnable_iter_context_config() -> None:
         yield fake.invoke(input * 2)
         yield fake.invoke(input * 3)
 
-    assert _schema(gen.input_schema) == {
+    assert gen.get_input_jsonschema() == {
         "title": "gen_input",
         "type": "string",
     }
-    assert _schema(gen.output_schema) == {
+    assert gen.get_output_jsonschema() == {
         "title": "gen_output",
         "type": "integer",
     }
@@ -4968,11 +4859,11 @@ async def test_runnable_iter_context_config() -> None:
         yield await fake.ainvoke(input * 2)
         yield await fake.ainvoke(input * 3)
 
-    assert _schema(agen.input_schema) == {
+    assert agen.get_input_jsonschema() == {
         "title": "agen_input",
         "type": "string",
     }
-    assert _schema(agen.output_schema) == {
+    assert agen.get_output_jsonschema() == {
         "title": "agen_output",
         "type": "integer",
     }
@@ -5035,8 +4926,8 @@ async def test_runnable_lambda_context_config() -> None:
         output += fake.invoke(input * 3)
         return output
 
-    assert _schema(fun.input_schema) == {"title": "fun_input", "type": "string"}
-    assert _schema(fun.output_schema) == {
+    assert fun.get_input_jsonschema() == {"title": "fun_input", "type": "string"}
+    assert fun.get_output_jsonschema() == {
         "title": "fun_output",
         "type": "integer",
     }
@@ -5084,8 +4975,8 @@ async def test_runnable_lambda_context_config() -> None:
         output += await fake.ainvoke(input * 3)
         return output
 
-    assert _schema(afun.input_schema) == {"title": "afun_input", "type": "string"}
-    assert _schema(afun.output_schema) == {
+    assert afun.get_input_jsonschema() == {"title": "afun_input", "type": "string"}
+    assert afun.get_output_jsonschema() == {
         "title": "afun_output",
         "type": "integer",
     }
@@ -5145,19 +5036,19 @@ async def test_runnable_gen_transform() -> None:
     chain: Runnable = RunnableGenerator(gen_indexes, agen_indexes) | plus_one
     achain = RunnableGenerator(gen_indexes, agen_indexes) | aplus_one
 
-    assert _schema(chain.input_schema) == {
+    assert chain.get_input_jsonschema() == {
         "title": "gen_indexes_input",
         "type": "integer",
     }
-    assert _schema(chain.output_schema) == {
+    assert chain.get_output_jsonschema() == {
         "title": "plus_one_output",
         "type": "integer",
     }
-    assert _schema(achain.input_schema) == {
+    assert achain.get_input_jsonschema() == {
         "title": "gen_indexes_input",
         "type": "integer",
     }
-    assert _schema(achain.output_schema) == {
+    assert achain.get_output_jsonschema() == {
         "title": "aplus_one_output",
         "type": "integer",
     }
@@ -5490,3 +5381,45 @@ async def test_closing_iterator_doesnt_raise_error() -> None:
     # Wait for a bit to make sure that the callback is called.
     time.sleep(0.05)
     assert on_chain_error_triggered is False
+
+
+def test_pydantic_protected_namespaces() -> None:
+    # Check that protected namespaces (e.g., `model_kwargs`) do not raise warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+
+        class CustomChatModel(RunnableSerializable):
+            model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+
+
+def test_schema_for_prompt_and_chat_model() -> None:
+    """Testing that schema is generated properly when using variable names
+
+    that collide with pydantic attributes.
+    """
+    prompt = ChatPromptTemplate([("system", "{model_json_schema}, {_private}, {json}")])
+    chat_res = "i'm a chatbot"
+    # sleep to better simulate a real stream
+    chat = FakeListChatModel(responses=[chat_res], sleep=0.01)
+    chain = prompt | chat
+    assert (
+        chain.invoke(
+            {"model_json_schema": "hello", "_private": "goodbye", "json": "json"}
+        ).content
+        == chat_res
+    )
+
+    assert chain.get_input_jsonschema() == {
+        "properties": {
+            "model_json_schema": {"title": "Model Json Schema", "type": "string"},
+            "_private": {"title": "Private", "type": "string"},
+            "json": {"title": "Json", "type": "string"},
+        },
+        "required": [
+            "_private",
+            "json",
+            "model_json_schema",
+        ],
+        "title": "PromptInput",
+        "type": "object",
+    }

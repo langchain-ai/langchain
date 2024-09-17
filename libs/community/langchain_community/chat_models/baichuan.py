@@ -44,7 +44,6 @@ from langchain_core.output_parsers.openai_tools import (
     parse_tool_call,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 from langchain_core.utils import (
@@ -53,6 +52,13 @@ from langchain_core.utils import (
     get_pydantic_field_names,
 )
 from langchain_core.utils.function_calling import convert_to_openai_tool
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    SecretStr,
+    model_validator,
+)
 
 from langchain_community.chat_models.llamacpp import (
     _lc_invalid_tool_call_to_openai_tool_call,
@@ -375,11 +381,13 @@ class ChatBaichuan(BaseChatModel):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for API call not explicitly specified."""
 
-    class Config:
-        allow_population_by_field_name = True
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
-    @root_validator(pre=True)
-    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})
@@ -404,8 +412,9 @@ class ChatBaichuan(BaseChatModel):
         values["model_kwargs"] = extra
         return values
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         values["baichuan_api_base"] = get_from_dict_or_env(
             values,
             "baichuan_api_base",

@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional, Sequence, Union
 
 from langchain_core._api.deprecation import deprecated
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import BaseModel, root_validator, validator
+from pydantic import BaseModel, model_validator, validator
 
 from langchain_community.document_loaders.base import BaseLoader
 
@@ -52,8 +52,9 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
     file_loader_kwargs: Dict["str", Any] = {}
     """The file loader kwargs to use."""
 
-    @root_validator(pre=True)
-    def validate_inputs(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_inputs(cls, values: Dict[str, Any]) -> Any:
         """Validate that either folder_id or document_ids is set, but not both."""
         if values.get("folder_id") and (
             values.get("document_ids") or values.get("file_ids")
