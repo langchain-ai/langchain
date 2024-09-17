@@ -1,4 +1,31 @@
 # serializer version: 1
+# name: test_double_nested_subgraph_mermaid[mermaid]
+  '''
+  %%{init: {'flowchart': {'curve': 'linear'}}}%%
+  graph TD;
+  	__start__([<p>__start__</p>]):::first
+  	parent_1(parent_1)
+  	child_child_1_grandchild_1(grandchild_1)
+  	child_child_1_grandchild_2(grandchild_2<hr/><small><em>__interrupt = before</em></small>)
+  	child_child_2(child_2)
+  	parent_2(parent_2)
+  	__end__([<p>__end__</p>]):::last
+  	__start__ --> parent_1;
+  	child_child_2 --> parent_2;
+  	parent_1 --> child_child_1_grandchild_1;
+  	parent_2 --> __end__;
+  	subgraph child
+  	child_child_1_grandchild_2 --> child_child_2;
+  	subgraph child_1
+  	child_child_1_grandchild_1 --> child_child_1_grandchild_2;
+  	end
+  	end
+  	classDef default fill:#f2f0ff,line-height:1.2
+  	classDef first fill-opacity:0
+  	classDef last fill:#bfb6fc
+  
+  '''
+# ---
 # name: test_graph_sequence[ascii]
   '''
               +-------------+              
@@ -334,31 +361,9 @@
       }),
       dict({
         'data': dict({
-          'anyOf': list([
-            dict({
-              'type': 'string',
-            }),
-            dict({
-              '$ref': '#/definitions/AIMessage',
-            }),
-            dict({
-              '$ref': '#/definitions/HumanMessage',
-            }),
-            dict({
-              '$ref': '#/definitions/ChatMessage',
-            }),
-            dict({
-              '$ref': '#/definitions/SystemMessage',
-            }),
-            dict({
-              '$ref': '#/definitions/FunctionMessage',
-            }),
-            dict({
-              '$ref': '#/definitions/ToolMessage',
-            }),
-          ]),
-          'definitions': dict({
+          '$defs': dict({
             'AIMessage': dict({
+              'additionalProperties': True,
               'description': '''
                 Message from an AI.
                 
@@ -400,21 +405,37 @@
                   'type': 'boolean',
                 }),
                 'id': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
                   'title': 'Id',
-                  'type': 'string',
                 }),
                 'invalid_tool_calls': dict({
                   'default': list([
                   ]),
                   'items': dict({
-                    '$ref': '#/definitions/InvalidToolCall',
+                    '$ref': '#/$defs/InvalidToolCall',
                   }),
                   'title': 'Invalid Tool Calls',
                   'type': 'array',
                 }),
                 'name': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
                   'title': 'Name',
-                  'type': 'string',
                 }),
                 'response_metadata': dict({
                   'title': 'Response Metadata',
@@ -424,21 +445,26 @@
                   'default': list([
                   ]),
                   'items': dict({
-                    '$ref': '#/definitions/ToolCall',
+                    '$ref': '#/$defs/ToolCall',
                   }),
                   'title': 'Tool Calls',
                   'type': 'array',
                 }),
                 'type': dict({
+                  'const': 'ai',
                   'default': 'ai',
-                  'enum': list([
-                    'ai',
-                  ]),
                   'title': 'Type',
-                  'type': 'string',
                 }),
                 'usage_metadata': dict({
-                  '$ref': '#/definitions/UsageMetadata',
+                  'anyOf': list([
+                    dict({
+                      '$ref': '#/$defs/UsageMetadata',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
                 }),
               }),
               'required': list([
@@ -447,7 +473,120 @@
               'title': 'AIMessage',
               'type': 'object',
             }),
+            'AIMessageChunk': dict({
+              'additionalProperties': True,
+              'description': 'Message chunk from an AI.',
+              'properties': dict({
+                'additional_kwargs': dict({
+                  'title': 'Additional Kwargs',
+                  'type': 'object',
+                }),
+                'content': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'items': dict({
+                        'anyOf': list([
+                          dict({
+                            'type': 'string',
+                          }),
+                          dict({
+                            'type': 'object',
+                          }),
+                        ]),
+                      }),
+                      'type': 'array',
+                    }),
+                  ]),
+                  'title': 'Content',
+                }),
+                'example': dict({
+                  'default': False,
+                  'title': 'Example',
+                  'type': 'boolean',
+                }),
+                'id': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
+                  'title': 'Id',
+                }),
+                'invalid_tool_calls': dict({
+                  'default': list([
+                  ]),
+                  'items': dict({
+                    '$ref': '#/$defs/InvalidToolCall',
+                  }),
+                  'title': 'Invalid Tool Calls',
+                  'type': 'array',
+                }),
+                'name': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
+                  'title': 'Name',
+                }),
+                'response_metadata': dict({
+                  'title': 'Response Metadata',
+                  'type': 'object',
+                }),
+                'tool_call_chunks': dict({
+                  'default': list([
+                  ]),
+                  'items': dict({
+                    '$ref': '#/$defs/ToolCallChunk',
+                  }),
+                  'title': 'Tool Call Chunks',
+                  'type': 'array',
+                }),
+                'tool_calls': dict({
+                  'default': list([
+                  ]),
+                  'items': dict({
+                    '$ref': '#/$defs/ToolCall',
+                  }),
+                  'title': 'Tool Calls',
+                  'type': 'array',
+                }),
+                'type': dict({
+                  'const': 'AIMessageChunk',
+                  'default': 'AIMessageChunk',
+                  'title': 'Type',
+                }),
+                'usage_metadata': dict({
+                  'anyOf': list([
+                    dict({
+                      '$ref': '#/$defs/UsageMetadata',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
+                }),
+              }),
+              'required': list([
+                'content',
+              ]),
+              'title': 'AIMessageChunk',
+              'type': 'object',
+            }),
             'ChatMessage': dict({
+              'additionalProperties': True,
               'description': 'Message that can be assigned an arbitrary speaker (i.e. role).',
               'properties': dict({
                 'additional_kwargs': dict({
@@ -476,12 +615,28 @@
                   'title': 'Content',
                 }),
                 'id': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
                   'title': 'Id',
-                  'type': 'string',
                 }),
                 'name': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
                   'title': 'Name',
-                  'type': 'string',
                 }),
                 'response_metadata': dict({
                   'title': 'Response Metadata',
@@ -492,12 +647,9 @@
                   'type': 'string',
                 }),
                 'type': dict({
+                  'const': 'chat',
                   'default': 'chat',
-                  'enum': list([
-                    'chat',
-                  ]),
                   'title': 'Type',
-                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -507,7 +659,82 @@
               'title': 'ChatMessage',
               'type': 'object',
             }),
+            'ChatMessageChunk': dict({
+              'additionalProperties': True,
+              'description': 'Chat Message chunk.',
+              'properties': dict({
+                'additional_kwargs': dict({
+                  'title': 'Additional Kwargs',
+                  'type': 'object',
+                }),
+                'content': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'items': dict({
+                        'anyOf': list([
+                          dict({
+                            'type': 'string',
+                          }),
+                          dict({
+                            'type': 'object',
+                          }),
+                        ]),
+                      }),
+                      'type': 'array',
+                    }),
+                  ]),
+                  'title': 'Content',
+                }),
+                'id': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
+                  'title': 'Id',
+                }),
+                'name': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
+                  'title': 'Name',
+                }),
+                'response_metadata': dict({
+                  'title': 'Response Metadata',
+                  'type': 'object',
+                }),
+                'role': dict({
+                  'title': 'Role',
+                  'type': 'string',
+                }),
+                'type': dict({
+                  'const': 'ChatMessageChunk',
+                  'default': 'ChatMessageChunk',
+                  'title': 'Type',
+                }),
+              }),
+              'required': list([
+                'content',
+                'role',
+              ]),
+              'title': 'ChatMessageChunk',
+              'type': 'object',
+            }),
             'FunctionMessage': dict({
+              'additionalProperties': True,
               'description': '''
                 Message for passing the result of executing a tool back to a model.
                 
@@ -545,8 +772,16 @@
                   'title': 'Content',
                 }),
                 'id': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
                   'title': 'Id',
-                  'type': 'string',
                 }),
                 'name': dict({
                   'title': 'Name',
@@ -557,12 +792,9 @@
                   'type': 'object',
                 }),
                 'type': dict({
+                  'const': 'function',
                   'default': 'function',
-                  'enum': list([
-                    'function',
-                  ]),
                   'title': 'Type',
-                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -572,7 +804,70 @@
               'title': 'FunctionMessage',
               'type': 'object',
             }),
+            'FunctionMessageChunk': dict({
+              'additionalProperties': True,
+              'description': 'Function Message chunk.',
+              'properties': dict({
+                'additional_kwargs': dict({
+                  'title': 'Additional Kwargs',
+                  'type': 'object',
+                }),
+                'content': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'items': dict({
+                        'anyOf': list([
+                          dict({
+                            'type': 'string',
+                          }),
+                          dict({
+                            'type': 'object',
+                          }),
+                        ]),
+                      }),
+                      'type': 'array',
+                    }),
+                  ]),
+                  'title': 'Content',
+                }),
+                'id': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
+                  'title': 'Id',
+                }),
+                'name': dict({
+                  'title': 'Name',
+                  'type': 'string',
+                }),
+                'response_metadata': dict({
+                  'title': 'Response Metadata',
+                  'type': 'object',
+                }),
+                'type': dict({
+                  'const': 'FunctionMessageChunk',
+                  'default': 'FunctionMessageChunk',
+                  'title': 'Type',
+                }),
+              }),
+              'required': list([
+                'content',
+                'name',
+              ]),
+              'title': 'FunctionMessageChunk',
+              'type': 'object',
+            }),
             'HumanMessage': dict({
+              'additionalProperties': True,
               'description': '''
                 Message from a human.
                 
@@ -629,24 +924,37 @@
                   'type': 'boolean',
                 }),
                 'id': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
                   'title': 'Id',
-                  'type': 'string',
                 }),
                 'name': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
                   'title': 'Name',
-                  'type': 'string',
                 }),
                 'response_metadata': dict({
                   'title': 'Response Metadata',
                   'type': 'object',
                 }),
                 'type': dict({
+                  'const': 'human',
                   'default': 'human',
-                  'enum': list([
-                    'human',
-                  ]),
                   'title': 'Type',
-                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -655,30 +963,135 @@
               'title': 'HumanMessage',
               'type': 'object',
             }),
-            'InvalidToolCall': dict({
+            'HumanMessageChunk': dict({
+              'additionalProperties': True,
+              'description': 'Human Message chunk.',
               'properties': dict({
-                'args': dict({
-                  'title': 'Args',
-                  'type': 'string',
+                'additional_kwargs': dict({
+                  'title': 'Additional Kwargs',
+                  'type': 'object',
                 }),
-                'error': dict({
-                  'title': 'Error',
-                  'type': 'string',
+                'content': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'items': dict({
+                        'anyOf': list([
+                          dict({
+                            'type': 'string',
+                          }),
+                          dict({
+                            'type': 'object',
+                          }),
+                        ]),
+                      }),
+                      'type': 'array',
+                    }),
+                  ]),
+                  'title': 'Content',
+                }),
+                'example': dict({
+                  'default': False,
+                  'title': 'Example',
+                  'type': 'boolean',
                 }),
                 'id': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
                   'title': 'Id',
-                  'type': 'string',
                 }),
                 'name': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
                   'title': 'Name',
-                  'type': 'string',
+                }),
+                'response_metadata': dict({
+                  'title': 'Response Metadata',
+                  'type': 'object',
                 }),
                 'type': dict({
-                  'enum': list([
-                    'invalid_tool_call',
-                  ]),
+                  'const': 'HumanMessageChunk',
+                  'default': 'HumanMessageChunk',
                   'title': 'Type',
-                  'type': 'string',
+                }),
+              }),
+              'required': list([
+                'content',
+              ]),
+              'title': 'HumanMessageChunk',
+              'type': 'object',
+            }),
+            'InvalidToolCall': dict({
+              'description': '''
+                Allowance for errors made by LLM.
+                
+                Here we add an `error` key to surface errors made during generation
+                (e.g., invalid JSON arguments.)
+              ''',
+              'properties': dict({
+                'args': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'title': 'Args',
+                }),
+                'error': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'title': 'Error',
+                }),
+                'id': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'title': 'Id',
+                }),
+                'name': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'title': 'Name',
+                }),
+                'type': dict({
+                  'const': 'invalid_tool_call',
+                  'title': 'Type',
                 }),
               }),
               'required': list([
@@ -691,6 +1104,7 @@
               'type': 'object',
             }),
             'SystemMessage': dict({
+              'additionalProperties': True,
               'description': '''
                 Message for priming AI behavior.
                 
@@ -742,24 +1156,37 @@
                   'title': 'Content',
                 }),
                 'id': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
                   'title': 'Id',
-                  'type': 'string',
                 }),
                 'name': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
                   'title': 'Name',
-                  'type': 'string',
                 }),
                 'response_metadata': dict({
                   'title': 'Response Metadata',
                   'type': 'object',
                 }),
                 'type': dict({
+                  'const': 'system',
                   'default': 'system',
-                  'enum': list([
-                    'system',
-                  ]),
                   'title': 'Type',
-                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -768,26 +1195,115 @@
               'title': 'SystemMessage',
               'type': 'object',
             }),
+            'SystemMessageChunk': dict({
+              'additionalProperties': True,
+              'description': 'System Message chunk.',
+              'properties': dict({
+                'additional_kwargs': dict({
+                  'title': 'Additional Kwargs',
+                  'type': 'object',
+                }),
+                'content': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'items': dict({
+                        'anyOf': list([
+                          dict({
+                            'type': 'string',
+                          }),
+                          dict({
+                            'type': 'object',
+                          }),
+                        ]),
+                      }),
+                      'type': 'array',
+                    }),
+                  ]),
+                  'title': 'Content',
+                }),
+                'id': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
+                  'title': 'Id',
+                }),
+                'name': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
+                  'title': 'Name',
+                }),
+                'response_metadata': dict({
+                  'title': 'Response Metadata',
+                  'type': 'object',
+                }),
+                'type': dict({
+                  'const': 'SystemMessageChunk',
+                  'default': 'SystemMessageChunk',
+                  'title': 'Type',
+                }),
+              }),
+              'required': list([
+                'content',
+              ]),
+              'title': 'SystemMessageChunk',
+              'type': 'object',
+            }),
             'ToolCall': dict({
+              'description': '''
+                Represents a request to call a tool.
+                
+                Example:
+                
+                    .. code-block:: python
+                
+                        {
+                            "name": "foo",
+                            "args": {"a": 1},
+                            "id": "123"
+                        }
+                
+                    This represents a request to call the tool named "foo" with arguments {"a": 1}
+                    and an identifier of "123".
+              ''',
               'properties': dict({
                 'args': dict({
                   'title': 'Args',
                   'type': 'object',
                 }),
                 'id': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
                   'title': 'Id',
-                  'type': 'string',
                 }),
                 'name': dict({
                   'title': 'Name',
                   'type': 'string',
                 }),
                 'type': dict({
-                  'enum': list([
-                    'tool_call',
-                  ]),
+                  'const': 'tool_call',
                   'title': 'Type',
-                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -798,7 +1314,87 @@
               'title': 'ToolCall',
               'type': 'object',
             }),
+            'ToolCallChunk': dict({
+              'description': '''
+                A chunk of a tool call (e.g., as part of a stream).
+                
+                When merging ToolCallChunks (e.g., via AIMessageChunk.__add__),
+                all string attributes are concatenated. Chunks are only merged if their
+                values of `index` are equal and not None.
+                
+                Example:
+                
+                .. code-block:: python
+                
+                    left_chunks = [ToolCallChunk(name="foo", args='{"a":', index=0)]
+                    right_chunks = [ToolCallChunk(name=None, args='1}', index=0)]
+                
+                    (
+                        AIMessageChunk(content="", tool_call_chunks=left_chunks)
+                        + AIMessageChunk(content="", tool_call_chunks=right_chunks)
+                    ).tool_call_chunks == [ToolCallChunk(name='foo', args='{"a":1}', index=0)]
+              ''',
+              'properties': dict({
+                'args': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'title': 'Args',
+                }),
+                'id': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'title': 'Id',
+                }),
+                'index': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'integer',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'title': 'Index',
+                }),
+                'name': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'title': 'Name',
+                }),
+                'type': dict({
+                  'const': 'tool_call_chunk',
+                  'title': 'Type',
+                }),
+              }),
+              'required': list([
+                'name',
+                'args',
+                'id',
+                'index',
+              ]),
+              'title': 'ToolCallChunk',
+              'type': 'object',
+            }),
             'ToolMessage': dict({
+              'additionalProperties': True,
               'description': '''
                 Message for passing the result of executing a tool back to a model.
                 
@@ -869,12 +1465,28 @@
                   'title': 'Content',
                 }),
                 'id': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
                   'title': 'Id',
-                  'type': 'string',
                 }),
                 'name': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
                   'title': 'Name',
-                  'type': 'string',
                 }),
                 'response_metadata': dict({
                   'title': 'Response Metadata',
@@ -882,24 +1494,16 @@
                 }),
                 'status': dict({
                   'default': 'success',
-                  'enum': list([
-                    'success',
-                    'error',
-                  ]),
                   'title': 'Status',
-                  'type': 'string',
                 }),
                 'tool_call_id': dict({
                   'title': 'Tool Call Id',
                   'type': 'string',
                 }),
                 'type': dict({
+                  'const': 'tool',
                   'default': 'tool',
-                  'enum': list([
-                    'tool',
-                  ]),
                   'title': 'Type',
-                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -909,7 +1513,103 @@
               'title': 'ToolMessage',
               'type': 'object',
             }),
+            'ToolMessageChunk': dict({
+              'additionalProperties': True,
+              'description': 'Tool Message chunk.',
+              'properties': dict({
+                'additional_kwargs': dict({
+                  'title': 'Additional Kwargs',
+                  'type': 'object',
+                }),
+                'artifact': dict({
+                  'title': 'Artifact',
+                }),
+                'content': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'items': dict({
+                        'anyOf': list([
+                          dict({
+                            'type': 'string',
+                          }),
+                          dict({
+                            'type': 'object',
+                          }),
+                        ]),
+                      }),
+                      'type': 'array',
+                    }),
+                  ]),
+                  'title': 'Content',
+                }),
+                'id': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
+                  'title': 'Id',
+                }),
+                'name': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
+                  'title': 'Name',
+                }),
+                'response_metadata': dict({
+                  'title': 'Response Metadata',
+                  'type': 'object',
+                }),
+                'status': dict({
+                  'default': 'success',
+                  'title': 'Status',
+                }),
+                'tool_call_id': dict({
+                  'title': 'Tool Call Id',
+                  'type': 'string',
+                }),
+                'type': dict({
+                  'const': 'ToolMessageChunk',
+                  'default': 'ToolMessageChunk',
+                  'title': 'Type',
+                }),
+              }),
+              'required': list([
+                'content',
+                'tool_call_id',
+              ]),
+              'title': 'ToolMessageChunk',
+              'type': 'object',
+            }),
             'UsageMetadata': dict({
+              'description': '''
+                Usage metadata for a message, such as token counts.
+                
+                This is a standard representation of token usage that is consistent across models.
+                
+                Example:
+                
+                    .. code-block:: python
+                
+                        {
+                            "input_tokens": 10,
+                            "output_tokens": 20,
+                            "total_tokens": 30
+                        }
+              ''',
               'properties': dict({
                 'input_tokens': dict({
                   'title': 'Input Tokens',
@@ -933,6 +1633,51 @@
               'type': 'object',
             }),
           }),
+          'anyOf': list([
+            dict({
+              'type': 'string',
+            }),
+            dict({
+              'oneOf': list([
+                dict({
+                  '$ref': '#/$defs/AIMessage',
+                }),
+                dict({
+                  '$ref': '#/$defs/HumanMessage',
+                }),
+                dict({
+                  '$ref': '#/$defs/ChatMessage',
+                }),
+                dict({
+                  '$ref': '#/$defs/SystemMessage',
+                }),
+                dict({
+                  '$ref': '#/$defs/FunctionMessage',
+                }),
+                dict({
+                  '$ref': '#/$defs/ToolMessage',
+                }),
+                dict({
+                  '$ref': '#/$defs/AIMessageChunk',
+                }),
+                dict({
+                  '$ref': '#/$defs/HumanMessageChunk',
+                }),
+                dict({
+                  '$ref': '#/$defs/ChatMessageChunk',
+                }),
+                dict({
+                  '$ref': '#/$defs/SystemMessageChunk',
+                }),
+                dict({
+                  '$ref': '#/$defs/FunctionMessageChunk',
+                }),
+                dict({
+                  '$ref': '#/$defs/ToolMessageChunk',
+                }),
+              ]),
+            }),
+          ]),
           'title': 'RunnableParallel<as_list,as_str>Input',
         }),
         'id': 3,
@@ -952,6 +1697,10 @@
               'title': 'As Str',
             }),
           }),
+          'required': list([
+            'as_list',
+            'as_str',
+          ]),
           'title': 'RunnableParallel<as_list,as_str>Output',
           'type': 'object',
         }),
@@ -1063,63 +1812,6 @@
   
   '''
 # ---
-# name: test_parallel_subgraph_mermaid[mermaid]
-  '''
-  %%{init: {'flowchart': {'curve': 'linear'}}}%%
-  graph TD;
-  	__start__([<p>__start__</p>]):::first
-  	outer_1(outer_1)
-  	inner_1_inner_1(inner_1)
-  	inner_1_inner_2(inner_2<hr/><small><em>__interrupt = before</em></small>)
-  	inner_2_inner_1(inner_1)
-  	inner_2_inner_2(inner_2)
-  	outer_2(outer_2)
-  	__end__([<p>__end__</p>]):::last
-  	__start__ --> outer_1;
-  	inner_1_inner_2 --> outer_2;
-  	inner_2_inner_2 --> outer_2;
-  	outer_1 --> inner_1_inner_1;
-  	outer_1 --> inner_2_inner_1;
-  	outer_2 --> __end__;
-  	subgraph inner_1
-  	inner_1_inner_1 --> inner_1_inner_2;
-  	end
-  	subgraph inner_2
-  	inner_2_inner_1 --> inner_2_inner_2;
-  	end
-  	classDef default fill:#f2f0ff,line-height:1.2
-  	classDef first fill-opacity:0
-  	classDef last fill:#bfb6fc
-  
-  '''
-# ---
-# name: test_double_nested_subgraph_mermaid[mermaid]
-  '''
-  %%{init: {'flowchart': {'curve': 'linear'}}}%%
-  graph TD;
-  	__start__([<p>__start__</p>]):::first
-  	parent_1(parent_1)
-  	child_child_1_grandchild_1(grandchild_1)
-  	child_child_1_grandchild_2(grandchild_2<hr/><small><em>__interrupt = before</em></small>)
-  	child_child_2(child_2)
-  	parent_2(parent_2)
-  	__end__([<p>__end__</p>]):::last
-  	__start__ --> parent_1;
-  	child_child_2 --> parent_2;
-  	parent_1 --> child_child_1_grandchild_1;
-  	parent_2 --> __end__;
-  	subgraph child
-  	child_child_1_grandchild_2 --> child_child_2;
-  	subgraph child_1
-  	child_child_1_grandchild_1 --> child_child_1_grandchild_2;
-  	end
-  	end
-  	classDef default fill:#f2f0ff,line-height:1.2
-  	classDef first fill-opacity:0
-  	classDef last fill:#bfb6fc
-  
-  '''
-# ---
 # name: test_graph_single_runnable[ascii]
   '''
   +----------------------+   
@@ -1148,6 +1840,36 @@
   	StrOutputParserOutput([StrOutputParserOutput]):::last
   	StrOutputParserInput --> StrOutputParser;
   	StrOutputParser --> StrOutputParserOutput;
+  	classDef default fill:#f2f0ff,line-height:1.2
+  	classDef first fill-opacity:0
+  	classDef last fill:#bfb6fc
+  
+  '''
+# ---
+# name: test_parallel_subgraph_mermaid[mermaid]
+  '''
+  %%{init: {'flowchart': {'curve': 'linear'}}}%%
+  graph TD;
+  	__start__([<p>__start__</p>]):::first
+  	outer_1(outer_1)
+  	inner_1_inner_1(inner_1)
+  	inner_1_inner_2(inner_2<hr/><small><em>__interrupt = before</em></small>)
+  	inner_2_inner_1(inner_1)
+  	inner_2_inner_2(inner_2)
+  	outer_2(outer_2)
+  	__end__([<p>__end__</p>]):::last
+  	__start__ --> outer_1;
+  	inner_1_inner_2 --> outer_2;
+  	inner_2_inner_2 --> outer_2;
+  	outer_1 --> inner_1_inner_1;
+  	outer_1 --> inner_2_inner_1;
+  	outer_2 --> __end__;
+  	subgraph inner_1
+  	inner_1_inner_1 --> inner_1_inner_2;
+  	end
+  	subgraph inner_2
+  	inner_2_inner_1 --> inner_2_inner_2;
+  	end
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc

@@ -10,13 +10,13 @@ from enum import Enum
 from pathlib import Path, PurePath
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Sequence, Union
 
-from langchain_core.pydantic_v1 import (
+from pydantic import (
     BaseModel,
-    BaseSettings,
     Field,
     FilePath,
     SecretStr,
 )
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from langchain_community.document_loaders.base import BaseLoader
 from langchain_community.document_loaders.blob_loaders.file_system import (
@@ -34,13 +34,12 @@ CHUNK_SIZE = 1024 * 1024 * 5
 
 
 class _O365Settings(BaseSettings):
-    client_id: str = Field(..., env="O365_CLIENT_ID")
-    client_secret: SecretStr = Field(..., env="O365_CLIENT_SECRET")
+    client_id: str = Field(..., alias="O365_CLIENT_ID")
+    client_secret: SecretStr = Field(..., alias="O365_CLIENT_SECRET")
 
-    class Config:
-        case_sentive = False
-        env_file = ".env"
-        env_prefix = ""
+    model_config = SettingsConfigDict(
+        case_sensitive=False, env_file=".env", env_prefix=""
+    )
 
 
 class _O365TokenStorage(BaseSettings):

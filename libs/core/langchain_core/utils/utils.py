@@ -10,9 +10,9 @@ from importlib.metadata import version
 from typing import Any, Callable, Dict, Optional, Sequence, Set, Tuple, Union, overload
 
 from packaging.version import parse
+from pydantic import SecretStr
 from requests import HTTPError, Response
 
-from langchain_core.pydantic_v1 import SecretStr
 from langchain_core.utils.pydantic import (
     is_pydantic_v1_subclass,
 )
@@ -353,7 +353,7 @@ def from_env(
 
 
 @overload
-def secret_from_env(key: str, /) -> Callable[[], SecretStr]: ...
+def secret_from_env(key: Union[str, Sequence[str]], /) -> Callable[[], SecretStr]: ...
 
 
 @overload

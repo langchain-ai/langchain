@@ -1,5 +1,6 @@
 from typing import Optional
 
+from pydantic import BaseModel
 from syrupy import SnapshotAssertion
 
 from langchain_core.language_models import FakeListLLM
@@ -7,11 +8,10 @@ from langchain_core.output_parsers.list import CommaSeparatedListOutputParser
 from langchain_core.output_parsers.string import StrOutputParser
 from langchain_core.output_parsers.xml import XMLOutputParser
 from langchain_core.prompts.prompt import PromptTemplate
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables.base import Runnable, RunnableConfig
 from langchain_core.runnables.graph import Edge, Graph, Node
 from langchain_core.runnables.graph_mermaid import _escape_node_label
-from tests.unit_tests.pydantic_utils import _schema
+from tests.unit_tests.pydantic_utils import _normalize_schema
 
 
 def test_graph_single_runnable(snapshot: SnapshotAssertion) -> None:
@@ -19,10 +19,10 @@ def test_graph_single_runnable(snapshot: SnapshotAssertion) -> None:
     graph = StrOutputParser().get_graph()
     first_node = graph.first_node()
     assert first_node is not None
-    assert _schema(first_node.data) == _schema(runnable.input_schema)  # type: ignore[union-attr]
+    assert first_node.data.model_json_schema() == runnable.get_input_jsonschema()  # type: ignore[union-attr]
     last_node = graph.last_node()
     assert last_node is not None
-    assert _schema(last_node.data) == _schema(runnable.output_schema)  # type: ignore[union-attr]
+    assert last_node.data.model_json_schema() == runnable.get_output_jsonschema()  # type: ignore[union-attr]
     assert len(graph.nodes) == 3
     assert len(graph.edges) == 2
     assert graph.edges[0].source == first_node.id
@@ -57,7 +57,7 @@ def test_trim(snapshot: SnapshotAssertion) -> None:
     graph.add_edge(answer, ask, conditional=True)
     graph.add_edge(answer, end, conditional=True)
 
-    assert graph.to_json() == snapshot
+    assert _normalize_schema(graph.to_json()) == snapshot
     assert graph.first_node() is start
     assert graph.last_node() is end
     # can't trim start or end node
@@ -209,8 +209,10 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
         }
     )
     graph = sequence.get_graph()
-    assert graph.to_json(with_schemas=True) == snapshot(name="graph_with_schema")
-    assert graph.to_json() == snapshot(name="graph_no_schemas")
+    assert _normalize_schema(graph.to_json(with_schemas=True)) == snapshot(
+        name="graph_with_schema"
+    )
+    assert _normalize_schema(graph.to_json()) == snapshot(name="graph_no_schemas")
     assert graph.draw_ascii() == snapshot(name="ascii")
     assert graph.draw_mermaid() == snapshot(name="mermaid")
     assert graph.draw_mermaid(with_styles=False) == snapshot(name="mermaid-simple")

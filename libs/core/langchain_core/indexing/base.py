@@ -3,7 +3,7 @@ from __future__ import annotations
 import abc
 import time
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Sequence, TypedDict
+from typing import Any, Optional, Sequence, TypedDict
 
 from langchain_core._api import beta
 from langchain_core.documents import Document
@@ -144,7 +144,7 @@ class RecordManager(ABC):
         """
 
     @abstractmethod
-    def exists(self, keys: Sequence[str]) -> List[bool]:
+    def exists(self, keys: Sequence[str]) -> list[bool]:
         """Check if the provided keys exist in the database.
 
         Args:
@@ -155,7 +155,7 @@ class RecordManager(ABC):
         """
 
     @abstractmethod
-    async def aexists(self, keys: Sequence[str]) -> List[bool]:
+    async def aexists(self, keys: Sequence[str]) -> list[bool]:
         """Asynchronously check if the provided keys exist in the database.
 
         Args:
@@ -173,7 +173,7 @@ class RecordManager(ABC):
         after: Optional[float] = None,
         group_ids: Optional[Sequence[str]] = None,
         limit: Optional[int] = None,
-    ) -> List[str]:
+    ) -> list[str]:
         """List records in the database based on the provided filters.
 
         Args:
@@ -194,7 +194,7 @@ class RecordManager(ABC):
         after: Optional[float] = None,
         group_ids: Optional[Sequence[str]] = None,
         limit: Optional[int] = None,
-    ) -> List[str]:
+    ) -> list[str]:
         """Asynchronously list records in the database based on the provided filters.
 
         Args:
@@ -241,7 +241,7 @@ class InMemoryRecordManager(RecordManager):
         super().__init__(namespace)
         # Each key points to a dictionary
         # of {'group_id': group_id, 'updated_at': timestamp}
-        self.records: Dict[str, _Record] = {}
+        self.records: dict[str, _Record] = {}
         self.namespace = namespace
 
     def create_schema(self) -> None:
@@ -325,7 +325,7 @@ class InMemoryRecordManager(RecordManager):
         """
         self.update(keys, group_ids=group_ids, time_at_least=time_at_least)
 
-    def exists(self, keys: Sequence[str]) -> List[bool]:
+    def exists(self, keys: Sequence[str]) -> list[bool]:
         """Check if the provided keys exist in the database.
 
         Args:
@@ -336,7 +336,7 @@ class InMemoryRecordManager(RecordManager):
         """
         return [key in self.records for key in keys]
 
-    async def aexists(self, keys: Sequence[str]) -> List[bool]:
+    async def aexists(self, keys: Sequence[str]) -> list[bool]:
         """Async check if the provided keys exist in the database.
 
         Args:
@@ -354,7 +354,7 @@ class InMemoryRecordManager(RecordManager):
         after: Optional[float] = None,
         group_ids: Optional[Sequence[str]] = None,
         limit: Optional[int] = None,
-    ) -> List[str]:
+    ) -> list[str]:
         """List records in the database based on the provided filters.
 
         Args:
@@ -390,7 +390,7 @@ class InMemoryRecordManager(RecordManager):
         after: Optional[float] = None,
         group_ids: Optional[Sequence[str]] = None,
         limit: Optional[int] = None,
-    ) -> List[str]:
+    ) -> list[str]:
         """Async list records in the database based on the provided filters.
 
         Args:
@@ -449,9 +449,9 @@ class UpsertResponse(TypedDict):
     indexed to avoid this issue.
     """
 
-    succeeded: List[str]
+    succeeded: list[str]
     """The IDs that were successfully indexed."""
-    failed: List[str]
+    failed: list[str]
     """The IDs that failed to index."""
 
 
@@ -562,7 +562,7 @@ class DocumentIndex(BaseRetriever):
         )
 
     @abc.abstractmethod
-    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> DeleteResponse:
+    def delete(self, ids: Optional[list[str]] = None, **kwargs: Any) -> DeleteResponse:
         """Delete by IDs or other criteria.
 
         Calling delete without any input parameters should raise a ValueError!
@@ -579,7 +579,7 @@ class DocumentIndex(BaseRetriever):
         """
 
     async def adelete(
-        self, ids: Optional[List[str]] = None, **kwargs: Any
+        self, ids: Optional[list[str]] = None, **kwargs: Any
     ) -> DeleteResponse:
         """Delete by IDs or other criteria. Async variant.
 
@@ -607,7 +607,7 @@ class DocumentIndex(BaseRetriever):
         ids: Sequence[str],
         /,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Get documents by id.
 
         Fewer documents may be returned than requested if some IDs are not found or
@@ -633,7 +633,7 @@ class DocumentIndex(BaseRetriever):
         ids: Sequence[str],
         /,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Get documents by id.
 
         Fewer documents may be returned than requested if some IDs are not found or

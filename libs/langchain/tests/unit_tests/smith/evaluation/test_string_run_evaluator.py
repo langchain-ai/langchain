@@ -12,11 +12,10 @@ from tests.unit_tests.llms import fake_llm
 
 def test_evaluate_run() -> None:
     run_mapper = ChainStringRunMapper()
-    example_mapper = MagicMock()
     string_evaluator = criteria.CriteriaEvalChain.from_llm(fake_llm.FakeLLM())
     evaluator = StringRunEvaluatorChain(
         run_mapper=run_mapper,
-        example_mapper=example_mapper,
+        example_mapper=None,
         name="test_evaluator",
         string_evaluator=string_evaluator,
     )

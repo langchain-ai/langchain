@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Any, List
+from typing import Any
 from unittest.mock import MagicMock
 from uuid import uuid4
 
@@ -30,7 +30,7 @@ class FakeTracer(BaseTracer):
     def __init__(self) -> None:
         """Initialize the tracer."""
         super().__init__()
-        self.runs: List[Run] = []
+        self.runs: list[Run] = []
 
     def _persist_run(self, run: Run) -> None:
         """Persist a run."""

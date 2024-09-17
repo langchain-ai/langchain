@@ -1,14 +1,21 @@
 from __future__ import annotations
 
 from inspect import signature
-from typing import Any, Awaitable, Callable, Dict, Optional, Tuple, Type, Union
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Optional,
+    Union,
+)
+
+from pydantic import BaseModel
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
 from langchain_core.messages import ToolCall
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import RunnableConfig, run_in_executor
 from langchain_core.tools.base import (
     BaseTool,
@@ -30,7 +37,7 @@ class Tool(BaseTool):
 
     async def ainvoke(
         self,
-        input: Union[str, Dict, ToolCall],
+        input: Union[str, dict, ToolCall],
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Any:
@@ -50,12 +57,12 @@ class Tool(BaseTool):
             The input arguments for the tool.
         """
         if self.args_schema is not None:
-            return self.args_schema.schema()["properties"]
+            return self.args_schema.model_json_schema()["properties"]
         # For backwards compatibility, if the function signature is ambiguous,
         # assume it takes a single string input.
         return {"tool_input": {"type": "string"}}
 
-    def _to_args_and_kwargs(self, tool_input: Union[str, Dict]) -> Tuple[Tuple, Dict]:
+    def _to_args_and_kwargs(self, tool_input: Union[str, dict]) -> tuple[tuple, dict]:
         """Convert tool input to pydantic model."""
         args, kwargs = super()._to_args_and_kwargs(tool_input)
         # For backwards compatibility. The tool must be run with a single input
@@ -121,7 +128,7 @@ class Tool(BaseTool):
         name: str,  # We keep these required to support backwards compatibility
         description: str,
         return_direct: bool = False,
-        args_schema: Optional[Type[BaseModel]] = None,
+        args_schema: Optional[type[BaseModel]] = None,
         coroutine: Optional[
             Callable[..., Awaitable[Any]]
         ] = None,  # This is last for compatibility, but should be after func
@@ -155,3 +162,6 @@ class Tool(BaseTool):
             args_schema=args_schema,
             **kwargs,
         )
+
+
+Tool.model_rebuild()
