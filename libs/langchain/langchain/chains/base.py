@@ -18,6 +18,7 @@ from langchain_core.callbacks import (
     CallbackManagerForChainRun,
     Callbacks,
 )
+from langchain_core.load.dump import dumpd
 from langchain_core.memory import BaseMemory
 from langchain_core.outputs import RunInfo
 from langchain_core.runnables import (
@@ -149,7 +150,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
         new_arg_supported = inspect.signature(self._call).parameters.get("run_manager")
 
         run_manager = callback_manager.on_chain_start(
-            None,
+            dumpd(self),
             inputs,
             run_id,
             name=run_name,
