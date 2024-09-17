@@ -85,7 +85,7 @@ def _rm_titles(kv: dict, prev_key: str = "") -> dict:
     removal="1.0",
 )
 def convert_pydantic_to_openai_function(
-    model: Type,
+    model: type,
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
@@ -106,8 +106,10 @@ def convert_pydantic_to_openai_function(
     """
     if hasattr(model, "model_json_schema"):
         schema = model.model_json_schema()  # Pydantic 2
-    else:
+    elif hasattr(model, "schema"):
         schema = model.schema()  # Pydantic 1
+    else:
+        raise TypeError("Model must be a Pydantic model.")
     schema = dereference_refs(schema)
     if "definitions" in schema:  # pydantic 1
         schema.pop("definitions", None)
@@ -128,7 +130,7 @@ def convert_pydantic_to_openai_function(
     removal="1.0",
 )
 def convert_pydantic_to_openai_tool(
-    model: Type[BaseModel],
+    model: type[BaseModel],
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
@@ -194,8 +196,8 @@ def convert_python_function_to_openai_function(
     )
 
 
-def _convert_typed_dict_to_openai_function(typed_dict: Type) -> FunctionDescription:
-    visited: Dict = {}
+def _convert_typed_dict_to_openai_function(typed_dict: type) -> FunctionDescription:
+    visited: dict = {}
     from pydantic.v1 import BaseModel
 
     model = cast(
@@ -209,11 +211,11 @@ _MAX_TYPED_DICT_RECURSION = 25
 
 
 def _convert_any_typed_dicts_to_pydantic(
-    type_: Type,
+    type_: type,
     *,
-    visited: Dict,
+    visited: dict,
     depth: int = 0,
-) -> Type:
+) -> type:
     from pydantic.v1 import Field as Field_v1
     from pydantic.v1 import create_model as create_model_v1
 
@@ -267,9 +269,9 @@ def _convert_any_typed_dicts_to_pydantic(
         subscriptable_origin = _py_38_safe_origin(origin)
         type_args = tuple(
             _convert_any_typed_dicts_to_pydantic(arg, depth=depth + 1, visited=visited)
-            for arg in type_args
+            for arg in type_args  # type: ignore[index]
         )
-        return subscriptable_origin[type_args]
+        return subscriptable_origin[type_args]  # type: ignore[index]
     else:
         return type_
 
@@ -333,10 +335,10 @@ def format_tool_to_openai_tool(tool: BaseTool) -> ToolDescription:
 
 
 def convert_to_openai_function(
-    function: Union[Dict[str, Any], Type, Callable, BaseTool],
+    function: Union[dict[str, Any], type, Callable, BaseTool],
     *,
     strict: Optional[bool] = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Convert a raw function/class to an OpenAI function.
 
     .. versionchanged:: 0.2.29
@@ -411,10 +413,10 @@ def convert_to_openai_function(
 
 
 def convert_to_openai_tool(
-    tool: Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool],
+    tool: Union[dict[str, Any], type[BaseModel], Callable, BaseTool],
     *,
     strict: Optional[bool] = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Convert a raw function/class to an OpenAI tool.
 
     .. versionchanged:: 0.2.29
@@ -441,13 +443,13 @@ def convert_to_openai_tool(
     if isinstance(tool, dict) and tool.get("type") == "function" and "function" in tool:
         return tool
     oai_function = convert_to_openai_function(tool, strict=strict)
-    oai_tool: Dict[str, Any] = {"type": "function", "function": oai_function}
+    oai_tool: dict[str, Any] = {"type": "function", "function": oai_function}
     return oai_tool
 
 
 def tool_example_to_messages(
-    input: str, tool_calls: List[BaseModel], tool_outputs: Optional[List[str]] = None
-) -> List[BaseMessage]:
+    input: str, tool_calls: list[BaseModel], tool_outputs: Optional[list[str]] = None
+) -> list[BaseMessage]:
     """Convert an example into a list of messages that can be fed into an LLM.
 
     This code is an adapter that converts a single example to a list of messages
@@ -511,7 +513,7 @@ def tool_example_to_messages(
                     tool_example_to_messages(txt, [tool_call])
                 )
     """
-    messages: List[BaseMessage] = [HumanMessage(content=input)]
+    messages: list[BaseMessage] = [HumanMessage(content=input)]
     openai_tool_calls = []
     for tool_call in tool_calls:
         openai_tool_calls.append(
@@ -540,10 +542,10 @@ def tool_example_to_messages(
 
 def _parse_google_docstring(
     docstring: Optional[str],
-    args: List[str],
+    args: list[str],
     *,
     error_on_invalid_docstring: bool = False,
-) -> Tuple[str, dict]:
+) -> tuple[str, dict]:
     """Parse the function and argument descriptions from the docstring of a function.
 
     Assumes the function docstring follows Google Python style guide.
@@ -590,12 +592,12 @@ def _parse_google_docstring(
     return description, arg_descriptions
 
 
-def _py_38_safe_origin(origin: Type) -> Type:
-    origin_union_type_map: Dict[Type, Any] = (
+def _py_38_safe_origin(origin: type) -> type:
+    origin_union_type_map: dict[type, Any] = (
         {types.UnionType: Union} if hasattr(types, "UnionType") else {}
     )
 
-    origin_map: Dict[Type, Any] = {
+    origin_map: dict[type, Any] = {
         dict: Dict,
         list: List,
         tuple: Tuple,
@@ -610,8 +612,8 @@ def _py_38_safe_origin(origin: Type) -> Type:
 
 
 def _recursive_set_additional_properties_false(
-    schema: Dict[str, Any],
-) -> Dict[str, Any]:
+    schema: dict[str, Any],
+) -> dict[str, Any]:
     if isinstance(schema, dict):
         # Check if 'required' is a key at the current level or if the schema is empty,
         # in which case additionalProperties still needs to be specified.

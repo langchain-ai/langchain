@@ -18,7 +18,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import List, Sequence, Union
+from typing import Sequence, Union
 
 from pydantic import BaseModel, Field
 
@@ -87,7 +87,7 @@ class BaseChatMessageHistory(ABC):
                        f.write("[]")
     """
 
-    messages: List[BaseMessage]
+    messages: list[BaseMessage]
     """A property or attribute that returns a list of messages.
 
     In general, getting the messages may involve IO to the underlying
@@ -95,7 +95,7 @@ class BaseChatMessageHistory(ABC):
     latency.
     """
 
-    async def aget_messages(self) -> List[BaseMessage]:
+    async def aget_messages(self) -> list[BaseMessage]:
         """Async version of getting messages.
 
         Can over-ride this method to provide an efficient async implementation.
@@ -204,10 +204,10 @@ class InMemoryChatMessageHistory(BaseChatMessageHistory, BaseModel):
     Stores messages in a memory list.
     """
 
-    messages: List[BaseMessage] = Field(default_factory=list)
+    messages: list[BaseMessage] = Field(default_factory=list)
     """A list of messages stored in memory."""
 
-    async def aget_messages(self) -> List[BaseMessage]:
+    async def aget_messages(self) -> list[BaseMessage]:
         """Async version of getting messages.
 
         Can over-ride this method to provide an efficient async implementation.

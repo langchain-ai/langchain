@@ -1,6 +1,6 @@
 # LangChain v0.3
 
-*Last updated: 09.13.24*
+*Last updated: 09.16.24*
 
 ## What's changed
 
@@ -23,21 +23,35 @@ The following features have been added during the development of 0.2.x:
 
 ## How to update your code
 
-If you're using `langchain` / `langchain-community` / `langchain-core` 0.0 or 0.1, we recommend that you first [upgrade to 0.2](https://python.langchain.com/v0.2/docs/versions/v0_2/). The `langchain-cli` will help you to migrate many imports automatically.
+If you're using `langchain` / `langchain-community` / `langchain-core` 0.0 or 0.1, we recommend that you first [upgrade to 0.2](https://python.langchain.com/v0.2/docs/versions/v0_2/).
 
 If you're using `langgraph`, upgrade to `langgraph>=0.2.20,<0.3`. This will work with either 0.2 or 0.3 versions of all the base packages.
 
-Here is a complete list of all packages that have been released and what we recommend upgrading your version constraints to:
+Here is a complete list of all packages that have been released and what we recommend upgrading your version constraints to.
+Any package that now requires `langchain-core` 0.3 had a minor version bump.
+Any package that is now compatible with both `langchain-core` 0.2 and 0.3 had a patch version bump.
+
+You can use the `langchain-cli` to update deprecated imports automatically.
+The CLI will handle updating deprecated imports that were introduced in LangChain 0.0.x and LangChain 0.1, as
+well as updating the `langchain_core.pydantic_v1` and `langchain.pydantic_v1` imports.
+
 
 ### Base packages
 
-| Package                                | Latest | Recommended constraint     |
-| -------------------------------------- | ------- | -------------------------- |
-| langchain                              | 0.3.0   | >=0.3,<0.4                 |
-| langchain-community                    | 0.3.0   | >=0.3,<0.4                 |
-| langchain-text-splitters               | 0.3.0   | >=0.3,<0.4                 |
-| langchain-core                         | 0.3.0   | >=0.3,<0.4                 |
-| langchain-experimental                 | 0.3.0   | >=0.3,<0.4                 |
+| Package                  | Latest | Recommended constraint |
+|--------------------------|--------|------------------------|
+| langchain                | 0.3.0  | >=0.3,<0.4             |
+| langchain-community      | 0.3.0  | >=0.3,<0.4             |
+| langchain-text-splitters | 0.3.0  | >=0.3,<0.4             |
+| langchain-core           | 0.3.0  | >=0.3,<0.4             |
+| langchain-experimental   | 0.3.0  | >=0.3,<0.4             |
+
+### Downstream packages
+
+| Package   | Latest | Recommended constraint |
+|-----------|--------|------------------------|
+| langgraph | 0.2.20 | >=0.2.20,<0.3          |
+| langserve | 0.3.0  | >=0.3,<0.4             |
 
 ### Integration packages
 
@@ -47,11 +61,11 @@ Here is a complete list of all packages that have been released and what we reco
 | langchain-aws                          | 0.2.0   | >=0.2,<0.3                 |
 | langchain-anthropic                    | 0.2.0   | >=0.2,<0.3                 |
 | langchain-astradb                      | 0.4.1   | >=0.4.1,<0.5               |
-| langchain-azure-dynamic-sessions       | 0.1.1   | >=0.1.1,<0.2               |
+| langchain-azure-dynamic-sessions       | 0.2.0   | >=0.2,<0.3                 |
 | langchain-box                          | 0.2.0   | >=0.2,<0.3                 |
 | langchain-chroma                       | 0.1.4   | >=0.1.4,<0.2               |
-| langchain-cohere                       | 0.2.0   | >=0.2,<0.3                 |
-| langchain-elasticsearch                | 0.2.3   | >=0.2.3,<0.3               |
+| langchain-cohere                       | 0.3.0   | >=0.3,<0.4                 |
+| langchain-elasticsearch                | 0.3.0   | >=0.3,<0.4                 |
 | langchain-exa                          | 0.2.0   | >=0.2,<0.3                 |
 | langchain-fireworks                    | 0.2.0   | >=0.2,<0.3                 |
 | langchain-groq                         | 0.2.0   | >=0.2,<0.3                 |
@@ -59,20 +73,24 @@ Here is a complete list of all packages that have been released and what we reco
 | langchain-google-genai                 | 2.0.0   | >=2,<3                     |
 | langchain-google-vertexai              | 2.0.0   | >=2,<3                     |
 | langchain-huggingface                  | 0.1.0   | >=0.1,<0.2                 |
+| langchain-ibm                          | 0.2.0   | >=0.2,<0.3                 |
 | langchain-milvus                       | 0.1.6   | >=0.1.6,<0.2               |
 | langchain-mistralai                    | 0.2.0   | >=0.2,<0.3                 |
-| langchain-mongodb                      | 0.1.10  | >=0.1.10,<0.2              |
+| langchain-mongodb                      | 0.2.0   | >=0.2,<0.3                 |
 | langchain-nomic                        | 0.1.3   | >=0.1.3,<0.2               |
 | langchain-ollama                       | 0.2.0   | >=0.2,<0.3                 |
 | langchain-openai                       | 0.2.0   | >=0.2,<0.3                 |
 | langchain-pinecone                     | 0.2.0   | >=0.2,<0.3                 |
 | langchain-postgres                     | 0.0.13  | >=0.0.13,<0.1              |
 | langchain-prompty                      | 0.1.0   | >=0.1,<0.2                 |
-| langchain-qdrant                       | 0.2.0   | >=0.2,<0.3                 |
+| langchain-qdrant                       | 0.1.4   | >=0.1.4,<0.2               |
+| langchain-redis                        | 0.1.0   | >=0.1,<0.2                 |
+| langchain-sema4                        | 0.2.0   | >=0.2,<0.3                 |
 | langchain-together                     | 0.2.0   | >=0.2,<0.3                 |
 | langchain-unstructured                 | 0.1.4   | >=0.1.4,<0.2               |
+| langchain-upstage                      | 0.3.0   | >=0.3,<0.4                 |
 | langchain-voyageai                     | 0.2.0   | >=0.2,<0.3                 |
-| langchain-weaviate                     | 0.1.0   | >=0.1,<0.2                 |
+| langchain-weaviate                     | 0.0.3   | >=0.0.3,<0.1               |
 
 Once you've updated to recent versions of the packages, you may need to address the following issues stemming from the internal switch from Pydantic v1 to Pydantic v2:
 
@@ -175,6 +193,8 @@ CustomTool(
 When sub-classing from LangChain models, users may need to add relevant imports
 to the file and rebuild the model.
 
+You can read more about `model_rebuild` [here](https://docs.pydantic.dev/latest/concepts/models/#rebuilding-model-schema).
+
 ```python
 from langchain_core.output_parsers import BaseOutputParser
 
@@ -194,4 +214,58 @@ class FooParser(BaseOutputParser):
     ...
 
 FooParser.model_rebuild()
+```
+
+## Migrate using langchain-cli
+
+The `langchain-cli` can help update deprecated LangChain imports in your code automatically.
+
+Please note that the `langchain-cli` only handles deprecated LangChain imports and cannot
+help to upgrade your code from pydantic 1 to pydantic 2.
+
+For help with the Pydantic 1 to 2 migration itself please refer to the [Pydantic Migration Guidelines](https://docs.pydantic.dev/latest/migration/).
+
+As of 0.0.31, the `langchain-cli` relies on [gritql](https://about.grit.io/) for applying code mods.
+
+### Installation
+
+```bash
+pip install -U langchain-cli
+langchain-cli --version # <-- Make sure the version is at least 0.0.31
+```
+
+### Usage
+
+Given that the migration script is not perfect, you should make sure you have a backup of your code first (e.g., using version control like `git`).
+
+The `langchain-cli` will handle the `langchain_core.pydantic_v1` deprecation introduced in LangChain 0.3 as well
+as older deprecations (e.g.,`from langchain.chat_models import ChatOpenAI` which should be `from langchain_openai import ChatOpenAI`),
+
+You will need to run the migration script **twice** as it only applies one import replacement per run.
+
+For example, say that your code is still using the old import `from langchain.chat_models import ChatOpenAI`:
+
+After the first run, you’ll get: `from langchain_community.chat_models import ChatOpenAI`
+After the second run, you’ll get: `from langchain_openai import ChatOpenAI`
+
+```bash
+# Run a first time
+# Will replace from langchain.chat_models import ChatOpenAI
+langchain-cli migrate --help [path to code] # Help
+langchain-cli migrate [path to code] # Apply
+
+# Run a second time to apply more import replacements
+langchain-cli migrate --diff [path to code] # Preview
+langchain-cli migrate [path to code] # Apply
+```
+
+### Other options
+
+```bash
+# See help menu
+langchain-cli migrate --help
+# Preview Changes without applying
+langchain-cli migrate --diff [path to code]
+# Approve changes interactively
+langchain-cli migrate --interactive [path to code]
 ```

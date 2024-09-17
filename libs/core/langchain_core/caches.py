@@ -23,7 +23,7 @@ Cache directly competes with Memory. See documentation for Pros and Cons.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional, Sequence, Tuple
+from typing import Any, Optional, Sequence
 
 from langchain_core.outputs import Generation
 from langchain_core.runnables import run_in_executor
@@ -157,7 +157,7 @@ class InMemoryCache(BaseCache):
         Raises:
             ValueError: If maxsize is less than or equal to 0.
         """
-        self._cache: Dict[Tuple[str, str], RETURN_VAL_TYPE] = {}
+        self._cache: dict[tuple[str, str], RETURN_VAL_TYPE] = {}
         if maxsize is not None and maxsize <= 0:
             raise ValueError("maxsize must be greater than 0")
         self._maxsize = maxsize

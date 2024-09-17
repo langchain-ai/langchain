@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, TypeVar, Union
+from typing import TYPE_CHECKING, Any, List, Optional, Sequence, TypeVar, Union
 from uuid import UUID
 
 from tenacity import RetryCallState
@@ -118,7 +118,7 @@ class ChainManagerMixin:
 
     def on_chain_end(
         self,
-        outputs: Dict[str, Any],
+        outputs: dict[str, Any],
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
@@ -222,13 +222,13 @@ class CallbackManagerMixin:
 
     def on_llm_start(
         self,
-        serialized: Dict[str, Any],
-        prompts: List[str],
+        serialized: dict[str, Any],
+        prompts: list[str],
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Any:
         """Run when LLM starts running.
@@ -249,13 +249,13 @@ class CallbackManagerMixin:
 
     def on_chat_model_start(
         self,
-        serialized: Dict[str, Any],
-        messages: List[List[BaseMessage]],
+        serialized: dict[str, Any],
+        messages: list[list[BaseMessage]],
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Any:
         """Run when a chat model starts running.
@@ -280,13 +280,13 @@ class CallbackManagerMixin:
 
     def on_retriever_start(
         self,
-        serialized: Dict[str, Any],
+        serialized: dict[str, Any],
         query: str,
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Any:
         """Run when the Retriever starts running.
@@ -303,13 +303,13 @@ class CallbackManagerMixin:
 
     def on_chain_start(
         self,
-        serialized: Dict[str, Any],
-        inputs: Dict[str, Any],
+        serialized: dict[str, Any],
+        inputs: dict[str, Any],
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Any:
         """Run when a chain starts running.
@@ -326,14 +326,14 @@ class CallbackManagerMixin:
 
     def on_tool_start(
         self,
-        serialized: Dict[str, Any],
+        serialized: dict[str, Any],
         input_str: str,
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
-        inputs: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
+        inputs: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Any:
         """Run when the tool starts running.
@@ -393,8 +393,8 @@ class RunManagerMixin:
         data: Any,
         *,
         run_id: UUID,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Any:
         """Override to define a handler for a custom event.
@@ -470,13 +470,13 @@ class AsyncCallbackHandler(BaseCallbackHandler):
 
     async def on_llm_start(
         self,
-        serialized: Dict[str, Any],
-        prompts: List[str],
+        serialized: dict[str, Any],
+        prompts: list[str],
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
         """Run when LLM starts running.
@@ -497,13 +497,13 @@ class AsyncCallbackHandler(BaseCallbackHandler):
 
     async def on_chat_model_start(
         self,
-        serialized: Dict[str, Any],
-        messages: List[List[BaseMessage]],
+        serialized: dict[str, Any],
+        messages: list[list[BaseMessage]],
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Any:
         """Run when a chat model starts running.
@@ -533,7 +533,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
-        tags: Optional[List[str]] = None,
+        tags: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> None:
         """Run on new LLM token. Only available when streaming is enabled.
@@ -554,7 +554,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
-        tags: Optional[List[str]] = None,
+        tags: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> None:
         """Run when LLM ends running.
@@ -573,7 +573,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
-        tags: Optional[List[str]] = None,
+        tags: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> None:
         """Run when LLM errors.
@@ -590,13 +590,13 @@ class AsyncCallbackHandler(BaseCallbackHandler):
 
     async def on_chain_start(
         self,
-        serialized: Dict[str, Any],
-        inputs: Dict[str, Any],
+        serialized: dict[str, Any],
+        inputs: dict[str, Any],
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
         """Run when a chain starts running.
@@ -613,11 +613,11 @@ class AsyncCallbackHandler(BaseCallbackHandler):
 
     async def on_chain_end(
         self,
-        outputs: Dict[str, Any],
+        outputs: dict[str, Any],
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
-        tags: Optional[List[str]] = None,
+        tags: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> None:
         """Run when a chain ends running.
@@ -636,7 +636,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
-        tags: Optional[List[str]] = None,
+        tags: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> None:
         """Run when chain errors.
@@ -651,14 +651,14 @@ class AsyncCallbackHandler(BaseCallbackHandler):
 
     async def on_tool_start(
         self,
-        serialized: Dict[str, Any],
+        serialized: dict[str, Any],
         input_str: str,
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
-        inputs: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
+        inputs: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
         """Run when the tool starts running.
@@ -680,7 +680,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
-        tags: Optional[List[str]] = None,
+        tags: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> None:
         """Run when the tool ends running.
@@ -699,7 +699,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
-        tags: Optional[List[str]] = None,
+        tags: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> None:
         """Run when tool errors.
@@ -718,7 +718,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
-        tags: Optional[List[str]] = None,
+        tags: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> None:
         """Run on an arbitrary text.
@@ -754,7 +754,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
-        tags: Optional[List[str]] = None,
+        tags: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> None:
         """Run on agent action.
@@ -773,7 +773,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
-        tags: Optional[List[str]] = None,
+        tags: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> None:
         """Run on the agent end.
@@ -788,13 +788,13 @@ class AsyncCallbackHandler(BaseCallbackHandler):
 
     async def on_retriever_start(
         self,
-        serialized: Dict[str, Any],
+        serialized: dict[str, Any],
         query: str,
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
         """Run on the retriever start.
@@ -815,7 +815,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
-        tags: Optional[List[str]] = None,
+        tags: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> None:
         """Run on the retriever end.
@@ -833,7 +833,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
-        tags: Optional[List[str]] = None,
+        tags: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> None:
         """Run on retriever error.
@@ -852,8 +852,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         data: Any,
         *,
         run_id: UUID,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
         """Override to define a handler for a custom event.
@@ -880,14 +880,14 @@ class BaseCallbackManager(CallbackManagerMixin):
 
     def __init__(
         self,
-        handlers: List[BaseCallbackHandler],
-        inheritable_handlers: Optional[List[BaseCallbackHandler]] = None,
+        handlers: list[BaseCallbackHandler],
+        inheritable_handlers: Optional[list[BaseCallbackHandler]] = None,
         parent_run_id: Optional[UUID] = None,
         *,
-        tags: Optional[List[str]] = None,
-        inheritable_tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
-        inheritable_metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        inheritable_tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
+        inheritable_metadata: Optional[dict[str, Any]] = None,
     ) -> None:
         """Initialize callback manager.
 
@@ -901,8 +901,8 @@ class BaseCallbackManager(CallbackManagerMixin):
                 Default is None.
             metadata (Optional[Dict[str, Any]]): The metadata. Default is None.
         """
-        self.handlers: List[BaseCallbackHandler] = handlers
-        self.inheritable_handlers: List[BaseCallbackHandler] = (
+        self.handlers: list[BaseCallbackHandler] = handlers
+        self.inheritable_handlers: list[BaseCallbackHandler] = (
             inheritable_handlers or []
         )
         self.parent_run_id: Optional[UUID] = parent_run_id
@@ -1002,7 +1002,7 @@ class BaseCallbackManager(CallbackManagerMixin):
         self.inheritable_handlers.remove(handler)
 
     def set_handlers(
-        self, handlers: List[BaseCallbackHandler], inherit: bool = True
+        self, handlers: list[BaseCallbackHandler], inherit: bool = True
     ) -> None:
         """Set handlers as the only handlers on the callback manager.
 
@@ -1024,7 +1024,7 @@ class BaseCallbackManager(CallbackManagerMixin):
         """
         self.set_handlers([handler], inherit=inherit)
 
-    def add_tags(self, tags: List[str], inherit: bool = True) -> None:
+    def add_tags(self, tags: list[str], inherit: bool = True) -> None:
         """Add tags to the callback manager.
 
         Args:
@@ -1038,7 +1038,7 @@ class BaseCallbackManager(CallbackManagerMixin):
         if inherit:
             self.inheritable_tags.extend(tags)
 
-    def remove_tags(self, tags: List[str]) -> None:
+    def remove_tags(self, tags: list[str]) -> None:
         """Remove tags from the callback manager.
 
         Args:
@@ -1048,7 +1048,7 @@ class BaseCallbackManager(CallbackManagerMixin):
             self.tags.remove(tag)
             self.inheritable_tags.remove(tag)
 
-    def add_metadata(self, metadata: Dict[str, Any], inherit: bool = True) -> None:
+    def add_metadata(self, metadata: dict[str, Any], inherit: bool = True) -> None:
         """Add metadata to the callback manager.
 
         Args:
@@ -1059,7 +1059,7 @@ class BaseCallbackManager(CallbackManagerMixin):
         if inherit:
             self.inheritable_metadata.update(metadata)
 
-    def remove_metadata(self, keys: List[str]) -> None:
+    def remove_metadata(self, keys: list[str]) -> None:
         """Remove metadata from the callback manager.
 
         Args:

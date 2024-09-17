@@ -13,12 +13,9 @@ from typing import (
     Any,
     Callable,
     Dict,
-    List,
     Literal,
     Optional,
     Sequence,
-    Tuple,
-    Type,
     TypeVar,
     Union,
     cast,
@@ -78,11 +75,11 @@ class SchemaAnnotationError(TypeError):
     """Raised when 'args_schema' is missing or has an incorrect type annotation."""
 
 
-def _is_annotated_type(typ: Type[Any]) -> bool:
+def _is_annotated_type(typ: type[Any]) -> bool:
     return get_origin(typ) is Annotated
 
 
-def _get_annotation_description(arg_type: Type) -> str | None:
+def _get_annotation_description(arg_type: type) -> str | None:
     if _is_annotated_type(arg_type):
         annotated_args = get_args(arg_type)
         for annotation in annotated_args[1:]:
@@ -92,7 +89,7 @@ def _get_annotation_description(arg_type: Type) -> str | None:
 
 
 def _get_filtered_args(
-    inferred_model: Type[BaseModel],
+    inferred_model: type[BaseModel],
     func: Callable,
     *,
     filter_args: Sequence[str],
@@ -112,7 +109,7 @@ def _get_filtered_args(
 
 def _parse_python_function_docstring(
     function: Callable, annotations: dict, error_on_invalid_docstring: bool = False
-) -> Tuple[str, dict]:
+) -> tuple[str, dict]:
     """Parse the function and argument descriptions from the docstring of a function.
 
     Assumes the function docstring follows Google Python style guide.
@@ -141,7 +138,7 @@ def _infer_arg_descriptions(
     *,
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = False,
-) -> Tuple[str, dict]:
+) -> tuple[str, dict]:
     """Infer argument descriptions from a function's docstring."""
     if hasattr(inspect, "get_annotations"):
         # This is for python < 3.10
@@ -218,7 +215,7 @@ def create_schema_from_function(
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = False,
     include_injected: bool = True,
-) -> Type[BaseModel]:
+) -> type[BaseModel]:
     """Create a pydantic schema from a function's signature.
 
     Args:
@@ -273,7 +270,7 @@ def create_schema_from_function(
         filter_args_ = filter_args
     else:
         # Handle classmethods and instance methods
-        existing_params: List[str] = list(sig.parameters.keys())
+        existing_params: list[str] = list(sig.parameters.keys())
         if existing_params and existing_params[0] in ("self", "cls") and in_class:
             filter_args_ = [existing_params[0]] + list(FILTERED_ARGS)
         else:
@@ -395,13 +392,13 @@ class ChildTool(BaseTool):
             description="Callback manager to add to the run trace.",
         )
     )
-    tags: Optional[List[str]] = None
+    tags: Optional[list[str]] = None
     """Optional list of tags associated with the tool. Defaults to None.
     These tags will be associated with each call to this tool,
     and passed as arguments to the handlers defined in `callbacks`.
     You can use these to eg identify a specific instance of a tool with its use case.
     """
-    metadata: Optional[Dict[str, Any]] = None
+    metadata: Optional[dict[str, Any]] = None
     """Optional metadata associated with the tool. Defaults to None.
     This metadata will be associated with each call to this tool,
     and passed as arguments to the handlers defined in `callbacks`.
@@ -451,7 +448,7 @@ class ChildTool(BaseTool):
         return self.get_input_schema().model_json_schema()["properties"]
 
     @property
-    def tool_call_schema(self) -> Type[BaseModel]:
+    def tool_call_schema(self) -> type[BaseModel]:
         full_schema = self.get_input_schema()
         fields = []
         for name, type_ in _get_all_basemodel_annotations(full_schema).items():
@@ -465,7 +462,7 @@ class ChildTool(BaseTool):
 
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
+    ) -> type[BaseModel]:
         """The tool's input schema.
 
         Args:
@@ -481,7 +478,7 @@ class ChildTool(BaseTool):
 
     def invoke(
         self,
-        input: Union[str, Dict, ToolCall],
+        input: Union[str, dict, ToolCall],
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Any:
@@ -490,7 +487,7 @@ class ChildTool(BaseTool):
 
     async def ainvoke(
         self,
-        input: Union[str, Dict, ToolCall],
+        input: Union[str, dict, ToolCall],
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Any:
@@ -499,7 +496,7 @@ class ChildTool(BaseTool):
 
     # --- Tool ---
 
-    def _parse_input(self, tool_input: Union[str, Dict]) -> Union[str, Dict[str, Any]]:
+    def _parse_input(self, tool_input: Union[str, dict]) -> Union[str, dict[str, Any]]:
         """Convert tool input to a pydantic model.
 
         Args:
@@ -536,7 +533,7 @@ class ChildTool(BaseTool):
 
     @model_validator(mode="before")
     @classmethod
-    def raise_deprecation(cls, values: Dict) -> Any:
+    def raise_deprecation(cls, values: dict) -> Any:
         """Raise deprecation warning if callback_manager is used.
 
         Args:
@@ -574,7 +571,7 @@ class ChildTool(BaseTool):
             kwargs["run_manager"] = kwargs["run_manager"].get_sync()
         return await run_in_executor(None, self._run, *args, **kwargs)
 
-    def _to_args_and_kwargs(self, tool_input: Union[str, Dict]) -> Tuple[Tuple, Dict]:
+    def _to_args_and_kwargs(self, tool_input: Union[str, dict]) -> tuple[tuple, dict]:
         tool_input = self._parse_input(tool_input)
         # For backwards compatibility, if run_input is a string,
         # pass as a positional argument.
@@ -585,14 +582,14 @@ class ChildTool(BaseTool):
 
     def run(
         self,
-        tool_input: Union[str, Dict[str, Any]],
+        tool_input: Union[str, dict[str, Any]],
         verbose: Optional[bool] = None,
         start_color: Optional[str] = "green",
         color: Optional[str] = "green",
         callbacks: Callbacks = None,
         *,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         run_name: Optional[str] = None,
         run_id: Optional[uuid.UUID] = None,
         config: Optional[RunnableConfig] = None,
@@ -696,14 +693,14 @@ class ChildTool(BaseTool):
 
     async def arun(
         self,
-        tool_input: Union[str, Dict],
+        tool_input: Union[str, dict],
         verbose: Optional[bool] = None,
         start_color: Optional[str] = "green",
         color: Optional[str] = "green",
         callbacks: Callbacks = None,
         *,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         run_name: Optional[str] = None,
         run_id: Optional[uuid.UUID] = None,
         config: Optional[RunnableConfig] = None,
@@ -866,7 +863,7 @@ def _prep_run_args(
     input: Union[str, dict, ToolCall],
     config: Optional[RunnableConfig],
     **kwargs: Any,
-) -> Tuple[Union[str, Dict], Dict]:
+) -> tuple[Union[str, dict], dict]:
     config = ensure_config(config)
     if _is_tool_call(input):
         tool_call_id: Optional[str] = cast(ToolCall, input)["id"]
@@ -933,7 +930,7 @@ def _stringify(content: Any) -> str:
         return str(content)
 
 
-def _get_type_hints(func: Callable) -> Optional[Dict[str, Type]]:
+def _get_type_hints(func: Callable) -> Optional[dict[str, type]]:
     if isinstance(func, functools.partial):
         func = func.func
     try:
@@ -956,7 +953,7 @@ class InjectedToolArg:
     """Annotation for a Tool arg that is **not** meant to be generated by a model."""
 
 
-def _is_injected_arg_type(type_: Type) -> bool:
+def _is_injected_arg_type(type_: type) -> bool:
     return any(
         isinstance(arg, InjectedToolArg)
         or (isinstance(arg, type) and issubclass(arg, InjectedToolArg))
@@ -966,10 +963,10 @@ def _is_injected_arg_type(type_: Type) -> bool:
 
 def _get_all_basemodel_annotations(
     cls: Union[TypeBaseModel, Any], *, default_to_bound: bool = True
-) -> Dict[str, Type]:
+) -> dict[str, type]:
     # cls has no subscript: cls = FooBar
     if isinstance(cls, type):
-        annotations: Dict[str, Type] = {}
+        annotations: dict[str, type] = {}
         for name, param in inspect.signature(cls).parameters.items():
             # Exclude hidden init args added by pydantic Config. For example if
             # BaseModel(extra="allow") then "extra_data" will part of init sig.
@@ -979,7 +976,7 @@ def _get_all_basemodel_annotations(
             ) and name not in fields:
                 continue
             annotations[name] = param.annotation
-        orig_bases: Tuple = getattr(cls, "__orig_bases__", tuple())
+        orig_bases: tuple = getattr(cls, "__orig_bases__", tuple())
     # cls has subscript: cls = FooBar[int]
     else:
         annotations = _get_all_basemodel_annotations(
@@ -1011,7 +1008,7 @@ def _get_all_basemodel_annotations(
             # parent_origin = Baz,
             # generic_type_vars = (type vars in Baz)
             # generic_map = {type var in Baz: str}
-            generic_type_vars: Tuple = getattr(parent_origin, "__parameters__", tuple())
+            generic_type_vars: tuple = getattr(parent_origin, "__parameters__", tuple())
             generic_map = {
                 type_var: t for type_var, t in zip(generic_type_vars, get_args(parent))
             }
@@ -1027,10 +1024,10 @@ def _get_all_basemodel_annotations(
 
 
 def _replace_type_vars(
-    type_: Type,
-    generic_map: Optional[Dict[TypeVar, Type]] = None,
+    type_: type,
+    generic_map: Optional[dict[TypeVar, type]] = None,
     default_to_bound: bool = True,
-) -> Type:
+) -> type:
     generic_map = generic_map or {}
     if isinstance(type_, TypeVar):
         if type_ in generic_map:
@@ -1043,7 +1040,7 @@ def _replace_type_vars(
         new_args = tuple(
             _replace_type_vars(arg, generic_map, default_to_bound) for arg in args
         )
-        return _py_38_safe_origin(origin)[new_args]
+        return _py_38_safe_origin(origin)[new_args]  # type: ignore[index]
     else:
         return type_
 
@@ -1052,5 +1049,5 @@ class BaseToolkit(BaseModel, ABC):
     """Base Toolkit representing a collection of related tools."""
 
     @abstractmethod
-    def get_tools(self) -> List[BaseTool]:
+    def get_tools(self) -> list[BaseTool]:
         """Get the tools in the toolkit."""

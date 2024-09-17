@@ -24,6 +24,7 @@ from typing import (
 )
 
 from fireworks.client import AsyncFireworks, Fireworks  # type: ignore
+from langchain_core._api import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -626,6 +627,11 @@ class ChatFireworks(BaseChatModel):
         """Return type of chat model."""
         return "fireworks-chat"
 
+    @deprecated(
+        since="0.2.1",
+        alternative="langchain_fireworks.chat_models.ChatFireworks.bind_tools",
+        removal="0.3.0",
+    )
     def bind_functions(
         self,
         functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
@@ -705,8 +711,8 @@ class ChatFireworks(BaseChatModel):
                 with the option to not call any function, "any" to enforce that some
                 function is called, or a dict of the form:
                 {"type": "function", "function": {"name": <<tool_name>>}}.
-            **kwargs: Any additional parameters to pass to the
-                :class:`~langchain.runnable.Runnable` constructor.
+            **kwargs: Any additional parameters to pass to
+                :meth:`~langchain_fireworks.chat_models.ChatFireworks.bind`
         """
 
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
