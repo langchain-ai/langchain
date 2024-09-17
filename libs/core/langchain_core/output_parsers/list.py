@@ -6,6 +6,7 @@ from io import StringIO
 from abc import abstractmethod
 from collections import deque
 from typing import AsyncIterator, Deque, Iterator, List, TypeVar, Union
+from typing import Optional as Optional
 
 from langchain_core.messages import BaseMessage
 from langchain_core.output_parsers.transform import BaseTransformOutputParser
@@ -122,6 +123,9 @@ class ListOutputParser(BaseTransformOutputParser[List[str]]):
         # yield the last part
         for part in self.parse(buffer):
             yield [part]
+
+
+ListOutputParser.model_rebuild()
 
 
 class CommaSeparatedListOutputParser(ListOutputParser):

@@ -2,14 +2,26 @@ from __future__ import annotations
 
 import textwrap
 from inspect import signature
-from typing import Any, Awaitable, Callable, Dict, List, Literal, Optional, Type, Union
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Type,
+    Union,
+)
+
+from pydantic import BaseModel, Field, SkipValidation
+from typing_extensions import Annotated
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
 from langchain_core.messages import ToolCall
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables import RunnableConfig, run_in_executor
 from langchain_core.tools.base import (
     FILTERED_ARGS,
@@ -24,9 +36,11 @@ class StructuredTool(BaseTool):
     """Tool that can operate on any number of inputs."""
 
     description: str = ""
-    args_schema: TypeBaseModel = Field(..., description="The tool schema.")
+    args_schema: Annotated[TypeBaseModel, SkipValidation()] = Field(
+        ..., description="The tool schema."
+    )
     """The input arguments' schema."""
-    func: Optional[Callable[..., Any]]
+    func: Optional[Callable[..., Any]] = None
     """The function to run when the tool is called."""
     coroutine: Optional[Callable[..., Awaitable[Any]]] = None
     """The asynchronous version of the function."""
@@ -51,7 +65,7 @@ class StructuredTool(BaseTool):
     @property
     def args(self) -> dict:
         """The tool's input arguments."""
-        return self.args_schema.schema()["properties"]
+        return self.args_schema.model_json_schema()["properties"]
 
     def _run(
         self,
@@ -84,8 +98,8 @@ class StructuredTool(BaseTool):
                 kwargs[config_param] = config
             return await self.coroutine(*args, **kwargs)
 
-        # NOTE: this code is unreachable since _arun is only called if coroutine is not
-        # None.
+        # If self.coroutine is None, then this will delegate to the default
+        # implementation which is expected to delegate to _run on a separate thread.
         return await super()._arun(
             *args, config=config, run_manager=run_manager, **kwargs
         )

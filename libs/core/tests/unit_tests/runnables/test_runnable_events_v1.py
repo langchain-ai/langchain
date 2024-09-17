@@ -3,8 +3,10 @@
 import sys
 from itertools import cycle
 from typing import Any, AsyncIterator, Dict, List, Sequence, cast
+from typing import Optional as Optional
 
 import pytest
+from pydantic import BaseModel
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun, Callbacks
 from langchain_core.chat_history import BaseChatMessageHistory
@@ -19,7 +21,6 @@ from langchain_core.messages import (
 )
 from langchain_core.prompt_values import ChatPromptValue
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import (
     ConfigurableField,
@@ -627,6 +628,7 @@ async def test_astream_events_from_model() -> None:
                         ],
                         "llm_output": None,
                         "run": None,
+                        "type": "LLMResult",
                     },
                 },
                 "event": "on_chat_model_end",
@@ -749,6 +751,7 @@ async def test_astream_events_from_model() -> None:
                         ],
                         "llm_output": None,
                         "run": None,
+                        "type": "LLMResult",
                     },
                 },
                 "event": "on_chat_model_end",
@@ -975,6 +978,7 @@ async def test_event_stream_with_simple_chain() -> None:
                         ],
                         "llm_output": None,
                         "run": None,
+                        "type": "LLMResult",
                     },
                 },
                 "event": "on_chat_model_end",
@@ -1174,6 +1178,9 @@ class HardCodedRetriever(BaseRetriever):
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
         return self.documents
+
+
+HardCodedRetriever.model_rebuild()
 
 
 async def test_event_stream_with_retriever() -> None:
@@ -1744,6 +1751,7 @@ async def test_with_llm() -> None:
                         ],
                         "llm_output": None,
                         "run": None,
+                        "type": "LLMResult",
                     },
                 },
                 "event": "on_llm_end",
