@@ -249,6 +249,7 @@ def _format_messages(
         else:
             content = message.content
 
+        # Ensure all tool_calls have a tool_use content block
         if isinstance(message, AIMessage) and message.tool_calls:
             content = content or []
             content = (
