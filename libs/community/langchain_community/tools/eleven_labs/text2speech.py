@@ -3,9 +3,9 @@ from enum import Enum
 from typing import Any, Dict, Optional, Union
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import root_validator
 from langchain_core.tools import BaseTool
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import model_validator
 
 
 def _import_elevenlabs() -> Any:
@@ -42,8 +42,9 @@ class ElevenLabsText2SpeechTool(BaseTool):
         "Spanish, Italian, French, Portuguese, and Hindi. "
     )
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that api key exists in environment."""
         _ = get_from_dict_or_env(values, "eleven_api_key", "ELEVEN_API_KEY")
 

@@ -7,7 +7,7 @@ from typing import Any, Iterator, List, Mapping, Optional
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
-from pydantic import BaseModel, root_validator
+from pydantic import ConfigDict
 
 DEFAULT_MODEL_ID = "gpt2"
 DEFAULT_TASK = "text-generation"
@@ -64,10 +64,9 @@ class HuggingFacePipeline(BaseLLM):
     batch_size: int = DEFAULT_BATCH_SIZE
     """Batch size to use when passing multiple documents to generate."""
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = "forbid"
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @root_validator(pre=True)
     def set_model_id(cls, values):
@@ -259,11 +258,6 @@ class HuggingFacePipeline(BaseLLM):
     @property
     def _llm_type(self) -> str:
         return "huggingface_pipeline"
-
-    @property
-    def model_id(self) -> str:
-        """Property to fetch model name from the pipeline"""
-        return self.pipeline.model.name_or_path if self.pipeline else DEFAULT_MODEL_ID
 
     def _generate(
         self,

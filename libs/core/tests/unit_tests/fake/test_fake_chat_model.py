@@ -9,7 +9,6 @@ from langchain_core.language_models import GenericFakeChatModel, ParrotFakeChatM
 from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
 from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
 from tests.unit_tests.stubs import (
-    AnyStr,
     _AnyIdAIMessage,
     _AnyIdAIMessageChunk,
     _AnyIdHumanMessage,
@@ -70,8 +69,8 @@ async def test_generic_fake_chat_model_stream() -> None:
     model = GenericFakeChatModel(messages=cycle([message]))
     chunks = [chunk async for chunk in model.astream("meow")]
     assert chunks == [
-        AIMessageChunk(content="", additional_kwargs={"foo": 42}, id=AnyStr()),
-        AIMessageChunk(content="", additional_kwargs={"bar": 24}, id=AnyStr()),
+        _AnyIdAIMessageChunk(content="", additional_kwargs={"foo": 42}),
+        _AnyIdAIMessageChunk(content="", additional_kwargs={"bar": 24}),
     ]
     assert len({chunk.id for chunk in chunks}) == 1
 
@@ -89,29 +88,23 @@ async def test_generic_fake_chat_model_stream() -> None:
     chunks = [chunk async for chunk in model.astream("meow")]
 
     assert chunks == [
-        AIMessageChunk(
-            content="",
-            additional_kwargs={"function_call": {"name": "move_file"}},
-            id=AnyStr(),
+        _AnyIdAIMessageChunk(
+            content="", additional_kwargs={"function_call": {"name": "move_file"}}
         ),
-        AIMessageChunk(
+        _AnyIdAIMessageChunk(
             content="",
             additional_kwargs={
                 "function_call": {"arguments": '{\n  "source_path": "foo"'},
             },
-            id=AnyStr(),
         ),
-        AIMessageChunk(
-            content="",
-            additional_kwargs={"function_call": {"arguments": ","}},
-            id=AnyStr(),
+        _AnyIdAIMessageChunk(
+            content="", additional_kwargs={"function_call": {"arguments": ","}}
         ),
-        AIMessageChunk(
+        _AnyIdAIMessageChunk(
             content="",
             additional_kwargs={
                 "function_call": {"arguments": '\n  "destination_path": "bar"\n}'},
             },
-            id=AnyStr(),
         ),
     ]
     assert len({chunk.id for chunk in chunks}) == 1

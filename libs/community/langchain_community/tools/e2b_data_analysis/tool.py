@@ -12,8 +12,8 @@ from langchain_core.callbacks import (
     CallbackManager,
     CallbackManagerForToolRun,
 )
-from langchain_core.pydantic_v1 import BaseModel, Field, PrivateAttr
 from langchain_core.tools import BaseTool, Tool
+from pydantic import BaseModel, Field, PrivateAttr
 
 from langchain_community.tools.e2b_data_analysis.unparse import Unparser
 
@@ -84,7 +84,7 @@ class E2BDataAnalysisToolArguments(BaseModel):
 
     python_code: str = Field(
         ...,
-        example="print('Hello World')",
+        examples=["print('Hello World')"],
         description=(
             "The python script to be evaluated. "
             "The contents will be in main.py. "
