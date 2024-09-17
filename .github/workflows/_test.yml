@@ -53,8 +53,16 @@ jobs:
           echo "min-versions=$min_versions" >> "$GITHUB_OUTPUT"
           echo "min-versions=$min_versions"
 
-      - name: Run unit tests with minimum dependency versions
-        if: ${{ steps.min-version.outputs.min-versions != '' }}
+      - name: Run unit tests with minimum dependency versions (PR Version)
+        if: ${{ steps.min-version.outputs.min-versions != '' && github.event.workflow_call.workflow_name == 'check_diffs.yml' }}
+        env:
+          MIN_VERSIONS: ${{ steps.min-version.outputs.min-versions }}
+        run: |
+          poetry run pip install $MIN_VERSIONS
+          make tests
+
+      - name: Run unit tests with minimum dependency versions (Release Version)
+        if: ${{ steps.min-version.outputs.min-versions != '' && github.event.workflow_call.workflow_name != 'check_diffs.yml' }}
         env:
           MIN_VERSIONS: ${{ steps.min-version.outputs.min-versions }}
         run: |
