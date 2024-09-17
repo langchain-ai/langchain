@@ -68,7 +68,9 @@ def dependents_graph() -> dict:
 
         # load extended deps from extended_testing_deps.txt
         package_path = Path(path).parent
-        extended_requirement_path = package_path / "extended_testing_deps.txt"
+        extended_requirement_path = (
+            package_path / "extended_dependencies" / "extended_testing_deps.txt"
+        )
         if extended_requirement_path.exists():
             with open(extended_requirement_path, "r") as f:
                 extended_deps = f.read().splitlines()
