@@ -103,7 +103,7 @@ class MLRun(LLM):
         """
         call the llm ainvoke function, routed through mlrun model server.
         """
-        raise NotImplementedError("ainvoke is not supported by mlrun yet.")
+        raise NotImplementedError("`ainvoke` is not supported by mlrun yet.")
 
     def batch(
         self,
@@ -160,7 +160,7 @@ class MLRun(LLM):
         """
         call the llm abatch function, routed through mlrun model server.
         """
-        raise NotImplementedError("abatch is not supported by mlrun yet.")
+        raise NotImplementedError("`abatch` is not supported by mlrun yet.")
 
     def stream(
         self,
@@ -173,7 +173,7 @@ class MLRun(LLM):
         """
         call the llm stream function, routed through mlrun model server.
         """
-        raise NotImplementedError("Stream is not supported by mlrun yet.")
+        raise NotImplementedError("`stream` is not supported by mlrun yet.")
 
     def astream(
         self,
@@ -186,4 +186,4 @@ class MLRun(LLM):
         """
         call the llm astream function, routed through mlrun model server.
         """
-        raise NotImplementedError("Stream is not supported by mlrun yet.")
+        raise NotImplementedError("`astream` is not supported by mlrun yet.")
