@@ -245,7 +245,8 @@ class HuggingFaceEndpoint(LLM):
         )
         if len(ignored_kwargs) > 0:
             logger.warning(
-                f"Ignoring following parameters as they are not supported by the InferenceClient or AsyncInferenceClient: {ignored_kwargs}."
+                f"Ignoring following parameters as they are not supported by the "
+                f"InferenceClient or AsyncInferenceClient: {ignored_kwargs}."
             )
 
         return self
