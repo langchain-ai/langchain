@@ -8,14 +8,10 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Dict,
-    List,
     NamedTuple,
     Optional,
     Protocol,
     Sequence,
-    Tuple,
-    Type,
     TypedDict,
     Union,
     overload,
@@ -106,8 +102,8 @@ class Node(NamedTuple):
 
     id: str
     name: str
-    data: Union[Type[BaseModel], RunnableType]
-    metadata: Optional[Dict[str, Any]]
+    data: Union[type[BaseModel], RunnableType]
+    metadata: Optional[dict[str, Any]]
 
     def copy(self, *, id: Optional[str] = None, name: Optional[str] = None) -> Node:
         """Return a copy of the node with optional new id and name.
@@ -179,7 +175,7 @@ class MermaidDrawMethod(Enum):
     API = "api"  # Uses Mermaid.INK API to render the graph
 
 
-def node_data_str(id: str, data: Union[Type[BaseModel], RunnableType]) -> str:
+def node_data_str(id: str, data: Union[type[BaseModel], RunnableType]) -> str:
     """Convert the data of a node to a string.
 
     Args:
@@ -202,7 +198,7 @@ def node_data_str(id: str, data: Union[Type[BaseModel], RunnableType]) -> str:
 
 def node_data_json(
     node: Node, *, with_schemas: bool = False
-) -> Dict[str, Union[str, Dict[str, Any]]]:
+) -> dict[str, Union[str, dict[str, Any]]]:
     """Convert the data of a node to a JSON-serializable format.
 
     Args:
@@ -217,7 +213,7 @@ def node_data_json(
     from langchain_core.runnables.base import Runnable, RunnableSerializable
 
     if isinstance(node.data, RunnableSerializable):
-        json: Dict[str, Any] = {
+        json: dict[str, Any] = {
             "type": "runnable",
             "data": {
                 "id": node.data.lc_id(),
@@ -265,10 +261,10 @@ class Graph:
         edges: List of edges in the graph. Defaults to an empty list.
     """
 
-    nodes: Dict[str, Node] = field(default_factory=dict)
-    edges: List[Edge] = field(default_factory=list)
+    nodes: dict[str, Node] = field(default_factory=dict)
+    edges: list[Edge] = field(default_factory=list)
 
-    def to_json(self, *, with_schemas: bool = False) -> Dict[str, List[Dict[str, Any]]]:
+    def to_json(self, *, with_schemas: bool = False) -> dict[str, list[dict[str, Any]]]:
         """Convert the graph to a JSON-serializable format.
 
         Args:
@@ -282,7 +278,7 @@ class Graph:
             node.id: i if is_uuid(node.id) else node.id
             for i, node in enumerate(self.nodes.values())
         }
-        edges: List[Dict[str, Any]] = []
+        edges: list[dict[str, Any]] = []
         for edge in self.edges:
             edge_dict = {
                 "source": stable_node_ids[edge.source],
@@ -315,10 +311,10 @@ class Graph:
 
     def add_node(
         self,
-        data: Union[Type[BaseModel], RunnableType],
+        data: Union[type[BaseModel], RunnableType],
         id: Optional[str] = None,
         *,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: Optional[dict[str, Any]] = None,
     ) -> Node:
         """Add a node to the graph and return it.
 
@@ -386,7 +382,7 @@ class Graph:
 
     def extend(
         self, graph: Graph, *, prefix: str = ""
-    ) -> Tuple[Optional[Node], Optional[Node]]:
+    ) -> tuple[Optional[Node], Optional[Node]]:
         """Add all nodes and edges from another graph.
         Note this doesn't check for duplicates, nor does it connect the graphs.
 
@@ -622,7 +618,7 @@ def _first_node(graph: Graph, exclude: Sequence[str] = ()) -> Optional[Node]:
     If there is no such node, or there are multiple, return None.
     When drawing the graph, this node would be the origin."""
     targets = {edge.target for edge in graph.edges if edge.source not in exclude}
-    found: List[Node] = []
+    found: list[Node] = []
     for node in graph.nodes.values():
         if node.id not in exclude and node.id not in targets:
             found.append(node)
@@ -635,7 +631,7 @@ def _last_node(graph: Graph, exclude: Sequence[str] = ()) -> Optional[Node]:
     If there is no such node, or there are multiple, return None.
     When drawing the graph, this node would be the destination."""
     sources = {edge.source for edge in graph.edges if edge.target not in exclude}
-    found: List[Node] = []
+    found: list[Node] = []
     for node in graph.nodes.values():
         if node.id not in exclude and node.id not in sources:
             found.append(node)

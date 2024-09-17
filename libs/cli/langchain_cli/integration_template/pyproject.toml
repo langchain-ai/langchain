@@ -13,7 +13,7 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-langchain-core = "^0.3.0.dev"
+langchain-core = "^0.3.0"
 
 [tool.poetry.group.test]
 optional = true

@@ -330,7 +330,7 @@ const config = {
         // this is linked to erick@langchain.dev currently
         apiKey: "6c01842d6a88772ed2236b9c85806441",
 
-        indexName: "python-langchain-0.2",
+        indexName: "python-langchain-latest",
 
         contextualSearch: false,
       },

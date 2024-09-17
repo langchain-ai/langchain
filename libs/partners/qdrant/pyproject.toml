@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-qdrant"
-version = "0.2.0.dev1"
+version = "0.1.4"
 description = "An integration package connecting Qdrant and LangChain"
 authors = []
 readme = "README.md"
@@ -22,10 +22,17 @@ disallow_untyped_defs = true
 "Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-qdrant%3D%3D0%22&expanded=true"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<4.0"
-langchain-core = { version = "^0.3.0.dev5", allow-prereleases = true }
+python = ">=3.8.1,<4"
 qdrant-client = "^1.10.1"
 fastembed = { version = "^0.3.3", python = ">=3.9,<3.13", optional = true }
+pydantic = "^2.7.4"
+[[tool.poetry.dependencies.langchain-core]]
+version = ">=0.1.52,<0.4"
+python = ">=3.9"
+
+[[tool.poetry.dependencies.langchain-core]]
+version = ">=0.1.52,<0.3"
+python = "<3.9"
 
 [tool.poetry.extras]
 fastembed = ["fastembed"]
@@ -65,6 +72,25 @@ syrupy = "^4.0.2"
 pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
 requests = "^2.31.0"
+[[tool.poetry.group.test.dependencies.langchain-core]]
+path = "../../core"
+develop = true
+python = ">=3.9"
+
+[[tool.poetry.group.test.dependencies.langchain-core]]
+version = ">=0.1.40,<0.3"
+python = "<3.9"
+
+
+[tool.poetry.group.dev.dependencies]
+[[tool.poetry.group.dev.dependencies.langchain-core]]
+path = "../../core"
+develop = true
+python = ">=3.9"
+
+[[tool.poetry.group.dev.dependencies.langchain-core]]
+version = ">=0.1.52,<0.3"
+python = "<3.9"
 
 [tool.poetry.group.codespell.dependencies]
 codespell = "^2.2.0"
@@ -77,15 +103,11 @@ ruff = "^0.5"
 [tool.poetry.group.typing.dependencies]
 mypy = "^1.10"
 simsimd = "^5.0.0"
-
-[tool.poetry.group.test.dependencies.langchain-core]
+[[tool.poetry.group.typing.dependencies.langchain-core]]
 path = "../../core"
 develop = true
+python = ">=3.9"
 
-[tool.poetry.group.dev.dependencies.langchain-core]
-path = "../../core"
-develop = true
-
-[tool.poetry.group.typing.dependencies.langchain-core]
-path = "../../core"
-develop = true
+[[tool.poetry.group.typing.dependencies.langchain-core]]
+version = ">=0.1.52,<0.3"
+python = "<3.9"

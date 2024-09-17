@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from abc import abstractmethod
 from collections import deque
-from typing import AsyncIterator, Deque, Iterator, List, TypeVar, Union
+from typing import AsyncIterator, Iterator, List, TypeVar, Union
 from typing import Optional as Optional
 
 from langchain_core.messages import BaseMessage
@@ -22,7 +22,7 @@ def droplastn(iter: Iterator[T], n: int) -> Iterator[T]:
     Yields:
         The elements of the iterator, except the last n elements.
     """
-    buffer: Deque[T] = deque()
+    buffer: deque[T] = deque()
     for item in iter:
         buffer.append(item)
         if len(buffer) > n:
@@ -37,7 +37,7 @@ class ListOutputParser(BaseTransformOutputParser[List[str]]):
         return "list"
 
     @abstractmethod
-    def parse(self, text: str) -> List[str]:
+    def parse(self, text: str) -> list[str]:
         """Parse the output of an LLM call.
 
         Args:
@@ -60,7 +60,7 @@ class ListOutputParser(BaseTransformOutputParser[List[str]]):
 
     def _transform(
         self, input: Iterator[Union[str, BaseMessage]]
-    ) -> Iterator[List[str]]:
+    ) -> Iterator[list[str]]:
         buffer = ""
         for chunk in input:
             if isinstance(chunk, BaseMessage):
@@ -92,7 +92,7 @@ class ListOutputParser(BaseTransformOutputParser[List[str]]):
 
     async def _atransform(
         self, input: AsyncIterator[Union[str, BaseMessage]]
-    ) -> AsyncIterator[List[str]]:
+    ) -> AsyncIterator[list[str]]:
         buffer = ""
         async for chunk in input:
             if isinstance(chunk, BaseMessage):
@@ -136,7 +136,7 @@ class CommaSeparatedListOutputParser(ListOutputParser):
         return True
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
 
         Returns:
@@ -152,7 +152,7 @@ class CommaSeparatedListOutputParser(ListOutputParser):
             "eg: `foo, bar, baz` or `foo,bar,baz`"
         )
 
-    def parse(self, text: str) -> List[str]:
+    def parse(self, text: str) -> list[str]:
         """Parse the output of an LLM call.
 
         Args:
@@ -180,7 +180,7 @@ class NumberedListOutputParser(ListOutputParser):
             "For example: \n\n1. foo\n\n2. bar\n\n3. baz"
         )
 
-    def parse(self, text: str) -> List[str]:
+    def parse(self, text: str) -> list[str]:
         """Parse the output of an LLM call.
 
         Args:
@@ -217,7 +217,7 @@ class MarkdownListOutputParser(ListOutputParser):
         """Return the format instructions for the Markdown list output."""
         return "Your response should be a markdown list, " "eg: `- foo\n- bar\n- baz`"
 
-    def parse(self, text: str) -> List[str]:
+    def parse(self, text: str) -> list[str]:
         """Parse the output of an LLM call.
 
         Args:

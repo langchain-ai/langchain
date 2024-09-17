@@ -7,7 +7,7 @@ the relevant methods.
 from __future__ import annotations
 
 import uuid
-from typing import Any, Dict, Iterable, List, Optional, Sequence
+from typing import Any, Iterable, Optional, Sequence
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
@@ -18,19 +18,19 @@ class CustomAddTextsVectorstore(VectorStore):
     """A vectorstore that only implements add texts."""
 
     def __init__(self) -> None:
-        self.store: Dict[str, Document] = {}
+        self.store: dict[str, Document] = {}
 
     def add_texts(
         self,
         texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        metadatas: Optional[list[dict]] = None,
         # One of the kwargs should be `ids` which is a list of ids
         # associated with the texts.
         # This is not yet enforced in the type signature for backwards compatibility
         # with existing implementations.
-        ids: Optional[List[str]] = None,
+        ids: Optional[list[str]] = None,
         **kwargs: Any,
-    ) -> List[str]:
+    ) -> list[str]:
         if not isinstance(texts, list):
             texts = list(texts)
         ids_iter = iter(ids or [])
@@ -46,14 +46,14 @@ class CustomAddTextsVectorstore(VectorStore):
             ids_.append(id_)
         return ids_
 
-    def get_by_ids(self, ids: Sequence[str], /) -> List[Document]:
+    def get_by_ids(self, ids: Sequence[str], /) -> list[Document]:
         return [self.store[id] for id in ids if id in self.store]
 
     def from_texts(  # type: ignore
         cls,
-        texts: List[str],
+        texts: list[str],
         embedding: Embeddings,
-        metadatas: Optional[List[dict]] = None,
+        metadatas: Optional[list[dict]] = None,
         **kwargs: Any,
     ) -> CustomAddTextsVectorstore:
         vectorstore = CustomAddTextsVectorstore()
@@ -62,7 +62,7 @@ class CustomAddTextsVectorstore(VectorStore):
 
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
-    ) -> List[Document]:
+    ) -> list[Document]:
         raise NotImplementedError()
 
 
