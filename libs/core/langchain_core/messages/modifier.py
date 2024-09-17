@@ -1,6 +1,5 @@
 from typing import Any, List, Literal
 
-from langchain_core._api import beta
 from langchain_core.messages.base import BaseMessage
 
 
