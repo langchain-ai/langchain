@@ -76,7 +76,7 @@ def maximal_marginal_relevance(
     embedding_list: list,
     lambda_mult: float = 0.5,
     k: int = 4,
-) -> List[int]:
+) -> list[int]:
     """Calculate maximal marginal relevance.
 
     Args:

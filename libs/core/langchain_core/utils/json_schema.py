@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import Any, Dict, List, Optional, Sequence, Set
+from typing import Any, Optional, Sequence
 
 
 def _retrieve_ref(path: str, schema: dict) -> dict:
@@ -24,9 +24,9 @@ def _retrieve_ref(path: str, schema: dict) -> dict:
 
 def _dereference_refs_helper(
     obj: Any,
-    full_schema: Dict[str, Any],
+    full_schema: dict[str, Any],
     skip_keys: Sequence[str],
-    processed_refs: Optional[Set[str]] = None,
+    processed_refs: Optional[set[str]] = None,
 ) -> Any:
     if processed_refs is None:
         processed_refs = set()
@@ -63,8 +63,8 @@ def _dereference_refs_helper(
 
 
 def _infer_skip_keys(
-    obj: Any, full_schema: dict, processed_refs: Optional[Set[str]] = None
-) -> List[str]:
+    obj: Any, full_schema: dict, processed_refs: Optional[set[str]] = None
+) -> list[str]:
     if processed_refs is None:
         processed_refs = set()
 

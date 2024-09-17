@@ -47,7 +47,7 @@ pydantic = [
 
 [tool.ruff.lint]
 select = ["B", "E", "F", "I", "T201", "UP"]
-ignore = ["UP006", "UP007"]
+ignore = ["UP007"]
 
 [tool.coverage.run]
 omit = ["tests/*"]

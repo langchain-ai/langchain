@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import datetime
 import warnings
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Optional
 from uuid import UUID
 
 from langsmith.schemas import RunBase as BaseRunV2
@@ -18,7 +18,7 @@ from langchain_core._api import deprecated
 
 
 @deprecated("0.1.0", alternative="Use string instead.", removal="1.0")
-def RunTypeEnum() -> Type[RunTypeEnumDep]:
+def RunTypeEnum() -> type[RunTypeEnumDep]:
     """RunTypeEnum."""
     warnings.warn(
         "RunTypeEnum is deprecated. Please directly use a string instead"
@@ -35,7 +35,7 @@ class TracerSessionV1Base(BaseModelV1):
 
     start_time: datetime.datetime = FieldV1(default_factory=datetime.datetime.utcnow)
     name: Optional[str] = None
-    extra: Optional[Dict[str, Any]] = None
+    extra: Optional[dict[str, Any]] = None
 
 
 @deprecated("0.1.0", removal="1.0")
@@ -72,10 +72,10 @@ class BaseRun(BaseModelV1):
     parent_uuid: Optional[str] = None
     start_time: datetime.datetime = FieldV1(default_factory=datetime.datetime.utcnow)
     end_time: datetime.datetime = FieldV1(default_factory=datetime.datetime.utcnow)
-    extra: Optional[Dict[str, Any]] = None
+    extra: Optional[dict[str, Any]] = None
     execution_order: int
     child_execution_order: int
-    serialized: Dict[str, Any]
+    serialized: dict[str, Any]
     session_id: int
     error: Optional[str] = None
 
@@ -84,7 +84,7 @@ class BaseRun(BaseModelV1):
 class LLMRun(BaseRun):
     """Class for LLMRun."""
 
-    prompts: List[str]
+    prompts: list[str]
     # Temporarily, remove but we will completely remove LLMRun
     # response: Optional[LLMResult] = None
 
@@ -93,11 +93,11 @@ class LLMRun(BaseRun):
 class ChainRun(BaseRun):
     """Class for ChainRun."""
 
-    inputs: Dict[str, Any]
-    outputs: Optional[Dict[str, Any]] = None
-    child_llm_runs: List[LLMRun] = FieldV1(default_factory=list)
-    child_chain_runs: List[ChainRun] = FieldV1(default_factory=list)
-    child_tool_runs: List[ToolRun] = FieldV1(default_factory=list)
+    inputs: dict[str, Any]
+    outputs: Optional[dict[str, Any]] = None
+    child_llm_runs: list[LLMRun] = FieldV1(default_factory=list)
+    child_chain_runs: list[ChainRun] = FieldV1(default_factory=list)
+    child_tool_runs: list[ToolRun] = FieldV1(default_factory=list)
 
 
 @deprecated("0.1.0", alternative="Run", removal="1.0")
@@ -107,9 +107,9 @@ class ToolRun(BaseRun):
     tool_input: str
     output: Optional[str] = None
     action: str
-    child_llm_runs: List[LLMRun] = FieldV1(default_factory=list)
-    child_chain_runs: List[ChainRun] = FieldV1(default_factory=list)
-    child_tool_runs: List[ToolRun] = FieldV1(default_factory=list)
+    child_llm_runs: list[LLMRun] = FieldV1(default_factory=list)
+    child_chain_runs: list[ChainRun] = FieldV1(default_factory=list)
+    child_tool_runs: list[ToolRun] = FieldV1(default_factory=list)
 
 
 # Begin V2 API Schemas
@@ -126,9 +126,9 @@ class Run(BaseRunV2):
         dotted_order: The dotted order.
     """
 
-    child_runs: List[Run] = FieldV1(default_factory=list)
-    tags: Optional[List[str]] = FieldV1(default_factory=list)
-    events: List[Dict[str, Any]] = FieldV1(default_factory=list)
+    child_runs: list[Run] = FieldV1(default_factory=list)
+    tags: Optional[list[str]] = FieldV1(default_factory=list)
+    events: list[dict[str, Any]] = FieldV1(default_factory=list)
     trace_id: Optional[UUID] = None
     dotted_order: Optional[str] = None
 
