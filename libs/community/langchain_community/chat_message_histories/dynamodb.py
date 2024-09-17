@@ -17,6 +17,15 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+def convert_messages(item):
+    if isinstance(item, list):
+        return [convert_messages(i) for i in item]
+    elif isinstance(item, dict):
+        return {k: convert_messages(v) for k, v in item.items()}
+    elif isinstance(item, float):
+        return Decimal(str(item))
+    return item
+
 class DynamoDBChatMessageHistory(BaseChatMessageHistory):
     """Chat message history that stores history in AWS DynamoDB.
 
@@ -158,6 +167,8 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
         messages = messages_to_dict(self.messages)
         _message = message_to_dict(message)
         messages.append(_message)
+
+        messages = convert_messages(messages)
 
         if self.history_size:
             messages = messages[-self.history_size :]
