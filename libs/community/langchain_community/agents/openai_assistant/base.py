@@ -301,7 +301,7 @@ class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
             inheritable_metadata=config.get("metadata"),
         )
         run_manager = callback_manager.on_chain_start(
-            dumpd(self), input, name=config.get("run_name")
+            dumpd(self), input, name=config.get("run_name") or self.get_name()
         )
 
         files = _convert_file_ids_into_attachments(kwargs.get("file_ids", []))
@@ -437,7 +437,7 @@ class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
             inheritable_metadata=config.get("metadata"),
         )
         run_manager = callback_manager.on_chain_start(
-            dumpd(self), input, name=config.get("run_name")
+            dumpd(self), input, name=config.get("run_name") or self.get_name()
         )
 
         files = _convert_file_ids_into_attachments(kwargs.get("file_ids", []))
