@@ -27,7 +27,7 @@ from tests.integration_tests.utils import (
 # https://milvus.io/docs/install_standalone-docker.md
 #
 @pytest.fixture
-def temp_milvus_db():
+def temp_milvus_db() -> Any:
     with tempfile.NamedTemporaryFile(suffix=".db") as temp_file:
         yield temp_file.name
 
