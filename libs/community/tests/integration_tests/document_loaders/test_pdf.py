@@ -86,8 +86,8 @@ def test_pdfminer_pdf_as_html_loader() -> None:
     assert len(docs) == 1
 
 
-@pytest.mark.requires("pypdf")
 @pytest.mark.runs
+@pytest.mark.requires("pypdf")
 def test_pypdf_loader() -> None:
     """Test PyPDFLoader."""
     file_path = Path(__file__).parent.parent / "examples/hello.pdf"
@@ -103,8 +103,8 @@ def test_pypdf_loader() -> None:
     assert len(docs) == 16
 
 
-@pytest.mark.requires("pypdf")
 @pytest.mark.runs
+@pytest.mark.requires("pypdf")
 def test_pypdf_loader_with_layout() -> None:
     """Test PyPDFLoader with layout mode."""
     file_path = Path(__file__).parent.parent / "examples/layout-parser-paper.pdf"

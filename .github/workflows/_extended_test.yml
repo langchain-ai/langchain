@@ -45,7 +45,7 @@ jobs:
       - name: Install extended dependencies
         shell: bash
         run: |
-          poetry install --with test
+          poetry install --with test,test_integration
           poetry run pip install uv
           poetry run uv pip install -r extended_dependencies/${{ inputs.extended-deps-file }}
 
@@ -58,6 +58,7 @@ jobs:
         shell: bash
         run: |
           make test
+          make integration_tests
 
       - name: Ensure the tests did not create any additional files
         shell: bash
