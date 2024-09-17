@@ -2,7 +2,7 @@ import warnings
 from typing import Any, Dict, List, Set
 
 from langchain_core.memory import BaseMemory
-from langchain_core.pydantic_v1 import validator
+from pydantic import field_validator
 
 from langchain.memory.chat_memory import BaseChatMemory
 
@@ -13,7 +13,8 @@ class CombinedMemory(BaseMemory):
     memories: List[BaseMemory]
     """For tracking all the memories that should be accessed."""
 
-    @validator("memories")
+    @field_validator("memories")
+    @classmethod
     def check_repeated_memory_variable(
         cls, value: List[BaseMemory]
     ) -> List[BaseMemory]:
@@ -29,7 +30,8 @@ class CombinedMemory(BaseMemory):
 
         return value
 
-    @validator("memories")
+    @field_validator("memories")
+    @classmethod
     def check_input_key(cls, value: List[BaseMemory]) -> List[BaseMemory]:
         """Check that if memories are of type BaseChatMemory that input keys exist."""
         for val in value:

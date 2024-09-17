@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import warnings
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
@@ -10,6 +11,7 @@ from uuid import UUID
 
 from langsmith import Client
 from langsmith import utils as ls_utils
+from pydantic import PydanticDeprecationWarning
 from tenacity import (
     Retrying,
     retry_if_exception_type,
@@ -69,11 +71,16 @@ def _get_executor() -> ThreadPoolExecutor:
 
 
 def _run_to_dict(run: Run) -> dict:
-    return {
-        **run.dict(exclude={"child_runs", "inputs", "outputs"}),
-        "inputs": run.inputs.copy() if run.inputs is not None else None,
-        "outputs": run.outputs.copy() if run.outputs is not None else None,
-    }
+    # TODO: Update once langsmith moves to Pydantic V2 and we can swap run.dict for
+    # run.model_dump
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=PydanticDeprecationWarning)
+
+        return {
+            **run.dict(exclude={"child_runs", "inputs", "outputs"}),
+            "inputs": run.inputs.copy() if run.inputs is not None else None,
+            "outputs": run.outputs.copy() if run.outputs is not None else None,
+        }
 
 
 class LangChainTracer(BaseTracer):
@@ -152,7 +159,12 @@ class LangChainTracer(BaseTracer):
         return chat_model_run
 
     def _persist_run(self, run: Run) -> None:
-        run_ = run.copy()
+        # TODO: Update once langsmith moves to Pydantic V2 and we can swap run.copy for
+        # run.model_copy
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=PydanticDeprecationWarning)
+
+            run_ = run.copy()
         run_.reference_example_id = self.example_id
         self.latest_run = run_
 

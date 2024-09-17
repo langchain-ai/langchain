@@ -5,9 +5,10 @@ from __future__ import annotations
 from abc import ABC
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type
 
+from pydantic import BaseModel, ConfigDict
+
 from langchain_core.documents import Document
 from langchain_core.example_selectors.base import BaseExampleSelector
-from langchain_core.pydantic_v1 import BaseModel, Extra
 from langchain_core.vectorstores import VectorStore
 
 if TYPE_CHECKING:
@@ -42,9 +43,10 @@ class _VectorStoreExampleSelector(BaseExampleSelector, BaseModel, ABC):
     vectorstore_kwargs: Optional[Dict[str, Any]] = None
     """Extra arguments passed to similarity_search function of the vectorstore."""
 
-    class Config:
-        arbitrary_types_allowed = True
-        extra = Extra.forbid
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
     @staticmethod
     def _example_to_text(
