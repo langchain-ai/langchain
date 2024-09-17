@@ -134,6 +134,10 @@ class ChatModelTests(BaseStandardTests):
     def supports_anthropic_inputs(self) -> bool:
         return False
 
+    @property
+    def supports_image_tool_message(self) -> bool:
+        return False
+
 
 class ChatModelUnitTests(ChatModelTests):
     @property
