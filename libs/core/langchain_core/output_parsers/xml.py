@@ -1,6 +1,6 @@
 import re
 import xml
-import xml.etree.ElementTree as ET
+import xml.etree.ElementTree as ET  # noqa: N817
 from collections.abc import AsyncIterator, Iterator
 from typing import Any, Literal, Optional, Union
 from xml.etree.ElementTree import TreeBuilder
@@ -46,14 +46,14 @@ class _StreamingParser:
         """
         if parser == "defusedxml":
             try:
-                from defusedxml import ElementTree as DET  # type: ignore
+                import defusedxml  # type: ignore
             except ImportError as e:
                 raise ImportError(
                     "defusedxml is not installed. "
                     "Please install it to use the defusedxml parser."
                     "You can install it with `pip install defusedxml` "
                 ) from e
-            _parser = DET.DefusedXMLParser(target=TreeBuilder())
+            _parser = defusedxml.ElementTree.DefusedXMLParser(target=TreeBuilder())
         else:
             _parser = None
         self.pull_parser = ET.XMLPullParser(["start", "end"], _parser=_parser)
@@ -189,7 +189,7 @@ class XMLOutputParser(BaseTransformOutputParser):
         # likely if you're reading this you can move them to the top of the file
         if self.parser == "defusedxml":
             try:
-                from defusedxml import ElementTree as DET  # type: ignore
+                import defusedxml  # type: ignore
             except ImportError as e:
                 raise ImportError(
                     "defusedxml is not installed. "
@@ -197,9 +197,9 @@ class XMLOutputParser(BaseTransformOutputParser):
                     "You can install it with `pip install defusedxml`"
                     "See https://github.com/tiran/defusedxml for more details"
                 ) from e
-            _ET = DET  # Use the defusedxml parser
+            _et = defusedxml.ElementTree  # Use the defusedxml parser
         else:
-            _ET = ET  # Use the standard library parser
+            _et = ET  # Use the standard library parser
 
         match = re.search(r"```(xml)?(.*)```", text, re.DOTALL)
         if match is not None:
