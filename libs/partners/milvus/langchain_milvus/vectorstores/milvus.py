@@ -470,7 +470,7 @@ class Milvus(VectorStore):
 
     def _init(
         self,
-        embeddings: Optional[Union[list, List[list]]] = None,
+        embeddings: Optional[List[list]] = None,
         metadatas: Optional[list[dict]] = None,
         partition_names: Optional[list] = None,
         replica_number: int = 1,
@@ -489,7 +489,7 @@ class Milvus(VectorStore):
 
     def _create_collection(
         self,
-        embeddings: Union[list, List[list]],
+        embeddings: List[list],
         metadatas: Optional[list[dict]] = None,
     ) -> None:
         from pymilvus import (
@@ -605,18 +605,18 @@ class Milvus(VectorStore):
         embeddings_functions: List[EmbeddingType] = self._get_as_list(
             self.embedding_func
         )
-        for i, vectors in enumerate(embeddings):
-            dim = len(vectors[0])
+        for vector_field, embedding_func, vector_field_embeddings in zip(
+            vector_fields, embeddings_functions, embeddings
+        ):
+            dim = len(vector_field_embeddings[0])
             # Create the vector field, supports binary or float vectors
-            if self._is_sparse_embedding(embeddings_function=embeddings_functions[i]):
-                fields.append(
-                    FieldSchema(vector_fields[i], DataType.SPARSE_FLOAT_VECTOR)
-                )
+            if self._is_sparse_embedding(embeddings_function=embedding_func):
+                fields.append(FieldSchema(vector_field, DataType.SPARSE_FLOAT_VECTOR))
             else:
                 fields.append(
                     FieldSchema(
-                        vector_fields[i],
-                        infer_dtype_bydata(vectors[0]),
+                        vector_field,
+                        infer_dtype_bydata(vector_field_embeddings[0]),
                         dim=dim,
                     )
                 )
@@ -683,30 +683,6 @@ class Milvus(VectorStore):
         """Create an index on the collection"""
         from pymilvus import Collection, MilvusException
 
-        def create_index_helper(
-            vector_field: str, index_params: Optional[dict]
-        ) -> None:
-            if self.col:
-                try:
-                    self.col.create_index(
-                        vector_field,
-                        index_params=index_params,
-                        using=self.alias,
-                    )
-                except MilvusException:
-                    # Use AUTOINDEX if default index creation fails
-                    # (e.g., on Zilliz Cloud)
-                    index_params = {
-                        "metric_type": "L2",
-                        "index_type": "AUTOINDEX",
-                        "params": {},
-                    }
-                    self.col.create_index(
-                        vector_field,
-                        index_params=index_params,
-                        using=self.alias,
-                    )
-
         if isinstance(self.col, Collection):
             embeddings_functions: List[EmbeddingType] = self._get_as_list(
                 self.embedding_func
@@ -720,9 +696,7 @@ class Milvus(VectorStore):
                 indexes_params = self._get_as_list(self.index_params)
 
             for i, embeddings_func in enumerate(embeddings_functions):
-                if isinstance(self.col, Collection) and not self._get_index(
-                    vector_fields[i]
-                ):
+                if not self._get_index(vector_fields[i]):
                     try:
                         # If no index params, use a default HNSW based one
                         if not indexes_params[i]:
@@ -738,7 +712,25 @@ class Milvus(VectorStore):
                                     "index_type": "HNSW",
                                     "params": {"M": 8, "efConstruction": 64},
                                 }
-                        create_index_helper(vector_fields[i], indexes_params[i])
+                        try:
+                            self.col.create_index(
+                                vector_fields[i],
+                                index_params=indexes_params[i],
+                                using=self.alias,
+                            )
+                        except MilvusException:
+                            # Use AUTOINDEX if default index creation fails
+                            # (e.g., on Zilliz Cloud)
+                            index_params = {
+                                "metric_type": "L2",
+                                "index_type": "AUTOINDEX",
+                                "params": {},
+                            }
+                            self.col.create_index(
+                                vector_fields[i],
+                                index_params=index_params,
+                                using=self.alias,
+                            )
                         logger.debug(
                             "Successfully created an index"
                             "on %s field on collection: %s",
@@ -871,11 +863,17 @@ class Milvus(VectorStore):
         )
         vector_fields: List[str] = self._get_as_list(self._vector_field)
         embeddings: List = []
+
         for embedding_func in embeddings_functions:
             try:
                 embeddings.append(embedding_func.embed_documents(texts))
             except NotImplementedError:
                 embeddings.append([embedding_func.embed_query(x) for x in texts])
+        # assuming [f1, f2] embeddings functions and [a, b, c] as texts:
+        # embeddings = [
+        #     [f1(a), f1(b), f1(c)],
+        #     [f2(a), f2(b), f2(c)]
+        # ]
 
         if len(embeddings) == 0:
             logger.debug("Nothing to insert, skipping.")
@@ -894,9 +892,9 @@ class Milvus(VectorStore):
 
         insert_list: list[dict] = []
 
-        for vectors in embeddings:
+        for vector_field_embeddings in embeddings:
             assert len(texts) == len(
-                vectors
+                vector_field_embeddings
             ), "Mismatched lengths of texts and embeddings."
 
         if metadatas is not None:
@@ -912,8 +910,8 @@ class Milvus(VectorStore):
 
             entity_dict[self._text_field] = text
 
-            for j, embedding in enumerate(embeddings):
-                entity_dict[vector_fields[j]] = embedding[i]
+            for vector_field, vector_field_embeddings in zip(vector_fields, embeddings):
+                entity_dict[vector_field] = vector_field_embeddings[i]
 
             if self._metadata_field and not self.enable_dynamic_field:
                 entity_dict[self._metadata_field] = metadata
@@ -1112,7 +1110,7 @@ class Milvus(VectorStore):
         # Embed the query text.
         timeout = self.timeout or timeout
 
-        if isinstance(self.embedding_func, list):
+        if isinstance(self.embedding_func, list):  # is hybrid
             ranker = self._create_ranker(
                 kwargs.pop("ranker_type", None), kwargs.pop("ranker_params", {})
             )
