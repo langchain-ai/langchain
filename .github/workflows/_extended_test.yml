@@ -1,0 +1,72 @@
+name: Extended tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      working-directory:
+        required: true
+        type: string
+        default: "libs/community"
+      python-version:
+        required: true
+        type: string
+        description: "Python version to use"
+        default: "3.11"
+      extended-deps-file:
+        required: true
+        type: choice
+        description: "File to install extended dependencies from"
+        options:
+          - extended_testing_deps.txt
+          - pdf_loader_deps.txt
+          - other_deps.txt
+
+env:
+  POETRY_VERSION: "1.7.1"
+
+jobs:
+  build:
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    runs-on: ubuntu-latest
+    name: Python ${{ inputs.python-version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ inputs.python-version }} + Poetry ${{ env.POETRY_VERSION }}
+        uses: "./.github/actions/poetry_setup"
+        with:
+          python-version: ${{ inputs.python-version }}
+          poetry-version: ${{ env.POETRY_VERSION }}
+          working-directory: ${{ inputs.working-directory }}
+          cache-key: core
+
+      - name: Install extended dependencies
+        shell: bash
+        run: |
+          poetry install --with test
+          poetry run pip install uv
+          poetry run uv pip install -r extended_dependencies/${{ inputs.extended-deps-file }}
+
+      - name: Install deps outside pyproject
+        if: ${{ startsWith(inputs.working-directory, 'libs/community/') }}
+        shell: bash
+        run: poetry run pip install "boto3<2" "google-cloud-aiplatform<2"
+
+      - name: Run extended tests
+        shell: bash
+        run: |
+          make test
+
+      - name: Ensure the tests did not create any additional files
+        shell: bash
+        run: |
+          set -eu
+
+          STATUS="$(git status)"
+          echo "$STATUS"
+
+          # grep will exit non-zero if the target message isn't found,
+          # and `set -e` above will cause the step to fail.
+          echo "$STATUS" | grep 'nothing to commit, working tree clean'
