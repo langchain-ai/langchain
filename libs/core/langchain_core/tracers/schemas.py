@@ -140,6 +140,8 @@ class Run(BaseRunV2):
                 values["name"] = values["serialized"]["name"]
             elif "id" in values["serialized"]:
                 values["name"] = values["serialized"]["id"][-1]
+        if values.get("name") is None:
+            values["name"] = "Unnamed"
         if values.get("events") is None:
             values["events"] = []
         return values
