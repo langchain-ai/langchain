@@ -333,9 +333,26 @@ def deprecated(
             old_doc = ""
 
         # Modify the docstring to include a deprecation notice.
+        if (
+            _alternative
+            and _alternative.split(".")[-1].lower() == _alternative.split(".")[-1]
+        ):
+            _alternative = f":meth:`~{_alternative}`"
+        elif _alternative:
+            _alternative = f":class:`~{_alternative}`"
+
+        if (
+            _alternative_import
+            and _alternative_import.split(".")[-1].lower()
+            == _alternative_import.split(".")[-1]
+        ):
+            _alternative_import = f":meth:`~{_alternative_import}`"
+        elif _alternative_import:
+            _alternative_import = f":class:`~{_alternative_import}`"
+
         components = [
             _message,
-            f"Use ``{_alternative}`` instead." if _alternative else "",
+            f"Use {_alternative} instead." if _alternative else "",
             f"Use ``{_alternative_import}`` instead." if _alternative_import else "",
             _addendum,
         ]
