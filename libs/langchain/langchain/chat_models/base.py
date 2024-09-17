@@ -278,10 +278,13 @@ def init_chat_model(
 
     .. versionchanged:: 0.2.12
 
-        Support for ChatOllama via langchain-ollama package added. Previously
-        langchain-community version of Ollama (now deprecated) was installed by default.
-        
-        Support for ChatBedrockConverse added (model_provider="bedrock_converse").
+        Support for ChatOllama via langchain-ollama package added
+        (langchain_ollama.ChatOllama). Previously,
+        the now-deprecated langchain-community version of Ollama was imported
+        (langchain_community.chat_models.ChatOllama).
+
+        Support for langchain_aws.ChatBedrockConverse added
+        (model_provider="bedrock_converse").
 
     """  # noqa: E501
     if not model and not configurable_fields:
