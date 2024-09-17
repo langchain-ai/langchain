@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 from typing import Sequence, Union
 
@@ -10,6 +11,7 @@ from langchain_community.document_loaders import (
     PDFMinerPDFasHTMLLoader,
     PyMuPDFLoader,
     PyPDFium2Loader,
+    PyPDFLoader,
     UnstructuredPDFLoader,
 )
 
@@ -82,6 +84,37 @@ def test_pdfminer_pdf_as_html_loader() -> None:
 
     docs = loader.load()
     assert len(docs) == 1
+
+
+def test_pypdf_loader() -> None:
+    """Test PyPDFLoader."""
+    file_path = Path(__file__).parent.parent / "examples/hello.pdf"
+    loader = PyPDFLoader(str(file_path))
+    docs = loader.load()
+
+    assert len(docs) == 1
+
+    file_path = Path(__file__).parent.parent / "examples/layout-parser-paper.pdf"
+    loader = PyPDFLoader(str(file_path))
+
+    docs = loader.load()
+    assert len(docs) == 16
+
+
+def test_pypdf_loader_with_layout() -> None:
+    """Test PyPDFLoader with layout mode."""
+    file_path = Path(__file__).parent.parent / "examples/layout-parser-paper.pdf"
+    loader = PyPDFLoader(str(file_path), extraction_mode="layout")
+
+    docs = loader.load()
+    first_page = docs[0].page_content
+
+    expected = (
+        Path(__file__).parent.parent / "examples/layout-parser-paper-page-1.txt"
+    ).read_text(encoding="utf-8")
+    cleaned_first_page = re.sub(r"\x00", "", first_page)
+    cleaned_expected = re.sub(r"\x00", "", expected)
+    assert cleaned_first_page == cleaned_expected
 
 
 def test_pypdfium2_loader() -> None:
