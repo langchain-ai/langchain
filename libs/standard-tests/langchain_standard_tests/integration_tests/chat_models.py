@@ -482,6 +482,37 @@ class ChatModelIntegrationTests(ChatModelTests):
         )
         model.invoke([message])
 
+    def test_image_tool_message(self, model: BaseChatModel) -> None:
+        if not self.supports_image_tool_message:
+            return
+        image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
+        image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
+        messages = [
+            HumanMessage("get a random image using the tool and describe the weather"),
+            AIMessage(
+                [],
+                tool_calls=[
+                    {"type": "tool_call", "id": "1", "name": "random_image", "args": {}}
+                ],
+            ),
+            ToolMessage(
+                content=[
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
+                    },
+                ],
+                tool_call_id="1",
+                name="random_image",
+            ),
+        ]
+
+        def random_image() -> str:
+            """Return a random image."""
+            return ""
+
+        model.bind_tools([random_image]).invoke(messages)
+
     def test_anthropic_inputs(self, model: BaseChatModel) -> None:
         if not self.supports_anthropic_inputs:
             return
