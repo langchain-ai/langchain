@@ -1,0 +1,42 @@
+---
+sidebar_position: 1
+---
+
+# How to migrate from v0.0 memory
+
+The concept of memory has evolved significantly in LangChain since its initial release.
+
+This guide will help you migrate your usage of memory implementations from LangChain v0.0.x
+to the new powerful persistence implementations of LangGraph.
+
+:::info How deprecated implementations work
+Even though many of these implementations are deprecated, they are **still supported** in the codebase.
+However, they are not recommended for new development, and we recommend re-implementing them using the following guides!
+
+To see the planned removal version for each deprecated implementation, check their API reference.
+:::
+
+:::info Prerequisites
+
+These guides assume some familiarity with the following concepts:
+- [LangGraph](https://langchain-ai.github.io/langgraph/)
+- [v0.0.x Memory](https://python.langchain.com/v0.1/docs/modules/memory/)
+- [How to add persistence ("memory") to your graph](https://langchain-ai.github.io/langgraph/how-tos/persistence/)
+:::
+
+LangChain maintains a number of legacy abstractions. Many of these can be reimplemented via short combinations modern LangChain and LangGraph primitives.
+
+### Advantages
+
+Some advantages to using LangGraph persistence instead of existing v0.0.x memory implementations include:
+
+- Built-in support for multi-user, multi-conversation scenarios which is often a requirement for real-world conversational AI applications.
+- Ability to save and resume complex state at any time for error recovery, human-in-the-loop workflows, time travel interactions, and more.
+- Full support for both LLM and chat models. In contrast, the v0.0.x memory abstractions were created prior to the existence and widespread adoption of chat model APIs, and so it does not work well with chat models (e.g., fails with tool calling chat models).
+- Offers a high degree of customization and control over the memory implementation, including the ability to use different backend.
+
+The below pages assist with migration from various specific chains to LCEL and LangGraph:
+
+- [ConversationBufferMemory](./ConversationBufferMemory.ipynb)
+
+Check out [LangGraph docs](https://langchain-ai.github.io/langgraph/) for more background information.
