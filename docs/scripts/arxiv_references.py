@@ -378,18 +378,18 @@ class ArxivAPIWrapper(BaseModel):
                 abstract=result.summary,
                 url=result.entry_id,
                 published_date=str(result.published.date()),
-                referencing_doc2url=type2key2urls["docs"]
-                if "docs" in type2key2urls
-                else {},
-                referencing_api_ref2url=type2key2urls["apis"]
-                if "apis" in type2key2urls
-                else {},
-                referencing_template2url=type2key2urls["templates"]
-                if "templates" in type2key2urls
-                else {},
-                referencing_cookbook2url=type2key2urls["cookbooks"]
-                if "cookbooks" in type2key2urls
-                else {},
+                referencing_doc2url=(
+                    type2key2urls["docs"] if "docs" in type2key2urls else {}
+                ),
+                referencing_api_ref2url=(
+                    type2key2urls["apis"] if "apis" in type2key2urls else {}
+                ),
+                referencing_template2url=(
+                    type2key2urls["templates"] if "templates" in type2key2urls else {}
+                ),
+                referencing_cookbook2url=(
+                    type2key2urls["cookbooks"] if "cookbooks" in type2key2urls else {}
+                ),
             )
             for result, type2key2urls in zip(results, arxiv_id2type2key2urls.values())
         ]
@@ -397,7 +397,7 @@ class ArxivAPIWrapper(BaseModel):
 
 
 def _format_doc_url(doc_path: str) -> str:
-    return f"https://{LANGCHAIN_PYTHON_URL}/v0.2/{doc_path}"
+    return f"https://{LANGCHAIN_PYTHON_URL}/{doc_path}"
 
 
 def _format_api_ref_url(doc_path: str, compact: bool = False) -> str:

@@ -4,15 +4,16 @@ import re
 from typing import Any, List, Optional, Union
 
 from langchain_community.graphs.networkx_graph import NetworkxEntityGraph
-
-from langchain_experimental.cpal.constants import Constant
-from langchain_experimental.pydantic_v1 import (
+from pydantic import (
     BaseModel,
+    ConfigDict,
     Field,
     PrivateAttr,
-    root_validator,
-    validator,
+    field_validator,
+    model_validator,
 )
+
+from langchain_experimental.cpal.constants import Constant
 
 
 class NarrativeModel(BaseModel):
@@ -24,7 +25,7 @@ class NarrativeModel(BaseModel):
     story_hypothetical: str
     story_plot: str  # causal stack of operations
 
-    @validator("*", pre=True)
+    @field_validator("*", mode="before")
     def empty_str_to_none(cls, v: str) -> Union[str, None]:
         """Empty strings are not allowed"""
         if v == "":
@@ -43,10 +44,11 @@ class EntityModel(BaseModel):
     # TODO: generalize to multivariate math
     # TODO: acyclic graph
 
-    class Config:
-        validate_assignment = True
+    model_config = ConfigDict(
+        validate_assignment=True,
+    )
 
-    @validator("name")
+    @field_validator("name")
     def lower_case_name(cls, v: str) -> str:
         v = v.lower()
         return v
@@ -73,7 +75,7 @@ class EntitySettingModel(BaseModel):
     attribute: str = Field(description="name of the attribute to be calculated")
     value: float = Field(description="entity's attribute value (calculated)")
 
-    @validator("name")
+    @field_validator("name")
     def lower_case_transform(cls, v: str) -> str:
         v = v.lower()
         return v
@@ -107,7 +109,7 @@ class InterventionModel(BaseModel):
     entity_settings: List[EntitySettingModel]
     system_settings: Optional[List[SystemSettingModel]] = None
 
-    @validator("system_settings")
+    @field_validator("system_settings")
     def lower_case_name(cls, v: str) -> Union[str, None]:
         if v is not None:
             raise NotImplementedError("system_setting is not implemented yet")
@@ -152,10 +154,9 @@ class StoryModel(BaseModel):
         # TODO: when langchain adopts pydantic.v2 replace w/ `__post_init__`
         # misses hints github.com/pydantic/pydantic/issues/1729#issuecomment-1300576214
 
-    # TODO: move away from `root_validator` since it is deprecated in pydantic v2
-    #       and causes mypy type-checking failures (hence the `type: ignore`)
-    @root_validator  # type: ignore[call-overload]
-    def check_intervention_is_valid(cls, values: dict) -> dict:
+    @model_validator(mode="before")
+    @classmethod
+    def check_intervention_is_valid(cls, values: dict) -> Any:
         valid_names = [e.name for e in values["causal_operations"].entities]
         for setting in values["intervention"].entity_settings:
             if setting.name not in valid_names:
