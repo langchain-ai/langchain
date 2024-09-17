@@ -11,7 +11,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List
+from typing import Any
 
 from pydantic import ConfigDict
 
@@ -55,11 +55,11 @@ class BaseMemory(Serializable, ABC):
 
     @property
     @abstractmethod
-    def memory_variables(self) -> List[str]:
+    def memory_variables(self) -> list[str]:
         """The string keys this memory class will add to chain inputs."""
 
     @abstractmethod
-    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
+    def load_memory_variables(self, inputs: dict[str, Any]) -> dict[str, Any]:
         """Return key-value pairs given the text input to the chain.
 
         Args:
@@ -69,7 +69,7 @@ class BaseMemory(Serializable, ABC):
             A dictionary of key-value pairs.
         """
 
-    async def aload_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
+    async def aload_memory_variables(self, inputs: dict[str, Any]) -> dict[str, Any]:
         """Async return key-value pairs given the text input to the chain.
 
         Args:
@@ -81,7 +81,7 @@ class BaseMemory(Serializable, ABC):
         return await run_in_executor(None, self.load_memory_variables, inputs)
 
     @abstractmethod
-    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
+    def save_context(self, inputs: dict[str, Any], outputs: dict[str, str]) -> None:
         """Save the context of this chain run to memory.
 
         Args:
@@ -90,7 +90,7 @@ class BaseMemory(Serializable, ABC):
         """
 
     async def asave_context(
-        self, inputs: Dict[str, Any], outputs: Dict[str, str]
+        self, inputs: dict[str, Any], outputs: dict[str, str]
     ) -> None:
         """Async save the context of this chain run to memory.
 
