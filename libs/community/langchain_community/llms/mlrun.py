@@ -42,6 +42,10 @@ class MLRun(LLM):
         prompt: str,
         **generate_kwargs: dict,
     ) -> str:
+        # We don't want all the calls to go through the _call function, so we just pass here
+        # and override the invoke and batch functions.
+        # This is because if all calls go through _call, we will lose the improvements and
+        # optimizations done by the providers of models we serve.
         pass
 
     def invoke(
