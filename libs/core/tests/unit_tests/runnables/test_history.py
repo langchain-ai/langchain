@@ -1,4 +1,5 @@
-from typing import Any, Callable, Dict, List, Optional, Sequence, Union
+from collections.abc import Sequence
+from typing import Any, Callable, Optional, Union
 
 import pytest
 from pydantic import BaseModel
@@ -30,7 +31,7 @@ def test_interfaces() -> None:
 
 def _get_get_session_history(
     *,
-    store: Optional[Dict[str, Any]] = None,
+    store: Optional[dict[str, Any]] = None,
 ) -> Callable[..., InMemoryChatMessageHistory]:
     chat_history_store = store if store is not None else {}
 
@@ -49,7 +50,7 @@ def test_input_messages() -> None:
         lambda messages: "you said: "
         + "\n".join(str(m.content) for m in messages if isinstance(m, HumanMessage))
     )
-    store: Dict = {}
+    store: dict = {}
     get_session_history = _get_get_session_history(store=store)
     with_history = RunnableWithMessageHistory(runnable, get_session_history)
     config: RunnableConfig = {"configurable": {"session_id": "1"}}
@@ -78,7 +79,7 @@ async def test_input_messages_async() -> None:
         lambda messages: "you said: "
         + "\n".join(str(m.content) for m in messages if isinstance(m, HumanMessage))
     )
-    store: Dict = {}
+    store: dict = {}
     get_session_history = _get_get_session_history(store=store)
     with_history = RunnableWithMessageHistory(runnable, get_session_history)
     config = {"session_id": "1_async"}
@@ -251,8 +252,8 @@ class LengthChatModel(BaseChatModel):
 
     def _generate(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
@@ -522,7 +523,7 @@ def test_get_input_schema_input_messages() -> None:
 def test_using_custom_config_specs() -> None:
     """Test that we can configure which keys should be passed to the session factory."""
 
-    def _fake_llm(input: Dict[str, Any]) -> List[BaseMessage]:
+    def _fake_llm(input: dict[str, Any]) -> list[BaseMessage]:
         messages = input["messages"]
         return [
             AIMessage(
@@ -635,7 +636,7 @@ def test_using_custom_config_specs() -> None:
 async def test_using_custom_config_specs_async() -> None:
     """Test that we can configure which keys should be passed to the session factory."""
 
-    def _fake_llm(input: Dict[str, Any]) -> List[BaseMessage]:
+    def _fake_llm(input: dict[str, Any]) -> list[BaseMessage]:
         messages = input["messages"]
         return [
             AIMessage(
@@ -748,7 +749,7 @@ async def test_using_custom_config_specs_async() -> None:
 def test_ignore_session_id() -> None:
     """Test without config."""
 
-    def _fake_llm(input: List[BaseMessage]) -> List[BaseMessage]:
+    def _fake_llm(input: list[BaseMessage]) -> list[BaseMessage]:
         return [
             AIMessage(
                 content="you said: "
@@ -833,7 +834,7 @@ def test_get_output_messages_no_value_error() -> None:
         lambda messages: "you said: "
         + "\n".join(str(m.content) for m in messages if isinstance(m, HumanMessage))
     )
-    store: Dict = {}
+    store: dict = {}
     get_session_history = _get_get_session_history(store=store)
     with_history = RunnableWithMessageHistory(runnable, get_session_history)
     config: RunnableConfig = {
@@ -850,7 +851,7 @@ def test_get_output_messages_no_value_error() -> None:
 def test_get_output_messages_with_value_error() -> None:
     illegal_bool_message = False
     runnable = _RunnableLambdaWithRaiseError(lambda messages: illegal_bool_message)
-    store: Dict = {}
+    store: dict = {}
     get_session_history = _get_get_session_history(store=store)
     with_history = RunnableWithMessageHistory(runnable, get_session_history)
     config: RunnableConfig = {

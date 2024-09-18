@@ -1,7 +1,8 @@
 """Utilities for formatting strings."""
 
+from collections.abc import Mapping, Sequence
 from string import Formatter
-from typing import Any, List, Mapping, Sequence
+from typing import Any
 
 
 class StrictFormatter(Formatter):
@@ -31,7 +32,7 @@ class StrictFormatter(Formatter):
         return super().vformat(format_string, args, kwargs)
 
     def validate_input_variables(
-        self, format_string: str, input_variables: List[str]
+        self, format_string: str, input_variables: list[str]
     ) -> None:
         """Check that all input variables are used in the format string.
 

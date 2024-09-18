@@ -1,6 +1,7 @@
 import copy
 import json
-from typing import Any, Dict, List, Optional, Type, Union
+from types import GenericAlias
+from typing import Any, Optional, Union
 
 import jsonpatch  # type: ignore[import]
 from pydantic import BaseModel, model_validator
@@ -20,7 +21,7 @@ class OutputFunctionsParser(BaseGenerationOutputParser[Any]):
     args_only: bool = True
     """Whether to only return the arguments to the function call."""
 
-    def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
+    def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:
         """Parse the result of an LLM call to a JSON object.
 
         Args:
@@ -72,7 +73,7 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
     def _diff(self, prev: Optional[Any], next: Any) -> Any:
         return jsonpatch.make_patch(prev, next).patch
 
-    def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
+    def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:
         """Parse the result of an LLM call to a JSON object.
 
         Args:
@@ -166,7 +167,7 @@ class JsonKeyOutputFunctionsParser(JsonOutputFunctionsParser):
     key_name: str
     """The name of the key to return."""
 
-    def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
+    def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:
         """Parse the result of an LLM call to a JSON object.
 
         Args:
@@ -223,7 +224,7 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
             result = parser.parse_result([chat_generation])
     """
 
-    pydantic_schema: Union[Type[BaseModel], Dict[str, Type[BaseModel]]]
+    pydantic_schema: Union[type[BaseModel], dict[str, type[BaseModel]]]
     """The pydantic schema to parse the output with.
     
     If multiple schemas are provided, then the function name will be used to
@@ -232,7 +233,7 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
 
     @model_validator(mode="before")
     @classmethod
-    def validate_schema(cls, values: Dict) -> Any:
+    def validate_schema(cls, values: dict) -> Any:
         """Validate the pydantic schema.
 
         Args:
@@ -246,17 +247,19 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
         """
         schema = values["pydantic_schema"]
         if "args_only" not in values:
-            values["args_only"] = isinstance(schema, type) and issubclass(
-                schema, BaseModel
+            values["args_only"] = (
+                isinstance(schema, type)
+                and not isinstance(schema, GenericAlias)
+                and issubclass(schema, BaseModel)
             )
-        elif values["args_only"] and isinstance(schema, Dict):
+        elif values["args_only"] and isinstance(schema, dict):
             raise ValueError(
                 "If multiple pydantic schemas are provided then args_only should be"
                 " False."
             )
         return values
 
-    def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
+    def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:
         """Parse the result of an LLM call to a JSON object.
 
         Args:
@@ -292,7 +295,7 @@ class PydanticAttrOutputFunctionsParser(PydanticOutputFunctionsParser):
     attr_name: str
     """The name of the attribute to return."""
 
-    def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
+    def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:
         """Parse the result of an LLM call to a JSON object.
 
         Args:

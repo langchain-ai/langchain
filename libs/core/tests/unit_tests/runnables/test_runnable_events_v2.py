@@ -3,17 +3,12 @@
 import asyncio
 import sys
 import uuid
+from collections.abc import AsyncIterator, Iterable, Iterator, Sequence
 from functools import partial
 from itertools import cycle
 from typing import (
     Any,
-    AsyncIterator,
-    Dict,
-    Iterable,
-    Iterator,
-    List,
     Optional,
-    Sequence,
     cast,
 )
 
@@ -55,7 +50,7 @@ from tests.unit_tests.runnables.test_runnable_events_v1 import (
 from tests.unit_tests.stubs import _AnyIdAIMessage, _AnyIdAIMessageChunk
 
 
-def _with_nulled_run_id(events: Sequence[StreamEvent]) -> List[StreamEvent]:
+def _with_nulled_run_id(events: Sequence[StreamEvent]) -> list[StreamEvent]:
     """Removes the run ids from events."""
     for event in events:
         assert "run_id" in event, f"Event {event} does not have a run_id."
@@ -68,12 +63,12 @@ def _with_nulled_run_id(events: Sequence[StreamEvent]) -> List[StreamEvent]:
         ), f"Event {event} parent_ids is not a list."
 
     return cast(
-        List[StreamEvent],
+        list[StreamEvent],
         [{**event, "run_id": "", "parent_ids": []} for event in events],
     )
 
 
-async def _as_async_iterator(iterable: List) -> AsyncIterator:
+async def _as_async_iterator(iterable: list) -> AsyncIterator:
     """Converts an iterable into an async iterator."""
     for item in iterable:
         yield item
@@ -81,7 +76,7 @@ async def _as_async_iterator(iterable: List) -> AsyncIterator:
 
 async def _collect_events(
     events: AsyncIterator[StreamEvent], with_nulled_ids: bool = True
-) -> List[StreamEvent]:
+) -> list[StreamEvent]:
     """Collect the events and remove the run ids."""
     materialized_events = [event async for event in events]
 
@@ -102,7 +97,7 @@ async def test_event_stream_with_simple_function_tool() -> None:
         return {"x": 5}
 
     @tool
-    def get_docs(x: int) -> List[Document]:
+    def get_docs(x: int) -> list[Document]:
         """Hello Doc"""
         return [Document(page_content="hello")]
 
@@ -1162,11 +1157,11 @@ async def test_event_streaming_with_tools() -> None:
 
 
 class HardCodedRetriever(BaseRetriever):
-    documents: List[Document]
+    documents: list[Document]
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
-    ) -> List[Document]:
+    ) -> list[Document]:
         return self.documents
 
 
@@ -1236,7 +1231,7 @@ async def test_event_stream_with_retriever_and_formatter() -> None:
         ]
     )
 
-    def format_docs(docs: List[Document]) -> str:
+    def format_docs(docs: list[Document]) -> str:
         """Format the docs."""
         return ", ".join([doc.page_content for doc in docs])
 
@@ -1860,7 +1855,7 @@ async def test_runnable_with_message_history() -> None:
 
     # Here we use a global variable to store the chat message history.
     # This will make it easier to inspect it to see the underlying results.
-    store: Dict = {}
+    store: dict = {}
 
     def get_by_session_id(session_id: str) -> BaseChatMessageHistory:
         """Get a chat message history"""
