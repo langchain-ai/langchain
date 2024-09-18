@@ -1,7 +1,7 @@
 import base64
 import tempfile
 from pathlib import Path
-from typing import Any, List, Tuple, Union, cast
+from typing import Any, Union, cast
 
 import pytest
 from pydantic import ValidationError
@@ -35,7 +35,7 @@ from tests.unit_tests.pydantic_utils import _normalize_schema
 
 
 @pytest.fixture
-def messages() -> List[BaseMessagePromptTemplate]:
+def messages() -> list[BaseMessagePromptTemplate]:
     """Create messages."""
     system_message_prompt = SystemMessagePromptTemplate(
         prompt=PromptTemplate(
@@ -72,7 +72,7 @@ def messages() -> List[BaseMessagePromptTemplate]:
 
 @pytest.fixture
 def chat_prompt_template(
-    messages: List[BaseMessagePromptTemplate],
+    messages: list[BaseMessagePromptTemplate],
 ) -> ChatPromptTemplate:
     """Create a chat prompt template."""
     return ChatPromptTemplate(
@@ -227,7 +227,7 @@ async def test_chat_prompt_template(chat_prompt_template: ChatPromptTemplate) ->
 
 
 def test_chat_prompt_template_from_messages(
-    messages: List[BaseMessagePromptTemplate],
+    messages: list[BaseMessagePromptTemplate],
 ) -> None:
     """Test creating a chat prompt template from messages."""
     chat_prompt_template = ChatPromptTemplate.from_messages(messages)
@@ -299,7 +299,7 @@ def test_chat_prompt_template_from_messages_mustache() -> None:
 
 
 def test_chat_prompt_template_with_messages(
-    messages: List[BaseMessagePromptTemplate],
+    messages: list[BaseMessagePromptTemplate],
 ) -> None:
     chat_prompt_template = ChatPromptTemplate.from_messages(
         messages + [HumanMessage(content="foo")]
@@ -828,7 +828,7 @@ async def test_chat_tmpl_serdes(snapshot: SnapshotAssertion) -> None:
             ("system", [{"text": "You are an AI assistant named {name}."}]),
             SystemMessagePromptTemplate.from_template("you are {foo}"),
             cast(
-                Tuple,
+                tuple,
                 (
                     "human",
                     [

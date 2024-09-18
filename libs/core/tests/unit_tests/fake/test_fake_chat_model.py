@@ -1,7 +1,7 @@
 """Tests for verifying that testing utility code works as expected."""
 
 from itertools import cycle
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 from uuid import UUID
 
 from langchain_core.callbacks.base import AsyncCallbackHandler
@@ -149,18 +149,18 @@ async def test_callback_handlers() -> None:
     """Verify that model is implemented correctly with handlers working."""
 
     class MyCustomAsyncHandler(AsyncCallbackHandler):
-        def __init__(self, store: List[str]) -> None:
+        def __init__(self, store: list[str]) -> None:
             self.store = store
 
         async def on_chat_model_start(
             self,
-            serialized: Dict[str, Any],
-            messages: List[List[BaseMessage]],
+            serialized: dict[str, Any],
+            messages: list[list[BaseMessage]],
             *,
             run_id: UUID,
             parent_run_id: Optional[UUID] = None,
-            tags: Optional[List[str]] = None,
-            metadata: Optional[Dict[str, Any]] = None,
+            tags: Optional[list[str]] = None,
+            metadata: Optional[dict[str, Any]] = None,
             **kwargs: Any,
         ) -> Any:
             # Do nothing
@@ -174,7 +174,7 @@ async def test_callback_handlers() -> None:
             chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
             run_id: UUID,
             parent_run_id: Optional[UUID] = None,
-            tags: Optional[List[str]] = None,
+            tags: Optional[list[str]] = None,
             **kwargs: Any,
         ) -> None:
             self.store.append(token)
@@ -185,7 +185,7 @@ async def test_callback_handlers() -> None:
         ]
     )
     model = GenericFakeChatModel(messages=infinite_cycle)
-    tokens: List[str] = []
+    tokens: list[str] = []
     # New model
     results = list(model.stream("meow", {"callbacks": [MyCustomAsyncHandler(tokens)]}))
     assert results == [

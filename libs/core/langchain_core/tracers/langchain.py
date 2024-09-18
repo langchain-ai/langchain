@@ -6,7 +6,7 @@ import logging
 import warnings
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 from uuid import UUID
 
 from langsmith import Client
@@ -91,7 +91,7 @@ class LangChainTracer(BaseTracer):
         example_id: Optional[Union[UUID, str]] = None,
         project_name: Optional[str] = None,
         client: Optional[Client] = None,
-        tags: Optional[List[str]] = None,
+        tags: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize the LangChain tracer.
@@ -114,13 +114,13 @@ class LangChainTracer(BaseTracer):
 
     def on_chat_model_start(
         self,
-        serialized: Dict[str, Any],
-        messages: List[List[BaseMessage]],
+        serialized: dict[str, Any],
+        messages: list[list[BaseMessage]],
         *,
         run_id: UUID,
-        tags: Optional[List[str]] = None,
+        tags: Optional[list[str]] = None,
         parent_run_id: Optional[UUID] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         name: Optional[str] = None,
         **kwargs: Any,
     ) -> Run:
@@ -194,7 +194,7 @@ class LangChainTracer(BaseTracer):
                 )
         raise ValueError("Failed to get run URL.")
 
-    def _get_tags(self, run: Run) -> List[str]:
+    def _get_tags(self, run: Run) -> list[str]:
         """Get combined tags for a run."""
         tags = set(run.tags or [])
         tags.update(self.tags or [])

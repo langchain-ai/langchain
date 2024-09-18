@@ -11,26 +11,21 @@ from __future__ import annotations
 
 import inspect
 import json
+from collections.abc import Iterable, Sequence
 from functools import partial
 from typing import (
     TYPE_CHECKING,
+    Annotated,
     Any,
     Callable,
-    Dict,
-    Iterable,
-    List,
     Literal,
     Optional,
-    Sequence,
-    Tuple,
-    Type,
     Union,
     cast,
     overload,
 )
 
 from pydantic import Discriminator, Field, Tag
-from typing_extensions import Annotated
 
 from langchain_core.messages.ai import AIMessage, AIMessageChunk
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk
@@ -166,7 +161,7 @@ def _message_from_dict(message: dict) -> BaseMessage:
         raise ValueError(f"Got unexpected message type: {_type}")
 
 
-def messages_from_dict(messages: Sequence[dict]) -> List[BaseMessage]:
+def messages_from_dict(messages: Sequence[dict]) -> list[BaseMessage]:
     """Convert a sequence of messages from dicts to Message objects.
 
     Args:
@@ -199,7 +194,7 @@ def message_chunk_to_message(chunk: BaseMessageChunk) -> BaseMessage:
 
 
 MessageLikeRepresentation = Union[
-    BaseMessage, List[str], Tuple[str, str], str, Dict[str, Any]
+    BaseMessage, list[str], tuple[str, str], str, dict[str, Any]
 ]
 
 
@@ -208,7 +203,7 @@ def _create_message_from_message_type(
     content: str,
     name: Optional[str] = None,
     tool_call_id: Optional[str] = None,
-    tool_calls: Optional[List[Dict[str, Any]]] = None,
+    tool_calls: Optional[list[dict[str, Any]]] = None,
     id: Optional[str] = None,
     **additional_kwargs: Any,
 ) -> BaseMessage:
@@ -230,7 +225,7 @@ def _create_message_from_message_type(
         ValueError: if the message type is not one of "human", "user", "ai",
             "assistant", "system", "function", or "tool".
     """
-    kwargs: Dict[str, Any] = {}
+    kwargs: dict[str, Any] = {}
     if name is not None:
         kwargs["name"] = name
     if tool_call_id is not None:
@@ -331,7 +326,7 @@ def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
 
 def convert_to_messages(
     messages: Union[Iterable[MessageLikeRepresentation], PromptValue],
-) -> List[BaseMessage]:
+) -> list[BaseMessage]:
     """Convert a sequence of messages to a list of messages.
 
     Args:
@@ -352,18 +347,18 @@ def _runnable_support(func: Callable) -> Callable:
     @overload
     def wrapped(
         messages: Literal[None] = None, **kwargs: Any
-    ) -> Runnable[Sequence[MessageLikeRepresentation], List[BaseMessage]]: ...
+    ) -> Runnable[Sequence[MessageLikeRepresentation], list[BaseMessage]]: ...
 
     @overload
     def wrapped(
         messages: Sequence[MessageLikeRepresentation], **kwargs: Any
-    ) -> List[BaseMessage]: ...
+    ) -> list[BaseMessage]: ...
 
     def wrapped(
         messages: Optional[Sequence[MessageLikeRepresentation]] = None, **kwargs: Any
     ) -> Union[
-        List[BaseMessage],
-        Runnable[Sequence[MessageLikeRepresentation], List[BaseMessage]],
+        list[BaseMessage],
+        Runnable[Sequence[MessageLikeRepresentation], list[BaseMessage]],
     ]:
         from langchain_core.runnables.base import RunnableLambda
 
@@ -382,11 +377,11 @@ def filter_messages(
     *,
     include_names: Optional[Sequence[str]] = None,
     exclude_names: Optional[Sequence[str]] = None,
-    include_types: Optional[Sequence[Union[str, Type[BaseMessage]]]] = None,
-    exclude_types: Optional[Sequence[Union[str, Type[BaseMessage]]]] = None,
+    include_types: Optional[Sequence[Union[str, type[BaseMessage]]]] = None,
+    exclude_types: Optional[Sequence[Union[str, type[BaseMessage]]]] = None,
     include_ids: Optional[Sequence[str]] = None,
     exclude_ids: Optional[Sequence[str]] = None,
-) -> List[BaseMessage]:
+) -> list[BaseMessage]:
     """Filter messages based on name, type or id.
 
     Args:
@@ -438,7 +433,7 @@ def filter_messages(
             ]
     """  # noqa: E501
     messages = convert_to_messages(messages)
-    filtered: List[BaseMessage] = []
+    filtered: list[BaseMessage] = []
     for msg in messages:
         if exclude_names and msg.name in exclude_names:
             continue
@@ -469,7 +464,7 @@ def merge_message_runs(
     messages: Union[Iterable[MessageLikeRepresentation], PromptValue],
     *,
     chunk_separator: str = "\n",
-) -> List[BaseMessage]:
+) -> list[BaseMessage]:
     """Merge consecutive Messages of the same type.
 
     **NOTE**: ToolMessages are not merged, as each has a distinct tool call id that
@@ -539,7 +534,7 @@ def merge_message_runs(
     if not messages:
         return []
     messages = convert_to_messages(messages)
-    merged: List[BaseMessage] = []
+    merged: list[BaseMessage] = []
     for msg in messages:
         curr = msg.model_copy(deep=True)
         last = merged.pop() if merged else None
@@ -569,21 +564,21 @@ def trim_messages(
     *,
     max_tokens: int,
     token_counter: Union[
-        Callable[[List[BaseMessage]], int],
+        Callable[[list[BaseMessage]], int],
         Callable[[BaseMessage], int],
         BaseLanguageModel,
     ],
     strategy: Literal["first", "last"] = "last",
     allow_partial: bool = False,
     end_on: Optional[
-        Union[str, Type[BaseMessage], Sequence[Union[str, Type[BaseMessage]]]]
+        Union[str, type[BaseMessage], Sequence[Union[str, type[BaseMessage]]]]
     ] = None,
     start_on: Optional[
-        Union[str, Type[BaseMessage], Sequence[Union[str, Type[BaseMessage]]]]
+        Union[str, type[BaseMessage], Sequence[Union[str, type[BaseMessage]]]]
     ] = None,
     include_system: bool = False,
-    text_splitter: Optional[Union[Callable[[str], List[str]], TextSplitter]] = None,
-) -> List[BaseMessage]:
+    text_splitter: Optional[Union[Callable[[str], list[str]], TextSplitter]] = None,
+) -> list[BaseMessage]:
     """Trim messages to be below a token count.
 
     Args:
@@ -875,13 +870,13 @@ def _first_max_tokens(
     messages: Sequence[BaseMessage],
     *,
     max_tokens: int,
-    token_counter: Callable[[List[BaseMessage]], int],
-    text_splitter: Callable[[str], List[str]],
+    token_counter: Callable[[list[BaseMessage]], int],
+    text_splitter: Callable[[str], list[str]],
     partial_strategy: Optional[Literal["first", "last"]] = None,
     end_on: Optional[
-        Union[str, Type[BaseMessage], Sequence[Union[str, Type[BaseMessage]]]]
+        Union[str, type[BaseMessage], Sequence[Union[str, type[BaseMessage]]]]
     ] = None,
-) -> List[BaseMessage]:
+) -> list[BaseMessage]:
     messages = list(messages)
     idx = 0
     for i in range(len(messages)):
@@ -949,17 +944,17 @@ def _last_max_tokens(
     messages: Sequence[BaseMessage],
     *,
     max_tokens: int,
-    token_counter: Callable[[List[BaseMessage]], int],
-    text_splitter: Callable[[str], List[str]],
+    token_counter: Callable[[list[BaseMessage]], int],
+    text_splitter: Callable[[str], list[str]],
     allow_partial: bool = False,
     include_system: bool = False,
     start_on: Optional[
-        Union[str, Type[BaseMessage], Sequence[Union[str, Type[BaseMessage]]]]
+        Union[str, type[BaseMessage], Sequence[Union[str, type[BaseMessage]]]]
     ] = None,
     end_on: Optional[
-        Union[str, Type[BaseMessage], Sequence[Union[str, Type[BaseMessage]]]]
+        Union[str, type[BaseMessage], Sequence[Union[str, type[BaseMessage]]]]
     ] = None,
-) -> List[BaseMessage]:
+) -> list[BaseMessage]:
     messages = list(messages)
     if end_on:
         while messages and not _is_message_type(messages[-1], end_on):
@@ -984,7 +979,7 @@ def _last_max_tokens(
         return reversed_[::-1]
 
 
-_MSG_CHUNK_MAP: Dict[Type[BaseMessage], Type[BaseMessageChunk]] = {
+_MSG_CHUNK_MAP: dict[type[BaseMessage], type[BaseMessageChunk]] = {
     HumanMessage: HumanMessageChunk,
     AIMessage: AIMessageChunk,
     SystemMessage: SystemMessageChunk,
@@ -1024,14 +1019,14 @@ def _chunk_to_msg(chunk: BaseMessageChunk) -> BaseMessage:
     )
 
 
-def _default_text_splitter(text: str) -> List[str]:
+def _default_text_splitter(text: str) -> list[str]:
     splits = text.split("\n")
     return [s + "\n" for s in splits[:-1]] + splits[-1:]
 
 
 def _is_message_type(
     message: BaseMessage,
-    type_: Union[str, Type[BaseMessage], Sequence[Union[str, Type[BaseMessage]]]],
+    type_: Union[str, type[BaseMessage], Sequence[Union[str, type[BaseMessage]]]],
 ) -> bool:
     types = [type_] if isinstance(type_, (str, type)) else type_
     types_str = [t for t in types if isinstance(t, str)]
