@@ -9,7 +9,7 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
-from langchain_core.pydantic_v1 import Field
+from pydantic import Field
 
 logger = logging.getLogger(__name__)
 

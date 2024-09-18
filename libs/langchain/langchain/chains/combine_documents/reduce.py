@@ -6,6 +6,7 @@ from typing import Any, Callable, List, Optional, Protocol, Tuple
 
 from langchain_core.callbacks import Callbacks
 from langchain_core.documents import Document
+from pydantic import ConfigDict
 
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 
@@ -204,9 +205,10 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
     If None, it will keep trying to collapse documents to fit token_max.
     Otherwise, after it reaches the max number, it will throw an error"""
 
-    class Config:
-        arbitrary_types_allowed = True
-        extra = "forbid"
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
     @property
     def _collapse_chain(self) -> BaseCombineDocumentsChain:
