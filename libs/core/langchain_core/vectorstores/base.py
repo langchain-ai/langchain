@@ -25,16 +25,14 @@ import logging
 import math
 import warnings
 from abc import ABC, abstractmethod
+from collections.abc import Collection, Iterable, Sequence
 from itertools import cycle
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
     ClassVar,
-    Collection,
-    Iterable,
     Optional,
-    Sequence,
     TypeVar,
 )
 

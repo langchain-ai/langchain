@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+from collections.abc import Awaitable
 from inspect import signature
 from typing import (
     Any,
-    Awaitable,
     Callable,
     Optional,
     Union,

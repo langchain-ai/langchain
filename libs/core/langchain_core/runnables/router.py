@@ -1,12 +1,9 @@
 from __future__ import annotations
 
+from collections.abc import AsyncIterator, Iterator, Mapping
 from typing import (
     Any,
-    AsyncIterator,
     Callable,
-    Iterator,
-    List,
-    Mapping,
     Optional,
     Union,
     cast,
@@ -154,7 +151,7 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
         configs = get_config_list(config, len(inputs))
         with get_executor_for_config(configs[0]) as executor:
             return cast(
-                List[Output],
+                list[Output],
                 list(executor.map(invoke, runnables, actual_inputs, configs)),
             )
 

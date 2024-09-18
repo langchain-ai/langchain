@@ -7,15 +7,15 @@ import json
 import uuid
 import warnings
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from contextvars import copy_context
 from inspect import signature
 from typing import (
+    Annotated,
     Any,
     Callable,
-    Dict,
     Literal,
     Optional,
-    Sequence,
     TypeVar,
     Union,
     cast,
@@ -36,7 +36,6 @@ from pydantic import (
 )
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import validate_arguments as validate_arguments_v1
-from typing_extensions import Annotated
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import (
@@ -324,7 +323,7 @@ class ToolException(Exception):
     pass
 
 
-class BaseTool(RunnableSerializable[Union[str, Dict, ToolCall], Any]):
+class BaseTool(RunnableSerializable[Union[str, dict, ToolCall], Any]):
     """Interface LangChain tools must implement."""
 
     def __init_subclass__(cls, **kwargs: Any) -> None:

@@ -7,7 +7,8 @@ They can be used to represent text, images, or chat message pieces.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Literal, Sequence, cast
+from collections.abc import Sequence
+from typing import Literal, cast
 
 from typing_extensions import TypedDict
 

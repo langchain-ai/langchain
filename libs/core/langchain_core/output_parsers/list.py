@@ -3,8 +3,9 @@ from __future__ import annotations
 import re
 from abc import abstractmethod
 from collections import deque
-from typing import AsyncIterator, Iterator, List, TypeVar, Union
+from collections.abc import AsyncIterator, Iterator
 from typing import Optional as Optional
+from typing import TypeVar, Union
 
 from langchain_core.messages import BaseMessage
 from langchain_core.output_parsers.transform import BaseTransformOutputParser
@@ -29,7 +30,7 @@ def droplastn(iter: Iterator[T], n: int) -> Iterator[T]:
             yield buffer.popleft()
 
 
-class ListOutputParser(BaseTransformOutputParser[List[str]]):
+class ListOutputParser(BaseTransformOutputParser[list[str]]):
     """Parse the output of an LLM call to a list."""
 
     @property

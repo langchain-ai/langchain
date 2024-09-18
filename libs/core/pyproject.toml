@@ -2,6 +2,9 @@
 requires = [ "poetry-core>=1.0.0",]
 build-backend = "poetry.core.masonry.api"
 
+[project]
+requires-python = ">=3.9,<4.0"
+
 [tool.poetry]
 name = "langchain-core"
 version = "0.3.1"

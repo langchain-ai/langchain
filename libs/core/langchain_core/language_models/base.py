@@ -1,16 +1,14 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from functools import lru_cache
+from collections.abc import Mapping, Sequence
+from functools import cache
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    List,
     Literal,
-    Mapping,
     Optional,
-    Sequence,
     TypeVar,
     Union,
 )
@@ -52,7 +50,7 @@ class LangSmithParams(TypedDict, total=False):
     """Stop words for generation."""
 
 
-@lru_cache(maxsize=None)  # Cache the tokenizer
+@cache  # Cache the tokenizer
 def get_tokenizer() -> Any:
     """Get a GPT-2 tokenizer instance.
 
@@ -158,7 +156,7 @@ class BaseLanguageModel(
         return Union[
             str,
             Union[StringPromptValue, ChatPromptValueConcrete],
-            List[AnyMessage],
+            list[AnyMessage],
         ]
 
     @abstractmethod

@@ -4,14 +4,11 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import AsyncIterator, Iterator, Sequence
 from typing import (
     TYPE_CHECKING,
     Any,
-    AsyncIterator,
-    Iterator,
-    List,
     Optional,
-    Sequence,
     TypeVar,
     Union,
     cast,
@@ -459,7 +456,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         output: Union[dict, BaseMessage] = {}
 
         if run_info["run_type"] == "chat_model":
-            generations = cast(List[List[ChatGenerationChunk]], response.generations)
+            generations = cast(list[list[ChatGenerationChunk]], response.generations)
             for gen in generations:
                 if output != {}:
                     break
@@ -469,7 +466,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
 
             event = "on_chat_model_end"
         elif run_info["run_type"] == "llm":
-            generations = cast(List[List[GenerationChunk]], response.generations)
+            generations = cast(list[list[GenerationChunk]], response.generations)
             output = {
                 "generations": [
                     [
