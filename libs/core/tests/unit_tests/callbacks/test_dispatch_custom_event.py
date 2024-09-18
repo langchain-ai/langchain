@@ -1,6 +1,6 @@
 import sys
 import uuid
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 from uuid import UUID
 
 import pytest
@@ -16,7 +16,7 @@ from langchain_core.runnables.config import RunnableConfig
 
 class AsyncCustomCallbackHandler(AsyncCallbackHandler):
     def __init__(self) -> None:
-        self.events: List[Any] = []
+        self.events: list[Any] = []
 
     async def on_custom_event(
         self,
@@ -24,8 +24,8 @@ class AsyncCustomCallbackHandler(AsyncCallbackHandler):
         data: Any,
         *,
         run_id: UUID,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
         assert kwargs == {}
@@ -120,7 +120,7 @@ def test_sync_callback_manager() -> None:
 
     class CustomCallbackManager(BaseCallbackHandler):
         def __init__(self) -> None:
-            self.events: List[Any] = []
+            self.events: list[Any] = []
 
         def on_custom_event(
             self,
@@ -128,8 +128,8 @@ def test_sync_callback_manager() -> None:
             data: Any,
             *,
             run_id: UUID,
-            tags: Optional[List[str]] = None,
-            metadata: Optional[Dict[str, Any]] = None,
+            tags: Optional[list[str]] = None,
+            metadata: Optional[dict[str, Any]] = None,
             **kwargs: Any,
         ) -> None:
             assert kwargs == {}

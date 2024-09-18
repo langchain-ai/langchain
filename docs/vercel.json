@@ -73,6 +73,10 @@
     {
       "source": "/v0.2/docs/templates/:path(.*/?)*",
       "destination": "https://github.com/langchain-ai/langchain/tree/master/templates/:path*"
+    },
+    {
+      "source": "/docs/integrations/providers/mlflow_ai_gateway(/?)",
+      "destination": "/docs/integrations/providers/mlflow/"
     }
   ]
 }
