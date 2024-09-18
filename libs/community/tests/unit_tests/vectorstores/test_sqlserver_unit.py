@@ -1,6 +1,7 @@
 # Unit test class
 import json
 import os
+import unittest
 from contextlib import ExitStack
 from types import SimpleNamespace
 from unittest.mock import MagicMock, Mock, patch
@@ -414,3 +415,399 @@ def test_similarity_search_by_vector_with_score() -> None:
             expected_search_result
         )
         assert result == expected_docs
+
+
+def test_add_texts():
+    store, mocks = generalized_mock_factory()
+
+    texts = ["hi", "hello", "welcome"]
+    embeddings = [0.01, 0.02, 0.03]
+    metadatas = [
+        {"id": 1, "summary": "Good Quality Dog Food"},
+        {"id": 2, "summary": "Nasty No flavor"},
+        {"id": 3, "summary": "stale product"},
+    ]
+    ids = [1, 2, 3]
+    input_ids = [4, 5, 6]
+
+    with patch(
+        "langchain_community.vectorstores.sqlserver.SQLServer_VectorStore.add_texts",
+        wraps=SQLServer_VectorStore.add_texts,
+    ), patch.object(store, "_insert_embeddings", wraps=mocks["_insert_embeddings"]):
+        store.embedding_function = Mock()
+        store.embedding_function.embed_documents = Mock()
+        store.embedding_function.embed_documents.return_value = embeddings
+        store._insert_embeddings.return_value = ids
+
+        # case 1:input ids not given
+        returned_ids = store.add_texts(store, texts, metadatas)
+        assert returned_ids == ids
+        store._insert_embeddings.assert_called_once_with(
+            texts, embeddings, metadatas, None
+        )
+
+        store._insert_embeddings.reset_mock()
+
+        # case 1:input ids not given
+        returned_ids = store.add_texts(store, texts, metadatas, input_ids)
+        assert returned_ids == ids
+        store._insert_embeddings.assert_called_once_with(
+            texts, embeddings, metadatas, input_ids
+        )
+
+
+def test_create_filter_clause():
+    store, mocks = generalized_mock_factory()
+    with (
+        patch(
+            "langchain_community.vectorstores.sqlserver.SQLServer_VectorStore._create_filter_clause",
+            wraps=SQLServer_VectorStore._create_filter_clause,
+        ) as mock_create_filter_clause,
+        patch.object(
+            store, "_handle_field_filter", wraps=mocks["_handle_field_filter"]
+        ),
+        patch.object(sqlalchemy, "and_", wraps=MagicMock) as mock_sqlalchemy_and,
+        patch.object(sqlalchemy, "or_", wraps=MagicMock) as mock_sqlalachemy_or,
+    ):
+        # filter case 0: Filters is not dict
+        filter_value = ["hi"]
+
+        with unittest.TestCase().assertRaises(ValueError) as context:
+            store._create_filter_clause(store, filter_value)
+        assert str(context.exception) == (
+            """Expected a dict, but got <class 'list'> for value: <class 'filter'>"""
+        )
+
+        # filter case 1: Outer operator is not AND/OR
+        filter_value = {"$XOR": 2}
+
+        with unittest.TestCase().assertRaises(ValueError) as context:
+            store._create_filter_clause(store, filter_value)
+        assert str(context.exception) == (
+            """Invalid filter condition.\nExpected $and or $or but got: $XOR"""
+        )
+
+        # filter case 2: Valid field filter case
+        filter_value = {"id": 1}
+        expected_filter_clause = """JSON_VALUE(langchain_vector_store_tests.
+        content_metadata, :JSON_VALUE_1) = :JSON_VALUE_2"""
+        store._handle_field_filter.return_value = expected_filter_clause
+
+        filter_clause_returned = store._create_filter_clause(store, filter_value)
+        assert filter_clause_returned == expected_filter_clause
+        store._handle_field_filter.assert_called_once_with("id", 1)
+        store._handle_field_filter.reset_mock()
+
+        # filter case 3 - Filter value is not list
+        filter_value = {"$or": {"hi"}}
+
+        with unittest.TestCase().assertRaises(ValueError) as context:
+            store._create_filter_clause(store, filter_value)
+        assert (
+            str(context.exception)
+            == """Expected a list, but got <class 'set'> for value: {'hi'}"""
+        )
+        store._handle_field_filter.reset_mock()
+
+        # filter case 4 - length of fields >1 and have operator, not fields
+        filter_value = {"$eq": {}, "$gte": 1}
+        with unittest.TestCase().assertRaises(ValueError) as context:
+            store._create_filter_clause(store, filter_value)
+        assert (
+            str(context.exception)
+            == """Invalid filter condition. Expected a field but got: $eq"""
+        )
+        store._handle_field_filter.reset_mock()
+
+        # filter case 5 - length of fields > 1 and have all fields, we AND it together
+
+        filter_value = {
+            "id": {"$eq": [1, 5, 2, 9]},
+            "location": {"$eq": ["pond", "market"]},
+        }
+        expected_filter_clause = (
+            "JSON_VALUE(langchain_vector_store_tests.content_metadata, :JSON_VALUE_1)"
+            " = :JSON_VALUE_2 AND "
+            "JSON_VALUE(langchain_vector_store_tests.content_metadata,"
+            " :JSON_VALUE_3) = :JSON_VALUE_4"
+        )
+        mock_sqlalchemy_and.return_value = expected_filter_clause
+        store._create_filter_clause(store, filter_value)
+        assert store._handle_field_filter.call_count == 2
+        store._handle_field_filter.reset_mock()
+
+        # filter case 6 - empty dictionary
+        filter_value = {}
+        with unittest.TestCase().assertRaises(ValueError) as context:
+            store._create_filter_clause(store, filter_value)
+        assert str(context.exception) == """Got an empty dictionary for filters."""
+
+        # filter case 7 - filter is None
+        filter_value = None
+        filter_clause_returned = store._create_filter_clause(store, filter_value)
+        assert filter_clause_returned is None
+
+
+def test_handle_field_filter():
+    store, mocks = generalized_mock_factory()
+
+    with (
+        patch(
+            "langchain_community.vectorstores.sqlserver.SQLServer_VectorStore._handle_field_filter",
+            wraps=SQLServer_VectorStore._handle_field_filter,
+        ),
+        patch.object(sqlalchemy, "and_", wraps=MagicMock) as mock_sqlalchemy_and,
+        patch.object(sqlalchemy, "or_", wraps=MagicMock),
+        patch.object(
+            sqlalchemy.sql.operators, "ne", wraps=MagicMock
+        ) as mock_sqlalchemy_ne,
+        patch.object(
+            sqlalchemy.sql.operators, "lt", wraps=MagicMock
+        ) as mock_sqlalchemy_lt,
+        patch.object(
+            sqlalchemy.sql.operators, "ge", wraps=MagicMock
+        ) as mock_sqlalchemy_gte,
+        patch.object(
+            sqlalchemy.sql.operators, "le", wraps=MagicMock
+        ) as mock_sqlalchemy_lte,
+    ):
+        # Test case 1: field startWith $
+        field = "$AND"
+        value = 1
+        with unittest.TestCase().assertRaises(ValueError) as context:
+            store._handle_field_filter(store, field, value)
+        assert (
+            str(context.exception)
+            == "Invalid filter condition. Expected a field but got an operator: $AND"
+        )
+
+        # Test case 2: field is not valid identifier
+        field = "/?"
+        value = 1
+        with unittest.TestCase().assertRaises(ValueError) as context:
+            store._handle_field_filter(store, field, value)
+        assert (
+            str(context.exception)
+            == f"Invalid field name: {field}. Expected a valid identifier."
+        )
+
+        # Test case 3: more than 1 filter for value
+        field = "id"
+        value = {"id": "3", "name": "john"}
+        expected_message = (
+            "Invalid filter condition."
+            " Expected a value which is a dictionary with a single key "
+            "that corresponds to an operator but got a dictionary with 2 keys."
+            " The first few keys are: "
+            "['id', 'name']"
+        )
+        with unittest.TestCase().assertRaises(ValueError) as context:
+            store._handle_field_filter(store, field, value)
+
+        assert str(context.exception) == expected_message
+
+        # Test case 4: field is not valid identifier
+        field = "id"
+        value = {"$neee": 1}
+        with unittest.TestCase().assertRaises(ValueError) as context:
+            store._handle_field_filter(store, field, value)
+        assert str(context.exception).startswith("Invalid operator: $neee.")
+
+        # Test case 5: SPECIAL CASED OPERATORS
+        field = "id"
+        value = {"$ne": 1}
+        expected_response = """JSON_VALUE(langchain_vector_store_tests.content_metadata,
+          :JSON_VALUE_1) != :JSON_VALUE_2"""
+        mock_sqlalchemy_ne.return_value = expected_response
+        handle_field_filter_response = store._handle_field_filter(store, field, value)
+        assert handle_field_filter_response == expected_response
+
+        # Test case 6: NUMERIC OPERATORS
+        field = "id"
+        value = {"$lt": 1}
+        expected_response = """JSON_VALUE(langchain_vector_store_tests.content_metadata,
+          :JSON_VALUE_1) < :JSON_VALUE_2"""
+        mock_sqlalchemy_lt.return_value = expected_response
+        handle_field_filter_response = store._handle_field_filter(store, field, value)
+        assert handle_field_filter_response == expected_response
+
+        # Test case 7: BETWEEN OPERATOR
+        field = "id"
+        value = {"$between": (1, 2)}
+        expected_response = """CAST(JSON_VALUE(
+        langchain_vector_store_tests.content_metadata, :JSON_VALUE_1) AS
+         NUMERIC(10, 2)) >= :param_1 AND 
+         CAST(JSON_VALUE(langchain_vector_store_tests.content_metadata,
+          :JSON_VALUE_1) AS NUMERIC(10, 2)) <= :param_2"""
+        mock_sqlalchemy_lte.return_value = (
+            "CAST(JSON_VALUE(langchain_vector_store_tests.content_metadata,"
+            " :JSON_VALUE_1) AS NUMERIC(10, 2)) <= :param_2"
+        )
+        mock_sqlalchemy_gte.return_value = (
+            "CAST(JSON_VALUE(langchain_vector_store_tests.content_metadata,"
+            " :JSON_VALUE_1) AS NUMERIC(10, 2)) >= :param_1 "
+        )
+        mock_sqlalchemy_and.return_value = expected_response
+        handle_field_filter_response = store._handle_field_filter(store, field, value)
+        assert handle_field_filter_response == expected_response
+        mock_sqlalchemy_and.assert_called_once_with(
+            mock_sqlalchemy_gte.return_value, mock_sqlalchemy_lte.return_value
+        )
+
+        # Test case 8: SPECIAL CASED OPERATOR unsupported
+        field = "id"
+        value = {"$in": [[], []]}
+        with unittest.TestCase().assertRaises(NotImplementedError) as context:
+            store._handle_field_filter(store, field, value)
+        assert (
+            str(context.exception) == "Unsupported type: <class 'list'> for value: []"
+        )
+
+        # Test case 9: SPECIAL CASED OPERATOR IN
+        field = "id"
+        value = {"$in": ["adam", "bob"]}
+        expected_response = (
+            "JSON_VALUE(:JSON_VALUE_1, :JSON_VALUE_2) IN (__[POSTCOMPILE_JSON_VALUE_3])"
+        )
+        handle_field_filter_response = store._handle_field_filter(store, field, value)
+        assert str(handle_field_filter_response) == expected_response
+
+        # Test case 10: SPECIAL CASED OPERATOR LIKE
+        field = "id"
+        value = {"$like": ["adam", "bob"]}
+        expected_response = (
+            "JSON_VALUE(:JSON_VALUE_1, :JSON_VALUE_2) LIKE :JSON_VALUE_3"
+        )
+        handle_field_filter_response = store._handle_field_filter(store, field, value)
+        assert str(handle_field_filter_response) == expected_response
+
+
+def test_docs_from_result():
+    store, mocks = generalized_mock_factory()
+
+    with patch(
+        "langchain_community.vectorstores.sqlserver.SQLServer_VectorStore._docs_from_result",
+        wraps=SQLServer_VectorStore._docs_from_result,
+    ):
+        result = [
+            (
+                Document(
+                    page_content="id 3",
+                    metadata={
+                        "name": "jane",
+                        "date": "2021-01-01",
+                        "count": 3,
+                        "is_active": True,
+                        "tags": ["b", "d"],
+                        "location": [3.0, 4.0],
+                        "id": 3,
+                        "height": 2.4,
+                        "happiness": None,
+                    },
+                ),
+                0.982679262929245,
+            ),
+            (
+                Document(
+                    page_content="id 1",
+                    metadata={
+                        "name": "adam",
+                        "date": "2021-01-01",
+                        "count": 1,
+                        "is_active": True,
+                        "tags": ["a", "b"],
+                        "location": [1.0, 2.0],
+                        "id": 1,
+                        "height": 10.0,
+                        "happiness": 0.9,
+                        "sadness": 0.1,
+                    },
+                ),
+                1.0078365850902349,
+            ),
+        ]
+        expected_documents = [
+            Document(
+                page_content="id 3",
+                metadata={
+                    "name": "jane",
+                    "date": "2021-01-01",
+                    "count": 3,
+                    "is_active": True,
+                    "tags": ["b", "d"],
+                    "location": [3.0, 4.0],
+                    "id": 3,
+                    "height": 2.4,
+                    "happiness": None,
+                },
+            ),
+            Document(
+                page_content="id 1",
+                metadata={
+                    "name": "adam",
+                    "date": "2021-01-01",
+                    "count": 1,
+                    "is_active": True,
+                    "tags": ["a", "b"],
+                    "location": [1.0, 2.0],
+                    "id": 1,
+                    "height": 10.0,
+                    "happiness": 0.9,
+                    "sadness": 0.1,
+                },
+            ),
+        ]
+        documents_returned = store._docs_from_result(store, result)
+
+        assert documents_returned == expected_documents
+
+
+def test_docs_and_scores_from_result():
+    store, mocks = generalized_mock_factory()
+
+    with patch(
+        "langchain_community.vectorstores.sqlserver.SQLServer_VectorStore._docs_and_scores_from_result",
+        wraps=SQLServer_VectorStore._docs_and_scores_from_result,
+    ):
+        result = [
+            SimpleNamespace(
+                EmbeddingStore=SimpleNamespace(
+                    content="hi", content_metadata={"key": "value"}
+                ),
+                distance=1,
+            )
+        ]
+
+        expected_documents = [
+            (Document(page_content="hi", metadata={"key": "value"}), 1)
+        ]
+        resulted_docs_and_score = store._docs_and_scores_from_result(store, result)
+
+        assert resulted_docs_and_score == expected_documents
+
+
+def test_delete():
+    store, mocks = generalized_mock_factory()
+
+    with (
+        patch(
+            "langchain_community.vectorstores.sqlserver.SQLServer_VectorStore.delete",
+            wraps=SQLServer_VectorStore.delete,
+        ),
+        patch.object(
+            store, "_delete_texts_by_ids", wraps=mocks["_delete_texts_by_ids"]
+        ),
+    ):
+        ids = None
+        assert store.delete(store, ids) is False
+
+        ids = []
+        assert store.delete(store, ids) is False
+
+        ids = [1, 2, 3]
+        store._delete_texts_by_ids.return_value = 0
+        assert store.delete(store, ids) is False
+
+        ids = [1, 2, 3]
+        store._delete_texts_by_ids.return_value = 1
+        assert store.delete(store, ids) is True
