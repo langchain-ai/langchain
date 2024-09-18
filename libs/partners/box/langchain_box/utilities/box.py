@@ -533,7 +533,7 @@ class BoxSearchOptions(BaseModel):
 
         The upper and lower bound can be omitted to create open ranges."""
 
-    updated_data_range: Optional[List[str]] = None
+    updated_date_range: Optional[List[str]] = None
     """Limits the search results to any items updated within a given date range.
 
         Date ranges are defined as comma separated RFC3339 timestamps.
@@ -549,48 +549,48 @@ class BoxSearchOptions(BaseModel):
         use_enum_values = True
         extra = "allow"
 
-    @root_validator()
-    def validate_search_options(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="after")
+    def validate_search_options(self) -> Self:
         """Validate k is between 1 and 200"""
-        if values.get("k") > 200 or values.get("k") < 1:  # type: ignore[operator]
+        if self.k > 200 or self.k < 1:  # type: ignore[operator]
             raise ValueError(
-                f"Invalid setting of k {values.get('k')}. "
+                f"Invalid setting of k {self.k}. "
                 "Value must be between 1 and 200."
             )
 
         """Validate created_date_range start date is before end date"""
-        if values.get("created_date_range"):
+        if self.created_date_range:
             if (
-                values.get("created_date_range")[0] is None  # type: ignore[index]
-                or values.get("created_date_range")[0] == ""  # type: ignore[index]
-                or values.get("created_date_range")[1] is None  # type: ignore[index]
-                or values.get("created_date_range")[1] == ""  # type: ignore[index]
+                self.created_date_range[0] is None  # type: ignore[index]
+                or self.created_date_range[0] == ""  # type: ignore[index]
+                or self.created_date_range[1] is None  # type: ignore[index]
+                or self.created_date_range[1] == ""  # type: ignore[index]
             ):
                 pass
             else:
                 if (
-                    values.get("created_date_range")[0]  # type: ignore[index]
-                    > values.get("created_date_range")[1]  # type: ignore[index]
+                    self.created_date_range[0]  # type: ignore[index]
+                    > self.created_date_range[1]  # type: ignore[index]
                 ):
                     raise ValueError("Start date must be before end date.")
 
         """Validate updated_date_range start date is before end date"""
-        if values.get("updated_date_range"):
+        if self.updated_date_range:
             if (
-                values.get("updated_date_range")[0] is None  # type: ignore[index]
-                or values.get("updated_date_range")[0] == ""  # type: ignore[index]
-                or values.get("updated_date_range")[1] is None  # type: ignore[index]
-                or values.get("updated_date_range")[1] == ""  # type: ignore[index]
+                self.updated_date_range[0] is None  # type: ignore[index]
+                or self.updated_date_range[0] == ""  # type: ignore[index]
+                or self.updated_date_range[1] is None  # type: ignore[index]
+                or self.updated_date_range[1] == ""  # type: ignore[index]
             ):
                 pass
             else:
                 if (
-                    values.get("updated_date_range")[0]  # type: ignore[index]
-                    > values.get("updated_date_range")[1]  # type: ignore[index]
+                    self.updated_date_range[0]  # type: ignore[index]
+                    > self.updated_date_range[1]  # type: ignore[index]
                 ):
                     raise ValueError("Start date must be before end date.")
 
-        return values
+        return self
 
 
 class _BoxAPIWrapper(BaseModel):

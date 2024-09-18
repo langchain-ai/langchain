@@ -150,10 +150,10 @@ class BoxRetriever(BaseRetriever):
             )
 
         _box = _BoxAPIWrapper(  # type: ignore[call-arg]
-            box_developer_token=values.get("box_developer_token"),
-            box_auth=values.get("box_auth"),
-            character_limit=values.get("character_limit"),
-            box_search_options=values.get("box_search_options"),
+            box_developer_token=self.box_developer_token,
+            box_auth=self.box_auth,
+            character_limit=self.character_limit,
+            box_search_options=self.box_search_options,
         )
 
         self._box = _box
