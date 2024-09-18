@@ -176,7 +176,7 @@ class HtmlLinkExtractor(LinkExtractor[HtmlInput]):
         Using LinkExtractorTransformer
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-        Using the :class:`~langchain_community.graph_vectorstores.extractors.keybert_link_extractor.LinkExtractorTransformer`,
+        Using the :class:`~langchain_community.graph_vectorstores.extractors.link_extractor_transformer.LinkExtractorTransformer`,
         we can simplify the link extraction::
 
             from langchain_community.document_loaders import AsyncHtmlLoader
