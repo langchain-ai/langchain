@@ -15,10 +15,11 @@ from typing import Any
 
 from pydantic import ConfigDict
 
+from langchain_core._api import deprecated
 from langchain_core.load.serializable import Serializable
 from langchain_core.runnables import run_in_executor
 
-
+@deprecated("0.3.0", alternative="langchain_core.chat_history.BaseChatMessageHistory", removal="1.0")
 class BaseMemory(Serializable, ABC):
     """Abstract base class for memory in Chains.
 
