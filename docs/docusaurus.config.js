@@ -168,19 +168,8 @@ const config = {
             label: "Integrations",
           },
           {
-            type: "dropdown",
-            label: "API reference",
-            position: "left",
-            items: [
-              {
-                label: "Latest",
-                to: "https://python.langchain.com/api_reference/reference.html",
-              },
-              {
-                label: "Legacy",
-                href: "https://api.python.langchain.com/"
-              }
-            ]
+            label: "API Reference",
+            to: "https://python.langchain.com/api_reference/",
           },
           {
             type: "dropdown",
@@ -189,31 +178,13 @@ const config = {
             items: [
               {
                 type: "doc",
-                docId: "people",
-                label: "People",
-              },
-              {
-                type: "doc",
                 docId: "contributing/index",
                 label: "Contributing",
               },
               {
-                label: "Cookbooks",
-                href: "https://github.com/langchain-ai/langchain/blob/master/cookbook/README.md"
-              },
-              {
                 type: "doc",
-                docId: "additional_resources/tutorials",
-                label: "3rd party tutorials"
-              },
-              {
-                type: "doc",
-                docId: "additional_resources/youtube",
-                label: "YouTube"
-              },
-              {
-                to: "/docs/additional_resources/arxiv_references",
-                label: "arXiv"
+                docId: "people",
+                label: "People",
               },
             ]
           },
@@ -242,12 +213,12 @@ const config = {
             position: "right",
             items: [
               {
-                href: "https://smith.langchain.com",
+                href: "https://docs.smith.langchain.com",
                 label: "LangSmith",
               },
               {
-                href: "https://docs.smith.langchain.com/",
-                label: "LangSmith Docs",
+                href: "https://langchain-ai.github.io/langgraph/",
+                label: "LangGraph",
               },
               {
                 href: "https://smith.langchain.com/hub",
@@ -255,12 +226,12 @@ const config = {
               },
               {
                 href: "https://js.langchain.com",
-                label: "JS/TS Docs",
+                label: "LangChain JS/TS",
               },
             ]
           },
           {
-            href: "https://chat.langchain.com",
+            to: "https://chat.langchain.com",
             label: "💬",
             position: "right",
           },

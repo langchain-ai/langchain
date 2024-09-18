@@ -12,6 +12,7 @@ from uuid import UUID
 from langsmith import Client
 from langsmith import utils as ls_utils
 from pydantic import PydanticDeprecationWarning
+from langchain_core.outputs import ChatGenerationChunk, GenerationChunk, LLMResult
 from tenacity import (
     Retrying,
     retry_if_exception_type,
@@ -230,6 +231,26 @@ class LangChainTracer(BaseTracer):
         if run.parent_run_id is None:
             run.reference_example_id = self.example_id
         self._persist_run_single(run)
+
+    def _llm_run_with_token_event(
+        self,
+        token: str,
+        run_id: UUID,
+        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
+        parent_run_id: Optional[UUID] = None,
+        **kwargs: Any,
+    ) -> Run:
+        """
+        Append token event to LLM run and return the run.
+        """
+        return super()._llm_run_with_token_event(
+            # Drop the chunk; we don't need to save it
+            token,
+            run_id,
+            chunk=None,
+            parent_run_id=parent_run_id,
+            **kwargs,
+        )
 
     def _on_chat_model_start(self, run: Run) -> None:
         """Persist an LLM run."""
