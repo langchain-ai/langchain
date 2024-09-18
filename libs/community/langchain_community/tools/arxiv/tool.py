@@ -2,6 +2,7 @@
 
 from typing import Optional, Type
 
+from datetime import datetime
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel, Field
@@ -25,7 +26,8 @@ class ArxivQueryRun(BaseTool):
         "Computer Science, Quantitative Biology, Quantitative Finance, Statistics, "
         "Electrical Engineering, and Economics "
         "from scientific articles on arxiv.org. "
-        "Input should be a search query."
+        "Input should be a search query. If there is something related to date please use date format and not words! "
+        f"Today's date is {datetime.today().strftime('%Y-%m-%d')}."
     )
     api_wrapper: ArxivAPIWrapper = Field(default_factory=ArxivAPIWrapper)  # type: ignore[arg-type]
     args_schema: Type[BaseModel] = ArxivInput
