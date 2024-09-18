@@ -12,7 +12,7 @@ def test_str() -> None:
 def test_repr() -> None:
     assert (
         repr(Document(page_content="Hello, World!"))
-        == "Document(page_content='Hello, World!')"
+        == "Document(metadata={}, page_content='Hello, World!')"
     )
     assert (
         repr(Document(page_content="Hello, World!", metadata={"a": 3}))

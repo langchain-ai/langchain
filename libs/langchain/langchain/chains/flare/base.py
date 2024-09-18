@@ -11,9 +11,9 @@ from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import AIMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import BasePromptTemplate
-from langchain_core.pydantic_v1 import Field
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import Runnable
+from pydantic import Field
 
 from langchain.chains.base import Chain
 from langchain.chains.flare.prompts import (
@@ -73,7 +73,10 @@ def _low_confidence_spans(
 
 class FlareChain(Chain):
     """Chain that combines a retriever, a question generator,
-    and a response generator."""
+    and a response generator.
+
+    See [Active Retrieval Augmented Generation](https://arxiv.org/abs/2305.06983) paper.
+    """
 
     question_generator_chain: Runnable
     """Chain that generates questions from uncertain spans."""

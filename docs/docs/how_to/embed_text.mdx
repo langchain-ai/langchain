@@ -8,7 +8,7 @@ The Embeddings class is a class designed for interfacing with text embedding mod
 
 Embeddings create a vector representation of a piece of text. This is useful because it means we can think about text in the vector space, and do things like semantic search where we look for pieces of text that are most similar in the vector space.
 
-The base Embeddings class in LangChain provides two methods: one for embedding documents and one for embedding a query. The former, `.embed_documents`, takes as input multiple texts, while the latter, `.embed_query`, takes a single text. The reason for having these as two separate methods is that some embedding providers have different embedding methods for documents (to be searched over) vs queries (the search query itself). 
+The base Embeddings class in LangChain provides two methods: one for embedding documents and one for embedding a query. The former, `.embed_documents`, takes as input multiple texts, while the latter, `.embed_query`, takes a single text. The reason for having these as two separate methods is that some embedding providers have different embedding methods for documents (to be searched over) vs queries (the search query itself).
 `.embed_query` will return a list of floats, whereas `.embed_documents` returns a list of lists of floats.
 
 ## Get started
@@ -94,15 +94,6 @@ from langchain_huggingface import HuggingFaceEmbeddings
 
 embeddings_model = HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")
 ```
-
-You can also leave the `model_name` blank to use the default [sentence-transformers/all-mpnet-base-v2](https://huggingface.co/sentence-transformers/all-mpnet-base-v2) model.
-
-```python
-from langchain_huggingface import HuggingFaceEmbeddings
-
-embeddings_model = HuggingFaceEmbeddings()
-```
-
   </TabItem>
 </Tabs>
 

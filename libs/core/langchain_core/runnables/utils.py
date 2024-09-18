@@ -18,23 +18,21 @@ from typing import (
     Coroutine,
     Dict,
     Iterable,
-    List,
     Mapping,
     NamedTuple,
     Optional,
     Protocol,
     Sequence,
-    Set,
-    Type,
     TypeVar,
     Union,
 )
 
 from typing_extensions import TypeGuard
 
-from langchain_core.pydantic_v1 import BaseConfig, BaseModel
-from langchain_core.pydantic_v1 import create_model as _create_model_base
 from langchain_core.runnables.schema import StreamEvent
+
+# Re-export create-model for backwards compatibility
+from langchain_core.utils.pydantic import create_model as create_model
 
 Input = TypeVar("Input", contravariant=True)
 # Output type should implement __concat__, as eg str, list, dict do
@@ -126,7 +124,7 @@ def asyncio_accepts_context() -> bool:
 class IsLocalDict(ast.NodeVisitor):
     """Check if a name is a local dict."""
 
-    def __init__(self, name: str, keys: Set[str]) -> None:
+    def __init__(self, name: str, keys: set[str]) -> None:
         """Initialize the visitor.
 
         Args:
@@ -181,7 +179,7 @@ class IsFunctionArgDict(ast.NodeVisitor):
     """Check if the first argument of a function is a dict."""
 
     def __init__(self) -> None:
-        self.keys: Set[str] = set()
+        self.keys: set[str] = set()
 
     def visit_Lambda(self, node: ast.Lambda) -> Any:
         """Visit a lambda function.
@@ -230,8 +228,8 @@ class NonLocals(ast.NodeVisitor):
     """Get nonlocal variables accessed."""
 
     def __init__(self) -> None:
-        self.loads: Set[str] = set()
-        self.stores: Set[str] = set()
+        self.loads: set[str] = set()
+        self.stores: set[str] = set()
 
     def visit_Name(self, node: ast.Name) -> Any:
         """Visit a name node.
@@ -271,7 +269,7 @@ class FunctionNonLocals(ast.NodeVisitor):
     """Get the nonlocal variables accessed of a function."""
 
     def __init__(self) -> None:
-        self.nonlocals: Set[str] = set()
+        self.nonlocals: set[str] = set()
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> Any:
         """Visit a function definition.
@@ -335,7 +333,7 @@ class GetLambdaSource(ast.NodeVisitor):
             self.source = ast.unparse(node)
 
 
-def get_function_first_arg_dict_keys(func: Callable) -> Optional[List[str]]:
+def get_function_first_arg_dict_keys(func: Callable) -> Optional[list[str]]:
     """Get the keys of the first argument of a function if it is a dict.
 
     Args:
@@ -350,7 +348,7 @@ def get_function_first_arg_dict_keys(func: Callable) -> Optional[List[str]]:
         tree = ast.parse(textwrap.dedent(code))
         visitor = IsFunctionArgDict()
         visitor.visit(tree)
-        return list(visitor.keys) if visitor.keys else None
+        return sorted(visitor.keys) if visitor.keys else None
     except (SyntaxError, TypeError, OSError, SystemError):
         return None
 
@@ -378,7 +376,7 @@ def get_lambda_source(func: Callable) -> Optional[str]:
         return name
 
 
-def get_function_nonlocals(func: Callable) -> List[Any]:
+def get_function_nonlocals(func: Callable) -> list[Any]:
     """Get the nonlocal variables accessed by a function.
 
     Args:
@@ -392,8 +390,10 @@ def get_function_nonlocals(func: Callable) -> List[Any]:
         tree = ast.parse(textwrap.dedent(code))
         visitor = FunctionNonLocals()
         visitor.visit(tree)
-        values: List[Any] = []
-        for k, v in inspect.getclosurevars(func).nonlocals.items():
+        values: list[Any] = []
+        closure = inspect.getclosurevars(func)
+        candidates = {**closure.globals, **closure.nonlocals}
+        for k, v in candidates.items():
             if k in visitor.nonlocals:
                 values.append(v)
             for kk in visitor.nonlocals:
@@ -606,12 +606,12 @@ class ConfigurableFieldSpec(NamedTuple):
     description: Optional[str] = None
     default: Any = None
     is_shared: bool = False
-    dependencies: Optional[List[str]] = None
+    dependencies: Optional[list[str]] = None
 
 
 def get_unique_config_specs(
     specs: Iterable[ConfigurableFieldSpec],
-) -> List[ConfigurableFieldSpec]:
+) -> list[ConfigurableFieldSpec]:
     """Get the unique config specs from a sequence of config specs.
 
     Args:
@@ -626,7 +626,7 @@ def get_unique_config_specs(
     grouped = groupby(
         sorted(specs, key=lambda s: (s.id, *(s.dependencies or []))), lambda s: s.id
     )
-    unique: List[ConfigurableFieldSpec] = []
+    unique: list[ConfigurableFieldSpec] = []
     for id, dupes in grouped:
         first = next(dupes)
         others = list(dupes)
@@ -695,43 +695,6 @@ class _RootEventFilter:
             )
 
         return include
-
-
-class _SchemaConfig(BaseConfig):
-    arbitrary_types_allowed = True
-    frozen = True
-
-
-def create_model(
-    __model_name: str,
-    **field_definitions: Any,
-) -> Type[BaseModel]:
-    """Create a pydantic model with the given field definitions.
-
-    Args:
-        __model_name: The name of the model.
-        **field_definitions: The field definitions for the model.
-
-    Returns:
-        Type[BaseModel]: The created model.
-    """
-    try:
-        return _create_model_cached(__model_name, **field_definitions)
-    except TypeError:
-        # something in field definitions is not hashable
-        return _create_model_base(
-            __model_name, __config__=_SchemaConfig, **field_definitions
-        )
-
-
-@lru_cache(maxsize=256)
-def _create_model_cached(
-    __model_name: str,
-    **field_definitions: Any,
-) -> Type[BaseModel]:
-    return _create_model_base(
-        __model_name, __config__=_SchemaConfig, **field_definitions
-    )
 
 
 def is_async_generator(
