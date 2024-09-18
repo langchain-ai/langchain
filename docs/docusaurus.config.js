@@ -188,7 +188,7 @@ const config = {
               },
               {
                 type: 'html',
-                value: '<hr class="dropdown-separator">',
+                value: '<hr class="dropdown-separator" style="margin-top: 0.5rem; margin-bottom: 0.5rem">',
               },
               {
                 href: "https://docs.smith.langchain.com",
