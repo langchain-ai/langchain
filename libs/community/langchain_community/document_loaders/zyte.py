@@ -20,6 +20,7 @@ class ZyteURLLoader(BaseLoader):
         mode: Determines how the text is extracted for the page content.
             It can take one of the following values: 'html', 'html-text', 'article'
         continue_on_failure: If True, continue loading other URLs if one fails.
+        n_conn: It is the maximum number of concurrent requests to use.
         **download_kwargs: Any additional download arguments to pass for download.
             See: https://docs.zyte.com/zyte-api/usage/reference.html
 
@@ -44,6 +45,7 @@ class ZyteURLLoader(BaseLoader):
         api_key: Optional[str],
         mode: Literal["article", "html", "html-text"] = "article",
         continue_on_failure: bool = False,
+        n_conn: int = 15,
         download_kwargs: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Initialize with file path."""
@@ -69,8 +71,10 @@ class ZyteURLLoader(BaseLoader):
         self.download_kwargs = download_kwargs or {}
         self.html_option = self._zyte_html_option()
         self.continue_on_failure = continue_on_failure
-        self.client = ZyteAPI(api_key=api_key, user_agent=user_agent)
-        self.client_async = AsyncZyteAPI(api_key=api_key, user_agent=user_agent)
+        self.client = ZyteAPI(api_key=api_key, user_agent=user_agent, n_conn=n_conn)
+        self.client_async = AsyncZyteAPI(
+            api_key=api_key, user_agent=user_agent, n_conn=n_conn
+        )
 
     def _zyte_html_option(self) -> str:
         if "browserHtml" in self.download_kwargs:
