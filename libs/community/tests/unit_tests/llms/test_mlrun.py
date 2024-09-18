@@ -96,8 +96,8 @@ class LangChainModelServer(V2ModelServer):
             )
 
 
-@pytest.mark.requires("mlrun")
-def test_huggingface() -> None:
+@pytest.mark.requires("mlrun", "transformers")
+def test_huggingface():
     """
     Test the langchain model server with a huggingface model
     """
