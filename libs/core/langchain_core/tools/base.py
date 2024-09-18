@@ -663,7 +663,7 @@ class ChildTool(BaseTool):
             except ToolException as e:
                 raise e
             except Exception as e:
-                raise ToolException(str(e)) from e
+                raise ToolException(repr(e)) from e
             except KeyboardInterrupt as e:
                 error_to_raise = e
                 status = "error"
@@ -786,7 +786,7 @@ class ChildTool(BaseTool):
             except ToolException as e:
                 raise e
             except Exception as e:
-                raise ToolException(str(e)) from e
+                raise ToolException(repr(e)) from e
         except ToolException as e:
             if not self.handle_tool_error:
                 error_to_raise = e
