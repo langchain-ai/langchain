@@ -1,10 +1,7 @@
+from collections.abc import AsyncIterator, Iterable, Iterator, Sequence
 from datetime import datetime
 from typing import (
     Any,
-    AsyncIterator,
-    Iterable,
-    Iterator,
-    Sequence,
 )
 from unittest.mock import AsyncMock, MagicMock, patch
 

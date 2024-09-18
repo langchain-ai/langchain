@@ -1,5 +1,6 @@
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Iterable, List, Literal, Union
+from typing import Literal, Union
 
 from langchain_core._api import beta
 from langchain_core.documents import Document
@@ -41,8 +42,9 @@ METADATA_LINKS_KEY = "links"
 
 
 @beta()
-def get_links(doc: Document) -> List[Link]:
+def get_links(doc: Document) -> list[Link]:
     """Get the links from a document.
+
     Args:
         doc: The document to get the link tags from.
     Returns:
@@ -60,6 +62,7 @@ def get_links(doc: Document) -> List[Link]:
 @beta()
 def add_links(doc: Document, *links: Union[Link, Iterable[Link]]) -> None:
     """Add links to the given metadata.
+
     Args:
         doc: The document to add the links to.
         *links: The links to add to the document.

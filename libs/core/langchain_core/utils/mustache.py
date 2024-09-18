@@ -3,16 +3,15 @@ Adapted from https://github.com/noahmorrison/chevron
 MIT License
 """
 
+from __future__ import annotations
+
 import logging
+from collections.abc import Iterator, Mapping, Sequence
+from types import MappingProxyType
 from typing import (
     Any,
-    Dict,
-    Iterator,
-    List,
     Literal,
     Optional,
-    Sequence,
-    Tuple,
     Union,
     cast,
 )
@@ -22,7 +21,7 @@ from typing_extensions import TypeAlias
 logger = logging.getLogger(__name__)
 
 
-Scopes: TypeAlias = List[Union[Literal[False, 0], Dict[str, Any]]]
+Scopes: TypeAlias = list[Union[Literal[False, 0], Mapping[str, Any]]]
 
 
 # Globals
@@ -41,7 +40,7 @@ class ChevronError(SyntaxError):
 #
 
 
-def grab_literal(template: str, l_del: str) -> Tuple[str, str]:
+def grab_literal(template: str, l_del: str) -> tuple[str, str]:
     """Parse a literal from the template.
 
     Args:
@@ -120,7 +119,7 @@ def r_sa_check(template: str, tag_type: str, is_standalone: bool) -> bool:
         return False
 
 
-def parse_tag(template: str, l_del: str, r_del: str) -> Tuple[Tuple[str, str], str]:
+def parse_tag(template: str, l_del: str, r_del: str) -> tuple[tuple[str, str], str]:
     """Parse a tag from a template.
 
     Args:
@@ -152,8 +151,8 @@ def parse_tag(template: str, l_del: str, r_del: str) -> Tuple[Tuple[str, str], s
     # Get the tag
     try:
         tag, template = template.split(r_del, 1)
-    except ValueError:
-        raise ChevronError("unclosed tag " f"at line {_CURRENT_LINE}")
+    except ValueError as e:
+        raise ChevronError("unclosed tag " f"at line {_CURRENT_LINE}") from e
 
     # Find the type meaning of the first character
     tag_type = tag_types.get(tag[0], "variable")
@@ -197,7 +196,7 @@ def parse_tag(template: str, l_del: str, r_del: str) -> Tuple[Tuple[str, str], s
 
 def tokenize(
     template: str, def_ldel: str = "{{", def_rdel: str = "}}"
-) -> Iterator[Tuple[str, str]]:
+) -> Iterator[tuple[str, str]]:
     """Tokenize a mustache template.
 
     Tokenizes a mustache template in a generator fashion,
@@ -279,12 +278,12 @@ def tokenize(
             # is the same as us
             try:
                 last_section = open_sections.pop()
-            except IndexError:
+            except IndexError as e:
                 raise ChevronError(
                     f'Trying to close tag "{tag_key}"\n'
                     "Looks like it was not opened.\n"
                     f"line {_CURRENT_LINE + 1}"
-                )
+                ) from e
             if tag_key != last_section:
                 # Otherwise we need to complain
                 raise ChevronError(
@@ -378,7 +377,7 @@ def _get_key(
                 # Move into the scope
                 try:
                     # Try subscripting (Normal dictionaries)
-                    scope = cast(Dict[str, Any], scope)[child]
+                    scope = cast(dict[str, Any], scope)[child]
                 except (TypeError, AttributeError):
                     try:
                         scope = getattr(scope, child)
@@ -411,7 +410,7 @@ def _get_key(
     return ""
 
 
-def _get_partial(name: str, partials_dict: Dict[str, str]) -> str:
+def _get_partial(name: str, partials_dict: Mapping[str, str]) -> str:
     """Load a partial"""
     try:
         # Maybe the partial is in the dictionary
@@ -423,13 +422,15 @@ def _get_partial(name: str, partials_dict: Dict[str, str]) -> str:
 #
 # The main rendering function
 #
-g_token_cache: Dict[str, List[Tuple[str, str]]] = {}
+g_token_cache: dict[str, list[tuple[str, str]]] = {}
+
+EMPTY_DICT: MappingProxyType[str, str] = MappingProxyType({})
 
 
 def render(
-    template: Union[str, List[Tuple[str, str]]] = "",
-    data: Dict[str, Any] = {},
-    partials_dict: Dict[str, str] = {},
+    template: Union[str, list[tuple[str, str]]] = "",
+    data: Mapping[str, Any] = EMPTY_DICT,
+    partials_dict: Mapping[str, str] = EMPTY_DICT,
     padding: str = "",
     def_ldel: str = "{{",
     def_rdel: str = "}}",
@@ -484,7 +485,7 @@ def render(
     if isinstance(template, Sequence) and not isinstance(template, str):
         # Then we don't need to tokenize it
         # But it does need to be a generator
-        tokens: Iterator[Tuple[str, str]] = (token for token in template)
+        tokens: Iterator[tuple[str, str]] = (token for token in template)
     else:
         if template in g_token_cache:
             tokens = (token for token in g_token_cache[template])
@@ -555,7 +556,7 @@ def render(
             if callable(scope):
                 # Generate template text from tags
                 text = ""
-                tags: List[Tuple[str, str]] = []
+                tags: list[tuple[str, str]] = []
                 for token in tokens:
                     if token == ("end", key):
                         break

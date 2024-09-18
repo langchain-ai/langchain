@@ -1,16 +1,14 @@
 from __future__ import annotations
 
 from abc import abstractmethod
+from collections.abc import AsyncIterable, Collection, Iterable, Iterator
 from typing import (
     Any,
-    AsyncIterable,
     ClassVar,
-    Collection,
-    Iterable,
-    Iterator,
-    List,
     Optional,
 )
+
+from pydantic import Field
 
 from langchain_core._api import beta
 from langchain_core.callbacks import (
@@ -20,7 +18,6 @@ from langchain_core.callbacks import (
 from langchain_core.documents import Document
 from langchain_core.graph_vectorstores.links import METADATA_LINKS_KEY, Link
 from langchain_core.load import Serializable
-from langchain_core.pydantic_v1 import Field
 from langchain_core.runnables import run_in_executor
 from langchain_core.vectorstores import VectorStore, VectorStoreRetriever
 
@@ -38,10 +35,11 @@ class Node(Serializable):
 
     Edges exist from nodes with an outgoing link to nodes with a matching incoming link.
 
-    For instance two nodes `a` and `b` connected over a hyperlink `https://some-url`
+    For instance two nodes `a` and `b` connected over a hyperlink ``https://some-url``
     would look like:
 
     .. code-block:: python
+
         [
             Node(
                 id="a",
@@ -66,7 +64,7 @@ class Node(Serializable):
     """Text contained by the node."""
     metadata: dict = Field(default_factory=dict)
     """Metadata for the node."""
-    links: List[Link] = Field(default_factory=list)
+    links: list[Link] = Field(default_factory=list)
     """Links associated with the node."""
 
 
@@ -80,12 +78,12 @@ def _texts_to_nodes(
     for text in texts:
         try:
             _metadata = next(metadatas_it).copy() if metadatas_it else {}
-        except StopIteration:
-            raise ValueError("texts iterable longer than metadatas")
+        except StopIteration as e:
+            raise ValueError("texts iterable longer than metadatas") from e
         try:
             _id = next(ids_it) if ids_it else None
-        except StopIteration:
-            raise ValueError("texts iterable longer than ids")
+        except StopIteration as e:
+            raise ValueError("texts iterable longer than ids") from e
 
         links = _metadata.pop(METADATA_LINKS_KEY, [])
         if not isinstance(links, list):
@@ -118,6 +116,13 @@ def _documents_to_nodes(documents: Iterable[Document]) -> Iterator[Node]:
 
 @beta()
 def nodes_to_documents(nodes: Iterable[Node]) -> Iterator[Document]:
+    """Convert nodes to documents.
+
+    Args:
+        nodes: The nodes to convert to documents.
+    Returns:
+        The documents generated from the nodes.
+    """
     for node in nodes:
         metadata = node.metadata.copy()
         metadata[METADATA_LINKS_KEY] = [
@@ -180,7 +185,7 @@ class GraphVectorStore(VectorStore):
         *,
         ids: Optional[Iterable[str]] = None,
         **kwargs: Any,
-    ) -> List[str]:
+    ) -> list[str]:
         """Run more texts through the embeddings and add to the vectorstore.
 
         The Links present in the metadata field `links` will be extracted to create
@@ -228,7 +233,7 @@ class GraphVectorStore(VectorStore):
         *,
         ids: Optional[Iterable[str]] = None,
         **kwargs: Any,
-    ) -> List[str]:
+    ) -> list[str]:
         """Run more texts through the embeddings and add to the vectorstore.
 
         The Links present in the metadata field `links` will be extracted to create
@@ -273,7 +278,7 @@ class GraphVectorStore(VectorStore):
         self,
         documents: Iterable[Document],
         **kwargs: Any,
-    ) -> List[str]:
+    ) -> list[str]:
         """Run more documents through the embeddings and add to the vectorstore.
 
         The Links present in the document metadata field `links` will be extracted to
@@ -323,7 +328,7 @@ class GraphVectorStore(VectorStore):
         self,
         documents: Iterable[Document],
         **kwargs: Any,
-    ) -> List[str]:
+    ) -> list[str]:
         """Run more documents through the embeddings and add to the vectorstore.
 
         The Links present in the document metadata field `links` will be extracted to
@@ -526,7 +531,7 @@ class GraphVectorStore(VectorStore):
 
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
-    ) -> List[Document]:
+    ) -> list[Document]:
         return list(self.traversal_search(query, k=k, depth=0))
 
     def max_marginal_relevance_search(
@@ -536,7 +541,7 @@ class GraphVectorStore(VectorStore):
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> list[Document]:
         return list(
             self.mmr_traversal_search(
                 query, k=k, fetch_k=fetch_k, lambda_mult=lambda_mult, depth=0
@@ -545,10 +550,10 @@ class GraphVectorStore(VectorStore):
 
     async def asimilarity_search(
         self, query: str, k: int = 4, **kwargs: Any
-    ) -> List[Document]:
+    ) -> list[Document]:
         return [doc async for doc in self.atraversal_search(query, k=k, depth=0)]
 
-    def search(self, query: str, search_type: str, **kwargs: Any) -> List[Document]:
+    def search(self, query: str, search_type: str, **kwargs: Any) -> list[Document]:
         if search_type == "similarity":
             return self.similarity_search(query, **kwargs)
         elif search_type == "similarity_score_threshold":
@@ -571,7 +576,7 @@ class GraphVectorStore(VectorStore):
 
     async def asearch(
         self, query: str, search_type: str, **kwargs: Any
-    ) -> List[Document]:
+    ) -> list[Document]:
         if search_type == "similarity":
             return await self.asimilarity_search(query, **kwargs)
         elif search_type == "similarity_score_threshold":
@@ -594,19 +599,24 @@ class GraphVectorStore(VectorStore):
         """Return GraphVectorStoreRetriever initialized from this GraphVectorStore.
 
         Args:
-            search_type (Optional[str]): Defines the type of search that
-                the Retriever should perform.
-                Can be "traversal" (default), "similarity", "mmr", or
-                "similarity_score_threshold".
-            search_kwargs (Optional[Dict]): Keyword arguments to pass to the
-                search function. Can include things like:
-                    k: Amount of documents to return (Default: 4)
-                    depth: The maximum depth of edges to traverse (Default: 1)
-                    score_threshold: Minimum relevance threshold
-                        for similarity_score_threshold
-                    fetch_k: Amount of documents to pass to MMR algorithm (Default: 20)
-                    lambda_mult: Diversity of results returned by MMR;
-                        1 for minimum diversity and 0 for maximum. (Default: 0.5)
+            **kwargs: Keyword arguments to pass to the search function.
+                Can include:
+
+                - search_type (Optional[str]): Defines the type of search that
+                  the Retriever should perform.
+                  Can be ``traversal`` (default), ``similarity``, ``mmr``, or
+                  ``similarity_score_threshold``.
+                - search_kwargs (Optional[Dict]): Keyword arguments to pass to the
+                  search function. Can include things like:
+
+                  - k(int): Amount of documents to return (Default: 4).
+                  - depth(int): The maximum depth of edges to traverse (Default: 1).
+                  - score_threshold(float): Minimum relevance threshold
+                    for similarity_score_threshold.
+                  - fetch_k(int): Amount of documents to pass to MMR algorithm
+                    (Default: 20).
+                  - lambda_mult(float): Diversity of results returned by MMR;
+                    1 for minimum diversity and 0 for maximum. (Default: 0.5).
         Returns:
             Retriever for this GraphVectorStore.
 
@@ -665,7 +675,7 @@ class GraphVectorStoreRetriever(VectorStoreRetriever):
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
-    ) -> List[Document]:
+    ) -> list[Document]:
         if self.search_type == "traversal":
             return list(self.vectorstore.traversal_search(query, **self.search_kwargs))
         elif self.search_type == "mmr_traversal":
@@ -677,7 +687,7 @@ class GraphVectorStoreRetriever(VectorStoreRetriever):
 
     async def _aget_relevant_documents(
         self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
-    ) -> List[Document]:
+    ) -> list[Document]:
         if self.search_type == "traversal":
             return [
                 doc

@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import contextlib
 import mimetypes
+from collections.abc import Generator
 from io import BufferedReader, BytesIO
 from pathlib import PurePath
-from typing import Any, Generator, List, Literal, Mapping, Optional, Union, cast
+from typing import Any, Literal, Optional, Union, cast
+
+from pydantic import ConfigDict, Field, field_validator, model_validator
 
 from langchain_core.load.serializable import Serializable
-from langchain_core.pydantic_v1 import Field, root_validator
 
 PathLike = Union[str, PurePath]
 
@@ -38,6 +40,13 @@ class BaseMedia(Serializable):
 
     metadata: dict = Field(default_factory=dict)
     """Arbitrary metadata associated with the content."""
+
+    @field_validator("id", mode="before")
+    def cast_id_to_str(cls, id_value: Any) -> Optional[str]:
+        if id_value is not None:
+            return str(id_value)
+        else:
+            return id_value
 
 
 class Blob(BaseMedia):
@@ -110,9 +119,10 @@ class Blob(BaseMedia):
     path: Optional[PathLike] = None
     """Location where the original content was found."""
 
-    class Config:
-        arbitrary_types_allowed = True
-        frozen = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        frozen=True,
+    )
 
     @property
     def source(self) -> Optional[str]:
@@ -127,8 +137,9 @@ class Blob(BaseMedia):
             return cast(Optional[str], self.metadata["source"])
         return str(self.path) if self.path else None
 
-    @root_validator(pre=True)
-    def check_blob_is_valid(cls, values: Mapping[str, Any]) -> Mapping[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def check_blob_is_valid(cls, values: dict[str, Any]) -> Any:
         """Verify that either data or path is provided."""
         if "data" not in values and "path" not in values:
             raise ValueError("Either data or path must be provided")
@@ -275,7 +286,7 @@ class Document(BaseMedia):
         return True
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "schema", "document"]
 
