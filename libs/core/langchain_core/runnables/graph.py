@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import inspect
 from collections import Counter
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import (
@@ -11,7 +12,6 @@ from typing import (
     NamedTuple,
     Optional,
     Protocol,
-    Sequence,
     TypedDict,
     Union,
     overload,

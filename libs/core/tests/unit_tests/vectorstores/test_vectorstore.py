@@ -7,7 +7,8 @@ the relevant methods.
 from __future__ import annotations
 
 import uuid
-from typing import Any, Iterable, Optional, Sequence
+from collections.abc import Iterable, Sequence
+from typing import Any, Optional
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings

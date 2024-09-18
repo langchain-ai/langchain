@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import uuid
 import warnings
+from collections.abc import Awaitable, Generator, Iterable, Iterator, Sequence
 from concurrent.futures import Executor, Future, ThreadPoolExecutor
 from contextlib import contextmanager
 from contextvars import ContextVar, copy_context
@@ -10,14 +11,8 @@ from functools import partial
 from typing import (
     TYPE_CHECKING,
     Any,
-    Awaitable,
     Callable,
-    Generator,
-    Iterable,
-    Iterator,
-    List,
     Optional,
-    Sequence,
     TypeVar,
     Union,
     cast,
@@ -43,7 +38,7 @@ if TYPE_CHECKING:
 else:
     # Pydantic validates through typed dicts, but
     # the callbacks need forward refs updated
-    Callbacks = Optional[Union[List, Any]]
+    Callbacks = Optional[Union[list, Any]]
 
 
 class EmptyDict(TypedDict, total=False):

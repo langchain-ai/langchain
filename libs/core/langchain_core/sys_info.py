@@ -2,10 +2,10 @@
 for debugging purposes.
 """
 
-from typing import List, Sequence
+from collections.abc import Sequence
 
 
-def _get_sub_deps(packages: Sequence[str]) -> List[str]:
+def _get_sub_deps(packages: Sequence[str]) -> list[str]:
     """Get any specified sub-dependencies."""
     from importlib import metadata
 

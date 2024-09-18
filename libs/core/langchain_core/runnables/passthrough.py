@@ -5,15 +5,11 @@ from __future__ import annotations
 import asyncio
 import inspect
 import threading
+from collections.abc import AsyncIterator, Awaitable, Iterator, Mapping
 from typing import (
     TYPE_CHECKING,
     Any,
-    AsyncIterator,
-    Awaitable,
     Callable,
-    Dict,
-    Iterator,
-    Mapping,
     Optional,
     Union,
     cast,
@@ -349,7 +345,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
 _graph_passthrough: RunnablePassthrough = RunnablePassthrough()
 
 
-class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
+class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
     """Runnable that assigns key-value pairs to Dict[str, Any] inputs.
 
     The `RunnableAssign` class takes input dictionaries and, through a
@@ -564,7 +560,7 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
                 if filtered:
                     yield filtered
             # yield map output
-            yield cast(Dict[str, Any], first_map_chunk_future.result())
+            yield cast(dict[str, Any], first_map_chunk_future.result())
             for chunk in map_output:
                 yield chunk
 
@@ -650,7 +646,7 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
             yield chunk
 
 
-class RunnablePick(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
+class RunnablePick(RunnableSerializable[dict[str, Any], dict[str, Any]]):
     """Runnable that picks keys from Dict[str, Any] inputs.
 
     RunnablePick class represents a Runnable that selectively picks keys from a

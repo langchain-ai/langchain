@@ -5,7 +5,7 @@ from __future__ import annotations
 import warnings
 from abc import ABC
 from string import Formatter
-from typing import Any, Callable, Dict
+from typing import Any, Callable
 
 from pydantic import BaseModel, create_model
 
@@ -139,7 +139,7 @@ def mustache_template_vars(
     return vars
 
 
-Defs = Dict[str, "Defs"]
+Defs = dict[str, "Defs"]
 
 
 def mustache_schema(
