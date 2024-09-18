@@ -40,6 +40,9 @@ python = ">=3.12.4"
 
 [tool.poetry.extras]
 
+[tool.ruff]
+target-version = "py39"
+
 [tool.ruff.lint]
 select = ["B", "E", "F", "I", "T201", "UP"]
 ignore = ["UP007"]
