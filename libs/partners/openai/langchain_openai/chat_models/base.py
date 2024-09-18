@@ -454,6 +454,7 @@ class BaseChatOpenAI(BaseChatModel):
     making requests to OpenAI compatible APIs, such as vLLM."""
     include_response_headers: bool = False
     """Whether to include response headers in the output message response_metadata."""
+    disabled_params: Optional[Dict[str, Any]] = Field(default=None)
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -1401,12 +1402,11 @@ class BaseChatOpenAI(BaseChatModel):
                     "Received None."
                 )
             tool_name = convert_to_openai_tool(schema)["function"]["name"]
-            llm = self.bind_tools(
-                [schema],
-                tool_choice=tool_name,
-                parallel_tool_calls=False,
-                strict=strict,
+            bind_kwargs = self._filter_disabled_params(
+                tool_choice=tool_name, parallel_tool_calls=False, strict=strict
             )
+
+            llm = self.bind_tools([schema], **bind_kwargs)
             if is_pydantic_schema:
                 output_parser: Runnable = PydanticToolsParser(
                     tools=[schema],  # type: ignore[list-item]
@@ -1455,6 +1455,21 @@ class BaseChatOpenAI(BaseChatModel):
             return RunnableMap(raw=llm) | parser_with_fallback
         else:
             return llm | output_parser
+
+    def _filter_disabled_params(self, **kwargs: Any) -> Dict[str, Any]:
+        if not self.disabled_params:
+            return kwargs
+        filtered = {}
+        for k, v in kwargs.items():
+            # Skip param
+            if k in self.disabled_params and (
+                self.disabled_params[k] is None or v in self.disabled_params[k]
+            ):
+                continue
+            # Keep param
+            else:
+                filtered[k] = v
+        return filtered
 
 
 class ChatOpenAI(BaseChatOpenAI):

@@ -551,6 +551,13 @@ class AzureChatOpenAI(BaseChatOpenAI):
         if self.n > 1 and self.streaming:
             raise ValueError("n must be 1 when streaming.")
 
+        if self.disabled_params is None:
+            # As of 09-17-2024 'parallel_tool_calls' param is only supported for gpt-4o.
+            if self.model_name and self.model_name == "gpt-4o":
+                pass
+            else:
+                self.disabled_params = {"parallel_tool_calls": None}
+
         # Check OPENAI_ORGANIZATION for backwards compatibility.
         self.openai_organization = (
             self.openai_organization
