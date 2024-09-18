@@ -29,7 +29,7 @@ documents = [Document(page_content=x) for x in doc_list]
 @pytest.mark.requires("voyageai")
 def test_init() -> None:
     VoyageAIRerank(
-        voyage_api_key="foo",
+        voyage_api_key="foo",  # type: ignore[arg-type]
         model="rerank-lite-1",
     )
 
@@ -63,7 +63,7 @@ def test_rerank_unit_test(mocker: Any) -> None:
     ]
 
     rerank = VoyageAIRerank(
-        voyage_api_key="foo",
+        voyage_api_key="foo",  # type: ignore[arg-type]
         model="rerank-lite-1",
     )
     result = rerank.compress_documents(
@@ -74,7 +74,7 @@ def test_rerank_unit_test(mocker: Any) -> None:
 
 def test_rerank_empty_input() -> None:
     rerank = VoyageAIRerank(
-        voyage_api_key="foo",
+        voyage_api_key="foo",  # type: ignore[arg-type]
         model="rerank-lite-1",
     )
     result = rerank.compress_documents(

@@ -3,7 +3,7 @@
 from typing import Generator, cast
 
 from langchain_core.outputs import LLMResult
-from langchain_core.pydantic_v1 import SecretStr
+from pydantic import SecretStr
 
 from langchain_community.llms.baidu_qianfan_endpoint import QianfanLLMEndpoint
 

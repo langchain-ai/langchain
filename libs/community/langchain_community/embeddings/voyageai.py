@@ -16,8 +16,8 @@ from typing import (
 import requests
 from langchain_core._api.deprecation import deprecated
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from pydantic import BaseModel, ConfigDict, SecretStr, model_validator
 from tenacity import (
     before_sleep_log,
     retry,
@@ -99,11 +99,13 @@ class VoyageEmbeddings(BaseModel, Embeddings):
         length, before vectorized by the embedding model. If False, an error will be 
         raised if any given text exceeds the context length."""
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that api key and python package exists in environment."""
         values["voyage_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(values, "voyage_api_key", "VOYAGE_API_KEY")

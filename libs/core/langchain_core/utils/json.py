@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import re
-from typing import Any, Callable, List
+from typing import Any, Callable
 
 from langchain_core.exceptions import OutputParserException
 
@@ -163,7 +163,7 @@ def _parse_json(
     return parser(json_str)
 
 
-def parse_and_check_json_markdown(text: str, expected_keys: List[str]) -> dict:
+def parse_and_check_json_markdown(text: str, expected_keys: list[str]) -> dict:
     """
     Parse a JSON string from a Markdown string and check that it
     contains the expected keys.
@@ -182,7 +182,7 @@ def parse_and_check_json_markdown(text: str, expected_keys: List[str]) -> dict:
     try:
         json_obj = parse_json_markdown(text)
     except json.JSONDecodeError as e:
-        raise OutputParserException(f"Got invalid JSON object. Error: {e}")
+        raise OutputParserException(f"Got invalid JSON object. Error: {e}") from e
     for key in expected_keys:
         if key not in json_obj:
             raise OutputParserException(

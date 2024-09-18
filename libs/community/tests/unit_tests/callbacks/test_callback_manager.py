@@ -7,6 +7,7 @@ from langchain_core.callbacks.manager import CallbackManager, trace_as_chain_gro
 from langchain_core.outputs import LLMResult
 from langchain_core.tracers.langchain import LangChainTracer, wait_for_all_tracers
 from langchain_core.utils.pydantic import get_fields
+from langsmith import utils as ls_utils
 
 from langchain_community.callbacks import get_openai_callback
 from langchain_community.callbacks.manager import get_bedrock_anthropic_callback
@@ -17,6 +18,8 @@ def test_callback_manager_configure_context_vars(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Test callback manager configuration."""
+    ls_utils.get_env_var.cache_clear()
+    ls_utils.get_tracer_project.cache_clear()
     monkeypatch.setenv("LANGCHAIN_TRACING_V2", "true")
     monkeypatch.setenv("LANGCHAIN_TRACING", "false")
     monkeypatch.setenv("LANGCHAIN_API_KEY", "foo")
@@ -118,4 +121,4 @@ def test_callback_manager_configure_context_vars(
                     assert cb.completion_tokens == 1
                     assert cb.total_cost > 0
             wait_for_all_tracers()
-            assert LangChainTracer._persist_run_single.call_count == 1  # type: ignore
+            assert LangChainTracer._persist_run_single.call_count == 4  # type: ignore

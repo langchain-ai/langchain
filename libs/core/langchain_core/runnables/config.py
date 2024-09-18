@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import uuid
 import warnings
+from collections.abc import Awaitable, Generator, Iterable, Iterator, Sequence
 from concurrent.futures import Executor, Future, ThreadPoolExecutor
 from contextlib import contextmanager
 from contextvars import ContextVar, copy_context
@@ -10,15 +11,8 @@ from functools import partial
 from typing import (
     TYPE_CHECKING,
     Any,
-    Awaitable,
     Callable,
-    Dict,
-    Generator,
-    Iterable,
-    Iterator,
-    List,
     Optional,
-    Sequence,
     TypeVar,
     Union,
     cast,
@@ -44,7 +38,7 @@ if TYPE_CHECKING:
 else:
     # Pydantic validates through typed dicts, but
     # the callbacks need forward refs updated
-    Callbacks = Optional[Union[List, Any]]
+    Callbacks = Optional[Union[list, Any]]
 
 
 class EmptyDict(TypedDict, total=False):
@@ -56,13 +50,13 @@ class EmptyDict(TypedDict, total=False):
 class RunnableConfig(TypedDict, total=False):
     """Configuration for a Runnable."""
 
-    tags: List[str]
+    tags: list[str]
     """
     Tags for this call and any sub-calls (eg. a Chain calling an LLM).
     You can use these to filter calls.
     """
 
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
     """
     Metadata for this call and any sub-calls (eg. a Chain calling an LLM).
     Keys should be strings, values should be JSON-serializable.
@@ -90,7 +84,7 @@ class RunnableConfig(TypedDict, total=False):
     Maximum number of times a call can recurse. If not provided, defaults to 25.
     """
 
-    configurable: Dict[str, Any]
+    configurable: dict[str, Any]
     """
     Runtime values for attributes previously made configurable on this Runnable,
     or sub-Runnables, through .configurable_fields() or .configurable_alternatives().
@@ -205,7 +199,7 @@ def ensure_config(config: Optional[RunnableConfig] = None) -> RunnableConfig:
 
 def get_config_list(
     config: Optional[Union[RunnableConfig, Sequence[RunnableConfig]]], length: int
-) -> List[RunnableConfig]:
+) -> list[RunnableConfig]:
     """Get a list of configs from a single config or a list of configs.
 
      It is useful for subclasses overriding batch() or abatch().
@@ -236,6 +230,7 @@ def get_config_list(
         warnings.warn(
             "Provided run_id be used only for the first element of the batch.",
             category=RuntimeWarning,
+            stacklevel=3,
         )
         subsequent = cast(
             RunnableConfig, {k: v for k, v in config.items() if k != "run_id"}
@@ -254,7 +249,7 @@ def patch_config(
     recursion_limit: Optional[int] = None,
     max_concurrency: Optional[int] = None,
     run_name: Optional[str] = None,
-    configurable: Optional[Dict[str, Any]] = None,
+    configurable: Optional[dict[str, Any]] = None,
 ) -> RunnableConfig:
     """Patch a config with new values.
 

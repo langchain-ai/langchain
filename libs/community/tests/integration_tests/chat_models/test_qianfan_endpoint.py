@@ -13,7 +13,7 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, LLMResult
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
-from langchain_core.pydantic_v1 import SecretStr
+from pydantic import SecretStr
 from pytest import CaptureFixture, MonkeyPatch
 
 from langchain_community.chat_models.baidu_qianfan_endpoint import (
