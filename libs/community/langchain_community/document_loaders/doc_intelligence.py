@@ -77,8 +77,8 @@ class AzureAIDocumentIntelligenceLoader(BaseLoader):
         """
 
         assert (
-            file_path is not None or url_path is not None
-        ), "file_path or url_path must be provided"
+            file_path is not None or url_path is not None or bytes_source is not None
+        ), "file_path, url_path or bytes_source must be provided"
         self.file_path = file_path
         self.url_path = url_path
         self.bytes_source = bytes_source
