@@ -5,6 +5,7 @@ from contextlib import ExitStack
 from types import SimpleNamespace
 from unittest.mock import MagicMock, Mock, patch
 
+import sqlalchemy
 from langchain_core.documents.base import Document
 
 from langchain_community.embeddings import FakeEmbeddings
@@ -12,7 +13,6 @@ from langchain_community.vectorstores.sqlserver import (
     DistanceStrategy,
     SQLServer_VectorStore,
 )
-import sqlalchemy
 
 EMBEDDING_LENGTH = 1536
 _ENTRA_ID_CONNECTION_STRING_TRUSTED_CONNECTION_NO = str(
@@ -176,7 +176,7 @@ def test_create_engine() -> None:
         wraps=SQLServer_VectorStore._create_engine,
     ), patch.object(
         store, "_can_connect_with_entra_id", wraps=mocks["_can_connect_with_entra_id"]
-    ), patch.object(sqlalchemy, "create_engine", wraps=MagicMock), patch.object(
+    ), patch.object(sqlalchemy, "create_engine", wraps=MagicMock()), patch.object(
         store, "_provide_token", wraps=mocks["_provide_token"]
     ), patch("sqlalchemy.event.listen") as mock_listen:
         engine = store._create_engine(store)
@@ -202,7 +202,9 @@ def test_create_engine() -> None:
         wraps=SQLServer_VectorStore._create_engine,
     ), patch.object(
         store, "_can_connect_with_entra_id", wraps=mocks["_can_connect_with_entra_id"]
-    ), patch.object(store, "_provide_token", wraps=mocks["_provide_token"]), patch(
+    ), patch.object(
+        sqlalchemy, 'create_engine', wraps=MagicMock()
+    ),patch.object(store, "_provide_token", wraps=mocks["_provide_token"]), patch(
         "sqlalchemy.event.listen"
     ) as mock_listen:
         engine = store._create_engine(store)
