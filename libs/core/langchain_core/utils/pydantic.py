@@ -11,7 +11,6 @@ from typing import (
     Any,
     Callable,
     Dict,
-    List,
     Optional,
     Type,
     TypeVar,
@@ -71,7 +70,7 @@ else:
 TBaseModel = TypeVar("TBaseModel", bound=PydanticBaseModel)
 
 
-def is_pydantic_v1_subclass(cls: Type) -> bool:
+def is_pydantic_v1_subclass(cls: type) -> bool:
     """Check if the installed Pydantic version is 1.x-like."""
     if PYDANTIC_MAJOR_VERSION == 1:
         return True
@@ -83,14 +82,14 @@ def is_pydantic_v1_subclass(cls: Type) -> bool:
     return False
 
 
-def is_pydantic_v2_subclass(cls: Type) -> bool:
+def is_pydantic_v2_subclass(cls: type) -> bool:
     """Check if the installed Pydantic version is 1.x-like."""
     from pydantic import BaseModel
 
     return PYDANTIC_MAJOR_VERSION == 2 and issubclass(cls, BaseModel)
 
 
-def is_basemodel_subclass(cls: Type) -> bool:
+def is_basemodel_subclass(cls: type) -> bool:
     """Check if the given class is a subclass of Pydantic BaseModel.
 
     Check if the given class is a subclass of any of the following:
@@ -166,7 +165,7 @@ def pre_init(func: Callable) -> Any:
 
         @root_validator(pre=True)
         @wraps(func)
-        def wrapper(cls: Type[BaseModel], values: Dict[str, Any]) -> Dict[str, Any]:
+        def wrapper(cls: type[BaseModel], values: dict[str, Any]) -> dict[str, Any]:
             """Decorator to run a function before model initialization.
 
             Args:
@@ -218,12 +217,12 @@ class _IgnoreUnserializable(GenerateJsonSchema):
 
 def _create_subset_model_v1(
     name: str,
-    model: Type[BaseModel],
+    model: type[BaseModel],
     field_names: list,
     *,
     descriptions: Optional[dict] = None,
     fn_description: Optional[str] = None,
-) -> Type[BaseModel]:
+) -> type[BaseModel]:
     """Create a pydantic model with only a subset of model's fields."""
     if PYDANTIC_MAJOR_VERSION == 1:
         from pydantic import create_model
@@ -256,12 +255,12 @@ def _create_subset_model_v1(
 
 def _create_subset_model_v2(
     name: str,
-    model: Type[pydantic.BaseModel],
-    field_names: List[str],
+    model: type[pydantic.BaseModel],
+    field_names: list[str],
     *,
     descriptions: Optional[dict] = None,
     fn_description: Optional[str] = None,
-) -> Type[pydantic.BaseModel]:
+) -> type[pydantic.BaseModel]:
     """Create a pydantic model with a subset of the model fields."""
     from pydantic import create_model
     from pydantic.fields import FieldInfo
@@ -299,11 +298,11 @@ def _create_subset_model_v2(
 def _create_subset_model(
     name: str,
     model: TypeBaseModel,
-    field_names: List[str],
+    field_names: list[str],
     *,
     descriptions: Optional[dict] = None,
     fn_description: Optional[str] = None,
-) -> Type[BaseModel]:
+) -> type[BaseModel]:
     """Create subset model using the same pydantic version as the input model."""
     if PYDANTIC_MAJOR_VERSION == 1:
         return _create_subset_model_v1(
@@ -344,25 +343,25 @@ if PYDANTIC_MAJOR_VERSION == 2:
     from pydantic.v1 import BaseModel as BaseModelV1
 
     @overload
-    def get_fields(model: Type[BaseModelV2]) -> Dict[str, FieldInfoV2]: ...
+    def get_fields(model: type[BaseModelV2]) -> dict[str, FieldInfoV2]: ...
 
     @overload
-    def get_fields(model: BaseModelV2) -> Dict[str, FieldInfoV2]: ...
+    def get_fields(model: BaseModelV2) -> dict[str, FieldInfoV2]: ...
 
     @overload
-    def get_fields(model: Type[BaseModelV1]) -> Dict[str, FieldInfoV1]: ...
+    def get_fields(model: type[BaseModelV1]) -> dict[str, FieldInfoV1]: ...
 
     @overload
-    def get_fields(model: BaseModelV1) -> Dict[str, FieldInfoV1]: ...
+    def get_fields(model: BaseModelV1) -> dict[str, FieldInfoV1]: ...
 
     def get_fields(
         model: Union[
             BaseModelV2,
             BaseModelV1,
-            Type[BaseModelV2],
-            Type[BaseModelV1],
+            type[BaseModelV2],
+            type[BaseModelV1],
         ],
-    ) -> Union[Dict[str, FieldInfoV2], Dict[str, FieldInfoV1]]:
+    ) -> Union[dict[str, FieldInfoV2], dict[str, FieldInfoV1]]:
         """Get the field names of a Pydantic model."""
         if hasattr(model, "model_fields"):
             return model.model_fields  # type: ignore
@@ -375,8 +374,8 @@ elif PYDANTIC_MAJOR_VERSION == 1:
     from pydantic import BaseModel as BaseModelV1_
 
     def get_fields(  # type: ignore[no-redef]
-        model: Union[Type[BaseModelV1_], BaseModelV1_],
-    ) -> Dict[str, FieldInfoV1]:
+        model: Union[type[BaseModelV1_], BaseModelV1_],
+    ) -> dict[str, FieldInfoV1]:
         """Get the field names of a Pydantic model."""
         return model.__fields__  # type: ignore
 else:
@@ -394,14 +393,14 @@ def _create_root_model(
     type_: Any,
     module_name: Optional[str] = None,
     default_: object = NO_DEFAULT,
-) -> Type[BaseModel]:
+) -> type[BaseModel]:
     """Create a base class."""
 
     def schema(
-        cls: Type[BaseModel],
+        cls: type[BaseModel],
         by_alias: bool = True,
         ref_template: str = DEFAULT_REF_TEMPLATE,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         # Complains about schema not being defined in superclass
         schema_ = super(cls, cls).schema(  # type: ignore[misc]
             by_alias=by_alias, ref_template=ref_template
@@ -410,12 +409,12 @@ def _create_root_model(
         return schema_
 
     def model_json_schema(
-        cls: Type[BaseModel],
+        cls: type[BaseModel],
         by_alias: bool = True,
         ref_template: str = DEFAULT_REF_TEMPLATE,
         schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
         mode: JsonSchemaMode = "validation",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         # Complains about model_json_schema not being defined in superclass
         schema_ = super(cls, cls).model_json_schema(  # type: ignore[misc]
             by_alias=by_alias,
@@ -452,7 +451,7 @@ def _create_root_model_cached(
     *,
     module_name: Optional[str] = None,
     default_: object = NO_DEFAULT,
-) -> Type[BaseModel]:
+) -> type[BaseModel]:
     return _create_root_model(
         model_name, type_, default_=default_, module_name=module_name
     )
@@ -462,7 +461,7 @@ def _create_root_model_cached(
 def _create_model_cached(
     __model_name: str,
     **field_definitions: Any,
-) -> Type[BaseModel]:
+) -> type[BaseModel]:
     return _create_model_base(
         __model_name,
         __config__=_SchemaConfig,
@@ -474,7 +473,7 @@ def create_model(
     __model_name: str,
     __module_name: Optional[str] = None,
     **field_definitions: Any,
-) -> Type[BaseModel]:
+) -> type[BaseModel]:
     """Create a pydantic model with the given field definitions.
 
     Please use create_model_v2 instead of this function.
@@ -513,7 +512,7 @@ def create_model(
 _RESERVED_NAMES = {key for key in dir(BaseModel) if not key.startswith("_")}
 
 
-def _remap_field_definitions(field_definitions: Dict[str, Any]) -> Dict[str, Any]:
+def _remap_field_definitions(field_definitions: dict[str, Any]) -> dict[str, Any]:
     """This remaps fields to avoid colliding with internal pydantic fields."""
     from pydantic import Field
     from pydantic.fields import FieldInfo
@@ -547,9 +546,9 @@ def create_model_v2(
     model_name: str,
     *,
     module_name: Optional[str] = None,
-    field_definitions: Optional[Dict[str, Any]] = None,
+    field_definitions: Optional[dict[str, Any]] = None,
     root: Optional[Any] = None,
-) -> Type[BaseModel]:
+) -> type[BaseModel]:
     """Create a pydantic model with the given field definitions.
 
     Attention:
