@@ -3,7 +3,7 @@ import os
 from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class QuantizedBgeEmbeddings(BaseModel, Embeddings):
@@ -118,8 +118,9 @@ class QuantizedBgeEmbeddings(BaseModel, Embeddings):
             onnx_model_path, use_embedding_runtime=True
         )
 
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(
+        extra="allow",
+    )
 
     def _embed(self, inputs: Any) -> Any:
         import torch

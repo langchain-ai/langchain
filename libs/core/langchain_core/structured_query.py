@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, List, Optional, Sequence, Union
+from typing import Any, Optional, Sequence, Union
 
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel
 
 
 class Visitor(ABC):
@@ -127,7 +127,8 @@ class Comparison(FilterDirective):
     def __init__(
         self, comparator: Comparator, attribute: str, value: Any, **kwargs: Any
     ) -> None:
-        super().__init__(
+        # super exists from BaseModel
+        super().__init__(  # type: ignore[call-arg]
             comparator=comparator, attribute=attribute, value=value, **kwargs
         )
 
@@ -141,12 +142,15 @@ class Operation(FilterDirective):
     """
 
     operator: Operator
-    arguments: List[FilterDirective]
+    arguments: list[FilterDirective]
 
     def __init__(
-        self, operator: Operator, arguments: List[FilterDirective], **kwargs: Any
-    ):
-        super().__init__(operator=operator, arguments=arguments, **kwargs)
+        self, operator: Operator, arguments: list[FilterDirective], **kwargs: Any
+    ) -> None:
+        # super exists from BaseModel
+        super().__init__(  # type: ignore[call-arg]
+            operator=operator, arguments=arguments, **kwargs
+        )
 
 
 class StructuredQuery(Expr):
@@ -165,5 +169,8 @@ class StructuredQuery(Expr):
         filter: Optional[FilterDirective],
         limit: Optional[int] = None,
         **kwargs: Any,
-    ):
-        super().__init__(query=query, filter=filter, limit=limit, **kwargs)
+    ) -> None:
+        # super exists from BaseModel
+        super().__init__(  # type: ignore[call-arg]
+            query=query, filter=filter, limit=limit, **kwargs
+        )

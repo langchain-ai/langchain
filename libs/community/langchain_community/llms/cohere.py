@@ -10,8 +10,8 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import LLM
 from langchain_core.load.serializable import Serializable
-from langchain_core.pydantic_v1 import Field, SecretStr
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
+from pydantic import ConfigDict, Field, SecretStr
 from tenacity import (
     before_sleep_log,
     retry,
@@ -76,8 +76,8 @@ def acompletion_with_retry(llm: Cohere, **kwargs: Any) -> Any:
 class BaseCohere(Serializable):
     """Base class for Cohere models."""
 
-    client: Any  #: :meta private:
-    async_client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
+    async_client: Any = None  #: :meta private:
     model: Optional[str] = Field(default=None)
     """Model name to use."""
 
@@ -159,8 +159,9 @@ class Cohere(LLM, BaseCohere):
     max_retries: int = 10
     """Maximum number of retries to make when generating."""
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @property
     def _default_params(self) -> Dict[str, Any]:

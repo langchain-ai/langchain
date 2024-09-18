@@ -1,7 +1,8 @@
 import json
 from typing import Any, Dict, List, Literal, Optional, Union
 
-from typing_extensions import TypedDict
+from pydantic import model_validator
+from typing_extensions import Self, TypedDict
 
 from langchain_core.messages.base import (
     BaseMessage,
@@ -24,7 +25,6 @@ from langchain_core.messages.tool import (
 from langchain_core.messages.tool import (
     tool_call_chunk as create_tool_call_chunk,
 )
-from langchain_core.pydantic_v1 import root_validator
 from langchain_core.utils._merge import merge_dicts, merge_lists
 from langchain_core.utils.json import parse_partial_json
 
@@ -111,8 +111,9 @@ class AIMessage(BaseMessage):
             "invalid_tool_calls": self.invalid_tool_calls,
         }
 
-    @root_validator(pre=True)
-    def _backwards_compat_tool_calls(cls, values: dict) -> dict:
+    @model_validator(mode="before")
+    @classmethod
+    def _backwards_compat_tool_calls(cls, values: dict) -> Any:
         check_additional_kwargs = not any(
             values.get(k)
             for k in ("tool_calls", "invalid_tool_calls", "tool_call_chunks")
@@ -204,7 +205,7 @@ class AIMessage(BaseMessage):
         return (base.strip() + "\n" + "\n".join(lines)).strip()
 
 
-AIMessage.update_forward_refs()
+AIMessage.model_rebuild()
 
 
 class AIMessageChunk(AIMessage, BaseMessageChunk):
@@ -238,8 +239,8 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
             "invalid_tool_calls": self.invalid_tool_calls,
         }
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def init_tool_calls(cls, values: dict) -> dict:
+    @model_validator(mode="after")
+    def init_tool_calls(self) -> Self:
         """Initialize tool calls from tool call chunks.
 
         Args:
@@ -251,35 +252,35 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
         Raises:
             ValueError: If the tool call chunks are malformed.
         """
-        if not values["tool_call_chunks"]:
-            if values["tool_calls"]:
-                values["tool_call_chunks"] = [
+        if not self.tool_call_chunks:
+            if self.tool_calls:
+                self.tool_call_chunks = [
                     create_tool_call_chunk(
                         name=tc["name"],
                         args=json.dumps(tc["args"]),
                         id=tc["id"],
                         index=None,
                     )
-                    for tc in values["tool_calls"]
+                    for tc in self.tool_calls
                 ]
-            if values["invalid_tool_calls"]:
-                tool_call_chunks = values.get("tool_call_chunks", [])
+            if self.invalid_tool_calls:
+                tool_call_chunks = self.tool_call_chunks
                 tool_call_chunks.extend(
                     [
                         create_tool_call_chunk(
                             name=tc["name"], args=tc["args"], id=tc["id"], index=None
                         )
-                        for tc in values["invalid_tool_calls"]
+                        for tc in self.invalid_tool_calls
                     ]
                 )
-                values["tool_call_chunks"] = tool_call_chunks
+                self.tool_call_chunks = tool_call_chunks
 
-            return values
+            return self
         tool_calls = []
         invalid_tool_calls = []
-        for chunk in values["tool_call_chunks"]:
+        for chunk in self.tool_call_chunks:
             try:
-                args_ = parse_partial_json(chunk["args"]) if chunk["args"] != "" else {}
+                args_ = parse_partial_json(chunk["args"]) if chunk["args"] != "" else {}  # type: ignore[arg-type]
                 if isinstance(args_, dict):
                     tool_calls.append(
                         create_tool_call(
@@ -299,9 +300,9 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                         error=None,
                     )
                 )
-        values["tool_calls"] = tool_calls
-        values["invalid_tool_calls"] = invalid_tool_calls
-        return values
+        self.tool_calls = tool_calls
+        self.invalid_tool_calls = invalid_tool_calls
+        return self
 
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
         if isinstance(other, AIMessageChunk):

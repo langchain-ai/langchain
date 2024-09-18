@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Union, cast
+
+from pydantic import ConfigDict, Field, field_validator
 
 from langchain_core.load.serializable import Serializable
-from langchain_core.pydantic_v1 import Extra, Field
 from langchain_core.utils import get_bolded_text
 from langchain_core.utils._merge import merge_dicts, merge_lists
 from langchain_core.utils.interactive_env import is_interactive_env
@@ -18,7 +19,7 @@ class BaseMessage(Serializable):
     Messages are the inputs and outputs of ChatModels.
     """
 
-    content: Union[str, List[Union[str, Dict]]]
+    content: Union[str, list[Union[str, dict]]]
     """The string contents of the message."""
 
     additional_kwargs: dict = Field(default_factory=dict)
@@ -51,11 +52,19 @@ class BaseMessage(Serializable):
     """An optional unique identifier for the message. This should ideally be
     provided by the provider/model which created the message."""
 
-    class Config:
-        extra = Extra.allow
+    model_config = ConfigDict(
+        extra="allow",
+    )
+
+    @field_validator("id", mode="before")
+    def cast_id_to_str(cls, id_value: Any) -> Optional[str]:
+        if id_value is not None:
+            return str(id_value)
+        else:
+            return id_value
 
     def __init__(
-        self, content: Union[str, List[Union[str, Dict]]], **kwargs: Any
+        self, content: Union[str, list[Union[str, dict]]], **kwargs: Any
     ) -> None:
         """Pass in content as positional arg.
 
@@ -76,7 +85,7 @@ class BaseMessage(Serializable):
         return True
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
         Default is ["langchain", "schema", "messages"].
         """
@@ -110,9 +119,9 @@ class BaseMessage(Serializable):
 
 
 def merge_content(
-    first_content: Union[str, List[Union[str, Dict]]],
-    *contents: Union[str, List[Union[str, Dict]]],
-) -> Union[str, List[Union[str, Dict]]]:
+    first_content: Union[str, list[Union[str, dict]]],
+    *contents: Union[str, list[Union[str, dict]]],
+) -> Union[str, list[Union[str, dict]]]:
     """Merge two message contents.
 
     Args:
@@ -154,7 +163,7 @@ class BaseMessageChunk(BaseMessage):
     """Message chunk, which can be concatenated with other Message chunks."""
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
         Default is ["langchain", "schema", "messages"].
         """
@@ -230,10 +239,10 @@ def message_to_dict(message: BaseMessage) -> dict:
         Message as a dict. The dict will have a "type" key with the message type
         and a "data" key with the message data as a dict.
     """
-    return {"type": message.type, "data": message.dict()}
+    return {"type": message.type, "data": message.model_dump()}
 
 
-def messages_to_dict(messages: Sequence[BaseMessage]) -> List[dict]:
+def messages_to_dict(messages: Sequence[BaseMessage]) -> list[dict]:
     """Convert a sequence of Messages to a list of dictionaries.
 
     Args:

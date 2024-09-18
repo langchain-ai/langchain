@@ -3,6 +3,8 @@ from __future__ import annotations
 from functools import partial
 from typing import Optional
 
+from pydantic import BaseModel, Field
+
 from langchain_core.callbacks import Callbacks
 from langchain_core.prompts import (
     BasePromptTemplate,
@@ -10,7 +12,6 @@ from langchain_core.prompts import (
     aformat_document,
     format_document,
 )
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.tools.simple import Tool
 
