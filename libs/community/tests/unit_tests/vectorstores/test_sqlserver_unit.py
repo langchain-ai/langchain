@@ -12,6 +12,7 @@ from langchain_community.vectorstores.sqlserver import (
     DistanceStrategy,
     SQLServer_VectorStore,
 )
+import sqlalchemy
 
 EMBEDDING_LENGTH = 1536
 _ENTRA_ID_CONNECTION_STRING_TRUSTED_CONNECTION_NO = str(
@@ -19,7 +20,7 @@ _ENTRA_ID_CONNECTION_STRING_TRUSTED_CONNECTION_NO = str(
 )
 
 
-def generalized_mock_factory():
+def generalized_mock_factory() -> None:
     mocks = {
         "_create_engine": MagicMock(),
         "_prepare_json_data_type": MagicMock(),
@@ -88,7 +89,7 @@ def test_init():
     mocks["_create_table_if_not_exists"].assert_called_once()
 
 
-def test_can_connect_with_entra_id():
+def test_can_connect_with_entra_id() -> None:
     store, mocks = generalized_mock_factory()
     with patch(
         "langchain_community.vectorstores.sqlserver.SQLServer_VectorStore._can_connect_with_entra_id",
@@ -164,7 +165,7 @@ def test_can_connect_with_entra_id():
         assert result is True
 
 
-def test_create_engine():
+def test_create_engine() -> None:
     # Arrange
     store, mocks = generalized_mock_factory()
     mocks["_can_connect_with_entra_id"].return_value = True
@@ -175,9 +176,9 @@ def test_create_engine():
         wraps=SQLServer_VectorStore._create_engine,
     ), patch.object(
         store, "_can_connect_with_entra_id", wraps=mocks["_can_connect_with_entra_id"]
-    ), patch.object(store, "_provide_token", wraps=mocks["_provide_token"]), patch(
-        "sqlalchemy.event.listen"
-    ) as mock_listen:
+    ), patch.object(sqlalchemy, "create_engine", wraps=MagicMock), patch.object(
+        store, "_provide_token", wraps=mocks["_provide_token"]
+    ), patch("sqlalchemy.event.listen") as mock_listen:
         engine = store._create_engine(store)
 
     mocks["_can_connect_with_entra_id"].assert_called_once()
@@ -216,7 +217,7 @@ def test_create_engine():
     ), f"Expected 'do_connect' to be called once. Called {len(specific_calls)} times."
 
 
-def test_similarity_search():
+def test_similarity_search() -> None:
     store, mocks = generalized_mock_factory()
 
     query = "hi"
@@ -248,7 +249,7 @@ def test_similarity_search():
         store.similarity_search_by_vector.assert_called_once_with([0.1, 0.2, 0.3], 7)
 
 
-def test_similarity_search_by_vector():
+def test_similarity_search_by_vector() -> None:
     store, mocks = generalized_mock_factory()
 
     with (
@@ -307,7 +308,7 @@ def test_similarity_search_by_vector():
         )
 
 
-def test_similarity_search_wih_score():
+def test_similarity_search_wih_score() -> None:
     store, mocks = generalized_mock_factory()
 
     query = "hi"
@@ -345,7 +346,7 @@ def test_similarity_search_wih_score():
         )
 
 
-def test_similarity_search_by_vector_with_score():
+def test_similarity_search_by_vector_with_score() -> None:
     store, mocks = generalized_mock_factory()
 
     with (
