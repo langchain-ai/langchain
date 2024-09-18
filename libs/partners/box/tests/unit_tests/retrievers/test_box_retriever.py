@@ -89,7 +89,7 @@ def test_search_options(mocker: MockerFixture) -> None:
         file_extensions=[DocumentFiles.DOCX, DocumentFiles.PDF],
         k=200,
         size_range=[1, 1000000],
-        updated_data_range=None,
+        updated_date_range=None,
     )
 
     retriever = BoxRetriever(  # type: ignore[call-arg]

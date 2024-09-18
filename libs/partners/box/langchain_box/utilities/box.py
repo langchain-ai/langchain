@@ -554,8 +554,7 @@ class BoxSearchOptions(BaseModel):
         """Validate k is between 1 and 200"""
         if self.k > 200 or self.k < 1:  # type: ignore[operator]
             raise ValueError(
-                f"Invalid setting of k {self.k}. "
-                "Value must be between 1 and 200."
+                f"Invalid setting of k {self.k}. " "Value must be between 1 and 200."
             )
 
         """Validate created_date_range start date is before end date"""
@@ -779,7 +778,7 @@ class _BoxAPIWrapper(BaseModel):
                     file_extensions=self.box_search_options.file_extensions,  #  type: ignore[union-attr]
                     limit=self.box_search_options.k,  #  type: ignore[union-attr]
                     size_range=self.box_search_options.size_range,  #  type: ignore[union-attr]
-                    updated_at_range=self.box_search_options.updated_data_range,  #  type: ignore[union-attr]
+                    updated_at_range=self.box_search_options.updated_date_range,  #  type: ignore[union-attr]
                 )
 
             if results.entries is None or len(results.entries) <= 0:
