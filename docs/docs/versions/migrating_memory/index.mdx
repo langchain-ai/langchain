@@ -8,7 +8,7 @@ The concept of memory has evolved significantly in LangChain since its initial r
 
 Broadly speaking, LangChain 0.0.x memory was used to handle four main use cases:
 
-1. Managing conversation history. For example, keep only the last `n` turns of the conversation between the user and the AI.
+1. Managing conversation history. For example, keep only the last `n` turns of the conversation between the user and the AI. See Migration guide for this use case is available [here](./manage_conversation_history).
 2. Extraction of structured information from the conversation history and providing it as context. For example, extract a list of facts learned about a user during the conversation.
 3. Implementations that provide composite logic on top of one or more memory implementations. For example, a memory implementation that combines a list of known facts about a user together with a list of facts learned during a given conversation.
 4. Custom user code based on the memory interface.
@@ -65,7 +65,7 @@ We do not currently have a guide for this. If you need help with migrating these
 open an issue in the docs, and we'll try to prioritize and write migration guidelines.
 
 The general strategy should be to use a chat model with tool calling capabilities to extract structured information from the conversation history.
-The extracted information can then be saved into an appropriate data structure (e.g., a dictionary), and information from it can be retrieved and injected
+The extracted information can then be saved into an appropriate data structure (e.g., a dictionary), and information from it can be retrieved and added
 into the prompt when needed.
 
 Memory classes that fall into this category include:
