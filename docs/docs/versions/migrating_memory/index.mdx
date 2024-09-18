@@ -102,4 +102,21 @@ If you have custom code that subclasses from `BaseMemory`, `BaseChatMemory`, or 
 
 Alternatively, you could use the existing implementations using the `load_memory_variables` and `save_context` API directly and write the appropriate glue code for your use case.
 
-Check out [LangGraph docs](https://langchain-ai.github.io/langgraph/) for more background information.
+## Related Resources
+
+Explore persistence with LangGraph:
+
+* [LangGraph quickstart tutorial](https://langchain-ai.github.io/langgraph/tutorials/introduction/)
+* [How to add persistence ("memory") to your graph](https://langchain-ai.github.io/langgraph/how-tos/persistence/)
+* [How to manage conversation history](https://langchain-ai.github.io/langgraph/how-tos/memory/manage-conversation-history/)
+* [How to add summary of the conversation history](https://langchain-ai.github.io/langgraph/how-tos/memory/add-summary-conversation-history/)
+
+Add persistence with simple LCEL (favor langgraph for more complex use cases):
+
+* [How to add message history](https://python.langchain.com/docs/how_to/message_history/)
+
+Working with message history:
+
+* [How to trim messages](https://python.langchain.com/docs/how_to/trim_messages)
+* [How to filter messages](https://python.langchain.com/docs/how_to/filter_messages/)
+* [How to merge message runs](https://python.langchain.com/docs/how_to/merge_message_runs/)
