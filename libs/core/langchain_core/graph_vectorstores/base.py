@@ -1,13 +1,10 @@
 from __future__ import annotations
 
 from abc import abstractmethod
+from collections.abc import AsyncIterable, Collection, Iterable, Iterator
 from typing import (
     Any,
-    AsyncIterable,
     ClassVar,
-    Collection,
-    Iterable,
-    Iterator,
     Optional,
 )
 

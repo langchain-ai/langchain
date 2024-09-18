@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 
 from pydantic import BaseModel
 
@@ -18,7 +18,7 @@ class ChatResult(BaseModel):
     for more information.
     """
 
-    generations: List[ChatGeneration]
+    generations: list[ChatGeneration]
     """List of the chat generations.
     
     Generations is a list to allow for multiple candidate generations for a single

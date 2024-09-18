@@ -2,12 +2,11 @@ from __future__ import annotations
 
 import json
 from json import JSONDecodeError
-from typing import Any, Optional, TypeVar, Union
+from typing import Annotated, Any, Optional, TypeVar, Union
 
 import jsonpatch  # type: ignore[import]
 import pydantic
 from pydantic import SkipValidation
-from typing_extensions import Annotated
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers.format_instructions import JSON_FORMAT_INSTRUCTIONS

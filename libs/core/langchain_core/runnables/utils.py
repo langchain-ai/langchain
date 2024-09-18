@@ -6,23 +6,24 @@ import ast
 import asyncio
 import inspect
 import textwrap
+from collections.abc import (
+    AsyncIterable,
+    AsyncIterator,
+    Awaitable,
+    Coroutine,
+    Iterable,
+    Mapping,
+    Sequence,
+)
 from functools import lru_cache
 from inspect import signature
 from itertools import groupby
 from typing import (
     Any,
-    AsyncIterable,
-    AsyncIterator,
-    Awaitable,
     Callable,
-    Coroutine,
-    Dict,
-    Iterable,
-    Mapping,
     NamedTuple,
     Optional,
     Protocol,
-    Sequence,
     TypeVar,
     Union,
 )
@@ -430,7 +431,7 @@ def indent_lines_after_first(text: str, prefix: str) -> str:
     return "\n".join([lines[0]] + [spaces + line for line in lines[1:]])
 
 
-class AddableDict(Dict[str, Any]):
+class AddableDict(dict[str, Any]):
     """
     Dictionary that can be added to another dictionary.
     """
