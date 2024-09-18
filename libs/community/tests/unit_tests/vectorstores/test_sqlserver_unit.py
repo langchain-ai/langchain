@@ -171,18 +171,26 @@ def test_create_engine() -> None:
     mocks["_can_connect_with_entra_id"].return_value = True
 
     # Unpatch _create_engine to call the actual method
-    with patch(
-        "langchain_community.vectorstores.sqlserver.SQLServer_VectorStore._create_engine",
-        wraps=SQLServer_VectorStore._create_engine,
-    ), patch.object(
-        store, "_can_connect_with_entra_id", wraps=mocks["_can_connect_with_entra_id"]
-    ), patch.object(sqlalchemy, "create_engine", wraps=MagicMock()), patch.object(
-        store, "_provide_token", wraps=mocks["_provide_token"]
-    ), patch("sqlalchemy.event.listen") as mock_listen:
+    with (
+        patch(
+            "langchain_community.vectorstores.sqlserver.SQLServer_VectorStore._create_engine",
+            wraps=SQLServer_VectorStore._create_engine,
+        ),
+        patch.object(
+            store,
+            "_can_connect_with_entra_id",
+            wraps=mocks["_can_connect_with_entra_id"],
+        ),
+        patch.object(store, "_provide_token", wraps=mocks["_provide_token"]),
+        patch("sqlalchemy.event.listen") as mock_listen,
+        patch.object(
+            sqlalchemy, "create_engine", wraps=MagicMock()
+        ) as mock_create_engine,
+    ):
         engine = store._create_engine(store)
 
     mocks["_can_connect_with_entra_id"].assert_called_once()
-
+    mock_create_engine.return_value = MagicMock()
     if mocks["_can_connect_with_entra_id"].return_value:
         specific_calls = [
             call for call in mock_listen.call_args_list if call.args[1] == "do_connect"
@@ -197,18 +205,25 @@ def test_create_engine() -> None:
     mocks["_can_connect_with_entra_id"].reset_mock()
 
     mocks["_can_connect_with_entra_id"].return_value = False
-    with patch(
-        "langchain_community.vectorstores.sqlserver.SQLServer_VectorStore._create_engine",
-        wraps=SQLServer_VectorStore._create_engine,
-    ), patch.object(
-        store, "_can_connect_with_entra_id", wraps=mocks["_can_connect_with_entra_id"]
-    ), patch.object(
-        sqlalchemy, 'create_engine', wraps=MagicMock()
-    ),patch.object(store, "_provide_token", wraps=mocks["_provide_token"]), patch(
-        "sqlalchemy.event.listen"
-    ) as mock_listen:
+    with (
+        patch(
+            "langchain_community.vectorstores.sqlserver.SQLServer_VectorStore._create_engine",
+            wraps=SQLServer_VectorStore._create_engine,
+        ),
+        patch.object(
+            store,
+            "_can_connect_with_entra_id",
+            wraps=mocks["_can_connect_with_entra_id"],
+        ),
+        patch.object(
+            sqlalchemy, "create_engine", wraps=MagicMock
+        ) as mock_create_engine,
+        patch.object(store, "_provide_token", wraps=mocks["_provide_token"]),
+        patch("sqlalchemy.event.listen") as mock_listen,
+    ):
         engine = store._create_engine(store)
 
+    mock_create_engine.return_value = MagicMock()
     mocks["_can_connect_with_entra_id"].assert_called_once()
 
     specific_calls = [
