@@ -455,6 +455,22 @@ class BaseChatOpenAI(BaseChatModel):
     include_response_headers: bool = False
     """Whether to include response headers in the output message response_metadata."""
     disabled_params: Optional[Dict[str, Any]] = Field(default=None)
+    """Parameters of the OpenAI client or chat.completions endpoint that should be 
+    disabled for the given model.
+    
+    Should be specified as ``{"param": None | ['val1', 'val2']}`` where the key is the 
+    parameter and the value is either None, meaning that parameter should never be
+    used, or it's a list of disabled values for the parameter.
+    
+    For example, older models may not support the 'parallel_tool_calls' parameter at 
+    all, in which case ``disabled_params={"parallel_tool_calls: None}`` can ben passed 
+    in.
+    
+    If a parameter is disabled then it will not be used by default in any methods, e.g.
+    in :meth:`~langchain_openai.chat_models.base.ChatOpenAI.with_structured_output`.
+    However this does not prevent a user from directly passed in the parameter during
+    invocation. 
+    """
 
     model_config = ConfigDict(populate_by_name=True)
 
