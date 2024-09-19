@@ -32,8 +32,12 @@ class StdOutCallbackHandler(BaseCallbackHandler):
             inputs (Dict[str, Any]): The inputs to the chain.
             **kwargs (Any): Additional keyword arguments.
         """
-        class_name = serialized.get("name", serialized.get("id", ["<unknown>"])[-1])
-        print(f"\n\n\033[1m> Entering new {class_name} chain...\033[0m")  # noqa: T201
+        chain_name = (
+            kwargs.get("class_name")
+            if kwargs.get("class_name")
+            else kwargs.get("lc_id", ["<unknown>"])[-1]
+        )
+        print(f"\n\n\033[1m> Entering new {chain_name} chain...\033[0m")  # noqa: T201
 
     def on_chain_end(self, outputs: dict[str, Any], **kwargs: Any) -> None:
         """Print out that we finished a chain.
