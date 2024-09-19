@@ -396,6 +396,14 @@ def test_recursive_text_splitter_regex_not_keep_separator() -> None:
     ]
     assert output == expected_output
 
+    # more cases
+    assert splitter.split_text("Hello  world!") == ["Hello  world!"]
+    assert splitter.split_text("Hello  world! ") == ["Hello  world!" ]
+    assert splitter.split_text("Hello  world!  ") == ["Hello  world!  "]
+    assert splitter.split_text(" Hello  world!") == [" Hello  world!"]
+    assert splitter.split_text("  Hello  world!") == ["  Hello  world!"]
+
+
 
 def test_split_documents() -> None:
     """Test split_documents."""
