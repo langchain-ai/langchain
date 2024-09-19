@@ -14,6 +14,7 @@ from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
+from pydantic import ConfigDict
 
 from langchain_experimental.sql.base import INTERMEDIATE_STEPS_KEY, SQLDatabaseChain
 
@@ -30,8 +31,9 @@ class VectorSQLOutputParser(BaseOutputParser[str]):
     distance_func_name: str = "distance"
     """Distance name for Vector SQL"""
 
-    class Config:
-        arbitrary_types_allowed = 1
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     @property
     def _type(self) -> str:

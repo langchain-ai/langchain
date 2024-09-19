@@ -2,8 +2,8 @@ from typing import Any, Dict, List, Optional
 
 from langchain_core._api.deprecation import deprecated
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, ConfigDict, model_validator
 
 from langchain_community.llms.cohere import _create_retry_decorator
 
@@ -30,9 +30,9 @@ class CohereEmbeddings(BaseModel, Embeddings):
             )
     """
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     """Cohere client."""
-    async_client: Any  #: :meta private:
+    async_client: Any = None  #: :meta private:
     """Cohere async client."""
     model: str = "embed-english-v2.0"
     """Model name to use."""
@@ -49,11 +49,13 @@ class CohereEmbeddings(BaseModel, Embeddings):
     user_agent: str = "langchain"
     """Identifier for the application making the request."""
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that api key and python package exists in environment."""
         cohere_api_key = get_from_dict_or_env(
             values, "cohere_api_key", "COHERE_API_KEY"
