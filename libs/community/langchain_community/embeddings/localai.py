@@ -16,12 +16,12 @@ from typing import (
 )
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.utils import (
     get_from_dict_or_env,
     get_pydantic_field_names,
     pre_init,
 )
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from tenacity import (
     AsyncRetrying,
     before_sleep_log,
@@ -141,7 +141,7 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
 
     """
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     model: str = "text-embedding-ada-002"
     deployment: str = model
     openai_api_version: Optional[str] = None
@@ -166,11 +166,11 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
 
-    @root_validator(pre=True)
-    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})

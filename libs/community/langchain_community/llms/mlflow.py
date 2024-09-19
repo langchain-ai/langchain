@@ -5,7 +5,7 @@ from urllib.parse import urlparse
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import LLM
-from langchain_core.pydantic_v1 import Field, PrivateAttr
+from pydantic import Field, PrivateAttr
 
 
 class Mlflow(LLM):
