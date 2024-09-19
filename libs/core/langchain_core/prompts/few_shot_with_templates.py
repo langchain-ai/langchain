@@ -1,7 +1,7 @@
 """Prompt template that contains few shot examples."""
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 
 from pydantic import ConfigDict, model_validator
 from typing_extensions import Self
@@ -16,7 +16,7 @@ from langchain_core.prompts.string import (
 class FewShotPromptWithTemplates(StringPromptTemplate):
     """Prompt template that contains few shot examples."""
 
-    examples: Optional[List[dict]] = None
+    examples: Optional[list[dict]] = None
     """Examples to format into the prompt.
     Either this or example_selector should be provided."""
 
@@ -43,13 +43,13 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
     """Whether or not to try validating the template."""
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "prompts", "few_shot_with_templates"]
 
     @model_validator(mode="before")
     @classmethod
-    def check_examples_and_selector(cls, values: Dict) -> Any:
+    def check_examples_and_selector(cls, values: dict) -> Any:
         """Check that one and only one of examples/example_selector are provided."""
         examples = values.get("examples", None)
         example_selector = values.get("example_selector", None)
@@ -93,7 +93,7 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
         extra="forbid",
     )
 
-    def _get_examples(self, **kwargs: Any) -> List[dict]:
+    def _get_examples(self, **kwargs: Any) -> list[dict]:
         if self.examples is not None:
             return self.examples
         elif self.example_selector is not None:
@@ -101,7 +101,7 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
         else:
             raise ValueError
 
-    async def _aget_examples(self, **kwargs: Any) -> List[dict]:
+    async def _aget_examples(self, **kwargs: Any) -> list[dict]:
         if self.examples is not None:
             return self.examples
         elif self.example_selector is not None:

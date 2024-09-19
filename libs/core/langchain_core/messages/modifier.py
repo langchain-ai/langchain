@@ -1,4 +1,4 @@
-from typing import Any, List, Literal
+from typing import Any, Literal
 
 from langchain_core.messages.base import BaseMessage
 
@@ -25,7 +25,7 @@ class RemoveMessage(BaseMessage):
         return super().__init__("", id=id, **kwargs)
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
         Default is ["langchain", "schema", "messages"]."""
         return ["langchain", "schema", "messages"]

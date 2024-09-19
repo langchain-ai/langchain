@@ -10,16 +10,12 @@ import logging
 import uuid
 import warnings
 from abc import ABC, abstractmethod
+from collections.abc import AsyncIterator, Iterator, Sequence
 from pathlib import Path
 from typing import (
     Any,
-    AsyncIterator,
     Callable,
-    Dict,
-    Iterator,
-    List,
     Optional,
-    Sequence,
     Union,
     cast,
 )
@@ -35,6 +31,7 @@ from tenacity import (
     stop_after_attempt,
     wait_exponential,
 )
+from typing_extensions import override
 
 from langchain_core._api import deprecated
 from langchain_core.caches import BaseCache
@@ -322,6 +319,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
     # --- Runnable methods ---
 
     @property
+    @override
     def OutputType(self) -> type[str]:
         """Get the input type for this runnable."""
         return str
@@ -448,7 +446,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 return [g[0].text for g in llm_result.generations]
             except Exception as e:
                 if return_exceptions:
-                    return cast(List[str], [e for _ in inputs])
+                    return cast(list[str], [e for _ in inputs])
                 else:
                     raise e
         else:
@@ -494,7 +492,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 return [g[0].text for g in llm_result.generations]
             except Exception as e:
                 if return_exceptions:
-                    return cast(List[str], [e for _ in inputs])
+                    return cast(list[str], [e for _ in inputs])
                 else:
                     raise e
         else:
@@ -883,13 +881,13 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             assert run_name is None or (
                 isinstance(run_name, list) and len(run_name) == len(prompts)
             )
-            callbacks = cast(List[Callbacks], callbacks)
-            tags_list = cast(List[Optional[List[str]]], tags or ([None] * len(prompts)))
+            callbacks = cast(list[Callbacks], callbacks)
+            tags_list = cast(list[Optional[list[str]]], tags or ([None] * len(prompts)))
             metadata_list = cast(
-                List[Optional[Dict[str, Any]]], metadata or ([{}] * len(prompts))
+                list[Optional[dict[str, Any]]], metadata or ([{}] * len(prompts))
             )
             run_name_list = run_name or cast(
-                List[Optional[str]], ([None] * len(prompts))
+                list[Optional[str]], ([None] * len(prompts))
             )
             callback_managers = [
                 CallbackManager.configure(
@@ -910,9 +908,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                     cast(Callbacks, callbacks),
                     self.callbacks,
                     self.verbose,
-                    cast(List[str], tags),
+                    cast(list[str], tags),
                     self.tags,
-                    cast(Dict[str, Any], metadata),
+                    cast(dict[str, Any], metadata),
                     self.metadata,
                 )
             ] * len(prompts)
@@ -1116,13 +1114,13 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             assert run_name is None or (
                 isinstance(run_name, list) and len(run_name) == len(prompts)
             )
-            callbacks = cast(List[Callbacks], callbacks)
-            tags_list = cast(List[Optional[List[str]]], tags or ([None] * len(prompts)))
+            callbacks = cast(list[Callbacks], callbacks)
+            tags_list = cast(list[Optional[list[str]]], tags or ([None] * len(prompts)))
             metadata_list = cast(
-                List[Optional[Dict[str, Any]]], metadata or ([{}] * len(prompts))
+                list[Optional[dict[str, Any]]], metadata or ([{}] * len(prompts))
             )
             run_name_list = run_name or cast(
-                List[Optional[str]], ([None] * len(prompts))
+                list[Optional[str]], ([None] * len(prompts))
             )
             callback_managers = [
                 AsyncCallbackManager.configure(
@@ -1143,9 +1141,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                     cast(Callbacks, callbacks),
                     self.callbacks,
                     self.verbose,
-                    cast(List[str], tags),
+                    cast(list[str], tags),
                     self.tags,
-                    cast(Dict[str, Any], metadata),
+                    cast(dict[str, Any], metadata),
                     self.metadata,
                 )
             ] * len(prompts)
