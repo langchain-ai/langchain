@@ -1,19 +1,13 @@
 import asyncio
 import threading
 from collections import defaultdict
+from collections.abc import Awaitable, Mapping, Sequence
 from functools import partial
 from itertools import groupby
 from typing import (
     Any,
-    Awaitable,
     Callable,
-    DefaultDict,
-    Dict,
-    List,
-    Mapping,
     Optional,
-    Sequence,
-    Type,
     TypeVar,
     Union,
 )
@@ -30,7 +24,7 @@ from langchain_core.runnables.config import RunnableConfig, ensure_config, patch
 from langchain_core.runnables.utils import ConfigurableFieldSpec, Input, Output
 
 T = TypeVar("T")
-Values = Dict[Union[asyncio.Event, threading.Event], Any]
+Values = dict[Union[asyncio.Event, threading.Event], Any]
 CONTEXT_CONFIG_PREFIX = "__context__/"
 CONTEXT_CONFIG_SUFFIX_GET = "/get"
 CONTEXT_CONFIG_SUFFIX_SET = "/set"
@@ -70,10 +64,10 @@ def _key_from_id(id_: str) -> str:
 
 def _config_with_context(
     config: RunnableConfig,
-    steps: List[Runnable],
+    steps: list[Runnable],
     setter: Callable,
     getter: Callable,
-    event_cls: Union[Type[threading.Event], Type[asyncio.Event]],
+    event_cls: Union[type[threading.Event], type[asyncio.Event]],
 ) -> RunnableConfig:
     if any(k.startswith(CONTEXT_CONFIG_PREFIX) for k in config.get("configurable", {})):
         return config
@@ -99,10 +93,10 @@ def _config_with_context(
     }
 
     values: Values = {}
-    events: DefaultDict[str, Union[asyncio.Event, threading.Event]] = defaultdict(
+    events: defaultdict[str, Union[asyncio.Event, threading.Event]] = defaultdict(
         event_cls
     )
-    context_funcs: Dict[str, Callable[[], Any]] = {}
+    context_funcs: dict[str, Callable[[], Any]] = {}
     for key, group in grouped_by_key.items():
         getters = [s for s in group if s[0].id.endswith(CONTEXT_CONFIG_SUFFIX_GET)]
         setters = [s for s in group if s[0].id.endswith(CONTEXT_CONFIG_SUFFIX_SET)]
@@ -129,7 +123,7 @@ def _config_with_context(
 
 def aconfig_with_context(
     config: RunnableConfig,
-    steps: List[Runnable],
+    steps: list[Runnable],
 ) -> RunnableConfig:
     """Asynchronously patch a runnable config with context getters and setters.
 
@@ -145,7 +139,7 @@ def aconfig_with_context(
 
 def config_with_context(
     config: RunnableConfig,
-    steps: List[Runnable],
+    steps: list[Runnable],
 ) -> RunnableConfig:
     """Patch a runnable config with context getters and setters.
 
@@ -165,13 +159,13 @@ class ContextGet(RunnableSerializable):
 
     prefix: str = ""
 
-    key: Union[str, List[str]]
+    key: Union[str, list[str]]
 
     def __str__(self) -> str:
         return f"ContextGet({_print_keys(self.key)})"
 
     @property
-    def ids(self) -> List[str]:
+    def ids(self) -> list[str]:
         prefix = self.prefix + "/" if self.prefix else ""
         keys = self.key if isinstance(self.key, list) else [self.key]
         return [
@@ -180,7 +174,7 @@ class ContextGet(RunnableSerializable):
         ]
 
     @property
-    def config_specs(self) -> List[ConfigurableFieldSpec]:
+    def config_specs(self) -> list[ConfigurableFieldSpec]:
         return super().config_specs + [
             ConfigurableFieldSpec(
                 id=id_,
@@ -256,7 +250,7 @@ class ContextSet(RunnableSerializable):
         return f"ContextSet({_print_keys(list(self.keys.keys()))})"
 
     @property
-    def ids(self) -> List[str]:
+    def ids(self) -> list[str]:
         prefix = self.prefix + "/" if self.prefix else ""
         return [
             f"{CONTEXT_CONFIG_PREFIX}{prefix}{key}{CONTEXT_CONFIG_SUFFIX_SET}"
@@ -264,7 +258,7 @@ class ContextSet(RunnableSerializable):
         ]
 
     @property
-    def config_specs(self) -> List[ConfigurableFieldSpec]:
+    def config_specs(self) -> list[ConfigurableFieldSpec]:
         mapper_config_specs = [
             s
             for mapper in self.keys.values()
@@ -364,7 +358,7 @@ class Context:
         return PrefixContext(prefix=scope)
 
     @staticmethod
-    def getter(key: Union[str, List[str]], /) -> ContextGet:
+    def getter(key: Union[str, list[str]], /) -> ContextGet:
         return ContextGet(key=key)
 
     @staticmethod
@@ -385,7 +379,7 @@ class PrefixContext:
     def __init__(self, prefix: str = ""):
         self.prefix = prefix
 
-    def getter(self, key: Union[str, List[str]], /) -> ContextGet:
+    def getter(self, key: Union[str, list[str]], /) -> ContextGet:
         return ContextGet(key=key, prefix=self.prefix)
 
     def setter(

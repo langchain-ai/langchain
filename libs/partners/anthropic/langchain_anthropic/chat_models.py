@@ -194,35 +194,35 @@ def _format_messages(
 
             # populate content
             content = []
-            for item in message.content:
-                if isinstance(item, str):
-                    content.append({"type": "text", "text": item})
-                elif isinstance(item, dict):
-                    if "type" not in item:
-                        raise ValueError("Dict content item must have a type key")
-                    elif item["type"] == "image_url":
+            for block in message.content:
+                if isinstance(block, str):
+                    content.append({"type": "text", "text": block})
+                elif isinstance(block, dict):
+                    if "type" not in block:
+                        raise ValueError("Dict content block must have a type key")
+                    elif block["type"] == "image_url":
                         # convert format
-                        source = _format_image(item["image_url"]["url"])
+                        source = _format_image(block["image_url"]["url"])
                         content.append({"type": "image", "source": source})
-                    elif item["type"] == "tool_use":
+                    elif block["type"] == "tool_use":
                         # If a tool_call with the same id as a tool_use content block
                         # exists, the tool_call is preferred.
-                        if isinstance(message, AIMessage) and item["id"] in [
+                        if isinstance(message, AIMessage) and block["id"] in [
                             tc["id"] for tc in message.tool_calls
                         ]:
                             overlapping = [
                                 tc
                                 for tc in message.tool_calls
-                                if tc["id"] == item["id"]
+                                if tc["id"] == block["id"]
                             ]
                             content.extend(
                                 _lc_tool_calls_to_anthropic_tool_use_blocks(overlapping)
                             )
                         else:
-                            item.pop("text", None)
-                            content.append(item)
-                    elif item["type"] == "text":
-                        text = item.get("text", "")
+                            block.pop("text", None)
+                            content.append(block)
+                    elif block["type"] == "text":
+                        text = block.get("text", "")
                         # Only add non-empty strings for now as empty ones are not
                         # accepted.
                         # https://github.com/anthropics/anthropic-sdk-python/issues/461
@@ -230,28 +230,44 @@ def _format_messages(
                             content.append(
                                 {
                                     k: v
-                                    for k, v in item.items()
+                                    for k, v in block.items()
                                     if k in ("type", "text", "cache_control")
                                 }
                             )
+                    elif block["type"] == "tool_result":
+                        tool_content = _format_messages(
+                            [HumanMessage(block["content"])]
+                        )[1][0]["content"]
+                        content.append({**block, **{"content": tool_content}})
                     else:
-                        content.append(item)
+                        content.append(block)
                 else:
                     raise ValueError(
-                        f"Content items must be str or dict, instead was: {type(item)}"
+                        f"Content blocks must be str or dict, instead was: "
+                        f"{type(block)}"
                     )
-        elif isinstance(message, AIMessage) and message.tool_calls:
-            content = (
-                []
-                if not message.content
-                else [{"type": "text", "text": message.content}]
-            )
-            # Note: Anthropic can't have invalid tool calls as presently defined,
-            # since the model already returns dicts args not JSON strings, and invalid
-            # tool calls are those with invalid JSON for args.
-            content += _lc_tool_calls_to_anthropic_tool_use_blocks(message.tool_calls)
         else:
             content = message.content
+
+        # Ensure all tool_calls have a tool_use content block
+        if isinstance(message, AIMessage) and message.tool_calls:
+            content = content or []
+            content = (
+                [{"type": "text", "text": message.content}]
+                if isinstance(content, str) and content
+                else content
+            )
+            tool_use_ids = [
+                cast(dict, block)["id"]
+                for block in content
+                if cast(dict, block)["type"] == "tool_use"
+            ]
+            missing_tool_calls = [
+                tc for tc in message.tool_calls if tc["id"] not in tool_use_ids
+            ]
+            cast(list, content).extend(
+                _lc_tool_calls_to_anthropic_tool_use_blocks(missing_tool_calls)
+            )
 
         formatted_messages.append({"role": role, "content": content})
     return system, formatted_messages

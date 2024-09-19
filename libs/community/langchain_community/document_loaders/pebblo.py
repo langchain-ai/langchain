@@ -4,7 +4,7 @@ import logging
 import os
 import uuid
 from importlib.metadata import version
-from typing import Dict, Iterator, List, Optional
+from typing import Any, Dict, Iterable, Iterator, List, Optional
 
 from langchain_core.documents import Document
 
@@ -271,3 +271,67 @@ class PebbloSafeLoader(BaseLoader):
             doc_metadata["pb_checksum"] = classified_docs.get(doc.pb_id, {}).get(
                 "pb_checksum", None
             )
+
+
+class PebbloTextLoader(BaseLoader):
+    """
+    Loader for text data.
+
+    Since PebbloSafeLoader is a wrapper around document loaders, this loader is
+    used to load text data directly into Documents.
+    """
+
+    def __init__(
+        self,
+        texts: Iterable[str],
+        *,
+        source: Optional[str] = None,
+        ids: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        metadatas: Optional[List[Dict[str, Any]]] = None,
+    ) -> None:
+        """
+        Args:
+            texts: Iterable of text data.
+            source: Source of the text data.
+                Optional. Defaults to None.
+            ids: List of unique identifiers for each text.
+                Optional. Defaults to None.
+            metadata: Metadata for all texts.
+                Optional. Defaults to None.
+            metadatas: List of metadata for each text.
+                Optional. Defaults to None.
+        """
+        self.texts = texts
+        self.source = source
+        self.ids = ids
+        self.metadata = metadata
+        self.metadatas = metadatas
+
+    def lazy_load(self) -> Iterator[Document]:
+        """
+        Lazy load text data into Documents.
+
+        Returns:
+            Iterator of Documents
+        """
+        for i, text in enumerate(self.texts):
+            _id = None
+            metadata = self.metadata or {}
+            if self.metadatas and i < len(self.metadatas) and self.metadatas[i]:
+                metadata.update(self.metadatas[i])
+            if self.ids and i < len(self.ids):
+                _id = self.ids[i]
+            yield Document(id=_id, page_content=text, metadata=metadata)
+
+    def load(self) -> List[Document]:
+        """
+        Load text data into Documents.
+
+        Returns:
+            List of Documents
+        """
+        documents = []
+        for doc in self.lazy_load():
+            documents.append(doc)
+        return documents

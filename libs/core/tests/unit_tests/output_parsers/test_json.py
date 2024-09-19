@@ -1,5 +1,6 @@
 import json
-from typing import Any, AsyncIterator, Iterator, Tuple
+from collections.abc import AsyncIterator, Iterator
+from typing import Any
 
 import pytest
 from pydantic import BaseModel
@@ -245,7 +246,7 @@ TEST_CASES_PARTIAL = [
 
 
 @pytest.mark.parametrize("json_strings", TEST_CASES_PARTIAL)
-def test_parse_partial_json(json_strings: Tuple[str, str]) -> None:
+def test_parse_partial_json(json_strings: tuple[str, str]) -> None:
     case, expected = json_strings
     parsed = parse_partial_json(case)
     assert parsed == json.loads(expected)
