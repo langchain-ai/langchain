@@ -21,6 +21,7 @@ path_to_layout_pdf_txt = (
 @pytest.mark.requires("pypdf")
 def test_pypdf_loader() -> None:
     """Test PyPDFLoader."""
+    raise AssertionError("Testing!")
     loader = PyPDFLoader(str(path_to_simple_pdf))
     docs = loader.load()
 
