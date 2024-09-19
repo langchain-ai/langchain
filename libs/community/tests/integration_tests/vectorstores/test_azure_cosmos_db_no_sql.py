@@ -104,6 +104,7 @@ class TestAzureCosmosDBNoSqlVectorSearch:
             ),
             indexing_policy=get_vector_indexing_policy("flat"),
             cosmos_container_properties={"partition_key": partition_key},
+            cosmos_database_properties={},
         )
         sleep(1)  # waits for Cosmos DB to save contents to the collection
 
@@ -139,6 +140,7 @@ class TestAzureCosmosDBNoSqlVectorSearch:
             ),
             indexing_policy=get_vector_indexing_policy("flat"),
             cosmos_container_properties={"partition_key": partition_key},
+            cosmos_database_properties={},
         )
         sleep(1)  # waits for Cosmos DB to save contents to the collection
 
@@ -153,4 +155,61 @@ class TestAzureCosmosDBNoSqlVectorSearch:
         output2 = store.similarity_search("Dogs", k=1)
         assert output2
         assert output2[0].page_content != "Dogs are tough."
+        safe_delete_database(cosmos_client)
+
+    def test_from_documents_cosine_distance_with_filtering(
+        self,
+        cosmos_client: Any,
+        partition_key: Any,
+        azure_openai_embeddings: OpenAIEmbeddings,
+    ) -> None:
+        """Test end to end construction and search."""
+        documents = [
+            Document(page_content="Dogs are tough.", metadata={"a": 1}),
+            Document(page_content="Cats have fluff.", metadata={"a": 1}),
+            Document(page_content="What is a sandwich?", metadata={"c": 1}),
+            Document(page_content="That fence is purple.", metadata={"d": 1, "e": 2}),
+        ]
+
+        store = AzureCosmosDBNoSqlVectorSearch.from_documents(
+            documents,
+            azure_openai_embeddings,
+            cosmos_client=cosmos_client,
+            database_name=database_name,
+            container_name=container_name,
+            vector_embedding_policy=get_vector_embedding_policy(
+                "cosine", "float32", 400
+            ),
+            indexing_policy=get_vector_indexing_policy("flat"),
+            cosmos_container_properties={"partition_key": partition_key},
+            cosmos_database_properties={},
+        )
+        sleep(1)  # waits for Cosmos DB to save contents to the collection
+
+        output = store.similarity_search("Dogs", k=4)
+        assert len(output) == 4
+        assert output[0].page_content == "Dogs are tough."
+        assert output[0].metadata["a"] == 1
+
+        pre_filter = {
+            "where_clause": "WHERE c.metadata.a=1",
+        }
+        output = store.similarity_search(
+            "Dogs", k=4, pre_filter=pre_filter, with_embedding=True
+        )
+
+        assert len(output) == 2
+        assert output[0].page_content == "Dogs are tough."
+        assert output[0].metadata["a"] == 1
+
+        pre_filter = {
+            "where_clause": "WHERE c.metadata.a=1",
+            "limit_offset_clause": "OFFSET 0 LIMIT 1",
+        }
+
+        output = store.similarity_search("Dogs", k=4, pre_filter=pre_filter)
+
+        assert len(output) == 1
+        assert output[0].page_content == "Dogs are tough."
+        assert output[0].metadata["a"] == 1
         safe_delete_database(cosmos_client)

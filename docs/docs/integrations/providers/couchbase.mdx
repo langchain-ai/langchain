@@ -89,3 +89,23 @@ set_llm_cache(
     )
 )
 ```
+
+## Chat Message History
+Use Couchbase as the storage for your chat messages.
+
+See a [usage example](/docs/integrations/memory/couchbase_chat_message_history).
+
+To use the chat message history in your applications:
+```python
+from langchain_couchbase.chat_message_histories import CouchbaseChatMessageHistory
+
+message_history = CouchbaseChatMessageHistory(
+    cluster=cluster,
+    bucket_name=BUCKET_NAME,
+    scope_name=SCOPE_NAME,
+    collection_name=COLLECTION_NAME,
+    session_id="test-session",
+)
+
+message_history.add_user_message("hi!")
+```

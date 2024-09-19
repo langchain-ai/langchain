@@ -2,26 +2,25 @@ from __future__ import annotations
 
 import inspect
 from collections import Counter
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Dict,
-    List,
     NamedTuple,
     Optional,
     Protocol,
-    Tuple,
-    Type,
     TypedDict,
     Union,
     overload,
 )
 from uuid import UUID, uuid4
 
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel
+
+from langchain_core.utils.pydantic import _IgnoreUnserializable, is_basemodel_subclass
 
 if TYPE_CHECKING:
     from langchain_core.runnables.base import Runnable as RunnableType
@@ -103,8 +102,8 @@ class Node(NamedTuple):
 
     id: str
     name: str
-    data: Union[Type[BaseModel], RunnableType]
-    metadata: Optional[Dict[str, Any]]
+    data: Union[type[BaseModel], RunnableType]
+    metadata: Optional[dict[str, Any]]
 
     def copy(self, *, id: Optional[str] = None, name: Optional[str] = None) -> Node:
         """Return a copy of the node with optional new id and name.
@@ -176,7 +175,7 @@ class MermaidDrawMethod(Enum):
     API = "api"  # Uses Mermaid.INK API to render the graph
 
 
-def node_data_str(id: str, data: Union[Type[BaseModel], RunnableType]) -> str:
+def node_data_str(id: str, data: Union[type[BaseModel], RunnableType]) -> str:
     """Convert the data of a node to a string.
 
     Args:
@@ -199,7 +198,7 @@ def node_data_str(id: str, data: Union[Type[BaseModel], RunnableType]) -> str:
 
 def node_data_json(
     node: Node, *, with_schemas: bool = False
-) -> Dict[str, Union[str, Dict[str, Any]]]:
+) -> dict[str, Union[str, dict[str, Any]]]:
     """Convert the data of a node to a JSON-serializable format.
 
     Args:
@@ -214,7 +213,7 @@ def node_data_json(
     from langchain_core.runnables.base import Runnable, RunnableSerializable
 
     if isinstance(node.data, RunnableSerializable):
-        json: Dict[str, Any] = {
+        json: dict[str, Any] = {
             "type": "runnable",
             "data": {
                 "id": node.data.lc_id(),
@@ -229,11 +228,13 @@ def node_data_json(
                 "name": node_data_str(node.id, node.data),
             },
         }
-    elif inspect.isclass(node.data) and issubclass(node.data, BaseModel):
+    elif inspect.isclass(node.data) and is_basemodel_subclass(node.data):
         json = (
             {
                 "type": "schema",
-                "data": node.data.schema(),
+                "data": node.data.model_json_schema(
+                    schema_generator=_IgnoreUnserializable
+                ),
             }
             if with_schemas
             else {
@@ -260,10 +261,10 @@ class Graph:
         edges: List of edges in the graph. Defaults to an empty list.
     """
 
-    nodes: Dict[str, Node] = field(default_factory=dict)
-    edges: List[Edge] = field(default_factory=list)
+    nodes: dict[str, Node] = field(default_factory=dict)
+    edges: list[Edge] = field(default_factory=list)
 
-    def to_json(self, *, with_schemas: bool = False) -> Dict[str, List[Dict[str, Any]]]:
+    def to_json(self, *, with_schemas: bool = False) -> dict[str, list[dict[str, Any]]]:
         """Convert the graph to a JSON-serializable format.
 
         Args:
@@ -277,7 +278,7 @@ class Graph:
             node.id: i if is_uuid(node.id) else node.id
             for i, node in enumerate(self.nodes.values())
         }
-        edges: List[Dict[str, Any]] = []
+        edges: list[dict[str, Any]] = []
         for edge in self.edges:
             edge_dict = {
                 "source": stable_node_ids[edge.source],
@@ -310,10 +311,10 @@ class Graph:
 
     def add_node(
         self,
-        data: Union[Type[BaseModel], RunnableType],
+        data: Union[type[BaseModel], RunnableType],
         id: Optional[str] = None,
         *,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: Optional[dict[str, Any]] = None,
     ) -> Node:
         """Add a node to the graph and return it.
 
@@ -381,7 +382,7 @@ class Graph:
 
     def extend(
         self, graph: Graph, *, prefix: str = ""
-    ) -> Tuple[Optional[Node], Optional[Node]]:
+    ) -> tuple[Optional[Node], Optional[Node]]:
         """Add all nodes and edges from another graph.
         Note this doesn't check for duplicates, nor does it connect the graphs.
 
@@ -447,48 +448,27 @@ class Graph:
         """Find the single node that is not a target of any edge.
         If there is no such node, or there are multiple, return None.
         When drawing the graph, this node would be the origin."""
-        targets = {edge.target for edge in self.edges}
-        found: List[Node] = []
-        for node in self.nodes.values():
-            if node.id not in targets:
-                found.append(node)
-        return found[0] if len(found) == 1 else None
+        return _first_node(self)
 
     def last_node(self) -> Optional[Node]:
         """Find the single node that is not a source of any edge.
         If there is no such node, or there are multiple, return None.
-        When drawing the graph, this node would be the destination.
-        """
-        sources = {edge.source for edge in self.edges}
-        found: List[Node] = []
-        for node in self.nodes.values():
-            if node.id not in sources:
-                found.append(node)
-        return found[0] if len(found) == 1 else None
+        When drawing the graph, this node would be the destination."""
+        return _last_node(self)
 
     def trim_first_node(self) -> None:
         """Remove the first node if it exists and has a single outgoing edge,
         i.e., if removing it would not leave the graph without a "first" node."""
         first_node = self.first_node()
-        if first_node:
-            if (
-                len(self.nodes) == 1
-                or len([edge for edge in self.edges if edge.source == first_node.id])
-                == 1
-            ):
-                self.remove_node(first_node)
+        if first_node and _first_node(self, exclude=[first_node.id]):
+            self.remove_node(first_node)
 
     def trim_last_node(self) -> None:
         """Remove the last node if it exists and has a single incoming edge,
         i.e., if removing it would not leave the graph without a "last" node."""
         last_node = self.last_node()
-        if last_node:
-            if (
-                len(self.nodes) == 1
-                or len([edge for edge in self.edges if edge.target == last_node.id])
-                == 1
-            ):
-                self.remove_node(last_node)
+        if last_node and _last_node(self, exclude=[last_node.id]):
+            self.remove_node(last_node)
 
     def draw_ascii(self) -> str:
         """Draw the graph as an ASCII art string."""
@@ -556,7 +536,7 @@ class Graph:
         *,
         with_styles: bool = True,
         curve_style: CurveStyle = CurveStyle.LINEAR,
-        node_colors: NodeStyles = NodeStyles(),
+        node_colors: Optional[NodeStyles] = None,
         wrap_label_n_words: int = 9,
     ) -> str:
         """Draw the graph as a Mermaid syntax string.
@@ -592,7 +572,7 @@ class Graph:
         self,
         *,
         curve_style: CurveStyle = CurveStyle.LINEAR,
-        node_colors: NodeStyles = NodeStyles(),
+        node_colors: Optional[NodeStyles] = None,
         wrap_label_n_words: int = 9,
         output_file_path: Optional[str] = None,
         draw_method: MermaidDrawMethod = MermaidDrawMethod.API,
@@ -630,3 +610,29 @@ class Graph:
             background_color=background_color,
             padding=padding,
         )
+
+
+def _first_node(graph: Graph, exclude: Sequence[str] = ()) -> Optional[Node]:
+    """Find the single node that is not a target of any edge.
+    Exclude nodes/sources with ids in the exclude list.
+    If there is no such node, or there are multiple, return None.
+    When drawing the graph, this node would be the origin."""
+    targets = {edge.target for edge in graph.edges if edge.source not in exclude}
+    found: list[Node] = []
+    for node in graph.nodes.values():
+        if node.id not in exclude and node.id not in targets:
+            found.append(node)
+    return found[0] if len(found) == 1 else None
+
+
+def _last_node(graph: Graph, exclude: Sequence[str] = ()) -> Optional[Node]:
+    """Find the single node that is not a source of any edge.
+    Exclude nodes/targets with ids in the exclude list.
+    If there is no such node, or there are multiple, return None.
+    When drawing the graph, this node would be the destination."""
+    sources = {edge.source for edge in graph.edges if edge.target not in exclude}
+    found: list[Node] = []
+    for node in graph.nodes.values():
+        if node.id not in exclude and node.id not in sources:
+            found.append(node)
+    return found[0] if len(found) == 1 else None

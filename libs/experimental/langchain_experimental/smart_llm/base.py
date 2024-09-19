@@ -14,8 +14,7 @@ from langchain_core.prompts.chat import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
 )
-
-from langchain_experimental.pydantic_v1 import Extra, root_validator
+from pydantic import ConfigDict, model_validator
 
 
 class SmartLLMChain(Chain):
@@ -83,14 +82,13 @@ class SmartLLMChain(Chain):
     """Whether to return ideas and critique, in addition to resolution."""
     history: SmartLLMChainHistory = SmartLLMChainHistory()
 
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
-    # TODO: move away from `root_validator` since it is deprecated in pydantic v2
-    #       and causes mypy type-checking failures (hence the `type: ignore`)
-    @root_validator  # type: ignore[call-overload]
+    @model_validator(mode="before")
     @classmethod
-    def validate_inputs(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    def validate_inputs(cls, values: Dict[str, Any]) -> Any:
         """Ensure we have an LLM for each step."""
         llm = values.get("llm")
         ideation_llm = values.get("ideation_llm")

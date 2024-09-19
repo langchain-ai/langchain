@@ -31,11 +31,13 @@ from langchain_core.output_parsers.openai_tools import (
     PydanticToolsParser,
 )
 from langchain_core.outputs import ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.utils import from_env, secret_from_env
 from langchain_core.utils.function_calling import convert_to_openai_tool
+from langchain_core.utils.pydantic import is_basemodel_subclass
+from pydantic import BaseModel, Field, SecretStr, model_validator
+from typing_extensions import Self
 
 from langchain_openai.chat_models.base import BaseChatOpenAI
 
@@ -54,7 +56,7 @@ class _AllReturnType(TypedDict):
 
 
 def _is_pydantic_class(obj: Any) -> bool:
-    return isinstance(obj, type) and issubclass(obj, BaseModel)
+    return isinstance(obj, type) and is_basemodel_subclass(obj)
 
 
 class AzureChatOpenAI(BaseChatOpenAI):
@@ -95,6 +97,12 @@ class AzureChatOpenAI(BaseChatOpenAI):
         organization: Optional[str]
             OpenAI organization ID. If not passed in will be read from env
             var OPENAI_ORG_ID.
+        model: Optional[str]
+            The name of the underlying OpenAI model. Used for tracing and token
+            counting. Does not affect completion. E.g. "gpt-4", "gpt-35-turbo", etc.
+        model_version: Optional[str]
+            The version of the underlying OpenAI model. Used for tracing and token
+            counting. Does not affect completion. E.g., "0125", "0125-preview", etc.
 
     See full list of supported init args and their descriptions in the params section.
 
@@ -111,6 +119,8 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 timeout=None,
                 max_retries=2,
                 # organization="...",
+                # model="gpt-35-turbo",
+                # model_version="0125",
                 # other params...
             )
 
@@ -241,7 +251,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
     Tool calling:
         .. code-block:: python
 
-            from langchain_core.pydantic_v1 import BaseModel, Field
+            from pydantic import BaseModel, Field
 
 
             class GetWeather(BaseModel):
@@ -296,7 +306,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
             from typing import Optional
 
-            from langchain_core.pydantic_v1 import BaseModel, Field
+            from pydantic import BaseModel, Field
 
 
             class Joke(BaseModel):
@@ -465,10 +475,13 @@ class AzureChatOpenAI(BaseChatOpenAI):
             }
     """  # noqa: E501
 
-    azure_endpoint: Union[str, None] = None
+    azure_endpoint: Optional[str] = Field(
+        default_factory=from_env("AZURE_OPENAI_ENDPOINT", default=None)
+    )
     """Your Azure endpoint, including the resource.
-    
+
         Automatically inferred from env var `AZURE_OPENAI_ENDPOINT` if not provided.
+
         Example: `https://example-resource.azure.openai.com/`
     """
     deployment_name: Union[str, None] = Field(default=None, alias="azure_deployment")
@@ -477,15 +490,29 @@ class AzureChatOpenAI(BaseChatOpenAI):
         If given sets the base client URL to include `/deployments/{azure_deployment}`.
         Note: this means you won't be able to use non-deployment endpoints.
     """
-    openai_api_version: str = Field(default="", alias="api_version")
+    openai_api_version: Optional[str] = Field(
+        alias="api_version",
+        default_factory=from_env("OPENAI_API_VERSION", default=None),
+    )
     """Automatically inferred from env var `OPENAI_API_VERSION` if not provided."""
-    openai_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
+    # Check OPENAI_API_KEY for backwards compatibility.
+    # TODO: Remove OPENAI_API_KEY support to avoid possible conflict when using
+    # other forms of azure credentials.
+    openai_api_key: Optional[SecretStr] = Field(
+        alias="api_key",
+        default_factory=secret_from_env(
+            ["AZURE_OPENAI_API_KEY", "OPENAI_API_KEY"], default=None
+        ),
+    )
     """Automatically inferred from env var `AZURE_OPENAI_API_KEY` if not provided."""
-    azure_ad_token: Optional[SecretStr] = None
+    azure_ad_token: Optional[SecretStr] = Field(
+        default_factory=secret_from_env("AZURE_OPENAI_AD_TOKEN", default=None)
+    )
     """Your Azure Active Directory token.
-    
+
         Automatically inferred from env var `AZURE_OPENAI_AD_TOKEN` if not provided.
-        For more: 
+
+        For more:
         https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id.
     """
     azure_ad_token_provider: Union[Callable[[], str], None] = None
@@ -507,11 +534,20 @@ class AzureChatOpenAI(BaseChatOpenAI):
     correct cost.
     """
 
-    openai_api_type: str = ""
+    openai_api_type: Optional[str] = Field(
+        default_factory=from_env("OPENAI_API_TYPE", default="azure")
+    )
     """Legacy, for openai<1.0.0 support."""
     validate_base_url: bool = True
     """If legacy arg openai_api_base is passed in, try to infer if it is a base_url or 
         azure_endpoint and update client params accordingly.
+    """
+
+    model_name: Optional[str] = Field(default=None, alias="model")  # type: ignore[assignment]
+    """Name of the deployed OpenAI model, e.g. "gpt-4o", "gpt-35-turbo", etc. 
+    
+    Distinct from the Azure deployment name, which is set by the Azure user.
+    Used for tracing and token counting. Does NOT affect completion.
     """
 
     @classmethod
@@ -530,64 +566,31 @@ class AzureChatOpenAI(BaseChatOpenAI):
     def is_lc_serializable(cls) -> bool:
         return True
 
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="after")
+    def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
-        if values["n"] < 1:
+        if self.n < 1:
             raise ValueError("n must be at least 1.")
-        if values["n"] > 1 and values["streaming"]:
+        if self.n > 1 and self.streaming:
             raise ValueError("n must be 1 when streaming.")
 
-        # Check OPENAI_KEY for backwards compatibility.
-        # TODO: Remove OPENAI_API_KEY support to avoid possible conflict when using
-        # other forms of azure credentials.
-        openai_api_key = (
-            values["openai_api_key"]
-            or os.getenv("AZURE_OPENAI_API_KEY")
-            or os.getenv("OPENAI_API_KEY")
-        )
-        values["openai_api_key"] = (
-            convert_to_secret_str(openai_api_key) if openai_api_key else None
-        )
-        values["openai_api_base"] = (
-            values["openai_api_base"]
-            if "openai_api_base" in values
-            else os.getenv("OPENAI_API_BASE")
-        )
-        values["openai_api_version"] = values["openai_api_version"] or os.getenv(
-            "OPENAI_API_VERSION"
-        )
         # Check OPENAI_ORGANIZATION for backwards compatibility.
-        values["openai_organization"] = (
-            values["openai_organization"]
+        self.openai_organization = (
+            self.openai_organization
             or os.getenv("OPENAI_ORG_ID")
             or os.getenv("OPENAI_ORGANIZATION")
         )
-        values["azure_endpoint"] = values["azure_endpoint"] or os.getenv(
-            "AZURE_OPENAI_ENDPOINT"
-        )
-        azure_ad_token = values["azure_ad_token"] or os.getenv("AZURE_OPENAI_AD_TOKEN")
-        values["azure_ad_token"] = (
-            convert_to_secret_str(azure_ad_token) if azure_ad_token else None
-        )
-
-        values["openai_api_type"] = get_from_dict_or_env(
-            values, "openai_api_type", "OPENAI_API_TYPE", default="azure"
-        )
-        values["openai_proxy"] = get_from_dict_or_env(
-            values, "openai_proxy", "OPENAI_PROXY", default=""
-        )
         # For backwards compatibility. Before openai v1, no distinction was made
         # between azure_endpoint and base_url (openai_api_base).
-        openai_api_base = values["openai_api_base"]
-        if openai_api_base and values["validate_base_url"]:
+        openai_api_base = self.openai_api_base
+        if openai_api_base and self.validate_base_url:
             if "/openai" not in openai_api_base:
                 raise ValueError(
                     "As of openai>=1.0.0, Azure endpoints should be specified via "
                     "the `azure_endpoint` param not `openai_api_base` "
                     "(or alias `base_url`)."
                 )
-            if values["deployment_name"]:
+            if self.deployment_name:
                 raise ValueError(
                     "As of openai>=1.0.0, if `azure_deployment` (or alias "
                     "`deployment_name`) is specified then "
@@ -600,43 +603,40 @@ class AzureChatOpenAI(BaseChatOpenAI):
                     "Or you can equivalently specify:\n\n"
                     'base_url="https://xxx.openai.azure.com/openai/deployments/my-deployment"'
                 )
-        client_params = {
-            "api_version": values["openai_api_version"],
-            "azure_endpoint": values["azure_endpoint"],
-            "azure_deployment": values["deployment_name"],
+        client_params: dict = {
+            "api_version": self.openai_api_version,
+            "azure_endpoint": self.azure_endpoint,
+            "azure_deployment": self.deployment_name,
             "api_key": (
-                values["openai_api_key"].get_secret_value()
-                if values["openai_api_key"]
-                else None
+                self.openai_api_key.get_secret_value() if self.openai_api_key else None
             ),
             "azure_ad_token": (
-                values["azure_ad_token"].get_secret_value()
-                if values["azure_ad_token"]
-                else None
+                self.azure_ad_token.get_secret_value() if self.azure_ad_token else None
             ),
-            "azure_ad_token_provider": values["azure_ad_token_provider"],
-            "organization": values["openai_organization"],
-            "base_url": values["openai_api_base"],
-            "timeout": values["request_timeout"],
-            "max_retries": values["max_retries"],
-            "default_headers": values["default_headers"],
-            "default_query": values["default_query"],
+            "azure_ad_token_provider": self.azure_ad_token_provider,
+            "organization": self.openai_organization,
+            "base_url": self.openai_api_base,
+            "timeout": self.request_timeout,
+            "max_retries": self.max_retries,
+            "default_headers": self.default_headers,
+            "default_query": self.default_query,
         }
-        if not values.get("client"):
-            sync_specific = {"http_client": values["http_client"]}
-            values["client"] = openai.AzureOpenAI(
-                **client_params, **sync_specific
-            ).chat.completions
-        if not values.get("async_client"):
-            async_specific = {"http_client": values["http_async_client"]}
-            values["async_client"] = openai.AsyncAzureOpenAI(
-                **client_params, **async_specific
-            ).chat.completions
-        return values
+        if not self.client:
+            sync_specific = {"http_client": self.http_client}
+            self.root_client = openai.AzureOpenAI(**client_params, **sync_specific)  # type: ignore[arg-type]
+            self.client = self.root_client.chat.completions
+        if not self.async_client:
+            async_specific = {"http_client": self.http_async_client}
+            self.root_async_client = openai.AsyncAzureOpenAI(
+                **client_params,
+                **async_specific,  # type: ignore[arg-type]
+            )
+            self.async_client = self.root_async_client.chat.completions
+        return self
 
     def bind_tools(
         self,
-        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        tools: Sequence[Union[Dict[str, Any], Type, Callable, BaseTool]],
         *,
         tool_choice: Optional[
             Union[dict, str, Literal["auto", "none", "required", "any"], bool]
@@ -687,20 +687,27 @@ class AzureChatOpenAI(BaseChatOpenAI):
         """Model wrapper that returns outputs formatted to match the given schema.
 
         Args:
-            schema: The output schema as a dict or a Pydantic class. If a Pydantic class
-                then the model output will be an object of that class. If a dict then
-                the model output will be a dict. With a Pydantic class the returned
-                attributes will be validated, whereas with a dict they will not be. If
-                `method` is "function_calling" and `schema` is a dict, then the dict
-                must match the OpenAI function-calling spec or be a valid JSON schema
-                with top level 'title' and 'description' keys specified.
-            method: The method for steering model generation, either "function_calling"
+            schema:
+                The output schema. Can be passed in as:
+                    - an OpenAI function/tool schema,
+                    - a JSON Schema,
+                    - a TypedDict class,
+                    - or a Pydantic class.
+                If ``schema`` is a Pydantic class then the model output will be a
+                Pydantic instance of that class, and the model-generated fields will be
+                validated by the Pydantic class. Otherwise the model output will be a
+                dict and will not be validated. See :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`
+                for more on how to properly specify types and descriptions of
+                schema fields when specifying a Pydantic or TypedDict class.
+            method:
+                The method for steering model generation, either "function_calling"
                 or "json_mode". If "function_calling" then the schema will be converted
                 to an OpenAI function and the returned model will make use of the
                 function-calling API. If "json_mode" then OpenAI's JSON mode will be
                 used. Note that if using "json_mode" then you must include instructions
                 for formatting the output into the desired schema into the model call.
-            include_raw: If False then only the parsed structured output is returned. If
+            include_raw:
+                If False then only the parsed structured output is returned. If
                 an error occurs during model output parsing it will be raised. If True
                 then both the raw model response (a BaseMessage) and the parsed model
                 response will be returned. If an error occurs during output parsing it
@@ -708,36 +715,40 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 with keys "raw", "parsed", and "parsing_error".
 
         Returns:
-            A Runnable that takes any ChatModel input and returns as output:
+            A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
 
-                If include_raw is True then a dict with keys:
-                    raw: BaseMessage
-                    parsed: Optional[_DictOrPydantic]
-                    parsing_error: Optional[BaseException]
+            If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs
+            an instance of ``schema`` (i.e., a Pydantic object).
 
-                If include_raw is False then just _DictOrPydantic is returned,
-                where _DictOrPydantic depends on the schema:
+            Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
 
-                If schema is a Pydantic class then _DictOrPydantic is the Pydantic
-                    class.
+            If ``include_raw`` is True, then Runnable outputs a dict with keys:
+                - ``"raw"``: BaseMessage
+                - ``"parsed"``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
+                - ``"parsing_error"``: Optional[BaseException]
 
-                If schema is a dict then _DictOrPydantic is a dict.
-
-        Example: Function-calling, Pydantic schema (method="function_calling", include_raw=False):
+        Example: schema=Pydantic class, method="function_calling", include_raw=False:
             .. code-block:: python
 
+                from typing import Optional
+
                 from langchain_openai import AzureChatOpenAI
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel, Field
 
 
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
 
                     answer: str
-                    justification: str
+                    # If we provide default values and/or descriptions for fields, these will be passed
+                    # to the model. This is an important part of improving a model's ability to
+                    # correctly return structured outputs.
+                    justification: Optional[str] = Field(
+                        default=None, description="A justification for the answer."
+                    )
 
 
-                llm = AzureChatOpenAI(azure_deployment="gpt-35-turbo", temperature=0)
+                llm = AzureChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
                 structured_llm = llm.with_structured_output(AnswerWithJustification)
 
                 structured_llm.invoke(
@@ -749,11 +760,11 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
                 # )
 
-        Example: Function-calling, Pydantic schema (method="function_calling", include_raw=True):
+        Example: schema=Pydantic class, method="function_calling", include_raw=True:
             .. code-block:: python
 
                 from langchain_openai import AzureChatOpenAI
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
 
 
                 class AnswerWithJustification(BaseModel):
@@ -763,7 +774,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
                     justification: str
 
 
-                llm = AzureChatOpenAI(azure_deployment="gpt-35-turbo", temperature=0)
+                llm = AzureChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
                 structured_llm = llm.with_structured_output(
                     AnswerWithJustification, include_raw=True
                 )
@@ -777,24 +788,27 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 #     'parsing_error': None
                 # }
 
-        Example: Function-calling, dict schema (method="function_calling", include_raw=False):
+        Example: schema=TypedDict class, method="function_calling", include_raw=False:
             .. code-block:: python
 
+                # IMPORTANT: If you are using Python <=3.8, you need to import Annotated
+                # from typing_extensions, not from typing.
+                from typing_extensions import Annotated, TypedDict
+
                 from langchain_openai import AzureChatOpenAI
-                from langchain_core.pydantic_v1 import BaseModel
-                from langchain_core.utils.function_calling import convert_to_openai_tool
 
 
-                class AnswerWithJustification(BaseModel):
+                class AnswerWithJustification(TypedDict):
                     '''An answer to the user question along with justification for the answer.'''
 
                     answer: str
-                    justification: str
+                    justification: Annotated[
+                        Optional[str], None, "A justification for the answer."
+                    ]
 
 
-                dict_schema = convert_to_openai_tool(AnswerWithJustification)
-                llm = AzureChatOpenAI(azure_deployment="gpt-35-turbo", temperature=0)
-                structured_llm = llm.with_structured_output(dict_schema)
+                llm = AzureChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+                structured_llm = llm.with_structured_output(AnswerWithJustification)
 
                 structured_llm.invoke(
                     "What weighs more a pound of bricks or a pound of feathers"
@@ -804,17 +818,46 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
                 # }
 
-        Example: JSON mode, Pydantic schema (method="json_mode", include_raw=True):
+        Example: schema=OpenAI function schema, method="function_calling", include_raw=False:
+            .. code-block:: python
+
+                from langchain_openai import AzureChatOpenAI
+
+                oai_schema = {
+                    'name': 'AnswerWithJustification',
+                    'description': 'An answer to the user question along with justification for the answer.',
+                    'parameters': {
+                        'type': 'object',
+                        'properties': {
+                            'answer': {'type': 'string'},
+                            'justification': {'description': 'A justification for the answer.', 'type': 'string'}
+                        },
+                       'required': ['answer']
+                   }
+               }
+
+                llm = AzureChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+                structured_llm = llm.with_structured_output(oai_schema)
+
+                structured_llm.invoke(
+                    "What weighs more a pound of bricks or a pound of feathers"
+                )
+                # -> {
+                #     'answer': 'They weigh the same',
+                #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
+                # }
+
+        Example: schema=Pydantic class, method="json_mode", include_raw=True:
             .. code-block::
 
                 from langchain_openai import AzureChatOpenAI
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
 
                 class AnswerWithJustification(BaseModel):
                     answer: str
                     justification: str
 
-                llm = AzureChatOpenAI(azure_deployment="gpt-35-turbo", temperature=0)
+                llm = AzureChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
                 structured_llm = llm.with_structured_output(
                     AnswerWithJustification,
                     method="json_mode",
@@ -832,7 +875,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 #     'parsing_error': None
                 # }
 
-        Example: JSON mode, no schema (schema=None, method="json_mode", include_raw=True):
+        Example: schema=None, method="json_mode", include_raw=True:
             .. code-block::
 
                 structured_llm = llm.with_structured_output(method="json_mode", include_raw=True)
@@ -850,8 +893,6 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 #     },
                 #     'parsing_error': None
                 # }
-
-
         """  # noqa: E501
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
@@ -923,12 +964,21 @@ class AzureChatOpenAI(BaseChatOpenAI):
         """Get the parameters used to invoke the model."""
         params = super()._get_ls_params(stop=stop, **kwargs)
         params["ls_provider"] = "azure"
-        if self.deployment_name:
+        if self.model_name:
+            if self.model_version and self.model_version not in self.model_name:
+                params["ls_model_name"] = (
+                    self.model_name + "-" + self.model_version.lstrip("-")
+                )
+            else:
+                params["ls_model_name"] = self.model_name
+        elif self.deployment_name:
             params["ls_model_name"] = self.deployment_name
         return params
 
     def _create_chat_result(
-        self, response: Union[dict, openai.BaseModel]
+        self,
+        response: Union[dict, openai.BaseModel],
+        generation_info: Optional[Dict] = None,
     ) -> ChatResult:
         if not isinstance(response, dict):
             response = response.model_dump()
@@ -938,7 +988,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
                     "Azure has not provided the response due to a content filter "
                     "being triggered"
                 )
-        chat_result = super()._create_chat_result(response)
+        chat_result = super()._create_chat_result(response, generation_info)
 
         if "model" in response:
             model = response["model"]

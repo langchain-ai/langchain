@@ -9,7 +9,7 @@ from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models.llms import LLM
-from langchain_core.pydantic_v1 import Extra, SecretStr, root_validator
+from pydantic import ConfigDict, SecretStr, model_validator
 
 from langchain_community.utils.openai import is_openai_v1
 
@@ -60,13 +60,13 @@ class Konko(LLM):
         the response for each token generation step.
     """
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
-        extra = Extra.forbid
-
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict[str, Any]) -> Any:
         """Validate that python package exists in environment."""
         try:
             import konko

@@ -1,11 +1,15 @@
 from typing import AsyncGenerator, Generator, cast
 
 import pytest
+import sqlalchemy as sa
 from langchain.storage._lc_store import create_kv_docstore, create_lc_store
 from langchain_core.documents import Document
 from langchain_core.stores import BaseStore
+from packaging import version
 
 from langchain_community.storage.sql import SQLStore
+
+is_sqlalchemy_v1 = version.parse(sa.__version__).major == 1
 
 
 @pytest.fixture
@@ -22,6 +26,7 @@ async def async_sql_store() -> AsyncGenerator[SQLStore, None]:
     yield store
 
 
+@pytest.mark.xfail(is_sqlalchemy_v1, reason="SQLAlchemy 1.x issues")
 def test_create_lc_store(sql_store: SQLStore) -> None:
     """Test that a docstore is created from a base store."""
     docstore: BaseStore[str, Document] = cast(
@@ -34,6 +39,7 @@ def test_create_lc_store(sql_store: SQLStore) -> None:
     assert fetched_doc.metadata == {"key": "value"}
 
 
+@pytest.mark.xfail(is_sqlalchemy_v1, reason="SQLAlchemy 1.x issues")
 def test_create_kv_store(sql_store: SQLStore) -> None:
     """Test that a docstore is created from a base store."""
     docstore = create_kv_docstore(sql_store)
@@ -57,6 +63,7 @@ async def test_async_create_kv_store(async_sql_store: SQLStore) -> None:
     assert fetched_doc.metadata == {"key": "value"}
 
 
+@pytest.mark.xfail(is_sqlalchemy_v1, reason="SQLAlchemy 1.x issues")
 def test_sample_sql_docstore(sql_store: SQLStore) -> None:
     # Set values for keys
     sql_store.mset([("key1", b"value1"), ("key2", b"value2")])

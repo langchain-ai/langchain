@@ -11,7 +11,11 @@ from langchain_core.callbacks import (
     CallbackManagerForRetrieverRun,
 )
 from langchain_core.documents import Document
-from langchain_core.vectorstores import VectorStore, VectorStoreRetriever
+from langchain_core.vectorstores import (
+    InMemoryVectorStore,
+    VectorStore,
+    VectorStoreRetriever,
+)
 
 from langchain_community.chains import PebbloRetrievalQA
 from langchain_community.chains.pebblo_retrieval.models import (
@@ -19,7 +23,6 @@ from langchain_community.chains.pebblo_retrieval.models import (
     ChainInput,
     SemanticContext,
 )
-from langchain_community.vectorstores.chroma import Chroma
 from langchain_community.vectorstores.pinecone import Pinecone
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
@@ -40,18 +43,6 @@ class FakeRetriever(VectorStoreRetriever):
         self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
     ) -> List[Document]:
         return [Document(page_content=query)]
-
-
-@pytest.fixture
-def unsupported_retriever() -> FakeRetriever:
-    """
-    Create a FakeRetriever instance
-    """
-    retriever = FakeRetriever()
-    retriever.search_kwargs = {}
-    # Set the class of vectorstore to Chroma
-    retriever.vectorstore.__class__ = Chroma
-    return retriever
 
 
 @pytest.fixture
@@ -107,9 +98,7 @@ def test_invoke(pebblo_retrieval_qa: PebbloRetrievalQA) -> None:
     assert response is not None
 
 
-def test_validate_vectorstore(
-    retriever: FakeRetriever, unsupported_retriever: FakeRetriever
-) -> None:
+def test_validate_vectorstore(retriever: FakeRetriever) -> None:
     """
     Test vectorstore validation
     """
@@ -123,6 +112,11 @@ def test_validate_vectorstore(
         description="description",
         app_name="app_name",
     )
+
+    unsupported_retriever = FakeRetriever()
+    unsupported_retriever.search_kwargs = {}
+    # Set the class of vectorstore
+    unsupported_retriever.vectorstore.__class__ = InMemoryVectorStore
 
     # validate_vectorstore method should raise a ValueError for unsupported vectorstores
     with pytest.raises(ValueError) as exc_info:

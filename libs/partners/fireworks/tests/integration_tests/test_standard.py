@@ -19,7 +19,7 @@ class TestFireworksStandard(ChatModelIntegrationTests):
     @property
     def chat_model_params(self) -> dict:
         return {
-            "model": "accounts/fireworks/models/firefunction-v1",
+            "model": "accounts/fireworks/models/firefunction-v2",
             "temperature": 0,
         }
 

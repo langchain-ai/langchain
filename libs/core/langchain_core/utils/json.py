@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import re
-from typing import Any, Callable, List
+from typing import Any, Callable
 
 from langchain_core.exceptions import OutputParserException
 
@@ -124,8 +124,7 @@ _json_markdown_re = re.compile(r"```(json)?(.*)", re.DOTALL)
 def parse_json_markdown(
     json_string: str, *, parser: Callable[[str], Any] = parse_partial_json
 ) -> dict:
-    """
-    Parse a JSON string from a Markdown string.
+    """Parse a JSON string from a Markdown string.
 
     Args:
         json_string: The Markdown string.
@@ -164,7 +163,7 @@ def _parse_json(
     return parser(json_str)
 
 
-def parse_and_check_json_markdown(text: str, expected_keys: List[str]) -> dict:
+def parse_and_check_json_markdown(text: str, expected_keys: list[str]) -> dict:
     """
     Parse a JSON string from a Markdown string and check that it
     contains the expected keys.
@@ -175,11 +174,15 @@ def parse_and_check_json_markdown(text: str, expected_keys: List[str]) -> dict:
 
     Returns:
         The parsed JSON object as a Python dictionary.
+
+    Raises:
+        OutputParserException: If the JSON string is invalid or does not contain
+            the expected keys.
     """
     try:
         json_obj = parse_json_markdown(text)
     except json.JSONDecodeError as e:
-        raise OutputParserException(f"Got invalid JSON object. Error: {e}")
+        raise OutputParserException(f"Got invalid JSON object. Error: {e}") from e
     for key in expected_keys:
         if key not in json_obj:
             raise OutputParserException(

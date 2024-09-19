@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Any, List
+from typing import Any
 from uuid import uuid4
 
 import pytest
@@ -26,7 +26,7 @@ class FakeAsyncTracer(AsyncBaseTracer):
     def __init__(self) -> None:
         """Initialize the tracer."""
         super().__init__()
-        self.runs: List[Run] = []
+        self.runs: list[Run] = []
 
     async def _persist_run(self, run: Run) -> None:
         self.runs.append(run)

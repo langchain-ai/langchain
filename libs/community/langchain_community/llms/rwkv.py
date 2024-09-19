@@ -8,8 +8,8 @@ from typing import Any, Dict, List, Mapping, Optional, Set
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from langchain_core.pydantic_v1 import BaseModel, Extra
 from langchain_core.utils import pre_init
+from pydantic import BaseModel, ConfigDict
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
@@ -74,10 +74,9 @@ class RWKV(LLM, BaseModel):
 
     model_state: Any = None  #: :meta private:
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @property
     def _default_params(self) -> Dict[str, Any]:

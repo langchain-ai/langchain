@@ -18,7 +18,10 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import List, Sequence, Union
+from collections.abc import Sequence
+from typing import Union
+
+from pydantic import BaseModel, Field
 
 from langchain_core.messages import (
     AIMessage,
@@ -26,7 +29,6 @@ from langchain_core.messages import (
     HumanMessage,
     get_buffer_string,
 )
-from langchain_core.pydantic_v1 import BaseModel, Field
 
 
 class BaseChatMessageHistory(ABC):
@@ -86,7 +88,7 @@ class BaseChatMessageHistory(ABC):
                        f.write("[]")
     """
 
-    messages: List[BaseMessage]
+    messages: list[BaseMessage]
     """A property or attribute that returns a list of messages.
 
     In general, getting the messages may involve IO to the underlying
@@ -94,7 +96,7 @@ class BaseChatMessageHistory(ABC):
     latency.
     """
 
-    async def aget_messages(self) -> List[BaseMessage]:
+    async def aget_messages(self) -> list[BaseMessage]:
         """Async version of getting messages.
 
         Can over-ride this method to provide an efficient async implementation.
@@ -116,7 +118,7 @@ class BaseChatMessageHistory(ABC):
         This method may be deprecated in a future release.
 
         Args:
-            message: The human message to add
+            message: The human message to add to the store.
         """
         if isinstance(message, HumanMessage):
             self.add_message(message)
@@ -200,22 +202,38 @@ class BaseChatMessageHistory(ABC):
 class InMemoryChatMessageHistory(BaseChatMessageHistory, BaseModel):
     """In memory implementation of chat message history.
 
-    Stores messages in an in memory list.
+    Stores messages in a memory list.
     """
 
-    messages: List[BaseMessage] = Field(default_factory=list)
+    messages: list[BaseMessage] = Field(default_factory=list)
     """A list of messages stored in memory."""
 
-    async def aget_messages(self) -> List[BaseMessage]:
-        """Async version of getting messages."""
+    async def aget_messages(self) -> list[BaseMessage]:
+        """Async version of getting messages.
+
+        Can over-ride this method to provide an efficient async implementation.
+        In general, fetching messages may involve IO to the underlying
+        persistence layer.
+
+        Returns:
+            List of messages.
+        """
         return self.messages
 
     def add_message(self, message: BaseMessage) -> None:
-        """Add a self-created message to the store."""
+        """Add a self-created message to the store.
+
+        Args:
+            message: The message to add.
+        """
         self.messages.append(message)
 
     async def aadd_messages(self, messages: Sequence[BaseMessage]) -> None:
-        """Async add messages to the store"""
+        """Async add messages to the store.
+
+        Args:
+            messages: The messages to add.
+        """
         self.add_messages(messages)
 
     def clear(self) -> None:

@@ -18,10 +18,10 @@ from langchain_core.documents import Document
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import BaseMessage
 from langchain_core.prompts import BasePromptTemplate
-from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import RunnableConfig
 from langchain_core.vectorstores import VectorStore
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from langchain.chains.base import Chain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
@@ -42,8 +42,11 @@ def _get_chat_history(chat_history: List[CHAT_TURN_TYPE]) -> str:
     buffer = ""
     for dialogue_turn in chat_history:
         if isinstance(dialogue_turn, BaseMessage):
-            role_prefix = _ROLE_MAP.get(dialogue_turn.type, f"{dialogue_turn.type}: ")
-            buffer += f"\n{role_prefix}{dialogue_turn.content}"
+            if len(dialogue_turn.content) > 0:
+                role_prefix = _ROLE_MAP.get(
+                    dialogue_turn.type, f"{dialogue_turn.type}: "
+                )
+                buffer += f"\n{role_prefix}{dialogue_turn.content}"
         elif isinstance(dialogue_turn, tuple):
             human = "Human: " + dialogue_turn[0]
             ai = "Assistant: " + dialogue_turn[1]
@@ -89,16 +92,15 @@ class BaseConversationalRetrievalChain(Chain):
     get_chat_history: Optional[Callable[[List[CHAT_TURN_TYPE]], str]] = None
     """An optional function to get a string of the chat history.
     If None is provided, will use a default."""
-    response_if_no_docs_found: Optional[str]
+    response_if_no_docs_found: Optional[str] = None
     """If specified, the chain will return a fixed response if no docs 
     are found for the question. """
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
-        allow_population_by_field_name = True
+    model_config = ConfigDict(
+        populate_by_name=True,
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
     @property
     def input_keys(self) -> List[str]:
@@ -241,7 +243,7 @@ class BaseConversationalRetrievalChain(Chain):
         "create_history_aware_retriever together with create_retrieval_chain "
         "(see example in docstring)"
     ),
-    removal="0.3.0",
+    removal="1.0",
 )
 class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
     """Chain for having a conversation based on retrieved documents.
@@ -442,7 +444,7 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
             combine_docs_chain_kwargs: Parameters to pass as kwargs to `load_qa_chain`
                 when constructing the combine_docs_chain.
             callbacks: Callbacks to pass to all subchains.
-            **kwargs: Additional parameters to pass when initializing
+            kwargs: Additional parameters to pass when initializing
                 ConversationalRetrievalChain
         """
         combine_docs_chain_kwargs = combine_docs_chain_kwargs or {}
@@ -481,8 +483,9 @@ class ChatVectorDBChain(BaseConversationalRetrievalChain):
     def _chain_type(self) -> str:
         return "chat-vector-db"
 
-    @root_validator(pre=True)
-    def raise_deprecation(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def raise_deprecation(cls, values: Dict) -> Any:
         warnings.warn(
             "`ChatVectorDBChain` is deprecated - "
             "please use `from langchain.chains import ConversationalRetrievalChain`"

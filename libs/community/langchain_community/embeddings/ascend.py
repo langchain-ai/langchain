@@ -2,7 +2,7 @@ import os
 from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from pydantic import BaseModel, model_validator
 
 
 class AscendEmbeddings(Embeddings, BaseModel):
@@ -54,13 +54,14 @@ class AscendEmbeddings(Embeddings, BaseModel):
             self.model.half()
         self.encode([f"warmup {i} times" for i in range(10)])
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         if "model_path" not in values:
             raise ValueError("model_path is required")
         if not os.access(values["model_path"], os.F_OK):
             raise FileNotFoundError(
-                f"Unabled to find valid model path in [{values['model_path']}]"
+                f"Unable to find valid model path in [{values['model_path']}]"
             )
         try:
             import torch_npu

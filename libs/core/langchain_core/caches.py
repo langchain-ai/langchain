@@ -23,7 +23,8 @@ Cache directly competes with Memory. See documentation for Pros and Cons.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional, Sequence, Tuple
+from collections.abc import Sequence
+from typing import Any, Optional
 
 from langchain_core.outputs import Generation
 from langchain_core.runnables import run_in_executor
@@ -44,7 +45,7 @@ class BaseCache(ABC):
 
     The default implementation of the async methods is to run the synchronous
     method in an executor. It's recommended to override the async methods
-    and provide an async implementations to avoid unnecessary overhead.
+    and provide async implementations to avoid unnecessary overhead.
     """
 
     @abstractmethod
@@ -56,8 +57,8 @@ class BaseCache(ABC):
 
         Args:
             prompt: a string representation of the prompt.
-                    In the case of a Chat model, the prompt is a non-trivial
-                    serialization of the prompt into the language model.
+                In the case of a Chat model, the prompt is a non-trivial
+                serialization of the prompt into the language model.
             llm_string: A string representation of the LLM configuration.
                 This is used to capture the invocation parameters of the LLM
                 (e.g., model name, temperature, stop tokens, max tokens, etc.).
@@ -78,8 +79,8 @@ class BaseCache(ABC):
 
         Args:
             prompt: a string representation of the prompt.
-                    In the case of a Chat model, the prompt is a non-trivial
-                    serialization of the prompt into the language model.
+                In the case of a Chat model, the prompt is a non-trivial
+                serialization of the prompt into the language model.
             llm_string: A string representation of the LLM configuration.
                 This is used to capture the invocation parameters of the LLM
                 (e.g., model name, temperature, stop tokens, max tokens, etc.).
@@ -101,8 +102,8 @@ class BaseCache(ABC):
 
         Args:
             prompt: a string representation of the prompt.
-                    In the case of a Chat model, the prompt is a non-trivial
-                    serialization of the prompt into the language model.
+                In the case of a Chat model, the prompt is a non-trivial
+                serialization of the prompt into the language model.
             llm_string: A string representation of the LLM configuration.
                 This is used to capture the invocation parameters of the LLM
                 (e.g., model name, temperature, stop tokens, max tokens, etc.).
@@ -125,8 +126,8 @@ class BaseCache(ABC):
 
         Args:
             prompt: a string representation of the prompt.
-                    In the case of a Chat model, the prompt is a non-trivial
-                    serialization of the prompt into the language model.
+                In the case of a Chat model, the prompt is a non-trivial
+                serialization of the prompt into the language model.
             llm_string: A string representation of the LLM configuration.
                 This is used to capture the invocation parameters of the LLM
                 (e.g., model name, temperature, stop tokens, max tokens, etc.).
@@ -152,8 +153,12 @@ class InMemoryCache(BaseCache):
             maxsize: The maximum number of items to store in the cache.
                 If None, the cache has no maximum size.
                 If the cache exceeds the maximum size, the oldest items are removed.
+                Default is None.
+
+        Raises:
+            ValueError: If maxsize is less than or equal to 0.
         """
-        self._cache: Dict[Tuple[str, str], RETURN_VAL_TYPE] = {}
+        self._cache: dict[tuple[str, str], RETURN_VAL_TYPE] = {}
         if maxsize is not None and maxsize <= 0:
             raise ValueError("maxsize must be greater than 0")
         self._maxsize = maxsize

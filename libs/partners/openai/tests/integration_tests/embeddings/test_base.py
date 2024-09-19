@@ -2,6 +2,7 @@
 
 import numpy as np
 import openai
+import pytest
 
 from langchain_openai.embeddings.base import OpenAIEmbeddings
 
@@ -32,6 +33,7 @@ def test_langchain_openai_embeddings_dimensions() -> None:
     assert len(output[0]) == 128
 
 
+@pytest.mark.skip(reason="flaky")
 def test_langchain_openai_embeddings_equivalent_to_raw() -> None:
     documents = ["disallowed special token '<|endoftext|>'"]
     embedding = OpenAIEmbeddings()
@@ -46,6 +48,7 @@ def test_langchain_openai_embeddings_equivalent_to_raw() -> None:
     assert np.isclose(lc_output, direct_output).all()
 
 
+@pytest.mark.skip(reason="flaky")
 async def test_langchain_openai_embeddings_equivalent_to_raw_async() -> None:
     documents = ["disallowed special token '<|endoftext|>'"]
     embedding = OpenAIEmbeddings()

@@ -6,9 +6,8 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import Extra, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from langchain_core.vectorstores import VectorStore
+from pydantic import ConfigDict
 
 
 class NeuralDBVectorStore(VectorStore):
@@ -32,11 +31,9 @@ class NeuralDBVectorStore(VectorStore):
     db: Any = None  #: :meta private:
     """NeuralDB instance"""
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        underscore_attrs_are_private = True
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @staticmethod
     def _verify_thirdai_library(thirdai_key: Optional[str] = None):  # type: ignore[no-untyped-def]
@@ -165,18 +162,6 @@ class NeuralDBVectorStore(VectorStore):
         source_id = self.insert([ndb.CSV(temp.name)], **kwargs)[0]
         offset = self.db._savable_state.documents.get_source_by_id(source_id)[1]
         return [str(offset + i) for i in range(len(texts))]  # type: ignore[arg-type]
-
-    @root_validator(allow_reuse=True)
-    def validate_environments(cls, values: Dict) -> Dict:
-        """Validate ThirdAI environment variables."""
-        values["thirdai_key"] = convert_to_secret_str(
-            get_from_dict_or_env(
-                values,
-                "thirdai_key",
-                "THIRDAI_KEY",
-            )
-        )
-        return values
 
     def insert(  # type: ignore[no-untyped-def, no-untyped-def]
         self,
@@ -346,11 +331,9 @@ class NeuralDBClientVectorStore(VectorStore):
     db: Any = None  #: :meta private:
     """NeuralDB Client instance"""
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        underscore_attrs_are_private = True
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     def similarity_search(
         self, query: str, k: int = 10, **kwargs: Any

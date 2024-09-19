@@ -39,14 +39,140 @@ class RetrievalMode(str, Enum):
 
 
 class QdrantVectorStore(VectorStore):
-    """`QdrantVectorStore` - Vector store implementation using https://qdrant.tech/
+    """Qdrant vector store integration.
 
-    Example:
+    Setup:
+        Install ``langchain-qdrant`` package.
+
+        .. code-block:: bash
+
+            pip install -qU langchain-qdrant
+
+    Key init args — indexing params:
+        collection_name: str
+            Name of the collection.
+        embedding: Embeddings
+            Embedding function to use.
+        sparse_embedding: SparseEmbeddings
+            Optional sparse embedding function to use.
+
+    Key init args — client params:
+        client: QdrantClient
+            Qdrant client to use.
+        retrieval_mode: RetrievalMode
+            Retrieval mode to use.
+
+    Instantiate:
         .. code-block:: python
-        from langchain_qdrant import QdrantVectorStore
 
-        store = QdrantVectorStore.from_existing_collection("my-collection", embedding, url="http://localhost:6333")
-    """
+            from langchain_qdrant import QdrantVectorStore
+            from qdrant_client import QdrantClient
+            from qdrant_client.http.models import Distance, VectorParams
+            from langchain_openai import OpenAIEmbeddings
+
+            client = QdrantClient(":memory:")
+
+            client.create_collection(
+                collection_name="demo_collection",
+                vectors_config=VectorParams(size=1536, distance=Distance.COSINE),
+            )
+
+            vector_store = QdrantVectorStore(
+                client=client,
+                collection_name="demo_collection",
+                embedding=OpenAIEmbeddings(),
+            )
+
+    Add Documents:
+        .. code-block:: python
+
+            from langchain_core.documents import Document
+            from uuid import uuid4
+
+            document_1 = Document(page_content="foo", metadata={"baz": "bar"})
+            document_2 = Document(page_content="thud", metadata={"bar": "baz"})
+            document_3 = Document(page_content="i will be deleted :(")
+
+            documents = [document_1, document_2, document_3]
+            ids = [str(uuid4()) for _ in range(len(documents))]
+            vector_store.add_documents(documents=documents, ids=ids)
+
+    Delete Documents:
+        .. code-block:: python
+
+            vector_store.delete(ids=[ids[-1]])
+
+    Search:
+        .. code-block:: python
+
+            results = vector_store.similarity_search(query="thud",k=1)
+            for doc in results:
+                print(f"* {doc.page_content} [{doc.metadata}]")
+
+        .. code-block:: python
+
+            * thud [{'bar': 'baz', '_id': '0d706099-6dd9-412a-9df6-a71043e020de', '_collection_name': 'demo_collection'}]
+
+    Search with filter:
+        .. code-block:: python
+
+            from qdrant_client.http import models
+
+            results = vector_store.similarity_search(query="thud",k=1,filter=models.Filter(must=[models.FieldCondition(key="metadata.bar", match=models.MatchValue(value="baz"),)]))
+            for doc in results:
+                print(f"* {doc.page_content} [{doc.metadata}]")
+
+        .. code-block:: python
+
+            * thud [{'bar': 'baz', '_id': '0d706099-6dd9-412a-9df6-a71043e020de', '_collection_name': 'demo_collection'}]
+
+
+    Search with score:
+        .. code-block:: python
+
+            results = vector_store.similarity_search_with_score(query="qux",k=1)
+            for doc, score in results:
+                print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
+
+        .. code-block:: python
+
+            * [SIM=0.832268] foo [{'baz': 'bar', '_id': '44ec7094-b061-45ac-8fbf-014b0f18e8aa', '_collection_name': 'demo_collection'}]
+
+    Async:
+        .. code-block:: python
+
+            # add documents
+            # await vector_store.aadd_documents(documents=documents, ids=ids)
+
+            # delete documents
+            # await vector_store.adelete(ids=["3"])
+
+            # search
+            # results = vector_store.asimilarity_search(query="thud",k=1)
+
+            # search with score
+            results = await vector_store.asimilarity_search_with_score(query="qux",k=1)
+            for doc,score in results:
+                print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
+
+        .. code-block:: python
+
+            * [SIM=0.832268] foo [{'baz': 'bar', '_id': '44ec7094-b061-45ac-8fbf-014b0f18e8aa', '_collection_name': 'demo_collection'}]
+
+    Use as Retriever:
+        .. code-block:: python
+
+            retriever = vector_store.as_retriever(
+                search_type="mmr",
+                search_kwargs={"k": 1, "fetch_k": 2, "lambda_mult": 0.5},
+            )
+            retriever.invoke("thud")
+
+        .. code-block:: python
+
+            [Document(metadata={'bar': 'baz', '_id': '0d706099-6dd9-412a-9df6-a71043e020de', '_collection_name': 'demo_collection'}, page_content='thud')]
+
+    """  # noqa: E501
 
     CONTENT_KEY: str = "page_content"
     METADATA_KEY: str = "metadata"
@@ -950,21 +1076,9 @@ class QdrantVectorStore(VectorStore):
         collection_info = client.get_collection(collection_name=collection_name)
         vector_config = collection_info.config.params.vectors
 
-        if isinstance(vector_config, models.VectorParams) and vector_name != "":
-            # For single/unnamed vector,
-            # qdrant-client returns a single VectorParams object
-
-            raise QdrantVectorStoreError(
-                f"Existing Qdrant collection {collection_name} is built "
-                "with unnamed dense vector. "
-                f"If you want to reuse it, set `vector_name` to ''(empty string)."
-                f"If you want to recreate the collection, "
-                "set `force_recreate` to `True`."
-            )
-
-        else:
+        if isinstance(vector_config, Dict):
             # vector_config is a Dict[str, VectorParams]
-            if isinstance(vector_config, dict) and vector_name not in vector_config:
+            if vector_name not in vector_config:
                 raise QdrantVectorStoreError(
                     f"Existing Qdrant collection {collection_name} does not "
                     f"contain dense vector named {vector_name}. "
@@ -976,6 +1090,20 @@ class QdrantVectorStore(VectorStore):
 
             # Get the VectorParams object for the specified vector_name
             vector_config = vector_config[vector_name]  # type: ignore
+
+        else:
+            # vector_config is an instance of VectorParams
+            # Case of a collection with single/unnamed vector.
+            if vector_name != "":
+                raise QdrantVectorStoreError(
+                    f"Existing Qdrant collection {collection_name} is built "
+                    "with unnamed dense vector. "
+                    f"If you want to reuse it, set `vector_name` to ''(empty string)."
+                    f"If you want to recreate the collection, "
+                    "set `force_recreate` to `True`."
+                )
+
+        assert vector_config is not None, "VectorParams is None"
 
         if isinstance(dense_embeddings, Embeddings):
             vector_size = len(dense_embeddings.embed_documents(["dummy_text"])[0])

@@ -15,12 +15,14 @@ from langchain_core.messages import (
     SystemMessage,
     ToolCall,
 )
-from langchain_core.pydantic_v1 import SecretStr
+from pydantic import SecretStr
 
 from langchain_mistralai.chat_models import (  # type: ignore[import]
     ChatMistralAI,
     _convert_message_to_mistral_chat_message,
     _convert_mistral_chat_message_to_message,
+    _convert_tool_call_id_to_mistral_compatible,
+    _is_valid_mistral_tool_call_id,
 )
 
 os.environ["MISTRAL_API_KEY"] = "foo"
@@ -40,6 +42,39 @@ def test_mistralai_initialization() -> None:
         ChatMistralAI(model="test", api_key="test"),  # type: ignore[call-arg, arg-type]
     ]:
         assert cast(SecretStr, model.mistral_api_key).get_secret_value() == "test"
+
+
+@pytest.mark.parametrize(
+    "model,expected_url",
+    [
+        (ChatMistralAI(model="test"), "https://api.mistral.ai/v1"),  # type: ignore[call-arg, arg-type]
+        (ChatMistralAI(model="test", endpoint="baz"), "baz"),  # type: ignore[call-arg, arg-type]
+    ],
+)
+def test_mistralai_initialization_baseurl(
+    model: ChatMistralAI, expected_url: str
+) -> None:
+    """Test ChatMistralAI initialization."""
+    # Verify that ChatMistralAI can be initialized providing endpoint, but also
+    # with default
+
+    assert model.endpoint == expected_url
+
+
+@pytest.mark.parametrize(
+    "env_var_name",
+    [
+        ("MISTRAL_BASE_URL"),
+    ],
+)
+def test_mistralai_initialization_baseurl_env(env_var_name: str) -> None:
+    """Test ChatMistralAI initialization."""
+    # Verify that ChatMistralAI can be initialized using env variable
+    import os
+
+    os.environ[env_var_name] = "boo"
+    model = ChatMistralAI(model="test")  # type: ignore[call-arg]
+    assert model.endpoint == "boo"
 
 
 @pytest.mark.parametrize(
@@ -128,7 +163,7 @@ async def test_astream_with_callback() -> None:
 
 def test__convert_dict_to_message_tool_call() -> None:
     raw_tool_call = {
-        "id": "abc123",
+        "id": "ssAbar4Dr",
         "function": {
             "arguments": '{"name": "Sally", "hair_color": "green"}',
             "name": "GenerateUsername",
@@ -143,7 +178,7 @@ def test__convert_dict_to_message_tool_call() -> None:
             ToolCall(
                 name="GenerateUsername",
                 args={"name": "Sally", "hair_color": "green"},
-                id="abc123",
+                id="ssAbar4Dr",
                 type="tool_call",
             )
         ],
@@ -154,14 +189,14 @@ def test__convert_dict_to_message_tool_call() -> None:
     # Test malformed tool call
     raw_tool_calls = [
         {
-            "id": "def456",
+            "id": "pL5rEGzxe",
             "function": {
                 "arguments": '{"name": "Sally", "hair_color": "green"}',
                 "name": "GenerateUsername",
             },
         },
         {
-            "id": "abc123",
+            "id": "ssAbar4Dr",
             "function": {
                 "arguments": "oops",
                 "name": "GenerateUsername",
@@ -178,7 +213,7 @@ def test__convert_dict_to_message_tool_call() -> None:
                 name="GenerateUsername",
                 args="oops",
                 error="Function GenerateUsername arguments:\n\noops\n\nare not valid JSON. Received JSONDecodeError Expecting value: line 1 column 1 (char 0)",  # noqa: E501
-                id="abc123",
+                id="ssAbar4Dr",
                 type="invalid_tool_call",
             ),
         ],
@@ -186,7 +221,7 @@ def test__convert_dict_to_message_tool_call() -> None:
             ToolCall(
                 name="GenerateUsername",
                 args={"name": "Sally", "hair_color": "green"},
-                id="def456",
+                id="pL5rEGzxe",
                 type="tool_call",
             ),
         ],
@@ -201,3 +236,18 @@ def test_custom_token_counting() -> None:
 
     llm = ChatMistralAI(custom_get_token_ids=token_encoder)
     assert llm.get_token_ids("foo") == [1, 2, 3]
+
+
+def test_tool_id_conversion() -> None:
+    assert _is_valid_mistral_tool_call_id("ssAbar4Dr")
+    assert not _is_valid_mistral_tool_call_id("abc123")
+    assert not _is_valid_mistral_tool_call_id("call_JIIjI55tTipFFzpcP8re3BpM")
+
+    result_map = {
+        "ssAbar4Dr": "ssAbar4Dr",
+        "abc123": "pL5rEGzxe",
+        "call_JIIjI55tTipFFzpcP8re3BpM": "8kxAQvoED",
+    }
+    for input_id, expected_output in result_map.items():
+        assert _convert_tool_call_id_to_mistral_compatible(input_id) == expected_output
+        assert _is_valid_mistral_tool_call_id(expected_output)
