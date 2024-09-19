@@ -17,6 +17,16 @@ from pydantic import ConfigDict
 
 from langchain_community.tools.databricks._execution import execute_function
 
+# import at top level as it's required for using UCFunctionToolkit
+# and resolve the problem of pydantic error when TYPE_CHECKING is False
+try:
+    from databricks.sdk import WorkspaceClient
+except ImportError as e:
+    raise ImportError(
+        "Could not import databricks-sdk python package. "
+        "Please install it with `pip install databricks-sdk`."
+    ) from e
+
 
 def _uc_type_to_pydantic_type(uc_type_json: Union[str, Dict[str, Any]]) -> Type:
     mapping = {
@@ -122,13 +132,6 @@ def _get_tool_name(function: "FunctionInfo") -> str:
 
 
 def _get_default_workspace_client() -> "WorkspaceClient":
-    try:
-        from databricks.sdk import WorkspaceClient
-    except ImportError as e:
-        raise ImportError(
-            "Could not import databricks-sdk python package. "
-            "Please install it with `pip install databricks-sdk`."
-        ) from e
     return WorkspaceClient()
 
 
