@@ -2,6 +2,7 @@ labels: [Question]
 body:
   - type: markdown
     attributes:
+      label: hello
       value: |
         Thanks for your interest in LangChain 🦜️🔗!
 
