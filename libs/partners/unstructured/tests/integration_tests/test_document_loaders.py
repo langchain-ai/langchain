@@ -122,16 +122,12 @@ def test_loader_partitions_via_api() -> None:
         # Unstructured kwargs
         strategy="fast",
         include_page_breaks=True,
+        coordinates=True,
     )
 
     docs = loader.load()
 
-    assert len(docs) > 1
-    assert any(doc.metadata.get("category") == "PageBreak" for doc in docs)
-    assert all(
-        doc.metadata.get("filename") == "layout-parser-paper.pdf" for doc in docs
-    )
-    assert docs[0].metadata.get("element_id") is not None
+    _check_docs_content(docs)
 
 
 def test_loader_partitions_multiple_via_api() -> None:
