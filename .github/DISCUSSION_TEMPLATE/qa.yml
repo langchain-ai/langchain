@@ -1,117 +1,38 @@
-labels: [Question]
+labels: [idea]
 body:
-  - type: markdown
-    attributes:
-      value: |
-        Thanks for your interest in LangChain 🦜️🔗!
-
-        Please follow these instructions, fill every question, and do every step. 🙏
-        
-        We're asking for this because answering questions and solving problems in GitHub takes a lot of time --
-        this is time that we cannot spend on adding new features, fixing bugs, writing documentation or reviewing pull requests.
-
-        By asking questions in a structured way (following this) it will be much easier for us to help you.
-
-        There's a high chance that by following this process, you'll find the solution on your own, eliminating the need to submit a question and wait for an answer. 😎
-
-        As there are many questions submitted every day, we will **DISCARD** and close the incomplete ones. 
-        
-        That will allow us (and others) to focus on helping people like you that follow the whole process. 🤓
-        
-        Relevant links to check before opening a question to see if your question has already been answered, fixed or
-        if there's another way to solve your problem:
-        
-        [LangChain documentation with the integrated search](https://python.langchain.com/docs/get_started/introduction),
-        [API Reference](https://api.python.langchain.com/en/stable/),
-        [GitHub search](https://github.com/langchain-ai/langchain),
-        [LangChain Github Discussions](https://github.com/langchain-ai/langchain/discussions),
-        [LangChain Github Issues](https://github.com/langchain-ai/langchain/issues?q=is%3Aissue),
-        [LangChain ChatBot](https://chat.langchain.com/)
   - type: checkboxes
     id: checks
     attributes:
-      label: Checked other resources
+      label: Checked
       description: Please confirm and check all the following options.
       options:
-        - label: I added a very descriptive title to this question.
+        - label: I searched existing ideas and did not find a similar one
           required: true
-        - label: I searched the LangChain documentation with the integrated search.
+        - label: I added a very descriptive title
           required: true
-        - label: I used the GitHub search to find a similar question and didn't find it.
-          required: true
-  - type: checkboxes
-    id: help
-    attributes:
-      label: Commit to Help
-      description: |
-        After submitting this, I commit to one of:
-
-          * Read open questions until I find 2 where I can help someone and add a comment to help there.
-          * I already hit the "watch" button in this repository to receive notifications and I commit to help at least 2 people that ask questions in the future.
-          * Once my question is answered, I will mark the answer as "accepted".
-      options:
-        - label: I commit to help with one of those options 👆
+        - label: I've clearly described the feature request and motivation for it
           required: true
   - type: textarea
-    id: example
-    attributes:
-      label: Example Code
-      description: |
-        Please add a self-contained, [minimal, reproducible, example](https://stackoverflow.com/help/minimal-reproducible-example) with your use case.
-        
-        If a maintainer can copy it, run it, and see it right away, there's a much higher chance that you'll be able to get help.
-        
-        **Important!** 
-        
-        * Use code tags (e.g., ```python ... ```) to correctly [format your code](https://help.github.com/en/github/writing-on-github/creating-and-highlighting-code-blocks#syntax-highlighting).
-        * INCLUDE the language label (e.g. `python`) after the first three backticks to enable syntax highlighting. (e.g., ```python rather than ```).
-        * Reduce your code to the minimum required to reproduce the issue if possible. This makes it much easier for others to help you.
-        * Avoid screenshots when possible, as they are hard to read and (more importantly) don't allow others to copy-and-paste your code.
-
-      placeholder: |
-        from langchain_core.runnables import RunnableLambda
-
-        def bad_code(inputs) -> int:
-          raise NotImplementedError('For demo purpose')
-        
-          chain = RunnableLambda(bad_code)
-          chain.invoke('Hello!')
-      render: python
+    id: feature-request
     validations:
       required: true
+    attributes:
+      label: Feature request
+      description: |
+        A clear and concise description of the feature proposal. Please provide links to any relevant GitHub repos, papers, or other resources if relevant.
   - type: textarea
-    id: description
-    attributes:
-      label: Description
-      description: |
-        What is the problem, question, or error?
-
-        Write a short description explaining what you are doing, what you expect to happen, and what is currently happening.
-      placeholder: |
-        * I'm trying to use the `langchain` library to do X.
-        * I expect to see Y.
-        * Instead, it does Z.
+    id: motivation
     validations:
       required: true
+    attributes:
+      label: Motivation
+      description: |
+        Please outline the motivation for the proposal. Is your feature request related to a problem? e.g., I'm always frustrated when [...]. If this is related to another GitHub issue, please link here too.
   - type: textarea
-    id: system-info
-    attributes:
-      description: |
-        Please share your system info with us. Do NOT skip this step and please don't trim
-        the output. Most users don't include enough information here and it makes it harder
-        for us to help you.
-        
-        Run the following command in your terminal and paste the output here:
-        
-        python -m langchain_core.sys_info
-        
-        or if you have an existing python interpreter running:
-        
-        from langchain_core import sys_info
-        sys_info.print_sys_info()
-        
-        alternatively, put the entire output of `pip freeze` here.
-      placeholder: |
-        python -m langchain_core.sys_info
+    id: proposal
     validations:
-      required: true
+      required: false
+    attributes:
+      label: Proposal (If applicable)
+      description: |
+        If you would like to propose a solution, please describe it here. 
