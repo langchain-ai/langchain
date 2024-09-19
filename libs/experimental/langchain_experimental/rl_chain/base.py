@@ -25,8 +25,8 @@ from langchain_core.prompts import (
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
+from pydantic import BaseModel, ConfigDict, model_validator
 
-from langchain_experimental.pydantic_v1 import BaseModel, root_validator
 from langchain_experimental.rl_chain.helpers import _Embed
 from langchain_experimental.rl_chain.metrics import (
     MetricsTrackerAverage,
@@ -279,8 +279,9 @@ class AutoSelectionScorer(SelectionScorer[Event], BaseModel):
         )
         return chat_prompt
 
-    @root_validator(pre=True)
-    def set_prompt_and_llm_chain(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def set_prompt_and_llm_chain(cls, values: Dict[str, Any]) -> Any:
         llm = values.get("llm")
         prompt = values.get("prompt")
         scoring_criteria_template_str = values.get("scoring_criteria_template_str")
@@ -358,8 +359,8 @@ class RLChain(Chain, Generic[TEvent]):
     active_policy: Policy = _NoOpPolicy()
     auto_embed: bool = False
     selection_scorer_activated: bool = True
-    selected_input_key = "rl_chain_selected"
-    selected_based_on_input_key = "rl_chain_selected_based_on"
+    selected_input_key: str = "rl_chain_selected"
+    selected_based_on_input_key: str = "rl_chain_selected_based_on"
     metrics: Optional[Union[MetricsTrackerRollingWindow, MetricsTrackerAverage]] = None
 
     def __init__(
@@ -400,9 +401,10 @@ class RLChain(Chain, Generic[TEvent]):
         else:
             self.metrics = MetricsTrackerAverage(step=metrics_step)
 
-    class Config:
-        arbitrary_types_allowed = True
-        extra = "forbid"
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
     @property
     def input_keys(self) -> List[str]:

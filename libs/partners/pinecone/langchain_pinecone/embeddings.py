@@ -1,16 +1,19 @@
 import logging
-from typing import Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Optional
 
 import aiohttp
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import (
-    BaseModel,
-    Field,
-    SecretStr,
-    root_validator,
-)
 from langchain_core.utils import secret_from_env
-from pinecone import Pinecone as PineconeClient  # type: ignore
+from pinecone import Pinecone as PineconeClient  # type: ignore[import-untyped]
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    PrivateAttr,
+    SecretStr,
+    model_validator,
+)
+from typing_extensions import Self
 
 logger = logging.getLogger(__name__)
 
@@ -29,8 +32,8 @@ class PineconeEmbeddings(BaseModel, Embeddings):
     """
 
     # Clients
-    _client: PineconeClient = Field(default=None, exclude=True)
-    _async_client: aiohttp.ClientSession = Field(default=None, exclude=True)
+    _client: PineconeClient = PrivateAttr(default=None)
+    _async_client: aiohttp.ClientSession = PrivateAttr(default=None)
     model: str
     """Model to use for example 'multilingual-e5-large'."""
     # Config
@@ -44,7 +47,7 @@ class PineconeEmbeddings(BaseModel, Embeddings):
     dimension: Optional[int] = None
     #
     show_progress_bar: bool = False
-    pinecone_api_key: Optional[SecretStr] = Field(
+    pinecone_api_key: SecretStr = Field(
         default_factory=secret_from_env(
             "PINECONE_API_KEY",
             error_message="Pinecone API key not found. Please set the PINECONE_API_KEY "
@@ -56,12 +59,15 @@ class PineconeEmbeddings(BaseModel, Embeddings):
     
     If not provided, will look for the PINECONE_API_KEY environment variable."""
 
-    class Config:
-        extra = "forbid"
-        allow_population_by_field_name = True
+    model_config = ConfigDict(
+        extra="forbid",
+        populate_by_name=True,
+        protected_namespaces=(),
+    )
 
-    @root_validator(pre=True)
-    def set_default_config(cls, values: dict) -> dict:
+    @model_validator(mode="before")
+    @classmethod
+    def set_default_config(cls, values: dict) -> Any:
         """Set default configuration based on model."""
         default_config_map = {
             "multilingual-e5-large": {
@@ -79,23 +85,23 @@ class PineconeEmbeddings(BaseModel, Embeddings):
                     values[key] = value
         return values
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def validate_environment(cls, values: dict) -> dict:
+    @model_validator(mode="after")
+    def validate_environment(self) -> Self:
         """Validate that Pinecone version and credentials exist in environment."""
-        api_key_str = values["pinecone_api_key"].get_secret_value()
+        api_key_str = self.pinecone_api_key.get_secret_value()
         client = PineconeClient(api_key=api_key_str, source_tag="langchain")
-        values["_client"] = client
+        self._client = client
 
         # initialize async client
-        if not values.get("_async_client"):
-            values["_async_client"] = aiohttp.ClientSession(
+        if not self._async_client:
+            self._async_client = aiohttp.ClientSession(
                 headers={
                     "Api-Key": api_key_str,
                     "Content-Type": "application/json",
                     "X-Pinecone-API-Version": "2024-07",
                 }
             )
-        return values
+        return self
 
     def _get_batch_iterator(self, texts: List[str]) -> Iterable:
         if self.batch_size is None:

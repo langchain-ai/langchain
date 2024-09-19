@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from typing import Optional, Type
+from typing import Any, Optional, Type
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from pydantic import BaseModel, model_validator
 
 from langchain_community.tools.playwright.base import BaseBrowserTool
 from langchain_community.tools.playwright.utils import (
@@ -22,8 +22,9 @@ class ExtractTextTool(BaseBrowserTool):
     description: str = "Extract all the text on the current webpage"
     args_schema: Type[BaseModel] = BaseModel
 
-    @root_validator(pre=True)
-    def check_acheck_bs_importrgs(cls, values: dict) -> dict:
+    @model_validator(mode="before")
+    @classmethod
+    def check_acheck_bs_importrgs(cls, values: dict) -> Any:
         """Check that the arguments are valid."""
         try:
             from bs4 import BeautifulSoup  # noqa: F401

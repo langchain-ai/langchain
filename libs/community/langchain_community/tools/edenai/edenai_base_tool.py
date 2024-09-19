@@ -6,9 +6,9 @@ from typing import Any, Dict, List, Optional
 
 import requests
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import Field, SecretStr
 from langchain_core.tools import BaseTool
 from langchain_core.utils import secret_from_env
+from pydantic import Field, SecretStr
 
 logger = logging.getLogger(__name__)
 
