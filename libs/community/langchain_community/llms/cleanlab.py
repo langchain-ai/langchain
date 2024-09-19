@@ -114,7 +114,6 @@ class CleanlabTLM(BaseLLM):
 
         generations = []
         for resp in responses:
-            print(resp)
             text = resp["response"]
             trustworthiness_score = resp["trustworthiness_score"]
             if stop is not None:
