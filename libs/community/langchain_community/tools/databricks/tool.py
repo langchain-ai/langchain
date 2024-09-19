@@ -1,5 +1,4 @@
 import json
-import logging
 from datetime import date, datetime
 from decimal import Decimal
 from hashlib import md5
@@ -11,24 +10,11 @@ from pydantic import BaseModel, Field, create_model
 from typing_extensions import Self
 
 if TYPE_CHECKING:
-    from databricks.sdk import WorkspaceClient
     from databricks.sdk.service.catalog import FunctionInfo
 
 from pydantic import ConfigDict
 
 from langchain_community.tools.databricks._execution import execute_function
-
-_logger = logging.getLogger(__name__)
-# import at top level as it's required for using UCFunctionToolkit
-# and resolve the problem of pydantic error when TYPE_CHECKING is False
-try:
-    from databricks.sdk import WorkspaceClient
-except ImportError as e:
-    _logger.warning(
-        "Could not import databricks-sdk python package. "
-        "Please install it with `pip install databricks-sdk`. "
-        f"Error: {e}"
-    )
 
 
 def _uc_type_to_pydantic_type(uc_type_json: Union[str, Dict[str, Any]]) -> Type:
@@ -134,7 +120,7 @@ def _get_tool_name(function: "FunctionInfo") -> str:
     return tool_name
 
 
-def _get_default_workspace_client() -> "WorkspaceClient":
+def _get_default_workspace_client() -> Any:
     try:
         from databricks.sdk import WorkspaceClient
     except ImportError as e:
@@ -150,7 +136,7 @@ class UCFunctionToolkit(BaseToolkit):
         description="The ID of a Databricks SQL Warehouse to execute functions."
     )
 
-    workspace_client: "WorkspaceClient" = Field(
+    workspace_client: Any = Field(
         default_factory=_get_default_workspace_client,
         description="Databricks workspace client.",
     )
