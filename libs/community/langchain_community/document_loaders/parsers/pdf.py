@@ -267,8 +267,8 @@ class PyMuPDFParser(BaseBlobParser):
 
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:  # type: ignore[valid-type]
         """Lazily parse the blob."""
+
         import fitz
-        import warnings
 
         with blob.as_bytes_io() as file_path:  # type: ignore[attr-defined]
             if blob.data is None:  # type: ignore[attr-defined]
@@ -283,17 +283,29 @@ class PyMuPDFParser(BaseBlobParser):
                 )
                 for page in doc
             ]
-            
-    def _get_page_content(self, doc: fitz.fitz.Document, page: fitz.fitz.Page, blob: Blob) -> str:
-        """Get the text of the page using PyMuPDF and RapidOCR and issue a warning if it is empty."""
-        content = page.get_text(**self.text_kwargs) + self._extract_images_from_page(doc, page)
+
+    def _get_page_content(
+        self, doc: fitz.fitz.Document, page: fitz.fitz.Page, blob: Blob
+    ) -> str:
+        """
+        Get the text of the page using PyMuPDF and RapidOCR and issue a warning
+        if it is empty.
+        """
+        content = page.get_text(**self.text_kwargs) + self._extract_images_from_page(
+            doc, page
+        )
 
         if not content:
-            warnings.warn(f"Warning: Empty content on page {page.number} of document {blob.source}")
-        
+            warnings.warn(
+                f"Warning: Empty content on page "
+                f"{page.number} of document {blob.source}"
+            )
+
         return content
 
-    def _extract_metadata(self, doc: fitz.fitz.Document, page: fitz.fitz.Page, blob: Blob) -> dict:
+    def _extract_metadata(
+        self, doc: fitz.fitz.Document, page: fitz.fitz.Page, blob: Blob
+    ) -> dict:
         """Extract metadata from the document and page."""
         return dict(
             {
@@ -308,7 +320,7 @@ class PyMuPDFParser(BaseBlobParser):
                 if isinstance(doc.metadata[k], (str, int))
             },
         )
-    
+
     def _extract_images_from_page(
         self, doc: fitz.fitz.Document, page: fitz.fitz.Page
     ) -> str:
