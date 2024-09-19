@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import os
 from copy import deepcopy
-from typing import Dict, Optional, Sequence, Union
+from typing import Any, Dict, Optional, Sequence, Union
 
 import voyageai  # type: ignore
 from langchain_core.callbacks.manager import Callbacks
 from langchain_core.documents import Document
 from langchain_core.documents.compressor import BaseDocumentCompressor
-from langchain_core.pydantic_v1 import SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str
+from pydantic import ConfigDict, SecretStr, model_validator
 from voyageai.object import RerankingObject  # type: ignore
 
 
@@ -28,11 +28,13 @@ class VoyageAIRerank(BaseDocumentCompressor):
     """Number of documents to return."""
     truncation: bool = True
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that api key exists in environment."""
         voyage_api_key = values.get("voyage_api_key") or os.getenv(
             "VOYAGE_API_KEY", None

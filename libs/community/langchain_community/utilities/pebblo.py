@@ -11,8 +11,8 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from langchain_core.documents import Document
 from langchain_core.env import get_runtime_environment
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel
 from requests import Response, request
 from requests.exceptions import RequestException
 

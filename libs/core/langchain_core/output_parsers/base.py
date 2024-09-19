@@ -4,16 +4,11 @@ from abc import ABC, abstractmethod
 from typing import (
     TYPE_CHECKING,
     Any,
-    Dict,
     Generic,
-    List,
     Optional,
-    Type,
     TypeVar,
     Union,
 )
-
-from typing_extensions import get_args
 
 from langchain_core.language_models import LanguageModelOutput
 from langchain_core.messages import AnyMessage, BaseMessage
@@ -32,7 +27,7 @@ class BaseLLMOutputParser(Generic[T], ABC):
     """Abstract base class for parsing the outputs of a model."""
 
     @abstractmethod
-    def parse_result(self, result: List[Generation], *, partial: bool = False) -> T:
+    def parse_result(self, result: list[Generation], *, partial: bool = False) -> T:
         """Parse a list of candidate model Generations into a specific format.
 
         Args:
@@ -46,7 +41,7 @@ class BaseLLMOutputParser(Generic[T], ABC):
         """
 
     async def aparse_result(
-        self, result: List[Generation], *, partial: bool = False
+        self, result: list[Generation], *, partial: bool = False
     ) -> T:
         """Async parse a list of candidate model Generations into a specific format.
 
@@ -73,7 +68,7 @@ class BaseGenerationOutputParser(
         return Union[str, AnyMessage]
 
     @property
-    def OutputType(self) -> Type[T]:
+    def OutputType(self) -> type[T]:
         """Return the output type for the parser."""
         # even though mypy complains this isn't valid,
         # it is good enough for pydantic to build the schema from
@@ -158,7 +153,7 @@ class BaseOutputParser(
         return Union[str, AnyMessage]
 
     @property
-    def OutputType(self) -> Type[T]:
+    def OutputType(self) -> type[T]:
         """Return the output type for the parser.
 
         This property is inferred from the first type argument of the class.
@@ -166,10 +161,11 @@ class BaseOutputParser(
         Raises:
             TypeError: If the class doesn't have an inferable OutputType.
         """
-        for cls in self.__class__.__orig_bases__:  # type: ignore[attr-defined]
-            type_args = get_args(cls)
-            if type_args and len(type_args) == 1:
-                return type_args[0]
+        for base in self.__class__.mro():
+            if hasattr(base, "__pydantic_generic_metadata__"):
+                metadata = base.__pydantic_generic_metadata__
+                if "args" in metadata and len(metadata["args"]) > 0:
+                    return metadata["args"][0]
 
         raise TypeError(
             f"Runnable {self.__class__.__name__} doesn't have an inferable OutputType. "
@@ -219,7 +215,7 @@ class BaseOutputParser(
                 run_type="parser",
             )
 
-    def parse_result(self, result: List[Generation], *, partial: bool = False) -> T:
+    def parse_result(self, result: list[Generation], *, partial: bool = False) -> T:
         """Parse a list of candidate model Generations into a specific format.
 
         The return value is parsed from only the first Generation in the result, which
@@ -248,7 +244,7 @@ class BaseOutputParser(
         """
 
     async def aparse_result(
-        self, result: List[Generation], *, partial: bool = False
+        self, result: list[Generation], *, partial: bool = False
     ) -> T:
         """Async parse a list of candidate model Generations into a specific format.
 
@@ -306,7 +302,7 @@ class BaseOutputParser(
             " This is required for serialization."
         )
 
-    def dict(self, **kwargs: Any) -> Dict:
+    def dict(self, **kwargs: Any) -> dict:
         """Return dictionary representation of output parser."""
         output_parser_dict = super().dict(**kwargs)
         try:

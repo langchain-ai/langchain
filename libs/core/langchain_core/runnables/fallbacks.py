@@ -1,25 +1,19 @@
 import asyncio
 import inspect
 import typing
+from collections.abc import AsyncIterator, Iterator, Sequence
 from contextvars import copy_context
 from functools import wraps
 from typing import (
     TYPE_CHECKING,
     Any,
-    AsyncIterator,
-    Dict,
-    Iterator,
-    List,
     Optional,
-    Sequence,
-    Tuple,
-    Type,
     Union,
     cast,
 )
 
-from langchain_core.load.dump import dumpd
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel, ConfigDict
+
 from langchain_core.runnables.base import Runnable, RunnableSerializable
 from langchain_core.runnables.config import (
     RunnableConfig,
@@ -96,7 +90,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     """The Runnable to run first."""
     fallbacks: Sequence[Runnable[Input, Output]]
     """A sequence of fallbacks to try."""
-    exceptions_to_handle: Tuple[Type[BaseException], ...] = (Exception,)
+    exceptions_to_handle: tuple[type[BaseException], ...] = (Exception,)
     """The exceptions on which fallbacks should be tried.
     
     Any exception that is not a subclass of these exceptions will be raised immediately.
@@ -107,29 +101,30 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         will not be passed to fallbacks. If used, the base Runnable and its fallbacks 
         must accept a dictionary as input."""
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     @property
-    def InputType(self) -> Type[Input]:
+    def InputType(self) -> type[Input]:
         return self.runnable.InputType
 
     @property
-    def OutputType(self) -> Type[Output]:
+    def OutputType(self) -> type[Output]:
         return self.runnable.OutputType
 
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
+    ) -> type[BaseModel]:
         return self.runnable.get_input_schema(config)
 
     def get_output_schema(
         self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
+    ) -> type[BaseModel]:
         return self.runnable.get_output_schema(config)
 
     @property
-    def config_specs(self) -> List[ConfigurableFieldSpec]:
+    def config_specs(self) -> list[ConfigurableFieldSpec]:
         return get_unique_config_specs(
             spec
             for step in [self.runnable, *self.fallbacks]
@@ -141,7 +136,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         return True
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "schema", "runnable"]
 
@@ -163,9 +158,9 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         callback_manager = get_callback_manager_for_config(config)
         # start the root run
         run_manager = callback_manager.on_chain_start(
-            dumpd(self),
+            None,
             input,
-            name=config.get("run_name"),
+            name=config.get("run_name") or self.get_name(),
             run_id=config.pop("run_id", None),
         )
         first_error = None
@@ -214,9 +209,9 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         callback_manager = get_async_callback_manager_for_config(config)
         # start the root run
         run_manager = await callback_manager.on_chain_start(
-            dumpd(self),
+            None,
             input,
-            name=config.get("run_name"),
+            name=config.get("run_name") or self.get_name(),
             run_id=config.pop("run_id", None),
         )
 
@@ -251,12 +246,12 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
 
     def batch(
         self,
-        inputs: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: list[Input],
+        config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
         *,
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
-    ) -> List[Output]:
+    ) -> list[Output]:
         from langchain_core.callbacks.manager import CallbackManager
 
         if self.exception_key is not None and not all(
@@ -287,17 +282,17 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         # start the root runs, one per input
         run_managers = [
             cm.on_chain_start(
-                dumpd(self),
+                None,
                 input if isinstance(input, dict) else {"input": input},
-                name=config.get("run_name"),
+                name=config.get("run_name") or self.get_name(),
                 run_id=config.pop("run_id", None),
             )
             for cm, input, config in zip(callback_managers, inputs, configs)
         ]
 
-        to_return: Dict[int, Any] = {}
+        to_return: dict[int, Any] = {}
         run_again = {i: input for i, input in enumerate(inputs)}
-        handled_exceptions: Dict[int, BaseException] = {}
+        handled_exceptions: dict[int, BaseException] = {}
         first_to_raise = None
         for runnable in self.runnables:
             outputs = runnable.batch(
@@ -343,12 +338,12 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
 
     async def abatch(
         self,
-        inputs: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: list[Input],
+        config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
         *,
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
-    ) -> List[Output]:
+    ) -> list[Output]:
         from langchain_core.callbacks.manager import AsyncCallbackManager
 
         if self.exception_key is not None and not all(
@@ -377,12 +372,12 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             for config in configs
         ]
         # start the root runs, one per input
-        run_managers: List[AsyncCallbackManagerForChainRun] = await asyncio.gather(
+        run_managers: list[AsyncCallbackManagerForChainRun] = await asyncio.gather(
             *(
                 cm.on_chain_start(
-                    dumpd(self),
+                    None,
                     input,
-                    name=config.get("run_name"),
+                    name=config.get("run_name") or self.get_name(),
                     run_id=config.pop("run_id", None),
                 )
                 for cm, input, config in zip(callback_managers, inputs, configs)
@@ -391,7 +386,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
 
         to_return = {}
         run_again = {i: input for i, input in enumerate(inputs)}
-        handled_exceptions: Dict[int, BaseException] = {}
+        handled_exceptions: dict[int, BaseException] = {}
         first_to_raise = None
         for runnable in self.runnables:
             outputs = await runnable.abatch(
@@ -458,9 +453,9 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         callback_manager = get_callback_manager_for_config(config)
         # start the root run
         run_manager = callback_manager.on_chain_start(
-            dumpd(self),
+            None,
             input,
-            name=config.get("run_name"),
+            name=config.get("run_name") or self.get_name(),
             run_id=config.pop("run_id", None),
         )
         first_error = None
@@ -521,9 +516,9 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         callback_manager = get_async_callback_manager_for_config(config)
         # start the root run
         run_manager = await callback_manager.on_chain_start(
-            dumpd(self),
+            None,
             input,
-            name=config.get("run_name"),
+            name=config.get("run_name") or self.get_name(),
             run_id=config.pop("run_id", None),
         )
         first_error = None
@@ -620,7 +615,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
 
                 return self.__class__(
                     **{
-                        **self.dict(),
+                        **self.model_dump(),
                         **{"runnable": new_runnable, "fallbacks": new_fallbacks},
                     }
                 )
