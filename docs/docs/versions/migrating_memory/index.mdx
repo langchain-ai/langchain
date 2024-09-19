@@ -8,18 +8,18 @@ The concept of memory has evolved significantly in LangChain since its initial r
 
 Broadly speaking, LangChain 0.0.x memory was used to handle four main use cases:
 
-1. Managing conversation history. For example, keep only the last `n` turns of the conversation between the user and the AI. See Migration guide for this use case is available [here](./manage_conversation_history).
-2. Extraction of structured information from the conversation history and providing it as context. For example, extract a list of facts learned about a user during the conversation.
-3. Implementations that provide composite logic on top of one or more memory implementations. For example, a memory implementation that combines a list of known facts about a user together with a list of facts learned during a given conversation.
-4. Custom user code based on the memory interface.
+| Use Case                                       | Description                                                                                                                       |
+|------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------|
+| Managing conversation history                  | Keep only the last `n` turns of the conversation between the user and the AI.                                                     |
+| Extraction of structured information           | Extract structured information from the conversation history, such as a list of facts learned about the user.                     |
+| Composite memory implementations               | Combine multiple memory sources, e.g., a list of known facts about the user along with facts learned during a given conversation. |
+| Custom user code based on the memory interface | Implement custom logic for memory management using the memory interface.                                                          |
 
-While the LangChain 0.0.x memory abstractions were useful, they were limited in their capabilities and not well suited for real-world conversational AI applications. Many of these abstractions were written before the existence of chat models and do not work well with chat models. In addition,
-they did not provide a good way to handle multi-user, multi-conversation scenarios, which are often a requirement for real-world conversational AI applications.
+While the LangChain 0.0.x memory abstractions were useful, they were limited in their capabilities and not well suited for real-world conversational AI applications. Many were developed before the advent of chat models, making them poorly suited for such applications. Additionally, they lacked robust solutions for handling multi-user, multi-conversation scenarios—an essential requirement for practical conversational AI systems.
 
 This guide will help you migrate your usage of memory implementations from LangChain v0.0.x to the persistence implementations of LangGraph.
 
-Where possible we may show an equivalent implementation using just [LCEL](/docs/concepts/#langchain-expression-language-lcel)
-without LangGraph; however, in general, we recommend that users swap to using LangGraph for most use cases.
+Where relevant we will also show how to implement the same functionality using just [LCEL](/docs/concepts/#langchain-expression-language-lcel) without LangGraph; however, in general, we recommend that users use LangGraph if persistence is required.
 
 ## Advantages of LangGraph persistence
 
@@ -44,22 +44,15 @@ These guides assume some familiarity with the following concepts:
 
 The goal of managing conversation history is to store and retrieve the history in a way that is optimal for a chat model to use.
 
-Often this involves trimming and / or summarizing the conversation history to keep the most relevant parts of the conversation
-while having the conversation fit inside the context window of the chat model.
+Often this involves trimming and / or summarizing the conversation history to keep the most relevant parts of the conversation while having the conversation fit inside the context window of the chat model.
 
-Please follow [this guide](./manage_conversation_history) to see how to migrate to modern LangChain and LangGraph primitives for managing conversation history.
+The following memory classes in LangChain v0.0.x fall into this category:
 
-There are different strategies for managing conversation history. The following memory classes in LangChain v0.0.x fall into this category:
+Migration guides:
 
-| Memory Type                       | Description                                                                                                                                                                                                         |
-|-----------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `ConversationBufferMemory`        | A basic memory implementation that simply stores the conversation history.                                                                                                                                          |
-| `ConversationStringBufferMemory`  | A special case of `ConversationBufferMemory` designed for LLMs and no longer relevant.                                                                                                                              |
-| `ConversationBufferWindowMemory`  | Keeps the last `n` turns of the conversation. Drops the oldest turn when the buffer is full.                                                                                                                        |
-| `ConversationTokenBufferMemory`   | Keeps only the most recent messages in the conversation under the constraint that the total number of tokens in the conversation does not exceed a certain limit.                                                   |
-| `ConversationSummaryMemory`       | Continually summarizes the conversation history. The summary is updated after each conversation turn. The abstraction returns the summary of the conversation history.                                              |
-| `ConversationSummaryBufferMemory` | Provides a running summary of the conversation together with the most recent messages in the conversation under the constraint that the total number of tokens in the conversation does not exceed a certain limit. |
-| `VectorStoreRetrieverMemory`      | Stores the conversation history in a vector store and retrieves the most relevant parts of past conversation based on the input.                                                                                    |
+- [`ConversationBufferMemory` and `ConversationStringBufferMemory`](./conversation_buffer_memory.ipynb)
+- [`ConversationBufferWindowMemory` and `ConversationTokenBufferMemory`](./conversation_buffer_memory.ipynb)
+- [`ConversationSummaryMemory` and `ConversationSummaryBufferMemory`](./conversation_buffer_memory.ipynb)
 
 ### 2. Extraction of structured information from the conversation history
 
