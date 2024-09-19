@@ -128,6 +128,17 @@ def test_loader_partitions_locally_and_applies_post_processors(
     assert docs[0].page_content.endswith("THE END!")
 
 
+@pytest.mark.local
+def test_url_loader() -> None:
+    docs = UnstructuredLoader(web_url="https://www.example.com/").load()
+
+    for doc in docs:
+        assert doc.page_content
+        assert doc.metadata["filetype"] == "text/html"
+        assert doc.metadata["url"] == "https://www.example.com/"
+        assert doc.metadata["category"]
+
+
 # -- API partition --
 
 
