@@ -95,6 +95,7 @@ class UnstructuredLoader(BaseLoader):
         api_key: Optional[str] = None,
         client: Optional[UnstructuredClient] = None,
         url: Optional[str] = None,
+        web_url: Optional[str] = None,
         **kwargs: Any,
     ):
         """Initialize loader."""
@@ -124,6 +125,8 @@ class UnstructuredLoader(BaseLoader):
         self.partition_via_api = partition_via_api
         self.post_processors = post_processors
         self.unstructured_kwargs = kwargs
+        if web_url:
+            self.unstructured_kwargs["url"] = web_url
 
     def lazy_load(self) -> Iterator[Document]:
         """Load file(s) to the _UnstructuredBaseLoader."""
