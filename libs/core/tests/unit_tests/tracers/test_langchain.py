@@ -3,7 +3,7 @@ import time
 import unittest
 import unittest.mock
 import uuid
-from typing import Any, Dict
+from typing import Any
 from uuid import UUID
 
 import pytest
@@ -65,7 +65,7 @@ def test_example_id_assignment_threadsafe() -> None:
 def test_tracer_with_run_tree_parent() -> None:
     mock_session = unittest.mock.MagicMock()
     client = Client(session=mock_session, api_key="test")
-    parent = RunTree(name="parent", inputs={"input": "foo"}, client=client)
+    parent = RunTree(name="parent", inputs={"input": "foo"}, _client=client)
     run_id = uuid.uuid4()
     tracer = LangChainTracer(client=client)
     tracer.order_map[parent.id] = (parent.trace_id, parent.dotted_order)
@@ -102,7 +102,7 @@ class LangChainProjectNameTest(unittest.TestCase):
 
     class SetProperTracerProjectTestCase:
         def __init__(
-            self, test_name: str, envvars: Dict[str, str], expected_project_name: str
+            self, test_name: str, envvars: dict[str, str], expected_project_name: str
         ):
             self.test_name = test_name
             self.envvars = envvars
