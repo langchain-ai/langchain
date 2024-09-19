@@ -109,13 +109,7 @@ pytest-asyncio = "^0.21.1"
 grandalf = "^0.8"
 pytest-profiling = "^1.7.0"
 responses = "^0.25.0"
-[[tool.poetry.group.test.dependencies.numpy]]
-version = "^1.24.0"
-python = "<3.12"
-
-[[tool.poetry.group.test.dependencies.numpy]]
-version = "^1.26.0"
-python = ">=3.12"
+numpy = "^1.26.0"
 
 [tool.poetry.group.test_integration.dependencies]
 

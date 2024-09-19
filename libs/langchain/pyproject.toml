@@ -42,13 +42,7 @@ requests = "^2"
 PyYAML = ">=5.3"
 aiohttp = "^3.8.3"
 tenacity = "^8.1.0,!=8.4.0"
-[[tool.poetry.dependencies.numpy]]
-version = "^1"
-python = "<3.12"
-
-[[tool.poetry.dependencies.numpy]]
-version = "^1.26.0"
-python = ">=3.12"
+numpy = "^1.26.0"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "T201"]

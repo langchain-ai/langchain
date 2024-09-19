@@ -1545,10 +1545,7 @@ async-timeout = {version = "^4.0.0", markers = "python_version < \"3.11\""}
 langchain-core = "^0.3.0"
 langchain-text-splitters = "^0.3.0"
 langsmith = "^0.1.17"
-numpy = [
-    {version = ">=1,<2", markers = "python_version < \"3.12\""},
-    {version = ">=1.26.0,<2.0.0", markers = "python_version >= \"3.12\""},
-]
+numpy = "^1.26.0"
 pydantic = "^2.7.4"
 PyYAML = ">=5.3"
 requests = "^2"
@@ -1574,10 +1571,7 @@ dataclasses-json = ">= 0.5.7, < 0.7"
 langchain = "^0.3.0"
 langchain-core = "^0.3.0"
 langsmith = "^0.1.112"
-numpy = [
-    {version = ">=1,<2", markers = "python_version < \"3.12\""},
-    {version = ">=1.26.0,<2.0.0", markers = "python_version >= \"3.12\""},
-]
+numpy = "^1.26.0"
 pydantic-settings = "^2.4.0"
 PyYAML = ">=5.3"
 requests = "^2"
@@ -1590,7 +1584,7 @@ url = "../community"
 
 [[package]]
 name = "langchain-core"
-version = "0.3.0"
+version = "0.3.1"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -3774,4 +3768,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0"
-content-hash = "faa180417e0cb446d8040153e0c616e12f6190d8d32e5f7c0281b3cee2271761"
+content-hash = "a23bf7be63c4a87bf50581accaece13c86bbe25d11215b9133621e4811324303"

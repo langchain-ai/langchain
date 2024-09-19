@@ -70,13 +70,7 @@ setuptools = "^67.6.1"
 [tool.poetry.group.test.dependencies]
 pytest = "^7.3.0"
 pytest-asyncio = "^0.20.3"
-[[tool.poetry.group.test.dependencies.numpy]]
-version = "^1.24.0"
-python = "<3.12"
-
-[[tool.poetry.group.test.dependencies.numpy]]
-version = "^1.26.0"
-python = ">=3.12"
+numpy = "^1.26.0"
 
 [tool.poetry.group.typing.dependencies.langchain]
 path = "../langchain"

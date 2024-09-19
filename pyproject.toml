@@ -39,13 +39,7 @@ langchain = { path = "libs/langchain/", develop = true }
 langchain-experimental = { path = "libs/experimental/", develop = true }
 langchain-openai = { path = "libs/partners/openai", develop = true }
 ipykernel = "^6.29.2"
-
-# Support Python 3.8 and 3.12+.
-# Can be removed once the numpy version is fixed in langchain-community.
-numpy = [
-    { version = "^1.24.0", python = "<3.12" },
-    { version = "^1.26.0", python = ">=3.12" },
-]
+numpy = "^1.26.0"
 
 [tool.poetry.group.test.dependencies]
 
