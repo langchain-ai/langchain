@@ -195,7 +195,7 @@ def execute_function(
             wait = min(2**retry_cnt, client_execution_timeout - wait_time)
             time.sleep(wait)
             _logger.info(f"Retry times: {retry_cnt}")
-            response = ws.statement_execution.get_statement(statement_id)
+            response = ws.statement_execution.get_statement(statement_id)  # type: ignore
             if response.status is None or not job_pending(response.status.state):
                 break
             wait_time += wait
@@ -246,7 +246,7 @@ def execute_function(
         )
 
 
-def job_pending(state: "StatementState") -> bool:
+def job_pending(state: Optional["StatementState"]) -> bool:
     from databricks.sdk.service.sql import StatementState
 
     return state in (StatementState.PENDING, StatementState.RUNNING)
