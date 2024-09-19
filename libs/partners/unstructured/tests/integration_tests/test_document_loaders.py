@@ -77,6 +77,23 @@ def test_loader_partitions_locally() -> None:
 
 
 @pytest.mark.local
+async def test_loader_partitions_locally_async_lazy() -> None:
+    file_path = os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf")
+
+    loader = UnstructuredLoader(
+        file_path=file_path,
+        # Unstructured kwargs
+        strategy="fast",
+        include_page_breaks=True,
+    )
+    docs = []
+    async for doc in loader.alazy_load():
+        docs.append(doc)
+
+    _check_docs_content(docs)
+
+
+@pytest.mark.local
 def test_loader_partition_ignores_invalid_arg() -> None:
     file_path = os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf")
 
@@ -126,6 +143,24 @@ def test_loader_partitions_via_api() -> None:
     )
 
     docs = loader.load()
+
+    _check_docs_content(docs)
+
+
+async def test_loader_partitions_via_api_async_lazy() -> None:
+    file_path = os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf")
+    loader = UnstructuredLoader(
+        file_path=file_path,
+        partition_via_api=True,
+        # Unstructured kwargs
+        strategy="fast",
+        include_page_breaks=True,
+        coordinates=True,
+    )
+
+    docs = []
+    async for doc in loader.alazy_load():
+        docs.append(doc)
 
     _check_docs_content(docs)
 
