@@ -1,11 +1,11 @@
 import inspect
 import warnings
-from typing import Any, Dict
+from typing import Any
 
 import pytest
+from pydantic import BaseModel
 
 from langchain_core._api.beta_decorator import beta, warn_beta
-from langchain_core.pydantic_v1 import BaseModel
 
 
 @pytest.mark.parametrize(
@@ -41,7 +41,7 @@ from langchain_core.pydantic_v1 import BaseModel
         ),
     ],
 )
-def test_warn_beta(kwargs: Dict[str, Any], expected_message: str) -> None:
+def test_warn_beta(kwargs: dict[str, Any], expected_message: str) -> None:
     """Test warn beta."""
     with warnings.catch_warnings(record=True) as warning_list:
         warnings.simplefilter("always")

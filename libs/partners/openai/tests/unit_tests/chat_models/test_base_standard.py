@@ -18,7 +18,7 @@ class TestOpenAIStandard(ChatModelUnitTests):
         return (
             {
                 "OPENAI_API_KEY": "api_key",
-                "OPENAI_ORGANIZATION": "org_id",
+                "OPENAI_ORG_ID": "org_id",
                 "OPENAI_API_BASE": "api_base",
                 "OPENAI_PROXY": "https://proxy.com",
             },

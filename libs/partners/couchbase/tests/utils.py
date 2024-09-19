@@ -5,7 +5,6 @@ from typing import Any, Dict, List, Mapping, Optional, cast
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models.llms import LLM
-from langchain_core.pydantic_v1 import validator
 
 
 class FakeEmbeddings(Embeddings):
@@ -62,16 +61,6 @@ class FakeLLM(LLM):
     queries: Optional[Mapping] = None
     sequential_responses: Optional[bool] = False
     response_index: int = 0
-
-    @validator("queries", always=True)
-    def check_queries_required(
-        cls, queries: Optional[Mapping], values: Mapping[str, Any]
-    ) -> Optional[Mapping]:
-        if values.get("sequential_response") and not queries:
-            raise ValueError(
-                "queries is required when sequential_response is set to True"
-            )
-        return queries
 
     def get_num_tokens(self, text: str) -> int:
         """Return number of tokens."""

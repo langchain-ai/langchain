@@ -14,7 +14,8 @@ import contextlib
 import functools
 import inspect
 import warnings
-from typing import Any, Callable, Generator, Type, TypeVar, Union, cast
+from collections.abc import Generator
+from typing import Any, Callable, TypeVar, Union, cast
 
 from langchain_core._api.internal import is_caller_internal
 
@@ -26,7 +27,7 @@ class LangChainBetaWarning(DeprecationWarning):
 # PUBLIC API
 
 
-T = TypeVar("T", bound=Union[Callable[..., Any], Type])
+T = TypeVar("T", bound=Union[Callable[..., Any], type])
 
 
 def beta(
