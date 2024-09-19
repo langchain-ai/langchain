@@ -163,6 +163,22 @@ def test_loader_partition_via_api_raises_TypeError_with_invalid_arg() -> None:
         loader.load()
 
 
+def test_loader_partitions_via_api_hi_res() -> None:
+    file_path = os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf")
+    loader = UnstructuredLoader(
+        file_path=file_path,
+        partition_via_api=True,
+        # Unstructured kwargs
+        strategy="hi_res",
+    )
+
+    docs = loader.load()
+
+    categories = set(doc.metadata.get("category") for doc in docs)
+    assert "Table" in categories
+    assert "Image" in categories
+
+
 # -- fixtures ---
 
 
