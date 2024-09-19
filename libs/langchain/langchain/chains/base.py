@@ -201,7 +201,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
             self.metadata,
         )
         new_arg_supported = inspect.signature(self._acall).parameters.get("run_manager")
-        run_manager = callback_manager.on_chain_start(
+        run_manager = await callback_manager.on_chain_start(
             None,
             inputs,
             run_id,
