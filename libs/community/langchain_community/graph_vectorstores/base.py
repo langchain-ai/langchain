@@ -8,18 +8,18 @@ from typing import (
     Optional,
 )
 
-from pydantic import Field
-
 from langchain_core._api import beta
 from langchain_core.callbacks import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
 from langchain_core.documents import Document
-from langchain_community.graph_vectorstores.links import METADATA_LINKS_KEY, Link
 from langchain_core.load import Serializable
 from langchain_core.runnables import run_in_executor
 from langchain_core.vectorstores import VectorStore, VectorStoreRetriever
+from pydantic import Field
+
+from langchain_community.graph_vectorstores.links import METADATA_LINKS_KEY, Link
 
 
 def _has_next(iterator: Iterator) -> bool:

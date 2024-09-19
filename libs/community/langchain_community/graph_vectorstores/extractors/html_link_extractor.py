@@ -6,8 +6,8 @@ from urllib.parse import urldefrag, urljoin, urlparse
 
 from langchain_core._api import beta
 from langchain_core.documents import Document
-from langchain_community.graph_vectorstores import Link
 
+from langchain_community.graph_vectorstores import Link
 from langchain_community.graph_vectorstores.extractors.link_extractor import (
     LinkExtractor,
 )

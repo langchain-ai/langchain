@@ -1,6 +1,6 @@
 import pytest
-from langchain_community.graph_vectorstores import Link
 
+from langchain_community.graph_vectorstores import Link
 from langchain_community.graph_vectorstores.extractors import (
     HtmlInput,
     HtmlLinkExtractor,
