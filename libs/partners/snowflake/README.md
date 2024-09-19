@@ -24,7 +24,7 @@ And you should configure credentials by setting the following environment variab
 
 Alternatively, if `SNOWFLAKE_PASSWORD` is not specified, the `AUTHENTICATOR` variable may be set to `externalbrowser` to log in through the externalbrowser instead.
 
-These paramaters can also be passed directly into either of the classes below.
+These paramaters can also be passed directly into the class described below.
 
 ## Search Retriever
 
