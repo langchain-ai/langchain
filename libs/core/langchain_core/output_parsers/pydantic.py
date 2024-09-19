@@ -1,9 +1,9 @@
 import json
-from typing import Generic, List, Optional, Type
+from typing import Annotated, Generic, Optional
 
 import pydantic
 from pydantic import SkipValidation
-from typing_extensions import Annotated
+from typing_extensions import override
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import JsonOutputParser
@@ -18,7 +18,7 @@ from langchain_core.utils.pydantic import (
 class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
     """Parse an output using a pydantic model."""
 
-    pydantic_object: Annotated[Type[TBaseModel], SkipValidation()]  # type: ignore
+    pydantic_object: Annotated[type[TBaseModel], SkipValidation()]  # type: ignore
     """The pydantic model to parse."""
 
     def _parse_obj(self, obj: dict) -> TBaseModel:
@@ -50,7 +50,7 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
         return OutputParserException(msg, llm_output=json_string)
 
     def parse_result(
-        self, result: List[Generation], *, partial: bool = False
+        self, result: list[Generation], *, partial: bool = False
     ) -> Optional[TBaseModel]:
         """Parse the result of an LLM call to a pydantic object.
 
@@ -108,7 +108,8 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
         return "pydantic"
 
     @property
-    def OutputType(self) -> Type[TBaseModel]:
+    @override
+    def OutputType(self) -> type[TBaseModel]:
         """Return the pydantic model."""
         return self.pydantic_object
 

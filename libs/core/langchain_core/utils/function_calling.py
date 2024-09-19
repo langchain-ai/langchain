@@ -10,21 +10,17 @@ import typing
 import uuid
 from typing import (
     TYPE_CHECKING,
+    Annotated,
     Any,
     Callable,
-    Dict,
-    List,
     Literal,
     Optional,
-    Set,
-    Tuple,
-    Type,
     Union,
     cast,
 )
 
 from pydantic import BaseModel
-from typing_extensions import Annotated, TypedDict, get_args, get_origin, is_typeddict
+from typing_extensions import TypedDict, get_args, get_origin, is_typeddict
 
 from langchain_core._api import deprecated
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
@@ -201,7 +197,7 @@ def _convert_typed_dict_to_openai_function(typed_dict: type) -> FunctionDescript
     from pydantic.v1 import BaseModel
 
     model = cast(
-        Type[BaseModel],
+        type[BaseModel],
         _convert_any_typed_dicts_to_pydantic(typed_dict, visited=visited),
     )
     return convert_pydantic_to_openai_function(model)  # type: ignore
@@ -383,15 +379,15 @@ def convert_to_openai_function(
             "parameters": function,
         }
     elif isinstance(function, type) and is_basemodel_subclass(function):
-        oai_function = cast(Dict, convert_pydantic_to_openai_function(function))
+        oai_function = cast(dict, convert_pydantic_to_openai_function(function))
     elif is_typeddict(function):
         oai_function = cast(
-            Dict, _convert_typed_dict_to_openai_function(cast(Type, function))
+            dict, _convert_typed_dict_to_openai_function(cast(type, function))
         )
     elif isinstance(function, BaseTool):
-        oai_function = cast(Dict, format_tool_to_openai_function(function))
+        oai_function = cast(dict, format_tool_to_openai_function(function))
     elif callable(function):
-        oai_function = cast(Dict, convert_python_function_to_openai_function(function))
+        oai_function = cast(dict, convert_python_function_to_openai_function(function))
     else:
         raise ValueError(
             f"Unsupported function\n\n{function}\n\nFunctions must be passed in"
@@ -598,17 +594,17 @@ def _py_38_safe_origin(origin: type) -> type:
     )
 
     origin_map: dict[type, Any] = {
-        dict: Dict,
-        list: List,
-        tuple: Tuple,
-        set: Set,
+        dict: dict,
+        list: list,
+        tuple: tuple,
+        set: set,
         collections.abc.Iterable: typing.Iterable,
         collections.abc.Mapping: typing.Mapping,
         collections.abc.Sequence: typing.Sequence,
         collections.abc.MutableMapping: typing.MutableMapping,
         **origin_union_type_map,
     }
-    return cast(Type, origin_map.get(origin, origin))
+    return cast(type, origin_map.get(origin, origin))
 
 
 def _recursive_set_additional_properties_false(

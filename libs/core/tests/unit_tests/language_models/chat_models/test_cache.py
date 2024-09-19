@@ -1,6 +1,6 @@
 """Module tests interaction of chat model with caching abstraction.."""
 
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Optional
 
 import pytest
 
@@ -20,7 +20,7 @@ class InMemoryCache(BaseCache):
 
     def __init__(self) -> None:
         """Initialize with empty cache."""
-        self._cache: Dict[Tuple[str, str], RETURN_VAL_TYPE] = {}
+        self._cache: dict[tuple[str, str], RETURN_VAL_TYPE] = {}
 
     def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
         """Look up based on prompt and llm_string."""

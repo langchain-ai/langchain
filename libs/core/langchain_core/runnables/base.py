@@ -6,36 +6,37 @@ import functools
 import inspect
 import threading
 from abc import ABC, abstractmethod
+from collections.abc import (
+    AsyncGenerator,
+    AsyncIterator,
+    Awaitable,
+    Coroutine,
+    Iterator,
+    Mapping,
+    Sequence,
+)
 from concurrent.futures import FIRST_COMPLETED, wait
 from contextvars import copy_context
 from functools import wraps
 from itertools import groupby, tee
 from operator import itemgetter
+from types import GenericAlias
 from typing import (
     TYPE_CHECKING,
     Any,
-    AsyncGenerator,
-    AsyncIterator,
-    Awaitable,
     Callable,
-    Coroutine,
-    Dict,
     Generic,
-    Iterator,
-    List,
-    Mapping,
     Optional,
     Protocol,
-    Sequence,
-    Type,
     TypeVar,
     Union,
     cast,
+    get_type_hints,
     overload,
 )
 
 from pydantic import BaseModel, ConfigDict, Field, RootModel
-from typing_extensions import Literal, get_args, get_type_hints
+from typing_extensions import Literal, get_args, override
 
 from langchain_core._api import beta_decorator
 from langchain_core.load.serializable import (
@@ -271,7 +272,7 @@ class Runnable(Generic[Input, Output], ABC):
             return name_
 
     @property
-    def InputType(self) -> type[Input]:
+    def InputType(self) -> type[Input]:  # noqa: N802
         """The type of input this Runnable accepts specified as a type annotation."""
         # First loop through all parent classes and if any of them is
         # a pydantic model, we will pick up the generic parameterization
@@ -296,7 +297,7 @@ class Runnable(Generic[Input, Output], ABC):
         )
 
     @property
-    def OutputType(self) -> type[Output]:
+    def OutputType(self) -> type[Output]:  # noqa: N802
         """The type of output this Runnable produces specified as a type annotation."""
         # First loop through bases -- this will help generic
         # any pydantic models.
@@ -340,7 +341,11 @@ class Runnable(Generic[Input, Output], ABC):
         """
         root_type = self.InputType
 
-        if inspect.isclass(root_type) and issubclass(root_type, BaseModel):
+        if (
+            inspect.isclass(root_type)
+            and not isinstance(root_type, GenericAlias)
+            and issubclass(root_type, BaseModel)
+        ):
             return root_type
 
         return create_model_v2(
@@ -408,7 +413,11 @@ class Runnable(Generic[Input, Output], ABC):
         """
         root_type = self.OutputType
 
-        if inspect.isclass(root_type) and issubclass(root_type, BaseModel):
+        if (
+            inspect.isclass(root_type)
+            and not isinstance(root_type, GenericAlias)
+            and issubclass(root_type, BaseModel)
+        ):
             return root_type
 
         return create_model_v2(
@@ -771,10 +780,10 @@ class Runnable(Generic[Input, Output], ABC):
 
         # If there's only one input, don't bother with the executor
         if len(inputs) == 1:
-            return cast(List[Output], [invoke(inputs[0], configs[0])])
+            return cast(list[Output], [invoke(inputs[0], configs[0])])
 
         with get_executor_for_config(configs[0]) as executor:
-            return cast(List[Output], list(executor.map(invoke, inputs, configs)))
+            return cast(list[Output], list(executor.map(invoke, inputs, configs)))
 
     @overload
     def batch_as_completed(
@@ -2024,7 +2033,7 @@ class Runnable(Generic[Input, Output], ABC):
             for run_manager in run_managers:
                 run_manager.on_chain_error(e)
             if return_exceptions:
-                return cast(List[Output], [e for _ in input])
+                return cast(list[Output], [e for _ in input])
             else:
                 raise
         else:
@@ -2036,7 +2045,7 @@ class Runnable(Generic[Input, Output], ABC):
                 else:
                     run_manager.on_chain_end(out)
             if return_exceptions or first_exception is None:
-                return cast(List[Output], output)
+                return cast(list[Output], output)
             else:
                 raise first_exception
 
@@ -2099,7 +2108,7 @@ class Runnable(Generic[Input, Output], ABC):
                 *(run_manager.on_chain_error(e) for run_manager in run_managers)
             )
             if return_exceptions:
-                return cast(List[Output], [e for _ in input])
+                return cast(list[Output], [e for _ in input])
             else:
                 raise
         else:
@@ -2113,7 +2122,7 @@ class Runnable(Generic[Input, Output], ABC):
                     coros.append(run_manager.on_chain_end(out))
             await asyncio.gather(*coros)
             if return_exceptions or first_exception is None:
-                return cast(List[Output], output)
+                return cast(list[Output], output)
             else:
                 raise first_exception
 
@@ -2802,11 +2811,13 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
     )
 
     @property
+    @override
     def InputType(self) -> type[Input]:
         """The type of the input to the Runnable."""
         return self.first.InputType
 
     @property
+    @override
     def OutputType(self) -> type[Output]:
         """The type of the output of the Runnable."""
         return self.last.OutputType
@@ -3171,7 +3182,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             for rm in run_managers:
                 rm.on_chain_error(e)
             if return_exceptions:
-                return cast(List[Output], [e for _ in inputs])
+                return cast(list[Output], [e for _ in inputs])
             else:
                 raise
         else:
@@ -3183,7 +3194,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                 else:
                     run_manager.on_chain_end(out)
             if return_exceptions or first_exception is None:
-                return cast(List[Output], inputs)
+                return cast(list[Output], inputs)
             else:
                 raise first_exception
 
@@ -3298,7 +3309,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         except BaseException as e:
             await asyncio.gather(*(rm.on_chain_error(e) for rm in run_managers))
             if return_exceptions:
-                return cast(List[Output], [e for _ in inputs])
+                return cast(list[Output], [e for _ in inputs])
             else:
                 raise
         else:
@@ -3312,7 +3323,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                     coros.append(run_manager.on_chain_end(out))
             await asyncio.gather(*coros)
             if return_exceptions or first_exception is None:
-                return cast(List[Output], inputs)
+                return cast(list[Output], inputs)
             else:
                 raise first_exception
 
@@ -3420,7 +3431,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             yield chunk
 
 
-class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
+class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
     """Runnable that runs a mapping of Runnables in parallel, and returns a mapping
     of their outputs.
 
@@ -3555,6 +3566,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         return super().get_name(suffix, name=name)
 
     @property
+    @override
     def InputType(self) -> Any:
         """The type of the input to the Runnable."""
         for step in self.steps__.values():
@@ -4048,6 +4060,7 @@ class RunnableGenerator(Runnable[Input, Output]):
             self.name = "RunnableGenerator"
 
     @property
+    @override
     def InputType(self) -> Any:
         func = getattr(self, "_transform", None) or self._atransform
         try:
@@ -4071,7 +4084,11 @@ class RunnableGenerator(Runnable[Input, Output]):
         func = getattr(self, "_transform", None) or self._atransform
         module = getattr(func, "__module__", None)
 
-        if inspect.isclass(root_type) and issubclass(root_type, BaseModel):
+        if (
+            inspect.isclass(root_type)
+            and not isinstance(root_type, GenericAlias)
+            and issubclass(root_type, BaseModel)
+        ):
             return root_type
 
         return create_model_v2(
@@ -4084,6 +4101,7 @@ class RunnableGenerator(Runnable[Input, Output]):
         )
 
     @property
+    @override
     def OutputType(self) -> Any:
         func = getattr(self, "_transform", None) or self._atransform
         try:
@@ -4106,7 +4124,11 @@ class RunnableGenerator(Runnable[Input, Output]):
         func = getattr(self, "_transform", None) or self._atransform
         module = getattr(func, "__module__", None)
 
-        if inspect.isclass(root_type) and issubclass(root_type, BaseModel):
+        if (
+            inspect.isclass(root_type)
+            and not isinstance(root_type, GenericAlias)
+            and issubclass(root_type, BaseModel)
+        ):
             return root_type
 
         return create_model_v2(
@@ -4329,6 +4351,7 @@ class RunnableLambda(Runnable[Input, Output]):
             pass
 
     @property
+    @override
     def InputType(self) -> Any:
         """The type of the input to this Runnable."""
         func = getattr(self, "func", None) or self.afunc
@@ -4369,7 +4392,7 @@ class RunnableLambda(Runnable[Input, Output]):
                 module = getattr(func, "__module__", None)
                 return create_model_v2(
                     self.get_name("Input"),
-                    root=List[Any],
+                    root=list[Any],
                     # To create the schema, we need to provide the module
                     # where the underlying function is defined.
                     # This allows pydantic to resolve type annotations appropriately.
@@ -4388,6 +4411,7 @@ class RunnableLambda(Runnable[Input, Output]):
         return super().get_input_schema(config)
 
     @property
+    @override
     def OutputType(self) -> Any:
         """The type of the output of this Runnable as a type annotation.
 
@@ -4420,7 +4444,11 @@ class RunnableLambda(Runnable[Input, Output]):
         func = getattr(self, "func", None) or self.afunc
         module = getattr(func, "__module__", None)
 
-        if inspect.isclass(root_type) and issubclass(root_type, BaseModel):
+        if (
+            inspect.isclass(root_type)
+            and not isinstance(root_type, GenericAlias)
+            and issubclass(root_type, BaseModel)
+        ):
             return root_type
 
         return create_model_v2(
@@ -4921,7 +4949,7 @@ class RunnableLambda(Runnable[Input, Output]):
             yield chunk
 
 
-class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
+class RunnableEachBase(RunnableSerializable[list[Input], list[Output]]):
     """Runnable that delegates calls to another Runnable
     with each element of the input sequence.
 
@@ -4937,8 +4965,9 @@ class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
     )
 
     @property
+    @override
     def InputType(self) -> Any:
-        return List[self.bound.InputType]  # type: ignore[name-defined]
+        return list[self.bound.InputType]  # type: ignore[name-defined]
 
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
@@ -4946,7 +4975,7 @@ class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
         return create_model_v2(
             self.get_name("Input"),
             root=(
-                List[self.bound.get_input_schema(config)],  # type: ignore
+                list[self.bound.get_input_schema(config)],  # type: ignore
                 None,
             ),
             # create model needs access to appropriate type annotations to be
@@ -4960,8 +4989,9 @@ class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
         )
 
     @property
+    @override
     def OutputType(self) -> type[list[Output]]:
-        return List[self.bound.OutputType]  # type: ignore[name-defined]
+        return list[self.bound.OutputType]  # type: ignore[name-defined]
 
     def get_output_schema(
         self, config: Optional[RunnableConfig] = None
@@ -4969,7 +4999,7 @@ class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
         schema = self.bound.get_output_schema(config)
         return create_model_v2(
             self.get_name("Output"),
-            root=List[schema],  # type: ignore[valid-type]
+            root=list[schema],  # type: ignore[valid-type]
             # create model needs access to appropriate type annotations to be
             # able to construct the pydantic model.
             # When we create the model, we pass information about the namespace
@@ -5253,17 +5283,19 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
         return self.bound.get_name(suffix, name=name)
 
     @property
+    @override
     def InputType(self) -> type[Input]:
         return (
-            cast(Type[Input], self.custom_input_type)
+            cast(type[Input], self.custom_input_type)
             if self.custom_input_type is not None
             else self.bound.InputType
         )
 
     @property
+    @override
     def OutputType(self) -> type[Output]:
         return (
-            cast(Type[Output], self.custom_output_type)
+            cast(type[Output], self.custom_output_type)
             if self.custom_output_type is not None
             else self.bound.OutputType
         )
@@ -5336,7 +5368,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
     ) -> list[Output]:
         if isinstance(config, list):
             configs = cast(
-                List[RunnableConfig],
+                list[RunnableConfig],
                 [self._merge_configs(conf) for conf in config],
             )
         else:
@@ -5358,7 +5390,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
     ) -> list[Output]:
         if isinstance(config, list):
             configs = cast(
-                List[RunnableConfig],
+                list[RunnableConfig],
                 [self._merge_configs(conf) for conf in config],
             )
         else:
@@ -5400,7 +5432,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
     ) -> Iterator[tuple[int, Union[Output, Exception]]]:
         if isinstance(config, Sequence):
             configs = cast(
-                List[RunnableConfig],
+                list[RunnableConfig],
                 [self._merge_configs(conf) for conf in config],
             )
         else:
@@ -5451,7 +5483,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
     ) -> AsyncIterator[tuple[int, Union[Output, Exception]]]:
         if isinstance(config, Sequence):
             configs = cast(
-                List[RunnableConfig],
+                list[RunnableConfig],
                 [self._merge_configs(conf) for conf in config],
             )
         else:

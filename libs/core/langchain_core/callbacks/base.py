@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, List, Optional, Sequence, TypeVar, Union
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any, Optional, TypeVar, Union
 from uuid import UUID
 
 from tenacity import RetryCallState
@@ -1070,4 +1071,4 @@ class BaseCallbackManager(CallbackManagerMixin):
             self.inheritable_metadata.pop(key)
 
 
-Callbacks = Optional[Union[List[BaseCallbackHandler], BaseCallbackManager]]
+Callbacks = Optional[Union[list[BaseCallbackHandler], BaseCallbackManager]]

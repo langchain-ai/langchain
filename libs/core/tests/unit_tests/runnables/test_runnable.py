@@ -1,18 +1,13 @@
 import sys
 import uuid
 import warnings
+from collections.abc import AsyncIterator, Awaitable, Iterator, Sequence
 from functools import partial
 from operator import itemgetter
 from typing import (
     Any,
-    AsyncIterator,
-    Awaitable,
     Callable,
-    Dict,
-    Iterator,
-    List,
     Optional,
-    Sequence,
     Union,
     cast,
 )
@@ -92,7 +87,7 @@ from langchain_core.tracers import (
 )
 from langchain_core.tracers.context import collect_runs
 from tests.unit_tests.pydantic_utils import _normalize_schema, _schema
-from tests.unit_tests.stubs import AnyStr, _AnyIdAIMessage, _AnyIdAIMessageChunk
+from tests.unit_tests.stubs import AnyStr, _any_id_ai_message, _any_id_ai_message_chunk
 
 PYDANTIC_VERSION = tuple(map(int, pydantic.__version__.split(".")))
 
@@ -104,8 +99,8 @@ class FakeTracer(BaseTracer):
     def __init__(self) -> None:
         """Initialize the tracer."""
         super().__init__()
-        self.runs: List[Run] = []
-        self.uuids_map: Dict[UUID, UUID] = {}
+        self.runs: list[Run] = []
+        self.uuids_map: dict[UUID, UUID] = {}
         self.uuids_generator = (
             UUID(f"00000000-0000-4000-8000-{i:012}", version=4) for i in range(10000)
         )
@@ -164,7 +159,7 @@ class FakeTracer(BaseTracer):
 
         self.runs.append(self._copy_run(run))
 
-    def flattened_runs(self) -> List[Run]:
+    def flattened_runs(self) -> list[Run]:
         q = [] + self.runs
         result = []
         while q:
@@ -175,7 +170,7 @@ class FakeTracer(BaseTracer):
         return result
 
     @property
-    def run_ids(self) -> List[Optional[uuid.UUID]]:
+    def run_ids(self) -> list[Optional[uuid.UUID]]:
         runs = self.flattened_runs()
         uuids_map = {v: k for k, v in self.uuids_map.items()}
         return [uuids_map.get(r.id) for r in runs]
@@ -208,10 +203,10 @@ class FakeRetriever(BaseRetriever):
         query: str,
         *,
         callbacks: Callbacks = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> list[Document]:
         return [Document(page_content="foo"), Document(page_content="bar")]
 
     async def _aget_relevant_documents(
@@ -219,10 +214,10 @@ class FakeRetriever(BaseRetriever):
         query: str,
         *,
         callbacks: Callbacks = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> list[Document]:
         return [Document(page_content="foo"), Document(page_content="bar")]
 
 
@@ -660,8 +655,8 @@ def test_with_types_with_type_generics() -> None:
 
     # Try specifying some
     RunnableLambda(foo).with_types(
-        output_type=List[int],  # type: ignore[arg-type]
-        input_type=List[int],  # type: ignore[arg-type]
+        output_type=list[int],  # type: ignore[arg-type]
+        input_type=list[int],  # type: ignore[arg-type]
     )
     RunnableLambda(foo).with_types(
         output_type=Sequence[int],  # type: ignore[arg-type]
@@ -1704,7 +1699,7 @@ def test_prompt_with_chat_model(
     tracer = FakeTracer()
     assert chain.invoke(
         {"question": "What is your name?"}, dict(callbacks=[tracer])
-    ) == _AnyIdAIMessage(content="foo")
+    ) == _any_id_ai_message(content="foo")
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
         messages=[
@@ -1729,8 +1724,8 @@ def test_prompt_with_chat_model(
         ],
         dict(callbacks=[tracer]),
     ) == [
-        _AnyIdAIMessage(content="foo"),
-        _AnyIdAIMessage(content="foo"),
+        _any_id_ai_message(content="foo"),
+        _any_id_ai_message(content="foo"),
     ]
     assert prompt_spy.call_args.args[1] == [
         {"question": "What is your name?"},
@@ -1770,9 +1765,9 @@ def test_prompt_with_chat_model(
     assert [
         *chain.stream({"question": "What is your name?"}, dict(callbacks=[tracer]))
     ] == [
-        _AnyIdAIMessageChunk(content="f"),
-        _AnyIdAIMessageChunk(content="o"),
-        _AnyIdAIMessageChunk(content="o"),
+        _any_id_ai_message_chunk(content="f"),
+        _any_id_ai_message_chunk(content="o"),
+        _any_id_ai_message_chunk(content="o"),
     ]
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
@@ -1810,7 +1805,7 @@ async def test_prompt_with_chat_model_async(
     tracer = FakeTracer()
     assert await chain.ainvoke(
         {"question": "What is your name?"}, dict(callbacks=[tracer])
-    ) == _AnyIdAIMessage(content="foo")
+    ) == _any_id_ai_message(content="foo")
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
         messages=[
@@ -1835,8 +1830,8 @@ async def test_prompt_with_chat_model_async(
         ],
         dict(callbacks=[tracer]),
     ) == [
-        _AnyIdAIMessage(content="foo"),
-        _AnyIdAIMessage(content="foo"),
+        _any_id_ai_message(content="foo"),
+        _any_id_ai_message(content="foo"),
     ]
     assert prompt_spy.call_args.args[1] == [
         {"question": "What is your name?"},
@@ -1879,9 +1874,9 @@ async def test_prompt_with_chat_model_async(
             {"question": "What is your name?"}, dict(callbacks=[tracer])
         )
     ] == [
-        _AnyIdAIMessageChunk(content="f"),
-        _AnyIdAIMessageChunk(content="o"),
-        _AnyIdAIMessageChunk(content="o"),
+        _any_id_ai_message_chunk(content="f"),
+        _any_id_ai_message_chunk(content="o"),
+        _any_id_ai_message_chunk(content="o"),
     ]
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
@@ -2553,7 +2548,7 @@ def test_prompt_with_chat_model_and_parser(
             HumanMessage(content="What is your name?"),
         ]
     )
-    assert parser_spy.call_args.args[1] == _AnyIdAIMessage(content="foo, bar")
+    assert parser_spy.call_args.args[1] == _any_id_ai_message(content="foo, bar")
 
     assert tracer.runs == snapshot
 
@@ -2577,8 +2572,7 @@ def test_combining_sequences(
     assert chain.first == prompt
     assert chain.middle == [chat]
     assert chain.last == parser
-    if sys.version_info >= (3, 9):
-        assert dumps(chain, pretty=True) == snapshot
+    assert dumps(chain, pretty=True) == snapshot
 
     prompt2 = (
         SystemMessagePromptTemplate.from_template("You are a nicer assistant.")
@@ -2586,7 +2580,7 @@ def test_combining_sequences(
     )
     chat2 = FakeListChatModel(responses=["baz, qux"])
     parser2 = CommaSeparatedListOutputParser()
-    input_formatter: RunnableLambda[List[str], Dict[str, Any]] = RunnableLambda(
+    input_formatter: RunnableLambda[list[str], dict[str, Any]] = RunnableLambda(
         lambda x: {"question": x[0] + x[1]}
     )
 
@@ -2596,8 +2590,7 @@ def test_combining_sequences(
     assert chain2.first == input_formatter
     assert chain2.middle == [prompt2, chat2]
     assert chain2.last == parser2
-    if sys.version_info >= (3, 9):
-        assert dumps(chain2, pretty=True) == snapshot
+    assert dumps(chain2, pretty=True) == snapshot
 
     combined_chain = cast(RunnableSequence, chain | chain2)
 
@@ -2610,8 +2603,7 @@ def test_combining_sequences(
         chat2,
     ]
     assert combined_chain.last == parser2
-    if sys.version_info >= (3, 9):
-        assert dumps(combined_chain, pretty=True) == snapshot
+    assert dumps(combined_chain, pretty=True) == snapshot
 
     # Test invoke
     tracer = FakeTracer()
@@ -2619,8 +2611,7 @@ def test_combining_sequences(
         {"question": "What is your name?"}, dict(callbacks=[tracer])
     ) == ["baz", "qux"]
 
-    if sys.version_info >= (3, 9):
-        assert tracer.runs == snapshot
+    assert tracer.runs == snapshot
 
 
 @freeze_time("2023-01-01")
@@ -2690,7 +2681,7 @@ Question:
             ),
         ]
     )
-    assert parser_spy.call_args.args[1] == _AnyIdAIMessage(content="foo, bar")
+    assert parser_spy.call_args.args[1] == _any_id_ai_message(content="foo, bar")
     assert len([r for r in tracer.runs if r.parent_run_id is None]) == 1
     parent_run = next(r for r in tracer.runs if r.parent_run_id is None)
     assert len(parent_run.child_runs) == 4
@@ -2736,7 +2727,7 @@ def test_seq_prompt_dict(mocker: MockerFixture, snapshot: SnapshotAssertion) -> 
     assert chain.invoke(
         {"question": "What is your name?"}, dict(callbacks=[tracer])
     ) == {
-        "chat": _AnyIdAIMessage(content="i'm a chatbot"),
+        "chat": _any_id_ai_message(content="i'm a chatbot"),
         "llm": "i'm a textbot",
     }
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
@@ -2827,7 +2818,7 @@ async def test_higher_order_lambda_runnable(
         input={"question": lambda x: x["question"]},
     )
 
-    def router(input: Dict[str, Any]) -> Runnable:
+    def router(input: dict[str, Any]) -> Runnable:
         if input["key"] == "math":
             return itemgetter("input") | math_chain
         elif input["key"] == "english":
@@ -2836,8 +2827,7 @@ async def test_higher_order_lambda_runnable(
             raise ValueError(f"Unknown key: {input['key']}")
 
     chain: Runnable = input_map | router
-    if sys.version_info >= (3, 9):
-        assert dumps(chain, pretty=True) == snapshot
+    assert dumps(chain, pretty=True) == snapshot
 
     result = chain.invoke({"key": "math", "question": "2 + 2"})
     assert result == "4"
@@ -2877,7 +2867,7 @@ async def test_higher_order_lambda_runnable(
     assert len(math_run.child_runs) == 3
 
     # Test ainvoke
-    async def arouter(input: Dict[str, Any]) -> Runnable:
+    async def arouter(input: dict[str, Any]) -> Runnable:
         if input["key"] == "math":
             return itemgetter("input") | math_chain
         elif input["key"] == "english":
@@ -2946,7 +2936,7 @@ def test_seq_prompt_map(mocker: MockerFixture, snapshot: SnapshotAssertion) -> N
     assert chain.invoke(
         {"question": "What is your name?"}, dict(callbacks=[tracer])
     ) == {
-        "chat": _AnyIdAIMessage(content="i'm a chatbot"),
+        "chat": _any_id_ai_message(content="i'm a chatbot"),
         "llm": "i'm a textbot",
         "passthrough": ChatPromptValue(
             messages=[
@@ -3010,7 +3000,7 @@ def test_map_stream() -> None:
     assert streamed_chunks[0] in [
         {"passthrough": prompt.invoke({"question": "What is your name?"})},
         {"llm": "i"},
-        {"chat": _AnyIdAIMessageChunk(content="i")},
+        {"chat": _any_id_ai_message_chunk(content="i")},
     ]
     assert len(streamed_chunks) == len(chat_res) + len(llm_res) + 1
     assert all(len(c.keys()) == 1 for c in streamed_chunks)
@@ -3069,11 +3059,11 @@ def test_map_stream() -> None:
 
     assert streamed_chunks[0] in [
         {"llm": "i"},
-        {"chat": _AnyIdAIMessageChunk(content="i")},
+        {"chat": _any_id_ai_message_chunk(content="i")},
     ]
     if not (  # TODO(Rewrite properly) statement above
         streamed_chunks[0] == {"llm": "i"}
-        or {"chat": _AnyIdAIMessageChunk(content="i")}
+        or {"chat": _any_id_ai_message_chunk(content="i")}
     ):
         raise AssertionError(f"Got an unexpected chunk: {streamed_chunks[0]}")
 
@@ -3118,7 +3108,7 @@ def test_map_stream_iterator_input() -> None:
     assert streamed_chunks[0] in [
         {"passthrough": "i"},
         {"llm": "i"},
-        {"chat": _AnyIdAIMessageChunk(content="i")},
+        {"chat": _any_id_ai_message_chunk(content="i")},
     ]
     assert len(streamed_chunks) == len(chat_res) + len(llm_res) + len(llm_res)
     assert all(len(c.keys()) == 1 for c in streamed_chunks)
@@ -3162,7 +3152,7 @@ async def test_map_astream() -> None:
     assert streamed_chunks[0] in [
         {"passthrough": prompt.invoke({"question": "What is your name?"})},
         {"llm": "i"},
-        {"chat": _AnyIdAIMessageChunk(content="i")},
+        {"chat": _any_id_ai_message_chunk(content="i")},
     ]
     assert len(streamed_chunks) == len(chat_res) + len(llm_res) + 1
     assert all(len(c.keys()) == 1 for c in streamed_chunks)
@@ -3656,7 +3646,7 @@ async def test_runnable_sequence_atransform() -> None:
     assert "".join(chunks) == "foo-lish"
 
 
-class FakeSplitIntoListParser(BaseOutputParser[List[str]]):
+class FakeSplitIntoListParser(BaseOutputParser[list[str]]):
     """Parse the output of an LLM call to a comma-separated list."""
 
     @classmethod
@@ -3670,7 +3660,7 @@ class FakeSplitIntoListParser(BaseOutputParser[List[str]]):
             "eg: `foo, bar, baz`"
         )
 
-    def parse(self, text: str) -> List[str]:
+    def parse(self, text: str) -> list[str]:
         """Parse the output of an LLM call."""
         return text.strip().split(", ")
 
@@ -3851,7 +3841,7 @@ async def test_async_retrying(mocker: MockerFixture) -> None:
 def test_runnable_lambda_stream() -> None:
     """Test that stream works for both normal functions & those returning Runnable."""
     # Normal output should work
-    output: List[Any] = [chunk for chunk in RunnableLambda(range).stream(5)]
+    output: list[Any] = [chunk for chunk in RunnableLambda(range).stream(5)]
     assert output == [range(5)]
 
     # Runnable output should also work
@@ -3905,7 +3895,7 @@ async def test_runnable_lambda_astream() -> None:
         return afunc
 
     # Normal output should work
-    output: List[Any] = [
+    output: list[Any] = [
         chunk
         async for chunk in RunnableLambda(
             func=id,
@@ -3983,9 +3973,9 @@ def test_seq_batch_return_exceptions(mocker: MockerFixture) -> None:
 
         def _batch(
             self,
-            inputs: List[str],
-        ) -> List:
-            outputs: List[Any] = []
+            inputs: list[str],
+        ) -> list:
+            outputs: list[Any] = []
             for input in inputs:
                 if input.startswith(self.fail_starts_with):
                     outputs.append(ValueError())
@@ -3995,12 +3985,12 @@ def test_seq_batch_return_exceptions(mocker: MockerFixture) -> None:
 
         def batch(
             self,
-            inputs: List[str],
-            config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+            inputs: list[str],
+            config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
             *,
             return_exceptions: bool = False,
             **kwargs: Any,
-        ) -> List[str]:
+        ) -> list[str]:
             return self._batch_with_config(
                 self._batch,
                 inputs,
@@ -4102,9 +4092,9 @@ async def test_seq_abatch_return_exceptions(mocker: MockerFixture) -> None:
 
         async def _abatch(
             self,
-            inputs: List[str],
-        ) -> List:
-            outputs: List[Any] = []
+            inputs: list[str],
+        ) -> list:
+            outputs: list[Any] = []
             for input in inputs:
                 if input.startswith(self.fail_starts_with):
                     outputs.append(ValueError())
@@ -4114,12 +4104,12 @@ async def test_seq_abatch_return_exceptions(mocker: MockerFixture) -> None:
 
         async def abatch(
             self,
-            inputs: List[str],
-            config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+            inputs: list[str],
+            config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
             *,
             return_exceptions: bool = False,
             **kwargs: Any,
-        ) -> List[str]:
+        ) -> list[str]:
             return await self._abatch_with_config(
                 self._abatch,
                 inputs,
@@ -5197,13 +5187,13 @@ def test_transform_of_runnable_lambda_with_dicts() -> None:
 
 
 async def test_atransform_of_runnable_lambda_with_dicts() -> None:
-    async def identity(x: Dict[str, str]) -> Dict[str, str]:
+    async def identity(x: dict[str, str]) -> dict[str, str]:
         """Return x."""
         return x
 
-    runnable = RunnableLambda[Dict[str, str], Dict[str, str]](identity)
+    runnable = RunnableLambda[dict[str, str], dict[str, str]](identity)
 
-    async def chunk_iterator() -> AsyncIterator[Dict[str, str]]:
+    async def chunk_iterator() -> AsyncIterator[dict[str, str]]:
         yield {"foo": "a"}
         yield {"foo": "n"}
 
@@ -5224,7 +5214,7 @@ def test_default_transform_with_dicts() -> None:
         ) -> Output:
             return cast(Output, input)  # type: ignore
 
-    runnable = CustomRunnable[Dict[str, str], Dict[str, str]]()
+    runnable = CustomRunnable[dict[str, str], dict[str, str]]()
     chunks = iter(
         [
             {"foo": "a"},
@@ -5245,9 +5235,9 @@ async def test_default_atransform_with_dicts() -> None:
         ) -> Output:
             return cast(Output, input)
 
-    runnable = CustomRunnable[Dict[str, str], Dict[str, str]]()
+    runnable = CustomRunnable[dict[str, str], dict[str, str]]()
 
-    async def chunk_iterator() -> AsyncIterator[Dict[str, str]]:
+    async def chunk_iterator() -> AsyncIterator[dict[str, str]]:
         yield {"foo": "a"}
         yield {"foo": "n"}
 
@@ -5256,7 +5246,7 @@ async def test_default_atransform_with_dicts() -> None:
     assert chunks == [{"foo": "n"}]
 
     # Test with addable dict
-    async def chunk_iterator_with_addable() -> AsyncIterator[Dict[str, str]]:
+    async def chunk_iterator_with_addable() -> AsyncIterator[dict[str, str]]:
         yield AddableDict({"foo": "a"})
         yield AddableDict({"foo": "n"})
 
@@ -5278,7 +5268,7 @@ async def test_passthrough_atransform_with_dicts() -> None:
     """Test that default transform works with dicts."""
     runnable = RunnablePassthrough(lambda x: x)
 
-    async def chunk_iterator() -> AsyncIterator[Dict[str, str]]:
+    async def chunk_iterator() -> AsyncIterator[dict[str, str]]:
         yield {"foo": "a"}
         yield {"foo": "n"}
 
@@ -5364,7 +5354,7 @@ async def test_closing_iterator_doesnt_raise_error() -> None:
             *,
             run_id: UUID,
             parent_run_id: Optional[UUID] = None,
-            tags: Optional[List[str]] = None,
+            tags: Optional[list[str]] = None,
             **kwargs: Any,
         ) -> None:
             """Run when chain errors."""
@@ -5389,7 +5379,7 @@ def test_pydantic_protected_namespaces() -> None:
         warnings.simplefilter("error")
 
         class CustomChatModel(RunnableSerializable):
-            model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+            model_kwargs: dict[str, Any] = Field(default_factory=dict)
 
 
 def test_schema_for_prompt_and_chat_model() -> None:

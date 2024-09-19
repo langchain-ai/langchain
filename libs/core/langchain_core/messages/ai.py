@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Any, Literal, Optional, Union
 
 from pydantic import model_validator
 from typing_extensions import Self, TypedDict
@@ -69,9 +69,9 @@ class AIMessage(BaseMessage):
     At the moment, this is ignored by most models. Usage is discouraged.
     """
 
-    tool_calls: List[ToolCall] = []
+    tool_calls: list[ToolCall] = []
     """If provided, tool calls associated with the message."""
-    invalid_tool_calls: List[InvalidToolCall] = []
+    invalid_tool_calls: list[InvalidToolCall] = []
     """If provided, tool calls with parsing errors associated with the message."""
     usage_metadata: Optional[UsageMetadata] = None
     """If provided, usage metadata for a message, such as token counts.
@@ -83,7 +83,7 @@ class AIMessage(BaseMessage):
     """The type of the message (used for deserialization). Defaults to "ai"."""
 
     def __init__(
-        self, content: Union[str, List[Union[str, Dict]]], **kwargs: Any
+        self, content: Union[str, list[Union[str, dict]]], **kwargs: Any
     ) -> None:
         """Pass in content as positional arg.
 
@@ -94,7 +94,7 @@ class AIMessage(BaseMessage):
         super().__init__(content=content, **kwargs)
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
 
         Returns:
@@ -104,7 +104,7 @@ class AIMessage(BaseMessage):
         return ["langchain", "schema", "messages"]
 
     @property
-    def lc_attributes(self) -> Dict:
+    def lc_attributes(self) -> dict:
         """Attrs to be serialized even if they are derived from other init args."""
         return {
             "tool_calls": self.tool_calls,
@@ -137,7 +137,7 @@ class AIMessage(BaseMessage):
 
         # Ensure "type" is properly set on all tool call-like dicts.
         if tool_calls := values.get("tool_calls"):
-            updated: List = []
+            updated: list = []
             for tc in tool_calls:
                 updated.append(
                     create_tool_call(**{k: v for k, v in tc.items() if k != "type"})
@@ -178,7 +178,7 @@ class AIMessage(BaseMessage):
         base = super().pretty_repr(html=html)
         lines = []
 
-        def _format_tool_args(tc: Union[ToolCall, InvalidToolCall]) -> List[str]:
+        def _format_tool_args(tc: Union[ToolCall, InvalidToolCall]) -> list[str]:
             lines = [
                 f"  {tc.get('name', 'Tool')} ({tc.get('id')})",
                 f" Call ID: {tc.get('id')}",
@@ -218,11 +218,11 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
     """The type of the message (used for deserialization). 
     Defaults to "AIMessageChunk"."""
 
-    tool_call_chunks: List[ToolCallChunk] = []
+    tool_call_chunks: list[ToolCallChunk] = []
     """If provided, tool call chunks associated with the message."""
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
 
         Returns:
@@ -232,7 +232,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
         return ["langchain", "schema", "messages"]
 
     @property
-    def lc_attributes(self) -> Dict:
+    def lc_attributes(self) -> dict:
         """Attrs to be serialized even if they are derived from other init args."""
         return {
             "tool_calls": self.tool_calls,
