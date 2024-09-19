@@ -16,7 +16,7 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import Extra
+from pydantic import ConfigDict
 
 from langchain_community.chat_models.anthropic import (
     convert_messages_to_prompt_anthropic,
@@ -203,7 +203,7 @@ _message_type_lookups = {
 
 
 @deprecated(
-    since="0.0.34", removal="0.3", alternative_import="langchain_aws.ChatBedrock"
+    since="0.0.34", removal="1.0", alternative_import="langchain_aws.ChatBedrock"
 )
 class BedrockChat(BaseChatModel, BedrockBase):
     """Chat model that uses the Bedrock API."""
@@ -232,10 +232,9 @@ class BedrockChat(BaseChatModel, BedrockBase):
 
         return attributes
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     def _stream(
         self,

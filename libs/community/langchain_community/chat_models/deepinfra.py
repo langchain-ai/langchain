@@ -45,18 +45,21 @@ from langchain_core.messages import (
     HumanMessageChunk,
     SystemMessage,
     SystemMessageChunk,
+    ToolMessage,
 )
 from langchain_core.messages.tool import ToolCall
+from langchain_core.messages.tool import tool_call as create_tool_call
 from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,
     ChatResult,
 )
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 from langchain_core.utils import get_from_dict_or_env
 from langchain_core.utils.function_calling import convert_to_openai_tool
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+from typing_extensions import Self
 
 from langchain_community.utilities.requests import Requests
 
@@ -92,10 +95,10 @@ def _parse_tool_calling(tool_call: dict) -> ToolCall:
     Returns:
 
     """
-    name = tool_call.get("name", "")
+    name = tool_call["function"].get("name", "")
     args = json.loads(tool_call["function"]["arguments"])
     id = tool_call.get("id")
-    return ToolCall(name=name, args=args, id=id)
+    return create_tool_call(name=name, args=args, id=id)
 
 
 def _convert_to_tool_calling(tool_call: ToolCall) -> Dict[str, Any]:
@@ -181,6 +184,13 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
             "content": message.content,
             "name": message.name,
         }
+    elif isinstance(message, ToolMessage):
+        message_dict = {
+            "role": "tool",
+            "content": message.content,
+            "name": message.name,  # type: ignore[dict-item]
+            "tool_call_id": message.tool_call_id,
+        }
     else:
         raise ValueError(f"Got unknown type {message}")
     if "name" in message.additional_kwargs:
@@ -198,7 +208,7 @@ class ChatDeepInfra(BaseChatModel):
     request_timeout: Optional[float] = Field(default=None, alias="timeout")
     temperature: Optional[float] = 1
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
-    """Run inference with this temperature. Must by in the closed
+    """Run inference with this temperature. Must be in the closed
        interval [0.0, 1.0]."""
     top_p: Optional[float] = None
     """Decode using nucleus sampling: consider the smallest set of tokens whose
@@ -212,6 +222,10 @@ class ChatDeepInfra(BaseChatModel):
     max_tokens: int = 256
     streaming: bool = False
     max_retries: int = 1
+
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
     @property
     def _default_params(self) -> Dict[str, Any]:
@@ -248,7 +262,6 @@ class ChatDeepInfra(BaseChatModel):
                 self._handle_status(response.status_code, response.text)
                 return response
             except Exception as e:
-                # import pdb; pdb.set_trace()
                 print("EX", e)  # noqa: T201
                 raise
 
@@ -278,8 +291,9 @@ class ChatDeepInfra(BaseChatModel):
 
         return await _completion_with_retry(**kwargs)
 
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def init_defaults(cls, values: Dict) -> Any:
         """Validate api key, python package exists, temperature, top_p, and top_k."""
         # For compatibility with LiteLLM
         api_key = get_from_dict_or_env(
@@ -294,17 +308,20 @@ class ChatDeepInfra(BaseChatModel):
             "DEEPINFRA_API_TOKEN",
             default=api_key,
         )
+        return values
 
-        if values["temperature"] is not None and not 0 <= values["temperature"] <= 1:
+    @model_validator(mode="after")
+    def validate_environment(self) -> Self:
+        if self.temperature is not None and not 0 <= self.temperature <= 1:
             raise ValueError("temperature must be in the range [0.0, 1.0]")
 
-        if values["top_p"] is not None and not 0 <= values["top_p"] <= 1:
+        if self.top_p is not None and not 0 <= self.top_p <= 1:
             raise ValueError("top_p must be in the range [0.0, 1.0]")
 
-        if values["top_k"] is not None and values["top_k"] <= 0:
+        if self.top_k is not None and self.top_k <= 0:
             raise ValueError("top_k must be positive")
 
-        return values
+        return self
 
     def _generate(
         self,
@@ -437,7 +454,9 @@ class ChatDeepInfra(BaseChatModel):
 
     def _handle_status(self, code: int, text: Any) -> None:
         if code >= 500:
-            raise ChatDeepInfraException(f"DeepInfra Server: Error {code}")
+            raise ChatDeepInfraException(
+                f"DeepInfra Server error status {code}: {text}"
+            )
         elif code >= 400:
             raise ValueError(f"DeepInfra received an invalid payload: {text}")
         elif code != 200:

@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Literal, Union
+from typing import Any, Literal, Union
 
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk
 
@@ -30,20 +30,27 @@ class SystemMessage(BaseMessage):
     """
 
     type: Literal["system"] = "system"
+    """The type of the message (used for serialization). Defaults to "system"."""
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
-        """Get the namespace of the langchain object."""
+    def get_lc_namespace(cls) -> list[str]:
+        """Get the namespace of the langchain object.
+        Default is ["langchain", "schema", "messages"]."""
         return ["langchain", "schema", "messages"]
 
     def __init__(
-        self, content: Union[str, List[Union[str, Dict]]], **kwargs: Any
+        self, content: Union[str, list[Union[str, dict]]], **kwargs: Any
     ) -> None:
-        """Pass in content as positional arg."""
+        """Pass in content as positional arg.
+
+        Args:
+               content: The string contents of the message.
+               kwargs: Additional fields to pass to the message.
+        """
         super().__init__(content=content, **kwargs)
 
 
-SystemMessage.update_forward_refs()
+SystemMessage.model_rebuild()
 
 
 class SystemMessageChunk(SystemMessage, BaseMessageChunk):
@@ -53,8 +60,11 @@ class SystemMessageChunk(SystemMessage, BaseMessageChunk):
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
     type: Literal["SystemMessageChunk"] = "SystemMessageChunk"  # type: ignore[assignment]
+    """The type of the message (used for serialization). 
+    Defaults to "SystemMessageChunk"."""
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
-        """Get the namespace of the langchain object."""
+    def get_lc_namespace(cls) -> list[str]:
+        """Get the namespace of the langchain object.
+        Default is ["langchain", "schema", "messages"]."""
         return ["langchain", "schema", "messages"]

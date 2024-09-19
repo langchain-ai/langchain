@@ -1,11 +1,12 @@
 """Integration tests for the TensorFlow Dataset Loader."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
 import pytest
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import ValidationError
+from pydantic import ValidationError
 
 from langchain_community.document_loaders.tensorflow_datasets import (
     TensorflowDatasetLoader,

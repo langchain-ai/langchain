@@ -6,13 +6,14 @@ These strategies ensure that the language model generates diverse and
 non-repeating thoughts, which are crucial for problem-solving tasks that require
 exploration.
 """
+
 from abc import abstractmethod
 from typing import Any, Dict, List, Tuple
 
 from langchain.chains.llm import LLMChain
 from langchain_core.prompts.base import BasePromptTemplate
+from pydantic import Field
 
-from langchain_experimental.pydantic_v1 import Field
 from langchain_experimental.tot.prompts import get_cot_prompt, get_propose_prompt
 
 

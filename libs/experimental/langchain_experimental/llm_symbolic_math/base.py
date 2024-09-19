@@ -1,4 +1,5 @@
 """Chain that interprets a prompt and executes python code to do symbolic math."""
+
 from __future__ import annotations
 
 import re
@@ -12,9 +13,9 @@ from langchain_core.callbacks.manager import (
     CallbackManagerForChainRun,
 )
 from langchain_core.prompts.base import BasePromptTemplate
+from pydantic import ConfigDict
 
 from langchain_experimental.llm_symbolic_math.prompt import PROMPT
-from langchain_experimental.pydantic_v1 import Extra
 
 
 class LLMSymbolicMathChain(Chain):
@@ -36,11 +37,10 @@ class LLMSymbolicMathChain(Chain):
     input_key: str = "question"  #: :meta private:
     output_key: str = "answer"  #: :meta private:
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
     @property
     def input_keys(self) -> List[str]:

@@ -5,8 +5,8 @@ from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.language_models.llms import LLM
 from langchain_core.messages import AIMessage
-from langchain_core.pydantic_v1 import Extra, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.utils import get_from_dict_or_env, pre_init
+from pydantic import ConfigDict
 
 logger = logging.getLogger(__name__)
 
@@ -33,12 +33,11 @@ class OpaquePrompts(LLM):
     base_llm: BaseLanguageModel
     """The base LLM to use."""
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
-        extra = Extra.forbid
-
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validates that the OpaquePrompts API key and the Python package exist."""
         try:

@@ -7,9 +7,9 @@ import pytest
 from anthropic.types import Message, TextBlock, Usage
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr
 from langchain_core.runnables import RunnableBinding
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel, Field, SecretStr
 from pytest import CaptureFixture, MonkeyPatch
 
 from langchain_anthropic import ChatAnthropic
@@ -139,7 +139,7 @@ def test__merge_messages() -> None:
                 },
             ]
         ),
-        ToolMessage("buz output", tool_call_id="1"),  # type: ignore[misc]
+        ToolMessage("buz output", tool_call_id="1", status="error"),  # type: ignore[misc]
         ToolMessage(
             content=[
                 {
@@ -180,7 +180,12 @@ def test__merge_messages() -> None:
         ),
         HumanMessage(  # type: ignore[misc]
             [
-                {"type": "tool_result", "content": "buz output", "tool_use_id": "1"},
+                {
+                    "type": "tool_result",
+                    "content": "buz output",
+                    "tool_use_id": "1",
+                    "is_error": True,
+                },
                 {
                     "type": "tool_result",
                     "content": [
@@ -194,6 +199,7 @@ def test__merge_messages() -> None:
                         },
                     ],
                     "tool_use_id": "2",
+                    "is_error": False,
                 },
                 {"type": "text", "text": "next thing"},
             ]
@@ -215,7 +221,12 @@ def test__merge_messages() -> None:
     expected = [
         HumanMessage(  # type: ignore[misc]
             [
-                {"type": "tool_result", "content": "buz output", "tool_use_id": "1"},
+                {
+                    "type": "tool_result",
+                    "content": "buz output",
+                    "tool_use_id": "1",
+                    "is_error": False,
+                },
                 {"type": "tool_result", "content": "blah output", "tool_use_id": "2"},
             ]
         )
@@ -355,15 +366,36 @@ def test_convert_to_anthropic_tool(
 def test__format_messages_with_tool_calls() -> None:
     system = SystemMessage("fuzz")  # type: ignore[misc]
     human = HumanMessage("foo")  # type: ignore[misc]
-    ai = AIMessage(  # type: ignore[misc]
-        "",
+    ai = AIMessage(
+        "",  # with empty string
         tool_calls=[{"name": "bar", "id": "1", "args": {"baz": "buzz"}}],
     )
-    tool = ToolMessage(  # type: ignore[misc]
+    ai2 = AIMessage(
+        [],  # with empty list
+        tool_calls=[{"name": "bar", "id": "2", "args": {"baz": "buzz"}}],
+    )
+    tool = ToolMessage(
         "blurb",
         tool_call_id="1",
     )
-    messages = [system, human, ai, tool]
+    tool_image_url = ToolMessage(
+        [{"type": "image_url", "image_url": {"url": "data:image/jpeg;base64,...."}}],
+        tool_call_id="2",
+    )
+    tool_image = ToolMessage(
+        [
+            {
+                "type": "image",
+                "source": {
+                    "data": "....",
+                    "type": "base64",
+                    "media_type": "image/jpeg",
+                },
+            }
+        ],
+        tool_call_id="3",
+    )
+    messages = [system, human, ai, tool, ai2, tool_image_url, tool_image]
     expected = (
         "fuzz",
         [
@@ -382,7 +414,58 @@ def test__format_messages_with_tool_calls() -> None:
             {
                 "role": "user",
                 "content": [
-                    {"type": "tool_result", "content": "blurb", "tool_use_id": "1"}
+                    {
+                        "type": "tool_result",
+                        "content": "blurb",
+                        "tool_use_id": "1",
+                        "is_error": False,
+                    }
+                ],
+            },
+            {
+                "role": "assistant",
+                "content": [
+                    {
+                        "type": "tool_use",
+                        "name": "bar",
+                        "id": "2",
+                        "input": {"baz": "buzz"},
+                    }
+                ],
+            },
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "tool_result",
+                        "content": [
+                            {
+                                "type": "image",
+                                "source": {
+                                    "data": "....",
+                                    "type": "base64",
+                                    "media_type": "image/jpeg",
+                                },
+                            }
+                        ],
+                        "tool_use_id": "2",
+                        "is_error": False,
+                    },
+                    {
+                        "type": "tool_result",
+                        "content": [
+                            {
+                                "type": "image",
+                                "source": {
+                                    "data": "....",
+                                    "type": "base64",
+                                    "media_type": "image/jpeg",
+                                },
+                            }
+                        ],
+                        "tool_use_id": "3",
+                        "is_error": False,
+                    },
                 ],
             },
         ],
@@ -421,7 +504,12 @@ def test__format_messages_with_str_content_and_tool_calls() -> None:
             {
                 "role": "user",
                 "content": [
-                    {"type": "tool_result", "content": "blurb", "tool_use_id": "1"}
+                    {
+                        "type": "tool_result",
+                        "content": "blurb",
+                        "tool_use_id": "1",
+                        "is_error": False,
+                    }
                 ],
             },
         ],
@@ -433,8 +521,6 @@ def test__format_messages_with_str_content_and_tool_calls() -> None:
 def test__format_messages_with_list_content_and_tool_calls() -> None:
     system = SystemMessage("fuzz")  # type: ignore[misc]
     human = HumanMessage("foo")  # type: ignore[misc]
-    # If content and tool_calls are specified and content is a list, then content is
-    # preferred.
     ai = AIMessage(  # type: ignore[misc]
         [{"type": "text", "text": "thought"}],
         tool_calls=[{"name": "bar", "id": "1", "args": {"baz": "buzz"}}],
@@ -450,12 +536,25 @@ def test__format_messages_with_list_content_and_tool_calls() -> None:
             {"role": "user", "content": "foo"},
             {
                 "role": "assistant",
-                "content": [{"type": "text", "text": "thought"}],
+                "content": [
+                    {"type": "text", "text": "thought"},
+                    {
+                        "type": "tool_use",
+                        "name": "bar",
+                        "id": "1",
+                        "input": {"baz": "buzz"},
+                    },
+                ],
             },
             {
                 "role": "user",
                 "content": [
-                    {"type": "tool_result", "content": "blurb", "tool_use_id": "1"}
+                    {
+                        "type": "tool_result",
+                        "content": "blurb",
+                        "tool_use_id": "1",
+                        "is_error": False,
+                    }
                 ],
             },
         ],
@@ -502,13 +601,52 @@ def test__format_messages_with_tool_use_blocks_and_tool_calls() -> None:
             {
                 "role": "user",
                 "content": [
-                    {"type": "tool_result", "content": "blurb", "tool_use_id": "1"}
+                    {
+                        "type": "tool_result",
+                        "content": "blurb",
+                        "tool_use_id": "1",
+                        "is_error": False,
+                    }
                 ],
             },
         ],
     )
     actual = _format_messages(messages)
     assert expected == actual
+
+
+def test__format_messages_with_cache_control() -> None:
+    messages = [
+        SystemMessage(
+            [
+                {"type": "text", "text": "foo", "cache_control": {"type": "ephemeral"}},
+            ]
+        ),
+        HumanMessage(
+            [
+                {"type": "text", "text": "foo", "cache_control": {"type": "ephemeral"}},
+                {
+                    "type": "text",
+                    "text": "foo",
+                },
+            ]
+        ),
+    ]
+    expected_system = [
+        {"type": "text", "text": "foo", "cache_control": {"type": "ephemeral"}}
+    ]
+    expected_messages = [
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "foo", "cache_control": {"type": "ephemeral"}},
+                {"type": "text", "text": "foo"},
+            ],
+        }
+    ]
+    actual_system, actual_messages = _format_messages(messages)
+    assert expected_system == actual_system
+    assert expected_messages == actual_messages
 
 
 def test_anthropic_api_key_is_secret_string() -> None:

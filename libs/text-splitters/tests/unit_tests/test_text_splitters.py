@@ -180,6 +180,30 @@ def test_character_text_splitter_discard_separator_regex(
     assert output == expected_output
 
 
+def test_recursive_character_text_splitter_keep_separators() -> None:
+    split_tags = [",", "."]
+    query = "Apple,banana,orange and tomato."
+    # start
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=10,
+        chunk_overlap=0,
+        separators=split_tags,
+        keep_separator="start",
+    )
+    result = splitter.split_text(query)
+    assert result == ["Apple", ",banana", ",orange and tomato", "."]
+
+    # end
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=10,
+        chunk_overlap=0,
+        separators=split_tags,
+        keep_separator="end",
+    )
+    result = splitter.split_text(query)
+    assert result == ["Apple,", "banana,", "orange and tomato."]
+
+
 def test_character_text_splitting_args() -> None:
     """Test invalid arguments."""
     with pytest.raises(ValueError):
@@ -1995,3 +2019,56 @@ def test_split_json_many_calls() -> None:
 
     assert chunk0 == chunk0_output
     assert chunk1 == chunk1_output
+
+
+def test_powershell_code_splitter_short_code() -> None:
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.POWERSHELL, chunk_size=60, chunk_overlap=0
+    )
+    code = """
+# Check if a file exists
+$filePath = "C:\\temp\\file.txt"
+if (Test-Path $filePath) {
+    # File exists
+} else {
+    # File does not exist
+}
+    """
+
+    chunks = splitter.split_text(code)
+    assert chunks == [
+        '# Check if a file exists\n$filePath = "C:\\temp\\file.txt"',
+        "if (Test-Path $filePath) {\n    # File exists\n} else {",
+        "# File does not exist\n}",
+    ]
+
+
+def test_powershell_code_splitter_longer_code() -> None:
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.POWERSHELL, chunk_size=60, chunk_overlap=0
+    )
+    code = """
+# Get a list of all processes and export to CSV
+$processes = Get-Process
+$processes | Export-Csv -Path "C:\\temp\\processes.csv" -NoTypeInformation
+
+# Read the CSV file and display its content
+$csvContent = Import-Csv -Path "C:\\temp\\processes.csv"
+$csvContent | ForEach-Object {
+    $_.ProcessName
+}
+
+# End of script
+    """
+
+    chunks = splitter.split_text(code)
+    assert chunks == [
+        "# Get a list of all processes and export to CSV",
+        "$processes = Get-Process",
+        '$processes | Export-Csv -Path "C:\\temp\\processes.csv"',
+        "-NoTypeInformation",
+        "# Read the CSV file and display its content",
+        '$csvContent = Import-Csv -Path "C:\\temp\\processes.csv"',
+        "$csvContent | ForEach-Object {\n    $_.ProcessName\n}",
+        "# End of script",
+    ]

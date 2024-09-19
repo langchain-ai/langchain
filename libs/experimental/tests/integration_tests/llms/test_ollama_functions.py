@@ -5,7 +5,7 @@ import unittest
 from langchain_community.tools import DuckDuckGoSearchResults
 from langchain_community.tools.pubmed.tool import PubmedQueryRun
 from langchain_core.messages import AIMessage
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 
 from langchain_experimental.llms.ollama_functions import (
     OllamaFunctions,
@@ -65,7 +65,7 @@ class TestOllamaFunctions(unittest.TestCase):
     def test_ollama_functions_tools(self) -> None:
         base_model = OllamaFunctions(model="phi3", format="json")
         model = base_model.bind_tools(
-            tools=[PubmedQueryRun(), DuckDuckGoSearchResults(max_results=2)]
+            tools=[PubmedQueryRun(), DuckDuckGoSearchResults(max_results=2)]  # type: ignore[call-arg]
         )
         res = model.invoke("What causes lung cancer?")
         self.assertIsInstance(res, AIMessage)

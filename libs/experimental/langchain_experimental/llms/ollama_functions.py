@@ -12,10 +12,10 @@ from typing import (
     TypedDict,
     TypeVar,
     Union,
-    cast,
 )
 
 from langchain_community.chat_models.ollama import ChatOllama
+from langchain_core._api import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -24,21 +24,21 @@ from langchain_core.language_models import LanguageModelInput
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
-    HumanMessage,
-    SystemMessage,
     ToolCall,
-    ToolMessage,
 )
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.json import JsonOutputParser
 from langchain_core.output_parsers.pydantic import PydanticOutputParser
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.prompts import SystemMessagePromptTemplate
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import Runnable, RunnableLambda
 from langchain_core.runnables.base import RunnableMap
 from langchain_core.runnables.passthrough import RunnablePassthrough
 from langchain_core.tools import BaseTool
+from langchain_core.utils.pydantic import is_basemodel_instance, is_basemodel_subclass
+from pydantic import (
+    BaseModel,
+)
 
 DEFAULT_SYSTEM_TEMPLATE = """You have access to the following tools:
 
@@ -75,22 +75,22 @@ _DictOrPydantic = Union[Dict, _BM]
 
 def _is_pydantic_class(obj: Any) -> bool:
     return isinstance(obj, type) and (
-        issubclass(obj, BaseModel) or BaseModel in obj.__bases__
+        is_basemodel_subclass(obj) or BaseModel in obj.__bases__
     )
-
-
-def _is_pydantic_object(obj: Any) -> bool:
-    return isinstance(obj, BaseModel)
 
 
 def convert_to_ollama_tool(tool: Any) -> Dict:
     """Convert a tool to an Ollama tool."""
     description = None
     if _is_pydantic_class(tool):
-        schema = tool.construct().schema()
+        schema = tool.model_construct().model_json_schema()
         name = schema["title"]
-    elif _is_pydantic_object(tool):
-        schema = tool.get_input_schema().schema()
+    elif isinstance(tool, BaseTool):
+        schema = tool.tool_call_schema.model_json_schema()
+        name = tool.get_name()
+        description = tool.description
+    elif is_basemodel_instance(tool):
+        schema = tool.get_input_schema().model_json_schema()
         name = tool.get_name()
         description = tool.description
     elif isinstance(tool, dict) and "name" in tool and "parameters" in tool:
@@ -133,6 +133,9 @@ def parse_response(message: BaseMessage) -> str:
     raise ValueError(f"`message` is not an instance of `AIMessage`: {message}")
 
 
+@deprecated(  # type: ignore[arg-type]
+    since="0.0.64", removal="1.0", alternative_import="langchain_ollama.ChatOllama"
+)
 class OllamaFunctions(ChatOllama):
     """Function chat model that uses Ollama API."""
 
@@ -189,7 +192,7 @@ class OllamaFunctions(ChatOllama):
             .. code-block:: python
 
                 from langchain_experimental.llms import OllamaFunctions
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
 
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
@@ -210,7 +213,7 @@ class OllamaFunctions(ChatOllama):
             .. code-block:: python
 
                 from langchain_experimental.llms import OllamaFunctions
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
 
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
@@ -231,7 +234,7 @@ class OllamaFunctions(ChatOllama):
             .. code-block:: python
 
                 from langchain_experimental.llms import OllamaFunctions, convert_to_ollama_tool
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
 
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
@@ -260,8 +263,8 @@ class OllamaFunctions(ChatOllama):
             )
         llm = self.bind_tools(tools=[schema], format="json")
         if is_pydantic_schema:
-            output_parser: OutputParserLike = PydanticOutputParser(
-                pydantic_object=schema
+            output_parser: OutputParserLike = PydanticOutputParser(  # type: ignore[type-var]
+                pydantic_object=schema  # type: ignore[arg-type]
             )
         else:
             output_parser = JsonOutputParser()
@@ -278,59 +281,6 @@ class OllamaFunctions(ChatOllama):
             return RunnableMap(raw=llm) | parser_with_fallback
         else:
             return llm | parser_chain
-
-    def _convert_messages_to_ollama_messages(
-        self, messages: List[BaseMessage]
-    ) -> List[Dict[str, Union[str, List[str]]]]:
-        ollama_messages: List = []
-        for message in messages:
-            role = ""
-            if isinstance(message, HumanMessage):
-                role = "user"
-            elif isinstance(message, AIMessage) or isinstance(message, ToolMessage):
-                role = "assistant"
-            elif isinstance(message, SystemMessage):
-                role = "system"
-            else:
-                raise ValueError("Received unsupported message type for Ollama.")
-
-            content = ""
-            images = []
-            if isinstance(message.content, str):
-                content = message.content
-            else:
-                for content_part in cast(List[Dict], message.content):
-                    if content_part.get("type") == "text":
-                        content += f"\n{content_part['text']}"
-                    elif content_part.get("type") == "image_url":
-                        if isinstance(content_part.get("image_url"), str):
-                            image_url_components = content_part["image_url"].split(",")
-                            # Support data:image/jpeg;base64,<image> format
-                            # and base64 strings
-                            if len(image_url_components) > 1:
-                                images.append(image_url_components[1])
-                            else:
-                                images.append(image_url_components[0])
-                        else:
-                            raise ValueError(
-                                "Only string image_url content parts are supported."
-                            )
-                    else:
-                        raise ValueError(
-                            "Unsupported message content type. "
-                            "Must either have type 'text' or type 'image_url' "
-                            "with a string 'image_url' field."
-                        )
-
-            ollama_messages.append(
-                {
-                    "role": role,
-                    "content": content,
-                    "images": images,
-                }
-            )
-
-        return ollama_messages
 
     def _generate(
         self,

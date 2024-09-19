@@ -1,15 +1,14 @@
+# Neo4j Cypher full-text index
 
-# neo4j-cypher-ft
+This template allows you to interact with a `Neo4j` graph database using natural language, leveraging OpenAI's LLM. 
 
-This template allows you to interact with a Neo4j graph database using natural language, leveraging OpenAI's LLM. 
+Its main function is to convert natural language questions into `Cypher` queries (the language used to query Neo4j databases), execute these queries, and provide natural language responses based on the query's results. 
 
-Its main function is to convert natural language questions into Cypher queries (the language used to query Neo4j databases), execute these queries, and provide natural language responses based on the query's results. 
-
-The package utilizes a full-text index for efficient mapping of text values to database entries, thereby enhancing the generation of accurate Cypher statements. 
+The package utilizes a `full-text index` for efficient mapping of text values to database entries, thereby enhancing the generation of accurate Cypher statements. 
 
 In the provided example, the full-text index is used to map names of people and movies from the user's query to corresponding database entries.
 
-![Workflow diagram showing the process from a user asking a question to generating an answer using the Neo4j knowledge graph and full-text index.](https://raw.githubusercontent.com/langchain-ai/langchain/master/templates/neo4j-cypher-ft/static/workflow.png "Neo4j Cypher Workflow Diagram")
+![Workflow diagram showing the process from a user asking a question to generating an answer using the Neo4j knowledge graph and full-text index.](https://raw.githubusercontent.com/langchain-ai/langchain/master/templates/neo4j-cypher-ft/static/workflow.png) "Neo4j Cypher Workflow Diagram"
 
 ## Environment Setup
 

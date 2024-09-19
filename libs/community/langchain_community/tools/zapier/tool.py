@@ -67,6 +67,7 @@ toolkit = ZapierToolkit.from_zapier_nla_wrapper(zapier)
 ```
 
 """
+
 from typing import Any, Dict, Optional
 
 from langchain_core._api import warn_deprecated
@@ -74,8 +75,9 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.tools import BaseTool
+from langchain_core.utils import pre_init
+from pydantic import Field
 
 from langchain_community.tools.zapier.prompt import BASE_ZAPIER_TOOL_PROMPT
 from langchain_community.utilities.zapier import ZapierNLAWrapper
@@ -104,7 +106,7 @@ class ZapierNLARunAction(BaseTool):
     name: str = ""
     description: str = ""
 
-    @root_validator
+    @pre_init
     def set_name_description(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         zapier_description = values["zapier_description"]
         params_schema = values["params_schema"]

@@ -3,8 +3,8 @@
 from typing import Any, Dict, Optional, cast
 
 import requests
-from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from pydantic import BaseModel, ConfigDict, SecretStr, model_validator
 
 
 class GoogleLensAPIWrapper(BaseModel):
@@ -27,16 +27,16 @@ class GoogleLensAPIWrapper(BaseModel):
         google_lens.run('langchain')
     """
 
-    serp_search_engine: Any
+    serp_search_engine: Any = None
     serp_api_key: Optional[SecretStr] = None
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
-        extra = Extra.forbid
-
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that api key and python package exists in environment."""
         values["serp_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(values, "serp_api_key", "SERPAPI_API_KEY")
