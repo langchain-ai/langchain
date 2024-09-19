@@ -152,8 +152,8 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
             None,
             inputs,
             run_id,
-            class_name = self.name,
-            lc_id = self.lc_id(),
+            class_name=self.name,
+            lc_id=self.lc_id(),
             name=run_name,
         )
         try:
@@ -206,8 +206,8 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
             None,
             inputs,
             run_id,
-            class_name = self.name,
-            lc_id = self.lc_id(),
+            class_name=self.name,
+            lc_id=self.lc_id(),
             name=run_name,
         )
         try:
