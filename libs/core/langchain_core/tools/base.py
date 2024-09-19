@@ -311,7 +311,7 @@ def create_schema_from_function(
     )
 
 
-class ToolException(Exception):
+class ToolException(Exception):  # noqa: N818
     """Optional exception that tool throws when execution error occurs.
 
     When this exception is thrown, the agent will not stop working,

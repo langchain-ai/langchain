@@ -1421,7 +1421,7 @@ class InjectedTool(BaseTool):
         return y
 
 
-class fooSchema(BaseModel):
+class fooSchema(BaseModel):  # noqa: N801
     """foo."""
 
     x: int = Field(..., description="abc")
@@ -1568,14 +1568,14 @@ def test_tool_injected_arg() -> None:
 
 
 def test_tool_inherited_injected_arg() -> None:
-    class barSchema(BaseModel):
+    class BarSchema(BaseModel):
         """bar."""
 
         y: Annotated[str, "foobar comment", InjectedToolArg()] = Field(
             ..., description="123"
         )
 
-    class fooSchema(barSchema):
+    class FooSchema(BarSchema):
         """foo."""
 
         x: int = Field(..., description="abc")
@@ -1583,14 +1583,14 @@ def test_tool_inherited_injected_arg() -> None:
     class InheritedInjectedArgTool(BaseTool):
         name: str = "foo"
         description: str = "foo."
-        args_schema: type[BaseModel] = fooSchema
+        args_schema: type[BaseModel] = FooSchema
 
         def _run(self, x: int, y: str) -> Any:
             return y
 
     tool_ = InheritedInjectedArgTool()
     assert tool_.get_input_schema().model_json_schema() == {
-        "title": "fooSchema",  # Matches the title from the provided schema
+        "title": "FooSchema",  # Matches the title from the provided schema
         "description": "foo.",
         "type": "object",
         "properties": {
@@ -1877,15 +1877,15 @@ def test__get_all_basemodel_annotations_v2(use_v1_namespace: bool) -> None:
     A = TypeVar("A")
 
     if use_v1_namespace:
-        from pydantic.v1 import BaseModel as BM1
+        from pydantic.v1 import BaseModel as BaseModel1
 
-        class ModelA(BM1, Generic[A], extra="allow"):
+        class ModelA(BaseModel1, Generic[A], extra="allow"):
             a: A
     else:
-        from pydantic import BaseModel as BM2
+        from pydantic import BaseModel as BaseModel2
         from pydantic import ConfigDict
 
-        class ModelA(BM2, Generic[A]):  # type: ignore[no-redef]
+        class ModelA(BaseModel2, Generic[A]):  # type: ignore[no-redef]
             a: A
             model_config = ConfigDict(arbitrary_types_allowed=True, extra="allow")
 
@@ -2081,13 +2081,13 @@ def test_structured_tool_direct_init() -> None:
     def foo(bar: str) -> str:
         return bar
 
-    async def asyncFoo(bar: str) -> str:
+    async def async_foo(bar: str) -> str:
         return bar
 
-    class fooSchema(BaseModel):
+    class FooSchema(BaseModel):
         bar: str = Field(..., description="The bar")
 
-    tool = StructuredTool(name="foo", args_schema=fooSchema, coroutine=asyncFoo)
+    tool = StructuredTool(name="foo", args_schema=FooSchema, coroutine=async_foo)
 
     with pytest.raises(NotImplementedError):
         assert tool.invoke("hello") == "hello"

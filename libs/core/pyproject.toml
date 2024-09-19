@@ -44,8 +44,16 @@ python = ">=3.12.4"
 target-version = "py39"
 
 [tool.ruff.lint]
-select = ["B", "E", "F", "I", "T201", "UP"]
+select = ["B", "E", "F", "I", "N", "T201", "UP"]
 ignore = ["UP007"]
+
+[tool.ruff.lint.pep8-naming]
+classmethod-decorators = [
+    "classmethod",
+    "langchain_core.utils.pydantic.pre_init",
+    "pydantic.field_validator",
+    "pydantic.v1.root_validator",
+]
 
 [tool.coverage.run]
 omit = [ "tests/*",]

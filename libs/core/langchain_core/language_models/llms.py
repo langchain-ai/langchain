@@ -31,6 +31,7 @@ from tenacity import (
     stop_after_attempt,
     wait_exponential,
 )
+from typing_extensions import override
 
 from langchain_core._api import deprecated
 from langchain_core.caches import BaseCache
@@ -318,6 +319,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
     # --- Runnable methods ---
 
     @property
+    @override
     def OutputType(self) -> type[str]:
         """Get the input type for this runnable."""
         return str
