@@ -16,6 +16,7 @@ from typing import (
 )
 
 from pydantic import BaseModel, RootModel
+from typing_extensions import override
 
 from langchain_core.runnables.base import (
     Other,
@@ -193,10 +194,12 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
         return ["langchain", "schema", "runnable"]
 
     @property
+    @override
     def InputType(self) -> Any:
         return self.input_type or Any
 
     @property
+    @override
     def OutputType(self) -> Any:
         return self.input_type or Any
 

@@ -493,7 +493,7 @@ def test_get_output_schema() -> None:
 def test_get_input_schema_input_messages() -> None:
     from pydantic import RootModel
 
-    RunnableWithMessageHistoryInput = RootModel[Sequence[BaseMessage]]
+    runnable_with_message_history_input = RootModel[Sequence[BaseMessage]]
 
     runnable = RunnableLambda(
         lambda messages: {
@@ -515,7 +515,7 @@ def test_get_input_schema_input_messages() -> None:
     with_history = RunnableWithMessageHistory(
         runnable, get_session_history, output_messages_key="output"
     )
-    expected_schema = _schema(RunnableWithMessageHistoryInput)
+    expected_schema = _schema(runnable_with_message_history_input)
     expected_schema["title"] = "RunnableWithChatHistoryInput"
     assert _schema(with_history.get_input_schema()) == expected_schema
 
