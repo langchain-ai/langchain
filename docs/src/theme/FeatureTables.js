@@ -354,7 +354,7 @@ const FEATURE_TABLES = {
             },
             {
                 name: "Nomic",
-                link: "cohere",
+                link: "nomic",
                 package: "langchain-nomic",
                 apiLink: "https://python.langchain.com/api_reference/nomic/embeddings/langchain_nomic.embeddings.NomicEmbeddings.html"
             },

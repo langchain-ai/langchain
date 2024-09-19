@@ -443,6 +443,12 @@ class AzureSearch(VectorStore):
             logger.debug("Nothing to insert, skipping.")
             return []
 
+        # when `keys` are not passed in and there is `ids` in kwargs, use those instead
+        # base class expects `ids` passed in rather than `keys`
+        # https://github.com/langchain-ai/langchain/blob/4cdaca67dc51dba887289f56c6fead3c1a52f97d/libs/core/langchain_core/vectorstores/base.py#L65
+        if (not keys) and ("ids" in kwargs) and (len(kwargs["ids"]) == len(embeddings)):
+            keys = kwargs["ids"]
+
         return self.add_embeddings(zip(texts, embeddings), metadatas, keys=keys)
 
     async def aadd_texts(
@@ -467,6 +473,12 @@ class AzureSearch(VectorStore):
             logger.debug("Nothing to insert, skipping.")
             return []
 
+        # when `keys` are not passed in and there is `ids` in kwargs, use those instead
+        # base class expects `ids` passed in rather than `keys`
+        # https://github.com/langchain-ai/langchain/blob/4cdaca67dc51dba887289f56c6fead3c1a52f97d/libs/core/langchain_core/vectorstores/base.py#L65
+        if (not keys) and ("ids" in kwargs) and (len(kwargs["ids"]) == len(embeddings)):
+            keys = kwargs["ids"]
+
         return await self.aadd_embeddings(zip(texts, embeddings), metadatas, keys=keys)
 
     def add_embeddings(
@@ -483,9 +495,13 @@ class AzureSearch(VectorStore):
         data = []
         for i, (text, embedding) in enumerate(text_embeddings):
             # Use provided key otherwise use default key
-            key = keys[i] if keys else str(uuid.uuid4())
-            # Encoding key for Azure Search valid characters
-            key = base64.urlsafe_b64encode(bytes(key, "utf-8")).decode("ascii")
+            if keys:
+                key = keys[i]
+            else:
+                key = str(uuid.uuid4())
+                # Encoding key for Azure Search valid characters
+                key = base64.urlsafe_b64encode(bytes(key, "utf-8")).decode("ascii")
+
             metadata = metadatas[i] if metadatas else {}
             # Add data to index
             # Additional metadata to fields mapping
