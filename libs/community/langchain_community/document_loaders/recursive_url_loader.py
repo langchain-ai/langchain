@@ -227,7 +227,7 @@ class RecursiveUrlLoader(BaseLoader):
                 "https://docs.python.org/3.9/",
                 prevent_outside=True,
                 base_url="https://docs.python.org",
-                link_regex=r'<a\s+(?:[^>]*?\s+)?href="([^"]*(?=index)[^"]*)"',
+                link_regex=r'<a\\s+(?:[^>]*?\\s+)?href="([^"]*(?=index)[^"]*)"',
                 exclude_dirs=['https://docs.python.org/3.9/faq']
             )
             docs = loader.load()

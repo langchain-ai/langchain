@@ -27,7 +27,7 @@ from tests.unit_tests.fake.callbacks import (
     FakeAsyncCallbackHandler,
     FakeCallbackHandler,
 )
-from tests.unit_tests.stubs import _AnyIdAIMessage, _AnyIdAIMessageChunk
+from tests.unit_tests.stubs import _any_id_ai_message, _any_id_ai_message_chunk
 
 
 @pytest.fixture
@@ -147,10 +147,10 @@ async def test_astream_fallback_to_ainvoke() -> None:
 
     model = ModelWithGenerate()
     chunks = [chunk for chunk in model.stream("anything")]
-    assert chunks == [_AnyIdAIMessage(content="hello")]
+    assert chunks == [_any_id_ai_message(content="hello")]
 
     chunks = [chunk async for chunk in model.astream("anything")]
-    assert chunks == [_AnyIdAIMessage(content="hello")]
+    assert chunks == [_any_id_ai_message(content="hello")]
 
 
 async def test_astream_implementation_fallback_to_stream() -> None:
@@ -185,15 +185,15 @@ async def test_astream_implementation_fallback_to_stream() -> None:
     model = ModelWithSyncStream()
     chunks = [chunk for chunk in model.stream("anything")]
     assert chunks == [
-        _AnyIdAIMessageChunk(content="a"),
-        _AnyIdAIMessageChunk(content="b"),
+        _any_id_ai_message_chunk(content="a"),
+        _any_id_ai_message_chunk(content="b"),
     ]
     assert len({chunk.id for chunk in chunks}) == 1
     assert type(model)._astream == BaseChatModel._astream
     astream_chunks = [chunk async for chunk in model.astream("anything")]
     assert astream_chunks == [
-        _AnyIdAIMessageChunk(content="a"),
-        _AnyIdAIMessageChunk(content="b"),
+        _any_id_ai_message_chunk(content="a"),
+        _any_id_ai_message_chunk(content="b"),
     ]
     assert len({chunk.id for chunk in astream_chunks}) == 1
 
@@ -230,8 +230,8 @@ async def test_astream_implementation_uses_astream() -> None:
     model = ModelWithAsyncStream()
     chunks = [chunk async for chunk in model.astream("anything")]
     assert chunks == [
-        _AnyIdAIMessageChunk(content="a"),
-        _AnyIdAIMessageChunk(content="b"),
+        _any_id_ai_message_chunk(content="a"),
+        _any_id_ai_message_chunk(content="b"),
     ]
     assert len({chunk.id for chunk in chunks}) == 1
 

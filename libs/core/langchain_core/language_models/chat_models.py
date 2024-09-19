@@ -26,6 +26,7 @@ from pydantic import (
     Field,
     model_validator,
 )
+from typing_extensions import override
 
 from langchain_core._api import deprecated
 from langchain_core.caches import BaseCache
@@ -251,6 +252,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     # --- Runnable methods ---
 
     @property
+    @override
     def OutputType(self) -> Any:
         """Get the output type for this runnable."""
         return AnyMessage
