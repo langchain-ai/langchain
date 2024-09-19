@@ -26,8 +26,7 @@ class ArxivQueryRun(BaseTool):
         "Computer Science, Quantitative Biology, Quantitative Finance, Statistics, "
         "Electrical Engineering, and Economics "
         "from scientific articles on arxiv.org. "
-        "Input should be a search query. If there is something related to date please use date format and not words! "
-        f"Today's date is {datetime.today().strftime('%Y-%m-%d')}."
+        "Input should be a search query."
     )
     api_wrapper: ArxivAPIWrapper = Field(default_factory=ArxivAPIWrapper)  # type: ignore[arg-type]
     args_schema: Type[BaseModel] = ArxivInput
