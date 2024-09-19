@@ -1017,4 +1017,9 @@ _JS_SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "image",
         "ImagePromptTemplate",
     ),
+    ("langchain", "chat_models", "bedrock", "ChatBedrock"): (
+        "langchain_aws",
+        "chat_models",
+        "ChatBedrock",
+    ),
 }
