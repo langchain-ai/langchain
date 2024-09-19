@@ -1,8 +1,9 @@
 import os
 from pathlib import Path
-from typing import Callable
+from typing import Callable, List
 
 import pytest
+from langchain_core.documents import Document
 
 from langchain_unstructured import UnstructuredLoader
 
@@ -11,6 +12,51 @@ EXAMPLE_DOCS_DIRECTORY = str(
     / "community/tests/integration_tests/examples/"
 )
 UNSTRUCTURED_API_KEY = os.getenv("UNSTRUCTURED_API_KEY")
+
+
+def _check_docs_content(docs: List[Document]) -> None:
+    assert all(
+        doc.metadata.get("filename") == "layout-parser-paper.pdf" for doc in docs
+    )
+    assert (
+        sum(doc.metadata.get("category") == "PageBreak" for doc in docs) == 16
+    )  # 16 page doc
+
+    expected_metadata_keys = [
+        "source",
+        "languages",
+        "page_number",
+        "category",
+        "coordinates",
+        "element_id",
+    ]
+    for doc in docs:
+        if doc.page_content:
+            for key in expected_metadata_keys:
+                assert key in doc.metadata
+        else:
+            assert doc.metadata.get("category") == "PageBreak"
+
+    page_numbers = []
+    for doc in docs:
+        if page_number := doc.metadata.get("page_number"):
+            page_numbers.append(page_number)
+
+    assert set(page_numbers) == set(range(1, 17))
+    assert len(docs) >= 32  # (16 pages * (>=1 element per page) + 16 page breaks)
+
+    page_1_content = ""
+    for doc in docs:
+        if doc.metadata.get("page_number") == 1:
+            page_1_content += f" {doc.page_content}"
+    assert (
+        "LayoutParser: A Uniﬁed Toolkit for Deep Learning "
+        "Based Document Image Analysis"
+    ) in page_1_content
+
+    categories = set(doc.metadata.get("category") for doc in docs)
+    assert "NarrativeText" in categories
+    assert "Title" in categories
 
 
 # -- Local partition --
@@ -27,10 +73,7 @@ def test_loader_partitions_locally() -> None:
         include_page_breaks=True,
     ).load()
 
-    assert all(
-        doc.metadata.get("filename") == "layout-parser-paper.pdf" for doc in docs
-    )
-    assert any(doc.metadata.get("category") == "PageBreak" for doc in docs)
+    _check_docs_content(docs)
 
 
 @pytest.mark.local
