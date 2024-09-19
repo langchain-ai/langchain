@@ -15,10 +15,11 @@ from langchain.agents.openai_assistant.base import OpenAIAssistantRunnable, Outp
 from langchain_core._api import beta
 from langchain_core.callbacks import CallbackManager
 from langchain_core.load import dumpd
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.runnables import RunnableConfig, ensure_config
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_tool
+from pydantic import BaseModel, Field, model_validator
+from typing_extensions import Self
 
 if TYPE_CHECKING:
     import openai
@@ -91,7 +92,7 @@ def _is_assistants_builtin_tool(
         A boolean response of true or false indicating if the tool corresponds to
         OpenAI Assistants built-in.
     """
-    assistants_builtin_tools = ("code_interpreter", "retrieval")
+    assistants_builtin_tools = ("code_interpreter", "retrieval", "file_search")
     return (
         isinstance(tool, dict)
         and ("type" in tool)
@@ -209,14 +210,14 @@ class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
     as_agent: bool = False
     """Use as a LangChain agent, compatible with the AgentExecutor."""
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def validate_async_client(cls, values: dict) -> dict:
-        if values["async_client"] is None:
+    @model_validator(mode="after")
+    def validate_async_client(self) -> Self:
+        if self.async_client is None:
             import openai
 
-            api_key = values["client"].api_key
-            values["async_client"] = openai.AsyncOpenAI(api_key=api_key)
-        return values
+            api_key = self.client.api_key
+            self.async_client = openai.AsyncOpenAI(api_key=api_key)
+        return self
 
     @classmethod
     def create_assistant(
@@ -300,7 +301,7 @@ class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
             inheritable_metadata=config.get("metadata"),
         )
         run_manager = callback_manager.on_chain_start(
-            dumpd(self), input, name=config.get("run_name")
+            dumpd(self), input, name=config.get("run_name") or self.get_name()
         )
 
         files = _convert_file_ids_into_attachments(kwargs.get("file_ids", []))
@@ -436,7 +437,7 @@ class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
             inheritable_metadata=config.get("metadata"),
         )
         run_manager = callback_manager.on_chain_start(
-            dumpd(self), input, name=config.get("run_name")
+            dumpd(self), input, name=config.get("run_name") or self.get_name()
         )
 
         files = _convert_file_ids_into_attachments(kwargs.get("file_ids", []))

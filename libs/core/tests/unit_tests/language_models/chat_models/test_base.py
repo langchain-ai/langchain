@@ -1,7 +1,8 @@
 """Test base chat model."""
 
 import uuid
-from typing import Any, AsyncIterator, Iterator, List, Literal, Optional, Union
+from collections.abc import AsyncIterator, Iterator
+from typing import Any, Literal, Optional, Union
 
 import pytest
 
@@ -130,8 +131,8 @@ async def test_astream_fallback_to_ainvoke() -> None:
     class ModelWithGenerate(BaseChatModel):
         def _generate(
             self,
-            messages: List[BaseMessage],
-            stop: Optional[List[str]] = None,
+            messages: list[BaseMessage],
+            stop: Optional[list[str]] = None,
             run_manager: Optional[CallbackManagerForLLMRun] = None,
             **kwargs: Any,
         ) -> ChatResult:
@@ -158,8 +159,8 @@ async def test_astream_implementation_fallback_to_stream() -> None:
     class ModelWithSyncStream(BaseChatModel):
         def _generate(
             self,
-            messages: List[BaseMessage],
-            stop: Optional[List[str]] = None,
+            messages: list[BaseMessage],
+            stop: Optional[list[str]] = None,
             run_manager: Optional[CallbackManagerForLLMRun] = None,
             **kwargs: Any,
         ) -> ChatResult:
@@ -168,8 +169,8 @@ async def test_astream_implementation_fallback_to_stream() -> None:
 
         def _stream(
             self,
-            messages: List[BaseMessage],
-            stop: Optional[List[str]] = None,
+            messages: list[BaseMessage],
+            stop: Optional[list[str]] = None,
             run_manager: Optional[CallbackManagerForLLMRun] = None,
             **kwargs: Any,
         ) -> Iterator[ChatGenerationChunk]:
@@ -203,8 +204,8 @@ async def test_astream_implementation_uses_astream() -> None:
     class ModelWithAsyncStream(BaseChatModel):
         def _generate(
             self,
-            messages: List[BaseMessage],
-            stop: Optional[List[str]] = None,
+            messages: list[BaseMessage],
+            stop: Optional[list[str]] = None,
             run_manager: Optional[CallbackManagerForLLMRun] = None,
             **kwargs: Any,
         ) -> ChatResult:
@@ -213,8 +214,8 @@ async def test_astream_implementation_uses_astream() -> None:
 
         async def _astream(  # type: ignore
             self,
-            messages: List[BaseMessage],
-            stop: Optional[List[str]] = None,
+            messages: list[BaseMessage],
+            stop: Optional[list[str]] = None,
             run_manager: Optional[CallbackManagerForLLMRun] = None,
             **kwargs: Any,
         ) -> AsyncIterator[ChatGenerationChunk]:
@@ -279,8 +280,8 @@ async def test_async_pass_run_id() -> None:
 class NoStreamingModel(BaseChatModel):
     def _generate(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
@@ -294,8 +295,8 @@ class NoStreamingModel(BaseChatModel):
 class StreamingModel(NoStreamingModel):
     def _stream(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:

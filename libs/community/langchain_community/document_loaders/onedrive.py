@@ -6,7 +6,7 @@ import logging
 from typing import TYPE_CHECKING, Iterator, List, Optional, Sequence, Union
 
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import Field
+from pydantic import Field
 
 from langchain_community.document_loaders.base_o365 import (
     O365BaseLoader,

@@ -595,11 +595,8 @@ class Neo4jVector(VectorStore):
         query: str,
         *,
         params: Optional[dict] = None,
-        retry_on_session_expired: bool = True,
     ) -> List[Dict[str, Any]]:
-        """
-        This method sends a Cypher query to the connected Neo4j database
-        and returns the results as a list of dictionaries.
+        """Query Neo4j database with retries and exponential backoff.
 
         Args:
             query (str): The Cypher query to execute.
@@ -608,24 +605,38 @@ class Neo4jVector(VectorStore):
         Returns:
             List[Dict[str, Any]]: List of dictionaries containing the query results.
         """
-        from neo4j.exceptions import CypherSyntaxError, SessionExpired
+        from neo4j import Query
+        from neo4j.exceptions import Neo4jError
 
         params = params or {}
-        with self._driver.session(database=self._database) as session:
-            try:
-                data = session.run(query, params)
-                return [r.data() for r in data]
-            except CypherSyntaxError as e:
-                raise ValueError(f"Cypher Statement is not valid\n{e}")
-            except (
-                SessionExpired
-            ) as e:  # Session expired is a transient error that can be retried
-                if retry_on_session_expired:
-                    return self.query(
-                        query, params=params, retry_on_session_expired=False
+        try:
+            data, _, _ = self._driver.execute_query(
+                query, database=self._database, parameters_=params
+            )
+            return [r.data() for r in data]
+        except Neo4jError as e:
+            if not (
+                (
+                    (  # isCallInTransactionError
+                        e.code == "Neo.DatabaseError.Statement.ExecutionFailed"
+                        or e.code
+                        == "Neo.DatabaseError.Transaction.TransactionStartFailed"
                     )
-                else:
-                    raise e
+                    and "in an implicit transaction" in e.message
+                )
+                or (  # isPeriodicCommitError
+                    e.code == "Neo.ClientError.Statement.SemanticError"
+                    and (
+                        "in an open transaction is not possible" in e.message
+                        or "tried to execute in an explicit transaction" in e.message
+                    )
+                )
+            ):
+                raise
+        # Fallback to allow implicit transactions
+        with self._driver.session() as session:
+            data = session.run(Query(text=query), params)
+            return [r.data() for r in data]
 
     def verify_version(self) -> None:
         """
@@ -692,9 +703,10 @@ class Neo4jVector(VectorStore):
             self.node_label = index_information[0]["labelsOrTypes"][0]
             self.embedding_node_property = index_information[0]["properties"][0]
             self._index_type = index_information[0]["entityType"]
-            embedding_dimension = index_information[0]["options"]["indexConfig"][
-                "vector.dimensions"
-            ]
+            embedding_dimension = None
+            index_config = index_information[0]["options"]["indexConfig"]
+            if "vector.dimensions" in index_config:
+                embedding_dimension = index_config["vector.dimensions"]
 
             return embedding_dimension, index_information[0]["entityType"]
         except IndexError:
@@ -808,10 +820,12 @@ class Neo4jVector(VectorStore):
             )
 
         # If the vector index doesn't exist yet
-        if not embedding_dimension:
+        if not index_type:
             store.create_new_index()
         # If the index already exists, check if embedding dimensions match
-        elif not store.embedding_dimension == embedding_dimension:
+        elif (
+            embedding_dimension and not store.embedding_dimension == embedding_dimension
+        ):
             raise ValueError(
                 f"Index with name {store.index_name} already exists."
                 "The provided embedding function and vector index "
@@ -1275,14 +1289,14 @@ class Neo4jVector(VectorStore):
                 "`from_existing_relationship_index` method."
             )
 
-        if not embedding_dimension:
+        if not index_type:
             raise ValueError(
                 "The specified vector index name does not exist. "
                 "Make sure to check if you spelled it correctly"
             )
 
         # Check if embedding function and vector index dimensions match
-        if not store.embedding_dimension == embedding_dimension:
+        if embedding_dimension and not store.embedding_dimension == embedding_dimension:
             raise ValueError(
                 "The provided embedding function and vector index "
                 "dimensions do not match.\n"
@@ -1337,7 +1351,7 @@ class Neo4jVector(VectorStore):
 
         embedding_dimension, index_type = store.retrieve_existing_index()
 
-        if not embedding_dimension:
+        if not index_type:
             raise ValueError(
                 "The specified vector index name does not exist. "
                 "Make sure to check if you spelled it correctly"
@@ -1351,7 +1365,7 @@ class Neo4jVector(VectorStore):
             )
 
         # Check if embedding function and vector index dimensions match
-        if not store.embedding_dimension == embedding_dimension:
+        if embedding_dimension and not store.embedding_dimension == embedding_dimension:
             raise ValueError(
                 "The provided embedding function and vector index "
                 "dimensions do not match.\n"
@@ -1464,10 +1478,12 @@ class Neo4jVector(VectorStore):
             )
 
         # If the vector index doesn't exist yet
-        if not embedding_dimension:
+        if not index_type:
             store.create_new_index()
         # If the index already exists, check if embedding dimensions match
-        elif not store.embedding_dimension == embedding_dimension:
+        elif (
+            embedding_dimension and not store.embedding_dimension == embedding_dimension
+        ):
             raise ValueError(
                 f"Index with name {store.index_name} already exists."
                 "The provided embedding function and vector index "

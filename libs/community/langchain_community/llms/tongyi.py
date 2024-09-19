@@ -24,8 +24,8 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
-from langchain_core.pydantic_v1 import Field
 from langchain_core.utils import get_from_dict_or_env, pre_init
+from pydantic import Field
 from requests.exceptions import HTTPError
 from tenacity import (
     before_sleep_log,
@@ -238,7 +238,7 @@ class Tongyi(BaseLLM):
     def lc_secrets(self) -> Dict[str, str]:
         return {"dashscope_api_key": "DASHSCOPE_API_KEY"}
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     model_name: str = Field(default="qwen-plus", alias="model")
 
     """Model name to use."""

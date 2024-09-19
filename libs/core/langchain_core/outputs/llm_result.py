@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import List, Optional
+from typing import Literal, Optional, Union
 
-from langchain_core.outputs.generation import Generation
+from pydantic import BaseModel
+
+from langchain_core.outputs.chat_generation import ChatGeneration, ChatGenerationChunk
+from langchain_core.outputs.generation import Generation, GenerationChunk
 from langchain_core.outputs.run_info import RunInfo
-from langchain_core.pydantic_v1 import BaseModel
 
 
 class LLMResult(BaseModel):
@@ -16,7 +18,9 @@ class LLMResult(BaseModel):
     wants to return.
     """
 
-    generations: List[List[Generation]]
+    generations: list[
+        list[Union[Generation, ChatGeneration, GenerationChunk, ChatGenerationChunk]]
+    ]
     """Generated outputs.
     
     The first dimension of the list represents completions for different input
@@ -41,10 +45,13 @@ class LLMResult(BaseModel):
     accessing relevant information from standardized fields present in
     AIMessage.
     """
-    run: Optional[List[RunInfo]] = None
+    run: Optional[list[RunInfo]] = None
     """List of metadata info for model call for each input."""
 
-    def flatten(self) -> List[LLMResult]:
+    type: Literal["LLMResult"] = "LLMResult"  # type: ignore[assignment]
+    """Type is used exclusively for serialization purposes."""
+
+    def flatten(self) -> list[LLMResult]:
         """Flatten generations into a single list.
 
         Unpack List[List[Generation]] -> List[LLMResult] where each returned LLMResult
