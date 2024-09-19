@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Type, cast
 
+from langchain_core._api import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
@@ -12,22 +13,97 @@ from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts import BasePromptTemplate
-from langchain_core.pydantic_v1 import root_validator
 from langchain_core.utils.json import parse_and_check_json_markdown
+from pydantic import model_validator
+from typing_extensions import Self
 
 from langchain.chains import LLMChain
 from langchain.chains.router.base import RouterChain
 
 
+@deprecated(
+    since="0.2.12",
+    removal="1.0",
+    message=(
+        "Use RunnableLambda to select from multiple prompt templates. See example "
+        "in API reference: "
+        "https://api.python.langchain.com/en/latest/chains/langchain.chains.router.llm_router.LLMRouterChain.html"  # noqa: E501
+    ),
+)
 class LLMRouterChain(RouterChain):
-    """A router chain that uses an LLM chain to perform routing."""
+    """A router chain that uses an LLM chain to perform routing.
+
+    This class is deprecated. See below for a replacement, which offers several
+    benefits, including streaming and batch support.
+
+    Below is an example implementation:
+
+        .. code-block:: python
+
+            from operator import itemgetter
+            from typing import Literal
+            from typing_extensions import TypedDict
+
+            from langchain_core.output_parsers import StrOutputParser
+            from langchain_core.prompts import ChatPromptTemplate
+            from langchain_core.runnables import RunnableLambda, RunnablePassthrough
+            from langchain_openai import ChatOpenAI
+
+            llm = ChatOpenAI(model="gpt-4o-mini")
+
+            prompt_1 = ChatPromptTemplate.from_messages(
+                [
+                    ("system", "You are an expert on animals."),
+                    ("human", "{query}"),
+                ]
+            )
+            prompt_2 = ChatPromptTemplate.from_messages(
+                [
+                    ("system", "You are an expert on vegetables."),
+                    ("human", "{query}"),
+                ]
+            )
+
+            chain_1 = prompt_1 | llm | StrOutputParser()
+            chain_2 = prompt_2 | llm | StrOutputParser()
+
+            route_system = "Route the user's query to either the animal or vegetable expert."
+            route_prompt = ChatPromptTemplate.from_messages(
+                [
+                    ("system", route_system),
+                    ("human", "{query}"),
+                ]
+            )
+
+
+            class RouteQuery(TypedDict):
+                \"\"\"Route query to destination.\"\"\"
+                destination: Literal["animal", "vegetable"]
+
+
+            route_chain = (
+                route_prompt
+                | llm.with_structured_output(RouteQuery)
+                | itemgetter("destination")
+            )
+
+            chain = {
+                "destination": route_chain,  # "animal" or "vegetable"
+                "query": lambda x: x["query"],  # pass through input query
+            } | RunnableLambda(
+                # if animal, chain_1. otherwise, chain_2.
+                lambda x: chain_1 if x["destination"] == "animal" else chain_2,
+            )
+
+            chain.invoke({"query": "what color are carrots"})
+    """  # noqa: E501
 
     llm_chain: LLMChain
     """LLM chain used to perform routing"""
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def validate_prompt(cls, values: dict) -> dict:
-        prompt = values["llm_chain"].prompt
+    @model_validator(mode="after")
+    def validate_prompt(self) -> Self:
+        prompt = self.llm_chain.prompt
         if prompt.output_parser is None:
             raise ValueError(
                 "LLMRouterChain requires base llm_chain prompt to have an output"
@@ -35,7 +111,7 @@ class LLMRouterChain(RouterChain):
                 " 'destination' and 'next_inputs'. Received a prompt with no output"
                 " parser."
             )
-        return values
+        return self
 
     @property
     def input_keys(self) -> List[str]:

@@ -18,12 +18,13 @@ from langchain_core.output_parsers.openai_tools import (
     PydanticToolsParser,
 )
 from langchain_core.prompts import BasePromptTemplate
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import Runnable
 from langchain_core.utils.function_calling import (
     convert_to_openai_function,
     convert_to_openai_tool,
 )
+from langchain_core.utils.pydantic import is_basemodel_subclass
+from pydantic import BaseModel
 
 
 @deprecated(
@@ -40,10 +41,10 @@ from langchain_core.utils.function_calling import (
         "feedback here: "
         "<https://github.com/langchain-ai/langchain/discussions/18154>"
     ),
-    removal="0.3.0",
+    removal="1.0",
     alternative=(
         """
-            from langchain_core.pydantic_v1 import BaseModel, Field
+            from pydantic import BaseModel, Field
             from langchain_anthropic import ChatAnthropic
     
             class Joke(BaseModel):
@@ -107,7 +108,7 @@ def create_openai_fn_runnable(
 
                 from langchain.chains.structured_output import create_openai_fn_runnable
                 from langchain_openai import ChatOpenAI
-                from langchain_core.pydantic_v1 import BaseModel, Field
+                from pydantic import BaseModel, Field
 
 
                 class RecordPerson(BaseModel):
@@ -158,10 +159,10 @@ def create_openai_fn_runnable(
         "feedback here: "
         "<https://github.com/langchain-ai/langchain/discussions/18154>"
     ),
-    removal="0.3.0",
+    removal="1.0",
     alternative=(
         """
-            from langchain_core.pydantic_v1 import BaseModel, Field
+            from pydantic import BaseModel, Field
             from langchain_anthropic import ChatAnthropic
 
             class Joke(BaseModel):
@@ -223,7 +224,7 @@ def create_structured_output_runnable(
             structured outputs or a single one. If True and model does not return any 
             structured outputs then chain output is None. If False and model does not 
             return any structured outputs then chain output is an empty list.
-        **kwargs: Additional named arguments.
+        kwargs: Additional named arguments.
 
     Returns:
         A runnable sequence that will return a structured output(s) matching the given 
@@ -236,7 +237,7 @@ def create_structured_output_runnable(
 
                 from langchain.chains import create_structured_output_runnable
                 from langchain_openai import ChatOpenAI
-                from langchain_core.pydantic_v1 import BaseModel, Field
+                from pydantic import BaseModel, Field
 
 
                 class RecordDog(BaseModel):
@@ -317,7 +318,7 @@ def create_structured_output_runnable(
 
                 from langchain.chains import create_structured_output_runnable
                 from langchain_openai import ChatOpenAI
-                from langchain_core.pydantic_v1 import BaseModel, Field
+                from pydantic import BaseModel, Field
 
                 class Dog(BaseModel):
                     '''Identifying information about a dog.'''
@@ -339,7 +340,7 @@ def create_structured_output_runnable(
                 from langchain.chains import create_structured_output_runnable
                 from langchain_openai import ChatOpenAI
                 from langchain_core.prompts import ChatPromptTemplate
-                from langchain_core.pydantic_v1 import BaseModel, Field
+                from pydantic import BaseModel, Field
 
                 class Dog(BaseModel):
                     '''Identifying information about a dog.'''
@@ -365,7 +366,7 @@ def create_structured_output_runnable(
                 from langchain.chains import create_structured_output_runnable
                 from langchain_openai import ChatOpenAI
                 from langchain_core.prompts import ChatPromptTemplate
-                from langchain_core.pydantic_v1 import BaseModel, Field
+                from pydantic import BaseModel, Field
 
                 class Dog(BaseModel):
                     '''Identifying information about a dog.'''
@@ -465,7 +466,7 @@ def _get_openai_tool_output_parser(
     *,
     first_tool_only: bool = False,
 ) -> Union[BaseOutputParser, BaseGenerationOutputParser]:
-    if isinstance(tool, type) and issubclass(tool, BaseModel):
+    if isinstance(tool, type) and is_basemodel_subclass(tool):
         output_parser: Union[BaseOutputParser, BaseGenerationOutputParser] = (
             PydanticToolsParser(tools=[tool], first_tool_only=first_tool_only)
         )
@@ -493,7 +494,7 @@ def get_openai_output_parser(
             not a Pydantic class, then the output parser will automatically extract
             only the function arguments and not the function name.
     """
-    if isinstance(functions[0], type) and issubclass(functions[0], BaseModel):
+    if isinstance(functions[0], type) and is_basemodel_subclass(functions[0]):
         if len(functions) > 1:
             pydantic_schema: Union[Dict, Type[BaseModel]] = {
                 convert_to_openai_function(fn)["name"]: fn for fn in functions
@@ -516,7 +517,7 @@ def _create_openai_json_runnable(
     output_parser: Optional[Union[BaseOutputParser, BaseGenerationOutputParser]] = None,
 ) -> Runnable:
     """"""
-    if isinstance(output_schema, type) and issubclass(output_schema, BaseModel):
+    if isinstance(output_schema, type) and is_basemodel_subclass(output_schema):
         output_parser = output_parser or PydanticOutputParser(
             pydantic_object=output_schema,  # type: ignore
         )

@@ -18,8 +18,7 @@ from langchain_core.messages import (
     BaseMessage,
     SystemMessage,
 )
-
-from langchain_experimental.pydantic_v1 import root_validator
+from pydantic import model_validator
 
 prompt = """In addition to responding, you can use tools. \
 You have access to the following tools.
@@ -126,7 +125,7 @@ def _destrip(tool_input: Any) -> Any:
 
 @deprecated(
     since="0.0.54",
-    removal="0.3",
+    removal="1.0",
     alternative_import="langchain_anthropic.experimental.ChatAnthropicTools",
 )
 class AnthropicFunctions(BaseChatModel):
@@ -134,8 +133,9 @@ class AnthropicFunctions(BaseChatModel):
 
     llm: BaseChatModel
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         values["llm"] = values.get("llm") or ChatAnthropic(**values)
         return values
 

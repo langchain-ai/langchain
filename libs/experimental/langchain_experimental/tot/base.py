@@ -9,8 +9,8 @@ from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
 )
+from pydantic import ConfigDict
 
-from langchain_experimental.pydantic_v1 import Extra
 from langchain_experimental.tot.checker import ToTChecker
 from langchain_experimental.tot.controller import ToTController
 from langchain_experimental.tot.memory import ToTDFSMemory
@@ -43,11 +43,10 @@ class ToTChain(Chain):
     tot_strategy_class: Type[BaseThoughtGenerationStrategy] = ProposePromptStrategy
     verbose_llm: bool = False
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
     @classmethod
     def from_llm(cls, llm: BaseLanguageModel, **kwargs: Any) -> ToTChain:

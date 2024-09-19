@@ -30,11 +30,11 @@ from langchain_core.language_models.chat_models import (
     generate_from_stream,
 )
 from langchain_core.messages import AnyMessage, BaseMessage
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import Runnable, RunnableConfig
 from langchain_core.runnables.schema import StreamEvent
 from langchain_core.tools import BaseTool
 from langchain_core.tracers import RunLog, RunLogPatch
+from pydantic import BaseModel
 from typing_extensions import TypeAlias
 
 __all__ = [
@@ -98,41 +98,42 @@ def init_chat_model(
 
     Must have the integration package corresponding to the model provider installed.
 
-    .. versionadded:: 0.2.7
-
-    .. versionchanged:: 0.2.8
-
     Args:
         model: The name of the model, e.g. "gpt-4o", "claude-3-opus-20240229".
         model_provider: The model provider. Supported model_provider values and the
             corresponding integration package:
-                - openai (langchain-openai)
-                - anthropic (langchain-anthropic)
-                - azure_openai (langchain-openai)
-                - google_vertexai (langchain-google-vertexai)
-                - google_genai (langchain-google-genai)
-                - bedrock (langchain-aws)
-                - cohere (langchain-cohere)
-                - fireworks (langchain-fireworks)
-                - together (langchain-together)
-                - mistralai (langchain-mistralai)
-                - huggingface (langchain-huggingface)
-                - groq (langchain-groq)
-                - ollama (langchain-community)
+
+            - openai (langchain-openai)
+            - anthropic (langchain-anthropic)
+            - azure_openai (langchain-openai)
+            - google_vertexai (langchain-google-vertexai)
+            - google_genai (langchain-google-genai)
+            - bedrock (langchain-aws)
+            - bedrock_converse (langchain-aws)
+            - cohere (langchain-cohere)
+            - fireworks (langchain-fireworks)
+            - together (langchain-together)
+            - mistralai (langchain-mistralai)
+            - huggingface (langchain-huggingface)
+            - groq (langchain-groq)
+            - ollama (langchain-ollama)  [support added in langchain==0.2.12]
 
             Will attempt to infer model_provider from model if not specified. The
             following providers will be inferred based on these model prefixes:
-                - gpt-3... or gpt-4... -> openai
-                - claude... -> anthropic
-                - amazon.... -> bedrock
-                - gemini... -> google_vertexai
-                - command... -> cohere
-                - accounts/fireworks... -> fireworks
+
+            - gpt-3..., gpt-4..., or o1... -> openai
+            - claude... -> anthropic
+            - amazon.... -> bedrock
+            - gemini... -> google_vertexai
+            - command... -> cohere
+            - accounts/fireworks... -> fireworks
+            - mistral... -> mistralai
         configurable_fields: Which model parameters are
             configurable:
-                - None: No configurable fields.
-                - "any": All fields are configurable. *See Security Note below.*
-                - Union[List[str], Tuple[str, ...]]: Specified fields are configurable.
+
+            - None: No configurable fields.
+            - "any": All fields are configurable. *See Security Note below.*
+            - Union[List[str], Tuple[str, ...]]: Specified fields are configurable.
 
             Fields are assumed to have config_prefix stripped if there is a
             config_prefix. If model is specified, then defaults to None. If model is
@@ -161,7 +162,9 @@ def init_chat_model(
         ValueError: If model_provider cannot be inferred or isn't supported.
         ImportError: If the model provider integration package is not installed.
 
-    Initialize non-configurable models:
+    .. dropdown:: Init non-configurable model
+        :open:
+
         .. code-block:: python
 
             # pip install langchain langchain-openai langchain-anthropic langchain-google-vertexai
@@ -176,7 +179,8 @@ def init_chat_model(
             gemini_15.invoke("what's your name")
 
 
-    Create a partially configurable model with no default model:
+    .. dropdown:: Partially configurable model with no default
+
         .. code-block:: python
 
             # pip install langchain langchain-openai langchain-anthropic
@@ -197,7 +201,8 @@ def init_chat_model(
             )
             # claude-3.5 sonnet response
 
-    Create a fully configurable model with a default model and a config prefix:
+    .. dropdown:: Fully configurable model with a default
+
         .. code-block:: python
 
             # pip install langchain langchain-openai langchain-anthropic
@@ -226,7 +231,8 @@ def init_chat_model(
             )
             # Claude-3.5 sonnet response with temperature 0.6
 
-    Bind tools to a configurable model:
+    .. dropdown:: Bind tools to a configurable model
+
         You can call any ChatModel declarative methods on a configurable model in the
         same way that you would with a normal model.
 
@@ -234,7 +240,7 @@ def init_chat_model(
 
             # pip install langchain langchain-openai langchain-anthropic
             from langchain.chat_models import init_chat_model
-            from langchain_core.pydantic_v1 import BaseModel, Field
+            from pydantic import BaseModel, Field
 
             class GetWeather(BaseModel):
                 '''Get the current weather in a given location'''
@@ -263,6 +269,23 @@ def init_chat_model(
                 config={"configurable": {"model": "claude-3-5-sonnet-20240620"}}
             )
             # Claude-3.5 sonnet response with tools
+
+    .. versionadded:: 0.2.7
+
+    .. versionchanged:: 0.2.8
+
+        Support for ``configurable_fields`` and ``config_prefix`` added.
+
+    .. versionchanged:: 0.2.12
+
+        Support for ChatOllama via langchain-ollama package added
+        (langchain_ollama.ChatOllama). Previously,
+        the now-deprecated langchain-community version of Ollama was imported
+        (langchain_community.chat_models.ChatOllama).
+
+        Support for langchain_aws.ChatBedrockConverse added
+        (model_provider="bedrock_converse").
+
     """  # noqa: E501
     if not model and not configurable_fields:
         configurable_fields = ("model", "model_provider")
@@ -336,8 +359,18 @@ def _init_chat_model_helper(
 
         return ChatFireworks(model=model, **kwargs)
     elif model_provider == "ollama":
-        _check_pkg("langchain_community")
-        from langchain_community.chat_models import ChatOllama
+        try:
+            _check_pkg("langchain_ollama")
+            from langchain_ollama import ChatOllama
+        except ImportError:
+            # For backwards compatibility
+            try:
+                _check_pkg("langchain_community")
+                from langchain_community.chat_models import ChatOllama
+            except ImportError:
+                # If both langchain-ollama and langchain-community aren't available,
+                # raise an error related to langchain-ollama
+                _check_pkg("langchain_ollama")
 
         return ChatOllama(model=model, **kwargs)
     elif model_provider == "together":
@@ -366,6 +399,11 @@ def _init_chat_model_helper(
 
         # TODO: update to use model= once ChatBedrock supports
         return ChatBedrock(model_id=model, **kwargs)
+    elif model_provider == "bedrock_converse":
+        _check_pkg("langchain_aws")
+        from langchain_aws import ChatBedrockConverse
+
+        return ChatBedrockConverse(model=model, **kwargs)
     else:
         supported = ", ".join(_SUPPORTED_PROVIDERS)
         raise ValueError(
@@ -388,11 +426,12 @@ _SUPPORTED_PROVIDERS = {
     "huggingface",
     "groq",
     "bedrock",
+    "bedrock_converse",
 }
 
 
 def _attempt_infer_model_provider(model_name: str) -> Optional[str]:
-    if model_name.startswith("gpt-3") or model_name.startswith("gpt-4"):
+    if any(model_name.startswith(pre) for pre in ("gpt-3", "gpt-4", "o1")):
         return "openai"
     elif model_name.startswith("claude"):
         return "anthropic"
@@ -404,6 +443,8 @@ def _attempt_infer_model_provider(model_name: str) -> Optional[str]:
         return "google_vertexai"
     elif model_name.startswith("amazon."):
         return "bedrock"
+    elif model_name.startswith("mistral"):
+        return "mistralai"
     else:
         return None
 

@@ -1,12 +1,15 @@
 import unittest
-from typing import List, Type
+import uuid
+from typing import Union
 
 import pytest
 
+from langchain_core.documents import Document
 from langchain_core.load import dumpd, load
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
+    BaseMessage,
     ChatMessage,
     ChatMessageChunk,
     FunctionMessage,
@@ -18,6 +21,7 @@ from langchain_core.messages import (
     ToolMessage,
     convert_to_messages,
     get_buffer_string,
+    merge_content,
     message_chunk_to_message,
     message_to_dict,
     messages_from_dict,
@@ -27,6 +31,16 @@ from langchain_core.messages.tool import invalid_tool_call as create_invalid_too
 from langchain_core.messages.tool import tool_call as create_tool_call
 from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
 from langchain_core.utils._merge import merge_lists
+
+
+def test_message_init() -> None:
+    for doc in [
+        BaseMessage(type="foo", content="bar"),
+        BaseMessage(type="foo", content="bar", id=None),
+        BaseMessage(type="foo", content="bar", id="1"),
+        BaseMessage(type="foo", content="bar", id=1),
+    ]:
+        assert isinstance(doc, BaseMessage)
 
 
 def test_message_chunks() -> None:
@@ -428,12 +442,12 @@ def test_message_chunk_to_message() -> None:
         ],
     )
     assert message_chunk_to_message(chunk) == expected
-    assert AIMessage(**expected.dict()) == expected
-    assert AIMessageChunk(**chunk.dict()) == chunk
+    assert AIMessage(**expected.model_dump()) == expected
+    assert AIMessageChunk(**chunk.model_dump()) == chunk
 
 
 def test_tool_calls_merge() -> None:
-    chunks: List[dict] = [
+    chunks: list[dict] = [
         dict(content=""),
         dict(
             content="",
@@ -776,7 +790,7 @@ def test_convert_to_messages() -> None:
         SystemMessage,
     ],
 )
-def test_message_name(MessageClass: Type) -> None:
+def test_message_name(MessageClass: type) -> None:
     msg = MessageClass(content="foo", name="bar")
     assert msg.name == "bar"
 
@@ -791,7 +805,7 @@ def test_message_name(MessageClass: Type) -> None:
     "MessageClass",
     [FunctionMessage, FunctionMessageChunk],
 )
-def test_message_name_function(MessageClass: Type) -> None:
+def test_message_name_function(MessageClass: type) -> None:
     # functionmessage doesn't support name=None
     msg = MessageClass(name="foo", content="bar")
     assert msg.name == "foo"
@@ -801,7 +815,7 @@ def test_message_name_function(MessageClass: Type) -> None:
     "MessageClass",
     [ChatMessage, ChatMessageChunk],
 )
-def test_message_name_chat(MessageClass: Type) -> None:
+def test_message_name_chat(MessageClass: type) -> None:
     msg = MessageClass(content="foo", role="user", name="bar")
     assert msg.name == "bar"
 
@@ -873,7 +887,9 @@ def test_merge_tool_calls() -> None:
 
 
 def test_tool_message_serdes() -> None:
-    message = ToolMessage("foo", artifact={"bar": {"baz": 123}}, tool_call_id="1")
+    message = ToolMessage(
+        "foo", artifact={"bar": {"baz": 123}}, tool_call_id="1", status="error"
+    )
     ser_message = {
         "lc": 1,
         "type": "constructor",
@@ -883,6 +899,7 @@ def test_tool_message_serdes() -> None:
             "type": "tool",
             "tool_call_id": "1",
             "artifact": {"bar": {"baz": 123}},
+            "status": "error",
         },
     }
     assert dumpd(message) == ser_message
@@ -910,6 +927,7 @@ def test_tool_message_ser_non_serializable() -> None:
                 "id": ["tests", "unit_tests", "test_messages", "BadObject"],
                 "repr": repr(bad_obj),
             },
+            "status": "success",
         },
     }
     assert dumpd(message) == ser_message
@@ -930,6 +948,7 @@ def test_tool_message_to_dict() -> None:
             "name": None,
             "id": None,
             "tool_call_id": "1",
+            "status": "success",
         },
     }
     actual = message_to_dict(message)
@@ -950,3 +969,48 @@ def test_tool_message_str() -> None:
     expected = "content='foo' tool_call_id='1' artifact={'bar': {'baz': 123}}"
     actual = str(message)
     assert expected == actual
+
+
+@pytest.mark.parametrize(
+    ["first", "others", "expected"],
+    [
+        ("", [""], ""),
+        ("", [[]], [""]),
+        ([], [""], []),
+        ([], [[]], []),
+        ("foo", [""], "foo"),
+        ("foo", [[]], ["foo"]),
+        (["foo"], [""], ["foo"]),
+        (["foo"], [[]], ["foo"]),
+        ("foo", ["bar"], "foobar"),
+        ("foo", [["bar"]], ["foo", "bar"]),
+        (["foo"], ["bar"], ["foobar"]),
+        (["foo"], [["bar"]], ["foo", "bar"]),
+    ],
+)
+def test_merge_content(
+    first: Union[list, str], others: list, expected: Union[list, str]
+) -> None:
+    actual = merge_content(first, *others)
+    assert actual == expected
+
+
+def test_tool_message_content() -> None:
+    ToolMessage("foo", tool_call_id="1")
+    ToolMessage(["foo"], tool_call_id="1")
+    ToolMessage([{"foo": "bar"}], tool_call_id="1")
+
+    assert ToolMessage(("a", "b", "c"), tool_call_id="1").content == ["a", "b", "c"]  # type: ignore[arg-type]
+    assert ToolMessage(5, tool_call_id="1").content == "5"  # type: ignore[arg-type]
+    assert ToolMessage(5.1, tool_call_id="1").content == "5.1"  # type: ignore[arg-type]
+    assert ToolMessage({"foo": "bar"}, tool_call_id="1").content == "{'foo': 'bar'}"  # type: ignore[arg-type]
+    assert (
+        ToolMessage(Document("foo"), tool_call_id="1").content == "page_content='foo'"  # type: ignore[arg-type]
+    )
+
+
+def test_tool_message_tool_call_id() -> None:
+    ToolMessage("foo", tool_call_id="1")
+    ToolMessage("foo", tool_call_id=uuid.uuid4())
+    ToolMessage("foo", tool_call_id=1)
+    ToolMessage("foo", tool_call_id=1.0)

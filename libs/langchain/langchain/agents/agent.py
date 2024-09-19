@@ -19,6 +19,7 @@ from typing import (
     Sequence,
     Tuple,
     Union,
+    cast,
 )
 
 import yaml
@@ -39,11 +40,12 @@ from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.prompts.few_shot import FewShotPromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
-from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.runnables import Runnable, RunnableConfig, ensure_config
 from langchain_core.runnables.utils import AddableDict
 from langchain_core.tools import BaseTool
 from langchain_core.utils.input import get_color_mapping
+from pydantic import BaseModel, ConfigDict, model_validator
+from typing_extensions import Self
 
 from langchain.agents.agent_iterator import AgentExecutorIterator
 from langchain.agents.agent_types import AgentType
@@ -156,7 +158,7 @@ class BaseSingleActionAgent(BaseModel):
             llm: Language model to use.
             tools: Tools to use.
             callback_manager: Callback manager to use.
-            **kwargs: Additional arguments.
+            kwargs: Additional arguments.
 
         Returns:
             BaseSingleActionAgent: Agent object.
@@ -174,7 +176,7 @@ class BaseSingleActionAgent(BaseModel):
         Returns:
             Dict: Dictionary representation of agent.
         """
-        _dict = super().dict()
+        _dict = super().model_dump()
         try:
             _type = self._agent_type
         except NotImplementedError:
@@ -322,7 +324,7 @@ class BaseMultiActionAgent(BaseModel):
 
     def dict(self, **kwargs: Any) -> Dict:
         """Return dictionary representation of agent."""
-        _dict = super().dict()
+        _dict = super().model_dump()
         try:
             _dict["_type"] = str(self._agent_type)
         except NotImplementedError:
@@ -419,10 +421,9 @@ class RunnableAgent(BaseSingleActionAgent):
         individual LLM tokens will not be available in stream_log.
     """
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     @property
     def return_values(self) -> List[str]:
@@ -529,10 +530,9 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
         individual LLM tokens will not be available in stream_log.
     """
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     @property
     def return_values(self) -> List[str]:
@@ -633,11 +633,11 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
 
 @deprecated(
     "0.1.0",
-    alternative=(
+    message=(
         "Use new agent constructor methods like create_react_agent, create_json_agent, "
         "create_structured_chat_agent, etc."
     ),
-    removal="0.3.0",
+    removal="1.0",
 )
 class LLMSingleActionAgent(BaseSingleActionAgent):
     """Base class for single action agents."""
@@ -724,11 +724,11 @@ class LLMSingleActionAgent(BaseSingleActionAgent):
 
 @deprecated(
     "0.1.0",
-    alternative=(
+    message=(
         "Use new agent constructor methods like create_react_agent, create_json_agent, "
         "create_structured_chat_agent, etc."
     ),
-    removal="0.3.0",
+    removal="1.0",
 )
 class Agent(BaseSingleActionAgent):
     """Agent that calls the language model and deciding the action.
@@ -857,8 +857,8 @@ class Agent(BaseSingleActionAgent):
         """
         return list(set(self.llm_chain.input_keys) - {"agent_scratchpad"})
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def validate_prompt(cls, values: Dict) -> Dict:
+    @model_validator(mode="after")
+    def validate_prompt(self) -> Self:
         """Validate that prompt matches format.
 
         Args:
@@ -871,7 +871,7 @@ class Agent(BaseSingleActionAgent):
             ValueError: If `agent_scratchpad` is not in prompt.input_variables
              and prompt is not a FewShotPromptTemplate or a PromptTemplate.
         """
-        prompt = values["llm_chain"].prompt
+        prompt = self.llm_chain.prompt
         if "agent_scratchpad" not in prompt.input_variables:
             logger.warning(
                 "`agent_scratchpad` should be a variable in prompt.input_variables."
@@ -884,7 +884,7 @@ class Agent(BaseSingleActionAgent):
                 prompt.suffix += "\n{agent_scratchpad}"
             else:
                 raise ValueError(f"Got unexpected prompt type {type(prompt)}")
-        return values
+        return self
 
     @property
     @abstractmethod
@@ -939,7 +939,7 @@ class Agent(BaseSingleActionAgent):
             tools: Tools to use.
             callback_manager: Callback manager to use.
             output_parser: Output parser to use.
-            **kwargs: Additional arguments.
+            kwargs: Additional arguments.
 
         Returns:
             Agent: Agent object.
@@ -1046,12 +1046,13 @@ class ExceptionTool(BaseTool):
 
 
 NextStepOutput = List[Union[AgentFinish, AgentAction, AgentStep]]
+RunnableAgentType = Union[RunnableAgent, RunnableMultiActionAgent]
 
 
 class AgentExecutor(Chain):
     """Agent that is using tools."""
 
-    agent: Union[BaseSingleActionAgent, BaseMultiActionAgent]
+    agent: Union[BaseSingleActionAgent, BaseMultiActionAgent, Runnable]
     """The agent to run for creating a plan and determining actions
     to take at each step of the execution loop."""
     tools: Sequence[BaseTool]
@@ -1099,7 +1100,7 @@ class AgentExecutor(Chain):
     @classmethod
     def from_agent_and_tools(
         cls,
-        agent: Union[BaseSingleActionAgent, BaseMultiActionAgent],
+        agent: Union[BaseSingleActionAgent, BaseMultiActionAgent, Runnable],
         tools: Sequence[BaseTool],
         callbacks: Callbacks = None,
         **kwargs: Any,
@@ -1110,7 +1111,7 @@ class AgentExecutor(Chain):
             agent: Agent to use.
             tools: Tools to use.
             callbacks: Callbacks to use.
-            **kwargs: Additional arguments.
+            kwargs: Additional arguments.
 
         Returns:
             AgentExecutor: Agent executor object.
@@ -1122,8 +1123,8 @@ class AgentExecutor(Chain):
             **kwargs,
         )
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def validate_tools(cls, values: Dict) -> Dict:
+    @model_validator(mode="after")
+    def validate_tools(self) -> Self:
         """Validate that tools are compatible with agent.
 
         Args:
@@ -1135,43 +1136,20 @@ class AgentExecutor(Chain):
         Raises:
             ValueError: If allowed tools are different than provided tools.
         """
-        agent = values["agent"]
-        tools = values["tools"]
-        allowed_tools = agent.get_allowed_tools()
+        agent = self.agent
+        tools = self.tools
+        allowed_tools = agent.get_allowed_tools()  # type: ignore
         if allowed_tools is not None:
             if set(allowed_tools) != set([tool.name for tool in tools]):
                 raise ValueError(
                     f"Allowed tools ({allowed_tools}) different than "
                     f"provided tools ({[tool.name for tool in tools]})"
                 )
-        return values
+        return self
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def validate_return_direct_tool(cls, values: Dict) -> Dict:
-        """Validate that tools are compatible with agent.
-
-        Args:
-            values: Values to validate.
-
-        Returns:
-            Dict: Validated values.
-
-        Raises:
-            ValueError: If tools that have `return_direct=True` are not allowed.
-        """
-        agent = values["agent"]
-        tools = values["tools"]
-        if isinstance(agent, BaseMultiActionAgent):
-            for tool in tools:
-                if tool.return_direct:
-                    raise ValueError(
-                        "Tools that have `return_direct=True` are not allowed "
-                        "in multi-action agents"
-                    )
-        return values
-
-    @root_validator(pre=True)
-    def validate_runnable_agent(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_runnable_agent(cls, values: Dict) -> Any:
         """Convert runnable to agent if passed in.
 
         Args:
@@ -1200,6 +1178,21 @@ class AgentExecutor(Chain):
                 )
         return values
 
+    @property
+    def _action_agent(self) -> Union[BaseSingleActionAgent, BaseMultiActionAgent]:
+        """Type cast self.agent.
+
+        The .agent attribute type includes Runnable, but is converted to one of
+        RunnableAgentType in the validate_runnable_agent root_validator.
+
+        To support instantiating with a Runnable, here we explicitly cast the type
+        to reflect the changes made in the root_validator.
+        """
+        if isinstance(self.agent, Runnable):
+            return cast(RunnableAgentType, self.agent)
+        else:
+            return self.agent
+
     def save(self, file_path: Union[Path, str]) -> None:
         """Raise error - saving not supported for Agent Executors.
 
@@ -1221,7 +1214,7 @@ class AgentExecutor(Chain):
         Args:
             file_path: Path to save to.
         """
-        return self.agent.save(file_path)
+        return self._action_agent.save(file_path)
 
     def iter(
         self,
@@ -1256,7 +1249,7 @@ class AgentExecutor(Chain):
 
         :meta private:
         """
-        return self.agent.input_keys
+        return self._action_agent.input_keys
 
     @property
     def output_keys(self) -> List[str]:
@@ -1265,9 +1258,9 @@ class AgentExecutor(Chain):
         :meta private:
         """
         if self.return_intermediate_steps:
-            return self.agent.return_values + ["intermediate_steps"]
+            return self._action_agent.return_values + ["intermediate_steps"]
         else:
-            return self.agent.return_values
+            return self._action_agent.return_values
 
     def lookup_tool(self, name: str) -> BaseTool:
         """Lookup tool by name.
@@ -1367,7 +1360,7 @@ class AgentExecutor(Chain):
             intermediate_steps = self._prepare_intermediate_steps(intermediate_steps)
 
             # Call the LLM to see what to do.
-            output = self.agent.plan(
+            output = self._action_agent.plan(
                 intermediate_steps,
                 callbacks=run_manager.get_child() if run_manager else None,
                 **inputs,
@@ -1400,7 +1393,7 @@ class AgentExecutor(Chain):
             output = AgentAction("_Exception", observation, text)
             if run_manager:
                 run_manager.on_agent_action(output, color="green")
-            tool_run_kwargs = self.agent.tool_run_logging_kwargs()
+            tool_run_kwargs = self._action_agent.tool_run_logging_kwargs()
             observation = ExceptionTool().run(
                 output.tool_input,
                 verbose=self.verbose,
@@ -1442,7 +1435,7 @@ class AgentExecutor(Chain):
             tool = name_to_tool_map[agent_action.tool]
             return_direct = tool.return_direct
             color = color_mapping[agent_action.tool]
-            tool_run_kwargs = self.agent.tool_run_logging_kwargs()
+            tool_run_kwargs = self._action_agent.tool_run_logging_kwargs()
             if return_direct:
                 tool_run_kwargs["llm_prefix"] = ""
             # We then call the tool on the tool input to get an observation
@@ -1454,7 +1447,7 @@ class AgentExecutor(Chain):
                 **tool_run_kwargs,
             )
         else:
-            tool_run_kwargs = self.agent.tool_run_logging_kwargs()
+            tool_run_kwargs = self._action_agent.tool_run_logging_kwargs()
             observation = InvalidTool().run(
                 {
                     "requested_tool_name": agent_action.tool,
@@ -1504,7 +1497,7 @@ class AgentExecutor(Chain):
             intermediate_steps = self._prepare_intermediate_steps(intermediate_steps)
 
             # Call the LLM to see what to do.
-            output = await self.agent.aplan(
+            output = await self._action_agent.aplan(
                 intermediate_steps,
                 callbacks=run_manager.get_child() if run_manager else None,
                 **inputs,
@@ -1535,7 +1528,7 @@ class AgentExecutor(Chain):
             else:
                 raise ValueError("Got unexpected type of `handle_parsing_errors`")
             output = AgentAction("_Exception", observation, text)
-            tool_run_kwargs = self.agent.tool_run_logging_kwargs()
+            tool_run_kwargs = self._action_agent.tool_run_logging_kwargs()
             observation = await ExceptionTool().arun(
                 output.tool_input,
                 verbose=self.verbose,
@@ -1589,7 +1582,7 @@ class AgentExecutor(Chain):
             tool = name_to_tool_map[agent_action.tool]
             return_direct = tool.return_direct
             color = color_mapping[agent_action.tool]
-            tool_run_kwargs = self.agent.tool_run_logging_kwargs()
+            tool_run_kwargs = self._action_agent.tool_run_logging_kwargs()
             if return_direct:
                 tool_run_kwargs["llm_prefix"] = ""
             # We then call the tool on the tool input to get an observation
@@ -1601,7 +1594,7 @@ class AgentExecutor(Chain):
                 **tool_run_kwargs,
             )
         else:
-            tool_run_kwargs = self.agent.tool_run_logging_kwargs()
+            tool_run_kwargs = self._action_agent.tool_run_logging_kwargs()
             observation = await InvalidTool().arun(
                 {
                     "requested_tool_name": agent_action.tool,
@@ -1656,7 +1649,7 @@ class AgentExecutor(Chain):
                     )
             iterations += 1
             time_elapsed = time.time() - start_time
-        output = self.agent.return_stopped_response(
+        output = self._action_agent.return_stopped_response(
             self.early_stopping_method, intermediate_steps, **inputs
         )
         return self._return(output, intermediate_steps, run_manager=run_manager)
@@ -1708,7 +1701,7 @@ class AgentExecutor(Chain):
 
                     iterations += 1
                     time_elapsed = time.time() - start_time
-                output = self.agent.return_stopped_response(
+                output = self._action_agent.return_stopped_response(
                     self.early_stopping_method, intermediate_steps, **inputs
                 )
                 return await self._areturn(
@@ -1716,7 +1709,7 @@ class AgentExecutor(Chain):
                 )
         except (TimeoutError, asyncio.TimeoutError):
             # stop early when interrupted by the async timeout
-            output = self.agent.return_stopped_response(
+            output = self._action_agent.return_stopped_response(
                 self.early_stopping_method, intermediate_steps, **inputs
             )
             return await self._areturn(
@@ -1730,8 +1723,8 @@ class AgentExecutor(Chain):
         agent_action, observation = next_step_output
         name_to_tool_map = {tool.name: tool for tool in self.tools}
         return_value_key = "output"
-        if len(self.agent.return_values) > 0:
-            return_value_key = self.agent.return_values[0]
+        if len(self._action_agent.return_values) > 0:
+            return_value_key = self._action_agent.return_values[0]
         # Invalid tools won't be in the map, so we return False.
         if agent_action.tool in name_to_tool_map:
             if name_to_tool_map[agent_action.tool].return_direct:
@@ -1765,7 +1758,7 @@ class AgentExecutor(Chain):
         Args:
             input: Input to the agent.
             config: Config to use.
-            **kwargs: Additional arguments.
+            kwargs: Additional arguments.
 
         Yields:
             AddableDict: Addable dictionary.
@@ -1796,7 +1789,7 @@ class AgentExecutor(Chain):
         Args:
             input: Input to the agent.
             config: Config to use.
-            **kwargs: Additional arguments.
+            kwargs: Additional arguments.
 
         Yields:
             AddableDict: Addable dictionary.

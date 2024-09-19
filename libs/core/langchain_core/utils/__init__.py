@@ -22,10 +22,12 @@ from langchain_core.utils.utils import (
     build_extra_kwargs,
     check_package_version,
     convert_to_secret_str,
+    from_env,
     get_pydantic_field_names,
     guard_import,
     mock_now,
     raise_for_status_with_text,
+    secret_from_env,
     xor_args,
 )
 
@@ -54,4 +56,6 @@ __all__ = [
     "pre_init",
     "batch_iterate",
     "abatch_iterate",
+    "from_env",
+    "secret_from_env",
 ]

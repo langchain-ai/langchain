@@ -3,8 +3,9 @@ from __future__ import annotations
 from typing import Any, List, Optional, Sequence
 
 from langchain_core.language_models import BaseLanguageModel
-from langchain_core.pydantic_v1 import Field
-from langchain_core.tools import BaseTool, BaseToolkit
+from langchain_core.tools import BaseTool
+from langchain_core.tools.base import BaseToolkit
+from pydantic import Field
 
 from langchain_community.agent_toolkits.nla.tool import NLATool
 from langchain_community.tools.openapi.utils.openapi_utils import OpenAPISpec
@@ -76,7 +77,7 @@ class NLAToolkit(BaseToolkit):
             spec: The OpenAPI spec.
             requests: Optional requests object. Default is None.
             verbose: Whether to print verbose output. Default is False.
-            **kwargs: Additional arguments.
+            kwargs: Additional arguments.
 
         Returns:
             The toolkit.
@@ -102,7 +103,7 @@ class NLAToolkit(BaseToolkit):
             open_api_url: The URL of the OpenAPI spec.
             requests: Optional requests object. Default is None.
             verbose: Whether to print verbose output. Default is False.
-            **kwargs: Additional arguments.
+            kwargs: Additional arguments.
 
         Returns:
             The toolkit.

@@ -4,7 +4,7 @@ from langchain.chains.base import Chain
 from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import PromptTemplate
-from langchain_core.pydantic_v1 import Extra
+from pydantic import ConfigDict
 
 from langchain_experimental.video_captioning.services.audio_service import (
     AudioProcessor,
@@ -37,9 +37,10 @@ class VideoCaptioningChain(Chain):
     closed_caption_similarity_threshold: int = 80
     use_unclustered_video_models: bool = False
 
-    class Config:
-        extra = Extra.allow
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="allow",
+    )
 
     @property
     def input_keys(self) -> List[str]:

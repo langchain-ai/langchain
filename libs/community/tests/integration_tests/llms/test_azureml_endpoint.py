@@ -7,7 +7,7 @@ from typing import Dict
 from urllib.request import HTTPError
 
 import pytest
-from langchain_core.pydantic_v1 import ValidationError
+from pydantic import ValidationError
 
 from langchain_community.llms.azureml_endpoint import (
     AzureMLOnlineEndpoint,
@@ -59,8 +59,8 @@ def test_custom_formatter() -> None:
     """Test ability to create a custom content formatter."""
 
     class CustomFormatter(ContentFormatterBase):
-        content_type = "application/json"
-        accepts = "application/json"
+        content_type: str = "application/json"
+        accepts: str = "application/json"
 
         def format_request_payload(self, prompt: str, model_kwargs: Dict) -> bytes:  # type: ignore[override]
             input_str = json.dumps(
@@ -101,8 +101,8 @@ def test_invalid_request_format() -> None:
     """Test invalid request format."""
 
     class CustomContentFormatter(ContentFormatterBase):
-        content_type = "application/json"
-        accepts = "application/json"
+        content_type: str = "application/json"
+        accepts: str = "application/json"
 
         def format_request_payload(self, prompt: str, model_kwargs: Dict) -> bytes:  # type: ignore[override]
             input_str = json.dumps(

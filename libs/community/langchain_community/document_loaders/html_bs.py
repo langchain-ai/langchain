@@ -1,3 +1,4 @@
+import importlib.util
 import logging
 from pathlib import Path
 from typing import Dict, Iterator, Union
@@ -10,7 +11,74 @@ logger = logging.getLogger(__name__)
 
 
 class BSHTMLLoader(BaseLoader):
-    """Load `HTML` files and parse them with `beautiful soup`."""
+    """
+    __ModuleName__ document loader integration
+
+    Setup:
+        Install ``langchain-community`` and ``bs4``.
+
+        .. code-block:: bash
+
+            pip install -U langchain-community bs4
+
+    Instantiate:
+        .. code-block:: python
+
+            from langchain_community.document_loaders import BSHTMLLoader
+
+            loader = BSHTMLLoader(
+                file_path="./example_data/fake-content.html",
+            )
+
+    Lazy load:
+        .. code-block:: python
+
+            docs = []
+            docs_lazy = loader.lazy_load()
+
+            # async variant:
+            # docs_lazy = await loader.alazy_load()
+
+            for doc in docs_lazy:
+                docs.append(doc)
+            print(docs[0].page_content[:100])
+            print(docs[0].metadata)
+
+        .. code-block:: python
+
+
+            Test Title
+
+
+            My First Heading
+            My first paragraph.
+
+
+
+            {'source': './example_data/fake-content.html', 'title': 'Test Title'}
+
+    Async load:
+        .. code-block:: python
+
+            docs = await loader.aload()
+            print(docs[0].page_content[:100])
+            print(docs[0].metadata)
+
+        .. code-block:: python
+
+
+
+            Test Title
+
+
+            My First Heading
+            My first paragraph.
+
+
+
+            {'source': './example_data/fake-content.html', 'title': 'Test Title'}
+
+    """  # noqa: E501
 
     def __init__(
         self,
@@ -39,6 +107,13 @@ class BSHTMLLoader(BaseLoader):
         self.file_path = file_path
         self.open_encoding = open_encoding
         if bs_kwargs is None:
+            if not importlib.util.find_spec("lxml"):
+                raise ImportError(
+                    "By default BSHTMLLoader uses the 'lxml' package. Please either "
+                    "install it with `pip install -U lxml` or pass in init arg "
+                    "`bs_kwargs={'features': '...'}` to overwrite the default "
+                    "BeautifulSoup kwargs."
+                )
             bs_kwargs = {"features": "lxml"}
         self.bs_kwargs = bs_kwargs
         self.get_text_separator = get_text_separator
