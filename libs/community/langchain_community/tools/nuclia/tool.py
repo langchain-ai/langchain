@@ -20,8 +20,8 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
@@ -220,7 +220,7 @@ class NucliaUnderstandingAPI(BaseTool):
                 data = MessageToJson(
                     pb,
                     preserving_proto_field_name=True,
-                    including_default_value_fields=True,
+                    including_default_value_fields=True,  # type: ignore
                 )
                 self._results[matching_id]["data"] = data
 

@@ -5,17 +5,13 @@ to a simple key-value interface.
 
 The primary goal of these storages is to support implementation of caching.
 """
+
 from abc import ABC, abstractmethod
+from collections.abc import AsyncIterator, Iterator, Sequence
 from typing import (
     Any,
-    AsyncIterator,
-    Dict,
     Generic,
-    Iterator,
-    List,
     Optional,
-    Sequence,
-    Tuple,
     TypeVar,
     Union,
 )
@@ -28,10 +24,62 @@ V = TypeVar("V")
 
 
 class BaseStore(Generic[K, V], ABC):
-    """Abstract interface for a key-value store."""
+    """Abstract interface for a key-value store.
+
+    This is an interface that's meant to abstract away the details of
+    different key-value stores. It provides a simple interface for
+    getting, setting, and deleting key-value pairs.
+
+    The basic methods are `mget`, `mset`, and `mdelete` for getting,
+    setting, and deleting multiple key-value pairs at once. The `yield_keys`
+    method is used to iterate over keys that match a given prefix.
+
+    The async versions of these methods are also provided, which are
+    meant to be used in async contexts. The async methods are named with
+    an `a` prefix, e.g., `amget`, `amset`, `amdelete`, and `ayield_keys`.
+
+    By default, the `amget`, `amset`, `amdelete`, and `ayield_keys` methods
+    are implemented using the synchronous methods. If the store can natively
+    support async  operations, it should override these methods.
+
+    By design the methods only accept batches of keys and values, and not
+    single keys or values. This is done to force user code to work with batches
+    which will usually be more efficient by saving on round trips to the store.
+
+    Examples:
+
+        .. code-block:: python
+
+            from langchain.storage import BaseStore
+
+            class MyInMemoryStore(BaseStore[str, int]):
+
+                def __init__(self):
+                    self.store = {}
+
+                def mget(self, keys):
+                    return [self.store.get(key) for key in keys]
+
+                def mset(self, key_value_pairs):
+                    for key, value in key_value_pairs:
+                        self.store[key] = value
+
+                def mdelete(self, keys):
+                    for key in keys:
+                        if key in self.store:
+                            del self.store[key]
+
+                def yield_keys(self, prefix=None):
+                    if prefix is None:
+                        yield from self.store.keys()
+                    else:
+                        for key in self.store.keys():
+                            if key.startswith(prefix):
+                                yield key
+    """
 
     @abstractmethod
-    def mget(self, keys: Sequence[K]) -> List[Optional[V]]:
+    def mget(self, keys: Sequence[K]) -> list[Optional[V]]:
         """Get the values associated with the given keys.
 
         Args:
@@ -42,8 +90,8 @@ class BaseStore(Generic[K, V], ABC):
             If a key is not found, the corresponding value will be None.
         """
 
-    async def amget(self, keys: Sequence[K]) -> List[Optional[V]]:
-        """Get the values associated with the given keys.
+    async def amget(self, keys: Sequence[K]) -> list[Optional[V]]:
+        """Async get the values associated with the given keys.
 
         Args:
             keys (Sequence[K]): A sequence of keys.
@@ -55,15 +103,15 @@ class BaseStore(Generic[K, V], ABC):
         return await run_in_executor(None, self.mget, keys)
 
     @abstractmethod
-    def mset(self, key_value_pairs: Sequence[Tuple[K, V]]) -> None:
+    def mset(self, key_value_pairs: Sequence[tuple[K, V]]) -> None:
         """Set the values for the given keys.
 
         Args:
             key_value_pairs (Sequence[Tuple[K, V]]): A sequence of key-value pairs.
         """
 
-    async def amset(self, key_value_pairs: Sequence[Tuple[K, V]]) -> None:
-        """Set the values for the given keys.
+    async def amset(self, key_value_pairs: Sequence[tuple[K, V]]) -> None:
+        """Async set the values for the given keys.
 
         Args:
             key_value_pairs (Sequence[Tuple[K, V]]): A sequence of key-value pairs.
@@ -79,7 +127,7 @@ class BaseStore(Generic[K, V], ABC):
         """
 
     async def amdelete(self, keys: Sequence[K]) -> None:
-        """Delete the given keys and their associated values.
+        """Async delete the given keys and their associated values.
 
         Args:
             keys (Sequence[K]): A sequence of keys to delete.
@@ -95,9 +143,8 @@ class BaseStore(Generic[K, V], ABC):
         Args:
             prefix (str): The prefix to match.
 
-        Returns:
+        Yields:
             Iterator[K | str]: An iterator over keys that match the given prefix.
-
             This method is allowed to return an iterator over either K or str
             depending on what makes more sense for the given store.
         """
@@ -105,14 +152,13 @@ class BaseStore(Generic[K, V], ABC):
     async def ayield_keys(
         self, *, prefix: Optional[str] = None
     ) -> Union[AsyncIterator[K], AsyncIterator[str]]:
-        """Get an iterator over keys that match the given prefix.
+        """Async get an iterator over keys that match the given prefix.
 
         Args:
             prefix (str): The prefix to match.
 
-        Returns:
+        Yields:
             Iterator[K | str]: An iterator over keys that match the given prefix.
-
             This method is allowed to return an iterator over either K or str
             depending on what makes more sense for the given store.
         """
@@ -129,7 +175,113 @@ ByteStore = BaseStore[str, bytes]
 
 
 class InMemoryBaseStore(BaseStore[str, V], Generic[V]):
-    """In-memory implementation of the BaseStore using a dictionary.
+    """In-memory implementation of the BaseStore using a dictionary."""
+
+    def __init__(self) -> None:
+        """Initialize an empty store."""
+        self.store: dict[str, V] = {}
+
+    def mget(self, keys: Sequence[str]) -> list[Optional[V]]:
+        """Get the values associated with the given keys.
+
+        Args:
+            keys (Sequence[str]): A sequence of keys.
+
+        Returns:
+            A sequence of optional values associated with the keys.
+            If a key is not found, the corresponding value will be None.
+        """
+        return [self.store.get(key) for key in keys]
+
+    async def amget(self, keys: Sequence[str]) -> list[Optional[V]]:
+        """Async get the values associated with the given keys.
+
+        Args:
+            keys (Sequence[str]): A sequence of keys.
+
+        Returns:
+            A sequence of optional values associated with the keys.
+            If a key is not found, the corresponding value will be None.
+        """
+        return self.mget(keys)
+
+    def mset(self, key_value_pairs: Sequence[tuple[str, V]]) -> None:
+        """Set the values for the given keys.
+
+        Args:
+            key_value_pairs (Sequence[Tuple[str, V]]): A sequence of key-value pairs.
+
+        Returns:
+            None
+        """
+        for key, value in key_value_pairs:
+            self.store[key] = value
+
+    async def amset(self, key_value_pairs: Sequence[tuple[str, V]]) -> None:
+        """Async set the values for the given keys.
+
+        Args:
+            key_value_pairs (Sequence[Tuple[str, V]]): A sequence of key-value pairs.
+
+        Returns:
+            None
+        """
+        return self.mset(key_value_pairs)
+
+    def mdelete(self, keys: Sequence[str]) -> None:
+        """Delete the given keys and their associated values.
+
+        Args:
+            keys (Sequence[str]): A sequence of keys to delete.
+        """
+        for key in keys:
+            if key in self.store:
+                del self.store[key]
+
+    async def amdelete(self, keys: Sequence[str]) -> None:
+        """Async delete the given keys and their associated values.
+
+        Args:
+            keys (Sequence[str]): A sequence of keys to delete.
+        """
+        self.mdelete(keys)
+
+    def yield_keys(self, prefix: Optional[str] = None) -> Iterator[str]:
+        """Get an iterator over keys that match the given prefix.
+
+        Args:
+            prefix (str, optional): The prefix to match. Defaults to None.
+
+        Yields:
+            Iterator[str]: An iterator over keys that match the given prefix.
+        """
+        if prefix is None:
+            yield from self.store.keys()
+        else:
+            for key in self.store.keys():
+                if key.startswith(prefix):
+                    yield key
+
+    async def ayield_keys(self, prefix: Optional[str] = None) -> AsyncIterator[str]:
+        """Async get an async iterator over keys that match the given prefix.
+
+        Args:
+            prefix (str, optional): The prefix to match. Defaults to None.
+
+        Yields:
+            AsyncIterator[str]: An async iterator over keys that match the given prefix.
+        """
+        if prefix is None:
+            for key in self.store.keys():
+                yield key
+        else:
+            for key in self.store.keys():
+                if key.startswith(prefix):
+                    yield key
+
+
+class InMemoryStore(InMemoryBaseStore[Any]):
+    """In-memory store for any type of data.
 
     Attributes:
         store (Dict[str, Any]): The underlying dictionary that stores
@@ -152,111 +304,30 @@ class InMemoryBaseStore(BaseStore[str, V], Generic[V]):
             # ['key2']
     """
 
-    def __init__(self) -> None:
-        """Initialize an empty store."""
-        self.store: Dict[str, V] = {}
 
-    def mget(self, keys: Sequence[str]) -> List[Optional[V]]:
-        """Get the values associated with the given keys.
+class InMemoryByteStore(InMemoryBaseStore[bytes]):
+    """In-memory store for bytes.
 
-        Args:
-            keys (Sequence[str]): A sequence of keys.
+    Attributes:
+        store (Dict[str, bytes]): The underlying dictionary that stores
+            the key-value pairs.
 
-        Returns:
-            A sequence of optional values associated with the keys.
-            If a key is not found, the corresponding value will be None.
-        """
-        return [self.store.get(key) for key in keys]
+    Examples:
 
-    async def amget(self, keys: Sequence[str]) -> List[Optional[V]]:
-        """Get the values associated with the given keys.
+        .. code-block:: python
 
-        Args:
-            keys (Sequence[str]): A sequence of keys.
+            from langchain.storage import InMemoryByteStore
 
-        Returns:
-            A sequence of optional values associated with the keys.
-            If a key is not found, the corresponding value will be None.
-        """
-        return self.mget(keys)
-
-    def mset(self, key_value_pairs: Sequence[Tuple[str, V]]) -> None:
-        """Set the values for the given keys.
-
-        Args:
-            key_value_pairs (Sequence[Tuple[str, V]]): A sequence of key-value pairs.
-
-        Returns:
-            None
-        """
-        for key, value in key_value_pairs:
-            self.store[key] = value
-
-    async def amset(self, key_value_pairs: Sequence[Tuple[str, V]]) -> None:
-        """Set the values for the given keys.
-
-        Args:
-            key_value_pairs (Sequence[Tuple[str, V]]): A sequence of key-value pairs.
-
-        Returns:
-            None
-        """
-        return self.mset(key_value_pairs)
-
-    def mdelete(self, keys: Sequence[str]) -> None:
-        """Delete the given keys and their associated values.
-
-        Args:
-            keys (Sequence[str]): A sequence of keys to delete.
-        """
-        for key in keys:
-            if key in self.store:
-                del self.store[key]
-
-    async def amdelete(self, keys: Sequence[str]) -> None:
-        """Delete the given keys and their associated values.
-
-        Args:
-            keys (Sequence[str]): A sequence of keys to delete.
-        """
-        self.mdelete(keys)
-
-    def yield_keys(self, prefix: Optional[str] = None) -> Iterator[str]:
-        """Get an iterator over keys that match the given prefix.
-
-        Args:
-            prefix (str, optional): The prefix to match. Defaults to None.
-
-        Returns:
-            Iterator[str]: An iterator over keys that match the given prefix.
-        """
-        if prefix is None:
-            yield from self.store.keys()
-        else:
-            for key in self.store.keys():
-                if key.startswith(prefix):
-                    yield key
-
-    async def ayield_keys(self, prefix: Optional[str] = None) -> AsyncIterator[str]:
-        """Get an async iterator over keys that match the given prefix.
-
-        Args:
-            prefix (str, optional): The prefix to match. Defaults to None.
-
-        Returns:
-            AsyncIterator[str]: An async iterator over keys that match the given prefix.
-        """
-        if prefix is None:
-            for key in self.store.keys():
-                yield key
-        else:
-            for key in self.store.keys():
-                if key.startswith(prefix):
-                    yield key
-
-
-InMemoryStore = InMemoryBaseStore[Any]
-InMemoryByteStore = InMemoryBaseStore[bytes]
+            store = InMemoryByteStore()
+            store.mset([('key1', b'value1'), ('key2', b'value2')])
+            store.mget(['key1', 'key2'])
+            # [b'value1', b'value2']
+            store.mdelete(['key1'])
+            list(store.yield_keys())
+            # ['key2']
+            list(store.yield_keys(prefix='k'))
+            # ['key2']
+    """
 
 
 class InvalidKeyException(LangChainException):

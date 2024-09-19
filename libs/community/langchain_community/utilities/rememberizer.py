@@ -1,10 +1,11 @@
 """Wrapper for Rememberizer APIs."""
-from typing import Dict, List, Optional
+
+from typing import Any, Dict, List, Optional, cast
 
 import requests
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, model_validator
 
 
 class RememberizerAPIWrapper(BaseModel):
@@ -13,8 +14,9 @@ class RememberizerAPIWrapper(BaseModel):
     top_k_results: int = 10
     rememberizer_api_key: Optional[str] = None
 
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that api key in environment."""
         rememberizer_api_key = get_from_dict_or_env(
             values, "rememberizer_api_key", "REMEMBERIZER_API_KEY"
@@ -26,7 +28,9 @@ class RememberizerAPIWrapper(BaseModel):
     def search(self, query: str) -> dict:
         """Search for a query in the Rememberizer API."""
         url = f"https://api.rememberizer.ai/api/v1/documents/search?q={query}&n={self.top_k_results}"
-        response = requests.get(url, headers={"x-api-key": self.rememberizer_api_key})
+        response = requests.get(
+            url, headers={"x-api-key": cast(str, self.rememberizer_api_key)}
+        )
         data = response.json()
 
         if response.status_code != 200:

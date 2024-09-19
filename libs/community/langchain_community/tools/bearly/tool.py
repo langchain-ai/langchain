@@ -6,9 +6,8 @@ from pathlib import Path
 from typing import Dict, List, Type
 
 import requests
-from langchain_core.pydantic_v1 import BaseModel, Field
-
-from langchain_community.tools import Tool
+from langchain_core.tools import Tool
+from pydantic import BaseModel, Field
 
 
 def strip_markdown_code(md_string: str) -> str:
@@ -38,7 +37,7 @@ class BearlyInterpreterToolArguments(BaseModel):
 
     python_code: str = Field(
         ...,
-        example="print('Hello World')",
+        examples=["print('Hello World')"],
         description=(
             "The pure python script to be evaluated. "
             "The contents will be in main.py. "
@@ -59,7 +58,7 @@ If you have any files outputted write them to "output/" relative to the executio
 path. Output can only be read from the directory, stdout, and stdin. \
 Do not use things like plot.show() as it will \
 not work instead write them out `output/` and a link to the file will be returned. \
-print() any output and results so you can capture the output."""  # noqa: T201
+print() any output and results so you can capture the output."""
 
 
 class FileInfo(BaseModel):
@@ -74,8 +73,8 @@ class BearlyInterpreterTool:
     """Tool for evaluating python code in a sandbox environment."""
 
     api_key: str
-    endpoint = "https://exec.bearly.ai/v1/interpreter"
-    name = "bearly_interpreter"
+    endpoint: str = "https://exec.bearly.ai/v1/interpreter"
+    name: str = "bearly_interpreter"
     args_schema: Type[BaseModel] = BearlyInterpreterToolArguments
     files: Dict[str, FileInfo] = {}
 

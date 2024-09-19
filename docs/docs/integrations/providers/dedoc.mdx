@@ -1,0 +1,56 @@
+# Dedoc
+
+>[Dedoc](https://dedoc.readthedocs.io) is an [open-source](https://github.com/ispras/dedoc)
+library/service that extracts texts, tables, attached files and document structure
+(e.g., titles, list items, etc.) from files of various formats.
+
+`Dedoc` supports `DOCX`, `XLSX`, `PPTX`, `EML`, `HTML`, `PDF`, images and more.
+Full list of supported formats can be found [here](https://dedoc.readthedocs.io/en/latest/#id1).
+
+## Installation and Setup
+
+### Dedoc library
+
+You can install `Dedoc` using `pip`.
+In this case, you will need to install dependencies,
+please go [here](https://dedoc.readthedocs.io/en/latest/getting_started/installation.html)
+to get more information.
+
+```bash
+pip install dedoc
+```
+
+### Dedoc API
+
+If you are going to use `Dedoc` API, you don't need to install `dedoc` library.
+In this case, you should run the `Dedoc` service, e.g. `Docker` container (please see
+[the documentation](https://dedoc.readthedocs.io/en/latest/getting_started/installation.html#install-and-run-dedoc-using-docker)
+for more details):
+
+```bash
+docker pull dedocproject/dedoc
+docker run -p 1231:1231
+```
+
+## Document Loader
+
+* For handling files of any formats (supported by `Dedoc`), you can use `DedocFileLoader`:
+
+    ```python
+    from langchain_community.document_loaders import DedocFileLoader
+    ```
+
+* For handling PDF files (with or without a textual layer), you can use `DedocPDFLoader`:
+
+    ```python
+    from langchain_community.document_loaders import DedocPDFLoader
+    ```
+
+* For handling files of any formats without library installation,
+you can use `Dedoc API` with `DedocAPIFileLoader`:
+
+    ```python
+    from langchain_community.document_loaders import DedocAPIFileLoader
+    ```
+
+Please see a [usage example](/docs/integrations/document_loaders/dedoc) for more details.

@@ -1,10 +1,12 @@
 """Module contains common parsers for PDFs."""
+
 from __future__ import annotations
 
 import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
+    Dict,
     Iterable,
     Iterator,
     Mapping,
@@ -26,6 +28,7 @@ if TYPE_CHECKING:
     import pdfplumber.page
     import pypdf._page
     import pypdfium2._helpers.page
+    from pypdf import PageObject
     from textractor.data.text_linearization_config import TextLinearizationConfig
 
 
@@ -82,20 +85,45 @@ class PyPDFParser(BaseBlobParser):
     """Load `PDF` using `pypdf`"""
 
     def __init__(
-        self, password: Optional[Union[str, bytes]] = None, extract_images: bool = False
+        self,
+        password: Optional[Union[str, bytes]] = None,
+        extract_images: bool = False,
+        *,
+        extraction_mode: str = "plain",
+        extraction_kwargs: Optional[Dict[str, Any]] = None,
     ):
         self.password = password
         self.extract_images = extract_images
+        self.extraction_mode = extraction_mode
+        self.extraction_kwargs = extraction_kwargs or {}
 
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:  # type: ignore[valid-type]
         """Lazily parse the blob."""
-        import pypdf
+        try:
+            import pypdf
+        except ImportError:
+            raise ImportError(
+                "`pypdf` package not found, please install it with "
+                "`pip install pypdf`"
+            )
+
+        def _extract_text_from_page(page: "PageObject") -> str:
+            """
+            Extract text from image given the version of pypdf.
+            """
+            if pypdf.__version__.startswith("3"):
+                return page.extract_text()
+            else:
+                return page.extract_text(
+                    extraction_mode=self.extraction_mode, **self.extraction_kwargs
+                )
 
         with blob.as_bytes_io() as pdf_file_obj:  # type: ignore[attr-defined]
             pdf_reader = pypdf.PdfReader(pdf_file_obj, password=self.password)
+
             yield from [
                 Document(
-                    page_content=page.extract_text()
+                    page_content=_extract_text_from_page(page=page)
                     + self._extract_images_from_page(page),
                     metadata={"source": blob.source, "page": page_number},  # type: ignore[attr-defined]
                 )
@@ -144,7 +172,13 @@ class PDFMinerParser(BaseBlobParser):
         """Lazily parse the blob."""
 
         if not self.extract_images:
-            from pdfminer.high_level import extract_text
+            try:
+                from pdfminer.high_level import extract_text
+            except ImportError:
+                raise ImportError(
+                    "`pdfminer` package not found, please install it with "
+                    "`pip install pdfminer.six`"
+                )
 
             with blob.as_bytes_io() as pdf_file_obj:  # type: ignore[attr-defined]
                 if self.concatenate_pages:
@@ -233,6 +267,7 @@ class PyMuPDFParser(BaseBlobParser):
 
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:  # type: ignore[valid-type]
         """Lazily parse the blob."""
+
         import fitz
 
         with blob.as_bytes_io() as file_path:  # type: ignore[attr-defined]
@@ -243,24 +278,48 @@ class PyMuPDFParser(BaseBlobParser):
 
             yield from [
                 Document(
-                    page_content=page.get_text(**self.text_kwargs)
-                    + self._extract_images_from_page(doc, page),
-                    metadata=dict(
-                        {
-                            "source": blob.source,  # type: ignore[attr-defined]
-                            "file_path": blob.source,  # type: ignore[attr-defined]
-                            "page": page.number,
-                            "total_pages": len(doc),
-                        },
-                        **{
-                            k: doc.metadata[k]
-                            for k in doc.metadata
-                            if type(doc.metadata[k]) in [str, int]
-                        },
-                    ),
+                    page_content=self._get_page_content(doc, page, blob),
+                    metadata=self._extract_metadata(doc, page, blob),
                 )
                 for page in doc
             ]
+
+    def _get_page_content(
+        self, doc: fitz.fitz.Document, page: fitz.fitz.Page, blob: Blob
+    ) -> str:
+        """
+        Get the text of the page using PyMuPDF and RapidOCR and issue a warning
+        if it is empty.
+        """
+        content = page.get_text(**self.text_kwargs) + self._extract_images_from_page(
+            doc, page
+        )
+
+        if not content:
+            warnings.warn(
+                f"Warning: Empty content on page "
+                f"{page.number} of document {blob.source}"
+            )
+
+        return content
+
+    def _extract_metadata(
+        self, doc: fitz.fitz.Document, page: fitz.fitz.Page, blob: Blob
+    ) -> dict:
+        """Extract metadata from the document and page."""
+        return dict(
+            {
+                "source": blob.source,  # type: ignore[attr-defined]
+                "file_path": blob.source,  # type: ignore[attr-defined]
+                "page": page.number,
+                "total_pages": len(doc),
+            },
+            **{
+                k: doc.metadata[k]
+                for k in doc.metadata
+                if isinstance(doc.metadata[k], (str, int))
+            },
+        )
 
     def _extract_images_from_page(
         self, doc: fitz.fitz.Document, page: fitz.fitz.Page

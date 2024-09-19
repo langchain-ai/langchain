@@ -1,4 +1,5 @@
 """Wrapper around a Power BI endpoint."""
+
 from __future__ import annotations
 
 import asyncio
@@ -8,8 +9,13 @@ from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Union
 
 import aiohttp
 import requests
-from aiohttp import ServerTimeoutError
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator, validator
+from aiohttp import ClientTimeout, ServerTimeoutError
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    model_validator,
+)
 from requests.exceptions import Timeout
 
 logger = logging.getLogger(__name__)
@@ -39,19 +45,16 @@ class PowerBIDataset(BaseModel):
     schemas: Dict[str, str] = Field(default_factory=dict)
     aiosession: Optional[aiohttp.ClientSession] = None
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
-        arbitrary_types_allowed = True
-
-    @validator("table_names", allow_reuse=True)
-    def fix_table_names(cls, table_names: List[str]) -> List[str]:
-        """Fix the table names."""
-        return [fix_table_name(table) for table in table_names]
-
-    @root_validator(pre=True, allow_reuse=True)
-    def token_or_credential_present(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_params(cls, values: Dict[str, Any]) -> Any:
         """Validate that at least one of token and credentials is present."""
+        table_names = values.get("table_names", [])
+        values["table_names"] = [fix_table_name(table) for table in table_names]
         if "token" in values or "credential" in values:
             return values
         raise ValueError("Please provide either a credential or a token.")
@@ -61,7 +64,7 @@ class PowerBIDataset(BaseModel):
         """Get the request url."""
         if self.group_id:
             return f"{BASE_URL}/groups/{self.group_id}/datasets/{self.dataset_id}/executeQueries"  # noqa: E501 # pylint: disable=C0301
-        return f"{BASE_URL}/datasets/{self.dataset_id}/executeQueries"  # noqa: E501 # pylint: disable=C0301
+        return f"{BASE_URL}/datasets/{self.dataset_id}/executeQueries"  # pylint: disable=C0301
 
     @property
     def headers(self) -> Dict[str, str]:
@@ -228,7 +231,7 @@ class PowerBIDataset(BaseModel):
                 self.request_url,
                 headers=self.headers,
                 json=self._create_json_content(command),
-                timeout=10,
+                timeout=ClientTimeout(total=10),
             ) as response:
                 if response.status == 403:
                     return "TokenError: Could not login to PowerBI, please check your credentials."  # noqa: E501
@@ -239,7 +242,7 @@ class PowerBIDataset(BaseModel):
                 self.request_url,
                 headers=self.headers,
                 json=self._create_json_content(command),
-                timeout=10,
+                timeout=ClientTimeout(total=10),
             ) as response:
                 if response.status == 403:
                     return "TokenError: Could not login to PowerBI, please check your credentials."  # noqa: E501

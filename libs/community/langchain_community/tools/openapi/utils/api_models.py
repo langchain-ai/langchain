@@ -1,4 +1,5 @@
 """Pydantic models for parsing an OpenAPI spec."""
+
 from __future__ import annotations
 
 import logging
@@ -15,7 +16,7 @@ from typing import (
     Union,
 )
 
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 
 from langchain_community.tools.openapi.utils.openapi_utils import HTTPVerb, OpenAPISpec
 
@@ -55,6 +56,7 @@ class APIPropertyLocation(Enum):
 _SUPPORTED_MEDIA_TYPES = ("application/json",)
 
 SUPPORTED_LOCATIONS = {
+    APIPropertyLocation.HEADER,
     APIPropertyLocation.QUERY,
     APIPropertyLocation.PATH,
 }

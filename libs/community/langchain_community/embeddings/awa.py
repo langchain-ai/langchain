@@ -1,7 +1,7 @@
 from typing import Any, Dict, List
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from pydantic import BaseModel, model_validator
 
 
 class AwaEmbeddings(BaseModel, Embeddings):
@@ -16,8 +16,9 @@ class AwaEmbeddings(BaseModel, Embeddings):
     client: Any  #: :meta private:
     model: str = "all-mpnet-base-v2"
 
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that awadb library is installed."""
 
         try:

@@ -1,5 +1,6 @@
-import json
+import json  # type: ignore[import-not-found]
 import logging
+import os
 from typing import Any, AsyncIterator, Dict, Iterator, List, Mapping, Optional
 
 from langchain_core.callbacks import (
@@ -8,8 +9,9 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
-from langchain_core.pydantic_v1 import Extra, Field, root_validator
-from langchain_core.utils import get_from_dict_or_env, get_pydantic_field_names
+from langchain_core.utils import from_env, get_pydantic_field_names
+from pydantic import ConfigDict, Field, model_validator
+from typing_extensions import Self
 
 logger = logging.getLogger(__name__)
 
@@ -66,10 +68,13 @@ class HuggingFaceEndpoint(LLM):
     """  # noqa: E501
 
     endpoint_url: Optional[str] = None
-    """Endpoint URL to use."""
+    """Endpoint URL to use. If repo_id is not specified then this needs to given or 
+    should be pass as env variable in `HF_INFERENCE_ENDPOINT`"""
     repo_id: Optional[str] = None
-    """Repo to use."""
-    huggingfacehub_api_token: Optional[str] = None
+    """Repo to use. If endpoint_url is not specified then this needs to given"""
+    huggingfacehub_api_token: Optional[str] = Field(
+        default_factory=from_env("HUGGINGFACEHUB_API_TOKEN", default=None)
+    )
     max_new_tokens: int = 512
     """Maximum number of generated tokens"""
     top_k: Optional[int] = None
@@ -110,19 +115,19 @@ class HuggingFaceEndpoint(LLM):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `call` not explicitly specified"""
     model: str
-    client: Any
-    async_client: Any
+    client: Any = None  #: :meta private:
+    async_client: Any = None  #: :meta private:
     task: Optional[str] = None
     """Task to call the model with.
     Should be a task that returns `generated_text` or `summary_text`."""
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
-        extra = Extra.forbid
-
-    @root_validator(pre=True)
-    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})
@@ -145,19 +150,43 @@ class HuggingFaceEndpoint(LLM):
             )
 
         values["model_kwargs"] = extra
-        if "endpoint_url" not in values and "repo_id" not in values:
+
+        # to correctly create the InferenceClient and AsyncInferenceClient
+        # in validate_environment, we need to populate values["model"].
+        # from InferenceClient docstring:
+        # model (`str`, `optional`):
+        #     The model to run inference with. Can be a model id hosted on the Hugging
+        #       Face Hub, e.g. `bigcode/starcoder`
+        #     or a URL to a deployed Inference Endpoint. Defaults to None, in which
+        #       case a recommended model is
+        #     automatically selected for the task.
+
+        # this string could be in 3 places of descending priority:
+        # 2. values["model"] or values["endpoint_url"] or values["repo_id"]
+        #       (equal priority - don't allow both set)
+        # 3. values["HF_INFERENCE_ENDPOINT"] (if none above set)
+
+        model = values.get("model")
+        endpoint_url = values.get("endpoint_url")
+        repo_id = values.get("repo_id")
+
+        if sum([bool(model), bool(endpoint_url), bool(repo_id)]) > 1:
             raise ValueError(
-                "Please specify an `endpoint_url` or `repo_id` for the model."
+                "Please specify either a `model` OR an `endpoint_url` OR a `repo_id`,"
+                "not more than one."
             )
-        if "endpoint_url" in values and "repo_id" in values:
+        values["model"] = (
+            model or endpoint_url or repo_id or os.environ.get("HF_INFERENCE_ENDPOINT")
+        )
+        if not values["model"]:
             raise ValueError(
-                "Please specify either an `endpoint_url` OR a `repo_id`, not both."
+                "Please specify a `model` or an `endpoint_url` or a `repo_id` for the "
+                "model."
             )
-        values["model"] = values.get("endpoint_url") or values.get("repo_id")
         return values
 
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="after")
+    def validate_environment(self) -> Self:
         """Validate that package is installed and that the API token is valid."""
         try:
             from huggingface_hub import login  # type: ignore[import]
@@ -167,33 +196,36 @@ class HuggingFaceEndpoint(LLM):
                 "Could not import huggingface_hub python package. "
                 "Please install it with `pip install huggingface_hub`."
             )
-        try:
-            huggingfacehub_api_token = get_from_dict_or_env(
-                values, "huggingfacehub_api_token", "HUGGINGFACEHUB_API_TOKEN"
-            )
-            login(token=huggingfacehub_api_token)
-        except Exception as e:
-            raise ValueError(
-                "Could not authenticate with huggingface_hub. "
-                "Please check your API token."
-            ) from e
+
+        huggingfacehub_api_token = self.huggingfacehub_api_token or os.getenv(
+            "HF_TOKEN"
+        )
+
+        if huggingfacehub_api_token is not None:
+            try:
+                login(token=huggingfacehub_api_token)
+            except Exception as e:
+                raise ValueError(
+                    "Could not authenticate with huggingface_hub. "
+                    "Please check your API token."
+                ) from e
 
         from huggingface_hub import AsyncInferenceClient, InferenceClient
 
-        values["client"] = InferenceClient(
-            model=values["model"],
-            timeout=values["timeout"],
+        self.client = InferenceClient(
+            model=self.model,
+            timeout=self.timeout,
             token=huggingfacehub_api_token,
-            **values["server_kwargs"],
+            **self.server_kwargs,
         )
-        values["async_client"] = AsyncInferenceClient(
-            model=values["model"],
-            timeout=values["timeout"],
+        self.async_client = AsyncInferenceClient(
+            model=self.model,
+            timeout=self.timeout,
             token=huggingfacehub_api_token,
-            **values["server_kwargs"],
+            **self.server_kwargs,
         )
 
-        return values
+        return self
 
     @property
     def _default_params(self) -> Dict[str, Any]:

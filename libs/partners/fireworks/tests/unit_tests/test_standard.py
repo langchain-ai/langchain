@@ -1,32 +1,34 @@
 """Standard LangChain interface tests"""
 
-from typing import Type
+from typing import Tuple, Type
 
-import pytest
 from langchain_core.language_models import BaseChatModel
-from langchain_standard_tests.unit_tests import ChatModelUnitTests
+from langchain_standard_tests.unit_tests import (  # type: ignore[import-not-found]
+    ChatModelUnitTests,  # type: ignore[import-not-found]
+)
 
 from langchain_fireworks import ChatFireworks
 
 
 class TestFireworksStandard(ChatModelUnitTests):
-    @pytest.fixture
+    @property
     def chat_model_class(self) -> Type[BaseChatModel]:
         return ChatFireworks
 
-    @pytest.fixture
+    @property
     def chat_model_params(self) -> dict:
-        return {
-            "api_key": "test_api_key",
-        }
+        return {"api_key": "test_api_key"}
 
-    @pytest.mark.xfail(reason="Not implemented.")
-    def test_standard_params(
-        self,
-        chat_model_class: Type[BaseChatModel],
-        chat_model_params: dict,
-    ) -> None:
-        super().test_standard_params(
-            chat_model_class,
-            chat_model_params,
+    @property
+    def init_from_env_params(self) -> Tuple[dict, dict, dict]:
+        return (
+            {
+                "FIREWORKS_API_KEY": "api_key",
+                "FIREWORKS_API_BASE": "https://base.com",
+            },
+            {},
+            {
+                "fireworks_api_key": "api_key",
+                "fireworks_api_base": "https://base.com",
+            },
         )

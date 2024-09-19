@@ -1,21 +1,14 @@
+from collections.abc import AsyncIterator, Awaitable, Iterator, Mapping, Sequence
 from typing import (
     Any,
-    AsyncIterator,
-    Awaitable,
     Callable,
-    Iterator,
-    List,
-    Mapping,
     Optional,
-    Sequence,
-    Tuple,
-    Type,
     Union,
     cast,
 )
 
-from langchain_core.load.dump import dumpd
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel, ConfigDict
+
 from langchain_core.runnables.base import (
     Runnable,
     RunnableLike,
@@ -48,6 +41,10 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
 
     If no condition evaluates to True, the default branch is run on the input.
 
+    Parameters:
+        branches: A list of (condition, Runnable) pairs.
+        default: A Runnable to run if no condition is met.
+
     Examples:
 
         .. code-block:: python
@@ -65,13 +62,13 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             branch.invoke(None) # "goodbye"
     """
 
-    branches: Sequence[Tuple[Runnable[Input, bool], Runnable[Input, Output]]]
+    branches: Sequence[tuple[Runnable[Input, bool], Runnable[Input, Output]]]
     default: Runnable[Input, Output]
 
     def __init__(
         self,
         *branches: Union[
-            Tuple[
+            tuple[
                 Union[
                     Runnable[Input, bool],
                     Callable[[Input], bool],
@@ -82,7 +79,18 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             RunnableLike,  # To accommodate the default branch
         ],
     ) -> None:
-        """A Runnable that runs one of two branches based on a condition."""
+        """A Runnable that runs one of two branches based on a condition.
+
+        Args:
+            *branches: A list of (condition, Runnable) pairs.
+                Defaults a Runnable to run if no condition is met.
+
+        Raises:
+            ValueError: If the number of branches is less than 2.
+            TypeError: If the default branch is not Runnable, Callable or Mapping.
+            TypeError: If a branch is not a tuple or list.
+            ValueError: If a branch is not of length 2.
+        """
         if len(branches) < 2:
             raise ValueError("RunnableBranch requires at least two branches")
 
@@ -93,7 +101,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             (Runnable, Callable, Mapping),  # type: ignore[arg-type]
         ):
             raise TypeError(
-                "RunnableBranch default must be runnable, callable or mapping."
+                "RunnableBranch default must be Runnable, callable or mapping."
             )
 
         default_ = cast(
@@ -119,10 +127,14 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             runnable = coerce_to_runnable(runnable)
             _branches.append((condition, runnable))
 
-        super().__init__(branches=_branches, default=default_)  # type: ignore[call-arg]
+        super().__init__(
+            branches=_branches,
+            default=default_,
+        )  # type: ignore[call-arg]
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -130,13 +142,13 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         return True
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "schema", "runnable"]
 
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
+    ) -> type[BaseModel]:
         runnables = (
             [self.default]
             + [r for _, r in self.branches]
@@ -144,13 +156,16 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         )
 
         for runnable in runnables:
-            if runnable.get_input_schema(config).schema().get("type") is not None:
+            if (
+                runnable.get_input_schema(config).model_json_schema().get("type")
+                is not None
+            ):
                 return runnable.get_input_schema(config)
 
         return super().get_input_schema(config)
 
     @property
-    def config_specs(self) -> List[ConfigurableFieldSpec]:
+    def config_specs(self) -> list[ConfigurableFieldSpec]:
         from langchain_core.beta.runnables.context import (
             CONTEXT_CONFIG_PREFIX,
             CONTEXT_CONFIG_SUFFIX_SET,
@@ -176,13 +191,25 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
-        """First evaluates the condition, then delegate to true or false branch."""
+        """First evaluates the condition, then delegate to true or false branch.
+
+        Args:
+            input: The input to the Runnable.
+            config: The configuration for the Runnable. Defaults to None.
+            kwargs: Additional keyword arguments to pass to the Runnable.
+
+        Returns:
+            The output of the branch that was run.
+
+        Raises:
+
+        """
         config = ensure_config(config)
         callback_manager = get_callback_manager_for_config(config)
         run_manager = callback_manager.on_chain_start(
-            dumpd(self),
+            None,
             input,
-            name=config.get("run_name"),
+            name=config.get("run_name") or self.get_name(),
             run_id=config.pop("run_id", None),
         )
 
@@ -219,7 +246,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         except BaseException as e:
             run_manager.on_chain_error(e)
             raise
-        run_manager.on_chain_end(dumpd(output))
+        run_manager.on_chain_end(output)
         return output
 
     async def ainvoke(
@@ -229,9 +256,9 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         config = ensure_config(config)
         callback_manager = get_async_callback_manager_for_config(config)
         run_manager = await callback_manager.on_chain_start(
-            dumpd(self),
+            None,
             input,
-            name=config.get("run_name"),
+            name=config.get("run_name") or self.get_name(),
             run_id=config.pop("run_id", None),
         )
         try:
@@ -267,7 +294,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         except BaseException as e:
             await run_manager.on_chain_error(e)
             raise
-        await run_manager.on_chain_end(dumpd(output))
+        await run_manager.on_chain_end(output)
         return output
 
     def stream(
@@ -277,13 +304,25 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         **kwargs: Optional[Any],
     ) -> Iterator[Output]:
         """First evaluates the condition,
-        then delegate to true or false branch."""
+        then delegate to true or false branch.
+
+        Args:
+            input: The input to the Runnable.
+            config: The configuration for the Runnable. Defaults to None.
+            kwargs: Additional keyword arguments to pass to the Runnable.
+
+        Yields:
+            The output of the branch that was run.
+
+        Raises:
+            BaseException: If an error occurs during the execution of the Runnable.
+        """
         config = ensure_config(config)
         callback_manager = get_callback_manager_for_config(config)
         run_manager = callback_manager.on_chain_start(
-            dumpd(self),
+            None,
             input,
-            name=config.get("run_name"),
+            name=config.get("run_name") or self.get_name(),
             run_id=config.pop("run_id", None),
         )
         final_output: Optional[Output] = None
@@ -352,13 +391,25 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         **kwargs: Optional[Any],
     ) -> AsyncIterator[Output]:
         """First evaluates the condition,
-        then delegate to true or false branch."""
+        then delegate to true or false branch.
+
+        Args:
+            input: The input to the Runnable.
+            config: The configuration for the Runnable. Defaults to None.
+            kwargs: Additional keyword arguments to pass to the Runnable.
+
+        Yields:
+            The output of the branch that was run.
+
+        Raises:
+            BaseException: If an error occurs during the execution of the Runnable.
+        """
         config = ensure_config(config)
         callback_manager = get_async_callback_manager_for_config(config)
         run_manager = await callback_manager.on_chain_start(
-            dumpd(self),
+            None,
             input,
-            name=config.get("run_name"),
+            name=config.get("run_name") or self.get_name(),
             run_id=config.pop("run_id", None),
         )
         final_output: Optional[Output] = None

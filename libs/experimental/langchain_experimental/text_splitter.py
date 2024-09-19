@@ -1,4 +1,5 @@
 """Experimental **text splitter** based on semantic similarity."""
+
 import copy
 import re
 from typing import Any, Dict, Iterable, List, Literal, Optional, Sequence, Tuple, cast
@@ -84,11 +85,14 @@ def calculate_cosine_distances(sentences: List[dict]) -> Tuple[List[float], List
     return distances, sentences
 
 
-BreakpointThresholdType = Literal["percentile", "standard_deviation", "interquartile"]
+BreakpointThresholdType = Literal[
+    "percentile", "standard_deviation", "interquartile", "gradient"
+]
 BREAKPOINT_DEFAULTS: Dict[BreakpointThresholdType, float] = {
     "percentile": 95,
     "standard_deviation": 3,
     "interquartile": 1.5,
+    "gradient": 95,
 }
 
 
@@ -127,23 +131,34 @@ class SemanticChunker(BaseDocumentTransformer):
         else:
             self.breakpoint_threshold_amount = breakpoint_threshold_amount
 
-    def _calculate_breakpoint_threshold(self, distances: List[float]) -> float:
+    def _calculate_breakpoint_threshold(
+        self, distances: List[float]
+    ) -> Tuple[float, List[float]]:
         if self.breakpoint_threshold_type == "percentile":
             return cast(
                 float,
                 np.percentile(distances, self.breakpoint_threshold_amount),
-            )
+            ), distances
         elif self.breakpoint_threshold_type == "standard_deviation":
             return cast(
                 float,
                 np.mean(distances)
                 + self.breakpoint_threshold_amount * np.std(distances),
-            )
+            ), distances
         elif self.breakpoint_threshold_type == "interquartile":
             q1, q3 = np.percentile(distances, [25, 75])
             iqr = q3 - q1
 
-            return np.mean(distances) + self.breakpoint_threshold_amount * iqr
+            return np.mean(
+                distances
+            ) + self.breakpoint_threshold_amount * iqr, distances
+        elif self.breakpoint_threshold_type == "gradient":
+            # Calculate the threshold based on the distribution of gradient of distance array. # noqa: E501
+            distance_gradient = np.gradient(distances, range(0, len(distances)))
+            return cast(
+                float,
+                np.percentile(distance_gradient, self.breakpoint_threshold_amount),
+            ), distance_gradient
         else:
             raise ValueError(
                 f"Got unexpected `breakpoint_threshold_type`: "
@@ -165,7 +180,11 @@ class SemanticChunker(BaseDocumentTransformer):
         x = max(min(self.number_of_chunks, x1), x2)
 
         # Linear interpolation formula
-        y = y1 + ((y2 - y1) / (x2 - x1)) * (x - x1)
+        if x2 == x1:
+            y = y2
+        else:
+            y = y1 + ((y2 - y1) / (x2 - x1)) * (x - x1)
+
         y = min(max(y, 0), 100)
 
         return cast(float, np.percentile(distances, y))
@@ -201,13 +220,17 @@ class SemanticChunker(BaseDocumentTransformer):
         distances, sentences = self._calculate_sentence_distances(single_sentences_list)
         if self.number_of_chunks is not None:
             breakpoint_distance_threshold = self._threshold_from_clusters(distances)
+            breakpoint_array = distances
         else:
-            breakpoint_distance_threshold = self._calculate_breakpoint_threshold(
-                distances
-            )
+            (
+                breakpoint_distance_threshold,
+                breakpoint_array,
+            ) = self._calculate_breakpoint_threshold(distances)
 
         indices_above_thresh = [
-            i for i, x in enumerate(distances) if x > breakpoint_distance_threshold
+            i
+            for i, x in enumerate(breakpoint_array)
+            if x > breakpoint_distance_threshold
         ]
 
         chunks = []
@@ -239,14 +262,14 @@ class SemanticChunker(BaseDocumentTransformer):
         _metadatas = metadatas or [{}] * len(texts)
         documents = []
         for i, text in enumerate(texts):
-            index = -1
+            start_index = 0
             for chunk in self.split_text(text):
                 metadata = copy.deepcopy(_metadatas[i])
                 if self._add_start_index:
-                    index = text.find(chunk, index + 1)
-                    metadata["start_index"] = index
+                    metadata["start_index"] = start_index
                 new_doc = Document(page_content=chunk, metadata=metadata)
                 documents.append(new_doc)
+                start_index += len(chunk)
         return documents
 
     def split_documents(self, documents: Iterable[Document]) -> List[Document]:

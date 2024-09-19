@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-cli"
-version = "0.0.22"
+version = "0.0.31"
 description = "CLI for interacting with LangChain"
 authors = ["Erick Friis <erick@langchain.dev>"]
 readme = "README.md"
@@ -9,15 +9,16 @@ license = "MIT"
 
 [tool.poetry.urls]
 "Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/cli"
+"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-cli%3D%3D0%22&expanded=true"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
+python = ">=3.9,<4.0"
 typer = { extras = ["all"], version = "^0.9.0" }
 gitpython = "^3.1.40"
 langserve = { extras = ["all"], version = ">=0.0.51" }
 uvicorn = "^0.23.2"
 tomlkit = "^0.12.2"
-libcst = { version = "^1.3.1", python = "^3.9" }
+gritql = "^0.1.1"
 
 [tool.poetry.scripts]
 langchain = "langchain_cli.cli:app"
@@ -29,7 +30,7 @@ pytest = "^7.4.2"
 pytest-watch = "^4.2.0"
 
 [tool.poetry.group.lint.dependencies]
-ruff = "^0.1.5"
+ruff = "^0.5"
 
 [tool.poetry.group.test.dependencies]
 
@@ -55,16 +56,16 @@ watch = "poetry run ptw"
 version = "poetry version --short"
 bump = ["_bump_1", "_bump_2"]
 lint = ["_lint", "_check_formatting"]
-format = ["_lint_fix", "_format"]
+format = ["_format", "_lint_fix"]
 
 _bump_2.shell = """sed -i "" "/^__version__ =/c\\ \n__version__ = \\"$version\\"\n" langchain_cli/cli.py"""
 _bump_2.uses = { version = "version" }
 
 _bump_1 = "poetry version patch"
 _check_formatting = "poetry run ruff format . --diff"
-_lint = "poetry run ruff ."
+_lint = "poetry run ruff check ."
 _format = "poetry run ruff format ."
-_lint_fix = "poetry run ruff . --fix"
+_lint_fix = "poetry run ruff check . --fix"
 
 [build-system]
 requires = ["poetry-core"]

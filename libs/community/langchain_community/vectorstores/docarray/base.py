@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Type
 import numpy as np
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import Field
 from langchain_core.vectorstores import VectorStore
+from pydantic import Field
 
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
@@ -28,7 +28,7 @@ def _check_docarray_import() -> None:
     except ImportError:
         raise ImportError(
             "Could not import docarray python package. "
-            'Please install it with `pip install "langchain[docarray]"`.'
+            "Please install it with `pip install docarray`."
         )
 
 
@@ -51,9 +51,9 @@ class DocArrayIndex(VectorStore, ABC):
         from docarray.typing import NdArray
 
         class DocArrayDoc(BaseDoc):
-            text: Optional[str] = Field(default=None, required=False)
+            text: Optional[str] = Field(default=None)
             embedding: Optional[NdArray] = Field(**embeddings_params)
-            metadata: Optional[dict] = Field(default=None, required=False)
+            metadata: Optional[dict] = Field(default=None)
 
         return DocArrayDoc
 

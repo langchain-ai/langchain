@@ -26,6 +26,8 @@ EXPECTED_ALL = [
     "TrubricsCallbackHandler",
     "FiddlerCallbackHandler",
     "UpTrainCallbackHandler",
+    "UpstashRatelimitError",
+    "UpstashRatelimitHandler",
 ]
 
 

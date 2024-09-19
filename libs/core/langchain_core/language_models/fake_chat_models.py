@@ -1,8 +1,10 @@
 """Fake ChatModel for testing purposes."""
+
 import asyncio
 import re
 import time
-from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Union, cast
+from collections.abc import AsyncIterator, Iterator
+from typing import Any, Optional, Union, cast
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -16,14 +18,17 @@ from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResu
 class FakeMessagesListChatModel(BaseChatModel):
     """Fake ChatModel for testing purposes."""
 
-    responses: List[BaseMessage]
+    responses: list[BaseMessage]
+    """List of responses to **cycle** through in order."""
     sleep: Optional[float] = None
+    """Sleep time in seconds between responses."""
     i: int = 0
+    """Internally incremented after every model invocation."""
 
     def _generate(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
@@ -40,13 +45,20 @@ class FakeMessagesListChatModel(BaseChatModel):
         return "fake-messages-list-chat-model"
 
 
+class FakeListChatModelError(Exception):
+    pass
+
+
 class FakeListChatModel(SimpleChatModel):
     """Fake ChatModel for testing purposes."""
 
-    responses: List
+    responses: list[str]
+    """List of responses to **cycle** through in order."""
     sleep: Optional[float] = None
     i: int = 0
+    """List of responses to **cycle** through in order."""
     error_on_chunk_number: Optional[int] = None
+    """Internally incremented after every model invocation."""
 
     @property
     def _llm_type(self) -> str:
@@ -54,8 +66,8 @@ class FakeListChatModel(SimpleChatModel):
 
     def _call(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
@@ -69,8 +81,8 @@ class FakeListChatModel(SimpleChatModel):
 
     def _stream(
         self,
-        messages: List[BaseMessage],
-        stop: Union[List[str], None] = None,
+        messages: list[BaseMessage],
+        stop: Union[list[str], None] = None,
         run_manager: Union[CallbackManagerForLLMRun, None] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
@@ -86,14 +98,14 @@ class FakeListChatModel(SimpleChatModel):
                 self.error_on_chunk_number is not None
                 and i_c == self.error_on_chunk_number
             ):
-                raise Exception("Fake error")
+                raise FakeListChatModelError
 
             yield ChatGenerationChunk(message=AIMessageChunk(content=c))
 
     async def _astream(
         self,
-        messages: List[BaseMessage],
-        stop: Union[List[str], None] = None,
+        messages: list[BaseMessage],
+        stop: Union[list[str], None] = None,
         run_manager: Union[AsyncCallbackManagerForLLMRun, None] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
@@ -109,11 +121,11 @@ class FakeListChatModel(SimpleChatModel):
                 self.error_on_chunk_number is not None
                 and i_c == self.error_on_chunk_number
             ):
-                raise Exception("Fake error")
+                raise FakeListChatModelError
             yield ChatGenerationChunk(message=AIMessageChunk(content=c))
 
     @property
-    def _identifying_params(self) -> Dict[str, Any]:
+    def _identifying_params(self) -> dict[str, Any]:
         return {"responses": self.responses}
 
 
@@ -122,8 +134,8 @@ class FakeChatModel(SimpleChatModel):
 
     def _call(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
@@ -131,8 +143,8 @@ class FakeChatModel(SimpleChatModel):
 
     async def _agenerate(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
@@ -146,7 +158,7 @@ class FakeChatModel(SimpleChatModel):
         return "fake-chat-model"
 
     @property
-    def _identifying_params(self) -> Dict[str, Any]:
+    def _identifying_params(self) -> dict[str, Any]:
         return {"key": "fake"}
 
 
@@ -175,8 +187,8 @@ class GenericFakeChatModel(BaseChatModel):
 
     def _generate(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
@@ -191,8 +203,8 @@ class GenericFakeChatModel(BaseChatModel):
 
     def _stream(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
@@ -220,7 +232,7 @@ class GenericFakeChatModel(BaseChatModel):
             # Use a regular expression to split on whitespace with a capture group
             # so that we can preserve the whitespace in the output.
             assert isinstance(content, str)
-            content_chunks = cast(List[str], re.split(r"(\s)", content))
+            content_chunks = cast(list[str], re.split(r"(\s)", content))
 
             for token in content_chunks:
                 chunk = ChatGenerationChunk(
@@ -238,7 +250,7 @@ class GenericFakeChatModel(BaseChatModel):
                     for fkey, fvalue in value.items():
                         if isinstance(fvalue, str):
                             # Break function call by `,`
-                            fvalue_chunks = cast(List[str], re.split(r"(,)", fvalue))
+                            fvalue_chunks = cast(list[str], re.split(r"(,)", fvalue))
                             for fvalue_chunk in fvalue_chunks:
                                 chunk = ChatGenerationChunk(
                                     message=AIMessageChunk(
@@ -295,8 +307,8 @@ class ParrotFakeChatModel(BaseChatModel):
 
     def _generate(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:

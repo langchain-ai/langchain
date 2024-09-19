@@ -1,0 +1,123 @@
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "langchain-milvus"
+version = "0.1.5"
+description = "An integration package connecting Milvus and LangChain"
+authors = []
+readme = "README.md"
+repository = "https://github.com/langchain-ai/langchain"
+license = "MIT"
+
+[tool.ruff]
+select = ["E", "F", "I", "T201"]
+
+[tool.mypy]
+disallow_untyped_defs = "True"
+[[tool.mypy.overrides]]
+module = ["pymilvus"]
+ignore_missing_imports = "True"
+
+[tool.poetry.urls]
+"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/milvus"
+"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-milvus%3D%3D0%22&expanded=true"
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+pymilvus = "^2.4.3"
+
+[[tool.poetry.dependencies.langchain-core]]
+version = ">=0.2.38,<0.4"
+python = ">=3.9"
+
+[[tool.poetry.dependencies.langchain-core]]
+version = ">=0.2.38,<0.3"
+python = "<3.9"
+
+[[tool.poetry.dependencies.scipy]]
+version = "^1.7"
+python = "<3.12"
+
+[[tool.poetry.dependencies.scipy]]
+version = "^1.9"
+python = ">=3.12"
+
+[tool.coverage.run]
+omit = ["tests/*"]
+
+[tool.pytest.ini_options]
+addopts = "--snapshot-warn-unused --strict-markers --strict-config --durations=5"
+markers = [
+    "requires: mark tests as requiring a specific library",
+    "asyncio: mark tests as requiring asyncio",
+    "compile: mark placeholder test used to compile integration tests without running them",
+]
+asyncio_mode = "auto"
+
+[tool.poetry.group.test]
+optional = true
+
+[tool.poetry.group.codespell]
+optional = true
+
+[tool.poetry.group.test_integration]
+optional = true
+
+[tool.poetry.group.lint]
+optional = true
+
+[tool.poetry.group.dev]
+optional = true
+
+[tool.poetry.group.test.dependencies]
+pytest = "^7.3.0"
+freezegun = "^1.2.2"
+pytest-mock = "^3.10.0"
+syrupy = "^4.0.2"
+pytest-watcher = "^0.3.4"
+pytest-asyncio = "^0.21.1"
+milvus_model = "^0.2.0"
+
+[[tool.poetry.group.test.dependencies.langchain-core]]
+path = "../../core"
+develop = true
+python = ">=3.9"
+
+[[tool.poetry.group.test.dependencies.langchain-core]]
+version = ">=0.2.38,<0.3"
+python = "<3.9"
+
+[tool.poetry.group.codespell.dependencies]
+codespell = "^2.2.0"
+
+[tool.poetry.group.test_integration.dependencies]
+milvus_model = "^0.2.0"
+
+[tool.poetry.group.lint.dependencies]
+ruff = "^0.1.5"
+
+[tool.poetry.group.typing.dependencies]
+mypy = "^0.991"
+types-requests = "^2"
+simsimd = "^5.0.0"
+
+[[tool.poetry.group.typing.dependencies.langchain-core]]
+path = "../../core"
+develop = true
+python = ">=3.9"
+
+[[tool.poetry.group.typing.dependencies.langchain-core]]
+version = ">=0.2.38,<0.3"
+python = "<3.9"
+
+[tool.poetry.group.dev.dependencies]
+[[tool.poetry.group.dev.dependencies.langchain-core]]
+path = "../../core"
+develop = true
+python = ">=3.9"
+
+[[tool.poetry.group.dev.dependencies.langchain-core]]
+version = ">=0.2.38,<0.3"
+python = "<3.9"

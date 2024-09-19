@@ -31,7 +31,7 @@ class BlackboardLoader(WebBaseLoader):
             )
             documents = loader.load()
 
-    """  # noqa: E501
+    """
 
     def __init__(
         self,
@@ -41,6 +41,7 @@ class BlackboardLoader(WebBaseLoader):
         basic_auth: Optional[Tuple[str, str]] = None,
         cookies: Optional[dict] = None,
         continue_on_failure: bool = False,
+        show_progress: bool = True,
     ):
         """Initialize with blackboard course url.
 
@@ -56,12 +57,15 @@ class BlackboardLoader(WebBaseLoader):
                 occurs loading a url, emitting a warning instead of raising an
                 exception. Setting this to True makes the loader more robust, but also
                 may result in missing data. Default: False
+            show_progress: whether to show a progress bar while loading. Default: True
 
         Raises:
             ValueError: If blackboard course url is invalid.
         """
         super().__init__(
-            web_paths=(blackboard_course_url), continue_on_failure=continue_on_failure
+            web_paths=(blackboard_course_url),
+            continue_on_failure=continue_on_failure,
+            show_progress=show_progress,
         )
         # Get base url
         try:

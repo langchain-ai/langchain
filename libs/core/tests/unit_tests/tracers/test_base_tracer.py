@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Any, List
+from typing import Any
 from unittest.mock import MagicMock
 from uuid import uuid4
 
@@ -13,10 +13,11 @@ from freezegun import freeze_time
 from langsmith import Client, traceable
 
 from langchain_core.callbacks import CallbackManager
+from langchain_core.exceptions import TracerException
 from langchain_core.messages import HumanMessage
 from langchain_core.outputs import LLMResult
 from langchain_core.runnables import chain as as_runnable
-from langchain_core.tracers.base import BaseTracer, TracerException
+from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
 
 SERIALIZED = {"id": ["llm"]}
@@ -29,7 +30,7 @@ class FakeTracer(BaseTracer):
     def __init__(self) -> None:
         """Initialize the tracer."""
         super().__init__()
-        self.runs: List[Run] = []
+        self.runs: list[Run] = []
 
     def _persist_run(self, run: Run) -> None:
         """Persist a run."""

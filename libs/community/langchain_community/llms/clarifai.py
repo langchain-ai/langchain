@@ -4,7 +4,8 @@ from typing import Any, Dict, List, Optional
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import Generation, LLMResult
-from langchain_core.pydantic_v1 import Extra, Field, root_validator
+from langchain_core.utils import pre_init
+from pydantic import ConfigDict, Field
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
@@ -48,12 +49,11 @@ class Clarifai(LLM):
     model: Any = Field(default=None, exclude=True)  #: :meta private:
     api_base: str = "https://api.clarifai.com"
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
-        extra = Extra.forbid
-
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that we have all required info to access Clarifai
         platform and python package exists in environment."""
