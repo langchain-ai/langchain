@@ -1,7 +1,7 @@
 """Configuration for unit tests."""
 
+from collections.abc import Sequence
 from importlib import util
-from typing import Dict, Sequence
 from uuid import UUID
 
 import pytest
@@ -41,7 +41,7 @@ def pytest_collection_modifyitems(config: Config, items: Sequence[Function]) -> 
     """
     # Mapping from the name of a package to whether it is installed or not.
     # Used to avoid repeated calls to `util.find_spec`
-    required_pkgs_info: Dict[str, bool] = {}
+    required_pkgs_info: dict[str, bool] = {}
 
     only_extended = config.getoption("--only-extended") or False
     only_core = config.getoption("--only-core") or False

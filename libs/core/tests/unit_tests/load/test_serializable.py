@@ -1,8 +1,7 @@
-from typing import Dict
+from pydantic import ConfigDict, Field
 
 from langchain_core.load import Serializable, dumpd, load
 from langchain_core.load.serializable import _is_field_useful
-from langchain_core.pydantic_v1 import Field
 
 
 def test_simple_serialization() -> None:
@@ -40,8 +39,9 @@ def test_simple_serialization_is_serializable() -> None:
 
 def test_simple_serialization_secret() -> None:
     """Test handling of secrets."""
+    from pydantic import SecretStr
+
     from langchain_core.load import Serializable
-    from langchain_core.pydantic_v1 import SecretStr
 
     class Foo(Serializable):
         bar: int
@@ -54,7 +54,7 @@ def test_simple_serialization_secret() -> None:
             return True
 
         @property
-        def lc_secrets(self) -> Dict[str, str]:
+        def lc_secrets(self) -> dict[str, str]:
             return {"secret": "MASKED_SECRET", "secret_2": "MASKED_SECRET_2"}
 
     foo = Foo(
@@ -97,8 +97,9 @@ def test__is_field_useful() -> None:
         # Make sure works for fields without default.
         z: ArrayObj
 
-        class Config:
-            arbitrary_types_allowed = True
+        model_config = ConfigDict(
+            arbitrary_types_allowed=True,
+        )
 
     foo = Foo(x=ArrayObj(), y=NonBoolObj(), z=ArrayObj())
     assert _is_field_useful(foo, "x", foo.x)

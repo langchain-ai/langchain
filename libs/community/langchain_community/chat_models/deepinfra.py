@@ -54,11 +54,12 @@ from langchain_core.outputs import (
     ChatGenerationChunk,
     ChatResult,
 )
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 from langchain_core.utils import get_from_dict_or_env
 from langchain_core.utils.function_calling import convert_to_openai_tool
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+from typing_extensions import Self
 
 from langchain_community.utilities.requests import Requests
 
@@ -222,10 +223,9 @@ class ChatDeepInfra(BaseChatModel):
     streaming: bool = False
     max_retries: int = 1
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        allow_population_by_field_name = True
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
     @property
     def _default_params(self) -> Dict[str, Any]:
@@ -291,8 +291,9 @@ class ChatDeepInfra(BaseChatModel):
 
         return await _completion_with_retry(**kwargs)
 
-    @root_validator(pre=True)
-    def init_defaults(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def init_defaults(cls, values: Dict) -> Any:
         """Validate api key, python package exists, temperature, top_p, and top_k."""
         # For compatibility with LiteLLM
         api_key = get_from_dict_or_env(
@@ -309,18 +310,18 @@ class ChatDeepInfra(BaseChatModel):
         )
         return values
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def validate_environment(cls, values: Dict) -> Dict:
-        if values["temperature"] is not None and not 0 <= values["temperature"] <= 1:
+    @model_validator(mode="after")
+    def validate_environment(self) -> Self:
+        if self.temperature is not None and not 0 <= self.temperature <= 1:
             raise ValueError("temperature must be in the range [0.0, 1.0]")
 
-        if values["top_p"] is not None and not 0 <= values["top_p"] <= 1:
+        if self.top_p is not None and not 0 <= self.top_p <= 1:
             raise ValueError("top_p must be in the range [0.0, 1.0]")
 
-        if values["top_k"] is not None and values["top_k"] <= 0:
+        if self.top_k is not None and self.top_k <= 0:
             raise ValueError("top_k must be positive")
 
-        return values
+        return self
 
     def _generate(
         self,

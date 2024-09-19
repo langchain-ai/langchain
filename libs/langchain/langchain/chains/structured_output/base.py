@@ -18,13 +18,13 @@ from langchain_core.output_parsers.openai_tools import (
     PydanticToolsParser,
 )
 from langchain_core.prompts import BasePromptTemplate
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import Runnable
 from langchain_core.utils.function_calling import (
     convert_to_openai_function,
     convert_to_openai_tool,
 )
 from langchain_core.utils.pydantic import is_basemodel_subclass
+from pydantic import BaseModel
 
 
 @deprecated(
@@ -44,7 +44,7 @@ from langchain_core.utils.pydantic import is_basemodel_subclass
     removal="1.0",
     alternative=(
         """
-            from langchain_core.pydantic_v1 import BaseModel, Field
+            from pydantic import BaseModel, Field
             from langchain_anthropic import ChatAnthropic
     
             class Joke(BaseModel):
@@ -108,7 +108,7 @@ def create_openai_fn_runnable(
 
                 from langchain.chains.structured_output import create_openai_fn_runnable
                 from langchain_openai import ChatOpenAI
-                from langchain_core.pydantic_v1 import BaseModel, Field
+                from pydantic import BaseModel, Field
 
 
                 class RecordPerson(BaseModel):
@@ -162,7 +162,7 @@ def create_openai_fn_runnable(
     removal="1.0",
     alternative=(
         """
-            from langchain_core.pydantic_v1 import BaseModel, Field
+            from pydantic import BaseModel, Field
             from langchain_anthropic import ChatAnthropic
 
             class Joke(BaseModel):
@@ -237,7 +237,7 @@ def create_structured_output_runnable(
 
                 from langchain.chains import create_structured_output_runnable
                 from langchain_openai import ChatOpenAI
-                from langchain_core.pydantic_v1 import BaseModel, Field
+                from pydantic import BaseModel, Field
 
 
                 class RecordDog(BaseModel):
@@ -318,7 +318,7 @@ def create_structured_output_runnable(
 
                 from langchain.chains import create_structured_output_runnable
                 from langchain_openai import ChatOpenAI
-                from langchain_core.pydantic_v1 import BaseModel, Field
+                from pydantic import BaseModel, Field
 
                 class Dog(BaseModel):
                     '''Identifying information about a dog.'''
@@ -340,7 +340,7 @@ def create_structured_output_runnable(
                 from langchain.chains import create_structured_output_runnable
                 from langchain_openai import ChatOpenAI
                 from langchain_core.prompts import ChatPromptTemplate
-                from langchain_core.pydantic_v1 import BaseModel, Field
+                from pydantic import BaseModel, Field
 
                 class Dog(BaseModel):
                     '''Identifying information about a dog.'''
@@ -366,7 +366,7 @@ def create_structured_output_runnable(
                 from langchain.chains import create_structured_output_runnable
                 from langchain_openai import ChatOpenAI
                 from langchain_core.prompts import ChatPromptTemplate
-                from langchain_core.pydantic_v1 import BaseModel, Field
+                from pydantic import BaseModel, Field
 
                 class Dog(BaseModel):
                     '''Identifying information about a dog.'''

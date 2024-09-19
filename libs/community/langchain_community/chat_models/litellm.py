@@ -52,11 +52,11 @@ from langchain_core.outputs import (
     ChatGenerationChunk,
     ChatResult,
 )
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 from langchain_core.utils import get_from_dict_or_env, pre_init
 from langchain_core.utils.function_calling import convert_to_openai_tool
+from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
@@ -215,7 +215,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
 class ChatLiteLLM(BaseChatModel):
     """Chat model that uses the LiteLLM API."""
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     model: str = "gpt-3.5-turbo"
     model_name: Optional[str] = None
     """Model name to use."""

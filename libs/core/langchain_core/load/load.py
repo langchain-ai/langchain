@@ -1,7 +1,7 @@
 import importlib
 import json
 import os
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Optional
 
 from langchain_core._api import beta
 from langchain_core.load.mapping import (
@@ -18,6 +18,7 @@ DEFAULT_NAMESPACES = [
     "langchain_community",
     "langchain_anthropic",
     "langchain_groq",
+    "langchain_google_genai",
 ]
 
 ALL_SERIALIZABLE_MAPPINGS = {
@@ -33,11 +34,11 @@ class Reviver:
 
     def __init__(
         self,
-        secrets_map: Optional[Dict[str, str]] = None,
-        valid_namespaces: Optional[List[str]] = None,
+        secrets_map: Optional[dict[str, str]] = None,
+        valid_namespaces: Optional[list[str]] = None,
         secrets_from_env: bool = True,
         additional_import_mappings: Optional[
-            Dict[Tuple[str, ...], Tuple[str, ...]]
+            dict[tuple[str, ...], tuple[str, ...]]
         ] = None,
     ) -> None:
         """Initialize the reviver.
@@ -72,7 +73,7 @@ class Reviver:
             else ALL_SERIALIZABLE_MAPPINGS
         )
 
-    def __call__(self, value: Dict[str, Any]) -> Any:
+    def __call__(self, value: dict[str, Any]) -> Any:
         if (
             value.get("lc", None) == 1
             and value.get("type", None) == "secret"
@@ -153,10 +154,10 @@ class Reviver:
 def loads(
     text: str,
     *,
-    secrets_map: Optional[Dict[str, str]] = None,
-    valid_namespaces: Optional[List[str]] = None,
+    secrets_map: Optional[dict[str, str]] = None,
+    valid_namespaces: Optional[list[str]] = None,
     secrets_from_env: bool = True,
-    additional_import_mappings: Optional[Dict[Tuple[str, ...], Tuple[str, ...]]] = None,
+    additional_import_mappings: Optional[dict[tuple[str, ...], tuple[str, ...]]] = None,
 ) -> Any:
     """Revive a LangChain class from a JSON string.
     Equivalent to `load(json.loads(text))`.
@@ -189,10 +190,10 @@ def loads(
 def load(
     obj: Any,
     *,
-    secrets_map: Optional[Dict[str, str]] = None,
-    valid_namespaces: Optional[List[str]] = None,
+    secrets_map: Optional[dict[str, str]] = None,
+    valid_namespaces: Optional[list[str]] = None,
     secrets_from_env: bool = True,
-    additional_import_mappings: Optional[Dict[Tuple[str, ...], Tuple[str, ...]]] = None,
+    additional_import_mappings: Optional[dict[tuple[str, ...], tuple[str, ...]]] = None,
 ) -> Any:
     """Revive a LangChain class from a JSON object. Use this if you already
     have a parsed JSON object, eg. from `json.load` or `orjson.loads`.

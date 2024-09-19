@@ -3,7 +3,7 @@ from typing import Any
 from unittest.mock import patch
 
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel
 
 from langchain_experimental.llms.ollama_functions import OllamaFunctions
 

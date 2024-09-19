@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any
 
 
 def stringify_value(val: Any) -> str:
@@ -35,7 +35,7 @@ def stringify_dict(data: dict) -> str:
     return text
 
 
-def comma_list(items: List[Any]) -> str:
+def comma_list(items: list[Any]) -> str:
     """Convert a list to a comma-separated string.
 
     Args:
