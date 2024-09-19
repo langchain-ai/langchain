@@ -1,7 +1,8 @@
 import datetime
 import json
 import uuid
-from typing import Any, Callable, Iterator, Optional, Sequence, Union
+from collections.abc import Iterator, Sequence
+from typing import Any, Callable, Optional, Union
 
 from langsmith import Client as LangSmithClient
 
