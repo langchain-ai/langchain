@@ -30,6 +30,14 @@ def test_pypdf_loader() -> None:
 
     docs = loader.load()
     assert len(docs) == 16
+    for page, doc in enumerate(docs):
+        assert doc.metadata["page"] == page
+        assert doc.metadata["source"].endswith("layout-parser-paper.pdf")
+        assert len(doc.page_content) > 10
+
+    first_page = docs[0].page_content
+    for expected in ["LayoutParser", "A Uniﬁed Toolkit"]:
+        assert expected in first_page
 
 
 @pytest.mark.requires("pypdf")
@@ -38,7 +46,15 @@ def test_pypdf_loader_with_layout() -> None:
     loader = PyPDFLoader(str(path_to_layout_pdf), extraction_mode="layout")
 
     docs = loader.load()
+    assert len(docs) == 16
+    for page, doc in enumerate(docs):
+        assert doc.metadata["page"] == page
+        assert doc.metadata["source"].endswith("layout-parser-paper.pdf")
+        assert len(doc.page_content) > 10
+
     first_page = docs[0].page_content
+    for expected in ["LayoutParser", "A Uniﬁed Toolkit"]:
+        assert expected in first_page
 
     expected = path_to_layout_pdf_txt.read_text(encoding="utf-8")
     cleaned_first_page = re.sub(r"\x00", "", first_page)
