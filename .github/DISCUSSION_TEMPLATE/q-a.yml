@@ -104,6 +104,9 @@ body:
         
         python -m langchain_core.sys_info
       placeholder: |
-        python -m langchain_core.sys_info        
+        python -m langchain_core.sys_info
+        
+        These will only surface LangChain packages, don't forget to include any other relevant
+        packages you're using (if you're not sure what's relevant, you can paste the entire output of `pip freeze`).
     validations:
       required: true
