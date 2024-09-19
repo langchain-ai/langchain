@@ -6,7 +6,7 @@ on:
       working-directory:
         required: true
         type: string
-        description: "From which folder this pipeline executes"
+        description: 'From which folder this pipeline executes'
   workflow_dispatch:
     inputs:
       working-directory:
@@ -17,11 +17,11 @@ on:
         required: false
         type: boolean
         default: false
-        description: "Release from a non-master branch (danger!)"
+        description: 'Release from a non-master branch (danger!)'
 
 env:
-  PYTHON_VERSION: "3.11"
-  POETRY_VERSION: "1.7.1"
+  PYTHON_VERSION: '3.11'
+  POETRY_VERSION: '1.7.1'
 
 jobs:
   build:
@@ -37,7 +37,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Set up Python + Poetry ${{ env.POETRY_VERSION }}
-        uses: "./.github/actions/poetry_setup"
+        uses: './.github/actions/poetry_setup'
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           poetry-version: ${{ env.POETRY_VERSION }}
@@ -132,8 +132,7 @@ jobs:
     needs:
       - build
       - release-notes
-    uses:
-      ./.github/workflows/_test_release.yml
+    uses: ./.github/workflows/_test_release.yml
     permissions: write-all
     with:
       working-directory: ${{ inputs.working-directory }}
@@ -163,7 +162,7 @@ jobs:
       #   used in the real world.
 
       - name: Set up Python + Poetry ${{ env.POETRY_VERSION }}
-        uses: "./.github/actions/poetry_setup"
+        uses: './.github/actions/poetry_setup'
         id: setup-python
         with:
           python-version: ${{ env.PYTHON_VERSION }}
@@ -326,7 +325,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Set up Python + Poetry ${{ env.POETRY_VERSION }}
-        uses: "./.github/actions/poetry_setup"
+        uses: './.github/actions/poetry_setup'
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           poetry-version: ${{ env.POETRY_VERSION }}
@@ -366,7 +365,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Set up Python + Poetry ${{ env.POETRY_VERSION }}
-        uses: "./.github/actions/poetry_setup"
+        uses: './.github/actions/poetry_setup'
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           poetry-version: ${{ env.POETRY_VERSION }}
@@ -377,11 +376,11 @@ jobs:
         with:
           name: dist
           path: ${{ inputs.working-directory }}/dist/
-          
+
       - name: Create Tag
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "dist/*"
+          artifacts: 'dist/*'
           token: ${{ secrets.GITHUB_TOKEN }}
           generateReleaseNotes: false
           tag: ${{needs.build.outputs.pkg-name}}==${{ needs.build.outputs.version }}

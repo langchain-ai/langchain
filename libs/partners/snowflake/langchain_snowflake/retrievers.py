@@ -148,7 +148,8 @@ class CortexSearchRetriever(BaseRetriever):
     snowflake_username: Optional[str] = Field(default=None, alias="username")
     """Automatically inferred from env var `SNOWFLAKE_USERNAME` if not provided."""
 
-    snowflake_password: Optional[SecretStr] = Field(default=None, alias="password")
+    snowflake_password: Optional[SecretStr] = Field(
+        default=None, alias="password")
     """Automatically inferred from env var `SNOWFLAKE_PASSWORD` if not provided."""
 
     snowflake_account: Optional[str] = Field(default=None, alias="account")
@@ -182,7 +183,8 @@ class CortexSearchRetriever(BaseRetriever):
             "SNOWFLAKE_PASSWORD"
         ):
             values["snowflake_password"] = convert_to_secret_str(
-                get_from_dict_or_env(values, "snowflake_password", "SNOWFLAKE_PASSWORD")
+                get_from_dict_or_env(
+                    values, "snowflake_password", "SNOWFLAKE_PASSWORD")
             )
         elif values["authenticator"] is not None:
             values["authenticator"] = get_from_dict_or_env(
@@ -231,11 +233,13 @@ class CortexSearchRetriever(BaseRetriever):
         if values["search_column"] is None:
             raise CortexSearchRetrieverError("Search column not provided")
         if values["cortex_search_service"] is None:
-            raise CortexSearchRetrieverError("Cortex search service not provided")
+            raise CortexSearchRetrieverError(
+                "Cortex search service not provided")
 
         # Attempt to create a session
         try:
-            values["_sp_session"] = Session.builder.configs(connection_params).create()
+            values["_sp_session"] = Session.builder.configs(
+                connection_params).create()
         except Exception as e:
             raise CortexSearchRetrieverError(f"Failed to create session: {e}")
 
@@ -253,7 +257,8 @@ class CortexSearchRetriever(BaseRetriever):
         run_manager: CallbackManagerForRetrieverRun,
     ) -> List[Document]:
         try:
-            kwargs = {"columns": self.columns if self.columns else [self.search_column]}
+            kwargs = {"columns": self.columns if self.columns else [
+                self.search_column]}
 
             if self.filter:
                 kwargs["filter"] = self.filter
