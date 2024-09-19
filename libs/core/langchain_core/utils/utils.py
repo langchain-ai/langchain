@@ -6,19 +6,20 @@ import functools
 import importlib
 import os
 import warnings
+from collections.abc import Sequence
 from importlib.metadata import version
-from typing import Any, Callable, Dict, Optional, Sequence, Set, Tuple, Union, overload
+from typing import Any, Callable, Optional, Union, overload
 
 from packaging.version import parse
+from pydantic import SecretStr
 from requests import HTTPError, Response
 
-from langchain_core.pydantic_v1 import SecretStr
 from langchain_core.utils.pydantic import (
     is_pydantic_v1_subclass,
 )
 
 
-def xor_args(*arg_groups: Tuple[str, ...]) -> Callable:
+def xor_args(*arg_groups: tuple[str, ...]) -> Callable:
     """Validate specified keyword args are mutually exclusive."
 
     Args:
@@ -186,7 +187,7 @@ def check_package_version(
         )
 
 
-def get_pydantic_field_names(pydantic_cls: Any) -> Set[str]:
+def get_pydantic_field_names(pydantic_cls: Any) -> set[str]:
     """Get field names, including aliases, for a pydantic class.
 
     Args:
@@ -210,10 +211,10 @@ def get_pydantic_field_names(pydantic_cls: Any) -> Set[str]:
 
 
 def build_extra_kwargs(
-    extra_kwargs: Dict[str, Any],
-    values: Dict[str, Any],
-    all_required_field_names: Set[str],
-) -> Dict[str, Any]:
+    extra_kwargs: dict[str, Any],
+    values: dict[str, Any],
+    all_required_field_names: set[str],
+) -> dict[str, Any]:
     """Build extra kwargs from values and extra_kwargs.
 
     Args:
@@ -353,7 +354,7 @@ def from_env(
 
 
 @overload
-def secret_from_env(key: str, /) -> Callable[[], SecretStr]: ...
+def secret_from_env(key: Union[str, Sequence[str]], /) -> Callable[[], SecretStr]: ...
 
 
 @overload

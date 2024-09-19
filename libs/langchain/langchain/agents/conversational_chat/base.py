@@ -17,8 +17,8 @@ from langchain_core.prompts.chat import (
     MessagesPlaceholder,
     SystemMessagePromptTemplate,
 )
-from langchain_core.pydantic_v1 import Field
 from langchain_core.tools import BaseTool
+from pydantic import Field
 
 from langchain.agents.agent import Agent, AgentOutputParser
 from langchain.agents.conversational_chat.output_parser import ConvoOutputParser

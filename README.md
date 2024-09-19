@@ -39,7 +39,7 @@ conda install langchain -c conda-forge
 For these applications, LangChain simplifies the entire application lifecycle:
 
 - **Open-source libraries**: Build your applications using LangChain's open-source [building blocks](https://python.langchain.com/v0.2/docs/concepts#langchain-expression-language-lcel), [components](https://python.langchain.com/v0.2/docs/concepts), and [third-party integrations](https://python.langchain.com/v0.2/docs/integrations/platforms/).
-  Use [LangGraph](/docs/concepts/#langgraph) to build stateful agents with first-class streaming and human-in-the-loop support.
+  Use [LangGraph](https://langchain-ai.github.io/langgraph/) to build stateful agents with first-class streaming and human-in-the-loop support.
 - **Productionization**: Inspect, monitor, and evaluate your apps with [LangSmith](https://docs.smith.langchain.com/) so that you can constantly optimize and deploy with confidence.
 - **Deployment**: Turn your LangGraph applications into production-ready APIs and Assistants with [LangGraph Cloud](https://langchain-ai.github.io/langgraph/cloud/).
 
@@ -49,7 +49,7 @@ For these applications, LangChain simplifies the entire application lifecycle:
 - **`langchain-community`**: Third party integrations.
   - Some integrations have been further split into **partner packages** that only rely on **`langchain-core`**. Examples include **`langchain_openai`** and **`langchain_anthropic`**.
 - **`langchain`**: Chains, agents, and retrieval strategies that make up an application's cognitive architecture.
-- **[`LangGraph`](https://langchain-ai.github.io/langgraph/)**: A library for building robust and stateful multi-actor applications with LLMs by modeling steps as edges and nodes in a graph. Integrates smoothly with LangChain, but can be used without it.
+- **[`LangGraph`](https://langchain-ai.github.io/langgraph/)**: A library for building robust and stateful multi-actor applications with LLMs by modeling steps as edges and nodes in a graph. Integrates smoothly with LangChain, but can be used without it. To learn more about LangGraph, check out our first LangChain Academy course, *Introduction to LangGraph*, available [here](https://academy.langchain.com/courses/intro-to-langgraph).
 
 ### Productionization:
 

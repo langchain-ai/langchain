@@ -4,8 +4,8 @@ import logging
 from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
+from pydantic import BaseModel, Field, SecretStr
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +71,7 @@ class QianfanEmbeddingsEndpoint(BaseModel, Embeddings):
     endpoint: str = ""
     """Endpoint of the Qianfan Embedding, required if custom model used."""
 
-    client: Any
+    client: Any = None
     """Qianfan client"""
 
     init_kwargs: Dict[str, Any] = Field(default_factory=dict)
