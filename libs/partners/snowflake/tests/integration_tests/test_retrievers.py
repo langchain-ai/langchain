@@ -18,6 +18,7 @@ export SNOWFLAKE_CORTEX_SEARCH_SERVICE=<cortex_search_service>
 
 import pytest
 from langchain_core.documents import Document
+
 from langchain_snowflake import CortexSearchRetriever, CortexSearchRetrieverError
 
 
