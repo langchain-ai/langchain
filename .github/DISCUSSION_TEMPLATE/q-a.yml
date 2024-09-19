@@ -1,30 +1,9 @@
-labels: [Question]
 body:
-  - type: markdown
-    attributes:
-      label: hello
-      value: |
-        Thanks for your interest in LangChain 🦜️🔗!
-
-        Please follow these instructions, fill every question, and do every step. 🙏
-        
-        We're asking for this because answering questions and solving problems in GitHub takes a lot of time --
-        this is time that we cannot spend on adding new features, fixing bugs, writing documentation or reviewing pull requests.
-
-        By asking questions in a structured way (following this) it will be much easier for us to help you.
-
-        There's a high chance that by following this process, you'll find the solution on your own, eliminating the need to submit a question and wait for an answer. 😎
-
-        As there are many questions submitted every day, we will **DISCARD** and close the incomplete ones. 
-        
-        That will allow us (and others) to focus on helping people like you that follow the whole process. 🤓
-        
-        Relevant links to check before opening a question to see if your question has already been answered, fixed or
-        if there's another way to solve your problem:
-        
-        [LangChain documentation with the integrated search](https://python.langchain.com/docs/get_started/introduction),
-        [API Reference](https://api.python.langchain.com/en/stable/),
-        [GitHub search](https://github.com/langchain-ai/langchain),
-        [LangChain Github Discussions](https://github.com/langchain-ai/langchain/discussions),
-        [LangChain Github Issues](https://github.com/langchain-ai/langchain/issues?q=is%3Aissue),
-        [LangChain ChatBot](https://chat.langchain.com/)
+- type: input
+  id: suggestion
+  attributes:
+    label: Suggestion
+    description: "How might we make this project better?"
+    placeholder: "Adding a CODE_OF_CONDUCT.md file would be a great idea."
+  validations:
+    required: true
