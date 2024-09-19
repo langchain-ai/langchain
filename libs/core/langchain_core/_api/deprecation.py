@@ -14,11 +14,10 @@ import contextlib
 import functools
 import inspect
 import warnings
+from collections.abc import Generator
 from typing import (
     Any,
     Callable,
-    Generator,
-    Type,
     TypeVar,
     Union,
     cast,
@@ -41,7 +40,7 @@ class LangChainPendingDeprecationWarning(PendingDeprecationWarning):
 
 
 # Last Any should be FieldInfoV1 but this leads to circular imports
-T = TypeVar("T", bound=Union[Type, Callable[..., Any], Any])
+T = TypeVar("T", bound=Union[type, Callable[..., Any], Any])
 
 
 def _validate_deprecation_params(
@@ -262,7 +261,7 @@ def deprecated(
             if not _obj_type:
                 _obj_type = "attribute"
             wrapped = None
-            _name = _name or cast(Union[Type, Callable], obj.fget).__qualname__
+            _name = _name or cast(Union[type, Callable], obj.fget).__qualname__
             old_doc = obj.__doc__
 
             class _deprecated_property(property):
@@ -304,7 +303,7 @@ def deprecated(
                 )
 
         else:
-            _name = _name or cast(Union[Type, Callable], obj).__qualname__
+            _name = _name or cast(Union[type, Callable], obj).__qualname__
             if not _obj_type:
                 # edge case: when a function is within another function
                 # within a test, this will call it a "method" not a "function"
@@ -333,9 +332,26 @@ def deprecated(
             old_doc = ""
 
         # Modify the docstring to include a deprecation notice.
+        if (
+            _alternative
+            and _alternative.split(".")[-1].lower() == _alternative.split(".")[-1]
+        ):
+            _alternative = f":meth:`~{_alternative}`"
+        elif _alternative:
+            _alternative = f":class:`~{_alternative}`"
+
+        if (
+            _alternative_import
+            and _alternative_import.split(".")[-1].lower()
+            == _alternative_import.split(".")[-1]
+        ):
+            _alternative_import = f":meth:`~{_alternative_import}`"
+        elif _alternative_import:
+            _alternative_import = f":class:`~{_alternative_import}`"
+
         components = [
             _message,
-            f"Use ``{_alternative}`` instead." if _alternative else "",
+            f"Use {_alternative} instead." if _alternative else "",
             f"Use ``{_alternative_import}`` instead." if _alternative_import else "",
             _addendum,
         ]

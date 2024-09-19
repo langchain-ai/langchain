@@ -1,6 +1,6 @@
 import inspect
 import warnings
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 from pydantic import BaseModel
@@ -55,7 +55,7 @@ from langchain_core._api.deprecation import (
         ),
     ],
 )
-def test_warn_deprecated(kwargs: Dict[str, Any], expected_message: str) -> None:
+def test_warn_deprecated(kwargs: dict[str, Any], expected_message: str) -> None:
     """Test warn deprecated."""
     with warnings.catch_warnings(record=True) as warning_list:
         warnings.simplefilter("always")

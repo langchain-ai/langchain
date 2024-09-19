@@ -886,7 +886,7 @@ const FEATURE_TABLES = {
                 apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.html_bs.BSHTMLLoader.html"
             },
             {
-                name: "UnstrucutredXMLLoader",
+                name: "UnstructuredXMLLoader",
                 link: "xml",
                 source: "XML files",
                 apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.xml.UnstructuredXMLLoader.html"

@@ -1,6 +1,6 @@
 import unittest
 import uuid
-from typing import List, Type, Union
+from typing import Union
 
 import pytest
 
@@ -447,7 +447,7 @@ def test_message_chunk_to_message() -> None:
 
 
 def test_tool_calls_merge() -> None:
-    chunks: List[dict] = [
+    chunks: list[dict] = [
         dict(content=""),
         dict(
             content="",
@@ -790,7 +790,7 @@ def test_convert_to_messages() -> None:
         SystemMessage,
     ],
 )
-def test_message_name(MessageClass: Type) -> None:
+def test_message_name(MessageClass: type) -> None:
     msg = MessageClass(content="foo", name="bar")
     assert msg.name == "bar"
 
@@ -805,7 +805,7 @@ def test_message_name(MessageClass: Type) -> None:
     "MessageClass",
     [FunctionMessage, FunctionMessageChunk],
 )
-def test_message_name_function(MessageClass: Type) -> None:
+def test_message_name_function(MessageClass: type) -> None:
     # functionmessage doesn't support name=None
     msg = MessageClass(name="foo", content="bar")
     assert msg.name == "foo"
@@ -815,7 +815,7 @@ def test_message_name_function(MessageClass: Type) -> None:
     "MessageClass",
     [ChatMessage, ChatMessageChunk],
 )
-def test_message_name_chat(MessageClass: Type) -> None:
+def test_message_name_chat(MessageClass: type) -> None:
     msg = MessageClass(content="foo", role="user", name="bar")
     assert msg.name == "bar"
 

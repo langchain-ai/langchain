@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import List, Literal, Optional, Union
+from typing import Literal, Optional, Union
 
 from pydantic import BaseModel
 
@@ -18,8 +18,8 @@ class LLMResult(BaseModel):
     wants to return.
     """
 
-    generations: List[
-        List[Union[Generation, ChatGeneration, GenerationChunk, ChatGenerationChunk]]
+    generations: list[
+        list[Union[Generation, ChatGeneration, GenerationChunk, ChatGenerationChunk]]
     ]
     """Generated outputs.
     
@@ -45,13 +45,13 @@ class LLMResult(BaseModel):
     accessing relevant information from standardized fields present in
     AIMessage.
     """
-    run: Optional[List[RunInfo]] = None
+    run: Optional[list[RunInfo]] = None
     """List of metadata info for model call for each input."""
 
     type: Literal["LLMResult"] = "LLMResult"  # type: ignore[assignment]
     """Type is used exclusively for serialization purposes."""
 
-    def flatten(self) -> List[LLMResult]:
+    def flatten(self) -> list[LLMResult]:
         """Flatten generations into a single list.
 
         Unpack List[List[Generation]] -> List[LLMResult] where each returned LLMResult
