@@ -1026,4 +1026,9 @@ _JS_SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "image",
         "ImagePromptTemplate",
     ),
+    ("langchain", "chat_models", "bedrock", "ChatBedrock"): (
+        "langchain_aws",
+        "chat_models",
+        "ChatBedrock",
+    ),
 }
