@@ -110,6 +110,8 @@ class LangChainTracer(BaseTracer):
         self.latest_run: Optional[Run] = None
 
     def _start_trace(self, run: Run) -> None:
+        run.session_name = self.project_name
+        run.tags = sorted(run.tags + self.tags)
         super()._start_trace(run)
         if run._client is None:
             run._client = self.client
