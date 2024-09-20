@@ -56,7 +56,7 @@ def wait_for_all_tracers() -> None:
 
 def get_client() -> Client:
     """Get the client."""
-    return rt._get_client()
+    return rt.get_cached_client()
 
 
 def _get_executor() -> ThreadPoolExecutor:
