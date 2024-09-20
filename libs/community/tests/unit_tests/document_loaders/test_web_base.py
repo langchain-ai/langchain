@@ -1,3 +1,4 @@
+from textwrap import dedent
 from typing import Any
 from unittest.mock import MagicMock, patch
 
@@ -27,9 +28,10 @@ class TestWebBaseLoader:
 @pytest.mark.requires("bs4")
 @patch("langchain_community.document_loaders.web_base.requests.Session.get")
 def test_lazy_load(mock_get: Any) -> None:
+    import bs4
+
     mock_response = MagicMock()
     mock_response.text = "<html><body><p>Test content</p></body></html>"
-    mock_response.raise_for_status = MagicMock()
     mock_get.return_value = mock_response
 
     loader = WebBaseLoader(web_paths=["https://www.example.com"])
@@ -37,3 +39,24 @@ def test_lazy_load(mock_get: Any) -> None:
     mock_get.assert_called_with("https://www.example.com")
     assert len(results) == 1
     assert results[0].page_content == "Test content"
+
+    # Test bs4 kwargs
+    mock_html = dedent("""
+        <html>
+        <body>
+            <p>Test content</p>
+            <div class="special-class">This is a div with a special class</div>
+        </body>
+        </html>
+        """)
+    mock_response = MagicMock()
+    mock_response.text = mock_html
+    mock_get.return_value = mock_response
+
+    loader = WebBaseLoader(
+        web_paths=["https://www.example.com"],
+        bs_kwargs={"parse_only": bs4.SoupStrainer(class_="special-class")},
+    )
+    results = list(loader.lazy_load())
+    assert len(results) == 1
+    assert results[0].page_content == "This is a div with a special class"
