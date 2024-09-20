@@ -72,7 +72,7 @@ jobs:
       - name: Analysing the code with our lint
         working-directory: ${{ inputs.working-directory }}
         run: |
-          make lint_package
+          RUFF_CHECK_OPTIONS="--output-format github" make lint_package
 
       - name: Install unit test dependencies
         # Also installs dev/lint/test/typing dependencies, to ensure we have
@@ -105,4 +105,4 @@ jobs:
       - name: Analysing the code with our lint
         working-directory: ${{ inputs.working-directory }}
         run: |
-          make lint_tests
+          RUFF_CHECK_OPTIONS="--output-format github" make lint_tests

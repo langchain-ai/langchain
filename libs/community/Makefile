@@ -48,7 +48,7 @@ lint lint_diff lint_package lint_tests:
 	./scripts/check_pydantic.sh .
 	./scripts/lint_imports.sh .
 	./scripts/check_pickle.sh .
-	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff check $(PYTHON_FILES)
+	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff check $(PYTHON_FILES) ${RUFF_CHECK_OPTIONS}
 	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff format $(PYTHON_FILES) --diff
 	[ "$(PYTHON_FILES)" = "" ] || mkdir -p $(MYPY_CACHE) && poetry run mypy $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
 
