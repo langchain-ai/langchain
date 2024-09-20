@@ -375,7 +375,7 @@ def test_tree_is_constructed() -> None:
 
     rid = uuid.uuid4()
 
-    with tracing_context(client=mock_client_):
+    with tracing_context(client=mock_client_, enabled=True):
         assert parent(langsmith_extra={"on_end": collect_run, "run_id": rid}) == "foo"
 
     assert collected

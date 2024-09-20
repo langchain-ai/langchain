@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import logging
 import warnings
 from concurrent.futures import ThreadPoolExecutor
@@ -10,6 +11,7 @@ from typing import TYPE_CHECKING, Any, Optional, Union
 from uuid import UUID
 
 from langsmith import Client
+from langsmith import run_trees as rt
 from langsmith import utils as ls_utils
 from pydantic import PydanticDeprecationWarning
 from tenacity import (
@@ -29,7 +31,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 _LOGGED = set()
-_CLIENT: Optional[Client] = None
 _EXECUTOR: Optional[ThreadPoolExecutor] = None
 
 
@@ -56,10 +57,7 @@ def wait_for_all_tracers() -> None:
 
 def get_client() -> Client:
     """Get the client."""
-    global _CLIENT
-    if _CLIENT is None:
-        _CLIENT = Client()
-    return _CLIENT
+    return rt._get_client()
 
 
 def _get_executor() -> ThreadPoolExecutor:
@@ -112,6 +110,11 @@ class LangChainTracer(BaseTracer):
         self.tags = tags or []
         self.latest_run: Optional[Run] = None
 
+    def _start_trace(self, run: Run):
+        super()._start_trace(run)
+        if run._client is None:
+            run._client = self.client
+
     def on_chat_model_start(
         self,
         serialized: dict[str, Any],
@@ -163,8 +166,7 @@ class LangChainTracer(BaseTracer):
         # run.model_copy
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=PydanticDeprecationWarning)
-
-            run_ = run.copy()
+            run_ = copy.copy(run)
         run_.reference_example_id = self.example_id
         self.latest_run = run_
 
