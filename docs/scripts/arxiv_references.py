@@ -378,18 +378,18 @@ class ArxivAPIWrapper(BaseModel):
                 abstract=result.summary,
                 url=result.entry_id,
                 published_date=str(result.published.date()),
-                referencing_doc2url=type2key2urls["docs"]
-                if "docs" in type2key2urls
-                else {},
-                referencing_api_ref2url=type2key2urls["apis"]
-                if "apis" in type2key2urls
-                else {},
-                referencing_template2url=type2key2urls["templates"]
-                if "templates" in type2key2urls
-                else {},
-                referencing_cookbook2url=type2key2urls["cookbooks"]
-                if "cookbooks" in type2key2urls
-                else {},
+                referencing_doc2url=(
+                    type2key2urls["docs"] if "docs" in type2key2urls else {}
+                ),
+                referencing_api_ref2url=(
+                    type2key2urls["apis"] if "apis" in type2key2urls else {}
+                ),
+                referencing_template2url=(
+                    type2key2urls["templates"] if "templates" in type2key2urls else {}
+                ),
+                referencing_cookbook2url=(
+                    type2key2urls["cookbooks"] if "cookbooks" in type2key2urls else {}
+                ),
             )
             for result, type2key2urls in zip(results, arxiv_id2type2key2urls.values())
         ]
@@ -522,8 +522,10 @@ LangChain implements the latest research in the field of Natural Language Proces
 This page contains `arXiv` papers referenced in the LangChain Documentation, API Reference,
  Templates, and Cookbooks.
 
-From the opposite direction, scientists use LangChain in research and reference LangChain in the research papers. 
-Here you find [such papers](https://arxiv.org/search/?query=langchain&searchtype=all&source=header).
+From the opposite direction, scientists use `LangChain` in research and reference it in the research papers. 
+
+`arXiv` papers with references to:
+ [LangChain](https://arxiv.org/search/?query=langchain&searchtype=all&source=header) | [LangGraph](https://arxiv.org/search/?query=langgraph&searchtype=all&source=header) | [LangSmith](https://arxiv.org/search/?query=langsmith&searchtype=all&source=header)
 
 ## Summary
 
@@ -561,7 +563,7 @@ Here you find [such papers](https://arxiv.org/search/?query=langchain&searchtype
                 refs += [
                     "`Cookbook:` "
                     + ", ".join(
-                        f"[{key}]({url})"
+                        f"[{str(key).replace('_', ' ').title()}]({url})"
                         for key, url in paper.referencing_cookbook2url.items()
                     )
                 ]
@@ -569,7 +571,7 @@ Here you find [such papers](https://arxiv.org/search/?query=langchain&searchtype
 
             title_link = f"[{paper.title}]({paper.url})"
             f.write(
-                f"| {' | '.join([f'`{paper.arxiv_id}` {title_link}', ', '.join(paper.authors), paper.published_date, refs_str])}\n"
+                f"| {' | '.join([f'`{paper.arxiv_id}` {title_link}', ', '.join(paper.authors), paper.published_date.replace('-', '&#8209;'), refs_str])}\n"
             )
 
         for paper in papers:
@@ -604,11 +606,8 @@ Here you find [such papers](https://arxiv.org/search/?query=langchain&searchtype
                 f"""
 ## {paper.title}
 
-- **arXiv id:** {paper.arxiv_id}
-- **Title:** {paper.title}
 - **Authors:** {', '.join(paper.authors)}
-- **Published Date:** {paper.published_date}
-- **URL:** {paper.url}
+- **arXiv id:** [{paper.arxiv_id}]({paper.url})  **Published Date:** {paper.published_date}
 - **LangChain:**
 
 {refs}

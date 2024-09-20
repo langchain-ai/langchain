@@ -79,6 +79,7 @@ def test_test_group_dependencies(poetry_conf: Mapping[str, Any]) -> None:
             "duckdb-engine",
             "freezegun",
             "langchain-core",
+            "langchain-standard-tests",
             "langchain-text-splitters",
             "langchain-openai",
             "lark",
@@ -93,5 +94,7 @@ def test_test_group_dependencies(poetry_conf: Mapping[str, Any]) -> None:
             "responses",
             "syrupy",
             "requests-mock",
+            # TODO: temporary hack since cffi 1.17.1 doesn't work with py 3.9.
+            "cffi",
         ]
     )

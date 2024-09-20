@@ -4,8 +4,8 @@ from typing import Any, Dict, List, Optional
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import root_validator
 from langchain_core.retrievers import BaseRetriever
+from pydantic import model_validator
 
 from langchain_community.vectorstores.zilliz import Zilliz
 
@@ -30,8 +30,9 @@ class ZillizRetriever(BaseRetriever):
     retriever: BaseRetriever
     """The underlying retriever."""
 
-    @root_validator(pre=True)
-    def create_client(cls, values: dict) -> dict:
+    @model_validator(mode="before")
+    @classmethod
+    def create_client(cls, values: dict) -> Any:
         values["store"] = Zilliz(
             values["embedding_function"],
             values["collection_name"],

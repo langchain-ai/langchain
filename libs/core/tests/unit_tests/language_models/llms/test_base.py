@@ -1,4 +1,5 @@
-from typing import Any, AsyncIterator, Iterator, List, Optional
+from collections.abc import AsyncIterator, Iterator
+from typing import Any, Optional
 
 import pytest
 
@@ -7,6 +8,7 @@ from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models import BaseLLM, FakeListLLM, FakeStreamingListLLM
+from langchain_core.language_models.fake import FakeListLLMError
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.tracers.context import collect_runs
 from tests.unit_tests.fake.callbacks import (
@@ -108,7 +110,7 @@ async def test_stream_error_callback() -> None:
             responses=[message],
             error_on_chunk_number=i,
         )
-        with pytest.raises(Exception):
+        with pytest.raises(FakeListLLMError):
             cb_async = FakeAsyncCallbackHandler()
             async for _ in llm.astream("Dummy message", callbacks=[cb_async]):
                 pass
@@ -127,8 +129,8 @@ async def test_astream_fallback_to_ainvoke() -> None:
     class ModelWithGenerate(BaseLLM):
         def _generate(
             self,
-            prompts: List[str],
-            stop: Optional[List[str]] = None,
+            prompts: list[str],
+            stop: Optional[list[str]] = None,
             run_manager: Optional[CallbackManagerForLLMRun] = None,
             **kwargs: Any,
         ) -> LLMResult:
@@ -153,8 +155,8 @@ async def test_astream_implementation_fallback_to_stream() -> None:
     class ModelWithSyncStream(BaseLLM):
         def _generate(
             self,
-            prompts: List[str],
-            stop: Optional[List[str]] = None,
+            prompts: list[str],
+            stop: Optional[list[str]] = None,
             run_manager: Optional[CallbackManagerForLLMRun] = None,
             **kwargs: Any,
         ) -> LLMResult:
@@ -164,7 +166,7 @@ async def test_astream_implementation_fallback_to_stream() -> None:
         def _stream(
             self,
             prompt: str,
-            stop: Optional[List[str]] = None,
+            stop: Optional[list[str]] = None,
             run_manager: Optional[CallbackManagerForLLMRun] = None,
             **kwargs: Any,
         ) -> Iterator[GenerationChunk]:
@@ -190,8 +192,8 @@ async def test_astream_implementation_uses_astream() -> None:
     class ModelWithAsyncStream(BaseLLM):
         def _generate(
             self,
-            prompts: List[str],
-            stop: Optional[List[str]] = None,
+            prompts: list[str],
+            stop: Optional[list[str]] = None,
             run_manager: Optional[CallbackManagerForLLMRun] = None,
             **kwargs: Any,
         ) -> LLMResult:
@@ -201,7 +203,7 @@ async def test_astream_implementation_uses_astream() -> None:
         async def _astream(
             self,
             prompt: str,
-            stop: Optional[List[str]] = None,
+            stop: Optional[list[str]] = None,
             run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
             **kwargs: Any,
         ) -> AsyncIterator[GenerationChunk]:

@@ -1,13 +1,18 @@
 from __future__ import annotations
 
 import logging
-from typing import Optional
+from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
+from pydantic import BaseModel, Field
 
 from langchain_community.tools.edenai.edenai_base_tool import EdenaiTool
 
 logger = logging.getLogger(__name__)
+
+
+class TextModerationInput(BaseModel):
+    query: str = Field(description="Text to moderate")
 
 
 class EdenAiTextModerationTool(EdenaiTool):
@@ -23,7 +28,6 @@ class EdenAiTextModerationTool(EdenaiTool):
     """
 
     name: str = "edenai_explicit_content_detection_text"
-
     description: str = (
         "A wrapper around edenai Services explicit content detection for text. "
         """Useful for when you have to scan text for offensive, 
@@ -44,6 +48,7 @@ class EdenAiTextModerationTool(EdenaiTool):
         """
         "Input should be a string."
     )
+    args_schema: Type[BaseModel] = TextModerationInput
 
     language: str
 

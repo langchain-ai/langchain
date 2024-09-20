@@ -6,9 +6,9 @@ from typing import Any, Dict, List, Optional, Tuple, Type
 
 from langchain_core.callbacks import Callbacks
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain_core.runnables.config import RunnableConfig
 from langchain_core.runnables.utils import create_model
+from pydantic import BaseModel, ConfigDict, model_validator
 
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.reduce import ReduceDocumentsChain
@@ -126,14 +126,14 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
             _output_keys = _output_keys + ["intermediate_steps"]
         return _output_keys
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
-
-    @root_validator(pre=True)
-    def get_reduce_chain(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def get_reduce_chain(cls, values: Dict) -> Any:
         """For backwards compatibility."""
         if "combine_document_chain" in values:
             if "reduce_documents_chain" in values:
@@ -155,16 +155,18 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
 
         return values
 
-    @root_validator(pre=True)
-    def get_return_intermediate_steps(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def get_return_intermediate_steps(cls, values: Dict) -> Any:
         """For backwards compatibility."""
         if "return_map_steps" in values:
             values["return_intermediate_steps"] = values["return_map_steps"]
             del values["return_map_steps"]
         return values
 
-    @root_validator(pre=True)
-    def get_default_document_variable_name(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def get_default_document_variable_name(cls, values: Dict) -> Any:
         """Get default document variable name, if not provided."""
         if "llm_chain" not in values:
             raise ValueError("llm_chain must be provided")

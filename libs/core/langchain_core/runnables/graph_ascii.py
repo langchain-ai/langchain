@@ -3,7 +3,8 @@ Adapted from https://github.com/iterative/dvc/blob/main/dvc/dagascii.py"""
 
 import math
 import os
-from typing import Any, Mapping, Sequence
+from collections.abc import Mapping, Sequence
+from typing import Any
 
 from langchain_core.runnables.graph import Edge as LangEdge
 
@@ -17,6 +18,7 @@ class VertexViewer:
     """
 
     HEIGHT = 3  # top and bottom box edges + text
+    """Height of the box."""
 
     def __init__(self, name: str) -> None:
         self._h = self.HEIGHT  # top and bottom box edges + text
@@ -244,27 +246,27 @@ def draw_ascii(vertices: Mapping[str, str], edges: Sequence[LangEdge]) -> str:
 
     # NOTE: coordinates might me negative, so we need to shift
     # everything to the positive plane before we actually draw it.
-    Xs = []
-    Ys = []
+    xlist = []
+    ylist = []
 
     sug = _build_sugiyama_layout(vertices, edges)
 
     for vertex in sug.g.sV:
         # NOTE: moving boxes w/2 to the left
-        Xs.append(vertex.view.xy[0] - vertex.view.w / 2.0)
-        Xs.append(vertex.view.xy[0] + vertex.view.w / 2.0)
-        Ys.append(vertex.view.xy[1])
-        Ys.append(vertex.view.xy[1] + vertex.view.h)
+        xlist.append(vertex.view.xy[0] - vertex.view.w / 2.0)
+        xlist.append(vertex.view.xy[0] + vertex.view.w / 2.0)
+        ylist.append(vertex.view.xy[1])
+        ylist.append(vertex.view.xy[1] + vertex.view.h)
 
     for edge in sug.g.sE:
         for x, y in edge.view._pts:
-            Xs.append(x)
-            Ys.append(y)
+            xlist.append(x)
+            ylist.append(y)
 
-    minx = min(Xs)
-    miny = min(Ys)
-    maxx = max(Xs)
-    maxy = max(Ys)
+    minx = min(xlist)
+    miny = min(ylist)
+    maxx = max(xlist)
+    maxy = max(ylist)
 
     canvas_cols = int(math.ceil(math.ceil(maxx) - math.floor(minx))) + 1
     canvas_lines = int(round(maxy - miny))

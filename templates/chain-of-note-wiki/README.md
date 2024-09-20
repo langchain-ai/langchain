@@ -1,6 +1,8 @@
-# Chain-of-Note (Wikipedia)
+# Chain-of-Note - Wikipedia
 
-Implements Chain-of-Note as described in https://arxiv.org/pdf/2311.09210.pdf by Yu, et al. Uses Wikipedia for retrieval.
+Implements `Chain-of-Note` as described in [CHAIN-OF-NOTE: ENHANCING ROBUSTNESS IN
+RETRIEVAL-AUGMENTED LANGUAGE MODELS](https://arxiv.org/pdf/2311.09210.pdf) paper
+by Yu, et al. Uses `Wikipedia` for retrieval.
 
 Check out the prompt being used here https://smith.langchain.com/hub/bagatur/chain-of-note-wiki.
 

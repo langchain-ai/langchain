@@ -1,7 +1,6 @@
+# RAG - AstraDB
 
-# rag-astradb
-
-This template will perform RAG using Astra DB (`AstraDB` vector store class)
+This template will perform RAG using `AstraDB` (`AstraDB` vector store class)
 
 ## Environment Setup
 

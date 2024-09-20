@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 from typing import (
     Any,
@@ -12,6 +13,7 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Sequence,
     Tuple,
     Type,
     Union,
@@ -21,6 +23,7 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
+from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
     agenerate_from_stream,
@@ -40,14 +43,20 @@ from langchain_core.messages import (
     HumanMessageChunk,
     SystemMessage,
     SystemMessageChunk,
+    ToolCall,
+    ToolCallChunk,
+    ToolMessage,
 )
 from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,
     ChatResult,
 )
-from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.runnables import Runnable
+from langchain_core.tools import BaseTool
+from langchain_core.utils import get_from_dict_or_env, pre_init
+from langchain_core.utils.function_calling import convert_to_openai_tool
+from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
@@ -127,10 +136,30 @@ def _convert_delta_to_message_chunk(
     else:
         additional_kwargs = {}
 
+    tool_call_chunks = []
+    if raw_tool_calls := _dict.get("tool_calls"):
+        additional_kwargs["tool_calls"] = raw_tool_calls
+        try:
+            tool_call_chunks = [
+                ToolCallChunk(
+                    name=rtc["function"].get("name"),
+                    args=rtc["function"].get("arguments"),
+                    id=rtc.get("id"),
+                    index=rtc["index"],
+                )
+                for rtc in raw_tool_calls
+            ]
+        except KeyError:
+            pass
+
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content)
     elif role == "assistant" or default_class == AIMessageChunk:
-        return AIMessageChunk(content=content, additional_kwargs=additional_kwargs)
+        return AIMessageChunk(
+            content=content,
+            additional_kwargs=additional_kwargs,
+            tool_call_chunks=tool_call_chunks,
+        )
     elif role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
     elif role == "function" or default_class == FunctionMessageChunk:
@@ -141,23 +170,41 @@ def _convert_delta_to_message_chunk(
         return default_class(content=content)  # type: ignore[call-arg]
 
 
+def _lc_tool_call_to_openai_tool_call(tool_call: ToolCall) -> dict:
+    return {
+        "type": "function",
+        "id": tool_call["id"],
+        "function": {
+            "name": tool_call["name"],
+            "arguments": json.dumps(tool_call["args"]),
+        },
+    }
+
+
 def _convert_message_to_dict(message: BaseMessage) -> dict:
+    message_dict: Dict[str, Any] = {"content": message.content}
     if isinstance(message, ChatMessage):
-        message_dict = {"role": message.role, "content": message.content}
+        message_dict["role"] = message.role
     elif isinstance(message, HumanMessage):
-        message_dict = {"role": "user", "content": message.content}
+        message_dict["role"] = "user"
     elif isinstance(message, AIMessage):
-        message_dict = {"role": "assistant", "content": message.content}
+        message_dict["role"] = "assistant"
         if "function_call" in message.additional_kwargs:
             message_dict["function_call"] = message.additional_kwargs["function_call"]
+        if message.tool_calls:
+            message_dict["tool_calls"] = [
+                _lc_tool_call_to_openai_tool_call(tc) for tc in message.tool_calls
+            ]
+        elif "tool_calls" in message.additional_kwargs:
+            message_dict["tool_calls"] = message.additional_kwargs["tool_calls"]
     elif isinstance(message, SystemMessage):
-        message_dict = {"role": "system", "content": message.content}
+        message_dict["role"] = "system"
     elif isinstance(message, FunctionMessage):
-        message_dict = {
-            "role": "function",
-            "content": message.content,
-            "name": message.name,
-        }
+        message_dict["role"] = "function"
+        message_dict["name"] = message.name
+    elif isinstance(message, ToolMessage):
+        message_dict["role"] = "tool"
+        message_dict["tool_call_id"] = message.tool_call_id
     else:
         raise ValueError(f"Got unknown type {message}")
     if "name" in message.additional_kwargs:
@@ -168,7 +215,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
 class ChatLiteLLM(BaseChatModel):
     """Chat model that uses the LiteLLM API."""
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     model: str = "gpt-3.5-turbo"
     model_name: Optional[str] = None
     """Model name to use."""
@@ -185,7 +232,7 @@ class ChatLiteLLM(BaseChatModel):
     request_timeout: Optional[Union[float, Tuple[float, float]]] = None
     temperature: Optional[float] = 1
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
-    """Run inference with this temperature. Must by in the closed
+    """Run inference with this temperature. Must be in the closed
        interval [0.0, 1.0]."""
     top_p: Optional[float] = None
     """Decode using nucleus sampling: consider the smallest set of tokens whose
@@ -244,7 +291,7 @@ class ChatLiteLLM(BaseChatModel):
 
         return _completion_with_retry(**kwargs)
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate api key, python package exists, temperature, top_p, and top_k."""
         try:
@@ -355,6 +402,8 @@ class ChatLiteLLM(BaseChatModel):
         for chunk in self.completion_with_retry(
             messages=message_dicts, run_manager=run_manager, **params
         ):
+            if not isinstance(chunk, dict):
+                chunk = chunk.model_dump()
             if len(chunk["choices"]) == 0:
                 continue
             delta = chunk["choices"][0]["delta"]
@@ -379,6 +428,8 @@ class ChatLiteLLM(BaseChatModel):
         async for chunk in await acompletion_with_retry(
             self, messages=message_dicts, run_manager=run_manager, **params
         ):
+            if not isinstance(chunk, dict):
+                chunk = chunk.model_dump()
             if len(chunk["choices"]) == 0:
                 continue
             delta = chunk["choices"][0]["delta"]
@@ -410,6 +461,32 @@ class ChatLiteLLM(BaseChatModel):
             self, messages=message_dicts, run_manager=run_manager, **params
         )
         return self._create_chat_result(response)
+
+    def bind_tools(
+        self,
+        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        """Bind tool-like objects to this chat model.
+
+        LiteLLM expects tools argument in OpenAI format.
+
+        Args:
+            tools: A list of tool definitions to bind to this chat model.
+                Can be  a dictionary, pydantic model, callable, or BaseTool. Pydantic
+                models, callables, and BaseTools will be automatically converted to
+                their schema dictionary representation.
+            tool_choice: Which tool to require the model to call.
+                Must be the name of the single provided function or
+                "auto" to automatically determine which function to call
+                (if any), or a dict of the form:
+                {"type": "function", "function": {"name": <<tool_name>>}}.
+            **kwargs: Any additional parameters to pass to the
+                :class:`~langchain.runnable.Runnable` constructor.
+        """
+
+        formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
+        return super().bind(tools=formatted_tools, **kwargs)
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:

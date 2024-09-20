@@ -3,27 +3,22 @@
 import asyncio
 import sys
 import uuid
+from collections.abc import AsyncIterator, Iterable, Iterator, Sequence
 from functools import partial
 from itertools import cycle
 from typing import (
     Any,
-    AsyncIterator,
-    Dict,
-    Iterable,
-    Iterator,
-    List,
     Optional,
-    Sequence,
     cast,
 )
 
 import pytest
+from pydantic import BaseModel
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun, Callbacks
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.documents import Document
 from langchain_core.language_models import FakeStreamingListLLM, GenericFakeChatModel
-from langchain_core.load import dumpd
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -33,7 +28,6 @@ from langchain_core.messages import (
 )
 from langchain_core.prompt_values import ChatPromptValue
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import (
     ConfigurableField,
@@ -50,10 +44,13 @@ from langchain_core.runnables.schema import StreamEvent
 from langchain_core.runnables.utils import Input, Output
 from langchain_core.tools import tool
 from langchain_core.utils.aiter import aclosing
-from tests.unit_tests.stubs import AnyStr
+from tests.unit_tests.runnables.test_runnable_events_v1 import (
+    _assert_events_equal_allow_superset_metadata,
+)
+from tests.unit_tests.stubs import _any_id_ai_message, _any_id_ai_message_chunk
 
 
-def _with_nulled_run_id(events: Sequence[StreamEvent]) -> List[StreamEvent]:
+def _with_nulled_run_id(events: Sequence[StreamEvent]) -> list[StreamEvent]:
     """Removes the run ids from events."""
     for event in events:
         assert "run_id" in event, f"Event {event} does not have a run_id."
@@ -66,12 +63,12 @@ def _with_nulled_run_id(events: Sequence[StreamEvent]) -> List[StreamEvent]:
         ), f"Event {event} parent_ids is not a list."
 
     return cast(
-        List[StreamEvent],
+        list[StreamEvent],
         [{**event, "run_id": "", "parent_ids": []} for event in events],
     )
 
 
-async def _as_async_iterator(iterable: List) -> AsyncIterator:
+async def _as_async_iterator(iterable: list) -> AsyncIterator:
     """Converts an iterable into an async iterator."""
     for item in iterable:
         yield item
@@ -79,7 +76,7 @@ async def _as_async_iterator(iterable: List) -> AsyncIterator:
 
 async def _collect_events(
     events: AsyncIterator[StreamEvent], with_nulled_ids: bool = True
-) -> List[StreamEvent]:
+) -> list[StreamEvent]:
     """Collect the events and remove the run ids."""
     materialized_events = [event async for event in events]
 
@@ -100,86 +97,89 @@ async def test_event_stream_with_simple_function_tool() -> None:
         return {"x": 5}
 
     @tool
-    def get_docs(x: int) -> List[Document]:
+    def get_docs(x: int) -> list[Document]:
         """Hello Doc"""
         return [Document(page_content="hello")]
 
     chain = RunnableLambda(foo) | get_docs
     events = await _collect_events(chain.astream_events({}, version="v2"))
-    assert events == [
-        {
-            "event": "on_chain_start",
-            "run_id": "",
-            "parent_ids": [],
-            "name": "RunnableSequence",
-            "tags": [],
-            "metadata": {},
-            "data": {"input": {}},
-        },
-        {
-            "event": "on_chain_start",
-            "name": "foo",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["seq:step:1"],
-            "metadata": {},
-            "data": {},
-        },
-        {
-            "event": "on_chain_stream",
-            "name": "foo",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["seq:step:1"],
-            "metadata": {},
-            "data": {"chunk": {"x": 5}},
-        },
-        {
-            "event": "on_chain_end",
-            "name": "foo",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["seq:step:1"],
-            "metadata": {},
-            "data": {"input": {}, "output": {"x": 5}},
-        },
-        {
-            "event": "on_tool_start",
-            "name": "get_docs",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["seq:step:2"],
-            "metadata": {},
-            "data": {"input": {"x": 5}},
-        },
-        {
-            "event": "on_tool_end",
-            "name": "get_docs",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["seq:step:2"],
-            "metadata": {},
-            "data": {"input": {"x": 5}, "output": [Document(page_content="hello")]},
-        },
-        {
-            "event": "on_chain_stream",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-            "metadata": {},
-            "name": "RunnableSequence",
-            "data": {"chunk": [Document(page_content="hello")]},
-        },
-        {
-            "event": "on_chain_end",
-            "name": "RunnableSequence",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-            "metadata": {},
-            "data": {"output": [Document(page_content="hello")]},
-        },
-    ]
+    _assert_events_equal_allow_superset_metadata(
+        events,
+        [
+            {
+                "event": "on_chain_start",
+                "run_id": "",
+                "parent_ids": [],
+                "name": "RunnableSequence",
+                "tags": [],
+                "metadata": {},
+                "data": {"input": {}},
+            },
+            {
+                "event": "on_chain_start",
+                "name": "foo",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["seq:step:1"],
+                "metadata": {},
+                "data": {},
+            },
+            {
+                "event": "on_chain_stream",
+                "name": "foo",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["seq:step:1"],
+                "metadata": {},
+                "data": {"chunk": {"x": 5}},
+            },
+            {
+                "event": "on_chain_end",
+                "name": "foo",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["seq:step:1"],
+                "metadata": {},
+                "data": {"input": {}, "output": {"x": 5}},
+            },
+            {
+                "event": "on_tool_start",
+                "name": "get_docs",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["seq:step:2"],
+                "metadata": {},
+                "data": {"input": {"x": 5}},
+            },
+            {
+                "event": "on_tool_end",
+                "name": "get_docs",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["seq:step:2"],
+                "metadata": {},
+                "data": {"input": {"x": 5}, "output": [Document(page_content="hello")]},
+            },
+            {
+                "event": "on_chain_stream",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
+                "metadata": {},
+                "name": "RunnableSequence",
+                "data": {"chunk": [Document(page_content="hello")]},
+            },
+            {
+                "event": "on_chain_end",
+                "name": "RunnableSequence",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
+                "metadata": {},
+                "data": {"output": [Document(page_content="hello")]},
+            },
+        ],
+    )
 
 
 async def test_event_stream_with_single_lambda() -> None:
@@ -192,35 +192,38 @@ async def test_event_stream_with_single_lambda() -> None:
     chain = RunnableLambda(func=reverse)
 
     events = await _collect_events(chain.astream_events("hello", version="v2"))
-    assert events == [
-        {
-            "data": {"input": "hello"},
-            "event": "on_chain_start",
-            "metadata": {},
-            "name": "reverse",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-        {
-            "data": {"chunk": "olleh"},
-            "event": "on_chain_stream",
-            "metadata": {},
-            "name": "reverse",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-        {
-            "data": {"output": "olleh"},
-            "event": "on_chain_end",
-            "metadata": {},
-            "name": "reverse",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-    ]
+    _assert_events_equal_allow_superset_metadata(
+        events,
+        [
+            {
+                "data": {"input": "hello"},
+                "event": "on_chain_start",
+                "metadata": {},
+                "name": "reverse",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
+            },
+            {
+                "data": {"chunk": "olleh"},
+                "event": "on_chain_stream",
+                "metadata": {},
+                "name": "reverse",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
+            },
+            {
+                "data": {"output": "olleh"},
+                "event": "on_chain_end",
+                "metadata": {},
+                "name": "reverse",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
+            },
+        ],
+    )
 
 
 async def test_event_stream_with_triple_lambda() -> None:
@@ -236,116 +239,119 @@ async def test_event_stream_with_triple_lambda() -> None:
         | r.with_config({"run_name": "3"})
     )
     events = await _collect_events(chain.astream_events("hello", version="v2"))
-    assert events == [
-        {
-            "data": {"input": "hello"},
-            "event": "on_chain_start",
-            "metadata": {},
-            "name": "RunnableSequence",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-        {
-            "data": {},
-            "event": "on_chain_start",
-            "metadata": {},
-            "name": "1",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["seq:step:1"],
-        },
-        {
-            "data": {"chunk": "olleh"},
-            "event": "on_chain_stream",
-            "metadata": {},
-            "name": "1",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["seq:step:1"],
-        },
-        {
-            "data": {},
-            "event": "on_chain_start",
-            "metadata": {},
-            "name": "2",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["seq:step:2"],
-        },
-        {
-            "data": {"input": "hello", "output": "olleh"},
-            "event": "on_chain_end",
-            "metadata": {},
-            "name": "1",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["seq:step:1"],
-        },
-        {
-            "data": {"chunk": "hello"},
-            "event": "on_chain_stream",
-            "metadata": {},
-            "name": "2",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["seq:step:2"],
-        },
-        {
-            "data": {},
-            "event": "on_chain_start",
-            "metadata": {},
-            "name": "3",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["seq:step:3"],
-        },
-        {
-            "data": {"input": "olleh", "output": "hello"},
-            "event": "on_chain_end",
-            "metadata": {},
-            "name": "2",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["seq:step:2"],
-        },
-        {
-            "data": {"chunk": "olleh"},
-            "event": "on_chain_stream",
-            "metadata": {},
-            "name": "3",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["seq:step:3"],
-        },
-        {
-            "data": {"chunk": "olleh"},
-            "event": "on_chain_stream",
-            "metadata": {},
-            "name": "RunnableSequence",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-        {
-            "data": {"input": "hello", "output": "olleh"},
-            "event": "on_chain_end",
-            "metadata": {},
-            "name": "3",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["seq:step:3"],
-        },
-        {
-            "data": {"output": "olleh"},
-            "event": "on_chain_end",
-            "metadata": {},
-            "name": "RunnableSequence",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-    ]
+    _assert_events_equal_allow_superset_metadata(
+        events,
+        [
+            {
+                "data": {"input": "hello"},
+                "event": "on_chain_start",
+                "metadata": {},
+                "name": "RunnableSequence",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
+            },
+            {
+                "data": {},
+                "event": "on_chain_start",
+                "metadata": {},
+                "name": "1",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["seq:step:1"],
+            },
+            {
+                "data": {"chunk": "olleh"},
+                "event": "on_chain_stream",
+                "metadata": {},
+                "name": "1",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["seq:step:1"],
+            },
+            {
+                "data": {},
+                "event": "on_chain_start",
+                "metadata": {},
+                "name": "2",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["seq:step:2"],
+            },
+            {
+                "data": {"input": "hello", "output": "olleh"},
+                "event": "on_chain_end",
+                "metadata": {},
+                "name": "1",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["seq:step:1"],
+            },
+            {
+                "data": {"chunk": "hello"},
+                "event": "on_chain_stream",
+                "metadata": {},
+                "name": "2",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["seq:step:2"],
+            },
+            {
+                "data": {},
+                "event": "on_chain_start",
+                "metadata": {},
+                "name": "3",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["seq:step:3"],
+            },
+            {
+                "data": {"input": "olleh", "output": "hello"},
+                "event": "on_chain_end",
+                "metadata": {},
+                "name": "2",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["seq:step:2"],
+            },
+            {
+                "data": {"chunk": "olleh"},
+                "event": "on_chain_stream",
+                "metadata": {},
+                "name": "3",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["seq:step:3"],
+            },
+            {
+                "data": {"chunk": "olleh"},
+                "event": "on_chain_stream",
+                "metadata": {},
+                "name": "RunnableSequence",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
+            },
+            {
+                "data": {"input": "hello", "output": "olleh"},
+                "event": "on_chain_end",
+                "metadata": {},
+                "name": "3",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["seq:step:3"],
+            },
+            {
+                "data": {"output": "olleh"},
+                "event": "on_chain_end",
+                "metadata": {},
+                "name": "RunnableSequence",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
+            },
+        ],
+    )
 
 
 async def test_event_stream_exception() -> None:
@@ -381,70 +387,76 @@ async def test_event_stream_with_triple_lambda_test_filtering() -> None:
     events = await _collect_events(
         chain.astream_events("hello", include_names=["1"], version="v2")
     )
-    assert events == [
-        {
-            "data": {"input": "hello"},
-            "event": "on_chain_start",
-            "metadata": {},
-            "name": "1",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["seq:step:1"],
-        },
-        {
-            "data": {"chunk": "olleh"},
-            "event": "on_chain_stream",
-            "metadata": {},
-            "name": "1",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["seq:step:1"],
-        },
-        {
-            "data": {"output": "olleh"},
-            "event": "on_chain_end",
-            "metadata": {},
-            "name": "1",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["seq:step:1"],
-        },
-    ]
+    _assert_events_equal_allow_superset_metadata(
+        events,
+        [
+            {
+                "data": {"input": "hello"},
+                "event": "on_chain_start",
+                "metadata": {},
+                "name": "1",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["seq:step:1"],
+            },
+            {
+                "data": {"chunk": "olleh"},
+                "event": "on_chain_stream",
+                "metadata": {},
+                "name": "1",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["seq:step:1"],
+            },
+            {
+                "data": {"output": "olleh"},
+                "event": "on_chain_end",
+                "metadata": {},
+                "name": "1",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["seq:step:1"],
+            },
+        ],
+    )
 
     events = await _collect_events(
         chain.astream_events(
             "hello", include_tags=["my_tag"], exclude_names=["2"], version="v2"
         )
     )
-    assert events == [
-        {
-            "data": {"input": "hello"},
-            "event": "on_chain_start",
-            "metadata": {},
-            "name": "3",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["my_tag", "seq:step:3"],
-        },
-        {
-            "data": {"chunk": "olleh"},
-            "event": "on_chain_stream",
-            "metadata": {},
-            "name": "3",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["my_tag", "seq:step:3"],
-        },
-        {
-            "data": {"output": "olleh"},
-            "event": "on_chain_end",
-            "metadata": {},
-            "name": "3",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["my_tag", "seq:step:3"],
-        },
-    ]
+    _assert_events_equal_allow_superset_metadata(
+        events,
+        [
+            {
+                "data": {"input": "hello"},
+                "event": "on_chain_start",
+                "metadata": {},
+                "name": "3",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["my_tag", "seq:step:3"],
+            },
+            {
+                "data": {"chunk": "olleh"},
+                "event": "on_chain_stream",
+                "metadata": {},
+                "name": "3",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["my_tag", "seq:step:3"],
+            },
+            {
+                "data": {"output": "olleh"},
+                "event": "on_chain_end",
+                "metadata": {},
+                "name": "3",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["my_tag", "seq:step:3"],
+            },
+        ],
+    )
 
 
 async def test_event_stream_with_lambdas_from_lambda() -> None:
@@ -454,35 +466,38 @@ async def test_event_stream_with_lambdas_from_lambda() -> None:
     events = await _collect_events(
         as_lambdas.astream_events({"question": "hello"}, version="v2")
     )
-    assert events == [
-        {
-            "data": {"input": {"question": "hello"}},
-            "event": "on_chain_start",
-            "metadata": {},
-            "name": "my_lambda",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-        {
-            "data": {"chunk": {"answer": "goodbye"}},
-            "event": "on_chain_stream",
-            "metadata": {},
-            "name": "my_lambda",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-        {
-            "data": {"output": {"answer": "goodbye"}},
-            "event": "on_chain_end",
-            "metadata": {},
-            "name": "my_lambda",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-    ]
+    _assert_events_equal_allow_superset_metadata(
+        events,
+        [
+            {
+                "data": {"input": {"question": "hello"}},
+                "event": "on_chain_start",
+                "metadata": {},
+                "name": "my_lambda",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
+            },
+            {
+                "data": {"chunk": {"answer": "goodbye"}},
+                "event": "on_chain_stream",
+                "metadata": {},
+                "name": "my_lambda",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
+            },
+            {
+                "data": {"output": {"answer": "goodbye"}},
+                "event": "on_chain_end",
+                "metadata": {},
+                "name": "my_lambda",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
+            },
+        ],
+    )
 
 
 async def test_astream_events_from_model() -> None:
@@ -501,55 +516,78 @@ async def test_astream_events_from_model() -> None:
         .bind(stop="<stop_token>")
     )
     events = await _collect_events(model.astream_events("hello", version="v2"))
-    assert events == [
-        {
-            "data": {"input": "hello"},
-            "event": "on_chat_model_start",
-            "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
-            "name": "my_model",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["my_model"],
-        },
-        {
-            "data": {"chunk": AIMessageChunk(content="hello", id=AnyStr())},
-            "event": "on_chat_model_stream",
-            "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
-            "name": "my_model",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["my_model"],
-        },
-        {
-            "data": {"chunk": AIMessageChunk(content=" ", id=AnyStr())},
-            "event": "on_chat_model_stream",
-            "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
-            "name": "my_model",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["my_model"],
-        },
-        {
-            "data": {"chunk": AIMessageChunk(content="world!", id=AnyStr())},
-            "event": "on_chat_model_stream",
-            "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
-            "name": "my_model",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["my_model"],
-        },
-        {
-            "data": {
-                "output": AIMessageChunk(content="hello world!", id=AnyStr()),
+    _assert_events_equal_allow_superset_metadata(
+        events,
+        [
+            {
+                "data": {"input": "hello"},
+                "event": "on_chat_model_start",
+                "metadata": {
+                    "a": "b",
+                    "ls_model_type": "chat",
+                    "ls_stop": "<stop_token>",
+                },
+                "name": "my_model",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["my_model"],
             },
-            "event": "on_chat_model_end",
-            "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
-            "name": "my_model",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["my_model"],
-        },
-    ]
+            {
+                "data": {"chunk": _any_id_ai_message_chunk(content="hello")},
+                "event": "on_chat_model_stream",
+                "metadata": {
+                    "a": "b",
+                    "ls_model_type": "chat",
+                    "ls_stop": "<stop_token>",
+                },
+                "name": "my_model",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["my_model"],
+            },
+            {
+                "data": {"chunk": _any_id_ai_message_chunk(content=" ")},
+                "event": "on_chat_model_stream",
+                "metadata": {
+                    "a": "b",
+                    "ls_model_type": "chat",
+                    "ls_stop": "<stop_token>",
+                },
+                "name": "my_model",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["my_model"],
+            },
+            {
+                "data": {"chunk": _any_id_ai_message_chunk(content="world!")},
+                "event": "on_chat_model_stream",
+                "metadata": {
+                    "a": "b",
+                    "ls_model_type": "chat",
+                    "ls_stop": "<stop_token>",
+                },
+                "name": "my_model",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["my_model"],
+            },
+            {
+                "data": {
+                    "output": _any_id_ai_message_chunk(content="hello world!"),
+                },
+                "event": "on_chat_model_end",
+                "metadata": {
+                    "a": "b",
+                    "ls_model_type": "chat",
+                    "ls_stop": "<stop_token>",
+                },
+                "name": "my_model",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["my_model"],
+            },
+        ],
+    )
 
 
 async def test_astream_with_model_in_chain() -> None:
@@ -576,83 +614,106 @@ async def test_astream_with_model_in_chain() -> None:
             return model.invoke(input, config)
 
     events = await _collect_events(i_dont_stream.astream_events("hello", version="v2"))
-    assert events == [
-        {
-            "data": {"input": "hello"},
-            "event": "on_chain_start",
-            "metadata": {},
-            "name": "i_dont_stream",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-        {
-            "data": {"input": {"messages": [[HumanMessage(content="hello")]]}},
-            "event": "on_chat_model_start",
-            "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
-            "name": "my_model",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["my_model"],
-        },
-        {
-            "data": {"chunk": AIMessageChunk(content="hello", id=AnyStr())},
-            "event": "on_chat_model_stream",
-            "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
-            "name": "my_model",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["my_model"],
-        },
-        {
-            "data": {"chunk": AIMessageChunk(content=" ", id=AnyStr())},
-            "event": "on_chat_model_stream",
-            "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
-            "name": "my_model",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["my_model"],
-        },
-        {
-            "data": {"chunk": AIMessageChunk(content="world!", id=AnyStr())},
-            "event": "on_chat_model_stream",
-            "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
-            "name": "my_model",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["my_model"],
-        },
-        {
-            "data": {
-                "input": {"messages": [[HumanMessage(content="hello")]]},
-                "output": AIMessage(content="hello world!", id=AnyStr()),
+    _assert_events_equal_allow_superset_metadata(
+        events,
+        [
+            {
+                "data": {"input": "hello"},
+                "event": "on_chain_start",
+                "metadata": {},
+                "name": "i_dont_stream",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
             },
-            "event": "on_chat_model_end",
-            "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
-            "name": "my_model",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["my_model"],
-        },
-        {
-            "data": {"chunk": AIMessage(content="hello world!", id=AnyStr())},
-            "event": "on_chain_stream",
-            "metadata": {},
-            "name": "i_dont_stream",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-        {
-            "data": {"output": AIMessage(content="hello world!", id=AnyStr())},
-            "event": "on_chain_end",
-            "metadata": {},
-            "name": "i_dont_stream",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-    ]
+            {
+                "data": {"input": {"messages": [[HumanMessage(content="hello")]]}},
+                "event": "on_chat_model_start",
+                "metadata": {
+                    "a": "b",
+                    "ls_model_type": "chat",
+                    "ls_stop": "<stop_token>",
+                },
+                "name": "my_model",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["my_model"],
+            },
+            {
+                "data": {"chunk": _any_id_ai_message_chunk(content="hello")},
+                "event": "on_chat_model_stream",
+                "metadata": {
+                    "a": "b",
+                    "ls_model_type": "chat",
+                    "ls_stop": "<stop_token>",
+                },
+                "name": "my_model",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["my_model"],
+            },
+            {
+                "data": {"chunk": _any_id_ai_message_chunk(content=" ")},
+                "event": "on_chat_model_stream",
+                "metadata": {
+                    "a": "b",
+                    "ls_model_type": "chat",
+                    "ls_stop": "<stop_token>",
+                },
+                "name": "my_model",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["my_model"],
+            },
+            {
+                "data": {"chunk": _any_id_ai_message_chunk(content="world!")},
+                "event": "on_chat_model_stream",
+                "metadata": {
+                    "a": "b",
+                    "ls_model_type": "chat",
+                    "ls_stop": "<stop_token>",
+                },
+                "name": "my_model",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["my_model"],
+            },
+            {
+                "data": {
+                    "input": {"messages": [[HumanMessage(content="hello")]]},
+                    "output": _any_id_ai_message(content="hello world!"),
+                },
+                "event": "on_chat_model_end",
+                "metadata": {
+                    "a": "b",
+                    "ls_model_type": "chat",
+                    "ls_stop": "<stop_token>",
+                },
+                "name": "my_model",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["my_model"],
+            },
+            {
+                "data": {"chunk": _any_id_ai_message(content="hello world!")},
+                "event": "on_chain_stream",
+                "metadata": {},
+                "name": "i_dont_stream",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
+            },
+            {
+                "data": {"output": _any_id_ai_message(content="hello world!")},
+                "event": "on_chain_end",
+                "metadata": {},
+                "name": "i_dont_stream",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
+            },
+        ],
+    )
 
     @RunnableLambda
     async def ai_dont_stream(input: Any, config: RunnableConfig) -> Any:
@@ -662,83 +723,106 @@ async def test_astream_with_model_in_chain() -> None:
             return await model.ainvoke(input, config)
 
     events = await _collect_events(ai_dont_stream.astream_events("hello", version="v2"))
-    assert events == [
-        {
-            "data": {"input": "hello"},
-            "event": "on_chain_start",
-            "metadata": {},
-            "name": "ai_dont_stream",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-        {
-            "data": {"input": {"messages": [[HumanMessage(content="hello")]]}},
-            "event": "on_chat_model_start",
-            "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
-            "name": "my_model",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["my_model"],
-        },
-        {
-            "data": {"chunk": AIMessageChunk(content="hello", id=AnyStr())},
-            "event": "on_chat_model_stream",
-            "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
-            "name": "my_model",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["my_model"],
-        },
-        {
-            "data": {"chunk": AIMessageChunk(content=" ", id=AnyStr())},
-            "event": "on_chat_model_stream",
-            "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
-            "name": "my_model",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["my_model"],
-        },
-        {
-            "data": {"chunk": AIMessageChunk(content="world!", id=AnyStr())},
-            "event": "on_chat_model_stream",
-            "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
-            "name": "my_model",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["my_model"],
-        },
-        {
-            "data": {
-                "input": {"messages": [[HumanMessage(content="hello")]]},
-                "output": AIMessage(content="hello world!", id=AnyStr()),
+    _assert_events_equal_allow_superset_metadata(
+        events,
+        [
+            {
+                "data": {"input": "hello"},
+                "event": "on_chain_start",
+                "metadata": {},
+                "name": "ai_dont_stream",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
             },
-            "event": "on_chat_model_end",
-            "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
-            "name": "my_model",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["my_model"],
-        },
-        {
-            "data": {"chunk": AIMessage(content="hello world!", id=AnyStr())},
-            "event": "on_chain_stream",
-            "metadata": {},
-            "name": "ai_dont_stream",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-        {
-            "data": {"output": AIMessage(content="hello world!", id=AnyStr())},
-            "event": "on_chain_end",
-            "metadata": {},
-            "name": "ai_dont_stream",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-    ]
+            {
+                "data": {"input": {"messages": [[HumanMessage(content="hello")]]}},
+                "event": "on_chat_model_start",
+                "metadata": {
+                    "a": "b",
+                    "ls_model_type": "chat",
+                    "ls_stop": "<stop_token>",
+                },
+                "name": "my_model",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["my_model"],
+            },
+            {
+                "data": {"chunk": _any_id_ai_message_chunk(content="hello")},
+                "event": "on_chat_model_stream",
+                "metadata": {
+                    "a": "b",
+                    "ls_model_type": "chat",
+                    "ls_stop": "<stop_token>",
+                },
+                "name": "my_model",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["my_model"],
+            },
+            {
+                "data": {"chunk": _any_id_ai_message_chunk(content=" ")},
+                "event": "on_chat_model_stream",
+                "metadata": {
+                    "a": "b",
+                    "ls_model_type": "chat",
+                    "ls_stop": "<stop_token>",
+                },
+                "name": "my_model",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["my_model"],
+            },
+            {
+                "data": {"chunk": _any_id_ai_message_chunk(content="world!")},
+                "event": "on_chat_model_stream",
+                "metadata": {
+                    "a": "b",
+                    "ls_model_type": "chat",
+                    "ls_stop": "<stop_token>",
+                },
+                "name": "my_model",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["my_model"],
+            },
+            {
+                "data": {
+                    "input": {"messages": [[HumanMessage(content="hello")]]},
+                    "output": _any_id_ai_message(content="hello world!"),
+                },
+                "event": "on_chat_model_end",
+                "metadata": {
+                    "a": "b",
+                    "ls_model_type": "chat",
+                    "ls_stop": "<stop_token>",
+                },
+                "name": "my_model",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["my_model"],
+            },
+            {
+                "data": {"chunk": _any_id_ai_message(content="hello world!")},
+                "event": "on_chain_stream",
+                "metadata": {},
+                "name": "ai_dont_stream",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
+            },
+            {
+                "data": {"output": _any_id_ai_message(content="hello world!")},
+                "event": "on_chain_end",
+                "metadata": {},
+                "name": "ai_dont_stream",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
+            },
+        ],
+    )
 
 
 async def test_event_stream_with_simple_chain() -> None:
@@ -777,168 +861,171 @@ async def test_event_stream_with_simple_chain() -> None:
     events = await _collect_events(
         chain.astream_events({"question": "hello"}, version="v2")
     )
-    assert events == [
-        {
-            "data": {"input": {"question": "hello"}},
-            "event": "on_chain_start",
-            "metadata": {"foo": "bar"},
-            "name": "my_chain",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["my_chain"],
-        },
-        {
-            "data": {"input": {"question": "hello"}},
-            "event": "on_prompt_start",
-            "metadata": {"foo": "bar"},
-            "name": "my_template",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["my_chain", "my_template", "seq:step:1"],
-        },
-        {
-            "data": {
-                "input": {"question": "hello"},
-                "output": ChatPromptValue(
-                    messages=[
-                        SystemMessage(content="You are Cat Agent 007"),
-                        HumanMessage(content="hello"),
-                    ]
-                ),
+    _assert_events_equal_allow_superset_metadata(
+        events,
+        [
+            {
+                "data": {"input": {"question": "hello"}},
+                "event": "on_chain_start",
+                "metadata": {"foo": "bar"},
+                "name": "my_chain",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["my_chain"],
             },
-            "event": "on_prompt_end",
-            "metadata": {"foo": "bar"},
-            "name": "my_template",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["my_chain", "my_template", "seq:step:1"],
-        },
-        {
-            "data": {
-                "input": {
-                    "messages": [
-                        [
+            {
+                "data": {"input": {"question": "hello"}},
+                "event": "on_prompt_start",
+                "metadata": {"foo": "bar"},
+                "name": "my_template",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["my_chain", "my_template", "seq:step:1"],
+            },
+            {
+                "data": {
+                    "input": {"question": "hello"},
+                    "output": ChatPromptValue(
+                        messages=[
                             SystemMessage(content="You are Cat Agent 007"),
                             HumanMessage(content="hello"),
                         ]
-                    ]
-                }
-            },
-            "event": "on_chat_model_start",
-            "metadata": {
-                "a": "b",
-                "foo": "bar",
-                "ls_model_type": "chat",
-                "ls_stop": "<stop_token>",
-            },
-            "name": "my_model",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["my_chain", "my_model", "seq:step:2"],
-        },
-        {
-            "data": {"chunk": AIMessageChunk(content="hello", id="ai1")},
-            "event": "on_chat_model_stream",
-            "metadata": {
-                "a": "b",
-                "foo": "bar",
-                "ls_model_type": "chat",
-                "ls_stop": "<stop_token>",
-            },
-            "name": "my_model",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["my_chain", "my_model", "seq:step:2"],
-        },
-        {
-            "data": {"chunk": AIMessageChunk(content="hello", id="ai1")},
-            "event": "on_chain_stream",
-            "metadata": {"foo": "bar"},
-            "name": "my_chain",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["my_chain"],
-        },
-        {
-            "data": {"chunk": AIMessageChunk(content=" ", id="ai1")},
-            "event": "on_chat_model_stream",
-            "metadata": {
-                "a": "b",
-                "foo": "bar",
-                "ls_model_type": "chat",
-                "ls_stop": "<stop_token>",
-            },
-            "name": "my_model",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["my_chain", "my_model", "seq:step:2"],
-        },
-        {
-            "data": {"chunk": AIMessageChunk(content=" ", id="ai1")},
-            "event": "on_chain_stream",
-            "metadata": {"foo": "bar"},
-            "name": "my_chain",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["my_chain"],
-        },
-        {
-            "data": {"chunk": AIMessageChunk(content="world!", id="ai1")},
-            "event": "on_chat_model_stream",
-            "metadata": {
-                "a": "b",
-                "foo": "bar",
-                "ls_model_type": "chat",
-                "ls_stop": "<stop_token>",
-            },
-            "name": "my_model",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["my_chain", "my_model", "seq:step:2"],
-        },
-        {
-            "data": {"chunk": AIMessageChunk(content="world!", id="ai1")},
-            "event": "on_chain_stream",
-            "metadata": {"foo": "bar"},
-            "name": "my_chain",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["my_chain"],
-        },
-        {
-            "data": {
-                "input": {
-                    "messages": [
-                        [
-                            SystemMessage(content="You are Cat Agent 007"),
-                            HumanMessage(content="hello"),
-                        ]
-                    ]
+                    ),
                 },
-                "output": AIMessageChunk(content="hello world!", id="ai1"),
+                "event": "on_prompt_end",
+                "metadata": {"foo": "bar"},
+                "name": "my_template",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["my_chain", "my_template", "seq:step:1"],
             },
-            "event": "on_chat_model_end",
-            "metadata": {
-                "a": "b",
-                "foo": "bar",
-                "ls_model_type": "chat",
-                "ls_stop": "<stop_token>",
+            {
+                "data": {
+                    "input": {
+                        "messages": [
+                            [
+                                SystemMessage(content="You are Cat Agent 007"),
+                                HumanMessage(content="hello"),
+                            ]
+                        ]
+                    }
+                },
+                "event": "on_chat_model_start",
+                "metadata": {
+                    "a": "b",
+                    "foo": "bar",
+                    "ls_model_type": "chat",
+                    "ls_stop": "<stop_token>",
+                },
+                "name": "my_model",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["my_chain", "my_model", "seq:step:2"],
             },
-            "name": "my_model",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["my_chain", "my_model", "seq:step:2"],
-        },
-        {
-            "data": {"output": AIMessageChunk(content="hello world!", id="ai1")},
-            "event": "on_chain_end",
-            "metadata": {"foo": "bar"},
-            "name": "my_chain",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["my_chain"],
-        },
-    ]
+            {
+                "data": {"chunk": AIMessageChunk(content="hello", id="ai1")},
+                "event": "on_chat_model_stream",
+                "metadata": {
+                    "a": "b",
+                    "foo": "bar",
+                    "ls_model_type": "chat",
+                    "ls_stop": "<stop_token>",
+                },
+                "name": "my_model",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["my_chain", "my_model", "seq:step:2"],
+            },
+            {
+                "data": {"chunk": AIMessageChunk(content="hello", id="ai1")},
+                "event": "on_chain_stream",
+                "metadata": {"foo": "bar"},
+                "name": "my_chain",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["my_chain"],
+            },
+            {
+                "data": {"chunk": AIMessageChunk(content=" ", id="ai1")},
+                "event": "on_chat_model_stream",
+                "metadata": {
+                    "a": "b",
+                    "foo": "bar",
+                    "ls_model_type": "chat",
+                    "ls_stop": "<stop_token>",
+                },
+                "name": "my_model",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["my_chain", "my_model", "seq:step:2"],
+            },
+            {
+                "data": {"chunk": AIMessageChunk(content=" ", id="ai1")},
+                "event": "on_chain_stream",
+                "metadata": {"foo": "bar"},
+                "name": "my_chain",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["my_chain"],
+            },
+            {
+                "data": {"chunk": AIMessageChunk(content="world!", id="ai1")},
+                "event": "on_chat_model_stream",
+                "metadata": {
+                    "a": "b",
+                    "foo": "bar",
+                    "ls_model_type": "chat",
+                    "ls_stop": "<stop_token>",
+                },
+                "name": "my_model",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["my_chain", "my_model", "seq:step:2"],
+            },
+            {
+                "data": {"chunk": AIMessageChunk(content="world!", id="ai1")},
+                "event": "on_chain_stream",
+                "metadata": {"foo": "bar"},
+                "name": "my_chain",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["my_chain"],
+            },
+            {
+                "data": {
+                    "input": {
+                        "messages": [
+                            [
+                                SystemMessage(content="You are Cat Agent 007"),
+                                HumanMessage(content="hello"),
+                            ]
+                        ]
+                    },
+                    "output": AIMessageChunk(content="hello world!", id="ai1"),
+                },
+                "event": "on_chat_model_end",
+                "metadata": {
+                    "a": "b",
+                    "foo": "bar",
+                    "ls_model_type": "chat",
+                    "ls_stop": "<stop_token>",
+                },
+                "name": "my_model",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["my_chain", "my_model", "seq:step:2"],
+            },
+            {
+                "data": {"output": AIMessageChunk(content="hello world!", id="ai1")},
+                "event": "on_chain_end",
+                "metadata": {"foo": "bar"},
+                "name": "my_chain",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["my_chain"],
+            },
+        ],
+    )
 
 
 async def test_event_streaming_with_tools() -> None:
@@ -967,102 +1054,114 @@ async def test_event_streaming_with_tools() -> None:
     # type ignores below because the tools don't appear to be runnables to type checkers
     # we can remove as soon as that's fixed
     events = await _collect_events(parameterless.astream_events({}, version="v2"))  # type: ignore
-    assert events == [
-        {
-            "data": {"input": {}},
-            "event": "on_tool_start",
-            "metadata": {},
-            "name": "parameterless",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-        {
-            "data": {"output": "hello"},
-            "event": "on_tool_end",
-            "metadata": {},
-            "name": "parameterless",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-    ]
+    _assert_events_equal_allow_superset_metadata(
+        events,
+        [
+            {
+                "data": {"input": {}},
+                "event": "on_tool_start",
+                "metadata": {},
+                "name": "parameterless",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
+            },
+            {
+                "data": {"output": "hello"},
+                "event": "on_tool_end",
+                "metadata": {},
+                "name": "parameterless",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
+            },
+        ],
+    )
     events = await _collect_events(with_callbacks.astream_events({}, version="v2"))  # type: ignore
-    assert events == [
-        {
-            "data": {"input": {}},
-            "event": "on_tool_start",
-            "metadata": {},
-            "name": "with_callbacks",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-        {
-            "data": {"output": "world"},
-            "event": "on_tool_end",
-            "metadata": {},
-            "name": "with_callbacks",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-    ]
+    _assert_events_equal_allow_superset_metadata(
+        events,
+        [
+            {
+                "data": {"input": {}},
+                "event": "on_tool_start",
+                "metadata": {},
+                "name": "with_callbacks",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
+            },
+            {
+                "data": {"output": "world"},
+                "event": "on_tool_end",
+                "metadata": {},
+                "name": "with_callbacks",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
+            },
+        ],
+    )
     events = await _collect_events(
         with_parameters.astream_events({"x": 1, "y": "2"}, version="v2")  # type: ignore
     )
-    assert events == [
-        {
-            "data": {"input": {"x": 1, "y": "2"}},
-            "event": "on_tool_start",
-            "metadata": {},
-            "name": "with_parameters",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-        {
-            "data": {"output": {"x": 1, "y": "2"}},
-            "event": "on_tool_end",
-            "metadata": {},
-            "name": "with_parameters",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-    ]
+    _assert_events_equal_allow_superset_metadata(
+        events,
+        [
+            {
+                "data": {"input": {"x": 1, "y": "2"}},
+                "event": "on_tool_start",
+                "metadata": {},
+                "name": "with_parameters",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
+            },
+            {
+                "data": {"output": {"x": 1, "y": "2"}},
+                "event": "on_tool_end",
+                "metadata": {},
+                "name": "with_parameters",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
+            },
+        ],
+    )
 
     events = await _collect_events(
         with_parameters_and_callbacks.astream_events({"x": 1, "y": "2"}, version="v2")  # type: ignore
     )
-    assert events == [
-        {
-            "data": {"input": {"x": 1, "y": "2"}},
-            "event": "on_tool_start",
-            "metadata": {},
-            "name": "with_parameters_and_callbacks",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-        {
-            "data": {"output": {"x": 1, "y": "2"}},
-            "event": "on_tool_end",
-            "metadata": {},
-            "name": "with_parameters_and_callbacks",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-    ]
+    _assert_events_equal_allow_superset_metadata(
+        events,
+        [
+            {
+                "data": {"input": {"x": 1, "y": "2"}},
+                "event": "on_tool_start",
+                "metadata": {},
+                "name": "with_parameters_and_callbacks",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
+            },
+            {
+                "data": {"output": {"x": 1, "y": "2"}},
+                "event": "on_tool_end",
+                "metadata": {},
+                "name": "with_parameters_and_callbacks",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
+            },
+        ],
+    )
 
 
 class HardCodedRetriever(BaseRetriever):
-    documents: List[Document]
+    documents: list[Document]
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
-    ) -> List[Document]:
+    ) -> list[Document]:
         return self.documents
 
 
@@ -1083,33 +1182,38 @@ async def test_event_stream_with_retriever() -> None:
     events = await _collect_events(
         retriever.astream_events({"query": "hello"}, version="v2")
     )
-    assert events == [
-        {
-            "data": {
-                "input": {"query": "hello"},
+    _assert_events_equal_allow_superset_metadata(
+        events,
+        [
+            {
+                "data": {
+                    "input": {"query": "hello"},
+                },
+                "event": "on_retriever_start",
+                "metadata": {},
+                "name": "HardCodedRetriever",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
             },
-            "event": "on_retriever_start",
-            "metadata": {},
-            "name": "HardCodedRetriever",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-        {
-            "data": {
-                "output": [
-                    Document(page_content="hello world!", metadata={"foo": "bar"}),
-                    Document(page_content="goodbye world!", metadata={"food": "spare"}),
-                ]
+            {
+                "data": {
+                    "output": [
+                        Document(page_content="hello world!", metadata={"foo": "bar"}),
+                        Document(
+                            page_content="goodbye world!", metadata={"food": "spare"}
+                        ),
+                    ]
+                },
+                "event": "on_retriever_end",
+                "metadata": {},
+                "name": "HardCodedRetriever",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
             },
-            "event": "on_retriever_end",
-            "metadata": {},
-            "name": "HardCodedRetriever",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-    ]
+        ],
+    )
 
 
 async def test_event_stream_with_retriever_and_formatter() -> None:
@@ -1127,98 +1231,105 @@ async def test_event_stream_with_retriever_and_formatter() -> None:
         ]
     )
 
-    def format_docs(docs: List[Document]) -> str:
+    def format_docs(docs: list[Document]) -> str:
         """Format the docs."""
         return ", ".join([doc.page_content for doc in docs])
 
     chain = retriever | format_docs
     events = await _collect_events(chain.astream_events("hello", version="v2"))
-    assert events == [
-        {
-            "data": {"input": "hello"},
-            "event": "on_chain_start",
-            "metadata": {},
-            "name": "RunnableSequence",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-        {
-            "data": {"input": {"query": "hello"}},
-            "event": "on_retriever_start",
-            "metadata": {},
-            "name": "HardCodedRetriever",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["seq:step:1"],
-        },
-        {
-            "data": {
-                "input": {"query": "hello"},
-                "output": [
-                    Document(page_content="hello world!", metadata={"foo": "bar"}),
-                    Document(page_content="goodbye world!", metadata={"food": "spare"}),
-                ],
+    _assert_events_equal_allow_superset_metadata(
+        events,
+        [
+            {
+                "data": {"input": "hello"},
+                "event": "on_chain_start",
+                "metadata": {},
+                "name": "RunnableSequence",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
             },
-            "event": "on_retriever_end",
-            "metadata": {},
-            "name": "HardCodedRetriever",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["seq:step:1"],
-        },
-        {
-            "data": {},
-            "event": "on_chain_start",
-            "metadata": {},
-            "name": "format_docs",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["seq:step:2"],
-        },
-        {
-            "data": {"chunk": "hello world!, goodbye world!"},
-            "event": "on_chain_stream",
-            "metadata": {},
-            "name": "format_docs",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["seq:step:2"],
-        },
-        {
-            "data": {"chunk": "hello world!, goodbye world!"},
-            "event": "on_chain_stream",
-            "metadata": {},
-            "name": "RunnableSequence",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-        {
-            "data": {
-                "input": [
-                    Document(page_content="hello world!", metadata={"foo": "bar"}),
-                    Document(page_content="goodbye world!", metadata={"food": "spare"}),
-                ],
-                "output": "hello world!, goodbye world!",
+            {
+                "data": {"input": {"query": "hello"}},
+                "event": "on_retriever_start",
+                "metadata": {},
+                "name": "HardCodedRetriever",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["seq:step:1"],
             },
-            "event": "on_chain_end",
-            "metadata": {},
-            "name": "format_docs",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["seq:step:2"],
-        },
-        {
-            "data": {"output": "hello world!, goodbye world!"},
-            "event": "on_chain_end",
-            "metadata": {},
-            "name": "RunnableSequence",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-    ]
+            {
+                "data": {
+                    "input": {"query": "hello"},
+                    "output": [
+                        Document(page_content="hello world!", metadata={"foo": "bar"}),
+                        Document(
+                            page_content="goodbye world!", metadata={"food": "spare"}
+                        ),
+                    ],
+                },
+                "event": "on_retriever_end",
+                "metadata": {},
+                "name": "HardCodedRetriever",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["seq:step:1"],
+            },
+            {
+                "data": {},
+                "event": "on_chain_start",
+                "metadata": {},
+                "name": "format_docs",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["seq:step:2"],
+            },
+            {
+                "data": {"chunk": "hello world!, goodbye world!"},
+                "event": "on_chain_stream",
+                "metadata": {},
+                "name": "format_docs",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["seq:step:2"],
+            },
+            {
+                "data": {"chunk": "hello world!, goodbye world!"},
+                "event": "on_chain_stream",
+                "metadata": {},
+                "name": "RunnableSequence",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
+            },
+            {
+                "data": {
+                    "input": [
+                        Document(page_content="hello world!", metadata={"foo": "bar"}),
+                        Document(
+                            page_content="goodbye world!", metadata={"food": "spare"}
+                        ),
+                    ],
+                    "output": "hello world!, goodbye world!",
+                },
+                "event": "on_chain_end",
+                "metadata": {},
+                "name": "format_docs",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["seq:step:2"],
+            },
+            {
+                "data": {"output": "hello world!, goodbye world!"},
+                "event": "on_chain_end",
+                "metadata": {},
+                "name": "RunnableSequence",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
+            },
+        ],
+    )
 
 
 async def test_event_stream_on_chain_with_tool() -> None:
@@ -1240,80 +1351,83 @@ async def test_event_stream_on_chain_with_tool() -> None:
     events = await _collect_events(
         chain.astream_events({"a": "hello", "b": "world"}, version="v2")
     )
-    assert events == [
-        {
-            "data": {"input": {"a": "hello", "b": "world"}},
-            "event": "on_chain_start",
-            "metadata": {},
-            "name": "RunnableSequence",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-        {
-            "data": {"input": {"a": "hello", "b": "world"}},
-            "event": "on_tool_start",
-            "metadata": {},
-            "name": "concat",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["seq:step:1"],
-        },
-        {
-            "data": {"input": {"a": "hello", "b": "world"}, "output": "helloworld"},
-            "event": "on_tool_end",
-            "metadata": {},
-            "name": "concat",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["seq:step:1"],
-        },
-        {
-            "data": {},
-            "event": "on_chain_start",
-            "metadata": {},
-            "name": "reverse",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["seq:step:2"],
-        },
-        {
-            "data": {"chunk": "dlrowolleh"},
-            "event": "on_chain_stream",
-            "metadata": {},
-            "name": "reverse",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["seq:step:2"],
-        },
-        {
-            "data": {"chunk": "dlrowolleh"},
-            "event": "on_chain_stream",
-            "metadata": {},
-            "name": "RunnableSequence",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-        {
-            "data": {"input": "helloworld", "output": "dlrowolleh"},
-            "event": "on_chain_end",
-            "metadata": {},
-            "name": "reverse",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["seq:step:2"],
-        },
-        {
-            "data": {"output": "dlrowolleh"},
-            "event": "on_chain_end",
-            "metadata": {},
-            "name": "RunnableSequence",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-    ]
+    _assert_events_equal_allow_superset_metadata(
+        events,
+        [
+            {
+                "data": {"input": {"a": "hello", "b": "world"}},
+                "event": "on_chain_start",
+                "metadata": {},
+                "name": "RunnableSequence",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
+            },
+            {
+                "data": {"input": {"a": "hello", "b": "world"}},
+                "event": "on_tool_start",
+                "metadata": {},
+                "name": "concat",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["seq:step:1"],
+            },
+            {
+                "data": {"input": {"a": "hello", "b": "world"}, "output": "helloworld"},
+                "event": "on_tool_end",
+                "metadata": {},
+                "name": "concat",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["seq:step:1"],
+            },
+            {
+                "data": {},
+                "event": "on_chain_start",
+                "metadata": {},
+                "name": "reverse",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["seq:step:2"],
+            },
+            {
+                "data": {"chunk": "dlrowolleh"},
+                "event": "on_chain_stream",
+                "metadata": {},
+                "name": "reverse",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["seq:step:2"],
+            },
+            {
+                "data": {"chunk": "dlrowolleh"},
+                "event": "on_chain_stream",
+                "metadata": {},
+                "name": "RunnableSequence",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
+            },
+            {
+                "data": {"input": "helloworld", "output": "dlrowolleh"},
+                "event": "on_chain_end",
+                "metadata": {},
+                "name": "reverse",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["seq:step:2"],
+            },
+            {
+                "data": {"output": "dlrowolleh"},
+                "event": "on_chain_end",
+                "metadata": {},
+                "name": "RunnableSequence",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
+            },
+        ],
+    )
 
 
 @pytest.mark.xfail(reason="Fix order of callback invocations in RunnableSequence")
@@ -1342,89 +1456,92 @@ async def test_chain_ordering() -> None:
     for event in events:
         event["tags"] = sorted(event["tags"])
 
-    assert events == [
-        {
-            "data": {"input": "q"},
-            "event": "on_chain_start",
-            "metadata": {},
-            "name": "RunnableSequence",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-        {
-            "data": {},
-            "event": "on_chain_start",
-            "metadata": {},
-            "name": "foo",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["seq:step:1"],
-        },
-        {
-            "data": {"chunk": "q"},
-            "event": "on_chain_stream",
-            "metadata": {},
-            "name": "foo",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["seq:step:1"],
-        },
-        {
-            "data": {"input": "q", "output": "q"},
-            "event": "on_chain_end",
-            "metadata": {},
-            "name": "foo",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["seq:step:1"],
-        },
-        {
-            "data": {},
-            "event": "on_chain_start",
-            "metadata": {},
-            "name": "bar",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["seq:step:2"],
-        },
-        {
-            "data": {"chunk": "q"},
-            "event": "on_chain_stream",
-            "metadata": {},
-            "name": "bar",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["seq:step:2"],
-        },
-        {
-            "data": {"chunk": "q"},
-            "event": "on_chain_stream",
-            "metadata": {},
-            "name": "RunnableSequence",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-        {
-            "data": {"input": "q", "output": "q"},
-            "event": "on_chain_end",
-            "metadata": {},
-            "name": "bar",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["seq:step:2"],
-        },
-        {
-            "data": {"output": "q"},
-            "event": "on_chain_end",
-            "metadata": {},
-            "name": "RunnableSequence",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-    ]
+    _assert_events_equal_allow_superset_metadata(
+        events,
+        [
+            {
+                "data": {"input": "q"},
+                "event": "on_chain_start",
+                "metadata": {},
+                "name": "RunnableSequence",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
+            },
+            {
+                "data": {},
+                "event": "on_chain_start",
+                "metadata": {},
+                "name": "foo",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["seq:step:1"],
+            },
+            {
+                "data": {"chunk": "q"},
+                "event": "on_chain_stream",
+                "metadata": {},
+                "name": "foo",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["seq:step:1"],
+            },
+            {
+                "data": {"input": "q", "output": "q"},
+                "event": "on_chain_end",
+                "metadata": {},
+                "name": "foo",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["seq:step:1"],
+            },
+            {
+                "data": {},
+                "event": "on_chain_start",
+                "metadata": {},
+                "name": "bar",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["seq:step:2"],
+            },
+            {
+                "data": {"chunk": "q"},
+                "event": "on_chain_stream",
+                "metadata": {},
+                "name": "bar",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["seq:step:2"],
+            },
+            {
+                "data": {"chunk": "q"},
+                "event": "on_chain_stream",
+                "metadata": {},
+                "name": "RunnableSequence",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
+            },
+            {
+                "data": {"input": "q", "output": "q"},
+                "event": "on_chain_end",
+                "metadata": {},
+                "name": "bar",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["seq:step:2"],
+            },
+            {
+                "data": {"output": "q"},
+                "event": "on_chain_end",
+                "metadata": {},
+                "name": "RunnableSequence",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
+            },
+        ],
+    )
 
 
 async def test_event_stream_with_retry() -> None:
@@ -1455,53 +1572,56 @@ async def test_event_stream_with_retry() -> None:
     for event in events:
         event["tags"] = sorted(event["tags"])
 
-    assert events == [
-        {
-            "data": {"input": "q"},
-            "event": "on_chain_start",
-            "metadata": {},
-            "name": "RunnableSequence",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-        {
-            "data": {},
-            "event": "on_chain_start",
-            "metadata": {},
-            "name": "success",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["seq:step:1"],
-        },
-        {
-            "data": {"chunk": "success"},
-            "event": "on_chain_stream",
-            "metadata": {},
-            "name": "success",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["seq:step:1"],
-        },
-        {
-            "data": {},
-            "event": "on_chain_start",
-            "metadata": {},
-            "name": "fail",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["seq:step:2"],
-        },
-        {
-            "data": {"input": "q", "output": "success"},
-            "event": "on_chain_end",
-            "metadata": {},
-            "name": "success",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["seq:step:1"],
-        },
-    ]
+    _assert_events_equal_allow_superset_metadata(
+        events,
+        [
+            {
+                "data": {"input": "q"},
+                "event": "on_chain_start",
+                "metadata": {},
+                "name": "RunnableSequence",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
+            },
+            {
+                "data": {},
+                "event": "on_chain_start",
+                "metadata": {},
+                "name": "success",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["seq:step:1"],
+            },
+            {
+                "data": {"chunk": "success"},
+                "event": "on_chain_stream",
+                "metadata": {},
+                "name": "success",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["seq:step:1"],
+            },
+            {
+                "data": {},
+                "event": "on_chain_start",
+                "metadata": {},
+                "name": "fail",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["seq:step:2"],
+            },
+            {
+                "data": {"input": "q", "output": "success"},
+                "event": "on_chain_end",
+                "metadata": {},
+                "name": "success",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["seq:step:1"],
+            },
+        ],
+    )
 
 
 async def test_with_llm() -> None:
@@ -1515,109 +1635,120 @@ async def test_with_llm() -> None:
     events = await _collect_events(
         chain.astream_events({"question": "hello"}, version="v2")
     )
-    assert events == [
-        {
-            "data": {"input": {"question": "hello"}},
-            "event": "on_chain_start",
-            "metadata": {},
-            "name": "RunnableSequence",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-        {
-            "data": {"input": {"question": "hello"}},
-            "event": "on_prompt_start",
-            "metadata": {},
-            "name": "my_template",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["my_template", "seq:step:1"],
-        },
-        {
-            "data": {
-                "input": {"question": "hello"},
-                "output": ChatPromptValue(
-                    messages=[
-                        SystemMessage(content="You are Cat Agent 007"),
-                        HumanMessage(content="hello"),
-                    ]
-                ),
+    _assert_events_equal_allow_superset_metadata(
+        events,
+        [
+            {
+                "data": {"input": {"question": "hello"}},
+                "event": "on_chain_start",
+                "metadata": {},
+                "name": "RunnableSequence",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
             },
-            "event": "on_prompt_end",
-            "metadata": {},
-            "name": "my_template",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["my_template", "seq:step:1"],
-        },
-        {
-            "data": {
-                "input": {"prompts": ["System: You are Cat Agent 007\n" "Human: hello"]}
+            {
+                "data": {"input": {"question": "hello"}},
+                "event": "on_prompt_start",
+                "metadata": {},
+                "name": "my_template",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["my_template", "seq:step:1"],
             },
-            "event": "on_llm_start",
-            "metadata": {},
-            "name": "FakeStreamingListLLM",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["seq:step:2"],
-        },
-        {
-            "data": {
-                "input": {
-                    "prompts": ["System: You are Cat Agent 007\n" "Human: hello"]
+            {
+                "data": {
+                    "input": {"question": "hello"},
+                    "output": ChatPromptValue(
+                        messages=[
+                            SystemMessage(content="You are Cat Agent 007"),
+                            HumanMessage(content="hello"),
+                        ]
+                    ),
                 },
-                "output": {
-                    "generations": [
-                        [{"generation_info": None, "text": "abc", "type": "Generation"}]
-                    ],
-                    "llm_output": None,
-                },
+                "event": "on_prompt_end",
+                "metadata": {},
+                "name": "my_template",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["my_template", "seq:step:1"],
             },
-            "event": "on_llm_end",
-            "metadata": {},
-            "name": "FakeStreamingListLLM",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": ["seq:step:2"],
-        },
-        {
-            "data": {"chunk": "a"},
-            "event": "on_chain_stream",
-            "metadata": {},
-            "name": "RunnableSequence",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-        {
-            "data": {"chunk": "b"},
-            "event": "on_chain_stream",
-            "metadata": {},
-            "name": "RunnableSequence",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-        {
-            "data": {"chunk": "c"},
-            "event": "on_chain_stream",
-            "metadata": {},
-            "name": "RunnableSequence",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-        {
-            "data": {"output": "abc"},
-            "event": "on_chain_end",
-            "metadata": {},
-            "name": "RunnableSequence",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-    ]
+            {
+                "data": {
+                    "input": {
+                        "prompts": ["System: You are Cat Agent 007\n" "Human: hello"]
+                    }
+                },
+                "event": "on_llm_start",
+                "metadata": {},
+                "name": "FakeStreamingListLLM",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["seq:step:2"],
+            },
+            {
+                "data": {
+                    "input": {
+                        "prompts": ["System: You are Cat Agent 007\n" "Human: hello"]
+                    },
+                    "output": {
+                        "generations": [
+                            [
+                                {
+                                    "generation_info": None,
+                                    "text": "abc",
+                                    "type": "Generation",
+                                }
+                            ]
+                        ],
+                        "llm_output": None,
+                    },
+                },
+                "event": "on_llm_end",
+                "metadata": {},
+                "name": "FakeStreamingListLLM",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["seq:step:2"],
+            },
+            {
+                "data": {"chunk": "a"},
+                "event": "on_chain_stream",
+                "metadata": {},
+                "name": "RunnableSequence",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
+            },
+            {
+                "data": {"chunk": "b"},
+                "event": "on_chain_stream",
+                "metadata": {},
+                "name": "RunnableSequence",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
+            },
+            {
+                "data": {"chunk": "c"},
+                "event": "on_chain_stream",
+                "metadata": {},
+                "name": "RunnableSequence",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
+            },
+            {
+                "data": {"output": "abc"},
+                "event": "on_chain_end",
+                "metadata": {},
+                "name": "RunnableSequence",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
+            },
+        ],
+    )
 
 
 async def test_runnable_each() -> None:
@@ -1650,55 +1781,58 @@ async def test_events_astream_config() -> None:
     assert model_02.invoke("hello") == AIMessage(content="Goodbye world", id="ai2")
 
     events = await _collect_events(model_02.astream_events("hello", version="v2"))
-    assert events == [
-        {
-            "data": {"input": "hello"},
-            "event": "on_chat_model_start",
-            "metadata": {"ls_model_type": "chat"},
-            "name": "GenericFakeChatModel",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-        {
-            "data": {"chunk": AIMessageChunk(content="Goodbye", id="ai2")},
-            "event": "on_chat_model_stream",
-            "metadata": {"ls_model_type": "chat"},
-            "name": "GenericFakeChatModel",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-        {
-            "data": {"chunk": AIMessageChunk(content=" ", id="ai2")},
-            "event": "on_chat_model_stream",
-            "metadata": {"ls_model_type": "chat"},
-            "name": "GenericFakeChatModel",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-        {
-            "data": {"chunk": AIMessageChunk(content="world", id="ai2")},
-            "event": "on_chat_model_stream",
-            "metadata": {"ls_model_type": "chat"},
-            "name": "GenericFakeChatModel",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-        {
-            "data": {
-                "output": AIMessageChunk(content="Goodbye world", id="ai2"),
+    _assert_events_equal_allow_superset_metadata(
+        events,
+        [
+            {
+                "data": {"input": "hello"},
+                "event": "on_chat_model_start",
+                "metadata": {"ls_model_type": "chat"},
+                "name": "GenericFakeChatModel",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
             },
-            "event": "on_chat_model_end",
-            "metadata": {"ls_model_type": "chat"},
-            "name": "GenericFakeChatModel",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-    ]
+            {
+                "data": {"chunk": AIMessageChunk(content="Goodbye", id="ai2")},
+                "event": "on_chat_model_stream",
+                "metadata": {"ls_model_type": "chat"},
+                "name": "GenericFakeChatModel",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
+            },
+            {
+                "data": {"chunk": AIMessageChunk(content=" ", id="ai2")},
+                "event": "on_chat_model_stream",
+                "metadata": {"ls_model_type": "chat"},
+                "name": "GenericFakeChatModel",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
+            },
+            {
+                "data": {"chunk": AIMessageChunk(content="world", id="ai2")},
+                "event": "on_chat_model_stream",
+                "metadata": {"ls_model_type": "chat"},
+                "name": "GenericFakeChatModel",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
+            },
+            {
+                "data": {
+                    "output": AIMessageChunk(content="Goodbye world", id="ai2"),
+                },
+                "event": "on_chat_model_end",
+                "metadata": {"ls_model_type": "chat"},
+                "name": "GenericFakeChatModel",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
+            },
+        ],
+    )
 
 
 async def test_runnable_with_message_history() -> None:
@@ -1721,7 +1855,7 @@ async def test_runnable_with_message_history() -> None:
 
     # Here we use a global variable to store the chat message history.
     # This will make it easier to inspect it to see the underlying results.
-    store: Dict = {}
+    store: dict = {}
 
     def get_by_session_id(session_id: str) -> BaseChatMessageHistory:
         """Get a chat message history"""
@@ -1749,6 +1883,25 @@ async def test_runnable_with_message_history() -> None:
         input_messages_key="question",
         history_messages_key="history",
     )
+
+    # patch with_message_history._get_output_messages to listen for errors
+    # so we can raise them in this main thread
+    raised_errors = []
+
+    def collect_errors(fn):  # type: ignore
+        nonlocal raised_errors
+
+        def _get_output_messages(*args, **kwargs):  # type: ignore
+            try:
+                return fn(*args, **kwargs)
+            except Exception as e:
+                raised_errors.append(e)
+                raise e
+
+        return _get_output_messages
+
+    old_ref = with_message_history._get_output_messages
+    with_message_history.__dict__["_get_output_messages"] = collect_errors(old_ref)
     await with_message_history.with_config(
         {"configurable": {"session_id": "session-123"}}
     ).ainvoke({"question": "hello"})
@@ -1771,6 +1924,7 @@ async def test_runnable_with_message_history() -> None:
             AIMessage(content="world", id="ai4"),
         ]
     }
+    assert not raised_errors
 
 
 EXPECTED_EVENTS = [
@@ -1847,7 +2001,7 @@ async def test_sync_in_async_stream_lambdas() -> None:
     add_one_proxy_ = RunnableLambda(add_one_proxy)  # type: ignore
 
     events = await _collect_events(add_one_proxy_.astream_events(1, version="v2"))
-    assert events == EXPECTED_EVENTS
+    _assert_events_equal_allow_superset_metadata(events, EXPECTED_EVENTS)
 
 
 async def test_async_in_async_stream_lambdas() -> None:
@@ -1867,7 +2021,7 @@ async def test_async_in_async_stream_lambdas() -> None:
     add_one_proxy_ = RunnableLambda(add_one_proxy)  # type: ignore
 
     events = await _collect_events(add_one_proxy_.astream_events(1, version="v2"))
-    assert events == EXPECTED_EVENTS
+    _assert_events_equal_allow_superset_metadata(events, EXPECTED_EVENTS)
 
 
 async def test_sync_in_sync_lambdas() -> None:
@@ -1887,7 +2041,7 @@ async def test_sync_in_sync_lambdas() -> None:
     add_one_proxy_ = RunnableLambda(add_one_proxy)
 
     events = await _collect_events(add_one_proxy_.astream_events(1, version="v2"))
-    assert events == EXPECTED_EVENTS
+    _assert_events_equal_allow_superset_metadata(events, EXPECTED_EVENTS)
 
 
 class StreamingRunnable(Runnable[Input, Output]):
@@ -1920,7 +2074,7 @@ class StreamingRunnable(Runnable[Input, Output]):
         config = ensure_config(config)
         callback_manager = get_callback_manager_for_config(config)
         run_manager = callback_manager.on_chain_start(
-            dumpd(self),
+            None,
             input,
             name=config.get("run_name", self.get_name()),
             run_id=config.get("run_id"),
@@ -1955,53 +2109,56 @@ async def test_astream_events_from_custom_runnable() -> None:
     chunks = [chunk async for chunk in runnable.astream(1, version="v2")]
     assert chunks == ["1", "2", "3"]
     events = await _collect_events(runnable.astream_events(1, version="v2"))
-    assert events == [
-        {
-            "data": {"input": 1},
-            "event": "on_chain_start",
-            "metadata": {},
-            "name": "StreamingRunnable",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-        {
-            "data": {"chunk": "1"},
-            "event": "on_chain_stream",
-            "metadata": {},
-            "name": "StreamingRunnable",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-        {
-            "data": {"chunk": "2"},
-            "event": "on_chain_stream",
-            "metadata": {},
-            "name": "StreamingRunnable",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-        {
-            "data": {"chunk": "3"},
-            "event": "on_chain_stream",
-            "metadata": {},
-            "name": "StreamingRunnable",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-        {
-            "data": {"output": "123"},
-            "event": "on_chain_end",
-            "metadata": {},
-            "name": "StreamingRunnable",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-    ]
+    _assert_events_equal_allow_superset_metadata(
+        events,
+        [
+            {
+                "data": {"input": 1},
+                "event": "on_chain_start",
+                "metadata": {},
+                "name": "StreamingRunnable",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
+            },
+            {
+                "data": {"chunk": "1"},
+                "event": "on_chain_stream",
+                "metadata": {},
+                "name": "StreamingRunnable",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
+            },
+            {
+                "data": {"chunk": "2"},
+                "event": "on_chain_stream",
+                "metadata": {},
+                "name": "StreamingRunnable",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
+            },
+            {
+                "data": {"chunk": "3"},
+                "event": "on_chain_stream",
+                "metadata": {},
+                "name": "StreamingRunnable",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
+            },
+            {
+                "data": {"output": "123"},
+                "event": "on_chain_end",
+                "metadata": {},
+                "name": "StreamingRunnable",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
+            },
+        ],
+    )
 
 
 async def test_parent_run_id_assignment() -> None:
@@ -2029,77 +2186,80 @@ async def test_parent_run_id_assignment() -> None:
         parent.astream_events("hello", {"run_id": bond}, version="v2"),
         with_nulled_ids=False,
     )
-    assert events == [
-        {
-            "data": {"input": "hello"},
-            "event": "on_chain_start",
-            "metadata": {},
-            "name": "parent",
-            "parent_ids": [],
-            "run_id": "00000000-0000-0000-0000-000000000007",
-            "tags": [],
-        },
-        {
-            "data": {"input": "hello"},
-            "event": "on_chain_start",
-            "metadata": {},
-            "name": "child",
-            "parent_ids": ["00000000-0000-0000-0000-000000000007"],
-            "run_id": "00000000-0000-0000-0000-000000000008",
-            "tags": [],
-        },
-        {
-            "data": {"input": "hello"},
-            "event": "on_chain_start",
-            "metadata": {},
-            "name": "grandchild",
-            "parent_ids": [
-                "00000000-0000-0000-0000-000000000007",
-                "00000000-0000-0000-0000-000000000008",
-            ],
-            "run_id": "00000000-0000-0000-0000-000000000009",
-            "tags": [],
-        },
-        {
-            "data": {"input": "hello", "output": "hello"},
-            "event": "on_chain_end",
-            "metadata": {},
-            "name": "grandchild",
-            "parent_ids": [
-                "00000000-0000-0000-0000-000000000007",
-                "00000000-0000-0000-0000-000000000008",
-            ],
-            "run_id": "00000000-0000-0000-0000-000000000009",
-            "tags": [],
-        },
-        {
-            "data": {"input": "hello", "output": "hello"},
-            "event": "on_chain_end",
-            "metadata": {},
-            "name": "child",
-            "parent_ids": ["00000000-0000-0000-0000-000000000007"],
-            "run_id": "00000000-0000-0000-0000-000000000008",
-            "tags": [],
-        },
-        {
-            "data": {"chunk": "hello"},
-            "event": "on_chain_stream",
-            "metadata": {},
-            "name": "parent",
-            "parent_ids": [],
-            "run_id": "00000000-0000-0000-0000-000000000007",
-            "tags": [],
-        },
-        {
-            "data": {"output": "hello"},
-            "event": "on_chain_end",
-            "metadata": {},
-            "name": "parent",
-            "parent_ids": [],
-            "run_id": "00000000-0000-0000-0000-000000000007",
-            "tags": [],
-        },
-    ]
+    _assert_events_equal_allow_superset_metadata(
+        events,
+        [
+            {
+                "data": {"input": "hello"},
+                "event": "on_chain_start",
+                "metadata": {},
+                "name": "parent",
+                "parent_ids": [],
+                "run_id": "00000000-0000-0000-0000-000000000007",
+                "tags": [],
+            },
+            {
+                "data": {"input": "hello"},
+                "event": "on_chain_start",
+                "metadata": {},
+                "name": "child",
+                "parent_ids": ["00000000-0000-0000-0000-000000000007"],
+                "run_id": "00000000-0000-0000-0000-000000000008",
+                "tags": [],
+            },
+            {
+                "data": {"input": "hello"},
+                "event": "on_chain_start",
+                "metadata": {},
+                "name": "grandchild",
+                "parent_ids": [
+                    "00000000-0000-0000-0000-000000000007",
+                    "00000000-0000-0000-0000-000000000008",
+                ],
+                "run_id": "00000000-0000-0000-0000-000000000009",
+                "tags": [],
+            },
+            {
+                "data": {"input": "hello", "output": "hello"},
+                "event": "on_chain_end",
+                "metadata": {},
+                "name": "grandchild",
+                "parent_ids": [
+                    "00000000-0000-0000-0000-000000000007",
+                    "00000000-0000-0000-0000-000000000008",
+                ],
+                "run_id": "00000000-0000-0000-0000-000000000009",
+                "tags": [],
+            },
+            {
+                "data": {"input": "hello", "output": "hello"},
+                "event": "on_chain_end",
+                "metadata": {},
+                "name": "child",
+                "parent_ids": ["00000000-0000-0000-0000-000000000007"],
+                "run_id": "00000000-0000-0000-0000-000000000008",
+                "tags": [],
+            },
+            {
+                "data": {"chunk": "hello"},
+                "event": "on_chain_stream",
+                "metadata": {},
+                "name": "parent",
+                "parent_ids": [],
+                "run_id": "00000000-0000-0000-0000-000000000007",
+                "tags": [],
+            },
+            {
+                "data": {"output": "hello"},
+                "event": "on_chain_end",
+                "metadata": {},
+                "name": "parent",
+                "parent_ids": [],
+                "run_id": "00000000-0000-0000-0000-000000000007",
+                "tags": [],
+            },
+        ],
+    )
 
 
 async def test_bad_parent_ids() -> None:
@@ -2125,17 +2285,20 @@ async def test_bad_parent_ids() -> None:
     # Includes only a partial list of events since the run ID gets duplicated
     # between parent and child run ID and the callback handler throws an exception.
     # The exception does not get bubbled up to the user.
-    assert events == [
-        {
-            "data": {"input": "hello"},
-            "event": "on_chain_start",
-            "metadata": {},
-            "name": "parent",
-            "parent_ids": [],
-            "run_id": "00000000-0000-0000-0000-000000000007",
-            "tags": [],
-        }
-    ]
+    _assert_events_equal_allow_superset_metadata(
+        events,
+        [
+            {
+                "data": {"input": "hello"},
+                "event": "on_chain_start",
+                "metadata": {},
+                "name": "parent",
+                "parent_ids": [],
+                "run_id": "00000000-0000-0000-0000-000000000007",
+                "tags": [],
+            }
+        ],
+    )
 
 
 async def test_runnable_generator() -> None:
@@ -2147,44 +2310,47 @@ async def test_runnable_generator() -> None:
 
     runnable: Runnable[str, str] = RunnableGenerator(transform=generator)
     events = await _collect_events(runnable.astream_events("hello", version="v2"))
-    assert events == [
-        {
-            "data": {"input": "hello"},
-            "event": "on_chain_start",
-            "metadata": {},
-            "name": "generator",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-        {
-            "data": {"chunk": "1"},
-            "event": "on_chain_stream",
-            "metadata": {},
-            "name": "generator",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-        {
-            "data": {"chunk": "2"},
-            "event": "on_chain_stream",
-            "metadata": {},
-            "name": "generator",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-        {
-            "data": {"output": "12"},
-            "event": "on_chain_end",
-            "metadata": {},
-            "name": "generator",
-            "run_id": "",
-            "parent_ids": [],
-            "tags": [],
-        },
-    ]
+    _assert_events_equal_allow_superset_metadata(
+        events,
+        [
+            {
+                "data": {"input": "hello"},
+                "event": "on_chain_start",
+                "metadata": {},
+                "name": "generator",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
+            },
+            {
+                "data": {"chunk": "1"},
+                "event": "on_chain_stream",
+                "metadata": {},
+                "name": "generator",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
+            },
+            {
+                "data": {"chunk": "2"},
+                "event": "on_chain_stream",
+                "metadata": {},
+                "name": "generator",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
+            },
+            {
+                "data": {"output": "12"},
+                "event": "on_chain_end",
+                "metadata": {},
+                "name": "generator",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
+            },
+        ],
+    )
 
 
 async def test_with_explicit_config() -> None:
@@ -2353,3 +2519,254 @@ async def test_cancel_astream_events() -> None:
 
     # node "anotherwhile" should never start
     assert anotherwhile.started is False
+
+
+async def test_custom_event() -> None:
+    """Test adhoc event."""
+    from langchain_core.callbacks.manager import adispatch_custom_event
+
+    # Ignoring type due to RunnableLamdba being dynamic when it comes to being
+    # applied as a decorator to async functions.
+    @RunnableLambda  # type: ignore[arg-type]
+    async def foo(x: int, config: RunnableConfig) -> int:
+        """Simple function that emits some adhoc events."""
+        await adispatch_custom_event("event1", {"x": x}, config=config)
+        await adispatch_custom_event("event2", "foo", config=config)
+        return x + 1
+
+    uuid1 = uuid.UUID(int=7)
+
+    events = await _collect_events(
+        foo.astream_events(
+            1,
+            version="v2",
+            config={"run_id": uuid1},
+        ),
+        with_nulled_ids=False,
+    )
+
+    run_id = str(uuid1)
+    _assert_events_equal_allow_superset_metadata(
+        events,
+        [
+            {
+                "data": {"input": 1},
+                "event": "on_chain_start",
+                "metadata": {},
+                "name": "foo",
+                "parent_ids": [],
+                "run_id": run_id,
+                "tags": [],
+            },
+            {
+                "data": {"x": 1},
+                "event": "on_custom_event",
+                "metadata": {},
+                "name": "event1",
+                "parent_ids": [],
+                "run_id": run_id,
+                "tags": [],
+            },
+            {
+                "data": "foo",
+                "event": "on_custom_event",
+                "metadata": {},
+                "name": "event2",
+                "parent_ids": [],
+                "run_id": run_id,
+                "tags": [],
+            },
+            {
+                "data": {"chunk": 2},
+                "event": "on_chain_stream",
+                "metadata": {},
+                "name": "foo",
+                "parent_ids": [],
+                "run_id": run_id,
+                "tags": [],
+            },
+            {
+                "data": {"output": 2},
+                "event": "on_chain_end",
+                "metadata": {},
+                "name": "foo",
+                "parent_ids": [],
+                "run_id": run_id,
+                "tags": [],
+            },
+        ],
+    )
+
+
+async def test_custom_event_nested() -> None:
+    """Test adhoc event in a nested chain."""
+    from langchain_core.callbacks.manager import adispatch_custom_event
+
+    # Ignoring type due to RunnableLamdba being dynamic when it comes to being
+    # applied as a decorator to async functions.
+    @RunnableLambda  # type: ignore[arg-type]
+    async def foo(x: int, config: RunnableConfig) -> int:
+        """Simple function that emits some adhoc events."""
+        await adispatch_custom_event("event1", {"x": x}, config=config)
+        await adispatch_custom_event("event2", "foo", config=config)
+        return x + 1
+
+    run_id = uuid.UUID(int=7)
+    child_run_id = uuid.UUID(int=8)
+
+    # Ignoring type due to RunnableLamdba being dynamic when it comes to being
+    # applied as a decorator to async functions.
+    @RunnableLambda  # type: ignore[arg-type]
+    async def bar(x: int, config: RunnableConfig) -> int:
+        """Simple function that emits some adhoc events."""
+        return await foo.ainvoke(
+            x,  # type: ignore[arg-type]
+            {"run_id": child_run_id, **config},
+        )
+
+    events = await _collect_events(
+        bar.astream_events(
+            1,
+            version="v2",
+            config={"run_id": run_id},
+        ),
+        with_nulled_ids=False,
+    )
+
+    run_id = str(run_id)  # type: ignore[assignment]
+    child_run_id = str(child_run_id)  # type: ignore[assignment]
+
+    _assert_events_equal_allow_superset_metadata(
+        events,
+        [
+            {
+                "data": {"input": 1},
+                "event": "on_chain_start",
+                "metadata": {},
+                "name": "bar",
+                "parent_ids": [],
+                "run_id": "00000000-0000-0000-0000-000000000007",
+                "tags": [],
+            },
+            {
+                "data": {"input": 1},
+                "event": "on_chain_start",
+                "metadata": {},
+                "name": "foo",
+                "parent_ids": ["00000000-0000-0000-0000-000000000007"],
+                "run_id": "00000000-0000-0000-0000-000000000008",
+                "tags": [],
+            },
+            {
+                "data": {"x": 1},
+                "event": "on_custom_event",
+                "metadata": {},
+                "name": "event1",
+                "parent_ids": ["00000000-0000-0000-0000-000000000007"],
+                "run_id": "00000000-0000-0000-0000-000000000008",
+                "tags": [],
+            },
+            {
+                "data": "foo",
+                "event": "on_custom_event",
+                "metadata": {},
+                "name": "event2",
+                "parent_ids": ["00000000-0000-0000-0000-000000000007"],
+                "run_id": "00000000-0000-0000-0000-000000000008",
+                "tags": [],
+            },
+            {
+                "data": {"input": 1, "output": 2},
+                "event": "on_chain_end",
+                "metadata": {},
+                "name": "foo",
+                "parent_ids": ["00000000-0000-0000-0000-000000000007"],
+                "run_id": "00000000-0000-0000-0000-000000000008",
+                "tags": [],
+            },
+            {
+                "data": {"chunk": 2},
+                "event": "on_chain_stream",
+                "metadata": {},
+                "name": "bar",
+                "parent_ids": [],
+                "run_id": "00000000-0000-0000-0000-000000000007",
+                "tags": [],
+            },
+            {
+                "data": {"output": 2},
+                "event": "on_chain_end",
+                "metadata": {},
+                "name": "bar",
+                "parent_ids": [],
+                "run_id": "00000000-0000-0000-0000-000000000007",
+                "tags": [],
+            },
+        ],
+    )
+
+
+async def test_custom_event_root_dispatch() -> None:
+    """Test adhoc event in a nested chain."""
+    # This just tests that nothing breaks on the path.
+    # It shouldn't do anything at the moment, since the tracer isn't configured
+    # to handle adhoc events.
+    from langchain_core.callbacks.manager import adispatch_custom_event
+
+    # Expected behavior is that the event cannot be dispatched
+    with pytest.raises(RuntimeError):
+        await adispatch_custom_event("event1", {"x": 1})
+
+
+IS_GTE_3_11 = sys.version_info >= (3, 11)
+
+
+# Test relies on automatically picking up RunnableConfig from contextvars
+@pytest.mark.skipif(not IS_GTE_3_11, reason="Requires Python >=3.11")
+async def test_custom_event_root_dispatch_with_in_tool() -> None:
+    """Test adhoc event in a nested chain."""
+    from langchain_core.callbacks.manager import adispatch_custom_event
+    from langchain_core.tools import tool
+
+    @tool
+    async def foo(x: int) -> int:
+        """Foo"""
+        await adispatch_custom_event("event1", {"x": x})
+        return x + 1
+
+    # Ignoring type due to @tool not returning correct type annotations
+    events = await _collect_events(
+        foo.astream_events({"x": 2}, version="v2")  # type: ignore[attr-defined]
+    )
+    _assert_events_equal_allow_superset_metadata(
+        events,
+        [
+            {
+                "data": {"input": {"x": 2}},
+                "event": "on_tool_start",
+                "metadata": {},
+                "name": "foo",
+                "parent_ids": [],
+                "run_id": "",
+                "tags": [],
+            },
+            {
+                "data": {"x": 2},
+                "event": "on_custom_event",
+                "metadata": {},
+                "name": "event1",
+                "parent_ids": [],
+                "run_id": "",
+                "tags": [],
+            },
+            {
+                "data": {"output": 3},
+                "event": "on_tool_end",
+                "metadata": {},
+                "name": "foo",
+                "parent_ids": [],
+                "run_id": "",
+                "tags": [],
+            },
+        ],
+    )

@@ -1,13 +1,18 @@
 from __future__ import annotations
 
 import logging
-from typing import Optional
+from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
+from pydantic import BaseModel, Field, HttpUrl
 
 from langchain_community.tools.edenai.edenai_base_tool import EdenaiTool
 
 logger = logging.getLogger(__name__)
+
+
+class ExplicitImageInput(BaseModel):
+    query: HttpUrl = Field(description="url of the image to analyze")
 
 
 class EdenAiExplicitImageTool(EdenaiTool):
@@ -33,6 +38,7 @@ class EdenAiExplicitImageTool(EdenaiTool):
         pornography, violence, gore content, etc."""
         "Input should be the string url of the image ."
     )
+    args_schema: Type[BaseModel] = ExplicitImageInput
 
     combine_available: bool = True
     feature: str = "image"

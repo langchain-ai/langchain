@@ -1,4 +1,4 @@
-from typing import Any, Callable, List, NamedTuple, Union
+from typing import Any, Callable, NamedTuple, Union
 
 import pytest
 
@@ -331,7 +331,7 @@ test_cases = [
 
 @pytest.mark.parametrize("runnable, cases", test_cases)
 async def test_context_runnables(
-    runnable: Union[Runnable, Callable[[], Runnable]], cases: List[_TestCase]
+    runnable: Union[Runnable, Callable[[], Runnable]], cases: list[_TestCase]
 ) -> None:
     runnable = runnable if isinstance(runnable, Runnable) else runnable()
     assert runnable.invoke(cases[0].input) == cases[0].output

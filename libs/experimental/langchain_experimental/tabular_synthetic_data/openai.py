@@ -1,10 +1,10 @@
 from typing import Any, Dict, Optional, Type, Union
 
 from langchain.chains.openai_functions import create_structured_output_chain
-from langchain.pydantic_v1 import BaseModel
 from langchain.schema import BaseLLMOutputParser, BasePromptTemplate
 from langchain_community.chat_models import ChatOpenAI
 from langchain_core.prompts import PromptTemplate
+from pydantic import BaseModel
 
 from langchain_experimental.tabular_synthetic_data.base import SyntheticDataGenerator
 
@@ -41,7 +41,7 @@ def create_openai_data_generator(
         from the function types.
 
 
-        **kwargs: Additional keyword arguments to be passed to
+        kwargs: Additional keyword arguments to be passed to
         `create_structured_output_chain`.
 
 

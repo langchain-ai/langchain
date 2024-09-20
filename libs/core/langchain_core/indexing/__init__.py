@@ -6,12 +6,19 @@ if it's unchanged.
 """
 
 from langchain_core.indexing.api import IndexingResult, aindex, index
-from langchain_core.indexing.base import InMemoryRecordManager, RecordManager
+from langchain_core.indexing.base import (
+    DocumentIndex,
+    InMemoryRecordManager,
+    RecordManager,
+    UpsertResponse,
+)
 
 __all__ = [
     "aindex",
+    "DocumentIndex",
     "index",
     "IndexingResult",
     "InMemoryRecordManager",
     "RecordManager",
+    "UpsertResponse",
 ]

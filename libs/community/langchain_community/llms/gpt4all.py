@@ -3,7 +3,8 @@ from typing import Any, Dict, List, Mapping, Optional, Set
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from langchain_core.pydantic_v1 import Extra, Field, root_validator
+from langchain_core.utils import pre_init
+from pydantic import ConfigDict, Field
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
@@ -95,10 +96,9 @@ class GPT4All(LLM):
 
     client: Any = None  #: :meta private:
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @staticmethod
     def _model_param_names() -> Set[str]:
@@ -127,7 +127,7 @@ class GPT4All(LLM):
             "streaming": self.streaming,
         }
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in the environment."""
         try:

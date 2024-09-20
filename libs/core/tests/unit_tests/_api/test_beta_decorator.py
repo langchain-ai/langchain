@@ -1,11 +1,11 @@
 import inspect
 import warnings
-from typing import Any, Dict
+from typing import Any
 
 import pytest
+from pydantic import BaseModel
 
 from langchain_core._api.beta_decorator import beta, warn_beta
-from langchain_core.pydantic_v1 import BaseModel
 
 
 @pytest.mark.parametrize(
@@ -41,7 +41,7 @@ from langchain_core.pydantic_v1 import BaseModel
         ),
     ],
 )
-def test_warn_beta(kwargs: Dict[str, Any], expected_message: str) -> None:
+def test_warn_beta(kwargs: dict[str, Any], expected_message: str) -> None:
     """Test warn beta."""
     with warnings.catch_warnings(record=True) as warning_list:
         warnings.simplefilter("always")
@@ -114,7 +114,7 @@ def test_beta_function() -> None:
 
         doc = beta_function.__doc__
         assert isinstance(doc, str)
-        assert doc.startswith("[*Beta*] original doc")
+        assert doc.startswith(".. beta::")
 
     assert not inspect.iscoroutinefunction(beta_function)
 
@@ -134,7 +134,7 @@ async def test_beta_async_function() -> None:
 
         doc = beta_function.__doc__
         assert isinstance(doc, str)
-        assert doc.startswith("[*Beta*] original doc")
+        assert doc.startswith(".. beta::")
 
     assert inspect.iscoroutinefunction(beta_async_function)
 
@@ -155,7 +155,7 @@ def test_beta_method() -> None:
 
         doc = obj.beta_method.__doc__
         assert isinstance(doc, str)
-        assert doc.startswith("[*Beta*] original doc")
+        assert doc.startswith(".. beta::")
 
     assert not inspect.iscoroutinefunction(obj.beta_method)
 
@@ -176,7 +176,7 @@ async def test_beta_async_method() -> None:
 
         doc = obj.beta_method.__doc__
         assert isinstance(doc, str)
-        assert doc.startswith("[*Beta*] original doc")
+        assert doc.startswith(".. beta::")
 
     assert inspect.iscoroutinefunction(obj.beta_async_method)
 
@@ -195,7 +195,7 @@ def test_beta_classmethod() -> None:
 
         doc = ClassWithBetaMethods.beta_classmethod.__doc__
         assert isinstance(doc, str)
-        assert doc.startswith("[*Beta*] original doc")
+        assert doc.startswith(".. beta::")
 
 
 def test_beta_staticmethod() -> None:
@@ -214,7 +214,7 @@ def test_beta_staticmethod() -> None:
         )
         doc = ClassWithBetaMethods.beta_staticmethod.__doc__
         assert isinstance(doc, str)
-        assert doc.startswith("[*Beta*] original doc")
+        assert doc.startswith(".. beta::")
 
 
 def test_beta_property() -> None:
@@ -234,7 +234,7 @@ def test_beta_property() -> None:
         )
         doc = ClassWithBetaMethods.beta_property.__doc__
         assert isinstance(doc, str)
-        assert doc.startswith("[*Beta*] original doc")
+        assert doc.startswith(".. beta::")
 
 
 def test_whole_class_beta() -> None:
@@ -277,7 +277,7 @@ def test_whole_class_inherited_beta() -> None:
     """Test whole class beta status for inherited class.
 
     The original version of beta decorator created duplicates with
-    '[*Beta*]'.
+    '.. beta::'.
     """
 
     # Test whole class beta status
@@ -339,9 +339,9 @@ def test_whole_class_inherited_beta() -> None:
             "the API may change."
         )
 
-        # if [*Beta*] was inserted only once:
+        # if .. beta:: was inserted only once:
         if obj.__doc__ is not None:
-            assert obj.__doc__.count("[*Beta*]") == 1
+            assert obj.__doc__.count(".. beta::") == 1
 
 
 # Tests with pydantic models
@@ -368,4 +368,4 @@ def test_beta_method_pydantic() -> None:
 
         doc = obj.beta_method.__doc__
         assert isinstance(doc, str)
-        assert doc.startswith("[*Beta*] original doc")
+        assert doc.startswith(".. beta::")

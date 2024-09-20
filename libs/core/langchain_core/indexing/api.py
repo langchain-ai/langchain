@@ -5,30 +5,24 @@ from __future__ import annotations
 import hashlib
 import json
 import uuid
+from collections.abc import AsyncIterable, AsyncIterator, Iterable, Iterator, Sequence
 from itertools import islice
 from typing import (
     Any,
-    AsyncIterable,
-    AsyncIterator,
     Callable,
-    Dict,
-    Iterable,
-    Iterator,
-    List,
     Literal,
     Optional,
-    Sequence,
-    Set,
     TypedDict,
     TypeVar,
     Union,
     cast,
 )
 
+from pydantic import model_validator
+
 from langchain_core.document_loaders.base import BaseLoader
 from langchain_core.documents import Document
-from langchain_core.indexing.base import RecordManager
-from langchain_core.pydantic_v1 import root_validator
+from langchain_core.indexing.base import DocumentIndex, RecordManager
 from langchain_core.vectorstores import VectorStore
 
 # Magic UUID to use as a namespace for hashing.
@@ -68,8 +62,9 @@ class _HashedDocument(Document):
     def is_lc_serializable(cls) -> bool:
         return False
 
-    @root_validator(pre=True)
-    def calculate_hashes(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def calculate_hashes(cls, values: dict[str, Any]) -> Any:
         """Root validator to calculate content and metadata hash."""
         content = values.get("page_content", "")
         metadata = values.get("metadata", {})
@@ -91,7 +86,7 @@ class _HashedDocument(Document):
             raise ValueError(
                 f"Failed to hash metadata: {e}. "
                 f"Please use a dict that can be serialized using json."
-            )
+            ) from e
 
         values["content_hash"] = content_hash
         values["metadata_hash"] = metadata_hash
@@ -106,6 +101,7 @@ class _HashedDocument(Document):
     def to_document(self) -> Document:
         """Return a Document object."""
         return Document(
+            id=self.uid,
             page_content=self.page_content,
             metadata=self.metadata,
         )
@@ -122,7 +118,7 @@ class _HashedDocument(Document):
         )
 
 
-def _batch(size: int, iterable: Iterable[T]) -> Iterator[List[T]]:
+def _batch(size: int, iterable: Iterable[T]) -> Iterator[list[T]]:
     """Utility batching function."""
     it = iter(iterable)
     while True:
@@ -132,9 +128,9 @@ def _batch(size: int, iterable: Iterable[T]) -> Iterator[List[T]]:
         yield chunk
 
 
-async def _abatch(size: int, iterable: AsyncIterable[T]) -> AsyncIterator[List[T]]:
+async def _abatch(size: int, iterable: AsyncIterable[T]) -> AsyncIterator[list[T]]:
     """Utility batching function."""
-    batch: List[T] = []
+    batch: list[T] = []
     async for element in iterable:
         if len(batch) < size:
             batch.append(element)
@@ -168,7 +164,7 @@ def _deduplicate_in_order(
     hashed_documents: Iterable[_HashedDocument],
 ) -> Iterator[_HashedDocument]:
     """Deduplicate a list of hashed documents while preserving order."""
-    seen: Set[str] = set()
+    seen: set[str] = set()
 
     for hashed_doc in hashed_documents:
         if hashed_doc.hash_ not in seen:
@@ -195,7 +191,7 @@ class IndexingResult(TypedDict):
 def index(
     docs_source: Union[BaseLoader, Iterable[Document]],
     record_manager: RecordManager,
-    vector_store: VectorStore,
+    vector_store: Union[VectorStore, DocumentIndex],
     *,
     batch_size: int = 100,
     cleanup: Literal["incremental", "full", None] = None,
@@ -232,7 +228,7 @@ def index(
         docs_source: Data loader or iterable of documents to index.
         record_manager: Timestamped set to keep track of which documents were
                          updated.
-        vector_store: Vector store to index the documents into.
+        vector_store: VectorStore or DocumentIndex to index the documents into.
         batch_size: Batch size to use when indexing. Default is 100.
         cleanup: How to handle clean up of documents. Default is None.
             - Incremental: Cleans up all documents that haven't been updated AND
@@ -274,19 +270,30 @@ def index(
     if cleanup == "incremental" and source_id_key is None:
         raise ValueError("Source id key is required when cleanup mode is incremental.")
 
-    # Check that the Vectorstore has required methods implemented
-    methods = ["delete", "add_documents"]
+    destination = vector_store  # Renaming internally for clarity
 
-    for method in methods:
-        if not hasattr(vector_store, method):
-            raise ValueError(
-                f"Vectorstore {vector_store} does not have required method {method}"
-            )
+    # If it's a vectorstore, let's check if it has the required methods.
+    if isinstance(destination, VectorStore):
+        # Check that the Vectorstore has required methods implemented
+        methods = ["delete", "add_documents"]
 
-    if type(vector_store).delete == VectorStore.delete:
-        # Checking if the vectorstore has overridden the default delete method
-        # implementation which just raises a NotImplementedError
-        raise ValueError("Vectorstore has not implemented the delete method")
+        for method in methods:
+            if not hasattr(destination, method):
+                raise ValueError(
+                    f"Vectorstore {destination} does not have required method {method}"
+                )
+
+        if type(destination).delete == VectorStore.delete:
+            # Checking if the vectorstore has overridden the default delete method
+            # implementation which just raises a NotImplementedError
+            raise ValueError("Vectorstore has not implemented the delete method")
+    elif isinstance(destination, DocumentIndex):
+        pass
+    else:
+        raise TypeError(
+            f"Vectorstore should be either a VectorStore or a DocumentIndex. "
+            f"Got {type(destination)}."
+        )
 
     if isinstance(docs_source, BaseLoader):
         try:
@@ -335,7 +342,7 @@ def index(
         uids = []
         docs_to_index = []
         uids_to_refresh = []
-        seen_docs: Set[str] = set()
+        seen_docs: set[str] = set()
         for hashed_doc, doc_exists in zip(hashed_docs, exists_batch):
             if doc_exists:
                 if force_update:
@@ -354,7 +361,13 @@ def index(
         # Be pessimistic and assume that all vector store write will fail.
         # First write to vector store
         if docs_to_index:
-            vector_store.add_documents(docs_to_index, ids=uids, batch_size=batch_size)
+            if isinstance(destination, VectorStore):
+                destination.add_documents(
+                    docs_to_index, ids=uids, batch_size=batch_size
+                )
+            elif isinstance(destination, DocumentIndex):
+                destination.upsert(docs_to_index)
+
             num_added += len(docs_to_index) - len(seen_docs)
             num_updated += len(seen_docs)
 
@@ -384,7 +397,7 @@ def index(
             )
             if uids_to_delete:
                 # Then delete from vector store.
-                vector_store.delete(uids_to_delete)
+                destination.delete(uids_to_delete)
                 # First delete from record store.
                 record_manager.delete_keys(uids_to_delete)
                 num_deleted += len(uids_to_delete)
@@ -394,7 +407,7 @@ def index(
             before=index_start_dt, limit=cleanup_batch_size
         ):
             # First delete from record store.
-            vector_store.delete(uids_to_delete)
+            destination.delete(uids_to_delete)
             # Then delete from record manager.
             record_manager.delete_keys(uids_to_delete)
             num_deleted += len(uids_to_delete)
@@ -417,7 +430,7 @@ async def _to_async_iterator(iterator: Iterable[T]) -> AsyncIterator[T]:
 async def aindex(
     docs_source: Union[BaseLoader, Iterable[Document], AsyncIterator[Document]],
     record_manager: RecordManager,
-    vector_store: VectorStore,
+    vector_store: Union[VectorStore, DocumentIndex],
     *,
     batch_size: int = 100,
     cleanup: Literal["incremental", "full", None] = None,
@@ -446,7 +459,7 @@ async def aindex(
         docs_source: Data loader or iterable of documents to index.
         record_manager: Timestamped set to keep track of which documents were
                          updated.
-        vector_store: Vector store to index the documents into.
+        vectorstore: Vector store or Document Index to index the documents into
         batch_size: Batch size to use when indexing. Default is 100.
         cleanup: How to handle clean up of documents. Default is None.
             - Incremental: Cleans up all documents that haven't been updated AND
@@ -488,20 +501,31 @@ async def aindex(
     if cleanup == "incremental" and source_id_key is None:
         raise ValueError("Source id key is required when cleanup mode is incremental.")
 
-    # Check that the Vectorstore has required methods implemented
-    methods = ["adelete", "aadd_documents"]
+    destination = vector_store  # Renaming internally for clarity
 
-    for method in methods:
-        if not hasattr(vector_store, method):
-            raise ValueError(
-                f"Vectorstore {vector_store} does not have required method {method}"
-            )
+    # If it's a vectorstore, let's check if it has the required methods.
+    if isinstance(destination, VectorStore):
+        # Check that the Vectorstore has required methods implemented
+        # Check that the Vectorstore has required methods implemented
+        methods = ["adelete", "aadd_documents"]
 
-    if type(vector_store).adelete == VectorStore.adelete:
-        # Checking if the vectorstore has overridden the default delete method
-        # implementation which just raises a NotImplementedError
-        raise ValueError("Vectorstore has not implemented the delete method")
+        for method in methods:
+            if not hasattr(destination, method):
+                raise ValueError(
+                    f"Vectorstore {destination} does not have required method {method}"
+                )
 
+        if type(destination).adelete == VectorStore.adelete:
+            # Checking if the vectorstore has overridden the default delete method
+            # implementation which just raises a NotImplementedError
+            raise ValueError("Vectorstore has not implemented the delete method")
+    elif isinstance(destination, DocumentIndex):
+        pass
+    else:
+        raise TypeError(
+            f"Vectorstore should be either a VectorStore or a DocumentIndex. "
+            f"Got {type(destination)}."
+        )
     async_doc_iterator: AsyncIterator[Document]
     if isinstance(docs_source, BaseLoader):
         try:
@@ -558,7 +582,7 @@ async def aindex(
         uids: list[str] = []
         docs_to_index: list[Document] = []
         uids_to_refresh = []
-        seen_docs: Set[str] = set()
+        seen_docs: set[str] = set()
         for hashed_doc, doc_exists in zip(hashed_docs, exists_batch):
             if doc_exists:
                 if force_update:
@@ -577,9 +601,12 @@ async def aindex(
         # Be pessimistic and assume that all vector store write will fail.
         # First write to vector store
         if docs_to_index:
-            await vector_store.aadd_documents(
-                docs_to_index, ids=uids, batch_size=batch_size
-            )
+            if isinstance(destination, VectorStore):
+                await destination.aadd_documents(
+                    docs_to_index, ids=uids, batch_size=batch_size
+                )
+            elif isinstance(destination, DocumentIndex):
+                await destination.aupsert(docs_to_index)
             num_added += len(docs_to_index) - len(seen_docs)
             num_updated += len(seen_docs)
 
@@ -610,7 +637,7 @@ async def aindex(
             )
             if uids_to_delete:
                 # Then delete from vector store.
-                await vector_store.adelete(uids_to_delete)
+                await destination.adelete(uids_to_delete)
                 # First delete from record store.
                 await record_manager.adelete_keys(uids_to_delete)
                 num_deleted += len(uids_to_delete)
@@ -620,7 +647,7 @@ async def aindex(
             before=index_start_dt, limit=cleanup_batch_size
         ):
             # First delete from record store.
-            await vector_store.adelete(uids_to_delete)
+            await destination.adelete(uids_to_delete)
             # Then delete from record manager.
             await record_manager.adelete_keys(uids_to_delete)
             num_deleted += len(uids_to_delete)
