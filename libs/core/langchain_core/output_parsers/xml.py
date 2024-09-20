@@ -211,10 +211,9 @@ class XMLOutputParser(BaseTransformOutputParser):
 
         text = text.strip()
         try:
-            root = ET.fromstring(text)
+            root = _et.fromstring(text)
             return self._root_to_dict(root)
-
-        except ET.ParseError as e:
+        except _et.ParseError as e:
             msg = f"Failed to parse XML format from completion {text}. Got: {e}"
             raise OutputParserException(msg, llm_output=text) from e
 
