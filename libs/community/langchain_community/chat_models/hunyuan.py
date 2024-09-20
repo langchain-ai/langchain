@@ -16,15 +16,16 @@ from langchain_core.messages import (
     ChatMessageChunk,
     HumanMessage,
     HumanMessageChunk,
+    SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import (
     convert_to_secret_str,
     get_from_dict_or_env,
     get_pydantic_field_names,
     pre_init,
 )
+from pydantic import ConfigDict, Field, SecretStr, model_validator
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +34,8 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     message_dict: Dict[str, Any]
     if isinstance(message, ChatMessage):
         message_dict = {"Role": message.role, "Content": message.content}
+    elif isinstance(message, SystemMessage):
+        message_dict = {"Role": "system", "Content": message.content}
     elif isinstance(message, HumanMessage):
         message_dict = {"Role": "user", "Content": message.content}
     elif isinstance(message, AIMessage):
@@ -45,7 +48,9 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
 
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     role = _dict["Role"]
-    if role == "user":
+    if role == "system":
+        return SystemMessage(content=_dict.get("Content", "") or "")
+    elif role == "user":
         return HumanMessage(content=_dict["Content"])
     elif role == "assistant":
         return AIMessage(content=_dict.get("Content", "") or "")
@@ -73,6 +78,7 @@ def _create_chat_result(response: Mapping[str, Any]) -> ChatResult:
     generations = []
     for choice in response["Choices"]:
         message = _convert_dict_to_message(choice["Message"])
+        message.id = response.get("Id", "")
         generations.append(ChatGeneration(message=message))
 
     token_usage = response["Usage"]
@@ -115,7 +121,7 @@ class ChatHunyuan(BaseChatModel):
     model: str = "hunyuan-lite"
     """What Model to use.
      Optional model:
-    - hunyuan-lite、
+    - hunyuan-lite
     - hunyuan-standard
     - hunyuan-standard-256K
     - hunyuan-pro
@@ -132,11 +138,13 @@ class ChatHunyuan(BaseChatModel):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for API call not explicitly specified."""
 
-    class Config:
-        allow_population_by_field_name = True
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
-    @root_validator(pre=True)
-    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})
@@ -233,6 +241,7 @@ class ChatHunyuan(BaseChatModel):
                 chunk = _convert_delta_to_message_chunk(
                     choice["Delta"], default_chunk_class
                 )
+                chunk.id = response.get("Id", "")
                 default_chunk_class = chunk.__class__
                 cg_chunk = ChatGenerationChunk(message=chunk)
                 if run_manager:

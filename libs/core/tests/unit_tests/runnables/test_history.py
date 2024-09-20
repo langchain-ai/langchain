@@ -1,4 +1,8 @@
-from typing import Any, Callable, Dict, List, Optional, Sequence, Union
+from collections.abc import Sequence
+from typing import Any, Callable, Optional, Union
+
+import pytest
+from pydantic import BaseModel
 
 from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
@@ -7,11 +11,12 @@ from langchain_core.chat_history import InMemoryChatMessageHistory
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
-from langchain_core.pydantic_v1 import BaseModel
-from langchain_core.runnables.base import RunnableLambda
+from langchain_core.runnables import Runnable
+from langchain_core.runnables.base import RunnableBinding, RunnableLambda
 from langchain_core.runnables.config import RunnableConfig
 from langchain_core.runnables.history import RunnableWithMessageHistory
-from langchain_core.runnables.utils import ConfigurableFieldSpec
+from langchain_core.runnables.utils import ConfigurableFieldSpec, Input, Output
+from langchain_core.tracers import Run
 from tests.unit_tests.pydantic_utils import _schema
 
 
@@ -26,7 +31,7 @@ def test_interfaces() -> None:
 
 def _get_get_session_history(
     *,
-    store: Optional[Dict[str, Any]] = None,
+    store: Optional[dict[str, Any]] = None,
 ) -> Callable[..., InMemoryChatMessageHistory]:
     chat_history_store = store if store is not None else {}
 
@@ -45,7 +50,7 @@ def test_input_messages() -> None:
         lambda messages: "you said: "
         + "\n".join(str(m.content) for m in messages if isinstance(m, HumanMessage))
     )
-    store: Dict = {}
+    store: dict = {}
     get_session_history = _get_get_session_history(store=store)
     with_history = RunnableWithMessageHistory(runnable, get_session_history)
     config: RunnableConfig = {"configurable": {"session_id": "1"}}
@@ -74,7 +79,7 @@ async def test_input_messages_async() -> None:
         lambda messages: "you said: "
         + "\n".join(str(m.content) for m in messages if isinstance(m, HumanMessage))
     )
-    store: Dict = {}
+    store: dict = {}
     get_session_history = _get_get_session_history(store=store)
     with_history = RunnableWithMessageHistory(runnable, get_session_history)
     config = {"session_id": "1_async"}
@@ -247,8 +252,8 @@ class LengthChatModel(BaseChatModel):
 
     def _generate(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
@@ -450,9 +455,45 @@ def test_get_input_schema_input_dict() -> None:
     )
 
 
+def test_get_output_schema() -> None:
+    """Test get output schema."""
+    runnable = RunnableLambda(
+        lambda input: {
+            "output": [
+                AIMessage(
+                    content="you said: "
+                    + "\n".join(
+                        [
+                            str(m.content)
+                            for m in input["history"]
+                            if isinstance(m, HumanMessage)
+                        ]
+                        + [input["input"]]
+                    )
+                )
+            ]
+        }
+    )
+    get_session_history = _get_get_session_history()
+    with_history = RunnableWithMessageHistory(
+        runnable,
+        get_session_history,
+        input_messages_key="input",
+        history_messages_key="history",
+        output_messages_key="output",
+    )
+    output_type = with_history.get_output_schema()
+
+    assert _schema(output_type) == {
+        "title": "RunnableWithChatHistoryOutput",
+        "type": "object",
+    }
+
+
 def test_get_input_schema_input_messages() -> None:
-    class RunnableWithChatHistoryInput(BaseModel):
-        __root__: Sequence[BaseMessage]
+    from pydantic import RootModel
+
+    runnable_with_message_history_input = RootModel[Sequence[BaseMessage]]
 
     runnable = RunnableLambda(
         lambda messages: {
@@ -474,15 +515,15 @@ def test_get_input_schema_input_messages() -> None:
     with_history = RunnableWithMessageHistory(
         runnable, get_session_history, output_messages_key="output"
     )
-    assert _schema(with_history.get_input_schema()) == _schema(
-        RunnableWithChatHistoryInput
-    )
+    expected_schema = _schema(runnable_with_message_history_input)
+    expected_schema["title"] = "RunnableWithChatHistoryInput"
+    assert _schema(with_history.get_input_schema()) == expected_schema
 
 
 def test_using_custom_config_specs() -> None:
     """Test that we can configure which keys should be passed to the session factory."""
 
-    def _fake_llm(input: Dict[str, Any]) -> List[BaseMessage]:
+    def _fake_llm(input: dict[str, Any]) -> list[BaseMessage]:
         messages = input["messages"]
         return [
             AIMessage(
@@ -595,7 +636,7 @@ def test_using_custom_config_specs() -> None:
 async def test_using_custom_config_specs_async() -> None:
     """Test that we can configure which keys should be passed to the session factory."""
 
-    def _fake_llm(input: Dict[str, Any]) -> List[BaseMessage]:
+    def _fake_llm(input: dict[str, Any]) -> list[BaseMessage]:
         messages = input["messages"]
         return [
             AIMessage(
@@ -708,7 +749,7 @@ async def test_using_custom_config_specs_async() -> None:
 def test_ignore_session_id() -> None:
     """Test without config."""
 
-    def _fake_llm(input: List[BaseMessage]) -> List[BaseMessage]:
+    def _fake_llm(input: list[BaseMessage]) -> list[BaseMessage]:
         return [
             AIMessage(
                 content="you said: "
@@ -724,3 +765,115 @@ def test_ignore_session_id() -> None:
     _ = with_message_history.invoke("hello")
     _ = with_message_history.invoke("hello again")
     assert len(history.messages) == 4
+
+
+class _RunnableLambdaWithRaiseError(RunnableLambda):
+    from langchain_core.tracers.root_listeners import AsyncListener
+
+    def with_listeners(
+        self,
+        *,
+        on_start: Optional[
+            Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]
+        ] = None,
+        on_end: Optional[
+            Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]
+        ] = None,
+        on_error: Optional[
+            Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]
+        ] = None,
+    ) -> Runnable[Input, Output]:
+        from langchain_core.tracers.root_listeners import RootListenersTracer
+
+        def create_tracer(config: RunnableConfig) -> RunnableConfig:
+            tracer = RootListenersTracer(
+                config=config,
+                on_start=on_start,
+                on_end=on_end,
+                on_error=on_error,
+            )
+            tracer.raise_error = True
+            return {
+                "callbacks": [tracer],
+            }
+
+        return RunnableBinding(
+            bound=self,
+            config_factories=[lambda config: create_tracer(config)],
+        )
+
+    def with_alisteners(
+        self,
+        *,
+        on_start: Optional[AsyncListener] = None,
+        on_end: Optional[AsyncListener] = None,
+        on_error: Optional[AsyncListener] = None,
+    ) -> Runnable[Input, Output]:
+        from langchain_core.tracers.root_listeners import AsyncRootListenersTracer
+
+        def create_tracer(config: RunnableConfig) -> RunnableConfig:
+            tracer = AsyncRootListenersTracer(
+                config=config,
+                on_start=on_start,
+                on_end=on_end,
+                on_error=on_error,
+            )
+            tracer.raise_error = True
+            return {
+                "callbacks": [tracer],
+            }
+
+        return RunnableBinding(
+            bound=self,
+            config_factories=[lambda config: create_tracer(config)],
+        )
+
+
+def test_get_output_messages_no_value_error() -> None:
+    runnable = _RunnableLambdaWithRaiseError(
+        lambda messages: "you said: "
+        + "\n".join(str(m.content) for m in messages if isinstance(m, HumanMessage))
+    )
+    store: dict = {}
+    get_session_history = _get_get_session_history(store=store)
+    with_history = RunnableWithMessageHistory(runnable, get_session_history)
+    config: RunnableConfig = {
+        "configurable": {"session_id": "1", "message_history": get_session_history("1")}
+    }
+    may_catch_value_error = None
+    try:
+        with_history.bound.invoke([HumanMessage(content="hello")], config)
+    except ValueError as e:
+        may_catch_value_error = e
+    assert may_catch_value_error is None
+
+
+def test_get_output_messages_with_value_error() -> None:
+    illegal_bool_message = False
+    runnable = _RunnableLambdaWithRaiseError(lambda messages: illegal_bool_message)
+    store: dict = {}
+    get_session_history = _get_get_session_history(store=store)
+    with_history = RunnableWithMessageHistory(runnable, get_session_history)
+    config: RunnableConfig = {
+        "configurable": {"session_id": "1", "message_history": get_session_history("1")}
+    }
+
+    with pytest.raises(ValueError) as excinfo:
+        with_history.bound.invoke([HumanMessage(content="hello")], config)
+    excepted = (
+        "Expected str, BaseMessage, List[BaseMessage], or Tuple[BaseMessage]."
+        + (f" Got {illegal_bool_message}.")
+    )
+    assert excepted in str(excinfo.value)
+
+    illegal_int_message = 123
+    runnable = _RunnableLambdaWithRaiseError(lambda messages: illegal_int_message)
+    with_history = RunnableWithMessageHistory(runnable, get_session_history)
+
+    with pytest.raises(ValueError) as excinfo:
+        with_history.bound.invoke([HumanMessage(content="hello")], config)
+    excepted = (
+        "Expected str, BaseMessage, List[BaseMessage], or Tuple[BaseMessage]."
+        + (f" Got {illegal_int_message}.")
+    )
+    assert excepted in str(excinfo.value)

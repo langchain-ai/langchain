@@ -22,11 +22,15 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from langchain_core.tools import (
-        BaseTool,
-        StructuredTool,
-        Tool,
-        tool,
+        BaseTool as BaseTool,
     )
+    from langchain_core.tools import (
+        StructuredTool as StructuredTool,
+    )
+    from langchain_core.tools import (
+        Tool as Tool,
+    )
+    from langchain_core.tools.convert import tool as tool
 
     from langchain_community.tools.ainetwork.app import (
         AINAppOps,
@@ -162,6 +166,7 @@ if TYPE_CHECKING:
     from langchain_community.tools.interaction.tool import (
         StdInInquireTool,
     )
+    from langchain_community.tools.jina_search.tool import JinaSearch
     from langchain_community.tools.jira.tool import (
         JiraAction,
     )
@@ -338,6 +343,10 @@ if TYPE_CHECKING:
     )
 
 __all__ = [
+    "BaseTool",
+    "Tool",
+    "tool",
+    "StructuredTool",
     "AINAppOps",
     "AINOwnerOps",
     "AINRuleOps",
@@ -362,7 +371,6 @@ __all__ = [
     "BaseRequestsTool",
     "BaseSQLDatabaseTool",
     "BaseSparkSQLTool",
-    "BaseTool",
     "BearlyInterpreterTool",
     "BingSearchResults",
     "BingSearchRun",
@@ -412,6 +420,7 @@ __all__ = [
     "InfoSQLDatabaseTool",
     "InfoSparkSQLTool",
     "JiraAction",
+    "JinaSearch",
     "JsonGetValueTool",
     "JsonListKeysTool",
     "ListDirectoryTool",
@@ -465,10 +474,8 @@ __all__ = [
     "StdInInquireTool",
     "SteamWebAPIQueryRun",
     "SteamshipImageGenerationTool",
-    "StructuredTool",
     "TavilyAnswer",
     "TavilySearchResults",
-    "Tool",
     "VectorStoreQATool",
     "VectorStoreQAWithSourcesTool",
     "WikipediaQueryRun",
@@ -484,7 +491,6 @@ __all__ = [
     "ZenGuardTool",
     "authenticate",
     "format_tool_to_openai_function",
-    "tool",
 ]
 
 # Used for internal purposes
@@ -566,6 +572,7 @@ _module_lookup = {
     "InfoSQLDatabaseTool": "langchain_community.tools.sql_database.tool",
     "InfoSparkSQLTool": "langchain_community.tools.spark_sql.tool",
     "JiraAction": "langchain_community.tools.jira.tool",
+    "JinaSearch": "langchain_community.tools.jina_search.tool",
     "JsonGetValueTool": "langchain_community.tools.json.tool",
     "JsonListKeysTool": "langchain_community.tools.json.tool",
     "ListDirectoryTool": "langchain_community.tools.file_management",

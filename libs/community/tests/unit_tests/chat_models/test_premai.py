@@ -4,7 +4,7 @@ from typing import cast
 
 import pytest
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
-from langchain_core.pydantic_v1 import SecretStr
+from pydantic import SecretStr
 from pytest import CaptureFixture
 
 from langchain_community.chat_models import ChatPremAI
@@ -67,4 +67,7 @@ def test_premai_initialization() -> None:
         ChatPremAI(model_name="prem-ai-model", api_key="xyz", project_id=8),  # type: ignore[arg-type, call-arg]
     ]:
         assert model.model == "prem-ai-model"
+        assert model.temperature is None
+        assert model.max_tokens is None
+        assert model.max_retries == 1
         assert cast(SecretStr, model.premai_api_key).get_secret_value() == "xyz"

@@ -8,8 +8,8 @@ from langchain_core._api import deprecated
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
-from langchain_core.pydantic_v1 import Field
 from langchain_core.tools import BaseTool, Tool
+from pydantic import Field
 
 from langchain.agents.agent import Agent, AgentExecutor, AgentOutputParser
 from langchain.agents.agent_types import AgentType
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from langchain_community.docstore.base import Docstore
 
 
-@deprecated("0.1.0", removal="0.3.0")
+@deprecated("0.1.0", removal="1.0")
 class ReActDocstoreAgent(Agent):
     """Agent for the ReAct chain."""
 
@@ -69,7 +69,7 @@ class ReActDocstoreAgent(Agent):
         return "Thought:"
 
 
-@deprecated("0.1.0", removal="0.3.0")
+@deprecated("0.1.0", removal="1.0")
 class DocstoreExplorer:
     """Class to assist with exploration of a document store."""
 
@@ -119,7 +119,7 @@ class DocstoreExplorer:
         return self.document.page_content.split("\n\n")
 
 
-@deprecated("0.1.0", removal="0.3.0")
+@deprecated("0.1.0", removal="1.0")
 class ReActTextWorldAgent(ReActDocstoreAgent):
     """Agent for the ReAct TextWorld chain."""
 
@@ -139,7 +139,7 @@ class ReActTextWorldAgent(ReActDocstoreAgent):
             raise ValueError(f"Tool name should be Play, got {tool_names}")
 
 
-@deprecated("0.1.0", removal="0.3.0")
+@deprecated("0.1.0", removal="1.0")
 class ReActChain(AgentExecutor):
     """[Deprecated] Chain that implements the ReAct paper."""
 

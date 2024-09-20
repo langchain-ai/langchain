@@ -7,8 +7,7 @@ from typing import TYPE_CHECKING, Any, List, Optional, cast
 
 from langchain_community.llms.huggingface_pipeline import HuggingFacePipeline
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
-
-from langchain_experimental.pydantic_v1 import Field, root_validator
+from pydantic import Field, model_validator
 
 if TYPE_CHECKING:
     import jsonformer
@@ -38,10 +37,9 @@ class JsonFormer(HuggingFacePipeline):
     )
     debug: bool = Field(default=False, description="Debug mode.")
 
-    # TODO: move away from `root_validator` since it is deprecated in pydantic v2
-    #       and causes mypy type-checking failures (hence the `type: ignore`)
-    @root_validator  # type: ignore[call-overload]
-    def check_jsonformer_installation(cls, values: dict) -> dict:
+    @model_validator(mode="before")
+    @classmethod
+    def check_jsonformer_installation(cls, values: dict) -> Any:
         import_jsonformer()
         return values
 

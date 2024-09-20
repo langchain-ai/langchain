@@ -1,19 +1,13 @@
 # mypy: disable-error-code="annotation-unchecked"
+import sys
+import typing
+from collections.abc import Iterable, Mapping, MutableMapping, Sequence
+from typing import Annotated as ExtensionsAnnotated
 from typing import (
     Any,
     Callable,
-    Dict,
-    Iterable,
-    List,
     Literal,
-    Mapping,
-    MutableMapping,
-    MutableSet,
     Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Type,
     Union,
 )
 from typing import TypedDict as TypingTypedDict
@@ -21,9 +15,6 @@ from typing import TypedDict as TypingTypedDict
 import pytest
 from pydantic import BaseModel as BaseModelV2Maybe  #  pydantic: ignore
 from pydantic import Field as FieldV2Maybe  #  pydantic: ignore
-from typing_extensions import (
-    Annotated as ExtensionsAnnotated,
-)
 from typing_extensions import (
     TypedDict as ExtensionsTypedDict,
 )
@@ -33,10 +24,11 @@ try:
 except ImportError:
     TypingAnnotated = ExtensionsAnnotated
 
+from pydantic import BaseModel, Field
+
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables import Runnable, RunnableLambda
-from langchain_core.tools import BaseTool, tool
+from langchain_core.tools import BaseTool, StructuredTool, Tool, tool
 from langchain_core.utils.function_calling import (
     _convert_typed_dict_to_openai_function,
     convert_to_openai_function,
@@ -45,8 +37,8 @@ from langchain_core.utils.function_calling import (
 
 
 @pytest.fixture()
-def pydantic() -> Type[BaseModel]:
-    class dummy_function(BaseModel):
+def pydantic() -> type[BaseModel]:
+    class dummy_function(BaseModel):  # noqa: N801
         """dummy function"""
 
         arg1: int = Field(..., description="foo")
@@ -56,7 +48,7 @@ def pydantic() -> Type[BaseModel]:
 
 
 @pytest.fixture()
-def Annotated_function() -> Callable:
+def annotated_function() -> Callable:
     def dummy_function(
         arg1: ExtensionsAnnotated[int, "foo"],
         arg2: ExtensionsAnnotated[Literal["bar", "baz"], "one of 'bar', 'baz'"],
@@ -100,7 +92,7 @@ def dummy_tool() -> BaseTool:
         arg2: Literal["bar", "baz"] = Field(..., description="one of 'bar', 'baz'")
 
     class DummyFunction(BaseTool):
-        args_schema: Type[BaseModel] = Schema
+        args_schema: type[BaseModel] = Schema
         name: str = "dummy_function"
         description: str = "dummy function"
 
@@ -111,8 +103,22 @@ def dummy_tool() -> BaseTool:
 
 
 @pytest.fixture()
-def dummy_pydantic() -> Type[BaseModel]:
-    class dummy_function(BaseModel):
+def dummy_structured_tool() -> StructuredTool:
+    class Schema(BaseModel):
+        arg1: int = Field(..., description="foo")
+        arg2: Literal["bar", "baz"] = Field(..., description="one of 'bar', 'baz'")
+
+    return StructuredTool.from_function(
+        lambda x: None,
+        name="dummy_function",
+        description="dummy function",
+        args_schema=Schema,
+    )
+
+
+@pytest.fixture()
+def dummy_pydantic() -> type[BaseModel]:
+    class dummy_function(BaseModel):  # noqa: N801
         """dummy function"""
 
         arg1: int = Field(..., description="foo")
@@ -122,8 +128,8 @@ def dummy_pydantic() -> Type[BaseModel]:
 
 
 @pytest.fixture()
-def dummy_pydantic_v2() -> Type[BaseModelV2Maybe]:
-    class dummy_function(BaseModelV2Maybe):
+def dummy_pydantic_v2() -> type[BaseModelV2Maybe]:
+    class dummy_function(BaseModelV2Maybe):  # noqa: N801
         """dummy function"""
 
         arg1: int = FieldV2Maybe(..., description="foo")
@@ -135,8 +141,8 @@ def dummy_pydantic_v2() -> Type[BaseModelV2Maybe]:
 
 
 @pytest.fixture()
-def dummy_typing_typed_dict() -> Type:
-    class dummy_function(TypingTypedDict):
+def dummy_typing_typed_dict() -> type:
+    class dummy_function(TypingTypedDict):  # noqa: N801
         """dummy function"""
 
         arg1: TypingAnnotated[int, ..., "foo"]  # noqa: F821
@@ -146,8 +152,8 @@ def dummy_typing_typed_dict() -> Type:
 
 
 @pytest.fixture()
-def dummy_typing_typed_dict_docstring() -> Type:
-    class dummy_function(TypingTypedDict):
+def dummy_typing_typed_dict_docstring() -> type:
+    class dummy_function(TypingTypedDict):  # noqa: N801
         """dummy function
 
         Args:
@@ -162,8 +168,8 @@ def dummy_typing_typed_dict_docstring() -> Type:
 
 
 @pytest.fixture()
-def dummy_extensions_typed_dict() -> Type:
-    class dummy_function(ExtensionsTypedDict):
+def dummy_extensions_typed_dict() -> type:
+    class dummy_function(ExtensionsTypedDict):  # noqa: N801
         """dummy function"""
 
         arg1: ExtensionsAnnotated[int, ..., "foo"]
@@ -173,8 +179,8 @@ def dummy_extensions_typed_dict() -> Type:
 
 
 @pytest.fixture()
-def dummy_extensions_typed_dict_docstring() -> Type:
-    class dummy_function(ExtensionsTypedDict):
+def dummy_extensions_typed_dict_docstring() -> type:
+    class dummy_function(ExtensionsTypedDict):  # noqa: N801
         """dummy function
 
         Args:
@@ -189,7 +195,7 @@ def dummy_extensions_typed_dict_docstring() -> Type:
 
 
 @pytest.fixture()
-def json_schema() -> Dict:
+def json_schema() -> dict:
     return {
         "title": "dummy_function",
         "description": "dummy function",
@@ -230,17 +236,18 @@ class DummyWithClassMethod:
 
 
 def test_convert_to_openai_function(
-    pydantic: Type[BaseModel],
+    pydantic: type[BaseModel],
     function: Callable,
+    dummy_structured_tool: StructuredTool,
     dummy_tool: BaseTool,
-    json_schema: Dict,
-    Annotated_function: Callable,
-    dummy_pydantic: Type[BaseModel],
+    json_schema: dict,
+    annotated_function: Callable,
+    dummy_pydantic: type[BaseModel],
     runnable: Runnable,
-    dummy_typing_typed_dict: Type,
-    dummy_typing_typed_dict_docstring: Type,
-    dummy_extensions_typed_dict: Type,
-    dummy_extensions_typed_dict_docstring: Type,
+    dummy_typing_typed_dict: type,
+    dummy_typing_typed_dict_docstring: type,
+    dummy_extensions_typed_dict: type,
+    dummy_extensions_typed_dict_docstring: type,
 ) -> None:
     expected = {
         "name": "dummy_function",
@@ -262,12 +269,13 @@ def test_convert_to_openai_function(
     for fn in (
         pydantic,
         function,
+        dummy_structured_tool,
         dummy_tool,
         json_schema,
         expected,
         Dummy.dummy_function,
         DummyWithClassMethod.dummy_function,
-        Annotated_function,
+        annotated_function,
         dummy_pydantic,
         dummy_typing_typed_dict,
         dummy_typing_typed_dict_docstring,
@@ -294,6 +302,42 @@ def test_convert_to_openai_function(
     runnable_expected["parameters"] = parameters
     assert actual == runnable_expected
 
+    # Test simple Tool
+    def my_function(input_string: str) -> str:
+        pass
+
+    tool = Tool(
+        name="dummy_function",
+        func=my_function,
+        description="test description",
+    )
+    actual = convert_to_openai_function(tool)
+    expected = {
+        "name": "dummy_function",
+        "description": "test description",
+        "parameters": {
+            "properties": {"__arg1": {"title": "__arg1", "type": "string"}},
+            "required": ["__arg1"],
+            "type": "object",
+        },
+    }
+    assert actual == expected
+
+
+@pytest.mark.xfail(reason="Direct pydantic v2 models not yet supported")
+def test_convert_to_openai_function_nested_v2() -> None:
+    class NestedV2(BaseModelV2Maybe):
+        nested_v2_arg1: int = FieldV2Maybe(..., description="foo")
+        nested_v2_arg2: Literal["bar", "baz"] = FieldV2Maybe(
+            ..., description="one of 'bar', 'baz'"
+        )
+
+    def my_function(arg1: NestedV2) -> None:
+        """dummy function"""
+        pass
+
+    convert_to_openai_function(my_function)
+
 
 def test_convert_to_openai_function_nested() -> None:
     class Nested(BaseModel):
@@ -302,62 +346,87 @@ def test_convert_to_openai_function_nested() -> None:
             ..., description="one of 'bar', 'baz'"
         )
 
-    class NestedV2(BaseModelV2Maybe):
-        nested_v2_arg1: int = FieldV2Maybe(..., description="foo")
-        nested_v2_arg2: Literal["bar", "baz"] = FieldV2Maybe(
-            ..., description="one of 'bar', 'baz'"
-        )
-
-    def my_function(arg1: Nested, arg2: NestedV2) -> None:
+    def my_function(arg1: Nested) -> None:
         """dummy function"""
         pass
 
-        expected = {
-            "name": "my_function",
-            "description": "dummy function",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "arg1": {
-                        "type": "object",
-                        "properties": {
-                            "nested_arg1": {"type": "integer", "description": "foo"},
-                            "nested_arg2": {
-                                "type": "string",
-                                "enum": ["bar", "baz"],
-                                "description": "one of 'bar', 'baz'",
-                            },
+    expected = {
+        "name": "my_function",
+        "description": "dummy function",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "arg1": {
+                    "type": "object",
+                    "properties": {
+                        "nested_arg1": {"type": "integer", "description": "foo"},
+                        "nested_arg2": {
+                            "type": "string",
+                            "enum": ["bar", "baz"],
+                            "description": "one of 'bar', 'baz'",
                         },
-                        "required": ["nested_arg1", "nested_arg2"],
                     },
-                    "arg2": {
-                        "type": "object",
-                        "properties": {
-                            "nested_v2_arg1": {"type": "integer", "description": "foo"},
-                            "nested_v2_arg2": {
-                                "type": "string",
-                                "enum": ["bar", "baz"],
-                                "description": "one of 'bar', 'baz'",
-                            },
-                        },
-                        "required": ["nested_v2_arg1", "nested_v2_arg2"],
-                    },
+                    "required": ["nested_arg1", "nested_arg2"],
                 },
-                "required": ["arg1", "arg2"],
             },
-        }
+            "required": ["arg1"],
+        },
+    }
 
-        actual = convert_to_openai_function(my_function)
-        assert actual == expected
+    actual = convert_to_openai_function(my_function)
+    assert actual == expected
 
 
-@pytest.mark.xfail(reason="Pydantic converts Optional[str] to str in .schema()")
+def test_convert_to_openai_function_nested_strict() -> None:
+    class Nested(BaseModel):
+        nested_arg1: int = Field(..., description="foo")
+        nested_arg2: Literal["bar", "baz"] = Field(
+            ..., description="one of 'bar', 'baz'"
+        )
+
+    def my_function(arg1: Nested) -> None:
+        """dummy function"""
+        pass
+
+    expected = {
+        "name": "my_function",
+        "description": "dummy function",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "arg1": {
+                    "type": "object",
+                    "properties": {
+                        "nested_arg1": {"type": "integer", "description": "foo"},
+                        "nested_arg2": {
+                            "type": "string",
+                            "enum": ["bar", "baz"],
+                            "description": "one of 'bar', 'baz'",
+                        },
+                    },
+                    "required": ["nested_arg1", "nested_arg2"],
+                    "additionalProperties": False,
+                },
+            },
+            "required": ["arg1"],
+            "additionalProperties": False,
+        },
+        "strict": True,
+    }
+
+    actual = convert_to_openai_function(my_function, strict=True)
+    assert actual == expected
+
+
+@pytest.mark.xfail(
+    reason="Pydantic converts Optional[str] to str in .model_json_schema()"
+)
 def test_function_optional_param() -> None:
     @tool
     def func5(
         a: Optional[str],
         b: str,
-        c: Optional[List[Optional[str]]],
+        c: Optional[list[Optional[str]]],
     ) -> None:
         """A test function"""
         pass
@@ -411,17 +480,17 @@ def test_multiple_tool_calls() -> None:
         {
             "id": messages[2].tool_call_id,
             "type": "function",
-            "function": {"name": "FakeCall", "arguments": '{"data": "ToolCall1"}'},
+            "function": {"name": "FakeCall", "arguments": '{"data":"ToolCall1"}'},
         },
         {
             "id": messages[3].tool_call_id,
             "type": "function",
-            "function": {"name": "FakeCall", "arguments": '{"data": "ToolCall2"}'},
+            "function": {"name": "FakeCall", "arguments": '{"data":"ToolCall2"}'},
         },
         {
             "id": messages[4].tool_call_id,
             "type": "function",
-            "function": {"name": "FakeCall", "arguments": '{"data": "ToolCall3"}'},
+            "function": {"name": "FakeCall", "arguments": '{"data":"ToolCall3"}'},
         },
     ]
 
@@ -442,7 +511,7 @@ def test_tool_outputs() -> None:
         {
             "id": messages[2].tool_call_id,
             "type": "function",
-            "function": {"name": "FakeCall", "arguments": '{"data": "ToolCall1"}'},
+            "function": {"name": "FakeCall", "arguments": '{"data":"ToolCall1"}'},
         },
     ]
     assert messages[2].content == "Output1"
@@ -454,20 +523,20 @@ def test__convert_typed_dict_to_openai_function(
     use_extension_typed_dict: bool, use_extension_annotated: bool
 ) -> None:
     if use_extension_typed_dict:
-        TypedDict = ExtensionsTypedDict
+        typed_dict = ExtensionsTypedDict
     else:
-        TypedDict = TypingTypedDict
+        typed_dict = TypingTypedDict
     if use_extension_annotated:
-        Annotated = TypingAnnotated
+        annotated = TypingAnnotated
     else:
-        Annotated = TypingAnnotated
+        annotated = TypingAnnotated
 
-    class SubTool(TypedDict):
+    class SubTool(typed_dict):
         """Subtool docstring"""
 
-        args: Annotated[Dict[str, Any], {}, "this does bar"]  # noqa: F722  # type: ignore
+        args: annotated[dict[str, Any], {}, "this does bar"]  # noqa: F722  # type: ignore
 
-    class Tool(TypedDict):
+    class Tool(typed_dict):
         """Docstring
 
         Args:
@@ -476,21 +545,21 @@ def test__convert_typed_dict_to_openai_function(
 
         arg1: str
         arg2: Union[int, str, bool]
-        arg3: Optional[List[SubTool]]
-        arg4: Annotated[Literal["bar", "baz"], ..., "this does foo"]  # noqa: F722
-        arg5: Annotated[Optional[float], None]
-        arg6: Annotated[
-            Optional[Sequence[Mapping[str, Tuple[Iterable[Any], SubTool]]]], []
+        arg3: Optional[list[SubTool]]
+        arg4: annotated[Literal["bar", "baz"], ..., "this does foo"]  # noqa: F722
+        arg5: annotated[Optional[float], None]
+        arg6: annotated[
+            Optional[Sequence[Mapping[str, tuple[Iterable[Any], SubTool]]]], []
         ]
-        arg7: Annotated[List[SubTool], ...]
-        arg8: Annotated[Tuple[SubTool], ...]
-        arg9: Annotated[Sequence[SubTool], ...]
-        arg10: Annotated[Iterable[SubTool], ...]
-        arg11: Annotated[Set[SubTool], ...]
-        arg12: Annotated[Dict[str, SubTool], ...]
-        arg13: Annotated[Mapping[str, SubTool], ...]
-        arg14: Annotated[MutableMapping[str, SubTool], ...]
-        arg15: Annotated[bool, False, "flag"]  # noqa: F821  # type: ignore
+        arg7: annotated[list[SubTool], ...]
+        arg8: annotated[tuple[SubTool], ...]
+        arg9: annotated[Sequence[SubTool], ...]
+        arg10: annotated[Iterable[SubTool], ...]
+        arg11: annotated[set[SubTool], ...]
+        arg12: annotated[dict[str, SubTool], ...]
+        arg13: annotated[Mapping[str, SubTool], ...]
+        arg14: annotated[MutableMapping[str, SubTool], ...]
+        arg15: annotated[bool, False, "flag"]  # noqa: F821  # type: ignore
 
     expected = {
         "name": "Tool",
@@ -696,9 +765,44 @@ def test__convert_typed_dict_to_openai_function(
 
 
 @pytest.mark.parametrize("typed_dict", [ExtensionsTypedDict, TypingTypedDict])
-def test__convert_typed_dict_to_openai_function_fail(typed_dict: Type) -> None:
+def test__convert_typed_dict_to_openai_function_fail(typed_dict: type) -> None:
     class Tool(typed_dict):
-        arg1: MutableSet  # Pydantic doesn't support
+        arg1: typing.MutableSet  # Pydantic 2 supports this, but pydantic v1 does not.
 
+    # Error should be raised since we're using v1 code path here
     with pytest.raises(TypeError):
         _convert_typed_dict_to_openai_function(Tool)
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 10), reason="Requires python version >= 3.10 to run."
+)
+def test_convert_union_type_py_39() -> None:
+    @tool
+    def magic_function(input: int | float) -> str:
+        """Compute a magic function."""
+        pass
+
+    result = convert_to_openai_function(magic_function)
+    assert result["parameters"]["properties"]["input"] == {
+        "anyOf": [{"type": "integer"}, {"type": "number"}]
+    }
+
+
+def test_convert_to_openai_function_no_args() -> None:
+    @tool
+    def empty_tool() -> str:
+        """No args"""
+        return "foo"
+
+    actual = convert_to_openai_function(empty_tool, strict=True)
+    assert actual == {
+        "name": "empty_tool",
+        "description": "No args",
+        "parameters": {
+            "properties": {},
+            "additionalProperties": False,
+            "type": "object",
+        },
+        "strict": True,
+    }
