@@ -7,12 +7,11 @@ import warnings
 from typing import Any, Optional
 from uuid import UUID
 
-from langsmith.schemas import RunBase as BaseRunV2
+from langsmith import RunTree
 from langsmith.schemas import RunTypeEnum as RunTypeEnumDep
 from pydantic import PydanticDeprecationWarning
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import Field as FieldV1
-from pydantic.v1 import root_validator
 
 from langchain_core._api import deprecated
 
@@ -115,37 +114,7 @@ class ToolRun(BaseRun):
 # Begin V2 API Schemas
 
 
-class Run(BaseRunV2):
-    """Run schema for the V2 API in the Tracer.
-
-    Parameters:
-        child_runs: The child runs.
-        tags: The tags. Default is an empty list.
-        events: The events. Default is an empty list.
-        trace_id: The trace ID. Default is None.
-        dotted_order: The dotted order.
-    """
-
-    child_runs: list[Run] = FieldV1(default_factory=list)
-    tags: Optional[list[str]] = FieldV1(default_factory=list)
-    events: list[dict[str, Any]] = FieldV1(default_factory=list)
-    trace_id: Optional[UUID] = None
-    dotted_order: Optional[str] = None
-
-    @root_validator(pre=True)
-    def assign_name(cls, values: dict) -> dict:
-        """Assign name to the run."""
-        if values.get("name") is None and values["serialized"] is not None:
-            if "name" in values["serialized"]:
-                values["name"] = values["serialized"]["name"]
-            elif "id" in values["serialized"]:
-                values["name"] = values["serialized"]["id"][-1]
-        if values.get("name") is None:
-            values["name"] = "Unnamed"
-        if values.get("events") is None:
-            values["events"] = []
-        return values
-
+Run = RunTree  # For backwards compatibility
 
 # TODO: Update once langsmith moves to Pydantic V2 and we can swap Run.model_rebuild
 # for Run.update_forward_refs
@@ -154,7 +123,6 @@ with warnings.catch_warnings():
 
     ChainRun.update_forward_refs()
     ToolRun.update_forward_refs()
-    Run.update_forward_refs()
 
 __all__ = [
     "BaseRun",

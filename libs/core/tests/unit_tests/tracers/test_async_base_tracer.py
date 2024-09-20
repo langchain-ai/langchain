@@ -438,7 +438,6 @@ async def test_tracer_tool_run_on_error() -> None:
         serialized={"name": "tool"},
         inputs=dict(input="test"),
         outputs=None,
-        action="{'name': 'tool'}",
         error=repr(exception),
         run_type="tool",
         trace_id=uuid,
@@ -566,7 +565,6 @@ async def test_tracer_nested_runs_on_error() -> None:
                 error=repr(exception),
                 inputs=dict(input="test"),
                 outputs=None,
-                action="{'name': 'tool'}",
                 trace_id=chain_uuid,
                 dotted_order=f"20230101T000000000000Z{chain_uuid}.20230101T000000000000Z{tool_uuid}",
                 child_runs=[
