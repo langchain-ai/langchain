@@ -2,8 +2,8 @@
 
 import contextlib
 import datetime
-import functools
 import importlib
+import functools
 import os
 import warnings
 from collections.abc import Sequence
