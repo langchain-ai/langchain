@@ -13,6 +13,7 @@ from typing import (
 )
 
 from pydantic import BaseModel, ConfigDict
+from typing_extensions import override
 
 from langchain_core.runnables.base import Runnable, RunnableSerializable
 from langchain_core.runnables.config import (
@@ -106,10 +107,12 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     )
 
     @property
+    @override
     def InputType(self) -> type[Input]:
         return self.runnable.InputType
 
     @property
+    @override
     def OutputType(self) -> type[Output]:
         return self.runnable.OutputType
 

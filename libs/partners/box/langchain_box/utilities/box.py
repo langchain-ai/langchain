@@ -470,6 +470,128 @@ class BoxAuth(BaseModel):
         return self._box_client
 
 
+class SearchTypeFilter(Enum):
+    """SearchTypeFilter.
+
+    Enum to limit the what we search.
+    """
+
+    NAME = "name"
+    """The name of the item, as defined by its ``name`` field."""
+
+    DESCRIPTION = "description"
+    """The description of the item, as defined by its ``description`` field."""
+
+    FILE_CONTENT = "file_content"
+    """The actual content of the file."""
+
+    COMMENTS = "comments"
+    """The content of any of the comments on a file or folder."""
+
+    TAGS = "tags"
+    """Any tags that are applied to an item, as defined by its ``tags`` field."""
+
+
+class BoxSearchOptions(BaseModel):
+    ancestor_folder_ids: Optional[List[str]] = None
+    """Limits the search results to items within the given list of folders, 
+       defined as a comma separated lists of folder IDs."""
+
+    search_type_filter: Optional[List[SearchTypeFilter]] = None
+    """Limits the search results to any items that match the search query for a 
+       specific part of the file, for example the file description.
+
+       Content types are defined as a comma separated lists of Box recognized 
+       content types. The allowed content types are as follows. Default is all."""
+
+    created_date_range: Optional[List[str]] = None
+    """Limits the search results to any items created within a given date range.
+
+       Date ranges are defined as comma separated RFC3339 timestamps.
+
+       If the the start date is omitted (,2014-05-17T13:35:01-07:00) anything 
+       created before the end date will be returned.
+
+       If the end date is omitted (2014-05-15T13:35:01-07:00,) the current 
+       date will be used as the end date instead."""
+
+    file_extensions: Optional[List[DocumentFiles]] = None
+    """Limits the search results to any files that match any of the provided 
+        file extensions. This list is a comma-separated list of 
+        ``langchain_box.utilities.DocumentFiles`` entries"""
+
+    k: Optional[int] = 100
+    """Defines the maximum number of items to return. Defaults to 100, maximum 
+        is 200."""
+
+    size_range: Optional[List[int]] = None
+    """Limits the search results to any items with a size within a given file 
+        size range. This applied to files and folders.
+
+        Size ranges are defined as comma separated list of a lower and upper 
+        byte size limit (inclusive).
+
+        The upper and lower bound can be omitted to create open ranges."""
+
+    updated_date_range: Optional[List[str]] = None
+    """Limits the search results to any items updated within a given date range.
+
+        Date ranges are defined as comma separated RFC3339 timestamps.
+
+        If the start date is omitted (,2014-05-17T13:35:01-07:00) anything 
+        updated before the end date will be returned.
+
+        If the end date is omitted (2014-05-15T13:35:01-07:00,) the current 
+        date will be used as the end date instead."""
+
+    class Config:
+        arbitrary_types_allowed = True
+        use_enum_values = True
+        extra = "allow"
+
+    @model_validator(mode="after")
+    def validate_search_options(self) -> Self:
+        """Validate k is between 1 and 200"""
+        if self.k > 200 or self.k < 1:  # type: ignore[operator]
+            raise ValueError(
+                f"Invalid setting of k {self.k}. " "Value must be between 1 and 200."
+            )
+
+        """Validate created_date_range start date is before end date"""
+        if self.created_date_range:
+            if (
+                self.created_date_range[0] is None  # type: ignore[index]
+                or self.created_date_range[0] == ""  # type: ignore[index]
+                or self.created_date_range[1] is None  # type: ignore[index]
+                or self.created_date_range[1] == ""  # type: ignore[index]
+            ):
+                pass
+            else:
+                if (
+                    self.created_date_range[0]  # type: ignore[index]
+                    > self.created_date_range[1]  # type: ignore[index]
+                ):
+                    raise ValueError("Start date must be before end date.")
+
+        """Validate updated_date_range start date is before end date"""
+        if self.updated_date_range:
+            if (
+                self.updated_date_range[0] is None  # type: ignore[index]
+                or self.updated_date_range[0] == ""  # type: ignore[index]
+                or self.updated_date_range[1] is None  # type: ignore[index]
+                or self.updated_date_range[1] == ""  # type: ignore[index]
+            ):
+                pass
+            else:
+                if (
+                    self.updated_date_range[0]  # type: ignore[index]
+                    > self.updated_date_range[1]  # type: ignore[index]
+                ):
+                    raise ValueError("Start date must be before end date.")
+
+        return self
+
+
 class _BoxAPIWrapper(BaseModel):
     """Wrapper for Box API."""
 
@@ -485,7 +607,10 @@ class _BoxAPIWrapper(BaseModel):
     """character_limit is an int that caps the number of characters to
        return per document."""
 
-    _box: Optional[box_sdk_gen.BoxClient] = None
+    box_search_options: Optional[BoxSearchOptions] = None
+    """Search options to configure BoxRetriever to narrow search results."""
+
+    _box: Optional[box_sdk_gen.BoxClient]
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
@@ -636,9 +761,25 @@ class _BoxAPIWrapper(BaseModel):
         files = []
 
         try:
-            results = self._box.search.search_for_content(  #  type: ignore[union-attr]
-                query=query, fields=["id", "type", "extension"]
-            )
+            results = None
+
+            if self.box_search_options is None:
+                results = self._box.search.search_for_content(  #  type: ignore[union-attr]
+                    query=query, fields=["id", "type", "extension"], type="file"
+                )
+            else:
+                results = self._box.search.search_for_content(  #  type: ignore[union-attr]
+                    query=query,
+                    fields=["id", "type", "extension"],
+                    type="file",
+                    ancestor_folder_ids=self.box_search_options.ancestor_folder_ids,  #  type: ignore[union-attr]
+                    content_types=self.box_search_options.search_type_filter,  #  type: ignore[union-attr]
+                    created_at_range=self.box_search_options.created_date_range,  #  type: ignore[union-attr]
+                    file_extensions=self.box_search_options.file_extensions,  #  type: ignore[union-attr]
+                    limit=self.box_search_options.k,  #  type: ignore[union-attr]
+                    size_range=self.box_search_options.size_range,  #  type: ignore[union-attr]
+                    updated_at_range=self.box_search_options.updated_date_range,  #  type: ignore[union-attr]
+                )
 
             if results.entries is None or len(results.entries) <= 0:
                 return None  #  type: ignore[return-value]
