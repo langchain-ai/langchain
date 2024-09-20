@@ -660,6 +660,7 @@ class GraphVectorStore(VectorStore):
         return GraphVectorStoreRetriever(vectorstore=self, **kwargs)
 
 
+@beta(message="Added in version 0.3.1 of langchain_community. API subject to change.")
 class GraphVectorStoreRetriever(VectorStoreRetriever):
     """Retriever for GraphVectorStore.
 
