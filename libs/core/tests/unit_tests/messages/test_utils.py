@@ -1,5 +1,4 @@
 import json
-from typing import Dict, List, Type
 
 import pytest
 
@@ -21,7 +20,7 @@ from langchain_core.messages.utils import (
 
 
 @pytest.mark.parametrize("msg_cls", [HumanMessage, AIMessage, SystemMessage])
-def test_merge_message_runs_str(msg_cls: Type[BaseMessage]) -> None:
+def test_merge_message_runs_str(msg_cls: type[BaseMessage]) -> None:
     messages = [msg_cls("foo"), msg_cls("bar"), msg_cls("baz")]
     messages_model_copy = [m.model_copy(deep=True) for m in messages]
     expected = [msg_cls("foo\nbar\nbaz")]
@@ -32,7 +31,7 @@ def test_merge_message_runs_str(msg_cls: Type[BaseMessage]) -> None:
 
 @pytest.mark.parametrize("msg_cls", [HumanMessage, AIMessage, SystemMessage])
 def test_merge_message_runs_str_with_specified_separator(
-    msg_cls: Type[BaseMessage],
+    msg_cls: type[BaseMessage],
 ) -> None:
     messages = [msg_cls("foo"), msg_cls("bar"), msg_cls("baz")]
     messages_model_copy = [m.model_copy(deep=True) for m in messages]
@@ -44,7 +43,7 @@ def test_merge_message_runs_str_with_specified_separator(
 
 @pytest.mark.parametrize("msg_cls", [HumanMessage, AIMessage, SystemMessage])
 def test_merge_message_runs_str_without_separator(
-    msg_cls: Type[BaseMessage],
+    msg_cls: type[BaseMessage],
 ) -> None:
     messages = [msg_cls("foo"), msg_cls("bar"), msg_cls("baz")]
     messages_model_copy = [m.model_copy(deep=True) for m in messages]
@@ -127,7 +126,7 @@ def test_merge_messages_tool_messages() -> None:
         {"include_names": ["blah", "blur"], "exclude_types": [SystemMessage]},
     ],
 )
-def test_filter_message(filters: Dict) -> None:
+def test_filter_message(filters: dict) -> None:
     messages = [
         SystemMessage("foo", name="blah", id="1"),
         HumanMessage("bar", name="blur", id="2"),
@@ -306,7 +305,7 @@ def test_trim_messages_allow_partial_text_splitter() -> None:
         AIMessage("This is a 4 token text.", id="fourth"),
     ]
 
-    def count_words(msgs: List[BaseMessage]) -> int:
+    def count_words(msgs: list[BaseMessage]) -> int:
         count = 0
         for msg in msgs:
             if isinstance(msg.content, str):
@@ -317,7 +316,7 @@ def test_trim_messages_allow_partial_text_splitter() -> None:
                 )
         return count
 
-    def _split_on_space(text: str) -> List[str]:
+    def _split_on_space(text: str) -> list[str]:
         splits = text.split(" ")
         return [s + " " for s in splits[:-1]] + splits[-1:]
 
@@ -356,7 +355,7 @@ def test_trim_messages_bad_token_counter() -> None:
         trimmer.invoke([HumanMessage("foobar")])
 
 
-def dummy_token_counter(messages: List[BaseMessage]) -> int:
+def dummy_token_counter(messages: list[BaseMessage]) -> int:
     # treat each message like it adds 3 default tokens at the beginning
     # of the message and at the end of the message. 3 + 4 + 3 = 10 tokens
     # per message.
@@ -381,12 +380,12 @@ def dummy_token_counter(messages: List[BaseMessage]) -> int:
 
 
 class FakeTokenCountingModel(FakeChatModel):
-    def get_num_tokens_from_messages(self, messages: List[BaseMessage]) -> int:
+    def get_num_tokens_from_messages(self, messages: list[BaseMessage]) -> int:
         return dummy_token_counter(messages)
 
 
 def test_convert_to_messages() -> None:
-    message_like: List = [
+    message_like: list = [
         # BaseMessage
         SystemMessage("1"),
         HumanMessage([{"type": "image_url", "image_url": {"url": "2.1"}}], name="2.2"),

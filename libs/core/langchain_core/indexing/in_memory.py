@@ -1,5 +1,6 @@
 import uuid
-from typing import Any, Dict, List, Optional, Sequence, cast
+from collections.abc import Sequence
+from typing import Any, Optional, cast
 
 from pydantic import Field
 
@@ -22,7 +23,7 @@ class InMemoryDocumentIndex(DocumentIndex):
     .. versionadded:: 0.2.29
     """
 
-    store: Dict[str, Document] = Field(default_factory=dict)
+    store: dict[str, Document] = Field(default_factory=dict)
     top_k: int = 4
 
     def upsert(self, items: Sequence[Document], /, **kwargs: Any) -> UpsertResponse:
@@ -43,7 +44,7 @@ class InMemoryDocumentIndex(DocumentIndex):
 
         return UpsertResponse(succeeded=ok_ids, failed=[])
 
-    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> DeleteResponse:
+    def delete(self, ids: Optional[list[str]] = None, **kwargs: Any) -> DeleteResponse:
         """Delete by ID."""
         if ids is None:
             raise ValueError("IDs must be provided for deletion")
@@ -59,7 +60,7 @@ class InMemoryDocumentIndex(DocumentIndex):
             succeeded=ok_ids, num_deleted=len(ok_ids), num_failed=0, failed=[]
         )
 
-    def get(self, ids: Sequence[str], /, **kwargs: Any) -> List[Document]:
+    def get(self, ids: Sequence[str], /, **kwargs: Any) -> list[Document]:
         """Get by ids."""
         found_documents = []
 
@@ -71,7 +72,7 @@ class InMemoryDocumentIndex(DocumentIndex):
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
-    ) -> List[Document]:
+    ) -> list[Document]:
         counts_by_doc = []
 
         for document in self.store.values():

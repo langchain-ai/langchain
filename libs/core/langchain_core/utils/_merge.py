@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 
-def merge_dicts(left: Dict[str, Any], *others: Dict[str, Any]) -> Dict[str, Any]:
+def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]:
     """Merge many dicts, handling specific scenarios where a key exists in both
     dictionaries but has a value of None in 'left'. In such cases, the method uses the
     value from 'right' for that key in the merged dictionary.
@@ -69,7 +69,7 @@ def merge_dicts(left: Dict[str, Any], *others: Dict[str, Any]) -> Dict[str, Any]
     return merged
 
 
-def merge_lists(left: Optional[List], *others: Optional[List]) -> Optional[List]:
+def merge_lists(left: Optional[list], *others: Optional[list]) -> Optional[list]:
     """Add many lists, handling None.
 
     Args:
