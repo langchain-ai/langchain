@@ -53,3 +53,9 @@ class BM25SparseEmbedding(BaseSparseEmbedding):
         for col_index, value in zip(col_indices, non_zero_values):
             result_dict[col_index] = value
         return result_dict
+
+    def load(self, path: str):
+        self.bm25_ef.load(path)
+
+    def save(self, path: str):
+        self.bm25_ef.save(path)
