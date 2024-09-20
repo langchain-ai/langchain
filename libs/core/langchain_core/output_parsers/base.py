@@ -4,14 +4,13 @@ from abc import ABC, abstractmethod
 from typing import (
     TYPE_CHECKING,
     Any,
-    Dict,
     Generic,
-    List,
     Optional,
-    Type,
     TypeVar,
     Union,
 )
+
+from typing_extensions import override
 
 from langchain_core.language_models import LanguageModelOutput
 from langchain_core.messages import AnyMessage, BaseMessage
@@ -30,7 +29,7 @@ class BaseLLMOutputParser(Generic[T], ABC):
     """Abstract base class for parsing the outputs of a model."""
 
     @abstractmethod
-    def parse_result(self, result: List[Generation], *, partial: bool = False) -> T:
+    def parse_result(self, result: list[Generation], *, partial: bool = False) -> T:
         """Parse a list of candidate model Generations into a specific format.
 
         Args:
@@ -44,7 +43,7 @@ class BaseLLMOutputParser(Generic[T], ABC):
         """
 
     async def aparse_result(
-        self, result: List[Generation], *, partial: bool = False
+        self, result: list[Generation], *, partial: bool = False
     ) -> T:
         """Async parse a list of candidate model Generations into a specific format.
 
@@ -66,12 +65,14 @@ class BaseGenerationOutputParser(
     """Base class to parse the output of an LLM call."""
 
     @property
+    @override
     def InputType(self) -> Any:
         """Return the input type for the parser."""
         return Union[str, AnyMessage]
 
     @property
-    def OutputType(self) -> Type[T]:
+    @override
+    def OutputType(self) -> type[T]:
         """Return the output type for the parser."""
         # even though mypy complains this isn't valid,
         # it is good enough for pydantic to build the schema from
@@ -151,12 +152,14 @@ class BaseOutputParser(
     """  # noqa: E501
 
     @property
+    @override
     def InputType(self) -> Any:
         """Return the input type for the parser."""
         return Union[str, AnyMessage]
 
     @property
-    def OutputType(self) -> Type[T]:
+    @override
+    def OutputType(self) -> type[T]:
         """Return the output type for the parser.
 
         This property is inferred from the first type argument of the class.
@@ -218,7 +221,7 @@ class BaseOutputParser(
                 run_type="parser",
             )
 
-    def parse_result(self, result: List[Generation], *, partial: bool = False) -> T:
+    def parse_result(self, result: list[Generation], *, partial: bool = False) -> T:
         """Parse a list of candidate model Generations into a specific format.
 
         The return value is parsed from only the first Generation in the result, which
@@ -247,7 +250,7 @@ class BaseOutputParser(
         """
 
     async def aparse_result(
-        self, result: List[Generation], *, partial: bool = False
+        self, result: list[Generation], *, partial: bool = False
     ) -> T:
         """Async parse a list of candidate model Generations into a specific format.
 
@@ -305,7 +308,7 @@ class BaseOutputParser(
             " This is required for serialization."
         )
 
-    def dict(self, **kwargs: Any) -> Dict:
+    def dict(self, **kwargs: Any) -> dict:
         """Return dictionary representation of output parser."""
         output_parser_dict = super().dict(**kwargs)
         try:

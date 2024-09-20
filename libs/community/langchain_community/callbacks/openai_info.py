@@ -8,6 +8,18 @@ from langchain_core.messages import AIMessage
 from langchain_core.outputs import ChatGeneration, LLMResult
 
 MODEL_COST_PER_1K_TOKENS = {
+    # OpenAI o1-preview input
+    "o1-preview": 0.015,
+    "o1-preview-2024-09-12": 0.015,
+    # OpenAI o1-preview output
+    "o1-preview-completion": 0.06,
+    "o1-preview-2024-09-12-completion": 0.06,
+    # OpenAI o1-mini input
+    "o1-mini": 0.003,
+    "o1-mini-2024-09-12": 0.003,
+    # OpenAI o1-mini output
+    "o1-mini-completion": 0.012,
+    "o1-mini-2024-09-12-completion": 0.012,
     # GPT-4o-mini input
     "gpt-4o-mini": 0.00015,
     "gpt-4o-mini-2024-07-18": 0.00015,
@@ -153,6 +165,7 @@ def standardize_model_name(
         model_name.startswith("gpt-4")
         or model_name.startswith("gpt-3.5")
         or model_name.startswith("gpt-35")
+        or model_name.startswith("o1-")
         or ("finetuned" in model_name and "legacy" not in model_name)
     ):
         return model_name + "-completion"

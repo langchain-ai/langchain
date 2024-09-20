@@ -1,15 +1,8 @@
+from collections.abc import AsyncIterator, Awaitable, Iterator, Mapping, Sequence
 from typing import (
     Any,
-    AsyncIterator,
-    Awaitable,
     Callable,
-    Iterator,
-    List,
-    Mapping,
     Optional,
-    Sequence,
-    Tuple,
-    Type,
     Union,
     cast,
 )
@@ -69,13 +62,13 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             branch.invoke(None) # "goodbye"
     """
 
-    branches: Sequence[Tuple[Runnable[Input, bool], Runnable[Input, Output]]]
+    branches: Sequence[tuple[Runnable[Input, bool], Runnable[Input, Output]]]
     default: Runnable[Input, Output]
 
     def __init__(
         self,
         *branches: Union[
-            Tuple[
+            tuple[
                 Union[
                     Runnable[Input, bool],
                     Callable[[Input], bool],
@@ -149,13 +142,13 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         return True
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "schema", "runnable"]
 
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
+    ) -> type[BaseModel]:
         runnables = (
             [self.default]
             + [r for _, r in self.branches]
@@ -172,7 +165,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         return super().get_input_schema(config)
 
     @property
-    def config_specs(self) -> List[ConfigurableFieldSpec]:
+    def config_specs(self) -> list[ConfigurableFieldSpec]:
         from langchain_core.beta.runnables.context import (
             CONTEXT_CONFIG_PREFIX,
             CONTEXT_CONFIG_SUFFIX_SET,
