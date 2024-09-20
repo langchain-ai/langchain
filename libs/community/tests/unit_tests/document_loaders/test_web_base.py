@@ -26,6 +26,7 @@ class TestWebBaseLoader:
 @pytest.mark.requires("bs4")
 @patch("langchain_community.document_loaders.web_base.requests.Session.get")
 def test_lazy_load(mock_get):
+    raise AssertionError("Testing!")
     mock_response = MagicMock()
     mock_response.text = "<html><body><p>Test content</p></body></html>"
     mock_response.raise_for_status = MagicMock()
