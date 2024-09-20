@@ -1031,4 +1031,19 @@ _JS_SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "chat_models",
         "ChatBedrock",
     ),
+    ("langchain", "chat_models", "google_genai", "ChatGoogleGenerativeAI"): (
+        "langchain_google_genai",
+        "chat_models",
+        "ChatGoogleGenerativeAI",
+    ),
+    ("langchain", "chat_models", "groq", "ChatGroq"): (
+        "langchain_groq",
+        "chat_models",
+        "ChatGroq",
+    ),
+    ("langchain", "chat_models", "bedrock", "BedrockChat"): (
+        "langchain_aws",
+        "chat_models",
+        "ChatBedrock",
+    ),
 }
