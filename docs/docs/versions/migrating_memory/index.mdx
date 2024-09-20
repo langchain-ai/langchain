@@ -8,7 +8,7 @@ The concept of memory has evolved significantly in LangChain since its initial r
 
 Broadly speaking, LangChain 0.0.x memory was used to handle three main use cases:
 
-| Use Case                             | Description                                                                                                                       |
+| Use Case                             | Example                                                                                                                           |
 |--------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------|
 | Managing conversation history        | Keep only the last `n` turns of the conversation between the user and the AI.                                                     |
 | Extraction of structured information | Extract structured information from the conversation history, such as a list of facts learned about the user.                     |
@@ -24,8 +24,8 @@ The main advantages of persistence implementation in LangGraph are:
 
 - Built-in support for multi-user, multi-conversation scenarios which is often a requirement for real-world conversational AI applications.
 - Ability to save and resume complex state at any time for error recovery, human-in-the-loop workflows, time travel interactions, and more.
-- Full support for both LLM and chat models. In contrast, the v0.0.x memory abstractions were created prior to the existence and widespread adoption of chat model APIs, and so it does not work well with chat models (e.g., fails with tool calling chat models).
-- Offers a high degree of customization and control over the memory implementation, including the ability to use different backend.
+- Full support for both [LLM](/docs/concepts/#llms) and [chat models](/docs/concepts/#chat-models). In contrast, the v0.0.x memory abstractions were created prior to the existence and widespread adoption of chat model APIs, and so it does not work well with chat models (e.g., fails with tool calling chat models).
+- Offers a high degree of customization and control over the memory implementation, including the ability to use different backends.
 
 ## Migrations
 
@@ -58,13 +58,6 @@ Memory classes that fall into this category include:
 
 ### 2. Extraction of structured information from the conversation history
 
-We do not currently have a guide for this. If you need more help migrating from this type of memory, please
-open an issue in the docs, and we'll try to prioritize and write migration guidelines.
-
-The general strategy should be to use a chat model with tool calling capabilities to extract structured information from the conversation history.
-The extracted information can then be saved into an appropriate data structure (e.g., a dictionary), and information from it can be retrieved and added
-into the prompt as needed.
-
 Memory classes that fall into this category include:
 
 | Memory Type                | Description                                                                                                                                                                                                       |
@@ -80,6 +73,17 @@ And specific backend implementations of abstractions:
 | `RedisEntityStore`        | A specific implementation of `BaseEntityStore` that uses Redis as the backend.                           |
 | `SQLiteEntityStore`       | A specific implementation of `BaseEntityStore` that uses SQLite as the backend.                          |
 | `UpstashRedisEntityStore` | A specific implementation of `BaseEntityStore` that uses Upstash as the backend.                         |
+
+These abstractions have not received much development since their initial release. The reason
+is that for these abstractions to be useful they typically require a lot of specialization for a particular application, so these
+abstractions are not as widely used as the conversation history management abstractions.
+
+For this reason, there are no migration guides for these abstractions. If you're struggling to migrate an applications
+that relies on these abstractions, please open an issue on the LangChain GitHub repository and we'll try to prioritize providing
+more guidance on how to migrate these abstractions.
+
+The general strategy for extracting structured information from the conversation history is to use a chat model with tool calling capabilities to extract structured information from the conversation history.
+The extracted information can then be saved into an appropriate data structure (e.g., a dictionary), and information from it can be retrieved and added into the prompt as needed.
 
 ### 3. Implementations that provide composite logic on top of one or more memory implementations
 
