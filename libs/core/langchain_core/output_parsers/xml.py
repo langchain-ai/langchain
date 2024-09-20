@@ -189,7 +189,7 @@ class XMLOutputParser(BaseTransformOutputParser):
         # likely if you're reading this you can move them to the top of the file
         if self.parser == "defusedxml":
             try:
-                import defusedxml  # type: ignore
+                from defusedxml import ElementTree  # type: ignore
             except ImportError as e:
                 raise ImportError(
                     "defusedxml is not installed. "
@@ -197,7 +197,7 @@ class XMLOutputParser(BaseTransformOutputParser):
                     "You can install it with `pip install defusedxml`"
                     "See https://github.com/tiran/defusedxml for more details"
                 ) from e
-            _et = defusedxml.ElementTree  # Use the defusedxml parser
+            _et = ElementTree  # Use the defusedxml parser
         else:
             _et = ET  # Use the standard library parser
 
@@ -211,10 +211,9 @@ class XMLOutputParser(BaseTransformOutputParser):
 
         text = text.strip()
         try:
-            root = ET.fromstring(text)
+            root = _et.fromstring(text)
             return self._root_to_dict(root)
-
-        except ET.ParseError as e:
+        except _et.ParseError as e:
             msg = f"Failed to parse XML format from completion {text}. Got: {e}"
             raise OutputParserException(msg, llm_output=text) from e
 
