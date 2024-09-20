@@ -1,6 +1,8 @@
-from typing import Any, Dict, List, Optional
+from types import TracebackType
+from typing import Any, Dict, List, Optional, Type
 
 from langchain_core.callbacks import (
+    AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
 from langchain_core.documents import Document
@@ -9,8 +11,8 @@ from langchain_core.utils import (
     convert_to_secret_str,
     get_from_dict_or_env,
     get_pydantic_field_names,
-    pre_init,
 )
+from langchain_core.utils.env import env_var_is_set
 from langchain_core.utils.utils import build_extra_kwargs
 from pydantic import Field, SecretStr, model_validator
 from snowflake.core import Root
@@ -131,11 +133,9 @@ class CortexSearchRetriever(BaseRetriever):
     _sp_root: Root
     """Snowpark API Root object."""
 
-    authenticator: Optional[str] = Field(default=None)
-    """Authenticator method to utilize when logging into Snowflake. Refer to Snowflake documentation for more information."""
-
     search_column: str = Field()
-    """Name of the search column in the Cortex Search Service. Always returned in the search results."""
+    """Name of the search column in the Cortex Search Service. Always returned in the
+    search results."""
 
     columns: List[str] = Field(default=[])
     """List of additional columns to return in the search results."""
@@ -148,6 +148,10 @@ class CortexSearchRetriever(BaseRetriever):
 
     limit: Optional[int] = Field(default=None)
     """The maximum number of results to return in a single query."""
+
+    snowflake_authenticator: Optional[str] = Field(default=None, alias="authenticator")
+    """Authenticator method to utilize when logging into Snowflake. Refer to Snowflake
+    documentation for more information."""
 
     snowflake_username: Optional[str] = Field(default=None, alias="username")
     """Automatically inferred from env var `SNOWFLAKE_USERNAME` if not provided."""
@@ -181,14 +185,12 @@ class CortexSearchRetriever(BaseRetriever):
     @model_validator(mode="before")
     @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
-        """Validate the environment needed to establish a Snowflake session or obtain an API root from a provided Snowflake session."""
+        """Validate the environment needed to establish a Snowflake session or obtain
+        an API root from a provided Snowflake session."""
 
         if "sp_session" not in values:
             values["username"] = get_from_dict_or_env(
                 values, "username", "SNOWFLAKE_USERNAME"
-            )
-            values["password"] = convert_to_secret_str(
-                get_from_dict_or_env(values, "password", "SNOWFLAKE_PASSWORD")
             )
             values["account"] = get_from_dict_or_env(
                 values, "account", "SNOWFLAKE_ACCOUNT"
@@ -199,63 +201,73 @@ class CortexSearchRetriever(BaseRetriever):
             values["schema"] = get_from_dict_or_env(
                 values, "schema", "SNOWFLAKE_SCHEMA"
             )
-            values["role"] = get_from_dict_or_env(
-                values, "role", "SNOWFLAKE_ROLE"
-            )
+            values["role"] = get_from_dict_or_env(values, "role", "SNOWFLAKE_ROLE")
+
+            # check whether to authenticate with password or authenticator
+            if "password" in values or env_var_is_set("SNOWFLAKE_PASSWORD"):
+                values["password"] = convert_to_secret_str(
+                    get_from_dict_or_env(values, "password", "SNOWFLAKE_PASSWORD")
+                )
+            elif "authenticator" in values or env_var_is_set("SNOWFLAKE_AUTHENTICATOR"):
+                values["authenticator"] = get_from_dict_or_env(
+                    values, "authenticator", "AUTHENTICATOR"
+                )
+                if values["authenticator"].lower() != "externalbrowser":
+                    raise CortexSearchRetrieverError(
+                        "Unable to authenticate. Unsupported authentication method"
+                    )
+            else:
+                raise CortexSearchRetrieverError(
+                    """Unable to authenticate. Please input Snowflake password directly
+                    or as environment variables, or authenticate with via another
+                    method by passing a valid `authenticator` type."""
+                )
 
             connection_params = {
                 "account": values["account"],
                 "user": values["username"],
-                "password": values["password"].get_secret_value(),
                 "database": values["database"],
                 "schema": values["schema"],
                 "role": values["role"],
             }
 
+            if "password" in values:
+                connection_params["password"] = values["password"].get_secret_value()
+
+            if "authenticator" in values:
+                connection_params["authenticator"] = values["authenticator"]
+
             try:
-                session = Session.builder.configs(
-                    connection_params).create()
+                session = Session.builder.configs(connection_params).create()
                 values["sp_session"] = session
             except Exception as e:
                 raise CortexSearchRetrieverError(f"Failed to create session: {e}")
 
         return values
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self._sp_root = Root(self.sp_session)
 
-    def model_post_init(self, __context: Any):
-        if self.sp_session is None:
-            raise ValueError("sp_session was not set correctly")
-        self._sp_root = Root(self.sp_session)
-
-    @property
     def _columns(self, cols: List[str] = []) -> List[str]:
         """The columns to return in the search results."""
         override_cols = cols if cols else self.columns
         return [self.search_column] + override_cols
 
     @property
-    def _default_params(self) -> dict:
-        """Default query parameters for the Cortex Search Service retriever. Can be optionally overridden on each invocation of `invoke()`."""
-        params = {}
+    def _default_params(self) -> Dict[str, Any]:
+        """Default query parameters for the Cortex Search Service retriever. Can be
+        optionally overridden on each invocation of `invoke()`."""
+        params: Dict[str, Any] = {}
         if self.filter:
             params["filter"] = self.filter
         if self.limit:
             params["limit"] = self.limit
         return params
 
-    def _optional_params(
-        self, **kwargs: Any
-    ) -> dict:
+    def _optional_params(self, **kwargs: Any) -> Dict[str, Any]:
         params = self._default_params
-        if kwargs:
-            if "filter" in kwargs:
-                params["filter"] = kwargs["filter"]
-            if "limit" in kwargs:
-                params["limit"] = kwargs["limit"]
-
+        params.update({k: v for k, v in kwargs.items() if k in ["filter", "limit"]})
         return params
 
     def _get_relevant_documents(
@@ -272,8 +284,8 @@ class CortexSearchRetriever(BaseRetriever):
                 .cortex_search_services[self.cortex_search_service]
                 .search(
                     query=str(query),
-                    columns=self._columns,
-                    **self._optional_params(**kwargs)
+                    columns=self._columns(kwargs.get("columns", None)),
+                    **self._optional_params(**kwargs),
                 )
             )
             document_list = []
@@ -297,11 +309,20 @@ class CortexSearchRetriever(BaseRetriever):
 
         return doc
 
-    def __del__(self) -> None:
-        if getattr(self, "sp_session", None) is not None:
-            self.sp_session.close()
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ) -> Optional[bool]:
+        try:
+            if self.sp_session is not None:
+                self.sp_session.close()
+        except Exception as e:
+            raise CortexSearchRetrieverError(f"Error while closing session: {e}")
+        return None
 
     async def _aget_relevant_documents(
-        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
     ) -> List[Document]:
-        raise NotImplementedError("error")
+        raise NotImplementedError("Async is not supported for Snowflake Cortex Search")

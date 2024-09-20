@@ -16,9 +16,13 @@ export SNOWFLAKE_ROLE=<snowflake_role>
 export SNOWFLAKE_CORTEX_SEARCH_SERVICE=<cortex_search_service>
 """
 
+import os
+from unittest import mock
+
 import pytest
 from langchain_core.documents import Document
 from pydantic import ValidationError
+
 from langchain_snowflake import CortexSearchRetriever, CortexSearchRetrieverError
 
 
@@ -144,3 +148,85 @@ def test_snowflake_cortex_search_invoke_limit() -> None:
 
     documents = retriever.invoke("dinosaur with a large tail", limit=new_limit)
     assert len(documents) == new_limit
+
+
+@pytest.mark.requires("snowflake.core")
+def test_snowflake_cortex_search_invoke_filter() -> None:
+    """Test the invoke() method with an overridden filter."""
+
+    columns = ["name", "description", "era", "diet", "height_meters"]
+    search_column = "description"
+
+    kwargs = {
+        "search_service": "dinosaur_svc",
+        "columns": columns,
+        "search_column": search_column,
+        "limit": 10,
+        "filter": {"@eq": {"era": "Jurassic"}},
+    }
+
+    retriever = CortexSearchRetriever(**kwargs)
+
+    documents = retriever.invoke("dinosaur with a large tail", filter=None)
+    assert len(documents) == 10
+
+    observed_eras = set()
+    for doc in documents:
+        observed_eras.add(doc.metadata["era"])
+
+    # Since we overrode the default filter with None, we should see more than one era.
+    assert len(observed_eras) > 1
+
+
+@pytest.mark.requires("snowflake.core")
+def test_snowflake_cortex_search_invoke_columns() -> None:
+    """Test the invoke() method with overridden columns."""
+
+    columns = ["description", "era"]
+    search_column = "description"
+
+    kwargs = {
+        "search_service": "dinosaur_svc",
+        "columns": columns,
+        "search_column": search_column,
+        "limit": 10,
+    }
+
+    retriever = CortexSearchRetriever(**kwargs)
+
+    documents = retriever.invoke("dinosaur with a large tail", columns=["description"])
+
+    assert len(documents) == 10
+
+    for doc in documents:
+        assert isinstance(doc, Document)
+        assert doc.page_content
+        assert "era" not in doc.metadata
+
+
+@pytest.mark.skip(
+    """This test requires a Snowflake account with externalbrowser authentication 
+    enabled."""
+)
+@pytest.mark.requires("snowflake.core")
+@mock.patch.dict(os.environ, {"SNOWFLAKE_PASSWORD": ""})
+def test_snowflake_cortex_search_constructor_externalbrowser_authenticator() -> None:
+    """Test the constructor with external browser authenticator."""
+
+    columns = ["name", "description", "era", "diet", "height_meters"]
+
+    kwargs = {
+        "search_service": "dinosaur_svc",
+        "columns": columns,
+        "search_column": "description",
+        "limit": 10,
+        "authenticator": "externalbrowser",
+    }
+
+    retriever = CortexSearchRetriever(**kwargs)
+
+    documents = retriever.invoke("dinosaur with a large tail")
+    assert len(documents) > 0
+    for doc in documents:
+        assert isinstance(doc, Document)
+        assert doc.page_content
