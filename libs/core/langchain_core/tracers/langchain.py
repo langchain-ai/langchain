@@ -50,9 +50,8 @@ def log_error_once(method: str, exception: Exception) -> None:
 
 def wait_for_all_tracers() -> None:
     """Wait for all tracers to finish."""
-    global _CLIENT
-    if _CLIENT is not None and _CLIENT.tracing_queue is not None:
-        _CLIENT.tracing_queue.join()
+    if rt._CLIENT is not None and rt._CLIENT.tracing_queue is not None:
+        rt._CLIENT.tracing_queue.join()
 
 
 def get_client() -> Client:
