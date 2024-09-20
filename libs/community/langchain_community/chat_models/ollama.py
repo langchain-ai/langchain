@@ -2,6 +2,7 @@ import json
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Union, cast
 
 from langchain_core._api import deprecated
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -47,6 +48,11 @@ def _chat_stream_response_to_chat_generation_chunk(
     )
 
 
+@deprecated(
+    since="0.3.1",
+    removal="1.0.0",
+    alternative_import="langchain_ollama.ChatOllama",
+)
 class ChatOllama(BaseChatModel, _OllamaCommon):
     """Ollama locally runs large language models.
 
