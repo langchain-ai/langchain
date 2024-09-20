@@ -1,11 +1,8 @@
 """**Memory** maintains Chain state, incorporating context from past runs.
 
-**Class hierarchy for Memory:**
+This module contains memory abstractions from LangChain v0.0.x.
 
-.. code-block::
-
-    BaseMemory --> <name>Memory --> <name>Memory  # Examples: BaseChatMemory -> MotorheadMemory
-
+These abstractions are now deprecated and will be removed in LangChain v1.0.0.
 """  # noqa: E501
 
 from __future__ import annotations
@@ -15,10 +12,19 @@ from typing import Any
 
 from pydantic import ConfigDict
 
+from langchain_core._api import deprecated
 from langchain_core.load.serializable import Serializable
 from langchain_core.runnables import run_in_executor
 
 
+@deprecated(
+    since="0.3.4",
+    removal="1.0.0",
+    message=(
+        "Please see the migration guide at: "
+        "https://python.langchain.com/docs/versions/migrating_memory/"
+    ),
+)
 class BaseMemory(Serializable, ABC):
     """Abstract base class for memory in Chains.
 
