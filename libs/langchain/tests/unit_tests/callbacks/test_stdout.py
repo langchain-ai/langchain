@@ -1,5 +1,7 @@
 from typing import Dict, List, Optional
 
+import pytest
+
 from langchain.callbacks import StdOutCallbackHandler
 from langchain.chains.base import CallbackManagerForChainRun, Chain
 
@@ -29,7 +31,7 @@ class FakeChain(Chain):
         return {"bar": "bar"}
 
 
-def test_stdoutcallback(capsys):
+def test_stdoutcallback(capsys: pytest.CaptureFixture):
     chain_test = FakeChain(callbacks=[StdOutCallbackHandler(color="red")])
     chain_test.invoke({"foo": "bar"})
     # Capture the output
