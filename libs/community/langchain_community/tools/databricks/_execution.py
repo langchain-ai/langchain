@@ -182,7 +182,6 @@ def execute_function(
     )
     if response.status and job_pending(response.status.state) and response.statement_id:
         statement_id = response.statement_id
-        _logger.info("Retrying to get statement execution status...")
         wait_time = 0
         retry_cnt = 0
         client_execution_timeout = int(
@@ -193,8 +192,11 @@ def execute_function(
         )
         while wait_time < client_execution_timeout:
             wait = min(2**retry_cnt, client_execution_timeout - wait_time)
+            _logger.debug(
+                f"Retrying {retry_cnt} time to get statement execution "
+                f"status after {wait} seconds."
+            )
             time.sleep(wait)
-            _logger.info(f"Retry times: {retry_cnt}")
             response = ws.statement_execution.get_statement(statement_id)  # type: ignore
             if response.status is None or not job_pending(response.status.state):
                 break
