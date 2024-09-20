@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import pytest
 
@@ -31,7 +31,7 @@ class FakeChain(Chain):
         return {"bar": "bar"}
 
 
-def test_stdoutcallback(capsys: pytest.CaptureFixture):
+def test_stdoutcallback(capsys: pytest.CaptureFixture) -> Any:
     chain_test = FakeChain(callbacks=[StdOutCallbackHandler(color="red")])
     chain_test.invoke({"foo": "bar"})
     # Capture the output
