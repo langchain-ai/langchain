@@ -1181,6 +1181,13 @@ class BaseChatOpenAI(BaseChatModel):
                 "function_calling" or "json_mode" defaults to None. Can only be
                 non-null if ``method`` is "function_calling" or "json_schema".
 
+            tools:
+
+                A list of tool definitions to bind to this chat model. If the `schema`
+                is included in the `tools` list as well, it will not be
+                double-bound. If it is left out, it will be prepended to the
+                beginning of the `tools` list.
+
             kwargs: Additional keyword args aren't supported.
 
         Returns:
@@ -1407,8 +1414,17 @@ class BaseChatOpenAI(BaseChatModel):
                     "Received None."
                 )
             tool_name = convert_to_openai_tool(schema)["function"]["name"]
+            if tools:
+                # allow custom ordering of tools if you include the schema in the tools
+                # list
+                if schema in tools:
+                    tools_list = tools
+                else:
+                    tools_list = [schema] + tools
+            else:
+                tools_list = [schema]
             llm = self.bind_tools(
-                [schema, *tools] if tools else [schema],
+                tools_list,
                 tool_choice=tool_name,
                 parallel_tool_calls=False,
                 strict=strict,
