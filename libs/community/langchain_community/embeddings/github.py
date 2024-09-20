@@ -13,7 +13,7 @@ from regex import fullmatch
 
 
 class GithubEmbeddings(BaseModel, Embeddings):
-    model_name: Optional[str] = None
+    model: Optional[str] = None
     github_endpoint_url: str = "https://models.inference.ai.azure.com/embeddings"
     api_version: str = "2024-04-01-preview"
     github_api_key: SecretStr = Field(
@@ -29,7 +29,7 @@ class GithubEmbeddings(BaseModel, Embeddings):
 
     @model_validator(mode="after")
     def validate_environment(self) -> Dict:
-        if self.model_name not in self.SUPPORTED_MODELS:
+        if self.model not in self.SUPPORTED_MODELS:
             raise ValueError(
                 f"Invalid model name. Supported models are: {self.SUPPORTED_MODELS}"
             )
