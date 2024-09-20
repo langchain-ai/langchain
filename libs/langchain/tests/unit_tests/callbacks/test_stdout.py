@@ -1,8 +1,7 @@
 from typing import Dict, List, Optional
 
+from langchain.callbacks import StdOutCallbackHandler
 from langchain.chains.base import CallbackManagerForChainRun, Chain
-
-from langchain_core.callbacks import StdOutCallbackHandler
 
 
 class FakeChain(Chain):
