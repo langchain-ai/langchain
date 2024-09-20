@@ -25,7 +25,7 @@ import logging
 import math
 import warnings
 from abc import ABC, abstractmethod
-from collections.abc import Collection, Iterable, Sequence
+from collections.abc import Collection, Iterable, Iterator, Sequence
 from itertools import cycle
 from typing import (
     TYPE_CHECKING,
@@ -61,10 +61,8 @@ class VectorStore(ABC):
         self,
         texts: Iterable[str],
         metadatas: Optional[list[dict]] = None,
-        # One of the kwargs should be `ids` which is a list of ids
-        # associated with the texts.
-        # This is not yet enforced in the type signature for backwards compatibility
-        # with existing implementations.
+        *,
+        ids: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> list[str]:
         """Run more texts through the embeddings and add to the vectorstore.
@@ -72,6 +70,7 @@ class VectorStore(ABC):
         Args:
             texts: Iterable of strings to add to the vectorstore.
             metadatas: Optional list of metadatas associated with the texts.
+            ids: Optional list of IDs associated with the texts.
             **kwargs: vectorstore specific parameters.
                 One of the kwargs should be `ids` which is a list of ids
                 associated with the texts.
@@ -99,10 +98,14 @@ class VectorStore(ABC):
                     f"Got {len(metadatas)} metadatas and {len(texts_)} texts."
                 )
             metadatas_ = iter(metadatas) if metadatas else cycle([{}])
+            ids_: Iterator[Optional[str]] = iter(ids) if ids else cycle([None])
             docs = [
-                Document(page_content=text, metadata=metadata_)
-                for text, metadata_ in zip(texts, metadatas_)
+                Document(id=id_, page_content=text, metadata=metadata_)
+                for text, metadata_, id_ in zip(texts, metadatas_, ids_)
             ]
+            if ids is not None:
+                # For backward compatibility
+                kwargs["ids"] = ids
 
             return self.add_documents(docs, **kwargs)
         raise NotImplementedError(
@@ -206,6 +209,8 @@ class VectorStore(ABC):
         self,
         texts: Iterable[str],
         metadatas: Optional[list[dict]] = None,
+        *,
+        ids: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> list[str]:
         """Async run more texts through the embeddings and add to the vectorstore.
@@ -214,6 +219,7 @@ class VectorStore(ABC):
             texts: Iterable of strings to add to the vectorstore.
             metadatas: Optional list of metadatas associated with the texts.
                 Default is None.
+            ids: Optional list
             **kwargs: vectorstore specific parameters.
 
         Returns:
@@ -223,6 +229,9 @@ class VectorStore(ABC):
             ValueError: If the number of metadatas does not match the number of texts.
             ValueError: If the number of ids does not match the number of texts.
         """
+        if ids is not None:
+            # For backward compatibility
+            kwargs["ids"] = ids
         if type(self).aadd_documents != VectorStore.aadd_documents:
             # Import document in local scope to avoid circular imports
             from langchain_core.documents import Document
@@ -239,12 +248,12 @@ class VectorStore(ABC):
                     f"Got {len(metadatas)} metadatas and {len(texts_)} texts."
                 )
             metadatas_ = iter(metadatas) if metadatas else cycle([{}])
+            ids_: Iterator[Optional[str]] = iter(ids) if ids else cycle([None])
 
             docs = [
-                Document(page_content=text, metadata=metadata_)
-                for text, metadata_ in zip(texts, metadatas_)
+                Document(id=id_, page_content=text, metadata=metadata_)
+                for text, metadata_, id_ in zip(texts, metadatas_, ids_)
             ]
-
             return await self.aadd_documents(docs, **kwargs)
         return await run_in_executor(None, self.add_texts, texts, metadatas, **kwargs)
 
@@ -827,6 +836,15 @@ class VectorStore(ABC):
         """
         texts = [d.page_content for d in documents]
         metadatas = [d.metadata for d in documents]
+
+        if "ids" not in kwargs:
+            ids = [doc.id for doc in documents]
+
+            # If there's at least one valid ID, we'll assume that IDs
+            # should be used.
+            if any(ids):
+                kwargs["ids"] = ids
+
         return cls.from_texts(texts, embedding, metadatas=metadatas, **kwargs)
 
     @classmethod
@@ -848,6 +866,15 @@ class VectorStore(ABC):
         """
         texts = [d.page_content for d in documents]
         metadatas = [d.metadata for d in documents]
+
+        if "ids" not in kwargs:
+            ids = [doc.id for doc in documents]
+
+            # If there's at least one valid ID, we'll assume that IDs
+            # should be used.
+            if any(ids):
+                kwargs["ids"] = ids
+
         return await cls.afrom_texts(texts, embedding, metadatas=metadatas, **kwargs)
 
     @classmethod
@@ -857,6 +884,8 @@ class VectorStore(ABC):
         texts: list[str],
         embedding: Embeddings,
         metadatas: Optional[list[dict]] = None,
+        *,
+        ids: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> VST:
         """Return VectorStore initialized from texts and embeddings.
@@ -866,6 +895,7 @@ class VectorStore(ABC):
             embedding: Embedding function to use.
             metadatas: Optional list of metadatas associated with the texts.
                 Default is None.
+            ids: Optional list of IDs associated with the texts.
             kwargs: Additional keyword arguments.
 
         Returns:
@@ -878,6 +908,8 @@ class VectorStore(ABC):
         texts: list[str],
         embedding: Embeddings,
         metadatas: Optional[list[dict]] = None,
+        *,
+        ids: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> VST:
         """Async return VectorStore initialized from texts and embeddings.
@@ -887,11 +919,14 @@ class VectorStore(ABC):
             embedding: Embedding function to use.
             metadatas: Optional list of metadatas associated with the texts.
                 Default is None.
+            ids: Optional list of IDs associated with the texts.
             kwargs: Additional keyword arguments.
 
         Returns:
             VectorStore: VectorStore initialized from texts and embeddings.
         """
+        if ids is not None:
+            kwargs["ids"] = ids
         return await run_in_executor(
             None, cls.from_texts, texts, embedding, metadatas, **kwargs
         )
