@@ -18,11 +18,9 @@ The mapping allows us to deserialize an AIMessage created with an older
 version of LangChain where the code was in a different location.
 """
 
-from typing import Dict, Tuple
-
 # First value is the value that it is serialized as
 # Second value is the path to load it from
-SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
+SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
     ("langchain", "schema", "messages", "AIMessage"): (
         "langchain_core",
         "messages",
@@ -297,6 +295,17 @@ SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "chat_models",
         "ChatMistralAI",
     ),
+    ("langchain", "chat_models", "bedrock", "ChatBedrock"): (
+        "langchain_aws",
+        "chat_models",
+        "bedrock",
+        "ChatBedrock",
+    ),
+    ("langchain_google_genai", "chat_models", "ChatGoogleGenerativeAI"): (
+        "langchain_google_genai",
+        "chat_models",
+        "ChatGoogleGenerativeAI",
+    ),
     ("langchain", "schema", "output", "ChatGenerationChunk"): (
         "langchain_core",
         "outputs",
@@ -524,7 +533,7 @@ SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
 
 # Needed for backwards compatibility for old versions of LangChain where things
 # Were in different place
-_OG_SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
+_OG_SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
     ("langchain", "schema", "AIMessage"): (
         "langchain_core",
         "messages",
@@ -572,7 +581,7 @@ _OG_SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
 
 # Needed for backwards compatibility for a few versions where we serialized
 # with langchain_core paths.
-OLD_CORE_NAMESPACES_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
+OLD_CORE_NAMESPACES_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
     ("langchain_core", "messages", "ai", "AIMessage"): (
         "langchain_core",
         "messages",
@@ -926,7 +935,7 @@ OLD_CORE_NAMESPACES_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
     ),
 }
 
-_JS_SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
+_JS_SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
     ("langchain_core", "messages", "AIMessage"): (
         "langchain_core",
         "messages",
@@ -1016,5 +1025,25 @@ _JS_SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "prompts",
         "image",
         "ImagePromptTemplate",
+    ),
+    ("langchain", "chat_models", "bedrock", "ChatBedrock"): (
+        "langchain_aws",
+        "chat_models",
+        "ChatBedrock",
+    ),
+    ("langchain", "chat_models", "google_genai", "ChatGoogleGenerativeAI"): (
+        "langchain_google_genai",
+        "chat_models",
+        "ChatGoogleGenerativeAI",
+    ),
+    ("langchain", "chat_models", "groq", "ChatGroq"): (
+        "langchain_groq",
+        "chat_models",
+        "ChatGroq",
+    ),
+    ("langchain", "chat_models", "bedrock", "BedrockChat"): (
+        "langchain_aws",
+        "chat_models",
+        "ChatBedrock",
     ),
 }

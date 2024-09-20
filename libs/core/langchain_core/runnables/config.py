@@ -3,26 +3,12 @@ from __future__ import annotations
 import asyncio
 import uuid
 import warnings
+from collections.abc import Awaitable, Generator, Iterable, Iterator, Sequence
 from concurrent.futures import Executor, Future, ThreadPoolExecutor
 from contextlib import contextmanager
 from contextvars import ContextVar, copy_context
 from functools import partial
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Awaitable,
-    Callable,
-    Dict,
-    Generator,
-    Iterable,
-    Iterator,
-    List,
-    Optional,
-    Sequence,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar, Union, cast
 
 from typing_extensions import ParamSpec, TypedDict
 
@@ -44,7 +30,7 @@ if TYPE_CHECKING:
 else:
     # Pydantic validates through typed dicts, but
     # the callbacks need forward refs updated
-    Callbacks = Optional[Union[List, Any]]
+    Callbacks = Optional[Union[list, Any]]
 
 
 class EmptyDict(TypedDict, total=False):
@@ -56,13 +42,13 @@ class EmptyDict(TypedDict, total=False):
 class RunnableConfig(TypedDict, total=False):
     """Configuration for a Runnable."""
 
-    tags: List[str]
+    tags: list[str]
     """
     Tags for this call and any sub-calls (eg. a Chain calling an LLM).
     You can use these to filter calls.
     """
 
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
     """
     Metadata for this call and any sub-calls (eg. a Chain calling an LLM).
     Keys should be strings, values should be JSON-serializable.
@@ -90,7 +76,7 @@ class RunnableConfig(TypedDict, total=False):
     Maximum number of times a call can recurse. If not provided, defaults to 25.
     """
 
-    configurable: Dict[str, Any]
+    configurable: dict[str, Any]
     """
     Runtime values for attributes previously made configurable on this Runnable,
     or sub-Runnables, through .configurable_fields() or .configurable_alternatives().
@@ -137,17 +123,29 @@ def _set_config_context(config: RunnableConfig) -> None:
     Args:
         config (RunnableConfig): The config to set.
     """
-    from langsmith import (
-        RunTree,  # type: ignore
-        run_helpers,  # type: ignore
-    )
+    from langchain_core.tracers.langchain import LangChainTracer
 
     var_child_runnable_config.set(config)
-    if hasattr(RunTree, "from_runnable_config"):
-        # import _set_tracing_context, get_tracing_context
-        rt = RunTree.from_runnable_config(dict(config))
-        tc = run_helpers.get_tracing_context()
-        run_helpers._set_tracing_context({**tc, "parent": rt})
+    if (
+        (callbacks := config.get("callbacks"))
+        and (
+            parent_run_id := getattr(callbacks, "parent_run_id", None)
+        )  # Is callback manager
+        and (
+            tracer := next(
+                (
+                    handler
+                    for handler in getattr(callbacks, "handlers", [])
+                    if isinstance(handler, LangChainTracer)
+                ),
+                None,
+            )
+        )
+    ):
+        if run := tracer.run_map.get(str(parent_run_id)):
+            from langsmith.run_helpers import _set_tracing_context
+
+            _set_tracing_context({"parent": run})
 
 
 def ensure_config(config: Optional[RunnableConfig] = None) -> RunnableConfig:
@@ -205,7 +203,7 @@ def ensure_config(config: Optional[RunnableConfig] = None) -> RunnableConfig:
 
 def get_config_list(
     config: Optional[Union[RunnableConfig, Sequence[RunnableConfig]]], length: int
-) -> List[RunnableConfig]:
+) -> list[RunnableConfig]:
     """Get a list of configs from a single config or a list of configs.
 
      It is useful for subclasses overriding batch() or abatch().
@@ -255,7 +253,7 @@ def patch_config(
     recursion_limit: Optional[int] = None,
     max_concurrency: Optional[int] = None,
     run_name: Optional[str] = None,
-    configurable: Optional[Dict[str, Any]] = None,
+    configurable: Optional[dict[str, Any]] = None,
 ) -> RunnableConfig:
     """Patch a config with new values.
 

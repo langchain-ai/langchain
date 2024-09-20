@@ -6,6 +6,7 @@ from typing import Any, Callable, Iterator, List, Mapping, Optional
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
+from pydantic import ConfigDict
 
 DEFAULT_MODEL_ID = "mlx-community/quantized-gemma-2b"
 
@@ -37,9 +38,9 @@ class MLXPipeline(LLM):
 
     model_id: str = DEFAULT_MODEL_ID
     """Model name to use."""
-    model: Any  #: :meta private:
+    model: Any = None  #: :meta private:
     """Model."""
-    tokenizer: Any  #: :meta private:
+    tokenizer: Any = None  #: :meta private:
     """Tokenizer."""
     tokenizer_config: Optional[dict] = None
     """
@@ -74,8 +75,9 @@ class MLXPipeline(LLM):
 
     """
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @classmethod
     def from_model_id(

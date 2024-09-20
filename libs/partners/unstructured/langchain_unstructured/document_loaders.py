@@ -76,6 +76,25 @@ class UnstructuredLoader(BaseLoader):
             {'source': './example_data/layout-parser-paper.pdf', 'coordinates': {'points': ((16.34, 213.36), (16.34, 253.36), (36.34, 253.36), (36.34, 213.36)), 'system': 'PixelSpace', 'layout_width': 612, 'layout_height': 792}, 'file_directory': './example_data', 'filename': 'layout-parser-paper.pdf', 'languages': ['eng'], 'last_modified': '2024-07-25T21:28:58', 'page_number': 1, 'filetype': 'application/pdf', 'category': 'UncategorizedText', 'element_id': 'd3ce55f220dfb75891b4394a18bcb973'}
 
 
+    Load URL:
+        .. code-block:: python
+
+            loader = UnstructuredLoader(web_url="https://www.example.com/")
+            print(docs[0])
+
+        .. code-block:: none
+
+            page_content='Example Domain' metadata={'category_depth': 0, 'languages': ['eng'], 'filetype': 'text/html', 'url': 'https://www.example.com/', 'category': 'Title', 'element_id': 'fdaa78d856f9d143aeeed85bf23f58f8'}
+
+        .. code-block:: python
+
+            print(docs[1])
+
+        .. code-block:: none
+
+            page_content='This domain is for use in illustrative examples in documents. You may use this domain in literature without prior coordination or asking for permission.' metadata={'languages': ['eng'], 'parent_id': 'fdaa78d856f9d143aeeed85bf23f58f8', 'filetype': 'text/html', 'url': 'https://www.example.com/', 'category': 'NarrativeText', 'element_id': '3652b8458b0688639f973fe36253c992'}
+
+
     References
     ----------
     https://docs.unstructured.io/api-reference/api-services/sdk
@@ -95,6 +114,7 @@ class UnstructuredLoader(BaseLoader):
         api_key: Optional[str] = None,
         client: Optional[UnstructuredClient] = None,
         url: Optional[str] = None,
+        web_url: Optional[str] = None,
         **kwargs: Any,
     ):
         """Initialize loader."""
@@ -124,6 +144,8 @@ class UnstructuredLoader(BaseLoader):
         self.partition_via_api = partition_via_api
         self.post_processors = post_processors
         self.unstructured_kwargs = kwargs
+        if web_url:
+            self.unstructured_kwargs["url"] = web_url
 
     def lazy_load(self) -> Iterator[Document]:
         """Load file(s) to the _UnstructuredBaseLoader."""
