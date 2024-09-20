@@ -36,7 +36,7 @@ from typing import (
 )
 
 from pydantic import BaseModel, ConfigDict, Field, RootModel
-from typing_extensions import Literal, get_args
+from typing_extensions import Literal, get_args, override
 
 from langchain_core._api import beta_decorator
 from langchain_core.load.serializable import (
@@ -272,7 +272,7 @@ class Runnable(Generic[Input, Output], ABC):
             return name_
 
     @property
-    def InputType(self) -> type[Input]:
+    def InputType(self) -> type[Input]:  # noqa: N802
         """The type of input this Runnable accepts specified as a type annotation."""
         # First loop through all parent classes and if any of them is
         # a pydantic model, we will pick up the generic parameterization
@@ -297,7 +297,7 @@ class Runnable(Generic[Input, Output], ABC):
         )
 
     @property
-    def OutputType(self) -> type[Output]:
+    def OutputType(self) -> type[Output]:  # noqa: N802
         """The type of output this Runnable produces specified as a type annotation."""
         # First loop through bases -- this will help generic
         # any pydantic models.
@@ -2811,11 +2811,13 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
     )
 
     @property
+    @override
     def InputType(self) -> type[Input]:
         """The type of the input to the Runnable."""
         return self.first.InputType
 
     @property
+    @override
     def OutputType(self) -> type[Output]:
         """The type of the output of the Runnable."""
         return self.last.OutputType
@@ -3564,6 +3566,7 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
         return super().get_name(suffix, name=name)
 
     @property
+    @override
     def InputType(self) -> Any:
         """The type of the input to the Runnable."""
         for step in self.steps__.values():
@@ -4057,6 +4060,7 @@ class RunnableGenerator(Runnable[Input, Output]):
             self.name = "RunnableGenerator"
 
     @property
+    @override
     def InputType(self) -> Any:
         func = getattr(self, "_transform", None) or self._atransform
         try:
@@ -4097,6 +4101,7 @@ class RunnableGenerator(Runnable[Input, Output]):
         )
 
     @property
+    @override
     def OutputType(self) -> Any:
         func = getattr(self, "_transform", None) or self._atransform
         try:
@@ -4346,6 +4351,7 @@ class RunnableLambda(Runnable[Input, Output]):
             pass
 
     @property
+    @override
     def InputType(self) -> Any:
         """The type of the input to this Runnable."""
         func = getattr(self, "func", None) or self.afunc
@@ -4405,6 +4411,7 @@ class RunnableLambda(Runnable[Input, Output]):
         return super().get_input_schema(config)
 
     @property
+    @override
     def OutputType(self) -> Any:
         """The type of the output of this Runnable as a type annotation.
 
@@ -4958,6 +4965,7 @@ class RunnableEachBase(RunnableSerializable[list[Input], list[Output]]):
     )
 
     @property
+    @override
     def InputType(self) -> Any:
         return list[self.bound.InputType]  # type: ignore[name-defined]
 
@@ -4981,6 +4989,7 @@ class RunnableEachBase(RunnableSerializable[list[Input], list[Output]]):
         )
 
     @property
+    @override
     def OutputType(self) -> type[list[Output]]:
         return list[self.bound.OutputType]  # type: ignore[name-defined]
 
@@ -5274,6 +5283,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
         return self.bound.get_name(suffix, name=name)
 
     @property
+    @override
     def InputType(self) -> type[Input]:
         return (
             cast(type[Input], self.custom_input_type)
@@ -5282,6 +5292,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
         )
 
     @property
+    @override
     def OutputType(self) -> type[Output]:
         return (
             cast(type[Output], self.custom_output_type)
