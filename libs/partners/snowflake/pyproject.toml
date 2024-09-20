@@ -14,7 +14,7 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = ">=3.9,<3.12"
 langchain-core = ">=0.2.40"
-snowflake = "^0.12.1"
+snowflake = ">=0.8.0"
 
 [tool.poetry.group.test]
 optional = true

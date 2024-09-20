@@ -8,7 +8,9 @@ This package contains the LangChain integration with Snowflake
 pip install -U langchain-snowflake
 ```
 
-And you should configure credentials by setting the following environment variables:
+You can authenticate by one of the following ways:
+
+1. Configure credentials by setting the following environment variables:
 
 `SNOWFLAKE_USERNAME` should hold your Snowflake username.
 
@@ -20,11 +22,41 @@ And you should configure credentials by setting the following environment variab
 
 `SNOWFLAKE_ROLE` should contain the name of the appropriate Snowflake role.
 
-`SNOWFLAKE_WAREHOUSE` should contain the name of the Snowflake warehouse you would like to use.
+`SNOWFLAKE_AUTHENTICATOR` should contain the name of Snowflake authentication method, if not using username/password authentication.
 
-Alternatively, if `SNOWFLAKE_PASSWORD` is not specified, the `AUTHENTICATOR` variable may be set to `externalbrowser` to log in through the externalbrowser instead.
+Any of these paramaters can also be passed directly into the `CortexSearchRetriever` constructor. Those not passed will be inferred from the environment. For instance:
 
-These paramaters can also be passed directly into the class described below.
+```python
+from langchain_snowflake.search_retriever import CortexSearchRetriever
+
+search = CortexSearchRetriever(
+        role="snowflake_role",
+        database="your_db",
+        schema="your_schema",
+        service="your_cortex_search_service_name",
+        search_column="search_column_name",
+)
+```
+
+Here, `role`, `database`, and `schema` are passed directly, while `SNOWFLAKE_USERNAME`, `SNOWFLAKE_PASSWORD`, and `SNOWFLAKE_AUTHENTICATOR` are inferred from the environment.
+
+If the `SNOWFLAKE_AUTHENTICATOR` environment variable or `authenticator` property is set to `externalbrowser`, the `SNOWFLAKE_PASSWORD`/`password` need not be provided. `externalbrowser` auth will prompt to log in through an browser popup instead.
+
+2. Alternatively, you can pass in a `snowflake.snowpark.Session` directly into the constructor. See [the Snowflake docs](https://docs.snowflake.com/en/developer-guide/snowpark/python/creating-session) on how to create such a session.
+
+```python
+from langchain_snowflake.search_retriever import CortexSearchRetriever
+from snowflake.snowpark import Session
+
+# Create a snowflake session
+snowflake_session = Session.builder.config(...).create()
+
+search = CortexSearchRetriever(
+        session=snowflake_session,
+        service="your_cortex_search_service_name",
+        search_column="search_column_name",
+)
+```
 
 ## Search Retriever
 
