@@ -32,7 +32,7 @@ gradientai>=1.4.0,<2
 hdbcli>=2.19.21,<3
 hologres-vector==0.0.6
 html2text>=2020.1.16
-httpx=^0.27.0
+httpx>=0.27.0
 httpx-sse>=0.4.0,<0.5
 jinja2>=3,<4
 jq>=1.4.1,<2
