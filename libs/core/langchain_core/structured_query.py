@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from enum import Enum
-from typing import Any, Optional, Sequence, Union
+from typing import Any, Optional, Union
 
 from pydantic import BaseModel
 

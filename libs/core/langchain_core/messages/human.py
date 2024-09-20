@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Literal, Union
+from typing import Any, Literal, Union
 
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk
 
@@ -39,13 +39,13 @@ class HumanMessage(BaseMessage):
     """The type of the message (used for serialization). Defaults to "human"."""
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
         Default is ["langchain", "schema", "messages"]."""
         return ["langchain", "schema", "messages"]
 
     def __init__(
-        self, content: Union[str, List[Union[str, Dict]]], **kwargs: Any
+        self, content: Union[str, list[Union[str, dict]]], **kwargs: Any
     ) -> None:
         """Pass in content as positional arg.
 
@@ -70,7 +70,7 @@ class HumanMessageChunk(HumanMessage, BaseMessageChunk):
     Defaults to "HumanMessageChunk"."""
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
         Default is ["langchain", "schema", "messages"]."""
         return ["langchain", "schema", "messages"]

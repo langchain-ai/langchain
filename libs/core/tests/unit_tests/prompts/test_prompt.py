@@ -1,6 +1,6 @@
 """Test functionality related to prompts."""
 
-from typing import Any, Dict, Union
+from typing import Any, Union
 from unittest import mock
 
 import pydantic
@@ -610,7 +610,7 @@ async def test_prompt_ainvoke_with_metadata() -> None:
 )
 @pytest.mark.parametrize("template_format", ["f-string", "mustache"])
 def test_prompt_falsy_vars(
-    template_format: str, value: Any, expected: Union[str, Dict[str, str]]
+    template_format: str, value: Any, expected: Union[str, dict[str, str]]
 ) -> None:
     # each line is value, f-string, mustache
     if template_format == "f-string":

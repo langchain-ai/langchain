@@ -5,8 +5,9 @@ from __future__ import annotations
 import logging
 import threading
 import weakref
+from collections.abc import Sequence
 from concurrent.futures import Future, ThreadPoolExecutor, wait
-from typing import Any, List, Optional, Sequence, Union, cast
+from typing import Any, Optional, Union, cast
 from uuid import UUID
 
 import langsmith
@@ -156,7 +157,7 @@ class EvaluatorCallbackHandler(BaseTracer):
         if isinstance(results, EvaluationResult):
             results_ = [results]
         elif isinstance(results, dict) and "results" in results:
-            results_ = cast(List[EvaluationResult], results["results"])
+            results_ = cast(list[EvaluationResult], results["results"])
         else:
             raise TypeError(
                 f"Invalid evaluation result type {type(results)}."

@@ -1,8 +1,6 @@
 from abc import ABC
 from typing import (
     Any,
-    Dict,
-    List,
     Literal,
     Optional,
     TypedDict,
@@ -25,9 +23,9 @@ class BaseSerialized(TypedDict):
     """
 
     lc: int
-    id: List[str]
+    id: list[str]
     name: NotRequired[str]
-    graph: NotRequired[Dict[str, Any]]
+    graph: NotRequired[dict[str, Any]]
 
 
 class SerializedConstructor(BaseSerialized):
@@ -39,7 +37,7 @@ class SerializedConstructor(BaseSerialized):
     """
 
     type: Literal["constructor"]
-    kwargs: Dict[str, Any]
+    kwargs: dict[str, Any]
 
 
 class SerializedSecret(BaseSerialized):
@@ -125,7 +123,7 @@ class Serializable(BaseModel, ABC):
         return False
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
 
         For example, if the class is `langchain.llms.openai.OpenAI`, then the
@@ -134,7 +132,7 @@ class Serializable(BaseModel, ABC):
         return cls.__module__.split(".")
 
     @property
-    def lc_secrets(self) -> Dict[str, str]:
+    def lc_secrets(self) -> dict[str, str]:
         """A map of constructor argument names to secret ids.
 
         For example,
@@ -143,7 +141,7 @@ class Serializable(BaseModel, ABC):
         return dict()
 
     @property
-    def lc_attributes(self) -> Dict:
+    def lc_attributes(self) -> dict:
         """List of attribute names that should be included in the serialized kwargs.
 
         These attributes must be accepted by the constructor.
@@ -152,7 +150,7 @@ class Serializable(BaseModel, ABC):
         return {}
 
     @classmethod
-    def lc_id(cls) -> List[str]:
+    def lc_id(cls) -> list[str]:
         """A unique identifier for this class for serialization purposes.
 
         The unique identifier is a list of strings that describes the path
@@ -315,8 +313,8 @@ def _is_field_useful(inst: Serializable, key: str, value: Any) -> bool:
 
 
 def _replace_secrets(
-    root: Dict[Any, Any], secrets_map: Dict[str, str]
-) -> Dict[Any, Any]:
+    root: dict[Any, Any], secrets_map: dict[str, str]
+) -> dict[Any, Any]:
     result = root.copy()
     for path, secret_id in secrets_map.items():
         [*parts, last] = path.split(".")
@@ -344,7 +342,7 @@ def to_json_not_implemented(obj: object) -> SerializedNotImplemented:
     Returns:
         SerializedNotImplemented
     """
-    _id: List[str] = []
+    _id: list[str] = []
     try:
         if hasattr(obj, "__name__"):
             _id = [*obj.__module__.split("."), obj.__name__]

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Union, cast
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 from pydantic import ConfigDict, Field, field_validator
 
@@ -143,7 +144,7 @@ def merge_content(
                 merged = [merged] + content  # type: ignore
         elif isinstance(content, list):
             # If both are lists
-            merged = merge_lists(cast(List, merged), content)  # type: ignore
+            merged = merge_lists(cast(list, merged), content)  # type: ignore
         # If the first content is a list, and the second content is a string
         else:
             # If the last element of the first content is a string

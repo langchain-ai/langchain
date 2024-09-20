@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any
 
 from pydantic import Field
 
@@ -33,7 +33,7 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
         return "image-prompt"
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "prompts", "image"]
 

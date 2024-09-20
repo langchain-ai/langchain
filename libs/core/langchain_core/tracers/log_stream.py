@@ -4,13 +4,11 @@ import asyncio
 import copy
 import threading
 from collections import defaultdict
+from collections.abc import AsyncIterator, Iterator, Sequence
 from typing import (
     Any,
-    AsyncIterator,
-    Iterator,
     Literal,
     Optional,
-    Sequence,
     TypeVar,
     Union,
     overload,
