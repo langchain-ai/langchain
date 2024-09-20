@@ -27,7 +27,7 @@ target-version = "py39"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-langsmith = "^0.1.117"
+langsmith = "^0.1.125"
 tenacity = "^8.1.0,!=8.4.0"
 jsonpatch = "^1.33"
 PyYAML = ">=5.3"

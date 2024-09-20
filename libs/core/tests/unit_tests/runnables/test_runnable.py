@@ -3881,7 +3881,7 @@ def test_runnable_lambda_stream_with_callbacks() -> None:
 
     assert len(tracer.runs) == 2
     assert "ValueError('x is too large')" in str(tracer.runs[1].error)
-    assert tracer.runs[1].outputs is None
+    assert not tracer.runs[1].outputs
 
 
 async def test_runnable_lambda_astream() -> None:
@@ -3959,7 +3959,7 @@ async def test_runnable_lambda_astream_with_callbacks() -> None:
 
     assert len(tracer.runs) == 2
     assert "ValueError('x is too large')" in str(tracer.runs[1].error)
-    assert tracer.runs[1].outputs is None
+    assert not tracer.runs[1].outputs
 
 
 @freeze_time("2023-01-01")
@@ -4363,7 +4363,7 @@ def test_runnable_branch_invoke_callbacks() -> None:
 
     assert len(tracer.runs) == 2
     assert "ValueError('x is too large')" in str(tracer.runs[1].error)
-    assert tracer.runs[1].outputs is None
+    assert not tracer.runs[1].outputs
 
 
 async def test_runnable_branch_ainvoke_callbacks() -> None:
@@ -4390,7 +4390,7 @@ async def test_runnable_branch_ainvoke_callbacks() -> None:
 
     assert len(tracer.runs) == 2
     assert "ValueError('x is too large')" in str(tracer.runs[1].error)
-    assert tracer.runs[1].outputs is None
+    assert not tracer.runs[1].outputs
 
 
 async def test_runnable_branch_abatch() -> None:
@@ -4452,7 +4452,7 @@ def test_runnable_branch_stream_with_callbacks() -> None:
 
     assert len(tracer.runs) == 2
     assert "ValueError('x is error')" in str(tracer.runs[1].error)
-    assert tracer.runs[1].outputs is None
+    assert not tracer.runs[1].outputs
 
     assert list(branch.stream("bye", config=config)) == ["bye"]
 
@@ -4529,7 +4529,7 @@ async def test_runnable_branch_astream_with_callbacks() -> None:
 
     assert len(tracer.runs) == 2
     assert "ValueError('x is error')" in str(tracer.runs[1].error)
-    assert tracer.runs[1].outputs is None
+    assert not tracer.runs[1].outputs
 
     assert [_ async for _ in branch.astream("bye", config=config)] == ["bye"]
 
