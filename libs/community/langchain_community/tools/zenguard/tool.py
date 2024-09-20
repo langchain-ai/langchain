@@ -1,6 +1,6 @@
 import os
 from enum import Enum
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, List, Optional, Type, cast
 
 import requests
 from langchain_core.tools import BaseTool
@@ -91,7 +91,7 @@ class ZenGuardTool(BaseTool):
             response = requests.post(
                 self._ZENGUARD_API_URL_ROOT + postfix,
                 json=json,
-                headers={"x-api-key": self.zenguard_api_key},
+                headers={"x-api-key": cast(str, self.zenguard_api_key)},
                 timeout=5,
             )
             response.raise_for_status()
