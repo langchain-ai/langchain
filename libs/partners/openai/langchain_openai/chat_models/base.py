@@ -1083,7 +1083,7 @@ class BaseChatOpenAI(BaseChatModel):
                 if tool_choice == "any":
                     tool_choice = "required"
             elif isinstance(tool_choice, bool):
-                tool_choice = "required"
+                tool_choice = "required" if tool_choice else "none"
             elif isinstance(tool_choice, dict):
                 tool_names = [
                     formatted_tool["function"]["name"]
