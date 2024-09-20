@@ -83,6 +83,9 @@ if TYPE_CHECKING:
     from langchain_community.embeddings.gigachat import (
         GigaChatEmbeddings,
     )
+    from langchain_community.embeddings.github import (
+        GithubEmbeddings,
+    )
     from langchain_community.embeddings.google_palm import (
         GooglePalmEmbeddings,
     )
@@ -263,6 +266,7 @@ __all__ = [
     "FastEmbedEmbeddings",
     "GPT4AllEmbeddings",
     "GigaChatEmbeddings",
+    "GithubEmbeddings",
     "GooglePalmEmbeddings",
     "GradientEmbeddings",
     "HuggingFaceBgeEmbeddings",
@@ -347,6 +351,7 @@ _module_lookup = {
     "GooglePalmEmbeddings": "langchain_community.embeddings.google_palm",
     "GradientEmbeddings": "langchain_community.embeddings.gradient_ai",
     "GigaChatEmbeddings": "langchain_community.embeddings.gigachat",
+    "GithubEmbeddings": "langchain_community.embeddings.github",
     "HuggingFaceBgeEmbeddings": "langchain_community.embeddings.huggingface",
     "HuggingFaceEmbeddings": "langchain_community.embeddings.huggingface",
     "HuggingFaceHubEmbeddings": "langchain_community.embeddings.huggingface_hub",
