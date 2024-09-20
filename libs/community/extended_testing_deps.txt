@@ -22,7 +22,7 @@ esprima>=4.0.1,<5
 faiss-cpu>=1,<2
 feedparser>=6.0.10,<7
 fireworks-ai>=0.9.0,<0.10
-friendli-client>=1.2.4,<2
+friendli-client>=1.2.4
 geopandas>=0.13.1
 gitpython>=3.1.32,<4
 gliner>=0.2.7
@@ -32,7 +32,7 @@ gradientai>=1.4.0,<2
 hdbcli>=2.19.21,<3
 hologres-vector==0.0.6
 html2text>=2020.1.16
-httpx>=0.27.0
+httpx>=0.24.1,<0.25
 httpx-sse>=0.4.0,<0.5
 jinja2>=3,<4
 jq>=1.4.1,<2

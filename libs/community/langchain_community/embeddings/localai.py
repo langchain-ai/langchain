@@ -257,7 +257,10 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
                             "Please install it with `pip install httpx`."
                         ) from e
                     sync_specific["http_client"] = httpx.Client(
-                        proxy=values.get("openai_proxy")
+                        # httpx>=0.26 like in langchain-openai
+                        # proxy=values.get("openai_proxy")
+                        # perhaps it might be more restrictive
+                        proxies={"all://*": values.get("openai_proxy")}
                     )
                 values["client"] = openai.OpenAI(
                     **client_params, **sync_specific
@@ -273,7 +276,10 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
                             "Please install it with `pip install httpx`."
                         ) from e
                     async_specific["http_client"] = httpx.AsyncClient(
-                        proxy=values.get("openai_proxy")
+                        # httpx>=0.26 like in langchain-openai
+                        # proxy=values.get("openai_proxy")
+                        # perhaps it might be more restrictive
+                        proxies={"all://*": values.get("openai_proxy")}
                     )
                 values["async_client"] = openai.AsyncOpenAI(
                     **client_params, **async_specific
