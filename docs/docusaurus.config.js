@@ -186,6 +186,26 @@ const config = {
                 docId: "people",
                 label: "People",
               },
+              {
+                type: 'html',
+                value: '<hr class="dropdown-separator" style="margin-top: 0.5rem; margin-bottom: 0.5rem">',
+              },
+              {
+                href: "https://docs.smith.langchain.com",
+                label: "LangSmith",
+              },
+              {
+                href: "https://langchain-ai.github.io/langgraph/",
+                label: "LangGraph",
+              },
+              {
+                href: "https://smith.langchain.com/hub",
+                label: "LangChain Hub",
+              },
+              {
+                href: "https://js.langchain.com",
+                label: "LangChain JS/TS",
+              },
             ]
           },
           {
@@ -205,29 +225,6 @@ const config = {
                 label: "v0.1",
                 href: "https://python.langchain.com/v0.1/docs/get_started/introduction"
               }
-            ]
-          },
-          {
-            type: "dropdown",
-            label: "🦜️🔗",
-            position: "right",
-            items: [
-              {
-                href: "https://docs.smith.langchain.com",
-                label: "LangSmith",
-              },
-              {
-                href: "https://langchain-ai.github.io/langgraph/",
-                label: "LangGraph",
-              },
-              {
-                href: "https://smith.langchain.com/hub",
-                label: "LangChain Hub",
-              },
-              {
-                href: "https://js.langchain.com",
-                label: "LangChain JS/TS",
-              },
             ]
           },
           {

@@ -4,14 +4,11 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import AsyncIterator, Iterator, Sequence
 from typing import (
     TYPE_CHECKING,
     Any,
-    AsyncIterator,
-    Iterator,
-    List,
     Optional,
-    Sequence,
     TypeVar,
     Union,
     cast,
@@ -459,7 +456,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         output: Union[dict, BaseMessage] = {}
 
         if run_info["run_type"] == "chat_model":
-            generations = cast(List[List[ChatGenerationChunk]], response.generations)
+            generations = cast(list[list[ChatGenerationChunk]], response.generations)
             for gen in generations:
                 if output != {}:
                     break
@@ -469,7 +466,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
 
             event = "on_chat_model_end"
         elif run_info["run_type"] == "llm":
-            generations = cast(List[List[GenerationChunk]], response.generations)
+            generations = cast(list[list[GenerationChunk]], response.generations)
             output = {
                 "generations": [
                     [
@@ -997,6 +994,10 @@ async def _astream_events_implementation_v2(
                     del event["data"]["input"]
 
             yield event
+    except asyncio.CancelledError as exc:
+        # Cancel the task if it's still running
+        task.cancel(exc.args[0] if exc.args else None)
+        raise
     finally:
         # Cancel the task if it's still running
         task.cancel()

@@ -1,17 +1,18 @@
 from __future__ import annotations
 
 import inspect
+from collections.abc import Sequence
+from types import GenericAlias
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Dict,
     Optional,
-    Sequence,
     Union,
 )
 
 from pydantic import BaseModel
+from typing_extensions import override
 
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.load.load import load
@@ -31,7 +32,7 @@ if TYPE_CHECKING:
     from langchain_core.tracers.schemas import Run
 
 
-MessagesOrDictWithMessages = Union[Sequence["BaseMessage"], Dict[str, Any]]
+MessagesOrDictWithMessages = Union[Sequence["BaseMessage"], dict[str, Any]]
 GetSessionHistoryCallable = Callable[..., BaseChatMessageHistory]
 
 
@@ -396,6 +397,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         )
 
     @property
+    @override
     def OutputType(self) -> type[Output]:
         output_type = self._history_chain.OutputType
         return output_type
@@ -419,7 +421,11 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         """
         root_type = self.OutputType
 
-        if inspect.isclass(root_type) and issubclass(root_type, BaseModel):
+        if (
+            inspect.isclass(root_type)
+            and not isinstance(root_type, GenericAlias)
+            and issubclass(root_type, BaseModel)
+        ):
             return root_type
 
         return create_model_v2(

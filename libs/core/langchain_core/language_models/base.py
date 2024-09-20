@@ -1,22 +1,20 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from functools import lru_cache
+from collections.abc import Mapping, Sequence
+from functools import cache
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    List,
     Literal,
-    Mapping,
     Optional,
-    Sequence,
     TypeVar,
     Union,
 )
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
-from typing_extensions import TypeAlias, TypedDict
+from typing_extensions import TypeAlias, TypedDict, override
 
 from langchain_core._api import deprecated
 from langchain_core.messages import (
@@ -52,7 +50,7 @@ class LangSmithParams(TypedDict, total=False):
     """Stop words for generation."""
 
 
-@lru_cache(maxsize=None)  # Cache the tokenizer
+@cache  # Cache the tokenizer
 def get_tokenizer() -> Any:
     """Get a GPT-2 tokenizer instance.
 
@@ -145,6 +143,7 @@ class BaseLanguageModel(
             return verbose
 
     @property
+    @override
     def InputType(self) -> TypeAlias:
         """Get the input type for this runnable."""
         from langchain_core.prompt_values import (
@@ -158,7 +157,7 @@ class BaseLanguageModel(
         return Union[
             str,
             Union[StringPromptValue, ChatPromptValueConcrete],
-            List[AnyMessage],
+            list[AnyMessage],
         ]
 
     @abstractmethod

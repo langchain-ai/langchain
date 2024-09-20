@@ -6,16 +6,12 @@ MIT License
 from __future__ import annotations
 
 import logging
+from collections.abc import Iterator, Mapping, Sequence
 from types import MappingProxyType
 from typing import (
     Any,
-    Dict,
-    Iterator,
-    List,
     Literal,
-    Mapping,
     Optional,
-    Sequence,
     Union,
     cast,
 )
@@ -25,7 +21,7 @@ from typing_extensions import TypeAlias
 logger = logging.getLogger(__name__)
 
 
-Scopes: TypeAlias = List[Union[Literal[False, 0], Mapping[str, Any]]]
+Scopes: TypeAlias = list[Union[Literal[False, 0], Mapping[str, Any]]]
 
 
 # Globals
@@ -381,7 +377,7 @@ def _get_key(
                 # Move into the scope
                 try:
                     # Try subscripting (Normal dictionaries)
-                    scope = cast(Dict[str, Any], scope)[child]
+                    scope = cast(dict[str, Any], scope)[child]
                 except (TypeError, AttributeError):
                     try:
                         scope = getattr(scope, child)

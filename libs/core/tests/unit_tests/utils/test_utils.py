@@ -2,7 +2,7 @@ import os
 import re
 from contextlib import AbstractContextManager, nullcontext
 from copy import deepcopy
-from typing import Any, Callable, Dict, Optional, Tuple, Type, Union
+from typing import Any, Callable, Optional, Union
 from unittest.mock import patch
 
 import pytest
@@ -32,9 +32,9 @@ from langchain_core.utils.utils import secret_from_env
 )
 def test_check_package_version(
     package: str,
-    check_kwargs: Dict[str, Optional[str]],
+    check_kwargs: dict[str, Optional[str]],
     actual_version: str,
-    expected: Optional[Tuple[Type[Exception], str]],
+    expected: Optional[tuple[type[Exception], str]],
 ) -> None:
     with patch("langchain_core.utils.utils.version", return_value=actual_version):
         if expected is None:

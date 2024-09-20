@@ -5,19 +5,15 @@ import functools
 import logging
 import uuid
 from abc import ABC, abstractmethod
+from collections.abc import AsyncGenerator, Coroutine, Generator, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager, contextmanager
 from contextvars import copy_context
 from typing import (
     TYPE_CHECKING,
     Any,
-    AsyncGenerator,
     Callable,
-    Coroutine,
-    Generator,
     Optional,
-    Sequence,
-    Type,
     TypeVar,
     Union,
     cast,
@@ -2352,7 +2348,7 @@ def _configure(
             and handler_class is not None
         )
         if var.get() is not None or create_one:
-            var_handler = var.get() or cast(Type[BaseCallbackHandler], handler_class)()
+            var_handler = var.get() or cast(type[BaseCallbackHandler], handler_class)()
             if handler_class is None:
                 if not any(
                     handler is var_handler  # direct pointer comparison
