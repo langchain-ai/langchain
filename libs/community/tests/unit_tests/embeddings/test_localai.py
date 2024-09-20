@@ -38,6 +38,7 @@ def test_localai_client() -> None:
     assert llm.client == myclient
     assert llm.async_client == myasync
 
+
 @pytest.mark.requires("openai")
 def test_localai_proxy() -> None:
     import openai
