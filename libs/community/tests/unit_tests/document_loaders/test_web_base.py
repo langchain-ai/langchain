@@ -1,3 +1,4 @@
+import asyncio
 from textwrap import dedent
 from typing import Any
 from unittest.mock import MagicMock, patch
@@ -60,3 +61,24 @@ def test_lazy_load(mock_get: Any) -> None:
     results = list(loader.lazy_load())
     assert len(results) == 1
     assert results[0].page_content == "This is a div with a special class"
+
+
+@patch("aiohttp.ClientSession.get")
+def test_aload(mock_get: Any) -> None:
+    async def mock_text():
+        return "<html><body><p>Test content</p></body></html>"
+
+    mock_response = MagicMock()
+    mock_response.text = mock_text
+    mock_get.return_value.__aenter__.return_value = mock_response
+
+    loader = WebBaseLoader(
+        web_paths=["https://www.example.com"],
+        header_template={"User-Agent": "test-user-agent"},
+    )
+    results = loader.aload()
+    assert len(results) == 1
+    assert results[0].page_content == "Test content"
+    mock_get.assert_called_with(
+        "https://www.example.com", headers={"User-Agent": "test-user-agent"}, cookies={}
+    )
