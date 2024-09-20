@@ -15,13 +15,13 @@ Broadly speaking, LangChain 0.0.x memory was used to handle four main use cases:
 | Composite memory implementations               | Combine multiple memory sources, e.g., a list of known facts about the user along with facts learned during a given conversation. |
 | Custom user code based on the memory interface | Implement custom logic for memory management using the memory interface.                                                          |
 
-While the LangChain 0.0.x memory abstractions were useful, they were limited in their capabilities and not well suited for real-world conversational AI applications. Many were developed before the advent of chat models, making them poorly suited for such applications. Additionally, they lacked robust solutions for handling multi-user, multi-conversation scenarios—an essential requirement for practical conversational AI systems.
+While the LangChain 0.0.x memory abstractions were useful, they were limited in their capabilities and not well suited for real-world conversational AI applications. These memory abstractions lacked built-in support for multi-user, multi-conversation scenarios, which are essential for practical conversational AI systems.
 
 This guide will help you migrate your usage of memory implementations from LangChain v0.0.x to the persistence implementations of LangGraph.
 
-Where relevant we will also show how to implement the same functionality using just [LCEL](/docs/concepts/#langchain-expression-language-lcel) without LangGraph; however, in general, we recommend that users use LangGraph if persistence is required.
+Where relevant we will also show how to implement the same functionality using just [LCEL](/docs/concepts/#langchain-expression-language-lcel) without LangGraph; however, we recommend that using LangGraph if persistence is required.
 
-## Advantages of LangGraph persistence
+## Why use LangGraph for memory?
 
 The main advantages of persistence implementation in LangGraph are:
 
@@ -61,7 +61,7 @@ open an issue in the docs, and we'll try to prioritize and write migration guide
 
 The general strategy should be to use a chat model with tool calling capabilities to extract structured information from the conversation history.
 The extracted information can then be saved into an appropriate data structure (e.g., a dictionary), and information from it can be retrieved and added
-into the prompt when needed.
+into the prompt as needed.
 
 Memory classes that fall into this category include:
 
