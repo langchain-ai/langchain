@@ -18,7 +18,7 @@ from langchain_core.runnables import run_in_executor
 
 
 @deprecated(
-    since="0.3.4",
+    since="0.3.3",
     removal="1.0.0",
     message=(
         "Please see the migration guide at: "

@@ -58,7 +58,7 @@ class SummarizerMixin(BaseModel):
 
 
 @deprecated(
-    since="0.3.4",
+    since="0.3.1",
     removal="1.0.0",
     message=(
         "Please see the migration guide at: "
