@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-core"
-version = "0.3.1"
+version = "0.3.2"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -17,6 +17,9 @@ disallow_untyped_defs = "True"
 [[tool.mypy.overrides]]
 module = [ "numpy", "pytest",]
 ignore_missing_imports = true
+
+[tool.ruff]
+target-version = "py39"
 
 [tool.poetry.urls]
 "Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/core"
@@ -40,20 +43,9 @@ python = ">=3.12.4"
 
 [tool.poetry.extras]
 
-[tool.ruff]
-target-version = "py39"
-
 [tool.ruff.lint]
-select = ["B", "E", "F", "I", "N", "T201", "UP"]
-ignore = ["UP007"]
-
-[tool.ruff.lint.pep8-naming]
-classmethod-decorators = [
-    "classmethod",
-    "langchain_core.utils.pydantic.pre_init",
-    "pydantic.field_validator",
-    "pydantic.v1.root_validator",
-]
+select = [ "B", "E", "F", "I", "N", "T201", "UP",]
+ignore = [ "UP007",]
 
 [tool.coverage.run]
 omit = [ "tests/*",]
@@ -78,6 +70,9 @@ optional = true
 
 [tool.poetry.group.test_integration]
 optional = true
+
+[tool.ruff.lint.pep8-naming]
+classmethod-decorators = [ "classmethod", "langchain_core.utils.pydantic.pre_init", "pydantic.field_validator", "pydantic.v1.root_validator",]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/unit_tests/prompts/test_chat.py" = [ "E501",]
