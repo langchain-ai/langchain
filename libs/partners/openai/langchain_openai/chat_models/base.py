@@ -1420,7 +1420,7 @@ class BaseChatOpenAI(BaseChatModel):
                 if schema in tools:
                     tools_list = tools
                 else:
-                    tools_list = [schema] + tools
+                    tools_list = [schema, *tools]
             else:
                 tools_list = [schema]
             llm = self.bind_tools(
