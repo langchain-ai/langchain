@@ -1,4 +1,3 @@
-import asyncio
 from textwrap import dedent
 from typing import Any
 from unittest.mock import MagicMock, patch
@@ -63,9 +62,10 @@ def test_lazy_load(mock_get: Any) -> None:
     assert results[0].page_content == "This is a div with a special class"
 
 
+@pytest.mark.requires("bs4")
 @patch("aiohttp.ClientSession.get")
 def test_aload(mock_get: Any) -> None:
-    async def mock_text():
+    async def mock_text() -> str:
         return "<html><body><p>Test content</p></body></html>"
 
     mock_response = MagicMock()
