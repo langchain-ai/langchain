@@ -4,13 +4,17 @@ from langchain_core.callbacks import (
     CallbackManagerForRetrieverRun,
 )
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.utils import (
     convert_to_secret_str,
     get_from_dict_or_env,
+    get_pydantic_field_names,
+    pre_init,
 )
-from langchain_core.utils.env import env_var_is_set
+from langchain_core.utils.utils import build_extra_kwargs
+from pydantic import Field, SecretStr, model_validator
+from snowflake.core import Root
+from snowflake.snowpark import Session
 
 
 class CortexSearchRetrieverError(Exception):
@@ -121,35 +125,34 @@ class CortexSearchRetriever(BaseRetriever):
 
     """  # noqa: E501
 
-    _sp_session: Any = None
+    sp_session: Optional[Session] = Field(alias="sp_session")
     """Snowpark session object."""
 
-    _sp_root: Any = None
+    _sp_root: Root
     """Snowpark API Root object."""
 
-    authenticator: Optional[str] = Field(default=None, alias="authenticator")
+    authenticator: Optional[str] = Field(default=None)
     """Authenticator method to utilize when logging into Snowflake. Refer to Snowflake documentation for more information."""
 
-    search_column: str = Field(default=None, alias="search_column")
+    search_column: str = Field()
     """Name of the search column in the Cortex Search Service. Always returned in the search results."""
 
-    columns: Optional[List[str]] = Field(default=[], alias="columns")
+    columns: List[str] = Field(default=[])
     """List of additional columns to return in the search results."""
 
-    cortex_search_service: str = Field(default=None, alias="search_service")
+    cortex_search_service: str = Field(alias="search_service")
     """Cortex search service to query against."""
 
-    filter: Optional[Dict[str, Any]] = None
+    filter: Optional[Dict[str, Any]] = Field(default=None)
     """Filter to apply to the search query."""
 
-    limit: Optional[int] = None
+    limit: Optional[int] = Field(default=None)
     """The maximum number of results to return in a single query."""
 
     snowflake_username: Optional[str] = Field(default=None, alias="username")
     """Automatically inferred from env var `SNOWFLAKE_USERNAME` if not provided."""
 
-    snowflake_password: Optional[SecretStr] = Field(
-        default=None, alias="password")
+    snowflake_password: Optional[SecretStr] = Field(default=None, alias="password")
     """Automatically inferred from env var `SNOWFLAKE_PASSWORD` if not provided."""
 
     snowflake_account: Optional[str] = Field(default=None, alias="account")
@@ -164,126 +167,124 @@ class CortexSearchRetriever(BaseRetriever):
     snowflake_role: Optional[str] = Field(default=None, alias="role")
     """Automatically inferred from env var `SNOWFLAKE_ROLE` if not provided."""
 
-    @root_validator()
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: Dict[str, Any]) -> Any:
+        """Build extra kwargs from additional params that were passed in."""
+        all_required_field_names = get_pydantic_field_names(cls)
+        extra = values.get("model_kwargs", {})
+        values["model_kwargs"] = build_extra_kwargs(
+            extra, values, all_required_field_names
+        )
+        return values
+
+    @model_validator(mode="before")
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
-        try:
-            from snowflake.core import Root
-            from snowflake.snowpark import Session
-        except ImportError:
-            raise ImportError(
-                "`snowflake-snowpark-python` package not found, please install it with "
-                "`pip install snowflake-snowpark-python`"
+        """Validate the environment needed to establish a Snowflake session or obtain an API root from a provided Snowflake session."""
+
+        if "sp_session" not in values:
+            values["username"] = get_from_dict_or_env(
+                values, "username", "SNOWFLAKE_USERNAME"
+            )
+            values["password"] = convert_to_secret_str(
+                get_from_dict_or_env(values, "password", "SNOWFLAKE_PASSWORD")
+            )
+            values["account"] = get_from_dict_or_env(
+                values, "account", "SNOWFLAKE_ACCOUNT"
+            )
+            values["database"] = get_from_dict_or_env(
+                values, "database", "SNOWFLAKE_DATABASE"
+            )
+            values["schema"] = get_from_dict_or_env(
+                values, "schema", "SNOWFLAKE_SCHEMA"
+            )
+            values["role"] = get_from_dict_or_env(
+                values, "role", "SNOWFLAKE_ROLE"
             )
 
-        values["snowflake_username"] = get_from_dict_or_env(
-            values, "snowflake_username", "SNOWFLAKE_USERNAME"
-        )
-        # check whether to authenticate with password or authenticator
-        if values["snowflake_password"] is not None or env_var_is_set(
-            "SNOWFLAKE_PASSWORD"
-        ):
-            values["snowflake_password"] = convert_to_secret_str(
-                get_from_dict_or_env(
-                    values, "snowflake_password", "SNOWFLAKE_PASSWORD")
-            )
-        elif values["authenticator"] is not None:
-            values["authenticator"] = get_from_dict_or_env(
-                values, "authenticator", "AUTHENTICATOR"
-            )
-            if values["authenticator"].lower() != "externalbrowser":
-                raise CortexSearchRetrieverError(
-                    "Unable to authenticate. Unsupported authentication method"
-                )
-            # check if authentication method is supported
-        else:
-            raise CortexSearchRetrieverError(
-                """Unable to authenticate. Please input Snowflake password directly as env variable, or authenticate with externalbrowser."""
-            )
-        values["snowflake_account"] = get_from_dict_or_env(
-            values, "snowflake_account", "SNOWFLAKE_ACCOUNT"
-        )
-        values["snowflake_database"] = get_from_dict_or_env(
-            values, "snowflake_database", "SNOWFLAKE_DATABASE"
-        )
-        values["snowflake_schema"] = get_from_dict_or_env(
-            values, "snowflake_schema", "SNOWFLAKE_SCHEMA"
-        )
-        values["snowflake_role"] = get_from_dict_or_env(
-            values, "snowflake_role", "SNOWFLAKE_ROLE"
-        )
+            connection_params = {
+                "account": values["account"],
+                "user": values["username"],
+                "password": values["password"].get_secret_value(),
+                "database": values["database"],
+                "schema": values["schema"],
+                "role": values["role"],
+            }
 
-        connection_params = {
-            "account": values["snowflake_account"],
-            "user": values["snowflake_username"],
-            "password": values["snowflake_password"].get_secret_value(),
-            "database": values["snowflake_database"],
-            "schema": values["snowflake_schema"],
-            "role": values["snowflake_role"],
-        }
-
-        # specify connection params based on if password/authenticator is provided
-        if values["snowflake_password"] is not None:
-            connection_params["password"] = values[
-                "snowflake_password"
-            ].get_secret_value()
-        else:
-            connection_params["authenticator"] = values["authenticator"]
-
-        # Check other required fields
-        if values["search_column"] is None:
-            raise CortexSearchRetrieverError("Search column not provided")
-        if values["cortex_search_service"] is None:
-            raise CortexSearchRetrieverError(
-                "Cortex search service not provided")
-
-        # Attempt to create a session
-        try:
-            values["_sp_session"] = Session.builder.configs(
-                connection_params).create()
-        except Exception as e:
-            raise CortexSearchRetrieverError(f"Failed to create session: {e}")
-
-        try:
-            values["_sp_root"] = Root(values["_sp_session"])
-        except Exception as e:
-            raise CortexSearchRetrieverError(f"Failed to initialize Root: {e}")
+            try:
+                session = Session.builder.configs(
+                    connection_params).create()
+                values["sp_session"] = session
+            except Exception as e:
+                raise CortexSearchRetrieverError(f"Failed to create session: {e}")
 
         return values
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._sp_root = Root(self.sp_session)
+
+    def model_post_init(self, __context: Any):
+        if self.sp_session is None:
+            raise ValueError("sp_session was not set correctly")
+        self._sp_root = Root(self.sp_session)
+
+    @property
+    def _columns(self, cols: List[str] = []) -> List[str]:
+        """The columns to return in the search results."""
+        override_cols = cols if cols else self.columns
+        return [self.search_column] + override_cols
+
+    @property
+    def _default_params(self) -> dict:
+        """Default query parameters for the Cortex Search Service retriever. Can be optionally overridden on each invocation of `invoke()`."""
+        params = {}
+        if self.filter:
+            params["filter"] = self.filter
+        if self.limit:
+            params["limit"] = self.limit
+        return params
+
+    def _optional_params(
+        self, **kwargs: Any
+    ) -> dict:
+        params = self._default_params
+        if kwargs:
+            if "filter" in kwargs:
+                params["filter"] = kwargs["filter"]
+            if "limit" in kwargs:
+                params["limit"] = kwargs["limit"]
+
+        return params
 
     def _get_relevant_documents(
         self,
         query: str,
         *,
         run_manager: CallbackManagerForRetrieverRun,
+        **kwargs: Any,
     ) -> List[Document]:
         try:
-            kwargs = {"columns": self.columns if self.columns else [
-                self.search_column]}
-
-            if self.filter:
-                kwargs["filter"] = self.filter
-            if self.limit:
-                kwargs["limit"] = self.limit
-
-            responses = (
+            response = (
                 self._sp_root.databases[self.snowflake_database]
                 .schemas[self.snowflake_schema]
                 .cortex_search_services[self.cortex_search_service]
                 .search(
-                    query,
-                    **kwargs,
+                    query=str(query),
+                    columns=self._columns,
+                    **self._optional_params(**kwargs)
                 )
             )
-
             document_list = []
-            for response in responses.results:
-                if self.search_column not in response.keys():
+            for result in response.results:
+                if self.search_column not in result.keys():
                     raise CortexSearchRetrieverError(
                         "Search column not found in Cortex Search response"
                     )
                 else:
                     document_list.append(
-                        self._create_document(response, self.search_column)
+                        self._create_document(result, self.search_column)
                     )
         except Exception as e:
             raise CortexSearchRetrieverError(f"Failed in search: {e}")
@@ -297,8 +298,8 @@ class CortexSearchRetriever(BaseRetriever):
         return doc
 
     def __del__(self) -> None:
-        if getattr(self, "_sp_session", None) is not None:
-            self._sp_session.close()
+        if getattr(self, "sp_session", None) is not None:
+            self.sp_session.close()
 
     async def _aget_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun

@@ -18,7 +18,7 @@ export SNOWFLAKE_CORTEX_SEARCH_SERVICE=<cortex_search_service>
 
 import pytest
 from langchain_core.documents import Document
-
+from pydantic import ValidationError
 from langchain_snowflake import CortexSearchRetriever, CortexSearchRetrieverError
 
 
@@ -41,6 +41,7 @@ def test_snowflake_cortex_search_invoke() -> None:
 
     documents = retriever.invoke("dinosaur with a large tail")
     assert len(documents) > 0
+
     for doc in documents:
         assert isinstance(doc, Document)
         assert doc.page_content
@@ -52,7 +53,6 @@ def test_snowflake_cortex_search_invoke() -> None:
         assert doc.metadata["era"] == "Jurassic"
 
 
-# Test no columns or filter
 @pytest.mark.requires("snowflake.core")
 def test_snowflake_cortex_search_invoke_no_columns_or_filter() -> None:
     """Test the invoke() method with no columns or filter."""
@@ -72,10 +72,9 @@ def test_snowflake_cortex_search_invoke_no_columns_or_filter() -> None:
         assert doc.page_content
 
 
-# Test no search column
 @pytest.mark.requires("snowflake.core")
-def test_snowflake_cortex_search_invoke_no_search_column() -> None:
-    """Test the invoke() method with no search column."""
+def test_snowflake_cortex_search_constructor_no_search_column() -> None:
+    """Test the constructor with no search column name provided."""
 
     columns = ["name", "description", "era", "diet", "height_meters"]
 
@@ -85,14 +84,13 @@ def test_snowflake_cortex_search_invoke_no_search_column() -> None:
         "limit": 10,
     }
 
-    with pytest.raises(CortexSearchRetrieverError):
+    with pytest.raises(ValidationError):
         CortexSearchRetriever(**kwargs)
 
 
-# Test no service name
 @pytest.mark.requires("snowflake.core")
-def test_snowflake_cortex_search_invoke_no_service_name() -> None:
-    """Test the invoke() method with no search column."""
+def test_snowflake_cortex_search_retriever_no_service_name() -> None:
+    """Test the constructor with no search service name provided."""
 
     columns = ["name", "description", "era", "diet", "height_meters"]
 
@@ -102,5 +100,47 @@ def test_snowflake_cortex_search_invoke_no_service_name() -> None:
         "search_column": "description",
     }
 
-    with pytest.raises(CortexSearchRetrieverError):
+    with pytest.raises(ValidationError):
         CortexSearchRetriever(**kwargs)
+
+
+@pytest.mark.requires("snowflake.core")
+def test_snowflake_cortex_search_invoke_invalid_filter() -> None:
+    """Test the invoke() method with an invalid filter object."""
+
+    columns = ["name", "description", "era", "diet", "height_meters"]
+
+    kwargs = {
+        "columns": columns,
+        "search_service": "dinosaur_svc",
+        "limit": 10,
+        "search_column": "description",
+        "filter": {"@eq": ["era", "Jurassic"]},
+    }
+
+    retriever = CortexSearchRetriever(**kwargs)
+
+    with pytest.raises(CortexSearchRetrieverError):
+        retriever.invoke("dinosaur with a large tail")
+
+
+@pytest.mark.requires("snowflake.core")
+def test_snowflake_cortex_search_invoke_limit() -> None:
+    """Test the invoke() method with an overridden limit."""
+
+    columns = ["name", "description", "era", "diet", "height_meters"]
+    search_column = "description"
+
+    kwargs = {
+        "search_service": "dinosaur_svc",
+        "columns": columns,
+        "search_column": search_column,
+        "limit": 1,
+    }
+
+    retriever = CortexSearchRetriever(**kwargs)
+
+    new_limit = 2
+
+    documents = retriever.invoke("dinosaur with a large tail", limit=new_limit)
+    assert len(documents) == new_limit
