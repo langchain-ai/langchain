@@ -2,11 +2,11 @@ from typing import Any, Dict, Iterable, Optional, Set, Union
 
 from langchain_core._api import beta
 from langchain_core.documents import Document
-from langchain_core.graph_vectorstores.links import Link
 
 from langchain_community.graph_vectorstores.extractors.link_extractor import (
     LinkExtractor,
 )
+from langchain_community.graph_vectorstores.links import Link
 
 KeybertInput = Union[str, Document]
 
@@ -37,7 +37,7 @@ class KeybertLinkExtractor(LinkExtractor[KeybertInput]):
         .. seealso::
 
             - :mod:`How to use a graph vector store <langchain_community.graph_vectorstores>`
-            - :class:`How to create links between documents <langchain_core.graph_vectorstores.links.Link>`
+            - :class:`How to create links between documents <langchain_community.graph_vectorstores.links.Link>`
 
         How to link Documents on common keywords using Keybert
         ======================================================
@@ -62,12 +62,12 @@ class KeybertLinkExtractor(LinkExtractor[KeybertInput]):
 
         We can use :meth:`extract_one` on a document to get the links and add the links
         to the document metadata with
-        :meth:`~langchain_core.graph_vectorstores.links.add_links`::
+        :meth:`~langchain_community.graph_vectorstores.links.add_links`::
 
             from langchain_community.document_loaders import TextLoader
             from langchain_community.graph_vectorstores import CassandraGraphVectorStore
             from langchain_community.graph_vectorstores.extractors import KeybertLinkExtractor
-            from langchain_core.graph_vectorstores.links import add_links
+            from langchain_community.graph_vectorstores.links import add_links
             from langchain_text_splitters import CharacterTextSplitter
 
             loader = TextLoader("state_of_the_union.txt")
@@ -116,7 +116,7 @@ class KeybertLinkExtractor(LinkExtractor[KeybertInput]):
 
             {'source': 'state_of_the_union.txt', 'links': [Link(kind='kw', direction='bidir', tag='ukraine'), Link(kind='kw', direction='bidir', tag='ukrainian'), Link(kind='kw', direction='bidir', tag='putin'), Link(kind='kw', direction='bidir', tag='vladimir'), Link(kind='kw', direction='bidir', tag='russia')]}
 
-        The documents with keyword links can then be added to a :class:`~langchain_core.graph_vectorstores.base.GraphVectorStore`::
+        The documents with keyword links can then be added to a :class:`~langchain_community.graph_vectorstores.base.GraphVectorStore`::
 
             from langchain_community.graph_vectorstores import CassandraGraphVectorStore
 
