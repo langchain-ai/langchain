@@ -18,7 +18,7 @@ from typing import (
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, model_validator
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from langchain_core.load import dumpd
 from langchain_core.output_parsers.base import BaseOutputParser
@@ -107,6 +107,7 @@ class BasePromptTemplate(
         return dumpd(self)
 
     @property
+    @override
     def OutputType(self) -> Any:
         """Return the output type of the prompt."""
         return Union[StringPromptValue, ChatPromptValueConcrete]

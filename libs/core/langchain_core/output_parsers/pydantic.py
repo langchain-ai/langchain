@@ -3,6 +3,7 @@ from typing import Annotated, Generic, Optional
 
 import pydantic
 from pydantic import SkipValidation
+from typing_extensions import override
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import JsonOutputParser
@@ -107,6 +108,7 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
         return "pydantic"
 
     @property
+    @override
     def OutputType(self) -> type[TBaseModel]:
         """Return the pydantic model."""
         return self.pydantic_object
