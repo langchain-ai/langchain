@@ -9,10 +9,10 @@ on:
       python-version:
         required: true
         type: string
-        description: 'Python version to use'
+        description: "Python version to use"
 
 env:
-  POETRY_VERSION: '1.7.1'
+  POETRY_VERSION: "1.7.1"
 
 jobs:
   build:
@@ -25,7 +25,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Set up Python ${{ inputs.python-version }} + Poetry ${{ env.POETRY_VERSION }}
-        uses: './.github/actions/poetry_setup'
+        uses: "./.github/actions/poetry_setup"
         with:
           python-version: ${{ inputs.python-version }}
           poetry-version: ${{ env.POETRY_VERSION }}
