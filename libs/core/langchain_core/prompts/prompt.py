@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import warnings
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Any, Literal, Optional, Union
+
+from pydantic import BaseModel, model_validator
 
 from langchain_core.prompts.string import (
     DEFAULT_FORMATTER_MAPPING,
@@ -13,7 +15,6 @@ from langchain_core.prompts.string import (
     get_template_variables,
     mustache_schema,
 )
-from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.runnables.config import RunnableConfig
 
 
@@ -53,13 +54,13 @@ class PromptTemplate(StringPromptTemplate):
     """
 
     @property
-    def lc_attributes(self) -> Dict[str, Any]:
+    def lc_attributes(self) -> dict[str, Any]:
         return {
             "template_format": self.template_format,
         }
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "prompts", "prompt"]
 
@@ -73,8 +74,9 @@ class PromptTemplate(StringPromptTemplate):
     validate_template: bool = False
     """Whether or not to try validating the template."""
 
-    @root_validator(pre=True)
-    def pre_init_validation(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def pre_init_validation(cls, values: dict) -> Any:
         """Check that template and input variables are consistent."""
         if values.get("template") is None:
             # Will let pydantic fail with a ValidationError if template
@@ -181,9 +183,9 @@ class PromptTemplate(StringPromptTemplate):
     @classmethod
     def from_examples(
         cls,
-        examples: List[str],
+        examples: list[str],
         suffix: str,
-        input_variables: List[str],
+        input_variables: list[str],
         example_separator: str = "\n\n",
         prefix: str = "",
         **kwargs: Any,
@@ -213,7 +215,7 @@ class PromptTemplate(StringPromptTemplate):
     def from_file(
         cls,
         template_file: Union[str, Path],
-        input_variables: Optional[List[str]] = None,
+        input_variables: Optional[list[str]] = None,
         encoding: Optional[str] = None,
         **kwargs: Any,
     ) -> PromptTemplate:
@@ -231,11 +233,13 @@ class PromptTemplate(StringPromptTemplate):
         Returns:
             The prompt loaded from the file.
         """
-        with open(str(template_file), "r", encoding=encoding) as f:
+        with open(str(template_file), encoding=encoding) as f:
             template = f.read()
         if input_variables:
             warnings.warn(
-                "`input_variables' is deprecated and ignored.", DeprecationWarning
+                "`input_variables' is deprecated and ignored.",
+                DeprecationWarning,
+                stacklevel=2,
             )
         return cls.from_template(template=template, **kwargs)
 
@@ -245,7 +249,7 @@ class PromptTemplate(StringPromptTemplate):
         template: str,
         *,
         template_format: str = "f-string",
-        partial_variables: Optional[Dict[str, Any]] = None,
+        partial_variables: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> PromptTemplate:
         """Load a prompt template from a template.

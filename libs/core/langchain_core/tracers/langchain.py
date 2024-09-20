@@ -3,13 +3,15 @@
 from __future__ import annotations
 
 import logging
+import warnings
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 from uuid import UUID
 
 from langsmith import Client
 from langsmith import utils as ls_utils
+from pydantic import PydanticDeprecationWarning
 from tenacity import (
     Retrying,
     retry_if_exception_type,
@@ -69,11 +71,16 @@ def _get_executor() -> ThreadPoolExecutor:
 
 
 def _run_to_dict(run: Run) -> dict:
-    return {
-        **run.dict(exclude={"child_runs", "inputs", "outputs"}),
-        "inputs": run.inputs.copy() if run.inputs is not None else None,
-        "outputs": run.outputs.copy() if run.outputs is not None else None,
-    }
+    # TODO: Update once langsmith moves to Pydantic V2 and we can swap run.dict for
+    # run.model_dump
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=PydanticDeprecationWarning)
+
+        return {
+            **run.dict(exclude={"child_runs", "inputs", "outputs"}),
+            "inputs": run.inputs.copy() if run.inputs is not None else None,
+            "outputs": run.outputs.copy() if run.outputs is not None else None,
+        }
 
 
 class LangChainTracer(BaseTracer):
@@ -84,7 +91,7 @@ class LangChainTracer(BaseTracer):
         example_id: Optional[Union[UUID, str]] = None,
         project_name: Optional[str] = None,
         client: Optional[Client] = None,
-        tags: Optional[List[str]] = None,
+        tags: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize the LangChain tracer.
@@ -94,7 +101,7 @@ class LangChainTracer(BaseTracer):
             project_name: The project name. Defaults to the tracer project.
             client: The client. Defaults to the global client.
             tags: The tags. Defaults to an empty list.
-            **kwargs: Additional keyword arguments.
+            kwargs: Additional keyword arguments.
         """
         super().__init__(**kwargs)
         self.example_id = (
@@ -107,13 +114,13 @@ class LangChainTracer(BaseTracer):
 
     def on_chat_model_start(
         self,
-        serialized: Dict[str, Any],
-        messages: List[List[BaseMessage]],
+        serialized: dict[str, Any],
+        messages: list[list[BaseMessage]],
         *,
         run_id: UUID,
-        tags: Optional[List[str]] = None,
+        tags: Optional[list[str]] = None,
         parent_run_id: Optional[UUID] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         name: Optional[str] = None,
         **kwargs: Any,
     ) -> Run:
@@ -127,7 +134,7 @@ class LangChainTracer(BaseTracer):
             parent_run_id: The parent run ID. Defaults to None.
             metadata: The metadata. Defaults to None.
             name: The name. Defaults to None.
-            **kwargs: Additional keyword arguments.
+            kwargs: Additional keyword arguments.
 
         Returns:
             Run: The run.
@@ -152,7 +159,12 @@ class LangChainTracer(BaseTracer):
         return chat_model_run
 
     def _persist_run(self, run: Run) -> None:
-        run_ = run.copy()
+        # TODO: Update once langsmith moves to Pydantic V2 and we can swap run.copy for
+        # run.model_copy
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=PydanticDeprecationWarning)
+
+            run_ = run.copy()
         run_.reference_example_id = self.example_id
         self.latest_run = run_
 
@@ -182,7 +194,7 @@ class LangChainTracer(BaseTracer):
                 )
         raise ValueError("Failed to get run URL.")
 
-    def _get_tags(self, run: Run) -> List[str]:
+    def _get_tags(self, run: Run) -> list[str]:
         """Get combined tags for a run."""
         tags = set(run.tags or [])
         tags.update(self.tags or [])

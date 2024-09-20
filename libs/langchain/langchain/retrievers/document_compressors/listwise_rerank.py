@@ -6,8 +6,8 @@ from langchain_core.callbacks import Callbacks
 from langchain_core.documents import BaseDocumentCompressor, Document
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate, ChatPromptTemplate
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables import Runnable, RunnableLambda, RunnablePassthrough
+from pydantic import BaseModel, ConfigDict, Field
 
 _default_system_tmpl = """{context}
 
@@ -76,8 +76,9 @@ class LLMListwiseRerank(BaseDocumentCompressor):
     top_n: int = 3
     """Number of documents to return."""
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     def compress_documents(
         self,
@@ -105,7 +106,7 @@ class LLMListwiseRerank(BaseDocumentCompressor):
             llm: The language model to use for filtering. **Must implement
                 BaseLanguageModel.with_structured_output().**
             prompt: The prompt to use for the filter.
-            **kwargs: Additional arguments to pass to the constructor.
+            kwargs: Additional arguments to pass to the constructor.
 
         Returns:
             A LLMListwiseRerank document compressor that uses the given language model.

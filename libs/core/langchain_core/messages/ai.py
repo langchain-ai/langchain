@@ -1,7 +1,8 @@
 import json
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Any, Literal, Optional, Union
 
-from typing_extensions import TypedDict
+from pydantic import model_validator
+from typing_extensions import Self, TypedDict
 
 from langchain_core.messages.base import (
     BaseMessage,
@@ -24,7 +25,6 @@ from langchain_core.messages.tool import (
 from langchain_core.messages.tool import (
     tool_call_chunk as create_tool_call_chunk,
 )
-from langchain_core.pydantic_v1 import root_validator
 from langchain_core.utils._merge import merge_dicts, merge_lists
 from langchain_core.utils.json import parse_partial_json
 
@@ -69,9 +69,9 @@ class AIMessage(BaseMessage):
     At the moment, this is ignored by most models. Usage is discouraged.
     """
 
-    tool_calls: List[ToolCall] = []
+    tool_calls: list[ToolCall] = []
     """If provided, tool calls associated with the message."""
-    invalid_tool_calls: List[InvalidToolCall] = []
+    invalid_tool_calls: list[InvalidToolCall] = []
     """If provided, tool calls with parsing errors associated with the message."""
     usage_metadata: Optional[UsageMetadata] = None
     """If provided, usage metadata for a message, such as token counts.
@@ -83,18 +83,18 @@ class AIMessage(BaseMessage):
     """The type of the message (used for deserialization). Defaults to "ai"."""
 
     def __init__(
-        self, content: Union[str, List[Union[str, Dict]]], **kwargs: Any
+        self, content: Union[str, list[Union[str, dict]]], **kwargs: Any
     ) -> None:
         """Pass in content as positional arg.
 
         Args:
             content: The content of the message.
-            **kwargs: Additional arguments to pass to the parent class.
+            kwargs: Additional arguments to pass to the parent class.
         """
         super().__init__(content=content, **kwargs)
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
 
         Returns:
@@ -104,15 +104,16 @@ class AIMessage(BaseMessage):
         return ["langchain", "schema", "messages"]
 
     @property
-    def lc_attributes(self) -> Dict:
+    def lc_attributes(self) -> dict:
         """Attrs to be serialized even if they are derived from other init args."""
         return {
             "tool_calls": self.tool_calls,
             "invalid_tool_calls": self.invalid_tool_calls,
         }
 
-    @root_validator(pre=True)
-    def _backwards_compat_tool_calls(cls, values: dict) -> dict:
+    @model_validator(mode="before")
+    @classmethod
+    def _backwards_compat_tool_calls(cls, values: dict) -> Any:
         check_additional_kwargs = not any(
             values.get(k)
             for k in ("tool_calls", "invalid_tool_calls", "tool_call_chunks")
@@ -136,7 +137,7 @@ class AIMessage(BaseMessage):
 
         # Ensure "type" is properly set on all tool call-like dicts.
         if tool_calls := values.get("tool_calls"):
-            updated: List = []
+            updated: list = []
             for tc in tool_calls:
                 updated.append(
                     create_tool_call(**{k: v for k, v in tc.items() if k != "type"})
@@ -177,7 +178,7 @@ class AIMessage(BaseMessage):
         base = super().pretty_repr(html=html)
         lines = []
 
-        def _format_tool_args(tc: Union[ToolCall, InvalidToolCall]) -> List[str]:
+        def _format_tool_args(tc: Union[ToolCall, InvalidToolCall]) -> list[str]:
             lines = [
                 f"  {tc.get('name', 'Tool')} ({tc.get('id')})",
                 f" Call ID: {tc.get('id')}",
@@ -204,7 +205,7 @@ class AIMessage(BaseMessage):
         return (base.strip() + "\n" + "\n".join(lines)).strip()
 
 
-AIMessage.update_forward_refs()
+AIMessage.model_rebuild()
 
 
 class AIMessageChunk(AIMessage, BaseMessageChunk):
@@ -217,11 +218,11 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
     """The type of the message (used for deserialization). 
     Defaults to "AIMessageChunk"."""
 
-    tool_call_chunks: List[ToolCallChunk] = []
+    tool_call_chunks: list[ToolCallChunk] = []
     """If provided, tool call chunks associated with the message."""
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
 
         Returns:
@@ -231,15 +232,15 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
         return ["langchain", "schema", "messages"]
 
     @property
-    def lc_attributes(self) -> Dict:
+    def lc_attributes(self) -> dict:
         """Attrs to be serialized even if they are derived from other init args."""
         return {
             "tool_calls": self.tool_calls,
             "invalid_tool_calls": self.invalid_tool_calls,
         }
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def init_tool_calls(cls, values: dict) -> dict:
+    @model_validator(mode="after")
+    def init_tool_calls(self) -> Self:
         """Initialize tool calls from tool call chunks.
 
         Args:
@@ -251,35 +252,35 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
         Raises:
             ValueError: If the tool call chunks are malformed.
         """
-        if not values["tool_call_chunks"]:
-            if values["tool_calls"]:
-                values["tool_call_chunks"] = [
+        if not self.tool_call_chunks:
+            if self.tool_calls:
+                self.tool_call_chunks = [
                     create_tool_call_chunk(
                         name=tc["name"],
                         args=json.dumps(tc["args"]),
                         id=tc["id"],
                         index=None,
                     )
-                    for tc in values["tool_calls"]
+                    for tc in self.tool_calls
                 ]
-            if values["invalid_tool_calls"]:
-                tool_call_chunks = values.get("tool_call_chunks", [])
+            if self.invalid_tool_calls:
+                tool_call_chunks = self.tool_call_chunks
                 tool_call_chunks.extend(
                     [
                         create_tool_call_chunk(
                             name=tc["name"], args=tc["args"], id=tc["id"], index=None
                         )
-                        for tc in values["invalid_tool_calls"]
+                        for tc in self.invalid_tool_calls
                     ]
                 )
-                values["tool_call_chunks"] = tool_call_chunks
+                self.tool_call_chunks = tool_call_chunks
 
-            return values
+            return self
         tool_calls = []
         invalid_tool_calls = []
-        for chunk in values["tool_call_chunks"]:
+        for chunk in self.tool_call_chunks:
             try:
-                args_ = parse_partial_json(chunk["args"]) if chunk["args"] != "" else {}
+                args_ = parse_partial_json(chunk["args"]) if chunk["args"] != "" else {}  # type: ignore[arg-type]
                 if isinstance(args_, dict):
                     tool_calls.append(
                         create_tool_call(
@@ -299,9 +300,9 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                         error=None,
                     )
                 )
-        values["tool_calls"] = tool_calls
-        values["invalid_tool_calls"] = invalid_tool_calls
-        return values
+        self.tool_calls = tool_calls
+        self.invalid_tool_calls = invalid_tool_calls
+        return self
 
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
         if isinstance(other, AIMessageChunk):

@@ -3,8 +3,12 @@ from typing import Any, Dict, List, Mapping, Optional
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from langchain_core.pydantic_v1 import Extra, Field, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
+from langchain_core.utils import (
+    convert_to_secret_str,
+    get_from_dict_or_env,
+    get_pydantic_field_names,
+)
+from pydantic import ConfigDict, Field, SecretStr, model_validator
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +30,7 @@ class GooseAI(LLM):
 
     """
 
-    client: Any
+    client: Any = None
 
     model_name: str = "gpt-neo-20b"
     """Model name to use"""
@@ -62,15 +66,15 @@ class GooseAI(LLM):
 
     gooseai_api_key: Optional[SecretStr] = None
 
-    class Config:
-        """Configuration for this pydantic config."""
+    model_config = ConfigDict(
+        extra="ignore",
+    )
 
-        extra = Extra.ignore
-
-    @root_validator(pre=True)
-    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
-        all_required_field_names = {field.alias for field in cls.__fields__.values()}
+        all_required_field_names = get_pydantic_field_names(cls)
 
         extra = values.get("model_kwargs", {})
         for field_name in list(values):
@@ -84,11 +88,7 @@ class GooseAI(LLM):
                 )
                 extra[field_name] = values.pop(field_name)
         values["model_kwargs"] = extra
-        return values
 
-    @pre_init
-    def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that api key and python package exists in environment."""
         gooseai_api_key = convert_to_secret_str(
             get_from_dict_or_env(values, "gooseai_api_key", "GOOSEAI_API_KEY")
         )

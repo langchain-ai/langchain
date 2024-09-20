@@ -9,11 +9,11 @@ from langchain_core.callbacks.manager import (
 )
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseLanguageModel
-from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import Runnable
 from langchain_core.structured_query import StructuredQuery, Visitor
 from langchain_core.vectorstores import VectorStore
+from pydantic import ConfigDict, Field, model_validator
 
 from langchain.chains.query_constructor.base import load_query_constructor_runnable
 from langchain.chains.query_constructor.schema import AttributeInfo
@@ -48,6 +48,7 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         MongoDBAtlasTranslator,
     )
     from langchain_community.query_constructors.myscale import MyScaleTranslator
+    from langchain_community.query_constructors.neo4j import Neo4jTranslator
     from langchain_community.query_constructors.opensearch import OpenSearchTranslator
     from langchain_community.query_constructors.pgvector import PGVectorTranslator
     from langchain_community.query_constructors.pinecone import PineconeTranslator
@@ -70,6 +71,7 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         Dingo,
         Milvus,
         MyScale,
+        Neo4jVector,
         OpenSearchVectorSearch,
         PGVector,
         Qdrant,
@@ -111,11 +113,10 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         TimescaleVector: TimescaleVectorTranslator,
         OpenSearchVectorSearch: OpenSearchTranslator,
         CommunityMongoDBAtlasVectorSearch: MongoDBAtlasTranslator,
+        Neo4jVector: Neo4jTranslator,
     }
     if isinstance(vectorstore, DatabricksVectorSearch):
         return DatabricksVectorSearchTranslator()
-    if isinstance(vectorstore, Qdrant):
-        return QdrantTranslator(metadata_key=vectorstore.metadata_payload_key)
     elif isinstance(vectorstore, MyScale):
         return MyScaleTranslator(metadata_key=vectorstore.metadata_column)
     elif isinstance(vectorstore, Redis):
@@ -177,6 +178,24 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
             if isinstance(vectorstore, PGVector):
                 return NewPGVectorTranslator()
 
+        try:
+            from langchain_qdrant import QdrantVectorStore
+        except ImportError:
+            pass
+        else:
+            if isinstance(vectorstore, QdrantVectorStore):
+                return QdrantTranslator(metadata_key=vectorstore.metadata_payload_key)
+
+        try:
+            # Added in langchain-community==0.2.11
+            from langchain_community.query_constructors.hanavector import HanaTranslator
+            from langchain_community.vectorstores import HanaDB
+        except ImportError:
+            pass
+        else:
+            if isinstance(vectorstore, HanaDB):
+                return HanaTranslator()
+
         raise ValueError(
             f"Self query retriever with Vector Store type {vectorstore.__class__}"
             f" not supported."
@@ -204,14 +223,14 @@ class SelfQueryRetriever(BaseRetriever):
     use_original_query: bool = False
     """Use original query instead of the revised new query from LLM"""
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        populate_by_name=True,
+        arbitrary_types_allowed=True,
+    )
 
-        arbitrary_types_allowed = True
-        allow_population_by_field_name = True
-
-    @root_validator(pre=True)
-    def validate_translator(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_translator(cls, values: Dict) -> Any:
         """Validate translator."""
         if "structured_query_translator" not in values:
             values["structured_query_translator"] = _get_builtin_translator(

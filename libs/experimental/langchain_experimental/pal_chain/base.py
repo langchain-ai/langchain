@@ -14,10 +14,11 @@ from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain_core.callbacks.manager import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
+from pydantic import ConfigDict, Field, model_validator
+from typing_extensions import Self
 
 from langchain_experimental.pal_chain.colored_object_prompt import COLORED_OBJECT_PROMPT
 from langchain_experimental.pal_chain.math_prompt import MATH_PROMPT
-from langchain_experimental.pydantic_v1 import Extra, Field, root_validator
 from langchain_experimental.utilities import PythonREPL
 
 COMMAND_EXECUTION_FUNCTIONS = [
@@ -154,9 +155,9 @@ class PALChain(Chain):
     incidents.
     """
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def post_init(cls, values: Dict) -> Dict:
-        if not values["allow_dangerous_code"]:
+    @model_validator(mode="after")
+    def post_init(self) -> Self:
+        if not self.allow_dangerous_code:
             raise ValueError(
                 "This chain relies on the execution of generated code, "
                 "which can be dangerous. "
@@ -166,13 +167,12 @@ class PALChain(Chain):
                 "`allow_dangerous_code` to `True`."
             )
 
-        return values
+        return self
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
     @property
     def input_keys(self) -> List[str]:

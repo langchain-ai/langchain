@@ -15,6 +15,14 @@ hide_table_of_contents: true
 
 # Document loaders
 
+:::info
+
+If you'd like to write your own document loader, see [this how-to](/docs/how_to/document_loader_custom/).
+If you'd like to contribute an integration, see [Contributing integrations](/docs/contributing/integrations/).
+
+:::
+
+
 ## Features
 
 The following table shows the feature support for all document loaders.

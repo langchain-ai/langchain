@@ -17,8 +17,9 @@ import aiohttp
 import numpy as np
 import requests
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.utils import from_env, secret_from_env
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
+from typing_extensions import Self
 
 __all__ = ["TextEmbedEmbeddings"]
 
@@ -50,37 +51,30 @@ class TextEmbedEmbeddings(BaseModel, Embeddings):
     model: str
     """Underlying TextEmbed model id."""
 
-    api_url: str = "http://localhost:8000/v1"
+    api_url: str = Field(
+        default_factory=from_env(
+            "TEXTEMBED_API_URL", default="http://localhost:8000/v1"
+        )
+    )
     """Endpoint URL to use."""
 
-    api_key: str = "None"
+    api_key: SecretStr = Field(default_factory=secret_from_env("TEXTEMBED_API_KEY"))
     """API Key for authentication"""
 
     client: Any = None
     """TextEmbed client."""
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
-        extra = Extra.forbid
-
-    @root_validator(pre=False, skip_on_failure=True)
-    def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that api key and URL exist in the environment.
-
-        Args:
-            values (Dict): Dictionary of values to validate.
-
-        Returns:
-            Dict: Validated values.
-        """
-        values["api_url"] = get_from_dict_or_env(values, "api_url", "API_URL")
-        values["api_key"] = get_from_dict_or_env(values, "api_key", "API_KEY")
-
-        values["client"] = AsyncOpenAITextEmbedEmbeddingClient(
-            host=values["api_url"], api_key=values["api_key"]
+    @model_validator(mode="after")
+    def validate_environment(self) -> Self:
+        """Validate that api key and URL exist in the environment."""
+        self.client = AsyncOpenAITextEmbedEmbeddingClient(
+            host=self.api_url, api_key=self.api_key.get_secret_value()
         )
-        return values
+        return self
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Call out to TextEmbed's embedding endpoint.

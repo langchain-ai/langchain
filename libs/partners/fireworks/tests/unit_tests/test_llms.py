@@ -2,7 +2,7 @@
 
 from typing import cast
 
-from langchain_core.pydantic_v1 import SecretStr
+from pydantic import SecretStr
 from pytest import CaptureFixture, MonkeyPatch
 
 from langchain_fireworks import Fireworks
@@ -69,3 +69,31 @@ def test_fireworks_uses_actual_secret_value_from_secretstr() -> None:
         max_tokens=250,
     )
     assert cast(SecretStr, llm.fireworks_api_key).get_secret_value() == "secret-api-key"
+
+
+def test_fireworks_model_params() -> None:
+    # Test standard tracing params
+    llm = Fireworks(model="foo", api_key="secret-api-key")  # type: ignore[arg-type]
+
+    ls_params = llm._get_ls_params()
+    assert ls_params == {
+        "ls_provider": "fireworks",
+        "ls_model_type": "llm",
+        "ls_model_name": "foo",
+    }
+
+    llm = Fireworks(
+        model="foo",
+        api_key="secret-api-key",  # type: ignore[arg-type]
+        max_tokens=10,
+        temperature=0.1,
+    )
+
+    ls_params = llm._get_ls_params()
+    assert ls_params == {
+        "ls_provider": "fireworks",
+        "ls_model_type": "llm",
+        "ls_model_name": "foo",
+        "ls_max_tokens": 10,
+        "ls_temperature": 0.1,
+    }

@@ -8,12 +8,13 @@ import CodeBlock from "@theme-original/CodeBlock";
  * @typedef {Object} ChatModelTabsProps - Component props.
  * @property {string} [openaiParams] - Parameters for OpenAI chat model. Defaults to `model="gpt-3.5-turbo-0125"`
  * @property {string} [anthropicParams] - Parameters for Anthropic chat model. Defaults to `model="claude-3-sonnet-20240229"`
- * @property {string} [cohereParams] - Parameters for Cohere chat model. Defaults to `model="command-r"`
+ * @property {string} [cohereParams] - Parameters for Cohere chat model. Defaults to `model="command-r-plus"`
  * @property {string} [fireworksParams] - Parameters for Fireworks chat model. Defaults to `model="accounts/fireworks/models/mixtral-8x7b-instruct"`
  * @property {string} [groqParams] - Parameters for Groq chat model. Defaults to `model="llama3-8b-8192"`
  * @property {string} [mistralParams] - Parameters for Mistral chat model. Defaults to `model="mistral-large-latest"`
  * @property {string} [googleParams] - Parameters for Google chat model. Defaults to `model="gemini-pro"`
  * @property {string} [togetherParams] - Parameters for Together chat model. Defaults to `model="mistralai/Mixtral-8x7B-Instruct-v0.1"`
+ * @property {string} [nvidiaParams] - Parameters for Nvidia NIM model. Defaults to `model="meta/llama3-70b-instruct"`
  * @property {boolean} [hideOpenai] - Whether or not to hide OpenAI chat model.
  * @property {boolean} [hideAnthropic] - Whether or not to hide Anthropic chat model.
  * @property {boolean} [hideCohere] - Whether or not to hide Cohere chat model.
@@ -23,6 +24,7 @@ import CodeBlock from "@theme-original/CodeBlock";
  * @property {boolean} [hideGoogle] - Whether or not to hide Google VertexAI chat model.
  * @property {boolean} [hideTogether] - Whether or not to hide Together chat model.
  * @property {boolean} [hideAzure] - Whether or not to hide Microsoft Azure OpenAI chat model.
+ * @property {boolean} [hideNvidia] - Whether or not to hide NVIDIA NIM model.
  * @property {string} [customVarName] - Custom variable name for the model. Defaults to `model`.
  */
 
@@ -40,6 +42,7 @@ export default function ChatModelTabs(props) {
     googleParams,
     togetherParams,
     azureParams,
+    nvidiaParams,
     hideOpenai,
     hideAnthropic,
     hideCohere,
@@ -49,6 +52,7 @@ export default function ChatModelTabs(props) {
     hideGoogle,
     hideTogether,
     hideAzure,
+    hideNvidia,
     customVarName,
   } = props;
 
@@ -69,6 +73,7 @@ export default function ChatModelTabs(props) {
   const azureParamsOrDefault =
     azureParams ??
     `\n    azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],\n    azure_deployment=os.environ["AZURE_OPENAI_DEPLOYMENT_NAME"],\n    openai_api_version=os.environ["AZURE_OPENAI_API_VERSION"],\n`;
+  const nvidiaParamsOrDefault = nvidiaParams ?? `model="meta/llama3-70b-instruct"`
 
   const llmVarName = customVarName ?? "model";
 
@@ -119,6 +124,15 @@ export default function ChatModelTabs(props) {
       shouldHide: hideCohere,
     },
     {
+      value: "NVIDIA",
+      label: "NVIDIA",
+      text: `from langchain import ChatNVIDIA\n\n${llmVarName} = ChatNVIDIA(${nvidiaParamsOrDefault})`,
+      apiKeyName: "NVIDIA_API_KEY",
+      packageName: "langchain-nvidia-ai-endpoints",
+      default: false,
+      shouldHide: hideNvidia,
+    },
+    {
       value: "FireworksAI",
       label: "FireworksAI",
       text: `from langchain_fireworks import ChatFireworks\n\n${llmVarName} = ChatFireworks(${fireworksParamsOrDefault})`,
@@ -167,6 +181,7 @@ import os
 os.environ["${tabItem.apiKeyName}"] = getpass.getpass()`;
           return (
             <TabItem
+              key={tabItem.value}
               value={tabItem.value}
               label={tabItem.label}
               default={tabItem.default}

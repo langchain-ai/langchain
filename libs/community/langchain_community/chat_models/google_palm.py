@@ -21,8 +21,8 @@ from langchain_core.outputs import (
     ChatGeneration,
     ChatResult,
 )
-from langchain_core.pydantic_v1 import BaseModel, SecretStr
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
+from pydantic import BaseModel, SecretStr
 from tenacity import (
     before_sleep_log,
     retry,
@@ -236,7 +236,7 @@ class ChatGooglePalm(BaseChatModel, BaseModel):
     """Model name to use."""
     google_api_key: Optional[SecretStr] = None
     temperature: Optional[float] = None
-    """Run inference with this temperature. Must by in the closed
+    """Run inference with this temperature. Must be in the closed
        interval [0.0, 1.0]."""
     top_p: Optional[float] = None
     """Decode using nucleus sampling: consider the smallest set of tokens whose
