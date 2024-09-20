@@ -4,7 +4,7 @@ Docs: https://docs.financialdatasets.ai/
 """
 
 import json
-from typing import Any, List, Optional
+from typing import Any, List, Optional, cast
 
 import requests
 from langchain_core.utils import get_from_dict_or_env
@@ -47,7 +47,7 @@ class FinancialDatasetsAPIWrapper(BaseModel):
         )
 
         # Add the api key to the headers
-        headers = {"X-API-KEY": self.financial_datasets_api_key}
+        headers = {"X-API-KEY": cast(str, self.financial_datasets_api_key)}
 
         # Execute the request
         response = requests.get(url, headers=headers)
@@ -78,7 +78,7 @@ class FinancialDatasetsAPIWrapper(BaseModel):
         )
 
         # Add the api key to the headers
-        headers = {"X-API-KEY": self.financial_datasets_api_key}
+        headers = {"X-API-KEY": cast(str, self.financial_datasets_api_key)}
 
         # Execute the request
         response = requests.get(url, headers=headers)
@@ -110,7 +110,7 @@ class FinancialDatasetsAPIWrapper(BaseModel):
         )
 
         # Add the api key to the headers
-        headers = {"X-API-KEY": self.financial_datasets_api_key}
+        headers = {"X-API-KEY": cast(str, self.financial_datasets_api_key)}
 
         # Execute the request
         response = requests.get(url, headers=headers)
