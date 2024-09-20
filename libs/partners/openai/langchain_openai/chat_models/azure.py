@@ -92,7 +92,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
             https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#rest-api-versioning
         timeout: Union[float, Tuple[float, float], Any, None]
             Timeout for requests.
-        max_retries: int
+        max_retries: Optional[int]
             Max number of retries.
         organization: Optional[str]
             OpenAI organization ID. If not passed in will be read from env
@@ -569,9 +569,9 @@ class AzureChatOpenAI(BaseChatOpenAI):
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
-        if self.n < 1:
+        if self.n is not None and self.n < 1:
             raise ValueError("n must be at least 1.")
-        if self.n > 1 and self.streaming:
+        elif self.n is not None and self.n > 1 and self.streaming:
             raise ValueError("n must be 1 when streaming.")
 
         # Check OPENAI_ORGANIZATION for backwards compatibility.
@@ -617,10 +617,11 @@ class AzureChatOpenAI(BaseChatOpenAI):
             "organization": self.openai_organization,
             "base_url": self.openai_api_base,
             "timeout": self.request_timeout,
-            "max_retries": self.max_retries,
             "default_headers": self.default_headers,
             "default_query": self.default_query,
         }
+        if self.max_retries is not None:
+            client_params["max_retries"] = self.max_retries
         if not self.client:
             sync_specific = {"http_client": self.http_client}
             self.root_client = openai.AzureOpenAI(**client_params, **sync_specific)  # type: ignore[arg-type]

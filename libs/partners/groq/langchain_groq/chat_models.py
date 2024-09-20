@@ -119,7 +119,7 @@ class ChatGroq(BaseChatModel):
     Key init args — client params:
         timeout: Union[float, Tuple[float, float], Any, None]
             Timeout for requests.
-        max_retries: int
+        max_retries: Optional[int]
             Max number of retries.
         api_key: Optional[str]
             Groq API key. If not passed in will be read from env var GROQ_API_KEY.
@@ -303,7 +303,7 @@ class ChatGroq(BaseChatModel):
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
     model_name: str = Field(default="mixtral-8x7b-32768", alias="model")
     """Model name to use."""
-    temperature: float = 0.7
+    temperature: Optional[float] = None
     """What sampling temperature to use."""
     stop: Optional[Union[List[str], str]] = Field(None, alias="stop_sequences")
     """Default stop sequences."""
@@ -327,11 +327,11 @@ class ChatGroq(BaseChatModel):
     )
     """Timeout for requests to Groq completion API. Can be float, httpx.Timeout or
         None."""
-    max_retries: int = 2
+    max_retries: Optional[int] = None
     """Maximum number of retries to make when generating."""
     streaming: bool = False
     """Whether to stream the results or not."""
-    n: int = 1
+    n: Optional[int] = None
     """Number of chat completions to generate for each prompt."""
     max_tokens: Optional[int] = None
     """Maximum number of tokens to generate."""
@@ -379,10 +379,11 @@ class ChatGroq(BaseChatModel):
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
-        if self.n < 1:
+        if self.n is not None and self.n < 1:
             raise ValueError("n must be at least 1.")
-        if self.n > 1 and self.streaming:
+        elif self.n is not None and self.n > 1 and self.streaming:
             raise ValueError("n must be 1 when streaming.")
+
         if self.temperature == 0:
             self.temperature = 1e-8
 
@@ -392,10 +393,11 @@ class ChatGroq(BaseChatModel):
             ),
             "base_url": self.groq_api_base,
             "timeout": self.request_timeout,
-            "max_retries": self.max_retries,
             "default_headers": self.default_headers,
             "default_query": self.default_query,
         }
+        if self.max_retries is not None:
+            client_params["max_retries"] = self.max_retries
 
         try:
             import groq

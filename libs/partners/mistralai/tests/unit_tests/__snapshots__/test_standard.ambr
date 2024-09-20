@@ -9,7 +9,6 @@
     ]),
     'kwargs': dict({
       'endpoint': 'boo',
-      'max_concurrent_requests': 64,
       'max_retries': 2,
       'max_tokens': 100,
       'mistral_api_key': dict({
@@ -22,7 +21,6 @@
       'model': 'mistral-small',
       'temperature': 0.0,
       'timeout': 60,
-      'top_p': 1,
     }),
     'lc': 1,
     'name': 'ChatMistralAI',
