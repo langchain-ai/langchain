@@ -1468,8 +1468,8 @@ class BaseChatOpenAI(BaseChatModel):
                 output_parser = JsonOutputParser()
         else:
             raise ValueError(
-                f"Unrecognized method argument. Expected one of 'function_calling' or "
-                f"'json_mode'. Received: '{method}'"
+                f"Unrecognized method argument. Expected one of 'function_calling', "
+                f"'json_schema', or 'json_mode'. Received: '{method}'"
             )
 
         if include_raw:
