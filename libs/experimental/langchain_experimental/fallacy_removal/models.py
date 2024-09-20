@@ -1,6 +1,6 @@
 """Models for the Logical Fallacy Chain"""
 
-from langchain_experimental.pydantic_v1 import BaseModel
+from pydantic import BaseModel
 
 
 class LogicalFallacy(BaseModel):

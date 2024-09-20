@@ -1,3 +1,4 @@
+import inspect
 import json
 from dataclasses import dataclass
 from io import StringIO
@@ -7,6 +8,13 @@ if TYPE_CHECKING:
     from databricks.sdk import WorkspaceClient
     from databricks.sdk.service.catalog import FunctionInfo
     from databricks.sdk.service.sql import StatementParameterListItem
+
+EXECUTE_FUNCTION_ARG_NAME = "__execution_args__"
+DEFAULT_EXECUTE_FUNCTION_ARGS = {
+    "wait_timeout": "30s",
+    "row_limit": 100,
+    "byte_limit": 4096,
+}
 
 
 def is_scalar(function: "FunctionInfo") -> bool:
@@ -122,16 +130,49 @@ def execute_function(
         ) from e
     from databricks.sdk.service.sql import StatementState
 
+    if (
+        function.input_params
+        and function.input_params.parameters
+        and any(
+            p.name == EXECUTE_FUNCTION_ARG_NAME
+            for p in function.input_params.parameters
+        )
+    ):
+        raise ValueError(
+            "Parameter name conflicts with the reserved argument name for executing "
+            f"functions: {EXECUTE_FUNCTION_ARG_NAME}. "
+            f"Please rename the parameter {EXECUTE_FUNCTION_ARG_NAME}."
+        )
+
+    # avoid modifying the original dict
+    execute_statement_args = {**DEFAULT_EXECUTE_FUNCTION_ARGS}
+    allowed_execute_statement_args = inspect.signature(
+        ws.statement_execution.execute_statement
+    ).parameters
+    if not any(
+        p.kind in (p.VAR_POSITIONAL, p.VAR_KEYWORD)
+        for p in allowed_execute_statement_args.values()
+    ):
+        invalid_params = set()
+        passed_execute_statement_args = parameters.pop(EXECUTE_FUNCTION_ARG_NAME, {})
+        for k, v in passed_execute_statement_args.items():
+            if k in allowed_execute_statement_args:
+                execute_statement_args[k] = v
+            else:
+                invalid_params.add(k)
+        if invalid_params:
+            raise ValueError(
+                f"Invalid parameters for executing functions: {invalid_params}. "
+                f"Allowed parameters are: {allowed_execute_statement_args.keys()}."
+            )
+
     # TODO: async so we can run functions in parallel
     parametrized_statement = get_execute_function_sql_stmt(function, parameters)
-    # TODO: configurable limits
     response = ws.statement_execution.execute_statement(
         statement=parametrized_statement.statement,
         warehouse_id=warehouse_id,
         parameters=parametrized_statement.parameters,
-        wait_timeout="30s",
-        row_limit=100,
-        byte_limit=4096,
+        **execute_statement_args,  # type: ignore
     )
     status = response.status
     assert status is not None, f"Statement execution failed: {response}"

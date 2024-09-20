@@ -1,7 +1,7 @@
 import importlib
 import json
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from langchain_core._api import beta
 from langchain_core.load.mapping import (
@@ -17,6 +17,19 @@ DEFAULT_NAMESPACES = [
     "langchain_core",
     "langchain_community",
     "langchain_anthropic",
+    "langchain_groq",
+    "langchain_google_genai",
+    "langchain_aws",
+    "langchain_openai",
+    "langchain_google_vertexai",
+    "langchain_mistralai",
+    "langchain_fireworks",
+]
+# Namespaces for which only deserializing via the SERIALIZABLE_MAPPING is allowed.
+# Load by path is not allowed.
+DISALLOW_LOAD_FROM_PATH = [
+    "langchain_community",
+    "langchain",
 ]
 
 ALL_SERIALIZABLE_MAPPINGS = {
@@ -32,9 +45,12 @@ class Reviver:
 
     def __init__(
         self,
-        secrets_map: Optional[Dict[str, str]] = None,
-        valid_namespaces: Optional[List[str]] = None,
+        secrets_map: Optional[dict[str, str]] = None,
+        valid_namespaces: Optional[list[str]] = None,
         secrets_from_env: bool = True,
+        additional_import_mappings: Optional[
+            dict[tuple[str, ...], tuple[str, ...]]
+        ] = None,
     ) -> None:
         """Initialize the reviver.
 
@@ -46,17 +62,29 @@ class Reviver:
                 to allow to be deserialized. Defaults to None.
             secrets_from_env: Whether to load secrets from the environment.
                 Defaults to True.
+            additional_import_mappings: A dictionary of additional namespace mappings
+                You can use this to override default mappings or add new mappings.
+                Defaults to None.
         """
         self.secrets_from_env = secrets_from_env
         self.secrets_map = secrets_map or dict()
-        # By default only support langchain, but user can pass in additional namespaces
+        # By default, only support langchain, but user can pass in additional namespaces
         self.valid_namespaces = (
             [*DEFAULT_NAMESPACES, *valid_namespaces]
             if valid_namespaces
             else DEFAULT_NAMESPACES
         )
+        self.additional_import_mappings = additional_import_mappings or dict()
+        self.import_mappings = (
+            {
+                **ALL_SERIALIZABLE_MAPPINGS,
+                **self.additional_import_mappings,
+            }
+            if self.additional_import_mappings
+            else ALL_SERIALIZABLE_MAPPINGS
+        )
 
-    def __call__(self, value: Dict[str, Any]) -> Any:
+    def __call__(self, value: dict[str, Any]) -> Any:
         if (
             value.get("lc", None) == 1
             and value.get("type", None) == "secret"
@@ -86,35 +114,31 @@ class Reviver:
             and value.get("id", None) is not None
         ):
             [*namespace, name] = value["id"]
+            mapping_key = tuple(value["id"])
 
             if namespace[0] not in self.valid_namespaces:
                 raise ValueError(f"Invalid namespace: {value}")
-
-            # The root namespace "langchain" is not a valid identifier.
-            if len(namespace) == 1 and namespace[0] == "langchain":
+            # The root namespace ["langchain"] is not a valid identifier.
+            elif namespace == ["langchain"]:
                 raise ValueError(f"Invalid namespace: {value}")
-
-            # If namespace is in known namespaces, try to use mapping
-            if namespace[0] in DEFAULT_NAMESPACES:
-                # Get the importable path
-                key = tuple(namespace + [name])
-                if key not in ALL_SERIALIZABLE_MAPPINGS:
-                    raise ValueError(
-                        "Trying to deserialize something that cannot "
-                        "be deserialized in current version of langchain-core: "
-                        f"{key}"
-                    )
-                import_path = ALL_SERIALIZABLE_MAPPINGS[key]
+            # Has explicit import path.
+            elif mapping_key in self.import_mappings:
+                import_path = self.import_mappings[mapping_key]
                 # Split into module and name
-                import_dir, import_obj = import_path[:-1], import_path[-1]
+                import_dir, name = import_path[:-1], import_path[-1]
                 # Import module
                 mod = importlib.import_module(".".join(import_dir))
-                # Import class
-                cls = getattr(mod, import_obj)
-            # Otherwise, load by path
+            elif namespace[0] in DISALLOW_LOAD_FROM_PATH:
+                raise ValueError(
+                    "Trying to deserialize something that cannot "
+                    "be deserialized in current version of langchain-core: "
+                    f"{mapping_key}."
+                )
+            # Otherwise, treat namespace as path.
             else:
                 mod = importlib.import_module(".".join(namespace))
-                cls = getattr(mod, name)
+
+            cls = getattr(mod, name)
 
             # The class must be a subclass of Serializable.
             if not issubclass(cls, Serializable):
@@ -132,9 +156,10 @@ class Reviver:
 def loads(
     text: str,
     *,
-    secrets_map: Optional[Dict[str, str]] = None,
-    valid_namespaces: Optional[List[str]] = None,
+    secrets_map: Optional[dict[str, str]] = None,
+    valid_namespaces: Optional[list[str]] = None,
     secrets_from_env: bool = True,
+    additional_import_mappings: Optional[dict[tuple[str, ...], tuple[str, ...]]] = None,
 ) -> Any:
     """Revive a LangChain class from a JSON string.
     Equivalent to `load(json.loads(text))`.
@@ -148,12 +173,18 @@ def loads(
             to allow to be deserialized. Defaults to None.
         secrets_from_env: Whether to load secrets from the environment.
             Defaults to True.
+        additional_import_mappings: A dictionary of additional namespace mappings
+            You can use this to override default mappings or add new mappings.
+            Defaults to None.
 
     Returns:
         Revived LangChain objects.
     """
     return json.loads(
-        text, object_hook=Reviver(secrets_map, valid_namespaces, secrets_from_env)
+        text,
+        object_hook=Reviver(
+            secrets_map, valid_namespaces, secrets_from_env, additional_import_mappings
+        ),
     )
 
 
@@ -161,9 +192,10 @@ def loads(
 def load(
     obj: Any,
     *,
-    secrets_map: Optional[Dict[str, str]] = None,
-    valid_namespaces: Optional[List[str]] = None,
+    secrets_map: Optional[dict[str, str]] = None,
+    valid_namespaces: Optional[list[str]] = None,
     secrets_from_env: bool = True,
+    additional_import_mappings: Optional[dict[tuple[str, ...], tuple[str, ...]]] = None,
 ) -> Any:
     """Revive a LangChain class from a JSON object. Use this if you already
     have a parsed JSON object, eg. from `json.load` or `orjson.loads`.
@@ -177,11 +209,16 @@ def load(
             to allow to be deserialized. Defaults to None.
         secrets_from_env: Whether to load secrets from the environment.
             Defaults to True.
+        additional_import_mappings: A dictionary of additional namespace mappings
+            You can use this to override default mappings or add new mappings.
+            Defaults to None.
 
     Returns:
         Revived LangChain objects.
     """
-    reviver = Reviver(secrets_map, valid_namespaces, secrets_from_env)
+    reviver = Reviver(
+        secrets_map, valid_namespaces, secrets_from_env, additional_import_mappings
+    )
 
     def _load(obj: Any) -> Any:
         if isinstance(obj, dict):

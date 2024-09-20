@@ -1,11 +1,15 @@
 import json
 import sys
-from typing import Any, AsyncGenerator, Generator
+import uuid
+from collections.abc import AsyncGenerator, Generator
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
 from langsmith import Client, traceable
 from langsmith.run_helpers import tracing_context
+from langsmith.run_trees import RunTree
+from langsmith.utils import get_env_var
 
 from langchain_core.runnables.base import RunnableLambda, RunnableParallel
 from langchain_core.tracers.langchain import LangChainTracer
@@ -31,6 +35,7 @@ def _get_posts(client: Client) -> list:
 
 
 def test_config_traceable_handoff() -> None:
+    get_env_var.cache_clear()
     mock_session = MagicMock()
     mock_client_ = Client(
         session=mock_session, api_key="test", auto_batch_tracing=False
@@ -186,6 +191,7 @@ def test_tracing_enable_disable(
     def my_func(a: int) -> int:
         return a + 1
 
+    get_env_var.cache_clear()
     env_on = env == "true"
     with patch.dict("os.environ", {"LANGSMITH_TRACING": env}):
         with tracing_context(enabled=enabled):
@@ -338,3 +344,51 @@ async def test_runnable_sequence_parallel_trace_nesting(method: str) -> None:
             assert str(parent_id_map[name]) == str(id_map[parent_])
         else:
             assert dotted_order.split(".")[0] == dotted_order
+
+
+def test_tree_is_constructed() -> None:
+    mock_session = MagicMock()
+    mock_client_ = Client(
+        session=mock_session, api_key="test", auto_batch_tracing=False
+    )
+
+    @traceable
+    def kitten(x: str) -> str:
+        return x
+
+    @RunnableLambda
+    def grandchild(x: str) -> str:
+        return kitten(x)
+
+    @RunnableLambda
+    def child(x: str) -> str:
+        return grandchild.invoke(x)
+
+    @traceable
+    def parent() -> str:
+        return child.invoke("foo")
+
+    collected: dict[str, RunTree] = {}  # noqa
+
+    def collect_run(run: RunTree) -> None:
+        collected[str(run.id)] = run
+
+    rid = uuid.uuid4()
+
+    with tracing_context(client=mock_client_, enabled=True):
+        assert parent(langsmith_extra={"on_end": collect_run, "run_id": rid}) == "foo"
+
+    assert collected
+    run = collected.get(str(rid))
+    assert run is not None
+    assert run.name == "parent"
+    assert run.child_runs
+    child_run = run.child_runs[0]
+    assert child_run.name == "child"
+    assert child_run.child_runs
+    grandchild_run = child_run.child_runs[0]
+    assert grandchild_run.name == "grandchild"
+    assert grandchild_run.child_runs
+    kitten_run = grandchild_run.child_runs[0]
+    assert kitten_run.name == "kitten"
+    assert not kitten_run.child_runs

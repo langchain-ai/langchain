@@ -1,7 +1,8 @@
 import re
 import xml
-import xml.etree.ElementTree as ET
-from typing import Any, AsyncIterator, Dict, Iterator, List, Literal, Optional, Union
+import xml.etree.ElementTree as ET  # noqa: N817
+from collections.abc import AsyncIterator, Iterator
+from typing import Any, Literal, Optional, Union
 from xml.etree.ElementTree import TreeBuilder
 
 from langchain_core.exceptions import OutputParserException
@@ -45,19 +46,19 @@ class _StreamingParser:
         """
         if parser == "defusedxml":
             try:
-                from defusedxml import ElementTree as DET  # type: ignore
-            except ImportError:
+                import defusedxml  # type: ignore
+            except ImportError as e:
                 raise ImportError(
                     "defusedxml is not installed. "
                     "Please install it to use the defusedxml parser."
                     "You can install it with `pip install defusedxml` "
-                )
-            _parser = DET.DefusedXMLParser(target=TreeBuilder())
+                ) from e
+            _parser = defusedxml.ElementTree.DefusedXMLParser(target=TreeBuilder())
         else:
             _parser = None
         self.pull_parser = ET.XMLPullParser(["start", "end"], _parser=_parser)
         self.xml_start_re = re.compile(r"<[a-zA-Z:_]")
-        self.current_path: List[str] = []
+        self.current_path: list[str] = []
         self.current_path_has_children = False
         self.buffer = ""
         self.xml_started = False
@@ -140,7 +141,7 @@ class _StreamingParser:
 class XMLOutputParser(BaseTransformOutputParser):
     """Parse an output using xml format."""
 
-    tags: Optional[List[str]] = None
+    tags: Optional[list[str]] = None
     encoding_matcher: re.Pattern = re.compile(
         r"<([^>]*encoding[^>]*)>\n(.*)", re.MULTILINE | re.DOTALL
     )
@@ -169,7 +170,7 @@ class XMLOutputParser(BaseTransformOutputParser):
         """Return the format instructions for the XML output."""
         return XML_FORMAT_INSTRUCTIONS.format(tags=self.tags)
 
-    def parse(self, text: str) -> Dict[str, Union[str, List[Any]]]:
+    def parse(self, text: str) -> dict[str, Union[str, list[Any]]]:
         """Parse the output of an LLM call.
 
         Args:
@@ -188,17 +189,17 @@ class XMLOutputParser(BaseTransformOutputParser):
         # likely if you're reading this you can move them to the top of the file
         if self.parser == "defusedxml":
             try:
-                from defusedxml import ElementTree as DET  # type: ignore
-            except ImportError:
+                from defusedxml import ElementTree  # type: ignore
+            except ImportError as e:
                 raise ImportError(
                     "defusedxml is not installed. "
                     "Please install it to use the defusedxml parser."
                     "You can install it with `pip install defusedxml`"
                     "See https://github.com/tiran/defusedxml for more details"
-                )
-            _ET = DET  # Use the defusedxml parser
+                ) from e
+            _et = ElementTree  # Use the defusedxml parser
         else:
-            _ET = ET  # Use the standard library parser
+            _et = ET  # Use the standard library parser
 
         match = re.search(r"```(xml)?(.*)```", text, re.DOTALL)
         if match is not None:
@@ -210,10 +211,9 @@ class XMLOutputParser(BaseTransformOutputParser):
 
         text = text.strip()
         try:
-            root = ET.fromstring(text)
+            root = _et.fromstring(text)
             return self._root_to_dict(root)
-
-        except ET.ParseError as e:
+        except _et.ParseError as e:
             msg = f"Failed to parse XML format from completion {text}. Got: {e}"
             raise OutputParserException(msg, llm_output=text) from e
 
@@ -234,13 +234,13 @@ class XMLOutputParser(BaseTransformOutputParser):
                 yield output
         streaming_parser.close()
 
-    def _root_to_dict(self, root: ET.Element) -> Dict[str, Union[str, List[Any]]]:
+    def _root_to_dict(self, root: ET.Element) -> dict[str, Union[str, list[Any]]]:
         """Converts xml tree to python dictionary."""
         if root.text and bool(re.search(r"\S", root.text)):
             # If root text contains any non-whitespace character it
             # returns {root.tag: root.text}
             return {root.tag: root.text}
-        result: Dict = {root.tag: []}
+        result: dict = {root.tag: []}
         for child in root:
             if len(child) == 0:
                 result[root.tag].append({child.tag: child.text})
@@ -253,7 +253,7 @@ class XMLOutputParser(BaseTransformOutputParser):
         return "xml"
 
 
-def nested_element(path: List[str], elem: ET.Element) -> Any:
+def nested_element(path: list[str], elem: ET.Element) -> Any:
     """Get nested element from path.
 
     Args:

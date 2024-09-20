@@ -13,6 +13,7 @@ from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_core.tools import BaseTool
 from langchain_core.vectorstores import VectorStoreRetriever
+from pydantic import ValidationError
 
 from langchain_experimental.autonomous_agents.autogpt.output_parser import (
     AutoGPTOutputParser,
@@ -22,7 +23,6 @@ from langchain_experimental.autonomous_agents.autogpt.prompt import AutoGPTPromp
 from langchain_experimental.autonomous_agents.autogpt.prompt_generator import (
     FINISH_NAME,
 )
-from langchain_experimental.pydantic_v1 import ValidationError
 
 
 class AutoGPT:

@@ -1,8 +1,8 @@
 from typing import Any, Dict, List
 
-from langchain.pydantic_v1 import BaseModel, root_validator
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils.pydantic import get_fields
+from pydantic import BaseModel, ConfigDict, model_validator
 
 
 class OpenCLIPEmbeddings(BaseModel, Embeddings):
@@ -15,8 +15,11 @@ class OpenCLIPEmbeddings(BaseModel, Embeddings):
     model_name: str = "ViT-H-14"
     checkpoint: str = "laion2b_s32b_b79k"
 
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
+    model_config = ConfigDict(protected_namespaces=())
+
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that open_clip and torch libraries are installed."""
         try:
             import open_clip

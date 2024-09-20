@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 
 
 def env_var_is_set(env_var: str) -> bool:
@@ -22,8 +22,8 @@ def env_var_is_set(env_var: str) -> bool:
 
 
 def get_from_dict_or_env(
-    data: Dict[str, Any],
-    key: Union[str, List[str]],
+    data: dict[str, Any],
+    key: Union[str, list[str]],
     env_key: str,
     default: Optional[str] = None,
 ) -> str:

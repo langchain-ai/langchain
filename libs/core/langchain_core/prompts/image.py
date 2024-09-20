@@ -1,8 +1,9 @@
-from typing import Any, List
+from typing import Any
+
+from pydantic import Field
 
 from langchain_core.prompt_values import ImagePromptValue, ImageURL, PromptValue
 from langchain_core.prompts.base import BasePromptTemplate
-from langchain_core.pydantic_v1 import Field
 from langchain_core.runnables import run_in_executor
 from langchain_core.utils import image as image_utils
 
@@ -32,7 +33,7 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
         return "image-prompt"
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "prompts", "image"]
 
