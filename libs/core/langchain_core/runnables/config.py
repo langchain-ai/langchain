@@ -127,20 +127,22 @@ def _set_config_context(config: RunnableConfig) -> None:
 
     var_child_runnable_config.set(config)
     if (
-        (cb := config.get("callbacks"))
-        and (prid := getattr(cb, "parent_run_id", None))  # Is callback manager
+        (callbacks := config.get("callbacks"))
+        and (
+            parent_run_id := getattr(callbacks, "parent_run_id", None)
+        )  # Is callback manager
         and (
             tracer := next(
                 (
-                    t
-                    for t in getattr(cb, "handlers", [])
-                    if isinstance(t, LangChainTracer)
+                    handler
+                    for handler in getattr(callbacks, "handlers", [])
+                    if isinstance(handler, LangChainTracer)
                 ),
                 None,
             )
         )
     ):
-        if run := tracer.run_map.get(str(prid)):
+        if run := tracer.run_map.get(str(parent_run_id)):
             from langsmith.run_helpers import _set_tracing_context
 
             _set_tracing_context({"parent": run})
