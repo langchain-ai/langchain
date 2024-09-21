@@ -103,6 +103,9 @@ if TYPE_CHECKING:
     from langchain_community.chat_models.litellm_router import (
         ChatLiteLLMRouter,
     )
+    from langchain_community.chat_models.unify import (
+        ChatUnify,
+    )
     from langchain_community.chat_models.llama_edge import (
         LlamaEdgeChatService,
     )
@@ -201,6 +204,7 @@ __all__ = [
     "ChatKonko",
     "ChatLiteLLM",
     "ChatLiteLLMRouter",
+    "ChatUnify",
     "ChatMLX",
     "ChatMLflowAIGateway",
     "ChatMaritalk",
@@ -259,6 +263,7 @@ _module_lookup = {
     "ChatKonko": "langchain_community.chat_models.konko",
     "ChatLiteLLM": "langchain_community.chat_models.litellm",
     "ChatLiteLLMRouter": "langchain_community.chat_models.litellm_router",
+    "ChatUnify": "langchain_community.chat_models.unify",
     "ChatMLflowAIGateway": "langchain_community.chat_models.mlflow_ai_gateway",
     "ChatMLX": "langchain_community.chat_models.mlx",
     "ChatMaritalk": "langchain_community.chat_models.maritalk",

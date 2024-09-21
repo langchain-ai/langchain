@@ -63,6 +63,7 @@ __all__ = [
     "MiniMaxChat",
     "ChatAnyscale",
     "ChatLiteLLM",
+    "ChatUnify",
     "ErnieBotChat",
     "ChatJavelinAIGateway",
     "ChatKonko",
