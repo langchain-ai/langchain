@@ -23,6 +23,7 @@ from tenacity import (
 
 from langchain_core.env import get_runtime_environment
 from langchain_core.load import dumpd
+from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
 
@@ -239,6 +240,26 @@ class LangChainTracer(BaseTracer):
         if run.parent_run_id is None:
             run.reference_example_id = self.example_id
         self._persist_run_single(run)
+
+    def _llm_run_with_token_event(
+        self,
+        token: str,
+        run_id: UUID,
+        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
+        parent_run_id: Optional[UUID] = None,
+        **kwargs: Any,
+    ) -> Run:
+        """
+        Append token event to LLM run and return the run.
+        """
+        return super()._llm_run_with_token_event(
+            # Drop the chunk; we don't need to save it
+            token,
+            run_id,
+            chunk=None,
+            parent_run_id=parent_run_id,
+            **kwargs,
+        )
 
     def _on_chat_model_start(self, run: Run) -> None:
         """Persist an LLM run."""
