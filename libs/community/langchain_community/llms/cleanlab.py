@@ -15,8 +15,8 @@ from langchain_community.llms.utils import enforce_stop_tokens
 logger = logging.getLogger(__name__)
 
 
-class CleanlabTLM(BaseLLM):
-    """Cleanlab's Trustworthy Large Language Model.
+class TLM(BaseLLM):
+    """Cleanlab's Trustworthy Language Model (TLM).
 
     To use, you should have the ``cleanlab-studio`` python package installed,
     and the API key set either in the ``CLEANLAB_API_KEY`` environment variable,
@@ -26,8 +26,8 @@ class CleanlabTLM(BaseLLM):
     Example:
         .. code-block:: python
 
-            from langchain_community.llms import CleanlabTLM
-            tlm = CleanlabTLM(
+            from langchain_community.llms import TLM
+            tlm = TLM(
                 cleanlab_api_key="my_api_key",  # Not required if `CLEANLAB_API_KEY` env variable is set
                 quality_preset="best"
             )
@@ -99,7 +99,7 @@ class CleanlabTLM(BaseLLM):
     @property
     def _llm_type(self) -> str:
         """Return type of llm."""
-        return "cleanlab"
+        return "TLM"
 
     def _generate(
         self,
