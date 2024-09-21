@@ -13,7 +13,7 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.12"
-langchain-core = ">=0.2.40"
+langchain-core = ">=0.2.40,<0.4"
 snowflake = ">=0.8.0"
 
 [tool.poetry.group.test]
