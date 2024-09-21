@@ -722,7 +722,9 @@ class Runnable(Generic[Input, Output], ABC):
     """ --- Public API --- """
 
     @abstractmethod
-    def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Output:
+    def invoke(
+        self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
+    ) -> Output:
         """Transform a single input into an output. Override to implement.
 
         Args:
@@ -3671,7 +3673,7 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
         return "{\n  " + map_for_repr + "\n}"
 
     def invoke(
-        self, input: Input, config: Optional[RunnableConfig] = None
+        self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> dict[str, Any]:
         from langchain_core.callbacks.manager import CallbackManager
 

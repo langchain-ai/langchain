@@ -193,6 +193,7 @@ class FakeRunnableSerializable(RunnableSerializable[str, int]):
         self,
         input: str,
         config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
     ) -> int:
         return len(input)
 
@@ -3968,7 +3969,9 @@ def test_seq_batch_return_exceptions(mocker: MockerFixture) -> None:
         def __init__(self, fail_starts_with: str) -> None:
             self.fail_starts_with = fail_starts_with
 
-        def invoke(self, input: Any, config: Optional[RunnableConfig] = None) -> Any:
+        def invoke(
+            self, input: Any, config: Optional[RunnableConfig] = None, **kwargs: Any
+        ) -> Any:
             raise NotImplementedError()
 
         def _batch(
@@ -4087,7 +4090,9 @@ async def test_seq_abatch_return_exceptions(mocker: MockerFixture) -> None:
         def __init__(self, fail_starts_with: str) -> None:
             self.fail_starts_with = fail_starts_with
 
-        def invoke(self, input: Any, config: Optional[RunnableConfig] = None) -> Any:
+        def invoke(
+            self, input: Any, config: Optional[RunnableConfig] = None, **kwargs: Any
+        ) -> Any:
             raise NotImplementedError()
 
         async def _abatch(
@@ -5210,7 +5215,7 @@ def test_default_transform_with_dicts() -> None:
 
     class CustomRunnable(RunnableSerializable[Input, Output]):
         def invoke(
-            self, input: Input, config: Optional[RunnableConfig] = None
+            self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
         ) -> Output:
             return cast(Output, input)  # type: ignore
 
@@ -5231,7 +5236,7 @@ async def test_default_atransform_with_dicts() -> None:
 
     class CustomRunnable(RunnableSerializable[Input, Output]):
         def invoke(
-            self, input: Input, config: Optional[RunnableConfig] = None
+            self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
         ) -> Output:
             return cast(Output, input)
 

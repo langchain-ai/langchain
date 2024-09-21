@@ -277,7 +277,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
         return cls(assistant_id=assistant.id, client=client, **kwargs)
 
     def invoke(
-        self, input: dict, config: Optional[RunnableConfig] = None
+        self, input: dict, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> OutputType:
         """Invoke assistant.
 

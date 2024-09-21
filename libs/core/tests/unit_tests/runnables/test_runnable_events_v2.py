@@ -2053,7 +2053,9 @@ class StreamingRunnable(Runnable[Input, Output]):
         """Initialize the runnable."""
         self.iterable = iterable
 
-    def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Output:
+    def invoke(
+        self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
+    ) -> Output:
         """Invoke the runnable."""
         raise ValueError("Server side error")
 

@@ -79,7 +79,10 @@ class BaseGenerationOutputParser(
         return T  # type: ignore[misc]
 
     def invoke(
-        self, input: Union[str, BaseMessage], config: Optional[RunnableConfig] = None
+        self,
+        input: Union[str, BaseMessage],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
     ) -> T:
         if isinstance(input, BaseMessage):
             return self._call_with_config(
@@ -179,7 +182,10 @@ class BaseOutputParser(
         )
 
     def invoke(
-        self, input: Union[str, BaseMessage], config: Optional[RunnableConfig] = None
+        self,
+        input: Union[str, BaseMessage],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
     ) -> T:
         if isinstance(input, BaseMessage):
             return self._call_with_config(
