@@ -54,14 +54,9 @@ os.environ["OPENAI_API_KEY"] = ""
 from langchain_needle import NeedleLoader
 
 # NeedleLoader Initialization
-
-# To store documents, initialize `NeedleLoader` with one of the following options:
-# - To connect to an existing collection, provide the `collection_id`.
-# - To create a new collection, pass a `collection_name`.
 document_store = NeedleLoader(
     needle_api_key=os.getenv("NEEDLE_API_KEY"),
     collection_name="Langchain",
-    # collection_id="COLLECTION_ID"
 )
 
 files = {

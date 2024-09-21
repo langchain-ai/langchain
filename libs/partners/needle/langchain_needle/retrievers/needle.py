@@ -15,10 +15,6 @@ class NeedleRetriever(BaseRetriever, BaseModel):
     collection_id: Optional[str] = Field(..., description="The ID of the Needle collection to search in")
     client: Optional[NeedleClient] = None
 
-    model_config = ConfigDict(
-        arbitrary_types_allowed=True,
-    )
-
     def _initialize_client(self) -> None:
         """Initialize NeedleClient with the provided API key."""
         if not self.client:

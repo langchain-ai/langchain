@@ -7,15 +7,15 @@ all: help
 TEST_FILE ?= tests/unit_tests/
 integration_test integration_tests: TEST_FILE = tests/integration_tests/
 
-
-# unit tests are run with the --disable-socket flag to prevent network calls
+# Unit tests are run with the --disable-socket flag to prevent network calls
 test tests:
 	poetry run pytest --disable-socket --allow-unix-socket $(TEST_FILE)
 
+# Watch for changes in tests
 test_watch:
 	poetry run ptw --snapshot-update --now . -- -vv $(TEST_FILE)
 
-# integration tests are run without the --disable-socket flag to allow network calls
+# Integration tests are run without the --disable-socket flag to allow network calls
 integration_test integration_tests:
 	poetry run pytest $(TEST_FILE)
 
@@ -60,6 +60,7 @@ help:
 	@echo 'check_imports				- check imports'
 	@echo 'format                       - run code formatters'
 	@echo 'lint                         - run linters'
-	@echo 'test                         - run unit tests'
-	@echo 'tests                        - run unit tests'
+	@echo 'test                         - run unit tests with --disable-socket'
+	@echo 'tests                        - run unit tests with --disable-socket'
+	@echo 'integration_tests            - run integration tests without --disable-socket'
 	@echo 'test TEST_FILE=<test_file>   - run all tests in file'
