@@ -217,6 +217,12 @@ class SemanticChunker(BaseDocumentTransformer):
         # np.percentile to fail.
         if len(single_sentences_list) == 1:
             return single_sentences_list
+        # similarly, the following np.gradient would fail
+        if (
+            self.breakpoint_threshold_type == "gradient"
+            and len(single_sentences_list) == 2
+        ):
+            return single_sentences_list
         distances, sentences = self._calculate_sentence_distances(single_sentences_list)
         if self.number_of_chunks is not None:
             breakpoint_distance_threshold = self._threshold_from_clusters(distances)

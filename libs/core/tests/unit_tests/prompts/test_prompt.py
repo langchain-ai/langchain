@@ -640,3 +640,22 @@ def test_prompt_missing_vars_error() -> None:
 
     # Check helper text has right number of braces
     assert "'{{goingtobemissing}}'" in str(e.value.args[0])
+
+
+def test_prompt_with_template_variable_name_fstring() -> None:
+    template = "This is a {template} test."
+    prompt = PromptTemplate.from_template(template, template_format="f-string")
+    assert prompt.invoke({"template": "bar"}).to_string() == "This is a bar test."
+
+
+def test_prompt_with_template_variable_name_mustache() -> None:
+    template = "This is a {{template}} test."
+    prompt = PromptTemplate.from_template(template, template_format="mustache")
+    assert prompt.invoke({"template": "bar"}).to_string() == "This is a bar test."
+
+
+@pytest.mark.requires("jinja2")
+def test_prompt_with_template_variable_name_jinja2() -> None:
+    template = "This is a {{template}} test."
+    prompt = PromptTemplate.from_template(template, template_format="jinja2")
+    assert prompt.invoke({"template": "bar"}).to_string() == "This is a bar test."
