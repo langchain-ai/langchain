@@ -354,18 +354,11 @@ def add_ai_message_chunks(
         )
         for other in others:
             if other.usage_metadata is not None:
-                if other.usage_metadata.get("input_tokens") is not None:
-                    usage_metadata_["input_tokens"] += other.usage_metadata[
-                        "input_tokens"
-                    ]
-                if other.usage_metadata.get("output_tokens") is not None:
-                    usage_metadata_["output_tokens"] += other.usage_metadata[
-                        "output_tokens"
-                    ]
-                if other.usage_metadata.get("total_tokens") is not None:
-                    usage_metadata_["total_tokens"] += other.usage_metadata[
-                        "total_tokens"
-                    ]
+                usage_metadata_["input_tokens"] += other.usage_metadata["input_tokens"]
+                usage_metadata_["output_tokens"] += other.usage_metadata[
+                    "output_tokens"
+                ]
+                usage_metadata_["total_tokens"] += other.usage_metadata["total_tokens"]
         usage_metadata: Optional[UsageMetadata] = usage_metadata_
     else:
         usage_metadata = None
