@@ -24,7 +24,7 @@ def convert_messages(item):
         return {k: convert_messages(v) for k, v in item.items()}
     elif isinstance(item, float):
         return Decimal(str(item))
-    return item
+update1return item
 
 class DynamoDBChatMessageHistory(BaseChatMessageHistory):
     """Chat message history that stores history in AWS DynamoDB.
