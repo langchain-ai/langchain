@@ -406,12 +406,14 @@ def _default_hybrid_search(
     query_text: str, query_vector: List[float], k: int = 4
 ) -> Dict:
     """Returns payload for performing hybrid search for given options.
-    Args: options: dict containing the following
-        query: The query text to search for.
-        embeded_query: The embedding vector to search for.
-        top_k: Number of Documents to return. Defaults to 4.
-    Returns: payload: dict containing the payload for hybrid search.
 
+    Args:
+        query_text: The query text to search for.
+        query_vector: The embedding vector (query) to search for.
+        k: Number of Documents to return. Defaults to 4.
+
+    Returns:
+        dict: The payload for hybrid search.
     """
     payload = {
         "_source": {"exclude": ["vector_field"]},
@@ -438,13 +440,16 @@ def _default_hybrid_search(
 def _hybrid_search_with_post_filter(
     query_text: str, query_vector: List[float], k: int, post_filter: Optional[Dict] = {}
 ) -> Dict:
-    """Returns payload for performing hybrid search with post filter for given options.
-    Args: options: dict containing the following
-        query: The query text to search for.
-        embeded_query: The embedding vector to search for.
-        top_k: Number of Documents to return. Defaults to 4.
-        post_filter: The post filter to apply.
-    Returns: payload: dict containing the payload for hybrid search with post filter.
+    """Returns payload for performing hybrid search with post filter.
+
+    Args:
+        query_text: The query text to search for.
+        query_vector: The embedding vector to search for.
+        k: Number of Documents to return.
+        post_filter: The post filter to apply. Defaults to an empty dict.
+
+    Returns:
+        dict: The payload for hybrid search with post filter.
     """
     payload = {
         "_source": {"exclude": ["vector_field"]},
@@ -1228,6 +1233,7 @@ class OpenSearchVectorSearch(VectorStore):
             response = self.client.transport.perform_request(
                 method="GET", url=path, body=payload
             )
+            
             return [hit for hit in response["hits"]["hits"]]
 
 
