@@ -364,6 +364,12 @@ const FEATURE_TABLES = {
                 package: "langchain-databricks",
                 apiLink: "https://python.langchain.com/api_reference/nomic/embeddings/langchain_databricks.embeddings.DatabricksEmbeddings.html"
             },
+            {
+                name: "VoyageAI",
+                link: "voyageai",
+                package: "langchain-voyageai",
+                apiLink: "https://python.langchain.com/api_reference/voyageai/embeddings/langchain_voyageai.embeddings.VoyageAIEmbeddings.html"
+            },
         ]
     },
     document_retrievers: {
