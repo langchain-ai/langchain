@@ -402,7 +402,7 @@ def _default_painless_scripting_query(
     }
 
 
-def _default_hybrid_search(
+def _default_hybrid_search_query(
     query_text: str, query_vector: List[float], k: int = 4
 ) -> Dict:
     """Returns payload for performing hybrid search for given options.
@@ -437,8 +437,11 @@ def _default_hybrid_search(
     return payload
 
 
-def _hybrid_search_with_post_filter(
-    query_text: str, query_vector: List[float], k: int, post_filter: Optional[Dict] = {}
+def _hybrid_search_query_with_post_filter(
+    query_text: str,
+    query_vector: List[float],
+    k: int,
+    post_filter: Dict,
 ) -> Dict:
     """Returns payload for performing hybrid search with post filter.
 
@@ -446,32 +449,16 @@ def _hybrid_search_with_post_filter(
         query_text: The query text to search for.
         query_vector: The embedding vector to search for.
         k: Number of Documents to return.
-        post_filter: The post filter to apply. Defaults to an empty dict.
+        post_filter: The post filter to apply.
 
     Returns:
         dict: The payload for hybrid search with post filter.
     """
-    payload = {
-        "_source": {"exclude": ["vector_field"]},
-        "query": {
-            "hybrid": {
-                "queries": [
-                    {
-                        "match": {
-                            "text": {
-                                "query": query_text,
-                            }
-                        }
-                    },
-                    {"knn": {"vector_field": {"vector": query_vector, "k": k}}},
-                ]
-            }
-        },
-        "size": k,
-        "post_filter": post_filter,
-    }
+    search_query = _default_hybrid_search_query(query_text, query_vector, k)
 
-    return payload
+    search_query["post_filter"] = post_filter
+
+    return search_query
 
 
 class OpenSearchVectorSearch(VectorStore):
@@ -1223,12 +1210,12 @@ class OpenSearchVectorSearch(VectorStore):
             # if post filter is provided
             if post_filter != {}:
                 # hybrid search with post filter
-                payload = _hybrid_search_with_post_filter(
+                payload = _hybrid_search_query_with_post_filter(
                     query_text, embeded_query, k, post_filter
                 )
             else:
                 # hybrid search without post filter
-                payload = _default_hybrid_search(query_text, embeded_query, k)
+                payload = _default_hybrid_search_query(query_text, embeded_query, k)
             
             response = self.client.transport.perform_request(
                 method="GET", url=path, body=payload
