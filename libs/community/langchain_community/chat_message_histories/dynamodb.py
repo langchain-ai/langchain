@@ -17,7 +17,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-
 def convert_messages(item):
     if isinstance(item, list):
         return [convert_messages(i) for i in item]
