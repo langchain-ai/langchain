@@ -56,6 +56,23 @@ def test_milvus() -> None:
     assert_docs_equal_without_pk(output, [Document(page_content="foo")])
 
 
+def test_milvus_add_embeddings_search() -> None:
+    """Test end to end with add embeddings"""
+    embed_func = FakeEmbeddings()
+    docsearch = Milvus(
+        embed_func,
+        # connection_args={"uri": "http://127.0.0.1:19530"},
+        connection_args={"uri": "./milvus_demo.db"},
+        drop_old=True,
+        consistency_level="Strong",
+        auto_id=True,
+    )
+
+    docsearch.add_embeddings(zip(fake_texts, embed_func.embed_documents(fake_texts)))
+    output = docsearch.similarity_search("foo", k=1)
+    assert_docs_equal_without_pk(output, [Document(page_content="foo")])
+
+
 def test_milvus_vector_search() -> None:
     """Test end to end construction and search by vector."""
     docsearch = _milvus_from_texts()
