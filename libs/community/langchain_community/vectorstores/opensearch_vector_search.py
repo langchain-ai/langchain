@@ -835,13 +835,12 @@ class OpenSearchVectorSearch(VectorStore):
                 }
             ],
         }
-        try:
-            response = self.client.transport.perform_request(
-                method="PUT", url=path, body=payload
-            )
-            return response
-        except Exception as e:
-            raise e
+        
+        response = self.client.transport.perform_request(
+            method="PUT", url=path, body=payload
+        )
+        return response
+        
 
     def search_pipeline_exists(self, pipeline_name: str) -> bool:
         """
@@ -862,12 +861,10 @@ class OpenSearchVectorSearch(VectorStore):
             >>> search_pipeline_exists("my_pipeline_2")
             False
         """
-        try:
-            existed_pipelines = self.client.transport.perform_request(
-                method="GET", url=f"/_search/pipeline/"
-            )
-        except Exception as e:
-            raise e
+        
+        existed_pipelines = self.client.transport.perform_request(
+            method="GET", url=f"/_search/pipeline/"
+        )
 
         return pipeline_name in existed_pipelines
 
@@ -906,12 +903,10 @@ class OpenSearchVectorSearch(VectorStore):
             None
         """
         response = None
-        try:
-            response = self.client.transport.perform_request(
-                method="GET", url=f"/_search/pipeline/{pipeline_name}"
-            )
-        except Exception as e:
-            raise e
+        
+        response = self.client.transport.perform_request(
+            method="GET", url=f"/_search/pipeline/{pipeline_name}"
+        )
 
         return response
 
@@ -1229,14 +1224,12 @@ class OpenSearchVectorSearch(VectorStore):
             else:
                 # hybrid search without post filter
                 payload = _default_hybrid_search(query_text, embeded_query, k)
-            try:
-                response = self.client.transport.perform_request(
-                    method="GET", url=path, body=payload
-                )
-                return [hit for hit in response["hits"]["hits"]]
+            
+            response = self.client.transport.perform_request(
+                method="GET", url=path, body=payload
+            )
+            return [hit for hit in response["hits"]["hits"]]
 
-            except Exception as e:
-                raise 
 
         else:
             raise ValueError("Invalid `search_type` provided as an argument")
