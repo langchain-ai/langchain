@@ -1,6 +1,6 @@
 import unittest
 import uuid
-from typing import List, Type, Union
+from typing import Union
 
 import pytest
 
@@ -447,7 +447,7 @@ def test_message_chunk_to_message() -> None:
 
 
 def test_tool_calls_merge() -> None:
-    chunks: List[dict] = [
+    chunks: list[dict] = [
         dict(content=""),
         dict(
             content="",
@@ -781,7 +781,7 @@ def test_convert_to_messages() -> None:
 
 
 @pytest.mark.parametrize(
-    "MessageClass",
+    "message_class",
     [
         AIMessage,
         AIMessageChunk,
@@ -790,39 +790,39 @@ def test_convert_to_messages() -> None:
         SystemMessage,
     ],
 )
-def test_message_name(MessageClass: Type) -> None:
-    msg = MessageClass(content="foo", name="bar")
+def test_message_name(message_class: type) -> None:
+    msg = message_class(content="foo", name="bar")
     assert msg.name == "bar"
 
-    msg2 = MessageClass(content="foo", name=None)
+    msg2 = message_class(content="foo", name=None)
     assert msg2.name is None
 
-    msg3 = MessageClass(content="foo")
+    msg3 = message_class(content="foo")
     assert msg3.name is None
 
 
 @pytest.mark.parametrize(
-    "MessageClass",
+    "message_class",
     [FunctionMessage, FunctionMessageChunk],
 )
-def test_message_name_function(MessageClass: Type) -> None:
+def test_message_name_function(message_class: type) -> None:
     # functionmessage doesn't support name=None
-    msg = MessageClass(name="foo", content="bar")
+    msg = message_class(name="foo", content="bar")
     assert msg.name == "foo"
 
 
 @pytest.mark.parametrize(
-    "MessageClass",
+    "message_class",
     [ChatMessage, ChatMessageChunk],
 )
-def test_message_name_chat(MessageClass: Type) -> None:
-    msg = MessageClass(content="foo", role="user", name="bar")
+def test_message_name_chat(message_class: type) -> None:
+    msg = message_class(content="foo", role="user", name="bar")
     assert msg.name == "bar"
 
-    msg2 = MessageClass(content="foo", role="user", name=None)
+    msg2 = message_class(content="foo", role="user", name=None)
     assert msg2.name is None
 
-    msg3 = MessageClass(content="foo", role="user")
+    msg3 = message_class(content="foo", role="user")
     assert msg3.name is None
 
 

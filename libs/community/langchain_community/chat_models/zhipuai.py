@@ -204,7 +204,7 @@ def _convert_delta_to_message_chunk(
     role = dct.get("role")
     content = dct.get("content", "")
     additional_kwargs = {}
-    tool_calls = dct.get("tool_call", None)
+    tool_calls = dct.get("tool_calls", None)
     if tool_calls is not None:
         additional_kwargs["tool_calls"] = tool_calls
 

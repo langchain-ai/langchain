@@ -1,6 +1,6 @@
 """Test functionality related to prompts."""
 
-from typing import Any, Dict, Union
+from typing import Any, Union
 from unittest import mock
 
 import pydantic
@@ -610,7 +610,7 @@ async def test_prompt_ainvoke_with_metadata() -> None:
 )
 @pytest.mark.parametrize("template_format", ["f-string", "mustache"])
 def test_prompt_falsy_vars(
-    template_format: str, value: Any, expected: Union[str, Dict[str, str]]
+    template_format: str, value: Any, expected: Union[str, dict[str, str]]
 ) -> None:
     # each line is value, f-string, mustache
     if template_format == "f-string":
@@ -640,3 +640,22 @@ def test_prompt_missing_vars_error() -> None:
 
     # Check helper text has right number of braces
     assert "'{{goingtobemissing}}'" in str(e.value.args[0])
+
+
+def test_prompt_with_template_variable_name_fstring() -> None:
+    template = "This is a {template} test."
+    prompt = PromptTemplate.from_template(template, template_format="f-string")
+    assert prompt.invoke({"template": "bar"}).to_string() == "This is a bar test."
+
+
+def test_prompt_with_template_variable_name_mustache() -> None:
+    template = "This is a {{template}} test."
+    prompt = PromptTemplate.from_template(template, template_format="mustache")
+    assert prompt.invoke({"template": "bar"}).to_string() == "This is a bar test."
+
+
+@pytest.mark.requires("jinja2")
+def test_prompt_with_template_variable_name_jinja2() -> None:
+    template = "This is a {{template}} test."
+    prompt = PromptTemplate.from_template(template, template_format="jinja2")
+    assert prompt.invoke({"template": "bar"}).to_string() == "This is a bar test."

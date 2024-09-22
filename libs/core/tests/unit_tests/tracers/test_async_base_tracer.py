@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Any, List
+from typing import Any
 from uuid import uuid4
 
 import pytest
@@ -26,7 +26,7 @@ class FakeAsyncTracer(AsyncBaseTracer):
     def __init__(self) -> None:
         """Initialize the tracer."""
         super().__init__()
-        self.runs: List[Run] = []
+        self.runs: list[Run] = []
 
     async def _persist_run(self, run: Run) -> None:
         self.runs.append(run)
@@ -438,7 +438,6 @@ async def test_tracer_tool_run_on_error() -> None:
         serialized={"name": "tool"},
         inputs=dict(input="test"),
         outputs=None,
-        action="{'name': 'tool'}",
         error=repr(exception),
         run_type="tool",
         trace_id=uuid,
@@ -566,7 +565,6 @@ async def test_tracer_nested_runs_on_error() -> None:
                 error=repr(exception),
                 inputs=dict(input="test"),
                 outputs=None,
-                action="{'name': 'tool'}",
                 trace_id=chain_uuid,
                 dotted_order=f"20230101T000000000000Z{chain_uuid}.20230101T000000000000Z{tool_uuid}",
                 child_runs=[

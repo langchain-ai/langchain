@@ -85,7 +85,7 @@ jobs:
           path: langchain
           sparse-checkout: | # this only grabs files for relevant dir
             ${{ inputs.working-directory }}
-          ref: master # this scopes to just master branch
+          ref: ${{ github.ref }} # this scopes to just ref'd branch
           fetch-depth: 0 # this fetches entire commit history
       - name: Check Tags
         id: check-tags

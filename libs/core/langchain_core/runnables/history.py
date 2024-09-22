@@ -1,19 +1,18 @@
 from __future__ import annotations
 
 import inspect
+from collections.abc import Sequence
+from types import GenericAlias
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Dict,
-    List,
     Optional,
-    Sequence,
-    Type,
     Union,
 )
 
 from pydantic import BaseModel
+from typing_extensions import override
 
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.load.load import load
@@ -33,7 +32,7 @@ if TYPE_CHECKING:
     from langchain_core.tracers.schemas import Run
 
 
-MessagesOrDictWithMessages = Union[Sequence["BaseMessage"], Dict[str, Any]]
+MessagesOrDictWithMessages = Union[Sequence["BaseMessage"], dict[str, Any]]
 GetSessionHistoryCallable = Callable[..., BaseChatMessageHistory]
 
 
@@ -238,7 +237,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
     history_factory_config: Sequence[ConfigurableFieldSpec]
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "schema", "runnable"]
 
@@ -366,7 +365,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         self._history_chain = history_chain
 
     @property
-    def config_specs(self) -> List[ConfigurableFieldSpec]:
+    def config_specs(self) -> list[ConfigurableFieldSpec]:
         """Get the configuration specs for the RunnableWithMessageHistory."""
         return get_unique_config_specs(
             super().config_specs + list(self.history_factory_config)
@@ -374,10 +373,10 @@ class RunnableWithMessageHistory(RunnableBindingBase):
 
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
+    ) -> type[BaseModel]:
         from langchain_core.messages import BaseMessage
 
-        fields: Dict = {}
+        fields: dict = {}
         if self.input_messages_key and self.history_messages_key:
             fields[self.input_messages_key] = (
                 Union[str, BaseMessage, Sequence[BaseMessage]],
@@ -398,13 +397,14 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         )
 
     @property
-    def OutputType(self) -> Type[Output]:
+    @override
+    def OutputType(self) -> type[Output]:
         output_type = self._history_chain.OutputType
         return output_type
 
     def get_output_schema(
         self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
+    ) -> type[BaseModel]:
         """Get a pydantic model that can be used to validate output to the Runnable.
 
         Runnables that leverage the configurable_fields and configurable_alternatives
@@ -421,7 +421,11 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         """
         root_type = self.OutputType
 
-        if inspect.isclass(root_type) and issubclass(root_type, BaseModel):
+        if (
+            inspect.isclass(root_type)
+            and not isinstance(root_type, GenericAlias)
+            and issubclass(root_type, BaseModel)
+        ):
             return root_type
 
         return create_model_v2(
@@ -430,15 +434,15 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             module_name=self.__class__.__module__,
         )
 
-    def _is_not_async(self, *args: Sequence[Any], **kwargs: Dict[str, Any]) -> bool:
+    def _is_not_async(self, *args: Sequence[Any], **kwargs: dict[str, Any]) -> bool:
         return False
 
-    async def _is_async(self, *args: Sequence[Any], **kwargs: Dict[str, Any]) -> bool:
+    async def _is_async(self, *args: Sequence[Any], **kwargs: dict[str, Any]) -> bool:
         return True
 
     def _get_input_messages(
         self, input_val: Union[str, BaseMessage, Sequence[BaseMessage], dict]
-    ) -> List[BaseMessage]:
+    ) -> list[BaseMessage]:
         from langchain_core.messages import BaseMessage
 
         # If dictionary, try to pluck the single key representing messages
@@ -481,7 +485,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
 
     def _get_output_messages(
         self, output_val: Union[str, BaseMessage, Sequence[BaseMessage], dict]
-    ) -> List[BaseMessage]:
+    ) -> list[BaseMessage]:
         from langchain_core.messages import BaseMessage
 
         # If dictionary, try to pluck the single key representing messages
@@ -514,7 +518,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
                 f"Got {output_val}."
             )
 
-    def _enter_history(self, input: Any, config: RunnableConfig) -> List[BaseMessage]:
+    def _enter_history(self, input: Any, config: RunnableConfig) -> list[BaseMessage]:
         hist: BaseChatMessageHistory = config["configurable"]["message_history"]
         messages = hist.messages.copy()
 
@@ -527,8 +531,8 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         return messages
 
     async def _aenter_history(
-        self, input: Dict[str, Any], config: RunnableConfig
-    ) -> List[BaseMessage]:
+        self, input: dict[str, Any], config: RunnableConfig
+    ) -> list[BaseMessage]:
         hist: BaseChatMessageHistory = config["configurable"]["message_history"]
         messages = (await hist.aget_messages()).copy()
 
@@ -621,7 +625,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         return config
 
 
-def _get_parameter_names(callable_: GetSessionHistoryCallable) -> List[str]:
+def _get_parameter_names(callable_: GetSessionHistoryCallable) -> list[str]:
     """Get the parameter names of the callable."""
     sig = inspect.signature(callable_)
     return list(sig.parameters.keys())

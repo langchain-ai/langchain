@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from enum import Enum
-from typing import Any, List, Optional, Sequence, Union
+from typing import Any, Optional, Union
 
 from pydantic import BaseModel
 
@@ -142,10 +143,10 @@ class Operation(FilterDirective):
     """
 
     operator: Operator
-    arguments: List[FilterDirective]
+    arguments: list[FilterDirective]
 
     def __init__(
-        self, operator: Operator, arguments: List[FilterDirective], **kwargs: Any
+        self, operator: Operator, arguments: list[FilterDirective], **kwargs: Any
     ) -> None:
         # super exists from BaseModel
         super().__init__(  # type: ignore[call-arg]

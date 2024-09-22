@@ -354,7 +354,7 @@ const FEATURE_TABLES = {
             },
             {
                 name: "Nomic",
-                link: "cohere",
+                link: "nomic",
                 package: "langchain-nomic",
                 apiLink: "https://python.langchain.com/api_reference/nomic/embeddings/langchain_nomic.embeddings.NomicEmbeddings.html"
             },
@@ -886,7 +886,7 @@ const FEATURE_TABLES = {
                 apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.html_bs.BSHTMLLoader.html"
             },
             {
-                name: "UnstrucutredXMLLoader",
+                name: "UnstructuredXMLLoader",
                 link: "xml",
                 source: "XML files",
                 apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.xml.UnstructuredXMLLoader.html"
