@@ -1,6 +1,6 @@
 from functools import partial
 from inspect import isclass
-from typing import Any, Dict, Type, Union, cast
+from typing import Any, Union, cast
 from typing import Optional as Optional
 
 from pydantic import BaseModel
@@ -14,12 +14,12 @@ from langchain_core.utils.pydantic import is_basemodel_subclass
 
 
 def _fake_runnable(
-    input: Any, *, schema: Union[Dict, Type[BaseModel]], value: Any = 42, **_: Any
-) -> Union[BaseModel, Dict]:
+    input: Any, *, schema: Union[dict, type[BaseModel]], value: Any = 42, **_: Any
+) -> Union[BaseModel, dict]:
     if isclass(schema) and is_basemodel_subclass(schema):
         return schema(name="yo", value=value)
     else:
-        params = cast(Dict, schema)["parameters"]
+        params = cast(dict, schema)["parameters"]
         return {k: 1 if k != "value" else value for k, v in params.items()}
 
 
@@ -27,7 +27,7 @@ class FakeStructuredChatModel(FakeListChatModel):
     """Fake ChatModel for testing purposes."""
 
     def with_structured_output(
-        self, schema: Union[Dict, Type[BaseModel]], **kwargs: Any
+        self, schema: Union[dict, type[BaseModel]], **kwargs: Any
     ) -> Runnable:
         return RunnableLambda(partial(_fake_runnable, schema=schema, **kwargs))
 

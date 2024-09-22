@@ -5,6 +5,9 @@ EXPECTED_ALL = [
     "BoxRetriever",
     "BoxAuth",
     "BoxAuthType",
+    "BoxSearchOptions",
+    "DocumentFiles",
+    "SearchTypeFilter",
     "_BoxAPIWrapper",
     "__version__",
 ]
