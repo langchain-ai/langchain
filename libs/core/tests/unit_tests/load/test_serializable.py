@@ -180,27 +180,23 @@ class Foo3(Serializable):
         return True
 
 
-def test_repr():
+def test_repr() -> None:
     foo = Foo3(
         content="test repr",
         data_frame=pd.DataFrame({"name": ["Alice", "Bob"], "age": [17, 19]}),
-        arbitrary_types_allowed=True,
     )
     assert (
-        repr(foo)
-        == "Foo3(content='test repr', data_frame=    "
-           "name  age\n0  Alice   17\n1    Bob   19)"
+        repr(foo) == "Foo3(content='test repr', data_frame=    "
+        "name  age\n0  Alice   17\n1    Bob   19)"
     )
 
 
-def test_str():
+def test_str() -> None:
     foo = Foo3(
         content="test repr",
         data_frame=pd.DataFrame({"name": ["Alice", "Bob"], "age": [17, 19]}),
-        arbitrary_types_allowed=True,
     )
     assert (
-        str(foo)
-        == "content='test repr' data_frame=    "
-           "name  age\n0  Alice   17\n1    Bob   19"
+        str(foo) == "content='test repr' data_frame=    "
+        "name  age\n0  Alice   17\n1    Bob   19"
     )
