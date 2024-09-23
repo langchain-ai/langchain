@@ -444,6 +444,18 @@ class Neo4jVector(VectorStore):
         embedding: Any embedding function implementing
             `langchain.embeddings.base.Embeddings` interface.
         distance_strategy: The distance strategy to use. (default: COSINE)
+        search_type: The type of search to be performed, either
+            'vector' or 'hybrid'
+        node_label: The label used for nodes in the Neo4j database.
+            (default: "Chunk")
+        embedding_node_property: The property name in Neo4j to store embeddings.
+            (default: "embedding")
+        text_node_property: The property name in Neo4j to store the text.
+            (default: "text")
+        retrieval_query: The Cypher query to be used for customizing retrieval.
+            If empty, a default query will be used.
+        index_type: The type of index to be used, either
+            'NODE' or 'RELATIONSHIP'
         pre_delete_collection: If True, will delete existing data if it exists.
             (default: False). Useful for testing.
 
