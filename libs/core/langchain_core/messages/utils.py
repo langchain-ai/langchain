@@ -584,12 +584,17 @@ def trim_messages(
     trim_messages can be used to reduce the size of a chat history to a specified token
     count or specified message count.
 
-    In either case, the trimmed chat history should usually satisfy the following
+    In either case, if passing the trimmed chat history back into a chat model
+    directly, the resulting chat history should usually satisfy the following
     properties:
 
     1. The resulting chat history should be valid. Most chat models expect that chat
        history starts with either (1) a `HumanMessage` or (2) a `SystemMessage` followed
        by a `HumanMessage`. To achieve this, set `start_on="human"`.
+       In addition, generally a `ToolMessage` can only appear after an `AIMessage`
+       that involved a tool call.
+       Please see the following link for more information about messages:
+       https://python.langchain.com/docs/concepts/#messages 
     2. It includes recent messages and drops old messages in the chat history.
        To achieve this set the `strategy="last"`.
     3. Usually, the new chat history should include the `SystemMessage` if it
@@ -597,7 +602,10 @@ def trim_messages(
        special instructions to the chat model. The `SystemMessage` is almost always
        the first message in the history if present. To achieve this set the
        `include_system=True`.
-
+       
+    **Note** The examples below show how to configure `trim_messages` to achieve 
+        a behavior consistent with the above properties.
+       
     Args:
         messages: Sequence of Message-like objects to trim.
         max_tokens: Max token count of trimmed messages.
