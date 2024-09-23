@@ -6,7 +6,7 @@ from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
-from langsmith import Client, traceable
+from langsmith import Client, get_current_run_tree, traceable
 from langsmith.run_helpers import tracing_context
 from langsmith.run_trees import RunTree
 from langsmith.utils import get_env_var
@@ -40,10 +40,15 @@ def test_config_traceable_handoff() -> None:
     mock_client_ = Client(
         session=mock_session, api_key="test", auto_batch_tracing=False
     )
-    tracer = LangChainTracer(client=mock_client_)
+    tracer = LangChainTracer(
+        client=mock_client_, project_name="another-flippin-project", tags=["such-a-tag"]
+    )
 
     @traceable
     def my_great_great_grandchild_function(a: int) -> int:
+        rt = get_current_run_tree()
+        assert rt
+        assert rt.session_name == "another-flippin-project"
         return a + 1
 
     @RunnableLambda
@@ -60,19 +65,28 @@ def test_config_traceable_handoff() -> None:
 
     @traceable()
     def my_function(a: int) -> int:
+        rt = get_current_run_tree()
+        assert rt
+        assert rt.session_name == "another-flippin-project"
+        assert rt.parent_run and rt.parent_run.name == "my_parent_function"
         return my_child_function(a)
 
     def my_parent_function(a: int) -> int:
+        rt = get_current_run_tree()
+        assert rt
+        assert rt.session_name == "another-flippin-project"
         return my_function(a)
 
     my_parent_runnable = RunnableLambda(my_parent_function)
 
     assert my_parent_runnable.invoke(1, {"callbacks": [tracer]}) == 6
     posts = _get_posts(mock_client_)
+    assert all(post["session_name"] == "another-flippin-project" for post in posts)
     # There should have been 6 runs created,
     # one for each function invocation
     assert len(posts) == 6
     name_to_body = {post["name"]: post for post in posts}
+
     ordered_names = [
         "my_parent_function",
         "my_function",
@@ -102,6 +116,7 @@ def test_config_traceable_handoff() -> None:
             )
         last_dotted_order = dotted_order
         parent_run_id = id_
+    assert "such-a-tag" in name_to_body["my_parent_function"]["tags"]
 
 
 @pytest.mark.skipif(
