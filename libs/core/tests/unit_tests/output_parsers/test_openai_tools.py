@@ -1,4 +1,5 @@
-from typing import Any, AsyncIterator, Iterator, List
+from collections.abc import AsyncIterator, Iterator
+from typing import Any
 
 import pytest
 from pydantic import BaseModel, Field
@@ -483,7 +484,7 @@ class Person(BaseModel):
 class NameCollector(BaseModel):
     """record names of all people mentioned"""
 
-    names: List[str] = Field(..., description="all names mentioned")
+    names: list[str] = Field(..., description="all names mentioned")
     person: Person = Field(..., description="info about the main subject")
 
 

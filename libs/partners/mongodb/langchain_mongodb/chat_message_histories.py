@@ -122,7 +122,11 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
                 cursor = self.collection.find({self.session_id_key: self.session_id})
             else:
                 skip_count = max(
-                    0, self.collection.count_documents({}) - self.history_size
+                    0,
+                    self.collection.count_documents(
+                        {self.session_id_key: self.session_id}
+                    )
+                    - self.history_size,
                 )
                 cursor = self.collection.find(
                     {self.session_id_key: self.session_id}, skip=skip_count

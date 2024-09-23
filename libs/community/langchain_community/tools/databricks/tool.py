@@ -122,7 +122,7 @@ def _get_tool_name(function: "FunctionInfo") -> str:
     return tool_name
 
 
-def _get_default_workspace_client() -> "WorkspaceClient":
+def _get_default_workspace_client() -> Any:
     try:
         from databricks.sdk import WorkspaceClient
     except ImportError as e:
@@ -138,7 +138,7 @@ class UCFunctionToolkit(BaseToolkit):
         description="The ID of a Databricks SQL Warehouse to execute functions."
     )
 
-    workspace_client: "WorkspaceClient" = Field(
+    workspace_client: Any = Field(
         default_factory=_get_default_workspace_client,
         description="Databricks workspace client.",
     )

@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import pytest
 from pydantic import ConfigDict, Field, model_validator
@@ -21,7 +21,7 @@ class MyRunnable(RunnableSerializable[str, str]):
 
     @model_validator(mode="before")
     @classmethod
-    def my_error(cls, values: Dict[str, Any]) -> Any:
+    def my_error(cls, values: dict[str, Any]) -> Any:
         if "_my_hidden_property" in values:
             raise ValueError("Cannot set _my_hidden_property")
         return values

@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import contextlib
 import mimetypes
+from collections.abc import Generator
 from io import BufferedReader, BytesIO
 from pathlib import PurePath
-from typing import Any, Generator, Literal, Optional, Union, cast
+from typing import Any, Literal, Optional, Union, cast
 
 from pydantic import ConfigDict, Field, field_validator, model_validator
 

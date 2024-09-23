@@ -6,14 +6,13 @@ import logging
 import sys
 import traceback
 from abc import ABC, abstractmethod
+from collections.abc import Coroutine, Sequence
 from datetime import datetime, timezone
 from typing import (
     TYPE_CHECKING,
     Any,
-    Coroutine,
     Literal,
     Optional,
-    Sequence,
     Union,
     cast,
 )

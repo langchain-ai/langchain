@@ -1,12 +1,12 @@
 import pytest
-
 from langchain_core.documents import Document
-from langchain_core.graph_vectorstores.base import (
+
+from langchain_community.graph_vectorstores.base import (
     Node,
     _documents_to_nodes,
     _texts_to_nodes,
 )
-from langchain_core.graph_vectorstores.links import Link
+from langchain_community.graph_vectorstores.links import Link
 
 
 def test_texts_to_nodes() -> None:

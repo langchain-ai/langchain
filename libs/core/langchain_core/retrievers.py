@@ -24,7 +24,7 @@ from __future__ import annotations
 import warnings
 from abc import ABC, abstractmethod
 from inspect import signature
-from typing import TYPE_CHECKING, Any, List, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from pydantic import ConfigDict
 from typing_extensions import TypedDict
@@ -47,7 +47,7 @@ if TYPE_CHECKING:
     )
 
 RetrieverInput = str
-RetrieverOutput = List[Document]
+RetrieverOutput = list[Document]
 RetrieverLike = Runnable[RetrieverInput, RetrieverOutput]
 RetrieverOutputLike = Runnable[Any, RetrieverOutput]
 
