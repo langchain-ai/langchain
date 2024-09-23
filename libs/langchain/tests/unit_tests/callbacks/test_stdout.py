@@ -32,9 +32,13 @@ class FakeChain(Chain):
 
 
 def test_stdoutcallback(capsys: pytest.CaptureFixture) -> Any:
+    """Test the stdout callback handler."""
     chain_test = FakeChain(callbacks=[StdOutCallbackHandler(color="red")])
     chain_test.invoke({"foo": "bar"})
     # Capture the output
     captured = capsys.readouterr()
     # Assert the output is as expected
-    assert "> Entering new FakeChain chain..." in captured.out
+    assert captured.out == (
+        "\n\n\x1b[1m> Entering new FakeChain "
+        "chain...\x1b[0m\n\n\x1b[1m> Finished chain.\x1b[0m\n"
+    )
