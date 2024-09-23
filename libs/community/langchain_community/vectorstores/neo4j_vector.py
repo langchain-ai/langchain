@@ -581,7 +581,7 @@ class Neo4jVector(VectorStore):
 
             self.query(
                 f"MATCH (n:`{self.node_label}`) "
-                "CALL { WITH n DETACH DELETE n } "
+                "CALL (n) { DETACH DELETE n } "
                 "IN TRANSACTIONS OF 10000 ROWS;"
             )
             # Delete index
@@ -753,18 +753,15 @@ class Neo4jVector(VectorStore):
         to create a new vector index in Neo4j.
         """
         index_query = (
-            "CALL db.index.vector.createNodeIndex("
-            "$index_name,"
-            "$node_label,"
-            "$embedding_node_property,"
-            "toInteger($embedding_dimension),"
-            "$similarity_metric )"
+            f"CREATE VECTOR INDEX {self.index_name} "
+            f"FOR (m:{self.node_label}) ON m.`{self.embedding_node_property}` "
+            "OPTIONS { indexConfig: { "
+            "`vector.dimensions`: toInteger($embedding_dimension), "
+            "`vector.similarity_function`: $similarity_metric }}"
         )
+        print(index_query)
 
         parameters = {
-            "index_name": self.index_name,
-            "node_label": self.node_label,
-            "embedding_node_property": self.embedding_node_property,
             "embedding_dimension": self.embedding_dimension,
             "similarity_metric": DISTANCE_MAPPING[self._distance_strategy],
         }
