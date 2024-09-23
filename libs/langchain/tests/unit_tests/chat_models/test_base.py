@@ -102,7 +102,8 @@ def test_configurable() -> None:
         "bound": {
             "name": None,
             "cache": None,
-            "disable_streaming": False,  #
+            "disable_streaming": False,
+            "disabled_params": None,
             "model_name": "gpt-4o",
             "temperature": 0.7,
             "model_kwargs": {},
