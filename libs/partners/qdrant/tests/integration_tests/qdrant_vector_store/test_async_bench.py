@@ -185,7 +185,7 @@ def async_qvs() -> AsyncQVS:
     instance.client.delete_collection(async_name)
 
 
-def test_qdrant_add_documents_existing_collection(
+def test_qdrant_add_texts(
     qvs: QdrantVectorStore, texts: List[str]
 ) -> None:
     qvs.add_texts(texts)  # , batch_size=10)
@@ -193,9 +193,9 @@ def test_qdrant_add_documents_existing_collection(
     assert act_count.count == len(texts)
 
 
-async def test_qdrant_aadd_documents_existing_collection(
+async def test_qdrant_async_aadd_texts(
         async_qvs: AsyncQVS, texts: List[str]
 ) -> None:
-    await async_qvs.aadd_texts(texts)  # , batch_size=10)
+    await async_qvs.aadd_texts(texts, max_parallel=40)  # , batch_size=10)
     act_count = await async_qvs.async_client.count(async_qvs.collection_name)
     assert act_count.count == len(texts)
