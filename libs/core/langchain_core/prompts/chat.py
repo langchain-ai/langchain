@@ -3,15 +3,13 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from pathlib import Path
 from typing import (
+    Annotated,
     Any,
-    List,
     Literal,
     Optional,
-    Sequence,
-    Tuple,
-    Type,
     TypedDict,
     TypeVar,
     Union,
@@ -25,7 +23,6 @@ from pydantic import (
     SkipValidation,
     model_validator,
 )
-from typing_extensions import Annotated
 
 from langchain_core._api import deprecated
 from langchain_core.load import Serializable
@@ -816,9 +813,9 @@ MessageLike = Union[BaseMessagePromptTemplate, BaseMessage, BaseChatPromptTempla
 
 MessageLikeRepresentation = Union[
     MessageLike,
-    Tuple[
-        Union[str, Type],
-        Union[str, List[dict], List[object]],
+    tuple[
+        Union[str, type],
+        Union[str, list[dict], list[object]],
     ],
     str,
 ]
@@ -1017,7 +1014,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
             ),
             **kwargs,
         }
-        cast(Type[ChatPromptTemplate], super()).__init__(messages=_messages, **kwargs)
+        cast(type[ChatPromptTemplate], super()).__init__(messages=_messages, **kwargs)
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
@@ -1083,7 +1080,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
                     values["partial_variables"][message.variable_name] = []
                     optional_variables.add(message.variable_name)
                 if message.variable_name not in input_types:
-                    input_types[message.variable_name] = List[AnyMessage]
+                    input_types[message.variable_name] = list[AnyMessage]
         if "partial_variables" in values:
             input_vars = input_vars - set(values["partial_variables"])
         if optional_variables:

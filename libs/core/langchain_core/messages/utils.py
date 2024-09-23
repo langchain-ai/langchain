@@ -11,25 +11,21 @@ from __future__ import annotations
 
 import inspect
 import json
+from collections.abc import Iterable, Sequence
 from functools import partial
 from typing import (
     TYPE_CHECKING,
+    Annotated,
     Any,
     Callable,
-    Dict,
-    Iterable,
-    List,
     Literal,
     Optional,
-    Sequence,
-    Tuple,
     Union,
     cast,
     overload,
 )
 
 from pydantic import Discriminator, Field, Tag
-from typing_extensions import Annotated
 
 from langchain_core.messages.ai import AIMessage, AIMessageChunk
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk
@@ -198,7 +194,7 @@ def message_chunk_to_message(chunk: BaseMessageChunk) -> BaseMessage:
 
 
 MessageLikeRepresentation = Union[
-    BaseMessage, List[str], Tuple[str, str], str, Dict[str, Any]
+    BaseMessage, list[str], tuple[str, str], str, dict[str, Any]
 ]
 
 

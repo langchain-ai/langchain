@@ -18,7 +18,8 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Sequence, Union
+from collections.abc import Sequence
+from typing import Union
 
 from pydantic import BaseModel, Field
 

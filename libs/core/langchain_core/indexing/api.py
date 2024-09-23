@@ -5,17 +5,13 @@ from __future__ import annotations
 import hashlib
 import json
 import uuid
+from collections.abc import AsyncIterable, AsyncIterator, Iterable, Iterator, Sequence
 from itertools import islice
 from typing import (
     Any,
-    AsyncIterable,
-    AsyncIterator,
     Callable,
-    Iterable,
-    Iterator,
     Literal,
     Optional,
-    Sequence,
     TypedDict,
     TypeVar,
     Union,

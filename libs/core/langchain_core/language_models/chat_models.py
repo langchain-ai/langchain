@@ -3,21 +3,19 @@ from __future__ import annotations
 import asyncio
 import inspect
 import json
+import typing
 import uuid
 import warnings
 from abc import ABC, abstractmethod
+from collections.abc import AsyncIterator, Iterator, Sequence
 from functools import cached_property
 from operator import itemgetter
 from typing import (
     TYPE_CHECKING,
     Any,
-    AsyncIterator,
     Callable,
-    Dict,
-    Iterator,
     Literal,
     Optional,
-    Sequence,
     Union,
     cast,
 )
@@ -28,6 +26,7 @@ from pydantic import (
     Field,
     model_validator,
 )
+from typing_extensions import override
 
 from langchain_core._api import deprecated
 from langchain_core.caches import BaseCache
@@ -253,6 +252,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     # --- Runnable methods ---
 
     @property
+    @override
     def OutputType(self) -> Any:
         """Get the output type for this runnable."""
         return AnyMessage
@@ -1121,18 +1121,18 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     def bind_tools(
         self,
-        tools: Sequence[Union[Dict[str, Any], type, Callable, BaseTool]],  # noqa: UP006
+        tools: Sequence[Union[typing.Dict[str, Any], type, Callable, BaseTool]],  # noqa: UP006
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         raise NotImplementedError()
 
     def with_structured_output(
         self,
-        schema: Union[Dict, type],  # noqa: UP006
+        schema: Union[typing.Dict, type],  # noqa: UP006
         *,
         include_raw: bool = False,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:  # noqa: UP006
+    ) -> Runnable[LanguageModelInput, Union[typing.Dict, BaseModel]]:  # noqa: UP006
         """Model wrapper that returns outputs formatted to match the given schema.
 
         Args:
