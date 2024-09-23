@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Any, Literal, Optional, Union
 
 from pydantic import (
     BaseModel,
@@ -31,7 +31,7 @@ from langchain_core.prompts.string import (
 class _FewShotPromptTemplateMixin(BaseModel):
     """Prompt template that contains few shot examples."""
 
-    examples: Optional[List[dict]] = None
+    examples: Optional[list[dict]] = None
     """Examples to format into the prompt.
     Either this or example_selector should be provided."""
 
@@ -46,7 +46,7 @@ class _FewShotPromptTemplateMixin(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def check_examples_and_selector(cls, values: Dict) -> Any:
+    def check_examples_and_selector(cls, values: dict) -> Any:
         """Check that one and only one of examples/example_selector are provided.
 
         Args:
@@ -73,7 +73,7 @@ class _FewShotPromptTemplateMixin(BaseModel):
 
         return values
 
-    def _get_examples(self, **kwargs: Any) -> List[dict]:
+    def _get_examples(self, **kwargs: Any) -> list[dict]:
         """Get the examples to use for formatting the prompt.
 
         Args:
@@ -94,7 +94,7 @@ class _FewShotPromptTemplateMixin(BaseModel):
                 "One of 'examples' and 'example_selector' should be provided"
             )
 
-    async def _aget_examples(self, **kwargs: Any) -> List[dict]:
+    async def _aget_examples(self, **kwargs: Any) -> list[dict]:
         """Async get the examples to use for formatting the prompt.
 
         Args:
@@ -363,7 +363,7 @@ class FewShotChatMessagePromptTemplate(
             chain.invoke({"input": "What's 3+3?"})
     """
 
-    input_variables: List[str] = Field(default_factory=list)
+    input_variables: list[str] = Field(default_factory=list)
     """A list of the names of the variables the prompt template will use
     to pass to the example_selector, if provided."""
 
@@ -380,7 +380,7 @@ class FewShotChatMessagePromptTemplate(
         extra="forbid",
     )
 
-    def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
+    def format_messages(self, **kwargs: Any) -> list[BaseMessage]:
         """Format kwargs into a list of messages.
 
         Args:
@@ -402,7 +402,7 @@ class FewShotChatMessagePromptTemplate(
         ]
         return messages
 
-    async def aformat_messages(self, **kwargs: Any) -> List[BaseMessage]:
+    async def aformat_messages(self, **kwargs: Any) -> list[BaseMessage]:
         """Async format kwargs into a list of messages.
 
         Args:

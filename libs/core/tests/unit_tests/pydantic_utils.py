@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -99,7 +99,7 @@ def _schema(obj: Any) -> dict:
     return schema_
 
 
-def _normalize_schema(obj: Any) -> Dict[str, Any]:
+def _normalize_schema(obj: Any) -> dict[str, Any]:
     """Generate a schema and normalize it.
 
     This will collapse single element allOfs into $ref.

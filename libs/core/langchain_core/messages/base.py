@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union, cast
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 from pydantic import ConfigDict, Field, field_validator
 
@@ -19,7 +20,7 @@ class BaseMessage(Serializable):
     Messages are the inputs and outputs of ChatModels.
     """
 
-    content: Union[str, List[Union[str, Dict]]]
+    content: Union[str, list[Union[str, dict]]]
     """The string contents of the message."""
 
     additional_kwargs: dict = Field(default_factory=dict)
@@ -64,7 +65,7 @@ class BaseMessage(Serializable):
             return id_value
 
     def __init__(
-        self, content: Union[str, List[Union[str, Dict]]], **kwargs: Any
+        self, content: Union[str, list[Union[str, dict]]], **kwargs: Any
     ) -> None:
         """Pass in content as positional arg.
 
@@ -85,7 +86,7 @@ class BaseMessage(Serializable):
         return True
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
         Default is ["langchain", "schema", "messages"].
         """
@@ -119,9 +120,9 @@ class BaseMessage(Serializable):
 
 
 def merge_content(
-    first_content: Union[str, List[Union[str, Dict]]],
-    *contents: Union[str, List[Union[str, Dict]]],
-) -> Union[str, List[Union[str, Dict]]]:
+    first_content: Union[str, list[Union[str, dict]]],
+    *contents: Union[str, list[Union[str, dict]]],
+) -> Union[str, list[Union[str, dict]]]:
     """Merge two message contents.
 
     Args:
@@ -143,7 +144,7 @@ def merge_content(
                 merged = [merged] + content  # type: ignore
         elif isinstance(content, list):
             # If both are lists
-            merged = merge_lists(cast(List, merged), content)  # type: ignore
+            merged = merge_lists(cast(list, merged), content)  # type: ignore
         # If the first content is a list, and the second content is a string
         else:
             # If the last element of the first content is a string
@@ -163,7 +164,7 @@ class BaseMessageChunk(BaseMessage):
     """Message chunk, which can be concatenated with other Message chunks."""
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
         Default is ["langchain", "schema", "messages"].
         """
@@ -242,7 +243,7 @@ def message_to_dict(message: BaseMessage) -> dict:
     return {"type": message.type, "data": message.model_dump()}
 
 
-def messages_to_dict(messages: Sequence[BaseMessage]) -> List[dict]:
+def messages_to_dict(messages: Sequence[BaseMessage]) -> list[dict]:
     """Convert a sequence of Messages to a list of dictionaries.
 
     Args:
