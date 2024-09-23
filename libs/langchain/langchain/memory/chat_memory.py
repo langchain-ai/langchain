@@ -2,6 +2,7 @@ import warnings
 from abc import ABC
 from typing import Any, Dict, Optional, Tuple
 
+from langchain_core._api import deprecated
 from langchain_core.chat_history import (
     BaseChatMessageHistory,
     InMemoryChatMessageHistory,
@@ -13,8 +14,24 @@ from pydantic import Field
 from langchain.memory.utils import get_prompt_input_key
 
 
+@deprecated(
+    since="0.3.1",
+    removal="1.0.0",
+    message=(
+        "Please see the migration guide at: "
+        "https://python.langchain.com/docs/versions/migrating_memory/"
+    ),
+)
 class BaseChatMemory(BaseMemory, ABC):
-    """Abstract base class for chat memory."""
+    """Abstract base class for chat memory.
+
+    **ATTENTION** This abstraction was created prior to when chat models had
+        native tool calling capabilities.
+        It does **NOT** support native tool calling capabilities for chat models and
+        will fail SILENTLY if used with a chat model that has native tool calling.
+
+    DO NOT USE THIS ABSTRACTION FOR NEW CODE.
+    """
 
     chat_memory: BaseChatMessageHistory = Field(
         default_factory=InMemoryChatMessageHistory
