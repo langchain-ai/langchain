@@ -765,7 +765,7 @@ class Neo4jVector(VectorStore):
         to create a new vector index in Neo4j.
         """
         index_query = (
-            f"CREATE VECTOR INDEX {self.index_name} "
+            f"CREATE VECTOR INDEX {self.index_name} IF NOT EXISTS "
             f"FOR (m:{self.node_label}) ON m.`{self.embedding_node_property}` "
             "OPTIONS { indexConfig: { "
             "`vector.dimensions`: toInteger($embedding_dimension), "
