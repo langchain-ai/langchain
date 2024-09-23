@@ -9,8 +9,6 @@ from langchain_core.tools.base import BaseToolkit
 from pydantic import BaseModel, Field, create_model
 from typing_extensions import Self
 
-from databricks.sdk import WorkspaceClient
-
 if TYPE_CHECKING:
     from databricks.sdk.service.catalog import FunctionInfo
 
