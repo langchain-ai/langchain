@@ -771,7 +771,6 @@ class Neo4jVector(VectorStore):
             "`vector.dimensions`: toInteger($embedding_dimension), "
             "`vector.similarity_function`: $similarity_metric }}"
         )
-        print(index_query)
 
         parameters = {
             "embedding_dimension": self.embedding_dimension,
