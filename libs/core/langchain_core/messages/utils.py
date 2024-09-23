@@ -594,7 +594,7 @@ def trim_messages(
        In addition, generally a `ToolMessage` can only appear after an `AIMessage`
        that involved a tool call.
        Please see the following link for more information about messages:
-       https://python.langchain.com/docs/concepts/#messages 
+       https://python.langchain.com/docs/concepts/#messages
     2. It includes recent messages and drops old messages in the chat history.
        To achieve this set the `strategy="last"`.
     3. Usually, the new chat history should include the `SystemMessage` if it
@@ -602,10 +602,10 @@ def trim_messages(
        special instructions to the chat model. The `SystemMessage` is almost always
        the first message in the history if present. To achieve this set the
        `include_system=True`.
-       
-    **Note** The examples below show how to configure `trim_messages` to achieve 
+
+    **Note** The examples below show how to configure `trim_messages` to achieve
         a behavior consistent with the above properties.
-       
+
     Args:
         messages: Sequence of Message-like objects to trim.
         max_tokens: Max token count of trimmed messages.
