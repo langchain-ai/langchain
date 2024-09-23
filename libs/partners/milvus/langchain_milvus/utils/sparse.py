@@ -29,7 +29,7 @@ class BM25SparseEmbedding(BaseSparseEmbedding):
     https://milvus.io/docs/embed-with-bm25.md
     """
 
-    def __init__(self, corpus: List[str], language: str = "en"):
+    def __init__(self, corpus: List[str] = None, path: str = None, language: str = "en"):
         from pymilvus.model.sparse import BM25EmbeddingFunction  # type: ignore
         from pymilvus.model.sparse.bm25.tokenizers import (  # type: ignore
             build_default_analyzer,
@@ -37,7 +37,10 @@ class BM25SparseEmbedding(BaseSparseEmbedding):
 
         self.analyzer = build_default_analyzer(language=language)
         self.bm25_ef = BM25EmbeddingFunction(self.analyzer, num_workers=1)
-        self.bm25_ef.fit(corpus)
+        if corpus is not None:
+            self.bm25_ef.fit(corpus)
+        elif path is not None:
+            self.bm25_ef.load(path)
 
     def embed_query(self, text: str) -> Dict[int, float]:
         return self._sparse_to_dict(self.bm25_ef.encode_queries([text]))
@@ -53,9 +56,3 @@ class BM25SparseEmbedding(BaseSparseEmbedding):
         for col_index, value in zip(col_indices, non_zero_values):
             result_dict[col_index] = value
         return result_dict
-
-    def load(self, path: str):
-        self.bm25_ef.load(path)
-
-    def save(self, path: str):
-        self.bm25_ef.save(path)
