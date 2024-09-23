@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 # Used to consolidate logic for raising deprecation warnings and
 # handling optional imports.
 DEPRECATED_LOOKUP = {
-    "ChatLiteLLM": "langchain_community.chat_models.litellm",
+    "ChatUnify": "langchain_community.chat_models.unify",
 }
 
 _import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
@@ -23,5 +23,5 @@ def __getattr__(name: str) -> Any:
 
 
 __all__ = [
-    "ChatLiteLLM"
+    "ChatUnify"
 ]
