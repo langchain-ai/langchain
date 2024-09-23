@@ -1,3 +1,4 @@
+import pandas as pd
 from pydantic import ConfigDict, Field
 
 from langchain_core.load import Serializable, dumpd, load
@@ -166,3 +167,40 @@ def test_simple_deserialization_with_additional_imports() -> None:
         },
     )
     assert isinstance(new_foo, Foo2)
+
+
+class Foo3(Serializable):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    content: str
+    data_frame: pd.DataFrame
+
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        return True
+
+
+def test_repr():
+    foo = Foo3(
+        content="test repr",
+        data_frame=pd.DataFrame({"name": ["Alice", "Bob"], "age": [17, 19]}),
+        arbitrary_types_allowed=True,
+    )
+    assert (
+        repr(foo)
+        == "Foo3(content='test repr', data_frame=    "
+           "name  age\n0  Alice   17\n1    Bob   19)"
+    )
+
+
+def test_str():
+    foo = Foo3(
+        content="test repr",
+        data_frame=pd.DataFrame({"name": ["Alice", "Bob"], "age": [17, 19]}),
+        arbitrary_types_allowed=True,
+    )
+    assert (
+        str(foo)
+        == "content='test repr' data_frame=    "
+           "name  age\n0  Alice   17\n1    Bob   19"
+    )
