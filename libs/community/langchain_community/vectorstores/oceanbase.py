@@ -6,7 +6,7 @@ from typing import List, Optional, Any, Iterable, Tuple, Sequence
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
-from sqlalchemy import Column, String, TEXT, JSON, Table, func, text
+from sqlalchemy import Column, String, Text, JSON, Table, func, text
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +28,59 @@ class OceanBase(VectorStore):
     """`OceanBase` vector store.
 
     You need to install `pyobvector` and run a standalone observer or OceanBase cluster.
+
+    See the following documentation for how to deploy OceanBase:
+    https://github.com/oceanbase/oceanbase-doc/blob/V4.3.1/en-US/400.deploy/500.deploy-oceanbase-database-community-edition/100.deployment-overview.md
+
+    IF USING L2/IP metric, IT IS HIGHLY SUGGESTED TO NORMALIZE YOUR DATA.
+
+    Args:
+        embedding_function (Embeddings): Function used to embed the text.
+        table_name (str): Which table name to use. Defaults to "langchain_vector".
+        connection_args (Optional[dict[str, any]]): The connection args used for
+            this class comes in the form of a dict. Refer to `DEFAULT_OCEANBASE_CONNECTION`
+            for example.
+        vidx_metric_type (str): Metric method of distance between vectors.
+            This parameter takes values in `l2` and `ip`. Defaults to `l2`.
+        vidx_algo_params (Optional[dict]): Which index params to use. Now OceanBase
+            supports HNSW only. Refer to `DEFAULT_OCEANBASE_HNSW_BUILD_PARAM`
+            for example.
+        drop_old (bool): Whether to drop the current table. Defaults
+            to False.
+        primary_field (str): Name of the primary key column. Defaults to "id".
+        vector_field (str): Name of the vector column. Defaults to "embedding".
+        text_field (str): Name of the text column. Defaults to "document".
+        metadata_field (Optional[str]): Name of the metadata column. Defaults to None.
+            When `metadata_field` is specified,
+            the document's metadata will store as json.
+        vidx_name (str): Name of the vector index table.
+        partitions (ObPartition): Partition strategy of table. Refer to `pyobvector`'s
+            documentation for more examples.
+
+    Example:
+        .. code-block:: python
+
+        from langchain_community.vectorstores import OceanBase
+        from langchain_community.embeddings import OpenAIEmbeddings
+
+        embedding = OpenAIEmbeddings()
+        # Connect to a OceanBase instance on localhost
+        ob = OceanBase(
+            embedding_function=embedding,
+            table_name="langchain_vector",
+            connection_args={
+                "host": "<YOUR-HOST>",
+                "port": "<YOUR-PORT>",
+                "user": "<YOUR-USER>",
+                "password": "<YOUR-PASSWORD>",
+                "db_name": "<YOUR-DBNAME>",
+            },
+            vidx_metric_type="l2",
+            drop_old=True,
+        )
+
+    Raises:
+        ValueError: If the pyobvector python package is not installed.
     """
 
     def __init__(
@@ -47,6 +100,7 @@ class OceanBase(VectorStore):
         partitions=None,
         **kwargs,
     ):
+        """Initialize the OceanBase vector store."""
         try:
             from pyobvector import ObVecClient
         except ImportError:
@@ -68,8 +122,8 @@ class OceanBase(VectorStore):
         assert self.obvector is not None
 
         self.vidx_metric_type = vidx_metric_type.lower()
-        if self.vidx_metric_type not in ("l2", "cosine", "ip"):
-            raise ValueError("`vidx_metric_type` should be set in `l2`/`cosine`/`ip`.")
+        if self.vidx_metric_type not in ("l2", "ip"):
+            raise ValueError("`vidx_metric_type` should be set in `l2`/`ip`.")
 
         self.vidx_algo_params = (
             vidx_algo_params
@@ -89,12 +143,14 @@ class OceanBase(VectorStore):
         if self.drop_old:
             self.obvector.drop_table_if_exist(self.table_name)
 
+        if self.obvector.check_table_exists(self.table_name):
+            self._load_table()
+
     @property
     def embeddings(self) -> Embeddings:
         return self.embedding_function
 
     def _create_client(self, **kwargs):
-        """Create the client to the OceanBase server."""
         try:
             from pyobvector import ObVecClient
         except ImportError:
@@ -117,6 +173,20 @@ class OceanBase(VectorStore):
             **kwargs,
         )
 
+    def _load_table(self):
+        table = Table(
+            self.table_name,
+            self.obvector.metadata_obj,
+            autoload_with=self.obvector.engine,
+        )
+        column_names = [column.name for column in table.columns]
+        assert len(column_names) in (3, 4)
+        logging.info(f"load exist table with {column_names} columns")
+        self.primary_field = column_names[0]
+        self.vector_field = column_names[1]
+        self.text_field = column_names[2]
+        self.metadata_field = None if len(column_names) == 3 else column_names[3]
+
     def _create_table_with_index(self, embeddings: list):
         try:
             from pyobvector import VECTOR
@@ -127,18 +197,7 @@ class OceanBase(VectorStore):
             )
 
         if self.obvector.check_table_exists(self.table_name):
-            table = Table(
-                self.table_name,
-                self.obvector.metadata_obj,
-                autoload_with=self.obvector.engine,
-            )
-            column_names = [column.name for column in table.columns]
-            assert len(column_names) in (3, 4)
-            logging.info(f"load exist table with {column_names} columns")
-            self.primary_field = column_names[0]
-            self.vector_field = column_names[1]
-            self.text_field = column_names[2]
-            self.metadata_field = None if len(column_names) == 3 else column_names[3]
+            self._load_table()
             return
 
         dim = len(embeddings[0])
@@ -147,7 +206,7 @@ class OceanBase(VectorStore):
                 self.primary_field, String(4096), primary_key=True, autoincrement=False
             ),
             Column(self.vector_field, VECTOR(dim)),
-            Column(self.text_field, TEXT),
+            Column(self.text_field, Text),
         ]
         if self.metadata_field is not None:
             cols.append(Column(self.metadata_field, JSON))
@@ -187,6 +246,28 @@ class OceanBase(VectorStore):
         ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[str]:
+        """Insert text data into OceanBase.
+
+        Inserting data when the table has not be created yet will result
+        in creating a new table. The data of the first record decides
+        the schema of the new table, the dim is extracted from the first
+        embedding.
+
+        Args:
+            texts (Iterable[str]): The texts to embed. OceanBase use a `LONGTEXT`
+                type column to hold the data.
+            metadatas (Optional[List[dict]]): Metadata dicts attached to each of
+                the texts. Defaults to None.
+            batch_size (int, optional): Batch size to use for insertion.
+                Defaults to 1000.
+            ids (Optional[List[str]]): List of text ids.
+
+        Raises:
+            Exception: Failure to add texts
+
+        Returns:
+            List[str]: The resulting ids for each inserted element.
+        """
         texts = list(texts)
 
         try:
@@ -265,6 +346,29 @@ class OceanBase(VectorStore):
         ids: Optional[List[str]] = None,
         **kwargs: Any,
     ):
+        """Create a OceanBase table, indexes it with HNSW, and insert data. 
+
+        Args:
+            texts (List[str]): Text data.
+            embedding (Embeddings): Embedding function.
+            metadatas (Optional[List[dict]]): Metadata for each text if it exists.
+                Defaults to None.
+            table_name (str): Table name to use. Defaults to "langchain_vector".
+            connection_args (Optional[dict[str, Any]]): The connection args used for
+                this class comes in the form of a dict. Refer to `DEFAULT_OCEANBASE_CONNECTION`
+                for example.
+            vidx_metric_type (str): Metric method of distance between vectors.
+                This parameter takes values in `l2` and `ip`. Defaults to `l2`.
+            vidx_algo_params (Optional[dict]): Which index params to use. Now OceanBase
+                supports HNSW only. Refer to `DEFAULT_OCEANBASE_HNSW_BUILD_PARAM`
+                for example.
+            drop_old (bool): Whether to drop the current table. Defaults
+                to False.
+            ids (Optional[List[str]]): List of text ids. Defaults to None.
+
+        Returns:
+            OceanBase: OceanBase Vector Store
+        """
         oceanbase = cls(
             embedding_function=embedding,
             table_name=table_name,
@@ -280,6 +384,12 @@ class OceanBase(VectorStore):
     def delete(  # type: ignore[no-untyped-def]
         self, ids: Optional[List[str]] = None, fltr: Optional[str] = None, **kwargs
     ):
+        """Delete by vector ID or boolean expression.
+
+        Args:
+            ids (Optional[List[str]]): List of ids to delete.
+            fltr (Optional[str]): Boolean filter that specifies the entities to delete.
+        """
         self.obvector.delete(
             table_name=self.table_name,
             ids=ids,
@@ -287,6 +397,14 @@ class OceanBase(VectorStore):
         )
 
     def get_by_ids(self, ids: List[str], **kwargs) -> list[Document]:
+        """Get entities by vector ID.
+
+        Args:
+            ids (Optional[List[str]]): List of ids to get.
+
+        Returns:
+            List[Document]: Document results for search.
+        """
         res = self.obvector.get(
             table_name=self.table_name,
             ids=ids,
@@ -312,6 +430,19 @@ class OceanBase(VectorStore):
         fltr: Optional[str] = None,
         **kwargs: Any,
     ) -> list[Document]:
+        """Perform a similarity search against the query string.
+
+        Args:
+            query (str): The text to search.
+            k (int, optional): How many results to return. Defaults to 10.
+            param (Optional[dict]): The search params for the index type.
+                Defaults to None. Refer to `DEFAULT_OCEANBASE_HNSW_SEARCH_PARAM`
+                for example.
+            fltr (Optional[str]): Boolean filter. Defaults to None.
+
+        Returns:
+            List[Document]: Document results for search.
+        """
         if k < 0:
             return []
 
@@ -328,6 +459,19 @@ class OceanBase(VectorStore):
         fltr: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
+        """Perform a search on a query string and return results with score.
+
+        Args:
+            query (str): The text being searched.
+            k (int, optional): How many results to return. Defaults to 10.
+            param (Optional[dict]): The search params for the index type.
+                Defaults to None. Refer to `DEFAULT_OCEANBASE_HNSW_SEARCH_PARAM`
+                for example.
+            fltr (Optional[str]): Boolean filter. Defaults to None.
+
+        Returns:
+            List[Tuple[Document, float]]: Document results with score for search.
+        """
         if k < 0:
             return []
 
@@ -344,6 +488,19 @@ class OceanBase(VectorStore):
         fltr: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Document]:
+        """Perform a similarity search against the query string.
+
+        Args:
+            embedding (List[float]): The embedding vector to search.
+            k (int, optional): How many results to return. Defaults to 10.
+            param (Optional[dict]): The search params for the index type.
+                Defaults to None. Refer to `DEFAULT_OCEANBASE_HNSW_SEARCH_PARAM`
+                for example.
+            fltr (Optional[str]): Boolean filter. Defaults to None.
+
+        Returns:
+            List[Document]: Document results for search.
+        """
         if k < 0:
             return []
 
@@ -386,6 +543,19 @@ class OceanBase(VectorStore):
         fltr: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
+        """Perform a search on a query string and return results with score.
+
+        Args:
+            embedding (List[float]): The embedding vector being searched.
+            k (int, optional): The amount of results to return. Defaults to 10.
+            param (Optional[dict]): The search params for the index type.
+                Defaults to None. Refer to `DEFAULT_OCEANBASE_HNSW_SEARCH_PARAM`
+                for example.
+            fltr (Optional[str]): Boolean filter. Defaults to None.
+
+        Returns:
+            List[Tuple[Document, float]]: Document results with score for search.
+        """
         if k < 0:
             return []
 
@@ -417,7 +587,9 @@ class OceanBase(VectorStore):
             (
                 Document(
                     page_content=r[0],
-                    metadata=json.loads(r[1]) if self.metadata_field is not None else None,
+                    metadata=(
+                        json.loads(r[1]) if self.metadata_field is not None else None
+                    ),
                 ),
                 r[2],
             )
