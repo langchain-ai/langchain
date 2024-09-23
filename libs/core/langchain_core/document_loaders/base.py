@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, AsyncIterator, Iterator, Optional
+from collections.abc import AsyncIterator, Iterator
+from typing import TYPE_CHECKING, Optional
 
 from langchain_core.documents import Document
 from langchain_core.runnables import run_in_executor

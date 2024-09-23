@@ -7,12 +7,11 @@ import textwrap
 import warnings
 from contextlib import nullcontext
 from functools import lru_cache, wraps
+from types import GenericAlias
 from typing import (
     Any,
     Callable,
-    Dict,
     Optional,
-    Type,
     TypeVar,
     Union,
     cast,
@@ -56,13 +55,13 @@ if PYDANTIC_MAJOR_VERSION == 1:
     from pydantic.fields import FieldInfo as FieldInfoV1
 
     PydanticBaseModel = pydantic.BaseModel
-    TypeBaseModel = Type[BaseModel]
+    TypeBaseModel = type[BaseModel]
 elif PYDANTIC_MAJOR_VERSION == 2:
     from pydantic.v1.fields import FieldInfo as FieldInfoV1  # type: ignore[assignment]
 
     # Union type needs to be last assignment to PydanticBaseModel to make mypy happy.
     PydanticBaseModel = Union[BaseModel, pydantic.BaseModel]  # type: ignore
-    TypeBaseModel = Union[Type[BaseModel], Type[pydantic.BaseModel]]  # type: ignore
+    TypeBaseModel = Union[type[BaseModel], type[pydantic.BaseModel]]  # type: ignore
 else:
     raise ValueError(f"Unsupported Pydantic version: {PYDANTIC_MAJOR_VERSION}")
 
@@ -99,7 +98,7 @@ def is_basemodel_subclass(cls: type) -> bool:
     * pydantic.v1.BaseModel in Pydantic 2.x
     """
     # Before we can use issubclass on the cls we need to check if it is a class
-    if not inspect.isclass(cls):
+    if not inspect.isclass(cls) or isinstance(cls, GenericAlias):
         return False
 
     if PYDANTIC_MAJOR_VERSION == 1:
@@ -436,12 +435,19 @@ def _create_root_model(
     if default_ is not NO_DEFAULT:
         base_class_attributes["root"] = default_
     with warnings.catch_warnings():
-        if isinstance(type_, type) and issubclass(type_, BaseModelV1):
-            warnings.filterwarnings(
-                action="ignore", category=PydanticDeprecationWarning
-            )
+        try:
+            if (
+                isinstance(type_, type)
+                and not isinstance(type_, GenericAlias)
+                and issubclass(type_, BaseModelV1)
+            ):
+                warnings.filterwarnings(
+                    action="ignore", category=PydanticDeprecationWarning
+                )
+        except TypeError:
+            pass
         custom_root_type = type(name, (RootModel,), base_class_attributes)
-    return cast(Type[BaseModel], custom_root_type)
+    return cast(type[BaseModel], custom_root_type)
 
 
 @lru_cache(maxsize=256)
@@ -565,7 +571,7 @@ def create_model_v2(
     Returns:
         Type[BaseModel]: The created model.
     """
-    field_definitions = cast(Dict[str, Any], field_definitions or {})  # type: ignore[no-redef]
+    field_definitions = cast(dict[str, Any], field_definitions or {})  # type: ignore[no-redef]
 
     if root:
         if field_definitions:

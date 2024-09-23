@@ -25,7 +25,8 @@ The schemas for the agents themselves are defined in langchain.agents.agent.
 from __future__ import annotations
 
 import json
-from typing import Any, Literal, Sequence, Union
+from collections.abc import Sequence
+from typing import Any, Literal, Union
 
 from langchain_core.load.serializable import Serializable
 from langchain_core.messages import (

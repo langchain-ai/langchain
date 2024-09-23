@@ -3,7 +3,7 @@ import time
 import unittest
 import unittest.mock
 import uuid
-from typing import Any, Dict
+from typing import Any
 from uuid import UUID
 
 import pytest
@@ -102,7 +102,7 @@ class LangChainProjectNameTest(unittest.TestCase):
 
     class SetProperTracerProjectTestCase:
         def __init__(
-            self, test_name: str, envvars: Dict[str, str], expected_project_name: str
+            self, test_name: str, envvars: dict[str, str], expected_project_name: str
         ):
             self.test_name = test_name
             self.envvars = envvars

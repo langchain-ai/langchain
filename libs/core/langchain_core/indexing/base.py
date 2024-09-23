@@ -3,7 +3,8 @@ from __future__ import annotations
 import abc
 import time
 from abc import ABC, abstractmethod
-from typing import Any, Optional, Sequence, TypedDict
+from collections.abc import Sequence
+from typing import Any, Optional, TypedDict
 
 from langchain_core._api import beta
 from langchain_core.documents import Document

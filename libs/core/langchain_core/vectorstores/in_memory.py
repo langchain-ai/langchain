@@ -2,14 +2,13 @@ from __future__ import annotations
 
 import json
 import uuid
+from collections.abc import Iterator, Sequence
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Iterator,
     Optional,
-    Sequence,
 )
 
 from langchain_core._api import deprecated
