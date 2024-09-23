@@ -66,7 +66,18 @@ class LLMSymbolicMathChain(Chain):
                 "Unable to import sympy, please install it with `pip install sympy`."
             ) from e
         try:
-            output = str(sympy.sympify(expression, evaluate=True))
+            allowed_symbols = {
+                'sin': sympy.sin,
+                'cos': sympy.cos,
+                'tan': sympy.tan,
+                'exp': sympy.exp,
+                'log': sympy.log,
+                'sqrt': sympy.sqrt,
+                # Add any other safe symbols or functions you want to allow
+            }
+        
+            # Use parse_expr with strict settings
+            output = str(sympy.parse_expr(expression, local_dict=allowed_symbols, evaluate=True))
         except Exception as e:
             raise ValueError(
                 f'LLMSymbolicMathChain._evaluate("{expression}") raised error: {e}.'
