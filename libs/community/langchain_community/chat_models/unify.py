@@ -29,7 +29,6 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.utils import pre_init
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
@@ -58,7 +57,7 @@ from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResu
 from pydantic import BaseModel, Field, SecretStr
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
-from langchain_core.utils import convert_to_secret_str
+from langchain_core.utils import convert_to_secret_str, pre_init
 from langchain_core.utils.function_calling import convert_to_openai_tool
 
 
@@ -100,7 +99,7 @@ class ChatUnify(BaseChatModel):
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         unify_api_key = convert_to_secret_str(
-            values.get("unify_api_key") or os.environ.get("UNIFY_API_KEY") or ""
+            values.get("unify_api_key") or os.environ.get("UNIFY_KEY") or ""
         )
         values["unify_api_key"] = unify_api_key
         values["client"] = Client(

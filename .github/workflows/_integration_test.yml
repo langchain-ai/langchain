@@ -82,7 +82,7 @@ jobs:
           ES_API_KEY: ${{ secrets.ES_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # for airbyte
           MONGODB_ATLAS_URI: ${{ secrets.MONGODB_ATLAS_URI }}
-          UNIFY_API_KEY: ${{ secrets.UNIFY_API_KEY }}
+          UNIFY_KEY: ${{ secrets.UNIFY_KEY }}
           VOYAGE_API_KEY: ${{ secrets.VOYAGE_API_KEY }}
           COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
           UPSTAGE_API_KEY: ${{ secrets.UPSTAGE_API_KEY }}
