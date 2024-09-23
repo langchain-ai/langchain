@@ -34,10 +34,10 @@ from langchain_core.messages import (
     SystemMessageChunk,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import Field, SecretStr
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from pydantic import Field, SecretStr
 
-DEFAULT_BASE_URL = "https://clovastudio.stream.ntruss.com"
+_DEFAULT_BASE_URL = "https://clovastudio.stream.ntruss.com"
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +59,7 @@ def _convert_chunk_to_message_chunk(
     elif role or default_class == ChatMessageChunk:
         return ChatMessageChunk(content=content, role=role)
     else:
-        return default_class(content=content)
+        return default_class(content=content)  # type: ignore[call-arg]
 
 
 def _convert_message_to_naver_chat_message(
@@ -109,7 +109,8 @@ def _convert_naver_chat_message_to_message(
             additional_kwargs=additional_kwargs,
         )
     else:
-        assert True, f"Expected role to be 'assistant', 'system', 'user', got {role}"
+        logger.warning("Got unknown role %s", role)
+        raise ValueError(f"Got unknown role {role}")
 
 
 async def _aiter_sse(
@@ -189,7 +190,7 @@ class ChatClovaX(BaseChatModel):
     ncp_apigw_api_key: Optional[SecretStr] = Field(default=None, alias="apigw_api_key")
     """Automatically inferred from env are `NCP_APIGW_API_KEY` if not provided."""
 
-    base_url: Optional[str] = Field(default=None, alias="base_url")
+    base_url: str = Field(default=None, alias="base_url")
     """
     Automatically inferred from env are `NCP_CLOVASTUDIO_API_BASE_URL` if not provided.
     """
@@ -204,7 +205,7 @@ class ChatClovaX(BaseChatModel):
     seed: Optional[int] = None
 
     timeout: Optional[int] = 90
-    max_retries: Optional[int] = 2
+    max_retries: int = 2
 
     class Config:
         """Configuration for this pydantic object."""
@@ -270,7 +271,12 @@ class ChatClovaX(BaseChatModel):
         else:
             return f"{self.base_url}/{app_type}/v1/chat-completions/{self.model_name}"
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        client: Optional[httpx.Client] = None,
+        async_client: Optional[httpx.AsyncClient] = None,
+        **kwargs: Any,
+    ) -> None:
         if (
             "temperature" in kwargs
             and kwargs["temperature"] is not None
@@ -323,7 +329,7 @@ class ChatClovaX(BaseChatModel):
             )
         )
         kwargs["base_url"] = get_from_dict_or_env(
-            kwargs, "base_url", "NCP_CLOVASTUDIO_API_BASE_URL", DEFAULT_BASE_URL
+            kwargs, "base_url", "NCP_CLOVASTUDIO_API_BASE_URL", _DEFAULT_BASE_URL
         )
 
         super().__init__(**kwargs)
@@ -334,8 +340,8 @@ class ChatClovaX(BaseChatModel):
         if not (self.model_name or self.task_id):
             raise ValueError("either model_name or task_id must be assigned a value.")
 
-        if "client" in kwargs:
-            self.client = kwargs.get("client")
+        if client:
+            self.client = client
         else:
             self.client = httpx.Client(
                 base_url=self.base_url,
@@ -343,8 +349,8 @@ class ChatClovaX(BaseChatModel):
                 timeout=self.timeout,
             )
 
-        if "async_client" in kwargs:
-            self.async_client = kwargs.get("async_client")
+        if async_client:
+            self.async_client = async_client
         else:
             self.async_client = httpx.AsyncClient(
                 base_url=self.base_url,
@@ -353,7 +359,7 @@ class ChatClovaX(BaseChatModel):
             )
 
     @staticmethod
-    def default_headers(values):
+    def default_headers(values: Any) -> Dict[str, Any]:
         clovastudio_api_key = (
             values["ncp_clovastudio_api_key"].get_secret_value()
             if values["ncp_clovastudio_api_key"]
@@ -450,11 +456,13 @@ class ChatClovaX(BaseChatModel):
         result = response.get("result", {})
         msg = result.get("message", {})
         message = _convert_naver_chat_message_to_message(msg)
-        message.usage_metadata = {
-            "input_tokens": result.get("inputLength"),
-            "output_tokens": result.get("outputLength"),
-            "total_tokens": result.get("inputLength") + result.get("outputLength"),
-        }
+
+        if isinstance(message, AIMessage):
+            message.usage_metadata = {
+                "input_tokens": result.get("inputLength"),
+                "output_tokens": result.get("outputLength"),
+                "total_tokens": result.get("inputLength") + result.get("outputLength"),
+            }
 
         gen = ChatGeneration(
             message=message,

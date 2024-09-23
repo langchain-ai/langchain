@@ -3,14 +3,14 @@ from typing import Any, Dict, List, Optional
 
 import httpx
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import (
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from pydantic import (
     BaseModel,
     Field,
     SecretStr,
 )
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
-DEFAULT_BASE_URL = "https://clovastudio.apigw.ntruss.com"
+_DEFAULT_BASE_URL = "https://clovastudio.apigw.ntruss.com"
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +65,7 @@ class ClovaXEmbeddings(BaseModel, Embeddings):
     ncp_apigw_api_key: Optional[SecretStr] = Field(default=None, alias="apigw_api_key")
     """Automatically inferred from env are `NCP_APIGW_API_KEY` if not provided."""
 
-    base_url: Optional[str] = Field(default=None, alias="base_url")
+    base_url: str = Field(default=None, alias="base_url")
     """
     Automatically inferred from env are  `NCP_CLOVASTUDIO_API_BASE_URL` if not provided.
     """
@@ -93,10 +93,10 @@ class ClovaXEmbeddings(BaseModel, Embeddings):
             "ncp_apigw_api_key": "NCP_APIGW_API_KEY",
         }
 
-    @property
-    def _client_params(self) -> Dict[str, Any]:
-        """Get the parameters used for the client."""
-        return self._default_params
+    # @property
+    # def _client_params(self) -> Dict[str, Any]:
+    #     """Get the parameters used for the client."""
+    #     return self._default_params
 
     @property
     def _api_url(self) -> str:
@@ -108,7 +108,12 @@ class ClovaXEmbeddings(BaseModel, Embeddings):
             f"/v1/api-tools/embedding/{model_name}/{self.app_id}"
         )
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        client: Optional[httpx.Client] = None,
+        async_client: Optional[httpx.AsyncClient] = None,
+        **kwargs: Any,
+    ) -> None:
         """Validate that api key and python package exists in environment."""
         kwargs["ncp_clovastudio_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(kwargs, "api_key", "NCP_CLOVASTUDIO_API_KEY")
@@ -119,7 +124,7 @@ class ClovaXEmbeddings(BaseModel, Embeddings):
             )
         )
         kwargs["base_url"] = get_from_dict_or_env(
-            kwargs, "base_url", "NCP_CLOVASTUDIO_API_BASE_URL", DEFAULT_BASE_URL
+            kwargs, "base_url", "NCP_CLOVASTUDIO_API_BASE_URL", _DEFAULT_BASE_URL
         )
 
         super().__init__(**kwargs)
@@ -128,8 +133,8 @@ class ClovaXEmbeddings(BaseModel, Embeddings):
 
         self.app_id = get_from_dict_or_env(kwargs, "app_id", "NCP_CLOVASTUDIO_APP_ID")
 
-        if "client" in kwargs:
-            self.client = kwargs.get("client")
+        if client is not None:
+            self.client = client
         else:
             self.client = httpx.Client(
                 base_url=self.base_url,
@@ -137,8 +142,8 @@ class ClovaXEmbeddings(BaseModel, Embeddings):
                 timeout=self.timeout,
             )
 
-        if "async_client" in kwargs:
-            self.async_client = kwargs.get("async_client")
+        if async_client is not None:
+            self.async_client = async_client
         else:
             self.async_client = httpx.AsyncClient(
                 base_url=self.base_url,
@@ -147,7 +152,7 @@ class ClovaXEmbeddings(BaseModel, Embeddings):
             )
 
     @staticmethod
-    def default_headers(values):
+    def default_headers(values: Any) -> Dict[str, Any]:
         clovastudio_api_key = (
             values["ncp_clovastudio_api_key"].get_secret_value()
             if values["ncp_clovastudio_api_key"]

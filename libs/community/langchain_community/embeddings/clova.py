@@ -10,8 +10,8 @@ from pydantic import BaseModel, ConfigDict, SecretStr, model_validator
 
 
 @deprecated(
-    since="0.2.12",
-    removal="0.3.0",
+    since="0.3.1",
+    removal="1.0.0",
     alternative_import="langchain_community.ClovaXEmbeddings",
 )
 class ClovaEmbeddings(BaseModel, Embeddings):

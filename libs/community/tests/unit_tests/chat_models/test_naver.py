@@ -6,6 +6,7 @@ from typing import Any, AsyncGenerator, Generator, cast
 from unittest.mock import patch
 
 import pytest
+from httpx_sse import ServerSentEvent
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.messages import (
     AIMessage,
@@ -131,9 +132,7 @@ async def test_naver_ainvoke(mock_chat_completion_response: dict) -> None:
     assert completed
 
 
-def _make_completion_response_from_token(token: str):
-    from httpx_sse import ServerSentEvent
-
+def _make_completion_response_from_token(token: str) -> ServerSentEvent:
     return ServerSentEvent(
         event="token",
         data=json.dumps(
