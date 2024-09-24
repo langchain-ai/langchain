@@ -13,11 +13,6 @@ from nbconvert.preprocessors import Preprocessor
 class EscapePreprocessor(Preprocessor):
     def preprocess_cell(self, cell, resources, cell_index):
         if cell.cell_type == "markdown":
-            # find all occurrences of ```{=mdx} blocks and remove wrapper
-            if "```{=mdx}\n" in cell.source:
-                cell.source = re.sub(
-                    r"```{=mdx}\n(.*?)\n```", r"\1", cell.source, flags=re.DOTALL
-                )
             # rewrite .ipynb links to .md
             cell.source = re.sub(
                 r"\[([^\]]*)\]\((?![^\)]*//)([^)]*)\.ipynb\)",
