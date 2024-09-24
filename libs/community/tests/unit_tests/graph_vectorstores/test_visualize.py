@@ -95,9 +95,7 @@ def test_visualize_simple_graph() -> None:
         "}\n"
     )
 
-    assert render_graphviz(
-        [doc1, doc2], skip_tags=[("kw", "foo")]
-    ).source == (
+    assert render_graphviz([doc1, doc2], skip_tags=[("kw", "foo")]).source == (
         "digraph {\n"
         "\trankdir=LR\n"
         "\tnode [style=filled]\n"
