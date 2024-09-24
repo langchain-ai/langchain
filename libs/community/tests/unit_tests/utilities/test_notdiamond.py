@@ -54,7 +54,6 @@ def not_diamond_routed_runnable(nd_client: Any) -> NotDiamondRoutedRunnable:
     return routed_runnable
 
 
-@pytest.mark.requires("notdiamond")
 class TestNotDiamondRunnable:
     def test_model_select(
         self, not_diamond_runnable: NotDiamondRunnable, llm_configs: List
@@ -74,7 +73,6 @@ class TestNotDiamondRunnable:
         ]
 
 
-@pytest.mark.requires("notdiamond")
 class TestNotDiamondRoutedRunnable:
     def test_invoke(
         self, not_diamond_routed_runnable: NotDiamondRoutedRunnable
