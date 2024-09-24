@@ -31,6 +31,20 @@ class EscapePreprocessor(Preprocessor):
                 r"[\1](\2.md)",
                 cell.source,
             )
+
+        elif cell.cell_type == "code":
+            # escape ``` in code
+            cell.source = cell.source.replace("```", r"\`\`\`")
+            # escape ``` in output
+            if "outputs" in cell:
+                for output in cell["outputs"]:
+                    if "text" in output:
+                        output["text"] = output["text"].replace("```", r"\`\`\`")
+                    if "data" in output:
+                        for key, value in output["data"].items():
+                            if isinstance(value, str):
+                                output["data"][key] = value.replace("```", r"\`\`\`")
+
         return cell, resources
 
 
