@@ -195,17 +195,17 @@ class ChatClovaX(BaseChatModel):
     Automatically inferred from env are `NCP_CLOVASTUDIO_API_BASE_URL` if not provided.
     """
 
-    temperature: Optional[float] = None
-    top_k: Optional[int] = None
-    top_p: Optional[float] = None
-    repeat_penalty: Optional[float] = None
-    max_tokens: Optional[int] = None
+    temperature: Optional[float] = Field(gt=0.0, le=1.0)
+    top_k: Optional[int] = Field(ge=0, le=128)
+    top_p: Optional[float] = Field(ge=0, le=1.0)
+    repeat_penalty: Optional[float] = Field(gt=0.0, le=10)
+    max_tokens: Optional[int] = Field(ge=0, le=4096)
     stop_before: Optional[list[str]] = Field(default=None, alias="stop")
-    include_ai_filters: Optional[bool] = None
-    seed: Optional[int] = None
+    include_ai_filters: Optional[bool] = Field(default=False)
+    seed: Optional[int] = Field(ge=0, le=4294967295, default=0)
 
-    timeout: Optional[int] = 90
-    max_retries: int = 2
+    timeout: int = Field(gt=0, default=90)
+    max_retries: int = Field(ge=1, default=2)
 
     class Config:
         """Configuration for this pydantic object."""
@@ -277,48 +277,6 @@ class ChatClovaX(BaseChatModel):
         async_client: Optional[httpx.AsyncClient] = None,
         **kwargs: Any,
     ) -> None:
-        if (
-            "temperature" in kwargs
-            and kwargs["temperature"] is not None
-            and not 0 < kwargs["temperature"] <= 1
-        ):
-            raise ValueError("temperature must be in the range (0.0, 1.0]")
-
-        if (
-            "top_k" in kwargs
-            and kwargs["top_k"] is not None
-            and not 0 <= kwargs["top_k"] <= 128
-        ):
-            raise ValueError("top_k must be in the range [0, 128]")
-
-        if (
-            "top_p" in kwargs
-            and kwargs["top_p"] is not None
-            and not 0 <= kwargs["top_p"] <= 1
-        ):
-            raise ValueError("top_p must be in the range [0.0, 1.0]")
-
-        if (
-            "repeat_penalty" in kwargs
-            and kwargs["repeat_penalty"] is not None
-            and not 0 < kwargs["repeat_penalty"] <= 10
-        ):
-            raise ValueError("repeat_penalty must be in the range (0.0, 10]")
-
-        if (
-            "max_tokens" in kwargs
-            and kwargs["max_tokens"] is not None
-            and not 0 <= kwargs["max_tokens"] <= 4096
-        ):
-            raise ValueError("max_tokens must be in the range [0, 4096]")
-
-        if (
-            "seed" in kwargs
-            and kwargs["seed"] is not None
-            and not 0 <= kwargs["seed"] <= 4294967295
-        ):
-            raise ValueError("seed must be in the range [0, 4294967295]")
-
         """Validate that api key and python package exists in environment."""
         kwargs["ncp_clovastudio_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(kwargs, "api_key", "NCP_CLOVASTUDIO_API_KEY")
@@ -334,9 +292,6 @@ class ChatClovaX(BaseChatModel):
 
         super().__init__(**kwargs)
 
-        self.timeout = 90 if self.timeout is None else self.timeout
-        self.max_retries = 2 if self.max_retries is None else self.max_retries
-
         if not (self.model_name or self.task_id):
             raise ValueError("either model_name or task_id must be assigned a value.")
 
@@ -345,7 +300,7 @@ class ChatClovaX(BaseChatModel):
         else:
             self.client = httpx.Client(
                 base_url=self.base_url,
-                headers=self.default_headers(kwargs),
+                headers=self.default_headers(),
                 timeout=self.timeout,
             )
 
@@ -354,20 +309,19 @@ class ChatClovaX(BaseChatModel):
         else:
             self.async_client = httpx.AsyncClient(
                 base_url=self.base_url,
-                headers=self.default_headers(kwargs),
+                headers=self.default_headers(),
                 timeout=self.timeout,
             )
 
-    @staticmethod
-    def default_headers(values: Any) -> Dict[str, Any]:
+    def default_headers(self) -> Dict[str, Any]:
         clovastudio_api_key = (
-            values["ncp_clovastudio_api_key"].get_secret_value()
-            if values["ncp_clovastudio_api_key"]
+            self.ncp_clovastudio_api_key.get_secret_value()
+            if self.ncp_clovastudio_api_key
             else None
         )
         apigw_api_key = (
-            values["ncp_apigw_api_key"].get_secret_value()
-            if values["ncp_apigw_api_key"]
+            self.ncp_apigw_api_key.get_secret_value()
+            if self.ncp_apigw_api_key
             else None
         )
         return {

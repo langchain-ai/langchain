@@ -81,7 +81,7 @@ class ClovaXEmbeddings(BaseModel, Embeddings):
         description="NCP ClovaStudio embedding model name",
     )
 
-    timeout: int = 60
+    timeout: int = Field(gt=0, default=60)
 
     class Config:
         arbitrary_types_allowed = True
@@ -92,11 +92,6 @@ class ClovaXEmbeddings(BaseModel, Embeddings):
             "ncp_clovastudio_api_key": "NCP_CLOVASTUDIO_API_KEY",
             "ncp_apigw_api_key": "NCP_APIGW_API_KEY",
         }
-
-    # @property
-    # def _client_params(self) -> Dict[str, Any]:
-    #     """Get the parameters used for the client."""
-    #     return self._default_params
 
     @property
     def _api_url(self) -> str:
@@ -129,8 +124,6 @@ class ClovaXEmbeddings(BaseModel, Embeddings):
 
         super().__init__(**kwargs)
 
-        self.timeout = 90 if self.timeout is None else self.timeout
-
         self.app_id = get_from_dict_or_env(kwargs, "app_id", "NCP_CLOVASTUDIO_APP_ID")
 
         if client is not None:
@@ -138,7 +131,7 @@ class ClovaXEmbeddings(BaseModel, Embeddings):
         else:
             self.client = httpx.Client(
                 base_url=self.base_url,
-                headers=self.default_headers(kwargs),
+                headers=self.default_headers(),
                 timeout=self.timeout,
             )
 
@@ -147,20 +140,19 @@ class ClovaXEmbeddings(BaseModel, Embeddings):
         else:
             self.async_client = httpx.AsyncClient(
                 base_url=self.base_url,
-                headers=self.default_headers(kwargs),
+                headers=self.default_headers(),
                 timeout=self.timeout,
             )
 
-    @staticmethod
-    def default_headers(values: Any) -> Dict[str, Any]:
+    def default_headers(self) -> Dict[str, Any]:
         clovastudio_api_key = (
-            values["ncp_clovastudio_api_key"].get_secret_value()
-            if values["ncp_clovastudio_api_key"]
+            self.ncp_clovastudio_api_key.get_secret_value()
+            if self.ncp_clovastudio_api_key
             else None
         )
         apigw_api_key = (
-            values["ncp_apigw_api_key"].get_secret_value()
-            if values["ncp_apigw_api_key"]
+            self.ncp_clovastudio_api_key.get_secret_value()
+            if self.ncp_clovastudio_api_key
             else None
         )
         return {
