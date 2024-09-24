@@ -256,7 +256,7 @@ This represents a message with role "tool", which contains the result of calling
 - a `tool_call_id` field which conveys the id of the call to the tool that was called to produce this result.
 - an `artifact` field which can be used to pass along arbitrary artifacts of the tool execution which are useful to track but which should not be sent to the model.
 
-With most chat models, a `ToolMessage` can appear in the conversation history following an `AIMessage` with tha requests one or more tool calls (via `tool_calls` field).
+With most chat models, a `ToolMessage` can only appear in the chat history after an `AIMessage` that has a populated `tool_calls` field.
 
 #### (Legacy) FunctionMessage
 
