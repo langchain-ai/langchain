@@ -94,3 +94,22 @@ def test_visualize_simple_graph() -> None:
         "\tb -> tag_3 [dir=both]\n"
         "}\n"
     )
+
+    assert render_graphviz(
+        [doc1, doc2], skip_tags=[("kw", "foo")]
+    ).source == (
+        "digraph {\n"
+        "\trankdir=LR\n"
+        "\tnode [style=filled]\n"
+        '\ta [label="a\nsome content" shape=note tooltip="some content"]\n'
+        '\ttag_0 [label="href:a"]\n'
+        "\ta -> tag_0 [dir=back]\n"
+        '\tb [label="b\n<some\n more content>" '
+        'shape=note tooltip="<some\n more content>"]\n'
+        '\ttag_1 [label="href:b"]\n'
+        "\tb -> tag_1 [dir=back]\n"
+        "\tb -> tag_0 [dir=forward]\n"
+        '\ttag_2 [label="kw:bar"]\n'
+        "\tb -> tag_2 [dir=both]\n"
+        "}\n"
+    )
