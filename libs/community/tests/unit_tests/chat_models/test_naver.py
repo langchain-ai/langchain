@@ -27,7 +27,7 @@ os.environ["NCP_APIGW_API_KEY"] = "test_gw_key"
 
 def test_initialization_api_key() -> None:
     """Test chat model initialization."""
-    chat_model = ChatClovaX(api_key="foo", apigw_api_key="bar")
+    chat_model = ChatClovaX(api_key="foo", apigw_api_key="bar")  # type: ignore[arg-type]
     assert (
         cast(SecretStr, chat_model.ncp_clovastudio_api_key).get_secret_value() == "foo"
     )
@@ -35,7 +35,7 @@ def test_initialization_api_key() -> None:
 
 
 def test_initialization_model_name() -> None:
-    llm = ChatClovaX(model="HCX-DASH-001")
+    llm = ChatClovaX(model="HCX-DASH-001")  # type: ignore[call-arg]
     assert llm.model_name == "HCX-DASH-001"
     llm = ChatClovaX(model_name="HCX-DASH-001")
     assert llm.model_name == "HCX-DASH-001"

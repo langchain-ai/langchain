@@ -1,13 +1,14 @@
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Self
 
 import httpx
 from langchain_core.embeddings import Embeddings
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.utils import convert_to_secret_str, get_from_env
 from pydantic import (
     BaseModel,
     Field,
     SecretStr,
+    model_validator,
 )
 
 _DEFAULT_BASE_URL = "https://clovastudio.apigw.ntruss.com"
@@ -103,46 +104,41 @@ class ClovaXEmbeddings(BaseModel, Embeddings):
             f"/v1/api-tools/embedding/{model_name}/{self.app_id}"
         )
 
-    def __init__(
-        self,
-        client: Optional[httpx.Client] = None,
-        async_client: Optional[httpx.AsyncClient] = None,
-        **kwargs: Any,
-    ) -> None:
-        """Validate that api key and python package exists in environment."""
-        kwargs["ncp_clovastudio_api_key"] = convert_to_secret_str(
-            get_from_dict_or_env(kwargs, "api_key", "NCP_CLOVASTUDIO_API_KEY")
-        )
-        kwargs["ncp_apigw_api_key"] = convert_to_secret_str(
-            get_from_dict_or_env(
-                kwargs, "apigw_api_key", "NCP_APIGW_API_KEY", "ncp_apigw_api_key"
+    @model_validator(mode="after")
+    def validate_model_after(self) -> Self:
+        if not self.ncp_clovastudio_api_key:
+            self.ncp_clovastudio_api_key = convert_to_secret_str(
+                get_from_env("ncp_clovastudio_api_key", "NCP_CLOVASTUDIO_API_KEY")
             )
-        )
-        kwargs["base_url"] = get_from_dict_or_env(
-            kwargs, "base_url", "NCP_CLOVASTUDIO_API_BASE_URL", _DEFAULT_BASE_URL
-        )
 
-        super().__init__(**kwargs)
+        if not self.ncp_apigw_api_key:
+            self.ncp_apigw_api_key = convert_to_secret_str(
+                get_from_env("ncp_apigw_api_key", "NCP_APIGW_API_KEY")
+            )
 
-        self.app_id = get_from_dict_or_env(kwargs, "app_id", "NCP_CLOVASTUDIO_APP_ID")
+        if not self.base_url:
+            self.base_url = get_from_env(
+                "base_url", "NCP_CLOVASTUDIO_API_BASE_URL", _DEFAULT_BASE_URL
+            )
 
-        if client is not None:
-            self.client = client
-        else:
+        if not self.app_id:
+            self.app_id = get_from_env("app_id", "NCP_CLOVASTUDIO_APP_ID")
+
+        if not self.client:
             self.client = httpx.Client(
                 base_url=self.base_url,
                 headers=self.default_headers(),
                 timeout=self.timeout,
             )
 
-        if async_client is not None:
-            self.async_client = async_client
-        else:
+        if not self.async_client:
             self.async_client = httpx.AsyncClient(
                 base_url=self.base_url,
                 headers=self.default_headers(),
                 timeout=self.timeout,
             )
+
+        return self
 
     def default_headers(self) -> Dict[str, Any]:
         clovastudio_api_key = (
@@ -151,8 +147,8 @@ class ClovaXEmbeddings(BaseModel, Embeddings):
             else None
         )
         apigw_api_key = (
-            self.ncp_clovastudio_api_key.get_secret_value()
-            if self.ncp_clovastudio_api_key
+            self.ncp_apigw_api_key.get_secret_value()
+            if self.ncp_apigw_api_key
             else None
         )
         return {

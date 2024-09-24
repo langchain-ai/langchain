@@ -8,6 +8,7 @@ from typing import (
     Iterator,
     List,
     Optional,
+    Self,
     Tuple,
     Type,
     Union,
@@ -34,8 +35,8 @@ from langchain_core.messages import (
     SystemMessageChunk,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
-from pydantic import Field, SecretStr
+from langchain_core.utils import convert_to_secret_str, get_from_env
+from pydantic import AliasChoices, Field, SecretStr, model_validator
 
 _DEFAULT_BASE_URL = "https://clovastudio.stream.ntruss.com"
 
@@ -174,7 +175,9 @@ class ChatClovaX(BaseChatModel):
     async_client: httpx.AsyncClient = Field(default=None)  #: :meta private:
 
     model_name: str = Field(
-        default="HCX-003", alias="model", description="NCP ClovaStudio chat model name"
+        default="HCX-003",
+        validation_alias=AliasChoices("model_name", "model"),
+        description="NCP ClovaStudio chat model name",
     )
     task_id: Optional[str] = Field(
         default=None, description="NCP Clova Studio chat model tuning task ID"
@@ -195,11 +198,11 @@ class ChatClovaX(BaseChatModel):
     Automatically inferred from env are `NCP_CLOVASTUDIO_API_BASE_URL` if not provided.
     """
 
-    temperature: Optional[float] = Field(gt=0.0, le=1.0)
-    top_k: Optional[int] = Field(ge=0, le=128)
-    top_p: Optional[float] = Field(ge=0, le=1.0)
-    repeat_penalty: Optional[float] = Field(gt=0.0, le=10)
-    max_tokens: Optional[int] = Field(ge=0, le=4096)
+    temperature: Optional[float] = Field(gt=0.0, le=1.0, default=0.5)
+    top_k: Optional[int] = Field(ge=0, le=128, default=0)
+    top_p: Optional[float] = Field(ge=0, le=1.0, default=0.8)
+    repeat_penalty: Optional[float] = Field(gt=0.0, le=10, default=5.0)
+    max_tokens: Optional[int] = Field(ge=0, le=4096, default=100)
     stop_before: Optional[list[str]] = Field(default=None, alias="stop")
     include_ai_filters: Optional[bool] = Field(default=False)
     seed: Optional[int] = Field(ge=0, le=4294967295, default=0)
@@ -271,47 +274,41 @@ class ChatClovaX(BaseChatModel):
         else:
             return f"{self.base_url}/{app_type}/v1/chat-completions/{self.model_name}"
 
-    def __init__(
-        self,
-        client: Optional[httpx.Client] = None,
-        async_client: Optional[httpx.AsyncClient] = None,
-        **kwargs: Any,
-    ) -> None:
-        """Validate that api key and python package exists in environment."""
-        kwargs["ncp_clovastudio_api_key"] = convert_to_secret_str(
-            get_from_dict_or_env(kwargs, "api_key", "NCP_CLOVASTUDIO_API_KEY")
-        )
-        kwargs["ncp_apigw_api_key"] = convert_to_secret_str(
-            get_from_dict_or_env(
-                kwargs, "apigw_api_key", "NCP_APIGW_API_KEY", "ncp_apigw_api_key"
-            )
-        )
-        kwargs["base_url"] = get_from_dict_or_env(
-            kwargs, "base_url", "NCP_CLOVASTUDIO_API_BASE_URL", _DEFAULT_BASE_URL
-        )
-
-        super().__init__(**kwargs)
-
+    @model_validator(mode="after")
+    def validate_model_after(self) -> Self:
         if not (self.model_name or self.task_id):
             raise ValueError("either model_name or task_id must be assigned a value.")
 
-        if client:
-            self.client = client
-        else:
+        if not self.ncp_clovastudio_api_key:
+            self.ncp_clovastudio_api_key = convert_to_secret_str(
+                get_from_env("ncp_clovastudio_api_key", "NCP_CLOVASTUDIO_API_KEY")
+            )
+
+        if not self.ncp_apigw_api_key:
+            self.ncp_apigw_api_key = convert_to_secret_str(
+                get_from_env("ncp_apigw_api_key", "NCP_APIGW_API_KEY")
+            )
+
+        if not self.base_url:
+            self.base_url = get_from_env(
+                "base_url", "NCP_CLOVASTUDIO_API_BASE_URL", _DEFAULT_BASE_URL
+            )
+
+        if not self.client:
             self.client = httpx.Client(
                 base_url=self.base_url,
                 headers=self.default_headers(),
                 timeout=self.timeout,
             )
 
-        if async_client:
-            self.async_client = async_client
-        else:
+        if not self.async_client:
             self.async_client = httpx.AsyncClient(
                 base_url=self.base_url,
                 headers=self.default_headers(),
                 timeout=self.timeout,
             )
+
+        return self
 
     def default_headers(self) -> Dict[str, Any]:
         clovastudio_api_key = (
