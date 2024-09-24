@@ -469,7 +469,10 @@ class RivaASR(
             ) from err
 
     def invoke(
-        self, input: ASRInputType, config: Optional[RunnableConfig] = None, **kwargs: Any
+        self,
+        input: ASRInputType,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
     ) -> ASROutputType:
         """Transcribe the audio bytes into a string with Riva."""
         # create an output text generator with Riva
@@ -565,7 +568,10 @@ class RivaTTS(
             ) from err
 
     def invoke(
-        self, input: TTSInputType, config: Optional[RunnableConfig] = None, **kwargs: Any
+        self,
+        input: TTSInputType,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
     ) -> TTSOutputType:
         """Perform TTS by taking a string and outputting the entire audio file."""
         return b"".join(self.transform(iter([input])))
