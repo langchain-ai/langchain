@@ -79,14 +79,6 @@ def render_graphviz(
             "Please install it with `pip install graphviz`."
         )
 
-    try:
-        graphviz.version()
-    except graphviz.ExecutableNotFound:
-        raise ImportError(
-            "Could not execute `dot`. "
-            "Make sure graphviz executable is installed (see https://www.graphviz.org/download/)."
-        )
-
     graph = graphviz.Digraph(engine=engine)
     graph.attr(rankdir="LR")
     graph.attr("node", style="filled")
