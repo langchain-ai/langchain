@@ -86,7 +86,7 @@ class LLMSymbolicMathChain(Chain):
                 "atanh": sympy.atanh,
                 # Exponentials and logarithms
                 "exp": sympy.exp,
-                "log": lambda x, base=10: sympy.log(x, base),
+                "log": sympy.log,
                 "ln": sympy.log,  # natural log sympy defaults to natural log
                 "log10": lambda x: sympy.log(x, 10),  # log base 10 (use sympy.log)
                 # Powers and roots
