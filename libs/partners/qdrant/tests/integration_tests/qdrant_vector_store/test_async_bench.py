@@ -1,45 +1,36 @@
 import asyncio
-import logging
+import os
 import random
 import uuid
 from itertools import islice
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Type
+from typing import (
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Type,
+)
 
 import pytest
 from langchain_core.embeddings import Embeddings
 from qdrant_client import AsyncQdrantClient, models
 
 from langchain_community.embeddings import LocalAIEmbeddings
-from langchain_qdrant import QdrantVectorStore, RetrievalMode, SparseEmbeddings
+from langchain_qdrant import Qdrant, QdrantVectorStore, RetrievalMode, SparseEmbeddings
 from tests.integration_tests.common import ConsistentFakeSparseEmbeddings
 
-location = "http://localhost:6333"
+DOCS_TO_ADD = 100
+
 vector_name = ""
 retrieval_mode = RetrievalMode.DENSE
 sparse_vector_name = "my-sparse-vector"
 
-bulk_embeds = LocalAIEmbeddings(
-    openai_api_base="http://localhost:9090/v1",
-    model="bert-cpp-minilm-v6",
-    openai_api_key="foo",
-)
-
-
-@pytest.fixture(scope="function")
-def qvs() -> QdrantVectorStore:
-    collection_name = "test_coll"
-
-    instance = QdrantVectorStore.construct_instance(
-        bulk_embeds,  # ConsistentFakeEmbeddings(),
-        client_options={"location": location},
-        collection_name=collection_name,
-        vector_name=vector_name,
-        sparse_vector_name=sparse_vector_name,
-        sparse_embedding=ConsistentFakeSparseEmbeddings(),
-        force_recreate=True,
-    )
-    yield instance
-    instance.client.delete_collection(collection_name)
+qdrant_client_options = {
+    "url": os.environ["QDRANT_URL"],
+    "api_key": os.environ["QDRANT_KEY"],
+}
 
 
 @pytest.fixture(scope="class")
@@ -56,8 +47,34 @@ def texts() -> List[str]:
 
     return [
         " ".join(generate_word() for _ in range(random.randint(3, 10)))
-        for _ in range(10000)
+        for _ in range(DOCS_TO_ADD)
     ]
+
+
+@pytest.fixture(scope="function")
+def bulk_embeds() -> LocalAIEmbeddings:
+    return LocalAIEmbeddings(
+        # openai_api_base="http://localhost:9090/v1",
+        model=os.environ["OPENAI_MODEL"],
+        # openai_api_key="foo",
+    )
+
+
+@pytest.fixture(scope="function")
+def qvs(bulk_embeds: LocalAIEmbeddings) -> QdrantVectorStore:
+    collection_name = "test_coll"
+
+    instance = QdrantVectorStore.construct_instance(
+        bulk_embeds,  # ConsistentFakeEmbeddings(),
+        client_options=qdrant_client_options,
+        collection_name=collection_name,
+        vector_name=vector_name,
+        sparse_vector_name=sparse_vector_name,
+        sparse_embedding=ConsistentFakeSparseEmbeddings(),
+        force_recreate=True,
+    )
+    yield instance
+    instance.client.delete_collection(collection_name)
 
 
 class AsyncQVS(QdrantVectorStore):
@@ -170,11 +187,11 @@ class AsyncQVS(QdrantVectorStore):
 
 
 @pytest.fixture(scope="function")
-def async_qvs() -> AsyncQVS:
+def async_qvs(bulk_embeds: LocalAIEmbeddings) -> AsyncQVS:
     async_name = "test_async"
     instance = AsyncQVS.construct_instance(
         bulk_embeds,  # ConsistentFakeEmbeddings(),
-        client_options={"location": location},
+        client_options=qdrant_client_options,
         collection_name=async_name,
         vector_name=vector_name,
         sparse_vector_name=sparse_vector_name,
@@ -185,17 +202,36 @@ def async_qvs() -> AsyncQVS:
     instance.client.delete_collection(async_name)
 
 
-def test_qdrant_add_texts(
-    qvs: QdrantVectorStore, texts: List[str]
-) -> None:
-    qvs.add_texts(texts)  # , batch_size=10)
+@pytest.fixture(scope="function")
+def old_qdrant(bulk_embeds: LocalAIEmbeddings) -> Qdrant:
+    async_name = "old_async"
+    instance = Qdrant.construct_instance(
+        texts=["foo"],
+        **qdrant_client_options,
+        collection_name=async_name,
+        vector_name=vector_name,
+        embedding=bulk_embeds,
+        force_recreate=True,
+    )
+    yield instance
+    instance.client.delete_collection(async_name)
+
+
+def test_qdrant_add_texts(qvs: QdrantVectorStore, texts: List[str]) -> None:
+    qvs.add_texts(texts, batch_size=10)
     act_count = qvs.client.count(qvs.collection_name)
     assert act_count.count == len(texts)
 
 
-async def test_qdrant_async_aadd_texts(
-        async_qvs: AsyncQVS, texts: List[str]
-) -> None:
-    await async_qvs.aadd_texts(texts, max_parallel=40)  # , batch_size=10)
+async def test_async_aadd_texts(async_qvs: AsyncQVS, texts: List[str]) -> None:
+    await async_qvs.aadd_texts(texts, batch_size=10)
     act_count = await async_qvs.async_client.count(async_qvs.collection_name)
+    assert act_count.count == len(texts)
+
+
+async def test_old_qdrant_async_aadd_texts(
+    old_qdrant: Qdrant, texts: List[str]
+) -> None:
+    await old_qdrant.aadd_texts(texts, batch_size=10)
+    act_count = await old_qdrant.async_client.count(old_qdrant.collection_name)
     assert act_count.count == len(texts)
