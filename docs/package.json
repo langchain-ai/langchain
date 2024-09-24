@@ -26,6 +26,7 @@
     "@docusaurus/preset-classic": "3.5.2",
     "@docusaurus/remark-plugin-npm2yarn": "^3.5.2",
     "@docusaurus/theme-mermaid": "3.5.2",
+    "prism-react-renderer": "^2.1.0",
     "@mdx-js/react": "^3",
     "@supabase/supabase-js": "^2.39.7",
     "clsx": "^1.2.1",
