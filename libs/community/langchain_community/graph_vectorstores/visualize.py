@@ -1,5 +1,5 @@
 import re
-from typing import TYPE_CHECKING, Dict, Iterable, Optional
+from typing import TYPE_CHECKING, Dict, Iterable, Optional, Tuple
 
 from langchain_core.documents import Document
 from langchain_core.graph_vectorstores.links import get_links
@@ -40,17 +40,20 @@ def render_graphviz(
     documents: Iterable[Document],
     engine: Optional[str] = None,
     node_color: Optional[str] = None,
-    node_colors: Optional[Dict[str, Optional[str]]] = {},
+    node_colors: Optional[Dict[str, Optional[str]]] = None,
+    skip_tags: Iterable[Tuple[str, str]] = (),
 ) -> "graphviz.Digraph":
     """Render a collection of GraphVectorStore documents to GraphViz format.
 
     Args:
         documents: The documents to render.
         engine: GraphViz layout engine to use. `None` uses the default.
-        node_color: General node color. Defaults to `white`.
+        node_color: Default node color. Defaults to `white`.
         node_colors: Dictionary specifying colors of specific nodes. Useful for
             emphasizing nodes that were selected by MMR, or differ from other
             results.
+        skip_tags: Set of tags to skip when rendering the graph. Specified as
+            tuples containing the kind and tag.
 
     Returns:
         The "graphviz.Digraph" representing the nodes. May be printed to source,
@@ -64,6 +67,9 @@ def render_graphviz(
     """
     if node_colors is None:
         node_colors = {}
+    if node_color is None:
+        node_color = "white"
+
     try:
         import graphviz
     except (ImportError, ModuleNotFoundError):
@@ -80,11 +86,13 @@ def render_graphviz(
             "Make sure graphviz executable is installed (see https://www.graphviz.org/download/)."
         )
 
-    tags = set()
-
     graph = graphviz.Digraph(engine=engine)
     graph.attr(rankdir="LR")
     graph.attr("node", style="filled")
+
+    skip_tags = set(skip_tags)
+    tags = { }
+
     for document in documents:
         id = document.id
         if id is None:
@@ -105,10 +113,15 @@ def render_graphviz(
         )
 
         for link in get_links(document):
-            tag = f"{link.kind}_{link.tag}"
-            if tag not in tags:
-                graph.node(tag, label=graphviz.escape(f"{link.kind}:{link.tag}"))
-                tags.add(tag)
+            tag_key = (link.kind, link.tag)
+            if tag_key in skip_tags:
+                continue
 
-            graph.edge(escaped_id, tag, dir=_EDGE_DIRECTION[link.direction])
+            tag_id = tags.get(tag_key)
+            if tag_id is None:
+                tag_id = f"tag_{len(tags)}"
+                tags[tag_key] = tag_id
+                graph.node(tag_id, label=graphviz.escape(f"{link.kind}:{link.tag}"))
+
+            graph.edge(escaped_id, tag_id, dir=_EDGE_DIRECTION[link.direction])
     return graph
