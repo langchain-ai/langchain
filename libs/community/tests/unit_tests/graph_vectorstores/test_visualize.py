@@ -1,7 +1,7 @@
 import pytest
 from langchain_core.documents import Document
-from langchain_core.graph_vectorstores.links import METADATA_LINKS_KEY, Link
 
+from langchain_community.graph_vectorstores.links import METADATA_LINKS_KEY, Link
 from langchain_community.graph_vectorstores.visualize import render_graphviz
 
 
