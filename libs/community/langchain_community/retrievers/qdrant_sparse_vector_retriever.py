@@ -29,7 +29,7 @@ from langchain_community.vectorstores.qdrant import Qdrant, QdrantException
         "Qdrant vector store now supports sparse retrievals natively. "
         "Use langchain_qdrant.QdrantVectorStore#as_retriever() instead. "
         "Reference: "
-        "https://python.langchain.com/v0.2/docs/integrations/vectorstores/qdrant/#sparse-vector-search"
+        "https://python.langchain.com/docs/integrations/vectorstores/qdrant/#sparse-vector-search"
     ),
     removal="0.5.0",
 )
