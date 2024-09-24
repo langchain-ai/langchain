@@ -396,6 +396,8 @@ class HuggingFaceInferenceAPIEmbeddings(BaseModel, Embeddings):
     additional_headers: Dict[str, str] = {}
     """Pass additional headers to the requests library if needed."""
 
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
+
     @property
     def _api_url(self) -> str:
         return self.api_url or self._default_api_url

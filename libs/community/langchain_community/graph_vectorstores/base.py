@@ -138,14 +138,14 @@ def nodes_to_documents(nodes: Iterable[Node]) -> Iterator[Document]:
         )
 
 
-@beta(message="Added in version 0.2.14 of langchain_core. API subject to change.")
+@beta(message="Added in version 0.3.1 of langchain_community. API subject to change.")
 class GraphVectorStore(VectorStore):
     """A hybrid vector-and-graph graph store.
 
     Document chunks support vector-similarity search as well as edges linking
     chunks based on structural and semantic properties.
 
-    .. versionadded:: 0.2.14
+    .. versionadded:: 0.3.1
     """
 
     @abstractmethod
@@ -218,6 +218,7 @@ class GraphVectorStore(VectorStore):
             metadatas: Optional list of metadatas associated with the texts.
                 The metadata key `links` shall be an iterable of
                 :py:class:`~langchain_community.graph_vectorstores.links.Link`.
+            ids: Optional list of IDs associated with the texts.
             **kwargs: vectorstore specific parameters.
 
         Returns:
@@ -266,6 +267,7 @@ class GraphVectorStore(VectorStore):
             metadatas: Optional list of metadatas associated with the texts.
                 The metadata key `links` shall be an iterable of
                 :py:class:`~langchain_community.graph_vectorstores.links.Link`.
+            ids: Optional list of IDs associated with the texts.
             **kwargs: vectorstore specific parameters.
 
         Returns:
@@ -658,8 +660,138 @@ class GraphVectorStore(VectorStore):
         return GraphVectorStoreRetriever(vectorstore=self, **kwargs)
 
 
+@beta(message="Added in version 0.3.1 of langchain_community. API subject to change.")
 class GraphVectorStoreRetriever(VectorStoreRetriever):
-    """Retriever class for GraphVectorStore."""
+    """Retriever for GraphVectorStore.
+
+    A graph vector store retriever is a retriever that uses a graph vector store to
+    retrieve documents.
+    It is similar to a vector store retriever, except that it uses both vector
+    similarity and graph connections to retrieve documents.
+    It uses the search methods implemented by a graph vector store, like traversal
+    search and MMR traversal search, to query the texts in the graph vector store.
+
+    Example::
+
+        store = CassandraGraphVectorStore(...)
+        retriever = store.as_retriever()
+        retriever.invoke("What is ...")
+
+    .. seealso::
+
+        :mod:`How to use a graph vector store <langchain_community.graph_vectorstores>`
+
+    How to use a graph vector store as a retriever
+    ==============================================
+
+    Creating a retriever from a graph vector store
+    ----------------------------------------------
+
+    You can build a retriever from a graph vector store using its
+    :meth:`~langchain_community.graph_vectorstores.base.GraphVectorStore.as_retriever`
+    method.
+
+    First we instantiate a graph vector store.
+    We will use a store backed by Cassandra
+    :class:`~langchain_community.graph_vectorstores.cassandra.CassandraGraphVectorStore`
+    graph vector store::
+
+        from langchain_community.document_loaders import TextLoader
+        from langchain_community.graph_vectorstores import CassandraGraphVectorStore
+        from langchain_community.graph_vectorstores.extractors import (
+            KeybertLinkExtractor,
+            LinkExtractorTransformer,
+        )
+        from langchain_openai import OpenAIEmbeddings
+        from langchain_text_splitters import CharacterTextSplitter
+
+        loader = TextLoader("state_of_the_union.txt")
+        documents = loader.load()
+
+        text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
+        texts = text_splitter.split_documents(documents)
+
+        pipeline = LinkExtractorTransformer([KeybertLinkExtractor()])
+        pipeline.transform_documents(texts)
+        embeddings = OpenAIEmbeddings()
+        graph_vectorstore = CassandraGraphVectorStore.from_documents(texts, embeddings)
+
+    We can then instantiate a retriever::
+
+        retriever = graph_vectorstore.as_retriever()
+
+    This creates a retriever (specifically a ``GraphVectorStoreRetriever``), which we
+    can use in the usual way::
+
+        docs = retriever.invoke("what did the president say about ketanji brown jackson?")
+
+    Maximum marginal relevance traversal retrieval
+    ----------------------------------------------
+
+    By default, the graph vector store retriever uses similarity search, then expands
+    the retrieved set by following a fixed number of graph edges.
+    If the underlying graph vector store supports maximum marginal relevance traversal,
+    you can specify that as the search type.
+
+    MMR-traversal is a retrieval method combining MMR and graph traversal.
+    The strategy first retrieves the top fetch_k results by similarity to the question.
+    It then iteratively expands the set of fetched documents by following adjacent_k
+    graph edges and selects the top k results based on maximum-marginal relevance using
+    the given ``lambda_mult``::
+
+        retriever = graph_vectorstore.as_retriever(search_type="mmr_traversal")
+
+    Passing search parameters
+    -------------------------
+
+    We can pass parameters to the underlying graph vectorstore's search methods using
+    ``search_kwargs``.
+
+    Specifying graph traversal depth
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    For example, we can set the graph traversal depth to only return documents
+    reachable through a given number of graph edges::
+
+        retriever = graph_vectorstore.as_retriever(search_kwargs={"depth": 3})
+
+    Specifying MMR parameters
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    When using search type ``mmr_traversal``, several parameters of the MMR algorithm
+    can be configured.
+
+    The ``fetch_k`` parameter determines how many documents are fetched using vector
+    similarity and ``adjacent_k`` parameter determines how many documents are fetched
+    using graph edges.
+    The ``lambda_mult`` parameter controls how the MMR re-ranking weights similarity to
+    the query string vs diversity among the retrieved documents as fetched documents
+    are selected for the set of ``k`` final results::
+
+        retriever = graph_vectorstore.as_retriever(
+            search_type="mmr",
+            search_kwargs={"fetch_k": 20, "adjacent_k": 20, "lambda_mult": 0.25},
+        )
+
+    Specifying top k
+    ^^^^^^^^^^^^^^^^
+
+    We can also limit the number of documents ``k`` returned by the retriever.
+
+    Note that if ``depth`` is greater than zero, the retriever may return more documents
+    than is specified by ``k``, since both the original ``k`` documents retrieved using
+    vector similarity and any documents connected via graph edges will be returned::
+
+        retriever = graph_vectorstore.as_retriever(search_kwargs={"k": 1})
+
+    Similarity score threshold retrieval
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    For example, we can set a similarity score threshold and only return documents with
+    a score above that threshold::
+
+        retriever = graph_vectorstore.as_retriever(search_kwargs={"score_threshold": 0.5})
+    """  # noqa: E501
 
     vectorstore: GraphVectorStore
     """GraphVectorStore to use for retrieval."""

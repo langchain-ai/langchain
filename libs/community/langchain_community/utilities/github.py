@@ -492,7 +492,7 @@ class GitHubAPIWrapper(BaseModel):
         response_dict: Dict[str, str] = {}
         add_to_dict(response_dict, "title", pull.title)
         add_to_dict(response_dict, "number", str(pr_number))
-        add_to_dict(response_dict, "body", pull.body)
+        add_to_dict(response_dict, "body", pull.body if pull.body else "")
 
         comments: List[str] = []
         page = 0
