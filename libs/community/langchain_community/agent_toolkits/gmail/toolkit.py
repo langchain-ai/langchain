@@ -41,7 +41,7 @@ class GmailToolkit(BaseToolkit):
 
     Setup:
         You will need a Google credentials.json file to use this toolkit.
-        See instructions here: https://python.langchain.com/v0.2/docs/integrations/tools/gmail/#setup
+        See instructions here: https://python.langchain.com/docs/integrations/tools/gmail/#setup
 
     Key init args:
         api_resource: Optional. The Google API resource. Default is None.

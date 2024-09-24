@@ -115,7 +115,7 @@ class HtmlLinkExtractor(LinkExtractor[HtmlInput]):
 
             loader = AsyncHtmlLoader(
                 [
-                    "https://python.langchain.com/v0.2/docs/integrations/providers/astradb/",
+                    "https://python.langchain.com/docs/integrations/providers/astradb/",
                     "https://docs.datastax.com/en/astra/home/astra.html",
                 ]
             )
@@ -132,11 +132,11 @@ class HtmlLinkExtractor(LinkExtractor[HtmlInput]):
 
         .. code-block:: output
 
-            [Link(kind='hyperlink', direction='out', tag='https://python.langchain.com/v0.2/docs/integrations/providers/spreedly/'),
-             Link(kind='hyperlink', direction='out', tag='https://python.langchain.com/v0.2/docs/integrations/providers/nvidia/'),
-             Link(kind='hyperlink', direction='out', tag='https://python.langchain.com/v0.2/docs/integrations/providers/ray_serve/'),
-             Link(kind='hyperlink', direction='out', tag='https://python.langchain.com/v0.2/docs/integrations/providers/bageldb/'),
-             Link(kind='hyperlink', direction='out', tag='https://python.langchain.com/v0.2/docs/introduction/')]
+            [Link(kind='hyperlink', direction='out', tag='https://python.langchain.com/docs/integrations/providers/spreedly/'),
+             Link(kind='hyperlink', direction='out', tag='https://python.langchain.com/docs/integrations/providers/nvidia/'),
+             Link(kind='hyperlink', direction='out', tag='https://python.langchain.com/docs/integrations/providers/ray_serve/'),
+             Link(kind='hyperlink', direction='out', tag='https://python.langchain.com/docs/integrations/providers/bageldb/'),
+             Link(kind='hyperlink', direction='out', tag='https://python.langchain.com/docs/introduction/')]
 
         Using as_document_extractor()
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -152,7 +152,7 @@ class HtmlLinkExtractor(LinkExtractor[HtmlInput]):
 
             loader = AsyncHtmlLoader(
                 [
-                    "https://python.langchain.com/v0.2/docs/integrations/providers/astradb/",
+                    "https://python.langchain.com/docs/integrations/providers/astradb/",
                     "https://docs.datastax.com/en/astra/home/astra.html",
                 ]
             )
@@ -167,11 +167,11 @@ class HtmlLinkExtractor(LinkExtractor[HtmlInput]):
 
         .. code-block:: output
 
-            [Link(kind='hyperlink', direction='out', tag='https://python.langchain.com/v0.2/docs/integrations/providers/spreedly/'),
-             Link(kind='hyperlink', direction='out', tag='https://python.langchain.com/v0.2/docs/integrations/providers/nvidia/'),
-             Link(kind='hyperlink', direction='out', tag='https://python.langchain.com/v0.2/docs/integrations/providers/ray_serve/'),
-             Link(kind='hyperlink', direction='out', tag='https://python.langchain.com/v0.2/docs/integrations/providers/bageldb/'),
-             Link(kind='hyperlink', direction='out', tag='https://python.langchain.com/v0.2/docs/introduction/')]
+            [Link(kind='hyperlink', direction='out', tag='https://python.langchain.com/docs/integrations/providers/spreedly/'),
+             Link(kind='hyperlink', direction='out', tag='https://python.langchain.com/docs/integrations/providers/nvidia/'),
+             Link(kind='hyperlink', direction='out', tag='https://python.langchain.com/docs/integrations/providers/ray_serve/'),
+             Link(kind='hyperlink', direction='out', tag='https://python.langchain.com/docs/integrations/providers/bageldb/'),
+             Link(kind='hyperlink', direction='out', tag='https://python.langchain.com/docs/introduction/')]
 
         Using LinkExtractorTransformer
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -188,7 +188,7 @@ class HtmlLinkExtractor(LinkExtractor[HtmlInput]):
 
             loader = AsyncHtmlLoader(
                 [
-                    "https://python.langchain.com/v0.2/docs/integrations/providers/astradb/",
+                    "https://python.langchain.com/docs/integrations/providers/astradb/",
                     "https://docs.datastax.com/en/astra/home/astra.html",
                 ]
             )
@@ -201,11 +201,11 @@ class HtmlLinkExtractor(LinkExtractor[HtmlInput]):
 
         .. code-block:: output
 
-            [Link(kind='hyperlink', direction='out', tag='https://python.langchain.com/v0.2/docs/integrations/providers/spreedly/'),
-             Link(kind='hyperlink', direction='out', tag='https://python.langchain.com/v0.2/docs/integrations/providers/nvidia/'),
-             Link(kind='hyperlink', direction='out', tag='https://python.langchain.com/v0.2/docs/integrations/providers/ray_serve/'),
-             Link(kind='hyperlink', direction='out', tag='https://python.langchain.com/v0.2/docs/integrations/providers/bageldb/'),
-             Link(kind='hyperlink', direction='out', tag='https://python.langchain.com/v0.2/docs/introduction/')]
+            [Link(kind='hyperlink', direction='out', tag='https://python.langchain.com/docs/integrations/providers/spreedly/'),
+             Link(kind='hyperlink', direction='out', tag='https://python.langchain.com/docs/integrations/providers/nvidia/'),
+             Link(kind='hyperlink', direction='out', tag='https://python.langchain.com/docs/integrations/providers/ray_serve/'),
+             Link(kind='hyperlink', direction='out', tag='https://python.langchain.com/docs/integrations/providers/bageldb/'),
+             Link(kind='hyperlink', direction='out', tag='https://python.langchain.com/docs/introduction/')]
 
         We can check that there is a link from the first document to the second::
 
@@ -225,7 +225,7 @@ class HtmlLinkExtractor(LinkExtractor[HtmlInput]):
 
         .. code-block:: output
 
-            Found link from https://python.langchain.com/v0.2/docs/integrations/providers/astradb/ to https://docs.datastax.com/en/astra/home/astra.html.
+            Found link from https://python.langchain.com/docs/integrations/providers/astradb/ to https://docs.datastax.com/en/astra/home/astra.html.
 
         The documents with URL links can then be added to a :class:`~langchain_community.graph_vectorstores.base.GraphVectorStore`::
 

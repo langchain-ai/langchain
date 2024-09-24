@@ -25,7 +25,7 @@ class ConversationChain(LLMChain):
     """Chain to have a conversation and load context from memory.
 
     This class is deprecated in favor of ``RunnableWithMessageHistory``. Please refer
-    to this tutorial for more detail: https://python.langchain.com/v0.2/docs/tutorials/chatbot/
+    to this tutorial for more detail: https://python.langchain.com/docs/tutorials/chatbot/
 
     ``RunnableWithMessageHistory`` offers several benefits, including:
 

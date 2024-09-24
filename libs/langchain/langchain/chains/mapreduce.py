@@ -31,7 +31,7 @@ from langchain.chains.llm import LLMChain
         "Refer here for a recommended map-reduce implementation using langgraph: "
         "https://langchain-ai.github.io/langgraph/how-tos/map-reduce/. See also "
         "migration guide: "
-        "https://python.langchain.com/v0.2/docs/versions/migrating_chains/map_reduce_chain/"  # noqa: E501
+        "https://python.langchain.com/docs/versions/migrating_chains/map_reduce_chain/"  # noqa: E501
     ),
 )
 class MapReduceChain(Chain):
