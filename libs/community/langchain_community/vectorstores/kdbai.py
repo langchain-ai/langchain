@@ -94,7 +94,7 @@ class KDBAI(VectorStore):
         df["embeddings"] = [np.array(e, dtype="float32") for e in embeds]
         if metadata is not None:
             df = pd.concat([df, metadata], axis=1)
-        self._table.insert(df, warn=False)
+        self._table.insert(df)
 
     def add_texts(
         self,
@@ -179,6 +179,7 @@ class KDBAI(VectorStore):
     def similarity_search_with_score(
         self,
         query: str,
+        index: str,
         k: int = 1,
         filter: Optional[List] = [],
         **kwargs: Any,
@@ -194,13 +195,14 @@ class KDBAI(VectorStore):
             List[Document]: List of similar documents.
         """
         return self.similarity_search_by_vector_with_score(
-            self._embed_query(query), k=k, filter=filter, **kwargs
+            self._embed_query(query), index=index, k=k, filter=filter, **kwargs
         )
 
     def similarity_search_by_vector_with_score(
         self,
         embedding: List[float],
         *,
+        index: str,
         k: int = 1,
         filter: Optional[List] = [],
         **kwargs: Any,
@@ -215,9 +217,15 @@ class KDBAI(VectorStore):
         Returns:
             List[Document]: List of similar documents.
         """
+        dist = "__nn_distance"
         if "n" in kwargs:
             k = kwargs.pop("n")
-        matches = self._table.search(vectors=[embedding], n=k, filter=filter, **kwargs)
+        elif "index" in kwargs:
+            index = kwargs.pop("index")
+        elif "options" in kwargs and ('distanceColumn' in kwargs['options'].keys()):
+            dist = kwargs['options']["distanceColumn"]
+        
+        matches = self._table.search(vectors={index:[embedding]}, n=k, filter=filter, **kwargs)
         docs: list = []
         if isinstance(matches, list):
             matches = matches[0]
@@ -225,7 +233,7 @@ class KDBAI(VectorStore):
             return docs
         for row in matches.to_dict(orient="records"):
             text = row.pop("text")
-            score = row.pop("__nn_distance")
+            score = row.pop(dist)
             docs.append(
                 (
                     Document(
