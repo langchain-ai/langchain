@@ -20,7 +20,7 @@ class EscapePreprocessor(Preprocessor):
                 )
             if ":::{.callout" in cell.source:
                 cell.source = re.sub(
-                    r"::: *{.callout-([^}]*)}(.*?):::",
+                    r":::{.callout-([^}]*)}(.*?):::",
                     r":::\1\2:::",
                     cell.source,
                     flags=re.DOTALL,
