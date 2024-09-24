@@ -35,7 +35,7 @@ def test_visualize_simple_graph() -> None:
         "\trankdir=LR\n"
         "\tnode [style=filled]\n"
         '\ta [label="a\nsome content" shape=note tooltip="some content"]\n'
-        '\tag_0 [label="href:a"]\n'
+        '\ttag_0 [label="href:a"]\n'
         "\ta -> tag_0 [dir=back]\n"
         '\ttag_1 [label="kw:foo"]\n'
         "\ta -> tag_1 [dir=both]\n"
@@ -58,7 +58,7 @@ def test_visualize_simple_graph() -> None:
         "\tnode [style=filled]\n"
         '\ta [label="a\nsome content" fillcolor=gold '
         'shape=note tooltip="some content"]\n'
-        '\tag_0 [label="href:a"]\n'
+        '\ttag_0 [label="href:a"]\n'
         "\ta -> tag_0 [dir=back]\n"
         '\ttag_1 [label="kw:foo"]\n'
         "\ta -> tag_1 [dir=both]\n"
