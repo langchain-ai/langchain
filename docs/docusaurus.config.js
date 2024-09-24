@@ -124,13 +124,6 @@ const config = {
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
-      announcementBar: {
-        content:
-          'Share your thoughts on AI agents. <a target="_blank" href="https://langchain.typeform.com/state-of-agents">Take the 3-min survey</a>.',
-        isCloseable: true,
-        backgroundColor: "rgba(53, 151, 147, 0.1)",
-        textColor: "rgb(53, 151, 147)",
-      },
       docs: {
         sidebar: {
           hideable: true,
