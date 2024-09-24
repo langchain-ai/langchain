@@ -1091,6 +1091,19 @@ const FEATURE_TABLES = {
                 multiTenancy: false,
                 local: true,
                 idsInAddDocuments: false,
+            },
+            {
+                name: "Weaviate",
+                link: "weaviate",
+                deleteById: true,
+                filtering: true,
+                searchByVector: true,
+                searchWithScore: true,
+                async: true,
+                passesStandardTests: false,
+                multiTenancy: true,
+                local: true,
+                idsInAddDocuments: false,
             }
         ],
     }
