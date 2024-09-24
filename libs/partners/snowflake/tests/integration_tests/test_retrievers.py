@@ -30,7 +30,7 @@ from langchain_snowflake import CortexSearchRetriever, CortexSearchRetrieverErro
 def test_snowflake_cortex_search_invoke() -> None:
     """Test the invoke() method."""
 
-    columns = ["name", "description", "era", "diet", "height_meters"]
+    columns = ["name", "description", "era", "diet"]
     search_column = "description"
 
     kwargs = {
@@ -80,7 +80,7 @@ def test_snowflake_cortex_search_invoke_no_columns_or_filter() -> None:
 def test_snowflake_cortex_search_constructor_no_search_column() -> None:
     """Test the constructor with no search column name provided."""
 
-    columns = ["name", "description", "era", "diet", "height_meters"]
+    columns = ["name", "description", "era", "diet"]
 
     kwargs = {
         "search_service": "dinosaur_svc",
@@ -112,7 +112,7 @@ def test_snowflake_cortex_search_retriever_no_service_name() -> None:
 def test_snowflake_cortex_search_invoke_invalid_filter() -> None:
     """Test the invoke() method with an invalid filter object."""
 
-    columns = ["name", "description", "era", "diet", "height_meters"]
+    columns = ["name", "description", "era", "diet"]
 
     kwargs = {
         "columns": columns,
@@ -132,7 +132,7 @@ def test_snowflake_cortex_search_invoke_invalid_filter() -> None:
 def test_snowflake_cortex_search_invoke_limit() -> None:
     """Test the invoke() method with an overridden limit."""
 
-    columns = ["name", "description", "era", "diet", "height_meters"]
+    columns = ["name", "description", "era", "diet"]
     search_column = "description"
 
     kwargs = {
@@ -154,7 +154,7 @@ def test_snowflake_cortex_search_invoke_limit() -> None:
 def test_snowflake_cortex_search_invoke_filter() -> None:
     """Test the invoke() method with an overridden filter."""
 
-    columns = ["name", "description", "era", "diet", "height_meters"]
+    columns = ["name", "description", "era", "diet"]
     search_column = "description"
 
     kwargs = {
@@ -213,7 +213,7 @@ def test_snowflake_cortex_search_invoke_columns() -> None:
 def test_snowflake_cortex_search_constructor_externalbrowser_authenticator() -> None:
     """Test the constructor with external browser authenticator."""
 
-    columns = ["name", "description", "era", "diet", "height_meters"]
+    columns = ["name", "description", "era", "diet"]
 
     kwargs = {
         "search_service": "dinosaur_svc",
