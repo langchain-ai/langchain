@@ -35,18 +35,18 @@ def test_visualize_simple_graph() -> None:
         "\trankdir=LR\n"
         "\tnode [style=filled]\n"
         '\ta [label="a\nsome content" shape=note tooltip="some content"]\n'
-        '\thref_a [label="href:a"]\n'
-        "\ta -> href_a [dir=back]\n"
-        '\tkw_foo [label="kw:foo"]\n'
-        "\ta -> kw_foo [dir=both]\n"
+        '\tag_0 [label="href:a"]\n'
+        "\ta -> tag_0 [dir=back]\n"
+        '\ttag_1 [label="kw:foo"]\n'
+        "\ta -> tag_1 [dir=both]\n"
         '\tb [label="b\n<some\n more content>" '
         'shape=note tooltip="<some\n more content>"]\n'
-        '\thref_b [label="href:b"]\n'
-        "\tb -> href_b [dir=back]\n"
-        "\tb -> href_a [dir=forward]\n"
-        "\tb -> kw_foo [dir=both]\n"
-        '\tkw_bar [label="kw:bar"]\n'
-        "\tb -> kw_bar [dir=both]\n"
+        '\ttag_2 [label="href:b"]\n'
+        "\tb -> tag_2 [dir=back]\n"
+        "\tb -> tag_0 [dir=forward]\n"
+        "\tb -> tag_1 [dir=both]\n"
+        '\ttag_3 [label="kw:bar"]\n'
+        "\tb -> tag_3 [dir=both]\n"
         "}\n"
     )
 
@@ -58,18 +58,18 @@ def test_visualize_simple_graph() -> None:
         "\tnode [style=filled]\n"
         '\ta [label="a\nsome content" fillcolor=gold '
         'shape=note tooltip="some content"]\n'
-        '\thref_a [label="href:a"]\n'
-        "\ta -> href_a [dir=back]\n"
-        '\tkw_foo [label="kw:foo"]\n'
-        "\ta -> kw_foo [dir=both]\n"
+        '\tag_0 [label="href:a"]\n'
+        "\ta -> tag_0 [dir=back]\n"
+        '\ttag_1 [label="kw:foo"]\n'
+        "\ta -> tag_1 [dir=both]\n"
         '\tb [label="b\n<some\n more content>" '
         'shape=note tooltip="<some\n more content>"]\n'
-        '\thref_b [label="href:b"]\n'
-        "\tb -> href_b [dir=back]\n"
-        "\tb -> href_a [dir=forward]\n"
-        "\tb -> kw_foo [dir=both]\n"
-        '\tkw_bar [label="kw:bar"]\n'
-        "\tb -> kw_bar [dir=both]\n"
+        '\ttag_2 [label="href:b"]\n'
+        "\tb -> tag_2 [dir=back]\n"
+        "\tb -> tag_0 [dir=forward]\n"
+        "\tb -> tag_1 [dir=both]\n"
+        '\ttag_3 [label="kw:bar"]\n'
+        "\tb -> tag_3 [dir=both]\n"
         "}\n"
     )
 
@@ -80,17 +80,17 @@ def test_visualize_simple_graph() -> None:
         "\trankdir=LR\n"
         "\tnode [style=filled]\n"
         '\ta [label="a\nsome content" shape=note tooltip="some content"]\n'
-        '\thref_a [label="href:a"]\n'
-        "\ta -> href_a [dir=back]\n"
-        '\tkw_foo [label="kw:foo"]\n'
-        "\ta -> kw_foo [dir=both]\n"
+        '\ttag_0 [label="href:a"]\n'
+        "\ta -> tag_0 [dir=back]\n"
+        '\ttag_1 [label="kw:foo"]\n'
+        "\ta -> tag_1 [dir=both]\n"
         '\tb [label="b\n<some\n more content>" fillcolor=gold '
         'shape=note tooltip="<some\n more content>"]\n'
-        '\thref_b [label="href:b"]\n'
-        "\tb -> href_b [dir=back]\n"
-        "\tb -> href_a [dir=forward]\n"
-        "\tb -> kw_foo [dir=both]\n"
-        '\tkw_bar [label="kw:bar"]\n'
-        "\tb -> kw_bar [dir=both]\n"
+        '\ttag_2 [label="href:b"]\n'
+        "\tb -> tag_2 [dir=back]\n"
+        "\tb -> tag_0 [dir=forward]\n"
+        "\tb -> tag_1 [dir=both]\n"
+        '\ttag_3 [label="kw:bar"]\n'
+        "\tb -> tag_3 [dir=both]\n"
         "}\n"
     )
