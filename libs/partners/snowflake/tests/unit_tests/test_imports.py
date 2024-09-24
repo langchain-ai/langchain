@@ -3,6 +3,7 @@ from langchain_snowflake import __all__
 EXPECTED_ALL = [
     "CortexSearchRetriever",
     "CortexSearchRetrieverError",
+    "__version__",
 ]
 
 
