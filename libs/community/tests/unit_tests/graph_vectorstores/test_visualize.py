@@ -6,7 +6,7 @@ from langchain_community.graph_vectorstores.visualize import render_graphviz
 
 
 @pytest.mark.requires("graphviz")
-def test_visualize_simple_graph():
+def test_visualize_simple_graph() -> None:
     doc1 = Document(
         id="a",
         page_content="some content",

@@ -2,7 +2,8 @@ import re
 from typing import TYPE_CHECKING, Dict, Iterable, Optional, Tuple
 
 from langchain_core.documents import Document
-from langchain_core.graph_vectorstores.links import get_links
+
+from langchain_community.graph_vectorstores.links import get_links
 
 if TYPE_CHECKING:
     import graphviz
@@ -91,7 +92,7 @@ def render_graphviz(
     graph.attr("node", style="filled")
 
     skip_tags = set(skip_tags)
-    tags = { }
+    tags: dict[Tuple[str, str], str] = {}
 
     for document in documents:
         id = document.id
@@ -100,10 +101,12 @@ def render_graphviz(
         escaped_id = _escape_id(id)
         color = node_colors[id] if id in node_colors else node_color
 
-        node_label = "\n".join([
-            graphviz.escape(id),
-            graphviz.escape(_split_prefix(document.page_content)),
-        ])
+        node_label = "\n".join(
+            [
+                graphviz.escape(id),
+                graphviz.escape(_split_prefix(document.page_content)),
+            ]
+        )
         graph.node(
             escaped_id,
             label=node_label,
