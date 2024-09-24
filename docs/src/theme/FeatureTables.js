@@ -2,7 +2,7 @@ import React from "react";
 import {useCurrentSidebarCategory} from '@docusaurus/theme-common';
 import {
   useDocById,
-} from '@docusaurus/theme-common/internal';
+} from '@docusaurus/plugin-content-docs/client';
 
 const FEATURE_TABLES = {
     chat: {
