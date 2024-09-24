@@ -68,44 +68,44 @@ class LLMSymbolicMathChain(Chain):
         try:
             allowed_symbols = {
                 # Basic arithmetic and trigonometry
-                'sin': sympy.sin,
-                'cos': sympy.cos,
-                'tan': sympy.tan,
-                'cot': sympy.cot,
-                'sec': sympy.sec,
-                'csc': sympy.csc,
-                'asin': sympy.asin,
-                'acos': sympy.acos,
-                'atan': sympy.atan,
+                "sin": sympy.sin,
+                "cos": sympy.cos,
+                "tan": sympy.tan,
+                "cot": sympy.cot,
+                "sec": sympy.sec,
+                "csc": sympy.csc,
+                "asin": sympy.asin,
+                "acos": sympy.acos,
+                "atan": sympy.atan,
                 # Hyperbolic functions
-                'sinh': sympy.sinh,
-                'cosh': sympy.cosh,
-                'tanh': sympy.tanh,
-                'asinh': sympy.asinh,
-                'acosh': sympy.acosh,
-                'atanh': sympy.atanh,
+                "sinh": sympy.sinh,
+                "cosh": sympy.cosh,
+                "tanh": sympy.tanh,
+                "asinh": sympy.asinh,
+                "acosh": sympy.acosh,
+                "atanh": sympy.atanh,
                 # Exponentials and logarithms
-                'exp': sympy.exp,
-                'log': sympy.log,
-                'ln': sympy.log,  # natural log (alias)
-                'log10': sympy.log,  # log base 10 (use sympy.log)
+                "exp": sympy.exp,
+                "log": sympy.log,
+                "ln": sympy.log,  # natural log (alias)
+                "log10": sympy.log,  # log base 10 (use sympy.log)
                 # Powers and roots
-                'sqrt': sympy.sqrt,
-                'cbrt': lambda x: sympy.Pow(x, sympy.Rational(1, 3)),
+                "sqrt": sympy.sqrt,
+                "cbrt": lambda x: sympy.Pow(x, sympy.Rational(1, 3)),
                 # Combinatorics and other math functions
-                'factorial': sympy.factorial,
-                'binomial': sympy.binomial,
-                'gcd': sympy.gcd,
-                'lcm': sympy.lcm,
-                'abs': sympy.Abs,
-                'sign': sympy.sign,
-                'mod': sympy.Mod,
+                "factorial": sympy.factorial,
+                "binomial": sympy.binomial,
+                "gcd": sympy.gcd,
+                "lcm": sympy.lcm,
+                "abs": sympy.Abs,
+                "sign": sympy.sign,
+                "mod": sympy.Mod,
                 # Constants
-                'pi': sympy.pi,
-                'e': sympy.E,
-                'I': sympy.I,
-                'oo': sympy.oo,
-                'NaN': sympy.nan,
+                "pi": sympy.pi,
+                "e": sympy.E,
+                "I": sympy.I,
+                "oo": sympy.oo,
+                "NaN": sympy.nan,
             }
 
             # Use parse_expr with strict settings

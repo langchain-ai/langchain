@@ -84,9 +84,13 @@ def test_error(fake_llm_symbolic_math_chain: LLMSymbolicMathChain) -> None:
     with pytest.raises(ValueError):
         fake_llm_symbolic_math_chain.run("foo")
 
-def test_security_vulnerability(fake_llm_symbolic_math_chain: LLMSymbolicMathChain) -> None:
+
+def test_security_vulnerability(
+    fake_llm_symbolic_math_chain: LLMSymbolicMathChain,
+) -> None:
     """Test for potential security vulnerability with malicious input."""
-    malicious_input = "__import__('os').system('rm -rf /')"  # Example of a code injection attempt
+    # Example of a code injection attempt
+    malicious_input = "__import__('os').system('rm -rf /')"
 
     # Run the chain with the malicious input and ensure it raises an error
     with pytest.raises(ValueError):
