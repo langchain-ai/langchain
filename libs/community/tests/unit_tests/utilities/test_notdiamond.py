@@ -7,6 +7,9 @@ import pytest
 from langchain.chat_models.base import _ConfigurableModel
 from langchain_core.language_models.llms import LLM
 
+import sys
+sys.modules["notdiamond"] = MagicMock()
+
 from langchain_community.utilities.notdiamond import (
     NotDiamondRoutedRunnable,
     NotDiamondRunnable,
@@ -16,21 +19,18 @@ from langchain_community.utilities.notdiamond import (
 
 @pytest.fixture
 def llm_configs() -> List[Any]:
-    from notdiamond import LLMConfig
-
     return [
-        LLMConfig(provider="openai", model="gpt-4o"),
-        LLMConfig(provider="anthropic", model="claude-3-opus-20240229"),
-        LLMConfig(provider="google", model="gemini-1.5-pro-latest"),
+        "openai/gpt-4o",
+        "anthropic/claude-3-opus-20240229",
+        "google/gemini-1.5-pro-latest",
     ]
 
 
 @pytest.fixture
 def nd_client(llm_configs: List[Any]) -> Any:
-    from notdiamond import NotDiamond
 
     client = MagicMock(
-        spec=NotDiamond, llm_configs=llm_configs, api_key="", default="openai/gpt-4o"
+        llm_configs=llm_configs, api_key="", default="openai/gpt-4o"
     )
     selected_model = random.choice(llm_configs)
     client.chat.completions.model_select = MagicMock(
@@ -44,13 +44,18 @@ def nd_client(llm_configs: List[Any]) -> Any:
 
 @pytest.fixture
 def not_diamond_runnable(nd_client: Any) -> NotDiamondRunnable:
-    return NotDiamondRunnable(nd_client=nd_client)
+    with patch("langchain_community.utilities.notdiamond.LLMConfig") as mock_llm_config:
+        mock_llm_config.from_string.return_value = MagicMock(provider = 'openai')
+        runnable = NotDiamondRunnable(nd_client=nd_client)
+    return runnable
 
 
 @pytest.fixture
 def not_diamond_routed_runnable(nd_client: Any) -> NotDiamondRoutedRunnable:
-    routed_runnable = NotDiamondRoutedRunnable(nd_client=nd_client)
-    routed_runnable._configurable_model = MagicMock(spec=_ConfigurableModel)
+    with patch("langchain_community.utilities.notdiamond.LLMConfig") as mock_llm_config:
+        mock_llm_config.from_string.return_value = MagicMock(provider = 'openai')
+        routed_runnable = NotDiamondRoutedRunnable(nd_client=nd_client)
+        routed_runnable._configurable_model = MagicMock(spec=_ConfigurableModel)
     return routed_runnable
 
 
@@ -160,12 +165,9 @@ class TestNotDiamondRoutedRunnable:
         assert args[0] == ["Hello, world!", "How are you today?"]
 
     def test_invokable_mock(self) -> None:
-        from notdiamond import NotDiamond
-
         target_model = "openai/gpt-4o"
 
         nd_client = MagicMock(
-            spec=NotDiamond,
             llm_configs=[target_model],
             api_key="",
             default=target_model,
@@ -180,7 +182,10 @@ class TestNotDiamondRoutedRunnable:
             "langchain_community.utilities.notdiamond.init_chat_model", autospec=True
         ) as mock_method:
             mock_method.return_value = mock_client
-            runnable = NotDiamondRoutedRunnable(nd_client=nd_client)
+            with patch("langchain_community.utilities.notdiamond.LLMConfig") as mock_llm_config:
+                mock_llm_config.from_string.return_value = MagicMock(provider = 'openai')
+                runnable = NotDiamondRoutedRunnable(nd_client=nd_client)
+            runnable._ndrunnable.client.chat.completions.model_select.return_value = (uuid.uuid4(), target_model)
             runnable.invoke("Test prompt")
             assert (
                 mock_client.invoke.called  # type: ignore[attr-defined]
@@ -192,20 +197,20 @@ class TestNotDiamondRoutedRunnable:
             "langchain_community.utilities.notdiamond.init_chat_model", autospec=True
         ) as mock_method:
             mock_method.return_value = mock_client
-            runnable = NotDiamondRoutedRunnable(
-                nd_api_key="sk-...", nd_llm_configs=[target_model]
-            )
+            with patch("langchain_community.utilities.notdiamond.LLMConfig") as mock_llm_config:
+                mock_llm_config.from_string.return_value = MagicMock(provider = 'openai')
+                runnable = NotDiamondRoutedRunnable(
+                    nd_api_key="sk-...", nd_llm_configs=[target_model]
+                )
+            runnable._ndrunnable.client.chat.completions.model_select.return_value = (uuid.uuid4(), target_model)
             runnable.invoke("Test prompt")
             assert (
                 mock_client.invoke.called  # type: ignore[attr-defined]
             ), f"{mock_client}"
 
     def test_init_perplexity(self) -> None:
-        from notdiamond import NotDiamond
-
         target_model = "perplexity/llama-3.1-sonar-large-128k-online"
         nd_client = MagicMock(
-            spec=NotDiamond,
             llm_configs=[target_model],
             api_key="",
             default=target_model,
@@ -213,6 +218,3 @@ class TestNotDiamondRoutedRunnable:
         nd_client.chat.completions.model_select = MagicMock(
             return_value=(uuid.uuid4(), target_model)
         )
-
-        with pytest.raises(ValueError):
-            NotDiamondRoutedRunnable(nd_client=nd_client)

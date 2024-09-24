@@ -10,6 +10,8 @@ from langchain_core.runnables import Runnable, RunnableConfig
 
 from langchain_community.adapters.openai import convert_message_to_dict
 
+from notdiamond import LLMConfig, NotDiamond
+
 _LANGCHAIN_PROVIDERS = {
     "openai",
     "anthropic",
@@ -36,7 +38,6 @@ class NotDiamondRunnable(Runnable[LanguageModelInput, str]):
         nd_api_key: Optional[str] = None,
         nd_client: Optional[Any] = None,
     ):
-        import notdiamond as nd
 
         if not nd_client:
             if not nd_api_key or not nd_llm_configs:
@@ -44,14 +45,14 @@ class NotDiamondRunnable(Runnable[LanguageModelInput, str]):
                     "Must provide either client or api_key and llm_configs to "
                     "instantiate NotDiamondRunnable."
                 )
-            nd_client = nd.NotDiamond(
+            nd_client = NotDiamond(
                 llm_configs=nd_llm_configs,
                 api_key=nd_api_key,
             )
         elif nd_client.llm_configs:
             for llm_config in nd_client.llm_configs:
                 if isinstance(llm_config, str):
-                    llm_config = nd.LLMConfig.from_string(llm_config)
+                    llm_config = LLMConfig.from_string(llm_config)
                 if llm_config.provider not in _LANGCHAIN_PROVIDERS:
                     raise ValueError(
                         f"Requested provider in {llm_config} supported by Not Diamond "
@@ -60,11 +61,11 @@ class NotDiamondRunnable(Runnable[LanguageModelInput, str]):
                     )
 
         try:
-            nd_client.user_agent = (
-                f"langchain-community/{metadata.version('notdiamond')}"
-            )
-        except AttributeError:
-            pass
+            nd_version = metadata.version('notdiamond')
+        except (AttributeError, metadata.PackageNotFoundError):
+            nd_version = 'none'
+
+        nd_client.user_agent = f"langchain-community/{nd_version}"
 
         self.client = nd_client
         self.api_key = nd_client.api_key
