@@ -13,8 +13,6 @@ export default function NotFoundContent({className}) {
   const pathname = location.pathname.endsWith('/') ? location.pathname : location.pathname + '/'; // Ensure the path matches the keys in suggestedLinks
   const {canonical, alternative} = suggestedLinks[pathname] || {};
 
-  console.log({location, pathname, canonical, alternative});
-
   return (
     <main className={clsx('container margin-vert--xl', className)}>
       <div className="row">
