@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, TextIO, cast
+from typing import Any, Optional, TextIO, cast
 
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.callbacks import BaseCallbackHandler
@@ -35,7 +35,7 @@ class FileCallbackHandler(BaseCallbackHandler):
         self.file.close()
 
     def on_chain_start(
-        self, serialized: Dict[str, Any], inputs: Dict[str, Any], **kwargs: Any
+        self, serialized: dict[str, Any], inputs: dict[str, Any], **kwargs: Any
     ) -> None:
         """Print out that we are entering a chain.
 
@@ -51,7 +51,7 @@ class FileCallbackHandler(BaseCallbackHandler):
             file=self.file,
         )
 
-    def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
+    def on_chain_end(self, outputs: dict[str, Any], **kwargs: Any) -> None:
         """Print out that we finished a chain.
 
         Args:

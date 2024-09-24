@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-milvus"
-version = "0.1.6"
+version = "0.1.5"
 description = "An integration package connecting Milvus and LangChain"
 authors = []
 readme = "README.md"
@@ -25,9 +25,16 @@ ignore_missing_imports = "True"
 "Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-milvus%3D%3D0%22&expanded=true"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<4.0"
-langchain-core = "^0.3"
+python = ">=3.8.1,<4.0"
 pymilvus = "^2.4.3"
+
+[[tool.poetry.dependencies.langchain-core]]
+version = ">=0.2.38,<0.4"
+python = ">=3.9"
+
+[[tool.poetry.dependencies.langchain-core]]
+version = ">=0.2.38,<0.3"
+python = "<3.9"
 
 [[tool.poetry.dependencies.scipy]]
 version = "^1.7"
@@ -73,6 +80,15 @@ pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
 milvus_model = "^0.2.0"
 
+[[tool.poetry.group.test.dependencies.langchain-core]]
+path = "../../core"
+develop = true
+python = ">=3.9"
+
+[[tool.poetry.group.test.dependencies.langchain-core]]
+version = ">=0.2.38,<0.3"
+python = "<3.9"
+
 [tool.poetry.group.codespell.dependencies]
 codespell = "^2.2.0"
 
@@ -87,14 +103,21 @@ mypy = "^0.991"
 types-requests = "^2"
 simsimd = "^5.0.0"
 
-[tool.poetry.group.test.dependencies.langchain-core]
+[[tool.poetry.group.typing.dependencies.langchain-core]]
 path = "../../core"
 develop = true
+python = ">=3.9"
 
-[tool.poetry.group.typing.dependencies.langchain-core]
-path = "../../core"
-develop = true
+[[tool.poetry.group.typing.dependencies.langchain-core]]
+version = ">=0.2.38,<0.3"
+python = "<3.9"
 
-[tool.poetry.group.dev.dependencies.langchain-core]
+[tool.poetry.group.dev.dependencies]
+[[tool.poetry.group.dev.dependencies.langchain-core]]
 path = "../../core"
 develop = true
+python = ">=3.9"
+
+[[tool.poetry.group.dev.dependencies.langchain-core]]
+version = ">=0.2.38,<0.3"
+python = "<3.9"

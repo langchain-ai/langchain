@@ -1,8 +1,8 @@
 from typing import Callable, Iterable, Set, TypeVar
 
 from langchain_core._api import beta
-from langchain_core.graph_vectorstores import Link
 
+from langchain_community.graph_vectorstores import Link
 from langchain_community.graph_vectorstores.extractors.link_extractor import (
     LinkExtractor,
 )

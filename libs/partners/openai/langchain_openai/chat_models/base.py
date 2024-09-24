@@ -33,6 +33,7 @@ from urllib.parse import urlparse
 
 import openai
 import tiktoken
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -453,6 +454,23 @@ class BaseChatOpenAI(BaseChatModel):
     making requests to OpenAI compatible APIs, such as vLLM."""
     include_response_headers: bool = False
     """Whether to include response headers in the output message response_metadata."""
+    disabled_params: Optional[Dict[str, Any]] = Field(default=None)
+    """Parameters of the OpenAI client or chat.completions endpoint that should be 
+    disabled for the given model.
+    
+    Should be specified as ``{"param": None | ['val1', 'val2']}`` where the key is the 
+    parameter and the value is either None, meaning that parameter should never be
+    used, or it's a list of disabled values for the parameter.
+    
+    For example, older models may not support the 'parallel_tool_calls' parameter at 
+    all, in which case ``disabled_params={"parallel_tool_calls: None}`` can ben passed 
+    in.
+    
+    If a parameter is disabled then it will not be used by default in any methods, e.g.
+    in :meth:`~langchain_openai.chat_models.base.ChatOpenAI.with_structured_output`.
+    However this does not prevent a user from directly passed in the parameter during
+    invocation. 
+    """
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -966,6 +984,11 @@ class BaseChatOpenAI(BaseChatModel):
         num_tokens += 3
         return num_tokens
 
+    @deprecated(
+        since="0.2.1",
+        alternative="langchain_openai.chat_models.base.ChatOpenAI.bind_tools",
+        removal="0.3.0",
+    )
     def bind_functions(
         self,
         functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
@@ -1033,22 +1056,18 @@ class BaseChatOpenAI(BaseChatModel):
 
         Assumes model is compatible with OpenAI tool-calling API.
 
-        .. versionchanged:: 0.1.21
-
-            Support for ``strict`` argument added.
-
         Args:
             tools: A list of tool definitions to bind to this chat model.
                 Supports any tool definition handled by
                 :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`.
-            tool_choice: Which tool to require the model to call.
-                Options are:
-                    - str of the form ``"<<tool_name>>"``: calls <<tool_name>> tool.
-                    - ``"auto"``: automatically selects a tool (including no tool).
-                    - ``"none"``: does not call a tool.
-                    - ``"any"`` or ``"required"`` or ``True``: force at least one tool to be called.
-                    - dict of the form ``{"type": "function", "function": {"name": <<tool_name>>}}``: calls <<tool_name>> tool.
-                    - ``False`` or ``None``: no effect, default OpenAI behavior.
+            tool_choice: Which tool to require the model to call. Options are:
+
+                - str of the form ``"<<tool_name>>"``: calls <<tool_name>> tool.
+                - ``"auto"``: automatically selects a tool (including no tool).
+                - ``"none"``: does not call a tool.
+                - ``"any"`` or ``"required"`` or ``True``: force at least one tool to be called.
+                - dict of the form ``{"type": "function", "function": {"name": <<tool_name>>}}``: calls <<tool_name>> tool.
+                - ``False`` or ``None``: no effect, default OpenAI behavior.
             strict: If True, model output is guaranteed to exactly match the JSON Schema
                 provided in the tool definition. If True, the input schema will be
                 validated according to
@@ -1056,11 +1075,13 @@ class BaseChatOpenAI(BaseChatModel):
                 If False, input schema will not be validated and model output will not
                 be validated.
                 If None, ``strict`` argument will not be passed to the model.
-
-                .. versionadded:: 0.1.21
-
             kwargs: Any additional parameters are passed directly to
-                ``self.bind(**kwargs)``.
+                :meth:`~langchain_openai.chat_models.base.ChatOpenAI.bind`.
+
+        .. versionchanged:: 0.1.21
+
+            Support for ``strict`` argument added.
+
         """  # noqa: E501
 
         formatted_tools = [
@@ -1397,12 +1418,11 @@ class BaseChatOpenAI(BaseChatModel):
                     "Received None."
                 )
             tool_name = convert_to_openai_tool(schema)["function"]["name"]
-            llm = self.bind_tools(
-                [schema],
-                tool_choice=tool_name,
-                parallel_tool_calls=False,
-                strict=strict,
+            bind_kwargs = self._filter_disabled_params(
+                tool_choice=tool_name, parallel_tool_calls=False, strict=strict
             )
+
+            llm = self.bind_tools([schema], **bind_kwargs)
             if is_pydantic_schema:
                 output_parser: Runnable = PydanticToolsParser(
                     tools=[schema],  # type: ignore[list-item]
@@ -1451,6 +1471,21 @@ class BaseChatOpenAI(BaseChatModel):
             return RunnableMap(raw=llm) | parser_with_fallback
         else:
             return llm | output_parser
+
+    def _filter_disabled_params(self, **kwargs: Any) -> Dict[str, Any]:
+        if not self.disabled_params:
+            return kwargs
+        filtered = {}
+        for k, v in kwargs.items():
+            # Skip param
+            if k in self.disabled_params and (
+                self.disabled_params[k] is None or v in self.disabled_params[k]
+            ):
+                continue
+            # Keep param
+            else:
+                filtered[k] = v
+        return filtered
 
 
 class ChatOpenAI(BaseChatOpenAI):
@@ -2110,7 +2145,7 @@ def _oai_structured_outputs_parser(ai_msg: AIMessage) -> PydanticBaseModel:
     else:
         raise ValueError(
             "Structured Output response does not have a 'parsed' field nor a 'refusal' "
-            "field."
+            "field. Received message:\n\n{ai_msg}"
         )
 
 

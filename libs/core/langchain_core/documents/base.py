@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import contextlib
 import mimetypes
+from collections.abc import Generator
 from io import BufferedReader, BytesIO
 from pathlib import PurePath
-from typing import Any, Dict, Generator, List, Literal, Optional, Union, cast
+from typing import Any, Literal, Optional, Union, cast
 
 from pydantic import ConfigDict, Field, field_validator, model_validator
 
@@ -106,7 +107,7 @@ class Blob(BaseMedia):
                 print(f.read())
     """
 
-    data: Union[bytes, str, None]
+    data: Union[bytes, str, None] = None
     """Raw data associated with the blob."""
     mimetype: Optional[str] = None
     """MimeType not to be confused with a file extension."""
@@ -138,7 +139,7 @@ class Blob(BaseMedia):
 
     @model_validator(mode="before")
     @classmethod
-    def check_blob_is_valid(cls, values: Dict[str, Any]) -> Any:
+    def check_blob_is_valid(cls, values: dict[str, Any]) -> Any:
         """Verify that either data or path is provided."""
         if "data" not in values and "path" not in values:
             raise ValueError("Either data or path must be provided")
@@ -285,7 +286,7 @@ class Document(BaseMedia):
         return True
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "schema", "document"]
 
