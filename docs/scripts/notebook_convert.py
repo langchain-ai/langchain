@@ -18,13 +18,6 @@ class EscapePreprocessor(Preprocessor):
                 cell.source = re.sub(
                     r"```{=mdx}\n(.*?)\n```", r"\1", cell.source, flags=re.DOTALL
                 )
-            if ":::{.callout" in cell.source:
-                cell.source = re.sub(
-                    r":::{.callout-([^}]*)}(.*?):::",
-                    r":::\1\2:::",
-                    cell.source,
-                    flags=re.DOTALL,
-                )
             # rewrite .ipynb links to .md
             cell.source = re.sub(
                 r"\[([^\]]*)\]\((?![^\)]*//)([^)]*)\.ipynb\)",
