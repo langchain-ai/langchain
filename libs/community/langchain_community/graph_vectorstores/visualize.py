@@ -49,7 +49,7 @@ def render_graphviz(
     Args:
         documents: The documents to render.
         engine: GraphViz layout engine to use. `None` uses the default.
-        node_color: Default node color. Defaults to `white`.
+        node_color: Default node color.
         node_colors: Dictionary specifying colors of specific nodes. Useful for
             emphasizing nodes that were selected by MMR, or differ from other
             results.
@@ -68,8 +68,6 @@ def render_graphviz(
     """
     if node_colors is None:
         node_colors = {}
-    if node_color is None:
-        node_color = "white"
 
     try:
         import graphviz
