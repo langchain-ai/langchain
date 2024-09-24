@@ -84,6 +84,8 @@ def _run_to_dict(run: Run) -> dict:
 class LangChainTracer(BaseTracer):
     """Implementation of the SharedTracer that POSTS to the LangChain endpoint."""
 
+    run_inline = True
+
     def __init__(
         self,
         example_id: Optional[Union[UUID, str]] = None,
