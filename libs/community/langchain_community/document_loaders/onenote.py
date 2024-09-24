@@ -1,29 +1,32 @@
 """Loads data from OneNote Notebooks"""
 
 from pathlib import Path
-from typing import Dict, Iterator, List, Optional
+from typing import Any, Dict, Iterator, List, Optional
 
 import requests
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import (
+from pydantic import (
     BaseModel,
-    BaseSettings,
     Field,
     FilePath,
     SecretStr,
+    model_validator,
 )
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from langchain_community.document_loaders.base import BaseLoader
 
 
 class _OneNoteGraphSettings(BaseSettings):
-    client_id: str = Field(..., env="MS_GRAPH_CLIENT_ID")
-    client_secret: SecretStr = Field(..., env="MS_GRAPH_CLIENT_SECRET")
+    client_id: str = Field(...)
+    client_secret: SecretStr = Field(...)
 
-    class Config:
-        case_sentive = False
-        env_file = ".env"
-        env_prefix = ""
+    model_config = SettingsConfigDict(
+        case_sensitive=False,
+        populate_by_name=True,
+        env_file=".env",
+        env_prefix="MS_GRAPH_",
+    )
 
 
 class OneNoteLoader(BaseLoader, BaseModel):
@@ -49,6 +52,14 @@ class OneNoteLoader(BaseLoader, BaseModel):
     """Filter on section name"""
     object_ids: Optional[List[str]] = None
     """ The IDs of the objects to load data from."""
+
+    @model_validator(mode="before")
+    @classmethod
+    def init(cls, values: Dict) -> Any:
+        """Initialize the class."""
+        if "settings" in values and isinstance(values["settings"], dict):
+            values["settings"] = _OneNoteGraphSettings(**values["settings"])
+        return values
 
     def lazy_load(self) -> Iterator[Document]:
         """

@@ -4,7 +4,7 @@ from langchain_core.messages import AIMessage, ToolCall
 from langchain_core.messages.tool import tool_call
 from langchain_core.output_parsers import BaseGenerationOutputParser
 from langchain_core.outputs import ChatGeneration, Generation
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class ToolsOutputParser(BaseGenerationOutputParser):
@@ -17,8 +17,9 @@ class ToolsOutputParser(BaseGenerationOutputParser):
     pydantic_schemas: Optional[List[Type[BaseModel]]] = None
     """Pydantic schemas to parse tool calls into."""
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
         """Parse a list of candidate model Generations into a specific format.

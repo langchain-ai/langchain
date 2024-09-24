@@ -20,8 +20,9 @@ from typing import (
 import openai
 import tiktoken
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
 from langchain_core.utils import from_env, get_pydantic_field_names, secret_from_env
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
+from typing_extensions import Self
 
 logger = logging.getLogger(__name__)
 
@@ -253,24 +254,23 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     retry_max_seconds: int = 20
     """Max number of seconds to wait between retries"""
     http_client: Union[Any, None] = None
-    """Optional httpx.Client. Only used for sync invocations. Must specify 
+    """Optional httpx.Client. Only used for sync invocations. Must specify
         http_async_client as well if you'd like a custom client for async invocations.
     """
     http_async_client: Union[Any, None] = None
-    """Optional httpx.AsyncClient. Only used for async invocations. Must specify 
+    """Optional httpx.AsyncClient. Only used for async invocations. Must specify
         http_client as well if you'd like a custom client for sync invocations."""
     check_embedding_ctx_length: bool = True
-    """Whether to check the token length of inputs and automatically split inputs 
+    """Whether to check the token length of inputs and automatically split inputs
         longer than embedding_ctx_length."""
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        extra="forbid", populate_by_name=True, protected_namespaces=()
+    )
 
-        extra = "forbid"
-        allow_population_by_field_name = True
-
-    @root_validator(pre=True)
-    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})
@@ -295,41 +295,37 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         values["model_kwargs"] = extra
         return values
 
-    @root_validator(pre=False, skip_on_failure=True, allow_reuse=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="after")
+    def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
-        if values["openai_api_type"] in ("azure", "azure_ad", "azuread"):
+        if self.openai_api_type in ("azure", "azure_ad", "azuread"):
             raise ValueError(
                 "If you are using Azure, "
                 "please use the `AzureOpenAIEmbeddings` class."
             )
-        client_params = {
+        client_params: dict = {
             "api_key": (
-                values["openai_api_key"].get_secret_value()
-                if values["openai_api_key"]
-                else None
+                self.openai_api_key.get_secret_value() if self.openai_api_key else None
             ),
-            "organization": values["openai_organization"],
-            "base_url": values["openai_api_base"],
-            "timeout": values["request_timeout"],
-            "max_retries": values["max_retries"],
-            "default_headers": values["default_headers"],
-            "default_query": values["default_query"],
+            "organization": self.openai_organization,
+            "base_url": self.openai_api_base,
+            "timeout": self.request_timeout,
+            "max_retries": self.max_retries,
+            "default_headers": self.default_headers,
+            "default_query": self.default_query,
         }
 
-        if values["openai_proxy"] and (
-            values["http_client"] or values["http_async_client"]
-        ):
-            openai_proxy = values["openai_proxy"]
-            http_client = values["http_client"]
-            http_async_client = values["http_async_client"]
+        if self.openai_proxy and (self.http_client or self.http_async_client):
+            openai_proxy = self.openai_proxy
+            http_client = self.http_client
+            http_async_client = self.http_async_client
             raise ValueError(
                 "Cannot specify 'openai_proxy' if one of "
                 "'http_client'/'http_async_client' is already specified. Received:\n"
                 f"{openai_proxy=}\n{http_client=}\n{http_async_client=}"
             )
-        if not values.get("client"):
-            if values["openai_proxy"] and not values["http_client"]:
+        if not self.client:
+            if self.openai_proxy and not self.http_client:
                 try:
                     import httpx
                 except ImportError as e:
@@ -337,13 +333,11 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                         "Could not import httpx python package. "
                         "Please install it with `pip install httpx`."
                     ) from e
-                values["http_client"] = httpx.Client(proxy=values["openai_proxy"])
-            sync_specific = {"http_client": values["http_client"]}
-            values["client"] = openai.OpenAI(
-                **client_params, **sync_specific
-            ).embeddings
-        if not values.get("async_client"):
-            if values["openai_proxy"] and not values["http_async_client"]:
+                self.http_client = httpx.Client(proxy=self.openai_proxy)
+            sync_specific = {"http_client": self.http_client}
+            self.client = openai.OpenAI(**client_params, **sync_specific).embeddings  # type: ignore[arg-type]
+        if not self.async_client:
+            if self.openai_proxy and not self.http_async_client:
                 try:
                     import httpx
                 except ImportError as e:
@@ -351,14 +345,13 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                         "Could not import httpx python package. "
                         "Please install it with `pip install httpx`."
                     ) from e
-                values["http_async_client"] = httpx.AsyncClient(
-                    proxy=values["openai_proxy"]
-                )
-            async_specific = {"http_client": values["http_async_client"]}
-            values["async_client"] = openai.AsyncOpenAI(
-                **client_params, **async_specific
+                self.http_async_client = httpx.AsyncClient(proxy=self.openai_proxy)
+            async_specific = {"http_client": self.http_async_client}
+            self.async_client = openai.AsyncOpenAI(
+                **client_params,
+                **async_specific,  # type: ignore[arg-type]
             ).embeddings
-        return values
+        return self
 
     @property
     def _invocation_params(self) -> Dict[str, Any]:
@@ -565,7 +558,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         return [e if e is not None else await empty_embedding() for e in embeddings]
 
     def embed_documents(
-        self, texts: List[str], chunk_size: Optional[int] = 0
+        self, texts: List[str], chunk_size: int | None = None
     ) -> List[List[float]]:
         """Call out to OpenAI's embedding endpoint for embedding search docs.
 
@@ -577,10 +570,13 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
+        chunk_size_ = chunk_size or self.chunk_size
         if not self.check_embedding_ctx_length:
             embeddings: List[List[float]] = []
-            for text in texts:
-                response = self.client.create(input=text, **self._invocation_params)
+            for i in range(0, len(texts), self.chunk_size):
+                response = self.client.create(
+                    input=texts[i : i + chunk_size_], **self._invocation_params
+                )
                 if not isinstance(response, dict):
                     response = response.dict()
                 embeddings.extend(r["embedding"] for r in response["data"])
@@ -592,7 +588,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         return self._get_len_safe_embeddings(texts, engine=engine)
 
     async def aembed_documents(
-        self, texts: List[str], chunk_size: Optional[int] = 0
+        self, texts: List[str], chunk_size: int | None = None
     ) -> List[List[float]]:
         """Call out to OpenAI's embedding endpoint async for embedding search docs.
 
@@ -604,11 +600,12 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
+        chunk_size_ = chunk_size or self.chunk_size
         if not self.check_embedding_ctx_length:
             embeddings: List[List[float]] = []
-            for text in texts:
+            for i in range(0, len(texts), chunk_size_):
                 response = await self.async_client.create(
-                    input=text, **self._invocation_params
+                    input=texts[i : i + chunk_size_], **self._invocation_params
                 )
                 if not isinstance(response, dict):
                     response = response.dict()
