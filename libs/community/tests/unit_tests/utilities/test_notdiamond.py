@@ -1,4 +1,5 @@
 import random
+import sys
 import uuid
 from typing import Any, List
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -7,10 +8,9 @@ import pytest
 from langchain.chat_models.base import _ConfigurableModel
 from langchain_core.language_models.llms import LLM
 
-import sys
 sys.modules["notdiamond"] = MagicMock()
 
-from langchain_community.utilities.notdiamond import (
+from langchain_community.utilities.notdiamond import (  # noqa: E402
     NotDiamondRoutedRunnable,
     NotDiamondRunnable,
     _nd_provider_to_langchain_provider,
@@ -28,10 +28,7 @@ def llm_configs() -> List[Any]:
 
 @pytest.fixture
 def nd_client(llm_configs: List[Any]) -> Any:
-
-    client = MagicMock(
-        llm_configs=llm_configs, api_key="", default="openai/gpt-4o"
-    )
+    client = MagicMock(llm_configs=llm_configs, api_key="", default="openai/gpt-4o")
     selected_model = random.choice(llm_configs)
     client.chat.completions.model_select = MagicMock(
         return_value=(uuid.uuid4(), selected_model)
@@ -45,7 +42,7 @@ def nd_client(llm_configs: List[Any]) -> Any:
 @pytest.fixture
 def not_diamond_runnable(nd_client: Any) -> NotDiamondRunnable:
     with patch("langchain_community.utilities.notdiamond.LLMConfig") as mock_llm_config:
-        mock_llm_config.from_string.return_value = MagicMock(provider = 'openai')
+        mock_llm_config.from_string.return_value = MagicMock(provider="openai")
         runnable = NotDiamondRunnable(nd_client=nd_client)
     return runnable
 
@@ -53,7 +50,7 @@ def not_diamond_runnable(nd_client: Any) -> NotDiamondRunnable:
 @pytest.fixture
 def not_diamond_routed_runnable(nd_client: Any) -> NotDiamondRoutedRunnable:
     with patch("langchain_community.utilities.notdiamond.LLMConfig") as mock_llm_config:
-        mock_llm_config.from_string.return_value = MagicMock(provider = 'openai')
+        mock_llm_config.from_string.return_value = MagicMock(provider="openai")
         routed_runnable = NotDiamondRoutedRunnable(nd_client=nd_client)
         routed_runnable._configurable_model = MagicMock(spec=_ConfigurableModel)
     return routed_runnable
@@ -182,10 +179,15 @@ class TestNotDiamondRoutedRunnable:
             "langchain_community.utilities.notdiamond.init_chat_model", autospec=True
         ) as mock_method:
             mock_method.return_value = mock_client
-            with patch("langchain_community.utilities.notdiamond.LLMConfig") as mock_llm_config:
-                mock_llm_config.from_string.return_value = MagicMock(provider = 'openai')
+            with patch(
+                "langchain_community.utilities.notdiamond.LLMConfig"
+            ) as mock_llm_config:
+                mock_llm_config.from_string.return_value = MagicMock(provider="openai")
                 runnable = NotDiamondRoutedRunnable(nd_client=nd_client)
-            runnable._ndrunnable.client.chat.completions.model_select.return_value = (uuid.uuid4(), target_model)
+            runnable._ndrunnable.client.chat.completions.model_select.return_value = (
+                uuid.uuid4(),
+                target_model,
+            )
             runnable.invoke("Test prompt")
             assert (
                 mock_client.invoke.called  # type: ignore[attr-defined]
@@ -197,12 +199,17 @@ class TestNotDiamondRoutedRunnable:
             "langchain_community.utilities.notdiamond.init_chat_model", autospec=True
         ) as mock_method:
             mock_method.return_value = mock_client
-            with patch("langchain_community.utilities.notdiamond.LLMConfig") as mock_llm_config:
-                mock_llm_config.from_string.return_value = MagicMock(provider = 'openai')
+            with patch(
+                "langchain_community.utilities.notdiamond.LLMConfig"
+            ) as mock_llm_config:
+                mock_llm_config.from_string.return_value = MagicMock(provider="openai")
                 runnable = NotDiamondRoutedRunnable(
                     nd_api_key="sk-...", nd_llm_configs=[target_model]
                 )
-            runnable._ndrunnable.client.chat.completions.model_select.return_value = (uuid.uuid4(), target_model)
+            runnable._ndrunnable.client.chat.completions.model_select.return_value = (
+                uuid.uuid4(),
+                target_model,
+            )
             runnable.invoke("Test prompt")
             assert (
                 mock_client.invoke.called  # type: ignore[attr-defined]

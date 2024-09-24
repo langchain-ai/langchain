@@ -7,10 +7,9 @@ from langchain_core.language_models import LanguageModelInput
 from langchain_core.messages.utils import convert_to_messages
 from langchain_core.prompt_values import ChatPromptValue, PromptValue, StringPromptValue
 from langchain_core.runnables import Runnable, RunnableConfig
+from notdiamond import LLMConfig, NotDiamond
 
 from langchain_community.adapters.openai import convert_message_to_dict
-
-from notdiamond import LLMConfig, NotDiamond
 
 _LANGCHAIN_PROVIDERS = {
     "openai",
@@ -38,7 +37,6 @@ class NotDiamondRunnable(Runnable[LanguageModelInput, str]):
         nd_api_key: Optional[str] = None,
         nd_client: Optional[Any] = None,
     ):
-
         if not nd_client:
             if not nd_api_key or not nd_llm_configs:
                 raise ValueError(
@@ -61,9 +59,9 @@ class NotDiamondRunnable(Runnable[LanguageModelInput, str]):
                     )
 
         try:
-            nd_version = metadata.version('notdiamond')
+            nd_version = metadata.version("notdiamond")
         except (AttributeError, metadata.PackageNotFoundError):
-            nd_version = 'none'
+            nd_version = "none"
 
         nd_client.user_agent = f"langchain-community/{nd_version}"
 
