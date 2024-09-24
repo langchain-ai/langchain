@@ -68,6 +68,10 @@ extend-exclude = [
     "docs/docs/expression_language/why.ipynb", # TODO: look into why linter errors
 ]
 
+[tool.ruff.lint]
+select = ["B", "E", "F", "I", "N", "T201", "UP"]
+ignore = ["UP007"]
+
 [tool.ruff.lint.per-file-ignores]
 "**/{cookbook,docs}/*" = [
     "E402", # allow imports to appear anywhere in docs
