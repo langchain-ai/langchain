@@ -144,13 +144,12 @@ def _convert_delta_to_message_chunk(
 ) -> BaseMessageChunk:
     role = _dict.get("role")
     content = _dict.get("content") or ""
+    tool_calls = _dict.get("tool_calls") or []
 
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content)
     elif role == "assistant" or default_class == AIMessageChunk:
-        tool_calls = [
-            _parse_tool_calling(tool_call) for tool_call in _dict.get("tool_calls", [])
-        ]
+        tool_calls = [_parse_tool_calling(tool_call) for tool_call in tool_calls]
         return AIMessageChunk(content=content, tool_calls=tool_calls)
     elif role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
