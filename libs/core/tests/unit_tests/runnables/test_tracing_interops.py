@@ -407,11 +407,11 @@ def test_tree_is_constructed(parent_type: Literal["ls", "lc"]) -> None:
         else:
 
             @RunnableLambda
-            def parent(_) -> str:
+            def parent(_) -> str:  # type: ignore
                 return child.invoke("foo")
 
             tracer = LangChainTracer()
-            assert parent.invoke(..., {"run_id": rid, "callbacks": [tracer]}) == "foo"
+            assert parent.invoke(..., {"run_id": rid, "callbacks": [tracer]}) == "foo"  # type: ignore
             run = tracer.latest_run
 
     assert run is not None
