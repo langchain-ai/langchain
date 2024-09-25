@@ -10,6 +10,9 @@
     'kwargs': dict({
       'azure_endpoint': 'https://test.azure.com',
       'deployment_name': 'test',
+      'disabled_params': dict({
+        'parallel_tool_calls': None,
+      }),
       'max_retries': 2,
       'max_tokens': 100,
       'n': 1,

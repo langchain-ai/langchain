@@ -1,8 +1,11 @@
+"""Deprecated as of LangChain v0.3.4 and will be removed in LangChain v1.0.0."""
+
 import logging
 from abc import ABC, abstractmethod
 from itertools import islice
 from typing import Any, Dict, Iterable, List, Optional
 
+from langchain_core._api import deprecated
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import BaseMessage, get_buffer_string
 from langchain_core.prompts import BasePromptTemplate
@@ -19,6 +22,14 @@ from langchain.memory.utils import get_prompt_input_key
 logger = logging.getLogger(__name__)
 
 
+@deprecated(
+    since="0.3.1",
+    removal="1.0.0",
+    message=(
+        "Please see the migration guide at: "
+        "https://python.langchain.com/docs/versions/migrating_memory/"
+    ),
+)
 class BaseEntityStore(BaseModel, ABC):
     """Abstract base class for Entity store."""
 
@@ -48,6 +59,14 @@ class BaseEntityStore(BaseModel, ABC):
         pass
 
 
+@deprecated(
+    since="0.3.1",
+    removal="1.0.0",
+    message=(
+        "Please see the migration guide at: "
+        "https://python.langchain.com/docs/versions/migrating_memory/"
+    ),
+)
 class InMemoryEntityStore(BaseEntityStore):
     """In-memory Entity store."""
 
@@ -69,6 +88,14 @@ class InMemoryEntityStore(BaseEntityStore):
         return self.store.clear()
 
 
+@deprecated(
+    since="0.3.1",
+    removal="1.0.0",
+    message=(
+        "Please see the migration guide at: "
+        "https://python.langchain.com/docs/versions/migrating_memory/"
+    ),
+)
 class UpstashRedisEntityStore(BaseEntityStore):
     """Upstash Redis backed Entity store.
 
@@ -147,6 +174,14 @@ class UpstashRedisEntityStore(BaseEntityStore):
             scan_and_delete(cursor)
 
 
+@deprecated(
+    since="0.3.1",
+    removal="1.0.0",
+    message=(
+        "Please see the migration guide at: "
+        "https://python.langchain.com/docs/versions/migrating_memory/"
+    ),
+)
 class RedisEntityStore(BaseEntityStore):
     """Redis-backed Entity store.
 
@@ -238,6 +273,14 @@ class RedisEntityStore(BaseEntityStore):
             self.redis_client.delete(*keybatch)
 
 
+@deprecated(
+    since="0.3.1",
+    removal="1.0.0",
+    message=(
+        "Please see the migration guide at: "
+        "https://python.langchain.com/docs/versions/migrating_memory/"
+    ),
+)
 class SQLiteEntityStore(BaseEntityStore):
     """SQLite-backed Entity store"""
 
@@ -335,6 +378,14 @@ class SQLiteEntityStore(BaseEntityStore):
             self.conn.execute(query)
 
 
+@deprecated(
+    since="0.3.1",
+    removal="1.0.0",
+    message=(
+        "Please see the migration guide at: "
+        "https://python.langchain.com/docs/versions/migrating_memory/"
+    ),
+)
 class ConversationEntityMemory(BaseChatMemory):
     """Entity extractor & summarizer memory.
 

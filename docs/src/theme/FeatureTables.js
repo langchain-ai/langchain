@@ -2,7 +2,7 @@ import React from "react";
 import {useCurrentSidebarCategory} from '@docusaurus/theme-common';
 import {
   useDocById,
-} from '@docusaurus/theme-common/internal';
+} from '@docusaurus/plugin-content-docs/client';
 
 const FEATURE_TABLES = {
     chat: {
@@ -734,6 +734,13 @@ const FEATURE_TABLES = {
                 source: "Uses urllib and BeautifulSoup to load and parse HTML web pages",
                 api: "Package",
                 apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.web_base.WebBaseLoader.html"
+            },
+            {
+                name: "Unstructured",
+                link: "unstructured_file",
+                source: "Uses Unstructured to load and parse web pages",
+                api: "Package",
+                apiLink: "https://python.langchain.com/api_reference/unstructured/document_loaders/langchain_unstructured.document_loaders.UnstructuredLoader.html"
             },
             {
                 name: "RecursiveURL",
