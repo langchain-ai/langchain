@@ -5,6 +5,7 @@ import warnings
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
+from azure.cosmos import ContainerProxy
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
@@ -402,5 +403,5 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         )
         return docs
 
-    def get_container(self):
+    def get_container(self) -> ContainerProxy:
         return self._container
