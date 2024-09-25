@@ -93,5 +93,5 @@ def test_base_transform_output_parser() -> None:
     model = GenericFakeChatModel(messages=iter([AIMessage(content="hello world")]))
     chain = model | StrInvertCase()
     # inputs to models are ignored, response is hard-coded in model definition
-    chunks = [chunk for chunk in chain.stream("")]
+    chunks = list(chain.stream(""))
     assert chunks == ["HELLO", " ", "WORLD"]

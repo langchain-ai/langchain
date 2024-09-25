@@ -166,7 +166,7 @@ def get_prompts(
     Raises:
         ValueError: If the cache is not set and cache is True.
     """
-    llm_string = str(sorted([(k, v) for k, v in params.items()]))
+    llm_string = str(sorted(params.items()))
     missing_prompts = []
     missing_prompt_idxs = []
     existing_prompts = {}
@@ -202,7 +202,7 @@ async def aget_prompts(
     Raises:
         ValueError: If the cache is not set and cache is True.
     """
-    llm_string = str(sorted([(k, v) for k, v in params.items()]))
+    llm_string = str(sorted(params.items()))
     missing_prompts = []
     missing_prompt_idxs = []
     existing_prompts = {}

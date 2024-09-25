@@ -144,7 +144,7 @@ class PromptTemplate(StringPromptTemplate):
             template = self.template + other.template
             # If any do not want to validate, then don't
             validate_template = self.validate_template and other.validate_template
-            partial_variables = {k: v for k, v in self.partial_variables.items()}
+            partial_variables = dict(self.partial_variables.items())
             for k, v in other.partial_variables.items():
                 if k in partial_variables:
                     raise ValueError("Cannot have same variable partialed twice.")

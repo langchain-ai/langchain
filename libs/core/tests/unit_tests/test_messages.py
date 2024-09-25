@@ -448,10 +448,10 @@ def test_message_chunk_to_message() -> None:
 
 def test_tool_calls_merge() -> None:
     chunks: list[dict] = [
-        dict(content=""),
-        dict(
-            content="",
-            additional_kwargs={
+        {"content": ""},
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 0,
@@ -461,10 +461,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 0,
@@ -474,10 +474,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 0,
@@ -487,10 +487,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 0,
@@ -500,10 +500,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 0,
@@ -513,10 +513,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 0,
@@ -526,10 +526,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 0,
@@ -539,10 +539,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 1,
@@ -552,10 +552,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 1,
@@ -565,10 +565,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 1,
@@ -578,10 +578,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 1,
@@ -591,10 +591,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 1,
@@ -604,10 +604,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 1,
@@ -617,10 +617,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 1,
@@ -630,8 +630,8 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(content=""),
+        },
+        {"content": ""},
     ]
 
     final = None
