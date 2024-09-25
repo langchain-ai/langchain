@@ -107,7 +107,7 @@ class Blob(BaseMedia):
                 print(f.read())
     """
 
-    data: Union[bytes, str, None]
+    data: Union[bytes, str, None] = None
     """Raw data associated with the blob."""
     mimetype: Optional[str] = None
     """MimeType not to be confused with a file extension."""

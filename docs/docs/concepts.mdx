@@ -732,10 +732,10 @@ of the object.
 If you're creating a custom chain or runnable, you need to remember to propagate request time
 callbacks to any child objects.
 
-:::important Async in Python<=3.10
+:::important Async in Python&lt;=3.10
 
 Any `RunnableLambda`, a `RunnableGenerator`, or `Tool` that invokes other runnables
-and is running `async` in python<=3.10, will have to propagate callbacks to child
+and is running `async` in python&lt;=3.10, will have to propagate callbacks to child
 objects manually. This is because LangChain cannot automatically propagate
 callbacks to child objects in this case.
 
