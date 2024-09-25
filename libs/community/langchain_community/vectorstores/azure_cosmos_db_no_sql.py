@@ -292,7 +292,9 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
 
         items = list(
             self._container.query_items(
-                query=query, parameters=parameters, enable_cross_partition_query=True,
+                query=query,
+                parameters=parameters,
+                enable_cross_partition_query=True,
             )
         )
         for item in items:
