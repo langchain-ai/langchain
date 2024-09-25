@@ -766,7 +766,7 @@ class Neo4jVector(VectorStore):
         """
         index_query = (
             f"CREATE VECTOR INDEX {self.index_name} IF NOT EXISTS "
-            f"FOR (m:{self.node_label}) ON m.`{self.embedding_node_property}` "
+            f"FOR (m:`{self.node_label}`) ON m.`{self.embedding_node_property}` "
             "OPTIONS { indexConfig: { "
             "`vector.dimensions`: toInteger($embedding_dimension), "
             "`vector.similarity_function`: $similarity_metric }}"
