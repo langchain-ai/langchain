@@ -1199,10 +1199,16 @@ class OpenSearchVectorSearch(VectorStore):
             )
 
         elif search_type == HYBRID_SEARCH:
-            search_pipeline = kwargs.get("search_pipeline", "")
+            search_pipeline = kwargs.get("search_pipeline")
             post_filter = kwargs.get("post_filter", {})
-            query_text = kwargs.get("query_text", "")
+            query_text = kwargs.get("query_text")
             path = f"/{index_name}/_search?search_pipeline={search_pipeline}"
+
+            if query_text is None:
+                raise ValueError("query_text must be provided for hybrid search")
+            
+            if search_pipeline is None:
+                raise ValueError("search_pipeline must be provided for hybrid search")
 
             # embedding the query_text
             embeded_query = self.embedding_function.embed_query(query_text)
