@@ -825,13 +825,6 @@ const FEATURE_TABLES = {
                 apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.pdf.PyPDFium2Loader.html"
             },
             {
-                name: "UnstructuredPDFLoader",
-                link: "unstructured_pdfloader",
-                source: "Load PDF files using Unstructured",
-                api: "Package",
-                apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.pdf.UnstructuredPDFLoader.html"
-            },
-            {
                 name: "PyMuPDF",
                 link: "pymupdf",
                 source: "Load PDF files using PyMuPDF",
@@ -871,7 +864,7 @@ const FEATURE_TABLES = {
             {
                 name: "Unstructured",
                 link: "unstructured_file",
-                source: "All file types",
+                source: "Many file types (see https://docs.unstructured.io/platform/supported-file-types)",
                 apiLink: "https://python.langchain.com/api_reference/unstructured/document_loaders/langchain_unstructured.document_loaders.UnstructuredLoader.html"
             },
             {
@@ -881,23 +874,11 @@ const FEATURE_TABLES = {
                 apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.json_loader.JSONLoader.html"
             },
             {
-                name: "UnstructuredMarkdownLoader",
-                link: "unstructured_markdown",
-                source: "Markdown files",
-                apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.markdown.UnstructuredMarkdownLoader.html"
-            },
-            {
                 name: "BSHTMLLoader",
                 link: "bshtml",
                 source: "HTML files",
                 apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.html_bs.BSHTMLLoader.html"
             },
-            {
-                name: "UnstructuredXMLLoader",
-                link: "xml",
-                source: "XML files",
-                apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.xml.UnstructuredXMLLoader.html"
-            }
         ]
     },
     vectorstores: {
