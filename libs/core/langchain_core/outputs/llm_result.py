@@ -76,7 +76,7 @@ class LLMResult(BaseModel):
             else:
                 if self.llm_output is not None:
                     llm_output = deepcopy(self.llm_output)
-                    llm_output["token_usage"] = {}
+                    llm_output["token_usage"] = dict()
                 else:
                     llm_output = None
                 llm_results.append(

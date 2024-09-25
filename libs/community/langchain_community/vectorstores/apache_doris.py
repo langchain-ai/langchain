@@ -62,10 +62,7 @@ class ApacheDorisSettings(BaseSettings):
         return getattr(self, item)
 
     model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        env_prefix="apache_doris_",
-        extra="ignore",
+        env_file=".env", env_file_encoding="utf-8", env_prefix="apache_doris_"
     )
 
 

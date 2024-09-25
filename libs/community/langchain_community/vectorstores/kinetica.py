@@ -80,10 +80,7 @@ class KineticaSettings(BaseSettings):
         return getattr(self, item)
 
     model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        env_prefix="kinetica_",
-        extra="ignore",
+        env_file=".env", env_file_encoding="utf-8", env_prefix="kinetica_"
     )
 
 
