@@ -23,9 +23,7 @@ execute_notebook() {
 export -f execute_notebook
 
 # Find all notebooks and filter out those in the skip list
-# notebooks=$(find docs/docs/tutorials docs/docs/how-tos -name "*.ipynb" | grep -v ".ipynb_checkpoints" | grep -vFf <(echo "$SKIP_NOTEBOOKS"))
-# notebooks="docs/docs/tutorials/llm_chain docs/docs/tutorials/chatbot.ipynb"
-notebooks="docs/docs/tutorials/llm_chain"
+notebooks=$(find docs/docs/tutorials -name "*.ipynb" | grep -v ".ipynb_checkpoints" | grep -vFf <(echo "$SKIP_NOTEBOOKS"))
 
 # Run notebooks in parallel
 if ! parallel execute_notebook ::: $notebooks; then
