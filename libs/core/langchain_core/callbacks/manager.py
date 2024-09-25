@@ -2333,7 +2333,11 @@ def _configure(
                 try:
                     handler = LangChainTracer(
                         project_name=tracer_project,
-                        client=run_tree.client if run_tree is not None else None,
+                        client=(
+                            run_tree.client
+                            if run_tree is not None
+                            else tracing_context["client"]
+                        ),
                     )
                     callback_manager.add_handler(handler, True)
                 except Exception as e:
