@@ -21,9 +21,8 @@ async def set_counter_var():
 
 
 class StatefulAsyncCallbackHandler(AsyncCallbackHandler):
-    def __init__(self, name: str, delay: float = 0.1, run_inline: bool = True):
+    def __init__(self, name: str, run_inline: bool = True):
         self.name = name
-        self.delay = delay
         self.run_inline = run_inline
 
     async def on_llm_start(
@@ -35,10 +34,6 @@ class StatefulAsyncCallbackHandler(AsyncCallbackHandler):
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> None:
-        event_name = "on_llm_start"
-        prompt = prompts[0]
-        await asyncio.sleep(self.delay)
-
         if self.name == "StateModifier":
             current_counter = counter_var.get()
             counter_var.set(current_counter + 1)
@@ -59,9 +54,9 @@ class StatefulAsyncCallbackHandler(AsyncCallbackHandler):
 @pytest.mark.asyncio
 async def test_async_callback_manager_context_loss():
     handlers = [
-        StatefulAsyncCallbackHandler("StateModifier", delay=0.1, run_inline=True),
-        StatefulAsyncCallbackHandler("StateReader", delay=0.05, run_inline=True),
-        StatefulAsyncCallbackHandler("NonInlineHandler", delay=0.2, run_inline=False),
+        StatefulAsyncCallbackHandler("StateModifier", run_inline=True),
+        StatefulAsyncCallbackHandler("StateReader", run_inline=True),
+        StatefulAsyncCallbackHandler("NonInlineHandler", run_inline=False),
     ]
 
     prompts = ["Prompt1", "Prompt2", "Prompt3"]
