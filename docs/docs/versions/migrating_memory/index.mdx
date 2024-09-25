@@ -43,7 +43,7 @@ as a simple persistence for storing and retrieving messages in a conversation.
 
 At that time, the only option for orchestrating LangChain chains was via [LCEL](https://python.langchain.com/docs/how_to/#langchain-expression-language-lcel). To incorporate memory with `LCEL`, users had to use the [RunnableWithMessageHistory](https://python.langchain.com/api_reference/core/runnables/langchain_core.runnables.history.RunnableWithMessageHistory.html#langchain_core.runnables.history.RunnableWithMessageHistory) interface. While sufficient for basic chat applications, many users found the API unintuitive and challenging to use.
 
-As of LangChain v0.3, we recommend that new code takes advantage of LangGraph for both orchestration and persistence:
+As of LangChain v0.3, we recommend that **new** code takes advantage of LangGraph for both orchestration and persistence:
 
 - Orchestration: In LangGraph, users define [graphs](https://langchain-ai.github.io/langgraph/concepts/low_level/) that specify the flow of the application. This allows users to keep using `LCEL` within individual nodes when `LCEL` is needed, while making it easy to define complex orchestration logic that is more readable and maintainable.
 - Persistence: Users can rely on LangGraph's [persistence](https://langchain-ai.github.io/langgraph/concepts/persistence/) to store and retrieve data. LangGraph persistence is extremely flexible and can support a much wider range of use cases than the `RunnableWithMessageHistory` interface.
