@@ -1,0 +1,98 @@
+interactions:
+- request:
+    body: '{"messages": [{"content": "Translate the following from English into Italian",
+      "role": "system"}, {"content": "hi!", "role": "user"}], "model": "gpt-4", "n":
+      1, "stream": false, "temperature": 0.7}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '197'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - OpenAI/Python 1.45.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.45.0
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.11.7
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAAAwAAAP//dJAxb8IwEIX3/Ar3ZqggoURkK3Tp1IEOLVUVmeQIbh2fZR9VK8R/r2xC
+        QocuGd7n9/LuHRMhQNVQCKj2kqvW6vH98nn5UN9t3KuZrGYpfi0fcb7ePDUvs3UOo+Cg7QdWfHHd
+        VtRajazInHHlUDKG1Gme5ukin2aLCFqqUQdbY3k8G0/m06xz7ElV6KEQb4kQQhzjN3QzNX5DISaj
+        i9Ki97JBKPpHQoAjHRSQ3ivP0jCMBliRYTSx7kpJurlmDncHL0Mnc9C600/9zzQ11tHWd7zXd8oo
+        vy8dSk8mBHsmC5GeEiHe41GHPz3BOmotl0yfaEJg2t0Ew3wDzDrGxFJfebL/PGWNLJX2V7vAuZ4y
+        zRAw6TvGI8H/eMa23CnToLNOxZniFKfkFwAA//8DAO3JYUAdAgAA
+    headers:
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-RAY:
+      - 8c8ddbf0da1c8d11-BOS
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 25 Sep 2024 20:45:40 GMT
+      Server:
+      - cloudflare
+      Set-Cookie:
+      - __cf_bm=VF3tMaYUMK2Ej4H69GLOoYwUYisDmwMOm1vH0wkjNPo-1727297140-1.0.1.1-B00LlqyBn0tYXGv65UMhlocuU6G4bNDSB3dqTcCM_dBZuh2WYdK6_fJ7CpaFRbjso4gENWwwjb7FLu3llTK6Ug;
+        path=/; expires=Wed, 25-Sep-24 21:15:40 GMT; domain=.api.openai.com; HttpOnly;
+        Secure; SameSite=None
+      - _cfuvid=i4XgWW8PnFPq9yqD.DPa3mhH1MtltPoUWnI3fy4djDY-1727297140236-0.0.1.1-604800000;
+        path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      openai-organization:
+      - user-wzxwdcuddhvwm09z43ibeucf
+      openai-processing-ms:
+      - '665'
+      openai-version:
+      - '2020-10-01'
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      x-ratelimit-limit-requests:
+      - '5000'
+      x-ratelimit-limit-tokens:
+      - '80000'
+      x-ratelimit-remaining-requests:
+      - '4999'
+      x-ratelimit-remaining-tokens:
+      - '79969'
+      x-ratelimit-reset-requests:
+      - 12ms
+      x-ratelimit-reset-tokens:
+      - 23ms
+      x-request-id:
+      - req_ae3d6d7b603fc4f33c1ce01e7166af6c
+    status:
+      code: 200
+      message: OK
+version: 1

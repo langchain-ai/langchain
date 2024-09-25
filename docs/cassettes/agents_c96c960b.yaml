@@ -1,0 +1,85 @@
+interactions:
+- request:
+    body: '{"max_tokens": 1024, "messages": [{"role": "user", "content": "hi!"}],
+      "model": "claude-3-sonnet-20240229"}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      anthropic-version:
+      - '2023-06-01'
+      connection:
+      - keep-alive
+      content-length:
+      - '107'
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - Anthropic/Python 0.34.2
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 0.34.2
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.11.7
+    method: POST
+    uri: https://api.anthropic.com/v1/messages
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAAA0yOT0vDQBDFP4vvvIEYW6F7tYeC4KXQi0hYsmMNbmbSnVltG/LdJUXB04Pf+8Ob
+        0Ed4DHps6/vH4frVPe+26/xx3r7s38P3U8wHONhlpCVFquFIcMiSFhBUe7XABodBIiV4dCmUSNVD
+        pcJMVjV1s6qbZgOHTtiIDf51+ps0Oi/lm3jsKCW5w/zmoCZjmymoMDyIY2slM34NpVMh7gieS0oO
+        5fbLT+h5LNaafBIr/MZBiv0n63n+AQAA//8DAMt8O6jzAAAA
+    headers:
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-RAY:
+      - 8c8dda56bfb38fc0-BOS
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 25 Sep 2024 20:44:34 GMT
+      Server:
+      - cloudflare
+      Transfer-Encoding:
+      - chunked
+      X-Robots-Tag:
+      - none
+      anthropic-ratelimit-requests-limit:
+      - '4000'
+      anthropic-ratelimit-requests-remaining:
+      - '3999'
+      anthropic-ratelimit-requests-reset:
+      - '2024-09-25T20:44:54Z'
+      anthropic-ratelimit-tokens-limit:
+      - '400000'
+      anthropic-ratelimit-tokens-remaining:
+      - '400000'
+      anthropic-ratelimit-tokens-reset:
+      - '2024-09-25T20:44:34Z'
+      request-id:
+      - req_01N9ZF9r1dZLuzySSm1WJVeB
+      via:
+      - 1.1 google
+      x-cloud-trace-context:
+      - 567654fb556877fa79f5e48ee18bb31f
+    status:
+      code: 200
+      message: OK
+version: 1

@@ -1,0 +1,107 @@
+interactions:
+- request:
+    body: '{"messages": [{"content": "\n    Extract the desired information from the
+      following passage.\n    \n    Only extract the properties mentioned in the ''Classification''
+      function.\n    \n    Passage:\n    Estoy muy enojado con vos! Te voy a dar tu
+      merecido!\n    ", "role": "user"}], "model": "gpt-4o-mini", "n": 1, "parallel_tool_calls":
+      false, "stream": false, "temperature": 0.0, "tool_choice": {"type": "function",
+      "function": {"name": "Classification"}}, "tools": [{"type": "function", "function":
+      {"name": "Classification", "description": "", "parameters": {"properties": {"sentiment":
+      {"enum": ["happy", "neutral", "sad"], "type": "string"}, "aggressiveness": {"description":
+      "describes how aggressive the statement is, the higher the number the more aggressive",
+      "enum": [1, 2, 3, 4, 5], "type": "integer"}, "language": {"enum": ["spanish",
+      "english", "french", "german", "italian"], "type": "string"}}, "required": ["sentiment",
+      "aggressiveness", "language"], "type": "object"}}}]}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '986'
+      content-type:
+      - application/json
+      cookie:
+      - __cf_bm=k9XVMcPy5alFMYKVS0m2QNBDI1KMDSrgWLEYO88SIV8-1727297211-1.0.1.1-V4Z0pw8_xlbMWpHVrp3_A8XQUNMR86PMWWYmdlBXAj98YfgP_KxL7kjfTo0SlQ7wYUlyyIujdYbXsdkw3iOeuA;
+        _cfuvid=2kmZ90A2GfIuaaB5f4TsI8.O2PJYut29FAQ4VI6hUHs-1727297211470-0.0.1.1-604800000
+      host:
+      - api.openai.com
+      user-agent:
+      - OpenAI/Python 1.45.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.45.0
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.11.7
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAAAwAAAP//dFLRbtsgFH3PV6D7bE+xl8aJ39pu1baHrtqqSdM8WQRfCBsGBHhtFOXf
+        K+zUdquOB4Tu4Z5zONzjghCQDZQE2J4G1lqVXl7dX99+lcXj5xW7O9xmFL9d3b2/+Xjz4fKhgSR2
+        mN0fZOG56x0zrVUYpNEDzBzSgJE1K/Ii3xZ5lvVAaxpUsU3YkK5M2kot03yZr9JlkWabc/feSIYe
+        SvJrQQghx36PPnWDj1CSZfJcadF7KhDK8RIh4IyKFaDeSx+oDpBMIDM6oI7WdafUDAjGqJpRpSbh
+        YR1n5yksqlRtA+cPF5ufXDTeFZ/c5v7L9x/hYGZ6A/XB9oZ4p9kY0gwf6+UrMUJA07bvvVbxOVwy
+        +gYDIUCd6FrUIbqHYwUedZCxUEFZgadNBUkFVAiH3st/qNH7CsqLpAJFteiowOGmpVr6fQUneCFx
+        Wrx1/j0L0CHvPFXnZM/10/hVygjrzM6/Sh64jHq1Q+r7BMAHYwftqNMrQPfil8E609pQB/MXdSTM
+        1vnAB9MkztDiDAYTqJrXt//rqhsMVPajME7f4FBqMTEsR5v9O8EffMC25lILdNbJfs6A2zrb7Vbr
+        bF3wLSxOiycAAAD//wMANmNB0nUDAAA=
+    headers:
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-RAY:
+      - 8c8dddb48ea14cd6-BOS
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 25 Sep 2024 20:46:52 GMT
+      Server:
+      - cloudflare
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      openai-organization:
+      - user-wzxwdcuddhvwm09z43ibeucf
+      openai-processing-ms:
+      - '436'
+      openai-version:
+      - '2020-10-01'
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      x-ratelimit-limit-requests:
+      - '5000'
+      x-ratelimit-limit-tokens:
+      - '4000000'
+      x-ratelimit-remaining-requests:
+      - '4999'
+      x-ratelimit-remaining-tokens:
+      - '3999925'
+      x-ratelimit-reset-requests:
+      - 12ms
+      x-ratelimit-reset-tokens:
+      - 1ms
+      x-request-id:
+      - req_c95c0d59b5bbcd7a91dc2108dfcd9e49
+    status:
+      code: 200
+      message: OK
+version: 1

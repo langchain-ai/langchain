@@ -1,0 +1,261 @@
+interactions:
+- request:
+    body: '{"max_tokens": 1024, "messages": [{"role": "user", "content": "whats the
+      weather in sf?"}], "model": "claude-3-sonnet-20240229", "tools": [{"name": "tavily_search_results_json",
+      "description": "A search engine optimized for comprehensive, accurate, and trusted
+      results. Useful for when you need to answer questions about current events.
+      Input should be a search query.", "input_schema": {"properties": {"query": {"description":
+      "search query to look up", "type": "string"}}, "required": ["query"], "type":
+      "object"}}]}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      anthropic-version:
+      - '2023-06-01'
+      connection:
+      - keep-alive
+      content-length:
+      - '518'
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - Anthropic/Python 0.34.2
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 0.34.2
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.11.7
+    method: POST
+    uri: https://api.anthropic.com/v1/messages
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAAA1SPQUvDQBCF/0qZ8xbS1Ba7NzFFEQsqemhFliWZJrGb2XZn1hpD/rskIuhx3sz7
+        5r0O6gI0NFyaZLZeZNfL+e5ky/NXtvtcL0K7lRIUSHvE4QqZbYmgIHg3CJa5ZrEkoKDxBTrQkDsb
+        C5zOp+yJUKZpkl4kaboCBbknQRLQr90vUrx3JvLAHIMMczTJ7P5uc3gor4rLbfZ0e/P8srfrx2oD
+        Csg2o89+1K41jDbklQnI0Qmbd/Y0kOgYBXQHp4ihBQ1ntFJhmLClyT5YymvOPfT9mwIWfzQB7eD8
+        F2dcMJ4iUo6gKTqnII79dffzwog/IDHodLlS4KP81ZZJ338DAAD//wMAdO9v7V4BAAA=
+    headers:
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-RAY:
+      - 8c8ddaaa6ef58fc0-BOS
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 25 Sep 2024 20:44:49 GMT
+      Server:
+      - cloudflare
+      Transfer-Encoding:
+      - chunked
+      X-Robots-Tag:
+      - none
+      anthropic-ratelimit-requests-limit:
+      - '4000'
+      anthropic-ratelimit-requests-remaining:
+      - '3999'
+      anthropic-ratelimit-requests-reset:
+      - '2024-09-25T20:44:54Z'
+      anthropic-ratelimit-tokens-limit:
+      - '400000'
+      anthropic-ratelimit-tokens-remaining:
+      - '400000'
+      anthropic-ratelimit-tokens-reset:
+      - '2024-09-25T20:44:49Z'
+      request-id:
+      - req_018Sy4ADyvamJ79hpbnisu2x
+      via:
+      - 1.1 google
+      x-cloud-trace-context:
+      - 229a6e2194264f22a703a2d89b6acbc6
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"api_key": "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", "query": "weather
+      san francisco", "max_results": 2, "search_depth": "advanced", "include_domains":
+      [], "exclude_domains": [], "include_answer": false, "include_raw_content": false,
+      "include_images": false}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '258'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.32.3
+    method: POST
+    uri: https://api.tavily.com/search
+  response:
+    body:
+      string: '{"query":"weather san francisco","follow_up_questions":null,"answer":null,"images":[],"results":[{"title":"Weather
+        in San Francisco","url":"https://www.weatherapi.com/","content":"{''location'':
+        {''name'': ''San Francisco'', ''region'': ''California'', ''country'': ''United
+        States of America'', ''lat'': 37.78, ''lon'': -122.42, ''tz_id'': ''America/Los_Angeles'',
+        ''localtime_epoch'': 1727297042, ''localtime'': ''2024-09-25 13:44''}, ''current'':
+        {''last_updated_epoch'': 1727296200, ''last_updated'': ''2024-09-25 13:30'',
+        ''temp_c'': 21.1, ''temp_f'': 70.0, ''is_day'': 1, ''condition'': {''text'':
+        ''Partly cloudy'', ''icon'': ''//cdn.weatherapi.com/weather/64x64/day/116.png'',
+        ''code'': 1003}, ''wind_mph'': 9.8, ''wind_kph'': 15.8, ''wind_degree'': 245,
+        ''wind_dir'': ''WSW'', ''pressure_mb'': 1012.0, ''pressure_in'': 29.89, ''precip_mm'':
+        0.0, ''precip_in'': 0.0, ''humidity'': 64, ''cloud'': 50, ''feelslike_c'':
+        21.1, ''feelslike_f'': 70.0, ''windchill_c'': 15.3, ''windchill_f'': 59.6,
+        ''heatindex_c'': 15.4, ''heatindex_f'': 59.8, ''dewpoint_c'': 13.7, ''dewpoint_f'':
+        56.7, ''vis_km'': 16.0, ''vis_miles'': 9.0, ''uv'': 4.0, ''gust_mph'': 12.4,
+        ''gust_kph'': 20.0}}","score":0.9988601,"raw_content":null},{"title":"September
+        25, 2024 San Francisco Bay Area weather forecast - MSN","url":"https://www.msn.com/en-us/weather/topstories/september-25-2024-san-francisco-bay-area-weather-forecast/vi-AA1rbskF","content":"September
+        25, 2024 San Francisco Bay Area weather forecast. Posted: September 25, 2024
+        | Last updated: September 25, 2024. KRON4 Meteorologist John Shrable has the
+        latest forecast <a ...","score":0.9979966,"raw_content":null}],"response_time":3.08}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '1577'
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 25 Sep 2024 20:44:52 GMT
+      Server:
+      - nginx
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"max_tokens": 1024, "messages": [{"role": "user", "content": "whats the
+      weather in sf?"}, {"role": "assistant", "content": [{"type": "tool_use", "name":
+      "tavily_search_results_json", "input": {"query": "weather san francisco"}, "id":
+      "toolu_01LJMkPgAd8YDRHGTUfaEQhM"}]}, {"role": "user", "content": [{"type": "tool_result",
+      "content": "[{\"url\": \"https://www.weatherapi.com/\", \"content\": \"{''location'':
+      {''name'': ''San Francisco'', ''region'': ''California'', ''country'': ''United
+      States of America'', ''lat'': 37.78, ''lon'': -122.42, ''tz_id'': ''America/Los_Angeles'',
+      ''localtime_epoch'': 1727297042, ''localtime'': ''2024-09-25 13:44''}, ''current'':
+      {''last_updated_epoch'': 1727296200, ''last_updated'': ''2024-09-25 13:30'',
+      ''temp_c'': 21.1, ''temp_f'': 70.0, ''is_day'': 1, ''condition'': {''text'':
+      ''Partly cloudy'', ''icon'': ''//cdn.weatherapi.com/weather/64x64/day/116.png'',
+      ''code'': 1003}, ''wind_mph'': 9.8, ''wind_kph'': 15.8, ''wind_degree'': 245,
+      ''wind_dir'': ''WSW'', ''pressure_mb'': 1012.0, ''pressure_in'': 29.89, ''precip_mm'':
+      0.0, ''precip_in'': 0.0, ''humidity'': 64, ''cloud'': 50, ''feelslike_c'': 21.1,
+      ''feelslike_f'': 70.0, ''windchill_c'': 15.3, ''windchill_f'': 59.6, ''heatindex_c'':
+      15.4, ''heatindex_f'': 59.8, ''dewpoint_c'': 13.7, ''dewpoint_f'': 56.7, ''vis_km'':
+      16.0, ''vis_miles'': 9.0, ''uv'': 4.0, ''gust_mph'': 12.4, ''gust_kph'': 20.0}}\"},
+      {\"url\": \"https://www.msn.com/en-us/weather/topstories/september-25-2024-san-francisco-bay-area-weather-forecast/vi-AA1rbskF\",
+      \"content\": \"September 25, 2024 San Francisco Bay Area weather forecast. Posted:
+      September 25, 2024 | Last updated: September 25, 2024. KRON4 Meteorologist John
+      Shrable has the latest forecast <a ...\"}]", "tool_use_id": "toolu_01LJMkPgAd8YDRHGTUfaEQhM",
+      "is_error": false}]}], "model": "claude-3-sonnet-20240229", "tools": [{"name":
+      "tavily_search_results_json", "description": "A search engine optimized for
+      comprehensive, accurate, and trusted results. Useful for when you need to answer
+      questions about current events. Input should be a search query.", "input_schema":
+      {"properties": {"query": {"description": "search query to look up", "type":
+      "string"}}, "required": ["query"], "type": "object"}}]}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      anthropic-version:
+      - '2023-06-01'
+      connection:
+      - keep-alive
+      content-length:
+      - '2136'
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - Anthropic/Python 0.34.2
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 0.34.2
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.11.7
+    method: POST
+    uri: https://api.anthropic.com/v1/messages
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAAA1xT204bMRD9lZGlSiBt0k1IuewbQUXtC60EpQ+lirz2bGLh9SyeMWSL+Ce+gS+r
+        vAkQ8bTWmeOZM+d4H5WzqlItLxflZK7r1cXZ4fHsa72e67vj9en9xNaqUNJ3mFnIrJeoChXJZ0Az
+        OxYdRBWqJYteVcp4nSyODkZMIaCMpuV0Vk6nJ6pQhoJgEFX9eXxtKbjOl4dPpeaa0QIFkBXCA2pZ
+        YYTTn98hIicvXAwFk2LEIG8EF+BSBziPOhjHhsAxdDqK78F4SraHBycr0CDYdhi1pIigI6Vg4ah8
+        eT6Hvenk5flsfwxXea4LNrfYMiYltN0K9iaHcNt+Xu1DE6ndCmQZMSVZ5dMYftxj1N4XYKhtKIqu
+        PYLXgnCJnWBbYwRDwTpxFDjLzl3muofTiHp8E27CJbUI2m4o2oNF0c7z+8wdM6p8YQTfUuusk76C
+        w9mnDJzlncHQPcYKvpQDdu3Y1c4PtBNonUfebrSfy7+uwQWL6wpm4zIDv7MHy8TCkDoQgsl048K0
+        3LiQSRcEXUTjOic66816rnaCcwzSd85oDw3FjxmFj9aMsi67GxK/Bte6NVCzSZNBBwucwiYtQ+Sh
+        joj/8rl1YQnUNINXP7VxjTPZT847DG9nJ5r3LHayC84goI6+h0Z7/7aMEHCHeXKOSFyLQEksUXx7
+        KUN/J/1YPf0tFAt1i4iaKahKYbALSTGobYHxLmEwqKqQvC9UGn6s6lG50CVZCN1iYFWdzA4KRUl2
+        scnx0dPTfwAAAP//AwDmO0u/uAMAAA==
+    headers:
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-RAY:
+      - 8c8ddace0fff8fc0-BOS
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 25 Sep 2024 20:44:57 GMT
+      Server:
+      - cloudflare
+      Transfer-Encoding:
+      - chunked
+      X-Robots-Tag:
+      - none
+      anthropic-ratelimit-requests-limit:
+      - '4000'
+      anthropic-ratelimit-requests-remaining:
+      - '3999'
+      anthropic-ratelimit-requests-reset:
+      - '2024-09-25T20:45:54Z'
+      anthropic-ratelimit-tokens-limit:
+      - '400000'
+      anthropic-ratelimit-tokens-remaining:
+      - '400000'
+      anthropic-ratelimit-tokens-reset:
+      - '2024-09-25T20:44:57Z'
+      request-id:
+      - req_01KPSvni2uuZkmNvNKWas2aH
+      via:
+      - 1.1 google
+      x-cloud-trace-context:
+      - bec89dc567a6d9e251250b630bbc5f4c
+    status:
+      code: 200
+      message: OK
+version: 1
