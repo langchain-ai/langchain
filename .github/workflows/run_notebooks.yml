@@ -30,6 +30,7 @@ jobs:
           poetry install --directory libs/core
           poetry install --directory libs/langchain
           poetry install --directory libs/community
+          poetry install --directory libs/experimental
           poetry install --directory libs/partners/anthropic
           poetry install --directory libs/partners/chroma
           poetry install --directory libs/partners/openai
