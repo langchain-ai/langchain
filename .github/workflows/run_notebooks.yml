@@ -1,0 +1,52 @@
+name: Run notebooks
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 13 * * *'
+
+env:
+  PYTHON_VERSION: "3.11"
+  POETRY_VERSION: "1.7.1"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    name: "Test docs"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python + Poetry ${{ env.POETRY_VERSION }}
+        uses: "./.github/actions/poetry_setup"
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          poetry-version: ${{ env.POETRY_VERSION }}
+          working-directory: ${{ inputs.working-directory }}
+          cache-key: run-notebooks
+
+      - name: Install dependencies
+        run: |
+          poetry install --directory libs/core
+          poetry install --directory libs/langchain
+          poetry install --directory libs/community
+          poetry install --directory libs/partners/openai
+          poetry run pip install jupyter chromadb pandas
+
+      - name: Prepare notebooks
+        run: |
+          poetry run python docs/scripts/prepare_notebooks_for_ci.py --comment-install-cells
+
+      - name: Run notebooks
+        env:
+          # these won't actually be used because of the VCR cassettes
+          # but need to set them to avoid triggering getpass()
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
+          LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
+        run: |
+          ./docs/scripts/execute_notebooks.sh
+
+      - name: Stop services
+        run: make stop-services
