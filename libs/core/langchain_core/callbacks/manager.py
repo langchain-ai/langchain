@@ -20,7 +20,7 @@ from typing import (
 )
 from uuid import UUID
 
-from langsmith.run_helpers import get_run_tree_context
+from langsmith.run_helpers import get_tracing_context
 from tenacity import RetryCallState
 
 from langchain_core.callbacks.base import (
@@ -2232,9 +2232,15 @@ def _configure(
         tracing_v2_callback_var,
     )
 
-    run_tree = get_run_tree_context()
+    tracing_context = get_tracing_context()
+    tracing_metadata = tracing_context["metadata"]
+    tracing_tags = tracing_context["tags"]
+    run_tree: Optional[Run] = tracing_context["parent"]
     parent_run_id = None if run_tree is None else run_tree.id
-    callback_manager = callback_manager_cls(handlers=[], parent_run_id=parent_run_id)
+    callback_manager = callback_manager_cls(
+        handlers=[],
+        parent_run_id=parent_run_id,
+    )
     if inheritable_callbacks or local_callbacks:
         if isinstance(inheritable_callbacks, list) or inheritable_callbacks is None:
             inheritable_callbacks_ = inheritable_callbacks or []
@@ -2278,6 +2284,10 @@ def _configure(
     if inheritable_metadata or local_metadata:
         callback_manager.add_metadata(inheritable_metadata or {})
         callback_manager.add_metadata(local_metadata or {}, False)
+    if tracing_metadata:
+        callback_manager.add_metadata(tracing_metadata.copy())
+    if tracing_tags:
+        callback_manager.add_tags(tracing_tags.copy())
 
     v1_tracing_enabled_ = env_var_is_set("LANGCHAIN_TRACING") or env_var_is_set(
         "LANGCHAIN_HANDLER"

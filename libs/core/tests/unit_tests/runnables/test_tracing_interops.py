@@ -390,7 +390,12 @@ def test_tree_is_constructed() -> None:
 
     rid = uuid.uuid4()
 
-    with tracing_context(client=mock_client_, enabled=True):
+    with tracing_context(
+        client=mock_client_,
+        enabled=True,
+        metadata={"some_foo": "some_bar"},
+        tags=["afoo"],
+    ):
         assert parent(langsmith_extra={"on_end": collect_run, "run_id": rid}) == "foo"
 
     assert collected
@@ -404,6 +409,10 @@ def test_tree_is_constructed() -> None:
     grandchild_run = child_run.child_runs[0]
     assert grandchild_run.name == "grandchild"
     assert grandchild_run.child_runs
+    assert grandchild_run.metadata.get("some_foo") == "some_bar"
+    assert "afoo" in grandchild_run.tags  # type: ignore
     kitten_run = grandchild_run.child_runs[0]
     assert kitten_run.name == "kitten"
     assert not kitten_run.child_runs
+    assert kitten_run.metadata.get("some_foo") == "some_bar"
+    assert "afoo" in kitten_run.tags  # type: ignore
