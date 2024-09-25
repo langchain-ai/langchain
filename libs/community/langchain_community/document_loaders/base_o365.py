@@ -38,7 +38,7 @@ class _O365Settings(BaseSettings):
     client_secret: SecretStr = Field(..., alias="O365_CLIENT_SECRET")
 
     model_config = SettingsConfigDict(
-        case_sensitive=False, env_file=".env", env_prefix=""
+        case_sensitive=False, env_file=".env", env_prefix="", extra="ignore"
     )
 
 

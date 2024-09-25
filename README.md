@@ -38,7 +38,7 @@ conda install langchain -c conda-forge
 
 For these applications, LangChain simplifies the entire application lifecycle:
 
-- **Open-source libraries**: Build your applications using LangChain's open-source [building blocks](https://python.langchain.com/v0.2/docs/concepts#langchain-expression-language-lcel), [components](https://python.langchain.com/v0.2/docs/concepts), and [third-party integrations](https://python.langchain.com/v0.2/docs/integrations/platforms/).
+- **Open-source libraries**: Build your applications using LangChain's open-source [building blocks](https://python.langchain.com/docs/concepts/#langchain-expression-language-lcel), [components](https://python.langchain.com/docs/concepts/), and [third-party integrations](https://python.langchain.com/docs/integrations/platforms/).
   Use [LangGraph](https://langchain-ai.github.io/langgraph/) to build stateful agents with first-class streaming and human-in-the-loop support.
 - **Productionization**: Inspect, monitor, and evaluate your apps with [LangSmith](https://docs.smith.langchain.com/) so that you can constantly optimize and deploy with confidence.
 - **Deployment**: Turn your LangGraph applications into production-ready APIs and Assistants with [LangGraph Cloud](https://langchain-ai.github.io/langgraph/cloud/).
@@ -65,20 +65,20 @@ For these applications, LangChain simplifies the entire application lifecycle:
 
 **❓ Question answering with RAG**
 
-- [Documentation](https://python.langchain.com/v0.2/docs/tutorials/rag/)
+- [Documentation](https://python.langchain.com/docs/tutorials/rag/)
 - End-to-end Example: [Chat LangChain](https://chat.langchain.com) and [repo](https://github.com/langchain-ai/chat-langchain)
 
 **🧱 Extracting structured output**
 
-- [Documentation](https://python.langchain.com/v0.2/docs/tutorials/extraction/)
+- [Documentation](https://python.langchain.com/docs/tutorials/extraction/)
 - End-to-end Example: [SQL Llama2 Template](https://github.com/langchain-ai/langchain-extract/)
 
 **🤖 Chatbots**
 
-- [Documentation](https://python.langchain.com/v0.2/docs/tutorials/chatbot/)
+- [Documentation](https://python.langchain.com/docs/tutorials/chatbot/)
 - End-to-end Example: [Web LangChain (web researcher chatbot)](https://weblangchain.vercel.app) and [repo](https://github.com/langchain-ai/weblangchain)
 
-And much more! Head to the [Tutorials](https://python.langchain.com/v0.2/docs/tutorials/) section of the docs for more.
+And much more! Head to the [Tutorials](https://python.langchain.com/docs/tutorials/) section of the docs for more.
 
 ## 🚀 How does LangChain help?
 
@@ -93,10 +93,10 @@ Off-the-shelf chains make it easy to get started. Components make it easy to cus
 
 LCEL is a key part of LangChain, allowing you to build and organize chains of processes in a straightforward, declarative manner. It was designed to support taking prototypes directly into production without needing to alter any code. This means you can use LCEL to set up everything from basic "prompt + LLM" setups to intricate, multi-step workflows.
 
-- **[Overview](https://python.langchain.com/v0.2/docs/concepts/#langchain-expression-language-lcel)**: LCEL and its benefits
-- **[Interface](https://python.langchain.com/v0.2/docs/concepts/#runnable-interface)**: The standard Runnable interface for LCEL objects
-- **[Primitives](https://python.langchain.com/v0.2/docs/how_to/#langchain-expression-language-lcel)**: More on the primitives LCEL includes
-- **[Cheatsheet](https://python.langchain.com/v0.2/docs/how_to/lcel_cheatsheet/)**: Quick overview of the most common usage patterns
+- **[Overview](https://python.langchain.com/docs/concepts/#langchain-expression-language-lcel)**: LCEL and its benefits
+- **[Interface](https://python.langchain.com/docs/concepts/#runnable-interface)**: The standard Runnable interface for LCEL objects
+- **[Primitives](https://python.langchain.com/docs/how_to/#langchain-expression-language-lcel)**: More on the primitives LCEL includes
+- **[Cheatsheet](https://python.langchain.com/docs/how_to/lcel_cheatsheet/)**: Quick overview of the most common usage patterns
 
 ## Components
 
@@ -104,24 +104,24 @@ Components fall into the following **modules**:
 
 **📃 Model I/O**
 
-This includes [prompt management](https://python.langchain.com/v0.2/docs/concepts/#prompt-templates), [prompt optimization](https://python.langchain.com/v0.2/docs/concepts/#example-selectors), a generic interface for [chat models](https://python.langchain.com/v0.2/docs/concepts/#chat-models) and [LLMs](https://python.langchain.com/v0.2/docs/concepts/#llms), and common utilities for working with [model outputs](https://python.langchain.com/v0.2/docs/concepts/#output-parsers).
+This includes [prompt management](https://python.langchain.com/docs/concepts/#prompt-templates), [prompt optimization](https://python.langchain.com/docs/concepts/#example-selectors), a generic interface for [chat models](https://python.langchain.com/docs/concepts/#chat-models) and [LLMs](https://python.langchain.com/docs/concepts/#llms), and common utilities for working with [model outputs](https://python.langchain.com/docs/concepts/#output-parsers).
 
 **📚 Retrieval**
 
-Retrieval Augmented Generation involves [loading data](https://python.langchain.com/v0.2/docs/concepts/#document-loaders) from a variety of sources, [preparing it](https://python.langchain.com/v0.2/docs/concepts/#text-splitters), then [searching over (a.k.a. retrieving from)](https://python.langchain.com/v0.2/docs/concepts/#retrievers) it for use in the generation step.
+Retrieval Augmented Generation involves [loading data](https://python.langchain.com/docs/concepts/#document-loaders) from a variety of sources, [preparing it](https://python.langchain.com/docs/concepts/#text-splitters), then [searching over (a.k.a. retrieving from)](https://python.langchain.com/docs/concepts/#retrievers) it for use in the generation step.
 
 **🤖 Agents**
 
-Agents allow an LLM autonomy over how a task is accomplished. Agents make decisions about which Actions to take, then take that Action, observe the result, and repeat until the task is complete. LangChain provides a [standard interface for agents](https://python.langchain.com/v0.2/docs/concepts/#agents), along with [LangGraph](https://github.com/langchain-ai/langgraph) for building custom agents.
+Agents allow an LLM autonomy over how a task is accomplished. Agents make decisions about which Actions to take, then take that Action, observe the result, and repeat until the task is complete. LangChain provides a [standard interface for agents](https://python.langchain.com/docs/concepts/#agents), along with [LangGraph](https://github.com/langchain-ai/langgraph) for building custom agents.
 
 ## 📖 Documentation
 
 Please see [here](https://python.langchain.com) for full documentation, which includes:
 
-- [Introduction](https://python.langchain.com/v0.2/docs/introduction/): Overview of the framework and the structure of the docs.
+- [Introduction](https://python.langchain.com/docs/introduction/): Overview of the framework and the structure of the docs.
 - [Tutorials](https://python.langchain.com/docs/use_cases/): If you're looking to build something specific or are more of a hands-on learner, check out our tutorials. This is the best place to get started.
-- [How-to guides](https://python.langchain.com/v0.2/docs/how_to/): Answers to “How do I….?” type questions. These guides are goal-oriented and concrete; they're meant to help you complete a specific task.
-- [Conceptual guide](https://python.langchain.com/v0.2/docs/concepts/): Conceptual explanations of the key parts of the framework.
+- [How-to guides](https://python.langchain.com/docs/how_to/): Answers to “How do I….?” type questions. These guides are goal-oriented and concrete; they're meant to help you complete a specific task.
+- [Conceptual guide](https://python.langchain.com/docs/concepts/): Conceptual explanations of the key parts of the framework.
 - [API Reference](https://api.python.langchain.com): Thorough documentation of every class and method.
 
 ## 🌐 Ecosystem
@@ -134,7 +134,7 @@ Please see [here](https://python.langchain.com) for full documentation, which in
 
 As an open-source project in a rapidly developing field, we are extremely open to contributions, whether it be in the form of a new feature, improved infrastructure, or better documentation.
 
-For detailed information on how to contribute, see [here](https://python.langchain.com/v0.2/docs/contributing/).
+For detailed information on how to contribute, see [here](https://python.langchain.com/docs/contributing/).
 
 ## 🌟 Contributors
 

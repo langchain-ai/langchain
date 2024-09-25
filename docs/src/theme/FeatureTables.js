@@ -736,6 +736,13 @@ const FEATURE_TABLES = {
                 apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.web_base.WebBaseLoader.html"
             },
             {
+                name: "Unstructured",
+                link: "unstructured_file",
+                source: "Uses Unstructured to load and parse web pages",
+                api: "Package",
+                apiLink: "https://python.langchain.com/api_reference/unstructured/document_loaders/langchain_unstructured.document_loaders.UnstructuredLoader.html"
+            },
+            {
                 name: "RecursiveURL",
                 link: "recursive_url",
                 source: "Recursively scrapes all child links from a root URL",

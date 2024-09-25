@@ -34,9 +34,20 @@ def fake_llm_symbolic_math_chain() -> LLMSymbolicMathChain:
             question="What are the solutions to this equation x**2 - x?"
         ): "```text\nsolveset(x**2 - x, x)\n```",
         _PROMPT_TEMPLATE.format(question="foo"): "foo",
+        _PROMPT_TEMPLATE.format(question="__import__('os')"): "__import__('os')",
     }
     fake_llm = FakeLLM(queries=queries)
-    return LLMSymbolicMathChain.from_llm(fake_llm, input_key="q", output_key="a")
+    return LLMSymbolicMathChain.from_llm(
+        fake_llm, input_key="q", output_key="a", allow_dangerous_requests=False
+    )
+
+
+def test_require_allow_dangerous_requests_to_be_set() -> None:
+    """Test that allow_dangerous_requests must be set."""
+    fake_llm = FakeLLM(queries={})
+
+    with pytest.raises(ValueError):
+        LLMSymbolicMathChain.from_llm(fake_llm, input_key="q", output_key="a")
 
 
 def test_simple_question(fake_llm_symbolic_math_chain: LLMSymbolicMathChain) -> None:
@@ -80,3 +91,15 @@ def test_error(fake_llm_symbolic_math_chain: LLMSymbolicMathChain) -> None:
     """Test question that raises error."""
     with pytest.raises(ValueError):
         fake_llm_symbolic_math_chain.run("foo")
+
+
+def test_security_vulnerability(
+    fake_llm_symbolic_math_chain: LLMSymbolicMathChain,
+) -> None:
+    """Test for potential security vulnerability with malicious input."""
+    # Example of a code injection attempt
+    malicious_input = "__import__('os')"
+
+    # Run the chain with the malicious input and ensure it raises an error
+    with pytest.raises(ValueError):
+        fake_llm_symbolic_math_chain.run(malicious_input)

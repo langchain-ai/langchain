@@ -975,7 +975,7 @@ def _get_all_basemodel_annotations(
             ) and name not in fields:
                 continue
             annotations[name] = param.annotation
-        orig_bases: tuple = getattr(cls, "__orig_bases__", tuple())
+        orig_bases: tuple = getattr(cls, "__orig_bases__", ())
     # cls has subscript: cls = FooBar[int]
     else:
         annotations = _get_all_basemodel_annotations(
@@ -1007,11 +1007,9 @@ def _get_all_basemodel_annotations(
             # parent_origin = Baz,
             # generic_type_vars = (type vars in Baz)
             # generic_map = {type var in Baz: str}
-            generic_type_vars: tuple = getattr(parent_origin, "__parameters__", tuple())
-            generic_map = {
-                type_var: t for type_var, t in zip(generic_type_vars, get_args(parent))
-            }
-            for field in getattr(parent_origin, "__annotations__", dict()):
+            generic_type_vars: tuple = getattr(parent_origin, "__parameters__", ())
+            generic_map = dict(zip(generic_type_vars, get_args(parent)))
+            for field in getattr(parent_origin, "__annotations__", {}):
                 annotations[field] = _replace_type_vars(
                     annotations[field], generic_map, default_to_bound
                 )
