@@ -138,7 +138,7 @@ class Serializable(BaseModel, ABC):
         For example,
             {"openai_api_key": "OPENAI_API_KEY"}
         """
-        return dict()
+        return {}
 
     @property
     def lc_attributes(self) -> dict:
@@ -188,7 +188,7 @@ class Serializable(BaseModel, ABC):
         if not self.is_lc_serializable():
             return self.to_json_not_implemented()
 
-        secrets = dict()
+        secrets = {}
         # Get latest values for kwargs if there is an attribute with same name
         lc_kwargs = {}
         for k, v in self:

@@ -55,7 +55,7 @@ async def test_generic_fake_chat_model_stream() -> None:
     ]
     assert len({chunk.id for chunk in chunks}) == 1
 
-    chunks = [chunk for chunk in model.stream("meow")]
+    chunks = list(model.stream("meow"))
     assert chunks == [
         _any_id_ai_message_chunk(content="hello"),
         _any_id_ai_message_chunk(content=" "),

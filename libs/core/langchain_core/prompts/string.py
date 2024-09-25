@@ -17,7 +17,7 @@ from langchain_core.utils.formatting import formatter
 from langchain_core.utils.interactive_env import is_interactive_env
 
 
-def jinja2_formatter(template: str, **kwargs: Any) -> str:
+def jinja2_formatter(template: str, /, **kwargs: Any) -> str:
     """Format a template using jinja2.
 
     *Security warning*:
@@ -99,7 +99,7 @@ def _get_jinja2_variables_from_template(template: str) -> set[str]:
     return variables
 
 
-def mustache_formatter(template: str, **kwargs: Any) -> str:
+def mustache_formatter(template: str, /, **kwargs: Any) -> str:
     """Format a template using mustache.
 
     Args:
