@@ -101,7 +101,7 @@ pressure	station	temperature	time	visibility
 */
 Thought:The "temperature" column in the "air" table is relevant to the question. I can query the average temperature between the specified dates.
 Action: sql_db_query
-Action Input: "SELECT AVG(temperature) FROM air WHERE station = 'XiaoMaiDao' AND time >= '2022-10-19' AND time <= '2022-10-20'"
+Action Input: "SELECT AVG(temperature) FROM air WHERE station = 'XiaoMaiDao' AND time >= '2022-10-19' AND time &lt;= '2022-10-20'"
 Observation: [(68.0,)]
 Thought:The average temperature of air at station XiaoMaiDao between October 19, 2022 and October 20, 2022 is 68.0.
 Final Answer: 68.0
