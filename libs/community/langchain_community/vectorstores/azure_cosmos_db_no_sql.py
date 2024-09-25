@@ -11,8 +11,7 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 
 if TYPE_CHECKING:
-    from azure.cosmos.cosmos_client import CosmosClient
-    from azure.cosmos import ContainerProxy
+    from azure.cosmos import ContainerProxy, CosmosClient
 
 
 class AzureCosmosDBNoSqlVectorSearch(VectorStore):
