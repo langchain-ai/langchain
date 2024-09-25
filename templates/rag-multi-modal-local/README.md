@@ -1,7 +1,6 @@
+# RAG - Ollama, Nomic, Chroma - multi-modal, local
 
-# rag-multi-modal-local
-
-Visual search is a famililar application to many with iPhones or Android devices. It allows user to search photos using natural language.
+Visual search is a familiar application to many with iPhones or Android devices. It allows user to search photos using natural language.
   
 With the release of open source, multi-modal LLMs it's possible to build this kind of application for yourself for your own private photo collection.
 
@@ -11,7 +10,7 @@ It uses [`nomic-embed-vision-v1`](https://huggingface.co/nomic-ai/nomic-embed-vi
  
 Given a question, relevant photos are retrieved and passed to an open source multi-modal LLM of your choice for answer synthesis.
  
-![Diagram illustrating the visual search process with nomic-embed-vision-v1 embeddings and multi-modal LLM for question-answering, featuring example food pictures and a matcha soft serve answer trace.](https://github.com/langchain-ai/langchain/assets/122662504/da543b21-052c-4c43-939e-d4f882a45d75 "Visual Search Process Diagram")
+![Diagram illustrating the visual search process with nomic-embed-vision-v1 embeddings and multi-modal LLM for question-answering, featuring example food pictures and a matcha soft serve answer trace.](https://github.com/langchain-ai/langchain/assets/122662504/da543b21-052c-4c43-939e-d4f882a45d75) "Visual Search Process Diagram"
 
 ## Input
 

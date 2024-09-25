@@ -1,5 +1,6 @@
 from typing import Any, Dict, Iterable, List, Optional, Set, Union
 
+from langchain_core._api import beta
 from langchain_core.documents import Document
 from langchain_core.graph_vectorstores.links import Link
 
@@ -11,6 +12,7 @@ from langchain_community.graph_vectorstores.extractors.link_extractor import (
 GLiNERInput = Union[str, Document]
 
 
+@beta()
 class GLiNERLinkExtractor(LinkExtractor[GLiNERInput]):
     """Link documents with common named entities using GLiNER <https://github.com/urchade/GLiNER>."""
 

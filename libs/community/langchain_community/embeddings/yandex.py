@@ -69,7 +69,7 @@ class YandexGPTEmbeddings(BaseModel, Embeddings):
     disable_request_logging: bool = False
     """YandexGPT API logs all request data by default. 
     If you provide personal data, confidential information, disable logging."""
-    _grpc_metadata: Sequence
+    grpc_metadata: Sequence
 
     class Config:
         allow_population_by_field_name = True
@@ -91,15 +91,15 @@ class YandexGPTEmbeddings(BaseModel, Embeddings):
         if api_key.get_secret_value() == "" and iam_token.get_secret_value() == "":
             raise ValueError("Either 'YC_API_KEY' or 'YC_IAM_TOKEN' must be provided.")
         if values["iam_token"]:
-            values["_grpc_metadata"] = [
+            values["grpc_metadata"] = [
                 ("authorization", f"Bearer {values['iam_token'].get_secret_value()}")
             ]
             if values["folder_id"]:
-                values["_grpc_metadata"].append(("x-folder-id", values["folder_id"]))
+                values["grpc_metadata"].append(("x-folder-id", values["folder_id"]))
         else:
-            values["_grpc_metadata"] = (
+            values["grpc_metadata"] = [
                 ("authorization", f"Api-Key {values['api_key'].get_secret_value()}"),
-            )
+            ]
 
         if not values.get("doc_model_uri"):
             if values["folder_id"] == "":
@@ -114,7 +114,7 @@ class YandexGPTEmbeddings(BaseModel, Embeddings):
                 f"emb://{values['folder_id']}/{values['model_name']}/{values['model_version']}"
             )
         if values["disable_request_logging"]:
-            values["_grpc_metadata"].append(
+            values["grpc_metadata"].append(
                 (
                     "x-data-logging-enabled",
                     "false",
@@ -206,7 +206,7 @@ def _make_request(self: YandexGPTEmbeddings, texts: List[str], **kwargs):  # typ
     for text in texts:
         request = TextEmbeddingRequest(model_uri=model_uri, text=text)
         stub = EmbeddingsServiceStub(channel)
-        res = stub.TextEmbedding(request, metadata=self._grpc_metadata)  # type: ignore[attr-defined]
+        res = stub.TextEmbedding(request, metadata=self.grpc_metadata)  # type: ignore[attr-defined]
         result.append(list(res.embedding))
         time.sleep(self.sleep_interval)
 
