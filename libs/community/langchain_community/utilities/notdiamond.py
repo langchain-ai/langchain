@@ -36,7 +36,15 @@ class NotDiamondRunnable(Runnable[LanguageModelInput, str]):
         nd_llm_configs: Optional[List] = None,
         nd_api_key: Optional[str] = None,
         nd_client: Optional[Any] = None,
+        nd_kwargs: Optional[Dict[str, Any]] = None,
     ):
+        """
+        Params:
+            nd_llm_configs: List of LLM configs to use.
+            nd_api_key: Not Diamond API key.
+            nd_client: Not Diamond client.
+            nd_kwargs: Keyword arguments to pass directly to model_select.
+        """
         if not nd_client:
             if not nd_api_key or not nd_llm_configs:
                 raise ValueError(
@@ -68,10 +76,13 @@ class NotDiamondRunnable(Runnable[LanguageModelInput, str]):
         self.client = nd_client
         self.api_key = nd_client.api_key
         self.llm_configs = nd_client.llm_configs
+        self.nd_kwargs = nd_kwargs or dict()
 
     def _model_select(self, input: LanguageModelInput) -> str:
         messages = _convert_input_to_message_dicts(input)
-        _, provider = self.client.chat.completions.model_select(messages=messages)
+        _, provider = self.client.chat.completions.model_select(
+            messages=messages, **self.nd_kwargs
+        )
         provider_str = _nd_provider_to_langchain_provider(str(provider))
         return provider_str
 
@@ -137,15 +148,26 @@ class NotDiamondRoutedRunnable(Runnable[LanguageModelInput, Any]):
         nd_llm_configs: Optional[List] = None,
         nd_api_key: Optional[str] = None,
         nd_client: Optional[Any] = None,
+        nd_kwargs: Optional[Dict[str, Any]] = None,
         **kwargs: Optional[Dict[Any, Any]],
     ) -> None:
+        """
+        Params:
+            nd_llm_configs: List of LLM configs to use.
+            nd_api_key: Not Diamond API key.
+            nd_client: Not Diamond client.
+            nd_kwargs: Keyword arguments to pass directly to model_select.
+        """
+        _nd_kwargs = {kw: kwargs[kw] for kw in kwargs.keys() if kw.startswith("nd_")}
+        if nd_kwargs:
+            _nd_kwargs.update(nd_kwargs)
+
         self._ndrunnable = NotDiamondRunnable(
             nd_api_key=nd_api_key,
             nd_llm_configs=nd_llm_configs,
             nd_client=nd_client,
+            nd_kwargs=_nd_kwargs,
         )
-        _nd_kwargs = {kw for kw in kwargs.keys() if kw.startswith("nd_")}
-
         _routed_fields = ["model", "model_provider"]
         if configurable_fields is None:
             configurable_fields = []
@@ -179,7 +201,7 @@ class NotDiamondRoutedRunnable(Runnable[LanguageModelInput, Any]):
 
     def batch(
         self,
-        inputs: List[LanguageModelInput],
+        inputs: Sequence[LanguageModelInput],
         config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
         **kwargs: Optional[Any],
     ) -> List[Any]:
@@ -194,7 +216,7 @@ class NotDiamondRoutedRunnable(Runnable[LanguageModelInput, Any]):
                 for i, ps in enumerate(provider_strs)
             ]
 
-        return self._configurable_model.batch(inputs, config=_configs)
+        return self._configurable_model.batch([i for i in inputs], config=_configs)
 
     async def astream(
         self,
@@ -219,7 +241,7 @@ class NotDiamondRoutedRunnable(Runnable[LanguageModelInput, Any]):
 
     async def abatch(
         self,
-        inputs: List[LanguageModelInput],
+        inputs: Sequence[LanguageModelInput],
         config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
         **kwargs: Optional[Any],
     ) -> List[Any]:
@@ -236,7 +258,9 @@ class NotDiamondRoutedRunnable(Runnable[LanguageModelInput, Any]):
                 for i, ps in enumerate(provider_strs)
             ]
 
-        return await self._configurable_model.abatch(inputs, config=_configs)
+        return await self._configurable_model.abatch(
+            [i for i in inputs], config=_configs
+        )
 
     def _build_model_config(
         self, provider_str: str, config: Optional[RunnableConfig] = None
