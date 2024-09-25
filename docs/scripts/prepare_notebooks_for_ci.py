@@ -1,5 +1,6 @@
 """Preprocess notebooks for CI. Currently adds VCR cassettes and optionally removes pip install cells."""
 
+import json
 import logging
 import os
 
@@ -7,7 +8,7 @@ import click
 import nbformat
 
 logger = logging.getLogger(__name__)
-NOTEBOOK_DIRS = ("docs/docs/how-tos","docs/docs/tutorials")
+NOTEBOOK_DIRS = ("docs/docs/tutorials",)
 DOCS_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CASSETTES_PATH = os.path.join(DOCS_PATH, "cassettes")
 
@@ -23,6 +24,9 @@ NOTEBOOKS_NO_EXECUTION = [
     "docs/docs/tutorials/query_analysis.ipynb",  # Requires youtube_transcript_api
     "docs/docs/tutorials/sql_qa.ipynb",  # Requires Chinook db locally
 ]
+
+with open(os.path.join(DOCS_PATH, "notebooks_no_execution.json"), "w") as f:
+    json.dump(NOTEBOOKS_NO_EXECUTION, f)
 
 
 def comment_install_cells(notebook: nbformat.NotebookNode) -> nbformat.NotebookNode:

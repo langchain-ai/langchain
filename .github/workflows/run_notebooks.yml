@@ -55,6 +55,3 @@ jobs:
           LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
         run: |
           ./docs/scripts/execute_notebooks.sh
-
-      - name: Stop services
-        run: make stop-services
