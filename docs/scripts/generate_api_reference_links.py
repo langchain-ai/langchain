@@ -14,10 +14,54 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 # Base URL for all class documentation
 _LANGCHAIN_API_REFERENCE = "https://python.langchain.com/api_reference/"
-_LANGGRAPH_API_REFERENCE = "https://langchain-ai.github.io/langgraph/reference/graphs/"
+_LANGGRAPH_API_REFERENCE = "https://langchain-ai.github.io/langgraph/reference/"
 
 # Regular expression to match Python code blocks
 code_block_re = re.compile(r"^(```\s?python\n)(.*?)(```)", re.DOTALL | re.MULTILINE)
+
+
+MANUAL_API_REFERENCES_LANGGRAPH = [
+    ("langgraph.prebuilt", "create_react_agent", "create_react_agent"),
+    ("langgraph.prebuilt", "ToolNode", "ToolNode"),
+    ("langgraph.prebuilt", "ToolExecutor", "ToolExecutor"),
+    ("langgraph.prebuilt", "ToolInvocation", "ToolInvocation"),
+    ("langgraph.prebuilt", "tools_condition", "tools_condition"),
+    ("langgraph.prebuilt", "ValidationNode", "ValidationNode"),
+    ("langgraph.prebuilt", "InjectedState", "InjectedState"),
+    # Graph
+    ("langgraph.graph", "StateGraph", "StateGraph"),
+    ("langgraph.graph.message", "MessageGraph", "MessageGraph"),
+    ("langgraph.graph.message", "add_messages", "add_messages"),
+    ("langgraph.graph.graph", "CompiledGraph", "CompiledGraph"),
+    ("langgraph.types", "StreamMode", "StreamMode"),
+    ("langgraph.graph", "START", "START"),
+    ("langgraph.graph", "END", "END"),
+    ("langgraph.types", "Send", "Send"),
+    ("langgraph.types", "Interrupt", "Interrupt"),
+    ("langgraph.types", "RetryPolicy", "RetryPolicy"),
+    ("langgraph.checkpoint.base", "Checkpoint", "Checkpoint"),
+    ("langgraph.checkpoint.base", "CheckpointMetadata", "CheckpointMetadata"),
+    ("langgraph.checkpoint.base", "BaseCheckpointSaver", "BaseCheckpointSaver"),
+    ("langgraph.checkpoint.base", "SerializerProtocol", "SerializerProtocol"),
+    (
+        "langgraph.checkpoint.serde.jsonplus",
+        "JsonPlusSerializer",
+        "JsonPlusSerializer",
+    ),
+    ("langgraph.checkpoint.memory", "MemorySaver", "MemorySaver"),
+    ("langgraph.checkpoint.sqlite.aio", "AsyncSqliteSaver", "AsyncSqliteSaver"),
+    ("langgraph.checkpoint.sqlite", "SqliteSaver", "SqliteSaver"),
+    (
+        "langgraph.checkpoint.postgres.aio",
+        "AsyncPostgresSaver",
+        "AsyncPostgresSaver",
+    ),
+    ("langgraph.checkpoint.postgres", "PostgresSaver", "PostgresSaver"),
+]
+
+WELL_KNOWN_LANGGRAPH_OBJECTS = {
+    (module_, class_) for module_, class_, _ in MANUAL_API_REFERENCES_LANGGRAPH
+}
 
 
 def _make_regular_expression(pkg_prefix: str) -> re.Pattern:
@@ -200,8 +244,21 @@ def _get_imports(
                     + ".html"
                 )
             elif package_ecosystem == "langgraph":
-                pkg = module_path.split(".")[0]
-                url = _LANGGRAPH_API_REFERENCE + pkg + "." + class_name + ".html"
+                if module.startswith("langgraph.checkpoint"):
+                    namespace = "checkpoints"
+                elif module.startswith("langgraph.graph"):
+                    namespace = "graphs"
+                elif module.startswith("langgraph.prebuilt"):
+                    namespace = "prebuilt"
+                else:
+                    # Likely not documented yet
+                    # Unable to determine the namespace
+                    continue
+
+                if (module, class_name) not in WELL_KNOWN_LANGGRAPH_OBJECTS:
+                    # Likely not documented yet
+                    continue
+                url = _LANGGRAPH_API_REFERENCE + namespace + "/#" + class_name.lower() + ".html"
             else:
                 raise ValueError(f"Invalid package ecosystem: {package_ecosystem}")
 
@@ -260,8 +317,6 @@ def replace_imports(file) -> List[ImportInformation]:
     # Use re.sub to replace each Python code block
     data = code_block_re.sub(replacer, data)
 
-    # if all_imports:
-    #     print(f"Adding {len(all_imports)} links for imports in {file}")
     with open(file, "w") as f:
         f.write(data)
     return all_imports
