@@ -18,7 +18,8 @@ NOTEBOOKS_NO_CASSETTES = (
 )
 
 NOTEBOOKS_NO_EXECUTION = [
-    "docs/docs/tutorials/local_rag.ipynb",
+    "docs/docs/tutorials/local_rag.ipynb",  # Local LLMs
+    "docs/docs/tutorials/graph.ipynb",  # Requires local graph db running
 ]
 
 
