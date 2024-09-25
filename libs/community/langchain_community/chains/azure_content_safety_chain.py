@@ -1,18 +1,16 @@
 """Pass input through an azure content safety resource."""
 
-from typing import Any, Dict, List, Optional
 import os
+from typing import Any, Dict, List, Optional
 
+from langchain.chains.base import Chain
 from langchain_core.callbacks import (
     CallbackManagerForChainRun,
 )
-
-from langchain.chains.base import Chain
+from langchain_core.messages import AIMessage
 
 
 class AzureOpenAIContentSafetyChain(Chain):
-
-
     client: Any  #: :meta private:
     error: bool = False
     """Whether or not to error if bad content was found."""
@@ -27,19 +25,10 @@ class AzureOpenAIContentSafetyChain(Chain):
         content_safety_key: Optional[str] = None,
         content_safety_endpoint: Optional[str] = None,
     ) -> None:
-
-
         content_safety_key = content_safety_key or os.environ["CONTENT_SAFETY_API_KEY"]
         content_safety_endpoint = (
             content_safety_endpoint or os.environ["CONTENT_SAFETY_ENDPOINT"]
         )
-        try:
-            from langchain_core.messages import AIMessage
-        except ImportError:
-            raise ImportError(
-                "langchain_core is not installed. "
-                "Run `pip install langchain_core` to install."
-            )
         try:
             import azure.ai.contentsafety as sdk
             from azure.core.credentials import AzureKeyCredential
@@ -80,18 +69,17 @@ class AzureOpenAIContentSafetyChain(Chain):
         contains_harmful_content = False
 
         for category in results:
-            if category['severity'] > 0:
+            if category["severity"] > 0:
                 contains_harmful_content = True
 
         if contains_harmful_content:
-            error_str = '''The input text contains harmful content 
-            according to Azure OpenAI's content policy'''
-            print(error_str)
+            error_str = """The input text contains harmful content 
+            according to Azure OpenAI's content policy"""
             if self.error:
                 raise ValueError(error_str)
             else:
                 return error_str
-        
+
         return text
 
     def _call(
@@ -102,13 +90,13 @@ class AzureOpenAIContentSafetyChain(Chain):
         text = inputs[self.input_key]
 
         from azure.ai.contentsafety.models import AnalyzeTextOptions
-        from langchain_core.messages import AIMessage
 
-        request = (AnalyzeTextOptions(text=text.content)
-                    if isinstance(text, AIMessage)
-                    else
-                    AnalyzeTextOptions(text=text))
-        
+        request = (
+            AnalyzeTextOptions(text=text.content)
+            if isinstance(text, AIMessage)
+            else AnalyzeTextOptions(text=text)
+        )
+
         response = self.client.analyze_text(request)
         result = response.categories_analysis
         output = self._sentiment_analysis(text, result)
