@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from scipy.sparse import csr_array  # type: ignore
 
@@ -29,14 +29,20 @@ class BM25SparseEmbedding(BaseSparseEmbedding):
     https://milvus.io/docs/embed-with-bm25.md
     """
 
-    def __init__(self, corpus: List[str] = None, path: str = None, language: str = "en"):
+    def __init__(self, *, corpus: Optional[List[str]] = None, path: Optional[str] = None, language: str = "en"):
         from pymilvus.model.sparse import BM25EmbeddingFunction  # type: ignore
         from pymilvus.model.sparse.bm25.tokenizers import (  # type: ignore
             build_default_analyzer,
         )
 
+        if corpus is None and path is None:
+            raise ValueError("Either 'corpus' or 'path' must be provided.")
+        if corpus is not None and path is not None:
+            raise ValueError("Only one of 'corpus' or 'path' should be provided.")
+
         self.analyzer = build_default_analyzer(language=language)
         self.bm25_ef = BM25EmbeddingFunction(self.analyzer, num_workers=1)
+        
         if corpus is not None:
             self.bm25_ef.fit(corpus)
         elif path is not None:
