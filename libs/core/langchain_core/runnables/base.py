@@ -3778,7 +3778,7 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
                     for key, step in steps.items()
                 )
             )
-            output = {key: value for key, value in zip(steps, results)}
+            output = dict(zip(steps, results))
         # finish the root run
         except BaseException as e:
             await run_manager.on_chain_error(e)

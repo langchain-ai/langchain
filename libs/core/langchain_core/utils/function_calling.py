@@ -233,9 +233,7 @@ def _convert_any_typed_dicts_to_pydantic(
                 new_arg_type = _convert_any_typed_dicts_to_pydantic(
                     annotated_args[0], depth=depth + 1, visited=visited
                 )
-                field_kwargs = {
-                    k: v for k, v in zip(("default", "description"), annotated_args[1:])
-                }
+                field_kwargs = dict(zip(("default", "description"), annotated_args[1:]))
                 if (field_desc := field_kwargs.get("description")) and not isinstance(
                     field_desc, str
                 ):
