@@ -248,11 +248,8 @@ def create_schema_from_function(
             validated = validate_arguments(func, config=_SchemaConfig)  # type: ignore
 
     # Let's ignore `self` and `cls` arguments for class and instance methods
-    if func.__qualname__ and "." in func.__qualname__:
-        # Then it likely belongs in a class namespace
-        in_class = True
-    else:
-        in_class = False
+    # If qualified name has a ".", then it likely belongs in a class namespace
+    in_class = bool(func.__qualname__ and "." in func.__qualname__)
 
     has_args = False
     has_kwargs = False
@@ -289,12 +286,10 @@ def create_schema_from_function(
     # Pydantic adds placeholder virtual fields we need to strip
     valid_properties = []
     for field in get_fields(inferred_model):
-        if not has_args:
-            if field == "args":
-                continue
-        if not has_kwargs:
-            if field == "kwargs":
-                continue
+        if not has_args and field == "args":
+            continue
+        if not has_kwargs and field == "kwargs":
+            continue
 
         if field == "v__duplicate_kwargs":  # Internal pydantic field
             continue
@@ -422,12 +417,15 @@ class ChildTool(BaseTool):
 
     def __init__(self, **kwargs: Any) -> None:
         """Initialize the tool."""
-        if "args_schema" in kwargs and kwargs["args_schema"] is not None:
-            if not is_basemodel_subclass(kwargs["args_schema"]):
-                raise TypeError(
-                    f"args_schema must be a subclass of pydantic BaseModel. "
-                    f"Got: {kwargs['args_schema']}."
-                )
+        if (
+            "args_schema" in kwargs
+            and kwargs["args_schema"] is not None
+            and not is_basemodel_subclass(kwargs["args_schema"])
+        ):
+            raise TypeError(
+                f"args_schema must be a subclass of pydantic BaseModel. "
+                f"Got: {kwargs['args_schema']}."
+            )
         super().__init__(**kwargs)
 
     model_config = ConfigDict(
@@ -840,10 +838,7 @@ def _handle_tool_error(
     flag: Optional[Union[Literal[True], str, Callable[[ToolException], str]]],
 ) -> str:
     if isinstance(flag, bool):
-        if e.args:
-            content = e.args[0]
-        else:
-            content = "Tool execution error"
+        content = e.args[0] if e.args else "Tool execution error"
     elif isinstance(flag, str):
         content = flag
     elif callable(flag):
@@ -902,12 +897,11 @@ def _format_output(
 
 def _is_message_content_type(obj: Any) -> bool:
     """Check for OpenAI or Anthropic format tool message content."""
-    if isinstance(obj, str):
-        return True
-    elif isinstance(obj, list) and all(_is_message_content_block(e) for e in obj):
-        return True
-    else:
-        return False
+    return (
+        isinstance(obj, str)
+        or isinstance(obj, list)
+        and all(_is_message_content_block(e) for e in obj)
+    )
 
 
 def _is_message_content_block(obj: Any) -> bool:

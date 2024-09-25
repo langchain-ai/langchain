@@ -139,11 +139,8 @@ def parse_json_markdown(
         match = _json_markdown_re.search(json_string)
 
         # If no match found, assume the entire string is a JSON string
-        if match is None:
-            json_str = json_string
-        else:
-            # If match found, use the content within the backticks
-            json_str = match.group(2)
+        # Else, use the content within the backticks
+        json_str = json_string if match is None else match.group(2)
     return _parse_json(json_str, parser=parser)
 
 
