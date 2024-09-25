@@ -864,7 +864,7 @@ const FEATURE_TABLES = {
             {
                 name: "Unstructured",
                 link: "unstructured_file",
-                source: "Many file types (refer to [this list](https://docs.unstructured.io/platform/supported-file-types))",
+                source: "Many file types (see https://docs.unstructured.io/platform/supported-file-types)",
                 apiLink: "https://python.langchain.com/api_reference/unstructured/document_loaders/langchain_unstructured.document_loaders.UnstructuredLoader.html"
             },
             {
