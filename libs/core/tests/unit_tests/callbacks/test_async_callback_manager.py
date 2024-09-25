@@ -1,10 +1,14 @@
-import asyncio
-import pytest
 import contextvars
-from uuid import UUID
-from typing import Any, Optional
-from langchain_core.callbacks import AsyncCallbackManager, AsyncCallbackHandler
 from contextlib import asynccontextmanager
+from typing import Any, Optional
+from uuid import UUID
+
+import pytest
+
+from langchain_core.callbacks import (
+    AsyncCallbackHandler,
+    AsyncCallbackManager,
+)
 
 counter_var = contextvars.ContextVar("counter", default=0)
 
@@ -12,7 +16,7 @@ shared_stack = []
 
 
 @asynccontextmanager
-async def set_counter_var():
+async def set_counter_var() -> Any:
     token = counter_var.set(0)
     try:
         yield
@@ -52,7 +56,7 @@ class StatefulAsyncCallbackHandler(AsyncCallbackHandler):
 
 @pytest.mark.xfail(reason="Context is not maintained across async calls")
 @pytest.mark.asyncio
-async def test_async_callback_manager_context_loss():
+async def test_async_callback_manager_context_loss() -> None:
     handlers = [
         StatefulAsyncCallbackHandler("StateModifier", run_inline=True),
         StatefulAsyncCallbackHandler("StateReader", run_inline=True),
@@ -67,7 +71,6 @@ async def test_async_callback_manager_context_loss():
         await manager.on_llm_start({}, prompts)
 
         # Assert the order of states
-        # Since we expect concurrent execution, the state should not follow the expected pattern of 1,1,2,2,3,3
         states = [entry for entry in shared_stack if entry is not None]
         assert states == [
             1,
