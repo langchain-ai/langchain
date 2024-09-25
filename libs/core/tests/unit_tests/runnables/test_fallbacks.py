@@ -264,7 +264,7 @@ def test_fallbacks_stream() -> None:
     runnable = RunnableGenerator(_generate_immediate_error).with_fallbacks(
         [RunnableGenerator(_generate)]
     )
-    assert list(runnable.stream({})) == [c for c in "foo bar"]
+    assert list(runnable.stream({})) == list("foo bar")
 
     with pytest.raises(ValueError):
         runnable = RunnableGenerator(_generate_delayed_error).with_fallbacks(

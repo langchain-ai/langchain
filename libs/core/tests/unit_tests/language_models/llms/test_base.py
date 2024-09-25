@@ -40,12 +40,12 @@ def test_batch_size() -> None:
     llm = FakeListLLM(responses=["foo"] * 3)
     with collect_runs() as cb:
         llm.batch(["foo", "bar", "foo"], {"callbacks": [cb]})
-        assert all([(r.extra or {}).get("batch_size") == 3 for r in cb.traced_runs])
+        assert all((r.extra or {}).get("batch_size") == 3 for r in cb.traced_runs)
         assert len(cb.traced_runs) == 3
     llm = FakeListLLM(responses=["foo"])
     with collect_runs() as cb:
         llm.batch(["foo"], {"callbacks": [cb]})
-        assert all([(r.extra or {}).get("batch_size") == 1 for r in cb.traced_runs])
+        assert all((r.extra or {}).get("batch_size") == 1 for r in cb.traced_runs)
         assert len(cb.traced_runs) == 1
 
     llm = FakeListLLM(responses=["foo"])
@@ -71,12 +71,12 @@ async def test_async_batch_size() -> None:
     llm = FakeListLLM(responses=["foo"] * 3)
     with collect_runs() as cb:
         await llm.abatch(["foo", "bar", "foo"], {"callbacks": [cb]})
-        assert all([(r.extra or {}).get("batch_size") == 3 for r in cb.traced_runs])
+        assert all((r.extra or {}).get("batch_size") == 3 for r in cb.traced_runs)
         assert len(cb.traced_runs) == 3
     llm = FakeListLLM(responses=["foo"])
     with collect_runs() as cb:
         await llm.abatch(["foo"], {"callbacks": [cb]})
-        assert all([(r.extra or {}).get("batch_size") == 1 for r in cb.traced_runs])
+        assert all((r.extra or {}).get("batch_size") == 1 for r in cb.traced_runs)
         assert len(cb.traced_runs) == 1
 
     llm = FakeListLLM(responses=["foo"])
@@ -142,7 +142,7 @@ async def test_astream_fallback_to_ainvoke() -> None:
             return "fake-chat-model"
 
     model = ModelWithGenerate()
-    chunks = [chunk for chunk in model.stream("anything")]
+    chunks = list(model.stream("anything"))
     assert chunks == ["hello"]
 
     chunks = [chunk async for chunk in model.astream("anything")]
@@ -179,7 +179,7 @@ async def test_astream_implementation_fallback_to_stream() -> None:
             return "fake-chat-model"
 
     model = ModelWithSyncStream()
-    chunks = [chunk for chunk in model.stream("anything")]
+    chunks = list(model.stream("anything"))
     assert chunks == ["a", "b"]
     assert type(model)._astream == BaseLLM._astream
     astream_chunks = [chunk async for chunk in model.astream("anything")]
