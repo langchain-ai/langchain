@@ -4,8 +4,7 @@ from typing import Any, Dict, List, Mapping, Optional, cast
 
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.language_models import LLM
-
-from langchain_experimental.pydantic_v1 import validator
+from pydantic import model_validator
 
 
 class FakeLLM(LLM):
@@ -15,15 +14,14 @@ class FakeLLM(LLM):
     sequential_responses: Optional[bool] = False
     response_index: int = 0
 
-    @validator("queries", always=True)
-    def check_queries_required(
-        cls, queries: Optional[Mapping], values: Mapping[str, Any]
-    ) -> Optional[Mapping]:
-        if values.get("sequential_response") and not queries:
+    @model_validator(mode="before")
+    @classmethod
+    def check_queries_required(cls, values: dict) -> dict:
+        if values.get("sequential_response") and not values.get("queries"):
             raise ValueError(
                 "queries is required when sequential_response is set to True"
             )
-        return queries
+        return values
 
     def get_num_tokens(self, text: str) -> int:
         """Return number of tokens."""

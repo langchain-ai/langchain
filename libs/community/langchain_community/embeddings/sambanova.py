@@ -3,8 +3,8 @@ from typing import Dict, Generator, List, Optional
 
 import requests
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.utils import get_from_dict_or_env, pre_init
+from pydantic import BaseModel
 
 
 class SambaStudioEmbeddings(BaseModel, Embeddings):
@@ -213,7 +213,7 @@ class SambaStudioEmbeddings(BaseModel, Embeddings):
                     )
                 try:
                     if params.get("select_expert"):
-                        embedding = response.json()["predictions"][0]
+                        embedding = response.json()["predictions"]
                     else:
                         embedding = response.json()["predictions"]
                     embeddings.extend(embedding)
@@ -299,7 +299,7 @@ class SambaStudioEmbeddings(BaseModel, Embeddings):
                 )
             try:
                 if params.get("select_expert"):
-                    embedding = response.json()["predictions"][0][0]
+                    embedding = response.json()["predictions"][0]
                 else:
                     embedding = response.json()["predictions"][0]
             except KeyError:

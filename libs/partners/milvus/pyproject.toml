@@ -1,5 +1,5 @@
 [build-system]
-requires = [ "poetry-core>=1.0.0",]
+requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
@@ -12,12 +12,12 @@ repository = "https://github.com/langchain-ai/langchain"
 license = "MIT"
 
 [tool.ruff]
-select = [ "E", "F", "I", "T201",]
+select = ["E", "F", "I", "T201"]
 
 [tool.mypy]
 disallow_untyped_defs = "True"
 [[tool.mypy.overrides]]
-module = [ "pymilvus",]
+module = ["pymilvus"]
 ignore_missing_imports = "True"
 
 [tool.poetry.urls]
@@ -26,8 +26,16 @@ ignore_missing_imports = "True"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = "^0.2.38"
 pymilvus = "^2.4.3"
+
+[[tool.poetry.dependencies.langchain-core]]
+version = ">=0.2.38,<0.4"
+python = ">=3.9"
+
+[[tool.poetry.dependencies.langchain-core]]
+version = ">=0.2.38,<0.3"
+python = "<3.9"
+
 [[tool.poetry.dependencies.scipy]]
 version = "^1.7"
 python = "<3.12"
@@ -37,11 +45,15 @@ version = "^1.9"
 python = ">=3.12"
 
 [tool.coverage.run]
-omit = [ "tests/*",]
+omit = ["tests/*"]
 
 [tool.pytest.ini_options]
 addopts = "--snapshot-warn-unused --strict-markers --strict-config --durations=5"
-markers = [ "requires: mark tests as requiring a specific library", "asyncio: mark tests as requiring asyncio", "compile: mark placeholder test used to compile integration tests without running them",]
+markers = [
+    "requires: mark tests as requiring a specific library",
+    "asyncio: mark tests as requiring asyncio",
+    "compile: mark placeholder test used to compile integration tests without running them",
+]
 asyncio_mode = "auto"
 
 [tool.poetry.group.test]
@@ -66,11 +78,22 @@ pytest-mock = "^3.10.0"
 syrupy = "^4.0.2"
 pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
+milvus_model = "^0.2.0"
+
+[[tool.poetry.group.test.dependencies.langchain-core]]
+path = "../../core"
+develop = true
+python = ">=3.9"
+
+[[tool.poetry.group.test.dependencies.langchain-core]]
+version = ">=0.2.38,<0.3"
+python = "<3.9"
 
 [tool.poetry.group.codespell.dependencies]
 codespell = "^2.2.0"
 
 [tool.poetry.group.test_integration.dependencies]
+milvus_model = "^0.2.0"
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.1.5"
@@ -80,14 +103,21 @@ mypy = "^0.991"
 types-requests = "^2"
 simsimd = "^5.0.0"
 
-[tool.poetry.group.test.dependencies.langchain-core]
+[[tool.poetry.group.typing.dependencies.langchain-core]]
 path = "../../core"
 develop = true
+python = ">=3.9"
 
-[tool.poetry.group.typing.dependencies.langchain-core]
-path = "../../core"
-develop = true
+[[tool.poetry.group.typing.dependencies.langchain-core]]
+version = ">=0.2.38,<0.3"
+python = "<3.9"
 
-[tool.poetry.group.dev.dependencies.langchain-core]
+[tool.poetry.group.dev.dependencies]
+[[tool.poetry.group.dev.dependencies.langchain-core]]
 path = "../../core"
 develop = true
+python = ">=3.9"
+
+[[tool.poetry.group.dev.dependencies.langchain-core]]
+version = ">=0.2.38,<0.3"
+python = "<3.9"
