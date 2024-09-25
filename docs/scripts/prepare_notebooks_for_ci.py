@@ -20,6 +20,8 @@ NOTEBOOKS_NO_CASSETTES = (
 NOTEBOOKS_NO_EXECUTION = [
     "docs/docs/tutorials/local_rag.ipynb",  # Local LLMs
     "docs/docs/tutorials/graph.ipynb",  # Requires local graph db running
+    "docs/docs/tutorials/query_analysis.ipynb",  # Requires youtube_transcript_api
+    "docs/docs/tutorials/sql_qa.ipynb",  # Requires Chinook db locally
 ]
 
 
