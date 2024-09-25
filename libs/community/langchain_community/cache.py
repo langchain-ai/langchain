@@ -2106,7 +2106,7 @@ class AzureCosmosDBSemanticCache(BaseCache):
         ef_construction: int = 64,
         ef_search: int = 40,
         score_threshold: Optional[float] = None,
-        application_name: str = "LANGCHAIN_CACHING_PYTHON",
+        application_name: str = "LangChain-CDBNoSQL-SemanticCache-Python",
     ):
         """
         Args:
@@ -2271,7 +2271,6 @@ class AzureCosmosDBSemanticCache(BaseCache):
         index_name = self._index_name(kwargs["llm_string"])
         if index_name in self._cache_dict:
             self._cache_dict[index_name].get_collection().delete_many({})
-            # self._cache_dict[index_name].clear_collection()
 
     @staticmethod
     def _validate_enum_value(value: Any, enum_type: Type[Enum]) -> None:
@@ -2374,8 +2373,11 @@ class AzureCosmosDBNoSqlSemanticCache(BaseCache):
 
     def clear(self, **kwargs: Any) -> None:
         """Clear semantic cache for a given llm_string."""
-        database = self.cosmos_client.get_database_client(self.database_name)
-        database.delete_container(self.container_name)
+        cache_name = self._cache_name(llm_string=kwargs["llm-string"])
+        if cache_name in self._cache_dict:
+            container = self._cache_dict["cache_name"].get_container()
+            for item in container.read_all_items():
+                container.delete_item(item)
 
 
 class OpenSearchSemanticCache(BaseCache):

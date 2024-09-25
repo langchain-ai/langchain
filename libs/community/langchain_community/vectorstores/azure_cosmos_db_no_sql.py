@@ -118,10 +118,6 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
             vector_embedding_policy=self._vector_embedding_policy,
         )
 
-        self._embedding_key = self._vector_embedding_policy["vectorEmbeddings"][0][
-            "path"
-        ][1:]
-
     def add_texts(
         self,
         texts: Iterable[str],
@@ -165,7 +161,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
             {
                 "id": str(uuid.uuid4()),
                 text_key: t,
-                self._embedding_key: embedding,
+                "embedding": embedding,
                 "metadata": m,
             }
             for t, m, embedding in zip(texts, metadatas, embeddings)
@@ -274,22 +270,21 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
             query += "TOP @limit "
 
         query += (
-            "c.id, c.{}, c.text, c.metadata, "
-            "VectorDistance(c.@embeddingKey, @embeddings) AS SimilarityScore FROM c"
+            "c.id, c.text, c.metadata, c.embedding, "
+            "VectorDistance(c.embedding, @embeddings) AS SimilarityScore FROM c"
         )
 
         # Add where_clause if specified
         if pre_filter is not None and pre_filter.get("where_clause") is not None:
             query += " {}".format(pre_filter["where_clause"])
 
-        query += " ORDER BY VectorDistance(c.@embeddingKey, @embeddings)"
+        query += " ORDER BY VectorDistance(c.embedding, @embeddings)"
 
         # Add limit_offset_clause if specified
         if pre_filter is not None and pre_filter.get("limit_offset_clause") is not None:
             query += " {}".format(pre_filter["limit_offset_clause"])
         parameters = [
             {"name": "@limit", "value": k},
-            {"name": "@embeddingKey", "value": self._embedding_key},
             {"name": "@embeddings", "value": embeddings},
         ]
 
@@ -297,15 +292,16 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
 
         items = list(
             self._container.query_items(
-                query=query, parameters=parameters, enable_cross_partition_query=True
+                query=query, parameters=parameters, enable_cross_partition_query=True,
             )
         )
         for item in items:
             text = item["text"]
             metadata = item["metadata"]
+            metadata["id"] = item["id"]
             score = item["SimilarityScore"]
             if with_embedding:
-                metadata[self._embedding_key] = item[self._embedding_key]
+                metadata["embedding"] = item["embedding"]
             docs_and_scores.append(
                 (Document(page_content=text, metadata=metadata), score)
             )
@@ -369,7 +365,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         # Re-ranks the docs using MMR
         mmr_doc_indexes = maximal_marginal_relevance(
             np.array(embedding),
-            [doc.metadata[self._embedding_key] for doc, _ in docs],
+            [doc.metadata["embedding"] for doc, _ in docs],
             k=k,
             lambda_mult=lambda_mult,
         )
@@ -403,3 +399,6 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
             with_embedding=with_embedding,
         )
         return docs
+
+    def get_container(self):
+        return self._container

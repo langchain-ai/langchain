@@ -7,9 +7,8 @@ from langchain.globals import get_llm_cache, set_llm_cache
 from langchain_core.outputs import Generation
 
 from langchain_community.cache import AzureCosmosDBNoSqlSemanticCache
-from tests.integration_tests.cache.fake_embeddings import (
-    FakeEmbeddings,
-)
+
+from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 HOST = "COSMOS_DB_URI"
@@ -57,7 +56,7 @@ cosmos_container_properties_test = {"partition_key": partition_key}
 cosmos_database_properties_test: Dict[str, Any] = {}
 
 
-def test_azure_cosmos_db_nosql_semantic_cache_cosine_quantizedflat() -> None:
+def test_azure_cosmos_db_nosql_semantic_cache_cosine_quantizedflat(cosmos_client) -> None:
     set_llm_cache(
         AzureCosmosDBNoSqlSemanticCache(
             cosmos_client=cosmos_client,
@@ -83,7 +82,7 @@ def test_azure_cosmos_db_nosql_semantic_cache_cosine_quantizedflat() -> None:
     get_llm_cache().clear(llm_string=llm_string)
 
 
-def test_azure_cosmos_db_nosql_semantic_cache_cosine_flat() -> None:
+def test_azure_cosmos_db_nosql_semantic_cache_cosine_flat(cosmos_client) -> None:
     set_llm_cache(
         AzureCosmosDBNoSqlSemanticCache(
             cosmos_client=cosmos_client,
@@ -109,7 +108,7 @@ def test_azure_cosmos_db_nosql_semantic_cache_cosine_flat() -> None:
     get_llm_cache().clear(llm_string=llm_string)
 
 
-def test_azure_cosmos_db_nosql_semantic_cache_dotproduct_quantizedflat() -> None:
+def test_azure_cosmos_db_nosql_semantic_cache_dotproduct_quantizedflat(cosmos_client) -> None:
     set_llm_cache(
         AzureCosmosDBNoSqlSemanticCache(
             cosmos_client=cosmos_client,
@@ -137,7 +136,7 @@ def test_azure_cosmos_db_nosql_semantic_cache_dotproduct_quantizedflat() -> None
     get_llm_cache().clear(llm_string=llm_string)
 
 
-def test_azure_cosmos_db_nosql_semantic_cache_dotproduct_flat() -> None:
+def test_azure_cosmos_db_nosql_semantic_cache_dotproduct_flat(cosmos_client) -> None:
     set_llm_cache(
         AzureCosmosDBNoSqlSemanticCache(
             cosmos_client=cosmos_client,
@@ -165,7 +164,7 @@ def test_azure_cosmos_db_nosql_semantic_cache_dotproduct_flat() -> None:
     get_llm_cache().clear(llm_string=llm_string)
 
 
-def test_azure_cosmos_db_nosql_semantic_cache_euclidean_quantizedflat() -> None:
+def test_azure_cosmos_db_nosql_semantic_cache_euclidean_quantizedflat(cosmos_client) -> None:
     set_llm_cache(
         AzureCosmosDBNoSqlSemanticCache(
             cosmos_client=cosmos_client,
@@ -191,7 +190,7 @@ def test_azure_cosmos_db_nosql_semantic_cache_euclidean_quantizedflat() -> None:
     get_llm_cache().clear(llm_string=llm_string)
 
 
-def test_azure_cosmos_db_nosql_semantic_cache_euclidean_flat() -> None:
+def test_azure_cosmos_db_nosql_semantic_cache_euclidean_flat(cosmos_client) -> None:
     set_llm_cache(
         AzureCosmosDBNoSqlSemanticCache(
             cosmos_client=cosmos_client,
