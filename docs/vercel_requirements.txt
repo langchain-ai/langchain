@@ -1,7 +1,6 @@
 -e ../libs/core
 -e ../libs/langchain
 -e ../libs/community
--e ../libs/experimental
 -e ../libs/text-splitters
 langchain-cohere
 urllib3==1.26.19
