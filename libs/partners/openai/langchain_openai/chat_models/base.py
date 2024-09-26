@@ -440,11 +440,11 @@ class BaseChatOpenAI(BaseChatModel):
     default_query: Union[Mapping[str, object], None] = None
     # Configure a custom httpx client. See the
     # [httpx documentation](https://www.python-httpx.org/api/#client) for more details.
-    http_client: Union[Any, None] = None
+    http_client: Union[Any, None] = Field(default=None, exclude=True)
     """Optional httpx.Client. Only used for sync invocations. Must specify 
         http_async_client as well if you'd like a custom client for async invocations.
     """
-    http_async_client: Union[Any, None] = None
+    http_async_client: Union[Any, None] = Field(default=None, exclude=True)
     """Optional httpx.AsyncClient. Only used for async invocations. Must specify 
         http_client as well if you'd like a custom client for sync invocations."""
     stop: Optional[Union[List[str], str]] = Field(default=None, alias="stop_sequences")
