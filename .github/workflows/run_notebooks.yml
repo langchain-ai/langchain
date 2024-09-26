@@ -30,19 +30,20 @@ jobs:
 
       - name: Install dependencies
         run: |
-          poetry install --directory libs/core
-          poetry install --directory libs/langchain
-          poetry install --directory libs/community
-          poetry install --directory libs/experimental
-          poetry install --directory libs/partners/anthropic
-          poetry install --directory libs/partners/chroma
-          poetry install --directory libs/partners/openai
-          poetry install --directory libs/partners/mistralai
-          poetry run pip install jupyter langgraph click pypdf vcrpy
+          pip install -e libs/core
+          pip install -e libs/langchain
+          pip install -e libs/community
+          pip install -e libs/experimental
+          pip install -e libs//partners/anthropic
+          pip install -e libs//partners/chroma
+          pip install -e libs//partners/openai
+          pip install -e libs//partners/mistralai
+          pip install jupyter langgraph click pypdf vcrpy
 
       - name: Prepare notebooks
         run: |
-          poetry run python docs/scripts/prepare_notebooks_for_ci.py --comment-install-cells
+
+          python docs/scripts/prepare_notebooks_for_ci.py --comment-install-cells
 
       - name: Run notebooks
         env:
@@ -54,4 +55,4 @@ jobs:
           TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
           LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
         run: |
-          poetry run ./docs/scripts/execute_notebooks.sh
+          ./docs/scripts/execute_notebooks.sh
