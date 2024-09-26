@@ -7,7 +7,6 @@ from operator import itemgetter
 from typing import (
     Any,
     Callable,
-    Dict,
     Optional,
     Union,
     cast,
@@ -5416,7 +5415,7 @@ def test_schema_for_prompt_and_chat_model() -> None:
 
 
 def test_runnable_assign() -> None:
-    def add_ten(x: Dict[str, int]) -> Dict[str, int]:
+    def add_ten(x: dict[str, int]) -> dict[str, int]:
         return {"added": x["input"] + 10}
 
     mapper = RunnableParallel({"add_step": RunnableLambda(add_ten)})
