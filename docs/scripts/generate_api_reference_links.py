@@ -21,7 +21,7 @@ code_block_re = re.compile(r"^(```\s?python\n)(.*?)(```)", re.DOTALL | re.MULTIL
 
 
 MANUAL_API_REFERENCES_LANGGRAPH = [
-    ("langgraph.prebuilt", "create_react_agent", "create_react_agent"),
+    ("langgraph.prebuilt", "create_react_agent"),
     (
         "langgraph.prebuilt",
         "ToolNode",
@@ -34,7 +34,7 @@ MANUAL_API_REFERENCES_LANGGRAPH = [
         "langgraph.prebuilt",
         "ToolInvocation",
     ),
-    ("langgraph.prebuilt", "tools_condition", "tools_condition"),
+    ("langgraph.prebuilt", "tools_condition"),
     (
         "langgraph.prebuilt",
         "ValidationNode",
@@ -52,7 +52,7 @@ MANUAL_API_REFERENCES_LANGGRAPH = [
         "langgraph.graph.message",
         "MessageGraph",
     ),
-    ("langgraph.graph.message", "add_messages", "add_messages"),
+    ("langgraph.graph.message", "add_messages"),
     (
         "langgraph.graph.graph",
         "CompiledGraph",
@@ -100,7 +100,6 @@ MANUAL_API_REFERENCES_LANGGRAPH = [
     (
         "langgraph.checkpoint.serde.jsonplus",
         "JsonPlusSerializer",
-        "JsonPlusSerializer",
     ),
     (
         "langgraph.checkpoint.memory",
@@ -116,7 +115,6 @@ MANUAL_API_REFERENCES_LANGGRAPH = [
     ),
     (
         "langgraph.checkpoint.postgres.aio",
-        "AsyncPostgresSaver",
         "AsyncPostgresSaver",
     ),
     (
