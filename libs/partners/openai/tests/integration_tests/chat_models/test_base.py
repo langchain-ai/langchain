@@ -44,7 +44,7 @@ def test_chat_openai() -> None:
         max_retries=3,
         http_client=None,
         n=1,
-        max_tokens=10,
+        max_completion_tokens=10,
         default_headers=None,
         default_query=None,
     )
@@ -64,7 +64,7 @@ def test_chat_openai_model() -> None:
 
 def test_chat_openai_system_message() -> None:
     """Test ChatOpenAI wrapper with system message."""
-    chat = ChatOpenAI(max_tokens=10)
+    chat = ChatOpenAI(max_completion_tokens=10)
     system_message = SystemMessage(content="You are to chat with the user.")
     human_message = HumanMessage(content="Hello")
     response = chat.invoke([system_message, human_message])
@@ -75,7 +75,7 @@ def test_chat_openai_system_message() -> None:
 @pytest.mark.scheduled
 def test_chat_openai_generate() -> None:
     """Test ChatOpenAI wrapper with generate."""
-    chat = ChatOpenAI(max_tokens=10, n=2)
+    chat = ChatOpenAI(max_completion_tokens=10, n=2)
     message = HumanMessage(content="Hello")
     response = chat.generate([[message], [message]])
     assert isinstance(response, LLMResult)
@@ -92,7 +92,7 @@ def test_chat_openai_generate() -> None:
 @pytest.mark.scheduled
 def test_chat_openai_multiple_completions() -> None:
     """Test ChatOpenAI wrapper with multiple completions."""
-    chat = ChatOpenAI(max_tokens=10, n=5)
+    chat = ChatOpenAI(max_completion_tokens=10, n=5)
     message = HumanMessage(content="Hello")
     response = chat._generate([message])
     assert isinstance(response, ChatResult)
@@ -108,7 +108,7 @@ def test_chat_openai_streaming() -> None:
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
     chat = ChatOpenAI(
-        max_tokens=10,
+        max_completion_tokens=10,
         streaming=True,
         temperature=0,
         callback_manager=callback_manager,
@@ -133,7 +133,9 @@ def test_chat_openai_streaming_generation_info() -> None:
 
     callback = _FakeCallback()
     callback_manager = CallbackManager([callback])
-    chat = ChatOpenAI(max_tokens=2, temperature=0, callback_manager=callback_manager)
+    chat = ChatOpenAI(
+        max_completion_tokens=2, temperature=0, callback_manager=callback_manager
+    )
     list(chat.stream("hi"))
     generation = callback.saved_things["generation"]
     # `Hello!` is two tokens, assert that that is what is returned
@@ -142,7 +144,7 @@ def test_chat_openai_streaming_generation_info() -> None:
 
 def test_chat_openai_llm_output_contains_model_name() -> None:
     """Test llm_output contains model_name."""
-    chat = ChatOpenAI(max_tokens=10)
+    chat = ChatOpenAI(max_completion_tokens=10)
     message = HumanMessage(content="Hello")
     llm_result = chat.generate([[message]])
     assert llm_result.llm_output is not None
@@ -151,7 +153,7 @@ def test_chat_openai_llm_output_contains_model_name() -> None:
 
 def test_chat_openai_streaming_llm_output_contains_model_name() -> None:
     """Test llm_output contains model_name."""
-    chat = ChatOpenAI(max_tokens=10, streaming=True)
+    chat = ChatOpenAI(max_completion_tokens=10, streaming=True)
     message = HumanMessage(content="Hello")
     llm_result = chat.generate([[message]])
     assert llm_result.llm_output is not None
@@ -161,13 +163,13 @@ def test_chat_openai_streaming_llm_output_contains_model_name() -> None:
 def test_chat_openai_invalid_streaming_params() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     with pytest.raises(ValueError):
-        ChatOpenAI(max_tokens=10, streaming=True, temperature=0, n=5)
+        ChatOpenAI(max_completion_tokens=10, streaming=True, temperature=0, n=5)
 
 
 @pytest.mark.scheduled
 async def test_async_chat_openai() -> None:
     """Test async generation."""
-    chat = ChatOpenAI(max_tokens=10, n=2)
+    chat = ChatOpenAI(max_completion_tokens=10, n=2)
     message = HumanMessage(content="Hello")
     response = await chat.agenerate([[message], [message]])
     assert isinstance(response, LLMResult)
@@ -187,7 +189,7 @@ async def test_async_chat_openai_streaming() -> None:
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
     chat = ChatOpenAI(
-        max_tokens=10,
+        max_completion_tokens=10,
         streaming=True,
         temperature=0,
         callback_manager=callback_manager,
@@ -219,7 +221,7 @@ async def test_async_chat_openai_bind_functions() -> None:
             default=None, title="Fav Food", description="The person's favorite food"
         )
 
-    chat = ChatOpenAI(max_tokens=30, n=1, streaming=True).bind_functions(
+    chat = ChatOpenAI(max_completion_tokens=30, n=1, streaming=True).bind_functions(
         functions=[Person], function_call="Person"
     )
 
@@ -241,8 +243,8 @@ async def test_async_chat_openai_bind_functions() -> None:
 def test_chat_openai_extra_kwargs() -> None:
     """Test extra kwargs to chat openai."""
     # Check that foo is saved in extra_kwargs.
-    llm = ChatOpenAI(foo=3, max_tokens=10)  # type: ignore[call-arg]
-    assert llm.max_tokens == 10
+    llm = ChatOpenAI(foo=3, max_completion_tokens=10)  # type: ignore[call-arg]
+    assert llm.max_completion_tokens == 10
     assert llm.model_kwargs == {"foo": 3}
 
     # Test that if extra_kwargs are provided, they are added to it.
@@ -265,7 +267,7 @@ def test_chat_openai_extra_kwargs() -> None:
 @pytest.mark.scheduled
 def test_openai_streaming() -> None:
     """Test streaming tokens from OpenAI."""
-    llm = ChatOpenAI(max_tokens=10)
+    llm = ChatOpenAI(max_completion_tokens=10)
 
     for token in llm.stream("I'm Pickle Rick"):
         assert isinstance(token.content, str)
@@ -274,7 +276,7 @@ def test_openai_streaming() -> None:
 @pytest.mark.scheduled
 async def test_openai_astream() -> None:
     """Test streaming tokens from OpenAI."""
-    llm = ChatOpenAI(max_tokens=10)
+    llm = ChatOpenAI(max_completion_tokens=10)
 
     async for token in llm.astream("I'm Pickle Rick"):
         assert isinstance(token.content, str)
@@ -283,7 +285,7 @@ async def test_openai_astream() -> None:
 @pytest.mark.scheduled
 async def test_openai_abatch() -> None:
     """Test streaming tokens from ChatOpenAI."""
-    llm = ChatOpenAI(max_tokens=10)
+    llm = ChatOpenAI(max_completion_tokens=10)
 
     result = await llm.abatch(["I'm Pickle Rick", "I'm not Pickle Rick"])
     for token in result:
@@ -293,7 +295,7 @@ async def test_openai_abatch() -> None:
 @pytest.mark.scheduled
 async def test_openai_abatch_tags() -> None:
     """Test batch tokens from ChatOpenAI."""
-    llm = ChatOpenAI(max_tokens=10)
+    llm = ChatOpenAI(max_completion_tokens=10)
 
     result = await llm.abatch(
         ["I'm Pickle Rick", "I'm not Pickle Rick"], config={"tags": ["foo"]}
@@ -305,7 +307,7 @@ async def test_openai_abatch_tags() -> None:
 @pytest.mark.scheduled
 def test_openai_batch() -> None:
     """Test batch tokens from ChatOpenAI."""
-    llm = ChatOpenAI(max_tokens=10)
+    llm = ChatOpenAI(max_completion_tokens=10)
 
     result = llm.batch(["I'm Pickle Rick", "I'm not Pickle Rick"])
     for token in result:
@@ -315,7 +317,7 @@ def test_openai_batch() -> None:
 @pytest.mark.scheduled
 async def test_openai_ainvoke() -> None:
     """Test invoke tokens from ChatOpenAI."""
-    llm = ChatOpenAI(max_tokens=10)
+    llm = ChatOpenAI(max_completion_tokens=10)
 
     result = await llm.ainvoke("I'm Pickle Rick", config={"tags": ["foo"]})
     assert isinstance(result.content, str)
@@ -324,7 +326,7 @@ async def test_openai_ainvoke() -> None:
 @pytest.mark.scheduled
 def test_openai_invoke() -> None:
     """Test invoke tokens from ChatOpenAI."""
-    llm = ChatOpenAI(max_tokens=10)
+    llm = ChatOpenAI(max_completion_tokens=10)
 
     result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
     assert isinstance(result.content, str)
@@ -409,7 +411,7 @@ async def test_astream() -> None:
             assert chunks_with_token_counts == 0
             assert full.usage_metadata is None
 
-    llm = ChatOpenAI(temperature=0, max_tokens=5)
+    llm = ChatOpenAI(temperature=0, max_completion_tokens=5)
     await _test_stream(llm.astream("Hello"), expect_usage=False)
     await _test_stream(
         llm.astream("Hello", stream_options={"include_usage": True}), expect_usage=True
@@ -417,7 +419,7 @@ async def test_astream() -> None:
     await _test_stream(llm.astream("Hello", stream_usage=True), expect_usage=True)
     llm = ChatOpenAI(
         temperature=0,
-        max_tokens=5,
+        max_completion_tokens=5,
         model_kwargs={"stream_options": {"include_usage": True}},
     )
     await _test_stream(llm.astream("Hello"), expect_usage=True)
@@ -425,7 +427,7 @@ async def test_astream() -> None:
         llm.astream("Hello", stream_options={"include_usage": False}),
         expect_usage=False,
     )
-    llm = ChatOpenAI(temperature=0, max_tokens=5, stream_usage=True)
+    llm = ChatOpenAI(temperature=0, max_completion_tokens=5, stream_usage=True)
     await _test_stream(llm.astream("Hello"), expect_usage=True)
     await _test_stream(llm.astream("Hello", stream_usage=False), expect_usage=False)
 
@@ -690,7 +692,7 @@ def test_openai_response_headers() -> None:
     """Test ChatOpenAI response headers."""
     chat_openai = ChatOpenAI(include_response_headers=True)
     query = "I'm Pickle Rick"
-    result = chat_openai.invoke(query, max_tokens=10)
+    result = chat_openai.invoke(query, max_completion_tokens=10)
     headers = result.response_metadata["headers"]
     assert headers
     assert isinstance(headers, dict)
@@ -698,7 +700,7 @@ def test_openai_response_headers() -> None:
 
     # Stream
     full: Optional[BaseMessageChunk] = None
-    for chunk in chat_openai.stream(query, max_tokens=10):
+    for chunk in chat_openai.stream(query, max_completion_tokens=10):
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessage)
     headers = full.response_metadata["headers"]
@@ -711,7 +713,7 @@ async def test_openai_response_headers_async() -> None:
     """Test ChatOpenAI response headers."""
     chat_openai = ChatOpenAI(include_response_headers=True)
     query = "I'm Pickle Rick"
-    result = await chat_openai.ainvoke(query, max_tokens=10)
+    result = await chat_openai.ainvoke(query, max_completion_tokens=10)
     headers = result.response_metadata["headers"]
     assert headers
     assert isinstance(headers, dict)
@@ -719,7 +721,7 @@ async def test_openai_response_headers_async() -> None:
 
     # Stream
     full: Optional[BaseMessageChunk] = None
-    async for chunk in chat_openai.astream(query, max_tokens=10):
+    async for chunk in chat_openai.astream(query, max_completion_tokens=10):
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessage)
     headers = full.response_metadata["headers"]

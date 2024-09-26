@@ -33,7 +33,7 @@ def test_openai_model_param() -> None:
     llm = ChatOpenAI(model_name="foo")  # type: ignore[call-arg]
     assert llm.model_name == "foo"
 
-    llm = ChatOpenAI(max_tokens=10)
+    llm = ChatOpenAI(max_tokens=10)  # type: ignore[call-arg]
     assert llm.max_tokens == 10
     llm = ChatOpenAI(max_completion_tokens=10)
     assert llm.max_tokens == 10
