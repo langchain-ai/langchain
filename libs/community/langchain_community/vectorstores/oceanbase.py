@@ -98,6 +98,7 @@ class OceanBase(VectorStore):
         metadata_field: Optional[str] = None,
         vidx_name: str = "vidx",
         partitions=None,
+        extra_columns: Optional[List[Column]] = None,
         **kwargs,
     ):
         """Initialize the OceanBase vector store."""
@@ -116,7 +117,7 @@ class OceanBase(VectorStore):
             if connection_args is not None
             else DEFAULT_OCEANBASE_CONNECTION
         )
-
+        self.extra_columns = extra_columns
         self.obvector: Optional[ObVecClient] = None
         self._create_client(**kwargs)
         assert self.obvector is not None
@@ -180,7 +181,9 @@ class OceanBase(VectorStore):
             autoload_with=self.obvector.engine,
         )
         column_names = [column.name for column in table.columns]
-        assert len(column_names) in (3, 4)
+        optional_len = len(self.extra_columns or []) + (1 if self.metadata_field else 0)
+        assert len(column_names) == (3 + optional_len)
+
         logging.info(f"load exist table with {column_names} columns")
         self.primary_field = column_names[0]
         self.vector_field = column_names[1]
@@ -210,6 +213,8 @@ class OceanBase(VectorStore):
         ]
         if self.metadata_field is not None:
             cols.append(Column(self.metadata_field, JSON))
+        if self.extra_columns is not None:
+            cols.extend(self.extra_columns)
 
         vidx_params = self.obvector.prepare_index_params()
         vidx_params.add_index(
@@ -244,6 +249,8 @@ class OceanBase(VectorStore):
         batch_size: int = 1000,
         *,
         ids: Optional[List[str]] = None,
+        extras: Optional[List[dict]] = None,
+        partition_name: Optional[str] = None,
         **kwargs: Any,
     ) -> List[str]:
         """Insert text data into OceanBase.
@@ -292,6 +299,8 @@ class OceanBase(VectorStore):
         if not metadatas:
             metadatas = [{} for _ in texts]
 
+        extra_data = extras or [{} for _ in texts]
+
         pks: list[str] = []
         for i in range(0, total_count, batch_size):
             if self.metadata_field is None:
@@ -300,11 +309,13 @@ class OceanBase(VectorStore):
                         self.primary_field: id,
                         self.vector_field: embedding,
                         self.text_field: text,
+                        **extra,
                     }
-                    for id, embedding, text in zip(
+                    for id, embedding, text, extra in zip(
                         ids[i : i + batch_size],
                         embeddings[i : i + batch_size],
                         texts[i : i + batch_size],
+                        extra_data[i : i + batch_size],
                     )
                 ]
             else:
@@ -314,16 +325,22 @@ class OceanBase(VectorStore):
                         self.vector_field: embedding,
                         self.text_field: text,
                         self.metadata_field: metadata,
+                        **extra,
                     }
-                    for id, embedding, text, metadata in zip(
+                    for id, embedding, text, metadata, extra in zip(
                         ids[i : i + batch_size],
                         embeddings[i : i + batch_size],
                         texts[i : i + batch_size],
                         metadatas[i : i + batch_size],
+                        extra_data[i : i + batch_size],
                     )
                 ]
             try:
-                self.obvector.insert(table_name=self.table_name, data=data)
+                self.obvector.insert(
+                    table_name=self.table_name,
+                    data=data,
+                    partition_name=(partition_name or ""),
+                )
                 pks.extend(ids[i : i + batch_size])
             except Exception as e:
                 logger.error(
@@ -344,9 +361,10 @@ class OceanBase(VectorStore):
         drop_old: bool = False,
         *,
         ids: Optional[List[str]] = None,
+        extras: Optional[List[dict]] = None,
         **kwargs: Any,
     ):
-        """Create a OceanBase table, indexes it with HNSW, and insert data. 
+        """Create a OceanBase table, indexes it with HNSW, and insert data.
 
         Args:
             texts (List[str]): Text data.
@@ -378,7 +396,7 @@ class OceanBase(VectorStore):
             drop_old=drop_old,
             **kwargs,
         )
-        oceanbase.add_texts(texts, metadatas, ids=ids)
+        oceanbase.add_texts(texts, metadatas, ids=ids, extras=extras)
         return oceanbase
 
     def delete(  # type: ignore[no-untyped-def]
