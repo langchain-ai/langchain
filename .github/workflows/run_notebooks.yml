@@ -54,4 +54,4 @@ jobs:
           TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
           LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
         run: |
-          ./docs/scripts/execute_notebooks.sh
+          poetry run ./docs/scripts/execute_notebooks.sh
