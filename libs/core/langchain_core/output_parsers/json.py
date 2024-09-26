@@ -108,7 +108,7 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
             return "Return a JSON object."
         else:
             # Copy schema to avoid altering original Pydantic schema.
-            schema = {k: v for k, v in self._get_schema(self.pydantic_object).items()}
+            schema = dict(self._get_schema(self.pydantic_object).items())
 
             # Remove extraneous fields.
             reduced_schema = schema
