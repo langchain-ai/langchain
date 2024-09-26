@@ -22,45 +22,111 @@ code_block_re = re.compile(r"^(```\s?python\n)(.*?)(```)", re.DOTALL | re.MULTIL
 
 MANUAL_API_REFERENCES_LANGGRAPH = [
     ("langgraph.prebuilt", "create_react_agent", "create_react_agent"),
-    ("langgraph.prebuilt", "ToolNode", "ToolNode"),
-    ("langgraph.prebuilt", "ToolExecutor", "ToolExecutor"),
-    ("langgraph.prebuilt", "ToolInvocation", "ToolInvocation"),
+    (
+        "langgraph.prebuilt",
+        "ToolNode",
+    ),
+    (
+        "langgraph.prebuilt",
+        "ToolExecutor",
+    ),
+    (
+        "langgraph.prebuilt",
+        "ToolInvocation",
+    ),
     ("langgraph.prebuilt", "tools_condition", "tools_condition"),
-    ("langgraph.prebuilt", "ValidationNode", "ValidationNode"),
-    ("langgraph.prebuilt", "InjectedState", "InjectedState"),
+    (
+        "langgraph.prebuilt",
+        "ValidationNode",
+    ),
+    (
+        "langgraph.prebuilt",
+        "InjectedState",
+    ),
     # Graph
-    ("langgraph.graph", "StateGraph", "StateGraph"),
-    ("langgraph.graph.message", "MessageGraph", "MessageGraph"),
+    (
+        "langgraph.graph",
+        "StateGraph",
+    ),
+    (
+        "langgraph.graph.message",
+        "MessageGraph",
+    ),
     ("langgraph.graph.message", "add_messages", "add_messages"),
-    ("langgraph.graph.graph", "CompiledGraph", "CompiledGraph"),
-    ("langgraph.types", "StreamMode", "StreamMode"),
-    ("langgraph.graph", "START", "START"),
-    ("langgraph.graph", "END", "END"),
-    ("langgraph.types", "Send", "Send"),
-    ("langgraph.types", "Interrupt", "Interrupt"),
-    ("langgraph.types", "RetryPolicy", "RetryPolicy"),
-    ("langgraph.checkpoint.base", "Checkpoint", "Checkpoint"),
-    ("langgraph.checkpoint.base", "CheckpointMetadata", "CheckpointMetadata"),
-    ("langgraph.checkpoint.base", "BaseCheckpointSaver", "BaseCheckpointSaver"),
-    ("langgraph.checkpoint.base", "SerializerProtocol", "SerializerProtocol"),
+    (
+        "langgraph.graph.graph",
+        "CompiledGraph",
+    ),
+    (
+        "langgraph.types",
+        "StreamMode",
+    ),
+    (
+        "langgraph.graph",
+        "START",
+    ),
+    (
+        "langgraph.graph",
+        "END",
+    ),
+    (
+        "langgraph.types",
+        "Send",
+    ),
+    (
+        "langgraph.types",
+        "Interrupt",
+    ),
+    (
+        "langgraph.types",
+        "RetryPolicy",
+    ),
+    (
+        "langgraph.checkpoint.base",
+        "Checkpoint",
+    ),
+    (
+        "langgraph.checkpoint.base",
+        "CheckpointMetadata",
+    ),
+    (
+        "langgraph.checkpoint.base",
+        "BaseCheckpointSaver",
+    ),
+    (
+        "langgraph.checkpoint.base",
+        "SerializerProtocol",
+    ),
     (
         "langgraph.checkpoint.serde.jsonplus",
         "JsonPlusSerializer",
         "JsonPlusSerializer",
     ),
-    ("langgraph.checkpoint.memory", "MemorySaver", "MemorySaver"),
-    ("langgraph.checkpoint.sqlite.aio", "AsyncSqliteSaver", "AsyncSqliteSaver"),
-    ("langgraph.checkpoint.sqlite", "SqliteSaver", "SqliteSaver"),
+    (
+        "langgraph.checkpoint.memory",
+        "MemorySaver",
+    ),
+    (
+        "langgraph.checkpoint.sqlite.aio",
+        "AsyncSqliteSaver",
+    ),
+    (
+        "langgraph.checkpoint.sqlite",
+        "SqliteSaver",
+    ),
     (
         "langgraph.checkpoint.postgres.aio",
         "AsyncPostgresSaver",
         "AsyncPostgresSaver",
     ),
-    ("langgraph.checkpoint.postgres", "PostgresSaver", "PostgresSaver"),
+    (
+        "langgraph.checkpoint.postgres",
+        "PostgresSaver",
+    ),
 ]
 
 WELL_KNOWN_LANGGRAPH_OBJECTS = {
-    (module_, class_) for module_, class_, _ in MANUAL_API_REFERENCES_LANGGRAPH
+    (module_, class_) for module_, class_ in MANUAL_API_REFERENCES_LANGGRAPH
 }
 
 
