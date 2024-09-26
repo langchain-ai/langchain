@@ -294,7 +294,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         ]
 
         to_return: dict[int, Any] = {}
-        run_again = {i: input for i, input in enumerate(inputs)}
+        run_again = dict(enumerate(inputs))
         handled_exceptions: dict[int, BaseException] = {}
         first_to_raise = None
         for runnable in self.runnables:
@@ -388,7 +388,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         )
 
         to_return = {}
-        run_again = {i: input for i, input in enumerate(inputs)}
+        run_again = dict(enumerate(inputs))
         handled_exceptions: dict[int, BaseException] = {}
         first_to_raise = None
         for runnable in self.runnables:

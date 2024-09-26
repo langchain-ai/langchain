@@ -75,7 +75,6 @@ def main():
 
     for file in find_files(args.docs_dir):
         file_imports = replace_imports(file)
-        print(file)
 
         if file_imports:
             # Use relative file path as key

@@ -391,7 +391,7 @@ async def test_runnable_seq_streaming_chunks() -> None:
         }
     )
 
-    chunks = [c for c in chain.stream({"foo": "foo", "bar": "bar"})]
+    chunks = list(chain.stream({"foo": "foo", "bar": "bar"}))
     achunks = [c async for c in chain.astream({"foo": "foo", "bar": "bar"})]
     for c in chunks:
         assert c in achunks

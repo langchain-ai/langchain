@@ -67,14 +67,14 @@ class Reviver:
                 Defaults to None.
         """
         self.secrets_from_env = secrets_from_env
-        self.secrets_map = secrets_map or dict()
+        self.secrets_map = secrets_map or {}
         # By default, only support langchain, but user can pass in additional namespaces
         self.valid_namespaces = (
             [*DEFAULT_NAMESPACES, *valid_namespaces]
             if valid_namespaces
             else DEFAULT_NAMESPACES
         )
-        self.additional_import_mappings = additional_import_mappings or dict()
+        self.additional_import_mappings = additional_import_mappings or {}
         self.import_mappings = (
             {
                 **ALL_SERIALIZABLE_MAPPINGS,
@@ -146,7 +146,7 @@ class Reviver:
 
             # We don't need to recurse on kwargs
             # as json.loads will do that for us.
-            kwargs = value.get("kwargs", dict())
+            kwargs = value.get("kwargs", {})
             return cls(**kwargs)
 
         return value

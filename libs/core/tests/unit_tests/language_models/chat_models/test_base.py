@@ -53,10 +53,10 @@ def test_batch_size(messages: list, messages_2: list) -> None:
     with collect_runs() as cb:
         llm.batch([messages, messages_2], {"callbacks": [cb]})
         assert len(cb.traced_runs) == 2
-        assert all([(r.extra or {}).get("batch_size") == 1 for r in cb.traced_runs])
+        assert all((r.extra or {}).get("batch_size") == 1 for r in cb.traced_runs)
     with collect_runs() as cb:
         llm.batch([messages], {"callbacks": [cb]})
-        assert all([(r.extra or {}).get("batch_size") == 1 for r in cb.traced_runs])
+        assert all((r.extra or {}).get("batch_size") == 1 for r in cb.traced_runs)
         assert len(cb.traced_runs) == 1
 
     with collect_runs() as cb:
@@ -76,11 +76,11 @@ async def test_async_batch_size(messages: list, messages_2: list) -> None:
     # so we expect batch_size to always be 1
     with collect_runs() as cb:
         await llm.abatch([messages, messages_2], {"callbacks": [cb]})
-        assert all([(r.extra or {}).get("batch_size") == 1 for r in cb.traced_runs])
+        assert all((r.extra or {}).get("batch_size") == 1 for r in cb.traced_runs)
         assert len(cb.traced_runs) == 2
     with collect_runs() as cb:
         await llm.abatch([messages], {"callbacks": [cb]})
-        assert all([(r.extra or {}).get("batch_size") == 1 for r in cb.traced_runs])
+        assert all((r.extra or {}).get("batch_size") == 1 for r in cb.traced_runs)
         assert len(cb.traced_runs) == 1
 
     with collect_runs() as cb:
@@ -146,7 +146,7 @@ async def test_astream_fallback_to_ainvoke() -> None:
             return "fake-chat-model"
 
     model = ModelWithGenerate()
-    chunks = [chunk for chunk in model.stream("anything")]
+    chunks = list(model.stream("anything"))
     assert chunks == [_any_id_ai_message(content="hello")]
 
     chunks = [chunk async for chunk in model.astream("anything")]
@@ -183,7 +183,7 @@ async def test_astream_implementation_fallback_to_stream() -> None:
             return "fake-chat-model"
 
     model = ModelWithSyncStream()
-    chunks = [chunk for chunk in model.stream("anything")]
+    chunks = list(model.stream("anything"))
     assert chunks == [
         _any_id_ai_message_chunk(content="a"),
         _any_id_ai_message_chunk(content="b"),
