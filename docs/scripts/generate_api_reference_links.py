@@ -258,13 +258,7 @@ def _get_imports(
                 if (module, class_name) not in WELL_KNOWN_LANGGRAPH_OBJECTS:
                     # Likely not documented yet
                     continue
-                url = (
-                    _LANGGRAPH_API_REFERENCE
-                    + namespace
-                    + "/#"
-                    + class_name.lower()
-                    + ".html"
-                )
+                url = _LANGGRAPH_API_REFERENCE + namespace + "/#" + class_name.lower()
             else:
                 raise ValueError(f"Invalid package ecosystem: {package_ecosystem}")
 
