@@ -7,6 +7,7 @@ import os
 from typing import Any, Callable, Dict, List, Optional, Type, TypedDict, TypeVar, Union
 
 import openai
+from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import LangSmithParams
 from langchain_core.messages import BaseMessage
 from langchain_core.outputs import ChatResult
@@ -658,6 +659,27 @@ class AzureChatOpenAI(BaseChatOpenAI):
             "openai_api_type": self.openai_api_type,
             "openai_api_version": self.openai_api_version,
         }
+
+    @property
+    def _default_params(self) -> Dict[str, Any]:
+        """Get the default parameters for calling OpenAI API."""
+        params = super()._default_params
+        if "max_completion_tokens" in params:
+            params["max_tokens"] = params.pop("max_completion_tokens")
+
+        return params
+
+    def _get_request_payload(
+        self,
+        input_: LanguageModelInput,
+        *,
+        stop: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> dict:
+        payload = super()._get_request_payload(input_, stop=stop, **kwargs)
+        if "max_completion_tokens" in payload:
+            payload["max_tokens"] = payload.pop("max_completion_tokens")
+        return payload
 
     def _get_ls_params(
         self, stop: Optional[List[str]] = None, **kwargs: Any
