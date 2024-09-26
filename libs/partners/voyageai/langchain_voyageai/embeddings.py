@@ -66,8 +66,11 @@ class VoyageAIEmbeddings(BaseModel, Embeddings):
                 else (
                     DEFAULT_VOYAGE_3_LITE_BATCH_SIZE
                     if model == "voyage-3-lite"
-                    else (DEFAULT_VOYAGE_3_BATCH_SIZE if model == "voyage-3"
-                          else DEFAULT_BATCH_SIZE)
+                    else (
+                        DEFAULT_VOYAGE_3_BATCH_SIZE
+                        if model == "voyage-3"
+                        else DEFAULT_BATCH_SIZE
+                    )
                 )
             )
         return values
