@@ -16,6 +16,11 @@ from typing_extensions import Self
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_VOYAGE_2_BATCH_SIZE = 72
+DEFAULT_VOYAGE_3_LITE_BATCH_SIZE = 30
+DEFAULT_VOYAGE_3_BATCH_SIZE = 10
+DEFAULT_BATCH_SIZE = 7
+
 
 class VoyageAIEmbeddings(BaseModel, Embeddings):
     """VoyageAIEmbeddings embedding model.
@@ -56,12 +61,13 @@ class VoyageAIEmbeddings(BaseModel, Embeddings):
         batch_size = values.get("batch_size")
         if batch_size is None:
             values["batch_size"] = (
-                72
+                DEFAULT_VOYAGE_2_BATCH_SIZE
                 if model in ["voyage-2", "voyage-02"]
                 else (
-                    30
+                    DEFAULT_VOYAGE_3_LITE_BATCH_SIZE
                     if model == "voyage-3-lite"
-                    else (10 if model == "voyage-3" else 7)
+                    else (DEFAULT_VOYAGE_3_BATCH_SIZE if model == "voyage-3"
+                          else DEFAULT_BATCH_SIZE)
                 )
             )
         return values
