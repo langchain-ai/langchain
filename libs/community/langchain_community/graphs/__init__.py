@@ -42,6 +42,9 @@ if TYPE_CHECKING:
     from langchain_community.graphs.ontotext_graphdb_graph import (
         OntotextGraphDBGraph,
     )
+    from langchain_community.graphs.oracle_graph import (
+        OracleGraph,
+    )
     from langchain_community.graphs.rdf_graph import (
         RdfGraph,
     )
@@ -64,6 +67,7 @@ __all__ = [
     "NeptuneAnalyticsGraph",
     "NetworkxEntityGraph",
     "OntotextGraphDBGraph",
+    "OracleGraph",
     "RdfGraph",
     "TigerGraph",
 ]
@@ -83,6 +87,7 @@ _module_lookup = {
     "NeptuneRdfGraph": "langchain_community.graphs.neptune_rdf_graph",
     "NetworkxEntityGraph": "langchain_community.graphs.networkx_graph",
     "OntotextGraphDBGraph": "langchain_community.graphs.ontotext_graphdb_graph",
+    "OracleGraph": "langchain_community.graphs.oracle_graph",
     "RdfGraph": "langchain_community.graphs.rdf_graph",
     "TigerGraph": "langchain_community.graphs.tigergraph_graph",
 }
