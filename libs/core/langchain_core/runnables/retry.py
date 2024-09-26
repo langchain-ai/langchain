@@ -117,7 +117,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
 
     @property
     def _kwargs_retrying(self) -> dict[str, Any]:
-        kwargs: dict[str, Any] = dict()
+        kwargs: dict[str, Any] = {}
 
         if self.max_attempt_number:
             kwargs["stop"] = stop_after_attempt(self.max_attempt_number)
