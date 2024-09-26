@@ -13,6 +13,7 @@ from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
     from azure.cosmos import ContainerProxy, CosmosClient
+    from azure.identity import ClientSecretCredential
 
 
 class AzureCosmosDBNoSqlVectorSearch(VectorStore):
@@ -232,6 +233,44 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
             an `AzureCosmosDBNoSqlVectorSearch` vectorstore.
         """
         vectorstore = AzureCosmosDBNoSqlVectorSearch._from_kwargs(embedding, **kwargs)
+        vectorstore.add_texts(
+            texts=texts,
+            metadatas=metadatas,
+        )
+        return vectorstore
+
+    @classmethod
+    def from_connection_string_and_aad(
+        cls,
+        connection_string: str,
+        clientSecretCredential: ClientSecretCredential,
+        texts: List[str],
+        embedding: Embeddings,
+        metadatas: Optional[List[dict]] = None,
+        ** kwargs: Any,
+    ) -> AzureCosmosDBNoSqlVectorSearch:
+        cosmos_client = CosmosClient(connection_string, clientSecretCredential)
+        kwargs["cosmos_client"] = cosmos_client
+        vectorstore = cls._from_kwargs(embedding, **kwargs)
+        vectorstore.add_texts(
+            texts=texts,
+            metadatas=metadatas,
+        )
+        return vectorstore
+
+    @classmethod
+    def from_connection_string_and_key(
+            cls,
+            connection_string: str,
+            key: str,
+            texts: List[str],
+            embedding: Embeddings,
+            metadatas: Optional[List[dict]] = None,
+            **kwargs: Any,
+    ) -> AzureCosmosDBNoSqlVectorSearch:
+        cosmos_client = CosmosClient(connection_string, key)
+        kwargs["cosmos_client"] = cosmos_client
+        vectorstore = cls._from_kwargs(embedding, **kwargs)
         vectorstore.add_texts(
             texts=texts,
             metadatas=metadatas,
