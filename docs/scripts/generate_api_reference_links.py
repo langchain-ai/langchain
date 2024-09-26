@@ -327,7 +327,7 @@ def _get_imports(
                         _LANGGRAPH_API_REFERENCE
                         + namespace
                         + "/#langgraph.errors."
-                        + class_name.lower()
+                        + class_name  # Uses the actual class name here.
                     )
                 else:
                     if (module, class_name) not in WELL_KNOWN_LANGGRAPH_OBJECTS:
