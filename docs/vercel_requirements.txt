@@ -1,7 +1,6 @@
 -e ../libs/core
 -e ../libs/langchain
 -e ../libs/community
--e ../libs/experimental
 -e ../libs/text-splitters
 langgraph
 langchain-cohere
