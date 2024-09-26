@@ -89,7 +89,7 @@ class NotDiamondRunnable(Runnable[LanguageModelInput, str]):
     async def _amodel_select(self, input: LanguageModelInput) -> str:
         messages = _convert_input_to_message_dicts(input)
         _, provider = await self.client.chat.completions.amodel_select(
-            messages=messages
+            messages=messages, **self.nd_kwargs
         )
         provider_str = _nd_provider_to_langchain_provider(str(provider))
         return provider_str
@@ -205,18 +205,10 @@ class NotDiamondRoutedRunnable(Runnable[LanguageModelInput, Any]):
         config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
         **kwargs: Optional[Any],
     ) -> List[Any]:
-        config = config or {}
-
-        provider_strs = [self._ndrunnable._model_select(input) for input in inputs]
-        if isinstance(config, dict):
-            _configs = [self._build_model_config(ps, config) for ps in provider_strs]
-        else:
-            _configs = [
-                self._build_model_config(ps, config[i])
-                for i, ps in enumerate(provider_strs)
-            ]
-
-        return self._configurable_model.batch([i for i in inputs], config=_configs)
+        config = config or dict()
+        provider_str = self._ndrunnable._model_select(inputs)
+        _config = self._build_model_config(provider_str, config)
+        return self._configurable_model.batch(inputs, config=_config)
 
     async def astream(
         self,
@@ -246,21 +238,9 @@ class NotDiamondRoutedRunnable(Runnable[LanguageModelInput, Any]):
         **kwargs: Optional[Any],
     ) -> List[Any]:
         config = config or {}
-
-        provider_strs = [
-            await self._ndrunnable._amodel_select(input) for input in inputs
-        ]
-        if isinstance(config, dict):
-            _configs = [self._build_model_config(ps, config) for ps in provider_strs]
-        else:
-            _configs = [
-                self._build_model_config(ps, config[i])
-                for i, ps in enumerate(provider_strs)
-            ]
-
-        return await self._configurable_model.abatch(
-            [i for i in inputs], config=_configs
-        )
+        provider_str = await self._ndrunnable._amodel_select(inputs)
+        _config = [self._build_model_config(provider_str, config)]
+        return await self._configurable_model.abatch(inputs, config=_config)
 
     def _build_model_config(
         self, provider_str: str, config: Optional[RunnableConfig] = None
@@ -289,6 +269,7 @@ def _convert_input_to_message_dicts(input: LanguageModelInput) -> List[Dict[str,
     elif isinstance(input, str):
         output = StringPromptValue(text=input)
     elif isinstance(input, Sequence):
+        print(input)
         output = ChatPromptValue(messages=convert_to_messages(input))
     else:
         raise ValueError(
