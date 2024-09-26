@@ -201,6 +201,8 @@ When messages are passed in as input, they will be formatted into a string under
 
 LangChain does not host any LLMs, rather we rely on third party integrations.
 
+LangChain includes LLM wrappers to interact with various LLM prvoiders (OpenAI, Anthropic, Hugging Face) and local LLMs such as Ollama. Also available is a custom LLM class to implement proprietary LLMs or to use a different wrapper not available in langChain.
+
 For specifics on how to use LLMs, see the [how-to guides](/docs/how_to/#llms).
 
 ### Messages
@@ -247,7 +249,7 @@ This property returns a list of `ToolCall`s. A `ToolCall` is a dictionary with t
 
 #### SystemMessage
 
-This represents a message with role "system", which tells the model how to behave. Not every model provider supports this.
+This represents a message with role "system", which tells the model how to behave. This message serves as the prompt for the LLM to tune the responses for certain applications. Not every model provider supports this.
 
 #### ToolMessage
 
@@ -413,6 +415,9 @@ A Document object in LangChain contains information about some data. It has two 
 - `page_content: str`: The content of this document. Currently is only a string.
 - `metadata: dict`: Arbitrary metadata associated with this document. Can track the document id, file name, etc.
 
+Documents are important to LangChain applications as they standardize the text data and are crucial to using certain components.For example, LangChain community vectorstores can only store and retrieve Document type objects.
+LangChain also only uses Document type objects for Embeddings models. It is a assumption that Documents are used for formatting data when using LangChain components.
+  
 ### Document loaders
 <span data-heading-keywords="document loader,document loaders"></span>
 
@@ -929,8 +934,10 @@ For example, if the output is to be stored in a relational database,
 it is much easier if the model generates output that adheres to a defined schema or format.
 [Extracting specific information](/docs/tutorials/extraction/) from unstructured text is another
 case where this is particularly useful. Most commonly, the output format will be JSON,
-though other formats such as [YAML](/docs/how_to/output_parser_yaml/) can be useful too. Below, we'll discuss
-a few ways to get structured output from models in LangChain.
+though other formats such as [YAML](/docs/how_to/output_parser_yaml/) can be useful too. Structured output can bridge the gap 
+between the flexibility of natural language and the precision required by many software systems and data processing tasks. Specifically, it can take unstructured text
+and create structued text that can be used to search databases or CSV files using the structured output created.
+Below, we'll discuss a few ways to get structured output from models in LangChain.
 
 #### `.with_structured_output()`
 

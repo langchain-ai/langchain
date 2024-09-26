@@ -29,6 +29,7 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 Concretely, the framework consists of the following open-source libraries:
 
 - **`langchain-core`**: Base abstractions and LangChain Expression Language.
+  - Includes the abstraction for core functionality such as retrievers, embeddings, and vectorstores.
 - **`langchain-community`**: Third party integrations.
   - Partner packages (e.g. **`langchain-openai`**, **`langchain-anthropic`**, etc.): Some integrations have been further split into their own lightweight packages that only depend on **`langchain-core`**.
 - **`langchain`**: Chains, agents, and retrieval strategies that make up an application's cognitive architecture.
@@ -42,6 +43,27 @@ Concretely, the framework consists of the following open-source libraries:
 These docs focus on the Python LangChain library. [Head here](https://js.langchain.com) for docs on the JavaScript LangChain library.
 
 :::
+
+## Key capabilities
+LangChain is a versatile framework that enables developers to create a wide range of LLM-powered applications. Its key capabilities include:
+Flexible integration:
+- Langchain community supports various LLM providers
+- Multiple vector store partners and databases are supported in langChain community
+- Capable of using LCEL with the various partners in langchain community
+
+Application development: 
+- RAG applications for working with external knowledge
+- Conversational AI and chatbots with advanced prompting techniques
+- Autonomous agents for complex decision-making and task completion
+- Structured output from unstructured input
+
+
+## Why use LangChain?
+- Modular Architecture: LangChain's flexible design allows you to easily swap out components for your application's architecture, such as as LLMs or vector stores, without disrupting the entire application. Your own components can be introduced and integrated with LangChain components.
+- Unified Interface: LangChain offers a consistent and unified interface, simplifying the integration process with various providers.
+- Ease of Use: The framework offers a high-level API for connecting language models to data sources and building complex applications.
+- Versatility: LangChain can be used to build a wide range of applications, from chatbots and question-answering systems to more complex AI-driven workflows.
+- Future-Proofing: As the field of AI and LLMs evolves, LangChain's modular design ensures that your applications remain adaptable to new advancements.
 
 ## [Tutorials](/docs/tutorials)
 
