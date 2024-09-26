@@ -426,7 +426,7 @@ class OceanBase(VectorStore):
         res = self.obvector.get(
             table_name=self.table_name,
             ids=ids,
-            output_column_name=(
+            output_column_names=(
                 [self.text_field]
                 if self.metadata_field is None
                 else [self.text_field, self.metadata_field]
@@ -538,7 +538,7 @@ class OceanBase(VectorStore):
             vec_column_name=self.vector_field,
             distance_func=self._parse_metric_type_str_to_dist_func(),
             topk=k,
-            output_column_name=(
+            output_column_names=(
                 [self.text_field]
                 if self.metadata_field is None
                 else [self.text_field, self.metadata_field]
@@ -595,7 +595,7 @@ class OceanBase(VectorStore):
             distance_func=self._parse_metric_type_str_to_dist_func(),
             with_dist=True,
             topk=k,
-            output_column_name=(
+            output_column_names=(
                 [self.text_field]
                 if self.metadata_field is None
                 else [self.text_field, self.metadata_field]
