@@ -72,7 +72,18 @@ class TestNotDiamondRunnable:
         assert str(actual_select) in [
             _nd_provider_to_langchain_provider(str(config)) for config in llm_configs
         ]
-        assert nd_client.model_select.called_with(prompt, tradeoff="cost")
+        nd_client.chat.completions.model_select.assert_called_with(
+            messages=[{"role": "user", "content": prompt}], tradeoff="cost"
+        )
+
+        chats = [{"role": "user", "content": "Hello, world!"}]
+        actual_select = not_diamond_runnable._model_select(chats)
+        assert str(actual_select) in [
+            _nd_provider_to_langchain_provider(str(config)) for config in llm_configs
+        ]
+        nd_client.chat.completions.model_select.assert_called_with(
+            messages=chats, tradeoff="cost"
+        )
 
     @pytest.mark.asyncio
     async def test_amodel_select(
@@ -86,7 +97,18 @@ class TestNotDiamondRunnable:
         assert str(actual_select) in [
             _nd_provider_to_langchain_provider(str(config)) for config in llm_configs
         ]
-        assert nd_client.amodel_select.called_with(prompt, tradeoff="cost")
+        nd_client.chat.completions.amodel_select.assert_called_with(
+            messages=[{"role": "user", "content": prompt}], tradeoff="cost"
+        )
+
+        chats = [{"role": "user", "content": "Hello, world!"}]
+        actual_select = await not_diamond_runnable._amodel_select(chats)
+        assert str(actual_select) in [
+            _nd_provider_to_langchain_provider(str(config)) for config in llm_configs
+        ]
+        nd_client.chat.completions.amodel_select.assert_called_with(
+            messages=chats, tradeoff="cost"
+        )
 
 
 class TestNotDiamondRoutedRunnable:
@@ -98,7 +120,9 @@ class TestNotDiamondRoutedRunnable:
         assert (
             not_diamond_routed_runnable._configurable_model.invoke.called  # type: ignore[attr-defined]
         ), f"{not_diamond_routed_runnable._configurable_model}"
-        assert nd_client.model_select.called_with(prompt, tradeoff="cost")
+        nd_client.chat.completions.model_select.assert_called_with(
+            messages=[{"role": "user", "content": prompt}], tradeoff="cost"
+        )
 
         # Check the call list
         call_list = (
@@ -117,7 +141,9 @@ class TestNotDiamondRoutedRunnable:
         assert (
             not_diamond_routed_runnable._configurable_model.stream.called  # type: ignore[attr-defined]
         ), f"{not_diamond_routed_runnable._configurable_model}"
-        assert nd_client.model_select.called_with(prompt, tradeoff="cost")
+        nd_client.chat.completions.model_select.assert_called_with(
+            messages=[{"role": "user", "content": prompt}], tradeoff="cost"
+        )
 
     def test_batch(
         self, not_diamond_routed_runnable: NotDiamondRoutedRunnable, nd_client: Any
@@ -127,7 +153,11 @@ class TestNotDiamondRoutedRunnable:
         assert (
             not_diamond_routed_runnable._configurable_model.batch.called  # type: ignore[attr-defined]
         ), f"{not_diamond_routed_runnable._configurable_model}"
-        assert nd_client.model_select.called_with(prompts, tradeoff="cost")
+        nd_client_call_list = nd_client.chat.completions.model_select.call_args_list
+        for call, prompt in zip(nd_client_call_list, prompts):
+            args, kwargs = call
+            assert kwargs["messages"] == [{"role": "user", "content": prompt}]
+            assert kwargs["tradeoff"] == "cost"
 
         # Check the call list
         call_list = (
@@ -146,7 +176,9 @@ class TestNotDiamondRoutedRunnable:
         assert (
             not_diamond_routed_runnable._configurable_model.ainvoke.called  # type: ignore[attr-defined]
         ), f"{not_diamond_routed_runnable._configurable_model}"
-        assert nd_client.amodel_select.called_with(prompt, tradeoff="cost")
+        nd_client.chat.completions.amodel_select.assert_called_with(
+            messages=[{"role": "user", "content": prompt}], tradeoff="cost"
+        )
 
         # Check the call list
         call_list = (
@@ -166,7 +198,9 @@ class TestNotDiamondRoutedRunnable:
         assert (
             not_diamond_routed_runnable._configurable_model.astream.called  # type: ignore[attr-defined]
         ), f"{not_diamond_routed_runnable._configurable_model}"
-        assert nd_client.amodel_select.called_with(prompt, tradeoff="cost")
+        nd_client.chat.completions.amodel_select.assert_called_with(
+            messages=[{"role": "user", "content": prompt}], tradeoff="cost"
+        )
 
     @pytest.mark.asyncio
     async def test_abatch(
@@ -177,7 +211,11 @@ class TestNotDiamondRoutedRunnable:
         assert (
             not_diamond_routed_runnable._configurable_model.abatch.called  # type: ignore[attr-defined]
         ), f"{not_diamond_routed_runnable._configurable_model}"
-        assert nd_client.amodel_select.called_with(prompts, tradeoff="cost")
+        nd_client_call_list = nd_client.chat.completions.amodel_select.call_args_list
+        for call, prompt in zip(nd_client_call_list, prompts):
+            args, kwargs = call
+            assert kwargs["messages"] == [{"role": "user", "content": prompt}]
+            assert kwargs["tradeoff"] == "cost"
 
         # Check the call list
         call_list = (

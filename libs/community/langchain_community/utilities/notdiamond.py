@@ -89,7 +89,7 @@ class NotDiamondRunnable(Runnable[LanguageModelInput, str]):
     async def _amodel_select(self, input: LanguageModelInput) -> str:
         messages = _convert_input_to_message_dicts(input)
         _, provider = await self.client.chat.completions.amodel_select(
-            messages=messages
+            messages=messages, **self.nd_kwargs
         )
         provider_str = _nd_provider_to_langchain_provider(str(provider))
         return provider_str
@@ -109,7 +109,7 @@ class NotDiamondRunnable(Runnable[LanguageModelInput, str]):
 
     def batch(
         self,
-        inputs: List[LanguageModelInput],
+        inputs: Sequence[LanguageModelInput],
         config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
         **kwargs: Optional[Any],
     ) -> List[str]:
@@ -133,7 +133,7 @@ class NotDiamondRunnable(Runnable[LanguageModelInput, str]):
 
     async def abatch(
         self,
-        inputs: List[LanguageModelInput],
+        inputs: Sequence[LanguageModelInput],
         config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
         **kwargs: Optional[Any],
     ) -> List[str]:
@@ -207,7 +207,7 @@ class NotDiamondRoutedRunnable(Runnable[LanguageModelInput, Any]):
     ) -> List[Any]:
         config = config or {}
 
-        provider_strs = [self._ndrunnable._model_select(input) for input in inputs]
+        provider_strs = self._ndrunnable.batch(inputs)
         if isinstance(config, dict):
             _configs = [self._build_model_config(ps, config) for ps in provider_strs]
         else:
@@ -247,9 +247,7 @@ class NotDiamondRoutedRunnable(Runnable[LanguageModelInput, Any]):
     ) -> List[Any]:
         config = config or {}
 
-        provider_strs = [
-            await self._ndrunnable._amodel_select(input) for input in inputs
-        ]
+        provider_strs = await self._ndrunnable.abatch(inputs)
         if isinstance(config, dict):
             _configs = [self._build_model_config(ps, config) for ps in provider_strs]
         else:
