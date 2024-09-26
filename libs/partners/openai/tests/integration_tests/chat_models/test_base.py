@@ -244,7 +244,7 @@ def test_chat_openai_extra_kwargs() -> None:
     """Test extra kwargs to chat openai."""
     # Check that foo is saved in extra_kwargs.
     llm = ChatOpenAI(foo=3, max_completion_tokens=10)  # type: ignore[call-arg]
-    assert llm.max_completion_tokens == 10
+    assert llm.max_tokens == 10
     assert llm.model_kwargs == {"foo": 3}
 
     # Test that if extra_kwargs are provided, they are added to it.
