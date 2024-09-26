@@ -31,7 +31,7 @@ jobs:
 
       - name: Install langchain editable
         run: |
-          poetry run pip install -e libs/core libs/langchain libs/community libs/experimental
+          poetry run pip install -e libs/core libs/langchain libs/community
 
       - name: Check doc imports
         shell: bash
