@@ -424,7 +424,7 @@ class BaseChatOpenAI(BaseChatModel):
     """Number of chat completions to generate for each prompt."""
     top_p: Optional[float] = None
     """Total probability mass of tokens to consider at each step."""
-    max_tokens: Optional[int] = None
+    max_tokens: Optional[int] = Field(default=None, alias="max_completion_tokens")
     """Maximum number of tokens to generate."""
     tiktoken_model_name: Optional[str] = None
     """The model name to pass to tiktoken when using this class. 
@@ -563,7 +563,7 @@ class BaseChatOpenAI(BaseChatModel):
             "top_logprobs": self.top_logprobs,
             "logit_bias": self.logit_bias,
             "stop": self.stop or None,  # also exclude empty list for this
-            "max_tokens": self.max_tokens,
+            "max_completion_tokens": self.max_tokens,
             "extra_body": self.extra_body,
         }
 
@@ -698,6 +698,11 @@ class BaseChatOpenAI(BaseChatModel):
         messages = self._convert_input(input_).to_messages()
         if stop is not None:
             kwargs["stop"] = stop
+        
+        # max_tokens was deprecated in favor of max_completion_tokens
+        # in September 2024 release
+        if "max_tokens" in kwargs:
+            kwargs["max_completion_tokens"] = kwargs.pop("max_tokens")
         return {
             "messages": [_convert_message_to_dict(m) for m in messages],
             **self._default_params,
@@ -874,7 +879,7 @@ class BaseChatOpenAI(BaseChatModel):
             ls_model_type="chat",
             ls_temperature=params.get("temperature", self.temperature),
         )
-        if ls_max_tokens := params.get("max_tokens", self.max_tokens):
+        if ls_max_tokens := params.get("max_tokens", self.max_tokens) or params.get("max_completion_tokens", self.max_tokens):
             ls_params["ls_max_tokens"] = ls_max_tokens
         if ls_stop := stop or params.get("stop", None):
             ls_params["ls_stop"] = ls_stop
