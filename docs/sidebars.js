@@ -335,6 +335,7 @@ module.exports = {
               link: {
                 type: "generated-index",
                 slug: "integrations/memory",
+                description: "This is some custom [text](https://langchain-ai.github.io/langgraph/concepts/memory/)",
               },
             },
             {
