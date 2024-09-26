@@ -8,6 +8,7 @@ import pytest
 from langchain_core.callbacks import (
     AsyncCallbackHandler,
     AsyncCallbackManager,
+    BaseCallbackHandler,
 )
 
 counter_var = contextvars.ContextVar("counter", default=0)
@@ -57,7 +58,7 @@ class StatefulAsyncCallbackHandler(AsyncCallbackHandler):
 @pytest.mark.xfail(reason="Context is not maintained across async calls")
 @pytest.mark.asyncio
 async def test_async_callback_manager_context_loss() -> None:
-    handlers = [
+    handlers: list[BaseCallbackHandler] = [
         StatefulAsyncCallbackHandler("StateModifier", run_inline=True),
         StatefulAsyncCallbackHandler("StateReader", run_inline=True),
         StatefulAsyncCallbackHandler("NonInlineHandler", run_inline=False),
