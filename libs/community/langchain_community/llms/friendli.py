@@ -10,10 +10,10 @@ from langchain_core.callbacks.manager import (
 from langchain_core.language_models.llms import LLM
 from langchain_core.load.serializable import Serializable
 from langchain_core.outputs import GenerationChunk, LLMResult
-from langchain_core.pydantic_v1 import Field, SecretStr
 from langchain_core.utils import pre_init
 from langchain_core.utils.env import get_from_dict_or_env
 from langchain_core.utils.utils import convert_to_secret_str
+from pydantic import Field, SecretStr
 
 
 def _stream_response_to_generation_chunk(stream_response: Any) -> GenerationChunk:
@@ -233,9 +233,9 @@ class Friendli(LLM, BaseFriendli):
         )
         for line in stream:
             chunk = _stream_response_to_generation_chunk(line)
-            yield chunk
             if run_manager:
                 run_manager.on_llm_new_token(line.text, chunk=chunk)
+            yield chunk
 
     async def _astream(
         self,
@@ -250,9 +250,9 @@ class Friendli(LLM, BaseFriendli):
         )
         async for line in stream:
             chunk = _stream_response_to_generation_chunk(line)
-            yield chunk
             if run_manager:
                 await run_manager.on_llm_new_token(line.text, chunk=chunk)
+            yield chunk
 
     def _generate(
         self,

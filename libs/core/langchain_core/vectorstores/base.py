@@ -25,25 +25,20 @@ import logging
 import math
 import warnings
 from abc import ABC, abstractmethod
+from collections.abc import Collection, Iterable, Sequence
 from itertools import cycle
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
     ClassVar,
-    Collection,
-    Dict,
-    Iterable,
-    List,
     Optional,
-    Sequence,
-    Tuple,
-    Type,
     TypeVar,
 )
 
+from pydantic import ConfigDict, Field, model_validator
+
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.retrievers import BaseRetriever, LangSmithRetrieverParams
 from langchain_core.runnables.config import run_in_executor
 
@@ -65,13 +60,13 @@ class VectorStore(ABC):
     def add_texts(
         self,
         texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        metadatas: Optional[list[dict]] = None,
         # One of the kwargs should be `ids` which is a list of ids
         # associated with the texts.
         # This is not yet enforced in the type signature for backwards compatibility
         # with existing implementations.
         **kwargs: Any,
-    ) -> List[str]:
+    ) -> list[str]:
         """Run more texts through the embeddings and add to the vectorstore.
 
         Args:
@@ -123,7 +118,7 @@ class VectorStore(ABC):
         )
         return None
 
-    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
+    def delete(self, ids: Optional[list[str]] = None, **kwargs: Any) -> Optional[bool]:
         """Delete by vector ID or other criteria.
 
         Args:
@@ -137,7 +132,7 @@ class VectorStore(ABC):
 
         raise NotImplementedError("delete method must be implemented by subclass.")
 
-    def get_by_ids(self, ids: Sequence[str], /) -> List[Document]:
+    def get_by_ids(self, ids: Sequence[str], /) -> list[Document]:
         """Get documents by their IDs.
 
         The returned documents are expected to have the ID field set to the ID of the
@@ -166,7 +161,7 @@ class VectorStore(ABC):
         )
 
     # Implementations should override this method to provide an async native version.
-    async def aget_by_ids(self, ids: Sequence[str], /) -> List[Document]:
+    async def aget_by_ids(self, ids: Sequence[str], /) -> list[Document]:
         """Async get documents by their IDs.
 
         The returned documents are expected to have the ID field set to the ID of the
@@ -193,7 +188,7 @@ class VectorStore(ABC):
         return await run_in_executor(None, self.get_by_ids, ids)
 
     async def adelete(
-        self, ids: Optional[List[str]] = None, **kwargs: Any
+        self, ids: Optional[list[str]] = None, **kwargs: Any
     ) -> Optional[bool]:
         """Async delete by vector ID or other criteria.
 
@@ -210,9 +205,9 @@ class VectorStore(ABC):
     async def aadd_texts(
         self,
         texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        metadatas: Optional[list[dict]] = None,
         **kwargs: Any,
-    ) -> List[str]:
+    ) -> list[str]:
         """Async run more texts through the embeddings and add to the vectorstore.
 
         Args:
@@ -253,7 +248,7 @@ class VectorStore(ABC):
             return await self.aadd_documents(docs, **kwargs)
         return await run_in_executor(None, self.add_texts, texts, metadatas, **kwargs)
 
-    def add_documents(self, documents: List[Document], **kwargs: Any) -> List[str]:
+    def add_documents(self, documents: list[Document], **kwargs: Any) -> list[str]:
         """Add or update documents in the vectorstore.
 
         Args:
@@ -286,8 +281,8 @@ class VectorStore(ABC):
         )
 
     async def aadd_documents(
-        self, documents: List[Document], **kwargs: Any
-    ) -> List[str]:
+        self, documents: list[Document], **kwargs: Any
+    ) -> list[str]:
         """Async run more documents through the embeddings and add to
         the vectorstore.
 
@@ -317,7 +312,7 @@ class VectorStore(ABC):
 
         return await run_in_executor(None, self.add_documents, documents, **kwargs)
 
-    def search(self, query: str, search_type: str, **kwargs: Any) -> List[Document]:
+    def search(self, query: str, search_type: str, **kwargs: Any) -> list[Document]:
         """Return docs most similar to query using a specified search type.
 
         Args:
@@ -351,7 +346,7 @@ class VectorStore(ABC):
 
     async def asearch(
         self, query: str, search_type: str, **kwargs: Any
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Async return docs most similar to query using a specified search type.
 
         Args:
@@ -385,7 +380,7 @@ class VectorStore(ABC):
     @abstractmethod
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Return docs most similar to query.
 
         Args:
@@ -441,7 +436,7 @@ class VectorStore(ABC):
 
     def similarity_search_with_score(
         self, *args: Any, **kwargs: Any
-    ) -> List[Tuple[Document, float]]:
+    ) -> list[tuple[Document, float]]:
         """Run similarity search with distance.
 
         Args:
@@ -455,7 +450,7 @@ class VectorStore(ABC):
 
     async def asimilarity_search_with_score(
         self, *args: Any, **kwargs: Any
-    ) -> List[Tuple[Document, float]]:
+    ) -> list[tuple[Document, float]]:
         """Async run similarity search with distance.
 
         Args:
@@ -478,7 +473,7 @@ class VectorStore(ABC):
         query: str,
         k: int = 4,
         **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
+    ) -> list[tuple[Document, float]]:
         """
         Default similarity search with relevance scores. Modify if necessary
         in subclass.
@@ -505,7 +500,7 @@ class VectorStore(ABC):
         query: str,
         k: int = 4,
         **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
+    ) -> list[tuple[Document, float]]:
         """
         Default similarity search with relevance scores. Modify if necessary
         in subclass.
@@ -532,7 +527,7 @@ class VectorStore(ABC):
         query: str,
         k: int = 4,
         **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
+    ) -> list[tuple[Document, float]]:
         """Return docs and relevance scores in the range [0, 1].
 
         0 is dissimilar, 1 is most similar.
@@ -580,7 +575,7 @@ class VectorStore(ABC):
         query: str,
         k: int = 4,
         **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
+    ) -> list[tuple[Document, float]]:
         """Async return docs and relevance scores in the range [0, 1].
 
         0 is dissimilar, 1 is most similar.
@@ -625,7 +620,7 @@ class VectorStore(ABC):
 
     async def asimilarity_search(
         self, query: str, k: int = 4, **kwargs: Any
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Async return docs most similar to query.
 
         Args:
@@ -643,8 +638,8 @@ class VectorStore(ABC):
         return await run_in_executor(None, self.similarity_search, query, k=k, **kwargs)
 
     def similarity_search_by_vector(
-        self, embedding: List[float], k: int = 4, **kwargs: Any
-    ) -> List[Document]:
+        self, embedding: list[float], k: int = 4, **kwargs: Any
+    ) -> list[Document]:
         """Return docs most similar to embedding vector.
 
         Args:
@@ -658,8 +653,8 @@ class VectorStore(ABC):
         raise NotImplementedError
 
     async def asimilarity_search_by_vector(
-        self, embedding: List[float], k: int = 4, **kwargs: Any
-    ) -> List[Document]:
+        self, embedding: list[float], k: int = 4, **kwargs: Any
+    ) -> list[Document]:
         """Async return docs most similar to embedding vector.
 
         Args:
@@ -685,7 +680,7 @@ class VectorStore(ABC):
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Return docs selected using the maximal marginal relevance.
 
         Maximal marginal relevance optimizes for similarity to query AND diversity
@@ -714,7 +709,7 @@ class VectorStore(ABC):
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Async return docs selected using the maximal marginal relevance.
 
         Maximal marginal relevance optimizes for similarity to query AND diversity
@@ -749,12 +744,12 @@ class VectorStore(ABC):
 
     def max_marginal_relevance_search_by_vector(
         self,
-        embedding: List[float],
+        embedding: list[float],
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Return docs selected using the maximal marginal relevance.
 
         Maximal marginal relevance optimizes for similarity to query AND diversity
@@ -778,12 +773,12 @@ class VectorStore(ABC):
 
     async def amax_marginal_relevance_search_by_vector(
         self,
-        embedding: List[float],
+        embedding: list[float],
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Async return docs selected using the maximal marginal relevance.
 
         Maximal marginal relevance optimizes for similarity to query AND diversity
@@ -815,8 +810,8 @@ class VectorStore(ABC):
 
     @classmethod
     def from_documents(
-        cls: Type[VST],
-        documents: List[Document],
+        cls: type[VST],
+        documents: list[Document],
         embedding: Embeddings,
         **kwargs: Any,
     ) -> VST:
@@ -836,8 +831,8 @@ class VectorStore(ABC):
 
     @classmethod
     async def afrom_documents(
-        cls: Type[VST],
-        documents: List[Document],
+        cls: type[VST],
+        documents: list[Document],
         embedding: Embeddings,
         **kwargs: Any,
     ) -> VST:
@@ -858,10 +853,10 @@ class VectorStore(ABC):
     @classmethod
     @abstractmethod
     def from_texts(
-        cls: Type[VST],
-        texts: List[str],
+        cls: type[VST],
+        texts: list[str],
         embedding: Embeddings,
-        metadatas: Optional[List[dict]] = None,
+        metadatas: Optional[list[dict]] = None,
         **kwargs: Any,
     ) -> VST:
         """Return VectorStore initialized from texts and embeddings.
@@ -879,10 +874,10 @@ class VectorStore(ABC):
 
     @classmethod
     async def afrom_texts(
-        cls: Type[VST],
-        texts: List[str],
+        cls: type[VST],
+        texts: list[str],
         embedding: Embeddings,
-        metadatas: Optional[List[dict]] = None,
+        metadatas: Optional[list[dict]] = None,
         **kwargs: Any,
     ) -> VST:
         """Async return VectorStore initialized from texts and embeddings.
@@ -901,7 +896,7 @@ class VectorStore(ABC):
             None, cls.from_texts, texts, embedding, metadatas, **kwargs
         )
 
-    def _get_retriever_tags(self) -> List[str]:
+    def _get_retriever_tags(self) -> list[str]:
         """Get tags for retriever."""
         tags = [self.__class__.__name__]
         if self.embeddings:
@@ -984,11 +979,13 @@ class VectorStoreRetriever(BaseRetriever):
         "mmr",
     )
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
-    @root_validator(pre=True)
-    def validate_search_type(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_search_type(cls, values: dict) -> Any:
         """Validate search type.
 
         Args:
@@ -1037,7 +1034,7 @@ class VectorStoreRetriever(BaseRetriever):
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
-    ) -> List[Document]:
+    ) -> list[Document]:
         if self.search_type == "similarity":
             docs = self.vectorstore.similarity_search(query, **self.search_kwargs)
         elif self.search_type == "similarity_score_threshold":
@@ -1057,7 +1054,7 @@ class VectorStoreRetriever(BaseRetriever):
 
     async def _aget_relevant_documents(
         self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
-    ) -> List[Document]:
+    ) -> list[Document]:
         if self.search_type == "similarity":
             docs = await self.vectorstore.asimilarity_search(
                 query, **self.search_kwargs
@@ -1077,7 +1074,7 @@ class VectorStoreRetriever(BaseRetriever):
             raise ValueError(f"search_type of {self.search_type} not allowed.")
         return docs
 
-    def add_documents(self, documents: List[Document], **kwargs: Any) -> List[str]:
+    def add_documents(self, documents: list[Document], **kwargs: Any) -> list[str]:
         """Add documents to the vectorstore.
 
         Args:
@@ -1090,8 +1087,8 @@ class VectorStoreRetriever(BaseRetriever):
         return self.vectorstore.add_documents(documents, **kwargs)
 
     async def aadd_documents(
-        self, documents: List[Document], **kwargs: Any
-    ) -> List[str]:
+        self, documents: list[Document], **kwargs: Any
+    ) -> list[str]:
         """Async add documents to the vectorstore.
 
         Args:
