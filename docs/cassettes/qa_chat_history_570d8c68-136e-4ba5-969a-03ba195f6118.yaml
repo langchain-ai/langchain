@@ -1,0 +1,543 @@
+interactions:
+- request:
+    body: '{"messages": [{"content": "Hi! I''m bob", "role": "user"}, {"content":
+      "Hello Bob! How can I assist you today?", "role": "assistant"}, {"content":
+      "What is Task Decomposition?", "role": "user"}, {"content": null, "role": "assistant",
+      "tool_calls": [{"type": "function", "id": "call_x3GauAofI4WYcsRZbrs2aOgn", "function":
+      {"name": "blog_post_retriever", "arguments": "{\"query\": \"Task Decomposition\"}"}}]},
+      {"content": "Fig. 1. Overview of a LLM-powered autonomous agent system.\nComponent
+      One: Planning#\nA complicated task usually involves many steps. An agent needs
+      to know what they are and plan ahead.\nTask Decomposition#\nChain of thought
+      (CoT; Wei et al. 2022) has become a standard prompting technique for enhancing
+      model performance on complex tasks. The model is instructed to \u201cthink step
+      by step\u201d to utilize more test-time computation to decompose hard tasks
+      into smaller and simpler steps. CoT transforms big tasks into multiple manageable
+      tasks and shed lights into an interpretation of the model\u2019s thinking process.\n\nFig.
+      1. Overview of a LLM-powered autonomous agent system.\nComponent One: Planning#\nA
+      complicated task usually involves many steps. An agent needs to know what they
+      are and plan ahead.\nTask Decomposition#\nChain of thought (CoT; Wei et al.
+      2022) has become a standard prompting technique for enhancing model performance
+      on complex tasks. The model is instructed to \u201cthink step by step\u201d
+      to utilize more test-time computation to decompose hard tasks into smaller and
+      simpler steps. CoT transforms big tasks into multiple manageable tasks and shed
+      lights into an interpretation of the model\u2019s thinking process.\n\nTree
+      of Thoughts (Yao et al. 2023) extends CoT by exploring multiple reasoning possibilities
+      at each step. It first decomposes the problem into multiple thought steps and
+      generates multiple thoughts per step, creating a tree structure. The search
+      process can be BFS (breadth-first search) or DFS (depth-first search) with each
+      state evaluated by a classifier (via a prompt) or majority vote.\nTask decomposition
+      can be done (1) by LLM with simple prompting like \"Steps for XYZ.\\n1.\", \"What
+      are the subgoals for achieving XYZ?\", (2) by using task-specific instructions;
+      e.g. \"Write a story outline.\" for writing a novel, or (3) with human inputs.\n\nTree
+      of Thoughts (Yao et al. 2023) extends CoT by exploring multiple reasoning possibilities
+      at each step. It first decomposes the problem into multiple thought steps and
+      generates multiple thoughts per step, creating a tree structure. The search
+      process can be BFS (breadth-first search) or DFS (depth-first search) with each
+      state evaluated by a classifier (via a prompt) or majority vote.\nTask decomposition
+      can be done (1) by LLM with simple prompting like \"Steps for XYZ.\\n1.\", \"What
+      are the subgoals for achieving XYZ?\", (2) by using task-specific instructions;
+      e.g. \"Write a story outline.\" for writing a novel, or (3) with human inputs.",
+      "role": "tool", "tool_call_id": "call_x3GauAofI4WYcsRZbrs2aOgn"}, {"content":
+      "Task decomposition is a technique used to break down complex tasks into smaller
+      and simpler steps. This approach helps in managing and solving difficult problems
+      by dividing them into more manageable components. One common method for task
+      decomposition is the Chain of Thought (CoT) technique, where models are prompted
+      to think step by step to decompose hard tasks into smaller steps. Another extension
+      of CoT is the Tree of Thoughts, which explores multiple reasoning possibilities
+      at each step and generates multiple thoughts per step, creating a tree structure.\n\nTask
+      decomposition can be facilitated by using language models with simple prompting,
+      task-specific instructions, or human inputs. By breaking down tasks into smaller
+      components, agents can better understand the steps involved and plan ahead effectively.",
+      "role": "assistant"}, {"content": "What according to the blog post are common
+      ways of doing it? redo the search", "role": "user"}], "model": "gpt-3.5-turbo",
+      "n": 1, "stream": false, "temperature": 0.0, "tools": [{"type": "function",
+      "function": {"name": "blog_post_retriever", "description": "Searches and returns
+      excerpts from the Autonomous Agents blog post.", "parameters": {"properties":
+      {"query": {"description": "query to look up in retriever", "type": "string"}},
+      "required": ["query"], "type": "object"}}}]}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '4411'
+      content-type:
+      - application/json
+      cookie:
+      - __cf_bm=TJy1II07AhbAwge9hGQASsYlIaUhFfPd77QFt2SHKGQ-1727368409-1.0.1.1-aMagx.YXYqalDIcujNuQ5mBHMFY8xglyeLb6F2xyOX26v8pMvnHRjgqhsYVXexbjkQ6LnDqasap9AxCIfT4iQQ;
+        _cfuvid=pesDnWrWIf9c6io431u.CKihrxHNWg9nH43No9VIC.s-1727368409430-0.0.1.1-604800000
+      host:
+      - api.openai.com
+      user-agent:
+      - OpenAI/Python 1.48.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.48.0
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.11.7
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAAAwAAAP//dFLLbtswELzrK4g924HlR2LrVhtBj0GaBm1SFwJNrWQ2FFclV24Fw/8e
+        SLIlxWh1IIgdzczucI+BEKATiASovWSVF2b8aW000+q5nM2r8H5pnhP1ev/9cf1wq5YPMKoZtPuF
+        ii+sG0V5YZA12RZWDiVjrRreTe9mt8t5uGqAnBI0NS0reDy7WYy5dDsaT8Lp4szck1boIRI/AiGE
+        ODZn3aNN8C9EYjK6VHL0XmYIUfeTEODI1BWQ3mvP0jKMelCRZbR127Y0ZgAwkYmVNKY3br/j4N4H
+        JY2JX8IVfkk3T9Pw9eXr7Nths346bD4/qoFfK10VTUNpaVUX0ADv6tGVmRBgZd5wd4ayuCDPsUN2
+        Gg/ormSEAOmyMkfL9Qhw3MLvEl21hWgLG8pzsuKPrLygVLD0byLB+s3I69p7Cyf4IHcK/nX/OUjM
+        YVp6ac5Rnuun7m0MZYWjnb+KGlJttd/HDqVvRh4mH1zcGh8oPzwuFI7ygmOmN7S17HI6b1WhX74e
+        nYZnkImlGbDmi/+x4gRZ6mYDuqVr+9Q26xUmXZvNtOArz5jHqbYZusLpbr2CU/AOAAD//wMAZtCG
+        bV0DAAA=
+    headers:
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-RAY:
+      - 8c94a82e3a9f4cf8-BOS
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 26 Sep 2024 16:33:40 GMT
+      Server:
+      - cloudflare
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      openai-organization:
+      - user-wzxwdcuddhvwm09z43ibeucf
+      openai-processing-ms:
+      - '424'
+      openai-version:
+      - '2020-10-01'
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      x-ratelimit-limit-requests:
+      - '5000'
+      x-ratelimit-limit-tokens:
+      - '4000000'
+      x-ratelimit-remaining-requests:
+      - '4999'
+      x-ratelimit-remaining-tokens:
+      - '3999104'
+      x-ratelimit-reset-requests:
+      - 12ms
+      x-ratelimit-reset-tokens:
+      - 13ms
+      x-request-id:
+      - req_9d5f0b669904d1b73e48061b7b6849a0
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"input": [[11076, 5627, 315, 3465, 66266]], "model": "text-embedding-ada-002",
+      "encoding_format": "base64"}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '108'
+      content-type:
+      - application/json
+      cookie:
+      - __cf_bm=h7ylh_1Cf4JL_ElRgGY6lWh.e._6ymdLoBMkUijp5.Y-1727368407-1.0.1.1-_v5GaSWRXNsRcpN6t3Sh8bZ9WYtYjRMgy9BqWLp4QUk9u.wwMBx3tS9flQ9toSx7ufErkTOoItO2jgTyGtpCVQ;
+        _cfuvid=j2MaB8kxt9Xg7ZZrRfIk0d5Iv3kGoW535BQi7VnSOW4-1727368407494-0.0.1.1-604800000
+      host:
+      - api.openai.com
+      user-agent:
+      - OpenAI/Python 1.48.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.48.0
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.11.7
+    method: POST
+    uri: https://api.openai.com/v1/embeddings
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAAA1RZSROyPJfd96946t3aVSIgCd+OSWRMUBS1V4CIgMwkQPrPd+nTQ/XGBd5yuLnn
+        niH/+W9//vzTJmWWTv/8688/n2Kc/vn377NnPMX//OvPf/zbnz9//vzn7/X/VWZ1kj2fRZP/yn9v
+        Fs0zW/751x/uf5/8X9G//vyzG+4HahRiEDJz7xjw/hAUAq9GPawvQ6og6QpK/dJ4JmPx3mlQaw2d
+        Pp7vmDGjhy08v6QSdfxxr89GJLbw1hw47Op3Jdw9MFXAZSkFMgnlNDCFIwR6UbxFu/p0C5ehsQtw
+        Jf2TKseU05eXnCtyAWhItbs/l+to8Hf4SsYI346akXCjBwggrnugB+pMLi3icw6rKVTRejGLYR75
+        UwTTITJRbvDPcl0zqwLxZnMgsiBsElJBtoGiV+XYgFWTrO+RaZAL+Re1H0Quy2jKo31tIwc7y9lw
+        hceoW5BXUE76934MWbe7e7Aq9g22OCspCTilDtylKECiS+phanbCus97ecZoX7jJTOxBgyw6KfhI
+        r67L+uIiAT01zvQCMlTuLOIZ8AZeERqEk1pyfSfc4TRsA+p7AnOJ3pJIml2xRdvlKoAsEC+rpNLx
+        hI87CNyFv29FWETSHhtBVibzSz54YBPlMvbZHIRkkwYiHO/RBQF8Hkq2yHEFm1EwsUnS2qXKw/Kg
+        cotyiimXhwx+lBq23otRB48q4LfC9g68VK1o4LeHhHlpSmBjaSPFZHdlS+W5nBTY2xDt5KArW1vS
+        kdzcvDe+NJuWEf5xJpD3wh0SfStwx67VRWgEZUxNWBTDylNZA7c0fGPllGgl5xb6KE91NFD7cuFC
+        5i56AV9zsWDL0m7DayNnMTCG60ik5Wzo/AltLRCS60qPHXizZRh9AotdUFJdyW/J7GVAAW+d7Kjj
+        KStYc7M2gDlnK3ldWrecBZQS8Dq7R7TCRxeS0CwCmF9vLtalj12OWWDV0N88ntiKrRCwrDIqOKnF
+        icDXwIfLZbzcwWoFHcbVldPHIhV5WNueg6DyicK1BtkMxbpusfZsHmwlsEthtfQV1jTfYuu94zi4
+        A5yMVRthvb7ojwoahzOmbiSa7q4QJQuI6orQ1iNK2L5EVYGzakTYuy2Du3znDUoWfOPDeVmGuXq0
+        FlyN25asDy4dWFtKJpAOuoA2m7Zk7MLZI9zagU2N9dS645SdOKjJY0utJMHufPW1eLs8xC2hlMuT
+        zozXTB5emwIftnyuz29ujsDlaArovbswd0qeXCp9fx9W5rfGmBu/PTl8Zhq1Gus2DCAsMnmoogN5
+        acnbXU/2CiE5yHe0jyfL5Zh+24BLOqVUC5rIpdHUXvbf8yO5mBB9XoydA3XNcDE6ldeQHeB53Zcr
+        r2FP6q1yfS65BNH6mPBTqxhb+v6MZFUpnhhR7OmMT96KnBnOTE0UTAmxTW6G583ZRxuoTWHbnd4V
+        tGuNYueQz6wtszGC/fhw6cGuBn1OTCGC3/9H9vzxoa81iFZwvIYeWZ9hp89V/uIBTJItkS77dmit
+        s7bCDbjdyN4iD7BqQVDAUbYIvbbLI1wOL76H3/mj3nZ+u2Otpw409kGG9c14K1kX8DO89yeR4ljj
+        2HKgXQDjDTzg6/XEBlY4VJI49vR+56fPx3pfQ7VuJOo8tqq79olzh5ytedhCxSN86Z3qQL96RNjn
+        bSOcjMy14G9e3ee9dVfSSD1s0jvC6r2p2YL2NwswcIgJe9VCuF4VRZIh5xpku7d27lJKUyvJN5KQ
+        N7ocS4FS3wLVrU2p4l17d7qc33cZxhakOl4VNt+fbgSXMsXUstVCZ2R6tPB+8RKaec+UjdWsZfC5
+        j55opy4+WNj9XQF2PLhUbRBfzucpW2HUaBgfAjfR1+2xMECSVSt1YWaF856/WnDY+TuqrBiC8fre
+        I3jaiSl1Ik9ny2ndzfvZPOuE35YCIO7hVUnoZhX05bbNsJA8d2B2aVrE7Mfksjpos1//qL29vIYV
+        810AZHkRsRLtBlBvhW0sdWIMyWoqtbtoWCZAGYiGYC8rLvfFn1RWIKD6eHaGtQ78HmaZI2A84lfC
+        Qh+u8Mg9VXyoNtClzM1NeCeoQHwM83D1Za2Hj7Ty6Kny3+G8leYcmu+zjPjbkzGqqgoBT/Nzwprg
+        FQMRIkcD33qcTr0B1tfuKEqtKSAkjZ47sKSfNqAHjoU17I/lBJ9hAKWDKnzx0w6T0/QjrITQxvYj
+        HhmzdssdqklEUeHGOGR148ywJlpFpC//jadhCKB03nRYG2pLF8bDA0m/ec9dfArJxXrOcJd6Abbt
+        yQjZ0WnPcL9x0LQ+cpet06BHsAxKQi3+TROCwSeD+42FsGk7HFtKJ4jk+DDb+B5d+YGWw9yC/EU+
+        2FnqC1hkPQ9kwH8+VCHpa5j5d6DAZ+1vsMJdFH1mo1yBV0IiipjWJVU9LjN4b2wObQUylGS4LaO8
+        6cUXEvP2yuja3wIQCkDD6MVfwgUhU5O++4PsPGNyiaZ8RHBV6IiNfk3K9cunsjX1Mtq8inJY0rsY
+        QKd/8dRxJMkd7II34cL2R6xsuDdb3lDjoL3zKpzF6aDPeRl7cF9ZR/zAR79k/rTyMCvyGEcP+crm
+        fVpYEuec8E+PJUwxHjH8/v4fPydzojILLsF1xpob06TTXnkk+xS3GM3dtZzN+NVL11fWYkuU9GRe
+        ozAAY5Pb9HxWXwmN2zWFzbgzsXnWnWGpPJ2HuXvTqUqmUm9qsNQQDYWBDfBJhx9eANxsIzT3qsJ2
+        y9yZ8JXKD0LTpGXzWBOyn0F5pVb3HsrJ984FjMrjB8ldgAYB9YUjc2K7x4FCaUn3h6cGt5lIqAWa
+        IxueslBLjHKYHgznDRi8XiF8QLSnh8LpQiYIxwKe3oVE/V6IhzUQ0xleS97F2qQsJd0rd15Q/Msd
+        +8feC2c9Vi/y4XUDGHW7AhBNmUR4jQNAL8fPlKzYvTvA8GyB+lKwhmzdIhO0/f2DFV6L3SXvqxFW
+        VtYQ3nwGOtvI2R1I5eONilOtDMwWKgl+5xHNH/zQR0DBCgXDo2j75X9GewVCCkeGgxWn7LufKzif
+        3gi7b/eQrJxpGzBWhRfWxjEHZHeEFXxn8pYa5COyOb0/MxCuwRPft2THmrkWz/C5ZT6Bx8Nd/50/
+        cPn1TJUa6SW7pg6Cwuu5p7/5ZMk2XeG7CTz68kgernRz2YCvHqXHq5UD+pSFCvKH2CfV+3N112kr
+        OdLvvE2tX8FS5VIPCu19I8+bXukLyVsHuAJ2sDLuwnKI5e4Mx6awqdpeaMLKm83DlW9DenkMHaCa
+        BhFs5HCDysE7sVVsckvuwqrAiGl2sivxJYdn83pB+xdTBp57NzW896FIvnyczF+8SozreyIU6S4Z
+        NWtAYA7OLvWvc8so4/dIOpByRpy3cjobY0sDv+/3lmehzzM5z9AYbiP2dYHqTHheip8+QvP8LgDj
+        k06DV5k706y3w2H255MD+1VdvnqsZStEbirRMxkpHvE2nHNUxmDfzSOaH9eJdbC4pZAu0hvr+Tjr
+        0+HFt/vDug+xLe1zxoztkELgWR+qnpNdyay3U8FIT0V6v13e+pdfHfgYZpWewjh3l2l7i+AlSR/0
+        NiclY+Xx5kF/2nyomrTQJbp8teDJYjs0iV0dzq2ipxAfco/6A39wP+7GV2DWkCOZK9CGPSzWQDJo
+        ENHsu//WW2tf4IYTG4pxYjDB4VL028dUYagJR2V3yqF8lzOq7+uXy4aX50l491mw04S7cr0qlgiH
+        gxXgh8+t4TSzZQZ8MNyJRcCFzW19j+HGkyeyCJI9kC8/wkezu5GX2x5LTrNKD8qw2BHZyV7u+Hbj
+        EcCNHGGvEp/ucPpwZ1lg+onsFY4Mixqad7jnqu0Xj5JLxseE9oudHak6JnLYyjcukCujlLH9UY4h
+        ByhbwdY+22iO284l+y7pQfMcTmjz4rlwlrJnL339D7VUZADB3KAAmAvdod3rWZVrKyITCGFcYeyR
+        PGHkSZUfXrAm5GHC9rHOwYE6N7I54WpYOuNwBq/dmNGjTMWEfPURrEt0xnZ3vIZrZ7QmpHohYP98
+        SpPFUZ8rBM1jxgpJt8Ok81orf/UzPj7KbcnQ9g7B+3GL8U/v9HP9zACmeUg95fQpl59/zkRni4/H
+        aKcv0Jw38LHEDbaLsBjyzcZG8FPvecIdvH25Xu5WDHZvjsfm67bVX4EMZnB23yrFfDKH4wCuBYSv
+        S0fAaZ2GaZ2CGIYt9Ylk+Lty1YatBrdlcEKEszR3NhLIg/KS3jGKU9ft4DM8A+uJDtjcljfGoqc8
+        gvS9CmRZ8zxkqmmIUBeuT3z0CzPZ6bzTA3jZYpQtraJzmIDNPlzplXRFEybkizd4OhYrNkL3CGbd
+        yQjYq2qL5owK+lQ69wjyibZigzcOCZG5ewxzQwyxwS2OS9/6jGStkCIEbh4PFmZtoDQFo0kTfxsk
+        zHlNd9CrG4/0ZNX0hUCzlRYsCgSmveqyp7ytoLE/Z2gwDx99SZ4whepGNFHetB4Q4IZVcBMVMtWl
+        TzfM6+AY8BNlG2prRxus0nB04OxKLVZNMrkU9sYKh3jeYQzBGq4HsN1ANC5HfLjLBaONmEsA8dEN
+        e1+9uDNjKQVGLHEYa4nqMtpbG5CGqkSVR7cZhnVrGkCyNm+KnjYG6/Xgm2CORoB1ssUuK4e5h8va
+        G2g1FVOfu9YVAVcql7/7fn3fPW9P9nJD1ehoAPr1/9Ld6Vx8bIoJLA9OySCky5vibcuDxX/bEeQm
+        vv76JT9ZEEIKbC+rgn/5D9uVsgQduzapo8RiwvI11mAmX0Z8dHbqsH42Tbo/mocbtoP3zV2jIVag
+        jGyXquhyHPo8uhMYlYcP9sZBSoavHgDJfeNT5XGdwHqDogMa+bShrr8NwvEl2ho8eeRF1QtnD6ud
+        lNVv/ukxoiMj3HL2/uY5RxUOjLXYDWDX4SP1vHMGFuek3IH+HkXqfuej9XfXC1QPxKFaEH6SGU9W
+        CuVzTqjvZFuXgvYRgK8fo1lzVdjidpkH/UDl0Oy3h1CwdksMbvypo97DvQwNa8wafgIF0Wca9GAN
+        fLeFje896IVbep3KSuPA7z5BAodUd47shYCHrslE3MYffbEuJwOuxnWLNmNx/OVdMTygvY7eKbmA
+        +aO2rXTOrykCw9C4qzOpBITCXqNOHC6MnoU4hl9+pj5vV+FqOYcMJgW8YuVF3gNFfWHJHfMxbgKt
+        Tb79q6FlcSV+uVAM5yPI77B0gIUPS6m6y91nuYR8K8ZW3u5AI+pdAbdVeSELmEy2qtd0/PE7NZ/d
+        wV16msXwPRFINRDO5RzZ+xGKyXql3zzEJbdWjfYxnQMc7uutTvbkxsM1bV2yXS9auDhNT8A37yKA
+        fdZknJjSQqx+CuyhyiiHrT3HQFqtjCJXZwn1jacHlbUZ0PZs2eXyVOYZHoosodpu3yTMRsdA0o/j
+        jA1hfSWroCYIvu/mDYlH0IWTGqIYohCLSFLMplwbPq7++ge9F1V9TVDVwtTbpGi5NybbXTR+hrMU
+        nL/+fR/+9p14S09vbB99LWQoFgoQPbUj9eF8SZhI1lauWefQY0mDcry5HwTDJnOIVJ3zcPk83xv4
+        y6Pc6TCXqzRgC375CitZUoerbcIVBmIkU/QqypLI1bSCm8t3hIPDLpk9Kxjlt0ANJP38/rceaOH4
+        psoF75KZu/AmHC9JjxLyerBv3jrCZvE6xEtaXo5X+UbgWpwX6jVOAeYyqy6ymYIYidpuZtQWxu9+
+        utx++aDexNOmB51xn5CI3yWgIOzTv/49tdyAMcfWzb/+xdGPkL1//f2YmonG1xAl33wsBoWUBdS9
+        n+mwKKezBKWLP2J/4D967WtIAs8ab4hQ0nlYDkZgwdjrFmpfG1ou1WfDA9qYCBv14Jejodk87OS6
+        w166OYGO5K0FLYsvCXiOIiDD2Obgp5cWZ5foEy+fot/nY0M9uMOco+EORrQY+LDrqcvOnnqWPwr/
+        oLYX2+7MC1L0F9++UE7ld59KcJQdQnj1JgyzRKyzFHSu9fUrKhBaKY2B6NU51qfPh60HIGzgRzuk
+        SHhrnisNqSxKX77DrrIdh5VxvQgFpp7wMdCscOecrDsIET1Q/M3H2M3QRril15ra9+Np4N1ur8Hv
+        PiUbEQcu0cC7hecqMPGt2nUh28/EgujZnPF3n4XDN1+Xuizm0O68LOWsEdGBuH5AekC9XvLf/sCk
+        2FwpDnYoGYVSz8Ha7COqR48A0LR5nmGEQgdx9eAP65OfDKnR+C3Vy3Ndtl65RdI5v6XYJa89IMF7
+        TaF7q59U+erraX45EHaVGmNk9a9yoYKT/fJ5ivY8dMcL32rw11+9eVzKkesqCZb784p1++G762vW
+        CdQuckUPX33GbjTh4RdfiH/dXjorbyoPb1ELKRbIMPzNI/z1YtFMvlrD/CDvDMSH1abm7RmyyTTd
+        Hm5FkafuLE5sPbGghnsTX/Exux4T2u3uSDp2LcF+PY/l3J26GlxLzkUgPYyMhj63gqeaVNTJX6VL
+        ejOsYVBuE+pVoqzPWd1LMLSNnDroUQ8tTDwIlOcSYEcO5WSUz7MpJ2Itofo4D/+Nz6+/QuPD5YaZ
+        LkMGQnJbsRazRl/CvhWhJDAdH4Nory+vixMDRnlMf3pxzAKlhrPvDkTkrGQg+KNb8u3DL1hxgDLM
+        DZmCH9+hcvc66UIuZAgc/FahSEn1gX22WgD9NlK+flr6+a8KTPOF0e99RcibhQHBz7/tjWYAK2g2
+        KaTt9YSdlDG2OnplwpMq+jTYky6ZAyV2fvkxRnK3T9bx0mlQSQuf6tuh0JnxmVP5izcCvvqqLocn
+        B0+JeKE3v6jDSmJeCgYV1/R3n7JcxvQOjO2EyHqq83LOw6b+6TPsm7fFnbJbYoKbiQyMTPg/9xEJ
+        S3zs7W9TOH79I4xP+oXIoE/KwfTFDVT7osIqbgpAzQ06w9wxFWzjoz+w/Vw7sLGUkerO2Caz475j
+        +XllJlVd7lMuXnXWYOEZNcYiZ4TzKeIy8M0HETibWUhkR1rh1y+hm3jFOi8kyIOneaTUfKdawn/5
+        GESP45PM334t1a7LfvdFX/y3ydKu1IBNoXG//MX95o1n8NvfEInXcEHPuYfPQ4SoTfwJLN3US/D0
+        ziWqffvzV5+EZZkTbi9ow+pFu3G/OJNDM7tz9J9eku1T52O/LzswLzMKpFA26Ncva66QSbUI2VYz
+        KPrqj12/tTWg+NGdzD/9Ox4eHsy5UiH7a4PLZV0vNbjSfY7d3aYOyaOuHPjV31+/fg2/+QmB9GmY
+        2Ctvh2G9PoD0y5OoJUplspo8m0F9CHPSq4+CjeJL4kAU7meKNm0J2MUZDfCtR7v4Nuo0w9f1p/8I
+        OJubkK2fxITC67WnWvF4lyQaYg3Gn5gnAtBYOVMzjqAr+A49CphP/vKV+okErJHQY5zLrwU01T6g
+        x2t6GqapnHkZaE1EDSpeXJY21wCixelJ5s+iO0tHdoHDtsH4qz9CCjegBn64yUgDLS+ZfEh5MEvn
+        MxLmpARzVFYjVEb5QG/06urcl69hY58otr/3AUttMQf+/KxnGBqb6+fRAudN4FPtErNk5oU1gtWt
+        T7GqtlxZx97egod7FiLpPn4Anc92BrjHy0CAGwZ3ka0x/ekJrMZoBc1BfWmQc0KM1TBW9N1Uijxs
+        7s+K+rqA9QkWrwwm3eOAnf8CAAD//0yaT4+iMBiH734K45UYkVFa54bAKlPQ6soMS7LZIH8cEQFt
+        S6HJfPcJZbPZay89NHnfX3/PsxGeK66o1AG0LwE2td3CJVx8KLC2I4qNbey7wvHOHcjiWYi3/fty
+        4gkCgIeKvdb3hwLQJIU67QDTZnEt+OHdUWCbbUhjnZYM8IjHEGZrghuHlbZFrOjNlzyQwRKZQCty
+        Q4FstTjKfHXmcH1UVt4MWdgJmkxw7fOXAZ38lGP7JbjkHITHeLXL0Qlv03ph9TyLwSRSBGvzrZN3
+        Twfbumd0keQFLjVRe9HlvOQfcxeoh+gHguXVULHMy8wEdbXq+TM2yooADt6YCiQP0Ktwf+6QRWyo
+        zeYeVbniAX5SoA4lD9uGeZYz5fO9n4f6rrGe3hHwe4IRvF1BOfRRMr/oM0yWWO5P2WfqPT+VPEEI
+        HuwekpcPfZ56MH46MHT2j8byjUT2Qz6Ej0Jl1LwJwP37Khp44hrNgUuDlxDJfdXE/X+HsTUlQ3+6
+        RvOz227auINMDczGtCkCWkB3F+B7hxt2/aw7FZtIT+FEWgFfo/H4tzQM7lWSFr0YQNOWTv+pAtMo
+        iaaqqg0aAiPRJZ28/jUQJvWzutf0D61uaUkmr+PloBpMaEWj4r/jUX/R1+gbAAD//wMA8xVFyt4g
+        AAA=
+    headers:
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-RAY:
+      - 8c94a832b8178fb7-BOS
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 26 Sep 2024 16:33:40 GMT
+      Server:
+      - cloudflare
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      access-control-allow-origin:
+      - '*'
+      access-control-expose-headers:
+      - X-Request-ID
+      openai-model:
+      - text-embedding-ada-002
+      openai-organization:
+      - user-wzxwdcuddhvwm09z43ibeucf
+      openai-processing-ms:
+      - '20'
+      openai-version:
+      - '2020-10-01'
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      x-ratelimit-limit-requests:
+      - '5000'
+      x-ratelimit-limit-tokens:
+      - '5000000'
+      x-ratelimit-remaining-requests:
+      - '4999'
+      x-ratelimit-remaining-tokens:
+      - '4999994'
+      x-ratelimit-reset-requests:
+      - 12ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_76c65b6b2d5d1a2fe8cecee6c3b3e5ea
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages": [{"content": "Hi! I''m bob", "role": "user"}, {"content":
+      "Hello Bob! How can I assist you today?", "role": "assistant"}, {"content":
+      "What is Task Decomposition?", "role": "user"}, {"content": null, "role": "assistant",
+      "tool_calls": [{"type": "function", "id": "call_x3GauAofI4WYcsRZbrs2aOgn", "function":
+      {"name": "blog_post_retriever", "arguments": "{\"query\": \"Task Decomposition\"}"}}]},
+      {"content": "Fig. 1. Overview of a LLM-powered autonomous agent system.\nComponent
+      One: Planning#\nA complicated task usually involves many steps. An agent needs
+      to know what they are and plan ahead.\nTask Decomposition#\nChain of thought
+      (CoT; Wei et al. 2022) has become a standard prompting technique for enhancing
+      model performance on complex tasks. The model is instructed to \u201cthink step
+      by step\u201d to utilize more test-time computation to decompose hard tasks
+      into smaller and simpler steps. CoT transforms big tasks into multiple manageable
+      tasks and shed lights into an interpretation of the model\u2019s thinking process.\n\nFig.
+      1. Overview of a LLM-powered autonomous agent system.\nComponent One: Planning#\nA
+      complicated task usually involves many steps. An agent needs to know what they
+      are and plan ahead.\nTask Decomposition#\nChain of thought (CoT; Wei et al.
+      2022) has become a standard prompting technique for enhancing model performance
+      on complex tasks. The model is instructed to \u201cthink step by step\u201d
+      to utilize more test-time computation to decompose hard tasks into smaller and
+      simpler steps. CoT transforms big tasks into multiple manageable tasks and shed
+      lights into an interpretation of the model\u2019s thinking process.\n\nTree
+      of Thoughts (Yao et al. 2023) extends CoT by exploring multiple reasoning possibilities
+      at each step. It first decomposes the problem into multiple thought steps and
+      generates multiple thoughts per step, creating a tree structure. The search
+      process can be BFS (breadth-first search) or DFS (depth-first search) with each
+      state evaluated by a classifier (via a prompt) or majority vote.\nTask decomposition
+      can be done (1) by LLM with simple prompting like \"Steps for XYZ.\\n1.\", \"What
+      are the subgoals for achieving XYZ?\", (2) by using task-specific instructions;
+      e.g. \"Write a story outline.\" for writing a novel, or (3) with human inputs.\n\nTree
+      of Thoughts (Yao et al. 2023) extends CoT by exploring multiple reasoning possibilities
+      at each step. It first decomposes the problem into multiple thought steps and
+      generates multiple thoughts per step, creating a tree structure. The search
+      process can be BFS (breadth-first search) or DFS (depth-first search) with each
+      state evaluated by a classifier (via a prompt) or majority vote.\nTask decomposition
+      can be done (1) by LLM with simple prompting like \"Steps for XYZ.\\n1.\", \"What
+      are the subgoals for achieving XYZ?\", (2) by using task-specific instructions;
+      e.g. \"Write a story outline.\" for writing a novel, or (3) with human inputs.",
+      "role": "tool", "tool_call_id": "call_x3GauAofI4WYcsRZbrs2aOgn"}, {"content":
+      "Task decomposition is a technique used to break down complex tasks into smaller
+      and simpler steps. This approach helps in managing and solving difficult problems
+      by dividing them into more manageable components. One common method for task
+      decomposition is the Chain of Thought (CoT) technique, where models are prompted
+      to think step by step to decompose hard tasks into smaller steps. Another extension
+      of CoT is the Tree of Thoughts, which explores multiple reasoning possibilities
+      at each step and generates multiple thoughts per step, creating a tree structure.\n\nTask
+      decomposition can be facilitated by using language models with simple prompting,
+      task-specific instructions, or human inputs. By breaking down tasks into smaller
+      components, agents can better understand the steps involved and plan ahead effectively.",
+      "role": "assistant"}, {"content": "What according to the blog post are common
+      ways of doing it? redo the search", "role": "user"}, {"content": null, "role":
+      "assistant", "tool_calls": [{"type": "function", "id": "call_Y19eRfCS21ZYT3WvCBSvCGQc",
+      "function": {"name": "blog_post_retriever", "arguments": "{\"query\": \"Common
+      ways of task decomposition\"}"}}]}, {"content": "Fig. 1. Overview of a LLM-powered
+      autonomous agent system.\nComponent One: Planning#\nA complicated task usually
+      involves many steps. An agent needs to know what they are and plan ahead.\nTask
+      Decomposition#\nChain of thought (CoT; Wei et al. 2022) has become a standard
+      prompting technique for enhancing model performance on complex tasks. The model
+      is instructed to \u201cthink step by step\u201d to utilize more test-time computation
+      to decompose hard tasks into smaller and simpler steps. CoT transforms big tasks
+      into multiple manageable tasks and shed lights into an interpretation of the
+      model\u2019s thinking process.\n\nFig. 1. Overview of a LLM-powered autonomous
+      agent system.\nComponent One: Planning#\nA complicated task usually involves
+      many steps. An agent needs to know what they are and plan ahead.\nTask Decomposition#\nChain
+      of thought (CoT; Wei et al. 2022) has become a standard prompting technique
+      for enhancing model performance on complex tasks. The model is instructed to
+      \u201cthink step by step\u201d to utilize more test-time computation to decompose
+      hard tasks into smaller and simpler steps. CoT transforms big tasks into multiple
+      manageable tasks and shed lights into an interpretation of the model\u2019s
+      thinking process.\n\nTree of Thoughts (Yao et al. 2023) extends CoT by exploring
+      multiple reasoning possibilities at each step. It first decomposes the problem
+      into multiple thought steps and generates multiple thoughts per step, creating
+      a tree structure. The search process can be BFS (breadth-first search) or DFS
+      (depth-first search) with each state evaluated by a classifier (via a prompt)
+      or majority vote.\nTask decomposition can be done (1) by LLM with simple prompting
+      like \"Steps for XYZ.\\n1.\", \"What are the subgoals for achieving XYZ?\",
+      (2) by using task-specific instructions; e.g. \"Write a story outline.\" for
+      writing a novel, or (3) with human inputs.\n\nTree of Thoughts (Yao et al. 2023)
+      extends CoT by exploring multiple reasoning possibilities at each step. It first
+      decomposes the problem into multiple thought steps and generates multiple thoughts
+      per step, creating a tree structure. The search process can be BFS (breadth-first
+      search) or DFS (depth-first search) with each state evaluated by a classifier
+      (via a prompt) or majority vote.\nTask decomposition can be done (1) by LLM
+      with simple prompting like \"Steps for XYZ.\\n1.\", \"What are the subgoals
+      for achieving XYZ?\", (2) by using task-specific instructions; e.g. \"Write
+      a story outline.\" for writing a novel, or (3) with human inputs.", "role":
+      "tool", "tool_call_id": "call_Y19eRfCS21ZYT3WvCBSvCGQc"}], "model": "gpt-3.5-turbo",
+      "n": 1, "stream": false, "temperature": 0.0, "tools": [{"type": "function",
+      "function": {"name": "blog_post_retriever", "description": "Searches and returns
+      excerpts from the Autonomous Agents blog post.", "parameters": {"properties":
+      {"query": {"description": "query to look up in retriever", "type": "string"}},
+      "required": ["query"], "type": "object"}}}]}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '7288'
+      content-type:
+      - application/json
+      cookie:
+      - __cf_bm=TJy1II07AhbAwge9hGQASsYlIaUhFfPd77QFt2SHKGQ-1727368409-1.0.1.1-aMagx.YXYqalDIcujNuQ5mBHMFY8xglyeLb6F2xyOX26v8pMvnHRjgqhsYVXexbjkQ6LnDqasap9AxCIfT4iQQ;
+        _cfuvid=pesDnWrWIf9c6io431u.CKihrxHNWg9nH43No9VIC.s-1727368409430-0.0.1.1-604800000
+      host:
+      - api.openai.com
+      user-agent:
+      - OpenAI/Python 1.48.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.48.0
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.11.7
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAAAwAAAP//dFNNbxNBDL3nV1hzTqJ8tBRyQeUEakWFoPSDRdHsrLM7zay9GnuTlqr/
+        Hc0kpEGCyx787DfveZ+fBwDGV2YBxjVWXduF0fmH4PvH2czdXFx93Oj26vv1xeXV1H65ebj8bIZp
+        gssHdPpnauy47QKqZ9rBLqJVTKzTs9nZ/M3bk9kkAy1XGNJY3eloPj4daR9LHk2ms9P9ZMPeoZgF
+        /BgAADznb9JIFT6aBWSeXGlRxNZoFocmABM5pIqxIl7UkprhK+iYFCnLPneOY+WpBmXQBqEMXEPH
+        okNw3LZMsLVPArwCtbKGCpNHFp9MgicX+goXBRU0HcO1JKJgqe5tjZBNCmy9NiA+bQa6yG2nnuoh
+        SO8asAKF+arYCaw4wu3dfWGAIxTmprEKNmIWJX1Zsw27Jusaj5v00u3d/fvCFDQbw7X64H9lH1bW
+        I+nQ+ZV34Ek09i6plWEex0ebpAyTlo3P1o+bIPg1pvejVwQLohyfgHsNnrAwmSI9sW/cRp/sgAXi
+        DYZxQfMxfKINh6yw6Vub1tT1KuApm/nHHrvIDkXGaY/fGhSEFrXhSqDB0KXBMqJdJ8aKtwS7nD3u
+        hXhSBmltCBjBUgUtR4TWkq3RlgFzOxOSyhCQbBmy4joV0m8vURUj9FRhTFmpdjvPf8VnK1hl3i5Y
+        Alyt0KnfYHgaH4cq4qoXm0JNfQj7+sshpYHrLnIpe/xQX3ny0iwjWmFKiRTlzmT0ZQDwM19D/1fA
+        zS5FS+U1UiKczt+d7AjN6wUewZO3e1RZbTgCTiez/80tK1TrgxydldmJ9FS/UkwOSrNVI0+i2C5X
+        nmqMXfT5yvJCXga/AQAA//8DAJUGMvFkBAAA
+    headers:
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-RAY:
+      - 8c94a834a8564cf8-BOS
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 26 Sep 2024 16:33:42 GMT
+      Server:
+      - cloudflare
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      openai-organization:
+      - user-wzxwdcuddhvwm09z43ibeucf
+      openai-processing-ms:
+      - '1399'
+      openai-version:
+      - '2020-10-01'
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      x-ratelimit-limit-requests:
+      - '5000'
+      x-ratelimit-limit-tokens:
+      - '4000000'
+      x-ratelimit-remaining-requests:
+      - '4999'
+      x-ratelimit-remaining-tokens:
+      - '3998472'
+      x-ratelimit-reset-requests:
+      - 12ms
+      x-ratelimit-reset-tokens:
+      - 22ms
+      x-request-id:
+      - req_2a8b990fafe9a5db570d350918d9214c
+    status:
+      code: 200
+      message: OK
+version: 1

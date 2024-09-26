@@ -1,0 +1,340 @@
+interactions:
+- request:
+    body: '{"input": [[3923, 374, 5546, 97478, 3571, 30]], "model": "text-embedding-ada-002",
+      "encoding_format": "base64"}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '111'
+      content-type:
+      - application/json
+      cookie:
+      - __cf_bm=h7ylh_1Cf4JL_ElRgGY6lWh.e._6ymdLoBMkUijp5.Y-1727368407-1.0.1.1-_v5GaSWRXNsRcpN6t3Sh8bZ9WYtYjRMgy9BqWLp4QUk9u.wwMBx3tS9flQ9toSx7ufErkTOoItO2jgTyGtpCVQ;
+        _cfuvid=j2MaB8kxt9Xg7ZZrRfIk0d5Iv3kGoW535BQi7VnSOW4-1727368407494-0.0.1.1-604800000
+      host:
+      - api.openai.com
+      user-agent:
+      - OpenAI/Python 1.48.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.48.0
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.11.7
+    method: POST
+    uri: https://api.openai.com/v1/embeddings
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAAA1SZyw6yzJqF5/sqvvxTOhEQqZc94yQgIIWACj0CVBRF5FAF1L75jn5Jd3piAhIV
+        6q21nrX8z7/+/PmnLeprOf7z7z//vB7D+M9/fc9d8jH/599//vtff/78+fOf3+v/u/LaFNfL5fGu
+        fpf/3ny8L9f5n3//4f/3zP9d9O8//4BeKAQF1wsbduEnAeG9qahxo89+0ZKHCtIQ3aj5ftj9PAPu
+        kO2HMg3DpmdMXICHt+O/qUeDG1uUY8aDQMUNGTNOMuZKvVgo6S6U9G6y6adILa6way1MNvf3FJNo
+        cn1UvE4GtSpqGGsh1FKlfrwtar7JzZj5ap3C/nQXsN5e3940fKYcvMI806IUhPjz0LMTesakwMaS
+        roqxEMMJbKEUsWHvGjZbiZSga+dzZLErx2BCuMth3E0dWUnbDaKru68DsDqirs8L9WcuhBBytzOw
+        Wsp8MT9NOZc/xkMK1qn7MsYuOIiy63A6kd0+Z/O9cjvUvSSKLapraIiqUZQFS67I0xyNetKakwuV
+        KXF0J9qPeHjd1h2K1klOo+PqWvOtqT8V46Q52LA92Vi49DaAn3x06iX3AZEXbq4wbNCaKKX29ipl
+        m7ZycOO32BUWvphW7uoJ/ugPAbfbdd6MOsmVc4gTolFV9IZsaBJUrt+vQAwzIV5UxoUQ4KbGrvXC
+        3ow+sgppeGLUajfvePJPnwZtuPZET+NuXUybVZhAP9k9NfbXzCPea+jA9ziXBm/+g2gVoO/zfY3Y
+        EuKiJtKoy8pbjQPsE6EvxmfjyrC9Kx1230XJJjFvW9hNs02dpeSKoQznCB6O0+LDvE3jv/Nk6cKF
+        WquK1FPy3OrguaIQiPmDsqf5ERLE7d8qdd3Pu54WXp5AF/I1dSojZnPKTjmgRQuC9CJt0WKIUrfp
+        LUSpmzmct1T21oHvcTClvNOTzRzIwKDUsXFslfhlTGMKm2NZ4NS7HNHSRq0In3jzxjsLwnjyz0GO
+        VFXuyXo33tkSkj1AbthZsHS3qX5qzdVFR13eEz6LtZhNO8ojZhovbL4b1WByvm+hOjoVLh7S0+vc
+        J6kQaLJGxGvjFPTa7wYwmk9GfXvpikmQMoDiuCfY6HSjn8dElOVBPe6ptfYbb279S4O6y8iwrd1e
+        HsuNCcBpxpQa3pErptHvJekdolsgPXTXmJoqBWjRGUgT5RwbA73xYelISQ2ciYiW78djJVvcjRRK
+        bRrLRa0sZWVneyIqxVAzVHjLRkn0UwDXbEZj+ExVRC+ZgfWJnL3pkYcDmNJM6Lbeb3pSru6ycnj5
+        WyK1+9Sbz5OSyOR57bBXbUY0GfZOglETDlRrBaeYDGcQ0Q0CCxtZp9f8dCA62p/SlqpW7LPxM2oR
+        SjG5Y9zfNWNs2pqDNoM9PubKrn4G+djAWG8ZtvPtgy0ZuAO8N1ZOdVJ/vEk1ugHOQXCh3ugZBjuI
+        ciQnMj3ggBhTPO7Qe0Lv0NFwEEdmvQwoeSB7dEfq0npks3cRr8gQK5/6PGcZc/ThODSET0pgj7be
+        lH7aK4if6ByIj65CEzsZJxjm8kHLa3ZAdNeGBC7tIFMs8Ko3BzoJIMmGA9aNB4qpEO5SqEyZoztP
+        bRnTL8gBZ2VUeF8acsGep2sFt4LqhOFMZMMD2TL4gmPR06oiPT2WlaPEEn8NlqZIvRkNaxmS3X6P
+        TSpOxmKBJAFLYhu7ZjUaRPTPASx6vCKipXY1S0pLhCPvUOpcpC2bky6N4IKXiiAWvryFVn6I4vnA
+        U2uV62xNbGtCQXooAllYkmIZUFnBZu9GVC+txiAbnDUgZrpAPWNlx4wFexfVmRTQeDp0xgdv7Qhq
+        edKwlsS1N7cjMTcvZdnRfWUvbGbX6wkuVZvg7YYI8RJNVIUcXJua43qDxtjtBtDLV0dN9eMZU5C5
+        HWyzaCFywm3YKOr3COoDJ5BV5iveHD5BRA91j2nu9jJicd7LkA/agq3NsULk4Q4n+H2/v0cv7zv/
+        JgwqhWCxG8ZapG2u0K+7I9Xy64SWwJlLFE+bLXZBy9FPj9CSX2XqR3bZT0dTWv7qpRZYGLHRdOTf
+        egZLFboFe52TDlp5taf69tXF8w0yHexktVBtdarZUJ02D7Rm1jOYXs5sUByrBEleGxD+3cbxzFer
+        FL3T6w5bwsEp5tDsSrTZ3zXywea9YOW7q5D4KZ4EnZqALfV4m2Ct+/PPbzxyNZ8mrKNrjHGxUw3h
+        sG2f8kWCkmS6dEbM1IYJAL2lYImlnTFyoTmAVXgvHGTvE+O9xHn8/Ad7H7ur2dyLJci36B0syzgW
+        9LXWA8hkFgabnjfimaNLCGfCE1oio/WWDT40EFchTx3xatRCoBmRIo2agp3DAMWU1K2PolP5xior
+        MOqoeh1gyS2P7s7JXDB9ZXQ/HsBXXa5rKsZ2CBwxTXpzWVRMrfnO5fupewbKw+dR97t/sQJM7gKG
+        nnDSPpR/+h+aUV0M+4xe5XsjWcHKHZueWEWbou88YM9ydG+JD9GkHMFysCkbRrHYK24Cv6QtdexM
+        KUjdg4jQ3N4Cppkmm3Jqp/LN0L3f/o3p/uCXcCjbHCe31IgX7zW06Df/EYdcY+Hfbofs0Rmp29+E
+        uFUs1kD1qnHwMEraU7fbTHCnfkCk2wp5Y+JVoqJ1XIZ3i/FhYxdkIgI32GH11I9sDB7FtKmUwaXX
+        ZZ/0TIxxiGzzeA/oJdCL6csjUMsoCMJPdCyGS5QEKO/lF7aNp/31C2GS6SjZFIcwGmyyWwu2u2wV
+        sEP5Yku89CHwTVES+ba9e8y2XAsq/ylg+2SfPIKiaVGkUlf+6qmI5ipQWCyn1K5SDXWl5kuIvwgz
+        3j/8BLH7TBakZj6ju0t9Rp2wE114zKcnVdHH7xc0V77CceSItVOexuwt33NIdpaKfWQ4BitanMCt
+        bktckvW1Z35oJcCLLUfjt3Iv5vUrIXIW4YbaJ1s0JvMTVkCMwMFaNa4LNrXTE7XaHFFjl/BoygaS
+        oGP86YNFkoqYbda5C2kb+eT4Ctt+icKkRQ2N9virB4y9s1SGblwdsYvWp5isNkYK2yxcAty/fTR7
+        ZVEhqcwGbF+x7TGOCytExeeK7kmlxLNwFyqkZu8HVsfw4S37jyeiC54qasi5Wa8TxKeglKcrNe58
+        wyYSBCJQsVnRILv3BrOMu67c6bEIltzG9bx5h4CkZ9NSazT6foDG5oHwQka30Ufzpv5zs1B03QC5
+        d6D0C2KUg+ujtoOR5IeafcrJAqdpPOwAVYqBX8ciJNr9RL20n73haEoTCtqHQj3qDz3b6g9ZOYLp
+        UG3YqEwg620FYeGesFcx3Vs7Tu9KjsjJ2P+uzzwXSgQmfi+kclLqzZGz6+QhVK5kI/nPfoKnagJH
+        ShaI7caOl+ewcNCc7Qjvn54XL6ILIQrr641MqK7YyKAFIPw6w9/5YoyR8wMgV96BoB8qb5nueg7N
+        ujnRnSWa9fs3P37ZFHh7d871IgVxCc61wFTnF1xPBPscpOr2QPXtfWZDUykTsOdHxB6qBKO5vfgn
+        8l9xTKThuDPmXbaUcna4OtTBhV4vcaQMUEfnJ3VXiLB5bZoBwjsvoHYMrUf2u1MEXl2PVC2lu8He
+        KPA3IRs0GthW4fU4dgYQbq8zdryLwJim4BRdu/f49ceIsZ+efPPNN78c6yEECOS5kkJ6TCW7F9/x
+        tkXJku3IamyMWKz7VIe8+BgE6eanf5xE/YpGdj4SeW4nb7rynYi+vEQWDnXGkm4+LYQRH+Bykvc1
+        EXaHEySHSSJ3Infx8MiFB5QNbwfcV3/nneyLUCnEDeSTEhriKjuKm/TGGVSl53VBB0OfkOWmNkGr
+        Lou/z3OB88oMqUmnZzHLrllCueWSQPzyLf3uN/Ti6jfd1cNSjFa8+MoNjjGOcs1gIu6fEizaYmD9
+        eToZyzk9uHJySHfUCuNPzY6wVLCy9SvdeRbfL23iTWh17mgwV2+vXh67XSpnWtBgL+/eBfP3Tgn4
+        YbcBf3ateixE4QkfnuVkclLs0R/v4E8b0ctRvvU/PobvfsO718zXiyFOnbKrXBHriuoXbDRfBLD8
+        iTDWX8d6aabc+Zsv/u5XhRMSIIW8+vkpWtzae6KXuL99+WNrzFFbqrA/1QK2p0lnVDppHURb8YS1
+        NAvQ4ltKACke7tjtb8d4okHrop+fm2tOMwZZZSf5yyNknrdp0XVinqMvj+N9sdb7ZdLXC1pYllD1
+        uunqgYaGpXzgZAaf15z0NHu0+d88qIZV5XWf01NEq9t4xMHk98aXd0tI5NODOuITx4u3jUK04XIe
+        63tBLpZmihwwzwuhtj1xNRPmTAY7eRvU0RwDLaf1mEIgLTe8TaV3T6r22KEPn/bUU2rTI/Z1d0Wt
+        1m2x6azfqCG3wIVhvj6CJTfWBlllFxGmm/OhKqpVxNOQSqjOjYJuQ1IXJJreKhRj/sHb6HM3BowO
+        EaouL4Ea0HMFvR/KFF4vRQlWAq8aEzwdE9BBD/7+fqaVqQ+cuABBUdn102erDornXi1qPaahZ8Jh
+        OMGCkhH/8hq7+isLWnQE6o4P87selatIydHCql++6zlbNg1KlrbH7pc/x28/Af3N6rDmoTta6PWT
+        wJevv/1EhuZcWJWy/todaVA8kp66/alBDxXjYHXe2t88GJkwasQknGe+0SRsQJLpKNtU94bb1+/t
+        CI66tKf4+3ljmfkR7K/mLWCHx6H/+tsJKBeK1FSpiKZvfwFNkOcUC3KPFiPd+WDatR/AxumKqQZL
+        h+7Y76nme4u33B0vgjIIS7wNp1PPpt2bh4OfS8HKF7WCf3JuCMVLWFF8wx6im/OzAVnaa1hFdYXo
+        mskc+vJkUMcXWsxq55zAbPWQauXFjmfNC7/5ZvOk+jN5MPo6lx1qGm5LplyIvEnchCa4H0XHznD8
+        GMwdyuGX76nqnrfFrPlIRB9+zvFOnR/96+3KLYJOzKldJZ9itpIpkYsx/QTyBtL+mzeSzTcfURxs
+        rsZSWVWiOCfbDtb7tWUIat+HoH6uR7KstCNijq0GUF3eArWitO/Z+bbzYbMNNtQ8emHR5cV0UkCT
+        NKw9mjuj1LpzP78mfD/0bPGbxyLbw8bDW/eN2GB6Wxlunjljy9z6iInR4yq3He0DpT3ifhbv4YAU
+        Y+LpToqmoik1UwJjn4Q07PfMGDa3bkJhJAY4+Gx8b37c1UlpztsIk17Si1EbPjn68diOO1i1+Dlq
+        Mlo64YM91VA9ZmrPBYX6c8CBisZ4ds6HHJAjRFhfaQKj1PEl0PqzQx1j/0LzTjbFH39973eK29Z8
+        pz+/xF/98mZPeeqgeMMe3zL/4k2eoIjIxNggSrXn6tamQoO0OnpQt8bbgnDrqgSjibq/+tIrF0dH
+        X36g6ubZ9cNTMR1oaJHjLWLreEx6FKDmPdbUP+00NHnHugRRNoRgsjKpZ30FFqQbraPmu6mM+bMv
+        CPz03o4MpX+J+j1Ucp3zsX09RoyNzyJEAR4nMq1vbTxJF22AH98EtkpjlmpAYNQGExfzIWAzgwr+
+        5hnj2HTeNHoqKLaSY/rtk4pWMytR6cxuT9C3z6M8mXjg91ZMxmKt1+ulz1rItPcR7yT/WbNtjXK4
+        n42YqrmweMtt+/Dlp1FuqDNl9575e7VUnhBtqXUdeK8GKCM4jUlHg3PZIqbBo4HoioBssKnFwv5+
+        bJVfn7M5xjZjKKtE2C5vFHz7KzQnXssrhdJ62DTHumb3Q5KDKGsC1qKQ9xiSNwnCh8TFOj8YiHDn
+        RYKJ5h71et2JWWqcOyhGlgbyPaTGxK8LEcqbIQfc5ET9QpR0gXX0qr77V0f851VYcG4WB6sff1fT
+        Z4IaaBrY0szTS+/rny3acHNN1fWLN9hwlwMw8WvBe1Jd4l8eBjLcw4ArqnsxsXMTgkGeC93DOmGM
+        2Nbyy0vYKnu3nq5xlMgXe21jf5L3P7+b4BKqBrkd1W3PL8Kt+eU3woj/Rssqu/Cbyl89yfqbf8hO
+        TR15+ByaYBBXuF/z2AuRxK/OdKdLa/TTD8jr5oJ1SUIxcZ/NA45sUgNW9L6Hps8llX88sI/p3E+n
+        RguVNTOf2N6oC1ukoCjBbL0L3bdH2lNiBxNgzWzpvnG1Xrjfxwat2cmi++3p7RH9WDlwMJMoEE/l
+        05gDXUuVy+bsYRxr2CCPLpNQ8bqEwUqAlTEvJcpR9Up1+uu3lqXuSzhdtg5ZjqtrP2l1GqEdfjyJ
+        /D7Oxpgf1UjB2Xz7+V88oJosaO0eztS0eIkNqNYAOVuS4kA87L2X1EQi+GYY07/8BTwxkbFlTSB5
+        Z9eYuiYLQPK6gBrFqypG1CccLOg0UsPG0ZevTUAos3js7B+pR9DcBiBM+ENg4u9svoIiQtuNPWHe
+        kYtfjXNoYH/K2+/xNaYVqSTgxY6j2y/vzsWp9jcQPSJqZvE9HvbZu0QOiXT66yfm1STlyNX0DzZ9
+        VMXk2+8ir76PPz2ol+nu5nJPT36w5kVSM/pertBbG0q/etkzzHM6CibBoup7J9fLrw//8gpZzqDV
+        P/2EfdO5WF/eWr88yVGGbx4iEjeohcje9Ip2Z0Umm+x2K5b7W+Kh2+qAsUU3bEqMpYP3fJ+w5wYj
+        Yz5JOTiZTKX6d73oZFcmqIu3D/72P2qnJor4Cc84485RMefHlwm//mE5sLchWIl0guhaf/16axVT
+        3x19lPMBof6C1t46WBIOuH1woAHZgTGRwOIRvnMF9lbdpiBPcpR+vICx2Z3ZskpnHWqNxtQTjnbx
+        zZecEvb1logaLN7f/1f2dHv78oPHWHdTANK2RdQvU6dg5kMJ//af33yIKD8Vy6b+HwAAAP//TJrJ
+        rqM4GIX39RSlu0WlAAFsagchISQMTiADkVot5hBIGG3AUr17C26r1Vs2Fpbt/5zvnDPDkS23aiit
+        44sAG/54RoZUfSjVdyYDG3uXIzuzk3bE9zuECbAZpHKHE6DXKDvC/JSMyGr6wOsjQWQld8fekMGW
+        otktekWRbIq2G9ybveYIOriyR7LwJa8HzXCE87wj5jo4hINuY2bhGUTpTxttCuSyApMbXNBWZ31A
+        nuN7WvIrsrnKpje8N86s2m0fc9bb9cZX4VQLL138fDjzgQYYzqHHjHlaheMNdfz3+dgpbg1IwVtb
+        EN2KkgQi34GRf/oYQrdOkWa7z9c05kYGWpI+MEgGak7+g9UXf06QUlhafxArZZn/eAXE3ByGMSzg
+        id0OJCXtzhtLg/flhUccaqKGvP3JJGnmg0j7yGo47LFbwdqbAqe80Z23/ojtCdAir/GqTNxw7T0U
+        CDfF8Cb7XX0IsWAJOVjmpZLLmjZ6DadLviDFs/9WKG9XNhZnHu4IU5SE1MLcBOf/J4Z2sMOK2YsY
+        gCftnHzWc+N2MAopObx7YsD+aNLuOVmQE8wNMpgu85b8SXjkqeGQkafeVOBYgqu9kpDbuN9qU/vY
+        SfDKehCvZn65rsKRkVk73qA5r3x1e0eZ39uLjh7oaGvcDV9cmOSGT245L3jV7Adk1dMUgiTl3lLX
+        P7Lgxms5nhb/tvhv4Hc7FGVFCuo4+FhwhfZbR76LV0CrUGTArPeQ6Y8RGOil8mGc0SexI3WvcQfh
+        KcCmlAhymLSm5Hy3MHAyi3PER7ryalMuFBCfNprDrcZi0WsTqM0ycQQ7skIcMu0EcjE8OnTyU6/r
+        TYUBHmpy3Gv3oaV3hSnAlFPNkW7rwuvtVMKwNh0ynx/1xXFqewS5HxzJwh+Hvnsk0MvqFzJrbTIJ
+        s6IRlIvqg6z3x3kt9xvM+aPzerI6HdZypIOpWddIV+G07LcAMksuHCplJ+8NLyGGnFPcHUBd3xvv
+        5/0EUraOMMhobo40FjM4GrfSobartiTpukbM+EPmCEPIgiGe1AlkjC6So4VrMKbwvJH3UR4tPKbF
+        PQwqoLZXAyW73fnVXXdxAQ/poCP3umJeA/do8sVfODFbC1rP57SSPGMvoC28xGa/PT+OEht3BVIn
+        Jgd9T9UcLPmn4pa51un2G8rvz4VFG7PIWiqwog54g3rOEAmqOZCTuYXKw6G4UYJn+D2PwmjwkTvz
+        wO98pSwjFcMdZc1xku0J7Au+JIdZb60/0tNf3gekusfKm6Ytq0DaWZnDpgH/Gg9itpGbnQLxKeAm
+        bUxCJYN33dsSFUtNODxa04c+WmNM0V1r+TCFt2/96dh23tLUck/gVp625F4k/euTWsEJYrOO0aZ5
+        bOmEZfm96GWir90RTDLXOSCR8AYLfPJqO4P4E/xaWgF/fvz8+dfSMHhXcVLOxYA+Gftf/1UFfgVx
+        8Itl+e8aAu6CLPn6/W8D4atuq3fd/91XRfLpvn7/lL6rBl991Qfl/z7/mBf68+MfAAAA//8DAH62
+        nYbeIAAA
+    headers:
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-RAY:
+      - 8c94a7e52c8f8fb7-BOS
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 26 Sep 2024 16:33:28 GMT
+      Server:
+      - cloudflare
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      access-control-allow-origin:
+      - '*'
+      access-control-expose-headers:
+      - X-Request-ID
+      openai-model:
+      - text-embedding-ada-002
+      openai-organization:
+      - user-wzxwdcuddhvwm09z43ibeucf
+      openai-processing-ms:
+      - '19'
+      openai-version:
+      - '2020-10-01'
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      x-ratelimit-limit-requests:
+      - '5000'
+      x-ratelimit-limit-tokens:
+      - '5000000'
+      x-ratelimit-remaining-requests:
+      - '4999'
+      x-ratelimit-remaining-tokens:
+      - '4999993'
+      x-ratelimit-reset-requests:
+      - 12ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_9e97a2386ff04e0d4224d9c3546a7747
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages": [{"content": "You are an assistant for question-answering
+      tasks. Use the following pieces of retrieved context to answer the question.
+      If you don''t know the answer, say that you don''t know. Use three sentences
+      maximum and keep the answer concise.\n\nFig. 1. Overview of a LLM-powered autonomous
+      agent system.\nComponent One: Planning#\nA complicated task usually involves
+      many steps. An agent needs to know what they are and plan ahead.\nTask Decomposition#\nChain
+      of thought (CoT; Wei et al. 2022) has become a standard prompting technique
+      for enhancing model performance on complex tasks. The model is instructed to
+      \u201cthink step by step\u201d to utilize more test-time computation to decompose
+      hard tasks into smaller and simpler steps. CoT transforms big tasks into multiple
+      manageable tasks and shed lights into an interpretation of the model\u2019s
+      thinking process.\n\nFig. 1. Overview of a LLM-powered autonomous agent system.\nComponent
+      One: Planning#\nA complicated task usually involves many steps. An agent needs
+      to know what they are and plan ahead.\nTask Decomposition#\nChain of thought
+      (CoT; Wei et al. 2022) has become a standard prompting technique for enhancing
+      model performance on complex tasks. The model is instructed to \u201cthink step
+      by step\u201d to utilize more test-time computation to decompose hard tasks
+      into smaller and simpler steps. CoT transforms big tasks into multiple manageable
+      tasks and shed lights into an interpretation of the model\u2019s thinking process.\n\nTree
+      of Thoughts (Yao et al. 2023) extends CoT by exploring multiple reasoning possibilities
+      at each step. It first decomposes the problem into multiple thought steps and
+      generates multiple thoughts per step, creating a tree structure. The search
+      process can be BFS (breadth-first search) or DFS (depth-first search) with each
+      state evaluated by a classifier (via a prompt) or majority vote.\nTask decomposition
+      can be done (1) by LLM with simple prompting like \"Steps for XYZ.\\n1.\", \"What
+      are the subgoals for achieving XYZ?\", (2) by using task-specific instructions;
+      e.g. \"Write a story outline.\" for writing a novel, or (3) with human inputs.\n\nTree
+      of Thoughts (Yao et al. 2023) extends CoT by exploring multiple reasoning possibilities
+      at each step. It first decomposes the problem into multiple thought steps and
+      generates multiple thoughts per step, creating a tree structure. The search
+      process can be BFS (breadth-first search) or DFS (depth-first search) with each
+      state evaluated by a classifier (via a prompt) or majority vote.\nTask decomposition
+      can be done (1) by LLM with simple prompting like \"Steps for XYZ.\\n1.\", \"What
+      are the subgoals for achieving XYZ?\", (2) by using task-specific instructions;
+      e.g. \"Write a story outline.\" for writing a novel, or (3) with human inputs.",
+      "role": "system"}, {"content": "What is Task Decomposition?", "role": "user"}],
+      "model": "gpt-3.5-turbo", "n": 1, "stream": false, "temperature": 0.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '2982'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - OpenAI/Python 1.48.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.48.0
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.11.7
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAAAwAAAP//dFJdaxsxEHz3r1j01IJtnE8nfmtT2kIopWDSL4rR6danzem0qnYvH4T8
+        96KzY7vQvtzBjmY0s5qnEYCh2izAOG/VdSlM3rwNRJdfv3g8luv86ezb5efr9/7dhx83H2+/m3Fh
+        cHWLTl9YU8ddCqjEcQO7jFaxqB7Nj+cn5xens4sB6LjGUGhN0snJ9Gyifa54Mjs6PtsyPZNDMQv4
+        OQIAeBq+xWOs8cEsYDZ+mXQoYhs0i90hAJM5lImxIiRqo5rxHnQcFeNge2mlhRqLcRYqzoEELCg6
+        H+l3j9AL1qAMVUbbQs33ETYxH0CttAIUlUE6GwJmsLEGoQJnEMUkU1j6ophSZus8eAxJwDYYVYAz
+        DJsQUOvagFDTek2uD7rVrh6hpjuqKTagHrvNZR1nhM5G26CtAoL01XB8Cv+I42yECsE6T3hXovjM
+        feOhQ/VcCwRqEa68pQi8hqUvoMKrK16+Lv6WGfEAkDHce3Iemp5qLJ42WYAiqKfYFqcleLE+/DkD
+        PqTAuSBdH5RSQMhohWMZJRahigIpoYBVwLKmQp0evlnGdS+2dCb2IWznz7sSBG5S5kq2+G6+pkji
+        V5vryoOLcjID+jwC+DWUrf+rPyZl7pKulFuMRfB8drrRM/t+79H5yRZUVhsOWPP5/1irGtVSkIPK
+        mt1C9gqznc0hp5FHUexWa4oN5pRpaPCwjefRHwAAAP//AwCKvg7IwAMAAA==
+    headers:
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-RAY:
+      - 8c94a7e68b224cf8-BOS
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 26 Sep 2024 16:33:29 GMT
+      Server:
+      - cloudflare
+      Set-Cookie:
+      - __cf_bm=TJy1II07AhbAwge9hGQASsYlIaUhFfPd77QFt2SHKGQ-1727368409-1.0.1.1-aMagx.YXYqalDIcujNuQ5mBHMFY8xglyeLb6F2xyOX26v8pMvnHRjgqhsYVXexbjkQ6LnDqasap9AxCIfT4iQQ;
+        path=/; expires=Thu, 26-Sep-24 17:03:29 GMT; domain=.api.openai.com; HttpOnly;
+        Secure; SameSite=None
+      - _cfuvid=pesDnWrWIf9c6io431u.CKihrxHNWg9nH43No9VIC.s-1727368409430-0.0.1.1-604800000;
+        path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      openai-organization:
+      - user-wzxwdcuddhvwm09z43ibeucf
+      openai-processing-ms:
+      - '1124'
+      openai-version:
+      - '2020-10-01'
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      x-ratelimit-limit-requests:
+      - '5000'
+      x-ratelimit-limit-tokens:
+      - '4000000'
+      x-ratelimit-remaining-requests:
+      - '4999'
+      x-ratelimit-remaining-tokens:
+      - '3999286'
+      x-ratelimit-reset-requests:
+      - 12ms
+      x-ratelimit-reset-tokens:
+      - 10ms
+      x-request-id:
+      - req_acce6b1c486370d6af6b352ea25939bb
+    status:
+      code: 200
+      message: OK
+version: 1
