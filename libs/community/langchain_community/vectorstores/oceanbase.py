@@ -56,6 +56,7 @@ class OceanBase(VectorStore):
         vidx_name (str): Name of the vector index table.
         partitions (ObPartition): Partition strategy of table. Refer to `pyobvector`'s
             documentation for more examples.
+        extra_columns (Optional[List[Column]]): Extra sqlalchemy columns to add to the table.
 
     Example:
         .. code-block:: python
