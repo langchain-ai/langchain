@@ -56,7 +56,7 @@ cosmos_database_properties_test: Dict[str, Any] = {}
 
 
 def test_azure_cosmos_db_nosql_semantic_cache_cosine_quantizedflat(
-    cosmos_client,
+    cosmos_client: Any,
 ) -> None:
     set_llm_cache(
         AzureCosmosDBNoSqlSemanticCache(
@@ -83,7 +83,9 @@ def test_azure_cosmos_db_nosql_semantic_cache_cosine_quantizedflat(
     get_llm_cache().clear(llm_string=llm_string)
 
 
-def test_azure_cosmos_db_nosql_semantic_cache_cosine_flat(cosmos_client) -> None:
+def test_azure_cosmos_db_nosql_semantic_cache_cosine_flat(
+        cosmos_client: Any,
+) -> None:
     set_llm_cache(
         AzureCosmosDBNoSqlSemanticCache(
             cosmos_client=cosmos_client,
@@ -110,7 +112,7 @@ def test_azure_cosmos_db_nosql_semantic_cache_cosine_flat(cosmos_client) -> None
 
 
 def test_azure_cosmos_db_nosql_semantic_cache_dotproduct_quantizedflat(
-    cosmos_client,
+    cosmos_client: Any,
 ) -> None:
     set_llm_cache(
         AzureCosmosDBNoSqlSemanticCache(
@@ -139,7 +141,9 @@ def test_azure_cosmos_db_nosql_semantic_cache_dotproduct_quantizedflat(
     get_llm_cache().clear(llm_string=llm_string)
 
 
-def test_azure_cosmos_db_nosql_semantic_cache_dotproduct_flat(cosmos_client) -> None:
+def test_azure_cosmos_db_nosql_semantic_cache_dotproduct_flat(
+        cosmos_client: Any,
+) -> None:
     set_llm_cache(
         AzureCosmosDBNoSqlSemanticCache(
             cosmos_client=cosmos_client,
@@ -168,7 +172,7 @@ def test_azure_cosmos_db_nosql_semantic_cache_dotproduct_flat(cosmos_client) -> 
 
 
 def test_azure_cosmos_db_nosql_semantic_cache_euclidean_quantizedflat(
-    cosmos_client,
+    cosmos_client: Any,
 ) -> None:
     set_llm_cache(
         AzureCosmosDBNoSqlSemanticCache(
@@ -195,7 +199,9 @@ def test_azure_cosmos_db_nosql_semantic_cache_euclidean_quantizedflat(
     get_llm_cache().clear(llm_string=llm_string)
 
 
-def test_azure_cosmos_db_nosql_semantic_cache_euclidean_flat(cosmos_client) -> None:
+def test_azure_cosmos_db_nosql_semantic_cache_euclidean_flat(
+        cosmos_client: Any,
+) -> None:
     set_llm_cache(
         AzureCosmosDBNoSqlSemanticCache(
             cosmos_client=cosmos_client,
