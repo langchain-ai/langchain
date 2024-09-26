@@ -247,7 +247,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
-        ** kwargs: Any,
+        **kwargs: Any,
     ) -> AzureCosmosDBNoSqlVectorSearch:
         cosmos_client = CosmosClient(connection_string, clientSecretCredential)
         kwargs["cosmos_client"] = cosmos_client
@@ -260,13 +260,13 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
 
     @classmethod
     def from_connection_string_and_key(
-            cls,
-            connection_string: str,
-            key: str,
-            texts: List[str],
-            embedding: Embeddings,
-            metadatas: Optional[List[dict]] = None,
-            **kwargs: Any,
+        cls,
+        connection_string: str,
+        key: str,
+        texts: List[str],
+        embedding: Embeddings,
+        metadatas: Optional[List[dict]] = None,
+        **kwargs: Any,
     ) -> AzureCosmosDBNoSqlVectorSearch:
         cosmos_client = CosmosClient(connection_string, key)
         kwargs["cosmos_client"] = cosmos_client
