@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 import warnings
-from typing import Any, Dict, Iterable, List, Optional, Tuple, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
