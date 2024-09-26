@@ -15,7 +15,7 @@ CASSETTES_PATH = os.path.join(DOCS_PATH, "cassettes")
 # TODO: update these
 NOTEBOOKS_NO_CASSETTES = (
     "docs/docs/how-tos/visualization.ipynb",
-    "docs/docs/how-tos/many-tools.ipynb"
+    "docs/docs/how-tos/many-tools.ipynb",
 )
 
 NOTEBOOKS_NO_EXECUTION = [
@@ -84,8 +84,9 @@ def add_vcr_to_notebook(
 
         cell_id = cell.get("id", idx)
         cassette_name = f"{cassette_prefix}_{cell_id}.yaml"
-        cell.source = f"with vcr.use_cassette('{cassette_name}', filter_headers=['x-api-key', 'authorization'], record_mode='once'):\n" + "\n".join(
-            f"    {line}" for line in lines
+        cell.source = (
+            f"with vcr.use_cassette('{cassette_name}', filter_headers=['x-api-key', 'authorization'], record_mode='once'):\n"
+            + "\n".join(f"    {line}" for line in lines)
         )
 
     # Add import statement
