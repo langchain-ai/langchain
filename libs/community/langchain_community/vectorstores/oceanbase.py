@@ -526,6 +526,7 @@ class OceanBase(VectorStore):
                 else [self.text_field, self.metadata_field]
             ),
             where_clause=([text(fltr)] if fltr is not None else None),
+            **kwargs,
         )
         return [
             Document(
@@ -582,6 +583,7 @@ class OceanBase(VectorStore):
                 else [self.text_field, self.metadata_field]
             ),
             where_clause=([text(fltr)] if fltr is not None else None),
+            **kwargs,
         )
         return [
             (
