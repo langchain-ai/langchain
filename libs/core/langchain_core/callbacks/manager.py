@@ -1729,7 +1729,8 @@ class AsyncCallbackManager(BaseCallbackManager):
                 to each prompt.
         """
 
-        tasks = []
+        inline_tasks = []
+        non_inline_tasks = []
         managers = []
 
         for prompt in prompts:
@@ -1739,9 +1740,9 @@ class AsyncCallbackManager(BaseCallbackManager):
             else:
                 run_id_ = uuid.uuid4()
 
-            tasks.append(
-                ahandle_event(
-                    self.handlers,
+            for handler in self.handlers:
+                task = ahandle_event(
+                    [handler],
                     "on_llm_start",
                     "ignore_llm",
                     serialized,
@@ -1752,7 +1753,10 @@ class AsyncCallbackManager(BaseCallbackManager):
                     metadata=self.metadata,
                     **kwargs,
                 )
-            )
+                if handler.run_inline:
+                    inline_tasks.append(task)
+                else:
+                    non_inline_tasks.append(task)
 
             managers.append(
                 AsyncCallbackManagerForLLMRun(
@@ -1767,7 +1771,13 @@ class AsyncCallbackManager(BaseCallbackManager):
                 )
             )
 
-        await asyncio.gather(*tasks)
+        # Run inline tasks sequentially
+        for task in inline_tasks:
+            await task
+
+        # Run non-inline tasks concurrently
+        if non_inline_tasks:
+            await asyncio.gather(*non_inline_tasks)
 
         return managers
 
@@ -1791,7 +1801,8 @@ class AsyncCallbackManager(BaseCallbackManager):
                 async callback managers, one for each LLM Run
                 corresponding to each inner  message list.
         """
-        tasks = []
+        inline_tasks = []
+        non_inline_tasks = []
         managers = []
 
         for message_list in messages:
@@ -1801,9 +1812,9 @@ class AsyncCallbackManager(BaseCallbackManager):
             else:
                 run_id_ = uuid.uuid4()
 
-            tasks.append(
-                ahandle_event(
-                    self.handlers,
+            for handler in self.handlers:
+                task = ahandle_event(
+                    [handler],
                     "on_chat_model_start",
                     "ignore_chat_model",
                     serialized,
@@ -1814,7 +1825,10 @@ class AsyncCallbackManager(BaseCallbackManager):
                     metadata=self.metadata,
                     **kwargs,
                 )
-            )
+                if handler.run_inline:
+                    inline_tasks.append(task)
+                else:
+                    non_inline_tasks.append(task)
 
             managers.append(
                 AsyncCallbackManagerForLLMRun(
@@ -1829,7 +1843,14 @@ class AsyncCallbackManager(BaseCallbackManager):
                 )
             )
 
-        await asyncio.gather(*tasks)
+        # Run inline tasks sequentially
+        for task in inline_tasks:
+            await task
+
+        # Run non-inline tasks concurrently
+        if non_inline_tasks:
+            await asyncio.gather(*non_inline_tasks)
+
         return managers
 
     async def on_chain_start(
