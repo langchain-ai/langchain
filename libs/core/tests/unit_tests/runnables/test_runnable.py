@@ -7,6 +7,7 @@ from operator import itemgetter
 from typing import (
     Any,
     Callable,
+    Dict,
     Optional,
     Union,
     cast,
@@ -63,6 +64,7 @@ from langchain_core.runnables import (
     ConfigurableFieldSingleOption,
     RouterRunnable,
     Runnable,
+    RunnableAssign,
     RunnableBinding,
     RunnableBranch,
     RunnableConfig,
@@ -5411,3 +5413,14 @@ def test_schema_for_prompt_and_chat_model() -> None:
         "title": "PromptInput",
         "type": "object",
     }
+
+
+def test_runnable_assign() -> None:
+    def add_ten(x: Dict[str, int]) -> Dict[str, int]:
+        return {"added": x["input"] + 10}
+
+    mapper = RunnableParallel({"add_step": RunnableLambda(add_ten)})
+    runnable_assign = RunnableAssign(mapper)
+
+    result = runnable_assign.invoke({"input": 5})
+    assert result == {"input": 5, "add_step": {"added": 15}}
