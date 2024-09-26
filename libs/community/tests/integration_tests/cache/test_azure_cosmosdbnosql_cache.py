@@ -84,7 +84,7 @@ def test_azure_cosmos_db_nosql_semantic_cache_cosine_quantizedflat(
 
 
 def test_azure_cosmos_db_nosql_semantic_cache_cosine_flat(
-        cosmos_client: Any,
+    cosmos_client: Any,
 ) -> None:
     set_llm_cache(
         AzureCosmosDBNoSqlSemanticCache(
@@ -142,7 +142,7 @@ def test_azure_cosmos_db_nosql_semantic_cache_dotproduct_quantizedflat(
 
 
 def test_azure_cosmos_db_nosql_semantic_cache_dotproduct_flat(
-        cosmos_client: Any,
+    cosmos_client: Any,
 ) -> None:
     set_llm_cache(
         AzureCosmosDBNoSqlSemanticCache(
@@ -200,7 +200,7 @@ def test_azure_cosmos_db_nosql_semantic_cache_euclidean_quantizedflat(
 
 
 def test_azure_cosmos_db_nosql_semantic_cache_euclidean_flat(
-        cosmos_client: Any,
+    cosmos_client: Any,
 ) -> None:
     set_llm_cache(
         AzureCosmosDBNoSqlSemanticCache(
