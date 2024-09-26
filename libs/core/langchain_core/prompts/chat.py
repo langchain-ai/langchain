@@ -1007,11 +1007,11 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
                 input_vars.update(_message.input_variables)
 
         kwargs = {
-            **dict(
-                input_variables=sorted(input_vars),
-                optional_variables=sorted(optional_variables),
-                partial_variables=partial_vars,
-            ),
+            **{
+                "input_variables": sorted(input_vars),
+                "optional_variables": sorted(optional_variables),
+                "partial_variables": partial_vars,
+            },
             **kwargs,
         }
         cast(type[ChatPromptTemplate], super()).__init__(messages=_messages, **kwargs)

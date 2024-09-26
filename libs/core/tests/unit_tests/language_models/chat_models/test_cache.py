@@ -262,7 +262,7 @@ def test_global_cache_stream() -> None:
             AIMessage(content="goodbye world"),
         ]
         model = GenericFakeChatModel(messages=iter(messages), cache=True)
-        chunks = [chunk for chunk in model.stream("some input")]
+        chunks = list(model.stream("some input"))
         assert len(chunks) == 3
         # Assert that streaming information gets cached
         assert global_cache._cache != {}
