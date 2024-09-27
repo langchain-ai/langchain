@@ -221,4 +221,4 @@ def test_fake_list_chat_model_batch() -> None:
         # run this 20 times to test race condition in batch
         fake = FakeListChatModel(responses=["a", "b", "c"])
         resp = fake.batch(["1", "2", "3"])
-        assert resp == expected, [resp.content for resp in resp]
+        assert resp == expected
