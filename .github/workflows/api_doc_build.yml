@@ -16,6 +16,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           path: langchain
+          token: ${{ secrets.TOKEN_GITHUB_API_DOCS_HTML }}
       - uses: actions/checkout@v4
         with:
           repository: langchain-ai/langchain-api-docs-html
@@ -36,4 +37,3 @@ jobs:
           git commit -m "Update API docs build"
           git remote set-url origin "https://x-access-token:$GITHUB_TOKEN@github.com/langchain-ai/langchain-api-docs-html.git"
           git push origin HEAD
-          
