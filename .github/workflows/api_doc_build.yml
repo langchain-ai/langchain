@@ -60,6 +60,11 @@ jobs:
         with:
           repository: langchain-ai/langchain-together
           path: langchain-together
+      - uses: actions/checkout@v4
+        with:
+          repository: langchain-ai/langchain-experimental
+          path: langchain-experimental
+
 
       - name: Set Git config
         working-directory: langchain
@@ -80,7 +85,8 @@ jobs:
             langchain/libs/partners/upstage \
             langchain/libs/partners/ai21 \
             langchain/libs/partners/together \
-            langchain/libs/standard-tests
+            langchain/libs/standard-tests \
+            langchain/libs/experimental
           mv langchain-google/libs/genai langchain/libs/partners/google-genai
           mv langchain-google/libs/vertexai langchain/libs/partners/google-vertexai
           mv langchain-google/libs/community langchain/libs/partners/google-community
@@ -93,6 +99,7 @@ jobs:
           mv langchain-weaviate/libs/weaviate langchain/libs/partners/weaviate
           mv langchain-ai21/libs/ai21 langchain/libs/partners/ai21
           mv langchain-together/libs/together langchain/libs/partners/together
+          mv langchain-experimental/libs/experimental langchain/libs/experimental
 
       - name: Rm old html
         run:
