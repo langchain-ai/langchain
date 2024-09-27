@@ -7,6 +7,10 @@ on:
         description: 'Python version'
         required: false
         default: '3.11'
+      working-directory:
+        description: 'Working directory or specific notebook file'
+        required: false
+        default: 'all'
   schedule:
     - cron: '0 13 * * *'
 
@@ -56,4 +60,4 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
         run: |
-          ./docs/scripts/execute_notebooks.sh
+          ./docs/scripts/execute_notebooks.sh ${{ github.event.inputs.working-directory || 'all' }}

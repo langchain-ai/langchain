@@ -3,6 +3,9 @@
 # Read the list of notebooks to skip from the JSON file
 SKIP_NOTEBOOKS=$(python -c "import json; print('\n'.join(json.load(open('docs/notebooks_no_execution.json'))))")
 
+# Get the working directory or specific notebook file from the input parameter
+WORKING_DIRECTORY=$1
+
 # Function to execute a single notebook
 execute_notebook() {
     file="$1"
@@ -22,8 +25,12 @@ execute_notebook() {
 
 export -f execute_notebook
 
-# Find all notebooks and filter out those in the skip list
-notebooks=$(find docs/docs/tutorials -name "*.ipynb" | grep -v ".ipynb_checkpoints" | grep -vFf <(echo "$SKIP_NOTEBOOKS"))
+# Determine the list of notebooks to execute
+if [ "$WORKING_DIRECTORY" == "all" ]; then
+    notebooks=$(find docs/docs/tutorials -name "*.ipynb" | grep -v ".ipynb_checkpoints" | grep -vFf <(echo "$SKIP_NOTEBOOKS"))
+else
+    notebooks=$(find "$WORKING_DIRECTORY" -name "*.ipynb" | grep -v ".ipynb_checkpoints" | grep -vFf <(echo "$SKIP_NOTEBOOKS"))
+fi
 
 # Execute notebooks sequentially
 for file in $notebooks; do
