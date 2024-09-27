@@ -35,5 +35,4 @@ jobs:
           git config --local user.name "Github Actions"
           git add .
           git commit -m "Update API docs build"
-          git remote set-url origin "https://x-access-token:$GITHUB_TOKEN@github.com/langchain-ai/langchain-api-docs-html.git"
           git push origin HEAD
