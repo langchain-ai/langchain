@@ -8,7 +8,7 @@ execute_notebook() {
     file="$1"
     echo "Starting execution of $file"
     start_time=$(date +%s)
-    if ! output=$(time poetry run jupyter execute "$file" 2>&1); then
+    if ! output=$(time poetry run jupyter nbconvert --to notebook --execute $file 2>&1); then
         end_time=$(date +%s)
         execution_time=$((end_time - start_time))
         echo "Error in $file. Execution time: $execution_time seconds"
