@@ -463,7 +463,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         )
 
         if self.rate_limiter:
-            self.rate_limiter.acquire(blocking=True)
+            await self.rate_limiter.aacquire(blocking=True)
 
         generation: Optional[ChatGenerationChunk] = None
         try:
@@ -551,7 +551,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     def _get_llm_string(self, stop: Optional[list[str]] = None, **kwargs: Any) -> str:
         if self.is_lc_serializable():
             params = {**kwargs, **{"stop": stop}}
-            param_string = str(sorted([(k, v) for k, v in params.items()]))
+            param_string = str(sorted(params.items()))
             # This code is not super efficient as it goes back and forth between
             # json and dict.
             serialized_repr = self._serialized
@@ -561,7 +561,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         else:
             params = self._get_invocation_params(stop=stop, **kwargs)
             params = {**params, **kwargs}
-            return str(sorted([(k, v) for k, v in params.items()]))
+            return str(sorted(params.items()))
 
     def generate(
         self,
@@ -905,7 +905,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         # we usually don't want to rate limit cache lookups, but
         # we do want to rate limit API requests.
         if self.rate_limiter:
-            self.rate_limiter.acquire(blocking=True)
+            await self.rate_limiter.aacquire(blocking=True)
 
         # If stream is not explicitly set, check if implicitly requested by
         # astream_events() or astream_log(). Bail out if _astream not implemented
