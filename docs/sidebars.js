@@ -323,7 +323,7 @@ module.exports = {
             },
             {
               type: "category",
-              label: "Memory",
+              label: "Message histories",
               collapsible: false,
               items: [
                 {
@@ -335,7 +335,6 @@ module.exports = {
               link: {
                 type: "generated-index",
                 slug: "integrations/memory",
-                description: "This is some custom [text](https://langchain-ai.github.io/langgraph/concepts/memory/)",
               },
             },
             {
