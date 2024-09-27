@@ -463,7 +463,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         )
 
         if self.rate_limiter:
-            self.rate_limiter.acquire(blocking=True)
+            await self.rate_limiter.aacquire(blocking=True)
 
         generation: Optional[ChatGenerationChunk] = None
         try:
@@ -905,7 +905,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         # we usually don't want to rate limit cache lookups, but
         # we do want to rate limit API requests.
         if self.rate_limiter:
-            self.rate_limiter.acquire(blocking=True)
+            await self.rate_limiter.aacquire(blocking=True)
 
         # If stream is not explicitly set, check if implicitly requested by
         # astream_events() or astream_log(). Bail out if _astream not implemented
