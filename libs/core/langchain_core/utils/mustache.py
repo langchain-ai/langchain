@@ -32,8 +32,6 @@ _LAST_TAG_LINE = None
 class ChevronError(SyntaxError):
     """Custom exception for Chevron errors."""
 
-    pass
-
 
 #
 # Helper functions
