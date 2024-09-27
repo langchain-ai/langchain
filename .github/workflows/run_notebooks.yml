@@ -2,11 +2,19 @@ name: Run notebooks
 
 on:
   workflow_dispatch:
+    inputs:
+      python_version:
+        description: 'Python version'
+        required: false
+        default: '3.11'
+      working-directory:
+        description: 'Working directory or subset (e.g., docs/docs/tutorials/llm_chain.ipynb)'
+        required: false
+        default: 'all'
   schedule:
     - cron: '0 13 * * *'
 
 env:
-  PYTHON_VERSION: "3.11"
   POETRY_VERSION: "1.7.1"
 
 jobs:
@@ -20,7 +28,7 @@ jobs:
       - name: Set up Python + Poetry ${{ env.POETRY_VERSION }}
         uses: "./.github/actions/poetry_setup"
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
+          python-version: ${{ github.event.inputs.python_version || '3.11' }}
           poetry-version: ${{ env.POETRY_VERSION }}
           working-directory: ${{ inputs.working-directory }}
           cache-key: run-notebooks
@@ -43,7 +51,6 @@ jobs:
 
       - name: Prepare notebooks
         run: |
-
           python docs/scripts/prepare_notebooks_for_ci.py --comment-install-cells
 
       - name: Run notebooks
@@ -53,4 +60,4 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
         run: |
-          ./docs/scripts/execute_notebooks.sh
+          ./docs/scripts/execute_notebooks.sh ${{ github.event.inputs.working-directory || 'all' }}
