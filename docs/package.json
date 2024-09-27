@@ -19,7 +19,7 @@
     "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,md,mdx}\"",
     "gen": "yarn gen:supabase",
     "gen:supabase": "npx supabase gen types typescript --project-id 'xsqpnijvmbodcxyapnyq' --schema public > ./src/supabase.d.ts",
-    "check-broken-links": "bash vercel_build.sh && node ./scripts/check-broken-links.js"
+    "check-broken-links": "make vercel-build && node ./scripts/check-broken-links.js"
   },
   "dependencies": {
     "@docusaurus/core": "3.5.2",
