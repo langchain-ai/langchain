@@ -829,7 +829,6 @@ async def _astream_events_implementation_v1(
                 inputs = log_entry["inputs"]
                 if inputs is not None:
                     data["input"] = inputs
-                pass
 
             if event_type == "end":
                 inputs = log_entry["inputs"]
