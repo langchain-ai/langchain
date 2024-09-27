@@ -24,16 +24,11 @@ jobs:
       - name: Test add file
         working-directory: langchain-api-docs-html
         run: |
-          echo "Hello world 2" > test.txt
-          
-      - name: Commit changes
-        working-directory: langchain-api-docs-html
-        run: |
-          git config --local user.email "actions@github.com"
-          git config --local user.name "Github Actions"
-          git add .
-          echo "precommit"
-          git commit -m "Update API docs build"
-          echo "preset"
-          echo "prepush"
-          git push
+          echo "Hello world 3" > test.txt
+       
+
+      # https://github.com/marketplace/actions/add-commit
+      - uses: EndBug/add-and-commit@v9
+        with:
+          cwd: langchain-api-docs-html
+          message: 'Update API docs build'
