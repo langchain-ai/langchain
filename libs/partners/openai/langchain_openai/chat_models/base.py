@@ -1217,12 +1217,12 @@ class BaseChatOpenAI(BaseChatModel):
             Support for ``strict`` argument added.
             Support for ``method`` = "json_schema" added.
 
-        .. note:: Planned breaking changes in version `0.2.0`
+        .. note:: Planned breaking changes in version `0.3.0`
 
             - ``method`` default will be changed to "json_schema" from
                 "function_calling".
             - ``strict`` will default to True when ``method`` is
-                "function_calling" as of version `0.2.0`.
+                "function_calling" as of version `0.3.0`.
 
 
         .. dropdown:: Example: schema=Pydantic class, method="function_calling", include_raw=False, strict=True

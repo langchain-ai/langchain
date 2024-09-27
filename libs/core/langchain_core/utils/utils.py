@@ -268,8 +268,6 @@ def convert_to_secret_str(value: Union[SecretStr, str]) -> SecretStr:
 class _NoDefaultType:
     """Type to indicate no default value is provided."""
 
-    pass
-
 
 _NoDefault = _NoDefaultType()
 

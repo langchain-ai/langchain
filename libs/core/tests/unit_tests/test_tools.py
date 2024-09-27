@@ -357,7 +357,6 @@ def test_structured_tool_types_parsed_pydantic_mixed() -> None:
             some_base_model: SomeBaseModel, another_base_model: AnotherBaseModel
         ) -> None:
             """Return the arguments directly."""
-            pass
 
 
 def test_base_tool_inheritance_base_schema() -> None:

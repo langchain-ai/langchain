@@ -429,16 +429,12 @@ def test_message_chunk_to_message() -> None:
     expected = AIMessage(
         content="I am",
         tool_calls=[
-            create_tool_call(**{"name": "tool1", "args": {"a": 1}, "id": "1"}),  # type: ignore[arg-type]
-            create_tool_call(**{"name": "tool2", "args": {}, "id": "2"}),  # type: ignore[arg-type]
+            create_tool_call(name="tool1", args={"a": 1}, id="1"),  # type: ignore[arg-type]
+            create_tool_call(name="tool2", args={}, id="2"),  # type: ignore[arg-type]
         ],
         invalid_tool_calls=[
-            create_invalid_tool_call(
-                **{"name": "tool3", "args": None, "id": "3", "error": None}
-            ),
-            create_invalid_tool_call(
-                **{"name": "tool4", "args": "abc", "id": "4", "error": None}
-            ),
+            create_invalid_tool_call(name="tool3", args=None, id="3", error=None),
+            create_invalid_tool_call(name="tool4", args="abc", id="4", error=None),
         ],
     )
     assert message_chunk_to_message(chunk) == expected
@@ -448,10 +444,10 @@ def test_message_chunk_to_message() -> None:
 
 def test_tool_calls_merge() -> None:
     chunks: list[dict] = [
-        dict(content=""),
-        dict(
-            content="",
-            additional_kwargs={
+        {"content": ""},
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 0,
@@ -461,10 +457,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 0,
@@ -474,10 +470,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 0,
@@ -487,10 +483,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 0,
@@ -500,10 +496,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 0,
@@ -513,10 +509,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 0,
@@ -526,10 +522,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 0,
@@ -539,10 +535,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 1,
@@ -552,10 +548,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 1,
@@ -565,10 +561,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 1,
@@ -578,10 +574,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 1,
@@ -591,10 +587,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 1,
@@ -604,10 +600,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 1,
@@ -617,10 +613,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 1,
@@ -630,8 +626,8 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(content=""),
+        },
+        {"content": ""},
     ]
 
     final = None
