@@ -829,7 +829,6 @@ async def _astream_events_implementation_v1(
                 inputs = log_entry["inputs"]
                 if inputs is not None:
                     data["input"] = inputs
-                pass
 
             if event_type == "end":
                 inputs = log_entry["inputs"]
@@ -994,6 +993,10 @@ async def _astream_events_implementation_v2(
                     del event["data"]["input"]
 
             yield event
+    except asyncio.CancelledError as exc:
+        # Cancel the task if it's still running
+        task.cancel(exc.args[0] if exc.args else None)
+        raise
     finally:
         # Cancel the task if it's still running
         task.cancel()
