@@ -2,14 +2,18 @@
 
 from __future__ import annotations
 
+import copy
 import logging
+import warnings
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 from uuid import UUID
 
 from langsmith import Client
+from langsmith import run_trees as rt
 from langsmith import utils as ls_utils
+from pydantic import PydanticDeprecationWarning
 from tenacity import (
     Retrying,
     retry_if_exception_type,
@@ -27,7 +31,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 _LOGGED = set()
-_CLIENT: Optional[Client] = None
 _EXECUTOR: Optional[ThreadPoolExecutor] = None
 
 
@@ -47,17 +50,13 @@ def log_error_once(method: str, exception: Exception) -> None:
 
 def wait_for_all_tracers() -> None:
     """Wait for all tracers to finish."""
-    global _CLIENT
-    if _CLIENT is not None and _CLIENT.tracing_queue is not None:
-        _CLIENT.tracing_queue.join()
+    if rt._CLIENT is not None and rt._CLIENT.tracing_queue is not None:
+        rt._CLIENT.tracing_queue.join()
 
 
 def get_client() -> Client:
     """Get the client."""
-    global _CLIENT
-    if _CLIENT is None:
-        _CLIENT = Client()
-    return _CLIENT
+    return rt.get_cached_client()
 
 
 def _get_executor() -> ThreadPoolExecutor:
@@ -69,11 +68,16 @@ def _get_executor() -> ThreadPoolExecutor:
 
 
 def _run_to_dict(run: Run) -> dict:
-    return {
-        **run.dict(exclude={"child_runs", "inputs", "outputs"}),
-        "inputs": run.inputs.copy() if run.inputs is not None else None,
-        "outputs": run.outputs.copy() if run.outputs is not None else None,
-    }
+    # TODO: Update once langsmith moves to Pydantic V2 and we can swap run.dict for
+    # run.model_dump
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=PydanticDeprecationWarning)
+
+        return {
+            **run.dict(exclude={"child_runs", "inputs", "outputs"}),
+            "inputs": run.inputs.copy() if run.inputs is not None else None,
+            "outputs": run.outputs.copy() if run.outputs is not None else None,
+        }
 
 
 class LangChainTracer(BaseTracer):
@@ -84,7 +88,7 @@ class LangChainTracer(BaseTracer):
         example_id: Optional[Union[UUID, str]] = None,
         project_name: Optional[str] = None,
         client: Optional[Client] = None,
-        tags: Optional[List[str]] = None,
+        tags: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize the LangChain tracer.
@@ -105,15 +109,20 @@ class LangChainTracer(BaseTracer):
         self.tags = tags or []
         self.latest_run: Optional[Run] = None
 
+    def _start_trace(self, run: Run) -> None:
+        super()._start_trace(run)
+        if run._client is None:
+            run._client = self.client
+
     def on_chat_model_start(
         self,
-        serialized: Dict[str, Any],
-        messages: List[List[BaseMessage]],
+        serialized: dict[str, Any],
+        messages: list[list[BaseMessage]],
         *,
         run_id: UUID,
-        tags: Optional[List[str]] = None,
+        tags: Optional[list[str]] = None,
         parent_run_id: Optional[UUID] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         name: Optional[str] = None,
         **kwargs: Any,
     ) -> Run:
@@ -152,7 +161,11 @@ class LangChainTracer(BaseTracer):
         return chat_model_run
 
     def _persist_run(self, run: Run) -> None:
-        run_ = run.copy()
+        # TODO: Update once langsmith moves to Pydantic V2 and we can swap run.copy for
+        # run.model_copy
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=PydanticDeprecationWarning)
+            run_ = copy.copy(run)
         run_.reference_example_id = self.example_id
         self.latest_run = run_
 
@@ -182,7 +195,7 @@ class LangChainTracer(BaseTracer):
                 )
         raise ValueError("Failed to get run URL.")
 
-    def _get_tags(self, run: Run) -> List[str]:
+    def _get_tags(self, run: Run) -> list[str]:
         """Get combined tags for a run."""
         tags = set(run.tags or [])
         tags.update(self.tags or [])

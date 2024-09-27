@@ -217,6 +217,12 @@ class SemanticChunker(BaseDocumentTransformer):
         # np.percentile to fail.
         if len(single_sentences_list) == 1:
             return single_sentences_list
+        # similarly, the following np.gradient would fail
+        if (
+            self.breakpoint_threshold_type == "gradient"
+            and len(single_sentences_list) == 2
+        ):
+            return single_sentences_list
         distances, sentences = self._calculate_sentence_distances(single_sentences_list)
         if self.number_of_chunks is not None:
             breakpoint_distance_threshold = self._threshold_from_clusters(distances)
@@ -262,14 +268,14 @@ class SemanticChunker(BaseDocumentTransformer):
         _metadatas = metadatas or [{}] * len(texts)
         documents = []
         for i, text in enumerate(texts):
-            index = -1
+            start_index = 0
             for chunk in self.split_text(text):
                 metadata = copy.deepcopy(_metadatas[i])
                 if self._add_start_index:
-                    index = text.find(chunk, index + 1)
-                    metadata["start_index"] = index
+                    metadata["start_index"] = start_index
                 new_doc = Document(page_content=chunk, metadata=metadata)
                 documents.append(new_doc)
+                start_index += len(chunk)
         return documents
 
     def split_documents(self, documents: Iterable[Document]) -> List[Document]:
