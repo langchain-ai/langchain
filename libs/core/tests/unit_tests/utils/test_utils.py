@@ -116,10 +116,7 @@ def test_check_package_version(
 def test_merge_dicts(
     left: dict, right: dict, expected: Union[dict, AbstractContextManager]
 ) -> None:
-    if isinstance(expected, AbstractContextManager):
-        err = expected
-    else:
-        err = nullcontext()
+    err = expected if isinstance(expected, AbstractContextManager) else nullcontext()
 
     left_copy = deepcopy(left)
     right_copy = deepcopy(right)
@@ -147,10 +144,7 @@ def test_merge_dicts(
 def test_merge_dicts_0_3(
     left: dict, right: dict, expected: Union[dict, AbstractContextManager]
 ) -> None:
-    if isinstance(expected, AbstractContextManager):
-        err = expected
-    else:
-        err = nullcontext()
+    err = expected if isinstance(expected, AbstractContextManager) else nullcontext()
 
     left_copy = deepcopy(left)
     right_copy = deepcopy(right)

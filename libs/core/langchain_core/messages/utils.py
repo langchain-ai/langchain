@@ -435,23 +435,22 @@ def filter_messages(
     messages = convert_to_messages(messages)
     filtered: list[BaseMessage] = []
     for msg in messages:
-        if exclude_names and msg.name in exclude_names:
-            continue
-        elif exclude_types and _is_message_type(msg, exclude_types):
-            continue
-        elif exclude_ids and msg.id in exclude_ids:
+        if (
+            (exclude_names and msg.name in exclude_names)
+            or (exclude_types and _is_message_type(msg, exclude_types))
+            or (exclude_ids and msg.id in exclude_ids)
+        ):
             continue
         else:
             pass
 
         # default to inclusion when no inclusion criteria given.
-        if not (include_types or include_ids or include_names):
-            filtered.append(msg)
-        elif include_names and msg.name in include_names:
-            filtered.append(msg)
-        elif include_types and _is_message_type(msg, include_types):
-            filtered.append(msg)
-        elif include_ids and msg.id in include_ids:
+        if (
+            not (include_types or include_ids or include_names)
+            or (include_names and msg.name in include_names)
+            or (include_types and _is_message_type(msg, include_types))
+            or (include_ids and msg.id in include_ids)
+        ):
             filtered.append(msg)
         else:
             pass
@@ -961,10 +960,7 @@ def _last_max_tokens(
         while messages and not _is_message_type(messages[-1], end_on):
             messages.pop()
     swapped_system = include_system and isinstance(messages[0], SystemMessage)
-    if swapped_system:
-        reversed_ = messages[:1] + messages[1:][::-1]
-    else:
-        reversed_ = messages[::-1]
+    reversed_ = messages[:1] + messages[1:][::-1] if swapped_system else messages[::-1]
 
     reversed_ = _first_max_tokens(
         reversed_,

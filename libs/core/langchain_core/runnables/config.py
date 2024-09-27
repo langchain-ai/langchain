@@ -139,11 +139,11 @@ def _set_config_context(config: RunnableConfig) -> None:
                 None,
             )
         )
+        and (run := tracer.run_map.get(str(parent_run_id)))
     ):
-        if run := tracer.run_map.get(str(parent_run_id)):
-            from langsmith.run_helpers import _set_tracing_context
+        from langsmith.run_helpers import _set_tracing_context
 
-            _set_tracing_context({"parent": run})
+        _set_tracing_context({"parent": run})
 
 
 def ensure_config(config: Optional[RunnableConfig] = None) -> RunnableConfig:

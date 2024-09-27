@@ -1,6 +1,6 @@
 import unittest
 import uuid
-from typing import Union
+from typing import Optional, Union
 
 import pytest
 
@@ -10,6 +10,7 @@ from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
+    BaseMessageChunk,
     ChatMessage,
     ChatMessageChunk,
     FunctionMessage,
@@ -630,14 +631,11 @@ def test_tool_calls_merge() -> None:
         {"content": ""},
     ]
 
-    final = None
+    final: Optional[BaseMessageChunk] = None
 
     for chunk in chunks:
         msg = AIMessageChunk(**chunk)
-        if final is None:
-            final = msg
-        else:
-            final = final + msg
+        final = msg if final is None else final + msg
 
     assert final == AIMessageChunk(
         content="",
