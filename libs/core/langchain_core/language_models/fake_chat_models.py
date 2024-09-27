@@ -133,7 +133,7 @@ class FakeListChatModel(SimpleChatModel):
     def batch(
         self,
         inputs: list[Any],
-        config: RunnableConfig | list[RunnableConfig] | None = None,
+        config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
         *,
         return_exceptions: bool = False,
         **kwargs: Any,
@@ -141,6 +141,20 @@ class FakeListChatModel(SimpleChatModel):
         if isinstance(config, list):
             return [self.invoke(m, c, **kwargs) for m, c in zip(inputs, config)]
         return [self.invoke(m, config, **kwargs) for m in inputs]
+
+    async def abatch(
+        self,
+        inputs: list[Any],
+        config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
+        *,
+        return_exceptions: bool = False,
+        **kwargs: Any,
+    ) -> list[BaseMessage]:
+        if isinstance(config, list):
+            # do Not use an async iterator here because need explicit ordering
+            return [await self.ainvoke(m, c, **kwargs) for m, c in zip(inputs, config)]
+        # do Not use an async iterator here because need explicit ordering
+        return [await self.ainvoke(m, config, **kwargs) for m in inputs]
 
 
 class FakeChatModel(SimpleChatModel):
