@@ -36,8 +36,6 @@ else:
 class EmptyDict(TypedDict, total=False):
     """Empty dict type."""
 
-    pass
-
 
 class RunnableConfig(TypedDict, total=False):
     """Configuration for a Runnable."""

@@ -320,8 +320,6 @@ class ToolException(Exception):  # noqa: N818
     to the agent as observation, and printed in red on the console.
     """
 
-    pass
-
 
 class BaseTool(RunnableSerializable[Union[str, dict, ToolCall], Any]):
     """Interface LangChain tools must implement."""
