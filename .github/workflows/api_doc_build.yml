@@ -133,8 +133,14 @@ jobs:
           cp ../langchain-api-docs-html/api_reference_build/html/{reference,index}.html
           rm -rf ../langchain-api-docs-html/_build/
 
-      # https://github.com/marketplace/actions/add-commit
-      - uses: EndBug/add-and-commit@v9
-        with:
-          cwd: langchain-api-docs-html
-          message: 'Update API docs build'
+      - name: Commit changes
+        working-directory: langchain-api-docs-html
+        env:
+          GITHUB_TOKEN: ${{ secrets.TOKEN_GITHUB_API_DOCS_HTML }}
+        run: |
+          git config --local user.email "actions@github.com"
+          git config --local user.name "Github Actions"
+          git add .
+          git commit -m "Update API docs build"
+          git remote set-url origin "https://x-access-token:$GITHUB_TOKEN@github.com/langchain-ai/langchain-api-docs-html.git"
+          git push origin HEAD

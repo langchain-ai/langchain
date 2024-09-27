@@ -1,0 +1,37 @@
+name: _erick test
+
+on:
+  workflow_dispatch:
+
+env:
+  POETRY_VERSION: "1.8.1"
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions: write-all
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: langchain
+      - uses: actions/checkout@v4
+        with:
+          repository: langchain-ai/langchain-api-docs-html
+          path: langchain-api-docs-html
+      - name: Test add file
+        working-directory: langchain-api-docs-html
+        run: |
+          echo "Hello world" > test.txt
+          
+      - name: Commit changes
+        working-directory: langchain-api-docs-html
+        env:
+          GITHUB_TOKEN: ${{ secrets.TOKEN_GITHUB_API_DOCS_HTML }}
+        run: |
+          git config --local user.email "actions@github.com"
+          git config --local user.name "Github Actions"
+          git add .
+          git commit -m "Update API docs build"
+          git remote set-url origin "https://x-access-token:$GITHUB_TOKEN@github.com/langchain-ai/langchain-api-docs-html.git"
+          git push origin HEAD
