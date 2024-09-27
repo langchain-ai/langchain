@@ -4,7 +4,7 @@ import tempfile
 from typing import TYPE_CHECKING, List
 
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from langchain_community.document_loaders.base import BaseLoader
 from langchain_community.document_loaders.unstructured import UnstructuredFileLoader
@@ -21,10 +21,9 @@ class OneDriveFileLoader(BaseLoader, BaseModel):
     file: File = Field(...)
     """The file to load."""
 
-    class Config:
-        arbitrary_types_allowed = True
-        """Allow arbitrary types. This is needed for the File type. Default is True.
-         See https://pydantic-docs.helpmanual.io/usage/types/#arbitrary-types-allowed"""
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     def load(self) -> List[Document]:
         """Load Documents"""

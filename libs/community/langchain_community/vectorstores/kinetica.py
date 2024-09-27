@@ -14,8 +14,8 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type
 import numpy as np
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseSettings
 from langchain_core.vectorstores import VectorStore
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
@@ -79,10 +79,12 @@ class KineticaSettings(BaseSettings):
     def __getitem__(self, item: str) -> Any:
         return getattr(self, item)
 
-    class Config:
-        env_file = ".env"
-        env_prefix = "kinetica_"
-        env_file_encoding = "utf-8"
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        env_prefix="kinetica_",
+        extra="ignore",
+    )
 
 
 class Kinetica(VectorStore):

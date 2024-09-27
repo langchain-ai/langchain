@@ -4,11 +4,12 @@ from typing import Any, TypeVar, Union
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import BaseLanguageModel
-from langchain_core.output_parsers import BaseOutputParser
+from langchain_core.output_parsers import BaseOutputParser, StrOutputParser
 from langchain_core.prompt_values import PromptValue
 from langchain_core.prompts import BasePromptTemplate, PromptTemplate
 from langchain_core.runnables import RunnableSerializable
-from typing_extensions import TypedDict
+from pydantic import SkipValidation
+from typing_extensions import Annotated, TypedDict
 
 NAIVE_COMPLETION_RETRY = """Prompt:
 {prompt}
@@ -53,7 +54,7 @@ class RetryOutputParser(BaseOutputParser[T]):
     LLM, and telling it the completion did not satisfy criteria in the prompt.
     """
 
-    parser: BaseOutputParser[T]
+    parser: Annotated[BaseOutputParser[T], SkipValidation()]
     """The parser to use to parse the output."""
     # Should be an LLMChain but we want to avoid top-level imports from langchain.chains
     retry_chain: Union[RunnableSerializable[RetryOutputParserRetryChainInput, str], Any]
@@ -82,7 +83,7 @@ class RetryOutputParser(BaseOutputParser[T]):
         Returns:
             RetryOutputParser
         """
-        chain = prompt | llm
+        chain = prompt | llm | StrOutputParser()
         return cls(parser=parser, retry_chain=chain, max_retries=max_retries)
 
     def parse_with_prompt(self, completion: str, prompt_value: PromptValue) -> T:
@@ -183,7 +184,7 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
     LLM, which in theory should give it more information on how to fix it.
     """
 
-    parser: BaseOutputParser[T]
+    parser: Annotated[BaseOutputParser[T], SkipValidation()]
     """The parser to use to parse the output."""
     # Should be an LLMChain but we want to avoid top-level imports from langchain.chains
     retry_chain: Union[
@@ -214,7 +215,7 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
         Returns:
             A RetryWithErrorOutputParser.
         """
-        chain = prompt | llm
+        chain = prompt | llm | StrOutputParser()
         return cls(parser=parser, retry_chain=chain, max_retries=max_retries)
 
     def parse_with_prompt(self, completion: str, prompt_value: PromptValue) -> T:

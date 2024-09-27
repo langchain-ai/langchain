@@ -1,12 +1,13 @@
 import glob
 import json
 import os
-import re
 import sys
-import tomllib
 from collections import defaultdict
 from typing import Dict, List, Set
 from pathlib import Path
+import tomllib
+
+from get_min_versions import get_min_version_from_toml
 
 
 LANGCHAIN_DIRS = [
@@ -14,7 +15,21 @@ LANGCHAIN_DIRS = [
     "libs/text-splitters",
     "libs/langchain",
     "libs/community",
-    "libs/experimental",
+]
+
+# when set to True, we are ignoring core dependents
+# in order to be able to get CI to pass for each individual
+# package that depends on core
+# e.g. if you touch core, we don't then add textsplitters/etc to CI
+IGNORE_CORE_DEPENDENTS = False
+
+# ignored partners are removed from dependents
+# but still run if directly edited
+IGNORED_PARTNERS = [
+    # remove huggingface from dependents because of CI instability
+    # specifically in huggingface jobs
+    # https://github.com/langchain-ai/langchain/issues/25558
+    "huggingface",
 ]
 
 
@@ -69,6 +84,11 @@ def dependents_graph() -> dict:
 
                     if "langchain" in dep:
                         dependents[dep].add(pkg_dir)
+
+    for k in dependents:
+        for partner in IGNORED_PARTNERS:
+            if f"libs/partners/{partner}" in dependents[k]:
+                dependents[k].remove(f"libs/partners/{partner}")
     return dependents
 
 
@@ -86,30 +106,101 @@ def add_dependents(dirs_to_eval: Set[str], dependents: dict) -> List[str]:
 
 
 def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
-    min_python = "3.8"
-    max_python = "3.12"
+    if job == "test-pydantic":
+        return _get_pydantic_test_configs(dir_)
 
+    if dir_ == "libs/core":
+        py_versions = ["3.9", "3.10", "3.11", "3.12"]
     # custom logic for specific directories
-    if dir_ == "libs/partners/milvus":
+    elif dir_ == "libs/partners/milvus":
         # milvus poetry doesn't allow 3.12 because they
         # declare deps in funny way
-        max_python = "3.11"
+        py_versions = ["3.9", "3.11"]
 
-    return [
-        {"working-directory": dir_, "python-version": min_python},
-        {"working-directory": dir_, "python-version": max_python},
+    elif dir_ in ["libs/community", "libs/langchain"] and job == "extended-tests":
+        # community extended test resolution in 3.12 is slow
+        # even in uv
+        py_versions = ["3.9", "3.11"]
+
+    elif dir_ == "libs/community" and job == "compile-integration-tests":
+        # community integration deps are slow in 3.12
+        py_versions = ["3.9", "3.11"]
+    else:
+        py_versions = ["3.9", "3.12"]
+
+    return [{"working-directory": dir_, "python-version": py_v} for py_v in py_versions]
+
+
+def _get_pydantic_test_configs(
+    dir_: str, *, python_version: str = "3.11"
+) -> List[Dict[str, str]]:
+    with open("./libs/core/poetry.lock", "rb") as f:
+        core_poetry_lock_data = tomllib.load(f)
+    for package in core_poetry_lock_data["package"]:
+        if package["name"] == "pydantic":
+            core_max_pydantic_minor = package["version"].split(".")[1]
+            break
+
+    with open(f"./{dir_}/poetry.lock", "rb") as f:
+        dir_poetry_lock_data = tomllib.load(f)
+
+    for package in dir_poetry_lock_data["package"]:
+        if package["name"] == "pydantic":
+            dir_max_pydantic_minor = package["version"].split(".")[1]
+            break
+
+    core_min_pydantic_version = get_min_version_from_toml(
+        "./libs/core/pyproject.toml", "release", python_version, include=["pydantic"]
+    )["pydantic"]
+    core_min_pydantic_minor = (
+        core_min_pydantic_version.split(".")[1]
+        if "." in core_min_pydantic_version
+        else "0"
+    )
+    dir_min_pydantic_version = get_min_version_from_toml(
+        f"./{dir_}/pyproject.toml", "release", python_version, include=["pydantic"]
+    ).get("pydantic", "0.0.0")
+    dir_min_pydantic_minor = (
+        dir_min_pydantic_version.split(".")[1]
+        if "." in dir_min_pydantic_version
+        else "0"
+    )
+
+    custom_mins = {
+        # depends on pydantic-settings 2.4 which requires pydantic 2.7
+        "libs/community": 7,
+    }
+
+    max_pydantic_minor = min(
+        int(dir_max_pydantic_minor),
+        int(core_max_pydantic_minor),
+    )
+    min_pydantic_minor = max(
+        int(dir_min_pydantic_minor),
+        int(core_min_pydantic_minor),
+        custom_mins.get(dir_, 0),
+    )
+
+    configs = [
+        {
+            "working-directory": dir_,
+            "pydantic-version": f"2.{v}.0",
+            "python-version": python_version,
+        }
+        for v in range(min_pydantic_minor, max_pydantic_minor + 1)
     ]
+    return configs
 
 
 def _get_configs_for_multi_dirs(
-    job: str, dirs_to_run: List[str], dependents: dict
+    job: str, dirs_to_run: Dict[str, Set[str]], dependents: dict
 ) -> List[Dict[str, str]]:
     if job == "lint":
         dirs = add_dependents(
             dirs_to_run["lint"] | dirs_to_run["test"] | dirs_to_run["extended-test"],
             dependents,
         )
-    elif job in ["test", "compile-integration-tests", "dependencies"]:
+    elif job in ["test", "compile-integration-tests", "dependencies", "test-pydantic"]:
         dirs = add_dependents(
             dirs_to_run["test"] | dirs_to_run["extended-test"], dependents
         )
@@ -138,6 +229,7 @@ if __name__ == "__main__":
         dirs_to_run["lint"] = all_package_dirs()
         dirs_to_run["test"] = all_package_dirs()
         dirs_to_run["extended-test"] = set(LANGCHAIN_DIRS)
+
     for file in files:
         if any(
             file.startswith(dir_)
@@ -155,8 +247,12 @@ if __name__ == "__main__":
         if any(file.startswith(dir_) for dir_ in LANGCHAIN_DIRS):
             # add that dir and all dirs after in LANGCHAIN_DIRS
             # for extended testing
+
             found = False
             for dir_ in LANGCHAIN_DIRS:
+                if dir_ == "libs/core" and IGNORE_CORE_DEPENDENTS:
+                    dirs_to_run["extended-test"].add(dir_)
+                    continue
                 if file.startswith(dir_):
                     found = True
                 if found:
@@ -168,7 +264,6 @@ if __name__ == "__main__":
             dirs_to_run["test"].add("libs/partners/mistralai")
             dirs_to_run["test"].add("libs/partners/openai")
             dirs_to_run["test"].add("libs/partners/anthropic")
-            dirs_to_run["test"].add("libs/partners/ai21")
             dirs_to_run["test"].add("libs/partners/fireworks")
             dirs_to_run["test"].add("libs/partners/groq")
 
@@ -198,7 +293,6 @@ if __name__ == "__main__":
 
     # we now have dirs_by_job
     # todo: clean this up
-
     map_job_to_configs = {
         job: _get_configs_for_multi_dirs(job, dirs_to_run, dependents)
         for job in [
@@ -207,6 +301,7 @@ if __name__ == "__main__":
             "extended-tests",
             "compile-integration-tests",
             "dependencies",
+            "test-pydantic",
         ]
     }
     map_job_to_configs["test-doc-imports"] = (

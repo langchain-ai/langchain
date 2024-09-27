@@ -21,8 +21,8 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
-from langchain_core.pydantic_v1 import BaseModel, Extra, Field
 from langchain_core.utils import get_from_dict_or_env, pre_init
+from pydantic import BaseModel, ConfigDict, Field
 
 from langchain_community.llms.utils import enforce_stop_tokens
 from langchain_community.utilities.anthropic import (
@@ -657,12 +657,12 @@ class BedrockBase(BaseModel, ABC):
         for chunk in LLMInputOutputAdapter.prepare_output_stream(
             provider, response, stop, True if messages else False
         ):
-            yield chunk
             # verify and raise callback error if any middleware intervened
             self._get_bedrock_services_signal(chunk.generation_info)  # type: ignore[arg-type]
 
             if run_manager is not None:
                 run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+            yield chunk
 
     async def _aprepare_input_and_invoke_stream(
         self,
@@ -703,17 +703,17 @@ class BedrockBase(BaseModel, ABC):
         async for chunk in LLMInputOutputAdapter.aprepare_output_stream(
             provider, response, stop
         ):
-            yield chunk
             if run_manager is not None and asyncio.iscoroutinefunction(
                 run_manager.on_llm_new_token
             ):
                 await run_manager.on_llm_new_token(chunk.text, chunk=chunk)
             elif run_manager is not None:
                 run_manager.on_llm_new_token(chunk.text, chunk=chunk)  # type: ignore[unused-coroutine]
+            yield chunk
 
 
 @deprecated(
-    since="0.0.34", removal="0.3", alternative_import="langchain_aws.BedrockLLM"
+    since="0.0.34", removal="1.0", alternative_import="langchain_aws.BedrockLLM"
 )
 class Bedrock(LLM, BedrockBase):
     """Bedrock models.
@@ -778,10 +778,9 @@ class Bedrock(LLM, BedrockBase):
 
         return attributes
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     def _stream(
         self,

@@ -6,35 +6,34 @@ import ast
 import asyncio
 import inspect
 import textwrap
+from collections.abc import (
+    AsyncIterable,
+    AsyncIterator,
+    Awaitable,
+    Coroutine,
+    Iterable,
+    Mapping,
+    Sequence,
+)
 from functools import lru_cache
 from inspect import signature
 from itertools import groupby
 from typing import (
     Any,
-    AsyncIterable,
-    AsyncIterator,
-    Awaitable,
     Callable,
-    Coroutine,
-    Dict,
-    Iterable,
-    List,
-    Mapping,
     NamedTuple,
     Optional,
     Protocol,
-    Sequence,
-    Set,
-    Type,
     TypeVar,
     Union,
 )
 
-from typing_extensions import TypeGuard
+from typing_extensions import TypeGuard, override
 
-from langchain_core.pydantic_v1 import BaseConfig, BaseModel
-from langchain_core.pydantic_v1 import create_model as _create_model_base
 from langchain_core.runnables.schema import StreamEvent
+
+# Re-export create-model for backwards compatibility
+from langchain_core.utils.pydantic import create_model as create_model
 
 Input = TypeVar("Input", contravariant=True)
 # Output type should implement __concat__, as eg str, list, dict do
@@ -118,10 +117,15 @@ def accepts_context(callable: Callable[..., Any]) -> bool:
         return False
 
 
+@lru_cache(maxsize=1)
+def asyncio_accepts_context() -> bool:
+    return accepts_context(asyncio.create_task)
+
+
 class IsLocalDict(ast.NodeVisitor):
     """Check if a name is a local dict."""
 
-    def __init__(self, name: str, keys: Set[str]) -> None:
+    def __init__(self, name: str, keys: set[str]) -> None:
         """Initialize the visitor.
 
         Args:
@@ -131,6 +135,7 @@ class IsLocalDict(ast.NodeVisitor):
         self.name = name
         self.keys = keys
 
+    @override
     def visit_Subscript(self, node: ast.Subscript) -> Any:
         """Visit a subscript node.
 
@@ -150,6 +155,7 @@ class IsLocalDict(ast.NodeVisitor):
             # we've found a subscript access on the name we're looking for
             self.keys.add(node.slice.value)
 
+    @override
     def visit_Call(self, node: ast.Call) -> Any:
         """Visit a call node.
 
@@ -176,8 +182,9 @@ class IsFunctionArgDict(ast.NodeVisitor):
     """Check if the first argument of a function is a dict."""
 
     def __init__(self) -> None:
-        self.keys: Set[str] = set()
+        self.keys: set[str] = set()
 
+    @override
     def visit_Lambda(self, node: ast.Lambda) -> Any:
         """Visit a lambda function.
 
@@ -192,6 +199,7 @@ class IsFunctionArgDict(ast.NodeVisitor):
         input_arg_name = node.args.args[0].arg
         IsLocalDict(input_arg_name, self.keys).visit(node.body)
 
+    @override
     def visit_FunctionDef(self, node: ast.FunctionDef) -> Any:
         """Visit a function definition.
 
@@ -206,6 +214,7 @@ class IsFunctionArgDict(ast.NodeVisitor):
         input_arg_name = node.args.args[0].arg
         IsLocalDict(input_arg_name, self.keys).visit(node)
 
+    @override
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> Any:
         """Visit an async function definition.
 
@@ -225,9 +234,10 @@ class NonLocals(ast.NodeVisitor):
     """Get nonlocal variables accessed."""
 
     def __init__(self) -> None:
-        self.loads: Set[str] = set()
-        self.stores: Set[str] = set()
+        self.loads: set[str] = set()
+        self.stores: set[str] = set()
 
+    @override
     def visit_Name(self, node: ast.Name) -> Any:
         """Visit a name node.
 
@@ -242,6 +252,7 @@ class NonLocals(ast.NodeVisitor):
         elif isinstance(node.ctx, ast.Store):
             self.stores.add(node.id)
 
+    @override
     def visit_Attribute(self, node: ast.Attribute) -> Any:
         """Visit an attribute node.
 
@@ -266,8 +277,9 @@ class FunctionNonLocals(ast.NodeVisitor):
     """Get the nonlocal variables accessed of a function."""
 
     def __init__(self) -> None:
-        self.nonlocals: Set[str] = set()
+        self.nonlocals: set[str] = set()
 
+    @override
     def visit_FunctionDef(self, node: ast.FunctionDef) -> Any:
         """Visit a function definition.
 
@@ -281,6 +293,7 @@ class FunctionNonLocals(ast.NodeVisitor):
         visitor.visit(node)
         self.nonlocals.update(visitor.loads - visitor.stores)
 
+    @override
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> Any:
         """Visit an async function definition.
 
@@ -294,6 +307,7 @@ class FunctionNonLocals(ast.NodeVisitor):
         visitor.visit(node)
         self.nonlocals.update(visitor.loads - visitor.stores)
 
+    @override
     def visit_Lambda(self, node: ast.Lambda) -> Any:
         """Visit a lambda function.
 
@@ -316,6 +330,7 @@ class GetLambdaSource(ast.NodeVisitor):
         self.source: Optional[str] = None
         self.count = 0
 
+    @override
     def visit_Lambda(self, node: ast.Lambda) -> Any:
         """Visit a lambda function.
 
@@ -330,7 +345,7 @@ class GetLambdaSource(ast.NodeVisitor):
             self.source = ast.unparse(node)
 
 
-def get_function_first_arg_dict_keys(func: Callable) -> Optional[List[str]]:
+def get_function_first_arg_dict_keys(func: Callable) -> Optional[list[str]]:
     """Get the keys of the first argument of a function if it is a dict.
 
     Args:
@@ -345,7 +360,7 @@ def get_function_first_arg_dict_keys(func: Callable) -> Optional[List[str]]:
         tree = ast.parse(textwrap.dedent(code))
         visitor = IsFunctionArgDict()
         visitor.visit(tree)
-        return list(visitor.keys) if visitor.keys else None
+        return sorted(visitor.keys) if visitor.keys else None
     except (SyntaxError, TypeError, OSError, SystemError):
         return None
 
@@ -373,7 +388,7 @@ def get_lambda_source(func: Callable) -> Optional[str]:
         return name
 
 
-def get_function_nonlocals(func: Callable) -> List[Any]:
+def get_function_nonlocals(func: Callable) -> list[Any]:
     """Get the nonlocal variables accessed by a function.
 
     Args:
@@ -387,8 +402,10 @@ def get_function_nonlocals(func: Callable) -> List[Any]:
         tree = ast.parse(textwrap.dedent(code))
         visitor = FunctionNonLocals()
         visitor.visit(tree)
-        values: List[Any] = []
-        for k, v in inspect.getclosurevars(func).nonlocals.items():
+        values: list[Any] = []
+        closure = inspect.getclosurevars(func)
+        candidates = {**closure.globals, **closure.nonlocals}
+        for k, v in candidates.items():
             if k in visitor.nonlocals:
                 values.append(v)
             for kk in visitor.nonlocals:
@@ -425,7 +442,7 @@ def indent_lines_after_first(text: str, prefix: str) -> str:
     return "\n".join([lines[0]] + [spaces + line for line in lines[1:]])
 
 
-class AddableDict(Dict[str, Any]):
+class AddableDict(dict[str, Any]):
     """
     Dictionary that can be added to another dictionary.
     """
@@ -601,12 +618,12 @@ class ConfigurableFieldSpec(NamedTuple):
     description: Optional[str] = None
     default: Any = None
     is_shared: bool = False
-    dependencies: Optional[List[str]] = None
+    dependencies: Optional[list[str]] = None
 
 
 def get_unique_config_specs(
     specs: Iterable[ConfigurableFieldSpec],
-) -> List[ConfigurableFieldSpec]:
+) -> list[ConfigurableFieldSpec]:
     """Get the unique config specs from a sequence of config specs.
 
     Args:
@@ -621,7 +638,7 @@ def get_unique_config_specs(
     grouped = groupby(
         sorted(specs, key=lambda s: (s.id, *(s.dependencies or []))), lambda s: s.id
     )
-    unique: List[ConfigurableFieldSpec] = []
+    unique: list[ConfigurableFieldSpec] = []
     for id, dupes in grouped:
         first = next(dupes)
         others = list(dupes)
@@ -692,43 +709,6 @@ class _RootEventFilter:
         return include
 
 
-class _SchemaConfig(BaseConfig):
-    arbitrary_types_allowed = True
-    frozen = True
-
-
-def create_model(
-    __model_name: str,
-    **field_definitions: Any,
-) -> Type[BaseModel]:
-    """Create a pydantic model with the given field definitions.
-
-    Args:
-        __model_name: The name of the model.
-        **field_definitions: The field definitions for the model.
-
-    Returns:
-        Type[BaseModel]: The created model.
-    """
-    try:
-        return _create_model_cached(__model_name, **field_definitions)
-    except TypeError:
-        # something in field definitions is not hashable
-        return _create_model_base(
-            __model_name, __config__=_SchemaConfig, **field_definitions
-        )
-
-
-@lru_cache(maxsize=256)
-def _create_model_cached(
-    __model_name: str,
-    **field_definitions: Any,
-) -> Type[BaseModel]:
-    return _create_model_base(
-        __model_name, __config__=_SchemaConfig, **field_definitions
-    )
-
-
 def is_async_generator(
     func: Any,
 ) -> TypeGuard[Callable[..., AsyncIterator]]:
@@ -743,7 +723,7 @@ def is_async_generator(
     """
     return (
         inspect.isasyncgenfunction(func)
-        or hasattr(func, "__call__")
+        or hasattr(func, "__call__")  # noqa: B004
         and inspect.isasyncgenfunction(func.__call__)
     )
 
@@ -762,6 +742,6 @@ def is_async_callable(
     """
     return (
         asyncio.iscoroutinefunction(func)
-        or hasattr(func, "__call__")
+        or hasattr(func, "__call__")  # noqa: B004
         and asyncio.iscoroutinefunction(func.__call__)
     )

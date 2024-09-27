@@ -1,6 +1,6 @@
-# shopping-assistant
+# Shopping assistant - Ionic
 
-This template creates a shopping assistant that helps users find products that they are looking for.
+This template creates a `shopping assistant` that helps users find products that they are looking for.
 
 This template will use `Ionic` to search for products.
 

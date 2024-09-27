@@ -102,11 +102,11 @@ langchain serve
 This now gives a fully deployed LangServe application.
 For example, you get a playground out-of-the-box at [http://127.0.0.1:8000/pirate-speak/playground/](http://127.0.0.1:8000/pirate-speak/playground/):
 
-![Screenshot of the LangServe Playground interface with input and output fields demonstrating pirate speak conversion.](docs/playground.png "LangServe Playground Interface")
+![Screenshot of the LangServe Playground interface with input and output fields demonstrating pirate speak conversion.](docs/playground.png) "LangServe Playground Interface"
 
 Access API documentation at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 
-![Screenshot of the API documentation interface showing available endpoints for the pirate-speak application.](docs/docs.png "API Documentation Interface")
+![Screenshot of the API documentation interface showing available endpoints for the pirate-speak application.](docs/docs.png) "API Documentation Interface"
 
 Use the LangServe python or js SDK to interact with the API as if it were a regular [Runnable](https://python.langchain.com/docs/expression_language/).
 

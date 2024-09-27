@@ -1,7 +1,8 @@
-from typing import Dict, List, Type
+import json
 
 import pytest
 
+from langchain_core.language_models.fake_chat_models import FakeChatModel
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
@@ -11,6 +12,7 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_core.messages.utils import (
+    convert_to_messages,
     filter_messages,
     merge_message_runs,
     trim_messages,
@@ -18,13 +20,37 @@ from langchain_core.messages.utils import (
 
 
 @pytest.mark.parametrize("msg_cls", [HumanMessage, AIMessage, SystemMessage])
-def test_merge_message_runs_str(msg_cls: Type[BaseMessage]) -> None:
+def test_merge_message_runs_str(msg_cls: type[BaseMessage]) -> None:
     messages = [msg_cls("foo"), msg_cls("bar"), msg_cls("baz")]
-    messages_copy = [m.copy(deep=True) for m in messages]
+    messages_model_copy = [m.model_copy(deep=True) for m in messages]
     expected = [msg_cls("foo\nbar\nbaz")]
     actual = merge_message_runs(messages)
     assert actual == expected
-    assert messages == messages_copy
+    assert messages == messages_model_copy
+
+
+@pytest.mark.parametrize("msg_cls", [HumanMessage, AIMessage, SystemMessage])
+def test_merge_message_runs_str_with_specified_separator(
+    msg_cls: type[BaseMessage],
+) -> None:
+    messages = [msg_cls("foo"), msg_cls("bar"), msg_cls("baz")]
+    messages_model_copy = [m.model_copy(deep=True) for m in messages]
+    expected = [msg_cls("foo<sep>bar<sep>baz")]
+    actual = merge_message_runs(messages, chunk_separator="<sep>")
+    assert actual == expected
+    assert messages == messages_model_copy
+
+
+@pytest.mark.parametrize("msg_cls", [HumanMessage, AIMessage, SystemMessage])
+def test_merge_message_runs_str_without_separator(
+    msg_cls: type[BaseMessage],
+) -> None:
+    messages = [msg_cls("foo"), msg_cls("bar"), msg_cls("baz")]
+    messages_model_copy = [m.model_copy(deep=True) for m in messages]
+    expected = [msg_cls("foobarbaz")]
+    actual = merge_message_runs(messages, chunk_separator="")
+    assert actual == expected
+    assert messages == messages_model_copy
 
 
 def test_merge_message_runs_content() -> None:
@@ -48,7 +74,7 @@ def test_merge_message_runs_content() -> None:
             id="3",
         ),
     ]
-    messages_copy = [m.copy(deep=True) for m in messages]
+    messages_model_copy = [m.model_copy(deep=True) for m in messages]
     expected = [
         AIMessage(
             [
@@ -68,7 +94,7 @@ def test_merge_message_runs_content() -> None:
     assert actual == expected
     invoked = merge_message_runs().invoke(messages)
     assert actual == invoked
-    assert messages == messages_copy
+    assert messages == messages_model_copy
 
 
 def test_merge_messages_tool_messages() -> None:
@@ -76,10 +102,10 @@ def test_merge_messages_tool_messages() -> None:
         ToolMessage("foo", tool_call_id="1"),
         ToolMessage("bar", tool_call_id="2"),
     ]
-    messages_copy = [m.copy(deep=True) for m in messages]
+    messages_model_copy = [m.model_copy(deep=True) for m in messages]
     actual = merge_message_runs(messages)
     assert actual == messages
-    assert messages == messages_copy
+    assert messages == messages_model_copy
 
 
 @pytest.mark.parametrize(
@@ -100,18 +126,18 @@ def test_merge_messages_tool_messages() -> None:
         {"include_names": ["blah", "blur"], "exclude_types": [SystemMessage]},
     ],
 )
-def test_filter_message(filters: Dict) -> None:
+def test_filter_message(filters: dict) -> None:
     messages = [
         SystemMessage("foo", name="blah", id="1"),
         HumanMessage("bar", name="blur", id="2"),
     ]
-    messages_copy = [m.copy(deep=True) for m in messages]
+    messages_model_copy = [m.model_copy(deep=True) for m in messages]
     expected = messages[1:2]
     actual = filter_messages(messages, **filters)
     assert expected == actual
     invoked = filter_messages(**filters).invoke(messages)
     assert invoked == actual
-    assert messages == messages_copy
+    assert messages == messages_model_copy
 
 
 _MESSAGES_TO_TRIM = [
@@ -127,7 +153,7 @@ _MESSAGES_TO_TRIM = [
     HumanMessage("This is a 4 token text.", id="third"),
     AIMessage("This is a 4 token text.", id="fourth"),
 ]
-_MESSAGES_TO_TRIM_COPY = [m.copy(deep=True) for m in _MESSAGES_TO_TRIM]
+_MESSAGES_TO_TRIM_COPY = [m.model_copy(deep=True) for m in _MESSAGES_TO_TRIM]
 
 
 def test_trim_messages_first_30() -> None:
@@ -279,7 +305,7 @@ def test_trim_messages_allow_partial_text_splitter() -> None:
         AIMessage("This is a 4 token text.", id="fourth"),
     ]
 
-    def count_words(msgs: List[BaseMessage]) -> int:
+    def count_words(msgs: list[BaseMessage]) -> int:
         count = 0
         for msg in msgs:
             if isinstance(msg.content, str):
@@ -290,7 +316,7 @@ def test_trim_messages_allow_partial_text_splitter() -> None:
                 )
         return count
 
-    def _split_on_space(text: str) -> List[str]:
+    def _split_on_space(text: str) -> list[str]:
         splits = text.split(" ")
         return [s + " " for s in splits[:-1]] + splits[-1:]
 
@@ -306,6 +332,19 @@ def test_trim_messages_allow_partial_text_splitter() -> None:
     assert _MESSAGES_TO_TRIM == _MESSAGES_TO_TRIM_COPY
 
 
+def test_trim_messages_include_system_strategy_last_empty_messages() -> None:
+    expected: list[BaseMessage] = []
+
+    actual = trim_messages(
+        max_tokens=10,
+        token_counter=dummy_token_counter,
+        strategy="last",
+        include_system=True,
+    ).invoke([])
+
+    assert actual == expected
+
+
 def test_trim_messages_invoke() -> None:
     actual = trim_messages(max_tokens=10, token_counter=dummy_token_counter).invoke(
         _MESSAGES_TO_TRIM
@@ -316,7 +355,20 @@ def test_trim_messages_invoke() -> None:
     assert actual == expected
 
 
-def dummy_token_counter(messages: List[BaseMessage]) -> int:
+def test_trim_messages_bound_model_token_counter() -> None:
+    trimmer = trim_messages(
+        max_tokens=10, token_counter=FakeTokenCountingModel().bind(foo="bar")
+    )
+    trimmer.invoke([HumanMessage("foobar")])
+
+
+def test_trim_messages_bad_token_counter() -> None:
+    trimmer = trim_messages(max_tokens=10, token_counter={})
+    with pytest.raises(ValueError):
+        trimmer.invoke([HumanMessage("foobar")])
+
+
+def dummy_token_counter(messages: list[BaseMessage]) -> int:
     # treat each message like it adds 3 default tokens at the beginning
     # of the message and at the end of the message. 3 + 4 + 3 = 10 tokens
     # per message.
@@ -338,3 +390,181 @@ def dummy_token_counter(messages: List[BaseMessage]) -> int:
                 + default_msg_suffix_len
             )
     return count
+
+
+class FakeTokenCountingModel(FakeChatModel):
+    def get_num_tokens_from_messages(self, messages: list[BaseMessage]) -> int:
+        return dummy_token_counter(messages)
+
+
+def test_convert_to_messages() -> None:
+    message_like: list = [
+        # BaseMessage
+        SystemMessage("1"),
+        HumanMessage([{"type": "image_url", "image_url": {"url": "2.1"}}], name="2.2"),
+        AIMessage(
+            [
+                {"type": "text", "text": "3.1"},
+                {
+                    "type": "tool_use",
+                    "id": "3.2",
+                    "name": "3.3",
+                    "input": {"3.4": "3.5"},
+                },
+            ]
+        ),
+        AIMessage(
+            [
+                {"type": "text", "text": "4.1"},
+                {
+                    "type": "tool_use",
+                    "id": "4.2",
+                    "name": "4.3",
+                    "input": {"4.4": "4.5"},
+                },
+            ],
+            tool_calls=[
+                {
+                    "name": "4.3",
+                    "args": {"4.4": "4.5"},
+                    "id": "4.2",
+                    "type": "tool_call",
+                }
+            ],
+        ),
+        ToolMessage("5.1", tool_call_id="5.2", name="5.3"),
+        # OpenAI dict
+        {"role": "system", "content": "6"},
+        {
+            "role": "user",
+            "content": [{"type": "image_url", "image_url": {"url": "7.1"}}],
+            "name": "7.2",
+        },
+        {
+            "role": "assistant",
+            "content": [{"type": "text", "text": "8.1"}],
+            "tool_calls": [
+                {
+                    "type": "function",
+                    "function": {
+                        "arguments": json.dumps({"8.2": "8.3"}),
+                        "name": "8.4",
+                    },
+                    "id": "8.5",
+                }
+            ],
+            "name": "8.6",
+        },
+        {"role": "tool", "content": "10.1", "tool_call_id": "10.2"},
+        # Tuple/List
+        ("system", "11.1"),
+        ("human", [{"type": "image_url", "image_url": {"url": "12.1"}}]),
+        (
+            "ai",
+            [
+                {"type": "text", "text": "13.1"},
+                {
+                    "type": "tool_use",
+                    "id": "13.2",
+                    "name": "13.3",
+                    "input": {"13.4": "13.5"},
+                },
+            ],
+        ),
+        # String
+        "14.1",
+        # LangChain dict
+        {
+            "role": "ai",
+            "content": [{"type": "text", "text": "15.1"}],
+            "tool_calls": [{"args": {"15.2": "15.3"}, "name": "15.4", "id": "15.5"}],
+            "name": "15.6",
+        },
+    ]
+    expected = [
+        SystemMessage(content="1"),
+        HumanMessage(
+            content=[{"type": "image_url", "image_url": {"url": "2.1"}}], name="2.2"
+        ),
+        AIMessage(
+            content=[
+                {"type": "text", "text": "3.1"},
+                {
+                    "type": "tool_use",
+                    "id": "3.2",
+                    "name": "3.3",
+                    "input": {"3.4": "3.5"},
+                },
+            ]
+        ),
+        AIMessage(
+            content=[
+                {"type": "text", "text": "4.1"},
+                {
+                    "type": "tool_use",
+                    "id": "4.2",
+                    "name": "4.3",
+                    "input": {"4.4": "4.5"},
+                },
+            ],
+            tool_calls=[
+                {
+                    "name": "4.3",
+                    "args": {"4.4": "4.5"},
+                    "id": "4.2",
+                    "type": "tool_call",
+                }
+            ],
+        ),
+        ToolMessage(content="5.1", name="5.3", tool_call_id="5.2"),
+        SystemMessage(content="6"),
+        HumanMessage(
+            content=[{"type": "image_url", "image_url": {"url": "7.1"}}], name="7.2"
+        ),
+        AIMessage(
+            content=[{"type": "text", "text": "8.1"}],
+            name="8.6",
+            tool_calls=[
+                {
+                    "name": "8.4",
+                    "args": {"8.2": "8.3"},
+                    "id": "8.5",
+                    "type": "tool_call",
+                }
+            ],
+        ),
+        ToolMessage(content="10.1", tool_call_id="10.2"),
+        SystemMessage(content="11.1"),
+        HumanMessage(content=[{"type": "image_url", "image_url": {"url": "12.1"}}]),
+        AIMessage(
+            content=[
+                {"type": "text", "text": "13.1"},
+                {
+                    "type": "tool_use",
+                    "id": "13.2",
+                    "name": "13.3",
+                    "input": {"13.4": "13.5"},
+                },
+            ]
+        ),
+        HumanMessage(content="14.1"),
+        AIMessage(
+            content=[{"type": "text", "text": "15.1"}],
+            name="15.6",
+            tool_calls=[
+                {
+                    "name": "15.4",
+                    "args": {"15.2": "15.3"},
+                    "id": "15.5",
+                    "type": "tool_call",
+                }
+            ],
+        ),
+    ]
+    actual = convert_to_messages(message_like)
+    assert expected == actual
+
+
+@pytest.mark.xfail(reason="AI message does not support refusal key yet.")
+def test_convert_to_messages_openai_refusal() -> None:
+    convert_to_messages([{"role": "assistant", "refusal": "9.1"}])

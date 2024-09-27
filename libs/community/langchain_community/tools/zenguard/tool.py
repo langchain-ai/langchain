@@ -1,10 +1,10 @@
 import os
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Type
 
 import requests
-from langchain_core.pydantic_v1 import BaseModel, Field, ValidationError, validator
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel, Field, ValidationError, validator
 
 
 class Detector(str, Enum):
@@ -30,13 +30,12 @@ class DetectorAPI(str, Enum):
 class ZenGuardInput(BaseModel):
     prompts: List[str] = Field(
         ...,
-        min_items=1,
         min_length=1,
         description="Prompt to check",
     )
     detectors: List[Detector] = Field(
         ...,
-        min_items=1,
+        min_length=1,
         description="List of detectors by which you want to check the prompt",
     )
     in_parallel: bool = Field(
@@ -50,13 +49,13 @@ class ZenGuardTool(BaseTool):
     description: str = (
         "ZenGuard AI integration package. ZenGuard AI - the fastest GenAI guardrails."
     )
-    args_schema = ZenGuardInput
-    return_direct = True
+    args_schema: Type[BaseModel] = ZenGuardInput
+    return_direct: bool = True
 
     zenguard_api_key: Optional[str] = Field(default=None)
 
-    _ZENGUARD_API_URL_ROOT = "https://api.zenguard.ai/"
-    _ZENGUARD_API_KEY_ENV_NAME = "ZENGUARD_API_KEY"
+    _ZENGUARD_API_URL_ROOT: str = "https://api.zenguard.ai/"
+    _ZENGUARD_API_KEY_ENV_NAME: str = "ZENGUARD_API_KEY"
 
     @validator("zenguard_api_key", pre=True, always=True, check_fields=False)
     def set_api_key(cls, v: str) -> str:
@@ -69,6 +68,19 @@ class ZenGuardTool(BaseTool):
                 f"the f{cls._ZENGUARD_API_KEY_ENV_NAME} environment variable"
             )
         return v
+
+    @property
+    def _api_key(self) -> str:
+        if self.zenguard_api_key is None:
+            raise ValueError(
+                "API key is required for the ZenGuardTool. "
+                "Please provide the API key by either:\n"
+                "1. Manually specifying it when initializing the tool: "
+                "ZenGuardTool(zenguard_api_key='your_api_key')\n"
+                "2. Setting it as an environment variable:"
+                f" {self._ZENGUARD_API_KEY_ENV_NAME}"
+            )
+        return self.zenguard_api_key
 
     def _run(
         self,
@@ -92,7 +104,7 @@ class ZenGuardTool(BaseTool):
             response = requests.post(
                 self._ZENGUARD_API_URL_ROOT + postfix,
                 json=json,
-                headers={"x-api-key": self.zenguard_api_key},
+                headers={"x-api-key": self._api_key},
                 timeout=5,
             )
             response.raise_for_status()

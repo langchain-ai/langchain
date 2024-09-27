@@ -53,16 +53,17 @@ from langchain_core.outputs import (
     ChatGenerationChunk,
     ChatResult,
 )
-from langchain_core.pydantic_v1 import (
-    BaseModel,
-    Field,
-    SecretStr,
-)
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 from langchain_core.utils.function_calling import convert_to_openai_tool
 from langchain_core.utils.pydantic import is_basemodel_subclass
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    SecretStr,
+)
 from requests.exceptions import HTTPError
 from tenacity import (
     before_sleep_log,
@@ -348,7 +349,7 @@ class ChatTongyi(BaseChatModel):
     Tool calling:
         .. code-block:: python
 
-            from langchain_core.pydantic_v1 import BaseModel, Field
+            from pydantic import BaseModel, Field
 
 
             class GetWeather(BaseModel):
@@ -386,7 +387,7 @@ class ChatTongyi(BaseChatModel):
 
             from typing import Optional
 
-            from langchain_core.pydantic_v1 import BaseModel, Field
+            from pydantic import BaseModel, Field
 
 
             class Joke(BaseModel):
@@ -433,7 +434,7 @@ class ChatTongyi(BaseChatModel):
     def lc_secrets(self) -> Dict[str, str]:
         return {"dashscope_api_key": "DASHSCOPE_API_KEY"}
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     model_name: str = Field(default="qwen-turbo", alias="model")
     """Model name to use.
     callable multimodal model:
@@ -457,10 +458,9 @@ class ChatTongyi(BaseChatModel):
     max_retries: int = 10
     """Maximum number of retries to make when generating."""
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        allow_population_by_field_name = True
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
     @property
     def _llm_type(self) -> str:

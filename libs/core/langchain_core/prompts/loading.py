@@ -3,7 +3,7 @@
 import json
 import logging
 from pathlib import Path
-from typing import Callable, Dict, Optional, Union
+from typing import Callable, Optional, Union
 
 import yaml
 
@@ -173,7 +173,7 @@ def _load_prompt_from_file(
         with open(file_path, encoding=encoding) as f:
             config = json.load(f)
     elif file_path.suffix.endswith((".yaml", ".yml")):
-        with open(file_path, mode="r", encoding=encoding) as f:
+        with open(file_path, encoding=encoding) as f:
             config = yaml.safe_load(f)
     else:
         raise ValueError(f"Got unsupported file type {file_path.suffix}")
@@ -181,7 +181,7 @@ def _load_prompt_from_file(
     return load_prompt_from_config(config)
 
 
-def _load_chat_prompt(config: Dict) -> ChatPromptTemplate:
+def _load_chat_prompt(config: dict) -> ChatPromptTemplate:
     """Load chat prompt from config"""
 
     messages = config.pop("messages")
@@ -194,7 +194,7 @@ def _load_chat_prompt(config: Dict) -> ChatPromptTemplate:
     return ChatPromptTemplate.from_template(template=template, **config)
 
 
-type_to_loader_dict: Dict[str, Callable[[dict], BasePromptTemplate]] = {
+type_to_loader_dict: dict[str, Callable[[dict], BasePromptTemplate]] = {
     "prompt": _load_prompt,
     "few_shot": _load_few_shot_prompt,
     "chat": _load_chat_prompt,

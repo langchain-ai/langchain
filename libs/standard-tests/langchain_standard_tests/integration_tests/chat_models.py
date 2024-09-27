@@ -16,8 +16,10 @@ from langchain_core.messages import (
 )
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import tool
+from pydantic import BaseModel, Field
+from pydantic.v1 import BaseModel as BaseModelV1
+from pydantic.v1 import Field as FieldV1
 
 from langchain_standard_tests.unit_tests.chat_models import (
     ChatModelTests,
@@ -26,7 +28,11 @@ from langchain_standard_tests.unit_tests.chat_models import (
 from langchain_standard_tests.utils.pydantic import PYDANTIC_MAJOR_VERSION
 
 
-@tool
+class MagicFunctionSchema(BaseModel):
+    input: int = Field(..., gt=-1000, lt=1000)
+
+
+@tool(args_schema=MagicFunctionSchema)
 def magic_function(input: int) -> int:
     """Applies a magic function to an input."""
     return input + 2
@@ -36,6 +42,13 @@ def magic_function(input: int) -> int:
 def magic_function_no_args() -> int:
     """Calculates a magic function."""
     return 5
+
+
+class Joke(BaseModel):
+    """Joke to tell user."""
+
+    setup: str = Field(description="question to set up a joke")
+    punchline: str = Field(description="answer to resolve the joke")
 
 
 def _validate_tool_call_message(message: BaseMessage) -> None:
@@ -59,6 +72,10 @@ def _validate_tool_call_message_no_args(message: BaseMessage) -> None:
 
 
 class ChatModelIntegrationTests(ChatModelTests):
+    @property
+    def standard_chat_model_params(self) -> dict:
+        return {}
+
     def test_invoke(self, model: BaseChatModel) -> None:
         result = model.invoke("Hello")
         assert result is not None
@@ -160,7 +177,11 @@ class ChatModelIntegrationTests(ChatModelTests):
     def test_tool_calling(self, model: BaseChatModel) -> None:
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
-        model_with_tools = model.bind_tools([magic_function])
+        if self.tool_choice_value == "tool_name":
+            tool_choice: Optional[str] = "magic_function"
+        else:
+            tool_choice = self.tool_choice_value
+        model_with_tools = model.bind_tools([magic_function], tool_choice=tool_choice)
 
         # Test invoke
         query = "What is the value of magic_function(3)? Use the tool."
@@ -178,7 +199,13 @@ class ChatModelIntegrationTests(ChatModelTests):
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
 
-        model_with_tools = model.bind_tools([magic_function_no_args])
+        if self.tool_choice_value == "tool_name":
+            tool_choice: Optional[str] = "magic_function_no_args"
+        else:
+            tool_choice = self.tool_choice_value
+        model_with_tools = model.bind_tools(
+            [magic_function_no_args], tool_choice=tool_choice
+        )
         query = "What is the value of magic_function()? Use the tool."
         result = model_with_tools.invoke(query)
         _validate_tool_call_message_no_args(result)
@@ -202,7 +229,11 @@ class ChatModelIntegrationTests(ChatModelTests):
             name="greeting_generator",
             description="Generate a greeting in a particular style of speaking.",
         )
-        model_with_tools = model.bind_tools([tool_])
+        if self.tool_choice_value == "tool_name":
+            tool_choice: Optional[str] = "greeting_generator"
+        else:
+            tool_choice = self.tool_choice_value
+        model_with_tools = model.bind_tools([tool_], tool_choice=tool_choice)
         query = "Using the tool, generate a Pirate greeting."
         result = model_with_tools.invoke(query)
         assert isinstance(result, AIMessage)
@@ -216,15 +247,6 @@ class ChatModelIntegrationTests(ChatModelTests):
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
 
-        from pydantic import BaseModel as BaseModelProper
-        from pydantic import Field as FieldProper
-
-        class Joke(BaseModelProper):
-            """Joke to tell user."""
-
-            setup: str = FieldProper(description="question to set up a joke")
-            punchline: str = FieldProper(description="answer to resolve the joke")
-
         # Pydantic class
         # Type ignoring since the interface only officially supports pydantic 1
         # or pydantic.v1.BaseModel but not pydantic.BaseModel from pydantic 2.
@@ -237,12 +259,39 @@ class ChatModelIntegrationTests(ChatModelTests):
             assert isinstance(chunk, Joke)
 
         # Schema
-        chat = model.with_structured_output(Joke.schema())
+        chat = model.with_structured_output(Joke.model_json_schema())
         result = chat.invoke("Tell me a joke about cats.")
         assert isinstance(result, dict)
         assert set(result.keys()) == {"setup", "punchline"}
 
         for chunk in chat.stream("Tell me a joke about cats."):
+            assert isinstance(chunk, dict)
+        assert isinstance(chunk, dict)  # for mypy
+        assert set(chunk.keys()) == {"setup", "punchline"}
+
+    async def test_structured_output_async(self, model: BaseChatModel) -> None:
+        """Test to verify structured output with a Pydantic model."""
+        if not self.has_tool_calling:
+            pytest.skip("Test requires tool calling.")
+
+        # Pydantic class
+        # Type ignoring since the interface only officially supports pydantic 1
+        # or pydantic.v1.BaseModel but not pydantic.BaseModel from pydantic 2.
+        # We'll need to do a pass updating the type signatures.
+        chat = model.with_structured_output(Joke)  # type: ignore[arg-type]
+        result = await chat.ainvoke("Tell me a joke about cats.")
+        assert isinstance(result, Joke)
+
+        async for chunk in chat.astream("Tell me a joke about cats."):
+            assert isinstance(chunk, Joke)
+
+        # Schema
+        chat = model.with_structured_output(Joke.model_json_schema())
+        result = await chat.ainvoke("Tell me a joke about cats.")
+        assert isinstance(result, dict)
+        assert set(result.keys()) == {"setup", "punchline"}
+
+        async for chunk in chat.astream("Tell me a joke about cats."):
             assert isinstance(chunk, dict)
         assert isinstance(chunk, dict)  # for mypy
         assert set(chunk.keys()) == {"setup", "punchline"}
@@ -256,11 +305,11 @@ class ChatModelIntegrationTests(ChatModelTests):
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
 
-        class Joke(BaseModel):  # Uses langchain_core.pydantic_v1.BaseModel
+        class Joke(BaseModelV1):  # Uses langchain_core.pydantic_v1.BaseModel
             """Joke to tell user."""
 
-            setup: str = Field(description="question to set up a joke")
-            punchline: str = Field(description="answer to resolve the joke")
+            setup: str = FieldV1(description="question to set up a joke")
+            punchline: str = FieldV1(description="answer to resolve the joke")
 
         # Pydantic class
         chat = model.with_structured_output(Joke)
@@ -281,10 +330,29 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(chunk, dict)  # for mypy
         assert set(chunk.keys()) == {"setup", "punchline"}
 
-    def test_tool_message_histories_string_content(
-        self,
-        model: BaseChatModel,
-    ) -> None:
+    def test_structured_output_optional_param(self, model: BaseChatModel) -> None:
+        """Test to verify structured output with an optional param."""
+        if not self.has_tool_calling:
+            pytest.skip("Test requires tool calling.")
+
+        class Joke(BaseModel):
+            """Joke to tell user."""
+
+            setup: str = Field(description="question to set up a joke")
+            punchline: Optional[str] = Field(
+                default=None, description="answer to resolve the joke"
+            )
+
+        chat = model.with_structured_output(Joke)  # type: ignore[arg-type]
+        setup_result = chat.invoke(
+            "Give me the setup to a joke about cats, no punchline."
+        )
+        assert isinstance(setup_result, Joke)
+
+        joke_result = chat.invoke("Give me a joke about cats, include the punchline.")
+        assert isinstance(joke_result, Joke)
+
+    def test_tool_message_histories_string_content(self, model: BaseChatModel) -> None:
         """
         Test that message histories are compatible with string tool contents
         (e.g. OpenAI).
@@ -414,11 +482,42 @@ class ChatModelIntegrationTests(ChatModelTests):
         )
         model.invoke([message])
 
+    def test_image_tool_message(self, model: BaseChatModel) -> None:
+        if not self.supports_image_tool_message:
+            return
+        image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
+        image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
+        messages = [
+            HumanMessage("get a random image using the tool and describe the weather"),
+            AIMessage(
+                [],
+                tool_calls=[
+                    {"type": "tool_call", "id": "1", "name": "random_image", "args": {}}
+                ],
+            ),
+            ToolMessage(
+                content=[
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
+                    },
+                ],
+                tool_call_id="1",
+                name="random_image",
+            ),
+        ]
+
+        def random_image() -> str:
+            """Return a random image."""
+            return ""
+
+        model.bind_tools([random_image]).invoke(messages)
+
     def test_anthropic_inputs(self, model: BaseChatModel) -> None:
         if not self.supports_anthropic_inputs:
             return
 
-        class color_picker(BaseModel):
+        class color_picker(BaseModelV1):
             """Input your fav color and get a random fact about it."""
 
             fav_color: str
@@ -467,9 +566,45 @@ class ChatModelIntegrationTests(ChatModelTests):
                                 "text": "green is a great pick! that's my sister's favorite color",  # noqa: E501
                             }
                         ],
+                        "is_error": False,
                     },
                     {"type": "text", "text": "what's my sister's favorite color"},
                 ]
             ),
         ]
         model.bind_tools([color_picker]).invoke(messages)
+
+    def test_tool_message_error_status(self, model: BaseChatModel) -> None:
+        """Test that ToolMessage with status='error' can be handled."""
+        if not self.has_tool_calling:
+            pytest.skip("Test requires tool calling.")
+        model_with_tools = model.bind_tools([my_adder_tool])
+        messages = [
+            HumanMessage("What is 1 + 2"),
+            AIMessage(
+                "",
+                tool_calls=[
+                    {
+                        "name": "my_adder_tool",
+                        "args": {"a": 1},
+                        "id": "abc123",
+                        "type": "tool_call",
+                    },
+                ],
+            ),
+            ToolMessage(
+                "Error: Missing required argument 'b'.",
+                name="my_adder_tool",
+                tool_call_id="abc123",
+                status="error",
+            ),
+        ]
+        result = model_with_tools.invoke(messages)
+        assert isinstance(result, AIMessage)
+
+    def test_message_with_name(self, model: BaseChatModel) -> None:
+        result = model.invoke([HumanMessage("hello", name="example_user")])
+        assert result is not None
+        assert isinstance(result, AIMessage)
+        assert isinstance(result.content, str)
+        assert len(result.content) > 0

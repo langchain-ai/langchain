@@ -1,12 +1,17 @@
 """Test functionality related to prompts."""
 
-from typing import Any, Dict, Union
+from typing import Any, Union
 from unittest import mock
 
+import pydantic
 import pytest
+from syrupy import SnapshotAssertion
 
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.tracers.run_collector import RunCollectorCallbackHandler
+from tests.unit_tests.pydantic_utils import _normalize_schema
+
+PYDANTIC_VERSION = tuple(map(int, pydantic.__version__.split(".")))
 
 
 def test_prompt_valid() -> None:
@@ -62,17 +67,17 @@ def test_prompt_from_template() -> None:
     assert prompt == expected_prompt
 
 
-def test_mustache_prompt_from_template() -> None:
+def test_mustache_prompt_from_template(snapshot: SnapshotAssertion) -> None:
     """Test prompts can be constructed from a template."""
     # Single input variable.
     template = "This is a {{foo}} test."
     prompt = PromptTemplate.from_template(template, template_format="mustache")
     assert prompt.format(foo="bar") == "This is a bar test."
     assert prompt.input_variables == ["foo"]
-    assert prompt.input_schema.schema() == {
+    assert prompt.get_input_jsonschema() == {
         "title": "PromptInput",
         "type": "object",
-        "properties": {"foo": {"title": "Foo", "type": "string"}},
+        "properties": {"foo": {"title": "Foo", "type": "string", "default": None}},
     }
 
     # Multiple input variables.
@@ -80,12 +85,12 @@ def test_mustache_prompt_from_template() -> None:
     prompt = PromptTemplate.from_template(template, template_format="mustache")
     assert prompt.format(bar="baz", foo="bar") == "This baz is a bar test."
     assert prompt.input_variables == ["bar", "foo"]
-    assert prompt.input_schema.schema() == {
+    assert prompt.get_input_jsonschema() == {
         "title": "PromptInput",
         "type": "object",
         "properties": {
-            "bar": {"title": "Bar", "type": "string"},
-            "foo": {"title": "Foo", "type": "string"},
+            "bar": {"title": "Bar", "type": "string", "default": None},
+            "foo": {"title": "Foo", "type": "string", "default": None},
         },
     }
 
@@ -94,12 +99,12 @@ def test_mustache_prompt_from_template() -> None:
     prompt = PromptTemplate.from_template(template, template_format="mustache")
     assert prompt.format(bar="baz", foo="bar") == "This baz is a bar test bar."
     assert prompt.input_variables == ["bar", "foo"]
-    assert prompt.input_schema.schema() == {
+    assert prompt.get_input_jsonschema() == {
         "title": "PromptInput",
         "type": "object",
         "properties": {
-            "bar": {"title": "Bar", "type": "string"},
-            "foo": {"title": "Foo", "type": "string"},
+            "bar": {"title": "Bar", "type": "string", "default": None},
+            "foo": {"title": "Foo", "type": "string", "default": None},
         },
     }
 
@@ -110,31 +115,17 @@ def test_mustache_prompt_from_template() -> None:
         "This foo is a bar test baz."
     )
     assert prompt.input_variables == ["foo", "obj"]
-    assert prompt.input_schema.schema() == {
-        "title": "PromptInput",
-        "type": "object",
-        "properties": {
-            "foo": {"title": "Foo", "type": "string"},
-            "obj": {"$ref": "#/definitions/obj"},
-        },
-        "definitions": {
-            "obj": {
-                "title": "obj",
-                "type": "object",
-                "properties": {
-                    "foo": {"title": "Foo", "type": "string"},
-                    "bar": {"title": "Bar", "type": "string"},
-                },
-            }
-        },
-    }
+    if PYDANTIC_VERSION >= (2, 9):
+        assert _normalize_schema(prompt.get_input_jsonschema()) == snapshot(
+            name="schema_0"
+        )
 
     # . variables
     template = "This {{.}} is a test."
     prompt = PromptTemplate.from_template(template, template_format="mustache")
     assert prompt.format(foo="baz") == ("This {'foo': 'baz'} is a test.")
     assert prompt.input_variables == []
-    assert prompt.input_schema.schema() == {
+    assert prompt.get_input_jsonschema() == {
         "title": "PromptInput",
         "type": "object",
         "properties": {},
@@ -151,18 +142,10 @@ def test_mustache_prompt_from_template() -> None:
     is a test."""
     )
     assert prompt.input_variables == ["foo"]
-    assert prompt.input_schema.schema() == {
-        "title": "PromptInput",
-        "type": "object",
-        "properties": {"foo": {"$ref": "#/definitions/foo"}},
-        "definitions": {
-            "foo": {
-                "title": "foo",
-                "type": "object",
-                "properties": {"bar": {"title": "Bar", "type": "string"}},
-            }
-        },
-    }
+    if PYDANTIC_VERSION >= (2, 9):
+        assert _normalize_schema(prompt.get_input_jsonschema()) == snapshot(
+            name="schema_2"
+        )
 
     # more complex nested section/context variables
     template = """This{{#foo}}
@@ -183,27 +166,10 @@ def test_mustache_prompt_from_template() -> None:
     is a test."""
     )
     assert prompt.input_variables == ["foo"]
-    assert prompt.input_schema.schema() == {
-        "title": "PromptInput",
-        "type": "object",
-        "properties": {"foo": {"$ref": "#/definitions/foo"}},
-        "definitions": {
-            "foo": {
-                "title": "foo",
-                "type": "object",
-                "properties": {
-                    "bar": {"title": "Bar", "type": "string"},
-                    "baz": {"$ref": "#/definitions/baz"},
-                    "quux": {"title": "Quux", "type": "string"},
-                },
-            },
-            "baz": {
-                "title": "baz",
-                "type": "object",
-                "properties": {"qux": {"title": "Qux", "type": "string"}},
-            },
-        },
-    }
+    if PYDANTIC_VERSION >= (2, 9):
+        assert _normalize_schema(prompt.get_input_jsonschema()) == snapshot(
+            name="schema_3"
+        )
 
     # triply nested section/context variables
     template = """This{{#foo}}
@@ -238,40 +204,10 @@ def test_mustache_prompt_from_template() -> None:
     is a test."""
     )
     assert prompt.input_variables == ["foo"]
-    assert prompt.input_schema.schema() == {
-        "title": "PromptInput",
-        "type": "object",
-        "properties": {"foo": {"$ref": "#/definitions/foo"}},
-        "definitions": {
-            "foo": {
-                "title": "foo",
-                "type": "object",
-                "properties": {
-                    "bar": {"title": "Bar", "type": "string"},
-                    "baz": {"$ref": "#/definitions/baz"},
-                    "quux": {"title": "Quux", "type": "string"},
-                },
-            },
-            "baz": {
-                "title": "baz",
-                "type": "object",
-                "properties": {"qux": {"$ref": "#/definitions/qux"}},
-            },
-            "qux": {
-                "title": "qux",
-                "type": "object",
-                "properties": {
-                    "foobar": {"title": "Foobar", "type": "string"},
-                    "barfoo": {"$ref": "#/definitions/barfoo"},
-                },
-            },
-            "barfoo": {
-                "title": "barfoo",
-                "type": "object",
-                "properties": {"foobar": {"title": "Foobar", "type": "string"}},
-            },
-        },
-    }
+    if PYDANTIC_VERSION >= (2, 9):
+        assert _normalize_schema(prompt.get_input_jsonschema()) == snapshot(
+            name="schema_4"
+        )
 
     # section/context variables with repeats
     template = """This{{#foo}}
@@ -286,19 +222,10 @@ def test_mustache_prompt_from_template() -> None:
     is a test."""
     )
     assert prompt.input_variables == ["foo"]
-    assert prompt.input_schema.schema() == {
-        "title": "PromptInput",
-        "type": "object",
-        "properties": {"foo": {"$ref": "#/definitions/foo"}},
-        "definitions": {
-            "foo": {
-                "title": "foo",
-                "type": "object",
-                "properties": {"bar": {"title": "Bar", "type": "string"}},
-            }
-        },
-    }
-
+    if PYDANTIC_VERSION >= (2, 9):
+        assert _normalize_schema(prompt.get_input_jsonschema()) == snapshot(
+            name="schema_5"
+        )
     template = """This{{^foo}}
         no foos
     {{/foo}}is a test."""
@@ -309,10 +236,10 @@ def test_mustache_prompt_from_template() -> None:
     is a test."""
     )
     assert prompt.input_variables == ["foo"]
-    assert prompt.input_schema.schema() == {
+    assert prompt.get_input_jsonschema() == {
+        "properties": {"foo": {"default": None, "title": "Foo", "type": "object"}},
         "title": "PromptInput",
         "type": "object",
-        "properties": {"foo": {"title": "Foo", "type": "object"}},
     }
 
 
@@ -683,7 +610,7 @@ async def test_prompt_ainvoke_with_metadata() -> None:
 )
 @pytest.mark.parametrize("template_format", ["f-string", "mustache"])
 def test_prompt_falsy_vars(
-    template_format: str, value: Any, expected: Union[str, Dict[str, str]]
+    template_format: str, value: Any, expected: Union[str, dict[str, str]]
 ) -> None:
     # each line is value, f-string, mustache
     if template_format == "f-string":
@@ -701,3 +628,34 @@ def test_prompt_falsy_vars(
         expected if not isinstance(expected, dict) else expected[template_format]
     )
     assert result.to_string() == expected_output
+
+
+def test_prompt_missing_vars_error() -> None:
+    prompt = PromptTemplate.from_template("This is a {foo} {goingtobemissing} test.")
+    with pytest.raises(KeyError) as e:
+        prompt.invoke({"foo": "bar"})
+
+    # Check that the error message contains the missing variable
+    assert "{'goingtobemissing'}" in str(e.value.args[0])
+
+    # Check helper text has right number of braces
+    assert "'{{goingtobemissing}}'" in str(e.value.args[0])
+
+
+def test_prompt_with_template_variable_name_fstring() -> None:
+    template = "This is a {template} test."
+    prompt = PromptTemplate.from_template(template, template_format="f-string")
+    assert prompt.invoke({"template": "bar"}).to_string() == "This is a bar test."
+
+
+def test_prompt_with_template_variable_name_mustache() -> None:
+    template = "This is a {{template}} test."
+    prompt = PromptTemplate.from_template(template, template_format="mustache")
+    assert prompt.invoke({"template": "bar"}).to_string() == "This is a bar test."
+
+
+@pytest.mark.requires("jinja2")
+def test_prompt_with_template_variable_name_jinja2() -> None:
+    template = "This is a {{template}} test."
+    prompt = PromptTemplate.from_template(template, template_format="jinja2")
+    assert prompt.invoke({"template": "bar"}).to_string() == "This is a bar test."
