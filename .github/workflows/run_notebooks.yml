@@ -2,11 +2,15 @@ name: Run notebooks
 
 on:
   workflow_dispatch:
+    inputs:
+      python_version:
+        description: 'Python version'
+        required: false
+        default: '3.11'
   schedule:
     - cron: '0 13 * * *'
 
 env:
-  PYTHON_VERSION: "3.11"
   POETRY_VERSION: "1.7.1"
 
 jobs:
@@ -20,7 +24,7 @@ jobs:
       - name: Set up Python + Poetry ${{ env.POETRY_VERSION }}
         uses: "./.github/actions/poetry_setup"
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
+          python-version: ${{ github.event.inputs.python_version || '3.11' }}
           poetry-version: ${{ env.POETRY_VERSION }}
           working-directory: ${{ inputs.working-directory }}
           cache-key: run-notebooks
@@ -43,7 +47,6 @@ jobs:
 
       - name: Prepare notebooks
         run: |
-
           python docs/scripts/prepare_notebooks_for_ci.py --comment-install-cells
 
       - name: Run notebooks
