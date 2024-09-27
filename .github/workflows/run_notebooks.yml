@@ -33,7 +33,7 @@ jobs:
           pip install -e libs/core
           pip install -e libs/langchain
           pip install -e libs/community
-          pip install -e libs/experimental
+          pip install --upgrade langchain-experimental
           pip install -e libs//partners/anthropic
           pip install -e libs//partners/chroma
           pip install -e libs//partners/openai
