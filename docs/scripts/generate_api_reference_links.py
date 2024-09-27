@@ -316,26 +316,24 @@ def _get_imports(
                     namespace = "prebuilt"
                 elif module.startswith("langgraph.errors"):
                     namespace = "errors"
+                elif module.startswith("langgraph.types"):
+                    namespace = "types"
                 else:
                     # Likely not documented yet
                     # Unable to determine the namespace
                     continue
 
-                if module.startswith("langgraph.errors"):
-                    # Has different URL structure than other modules
-                    url = (
-                        _LANGGRAPH_API_REFERENCE
-                        + namespace
-                        + "/#langgraph.errors."
-                        + class_name  # Uses the actual class name here.
-                    )
-                else:
-                    if (module, class_name) not in WELL_KNOWN_LANGGRAPH_OBJECTS:
-                        # Likely not documented yet
-                        continue
-                    url = (
-                        _LANGGRAPH_API_REFERENCE + namespace + "/#" + class_name.lower()
-                    )
+                if (module, class_name) not in WELL_KNOWN_LANGGRAPH_OBJECTS:
+                    # Likely not documented yet
+                    continue
+                url = (
+                    _LANGGRAPH_API_REFERENCE
+                    + namespace
+                    + "/#"
+                    + module
+                    + "."
+                    + class_name
+                )
             else:
                 raise ValueError(f"Invalid package ecosystem: {package_ecosystem}")
 
