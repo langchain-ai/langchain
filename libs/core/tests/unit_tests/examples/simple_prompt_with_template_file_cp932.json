@@ -1,0 +1,6 @@
+{
+    "_type": "prompt",
+    "input_variables": ["adjective", "content"],
+    "template_path": "simple_template_cp932.txt",
+    "template_encoding": "cp932"
+}
