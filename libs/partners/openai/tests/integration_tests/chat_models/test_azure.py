@@ -39,7 +39,7 @@ def _get_llm(**kwargs: Any) -> AzureChatOpenAI:
 @pytest.mark.scheduled
 @pytest.fixture
 def llm() -> AzureChatOpenAI:
-    return _get_llm(max_tokens=10)
+    return _get_llm(max_tokens=50)
 
 
 def test_chat_openai(llm: AzureChatOpenAI) -> None:

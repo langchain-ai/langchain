@@ -1,4 +1,4 @@
-from typing import Any, List, Literal
+from typing import Any, Literal
 
 from langchain_core.messages.base import (
     BaseMessage,
@@ -18,14 +18,14 @@ class ChatMessage(BaseMessage):
     """The type of the message (used during serialization). Defaults to "chat"."""
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
         Default is ["langchain", "schema", "messages"].
         """
         return ["langchain", "schema", "messages"]
 
 
-ChatMessage.update_forward_refs()
+ChatMessage.model_rebuild()
 
 
 class ChatMessageChunk(ChatMessage, BaseMessageChunk):
@@ -39,7 +39,7 @@ class ChatMessageChunk(ChatMessage, BaseMessageChunk):
     Defaults to "ChatMessageChunk"."""
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
         Default is ["langchain", "schema", "messages"].
         """

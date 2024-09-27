@@ -3,25 +3,30 @@ from __future__ import annotations
 import asyncio
 import inspect
 import json
+import typing
 import uuid
 import warnings
 from abc import ABC, abstractmethod
+from collections.abc import AsyncIterator, Iterator, Sequence
+from functools import cached_property
 from operator import itemgetter
 from typing import (
     TYPE_CHECKING,
     Any,
-    AsyncIterator,
     Callable,
-    Dict,
-    Iterator,
-    List,
     Literal,
     Optional,
-    Sequence,
-    Type,
     Union,
     cast,
 )
+
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    model_validator,
+)
+from typing_extensions import override
 
 from langchain_core._api import deprecated
 from langchain_core.caches import BaseCache
@@ -57,11 +62,6 @@ from langchain_core.outputs import (
     RunInfo,
 )
 from langchain_core.prompt_values import ChatPromptValue, PromptValue, StringPromptValue
-from langchain_core.pydantic_v1 import (
-    BaseModel,
-    Field,
-    root_validator,
-)
 from langchain_core.rate_limiters import BaseRateLimiter
 from langchain_core.runnables import RunnableMap, RunnablePassthrough
 from langchain_core.runnables.config import ensure_config, run_in_executor
@@ -218,8 +218,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     - If False (default), will always use streaming case if available.
     """
 
-    @root_validator(pre=True)
-    def raise_deprecation(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def raise_deprecation(cls, values: dict) -> Any:
         """Raise deprecation warning if callback_manager is used.
 
         Args:
@@ -235,16 +236,23 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             warnings.warn(
                 "callback_manager is deprecated. Please use callbacks instead.",
                 DeprecationWarning,
+                stacklevel=5,
             )
             values["callbacks"] = values.pop("callback_manager", None)
         return values
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
+
+    @cached_property
+    def _serialized(self) -> dict[str, Any]:
+        return dumpd(self)
 
     # --- Runnable methods ---
 
     @property
+    @override
     def OutputType(self) -> Any:
         """Get the output type for this runnable."""
         return AnyMessage
@@ -267,7 +275,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         input: LanguageModelInput,
         config: Optional[RunnableConfig] = None,
         *,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> BaseMessage:
         config = ensure_config(config)
@@ -290,7 +298,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         input: LanguageModelInput,
         config: Optional[RunnableConfig] = None,
         *,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> BaseMessage:
         config = ensure_config(config)
@@ -346,7 +354,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         input: LanguageModelInput,
         config: Optional[RunnableConfig] = None,
         *,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> Iterator[BaseMessageChunk]:
         if not self._should_stream(async_api=False, **{**kwargs, **{"stream": True}}):
@@ -373,7 +381,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 self.metadata,
             )
             (run_manager,) = callback_manager.on_chat_model_start(
-                dumpd(self),
+                self._serialized,
                 [messages],
                 invocation_params=params,
                 options=options,
@@ -416,7 +424,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         input: LanguageModelInput,
         config: Optional[RunnableConfig] = None,
         *,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> AsyncIterator[BaseMessageChunk]:
         if not self._should_stream(async_api=True, **{**kwargs, **{"stream": True}}):
@@ -445,7 +453,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             self.metadata,
         )
         (run_manager,) = await callback_manager.on_chat_model_start(
-            dumpd(self),
+            self._serialized,
             [messages],
             invocation_params=params,
             options=options,
@@ -455,7 +463,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         )
 
         if self.rate_limiter:
-            self.rate_limiter.acquire(blocking=True)
+            await self.rate_limiter.aacquire(blocking=True)
 
         generation: Optional[ChatGenerationChunk] = None
         try:
@@ -489,12 +497,12 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     # --- Custom methods ---
 
-    def _combine_llm_outputs(self, llm_outputs: List[Optional[dict]]) -> dict:
+    def _combine_llm_outputs(self, llm_outputs: list[Optional[dict]]) -> dict:
         return {}
 
     def _get_invocation_params(
         self,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> dict:
         params = self.dict()
@@ -503,7 +511,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     def _get_ls_params(
         self,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> LangSmithParams:
         """Get standard params for tracing."""
@@ -540,29 +548,29 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
         return ls_params
 
-    def _get_llm_string(self, stop: Optional[List[str]] = None, **kwargs: Any) -> str:
+    def _get_llm_string(self, stop: Optional[list[str]] = None, **kwargs: Any) -> str:
         if self.is_lc_serializable():
             params = {**kwargs, **{"stop": stop}}
-            param_string = str(sorted([(k, v) for k, v in params.items()]))
+            param_string = str(sorted(params.items()))
             # This code is not super efficient as it goes back and forth between
             # json and dict.
-            serialized_repr = dumpd(self)
+            serialized_repr = self._serialized
             _cleanup_llm_representation(serialized_repr, 1)
             llm_string = json.dumps(serialized_repr, sort_keys=True)
             return llm_string + "---" + param_string
         else:
             params = self._get_invocation_params(stop=stop, **kwargs)
             params = {**params, **kwargs}
-            return str(sorted([(k, v) for k, v in params.items()]))
+            return str(sorted(params.items()))
 
     def generate(
         self,
-        messages: List[List[BaseMessage]],
-        stop: Optional[List[str]] = None,
+        messages: list[list[BaseMessage]],
+        stop: Optional[list[str]] = None,
         callbacks: Callbacks = None,
         *,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         run_name: Optional[str] = None,
         run_id: Optional[uuid.UUID] = None,
         **kwargs: Any,
@@ -608,7 +616,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             self.metadata,
         )
         run_managers = callback_manager.on_chat_model_start(
-            dumpd(self),
+            self._serialized,
             messages,
             invocation_params=params,
             options=options,
@@ -648,12 +656,12 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     async def agenerate(
         self,
-        messages: List[List[BaseMessage]],
-        stop: Optional[List[str]] = None,
+        messages: list[list[BaseMessage]],
+        stop: Optional[list[str]] = None,
         callbacks: Callbacks = None,
         *,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         run_name: Optional[str] = None,
         run_id: Optional[uuid.UUID] = None,
         **kwargs: Any,
@@ -700,7 +708,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         )
 
         run_managers = await callback_manager.on_chat_model_start(
-            dumpd(self),
+            self._serialized,
             messages,
             invocation_params=params,
             options=options,
@@ -767,8 +775,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     def generate_prompt(
         self,
-        prompts: List[PromptValue],
-        stop: Optional[List[str]] = None,
+        prompts: list[PromptValue],
+        stop: Optional[list[str]] = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> LLMResult:
@@ -777,8 +785,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     async def agenerate_prompt(
         self,
-        prompts: List[PromptValue],
-        stop: Optional[List[str]] = None,
+        prompts: list[PromptValue],
+        stop: Optional[list[str]] = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> LLMResult:
@@ -789,8 +797,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     def _generate_with_cache(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
@@ -829,7 +837,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             run_manager=run_manager,
             **kwargs,
         ):
-            chunks: List[ChatGenerationChunk] = []
+            chunks: list[ChatGenerationChunk] = []
             for chunk in self._stream(messages, stop=stop, **kwargs):
                 chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
                 if run_manager:
@@ -866,8 +874,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     async def _agenerate_with_cache(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
@@ -897,7 +905,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         # we usually don't want to rate limit cache lookups, but
         # we do want to rate limit API requests.
         if self.rate_limiter:
-            self.rate_limiter.acquire(blocking=True)
+            await self.rate_limiter.aacquire(blocking=True)
 
         # If stream is not explicitly set, check if implicitly requested by
         # astream_events() or astream_log(). Bail out if _astream not implemented
@@ -906,7 +914,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             run_manager=run_manager,
             **kwargs,
         ):
-            chunks: List[ChatGenerationChunk] = []
+            chunks: list[ChatGenerationChunk] = []
             async for chunk in self._astream(messages, stop=stop, **kwargs):
                 chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
                 if run_manager:
@@ -944,8 +952,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     @abstractmethod
     def _generate(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
@@ -953,8 +961,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     async def _agenerate(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
@@ -970,8 +978,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     def _stream(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
@@ -979,8 +987,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     async def _astream(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
@@ -1007,8 +1015,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     @deprecated("0.1.7", alternative="invoke", removal="1.0")
     def __call__(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> BaseMessage:
@@ -1022,8 +1030,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     async def _call_async(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> BaseMessage:
@@ -1038,7 +1046,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     @deprecated("0.1.7", alternative="invoke", removal="1.0")
     def call_as_llm(
-        self, message: str, stop: Optional[List[str]] = None, **kwargs: Any
+        self, message: str, stop: Optional[list[str]] = None, **kwargs: Any
     ) -> str:
         return self.predict(message, stop=stop, **kwargs)
 
@@ -1059,7 +1067,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     @deprecated("0.1.7", alternative="invoke", removal="1.0")
     def predict_messages(
         self,
-        messages: List[BaseMessage],
+        messages: list[BaseMessage],
         *,
         stop: Optional[Sequence[str]] = None,
         **kwargs: Any,
@@ -1089,7 +1097,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     @deprecated("0.1.7", alternative="ainvoke", removal="1.0")
     async def apredict_messages(
         self,
-        messages: List[BaseMessage],
+        messages: list[BaseMessage],
         *,
         stop: Optional[Sequence[str]] = None,
         **kwargs: Any,
@@ -1105,7 +1113,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     def _llm_type(self) -> str:
         """Return type of chat model."""
 
-    def dict(self, **kwargs: Any) -> Dict:
+    def dict(self, **kwargs: Any) -> dict:
         """Return a dictionary of the LLM."""
         starter_dict = dict(self._identifying_params)
         starter_dict["_type"] = self._llm_type
@@ -1113,18 +1121,18 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     def bind_tools(
         self,
-        tools: Sequence[Union[Dict[str, Any], Type, Callable, BaseTool]],
+        tools: Sequence[Union[typing.Dict[str, Any], type, Callable, BaseTool]],  # noqa: UP006
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         raise NotImplementedError()
 
     def with_structured_output(
         self,
-        schema: Union[Dict, Type],
+        schema: Union[typing.Dict, type],  # noqa: UP006
         *,
         include_raw: bool = False,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
+    ) -> Runnable[LanguageModelInput, Union[typing.Dict, BaseModel]]:  # noqa: UP006
         """Model wrapper that returns outputs formatted to match the given schema.
 
         Args:
@@ -1169,7 +1177,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         Example: Pydantic schema (include_raw=False):
             .. code-block:: python
 
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
 
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
@@ -1189,7 +1197,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         Example: Pydantic schema (include_raw=True):
             .. code-block:: python
 
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
 
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
@@ -1209,7 +1217,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         Example: Dict schema (include_raw=False):
             .. code-block:: python
 
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
                 from langchain_core.utils.function_calling import convert_to_openai_tool
 
                 class AnswerWithJustification(BaseModel):
@@ -1271,8 +1279,8 @@ class SimpleChatModel(BaseChatModel):
 
     def _generate(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
@@ -1284,8 +1292,8 @@ class SimpleChatModel(BaseChatModel):
     @abstractmethod
     def _call(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
@@ -1293,8 +1301,8 @@ class SimpleChatModel(BaseChatModel):
 
     async def _agenerate(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:

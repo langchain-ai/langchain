@@ -206,7 +206,8 @@ def _generate_completion(
         messages=[Message(**message) for message in message_history],
     )
     stub = TextGenerationServiceStub(channel)
-    return stub.Completion(request, metadata=self._grpc_metadata)
+    res = stub.Completion(request, metadata=self._grpc_metadata)
+    return list(res)[0].alternatives[0].message.text
 
 
 async def _agenerate_completion(self, messages, stream=False):
@@ -277,7 +278,7 @@ async def _agenerate_completion(self, messages, stream=False):
                 operation_request = GetOperationRequest(operation_id=operation.id)
                 operation = await operation_stub.Get(
                     operation_request,
-                    metadata=self._grpc_metadata,
+                    metadata=self.grpc_metadata,
                 )
 
             completion_response = CompletionResponse()

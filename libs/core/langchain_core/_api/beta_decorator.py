@@ -14,7 +14,8 @@ import contextlib
 import functools
 import inspect
 import warnings
-from typing import Any, Callable, Generator, Type, TypeVar, Union, cast
+from collections.abc import Generator
+from typing import Any, Callable, TypeVar, Union, cast
 
 from langchain_core._api.internal import is_caller_internal
 
@@ -26,7 +27,7 @@ class LangChainBetaWarning(DeprecationWarning):
 # PUBLIC API
 
 
-T = TypeVar("T", bound=Union[Callable[..., Any], Type])
+T = TypeVar("T", bound=Union[Callable[..., Any], type])
 
 
 def beta(
@@ -154,7 +155,7 @@ def beta(
             _name = _name or obj.fget.__qualname__
             old_doc = obj.__doc__
 
-            class _beta_property(property):
+            class _BetaProperty(property):
                 """A beta property."""
 
                 def __init__(self, fget=None, fset=None, fdel=None, doc=None):
@@ -185,7 +186,7 @@ def beta(
 
             def finalize(wrapper: Callable[..., Any], new_doc: str) -> Any:
                 """Finalize the property."""
-                return _beta_property(
+                return _BetaProperty(
                     fget=obj.fget, fset=obj.fset, fdel=obj.fdel, doc=new_doc
                 )
 
@@ -270,7 +271,7 @@ def warn_beta(
             message += f" {addendum}"
 
     warning = LangChainBetaWarning(message)
-    warnings.warn(warning, category=LangChainBetaWarning, stacklevel=2)
+    warnings.warn(warning, category=LangChainBetaWarning, stacklevel=4)
 
 
 def surface_langchain_beta_warnings() -> None:
