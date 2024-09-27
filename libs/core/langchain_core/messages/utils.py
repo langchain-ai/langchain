@@ -819,6 +819,7 @@ def trim_messages(
 
             def list_token_counter(messages: Sequence[BaseMessage]) -> int:
                 return sum(token_counter(msg) for msg in messages)  # type: ignore[arg-type, misc]
+
         else:
             list_token_counter = token_counter  # type: ignore[assignment]
     else:
@@ -956,6 +957,8 @@ def _last_max_tokens(
     ] = None,
 ) -> list[BaseMessage]:
     messages = list(messages)
+    if len(messages) == 0:
+        return []
     if end_on:
         while messages and not _is_message_type(messages[-1], end_on):
             messages.pop()
