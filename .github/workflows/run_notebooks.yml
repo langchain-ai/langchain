@@ -40,6 +40,10 @@ jobs:
           pip install -e libs//partners/mistralai
           pip install jupyter langgraph click pypdf vcrpy
 
+      - name: Pre-download tiktoken files
+        run: |
+          python docs/scripts/download_tiktoken.py
+
       - name: Prepare notebooks
         run: |
 
@@ -47,7 +51,6 @@ jobs:
 
       - name: Run notebooks
         env:
-          TIKTOKEN_CACHE_DIR: ''
           # these won't actually be used because of the VCR cassettes
           # but need to set them to avoid triggering getpass()
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}

@@ -14,8 +14,8 @@ interactions:
       content-type:
       - application/json
       cookie:
-      - __cf_bm=_SkX10_lz_dX1guPhghsUYAz4_9kWqoLA5uNrUkQB18-1727447406-1.0.1.1-Hbwqr14cIbBH0gj8B1mx9a96FHwcQ0zFiSd700EllAydhGfmuJvCorr0hPCbtfl2nG4OnDCQCd1OOKW5VHRCzg;
-        _cfuvid=_gLrQReNbyL5vxKd7xmYmcYUDElVbJf1pTZYccPx6LE-1727447406444-0.0.1.1-604800000
+      - __cf_bm=IkziaTvtUmKlpJ6hBD6feB_TIDyI4boVZA3o2BPhCL8-1727449102-1.0.1.1-O.6GwXzEQt97Xmx063yop4OpodgHCXvPoDrm2j1o11fitCx.HXCK6l3aOcxSYn8ImB8TrwwExhm9.i3_joGUXg;
+        _cfuvid=mUjgjvAf3oXRxknfOJFguM.7C1A0icg48urbm4Rrj7I-1727449102443-0.0.1.1-604800000
       host:
       - api.openai.com
       user-agent:
@@ -155,7 +155,7 @@ interactions:
       CF-Cache-Status:
       - DYNAMIC
       CF-RAY:
-      - 8c9c30ab6de94d10-BOS
+      - 8c9c5a1afdea8fb4-BOS
       Connection:
       - keep-alive
       Content-Encoding:
@@ -163,7 +163,7 @@ interactions:
       Content-Type:
       - application/json
       Date:
-      - Fri, 27 Sep 2024 14:30:10 GMT
+      - Fri, 27 Sep 2024 14:58:27 GMT
       Server:
       - cloudflare
       Transfer-Encoding:
@@ -179,7 +179,7 @@ interactions:
       openai-organization:
       - user-wzxwdcuddhvwm09z43ibeucf
       openai-processing-ms:
-      - '21'
+      - '22'
       openai-version:
       - '2020-10-01'
       strict-transport-security:
@@ -197,7 +197,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_6ac5b35afaecc4f3847965730853efbb
+      - req_7121a35adf3d77d524b5c430408f19a0
     status:
       code: 200
       message: OK
