@@ -25,13 +25,22 @@ class EscapePreprocessor(Preprocessor):
             cell.source = cell.source.replace("```", r"\`\`\`")
             # escape ``` in output
             if "outputs" in cell:
-                for output in cell["outputs"]:
+                filter_out = set()
+                for i, output in enumerate(cell["outputs"]):
                     if "text" in output:
+                        if not output["text"].strip():
+                            filter_out.add(i)
+                            continue
                         output["text"] = output["text"].replace("```", r"\`\`\`")
-                    if "data" in output:
+                    elif "data" in output:
                         for key, value in output["data"].items():
                             if isinstance(value, str):
                                 output["data"][key] = value.replace("```", r"\`\`\`")
+                cell["outputs"] = [
+                    output
+                    for i, output in enumerate(cell["outputs"])
+                    if i not in filter_out
+                ]
 
         return cell, resources
 

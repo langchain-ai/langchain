@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Callable, List, Optional, Protocol, Tuple
 
+from langchain_core._api import deprecated
 from langchain_core.callbacks import Callbacks
 from langchain_core.documents import Document
 from pydantic import ConfigDict
@@ -121,6 +122,15 @@ async def acollapse_docs(
     return Document(page_content=result, metadata=combined_metadata)
 
 
+@deprecated(
+    since="0.3.1",
+    removal="1.0",
+    message=(
+        "This class is deprecated. Please see the migration guide here for "
+        "a recommended replacement: "
+        "https://python.langchain.com/docs/versions/migrating_chains/map_reduce_chain/"
+    ),
+)
 class ReduceDocumentsChain(BaseCombineDocumentsChain):
     """Combine documents by recursively reducing them.
 
