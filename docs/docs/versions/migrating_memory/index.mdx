@@ -41,6 +41,10 @@ Most of these implementations have been officially deprecated in LangChain 0.3.x
 
 ### RunnableWithMessageHistory and BaseChatMessageHistory
 
+:::note
+Please see [How to use BaseChatMessageHistory with LangGraph](./chat_history), if you would like to use `BaseChatMessageHistory` (with or without `RunnableWithMessageHistory`) in LangGraph.
+:::
+
 As of LangChain v0.1, we started recommending that users rely primarily on [BaseChatMessageHistory](https://python.langchain.com/api_reference/core/runnables/langchain_core.runnables.history.RunnableWithMessageHistory.html#langchain_core.runnables.history.RunnableWithMessageHistory). `BaseChatMessageHistory` serves
 as a simple persistence for storing and retrieving messages in a conversation.
 
