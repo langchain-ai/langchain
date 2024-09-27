@@ -24,12 +24,10 @@ jobs:
       - name: Test add file
         working-directory: langchain-api-docs-html
         run: |
-          echo "Hello world" > test.txt
+          echo "Hello world 2" > test.txt
           
       - name: Commit changes
         working-directory: langchain-api-docs-html
-        env:
-          GITHUB_TOKEN: ${{ secrets.TOKEN_GITHUB_API_DOCS_HTML }}
         run: |
           git config --local user.email "actions@github.com"
           git config --local user.name "Github Actions"
