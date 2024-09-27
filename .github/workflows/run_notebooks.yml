@@ -47,6 +47,7 @@ jobs:
 
       - name: Run notebooks
         env:
+          TIKTOKEN_CACHE_DIR: ''
           # these won't actually be used because of the VCR cassettes
           # but need to set them to avoid triggering getpass()
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
