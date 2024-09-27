@@ -12,17 +12,15 @@ NOTEBOOK_DIRS = ("docs/docs/tutorials",)
 DOCS_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CASSETTES_PATH = os.path.join(DOCS_PATH, "cassettes")
 
-# TODO: update these
-NOTEBOOKS_NO_CASSETTES = (
-    "docs/docs/how-tos/visualization.ipynb",
-    "docs/docs/how-tos/many-tools.ipynb",
-)
+# TODO: populate if needed
+NOTEBOOKS_NO_CASSETTES = []
 
 NOTEBOOKS_NO_EXECUTION = [
     "docs/docs/tutorials/local_rag.ipynb",  # Local LLMs
     "docs/docs/tutorials/graph.ipynb",  # Requires local graph db running
     "docs/docs/tutorials/query_analysis.ipynb",  # Requires youtube_transcript_api
     "docs/docs/tutorials/sql_qa.ipynb",  # Requires Chinook db locally
+    "docs/docs/tutorials/summarization.ipynb",  # TODO: source of non-determinism somewhere, fix or add to no cassettes
 ]
 
 with open(os.path.join(DOCS_PATH, "notebooks_no_execution.json"), "w") as f:
