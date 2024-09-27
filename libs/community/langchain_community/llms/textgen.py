@@ -342,7 +342,6 @@ class TextGen(LLM):
                 websocket_client.close()
                 return
 
-
     async def _astream(
         self,
         prompt: str,
@@ -414,4 +413,3 @@ class TextGen(LLM):
             elif result["event"] == "stream_end":  # type: ignore[call-overload, index]
                 websocket_client.close()
                 return
-
