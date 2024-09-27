@@ -3,7 +3,7 @@ name: Run notebooks
 on:
   push:
     branches:
-      - cc/compress_cassettes
+      - cc/run_notebooks
   workflow_dispatch:
   schedule:
     - cron: '0 13 * * *'
