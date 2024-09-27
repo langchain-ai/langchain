@@ -1,12 +1,12 @@
+import json
 import logging
 import uuid
-import json
-from typing import List, Optional, Any, Iterable, Tuple, Sequence
+from typing import Any, Iterable, List, Optional, Tuple
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
-from sqlalchemy import Column, String, Text, JSON, Table, func, text
+from sqlalchemy import JSON, Column, String, Table, Text, func, text
 
 logger = logging.getLogger(__name__)
 
@@ -38,8 +38,8 @@ class OceanBase(VectorStore):
         embedding_function (Embeddings): Function used to embed the text.
         table_name (str): Which table name to use. Defaults to "langchain_vector".
         connection_args (Optional[dict[str, any]]): The connection args used for
-            this class comes in the form of a dict. Refer to `DEFAULT_OCEANBASE_CONNECTION`
-            for example.
+            this class comes in the form of a dict. Refer to
+            `DEFAULT_OCEANBASE_CONNECTION` for example.
         vidx_metric_type (str): Metric method of distance between vectors.
             This parameter takes values in `l2` and `ip`. Defaults to `l2`.
         vidx_algo_params (Optional[dict]): Which index params to use. Now OceanBase
@@ -56,7 +56,8 @@ class OceanBase(VectorStore):
         vidx_name (str): Name of the vector index table.
         partitions (ObPartition): Partition strategy of table. Refer to `pyobvector`'s
             documentation for more examples.
-        extra_columns (Optional[List[Column]]): Extra sqlalchemy columns to add to the table.
+        extra_columns (Optional[List[Column]]): Extra sqlalchemy columns
+            to add to the table.
 
     Example:
         .. code-block:: python
@@ -269,6 +270,8 @@ class OceanBase(VectorStore):
             batch_size (int, optional): Batch size to use for insertion.
                 Defaults to 1000.
             ids (Optional[List[str]]): List of text ids.
+            extras (Optional[List[dict]]): Extra data to store in the table.
+            partition_name (Optional[str]): The partition name to insert data into.
 
         Raises:
             Exception: Failure to add texts
@@ -343,9 +346,10 @@ class OceanBase(VectorStore):
                     partition_name=(partition_name or ""),
                 )
                 pks.extend(ids[i : i + batch_size])
-            except Exception as e:
+            except Exception:
+                end_idx = i + batch_size
                 logger.error(
-                    f"Failed to insert batch starting at entity: [{i}, {i + batch_size})"
+                    f"Failed to insert batch starting at entity: [{i}, {end_idx})"
                 )
         return pks
 
@@ -374,8 +378,8 @@ class OceanBase(VectorStore):
                 Defaults to None.
             table_name (str): Table name to use. Defaults to "langchain_vector".
             connection_args (Optional[dict[str, Any]]): The connection args used for
-                this class comes in the form of a dict. Refer to `DEFAULT_OCEANBASE_CONNECTION`
-                for example.
+                this class comes in the form of a dict. Refer to 
+                `DEFAULT_OCEANBASE_CONNECTION` for example.
             vidx_metric_type (str): Metric method of distance between vectors.
                 This parameter takes values in `l2` and `ip`. Defaults to `l2`.
             vidx_algo_params (Optional[dict]): Which index params to use. Now OceanBase
@@ -384,6 +388,7 @@ class OceanBase(VectorStore):
             drop_old (bool): Whether to drop the current table. Defaults
                 to False.
             ids (Optional[List[str]]): List of text ids. Defaults to None.
+            extras (Optional[List[dict]]): Extra data to insert. Defaults to None.
 
         Returns:
             OceanBase: OceanBase Vector Store
