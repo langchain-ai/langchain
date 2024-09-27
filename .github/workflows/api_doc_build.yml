@@ -16,11 +16,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           path: langchain
-          token: ${{ secrets.TOKEN_GITHUB_API_DOCS_HTML }}
       - uses: actions/checkout@v4
         with:
           repository: langchain-ai/langchain-api-docs-html
           path: langchain-api-docs-html
+          token: ${{ secrets.TOKEN_GITHUB_API_DOCS_HTML }}
       - name: Test add file
         working-directory: langchain-api-docs-html
         run: |
@@ -34,6 +34,9 @@ jobs:
           git config --local user.email "actions@github.com"
           git config --local user.name "Github Actions"
           git add .
+          echo "precommit"
           git commit -m "Update API docs build"
+          echo "preset"
           git remote set-url origin "https://x-access-token:$GITHUB_TOKEN@github.com/langchain-ai/langchain-api-docs-html.git"
+          echo "prepush"
           git push origin HEAD
