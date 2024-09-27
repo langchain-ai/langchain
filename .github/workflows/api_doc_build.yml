@@ -19,7 +19,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: langchain-ai/langchain-api-docs-html
-          ref: ${{ github.ref_name }}
           path: langchain-api-docs-html
       - uses: actions/checkout@v4
         with:
