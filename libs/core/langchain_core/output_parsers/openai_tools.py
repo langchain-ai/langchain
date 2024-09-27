@@ -207,7 +207,7 @@ class JsonOutputToolsParser(BaseCumulativeTransformOutputParser[Any]):
         Returns:
             The parsed tool calls.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class JsonOutputKeyToolsParser(JsonOutputToolsParser):

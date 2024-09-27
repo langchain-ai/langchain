@@ -467,4 +467,4 @@ class FewShotChatMessagePromptTemplate(
         Returns:
             A pretty representation of the prompt template.
         """
-        raise NotImplementedError()
+        raise NotImplementedError

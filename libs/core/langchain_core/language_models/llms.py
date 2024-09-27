@@ -695,7 +695,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         Returns:
             An iterator of GenerationChunks.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     async def _astream(
         self,

@@ -65,7 +65,7 @@ class CustomAddTextsVectorstore(VectorStore):
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> list[Document]:
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 def test_default_add_documents() -> None:
