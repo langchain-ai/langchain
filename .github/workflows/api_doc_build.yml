@@ -20,6 +20,7 @@ jobs:
         with:
           repository: langchain-ai/langchain-api-docs-html
           path: langchain-api-docs-html
+          token: ${{ secrets.TOKEN_GITHUB_API_DOCS_HTML }}
       - uses: actions/checkout@v4
         with:
           repository: langchain-ai/langchain-google
