@@ -8,7 +8,7 @@ on:
         required: false
         default: '3.11'
       working-directory:
-        description: 'Working directory or specific notebook file'
+        description: 'Working directory or subset (e.g., docs/docs/tutorials/llm_chain.ipynb)'
         required: false
         default: 'all'
   schedule:
