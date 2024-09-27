@@ -13,18 +13,17 @@ DOCS_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CASSETTES_PATH = os.path.join(DOCS_PATH, "cassettes")
 
 # TODO: populate if needed
-NOTEBOOKS_NO_CASSETTES = []
+NOTEBOOKS_NO_CASSETTES = [
+    "docs/docs/tutorials/retrievers.ipynb",  # TODO: fix non-determinism
+]
 
 NOTEBOOKS_NO_EXECUTION = [
-    "docs/docs/tutorials/local_rag.ipynb",  # Local LLMs
     "docs/docs/tutorials/graph.ipynb",  # Requires local graph db running
+    "docs/docs/tutorials/local_rag.ipynb",  # Local LLMs
     "docs/docs/tutorials/query_analysis.ipynb",  # Requires youtube_transcript_api
     "docs/docs/tutorials/sql_qa.ipynb",  # Requires Chinook db locally
     "docs/docs/tutorials/summarization.ipynb",  # TODO: source of non-determinism somewhere, fix or add to no cassettes
 ]
-
-with open(os.path.join(DOCS_PATH, "notebooks_no_execution.json"), "w") as f:
-    json.dump(NOTEBOOKS_NO_EXECUTION, f)
 
 
 def comment_install_cells(notebook: nbformat.NotebookNode) -> nbformat.NotebookNode:
@@ -81,18 +80,40 @@ def add_vcr_to_notebook(
             continue
 
         cell_id = cell.get("id", idx)
-        cassette_name = f"{cassette_prefix}_{cell_id}.yaml"
-        cell.source = (
-            f"with vcr.use_cassette('{cassette_name}', filter_headers=['x-api-key', 'authorization'], record_mode='once'):\n"
-            + "\n".join(f"    {line}" for line in lines)
+        cassette_name = f"{cassette_prefix}_{cell_id}.msgpack.zlib"
+        cell.source = f"with custom_vcr.use_cassette('{cassette_name}', filter_headers=['x-api-key', 'authorization'], record_mode='once', serializer='advanced_compressed'):\n" + "\n".join(
+            f"    {line}" for line in lines
         )
 
     # Add import statement
     vcr_import_lines = [
-        "import vcr",
-        # this is needed for ChatAnthropic
         "import nest_asyncio",
         "nest_asyncio.apply()",
+        "import vcr",
+        "import msgpack",
+        "import base64",
+        "import zlib",
+        "custom_vcr = vcr.VCR()",
+        "",
+        "def compress_data(data, compression_level=9):",
+        "    packed = msgpack.packb(data, use_bin_type=True)",
+        "    compressed = zlib.compress(packed, level=compression_level)",
+        "    return base64.b64encode(compressed).decode('utf-8')",
+        "",
+        "def decompress_data(compressed_string):",
+        "    decoded = base64.b64decode(compressed_string)",
+        "    decompressed = zlib.decompress(decoded)",
+        "    return msgpack.unpackb(decompressed, raw=False)",
+        "",
+        "class AdvancedCompressedSerializer:",
+        "    def serialize(self, cassette_dict):",
+        "        return compress_data(cassette_dict)",
+        "",
+        "    def deserialize(self, cassette_string):",
+        "        return decompress_data(cassette_string)",
+        "",
+        "custom_vcr.register_serializer('advanced_compressed', AdvancedCompressedSerializer())",
+        "custom_vcr.serializer = 'advanced_compressed'",
     ]
     import_cell = nbformat.v4.new_code_cell(source="\n".join(vcr_import_lines))
     import_cell.pop("id", None)
@@ -121,10 +142,24 @@ def process_notebooks(should_comment_install_cells: bool) -> None:
                             notebook, cassette_prefix=cassette_prefix
                         )
 
+                    if notebook_path in NOTEBOOKS_NO_EXECUTION:
+                        # Add a cell at the beginning to indicate that this notebook should not be executed
+                        warning_cell = nbformat.v4.new_markdown_cell(
+                            source="**Warning:** This notebook is not meant to be executed automatically."
+                        )
+                        notebook.cells.insert(0, warning_cell)
+
+                        # Add a special tag to the first code cell
+                        if notebook.cells and notebook.cells[1].cell_type == "code":
+                            notebook.cells[1].metadata["tags"] = notebook.cells[1].metadata.get("tags", []) + ["no_execution"]
+
                     nbformat.write(notebook, notebook_path)
                     logger.info(f"Processed: {notebook_path}")
                 except Exception as e:
                     logger.error(f"Error processing {notebook_path}: {e}")
+
+    with open(os.path.join(DOCS_PATH, "notebooks_no_execution.json"), "w") as f:
+        json.dump(NOTEBOOKS_NO_EXECUTION, f)
 
 
 @click.command()
