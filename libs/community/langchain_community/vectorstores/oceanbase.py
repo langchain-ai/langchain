@@ -1,7 +1,7 @@
 import json
 import logging
 import uuid
-from typing import Any, Iterable, List, Optional, Tuple
+from typing import Any, Iterable, List, Optional, Sequence, Tuple
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
@@ -85,7 +85,7 @@ class OceanBase(VectorStore):
         ValueError: If the pyobvector python package is not installed.
     """
 
-    def __init__(
+    def __init__(  # type: ignore[no-untyped-def]
         self,
         embedding_function: Embeddings,
         table_name: str = DEFAULT_OCEANBASE_VECTOR_TABLE_NAME,
@@ -99,18 +99,11 @@ class OceanBase(VectorStore):
         text_field: str = "document",
         metadata_field: Optional[str] = None,
         vidx_name: str = "vidx",
-        partitions=None,
+        partitions: Optional[Any] = None,
         extra_columns: Optional[List[Column]] = None,
         **kwargs,
     ):
         """Initialize the OceanBase vector store."""
-        try:
-            from pyobvector import ObVecClient
-        except ImportError:
-            raise ImportError(
-                "Could not import pyobvector package. "
-                "Please install it with `pip install pyobvector`."
-            )
 
         self.embedding_function = embedding_function
         self.table_name = table_name
@@ -120,7 +113,6 @@ class OceanBase(VectorStore):
             else DEFAULT_OCEANBASE_CONNECTION
         )
         self.extra_columns = extra_columns
-        self.obvector: Optional[ObVecClient] = None
         self._create_client(**kwargs)
         assert self.obvector is not None
 
@@ -153,7 +145,7 @@ class OceanBase(VectorStore):
     def embeddings(self) -> Embeddings:
         return self.embedding_function
 
-    def _create_client(self, **kwargs):
+    def _create_client(self, **kwargs):  # type: ignore[no-untyped-def]
         try:
             from pyobvector import ObVecClient
         except ImportError:
@@ -176,7 +168,7 @@ class OceanBase(VectorStore):
             **kwargs,
         )
 
-    def _load_table(self):
+    def _load_table(self) -> None:
         table = Table(
             self.table_name,
             self.obvector.metadata_obj,
@@ -192,7 +184,7 @@ class OceanBase(VectorStore):
         self.text_field = column_names[2]
         self.metadata_field = None if len(column_names) == 3 else column_names[3]
 
-    def _create_table_with_index(self, embeddings: list):
+    def _create_table_with_index(self, embeddings: list) -> None:
         try:
             from pyobvector import VECTOR
         except ImportError:
@@ -235,7 +227,7 @@ class OceanBase(VectorStore):
             paritions=self.partition,
         )
 
-    def _parse_metric_type_str_to_dist_func(self):
+    def _parse_metric_type_str_to_dist_func(self) -> Any:
         if self.vidx_metric_type == "l2":
             return func.l2_distance
         if self.vidx_metric_type == "cosine":
@@ -368,7 +360,7 @@ class OceanBase(VectorStore):
         ids: Optional[List[str]] = None,
         extras: Optional[List[dict]] = None,
         **kwargs: Any,
-    ):
+    ) -> "OceanBase":
         """Create a OceanBase table, indexes it with HNSW, and insert data.
 
         Args:
@@ -377,8 +369,7 @@ class OceanBase(VectorStore):
             metadatas (Optional[List[dict]]): Metadata for each text if it exists.
                 Defaults to None.
             table_name (str): Table name to use. Defaults to "langchain_vector".
-            connection_args (Optional[dict[str, Any]]): The connection args used for
-                this class comes in the form of a dict. Refer to 
+            connection_args (Optional[dict[str, Any]]): Refer to
                 `DEFAULT_OCEANBASE_CONNECTION` for example.
             vidx_metric_type (str): Metric method of distance between vectors.
                 This parameter takes values in `l2` and `ip`. Defaults to `l2`.
@@ -420,7 +411,7 @@ class OceanBase(VectorStore):
             where_clause=([text(fltr)] if fltr is not None else None),
         )
 
-    def get_by_ids(self, ids: List[str], **kwargs) -> list[Document]:
+    def get_by_ids(self, ids: Sequence[str], /) -> list[Document]:
         """Get entities by vector ID.
 
         Args:
