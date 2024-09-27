@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import contextlib
 import mimetypes
+from collections.abc import Generator
 from io import BufferedReader, BytesIO
 from pathlib import PurePath
-from typing import Any, Generator, Literal, Optional, Union, cast
+from typing import Any, Literal, Optional, Union, cast
 
 from pydantic import ConfigDict, Field, field_validator, model_validator
 
@@ -106,7 +107,7 @@ class Blob(BaseMedia):
                 print(f.read())
     """
 
-    data: Union[bytes, str, None]
+    data: Union[bytes, str, None] = None
     """Raw data associated with the blob."""
     mimetype: Optional[str] = None
     """MimeType not to be confused with a file extension."""

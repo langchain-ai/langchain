@@ -14,11 +14,10 @@ import contextlib
 import functools
 import inspect
 import warnings
+from collections.abc import Generator
 from typing import (
     Any,
     Callable,
-    Generator,
-    Type,
     TypeVar,
     Union,
     cast,
@@ -41,7 +40,7 @@ class LangChainPendingDeprecationWarning(PendingDeprecationWarning):
 
 
 # Last Any should be FieldInfoV1 but this leads to circular imports
-T = TypeVar("T", bound=Union[Type, Callable[..., Any], Any])
+T = TypeVar("T", bound=Union[type, Callable[..., Any], Any])
 
 
 def _validate_deprecation_params(
@@ -199,10 +198,9 @@ def deprecated(
 
             def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:
                 """Finalize the deprecation of a class."""
-                try:
+                # Can't set new_doc on some extension objects.
+                with contextlib.suppress(AttributeError):
                     obj.__doc__ = new_doc
-                except AttributeError:  # Can't set on some extension objects.
-                    pass
 
                 def warn_if_direct_instance(
                     self: Any, *args: Any, **kwargs: Any
@@ -262,10 +260,10 @@ def deprecated(
             if not _obj_type:
                 _obj_type = "attribute"
             wrapped = None
-            _name = _name or cast(Union[Type, Callable], obj.fget).__qualname__
+            _name = _name or cast(Union[type, Callable], obj.fget).__qualname__
             old_doc = obj.__doc__
 
-            class _deprecated_property(property):
+            class _DeprecatedProperty(property):
                 """A deprecated property."""
 
                 def __init__(self, fget=None, fset=None, fdel=None, doc=None):  # type: ignore[no-untyped-def]
@@ -298,13 +296,13 @@ def deprecated(
                 """Finalize the property."""
                 return cast(
                     T,
-                    _deprecated_property(
+                    _DeprecatedProperty(
                         fget=obj.fget, fset=obj.fset, fdel=obj.fdel, doc=new_doc
                     ),
                 )
 
         else:
-            _name = _name or cast(Union[Type, Callable], obj).__qualname__
+            _name = _name or cast(Union[type, Callable], obj).__qualname__
             if not _obj_type:
                 # edge case: when a function is within another function
                 # within a test, this will call it a "method" not a "function"

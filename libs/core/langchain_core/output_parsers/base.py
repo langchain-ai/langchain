@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 from abc import ABC, abstractmethod
 from typing import (
     TYPE_CHECKING,
@@ -9,6 +10,8 @@ from typing import (
     TypeVar,
     Union,
 )
+
+from typing_extensions import override
 
 from langchain_core.language_models import LanguageModelOutput
 from langchain_core.messages import AnyMessage, BaseMessage
@@ -63,11 +66,13 @@ class BaseGenerationOutputParser(
     """Base class to parse the output of an LLM call."""
 
     @property
+    @override
     def InputType(self) -> Any:
         """Return the input type for the parser."""
         return Union[str, AnyMessage]
 
     @property
+    @override
     def OutputType(self) -> type[T]:
         """Return the output type for the parser."""
         # even though mypy complains this isn't valid,
@@ -148,11 +153,13 @@ class BaseOutputParser(
     """  # noqa: E501
 
     @property
+    @override
     def InputType(self) -> Any:
         """Return the input type for the parser."""
         return Union[str, AnyMessage]
 
     @property
+    @override
     def OutputType(self) -> type[T]:
         """Return the output type for the parser.
 
@@ -305,8 +312,6 @@ class BaseOutputParser(
     def dict(self, **kwargs: Any) -> dict:
         """Return dictionary representation of output parser."""
         output_parser_dict = super().dict(**kwargs)
-        try:
+        with contextlib.suppress(NotImplementedError):
             output_parser_dict["_type"] = self._type
-        except NotImplementedError:
-            pass
         return output_parser_dict

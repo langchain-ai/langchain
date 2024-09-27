@@ -1,6 +1,5 @@
 """Module to test base parser implementations."""
 
-from typing import List
 from typing import Optional as Optional
 
 from langchain_core.exceptions import OutputParserException
@@ -20,7 +19,7 @@ def test_base_generation_parser() -> None:
         """An example parser that inverts the case of the characters in the message."""
 
         def parse_result(
-            self, result: List[Generation], *, partial: bool = False
+            self, result: list[Generation], *, partial: bool = False
         ) -> str:
             """Parse a list of model Generations into a specific format.
 
@@ -65,7 +64,7 @@ def test_base_transform_output_parser() -> None:
             raise NotImplementedError()
 
         def parse_result(
-            self, result: List[Generation], *, partial: bool = False
+            self, result: list[Generation], *, partial: bool = False
         ) -> str:
             """Parse a list of model Generations into a specific format.
 
@@ -94,5 +93,5 @@ def test_base_transform_output_parser() -> None:
     model = GenericFakeChatModel(messages=iter([AIMessage(content="hello world")]))
     chain = model | StrInvertCase()
     # inputs to models are ignored, response is hard-coded in model definition
-    chunks = [chunk for chunk in chain.stream("")]
+    chunks = list(chain.stream(""))
     assert chunks == ["HELLO", " ", "WORLD"]

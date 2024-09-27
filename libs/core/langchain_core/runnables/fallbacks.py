@@ -1,24 +1,19 @@
 import asyncio
 import inspect
 import typing
+from collections.abc import AsyncIterator, Iterator, Sequence
 from contextvars import copy_context
 from functools import wraps
 from typing import (
     TYPE_CHECKING,
     Any,
-    AsyncIterator,
-    Dict,
-    Iterator,
-    List,
     Optional,
-    Sequence,
-    Tuple,
-    Type,
     Union,
     cast,
 )
 
 from pydantic import BaseModel, ConfigDict
+from typing_extensions import override
 
 from langchain_core.runnables.base import Runnable, RunnableSerializable
 from langchain_core.runnables.config import (
@@ -96,7 +91,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     """The Runnable to run first."""
     fallbacks: Sequence[Runnable[Input, Output]]
     """A sequence of fallbacks to try."""
-    exceptions_to_handle: Tuple[Type[BaseException], ...] = (Exception,)
+    exceptions_to_handle: tuple[type[BaseException], ...] = (Exception,)
     """The exceptions on which fallbacks should be tried.
     
     Any exception that is not a subclass of these exceptions will be raised immediately.
@@ -112,25 +107,27 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     )
 
     @property
-    def InputType(self) -> Type[Input]:
+    @override
+    def InputType(self) -> type[Input]:
         return self.runnable.InputType
 
     @property
-    def OutputType(self) -> Type[Output]:
+    @override
+    def OutputType(self) -> type[Output]:
         return self.runnable.OutputType
 
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
+    ) -> type[BaseModel]:
         return self.runnable.get_input_schema(config)
 
     def get_output_schema(
         self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
+    ) -> type[BaseModel]:
         return self.runnable.get_output_schema(config)
 
     @property
-    def config_specs(self) -> List[ConfigurableFieldSpec]:
+    def config_specs(self) -> list[ConfigurableFieldSpec]:
         return get_unique_config_specs(
             spec
             for step in [self.runnable, *self.fallbacks]
@@ -142,7 +139,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         return True
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "schema", "runnable"]
 
@@ -252,12 +249,12 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
 
     def batch(
         self,
-        inputs: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: list[Input],
+        config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
         *,
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
-    ) -> List[Output]:
+    ) -> list[Output]:
         from langchain_core.callbacks.manager import CallbackManager
 
         if self.exception_key is not None and not all(
@@ -296,9 +293,9 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             for cm, input, config in zip(callback_managers, inputs, configs)
         ]
 
-        to_return: Dict[int, Any] = {}
-        run_again = {i: input for i, input in enumerate(inputs)}
-        handled_exceptions: Dict[int, BaseException] = {}
+        to_return: dict[int, Any] = {}
+        run_again = dict(enumerate(inputs))
+        handled_exceptions: dict[int, BaseException] = {}
         first_to_raise = None
         for runnable in self.runnables:
             outputs = runnable.batch(
@@ -344,12 +341,12 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
 
     async def abatch(
         self,
-        inputs: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: list[Input],
+        config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
         *,
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
-    ) -> List[Output]:
+    ) -> list[Output]:
         from langchain_core.callbacks.manager import AsyncCallbackManager
 
         if self.exception_key is not None and not all(
@@ -378,7 +375,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             for config in configs
         ]
         # start the root runs, one per input
-        run_managers: List[AsyncCallbackManagerForChainRun] = await asyncio.gather(
+        run_managers: list[AsyncCallbackManagerForChainRun] = await asyncio.gather(
             *(
                 cm.on_chain_start(
                     None,
@@ -391,8 +388,8 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         )
 
         to_return = {}
-        run_again = {i: input for i, input in enumerate(inputs)}
-        handled_exceptions: Dict[int, BaseException] = {}
+        run_again = dict(enumerate(inputs))
+        handled_exceptions: dict[int, BaseException] = {}
         first_to_raise = None
         for runnable in self.runnables:
             outputs = await runnable.abatch(
@@ -622,7 +619,8 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                 return self.__class__(
                     **{
                         **self.model_dump(),
-                        **{"runnable": new_runnable, "fallbacks": new_fallbacks},
+                        "runnable": new_runnable,
+                        "fallbacks": new_fallbacks,
                     }
                 )
 

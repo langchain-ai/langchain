@@ -1,7 +1,7 @@
 import base64
 import re
 from dataclasses import asdict
-from typing import Dict, List, Optional
+from typing import Optional
 
 from langchain_core.runnables.graph import (
     CurveStyle,
@@ -15,8 +15,8 @@ MARKDOWN_SPECIAL_CHARS = "*_`"
 
 
 def draw_mermaid(
-    nodes: Dict[str, Node],
-    edges: List[Edge],
+    nodes: dict[str, Node],
+    edges: list[Edge],
     *,
     first_node: Optional[str] = None,
     last_node: Optional[str] = None,
@@ -87,7 +87,7 @@ def draw_mermaid(
             mermaid_graph += f"\t{node_label}\n"
 
     # Group edges by their common prefixes
-    edge_groups: Dict[str, List[Edge]] = {}
+    edge_groups: dict[str, list[Edge]] = {}
     for edge in edges:
         src_parts = edge.source.split(":")
         tgt_parts = edge.target.split(":")
@@ -98,7 +98,7 @@ def draw_mermaid(
 
     seen_subgraphs = set()
 
-    def add_subgraph(edges: List[Edge], prefix: str) -> None:
+    def add_subgraph(edges: list[Edge], prefix: str) -> None:
         nonlocal mermaid_graph
         self_loop = len(edges) == 1 and edges[0].source == edges[0].target
         if prefix and not self_loop:
@@ -131,10 +131,7 @@ def draw_mermaid(
                 else:
                     edge_label = f" -- &nbsp;{edge_data}&nbsp; --> "
             else:
-                if edge.conditional:
-                    edge_label = " -.-> "
-                else:
-                    edge_label = " --> "
+                edge_label = " -.-> " if edge.conditional else " --> "
 
             mermaid_graph += (
                 f"\t{_escape_node_label(source)}{edge_label}"
@@ -142,7 +139,7 @@ def draw_mermaid(
             )
 
         # Recursively add nested subgraphs
-        for nested_prefix in edge_groups.keys():
+        for nested_prefix in edge_groups:
             if not nested_prefix.startswith(prefix + ":") or nested_prefix == prefix:
                 continue
             add_subgraph(edge_groups[nested_prefix], nested_prefix)
@@ -154,7 +151,7 @@ def draw_mermaid(
     add_subgraph(edge_groups.get("", []), "")
 
     # Add remaining subgraphs
-    for prefix in edge_groups.keys():
+    for prefix in edge_groups:
         if ":" in prefix or prefix == "":
             continue
         add_subgraph(edge_groups[prefix], prefix)

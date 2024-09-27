@@ -5,17 +5,13 @@ from __future__ import annotations
 import hashlib
 import json
 import uuid
+from collections.abc import AsyncIterable, AsyncIterator, Iterable, Iterator, Sequence
 from itertools import islice
 from typing import (
     Any,
-    AsyncIterable,
-    AsyncIterator,
     Callable,
-    Iterable,
-    Iterator,
     Literal,
     Optional,
-    Sequence,
     TypedDict,
     TypeVar,
     Union,
@@ -96,7 +92,7 @@ class _HashedDocument(Document):
         values["metadata_hash"] = metadata_hash
         values["hash_"] = str(_hash_string_to_uuid(content_hash + metadata_hash))
 
-        _uid = values.get("uid", None)
+        _uid = values.get("uid")
 
         if _uid is None:
             values["uid"] = values["hash_"]

@@ -2,12 +2,11 @@ from __future__ import annotations
 
 import json
 from json import JSONDecodeError
-from typing import Any, Optional, TypeVar, Union
+from typing import Annotated, Any, Optional, TypeVar, Union
 
 import jsonpatch  # type: ignore[import]
 import pydantic
 from pydantic import SkipValidation
-from typing_extensions import Annotated
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers.format_instructions import JSON_FORMAT_INSTRUCTIONS
@@ -50,12 +49,10 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
         return jsonpatch.make_patch(prev, next).patch
 
     def _get_schema(self, pydantic_object: type[TBaseModel]) -> dict[str, Any]:
-        if PYDANTIC_MAJOR_VERSION == 2:
-            if issubclass(pydantic_object, pydantic.BaseModel):
-                return pydantic_object.model_json_schema()
-            elif issubclass(pydantic_object, pydantic.v1.BaseModel):
-                return pydantic_object.model_json_schema()
-        return pydantic_object.model_json_schema()
+        if issubclass(pydantic_object, pydantic.BaseModel):
+            return pydantic_object.model_json_schema()
+        elif issubclass(pydantic_object, pydantic.v1.BaseModel):
+            return pydantic_object.schema()
 
     def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:
         """Parse the result of an LLM call to a JSON object.
@@ -109,7 +106,7 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
             return "Return a JSON object."
         else:
             # Copy schema to avoid altering original Pydantic schema.
-            schema = {k: v for k, v in self._get_schema(self.pydantic_object).items()}
+            schema = dict(self._get_schema(self.pydantic_object).items())
 
             # Remove extraneous fields.
             reduced_schema = schema

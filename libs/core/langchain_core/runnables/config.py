@@ -3,25 +3,12 @@ from __future__ import annotations
 import asyncio
 import uuid
 import warnings
+from collections.abc import Awaitable, Generator, Iterable, Iterator, Sequence
 from concurrent.futures import Executor, Future, ThreadPoolExecutor
 from contextlib import contextmanager
 from contextvars import ContextVar, copy_context
 from functools import partial
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Awaitable,
-    Callable,
-    Generator,
-    Iterable,
-    Iterator,
-    List,
-    Optional,
-    Sequence,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar, Union, cast
 
 from typing_extensions import ParamSpec, TypedDict
 
@@ -43,13 +30,11 @@ if TYPE_CHECKING:
 else:
     # Pydantic validates through typed dicts, but
     # the callbacks need forward refs updated
-    Callbacks = Optional[Union[List, Any]]
+    Callbacks = Optional[Union[list, Any]]
 
 
 class EmptyDict(TypedDict, total=False):
     """Empty dict type."""
-
-    pass
 
 
 class RunnableConfig(TypedDict, total=False):
@@ -136,17 +121,29 @@ def _set_config_context(config: RunnableConfig) -> None:
     Args:
         config (RunnableConfig): The config to set.
     """
-    from langsmith import (
-        RunTree,  # type: ignore
-        run_helpers,  # type: ignore
-    )
+    from langchain_core.tracers.langchain import LangChainTracer
 
     var_child_runnable_config.set(config)
-    if hasattr(RunTree, "from_runnable_config"):
-        # import _set_tracing_context, get_tracing_context
-        rt = RunTree.from_runnable_config(dict(config))
-        tc = run_helpers.get_tracing_context()
-        run_helpers._set_tracing_context({**tc, "parent": rt})
+    if (
+        (callbacks := config.get("callbacks"))
+        and (
+            parent_run_id := getattr(callbacks, "parent_run_id", None)
+        )  # Is callback manager
+        and (
+            tracer := next(
+                (
+                    handler
+                    for handler in getattr(callbacks, "handlers", [])
+                    if isinstance(handler, LangChainTracer)
+                ),
+                None,
+            )
+        )
+        and (run := tracer.run_map.get(str(parent_run_id)))
+    ):
+        from langsmith.run_helpers import _set_tracing_context
+
+        _set_tracing_context({"parent": run})
 
 
 def ensure_config(config: Optional[RunnableConfig] = None) -> RunnableConfig:

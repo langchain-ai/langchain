@@ -1,16 +1,17 @@
 from __future__ import annotations
 
+import contextlib
 import json
+import typing
 from abc import ABC, abstractmethod
+from collections.abc import Mapping
 from functools import cached_property
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Dict,
     Generic,
-    Mapping,
     Optional,
     TypeVar,
     Union,
@@ -18,7 +19,7 @@ from typing import (
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, model_validator
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from langchain_core.load import dumpd
 from langchain_core.output_parsers.base import BaseOutputParser
@@ -39,7 +40,7 @@ FormatOutputType = TypeVar("FormatOutputType")
 
 
 class BasePromptTemplate(
-    RunnableSerializable[Dict, PromptValue], Generic[FormatOutputType], ABC
+    RunnableSerializable[dict, PromptValue], Generic[FormatOutputType], ABC
 ):
     """Base class for all prompt templates, returning a prompt."""
 
@@ -50,7 +51,7 @@ class BasePromptTemplate(
     """optional_variables: A list of the names of the variables for placeholder
        or MessagePlaceholder that are optional. These variables are auto inferred 
        from the prompt and user need not provide them."""
-    input_types: Dict[str, Any] = Field(default_factory=dict, exclude=True)  # noqa: UP006
+    input_types: typing.Dict[str, Any] = Field(default_factory=dict, exclude=True)  # noqa: UP006
     """A dictionary of the types of the variables the prompt template expects.
     If not provided, all variables are assumed to be strings."""
     output_parser: Optional[BaseOutputParser] = None
@@ -60,7 +61,7 @@ class BasePromptTemplate(
     
     Partial variables populate the template so that you don't need to
     pass them in every time you call the prompt."""
-    metadata: Optional[Dict[str, Any]] = None  # noqa: UP006
+    metadata: Optional[typing.Dict[str, Any]] = None  # noqa: UP006
     """Metadata to be used for tracing."""
     tags: Optional[list[str]] = None
     """Tags to be used for tracing."""
@@ -107,6 +108,7 @@ class BasePromptTemplate(
         return dumpd(self)
 
     @property
+    @override
     def OutputType(self) -> Any:
         """Return the output type of the prompt."""
         return Union[StringPromptValue, ChatPromptValueConcrete]
@@ -318,10 +320,8 @@ class BasePromptTemplate(
             NotImplementedError: If the prompt type is not implemented.
         """
         prompt_dict = super().model_dump(**kwargs)
-        try:
+        with contextlib.suppress(NotImplementedError):
             prompt_dict["_type"] = self._prompt_type
-        except NotImplementedError:
-            pass
         return prompt_dict
 
     def save(self, file_path: Union[Path, str]) -> None:
@@ -349,10 +349,7 @@ class BasePromptTemplate(
             raise NotImplementedError(f"Prompt {self} does not support saving.")
 
         # Convert file to Path object.
-        if isinstance(file_path, str):
-            save_path = Path(file_path)
-        else:
-            save_path = file_path
+        save_path = Path(file_path) if isinstance(file_path, str) else file_path
 
         directory_path = save_path.parent
         directory_path.mkdir(parents=True, exist_ok=True)

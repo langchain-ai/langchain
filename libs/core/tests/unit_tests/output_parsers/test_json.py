@@ -1,5 +1,6 @@
 import json
-from typing import Any, AsyncIterator, Iterator, Tuple
+from collections.abc import AsyncIterator, Iterator
+from typing import Any
 
 import pytest
 from pydantic import BaseModel
@@ -245,7 +246,7 @@ TEST_CASES_PARTIAL = [
 
 
 @pytest.mark.parametrize("json_strings", TEST_CASES_PARTIAL)
-def test_parse_partial_json(json_strings: Tuple[str, str]) -> None:
+def test_parse_partial_json(json_strings: tuple[str, str]) -> None:
     case, expected = json_strings
     parsed = parse_partial_json(case)
     assert parsed == json.loads(expected)
@@ -595,10 +596,10 @@ def test_base_model_schema_consistency() -> None:
         setup: str
         punchline: str
 
-    initial_joke_schema = {k: v for k, v in _schema(Joke).items()}
+    initial_joke_schema = dict(_schema(Joke).items())
     SimpleJsonOutputParser(pydantic_object=Joke)
     openai_func = convert_to_openai_function(Joke)
-    retrieved_joke_schema = {k: v for k, v in _schema(Joke).items()}
+    retrieved_joke_schema = dict(_schema(Joke).items())
 
     assert initial_joke_schema == retrieved_joke_schema
     assert openai_func.get("name", None) is not None

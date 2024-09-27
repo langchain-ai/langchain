@@ -3,15 +3,13 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
+from collections.abc import AsyncIterator, Iterator, Sequence
 from typing import (
     TYPE_CHECKING,
     Any,
-    AsyncIterator,
-    Iterator,
-    List,
     Optional,
-    Sequence,
     TypeVar,
     Union,
     cast,
@@ -459,7 +457,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         output: Union[dict, BaseMessage] = {}
 
         if run_info["run_type"] == "chat_model":
-            generations = cast(List[List[ChatGenerationChunk]], response.generations)
+            generations = cast(list[list[ChatGenerationChunk]], response.generations)
             for gen in generations:
                 if output != {}:
                     break
@@ -469,7 +467,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
 
             event = "on_chat_model_end"
         elif run_info["run_type"] == "llm":
-            generations = cast(List[List[GenerationChunk]], response.generations)
+            generations = cast(list[list[GenerationChunk]], response.generations)
             output = {
                 "generations": [
                     [
@@ -817,10 +815,7 @@ async def _astream_events_implementation_v1(
             data: EventData = {}
             log_entry: LogEntry = run_log.state["logs"][path]
             if log_entry["end_time"] is None:
-                if log_entry["streamed_output"]:
-                    event_type = "stream"
-                else:
-                    event_type = "start"
+                event_type = "stream" if log_entry["streamed_output"] else "start"
             else:
                 event_type = "end"
 
@@ -832,7 +827,6 @@ async def _astream_events_implementation_v1(
                 inputs = log_entry["inputs"]
                 if inputs is not None:
                     data["input"] = inputs
-                pass
 
             if event_type == "end":
                 inputs = log_entry["inputs"]
@@ -987,21 +981,24 @@ async def _astream_events_implementation_v2(
                 yield event
                 continue
 
-            if event["run_id"] == first_event_run_id and event["event"].endswith(
-                "_end"
+            # If it's the end event corresponding to the root runnable
+            # we dont include the input in the event since it's guaranteed
+            # to be included in the first event.
+            if (
+                event["run_id"] == first_event_run_id
+                and event["event"].endswith("_end")
+                and "input" in event["data"]
             ):
-                # If it's the end event corresponding to the root runnable
-                # we dont include the input in the event since it's guaranteed
-                # to be included in the first event.
-                if "input" in event["data"]:
-                    del event["data"]["input"]
+                del event["data"]["input"]
 
             yield event
+    except asyncio.CancelledError as exc:
+        # Cancel the task if it's still running
+        task.cancel(exc.args[0] if exc.args else None)
+        raise
     finally:
         # Cancel the task if it's still running
         task.cancel()
         # Await it anyway, to run any cleanup code, and propagate any exceptions
-        try:
+        with contextlib.suppress(asyncio.CancelledError):
             await task
-        except asyncio.CancelledError:
-            pass

@@ -6,14 +6,13 @@ import logging
 import sys
 import traceback
 from abc import ABC, abstractmethod
+from collections.abc import Coroutine, Sequence
 from datetime import datetime, timezone
 from typing import (
     TYPE_CHECKING,
     Any,
-    Coroutine,
     Literal,
     Optional,
-    Sequence,
     Union,
     cast,
 )
@@ -119,7 +118,7 @@ class _TracerCore(ABC):
                     self._add_child_run(parent_run, run)
             else:
                 if self.log_missing_parent:
-                    logger.warning(
+                    logger.debug(
                         f"Parent run {run.parent_run_id} not found for run {run.id}."
                         " Treating as a root run."
                     )

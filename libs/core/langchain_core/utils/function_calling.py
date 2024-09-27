@@ -10,21 +10,17 @@ import typing
 import uuid
 from typing import (
     TYPE_CHECKING,
+    Annotated,
     Any,
     Callable,
-    Dict,
-    List,
     Literal,
     Optional,
-    Set,
-    Tuple,
-    Type,
     Union,
     cast,
 )
 
 from pydantic import BaseModel
-from typing_extensions import Annotated, TypedDict, get_args, get_origin, is_typeddict
+from typing_extensions import TypedDict, get_args, get_origin, is_typeddict
 
 from langchain_core._api import deprecated
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
@@ -68,7 +64,7 @@ def _rm_titles(kv: dict, prev_key: str = "") -> dict:
     new_kv = {}
     for k, v in kv.items():
         if k == "title":
-            if isinstance(v, dict) and prev_key == "properties" and "title" in v.keys():
+            if isinstance(v, dict) and prev_key == "properties" and "title" in v:
                 new_kv[k] = _rm_titles(v, k)
             else:
                 continue
@@ -201,7 +197,7 @@ def _convert_typed_dict_to_openai_function(typed_dict: type) -> FunctionDescript
     from pydantic.v1 import BaseModel
 
     model = cast(
-        Type[BaseModel],
+        type[BaseModel],
         _convert_any_typed_dicts_to_pydantic(typed_dict, visited=visited),
     )
     return convert_pydantic_to_openai_function(model)  # type: ignore
@@ -237,9 +233,7 @@ def _convert_any_typed_dicts_to_pydantic(
                 new_arg_type = _convert_any_typed_dicts_to_pydantic(
                     annotated_args[0], depth=depth + 1, visited=visited
                 )
-                field_kwargs = {
-                    k: v for k, v in zip(("default", "description"), annotated_args[1:])
-                }
+                field_kwargs = dict(zip(("default", "description"), annotated_args[1:]))
                 if (field_desc := field_kwargs.get("description")) and not isinstance(
                     field_desc, str
                 ):
@@ -383,15 +377,15 @@ def convert_to_openai_function(
             "parameters": function,
         }
     elif isinstance(function, type) and is_basemodel_subclass(function):
-        oai_function = cast(Dict, convert_pydantic_to_openai_function(function))
+        oai_function = cast(dict, convert_pydantic_to_openai_function(function))
     elif is_typeddict(function):
         oai_function = cast(
-            Dict, _convert_typed_dict_to_openai_function(cast(Type, function))
+            dict, _convert_typed_dict_to_openai_function(cast(type, function))
         )
     elif isinstance(function, BaseTool):
-        oai_function = cast(Dict, format_tool_to_openai_function(function))
+        oai_function = cast(dict, format_tool_to_openai_function(function))
     elif callable(function):
-        oai_function = cast(Dict, convert_python_function_to_openai_function(function))
+        oai_function = cast(dict, convert_python_function_to_openai_function(function))
     else:
         raise ValueError(
             f"Unsupported function\n\n{function}\n\nFunctions must be passed in"
@@ -567,7 +561,7 @@ def _parse_google_docstring(
             if block.startswith("Args:"):
                 args_block = block
                 break
-            elif block.startswith("Returns:") or block.startswith("Example:"):
+            elif block.startswith(("Returns:", "Example:")):
                 # Don't break in case Args come after
                 past_descriptors = True
             elif not past_descriptors:
@@ -598,17 +592,17 @@ def _py_38_safe_origin(origin: type) -> type:
     )
 
     origin_map: dict[type, Any] = {
-        dict: Dict,
-        list: List,
-        tuple: Tuple,
-        set: Set,
+        dict: dict,
+        list: list,
+        tuple: tuple,
+        set: set,
         collections.abc.Iterable: typing.Iterable,
         collections.abc.Mapping: typing.Mapping,
         collections.abc.Sequence: typing.Sequence,
         collections.abc.MutableMapping: typing.MutableMapping,
         **origin_union_type_map,
     }
-    return cast(Type, origin_map.get(origin, origin))
+    return cast(type, origin_map.get(origin, origin))
 
 
 def _recursive_set_additional_properties_false(

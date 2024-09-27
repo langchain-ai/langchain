@@ -3,23 +3,20 @@ from __future__ import annotations
 import enum
 import threading
 from abc import abstractmethod
+from collections.abc import AsyncIterator, Iterator, Sequence
+from collections.abc import Mapping as Mapping
 from functools import wraps
 from typing import (
     Any,
-    AsyncIterator,
     Callable,
-    Iterator,
-    List,
     Optional,
-    Sequence,
-    Type,
     Union,
     cast,
 )
-from typing import Mapping as Mapping
 from weakref import WeakValueDictionary
 
 from pydantic import BaseModel, ConfigDict
+from typing_extensions import override
 
 from langchain_core.runnables.base import Runnable, RunnableSerializable
 from langchain_core.runnables.config import (
@@ -72,10 +69,12 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
         return ["langchain", "schema", "runnable"]
 
     @property
+    @override
     def InputType(self) -> type[Input]:
         return self.default.InputType
 
     @property
+    @override
     def OutputType(self) -> type[Output]:
         return self.default.OutputType
 
@@ -176,10 +175,10 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
 
         # If there's only one input, don't bother with the executor
         if len(inputs) == 1:
-            return cast(List[Output], [invoke(prepared[0], inputs[0])])
+            return cast(list[Output], [invoke(prepared[0], inputs[0])])
 
         with get_executor_for_config(configs[0]) as executor:
-            return cast(List[Output], list(executor.map(invoke, prepared, inputs)))
+            return cast(list[Output], list(executor.map(invoke, prepared, inputs)))
 
     async def abatch(
         self,
@@ -458,8 +457,6 @@ RunnableConfigurableFields.model_rebuild()
 class StrEnum(str, enum.Enum):
     """String enum."""
 
-    pass
-
 
 _enums_for_spec: WeakValueDictionary[
     Union[
@@ -562,7 +559,7 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
                         for v in list(self.alternatives.keys()) + [self.default_key]
                     ),
                 )
-                _enums_for_spec[self.which] = cast(Type[StrEnum], which_enum)
+                _enums_for_spec[self.which] = cast(type[StrEnum], which_enum)
         return get_unique_config_specs(
             # which alternative
             [
@@ -694,7 +691,7 @@ def make_options_spec(
                 spec.name or spec.id,
                 ((v, v) for v in list(spec.options.keys())),
             )
-            _enums_for_spec[spec] = cast(Type[StrEnum], enum)
+            _enums_for_spec[spec] = cast(type[StrEnum], enum)
     if isinstance(spec, ConfigurableFieldSingleOption):
         return ConfigurableFieldSpec(
             id=spec.id,

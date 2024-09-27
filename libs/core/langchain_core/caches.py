@@ -23,7 +23,8 @@ Cache directly competes with Memory. See documentation for Pros and Cons.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Optional, Sequence
+from collections.abc import Sequence
+from typing import Any, Optional
 
 from langchain_core.outputs import Generation
 from langchain_core.runnables import run_in_executor

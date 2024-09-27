@@ -6,28 +6,29 @@ import ast
 import asyncio
 import inspect
 import textwrap
+from collections.abc import (
+    AsyncIterable,
+    AsyncIterator,
+    Awaitable,
+    Coroutine,
+    Iterable,
+    Mapping,
+    Sequence,
+)
 from functools import lru_cache
 from inspect import signature
 from itertools import groupby
 from typing import (
     Any,
-    AsyncIterable,
-    AsyncIterator,
-    Awaitable,
     Callable,
-    Coroutine,
-    Dict,
-    Iterable,
-    Mapping,
     NamedTuple,
     Optional,
     Protocol,
-    Sequence,
     TypeVar,
     Union,
 )
 
-from typing_extensions import TypeGuard
+from typing_extensions import TypeGuard, override
 
 from langchain_core.runnables.schema import StreamEvent
 
@@ -134,6 +135,7 @@ class IsLocalDict(ast.NodeVisitor):
         self.name = name
         self.keys = keys
 
+    @override
     def visit_Subscript(self, node: ast.Subscript) -> Any:
         """Visit a subscript node.
 
@@ -153,6 +155,7 @@ class IsLocalDict(ast.NodeVisitor):
             # we've found a subscript access on the name we're looking for
             self.keys.add(node.slice.value)
 
+    @override
     def visit_Call(self, node: ast.Call) -> Any:
         """Visit a call node.
 
@@ -181,6 +184,7 @@ class IsFunctionArgDict(ast.NodeVisitor):
     def __init__(self) -> None:
         self.keys: set[str] = set()
 
+    @override
     def visit_Lambda(self, node: ast.Lambda) -> Any:
         """Visit a lambda function.
 
@@ -195,6 +199,7 @@ class IsFunctionArgDict(ast.NodeVisitor):
         input_arg_name = node.args.args[0].arg
         IsLocalDict(input_arg_name, self.keys).visit(node.body)
 
+    @override
     def visit_FunctionDef(self, node: ast.FunctionDef) -> Any:
         """Visit a function definition.
 
@@ -209,6 +214,7 @@ class IsFunctionArgDict(ast.NodeVisitor):
         input_arg_name = node.args.args[0].arg
         IsLocalDict(input_arg_name, self.keys).visit(node)
 
+    @override
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> Any:
         """Visit an async function definition.
 
@@ -231,6 +237,7 @@ class NonLocals(ast.NodeVisitor):
         self.loads: set[str] = set()
         self.stores: set[str] = set()
 
+    @override
     def visit_Name(self, node: ast.Name) -> Any:
         """Visit a name node.
 
@@ -245,6 +252,7 @@ class NonLocals(ast.NodeVisitor):
         elif isinstance(node.ctx, ast.Store):
             self.stores.add(node.id)
 
+    @override
     def visit_Attribute(self, node: ast.Attribute) -> Any:
         """Visit an attribute node.
 
@@ -271,6 +279,7 @@ class FunctionNonLocals(ast.NodeVisitor):
     def __init__(self) -> None:
         self.nonlocals: set[str] = set()
 
+    @override
     def visit_FunctionDef(self, node: ast.FunctionDef) -> Any:
         """Visit a function definition.
 
@@ -284,6 +293,7 @@ class FunctionNonLocals(ast.NodeVisitor):
         visitor.visit(node)
         self.nonlocals.update(visitor.loads - visitor.stores)
 
+    @override
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> Any:
         """Visit an async function definition.
 
@@ -297,6 +307,7 @@ class FunctionNonLocals(ast.NodeVisitor):
         visitor.visit(node)
         self.nonlocals.update(visitor.loads - visitor.stores)
 
+    @override
     def visit_Lambda(self, node: ast.Lambda) -> Any:
         """Visit a lambda function.
 
@@ -319,6 +330,7 @@ class GetLambdaSource(ast.NodeVisitor):
         self.source: Optional[str] = None
         self.count = 0
 
+    @override
     def visit_Lambda(self, node: ast.Lambda) -> Any:
         """Visit a lambda function.
 
@@ -430,7 +442,7 @@ def indent_lines_after_first(text: str, prefix: str) -> str:
     return "\n".join([lines[0]] + [spaces + line for line in lines[1:]])
 
 
-class AddableDict(Dict[str, Any]):
+class AddableDict(dict[str, Any]):
     """
     Dictionary that can be added to another dictionary.
     """
@@ -484,12 +496,9 @@ def add(addables: Iterable[Addable]) -> Optional[Addable]:
     Returns:
         Optional[Addable]: The result of adding the addable objects.
     """
-    final = None
+    final: Optional[Addable] = None
     for chunk in addables:
-        if final is None:
-            final = chunk
-        else:
-            final = final + chunk
+        final = chunk if final is None else final + chunk
     return final
 
 
@@ -502,12 +511,9 @@ async def aadd(addables: AsyncIterable[Addable]) -> Optional[Addable]:
     Returns:
         Optional[Addable]: The result of adding the addable objects.
     """
-    final = None
+    final: Optional[Addable] = None
     async for chunk in addables:
-        if final is None:
-            final = chunk
-        else:
-            final = final + chunk
+        final = chunk if final is None else final + chunk
     return final
 
 
@@ -630,9 +636,7 @@ def get_unique_config_specs(
     for id, dupes in grouped:
         first = next(dupes)
         others = list(dupes)
-        if len(others) == 0:
-            unique.append(first)
-        elif all(o == first for o in others):
+        if len(others) == 0 or all(o == first for o in others):
             unique.append(first)
         else:
             raise ValueError(

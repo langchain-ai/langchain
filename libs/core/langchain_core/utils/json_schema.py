@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from copy import deepcopy
-from typing import Any, Optional, Sequence
+from typing import Any, Optional
 
 
 def _retrieve_ref(path: str, schema: dict) -> dict:

@@ -1,16 +1,15 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import copy
 import threading
 from collections import defaultdict
+from collections.abc import AsyncIterator, Iterator, Sequence
 from typing import (
     Any,
-    AsyncIterator,
-    Iterator,
     Literal,
     Optional,
-    Sequence,
     TypeVar,
     Union,
     overload,
@@ -255,18 +254,22 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
         """
         async for chunk in output:
             # root run is handled in .astream_log()
-            if run_id != self.root_id:
-                # if we can't find the run silently ignore
-                # eg. because this run wasn't included in the log
-                if key := self._key_map_by_run_id.get(run_id):
-                    if not self.send(
+            # if we can't find the run silently ignore
+            # eg. because this run wasn't included in the log
+            if (
+                run_id != self.root_id
+                and (key := self._key_map_by_run_id.get(run_id))
+                and (
+                    not self.send(
                         {
                             "op": "add",
                             "path": f"/logs/{key}/streamed_output/-",
                             "value": chunk,
                         }
-                    ):
-                        break
+                    )
+                )
+            ):
+                break
 
             yield chunk
 
@@ -282,18 +285,22 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
         """
         for chunk in output:
             # root run is handled in .astream_log()
-            if run_id != self.root_id:
-                # if we can't find the run silently ignore
-                # eg. because this run wasn't included in the log
-                if key := self._key_map_by_run_id.get(run_id):
-                    if not self.send(
+            # if we can't find the run silently ignore
+            # eg. because this run wasn't included in the log
+            if (
+                run_id != self.root_id
+                and (key := self._key_map_by_run_id.get(run_id))
+                and (
+                    not self.send(
                         {
                             "op": "add",
                             "path": f"/logs/{key}/streamed_output/-",
                             "value": chunk,
                         }
-                    ):
-                        break
+                    )
+                )
+            ):
+                break
 
             yield chunk
 
@@ -441,9 +448,8 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
 
             self.send(*ops)
         finally:
-            if run.id == self.root_id:
-                if self.auto_close:
-                    self.send_stream.close()
+            if run.id == self.root_id and self.auto_close:
+                self.send_stream.close()
 
     def _on_llm_new_token(
         self,
@@ -664,7 +670,5 @@ async def _astream_log_implementation(
                 yield state
     finally:
         # Wait for the runnable to finish, if not cancelled (eg. by break)
-        try:
+        with contextlib.suppress(asyncio.CancelledError):
             await task
-        except asyncio.CancelledError:
-            pass
