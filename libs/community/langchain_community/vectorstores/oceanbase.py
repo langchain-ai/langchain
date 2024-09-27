@@ -1,12 +1,12 @@
+import json
 import logging
 import uuid
-import json
-from typing import List, Optional, Any, Iterable, Tuple, Sequence
+from typing import Any, Iterable, List, Optional, Sequence, Tuple
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
-from sqlalchemy import Column, String, Text, JSON, Table, func, text
+from sqlalchemy import JSON, Column, String, Table, Text, func, text
 
 logger = logging.getLogger(__name__)
 
@@ -38,8 +38,8 @@ class OceanBase(VectorStore):
         embedding_function (Embeddings): Function used to embed the text.
         table_name (str): Which table name to use. Defaults to "langchain_vector".
         connection_args (Optional[dict[str, any]]): The connection args used for
-            this class comes in the form of a dict. Refer to `DEFAULT_OCEANBASE_CONNECTION`
-            for example.
+            this class comes in the form of a dict. Refer to
+            `DEFAULT_OCEANBASE_CONNECTION` for example.
         vidx_metric_type (str): Metric method of distance between vectors.
             This parameter takes values in `l2` and `ip`. Defaults to `l2`.
         vidx_algo_params (Optional[dict]): Which index params to use. Now OceanBase
@@ -56,6 +56,8 @@ class OceanBase(VectorStore):
         vidx_name (str): Name of the vector index table.
         partitions (ObPartition): Partition strategy of table. Refer to `pyobvector`'s
             documentation for more examples.
+        extra_columns (Optional[List[Column]]): Extra sqlalchemy columns
+            to add to the table.
 
     Example:
         .. code-block:: python
@@ -83,7 +85,7 @@ class OceanBase(VectorStore):
         ValueError: If the pyobvector python package is not installed.
     """
 
-    def __init__(
+    def __init__(  # type: ignore[no-untyped-def]
         self,
         embedding_function: Embeddings,
         table_name: str = DEFAULT_OCEANBASE_VECTOR_TABLE_NAME,
@@ -97,17 +99,11 @@ class OceanBase(VectorStore):
         text_field: str = "document",
         metadata_field: Optional[str] = None,
         vidx_name: str = "vidx",
-        partitions=None,
+        partitions: Optional[Any] = None,
+        extra_columns: Optional[List[Column]] = None,
         **kwargs,
     ):
         """Initialize the OceanBase vector store."""
-        try:
-            from pyobvector import ObVecClient
-        except ImportError:
-            raise ImportError(
-                "Could not import pyobvector package. "
-                "Please install it with `pip install pyobvector`."
-            )
 
         self.embedding_function = embedding_function
         self.table_name = table_name
@@ -116,8 +112,7 @@ class OceanBase(VectorStore):
             if connection_args is not None
             else DEFAULT_OCEANBASE_CONNECTION
         )
-
-        self.obvector: Optional[ObVecClient] = None
+        self.extra_columns = extra_columns
         self._create_client(**kwargs)
         assert self.obvector is not None
 
@@ -150,7 +145,7 @@ class OceanBase(VectorStore):
     def embeddings(self) -> Embeddings:
         return self.embedding_function
 
-    def _create_client(self, **kwargs):
+    def _create_client(self, **kwargs):  # type: ignore[no-untyped-def]
         try:
             from pyobvector import ObVecClient
         except ImportError:
@@ -173,21 +168,23 @@ class OceanBase(VectorStore):
             **kwargs,
         )
 
-    def _load_table(self):
+    def _load_table(self) -> None:
         table = Table(
             self.table_name,
             self.obvector.metadata_obj,
             autoload_with=self.obvector.engine,
         )
         column_names = [column.name for column in table.columns]
-        assert len(column_names) in (3, 4)
+        optional_len = len(self.extra_columns or []) + (1 if self.metadata_field else 0)
+        assert len(column_names) == (3 + optional_len)
+
         logging.info(f"load exist table with {column_names} columns")
         self.primary_field = column_names[0]
         self.vector_field = column_names[1]
         self.text_field = column_names[2]
         self.metadata_field = None if len(column_names) == 3 else column_names[3]
 
-    def _create_table_with_index(self, embeddings: list):
+    def _create_table_with_index(self, embeddings: list) -> None:
         try:
             from pyobvector import VECTOR
         except ImportError:
@@ -210,6 +207,8 @@ class OceanBase(VectorStore):
         ]
         if self.metadata_field is not None:
             cols.append(Column(self.metadata_field, JSON))
+        if self.extra_columns is not None:
+            cols.extend(self.extra_columns)
 
         vidx_params = self.obvector.prepare_index_params()
         vidx_params.add_index(
@@ -228,7 +227,7 @@ class OceanBase(VectorStore):
             paritions=self.partition,
         )
 
-    def _parse_metric_type_str_to_dist_func(self):
+    def _parse_metric_type_str_to_dist_func(self) -> Any:
         if self.vidx_metric_type == "l2":
             return func.l2_distance
         if self.vidx_metric_type == "cosine":
@@ -244,6 +243,8 @@ class OceanBase(VectorStore):
         batch_size: int = 1000,
         *,
         ids: Optional[List[str]] = None,
+        extras: Optional[List[dict]] = None,
+        partition_name: Optional[str] = None,
         **kwargs: Any,
     ) -> List[str]:
         """Insert text data into OceanBase.
@@ -261,6 +262,8 @@ class OceanBase(VectorStore):
             batch_size (int, optional): Batch size to use for insertion.
                 Defaults to 1000.
             ids (Optional[List[str]]): List of text ids.
+            extras (Optional[List[dict]]): Extra data to store in the table.
+            partition_name (Optional[str]): The partition name to insert data into.
 
         Raises:
             Exception: Failure to add texts
@@ -292,6 +295,8 @@ class OceanBase(VectorStore):
         if not metadatas:
             metadatas = [{} for _ in texts]
 
+        extra_data = extras or [{} for _ in texts]
+
         pks: list[str] = []
         for i in range(0, total_count, batch_size):
             if self.metadata_field is None:
@@ -300,11 +305,13 @@ class OceanBase(VectorStore):
                         self.primary_field: id,
                         self.vector_field: embedding,
                         self.text_field: text,
+                        **extra,
                     }
-                    for id, embedding, text in zip(
+                    for id, embedding, text, extra in zip(
                         ids[i : i + batch_size],
                         embeddings[i : i + batch_size],
                         texts[i : i + batch_size],
+                        extra_data[i : i + batch_size],
                     )
                 ]
             else:
@@ -314,20 +321,27 @@ class OceanBase(VectorStore):
                         self.vector_field: embedding,
                         self.text_field: text,
                         self.metadata_field: metadata,
+                        **extra,
                     }
-                    for id, embedding, text, metadata in zip(
+                    for id, embedding, text, metadata, extra in zip(
                         ids[i : i + batch_size],
                         embeddings[i : i + batch_size],
                         texts[i : i + batch_size],
                         metadatas[i : i + batch_size],
+                        extra_data[i : i + batch_size],
                     )
                 ]
             try:
-                self.obvector.insert(table_name=self.table_name, data=data)
+                self.obvector.insert(
+                    table_name=self.table_name,
+                    data=data,
+                    partition_name=(partition_name or ""),
+                )
                 pks.extend(ids[i : i + batch_size])
-            except Exception as e:
+            except Exception:
+                end_idx = i + batch_size
                 logger.error(
-                    f"Failed to insert batch starting at entity: [{i}, {i + batch_size})"
+                    f"Failed to insert batch starting at entity: [{i}, {end_idx})"
                 )
         return pks
 
@@ -344,9 +358,10 @@ class OceanBase(VectorStore):
         drop_old: bool = False,
         *,
         ids: Optional[List[str]] = None,
+        extras: Optional[List[dict]] = None,
         **kwargs: Any,
-    ):
-        """Create a OceanBase table, indexes it with HNSW, and insert data. 
+    ) -> "OceanBase":
+        """Create a OceanBase table, indexes it with HNSW, and insert data.
 
         Args:
             texts (List[str]): Text data.
@@ -354,9 +369,8 @@ class OceanBase(VectorStore):
             metadatas (Optional[List[dict]]): Metadata for each text if it exists.
                 Defaults to None.
             table_name (str): Table name to use. Defaults to "langchain_vector".
-            connection_args (Optional[dict[str, Any]]): The connection args used for
-                this class comes in the form of a dict. Refer to `DEFAULT_OCEANBASE_CONNECTION`
-                for example.
+            connection_args (Optional[dict[str, Any]]): Refer to
+                `DEFAULT_OCEANBASE_CONNECTION` for example.
             vidx_metric_type (str): Metric method of distance between vectors.
                 This parameter takes values in `l2` and `ip`. Defaults to `l2`.
             vidx_algo_params (Optional[dict]): Which index params to use. Now OceanBase
@@ -365,6 +379,7 @@ class OceanBase(VectorStore):
             drop_old (bool): Whether to drop the current table. Defaults
                 to False.
             ids (Optional[List[str]]): List of text ids. Defaults to None.
+            extras (Optional[List[dict]]): Extra data to insert. Defaults to None.
 
         Returns:
             OceanBase: OceanBase Vector Store
@@ -378,7 +393,7 @@ class OceanBase(VectorStore):
             drop_old=drop_old,
             **kwargs,
         )
-        oceanbase.add_texts(texts, metadatas, ids=ids)
+        oceanbase.add_texts(texts, metadatas, ids=ids, extras=extras)
         return oceanbase
 
     def delete(  # type: ignore[no-untyped-def]
@@ -396,7 +411,7 @@ class OceanBase(VectorStore):
             where_clause=([text(fltr)] if fltr is not None else None),
         )
 
-    def get_by_ids(self, ids: List[str], **kwargs) -> list[Document]:
+    def get_by_ids(self, ids: Sequence[str], /) -> list[Document]:
         """Get entities by vector ID.
 
         Args:
@@ -408,7 +423,7 @@ class OceanBase(VectorStore):
         res = self.obvector.get(
             table_name=self.table_name,
             ids=ids,
-            output_column_name=(
+            output_column_names=(
                 [self.text_field]
                 if self.metadata_field is None
                 else [self.text_field, self.metadata_field]
@@ -520,7 +535,7 @@ class OceanBase(VectorStore):
             vec_column_name=self.vector_field,
             distance_func=self._parse_metric_type_str_to_dist_func(),
             topk=k,
-            output_column_name=(
+            output_column_names=(
                 [self.text_field]
                 if self.metadata_field is None
                 else [self.text_field, self.metadata_field]
@@ -577,7 +592,7 @@ class OceanBase(VectorStore):
             distance_func=self._parse_metric_type_str_to_dist_func(),
             with_dist=True,
             topk=k,
-            output_column_name=(
+            output_column_names=(
                 [self.text_field]
                 if self.metadata_field is None
                 else [self.text_field, self.metadata_field]

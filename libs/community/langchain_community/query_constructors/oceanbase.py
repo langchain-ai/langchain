@@ -11,6 +11,7 @@ from langchain_core.structured_query import (
     Visitor,
 )
 
+
 class OceanBaseTranslator(Visitor):
     """A class to convert internal query elements to valid filters."""
 
@@ -38,7 +39,7 @@ class OceanBaseTranslator(Visitor):
     def _format_func(self, func: Union[Operator, Comparator]) -> str:
         self._validate_func(func)
         return self.map_dict[func]
-    
+
     def visit_operation(self, operation: Operation) -> str:
         args = [arg.accept(self) for arg in operation.arguments]
         return self._format_func(operation.operator).join(args)
