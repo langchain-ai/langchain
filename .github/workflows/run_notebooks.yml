@@ -1,0 +1,56 @@
+name: Run notebooks
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 13 * * *'
+
+env:
+  PYTHON_VERSION: "3.11"
+  POETRY_VERSION: "1.7.1"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    name: "Test docs"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python + Poetry ${{ env.POETRY_VERSION }}
+        uses: "./.github/actions/poetry_setup"
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          poetry-version: ${{ env.POETRY_VERSION }}
+          working-directory: ${{ inputs.working-directory }}
+          cache-key: run-notebooks
+
+      - name: Install dependencies
+        run: |
+          pip install -e libs/core
+          pip install -e libs/langchain
+          pip install -e libs/community
+          pip install --upgrade langchain-experimental
+          pip install -e libs//partners/anthropic
+          pip install -e libs//partners/chroma
+          pip install -e libs//partners/openai
+          pip install -e libs//partners/mistralai
+          pip install jupyter langgraph click pypdf vcrpy
+
+      - name: Pre-download tiktoken files
+        run: |
+          python docs/scripts/download_tiktoken.py
+
+      - name: Prepare notebooks
+        run: |
+
+          python docs/scripts/prepare_notebooks_for_ci.py --comment-install-cells
+
+      - name: Run notebooks
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
+        run: |
+          ./docs/scripts/execute_notebooks.sh
