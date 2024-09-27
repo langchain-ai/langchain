@@ -37,6 +37,5 @@ jobs:
           echo "precommit"
           git commit -m "Update API docs build"
           echo "preset"
-          git remote set-url origin "https://x-access-token:$GITHUB_TOKEN@github.com/langchain-ai/langchain-api-docs-html.git"
           echo "prepush"
-          git push origin HEAD
+          git push
