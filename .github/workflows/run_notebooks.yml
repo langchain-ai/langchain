@@ -5,24 +5,16 @@ on:
     branches:
       - cc/run_notebooks
   workflow_dispatch:
-    inputs:
-      python-version:
-        description: 'Python version'
-        required: true
-        default: '3.11'
   schedule:
     - cron: '0 13 * * *'
 
 env:
+  PYTHON_VERSION: "3.11"
   POETRY_VERSION: "1.7.1"
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        python-version: [ ${{ github.event.inputs.python-version || '3.11' }} ]
 
     name: "Test docs"
     steps:
@@ -31,7 +23,7 @@ jobs:
       - name: Set up Python + Poetry ${{ env.POETRY_VERSION }}
         uses: "./.github/actions/poetry_setup"
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: ${{ env.PYTHON_VERSION }}
           poetry-version: ${{ env.POETRY_VERSION }}
           working-directory: ${{ inputs.working-directory }}
           cache-key: run-notebooks
@@ -41,7 +33,7 @@ jobs:
           pip install -e libs/core
           pip install -e libs/langchain
           pip install -e libs/community
-          pip install --upgrade langchain-experimental
+          pip install -e libs/experimental
           pip install -e libs//partners/anthropic
           pip install -e libs//partners/chroma
           pip install -e libs//partners/openai
@@ -54,10 +46,13 @@ jobs:
 
       - name: Prepare notebooks
         run: |
+
           python docs/scripts/prepare_notebooks_for_ci.py --comment-install-cells
 
       - name: Run notebooks
         env:
+          # these won't actually be used because of the VCR cassettes
+          # but need to set them to avoid triggering getpass()
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
