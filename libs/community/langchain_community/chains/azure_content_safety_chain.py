@@ -16,8 +16,6 @@ class AzureOpenAIContentSafetyChain(Chain):
     """Whether or not to error if bad content was found."""
     input_key: str = "input"  #: :meta private:
     output_key: str = "output"  #: :meta private:
-    content_safety_api_key: Optional[str] = None
-    content_safety_endpoint: Optional[str] = None
 
     def __init__(
         self,
@@ -25,15 +23,15 @@ class AzureOpenAIContentSafetyChain(Chain):
         content_safety_key: Optional[str] = None,
         content_safety_endpoint: Optional[str] = None,
     ) -> None:
-        content_safety_key = content_safety_key or os.environ["CONTENT_SAFETY_API_KEY"]
-        content_safety_endpoint = (
+        self.content_safety_key = content_safety_key or os.environ["CONTENT_SAFETY_API_KEY"]
+        self.content_safety_endpoint = (
             content_safety_endpoint or os.environ["CONTENT_SAFETY_ENDPOINT"]
         )
         try:
             import azure.ai.contentsafety as sdk
             from azure.core.credentials import AzureKeyCredential
 
-            client = sdk.ContentSafetyClient(
+            self.client = sdk.ContentSafetyClient(
                 endpoint=content_safety_endpoint,
                 credential=AzureKeyCredential(content_safety_key),
             )
@@ -43,11 +41,6 @@ class AzureOpenAIContentSafetyChain(Chain):
                 "azure-ai-contentsafety is not installed. "
                 "Run `pip install azure-ai-contentsafety` to install."
             )
-        super().__init__(
-            content_safety_key=content_safety_key,
-            content_safety_endpoint=content_safety_endpoint,
-            client=client,
-        )
 
     @property
     def input_keys(self) -> List[str]:
