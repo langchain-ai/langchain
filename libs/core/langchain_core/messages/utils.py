@@ -51,10 +51,11 @@ def _get_type(v: Any) -> str:
     elif hasattr(v, "type"):
         return v.type
     else:
-        raise TypeError(
+        msg = (
             f"Expected either a dictionary with a 'type' key or an object "
             f"with a 'type' attribute. Instead got type {type(v)}."
         )
+        raise TypeError(msg)
 
 
 AnyMessage = Annotated[
@@ -120,7 +121,8 @@ def get_buffer_string(
         elif isinstance(m, ChatMessage):
             role = m.role
         else:
-            raise ValueError(f"Got unsupported message type: {m}")
+            msg = f"Got unsupported message type: {m}"
+            raise ValueError(msg)
         message = f"{role}: {m.content}"
         if isinstance(m, AIMessage) and "function_call" in m.additional_kwargs:
             message += f"{m.additional_kwargs['function_call']}"
@@ -158,7 +160,8 @@ def _message_from_dict(message: dict) -> BaseMessage:
     elif _type == "ChatMessageChunk":
         return ChatMessageChunk(**message["data"])
     else:
-        raise ValueError(f"Got unexpected message type: {_type}")
+        msg = f"Got unexpected message type: {_type}"
+        raise ValueError(msg)
 
 
 def messages_from_dict(messages: Sequence[dict]) -> list[BaseMessage]:
@@ -266,10 +269,11 @@ def _create_message_from_message_type(
     elif message_type == "remove":
         message = RemoveMessage(**kwargs)
     else:
-        raise ValueError(
+        msg = (
             f"Unexpected message type: '{message_type}'. Use one of 'human',"
             f" 'user', 'ai', 'assistant', 'function', 'tool', or 'system'."
         )
+        raise ValueError(msg)
     return message
 
 
@@ -312,14 +316,14 @@ def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
             # None msg content is not allowed
             msg_content = msg_kwargs.pop("content") or ""
         except KeyError as e:
-            raise ValueError(
-                f"Message dict must contain 'role' and 'content' keys, got {message}"
-            ) from e
+            msg = f"Message dict must contain 'role' and 'content' keys, got {message}"
+            raise ValueError(msg) from e
         _message = _create_message_from_message_type(
             msg_type, msg_content, **msg_kwargs
         )
     else:
-        raise NotImplementedError(f"Unsupported message type: {type(message)}")
+        msg = f"Unsupported message type: {type(message)}"
+        raise NotImplementedError(msg)
 
     return _message
 
@@ -820,11 +824,12 @@ def trim_messages(
         else:
             list_token_counter = token_counter  # type: ignore[assignment]
     else:
-        raise ValueError(
+        msg = (
             f"'token_counter' expected to be a model that implements "
             f"'get_num_tokens_from_messages()' or a function. Received object of type "
             f"{type(token_counter)}."
         )
+        raise ValueError(msg)
 
     try:
         from langchain_text_splitters import TextSplitter
@@ -859,9 +864,8 @@ def trim_messages(
             text_splitter=text_splitter_fn,
         )
     else:
-        raise ValueError(
-            f"Unrecognized {strategy=}. Supported strategies are 'last' and 'first'."
-        )
+        msg = f"Unrecognized {strategy=}. Supported strategies are 'last' and 'first'."
+        raise ValueError(msg)
 
 
 def _first_max_tokens(
@@ -995,10 +999,11 @@ def _msg_to_chunk(message: BaseMessage) -> BaseMessageChunk:
         if isinstance(message, msg_cls):
             return chunk_cls(**message.model_dump(exclude={"type"}))
 
-    raise ValueError(
+    msg = (
         f"Unrecognized message class {message.__class__}. Supported classes are "
         f"{list(_MSG_CHUNK_MAP.keys())}"
     )
+    raise ValueError(msg)
 
 
 def _chunk_to_msg(chunk: BaseMessageChunk) -> BaseMessage:
@@ -1010,10 +1015,11 @@ def _chunk_to_msg(chunk: BaseMessageChunk) -> BaseMessage:
         if isinstance(chunk, chunk_cls):
             return msg_cls(**chunk.model_dump(exclude={"type", "tool_call_chunks"}))
 
-    raise ValueError(
+    msg = (
         f"Unrecognized message chunk class {chunk.__class__}. Supported classes are "
         f"{list(_CHUNK_MSG_MAP.keys())}"
     )
+    raise ValueError(msg)
 
 
 def _default_text_splitter(text: str) -> list[str]:

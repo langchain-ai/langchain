@@ -32,15 +32,13 @@ def test_base_generation_parser() -> None:
                          that support streaming
             """
             if len(result) != 1:
-                raise NotImplementedError(
-                    "This output parser can only be used with a single generation."
-                )
+                msg = "This output parser can only be used with a single generation."
+                raise NotImplementedError(msg)
             generation = result[0]
             if not isinstance(generation, ChatGeneration):
                 # Say that this one only works with chat generations
-                raise OutputParserException(
-                    "This output parser can only be used with a chat generation."
-                )
+                msg = "This output parser can only be used with a chat generation."
+                raise OutputParserException(msg)
 
             content = generation.message.content
             assert isinstance(content, str)
@@ -77,15 +75,13 @@ def test_base_transform_output_parser() -> None:
                          that support streaming
             """
             if len(result) != 1:
-                raise NotImplementedError(
-                    "This output parser can only be used with a single generation."
-                )
+                msg = "This output parser can only be used with a single generation."
+                raise NotImplementedError(msg)
             generation = result[0]
             if not isinstance(generation, ChatGeneration):
                 # Say that this one only works with chat generations
-                raise OutputParserException(
-                    "This output parser can only be used with a chat generation."
-                )
+                msg = "This output parser can only be used with a chat generation."
+                raise OutputParserException(msg)
             content = generation.message.content
             assert isinstance(content, str)
             return content.swapcase()  # type: ignore

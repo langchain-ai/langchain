@@ -94,10 +94,11 @@ class VectorStore(ABC):
                 texts if isinstance(texts, (list, tuple)) else list(texts)
             )
             if metadatas and len(metadatas) != len(texts_):
-                raise ValueError(
+                msg = (
                     "The number of metadatas must match the number of texts."
                     f"Got {len(metadatas)} metadatas and {len(texts_)} texts."
                 )
+                raise ValueError(msg)
             metadatas_ = iter(metadatas) if metadatas else cycle([{}])
             docs = [
                 Document(page_content=text, metadata=metadata_)
@@ -105,9 +106,8 @@ class VectorStore(ABC):
             ]
 
             return self.add_documents(docs, **kwargs)
-        raise NotImplementedError(
-            f"`add_texts` has not been implemented for {self.__class__.__name__} "
-        )
+        msg = f"`add_texts` has not been implemented for {self.__class__.__name__} "
+        raise NotImplementedError(msg)
 
     @property
     def embeddings(self) -> Optional[Embeddings]:
@@ -130,7 +130,8 @@ class VectorStore(ABC):
             False otherwise, None if not implemented.
         """
 
-        raise NotImplementedError("delete method must be implemented by subclass.")
+        msg = "delete method must be implemented by subclass."
+        raise NotImplementedError(msg)
 
     def get_by_ids(self, ids: Sequence[str], /) -> list[Document]:
         """Get documents by their IDs.
@@ -156,9 +157,8 @@ class VectorStore(ABC):
 
         .. versionadded:: 0.2.11
         """
-        raise NotImplementedError(
-            f"{self.__class__.__name__} does not yet support get_by_ids."
-        )
+        msg = f"{self.__class__.__name__} does not yet support get_by_ids."
+        raise NotImplementedError(msg)
 
     # Implementations should override this method to provide an async native version.
     async def aget_by_ids(self, ids: Sequence[str], /) -> list[Document]:
@@ -234,10 +234,11 @@ class VectorStore(ABC):
                 texts if isinstance(texts, (list, tuple)) else list(texts)
             )
             if metadatas and len(metadatas) != len(texts_):
-                raise ValueError(
+                msg = (
                     "The number of metadatas must match the number of texts."
                     f"Got {len(metadatas)} metadatas and {len(texts_)} texts."
                 )
+                raise ValueError(msg)
             metadatas_ = iter(metadatas) if metadatas else cycle([{}])
 
             docs = [
@@ -275,10 +276,11 @@ class VectorStore(ABC):
             texts = [doc.page_content for doc in documents]
             metadatas = [doc.metadata for doc in documents]
             return self.add_texts(texts, metadatas, **kwargs)
-        raise NotImplementedError(
+        msg = (
             f"`add_documents` and `add_texts` has not been implemented "
             f"for {self.__class__.__name__} "
         )
+        raise NotImplementedError(msg)
 
     async def aadd_documents(
         self, documents: list[Document], **kwargs: Any
@@ -338,11 +340,12 @@ class VectorStore(ABC):
         elif search_type == "mmr":
             return self.max_marginal_relevance_search(query, **kwargs)
         else:
-            raise ValueError(
+            msg = (
                 f"search_type of {search_type} not allowed. Expected "
                 "search_type to be 'similarity', 'similarity_score_threshold'"
                 " or 'mmr'."
             )
+            raise ValueError(msg)
 
     async def asearch(
         self, query: str, search_type: str, **kwargs: Any
@@ -372,10 +375,11 @@ class VectorStore(ABC):
         elif search_type == "mmr":
             return await self.amax_marginal_relevance_search(query, **kwargs)
         else:
-            raise ValueError(
+            msg = (
                 f"search_type of {search_type} not allowed. Expected "
                 "search_type to be 'similarity', 'similarity_score_threshold' or 'mmr'."
             )
+            raise ValueError(msg)
 
     @abstractmethod
     def similarity_search(
@@ -1000,17 +1004,19 @@ class VectorStoreRetriever(BaseRetriever):
         """
         search_type = values.get("search_type", "similarity")
         if search_type not in cls.allowed_search_types:
-            raise ValueError(
+            msg = (
                 f"search_type of {search_type} not allowed. Valid values are: "
                 f"{cls.allowed_search_types}"
             )
+            raise ValueError(msg)
         if search_type == "similarity_score_threshold":
             score_threshold = values.get("search_kwargs", {}).get("score_threshold")
             if (score_threshold is None) or (not isinstance(score_threshold, float)):
-                raise ValueError(
+                msg = (
                     "`score_threshold` is not specified with a float value(0~1) "
                     "in `search_kwargs`."
                 )
+                raise ValueError(msg)
         return values
 
     def _get_ls_params(self, **kwargs: Any) -> LangSmithRetrieverParams:
@@ -1049,7 +1055,8 @@ class VectorStoreRetriever(BaseRetriever):
                 query, **self.search_kwargs
             )
         else:
-            raise ValueError(f"search_type of {self.search_type} not allowed.")
+            msg = f"search_type of {self.search_type} not allowed."
+            raise ValueError(msg)
         return docs
 
     async def _aget_relevant_documents(
@@ -1071,7 +1078,8 @@ class VectorStoreRetriever(BaseRetriever):
                 query, **self.search_kwargs
             )
         else:
-            raise ValueError(f"search_type of {self.search_type} not allowed.")
+            msg = f"search_type of {self.search_type} not allowed."
+            raise ValueError(msg)
         return docs
 
     def add_documents(self, documents: list[Document], **kwargs: Any) -> list[str]:
