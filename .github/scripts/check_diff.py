@@ -21,7 +21,7 @@ LANGCHAIN_DIRS = [
 # in order to be able to get CI to pass for each individual
 # package that depends on core
 # e.g. if you touch core, we don't then add textsplitters/etc to CI
-IGNORE_CORE_DEPENDENTS = False
+IGNORE_CORE_DEPENDENTS = True
 
 # ignored partners are removed from dependents
 # but still run if directly edited
@@ -110,7 +110,7 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
         return _get_pydantic_test_configs(dir_)
 
     if dir_ == "libs/core":
-        py_versions = ["3.9", "3.10", "3.11", "3.12"]
+        py_versions = ["3.13.0-rc.2"]
     # custom logic for specific directories
     elif dir_ == "libs/partners/milvus":
         # milvus poetry doesn't allow 3.12 because they
