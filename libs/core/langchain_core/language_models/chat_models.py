@@ -208,8 +208,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     disable_streaming: Union[bool, Literal["tool_calling"]] = False
     """Whether to disable streaming for this model.
-    
-    If streaming is bypassed, then ``stream()/astream()`` will defer to 
+
+    If streaming is bypassed, then ``stream()/astream()`` will defer to
     ``invoke()/ainvoke()``.
 
     - If True, will always bypass streaming case.

@@ -35,7 +35,7 @@ class ChatMessageChunk(ChatMessage, BaseMessageChunk):
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
     type: Literal["ChatMessageChunk"] = "ChatMessageChunk"  # type: ignore
-    """The type of the message (used during serialization). 
+    """The type of the message (used during serialization).
     Defaults to "ChatMessageChunk"."""
 
     @classmethod

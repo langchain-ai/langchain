@@ -42,7 +42,7 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
     """
 
     pydantic_object: Annotated[Optional[type[TBaseModel]], SkipValidation()] = None  # type: ignore
-    """The Pydantic object to use for validation. 
+    """The Pydantic object to use for validation.
     If None, no validation is performed."""
 
     def _diff(self, prev: Optional[Any], next: Any) -> Any:

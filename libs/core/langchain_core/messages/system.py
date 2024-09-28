@@ -60,7 +60,7 @@ class SystemMessageChunk(SystemMessage, BaseMessageChunk):
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
     type: Literal["SystemMessageChunk"] = "SystemMessageChunk"  # type: ignore[assignment]
-    """The type of the message (used for serialization). 
+    """The type of the message (used for serialization).
     Defaults to "SystemMessageChunk"."""
 
     @classmethod

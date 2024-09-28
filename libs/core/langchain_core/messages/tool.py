@@ -58,11 +58,11 @@ class ToolMessage(BaseMessage):
 
     artifact: Any = None
     """Artifact of the Tool execution which is not meant to be sent to the model.
-    
-    Should only be specified if it is different from the message content, e.g. if only 
+
+    Should only be specified if it is different from the message content, e.g. if only
     a subset of the full tool output is being passed as message content but the full
     output is needed in other parts of the code.
-    
+
     .. versionadded:: 0.2.17
     """
 
@@ -191,7 +191,7 @@ class ToolCall(TypedDict):
     """The arguments to the tool call."""
     id: Optional[str]
     """An identifier associated with the tool call.
-    
+
     An identifier is needed to associate a tool call request with a tool
     call result in events when multiple concurrent tool calls are made.
     """

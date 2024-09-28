@@ -30,7 +30,7 @@ class HumanMessage(BaseMessage):
 
     example: bool = False
     """Use to denote that a message is part of an example conversation.
-    
+
     At the moment, this is ignored by most models. Usage is discouraged.
     Defaults to False.
     """
@@ -66,7 +66,7 @@ class HumanMessageChunk(HumanMessage, BaseMessageChunk):
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
     type: Literal["HumanMessageChunk"] = "HumanMessageChunk"  # type: ignore[assignment]
-    """The type of the message (used for serialization). 
+    """The type of the message (used for serialization).
     Defaults to "HumanMessageChunk"."""
 
     @classmethod

@@ -45,11 +45,11 @@ class BasePromptTemplate(
     """Base class for all prompt templates, returning a prompt."""
 
     input_variables: list[str]
-    """A list of the names of the variables whose values are required as inputs to the 
+    """A list of the names of the variables whose values are required as inputs to the
     prompt."""
     optional_variables: list[str] = Field(default=[])
     """optional_variables: A list of the names of the variables for placeholder
-       or MessagePlaceholder that are optional. These variables are auto inferred 
+       or MessagePlaceholder that are optional. These variables are auto inferred
        from the prompt and user need not provide them."""
     input_types: typing.Dict[str, Any] = Field(default_factory=dict, exclude=True)  # noqa: UP006
     """A dictionary of the types of the variables the prompt template expects.
@@ -58,7 +58,7 @@ class BasePromptTemplate(
     """How to parse the output of calling an LLM on this formatted prompt."""
     partial_variables: Mapping[str, Any] = Field(default_factory=dict)
     """A dictionary of the partial variables the prompt template carries.
-    
+
     Partial variables populate the template so that you don't need to
     pass them in every time you call the prompt."""
     metadata: Optional[typing.Dict[str, Any]] = None  # noqa: UP006

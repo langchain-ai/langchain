@@ -136,7 +136,7 @@ WITHOUT_END_BRACKET = """Here is a response formatted as schema:
 ```json
 {
   "foo": "bar"
-  
+
 
 """
 
@@ -146,7 +146,7 @@ WITH_END_BRACKET = """Here is a response formatted as schema:
 {
   "foo": "bar"
 }
-  
+
 """
 
 WITH_END_TICK = """Here is a response formatted as schema:
@@ -155,7 +155,7 @@ WITH_END_TICK = """Here is a response formatted as schema:
 {
   "foo": "bar"
 }
-``` 
+```
 """
 
 WITH_END_TEXT = """Here is a response formatted as schema:
@@ -164,8 +164,8 @@ WITH_END_TEXT = """Here is a response formatted as schema:
 {
   "foo": "bar"
 
-``` 
-This should do the trick 
+```
+This should do the trick
 """
 
 TEST_CASES = [

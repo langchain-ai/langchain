@@ -142,12 +142,12 @@ class JsonOutputToolsParser(BaseCumulativeTransformOutputParser[Any]):
     first_tool_only: bool = False
     """Whether to return only the first tool call.
 
-    If False, the result will be a list of tool calls, or an empty list 
+    If False, the result will be a list of tool calls, or an empty list
     if no tool calls are found.
 
     If true, and multiple tool calls are found, only the first one will be returned,
-    and the other tool calls will be ignored. 
-    If no tool calls are found, None will be returned. 
+    and the other tool calls will be ignored.
+    If no tool calls are found, None will be returned.
     """
 
     def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:

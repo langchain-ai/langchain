@@ -348,7 +348,7 @@ class ChildTool(BaseTool):
     """The unique name of the tool that clearly communicates its purpose."""
     description: str
     """Used to tell the model how/when/why to use the tool.
-    
+
     You can provide few-shot examples as a part of the description.
     """
 
@@ -356,17 +356,17 @@ class ChildTool(BaseTool):
         default=None, description="The tool schema."
     )
     """Pydantic model class to validate and parse the tool's input arguments.
-    
-    Args schema should be either: 
-    
+
+    Args schema should be either:
+
     - A subclass of pydantic.BaseModel.
-    or 
+    or
     - A subclass of pydantic.v1.BaseModel if accessing v1 namespace in pydantic 2
     """
     return_direct: bool = False
-    """Whether to return the tool's output directly. 
-    
-    Setting this to True means    
+    """Whether to return the tool's output directly.
+
+    Setting this to True means
     that after the tool is called, the AgentExecutor will stop looping.
     """
     verbose: bool = False
@@ -410,8 +410,8 @@ class ChildTool(BaseTool):
     response_format: Literal["content", "content_and_artifact"] = "content"
     """The tool response format. Defaults to 'content'.
 
-    If "content" then the output of the tool is interpreted as the contents of a 
-    ToolMessage. If "content_and_artifact" then the output is expected to be a 
+    If "content" then the output of the tool is interpreted as the contents of a
+    ToolMessage. If "content_and_artifact" then the output is expected to be a
     two-tuple corresponding to the (content, artifact) of a ToolMessage.
     """
 

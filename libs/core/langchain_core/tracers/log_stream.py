@@ -53,8 +53,8 @@ class LogEntry(TypedDict):
     inputs: NotRequired[Optional[Any]]
     """Inputs to this run. Not available currently via astream_log."""
     final_output: Optional[Any]
-    """Final output of this run. 
-    
+    """Final output of this run.
+
     Only available after the run has finished successfully."""
     end_time: Optional[str]
     """ISO-8601 timestamp of when the run ended.

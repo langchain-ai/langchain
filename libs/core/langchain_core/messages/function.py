@@ -42,7 +42,7 @@ class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
     type: Literal["FunctionMessageChunk"] = "FunctionMessageChunk"  # type: ignore[assignment]
-    """The type of the message (used for serialization). 
+    """The type of the message (used for serialization).
     Defaults to "FunctionMessageChunk"."""
 
     @classmethod

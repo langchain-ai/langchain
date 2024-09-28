@@ -21,12 +21,12 @@ class FakeListLLM(LLM):
     # it's only used by sub-classes.
     sleep: Optional[float] = None
     """Sleep time in seconds between responses.
-    
+
     Ignored by FakeListLLM, but used by sub-classes.
     """
     i: int = 0
     """Internally incremented after every model invocation.
-    
+
     Useful primarily for testing purposes.
     """
 
