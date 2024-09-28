@@ -16,10 +16,10 @@ class AdobePDFExtractParser(BaseBlobParser):
     """Loads a document using the Adobe PDF Services API.
 
     Args:
-        client_id: Adobe PDF Services client ID.
-        client_secret: Adobe PDF Services client secret.
-        mode: One of 'chunks', 'json', or 'data'.
-        embed_figures: Whether to include figures in loaded results.
+        client_id: Your Adobe PDF Services client ID, used to authenticate API requests.
+        client_secret: Your Adobe PDF Services client secret, used alongside the client ID to authenticate API requests.
+        mode: The format for processing the PDF document. 'chunks' breaks the document into smaller parts, 'json' provides the entire document in JSON format, and 'data' returns all figures and tables from the document.
+        embed_figures: If True, includes figures from the PDF in the chunks as placeholders with the base64 image contained in the metadata.
 
     .. dropdown:: Lazy load as Documents
         .. code-block:: python
