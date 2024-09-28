@@ -55,6 +55,7 @@ runs:
         # Refresh the shell hashtable, to ensure correct `which` output.
         hash -r
 
+        # Extract the major.minor version of python
         PYTHON_MAJOR_MINOR=$(echo "$PYTHON_VERSION" | sed -E 's/^([0-9]+\.[0-9]+).*/\1/')
 
         # `actions/cache@v3` doesn't always seem able to correctly unpack softlinks.
