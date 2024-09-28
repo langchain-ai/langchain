@@ -21,52 +21,36 @@ code_block_re = re.compile(r"^(```\s?python\n)(.*?)(```)", re.DOTALL | re.MULTIL
 
 
 MANUAL_API_REFERENCES_LANGGRAPH = [
-    ("langgraph.prebuilt", "create_react_agent"),
+    ("langgraph.prebuilt.chat_agent_executor", "create_react_agent"),
     (
-        "langgraph.prebuilt",
+        "langgraph.prebuilt.tool_node",
         "ToolNode",
     ),
-    (
-        "langgraph.prebuilt",
-        "ToolExecutor",
-    ),
-    (
-        "langgraph.prebuilt",
-        "ToolInvocation",
-    ),
-    ("langgraph.prebuilt", "tools_condition"),
-    (
-        "langgraph.prebuilt",
-        "ValidationNode",
-    ),
+    ("langgraph.prebuilt.tool_node", "tools_condition"),
     (
         "langgraph.prebuilt",
         "InjectedState",
     ),
     # Graph
+    ("langgraph.graph.message", "add_messages"),
     (
-        "langgraph.graph",
+        "langgraph.graph.state",
         "StateGraph",
     ),
     (
-        "langgraph.graph.message",
-        "MessageGraph",
-    ),
-    ("langgraph.graph.message", "add_messages"),
-    (
-        "langgraph.graph.graph",
-        "CompiledGraph",
+        "langgraph.graph.state",
+        "CompiledStateGraph",
     ),
     (
         "langgraph.types",
         "StreamMode",
     ),
     (
-        "langgraph.graph",
+        "langgraph.graph.constants",
         "START",
     ),
     (
-        "langgraph.graph",
+        "langgraph.graph.constants",
         "END",
     ),
     (
@@ -318,6 +302,8 @@ def _get_imports(
                     namespace = "errors"
                 elif module.startswith("langgraph.types"):
                     namespace = "types"
+                elif module.startswith("langgraph.constants"):
+                    namespace = "constants"
                 else:
                     # Likely not documented yet
                     # Unable to determine the namespace
