@@ -209,9 +209,11 @@ def test_tracing_enable_disable(
 
     get_env_var.cache_clear()
     env_on = env == "true"
-    with patch.dict("os.environ", {"LANGSMITH_TRACING": env}):
-        with tracing_context(enabled=enabled):
-            RunnableLambda(my_func).invoke(1)
+    with (
+        patch.dict("os.environ", {"LANGSMITH_TRACING": env}),
+        tracing_context(enabled=enabled),
+    ):
+        RunnableLambda(my_func).invoke(1)
 
     mock_posts = _get_posts(mock_client_)
     if enabled is True:

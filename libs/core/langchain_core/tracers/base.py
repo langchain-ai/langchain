@@ -850,7 +850,6 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
 
     async def _on_run_create(self, run: Run) -> None:
         """Process a run upon creation."""
-        pass
 
     async def _on_run_update(self, run: Run) -> None:
         """Process a run upon update."""

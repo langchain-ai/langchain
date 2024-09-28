@@ -1305,10 +1305,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
     def predict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
     ) -> str:
-        if stop is None:
-            _stop = None
-        else:
-            _stop = list(stop)
+        _stop = None if stop is None else list(stop)
         return self(text, stop=_stop, **kwargs)
 
     @deprecated("0.1.7", alternative="invoke", removal="1.0")
@@ -1320,10 +1317,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         **kwargs: Any,
     ) -> BaseMessage:
         text = get_buffer_string(messages)
-        if stop is None:
-            _stop = None
-        else:
-            _stop = list(stop)
+        _stop = None if stop is None else list(stop)
         content = self(text, stop=_stop, **kwargs)
         return AIMessage(content=content)
 
@@ -1331,10 +1325,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
     async def apredict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
     ) -> str:
-        if stop is None:
-            _stop = None
-        else:
-            _stop = list(stop)
+        _stop = None if stop is None else list(stop)
         return await self._call_async(text, stop=_stop, **kwargs)
 
     @deprecated("0.1.7", alternative="ainvoke", removal="1.0")
@@ -1346,10 +1337,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         **kwargs: Any,
     ) -> BaseMessage:
         text = get_buffer_string(messages)
-        if stop is None:
-            _stop = None
-        else:
-            _stop = list(stop)
+        _stop = None if stop is None else list(stop)
         content = await self._call_async(text, stop=_stop, **kwargs)
         return AIMessage(content=content)
 
@@ -1384,10 +1372,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             llm.save(file_path="path/llm.yaml")
         """
         # Convert file to Path object.
-        if isinstance(file_path, str):
-            save_path = Path(file_path)
-        else:
-            save_path = file_path
+        save_path = Path(file_path) if isinstance(file_path, str) else file_path
 
         directory_path = save_path.parent
         directory_path.mkdir(parents=True, exist_ok=True)
