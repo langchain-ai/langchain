@@ -23,7 +23,9 @@ class AzureOpenAIContentSafetyChain(Chain):
         content_safety_key: Optional[str] = None,
         content_safety_endpoint: Optional[str] = None,
     ) -> None:
-        self.content_safety_key = content_safety_key or os.environ["CONTENT_SAFETY_API_KEY"]
+        self.content_safety_key = (
+            content_safety_key or os.environ["CONTENT_SAFETY_API_KEY"]
+        )
         self.content_safety_endpoint = (
             content_safety_endpoint or os.environ["CONTENT_SAFETY_ENDPOINT"]
         )
