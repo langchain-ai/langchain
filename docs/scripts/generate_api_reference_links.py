@@ -28,7 +28,7 @@ MANUAL_API_REFERENCES_LANGGRAPH = [
     ),
     ("langgraph.prebuilt.tool_node", "tools_condition"),
     (
-        "langgraph.prebuilt",
+        "langgraph.prebuilt.tool_node",
         "InjectedState",
     ),
     # Graph
