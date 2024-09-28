@@ -195,7 +195,10 @@ def _convert_agent_observation_to_messages(
     else:
         content = observation
         if not isinstance(observation, str):
-            content = json.dumps(observation, ensure_ascii=False)
+            try:
+                content = json.dumps(observation, ensure_ascii=False)
+            except Exception:
+                content = str(observation)
         return [HumanMessage(content=content)]
 
 
