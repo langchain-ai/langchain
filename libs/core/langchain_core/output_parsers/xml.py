@@ -1,3 +1,4 @@
+import contextlib
 import re
 import xml
 import xml.etree.ElementTree as ET  # noqa: N817
@@ -131,11 +132,9 @@ class _StreamingParser:
         Raises:
             xml.etree.ElementTree.ParseError: If the XML is not well-formed.
         """
-        try:
+        # Ignore ParseError. This will ignore any incomplete XML at the end of the input
+        with contextlib.suppress(xml.etree.ElementTree.ParseError):
             self.pull_parser.close()
-        except xml.etree.ElementTree.ParseError:
-            # Ignore. This will ignore any incomplete XML at the end of the input
-            pass
 
 
 class XMLOutputParser(BaseTransformOutputParser):

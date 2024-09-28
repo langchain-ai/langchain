@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import json
 import typing
 from abc import ABC, abstractmethod
@@ -319,10 +320,8 @@ class BasePromptTemplate(
             NotImplementedError: If the prompt type is not implemented.
         """
         prompt_dict = super().model_dump(**kwargs)
-        try:
+        with contextlib.suppress(NotImplementedError):
             prompt_dict["_type"] = self._prompt_type
-        except NotImplementedError:
-            pass
         return prompt_dict
 
     def save(self, file_path: Union[Path, str]) -> None:
@@ -350,10 +349,7 @@ class BasePromptTemplate(
             raise NotImplementedError(f"Prompt {self} does not support saving.")
 
         # Convert file to Path object.
-        if isinstance(file_path, str):
-            save_path = Path(file_path)
-        else:
-            save_path = file_path
+        save_path = Path(file_path) if isinstance(file_path, str) else file_path
 
         directory_path = save_path.parent
         directory_path.mkdir(parents=True, exist_ok=True)

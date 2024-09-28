@@ -99,24 +99,15 @@ class AsciiCanvas:
             self.point(x0, y0, char)
         elif abs(dx) >= abs(dy):
             for x in range(x0, x1 + 1):
-                if dx == 0:
-                    y = y0
-                else:
-                    y = y0 + int(round((x - x0) * dy / float(dx)))
+                y = y0 if dx == 0 else y0 + int(round((x - x0) * dy / float(dx)))
                 self.point(x, y, char)
         elif y0 < y1:
             for y in range(y0, y1 + 1):
-                if dy == 0:
-                    x = x0
-                else:
-                    x = x0 + int(round((y - y0) * dx / float(dy)))
+                x = x0 if dy == 0 else x0 + int(round((y - y0) * dx / float(dy)))
                 self.point(x, y, char)
         else:
             for y in range(y1, y0 + 1):
-                if dy == 0:
-                    x = x0
-                else:
-                    x = x1 + int(round((y - y1) * dx / float(dy)))
+                x = x0 if dy == 0 else x1 + int(round((y - y1) * dx / float(dy)))
                 self.point(x, y, char)
 
     def text(self, x: int, y: int, text: str) -> None:

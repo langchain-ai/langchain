@@ -802,10 +802,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        if isinstance(self.cache, BaseCache):
-            llm_cache = self.cache
-        else:
-            llm_cache = get_llm_cache()
+        llm_cache = self.cache if isinstance(self.cache, BaseCache) else get_llm_cache()
         # We should check the cache unless it's explicitly set to False
         # A None cache means we should use the default global cache
         # if it's configured.
@@ -879,10 +876,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        if isinstance(self.cache, BaseCache):
-            llm_cache = self.cache
-        else:
-            llm_cache = get_llm_cache()
+        llm_cache = self.cache if isinstance(self.cache, BaseCache) else get_llm_cache()
         # We should check the cache unless it's explicitly set to False
         # A None cache means we should use the default global cache
         # if it's configured.
@@ -1054,10 +1048,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     def predict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
     ) -> str:
-        if stop is None:
-            _stop = None
-        else:
-            _stop = list(stop)
+        _stop = None if stop is None else list(stop)
         result = self([HumanMessage(content=text)], stop=_stop, **kwargs)
         if isinstance(result.content, str):
             return result.content
@@ -1072,20 +1063,14 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         stop: Optional[Sequence[str]] = None,
         **kwargs: Any,
     ) -> BaseMessage:
-        if stop is None:
-            _stop = None
-        else:
-            _stop = list(stop)
+        _stop = None if stop is None else list(stop)
         return self(messages, stop=_stop, **kwargs)
 
     @deprecated("0.1.7", alternative="ainvoke", removal="1.0")
     async def apredict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
     ) -> str:
-        if stop is None:
-            _stop = None
-        else:
-            _stop = list(stop)
+        _stop = None if stop is None else list(stop)
         result = await self._call_async(
             [HumanMessage(content=text)], stop=_stop, **kwargs
         )
@@ -1102,10 +1087,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         stop: Optional[Sequence[str]] = None,
         **kwargs: Any,
     ) -> BaseMessage:
-        if stop is None:
-            _stop = None
-        else:
-            _stop = list(stop)
+        _stop = None if stop is None else list(stop)
         return await self._call_async(messages, stop=_stop, **kwargs)
 
     @property
@@ -1333,9 +1315,12 @@ def _cleanup_llm_representation(serialized: Any, depth: int) -> None:
     if not isinstance(serialized, dict):
         return
 
-    if "type" in serialized and serialized["type"] == "not_implemented":
-        if "repr" in serialized:
-            del serialized["repr"]
+    if (
+        "type" in serialized
+        and serialized["type"] == "not_implemented"
+        and "repr" in serialized
+    ):
+        del serialized["repr"]
 
     if "graph" in serialized:
         del serialized["graph"]
