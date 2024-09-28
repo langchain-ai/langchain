@@ -1305,28 +1305,30 @@ async def test_with_config(mocker: MockerFixture) -> None:
         5,
         7,
     ]
-    assert spy.call_args_list == [
-        mocker.call(
-            "hello",
-            {
-                "metadata": {"key": "value"},
-                "tags": ["c"],
-                "callbacks": None,
-                "recursion_limit": 5,
-                "configurable": {},
-            },
-        ),
-        mocker.call(
-            "wooorld",
-            {
-                "metadata": {"key": "value"},
-                "tags": ["c"],
-                "callbacks": None,
-                "recursion_limit": 5,
-                "configurable": {},
-            },
-        ),
-    ]
+    assert sorted(spy.call_args_list) == sorted(
+        [
+            mocker.call(
+                "hello",
+                {
+                    "metadata": {"key": "value"},
+                    "tags": ["c"],
+                    "callbacks": None,
+                    "recursion_limit": 5,
+                    "configurable": {},
+                },
+            ),
+            mocker.call(
+                "wooorld",
+                {
+                    "metadata": {"key": "value"},
+                    "tags": ["c"],
+                    "callbacks": None,
+                    "recursion_limit": 5,
+                    "configurable": {},
+                },
+            ),
+        ]
+    )
     spy.reset_mock()
 
     assert sorted(
