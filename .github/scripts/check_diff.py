@@ -21,7 +21,7 @@ LANGCHAIN_DIRS = [
 # in order to be able to get CI to pass for each individual
 # package that depends on core
 # e.g. if you touch core, we don't then add textsplitters/etc to CI
-IGNORE_CORE_DEPENDENTS = True
+IGNORE_CORE_DEPENDENTS = False
 
 # ignored partners are removed from dependents
 # but still run if directly edited
@@ -120,13 +120,13 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
     elif dir_ in ["libs/community", "libs/langchain"] and job == "extended-tests":
         # community extended test resolution in 3.12 is slow
         # even in uv
-        py_versions = ["3.9", "3.11"]
+        py_versions = ["3.9", "3.11", "3.13.0-rc.2"]
 
     elif dir_ == "libs/community" and job == "compile-integration-tests":
         # community integration deps are slow in 3.12
-        py_versions = ["3.9", "3.11"]
+        py_versions = ["3.9", "3.11", "3.13.0-rc.2"]
     else:
-        py_versions = ["3.9", "3.12"]
+        py_versions = ["3.9", "3.12", "3.13.0-rc.2"]
 
     return [{"working-directory": dir_, "python-version": py_v} for py_v in py_versions]
 
