@@ -8,7 +8,7 @@ from langchain_community.utilities.mindsdb.ai_data_mind.database_models import (
 from langchain_community.utilities.mindsdb.base_mind_wrapper import BaseMindWrapper
 
 if TYPE_CHECKING:
-    from mindsdb_sdk.utils.mind import DatabaseConfig
+    from minds.datasources import DatabaseConfig
 
 
 class DataSourceConfig(BaseModel):
@@ -32,13 +32,13 @@ class DataSourceConfig(BaseModel):
         self.connection_args = model_obj.dict()
 
     def to_database_config(self) -> "DatabaseConfig":
-        # Validate that the `mindsdb_sdk` package can be imported.
+        # Validate that the `minds-sdk` package can be imported.
         try:
-            from mindsdb_sdk.utils.mind import DatabaseConfig
+            from minds.datasources import DatabaseConfig
         except ImportError as e:
             raise ImportError(
-                "Could not import mindsdb_sdk python package. "
-                "Please install it with `pip install mindsdb_sdk`.",
+                "Could not import minds-sdk python package. "
+                "Please install it with `pip install minds-sdk`.",
             ) from e
 
         return DatabaseConfig(
@@ -56,13 +56,13 @@ class AIDataMindWrapper(BaseMindWrapper):
     def __init__(self, **data: Any) -> None:
         super().__init__(**data)
 
-        # Validate that the `mindsdb_sdk` package can be imported.
+        # Validate that the `minds-sdk` package can be imported.
         try:
-            from mindsdb_sdk.utils.mind import create_mind
+            from minds.client import Client
         except ImportError as e:
             raise ImportError(
-                "Could not import mindsdb_sdk python package. "
-                "Please install it with `pip install mindsdb_sdk`.",
+                "Could not import minds-sdk python package. "
+                "Please install it with `pip install minds-sdk`.",
             ) from e
 
         # Validate that the correct connection arguments are provided for
@@ -72,13 +72,16 @@ class AIDataMindWrapper(BaseMindWrapper):
             data_source_config_obj = DataSourceConfig(**data_source_config)
             data_source_config_objs.append(data_source_config_obj.to_database_config())
 
-        # Create the MindsDB mind object.
-        self.mind = create_mind(
+        # Create the Mind object.
+        minds_client = Client(
+            self.minds_api_key.get_secret_value(),
+            self.minds_api_base,
+        )
+
+        self.mind = minds_client.minds.create(
             name=self.name,
-            base_url=self.mindsdb_api_base,
-            api_key=self.mindsdb_api_key.get_secret_value(),
-            model=self.model,
-            data_source_configs=data_source_config_objs,
+            model_name=self.model,
+            datasources=data_source_config_objs,
         )
 
     def run(self, query: Text) -> Text:
