@@ -3,7 +3,7 @@
 from typing import Any, Optional
 
 
-class LangChainException(Exception):
+class LangChainException(Exception):  # noqa: N818
     """General LangChain exception."""
 
 
@@ -11,7 +11,7 @@ class TracerException(LangChainException):
     """Base class for exceptions in tracers module."""
 
 
-class OutputParserException(ValueError, LangChainException):
+class OutputParserException(ValueError, LangChainException):  # noqa: N818
     """Exception that output parsers should raise to signify a parsing error.
 
     This exists to differentiate parsing errors from other code or execution errors
@@ -40,12 +40,11 @@ class OutputParserException(ValueError, LangChainException):
         send_to_llm: bool = False,
     ):
         super().__init__(error)
-        if send_to_llm:
-            if observation is None or llm_output is None:
-                raise ValueError(
-                    "Arguments 'observation' & 'llm_output'"
-                    " are required if 'send_to_llm' is True"
-                )
+        if send_to_llm and (observation is None or llm_output is None):
+            raise ValueError(
+                "Arguments 'observation' & 'llm_output'"
+                " are required if 'send_to_llm' is True"
+            )
         self.observation = observation
         self.llm_output = llm_output
         self.send_to_llm = send_to_llm

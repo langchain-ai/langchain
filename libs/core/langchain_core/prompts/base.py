@@ -1,34 +1,36 @@
 from __future__ import annotations
 
+import contextlib
 import json
+import typing
 from abc import ABC, abstractmethod
+from collections.abc import Mapping
+from functools import cached_property
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Dict,
     Generic,
-    List,
-    Mapping,
     Optional,
-    Type,
     TypeVar,
     Union,
 )
 
 import yaml
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+from typing_extensions import Self, override
 
+from langchain_core.load import dumpd
 from langchain_core.output_parsers.base import BaseOutputParser
 from langchain_core.prompt_values import (
     ChatPromptValueConcrete,
     PromptValue,
     StringPromptValue,
 )
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.runnables import RunnableConfig, RunnableSerializable
 from langchain_core.runnables.config import ensure_config
-from langchain_core.runnables.utils import create_model
+from langchain_core.utils.pydantic import create_model_v2
 
 if TYPE_CHECKING:
     from langchain_core.documents import Document
@@ -38,18 +40,18 @@ FormatOutputType = TypeVar("FormatOutputType")
 
 
 class BasePromptTemplate(
-    RunnableSerializable[Dict, PromptValue], Generic[FormatOutputType], ABC
+    RunnableSerializable[dict, PromptValue], Generic[FormatOutputType], ABC
 ):
     """Base class for all prompt templates, returning a prompt."""
 
-    input_variables: List[str]
+    input_variables: list[str]
     """A list of the names of the variables whose values are required as inputs to the 
     prompt."""
-    optional_variables: List[str] = Field(default=[])
+    optional_variables: list[str] = Field(default=[])
     """optional_variables: A list of the names of the variables for placeholder
        or MessagePlaceholder that are optional. These variables are auto inferred 
        from the prompt and user need not provide them."""
-    input_types: Dict[str, Any] = Field(default_factory=dict, exclude=True)
+    input_types: typing.Dict[str, Any] = Field(default_factory=dict, exclude=True)  # noqa: UP006
     """A dictionary of the types of the variables the prompt template expects.
     If not provided, all variables are assumed to be strings."""
     output_parser: Optional[BaseOutputParser] = None
@@ -59,36 +61,34 @@ class BasePromptTemplate(
     
     Partial variables populate the template so that you don't need to
     pass them in every time you call the prompt."""
-    metadata: Optional[Dict[str, Any]] = None
+    metadata: Optional[typing.Dict[str, Any]] = None  # noqa: UP006
     """Metadata to be used for tracing."""
-    tags: Optional[List[str]] = None
+    tags: Optional[list[str]] = None
     """Tags to be used for tracing."""
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def validate_variable_names(cls, values: Dict) -> Dict:
+    @model_validator(mode="after")
+    def validate_variable_names(self) -> Self:
         """Validate variable names do not include restricted names."""
-        if "stop" in values["input_variables"]:
+        if "stop" in self.input_variables:
             raise ValueError(
                 "Cannot have an input variable named 'stop', as it is used internally,"
                 " please rename."
             )
-        if "stop" in values["partial_variables"]:
+        if "stop" in self.partial_variables:
             raise ValueError(
                 "Cannot have an partial variable named 'stop', as it is used "
                 "internally, please rename."
             )
 
-        overall = set(values["input_variables"]).intersection(
-            values["partial_variables"]
-        )
+        overall = set(self.input_variables).intersection(self.partial_variables)
         if overall:
             raise ValueError(
                 f"Found overlapping input and partial variables: {overall}"
             )
-        return values
+        return self
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
         Returns ["langchain", "schema", "prompt_template"]."""
         return ["langchain", "schema", "prompt_template"]
@@ -99,17 +99,23 @@ class BasePromptTemplate(
         Returns True."""
         return True
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
+
+    @cached_property
+    def _serialized(self) -> dict[str, Any]:
+        return dumpd(self)
 
     @property
+    @override
     def OutputType(self) -> Any:
         """Return the output type of the prompt."""
         return Union[StringPromptValue, ChatPromptValueConcrete]
 
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
+    ) -> type[BaseModel]:
         """Get the input schema for the prompt.
 
         Args:
@@ -125,11 +131,12 @@ class BasePromptTemplate(
         optional_input_variables = {
             k: (self.input_types.get(k, str), None) for k in self.optional_variables
         }
-        return create_model(
-            "PromptInput", **{**required_input_variables, **optional_input_variables}
+        return create_model_v2(
+            "PromptInput",
+            field_definitions={**required_input_variables, **optional_input_variables},
         )
 
-    def _validate_input(self, inner_input: Any) -> Dict:
+    def _validate_input(self, inner_input: Any) -> dict:
         if not isinstance(inner_input, dict):
             if len(self.input_variables) == 1:
                 var_name = self.input_variables[0]
@@ -156,18 +163,18 @@ class BasePromptTemplate(
             raise KeyError(msg)
         return inner_input
 
-    def _format_prompt_with_error_handling(self, inner_input: Dict) -> PromptValue:
+    def _format_prompt_with_error_handling(self, inner_input: dict) -> PromptValue:
         _inner_input = self._validate_input(inner_input)
         return self.format_prompt(**_inner_input)
 
     async def _aformat_prompt_with_error_handling(
-        self, inner_input: Dict
+        self, inner_input: dict
     ) -> PromptValue:
         _inner_input = self._validate_input(inner_input)
         return await self.aformat_prompt(**_inner_input)
 
     def invoke(
-        self, input: Dict, config: Optional[RunnableConfig] = None
+        self, input: dict, config: Optional[RunnableConfig] = None
     ) -> PromptValue:
         """Invoke the prompt.
 
@@ -188,10 +195,11 @@ class BasePromptTemplate(
             input,
             config,
             run_type="prompt",
+            serialized=self._serialized,
         )
 
     async def ainvoke(
-        self, input: Dict, config: Optional[RunnableConfig] = None, **kwargs: Any
+        self, input: dict, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> PromptValue:
         """Async invoke the prompt.
 
@@ -212,6 +220,7 @@ class BasePromptTemplate(
             input,
             config,
             run_type="prompt",
+            serialized=self._serialized,
         )
 
     @abstractmethod
@@ -252,7 +261,7 @@ class BasePromptTemplate(
         prompt_dict["partial_variables"] = {**self.partial_variables, **kwargs}
         return type(self)(**prompt_dict)
 
-    def _merge_partial_and_user_variables(self, **kwargs: Any) -> Dict[str, Any]:
+    def _merge_partial_and_user_variables(self, **kwargs: Any) -> dict[str, Any]:
         # Get partial params:
         partial_kwargs = {
             k: v if not callable(v) else v() for k, v in self.partial_variables.items()
@@ -298,7 +307,7 @@ class BasePromptTemplate(
         """Return the prompt type key."""
         raise NotImplementedError
 
-    def dict(self, **kwargs: Any) -> Dict:
+    def dict(self, **kwargs: Any) -> dict:
         """Return dictionary representation of prompt.
 
         Args:
@@ -310,11 +319,9 @@ class BasePromptTemplate(
         Raises:
             NotImplementedError: If the prompt type is not implemented.
         """
-        prompt_dict = super().dict(**kwargs)
-        try:
+        prompt_dict = super().model_dump(**kwargs)
+        with contextlib.suppress(NotImplementedError):
             prompt_dict["_type"] = self._prompt_type
-        except NotImplementedError:
-            pass
         return prompt_dict
 
     def save(self, file_path: Union[Path, str]) -> None:
@@ -342,10 +349,7 @@ class BasePromptTemplate(
             raise NotImplementedError(f"Prompt {self} does not support saving.")
 
         # Convert file to Path object.
-        if isinstance(file_path, str):
-            save_path = Path(file_path)
-        else:
-            save_path = file_path
+        save_path = Path(file_path) if isinstance(file_path, str) else file_path
 
         directory_path = save_path.parent
         directory_path.mkdir(parents=True, exist_ok=True)
@@ -360,7 +364,7 @@ class BasePromptTemplate(
             raise ValueError(f"{save_path} must be json or yaml")
 
 
-def _get_document_info(doc: Document, prompt: BasePromptTemplate[str]) -> Dict:
+def _get_document_info(doc: Document, prompt: BasePromptTemplate[str]) -> dict:
     base_info = {"page_content": doc.page_content, **doc.metadata}
     missing_metadata = set(prompt.input_variables).difference(base_info)
     if len(missing_metadata) > 0:

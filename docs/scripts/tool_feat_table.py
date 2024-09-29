@@ -62,6 +62,11 @@ SEARCH_TOOL_FEAT_TABLE = {
         "available_data": "Answer",
         "link": "/docs/integrations/tools/serpapi",
     },
+    "Jina Search": {
+        "pricing": "1M Response Tokens Free",
+        "available_data": "URL, Snippet, Title, Page Content",
+        "link": "/docs/integrations/tools/jina_search/",
+    },
 }
 
 CODE_INTERPRETER_TOOL_FEAT_TABLE = {
@@ -76,7 +81,7 @@ CODE_INTERPRETER_TOOL_FEAT_TABLE = {
     "Riza Code Interpreter": {
         "langauges": "Python, JavaScript, PHP, Ruby",
         "sandbox_lifetime": "Resets on Execution",
-        "upload": False,
+        "upload": True,
         "return_results": "Text",
         "link": "/docs/integrations/tools/riza",
         "self_hosting": True,

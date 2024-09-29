@@ -42,14 +42,14 @@ from langchain_core.output_parsers.openai_tools import (
     parse_tool_call,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import (
+from langchain_core.runnables import Runnable, RunnableConfig
+from langchain_core.tools import BaseTool
+from langchain_core.utils.function_calling import convert_to_openai_tool
+from pydantic import (
     BaseModel,
     Field,
     PrivateAttr,
 )
-from langchain_core.runnables import Runnable, RunnableConfig
-from langchain_core.tools import BaseTool
-from langchain_core.utils.function_calling import convert_to_openai_tool
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +68,7 @@ class ChatMlflow(BaseChatModel):
             chat = ChatMlflow(
                 target_uri="http://localhost:5000",
                 endpoint="chat",
-                temperature-0.1,
+                temperature=0.1,
             )
     """
 

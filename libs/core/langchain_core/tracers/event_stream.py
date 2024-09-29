@@ -3,16 +3,13 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
+from collections.abc import AsyncIterator, Iterator, Sequence
 from typing import (
     TYPE_CHECKING,
     Any,
-    AsyncIterator,
-    Dict,
-    Iterator,
-    List,
     Optional,
-    Sequence,
     TypeVar,
     Union,
     cast,
@@ -66,21 +63,22 @@ class RunInfo(TypedDict):
     """
 
     name: str
-    tags: List[str]
-    metadata: Dict[str, Any]
+    tags: list[str]
+    metadata: dict[str, Any]
     run_type: str
     inputs: NotRequired[Any]
     parent_run_id: Optional[UUID]
 
 
-def _assign_name(name: Optional[str], serialized: Dict[str, Any]) -> str:
+def _assign_name(name: Optional[str], serialized: Optional[dict[str, Any]]) -> str:
     """Assign a name to a run."""
     if name is not None:
         return name
-    if "name" in serialized:
-        return serialized["name"]
-    elif "id" in serialized:
-        return serialized["id"][-1]
+    if serialized is not None:
+        if "name" in serialized:
+            return serialized["name"]
+        elif "id" in serialized:
+            return serialized["id"][-1]
     return "Unnamed"
 
 
@@ -106,15 +104,15 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         # Map of run ID to run info.
         # the entry corresponding to a given run id is cleaned
         # up when each corresponding run ends.
-        self.run_map: Dict[UUID, RunInfo] = {}
+        self.run_map: dict[UUID, RunInfo] = {}
         # The callback event that corresponds to the end of a parent run
         # may be invoked BEFORE the callback event that corresponds to the end
         # of a child run, which results in clean up of run_map.
         # So we keep track of the mapping between children and parent run IDs
         # in a separate container. This container is GCed when the tracer is GCed.
-        self.parent_map: Dict[UUID, Optional[UUID]] = {}
+        self.parent_map: dict[UUID, Optional[UUID]] = {}
 
-        self.is_tapped: Dict[UUID, Any] = {}
+        self.is_tapped: dict[UUID, Any] = {}
 
         # Filter which events will be sent over the queue.
         self.root_event_filter = _RootEventFilter(
@@ -131,7 +129,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         self.send_stream = memory_stream.get_send_stream()
         self.receive_stream = memory_stream.get_receive_stream()
 
-    def _get_parent_ids(self, run_id: UUID) -> List[str]:
+    def _get_parent_ids(self, run_id: UUID) -> list[str]:
         """Get the parent IDs of a run (non-recursively) cast to strings."""
         parent_ids = []
 
@@ -268,8 +266,8 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         self,
         run_id: UUID,
         *,
-        tags: Optional[List[str]],
-        metadata: Optional[Dict[str, Any]],
+        tags: Optional[list[str]],
+        metadata: Optional[dict[str, Any]],
         parent_run_id: Optional[UUID],
         name_: str,
         run_type: str,
@@ -295,13 +293,13 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
 
     async def on_chat_model_start(
         self,
-        serialized: Dict[str, Any],
-        messages: List[List[BaseMessage]],
+        serialized: dict[str, Any],
+        messages: list[list[BaseMessage]],
         *,
         run_id: UUID,
-        tags: Optional[List[str]] = None,
+        tags: Optional[list[str]] = None,
         parent_run_id: Optional[UUID] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         name: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
@@ -336,13 +334,13 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
 
     async def on_llm_start(
         self,
-        serialized: Dict[str, Any],
-        prompts: List[str],
+        serialized: dict[str, Any],
+        prompts: list[str],
         *,
         run_id: UUID,
-        tags: Optional[List[str]] = None,
+        tags: Optional[list[str]] = None,
         parent_run_id: Optional[UUID] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         name: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
@@ -383,8 +381,8 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         data: Any,
         *,
         run_id: UUID,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
         """Generate a custom astream event."""
@@ -455,11 +453,11 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         run_info = self.run_map.pop(run_id)
         inputs_ = run_info["inputs"]
 
-        generations: Union[List[List[GenerationChunk]], List[List[ChatGenerationChunk]]]
+        generations: Union[list[list[GenerationChunk]], list[list[ChatGenerationChunk]]]
         output: Union[dict, BaseMessage] = {}
 
         if run_info["run_type"] == "chat_model":
-            generations = cast(List[List[ChatGenerationChunk]], response.generations)
+            generations = cast(list[list[ChatGenerationChunk]], response.generations)
             for gen in generations:
                 if output != {}:
                     break
@@ -469,7 +467,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
 
             event = "on_chat_model_end"
         elif run_info["run_type"] == "llm":
-            generations = cast(List[List[GenerationChunk]], response.generations)
+            generations = cast(list[list[GenerationChunk]], response.generations)
             output = {
                 "generations": [
                     [
@@ -503,13 +501,13 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
 
     async def on_chain_start(
         self,
-        serialized: Dict[str, Any],
-        inputs: Dict[str, Any],
+        serialized: dict[str, Any],
+        inputs: dict[str, Any],
         *,
         run_id: UUID,
-        tags: Optional[List[str]] = None,
+        tags: Optional[list[str]] = None,
         parent_run_id: Optional[UUID] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         run_type: Optional[str] = None,
         name: Optional[str] = None,
         **kwargs: Any,
@@ -551,10 +549,10 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
 
     async def on_chain_end(
         self,
-        outputs: Dict[str, Any],
+        outputs: dict[str, Any],
         *,
         run_id: UUID,
-        inputs: Optional[Dict[str, Any]] = None,
+        inputs: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
         """End a trace for a chain run."""
@@ -585,15 +583,15 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
 
     async def on_tool_start(
         self,
-        serialized: Dict[str, Any],
+        serialized: dict[str, Any],
         input_str: str,
         *,
         run_id: UUID,
-        tags: Optional[List[str]] = None,
+        tags: Optional[list[str]] = None,
         parent_run_id: Optional[UUID] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         name: Optional[str] = None,
-        inputs: Optional[Dict[str, Any]] = None,
+        inputs: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
         """Start a trace for a tool run."""
@@ -652,13 +650,13 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
 
     async def on_retriever_start(
         self,
-        serialized: Dict[str, Any],
+        serialized: dict[str, Any],
         query: str,
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         name: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
@@ -817,10 +815,7 @@ async def _astream_events_implementation_v1(
             data: EventData = {}
             log_entry: LogEntry = run_log.state["logs"][path]
             if log_entry["end_time"] is None:
-                if log_entry["streamed_output"]:
-                    event_type = "stream"
-                else:
-                    event_type = "start"
+                event_type = "stream" if log_entry["streamed_output"] else "start"
             else:
                 event_type = "end"
 
@@ -832,7 +827,6 @@ async def _astream_events_implementation_v1(
                 inputs = log_entry["inputs"]
                 if inputs is not None:
                     data["input"] = inputs
-                pass
 
             if event_type == "end":
                 inputs = log_entry["inputs"]
@@ -987,21 +981,24 @@ async def _astream_events_implementation_v2(
                 yield event
                 continue
 
-            if event["run_id"] == first_event_run_id and event["event"].endswith(
-                "_end"
+            # If it's the end event corresponding to the root runnable
+            # we dont include the input in the event since it's guaranteed
+            # to be included in the first event.
+            if (
+                event["run_id"] == first_event_run_id
+                and event["event"].endswith("_end")
+                and "input" in event["data"]
             ):
-                # If it's the end event corresponding to the root runnable
-                # we dont include the input in the event since it's guaranteed
-                # to be included in the first event.
-                if "input" in event["data"]:
-                    del event["data"]["input"]
+                del event["data"]["input"]
 
             yield event
+    except asyncio.CancelledError as exc:
+        # Cancel the task if it's still running
+        task.cancel(exc.args[0] if exc.args else None)
+        raise
     finally:
         # Cancel the task if it's still running
         task.cancel()
         # Await it anyway, to run any cleanup code, and propagate any exceptions
-        try:
+        with contextlib.suppress(asyncio.CancelledError):
             await task
-        except asyncio.CancelledError:
-            pass

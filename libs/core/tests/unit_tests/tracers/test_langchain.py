@@ -3,12 +3,13 @@ import time
 import unittest
 import unittest.mock
 import uuid
-from typing import Any, Dict
+from typing import Any
 from uuid import UUID
 
 import pytest
 from langsmith import Client
 from langsmith.run_trees import RunTree
+from langsmith.utils import get_env_var, get_tracer_project
 
 from langchain_core.outputs import LLMResult
 from langchain_core.tracers.langchain import LangChainTracer
@@ -64,7 +65,7 @@ def test_example_id_assignment_threadsafe() -> None:
 def test_tracer_with_run_tree_parent() -> None:
     mock_session = unittest.mock.MagicMock()
     client = Client(session=mock_session, api_key="test")
-    parent = RunTree(name="parent", inputs={"input": "foo"}, client=client)
+    parent = RunTree(name="parent", inputs={"input": "foo"}, _client=client)  # type: ignore
     run_id = uuid.uuid4()
     tracer = LangChainTracer(client=client)
     tracer.order_map[parent.id] = (parent.trace_id, parent.dotted_order)
@@ -101,7 +102,7 @@ class LangChainProjectNameTest(unittest.TestCase):
 
     class SetProperTracerProjectTestCase:
         def __init__(
-            self, test_name: str, envvars: Dict[str, str], expected_project_name: str
+            self, test_name: str, envvars: dict[str, str], expected_project_name: str
         ):
             self.test_name = test_name
             self.envvars = envvars
@@ -130,25 +131,26 @@ class LangChainProjectNameTest(unittest.TestCase):
         ]
 
         for case in cases:
-            with self.subTest(msg=case.test_name):
-                with pytest.MonkeyPatch.context() as mp:
-                    for k, v in case.envvars.items():
-                        mp.setenv(k, v)
+            get_env_var.cache_clear()
+            get_tracer_project.cache_clear()
+            with self.subTest(msg=case.test_name), pytest.MonkeyPatch.context() as mp:
+                for k, v in case.envvars.items():
+                    mp.setenv(k, v)
 
-                    client = unittest.mock.MagicMock(spec=Client)
-                    tracer = LangChainTracer(client=client)
-                    projects = []
+                client = unittest.mock.MagicMock(spec=Client)
+                tracer = LangChainTracer(client=client)
+                projects = []
 
-                    def mock_create_run(**kwargs: Any) -> Any:
-                        projects.append(kwargs.get("project_name"))  # noqa: B023
-                        return unittest.mock.MagicMock()
+                def mock_create_run(**kwargs: Any) -> Any:
+                    projects.append(kwargs.get("project_name"))  # noqa: B023
+                    return unittest.mock.MagicMock()
 
-                    client.create_run = mock_create_run
+                client.create_run = mock_create_run
 
-                    tracer.on_llm_start(
-                        {"name": "example_1"},
-                        ["foo"],
-                        run_id=UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160a"),
-                    )
-                    tracer.wait_for_futures()
-                    assert projects == [case.expected_project_name]
+                tracer.on_llm_start(
+                    {"name": "example_1"},
+                    ["foo"],
+                    run_id=UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160a"),
+                )
+                tracer.wait_for_futures()
+                assert projects == [case.expected_project_name]

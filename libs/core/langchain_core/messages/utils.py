@@ -11,23 +11,21 @@ from __future__ import annotations
 
 import inspect
 import json
+from collections.abc import Iterable, Sequence
 from functools import partial
 from typing import (
     TYPE_CHECKING,
+    Annotated,
     Any,
     Callable,
-    Dict,
-    Iterable,
-    List,
     Literal,
     Optional,
-    Sequence,
-    Tuple,
-    Type,
     Union,
     cast,
     overload,
 )
+
+from pydantic import Discriminator, Field, Tag
 
 from langchain_core.messages.ai import AIMessage, AIMessageChunk
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk
@@ -45,13 +43,36 @@ if TYPE_CHECKING:
     from langchain_core.prompt_values import PromptValue
     from langchain_core.runnables.base import Runnable
 
-AnyMessage = Union[
-    AIMessage,
-    HumanMessage,
-    ChatMessage,
-    SystemMessage,
-    FunctionMessage,
-    ToolMessage,
+
+def _get_type(v: Any) -> str:
+    """Get the type associated with the object for serialization purposes."""
+    if isinstance(v, dict) and "type" in v:
+        return v["type"]
+    elif hasattr(v, "type"):
+        return v.type
+    else:
+        raise TypeError(
+            f"Expected either a dictionary with a 'type' key or an object "
+            f"with a 'type' attribute. Instead got type {type(v)}."
+        )
+
+
+AnyMessage = Annotated[
+    Union[
+        Annotated[AIMessage, Tag(tag="ai")],
+        Annotated[HumanMessage, Tag(tag="human")],
+        Annotated[ChatMessage, Tag(tag="chat")],
+        Annotated[SystemMessage, Tag(tag="system")],
+        Annotated[FunctionMessage, Tag(tag="function")],
+        Annotated[ToolMessage, Tag(tag="tool")],
+        Annotated[AIMessageChunk, Tag(tag="AIMessageChunk")],
+        Annotated[HumanMessageChunk, Tag(tag="HumanMessageChunk")],
+        Annotated[ChatMessageChunk, Tag(tag="ChatMessageChunk")],
+        Annotated[SystemMessageChunk, Tag(tag="SystemMessageChunk")],
+        Annotated[FunctionMessageChunk, Tag(tag="FunctionMessageChunk")],
+        Annotated[ToolMessageChunk, Tag(tag="ToolMessageChunk")],
+    ],
+    Field(discriminator=Discriminator(_get_type)),
 ]
 
 
@@ -140,7 +161,7 @@ def _message_from_dict(message: dict) -> BaseMessage:
         raise ValueError(f"Got unexpected message type: {_type}")
 
 
-def messages_from_dict(messages: Sequence[dict]) -> List[BaseMessage]:
+def messages_from_dict(messages: Sequence[dict]) -> list[BaseMessage]:
     """Convert a sequence of messages from dicts to Message objects.
 
     Args:
@@ -173,7 +194,7 @@ def message_chunk_to_message(chunk: BaseMessageChunk) -> BaseMessage:
 
 
 MessageLikeRepresentation = Union[
-    BaseMessage, List[str], Tuple[str, str], str, Dict[str, Any]
+    BaseMessage, list[str], tuple[str, str], str, dict[str, Any]
 ]
 
 
@@ -182,7 +203,7 @@ def _create_message_from_message_type(
     content: str,
     name: Optional[str] = None,
     tool_call_id: Optional[str] = None,
-    tool_calls: Optional[List[Dict[str, Any]]] = None,
+    tool_calls: Optional[list[dict[str, Any]]] = None,
     id: Optional[str] = None,
     **additional_kwargs: Any,
 ) -> BaseMessage:
@@ -204,7 +225,7 @@ def _create_message_from_message_type(
         ValueError: if the message type is not one of "human", "user", "ai",
             "assistant", "system", "function", or "tool".
     """
-    kwargs: Dict[str, Any] = {}
+    kwargs: dict[str, Any] = {}
     if name is not None:
         kwargs["name"] = name
     if tool_call_id is not None:
@@ -246,7 +267,7 @@ def _create_message_from_message_type(
         message = RemoveMessage(**kwargs)
     else:
         raise ValueError(
-            f"Unexpected message type: {message_type}. Use one of 'human',"
+            f"Unexpected message type: '{message_type}'. Use one of 'human',"
             f" 'user', 'ai', 'assistant', 'function', 'tool', or 'system'."
         )
     return message
@@ -305,7 +326,7 @@ def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
 
 def convert_to_messages(
     messages: Union[Iterable[MessageLikeRepresentation], PromptValue],
-) -> List[BaseMessage]:
+) -> list[BaseMessage]:
     """Convert a sequence of messages to a list of messages.
 
     Args:
@@ -326,18 +347,18 @@ def _runnable_support(func: Callable) -> Callable:
     @overload
     def wrapped(
         messages: Literal[None] = None, **kwargs: Any
-    ) -> Runnable[Sequence[MessageLikeRepresentation], List[BaseMessage]]: ...
+    ) -> Runnable[Sequence[MessageLikeRepresentation], list[BaseMessage]]: ...
 
     @overload
     def wrapped(
         messages: Sequence[MessageLikeRepresentation], **kwargs: Any
-    ) -> List[BaseMessage]: ...
+    ) -> list[BaseMessage]: ...
 
     def wrapped(
         messages: Optional[Sequence[MessageLikeRepresentation]] = None, **kwargs: Any
     ) -> Union[
-        List[BaseMessage],
-        Runnable[Sequence[MessageLikeRepresentation], List[BaseMessage]],
+        list[BaseMessage],
+        Runnable[Sequence[MessageLikeRepresentation], list[BaseMessage]],
     ]:
         from langchain_core.runnables.base import RunnableLambda
 
@@ -356,11 +377,11 @@ def filter_messages(
     *,
     include_names: Optional[Sequence[str]] = None,
     exclude_names: Optional[Sequence[str]] = None,
-    include_types: Optional[Sequence[Union[str, Type[BaseMessage]]]] = None,
-    exclude_types: Optional[Sequence[Union[str, Type[BaseMessage]]]] = None,
+    include_types: Optional[Sequence[Union[str, type[BaseMessage]]]] = None,
+    exclude_types: Optional[Sequence[Union[str, type[BaseMessage]]]] = None,
     include_ids: Optional[Sequence[str]] = None,
     exclude_ids: Optional[Sequence[str]] = None,
-) -> List[BaseMessage]:
+) -> list[BaseMessage]:
     """Filter messages based on name, type or id.
 
     Args:
@@ -412,25 +433,24 @@ def filter_messages(
             ]
     """  # noqa: E501
     messages = convert_to_messages(messages)
-    filtered: List[BaseMessage] = []
+    filtered: list[BaseMessage] = []
     for msg in messages:
-        if exclude_names and msg.name in exclude_names:
-            continue
-        elif exclude_types and _is_message_type(msg, exclude_types):
-            continue
-        elif exclude_ids and msg.id in exclude_ids:
+        if (
+            (exclude_names and msg.name in exclude_names)
+            or (exclude_types and _is_message_type(msg, exclude_types))
+            or (exclude_ids and msg.id in exclude_ids)
+        ):
             continue
         else:
             pass
 
         # default to inclusion when no inclusion criteria given.
-        if not (include_types or include_ids or include_names):
-            filtered.append(msg)
-        elif include_names and msg.name in include_names:
-            filtered.append(msg)
-        elif include_types and _is_message_type(msg, include_types):
-            filtered.append(msg)
-        elif include_ids and msg.id in include_ids:
+        if (
+            not (include_types or include_ids or include_names)
+            or (include_names and msg.name in include_names)
+            or (include_types and _is_message_type(msg, include_types))
+            or (include_ids and msg.id in include_ids)
+        ):
             filtered.append(msg)
         else:
             pass
@@ -443,7 +463,7 @@ def merge_message_runs(
     messages: Union[Iterable[MessageLikeRepresentation], PromptValue],
     *,
     chunk_separator: str = "\n",
-) -> List[BaseMessage]:
+) -> list[BaseMessage]:
     """Merge consecutive Messages of the same type.
 
     **NOTE**: ToolMessages are not merged, as each has a distinct tool call id that
@@ -513,9 +533,9 @@ def merge_message_runs(
     if not messages:
         return []
     messages = convert_to_messages(messages)
-    merged: List[BaseMessage] = []
+    merged: list[BaseMessage] = []
     for msg in messages:
-        curr = msg.copy(deep=True)
+        curr = msg.model_copy(deep=True)
         last = merged.pop() if merged else None
         if not last:
             merged.append(curr)
@@ -543,22 +563,47 @@ def trim_messages(
     *,
     max_tokens: int,
     token_counter: Union[
-        Callable[[List[BaseMessage]], int],
+        Callable[[list[BaseMessage]], int],
         Callable[[BaseMessage], int],
         BaseLanguageModel,
     ],
     strategy: Literal["first", "last"] = "last",
     allow_partial: bool = False,
     end_on: Optional[
-        Union[str, Type[BaseMessage], Sequence[Union[str, Type[BaseMessage]]]]
+        Union[str, type[BaseMessage], Sequence[Union[str, type[BaseMessage]]]]
     ] = None,
     start_on: Optional[
-        Union[str, Type[BaseMessage], Sequence[Union[str, Type[BaseMessage]]]]
+        Union[str, type[BaseMessage], Sequence[Union[str, type[BaseMessage]]]]
     ] = None,
     include_system: bool = False,
-    text_splitter: Optional[Union[Callable[[str], List[str]], TextSplitter]] = None,
-) -> List[BaseMessage]:
+    text_splitter: Optional[Union[Callable[[str], list[str]], TextSplitter]] = None,
+) -> list[BaseMessage]:
     """Trim messages to be below a token count.
+
+    trim_messages can be used to reduce the size of a chat history to a specified token
+    count or specified message count.
+
+    In either case, if passing the trimmed chat history back into a chat model
+    directly, the resulting chat history should usually satisfy the following
+    properties:
+
+    1. The resulting chat history should be valid. Most chat models expect that chat
+       history starts with either (1) a `HumanMessage` or (2) a `SystemMessage` followed
+       by a `HumanMessage`. To achieve this, set `start_on="human"`.
+       In addition, generally a `ToolMessage` can only appear after an `AIMessage`
+       that involved a tool call.
+       Please see the following link for more information about messages:
+       https://python.langchain.com/docs/concepts/#messages
+    2. It includes recent messages and drops old messages in the chat history.
+       To achieve this set the `strategy="last"`.
+    3. Usually, the new chat history should include the `SystemMessage` if it
+       was present in the original chat history since the `SystemMessage` includes
+       special instructions to the chat model. The `SystemMessage` is almost always
+       the first message in the history if present. To achieve this set the
+       `include_system=True`.
+
+    **Note** The examples below show how to configure `trim_messages` to achieve
+        a behavior consistent with the above properties.
 
     Args:
         messages: Sequence of Message-like objects to trim.
@@ -566,6 +611,7 @@ def trim_messages(
         token_counter: Function or llm for counting tokens in a BaseMessage or a list of
             BaseMessage. If a BaseLanguageModel is passed in then
             BaseLanguageModel.get_num_tokens_from_messages() will be used.
+            Set to `len` to count the number of **messages** in the chat history.
         strategy: Strategy for trimming.
             - "first": Keep the first <= n_count tokens of the messages.
             - "last": Keep the last <= n_count tokens of the messages.
@@ -612,11 +658,97 @@ def trim_messages(
             ``strategy`` is specified.
 
     Example:
+        Trim chat history based on token count, keeping the SystemMessage if
+        present, and ensuring that the chat history starts with a HumanMessage (
+        or a SystemMessage followed by a HumanMessage).
+
         .. code-block:: python
 
             from typing import List
 
-            from langchain_core.messages import trim_messages, AIMessage, BaseMessage, HumanMessage, SystemMessage
+            from langchain_core.messages import (
+                AIMessage,
+                HumanMessage,
+                BaseMessage,
+                SystemMessage,
+                trim_messages,
+            )
+
+            messages = [
+                SystemMessage("you're a good assistant, you always respond with a joke."),
+                HumanMessage("i wonder why it's called langchain"),
+                AIMessage(
+                    'Well, I guess they thought "WordRope" and "SentenceString" just didn\'t have the same ring to it!'
+                ),
+                HumanMessage("and who is harrison chasing anyways"),
+                AIMessage(
+                    "Hmmm let me think.\n\nWhy, he's probably chasing after the last cup of coffee in the office!"
+                ),
+                HumanMessage("what do you call a speechless parrot"),
+            ]
+
+
+            trim_messages(
+                messages,
+                max_tokens=45,
+                strategy="last",
+                token_counter=ChatOpenAI(model="gpt-4o"),
+                # Most chat models expect that chat history starts with either:
+                # (1) a HumanMessage or
+                # (2) a SystemMessage followed by a HumanMessage
+                start_on="human",
+                # Usually, we want to keep the SystemMessage
+                # if it's present in the original history.
+                # The SystemMessage has special instructions for the model.
+                include_system=True,
+                allow_partial=False,
+            )
+
+        .. code-block:: python
+
+            [
+                SystemMessage(content="you're a good assistant, you always respond with a joke."),
+                HumanMessage(content='what do you call a speechless parrot'),
+            ]
+
+        Trim chat history based on the message count, keeping the SystemMessage if
+        present, and ensuring that the chat history starts with a HumanMessage (
+        or a SystemMessage followed by a HumanMessage).
+
+            trim_messages(
+                messages,
+                # When `len` is passed in as the token counter function,
+                # max_tokens will count the number of messages in the chat history.
+                max_tokens=4,
+                strategy="last",
+                # Passing in `len` as a token counter function will
+                # count the number of messages in the chat history.
+                token_counter=len,
+                # Most chat models expect that chat history starts with either:
+                # (1) a HumanMessage or
+                # (2) a SystemMessage followed by a HumanMessage
+                start_on="human",
+                # Usually, we want to keep the SystemMessage
+                # if it's present in the original history.
+                # The SystemMessage has special instructions for the model.
+                include_system=True,
+                allow_partial=False,
+            )
+
+        .. code-block:: python
+
+            [
+                SystemMessage(content="you're a good assistant, you always respond with a joke."),
+                HumanMessage(content='and who is harrison chasing anyways'),
+                AIMessage(content="Hmmm let me think.\n\nWhy, he's probably chasing after the last cup of coffee in the office!"),
+                HumanMessage(content='what do you call a speechless parrot'),
+            ]
+
+
+        Trim chat history using a custom token counter function that counts the
+        number of tokens in each message.
+
+        .. code-block:: python
 
             messages = [
                 SystemMessage("This is a 4 token text. The full message is 10 tokens."),
@@ -649,18 +781,6 @@ def trim_messages(
                         count += default_msg_prefix_len + len(msg.content) *  default_content_len + default_msg_suffix_len
                 return count
 
-        First 30 tokens, not allowing partial messages:
-            .. code-block:: python
-
-                trim_messages(messages, max_tokens=30, token_counter=dummy_token_counter, strategy="first")
-
-            .. code-block:: python
-
-                [
-                    SystemMessage("This is a 4 token text. The full message is 10 tokens."),
-                    HumanMessage("This is a 4 token text. The full message is 10 tokens.", id="first"),
-                ]
-
         First 30 tokens, allowing partial messages:
             .. code-block:: python
 
@@ -679,108 +799,6 @@ def trim_messages(
                     HumanMessage("This is a 4 token text. The full message is 10 tokens.", id="first"),
                     AIMessage( [{"type": "text", "text": "This is the FIRST 4 token block."}], id="second"),
                 ]
-
-        First 30 tokens, allowing partial messages, have to end on HumanMessage:
-            .. code-block:: python
-
-                trim_messages(
-                    messages,
-                    max_tokens=30,
-                    token_counter=dummy_token_counter,
-                    strategy="first"
-                    allow_partial=True,
-                    end_on="human",
-                )
-
-            .. code-block:: python
-
-                [
-                    SystemMessage("This is a 4 token text. The full message is 10 tokens."),
-                    HumanMessage("This is a 4 token text. The full message is 10 tokens.", id="first"),
-                ]
-
-
-        Last 30 tokens, including system message, not allowing partial messages:
-            .. code-block:: python
-
-                trim_messages(messages, max_tokens=30, include_system=True, token_counter=dummy_token_counter, strategy="last")
-
-            .. code-block:: python
-
-                [
-                    SystemMessage("This is a 4 token text. The full message is 10 tokens."),
-                    HumanMessage("This is a 4 token text. The full message is 10 tokens.", id="third"),
-                    AIMessage("This is a 4 token text. The full message is 10 tokens.", id="fourth"),
-                ]
-
-        Last 40 tokens, including system message, allowing partial messages:
-            .. code-block:: python
-
-                trim_messages(
-                    messages,
-                    max_tokens=40,
-                    token_counter=dummy_token_counter,
-                    strategy="last",
-                    allow_partial=True,
-                    include_system=True
-                )
-
-            .. code-block:: python
-
-                [
-                    SystemMessage("This is a 4 token text. The full message is 10 tokens."),
-                    AIMessage(
-                        [{"type": "text", "text": "This is the FIRST 4 token block."},],
-                        id="second",
-                    ),
-                    HumanMessage("This is a 4 token text. The full message is 10 tokens.", id="third"),
-                    AIMessage("This is a 4 token text. The full message is 10 tokens.", id="fourth"),
-                ]
-
-        Last 30 tokens, including system message, allowing partial messages, end on HumanMessage:
-            .. code-block:: python
-
-                trim_messages(
-                    messages,
-                    max_tokens=30,
-                    token_counter=dummy_token_counter,
-                    strategy="last",
-                    end_on="human",
-                    include_system=True,
-                    allow_partial=True,
-                )
-
-            .. code-block:: python
-
-                [
-                    SystemMessage("This is a 4 token text. The full message is 10 tokens."),
-                    AIMessage(
-                        [{"type": "text", "text": "This is the FIRST 4 token block."},],
-                        id="second",
-                    ),
-                    HumanMessage("This is a 4 token text. The full message is 10 tokens.", id="third"),
-                ]
-
-        Last 40 tokens, including system message, allowing partial messages, start on HumanMessage:
-            .. code-block:: python
-
-                trim_messages(
-                    messages,
-                    max_tokens=40,
-                    token_counter=dummy_token_counter,
-                    strategy="last",
-                    include_system=True,
-                    allow_partial=True,
-                    start_on="human"
-                )
-
-            .. code-block:: python
-
-                [
-                    SystemMessage("This is a 4 token text. The full message is 10 tokens."),
-                    HumanMessage("This is a 4 token text. The full message is 10 tokens.", id="third"),
-                    AIMessage("This is a 4 token text. The full message is 10 tokens.", id="fourth"),
-                ]
     """  # noqa: E501
 
     if start_on and strategy == "first":
@@ -798,6 +816,7 @@ def trim_messages(
 
             def list_token_counter(messages: Sequence[BaseMessage]) -> int:
                 return sum(token_counter(msg) for msg in messages)  # type: ignore[arg-type, misc]
+
         else:
             list_token_counter = token_counter  # type: ignore[assignment]
     else:
@@ -849,13 +868,13 @@ def _first_max_tokens(
     messages: Sequence[BaseMessage],
     *,
     max_tokens: int,
-    token_counter: Callable[[List[BaseMessage]], int],
-    text_splitter: Callable[[str], List[str]],
+    token_counter: Callable[[list[BaseMessage]], int],
+    text_splitter: Callable[[str], list[str]],
     partial_strategy: Optional[Literal["first", "last"]] = None,
     end_on: Optional[
-        Union[str, Type[BaseMessage], Sequence[Union[str, Type[BaseMessage]]]]
+        Union[str, type[BaseMessage], Sequence[Union[str, type[BaseMessage]]]]
     ] = None,
-) -> List[BaseMessage]:
+) -> list[BaseMessage]:
     messages = list(messages)
     idx = 0
     for i in range(len(messages)):
@@ -866,7 +885,7 @@ def _first_max_tokens(
     if idx < len(messages) - 1 and partial_strategy:
         included_partial = False
         if isinstance(messages[idx].content, list):
-            excluded = messages[idx].copy(deep=True)
+            excluded = messages[idx].model_copy(deep=True)
             num_block = len(excluded.content)
             if partial_strategy == "last":
                 excluded.content = list(reversed(excluded.content))
@@ -880,7 +899,7 @@ def _first_max_tokens(
             if included_partial and partial_strategy == "last":
                 excluded.content = list(reversed(excluded.content))
         if not included_partial:
-            excluded = messages[idx].copy(deep=True)
+            excluded = messages[idx].model_copy(deep=True)
             if isinstance(excluded.content, list) and any(
                 isinstance(block, str) or block["type"] == "text"
                 for block in messages[idx].content
@@ -923,26 +942,25 @@ def _last_max_tokens(
     messages: Sequence[BaseMessage],
     *,
     max_tokens: int,
-    token_counter: Callable[[List[BaseMessage]], int],
-    text_splitter: Callable[[str], List[str]],
+    token_counter: Callable[[list[BaseMessage]], int],
+    text_splitter: Callable[[str], list[str]],
     allow_partial: bool = False,
     include_system: bool = False,
     start_on: Optional[
-        Union[str, Type[BaseMessage], Sequence[Union[str, Type[BaseMessage]]]]
+        Union[str, type[BaseMessage], Sequence[Union[str, type[BaseMessage]]]]
     ] = None,
     end_on: Optional[
-        Union[str, Type[BaseMessage], Sequence[Union[str, Type[BaseMessage]]]]
+        Union[str, type[BaseMessage], Sequence[Union[str, type[BaseMessage]]]]
     ] = None,
-) -> List[BaseMessage]:
+) -> list[BaseMessage]:
     messages = list(messages)
+    if len(messages) == 0:
+        return []
     if end_on:
         while messages and not _is_message_type(messages[-1], end_on):
             messages.pop()
     swapped_system = include_system and isinstance(messages[0], SystemMessage)
-    if swapped_system:
-        reversed_ = messages[:1] + messages[1:][::-1]
-    else:
-        reversed_ = messages[::-1]
+    reversed_ = messages[:1] + messages[1:][::-1] if swapped_system else messages[::-1]
 
     reversed_ = _first_max_tokens(
         reversed_,
@@ -958,7 +976,7 @@ def _last_max_tokens(
         return reversed_[::-1]
 
 
-_MSG_CHUNK_MAP: Dict[Type[BaseMessage], Type[BaseMessageChunk]] = {
+_MSG_CHUNK_MAP: dict[type[BaseMessage], type[BaseMessageChunk]] = {
     HumanMessage: HumanMessageChunk,
     AIMessage: AIMessageChunk,
     SystemMessage: SystemMessageChunk,
@@ -971,11 +989,11 @@ _CHUNK_MSG_MAP = {v: k for k, v in _MSG_CHUNK_MAP.items()}
 
 def _msg_to_chunk(message: BaseMessage) -> BaseMessageChunk:
     if message.__class__ in _MSG_CHUNK_MAP:
-        return _MSG_CHUNK_MAP[message.__class__](**message.dict(exclude={"type"}))
+        return _MSG_CHUNK_MAP[message.__class__](**message.model_dump(exclude={"type"}))
 
     for msg_cls, chunk_cls in _MSG_CHUNK_MAP.items():
         if isinstance(message, msg_cls):
-            return chunk_cls(**message.dict(exclude={"type"}))
+            return chunk_cls(**message.model_dump(exclude={"type"}))
 
     raise ValueError(
         f"Unrecognized message class {message.__class__}. Supported classes are "
@@ -986,11 +1004,11 @@ def _msg_to_chunk(message: BaseMessage) -> BaseMessageChunk:
 def _chunk_to_msg(chunk: BaseMessageChunk) -> BaseMessage:
     if chunk.__class__ in _CHUNK_MSG_MAP:
         return _CHUNK_MSG_MAP[chunk.__class__](
-            **chunk.dict(exclude={"type", "tool_call_chunks"})
+            **chunk.model_dump(exclude={"type", "tool_call_chunks"})
         )
     for chunk_cls, msg_cls in _CHUNK_MSG_MAP.items():
         if isinstance(chunk, chunk_cls):
-            return msg_cls(**chunk.dict(exclude={"type", "tool_call_chunks"}))
+            return msg_cls(**chunk.model_dump(exclude={"type", "tool_call_chunks"}))
 
     raise ValueError(
         f"Unrecognized message chunk class {chunk.__class__}. Supported classes are "
@@ -998,14 +1016,14 @@ def _chunk_to_msg(chunk: BaseMessageChunk) -> BaseMessage:
     )
 
 
-def _default_text_splitter(text: str) -> List[str]:
+def _default_text_splitter(text: str) -> list[str]:
     splits = text.split("\n")
     return [s + "\n" for s in splits[:-1]] + splits[-1:]
 
 
 def _is_message_type(
     message: BaseMessage,
-    type_: Union[str, Type[BaseMessage], Sequence[Union[str, Type[BaseMessage]]]],
+    type_: Union[str, type[BaseMessage], Sequence[Union[str, type[BaseMessage]]]],
 ) -> bool:
     types = [type_] if isinstance(type_, (str, type)) else type_
     types_str = [t for t in types if isinstance(t, str)]

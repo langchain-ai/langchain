@@ -9,7 +9,7 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
-from langchain_core.pydantic_v1 import Field
+from pydantic import Field
 
 logger = logging.getLogger(__name__)
 
@@ -335,13 +335,12 @@ class TextGen(LLM):
                     text=result["text"],  # type: ignore[call-overload, index]
                     generation_info=None,
                 )
+                if run_manager:
+                    run_manager.on_llm_new_token(token=chunk.text)
                 yield chunk
             elif result["event"] == "stream_end":  # type: ignore[call-overload, index]
                 websocket_client.close()
                 return
-
-            if run_manager:
-                run_manager.on_llm_new_token(token=chunk.text)
 
     async def _astream(
         self,
@@ -408,10 +407,9 @@ class TextGen(LLM):
                     text=result["text"],  # type: ignore[call-overload, index]
                     generation_info=None,
                 )
+                if run_manager:
+                    await run_manager.on_llm_new_token(token=chunk.text)
                 yield chunk
             elif result["event"] == "stream_end":  # type: ignore[call-overload, index]
                 websocket_client.close()
                 return
-
-            if run_manager:
-                await run_manager.on_llm_new_token(token=chunk.text)

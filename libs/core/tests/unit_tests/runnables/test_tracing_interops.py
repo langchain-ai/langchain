@@ -1,11 +1,16 @@
 import json
 import sys
-from typing import Any, AsyncGenerator, Generator
+import uuid
+from collections.abc import AsyncGenerator, Generator
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
-from langsmith import Client, traceable
+from langsmith import Client, get_current_run_tree, traceable
 from langsmith.run_helpers import tracing_context
+from langsmith.run_trees import RunTree
+from langsmith.utils import get_env_var
+from typing_extensions import Literal
 
 from langchain_core.runnables.base import RunnableLambda, RunnableParallel
 from langchain_core.tracers.langchain import LangChainTracer
@@ -31,14 +36,20 @@ def _get_posts(client: Client) -> list:
 
 
 def test_config_traceable_handoff() -> None:
+    get_env_var.cache_clear()
     mock_session = MagicMock()
     mock_client_ = Client(
         session=mock_session, api_key="test", auto_batch_tracing=False
     )
-    tracer = LangChainTracer(client=mock_client_)
+    tracer = LangChainTracer(
+        client=mock_client_, project_name="another-flippin-project", tags=["such-a-tag"]
+    )
 
     @traceable
     def my_great_great_grandchild_function(a: int) -> int:
+        rt = get_current_run_tree()
+        assert rt
+        assert rt.session_name == "another-flippin-project"
         return a + 1
 
     @RunnableLambda
@@ -55,19 +66,28 @@ def test_config_traceable_handoff() -> None:
 
     @traceable()
     def my_function(a: int) -> int:
+        rt = get_current_run_tree()
+        assert rt
+        assert rt.session_name == "another-flippin-project"
+        assert rt.parent_run and rt.parent_run.name == "my_parent_function"
         return my_child_function(a)
 
     def my_parent_function(a: int) -> int:
+        rt = get_current_run_tree()
+        assert rt
+        assert rt.session_name == "another-flippin-project"
         return my_function(a)
 
     my_parent_runnable = RunnableLambda(my_parent_function)
 
     assert my_parent_runnable.invoke(1, {"callbacks": [tracer]}) == 6
     posts = _get_posts(mock_client_)
+    assert all(post["session_name"] == "another-flippin-project" for post in posts)
     # There should have been 6 runs created,
     # one for each function invocation
     assert len(posts) == 6
     name_to_body = {post["name"]: post for post in posts}
+
     ordered_names = [
         "my_parent_function",
         "my_function",
@@ -97,6 +117,7 @@ def test_config_traceable_handoff() -> None:
             )
         last_dotted_order = dotted_order
         parent_run_id = id_
+    assert "such-a-tag" in name_to_body["my_parent_function"]["tags"]
 
 
 @pytest.mark.skipif(
@@ -186,10 +207,13 @@ def test_tracing_enable_disable(
     def my_func(a: int) -> int:
         return a + 1
 
+    get_env_var.cache_clear()
     env_on = env == "true"
-    with patch.dict("os.environ", {"LANGSMITH_TRACING": env}):
-        with tracing_context(enabled=enabled):
-            RunnableLambda(my_func).invoke(1)
+    with (
+        patch.dict("os.environ", {"LANGSMITH_TRACING": env}),
+        tracing_context(enabled=enabled),
+    ):
+        RunnableLambda(my_func).invoke(1)
 
     mock_posts = _get_posts(mock_client_)
     if enabled is True:
@@ -338,3 +362,73 @@ async def test_runnable_sequence_parallel_trace_nesting(method: str) -> None:
             assert str(parent_id_map[name]) == str(id_map[parent_])
         else:
             assert dotted_order.split(".")[0] == dotted_order
+
+
+@pytest.mark.parametrize("parent_type", ("ls", "lc"))
+def test_tree_is_constructed(parent_type: Literal["ls", "lc"]) -> None:
+    mock_session = MagicMock()
+    mock_client_ = Client(
+        session=mock_session, api_key="test", auto_batch_tracing=False
+    )
+
+    @traceable
+    def kitten(x: str) -> str:
+        return x
+
+    @RunnableLambda
+    def grandchild(x: str) -> str:
+        return kitten(x)
+
+    @RunnableLambda
+    def child(x: str) -> str:
+        return grandchild.invoke(x)
+
+    rid = uuid.uuid4()
+    with tracing_context(
+        client=mock_client_,
+        enabled=True,
+        metadata={"some_foo": "some_bar"},
+        tags=["afoo"],
+    ):
+        if parent_type == "ls":
+            collected: dict[str, RunTree] = {}  # noqa
+
+            def collect_run(run: RunTree) -> None:
+                collected[str(run.id)] = run
+
+            @traceable
+            def parent() -> str:
+                return child.invoke("foo")
+
+            assert (
+                parent(langsmith_extra={"on_end": collect_run, "run_id": rid}) == "foo"
+            )
+            assert collected
+            run = collected.get(str(rid))
+
+        else:
+
+            @RunnableLambda
+            def parent(_) -> str:  # type: ignore
+                return child.invoke("foo")
+
+            tracer = LangChainTracer()
+            assert parent.invoke(..., {"run_id": rid, "callbacks": [tracer]}) == "foo"  # type: ignore
+            run = tracer.latest_run
+
+    assert run is not None
+    assert run.name == "parent"
+    assert run.child_runs
+    child_run = run.child_runs[0]
+    assert child_run.name == "child"
+    assert child_run.child_runs
+    grandchild_run = child_run.child_runs[0]
+    assert grandchild_run.name == "grandchild"
+    assert grandchild_run.child_runs
+    assert grandchild_run.metadata.get("some_foo") == "some_bar"
+    assert "afoo" in grandchild_run.tags  # type: ignore
+    kitten_run = grandchild_run.child_runs[0]
+    assert kitten_run.name == "kitten"
+    assert not kitten_run.child_runs
+    assert kitten_run.metadata.get("some_foo") == "some_bar"
+    assert "afoo" in kitten_run.tags  # type: ignore
