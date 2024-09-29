@@ -29,9 +29,7 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
     merged = left.copy()
     for right in others:
         for right_k, right_v in right.items():
-            if right_k not in merged:
-                merged[right_k] = right_v
-            elif right_v is not None and merged[right_k] is None:
+            if right_k not in merged or right_v is not None and merged[right_k] is None:
                 merged[right_k] = right_v
             elif right_v is None:
                 continue

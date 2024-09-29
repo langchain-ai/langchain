@@ -2033,7 +2033,7 @@ async def test_sync_in_async_stream_lambdas() -> None:
 
     async def add_one_proxy_(x: int, config: RunnableConfig) -> int:
         streaming = add_one.stream(x, config)
-        results = [result for result in streaming]
+        results = list(streaming)
         return results[0]
 
     add_one_proxy = RunnableLambda(add_one_proxy_)  # type: ignore
@@ -2078,7 +2078,7 @@ async def test_sync_in_sync_lambdas() -> None:
     def add_one_proxy(x: int, config: RunnableConfig) -> int:
         # Use sync streaming
         streaming = add_one_.stream(x, config)
-        results = [result for result in streaming]
+        results = list(streaming)
         return results[0]
 
     add_one_proxy_ = RunnableLambda(add_one_proxy)

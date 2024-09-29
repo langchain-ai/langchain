@@ -88,7 +88,6 @@ async def deprecated_async_function() -> str:
 class ClassWithDeprecatedMethods:
     def __init__(self) -> None:
         """original doc"""
-        pass
 
     @deprecated(since="2.0.0", removal="3.0.0")
     def deprecated_method(self) -> str:
@@ -268,7 +267,6 @@ def test_whole_class_deprecation() -> None:
     class DeprecatedClass:
         def __init__(self) -> None:
             """original doc"""
-            pass
 
         @deprecated(since="2.0.0", removal="3.0.0")
         def deprecated_method(self) -> str:
@@ -311,7 +309,6 @@ def test_whole_class_inherited_deprecation() -> None:
     class DeprecatedClass:
         def __init__(self) -> None:
             """original doc"""
-            pass
 
         @deprecated(since="2.0.0", removal="3.0.0")
         def deprecated_method(self) -> str:
@@ -324,7 +321,6 @@ def test_whole_class_inherited_deprecation() -> None:
 
         def __init__(self) -> None:
             """original doc"""
-            pass
 
         @deprecated(since="2.2.0", removal="3.2.0")
         def deprecated_method(self) -> str:

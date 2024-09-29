@@ -1,3 +1,4 @@
+import contextlib
 from abc import ABC
 from typing import (
     Any,
@@ -138,7 +139,7 @@ class Serializable(BaseModel, ABC):
         For example,
             {"openai_api_key": "OPENAI_API_KEY"}
         """
-        return dict()
+        return {}
 
     @property
     def lc_attributes(self) -> dict:
@@ -188,7 +189,7 @@ class Serializable(BaseModel, ABC):
         if not self.is_lc_serializable():
             return self.to_json_not_implemented()
 
-        secrets = dict()
+        secrets = {}
         # Get latest values for kwargs if there is an attribute with same name
         lc_kwargs = {}
         for k, v in self:
@@ -238,7 +239,7 @@ class Serializable(BaseModel, ABC):
 
         # include all secrets, even if not specified in kwargs
         # as these secrets may be passed as an environment variable instead
-        for key in secrets.keys():
+        for key in secrets:
             secret_value = getattr(self, key, None) or lc_kwargs.get(key)
             if secret_value is not None:
                 lc_kwargs.update({key: secret_value})
@@ -357,8 +358,6 @@ def to_json_not_implemented(obj: object) -> SerializedNotImplemented:
         "id": _id,
         "repr": None,
     }
-    try:
+    with contextlib.suppress(Exception):
         result["repr"] = repr(obj)
-    except Exception:
-        pass
     return result

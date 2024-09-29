@@ -10,6 +10,7 @@ from langsmith import Client, get_current_run_tree, traceable
 from langsmith.run_helpers import tracing_context
 from langsmith.run_trees import RunTree
 from langsmith.utils import get_env_var
+from typing_extensions import Literal
 
 from langchain_core.runnables.base import RunnableLambda, RunnableParallel
 from langchain_core.tracers.langchain import LangChainTracer
@@ -208,9 +209,11 @@ def test_tracing_enable_disable(
 
     get_env_var.cache_clear()
     env_on = env == "true"
-    with patch.dict("os.environ", {"LANGSMITH_TRACING": env}):
-        with tracing_context(enabled=enabled):
-            RunnableLambda(my_func).invoke(1)
+    with (
+        patch.dict("os.environ", {"LANGSMITH_TRACING": env}),
+        tracing_context(enabled=enabled),
+    ):
+        RunnableLambda(my_func).invoke(1)
 
     mock_posts = _get_posts(mock_client_)
     if enabled is True:
@@ -361,7 +364,8 @@ async def test_runnable_sequence_parallel_trace_nesting(method: str) -> None:
             assert dotted_order.split(".")[0] == dotted_order
 
 
-def test_tree_is_constructed() -> None:
+@pytest.mark.parametrize("parent_type", ("ls", "lc"))
+def test_tree_is_constructed(parent_type: Literal["ls", "lc"]) -> None:
     mock_session = MagicMock()
     mock_client_ = Client(
         session=mock_session, api_key="test", auto_batch_tracing=False
@@ -379,22 +383,39 @@ def test_tree_is_constructed() -> None:
     def child(x: str) -> str:
         return grandchild.invoke(x)
 
-    @traceable
-    def parent() -> str:
-        return child.invoke("foo")
-
-    collected: dict[str, RunTree] = {}  # noqa
-
-    def collect_run(run: RunTree) -> None:
-        collected[str(run.id)] = run
-
     rid = uuid.uuid4()
+    with tracing_context(
+        client=mock_client_,
+        enabled=True,
+        metadata={"some_foo": "some_bar"},
+        tags=["afoo"],
+    ):
+        if parent_type == "ls":
+            collected: dict[str, RunTree] = {}  # noqa
 
-    with tracing_context(client=mock_client_, enabled=True):
-        assert parent(langsmith_extra={"on_end": collect_run, "run_id": rid}) == "foo"
+            def collect_run(run: RunTree) -> None:
+                collected[str(run.id)] = run
 
-    assert collected
-    run = collected.get(str(rid))
+            @traceable
+            def parent() -> str:
+                return child.invoke("foo")
+
+            assert (
+                parent(langsmith_extra={"on_end": collect_run, "run_id": rid}) == "foo"
+            )
+            assert collected
+            run = collected.get(str(rid))
+
+        else:
+
+            @RunnableLambda
+            def parent(_) -> str:  # type: ignore
+                return child.invoke("foo")
+
+            tracer = LangChainTracer()
+            assert parent.invoke(..., {"run_id": rid, "callbacks": [tracer]}) == "foo"  # type: ignore
+            run = tracer.latest_run
+
     assert run is not None
     assert run.name == "parent"
     assert run.child_runs
@@ -404,6 +425,10 @@ def test_tree_is_constructed() -> None:
     grandchild_run = child_run.child_runs[0]
     assert grandchild_run.name == "grandchild"
     assert grandchild_run.child_runs
+    assert grandchild_run.metadata.get("some_foo") == "some_bar"
+    assert "afoo" in grandchild_run.tags  # type: ignore
     kitten_run = grandchild_run.child_runs[0]
     assert kitten_run.name == "kitten"
     assert not kitten_run.child_runs
+    assert kitten_run.metadata.get("some_foo") == "some_bar"
+    assert "afoo" in kitten_run.tags  # type: ignore
