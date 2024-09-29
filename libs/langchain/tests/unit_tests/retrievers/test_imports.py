@@ -31,6 +31,7 @@ EXPECTED_ALL = [
     "MultiQueryRetriever",
     "MultiVectorRetriever",
     "NeuralDBRetriever",
+    "NimbleItRetriever",
     "OutlineRetriever",
     "ParentDocumentRetriever",
     "PineconeHybridSearchRetriever",
