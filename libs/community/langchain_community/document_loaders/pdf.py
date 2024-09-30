@@ -206,7 +206,6 @@ class PyPDFLoader(BasePDFLoader):
             Zejiang Shen1( ), R
             {'source': './example_data/layout-parser-paper.pdf', 'page': 0}
 
-    # TODO: Delete if async load is not implemented
     Async load:
         .. code-block:: python
 

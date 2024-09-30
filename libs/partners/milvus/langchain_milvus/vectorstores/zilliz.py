@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from langchain_core.embeddings import Embeddings
 
+from langchain_milvus.utils.sparse import BaseSparseEmbedding
 from langchain_milvus.vectorstores.milvus import Milvus
 
 logger = logging.getLogger(__name__)
@@ -141,7 +142,7 @@ class Zilliz(Milvus):
     def from_texts(
         cls,
         texts: List[str],
-        embedding: Embeddings,
+        embedding: Union[Embeddings, BaseSparseEmbedding],
         metadatas: Optional[List[dict]] = None,
         collection_name: str = "LangChainCollection",
         connection_args: Optional[Dict[str, Any]] = None,

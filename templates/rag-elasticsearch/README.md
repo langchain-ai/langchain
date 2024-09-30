@@ -1,9 +1,8 @@
-
-# rag-elasticsearch
+# RAG - Elasticsearch
 
 This template performs RAG using [Elasticsearch](https://python.langchain.com/docs/integrations/vectorstores/elasticsearch).
 
-It relies on sentence transformer `MiniLM-L6-v2` for embedding passages and questions.
+It relies on `Hugging Face sentence transformer` `MiniLM-L6-v2` for embedding passages and questions.
 
 ## Environment Setup
 

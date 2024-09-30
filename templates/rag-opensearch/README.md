@@ -1,6 +1,6 @@
-# rag-opensearch
+# RAG - OpenSearch
 
-This Template performs RAG using [OpenSearch](https://python.langchain.com/docs/integrations/vectorstores/opensearch).
+This template performs RAG using [OpenSearch](https://python.langchain.com/docs/integrations/vectorstores/opensearch).
 
 ## Environment Setup
 

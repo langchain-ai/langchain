@@ -471,6 +471,14 @@ def _build_rst_file(package_name: str = "langchain") -> None:
 
 
 def _package_namespace(package_name: str) -> str:
+    """Returns the package name used.
+
+    Args:
+        package_name: Can be either "langchain" or "core" or "experimental".
+
+    Returns:
+        modified package_name: Can be either "langchain" or "langchain_{package_name}"
+    """
     return (
         package_name
         if package_name == "langchain"

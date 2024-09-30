@@ -6,8 +6,9 @@ from typing import Any, Dict, List, Optional
 import box_sdk_gen  # type: ignore
 import requests
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import BaseModel, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.utils import from_env
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+from typing_extensions import Self
 
 
 class DocumentFiles(Enum):
@@ -134,52 +135,63 @@ class BoxAuthType(Enum):
     an enum to tell BoxLoader how you wish to autheticate your Box connection.
 
     Options are:
+
     TOKEN - Use a developer token generated from the Box Deevloper Token.
             Only recommended for development.
-            Provide `box_developer_token`.
+            Provide ``box_developer_token``.
     CCG - Client Credentials Grant.
-          provide `box_client_id`, `box_client_secret`,
-          and `box_enterprise_id` or optionally `box_user_id`.
+          provide ``box_client_id`, ``box_client_secret`,
+          and ``box_enterprise_id`` or optionally `box_user_id`.
     JWT - Use JWT for authentication. Config should be stored on the file
           system accessible to your app.
-          provide `box_jwt_path`. Optionally, provide `box_user_id` to
+          provide ``box_jwt_path``. Optionally, provide ``box_user_id`` to
           act as a specific user
     """
 
     TOKEN = "token"
-    """Use a developer token or a token retrieved from box-sdk-gen"""
+    """Use a developer token or a token retrieved from ``box-sdk-gen``"""
 
     CCG = "ccg"
-    """Use `client_credentials` type grant"""
+    """Use ``client_credentials`` type grant"""
 
     JWT = "jwt"
     """Use JWT bearer token auth"""
 
 
 class BoxAuth(BaseModel):
-    """BoxAuth.
+    """**BoxAuth.**
+
+    The ``box-langchain`` package offers some flexibility to authentication. The
+    most basic authentication method is by using a developer token. This can be
+    found in the `Box developer console <https://account.box.com/developers/console>`_
+    on the configuration screen. This token is purposely short-lived (1 hour) and is
+    intended for development. With this token, you can add it to your environment as
+    ``BOX_DEVELOPER_TOKEN``, you can pass it directly to the loader, or you can use the
+    ``BoxAuth`` authentication helper class.
 
     `BoxAuth` supports the following authentication methods:
 
-    * Token — either a developer token or any token generated through the Box SDK
-    * JWT with a service account
-    * JWT with a specified user
-    * CCG with a service account
-    * CCG with a specified user
+    * **Token** — either a developer token or any token generated through the Box SDK
+    * **JWT** with a service account
+    * **JWT** with a specified user
+    * **CCG** with a service account
+    * **CCG** with a specified user
 
     .. note::
-    If using JWT authentication, you will need to download the configuration from the
-    Box developer console after generating your public/private key pair. Place this
-    file in your application directory structure somewhere. You will use the path to
-    this file when using the `BoxAuth` helper class.
+        If using JWT authentication, you will need to download the configuration from
+        the Box developer console after generating your public/private key pair. Place
+        this file in your application directory structure somewhere. You will use the
+        path to this file when using the ``BoxAuth`` helper class. If you wish to use
+        OAuth2 with the authorization_code flow, please use ``BoxAuthType.TOKEN`` with
+        the token you have acquired.
 
     For more information, learn about how to
-    [set up a Box application](https://developer.box.com/guides/getting-started/first-application/),
+    `set up a Box application <https://developer.box.com/guides/getting-started/first-application/>`_,
     and check out the
-    [Box authentication guide](https://developer.box.com/guides/authentication/select/)
+    `Box authentication guide <https://developer.box.com/guides/authentication/select/>`_
     for more about our different authentication options.
 
-    Simple implementation
+    Simple implementation:
 
         To instantiate, you must provide a ``langchain_box.utilities.BoxAuthType``.
 
@@ -187,18 +199,24 @@ class BoxAuth(BaseModel):
         Box connection.
 
         Options are:
+
         TOKEN - Use a developer token generated from the Box Deevloper Token.
                 Only recommended for development.
-                Provide `box_developer_token`.
+                Provide ``box_developer_token``.
         CCG - Client Credentials Grant.
-            provide `box_client_id`, `box_client_secret`,
-            and `box_enterprise_id` or optionally `box_user_id`.
+            provide ``box_client_id``, ``box_client_secret``,
+            and ``box_enterprise_id`` or optionally ``box_user_id``.
         JWT - Use JWT for authentication. Config should be stored on the file
             system accessible to your app.
-            provide `box_jwt_path`. Optionally, provide `box_user_id` to
+            provide ``box_jwt_path``. Optionally, provide ``box_user_id`` to
             act as a specific user
 
+        **Examples**:
+
+        **Token**
+
         .. code-block:: python
+
             from langchain_box.document_loaders import BoxLoader
             from langchain_box.utilities import BoxAuth, BoxAuthType
 
@@ -212,172 +230,237 @@ class BoxAuth(BaseModel):
                 ...
             )
 
-    To see examples for each supported authentication methodology, visit the
-    [Box providers](/docs/integrations/providers/box) page. If you want to
-    use OAuth 2.0 `authorization_code` flow, use
-    [box-sdk-gen](https://github.com/box/box-python-sdk-gen) SDK, get your
-    token, and use `BoxAuthType.TOKEN` type.
+
+        **JWT with a service account**
+
+        .. code-block:: python
+
+            from langchain_box.document_loaders import BoxLoader
+            from langchain_box.utilities import BoxAuth, BoxAuthType
+
+            auth = BoxAuth(
+                auth_type=BoxAuthType.JWT,
+                box_jwt_path=box_jwt_path
+            )
+
+            loader = BoxLoader(
+                box_auth=auth,
+                ...
+            )
+
+
+        **JWT with a specified user**
+
+        .. code-block:: python
+
+            from langchain_box.document_loaders import BoxLoader
+            from langchain_box.utilities import BoxAuth, BoxAuthType
+
+            auth = BoxAuth(
+                auth_type=BoxAuthType.JWT,
+                box_jwt_path=box_jwt_path,
+                box_user_id=box_user_id
+            )
+
+            loader = BoxLoader(
+                box_auth=auth,
+                ...
+            )
+
+
+        **CCG with a service account**
+
+        .. code-block:: python
+
+            from langchain_box.document_loaders import BoxLoader
+            from langchain_box.utilities import BoxAuth, BoxAuthType
+
+            auth = BoxAuth(
+                auth_type=BoxAuthType.CCG,
+                box_client_id=box_client_id,
+                box_client_secret=box_client_secret,
+                box_enterprise_id=box_enterprise_id
+            )
+
+            loader = BoxLoader(
+                box_auth=auth,
+                ...
+            )
+
+
+        **CCG with a specified user**
+
+        .. code-block:: python
+
+            from langchain_box.document_loaders import BoxLoader
+            from langchain_box.utilities import BoxAuth, BoxAuthType
+
+            auth = BoxAuth(
+                auth_type=BoxAuthType.CCG,
+                box_client_id=box_client_id,
+                box_client_secret=box_client_secret,
+                box_user_id=box_user_id
+            )
+
+            loader = BoxLoader(
+                box_auth=auth,
+                ...
+            )
+
     """
 
     auth_type: BoxAuthType
-    """langchain_box.utilities.BoxAuthType. Enum describing how to
+    """``langchain_box.utilities.BoxAuthType``. Enum describing how to
        authenticate against Box"""
 
-    box_developer_token: Optional[str] = None
-    """ If using BoxAuthType.TOKEN, provide your token here"""
+    box_developer_token: Optional[str] = Field(
+        default_factory=from_env("BOX_DEVELOPER_TOKEN", default=None)
+    )
+    """ If using ``BoxAuthType.TOKEN``, provide your token here"""
 
-    box_jwt_path: Optional[str] = None
-    """If using BoxAuthType.JWT, provide local path to your
+    box_jwt_path: Optional[str] = Field(
+        default_factory=from_env("BOX_JWT_PATH", default=None)
+    )
+    """If using ``BoxAuthType.JWT``, provide local path to your
        JWT configuration file"""
 
-    box_client_id: Optional[str] = None
-    """If using BoxAuthType.CCG, provide your app's client ID"""
+    box_client_id: Optional[str] = Field(
+        default_factory=from_env("BOX_CLIENT_ID", default=None)
+    )
+    """If using ``BoxAuthType.CCG``, provide your app's client ID"""
 
-    box_client_secret: Optional[str] = None
-    """If using BoxAuthType.CCG, provide your app's client secret"""
+    box_client_secret: Optional[str] = Field(
+        default_factory=from_env("BOX_CLIENT_SECRET", default=None)
+    )
+    """If using ``BoxAuthType.CCG``, provide your app's client secret"""
 
     box_enterprise_id: Optional[str] = None
-    """If using BoxAuthType.CCG, provide your enterprise ID.
-       Only required if you are not sending `box_user_id`"""
+    """If using ``BoxAuthType.CCG``, provide your enterprise ID.
+       Only required if you are not sending ``box_user_id``"""
 
     box_user_id: Optional[str] = None
-    """If using BoxAuthType.CCG or BoxAuthType.JWT, providing 
-       `box_user_id` will act on behalf of a specific user"""
+    """If using ``BoxAuthType.CCG`` or ``BoxAuthType.JWT``, providing 
+       ``box_user_id`` will act on behalf of a specific user"""
 
     _box_client: Optional[box_sdk_gen.BoxClient] = None
     _custom_header: Dict = dict({"x-box-ai-library": "langchain"})
 
-    class Config:
-        arbitrary_types_allowed = True
-        use_enum_values = True
-        extra = "allow"
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        use_enum_values=True,
+        extra="allow",
+    )
 
-    @root_validator()
-    def validate_box_auth_inputs(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="after")
+    def validate_box_auth_inputs(self) -> Self:
         """Validate auth_type is set"""
-        if not values.get("auth_type"):
+        if not self.auth_type:
             raise ValueError("Auth type must be set.")
 
         """Validate that TOKEN auth type provides box_developer_token."""
-        if values.get("auth_type") == "token":
-            if not get_from_dict_or_env(
-                values, "box_developer_token", "BOX_DEVELOPER_TOKEN"
-            ):
-                raise ValueError(
-                    f"{values.get('auth_type')} requires box_developer_token to be set"
-                )
+        if self.auth_type == "token" and not self.box_developer_token:
+            raise ValueError(f"{self.auth_type} requires box_developer_token to be set")
 
         """Validate that JWT auth type provides box_jwt_path."""
-        if values.get("auth_type") == "jwt":
-            if not get_from_dict_or_env(values, "box_jwt_path", "BOX_JWT_PATH"):
-                raise ValueError(
-                    f"{values.get('auth_type')} requires box_jwt_path to be set"
-                )
+        if self.auth_type == "jwt" and not self.box_jwt_path:
+            raise ValueError(f"{self.auth_type} requires box_jwt_path to be set")
 
         """Validate that CCG auth type provides box_client_id and
            box_client_secret and either box_enterprise_id or box_user_id."""
-        if values.get("auth_type") == "ccg":
+        if self.auth_type == "ccg":
             if (
-                not get_from_dict_or_env(values, "box_client_id", "BOX_CLIENT_ID")
-                or not get_from_dict_or_env(
-                    values, "box_client_secret", "BOX_CLIENT_SECRET"
-                )
-                or (
-                    not values.get("box_enterprise_id")
-                    and not values.get("box_user_id")
-                )
+                not self.box_client_id
+                or not self.box_client_secret
+                or (not self.box_enterprise_id and not self.box_user_id)
             ):
                 raise ValueError(
-                    f"{values.get('auth_type')} requires box_client_id, \
-                        box_client_secret, and box_enterprise_id."
+                    f"{self.auth_type} requires box_client_id, \
+                        box_client_secret, and box_enterprise_id/box_user_id."
                 )
 
-        return values
+        return self
 
     def _authorize(self) -> None:
-        match self.auth_type:
-            case "token":
-                try:
-                    auth = box_sdk_gen.BoxDeveloperTokenAuth(
-                        token=self.box_developer_token
-                    )
-                    self._box_client = box_sdk_gen.BoxClient(
-                        auth=auth
-                    ).with_extra_headers(extra_headers=self._custom_header)
-
-                except box_sdk_gen.BoxSDKError as bse:
-                    raise RuntimeError(
-                        f"Error getting client from developer token: {bse.message}"
-                    )
-                except Exception as ex:
-                    raise ValueError(
-                        f"Invalid Box developer token. Please verify your \
-                            token and try again.\n{ex}"
-                    ) from ex
-
-            case "jwt":
-                try:
-                    jwt_config = box_sdk_gen.JWTConfig.from_config_file(
-                        config_file_path=self.box_jwt_path
-                    )
-                    auth = box_sdk_gen.BoxJWTAuth(config=jwt_config)
-
-                    self._box_client = box_sdk_gen.BoxClient(
-                        auth=auth
-                    ).with_extra_headers(extra_headers=self._custom_header)
-
-                    if self.box_user_id is not None:
-                        user_auth = auth.with_user_subject(self.box_user_id)
-                        self._box_client = box_sdk_gen.BoxClient(
-                            auth=user_auth
-                        ).with_extra_headers(extra_headers=self._custom_header)
-
-                except box_sdk_gen.BoxSDKError as bse:
-                    raise RuntimeError(
-                        f"Error getting client from jwt token: {bse.message}"
-                    )
-                except Exception as ex:
-                    raise ValueError(
-                        "Error authenticating. Please verify your JWT config \
-                            and try again."
-                    ) from ex
-
-            case "ccg":
-                try:
-                    if self.box_user_id is not None:
-                        ccg_config = box_sdk_gen.CCGConfig(
-                            client_id=self.box_client_id,
-                            client_secret=self.box_client_secret,
-                            user_id=self.box_user_id,
-                        )
-                    else:
-                        ccg_config = box_sdk_gen.CCGConfig(
-                            client_id=self.box_client_id,
-                            client_secret=self.box_client_secret,
-                            enterprise_id=self.box_enterprise_id,
-                        )
-                    auth = box_sdk_gen.BoxCCGAuth(config=ccg_config)
-
-                    self._box_client = box_sdk_gen.BoxClient(
-                        auth=auth
-                    ).with_extra_headers(extra_headers=self._custom_header)
-
-                except box_sdk_gen.BoxSDKError as bse:
-                    raise RuntimeError(
-                        f"Error getting client from ccg token: {bse.message}"
-                    )
-                except Exception as ex:
-                    raise ValueError(
-                        "Error authenticating. Please verify you are providing a \
-                            valid client id, secret and either a valid user ID or \
-                                enterprise ID."
-                    ) from ex
-
-            case _:
-                raise ValueError(
-                    f"{self.auth_type} is not a valid auth_type. Value must be \
-                TOKEN, CCG, or JWT."
+        if self.auth_type == "token":
+            try:
+                auth = box_sdk_gen.BoxDeveloperTokenAuth(token=self.box_developer_token)
+                self._box_client = box_sdk_gen.BoxClient(auth=auth).with_extra_headers(
+                    extra_headers=self._custom_header
                 )
+
+            except box_sdk_gen.BoxSDKError as bse:
+                raise RuntimeError(
+                    f"Error getting client from developer token: {bse.message}"
+                )
+            except Exception as ex:
+                raise ValueError(
+                    f"Invalid Box developer token. Please verify your \
+                        token and try again.\n{ex}"
+                ) from ex
+
+        elif self.auth_type == "jwt":
+            try:
+                jwt_config = box_sdk_gen.JWTConfig.from_config_file(
+                    config_file_path=self.box_jwt_path
+                )
+                auth = box_sdk_gen.BoxJWTAuth(config=jwt_config)
+
+                self._box_client = box_sdk_gen.BoxClient(auth=auth).with_extra_headers(
+                    extra_headers=self._custom_header
+                )
+
+                if self.box_user_id is not None:
+                    user_auth = auth.with_user_subject(self.box_user_id)
+                    self._box_client = box_sdk_gen.BoxClient(
+                        auth=user_auth
+                    ).with_extra_headers(extra_headers=self._custom_header)
+
+            except box_sdk_gen.BoxSDKError as bse:
+                raise RuntimeError(
+                    f"Error getting client from jwt token: {bse.message}"
+                )
+            except Exception as ex:
+                raise ValueError(
+                    "Error authenticating. Please verify your JWT config \
+                        and try again."
+                ) from ex
+
+        elif self.auth_type == "ccg":
+            try:
+                if self.box_user_id is not None:
+                    ccg_config = box_sdk_gen.CCGConfig(
+                        client_id=self.box_client_id,
+                        client_secret=self.box_client_secret,
+                        user_id=self.box_user_id,
+                    )
+                else:
+                    ccg_config = box_sdk_gen.CCGConfig(
+                        client_id=self.box_client_id,
+                        client_secret=self.box_client_secret,
+                        enterprise_id=self.box_enterprise_id,
+                    )
+                auth = box_sdk_gen.BoxCCGAuth(config=ccg_config)
+
+                self._box_client = box_sdk_gen.BoxClient(auth=auth).with_extra_headers(
+                    extra_headers=self._custom_header
+                )
+
+            except box_sdk_gen.BoxSDKError as bse:
+                raise RuntimeError(
+                    f"Error getting client from ccg token: {bse.message}"
+                )
+            except Exception as ex:
+                raise ValueError(
+                    "Error authenticating. Please verify you are providing a \
+                        valid client id, secret and either a valid user ID or \
+                            enterprise ID."
+                ) from ex
+
+        else:
+            raise ValueError(
+                f"{self.auth_type} is not a valid auth_type. Value must be \
+            TOKEN, CCG, or JWT."
+            )
 
     def get_client(self) -> box_sdk_gen.BoxClient:
         """Instantiate the Box SDK."""
@@ -387,10 +470,134 @@ class BoxAuth(BaseModel):
         return self._box_client
 
 
+class SearchTypeFilter(Enum):
+    """SearchTypeFilter.
+
+    Enum to limit the what we search.
+    """
+
+    NAME = "name"
+    """The name of the item, as defined by its ``name`` field."""
+
+    DESCRIPTION = "description"
+    """The description of the item, as defined by its ``description`` field."""
+
+    FILE_CONTENT = "file_content"
+    """The actual content of the file."""
+
+    COMMENTS = "comments"
+    """The content of any of the comments on a file or folder."""
+
+    TAGS = "tags"
+    """Any tags that are applied to an item, as defined by its ``tags`` field."""
+
+
+class BoxSearchOptions(BaseModel):
+    ancestor_folder_ids: Optional[List[str]] = None
+    """Limits the search results to items within the given list of folders, 
+       defined as a comma separated lists of folder IDs."""
+
+    search_type_filter: Optional[List[SearchTypeFilter]] = None
+    """Limits the search results to any items that match the search query for a 
+       specific part of the file, for example the file description.
+
+       Content types are defined as a comma separated lists of Box recognized 
+       content types. The allowed content types are as follows. Default is all."""
+
+    created_date_range: Optional[List[str]] = None
+    """Limits the search results to any items created within a given date range.
+
+       Date ranges are defined as comma separated RFC3339 timestamps.
+
+       If the the start date is omitted (,2014-05-17T13:35:01-07:00) anything 
+       created before the end date will be returned.
+
+       If the end date is omitted (2014-05-15T13:35:01-07:00,) the current 
+       date will be used as the end date instead."""
+
+    file_extensions: Optional[List[DocumentFiles]] = None
+    """Limits the search results to any files that match any of the provided 
+        file extensions. This list is a comma-separated list of 
+        ``langchain_box.utilities.DocumentFiles`` entries"""
+
+    k: Optional[int] = 100
+    """Defines the maximum number of items to return. Defaults to 100, maximum 
+        is 200."""
+
+    size_range: Optional[List[int]] = None
+    """Limits the search results to any items with a size within a given file 
+        size range. This applied to files and folders.
+
+        Size ranges are defined as comma separated list of a lower and upper 
+        byte size limit (inclusive).
+
+        The upper and lower bound can be omitted to create open ranges."""
+
+    updated_date_range: Optional[List[str]] = None
+    """Limits the search results to any items updated within a given date range.
+
+        Date ranges are defined as comma separated RFC3339 timestamps.
+
+        If the start date is omitted (,2014-05-17T13:35:01-07:00) anything 
+        updated before the end date will be returned.
+
+        If the end date is omitted (2014-05-15T13:35:01-07:00,) the current 
+        date will be used as the end date instead."""
+
+    class Config:
+        arbitrary_types_allowed = True
+        use_enum_values = True
+        extra = "allow"
+
+    @model_validator(mode="after")
+    def validate_search_options(self) -> Self:
+        """Validate k is between 1 and 200"""
+        if self.k > 200 or self.k < 1:  # type: ignore[operator]
+            raise ValueError(
+                f"Invalid setting of k {self.k}. " "Value must be between 1 and 200."
+            )
+
+        """Validate created_date_range start date is before end date"""
+        if self.created_date_range:
+            if (
+                self.created_date_range[0] is None  # type: ignore[index]
+                or self.created_date_range[0] == ""  # type: ignore[index]
+                or self.created_date_range[1] is None  # type: ignore[index]
+                or self.created_date_range[1] == ""  # type: ignore[index]
+            ):
+                pass
+            else:
+                if (
+                    self.created_date_range[0]  # type: ignore[index]
+                    > self.created_date_range[1]  # type: ignore[index]
+                ):
+                    raise ValueError("Start date must be before end date.")
+
+        """Validate updated_date_range start date is before end date"""
+        if self.updated_date_range:
+            if (
+                self.updated_date_range[0] is None  # type: ignore[index]
+                or self.updated_date_range[0] == ""  # type: ignore[index]
+                or self.updated_date_range[1] is None  # type: ignore[index]
+                or self.updated_date_range[1] == ""  # type: ignore[index]
+            ):
+                pass
+            else:
+                if (
+                    self.updated_date_range[0]  # type: ignore[index]
+                    > self.updated_date_range[1]  # type: ignore[index]
+                ):
+                    raise ValueError("Start date must be before end date.")
+
+        return self
+
+
 class _BoxAPIWrapper(BaseModel):
     """Wrapper for Box API."""
 
-    box_developer_token: Optional[str] = None
+    box_developer_token: Optional[str] = Field(
+        default_factory=from_env("BOX_DEVELOPER_TOKEN", default=None)
+    )
     """String containing the Box Developer Token generated in the developer console"""
 
     box_auth: Optional[BoxAuth] = None
@@ -400,30 +607,32 @@ class _BoxAPIWrapper(BaseModel):
     """character_limit is an int that caps the number of characters to
        return per document."""
 
+    box_search_options: Optional[BoxSearchOptions] = None
+    """Search options to configure BoxRetriever to narrow search results."""
+
     _box: Optional[box_sdk_gen.BoxClient]
 
-    class Config:
-        arbitrary_types_allowed = True
-        use_enum_values = True
-        extra = "allow"
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        use_enum_values=True,
+        extra="allow",
+    )
 
-    @root_validator(allow_reuse=True)
-    def validate_box_api_inputs(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        values["_box"] = None
+    @model_validator(mode="after")
+    def validate_box_api_inputs(self) -> Self:
+        self._box = None
 
         """Validate that TOKEN auth type provides box_developer_token."""
-        if not values.get("box_auth"):
-            if not get_from_dict_or_env(
-                values, "box_developer_token", "BOX_DEVELOPER_TOKEN"
-            ):
+        if not self.box_auth:
+            if not self.box_developer_token:
                 raise ValueError(
                     "You must configure either box_developer_token of box_auth"
                 )
         else:
-            box_auth = values.get("box_auth")
-            values["_box"] = box_auth.get_client()  #  type: ignore[union-attr]
+            box_auth = self.box_auth
+            self._box = box_auth.get_client()  #  type: ignore[union-attr]
 
-        return values
+        return self
 
     def get_box_client(self) -> box_sdk_gen.BoxClient:
         box_auth = BoxAuth(
@@ -552,9 +761,25 @@ class _BoxAPIWrapper(BaseModel):
         files = []
 
         try:
-            results = self._box.search.search_for_content(  #  type: ignore[union-attr]
-                query=query, fields=["id", "type", "extension"]
-            )
+            results = None
+
+            if self.box_search_options is None:
+                results = self._box.search.search_for_content(  #  type: ignore[union-attr]
+                    query=query, fields=["id", "type", "extension"], type="file"
+                )
+            else:
+                results = self._box.search.search_for_content(  #  type: ignore[union-attr]
+                    query=query,
+                    fields=["id", "type", "extension"],
+                    type="file",
+                    ancestor_folder_ids=self.box_search_options.ancestor_folder_ids,  #  type: ignore[union-attr]
+                    content_types=self.box_search_options.search_type_filter,  #  type: ignore[union-attr]
+                    created_at_range=self.box_search_options.created_date_range,  #  type: ignore[union-attr]
+                    file_extensions=self.box_search_options.file_extensions,  #  type: ignore[union-attr]
+                    limit=self.box_search_options.k,  #  type: ignore[union-attr]
+                    size_range=self.box_search_options.size_range,  #  type: ignore[union-attr]
+                    updated_at_range=self.box_search_options.updated_date_range,  #  type: ignore[union-attr]
+                )
 
             if results.entries is None or len(results.entries) <= 0:
                 return None  #  type: ignore[return-value]

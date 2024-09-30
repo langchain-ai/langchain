@@ -3,9 +3,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, List, Optional
 
 from langchain_core.language_models import BaseLanguageModel
-from langchain_core.pydantic_v1 import Field
 from langchain_core.tools import BaseTool
 from langchain_core.tools.base import BaseToolkit
+from pydantic import ConfigDict, Field
 
 from langchain_community.tools.amadeus.closest_airport import AmadeusClosestAirport
 from langchain_community.tools.amadeus.flight_search import AmadeusFlightSearch
@@ -26,8 +26,9 @@ class AmadeusToolkit(BaseToolkit):
     client: Client = Field(default_factory=authenticate)
     llm: Optional[BaseLanguageModel] = Field(default=None)
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""

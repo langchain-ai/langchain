@@ -1,9 +1,8 @@
-
-# rag-codellama-fireworks
+# RAG - codellama, Fireworks
 
 This template performs RAG on a codebase. 
  
-It uses codellama-34b hosted by Fireworks' [LLM inference API](https://blog.fireworks.ai/accelerating-code-completion-with-fireworks-fast-llm-inference-f4e8b5ec534a).
+It uses `codellama-34b` hosted by `Fireworks` [LLM inference API](https://blog.fireworks.ai/accelerating-code-completion-with-fireworks-fast-llm-inference-f4e8b5ec534a).
 
 ## Environment Setup
 

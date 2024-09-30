@@ -1,11 +1,10 @@
+# RAG - MongoDB
 
-# rag-mongo
-
-This template performs RAG using MongoDB and OpenAI.
+This template performs RAG using `MongoDB` and `OpenAI`.
 
 ## Environment Setup
 
-You should export two environment variables, one being your MongoDB URI, the other being your OpenAI API KEY.
+You should export two environment variables, one being your `MongoDB` URI, the other being your OpenAI API KEY.
 If you do not have a MongoDB URI, see the `Setup Mongo` section at the bottom for instructions on how to do so.
 
 ```shell
@@ -97,15 +96,15 @@ We will first follow the standard MongoDB Atlas setup instructions [here](https:
 
 This can be done by going to the deployment overview page and connecting to you database
 
-![Screenshot highlighting the 'Connect' button in MongoDB Atlas.](_images/connect.png "MongoDB Atlas Connect Button")
+![Screenshot highlighting the 'Connect' button in MongoDB Atlas.](_images/connect.png) "MongoDB Atlas Connect Button"
 
 We then look at the drivers available
 
-![Screenshot showing the MongoDB Atlas drivers section for connecting to the database.](_images/driver.png "MongoDB Atlas Drivers Section")
+![Screenshot showing the MongoDB Atlas drivers section for connecting to the database.](_images/driver.png) "MongoDB Atlas Drivers Section"
 
 Among which we will see our URI listed
 
-![Screenshot displaying an example of a MongoDB URI in the connection instructions.](_images/uri.png "MongoDB URI Example")
+![Screenshot displaying an example of a MongoDB URI in the connection instructions.](_images/uri.png) "MongoDB URI Example"
 
 Let's then set that as an environment variable locally:
 
@@ -131,23 +130,23 @@ Note that you can (and should!) change this to ingest data of your choice
 
 We can first connect to the cluster where our database lives
 
-![Screenshot of the MongoDB Atlas interface showing the cluster overview with a 'Connect' button.](_images/cluster.png "MongoDB Atlas Cluster Overview")
+![Screenshot of the MongoDB Atlas interface showing the cluster overview with a 'Connect' button.](_images/cluster.png) "MongoDB Atlas Cluster Overview"
 
 We can then navigate to where all our collections are listed
 
-![Screenshot of the MongoDB Atlas interface showing the collections overview within a database.](_images/collections.png "MongoDB Atlas Collections Overview")
+![Screenshot of the MongoDB Atlas interface showing the collections overview within a database.](_images/collections.png) "MongoDB Atlas Collections Overview"
 
 We can then find the collection we want and look at the search indexes for that collection
 
-![Screenshot showing the search indexes section in MongoDB Atlas for a specific collection.](_images/search-indexes.png "MongoDB Atlas Search Indexes")
+![Screenshot showing the search indexes section in MongoDB Atlas for a specific collection.](_images/search-indexes.png) "MongoDB Atlas Search Indexes"
 
 That should likely be empty, and we want to create a new one:
 
-![Screenshot highlighting the 'Create Index' button in MongoDB Atlas.](_images/create.png "MongoDB Atlas Create Index Button")
+![Screenshot highlighting the 'Create Index' button in MongoDB Atlas.](_images/create.png) "MongoDB Atlas Create Index Button"
 
 We will use the JSON editor to create it
 
-![Screenshot showing the JSON Editor option for creating a search index in MongoDB Atlas.](_images/json_editor.png "MongoDB Atlas JSON Editor Option")
+![Screenshot showing the JSON Editor option for creating a search index in MongoDB Atlas.](_images/json_editor.png) "MongoDB Atlas JSON Editor Option"
 
 And we will paste the following JSON in:
 
@@ -165,6 +164,6 @@ And we will paste the following JSON in:
    }
  }
 ```
-![Screenshot of the JSON configuration for a search index in MongoDB Atlas.](_images/json.png "MongoDB Atlas Search Index JSON Configuration")
+![Screenshot of the JSON configuration for a search index in MongoDB Atlas.](_images/json.png) "MongoDB Atlas Search Index JSON Configuration"
 
 From there, hit "Next" and then "Create Search Index". It will take a little bit but you should then have an index over your data!

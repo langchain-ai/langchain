@@ -1,10 +1,11 @@
-from typing import Any, Dict, Iterator, List, Optional
+from typing import Iterator, List, Optional
 
 from box_sdk_gen import FileBaseTypeField  # type: ignore
 from langchain_core.document_loaders.base import BaseLoader
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import BaseModel, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.utils import from_env
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+from typing_extensions import Self
 
 from langchain_box.utilities import BoxAuth, _BoxAPIWrapper
 
@@ -21,11 +22,12 @@ class BoxLoader(BaseLoader, BaseModel):
     Plus plan or above. The free developer account does not have access to Box AI.
 
     In addition, using the Box AI API requires a few prerequisite steps:
-    * Your administrator must enable the Box AI API
-    * You must enable the `Manage AI` scope in your app in the developer console.
-    * Your administratormust install and enable your application.
 
-    Setup:
+    * Your administrator must enable the Box AI API
+    * You must enable the ``Manage AI`` scope in your app in the developer console.
+    * Your administrator must install and enable your application.
+
+    **Setup**:
         Install ``langchain-box`` and set environment variable ``BOX_DEVELOPER_TOKEN``.
 
         .. code-block:: bash
@@ -34,7 +36,7 @@ class BoxLoader(BaseLoader, BaseModel):
             export BOX_DEVELOPER_TOKEN="your-api-key"
 
 
-    This loader returns ``Document `` objects built from text representations of files
+    This loader returns ``Document`` objects built from text representations of files
     in Box. It will skip any document without a text representation available. You can
     provide either a ``List[str]`` containing Box file IDS, or you can provide a
     ``str`` contining a Box folder ID. If providing a folder ID, you can also enable
@@ -46,19 +48,44 @@ class BoxLoader(BaseLoader, BaseModel):
         recommend never getting all files from folder 0 recursively. Folder ID 0 is your
         root folder.
 
-    Instantiate:
+    **Instantiate**:
 
-        Initialization variables
-            variable | description | type | required
-            ---+---+---
-            box_developer_token | token to use for auth. | string | no
-            box_auth | client id for you app. Used for CCG | string | no
-            box_file_ids | Array of Box file Ids to retrieve | array of strings | no
-            box_folder_id | Box folder id to retrieve | string | no
-            recursive | whether to return subfolders, default False | bool | no
+        .. list-table:: Initialization variables
+            :widths: 25 50 15 10
+            :header-rows: 1
 
-    Get files — this method requires you pass the ``box_file_ids`` parameter. This is a
-    ``List[str]`` containing the file IDs you wish to index.
+            * - Variable
+              - Description
+              - Type
+              - Default
+            * - box_developer_token
+              - Token to use for auth.
+              - ``str``
+              - ``None``
+            * - box_auth
+              - client id for you app. Used for CCG
+              - ``langchain_box.utilities.BoxAuth``
+              - ``None``
+            * - box_file_ids
+              - client id for you app. Used for CCG
+              - ``List[str]``
+              - ``None``
+            * - box_folder_id
+              - client id for you app. Used for CCG
+              - ``str``
+              - ``None``
+            * - recursive
+              - client id for you app. Used for CCG
+              - ``Bool``
+              - ``False``
+            * - character_limit
+              - client id for you app. Used for CCG
+              - ``int``
+              - ``-1``
+
+
+    **Get files** — this method requires you pass the ``box_file_ids`` parameter.
+    This is a ``List[str]`` containing the file IDs you wish to index.
 
         .. code-block:: python
 
@@ -71,7 +98,7 @@ class BoxLoader(BaseLoader, BaseModel):
                 character_limit=10000  # Optional. Defaults to no limit
             )
 
-    Get files in a folder — this method requires you pass the ``box_folder_id``
+    **Get files in a folder** — this method requires you pass the ``box_folder_id``
     parameter. This is a ``str`` containing the folder ID you wish to index.
 
         .. code-block:: python
@@ -85,7 +112,7 @@ class BoxLoader(BaseLoader, BaseModel):
                 recursive=False  # Optional. return entire tree, defaults to False
             )
 
-    Load:
+    **Load**:
         .. code-block:: python
 
             docs = loader.load()
@@ -96,11 +123,11 @@ class BoxLoader(BaseLoader, BaseModel):
             Document(metadata={'source': 'https://dl.boxcloud.com/api/2.0/
             internal_files/1514555423624/versions/1663171610024/representations
             /extracted_text/content/', 'title': 'Invoice-A5555_txt'},
-            page_content='Vendor: AstroTech Solutions\nInvoice Number: A5555\n\nLine
-            Items:\n    - Gravitational Wave Detector Kit: $800\n    - Exoplanet
-            Terrarium: $120\nTotal: $920')
+            page_content='Vendor: AstroTech Solutions\\nInvoice Number: A5555\\n\\nLine
+            Items:\\n    - Gravitational Wave Detector Kit: $800\\n    - Exoplanet
+            Terrarium: $120\\nTotal: $920')
 
-    Lazy load:
+    **Lazy load**:
         .. code-block:: python
 
             docs = []
@@ -116,16 +143,21 @@ class BoxLoader(BaseLoader, BaseModel):
             Document(metadata={'source': 'https://dl.boxcloud.com/api/2.0/
             internal_files/1514555423624/versions/1663171610024/representations
             /extracted_text/content/', 'title': 'Invoice-A5555_txt'},
-            page_content='Vendor: AstroTech Solutions\nInvoice Number: A5555\n\nLine
-            Items:\n    - Gravitational Wave Detector Kit: $800\n    - Exoplanet
-            Terrarium: $120\nTotal: $920')
+            page_content='Vendor: AstroTech Solutions\\nInvoice Number: A5555\\n\\nLine
+            Items:\\n    - Gravitational Wave Detector Kit: $800\\n    - Exoplanet
+            Terrarium: $120\\nTotal: $920')
+
     """
 
-    box_developer_token: Optional[str] = None
+    box_developer_token: Optional[str] = Field(
+        default_factory=from_env("BOX_DEVELOPER_TOKEN", default=None)
+    )
     """String containing the Box Developer Token generated in the developer console"""
 
     box_auth: Optional[BoxAuth] = None
-    """Configured langchain_box.utilities.BoxAuth object"""
+    """Configured 
+       `BoxAuth <https://python.langchain.com/v0.2/api_reference/box/utilities/langchain_box.utilities.box.BoxAuth.html>`_ 
+       object"""
 
     box_file_ids: Optional[List[str]] = None
     """List[str] containing Box file ids"""
@@ -141,54 +173,49 @@ class BoxLoader(BaseLoader, BaseModel):
     """character_limit is an int that caps the number of characters to
        return per document."""
 
-    _box: Optional[_BoxAPIWrapper]
+    _box: Optional[_BoxAPIWrapper] = None
 
-    class Config:
-        arbitrary_types_allowed = True
-        extra = "allow"
-        use_enum_values = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="allow",
+        use_enum_values=True,
+    )
 
-    @root_validator(allow_reuse=True)
-    def validate_box_loader_inputs(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="after")
+    def validate_box_loader_inputs(self) -> Self:
         _box = None
 
         """Validate that has either box_file_ids or box_folder_id."""
-        if not values.get("box_file_ids") and not values.get("box_folder_id"):
+        if not self.box_file_ids and not self.box_folder_id:
             raise ValueError("You must provide box_file_ids or box_folder_id.")
 
         """Validate that we don't have both box_file_ids and box_folder_id."""
-        if values.get("box_file_ids") and values.get("box_folder_id"):
+        if self.box_file_ids and self.box_folder_id:
             raise ValueError(
                 "You must provide either box_file_ids or box_folder_id, not both."
             )
 
         """Validate that we have either a box_developer_token or box_auth."""
-        if not values.get("box_auth"):
-            if not get_from_dict_or_env(
-                values, "box_developer_token", "BOX_DEVELOPER_TOKEN"
-            ):
+        if not self.box_auth:
+            if not self.box_developer_token:
                 raise ValueError(
                     "you must provide box_developer_token or a box_auth "
                     "generated with langchain_box.utilities.BoxAuth"
                 )
             else:
-                token = get_from_dict_or_env(
-                    values, "box_developer_token", "BOX_DEVELOPER_TOKEN"
-                )
-
                 _box = _BoxAPIWrapper(  # type: ignore[call-arg]
-                    box_developer_token=token,
-                    character_limit=values.get("character_limit"),
+                    box_developer_token=self.box_developer_token,
+                    character_limit=self.character_limit,
                 )
         else:
             _box = _BoxAPIWrapper(  # type: ignore[call-arg]
-                box_auth=values.get("box_auth"),
-                character_limit=values.get("character_limit"),
+                box_auth=self.box_auth,
+                character_limit=self.character_limit,
             )
 
-        values["_box"] = _box
+        self._box = _box
 
-        return values
+        return self
 
     def _get_files_from_folder(self, folder_id):  # type: ignore[no-untyped-def]
         folder_content = self.box.get_folder_items(folder_id)

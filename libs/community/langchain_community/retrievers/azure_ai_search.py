@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import aiohttp
 import requests
@@ -10,9 +10,9 @@ from langchain_core.callbacks import (
     CallbackManagerForRetrieverRun,
 )
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import root_validator
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.utils import get_from_dict_or_env, get_from_env
+from pydantic import ConfigDict, model_validator
 
 DEFAULT_URL_SUFFIX = "search.windows.net"
 """Default URL Suffix for endpoint connection - commercial cloud"""
@@ -103,12 +103,14 @@ class AzureAISearchRetriever(BaseRetriever):
     filter: Optional[str] = None
     """OData $filter expression to apply to the search query."""
 
-    class Config:
-        arbitrary_types_allowed = True
-        extra = "forbid"
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that service name, index name and api key exists in environment."""
         values["service_name"] = get_from_dict_or_env(
             values, "service_name", "AZURE_AI_SEARCH_SERVICE_NAME"

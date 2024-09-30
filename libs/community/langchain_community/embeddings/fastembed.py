@@ -4,14 +4,15 @@ from typing import Any, Dict, List, Literal, Optional
 
 import numpy as np
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.utils import pre_init
+from pydantic import BaseModel, ConfigDict
 
 MIN_VERSION = "0.2.0"
 
 
 class FastEmbedEmbeddings(BaseModel, Embeddings):
     """Qdrant FastEmbedding models.
+
     FastEmbed is a lightweight, fast, Python library built for embedding generation.
     See more documentation at:
     * https://github.com/qdrant/fastembed/
@@ -37,12 +38,12 @@ class FastEmbedEmbeddings(BaseModel, Embeddings):
     Unknown behavior for values > 512.
     """
 
-    cache_dir: Optional[str]
+    cache_dir: Optional[str] = None
     """The path to the cache directory.
     Defaults to `local_cache` in the parent directory
     """
 
-    threads: Optional[int]
+    threads: Optional[int] = None
     """The number of threads single onnxruntime session can use.
     Defaults to None
     """
@@ -64,10 +65,9 @@ class FastEmbedEmbeddings(BaseModel, Embeddings):
     Defaults to `None`.
     """
 
-    _model: Any  # : :meta private:
+    _model: Any = None  # : :meta private:
 
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow", protected_namespaces=())
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:

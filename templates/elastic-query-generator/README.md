@@ -1,9 +1,9 @@
+# Elasticsearch - query generator
 
-# elastic-query-generator
+This template allows interacting with `Elasticsearch` analytics databases 
+in natural language using LLMs. 
 
-This template allows interacting with Elasticsearch analytics databases in natural language using LLMs. 
-
-It builds search queries via the Elasticsearch DSL API (filters and aggregations). 
+It builds search queries via the `Elasticsearch DSL API` (filters and aggregations). 
 
 ## Environment Setup
 

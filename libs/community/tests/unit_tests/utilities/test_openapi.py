@@ -42,3 +42,52 @@ def test_header_param() -> None:
     openai_functions, _ = openapi_spec_to_openai_fn(spec)
 
     assert openai_functions == EXPECTED_OPENAI_FUNCTIONS_HEADER_PARAM
+
+
+EXPECTED_OPENAI_FUNCTIONS_NESTED_REF = [
+    {
+        "name": "addPet",
+        "description": "Add a new pet to the store",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "json": {
+                    "properties": {
+                        "id": {
+                            "type": "integer",
+                            "schema_format": "int64",
+                            "example": 10,
+                        },
+                        "name": {"type": "string", "example": "doggie"},
+                        "tags": {
+                            "items": {
+                                "properties": {
+                                    "id": {"type": "integer", "schema_format": "int64"},
+                                    "model_type": {"type": "number"},
+                                },
+                                "type": "object",
+                            },
+                            "type": "array",
+                        },
+                    },
+                    "type": "object",
+                    "required": ["name"],
+                }
+            },
+        },
+    }
+]
+
+
+@pytest.mark.requires("openapi_pydantic")
+def test_nested_ref_in_openapi_spec() -> None:
+    spec = OpenAPISpec.from_file(
+        Path(__file__).parent.parent
+        / "data"
+        / "openapi_specs"
+        / "openapi_spec_nested_ref.json",
+    )
+
+    openai_functions, _ = openapi_spec_to_openai_fn(spec)
+
+    assert openai_functions == EXPECTED_OPENAI_FUNCTIONS_NESTED_REF

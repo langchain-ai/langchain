@@ -12,6 +12,9 @@ integration_test integration_tests: TEST_FILE = tests/integration_tests/
 test tests:
 	poetry run pytest --disable-socket --allow-unix-socket $(TEST_FILE)
 
+test_watch:
+	poetry run ptw --snapshot-update --now . -- -vv $(TEST_FILE)
+
 # integration tests are run without the --disable-socket flag to allow network calls
 integration_test:
 	poetry run pytest $(TEST_FILE)
@@ -34,14 +37,14 @@ lint_tests: PYTHON_FILES=tests
 lint_tests: MYPY_CACHE=.mypy_cache_test
 
 lint lint_diff lint_package lint_tests:
-	poetry run ruff .
+	poetry run ruff check .
 	poetry run ruff format $(PYTHON_FILES) --diff
-	poetry run ruff --select I $(PYTHON_FILES)
+	poetry run ruff check --select I $(PYTHON_FILES)
 	mkdir -p $(MYPY_CACHE); poetry run mypy $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
 
 format format_diff:
 	poetry run ruff format $(PYTHON_FILES)
-	poetry run ruff --select I --fix $(PYTHON_FILES)
+	poetry run ruff check --select I --fix $(PYTHON_FILES)
 
 spell_check:
 	poetry run codespell --toml pyproject.toml

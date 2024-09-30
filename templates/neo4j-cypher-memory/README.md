@@ -1,13 +1,12 @@
+# Neo4j Cypher memory
 
-# neo4j-cypher-memory
-
-This template allows you to have conversations with a Neo4j graph database in natural language, using an OpenAI LLM.
-It transforms a natural language question into a Cypher query (used to fetch data from Neo4j databases), executes the query, and provides a natural language response based on the query results.
-Additionally, it features a conversational memory module that stores the dialogue history in the Neo4j graph database.
+This template allows you to have conversations with a `Neo4j` graph database in natural language, using an OpenAI LLM.
+It transforms a natural language question into a `Cypher` query (used to fetch data from Neo4j databases), executes the query, and provides a natural language response based on the query results.
+Additionally, it features a `conversational memory` module that stores the dialogue history in the Neo4j graph database.
 The conversation memory is uniquely maintained for each user session, ensuring personalized interactions.
 To facilitate this, please supply both the `user_id` and `session_id` when using the conversation chain.
 
-![Workflow diagram illustrating the process of a user asking a question, generating a Cypher query, retrieving conversational history, executing the query on a Neo4j database, generating an answer, and storing conversational memory.](https://raw.githubusercontent.com/langchain-ai/langchain/master/templates/neo4j-cypher-memory/static/workflow.png "Neo4j Cypher Memory Workflow Diagram")
+![Workflow diagram illustrating the process of a user asking a question, generating a Cypher query, retrieving conversational history, executing the query on a Neo4j database, generating an answer, and storing conversational memory.](https://raw.githubusercontent.com/langchain-ai/langchain/master/templates/neo4j-cypher-memory/static/workflow.png) "Neo4j Cypher Memory Workflow Diagram"
 
 ## Environment Setup
 

@@ -65,7 +65,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
     def __init__(
         self,
         separators: Optional[List[str]] = None,
-        keep_separator: bool = True,
+        keep_separator: Union[bool, Literal["start", "end"]] = True,
         is_separator_regex: bool = False,
         **kwargs: Any,
     ) -> None:

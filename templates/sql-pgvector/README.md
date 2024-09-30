@@ -1,6 +1,6 @@
-# sql-pgvector
+# SQL - Postgres + pgvector
 
-This template enables user to use `pgvector` for combining postgreSQL with semantic search / RAG. 
+This template enables user to use `pgvector` for combining `PostgreSQL` with semantic search / RAG. 
 
 It uses [PGVector](https://github.com/pgvector/pgvector) extension as shown in the [RAG empowered SQL cookbook](https://github.com/langchain-ai/langchain/blob/master/cookbook/retrieval_in_sql.ipynb)
 
@@ -8,7 +8,7 @@ It uses [PGVector](https://github.com/pgvector/pgvector) extension as shown in t
 
 If you are using `ChatOpenAI` as your LLM, make sure the `OPENAI_API_KEY` is set in your environment. You can change both the LLM and embeddings model inside `chain.py`
 
-And you can configure configure the following environment variables
+And you can configure the following environment variables
 for use by the template (defaults are in parentheses)
 
 - `POSTGRES_USER` (postgres)
@@ -38,7 +38,7 @@ docker start some-postgres
 
 Apart from having `pgvector` extension enabled, you will need to do some setup before being able to run semantic search within your SQL queries.
 
-In order to run RAG over your postgreSQL database you will need to generate the embeddings for the specific columns you want. 
+In order to run RAG over your PostgreSQL database you will need to generate the embeddings for the specific columns you want. 
 
 This process is covered in the [RAG empowered SQL cookbook](https://github.com/langchain-ai/langchain/blob/master/cookbook/retrieval_in_sql.ipynb), but the overall approach consist of:
 1. Querying for unique values in the column

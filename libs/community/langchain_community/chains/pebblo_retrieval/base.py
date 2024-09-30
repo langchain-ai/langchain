@@ -6,6 +6,7 @@ against a vector database.
 import datetime
 import inspect
 import logging
+from importlib.metadata import version
 from typing import Any, Dict, List, Optional
 
 from langchain.chains.base import Chain
@@ -16,8 +17,8 @@ from langchain_core.callbacks import (
 )
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseLanguageModel
-from langchain_core.pydantic_v1 import Field, validator
 from langchain_core.vectorstores import VectorStoreRetriever
+from pydantic import ConfigDict, Field, validator
 
 from langchain_community.chains.pebblo_retrieval.enforcement_filters import (
     SUPPORTED_VECTORSTORES,
@@ -27,6 +28,7 @@ from langchain_community.chains.pebblo_retrieval.models import (
     App,
     AuthContext,
     ChainInfo,
+    Framework,
     Model,
     SemanticContext,
     VectorDB,
@@ -149,6 +151,7 @@ class PebbloRetrievalQA(Chain):
         res = indexqa({'query': 'This is my query'})
         answer, docs = res['result'], res['source_documents']
         """
+        prompt_time = datetime.datetime.now().isoformat()
         _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
         question = inputs[self.input_key]
         auth_context = inputs.get(self.auth_context_key)
@@ -157,7 +160,7 @@ class PebbloRetrievalQA(Chain):
             "run_manager" in inspect.signature(self._aget_docs).parameters
         )
 
-        _, prompt_entities = self.pb_client.check_prompt_validity(question)
+        _, prompt_entities = await self.pb_client.acheck_prompt_validity(question)
 
         if accepts_run_manager:
             docs = await self._aget_docs(
@@ -169,15 +172,28 @@ class PebbloRetrievalQA(Chain):
             input_documents=docs, question=question, callbacks=_run_manager.get_child()
         )
 
+        await self.pb_client.asend_prompt(
+            self.app_name,
+            self.retriever,
+            question,
+            answer,
+            auth_context,
+            docs,
+            prompt_entities,
+            prompt_time,
+            self.enable_prompt_gov,
+        )
+
         if self.return_source_documents:
             return {self.output_key: answer, "source_documents": docs}
         else:
             return {self.output_key: answer}
 
-    class Config:
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
-        extra = "forbid"
+    model_config = ConfigDict(
+        populate_by_name=True,
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
     @property
     def input_keys(self) -> List[str]:
@@ -314,6 +330,10 @@ class PebbloRetrievalQA(Chain):
             framework=framework,
             chains=chains,
             plugin_version=PLUGIN_VERSION,
+            client_version=Framework(
+                name="langchain_community",
+                version=version("langchain_community"),
+            ),
         )
         return app
 

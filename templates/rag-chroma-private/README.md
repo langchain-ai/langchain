@@ -1,9 +1,8 @@
-
-# rag-chroma-private
+# RAG - Chroma, Ollama, Gpt4all - private
 
 This template performs RAG with no reliance on external APIs. 
 
-It utilizes Ollama the LLM, GPT4All for embeddings, and Chroma for the vectorstore.
+It utilizes `Ollama` the LLM, `GPT4All` for embeddings, and `Chroma` for the vectorstore.
 
 The vectorstore is created in `chain.py` and by default indexes a [popular blog posts on Agents](https://lilianweng.github.io/posts/2023-06-23-agent/) for question-answering. 
 

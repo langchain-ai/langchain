@@ -10,8 +10,8 @@ from langchain_core.callbacks.manager import (
 )
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.utils import pre_init
+from pydantic import BaseModel, Field
 
 from langchain_community.utilities.vertexai import (
     create_retry_decorator,

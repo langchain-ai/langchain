@@ -1,7 +1,6 @@
+# RAG - JaguarDB
 
-# rag-jaguardb
-
-This template performs RAG using JaguarDB and OpenAI.
+This template performs RAG using `JaguarDB` and OpenAI.
 
 ## Environment Setup
 

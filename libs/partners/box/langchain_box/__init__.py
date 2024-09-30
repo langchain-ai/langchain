@@ -2,7 +2,14 @@ from importlib import metadata
 
 from langchain_box.document_loaders import BoxLoader
 from langchain_box.retrievers import BoxRetriever
-from langchain_box.utilities import BoxAuth, BoxAuthType, _BoxAPIWrapper
+from langchain_box.utilities.box import (
+    BoxAuth,
+    BoxAuthType,
+    BoxSearchOptions,
+    DocumentFiles,
+    SearchTypeFilter,
+    _BoxAPIWrapper,
+)
 
 try:
     __version__ = metadata.version(__package__)
@@ -16,6 +23,9 @@ __all__ = [
     "BoxRetriever",
     "BoxAuth",
     "BoxAuthType",
+    "BoxSearchOptions",
+    "DocumentFiles",
+    "SearchTypeFilter",
     "_BoxAPIWrapper",
     "__version__",
 ]

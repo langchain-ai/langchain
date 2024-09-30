@@ -2,8 +2,8 @@ from typing import Any, Dict, List, Optional, Union, cast
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from langchain_core.pydantic_v1 import SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from pydantic import ConfigDict, SecretStr, model_validator
 
 from langchain_community.utilities.arcee import ArceeWrapper, DALMFilter
 
@@ -51,9 +51,9 @@ class Arcee(LLM):
     model_kwargs: Optional[Dict[str, Any]] = None
     """Keyword arguments to pass to the model."""
 
-    class Config:
-        extra = "forbid"
-        underscore_attrs_are_private = True
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @property
     def _llm_type(self) -> str:
@@ -73,8 +73,9 @@ class Arcee(LLM):
             model_name=self.model,
         )
 
-    @root_validator(pre=True)
-    def validate_environments(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environments(cls, values: Dict) -> Any:
         """Validate Arcee environment variables."""
 
         # validate env vars

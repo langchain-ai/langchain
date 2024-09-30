@@ -16,9 +16,9 @@ from langchain_core.callbacks import (
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import PromptTemplate
-from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.vectorstores import VectorStore
+from pydantic import ConfigDict, Field, model_validator
 
 from langchain.chains.base import Chain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
@@ -47,10 +47,11 @@ class BaseRetrievalQA(Chain):
     return_source_documents: bool = False
     """Return the source documents or not."""
 
-    class Config:
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
-        extra = "forbid"
+    model_config = ConfigDict(
+        populate_by_name=True,
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
     @property
     def input_keys(self) -> List[str]:
@@ -309,16 +310,18 @@ class VectorDBQA(BaseRetrievalQA):
     search_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Extra search args."""
 
-    @root_validator(pre=True)
-    def raise_deprecation(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def raise_deprecation(cls, values: Dict) -> Any:
         warnings.warn(
             "`VectorDBQA` is deprecated - "
             "please use `from langchain.chains import RetrievalQA`"
         )
         return values
 
-    @root_validator(pre=True)
-    def validate_search_type(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_search_type(cls, values: Dict) -> Any:
         """Validate search type."""
         if "search_type" in values:
             search_type = values["search_type"]

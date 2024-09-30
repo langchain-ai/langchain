@@ -1,13 +1,12 @@
+# RAG - SingleStoreDB
 
-# rag-singlestoredb
-
-This template performs RAG using SingleStoreDB and OpenAI.
+This template performs RAG using `SingleStoreDB` and OpenAI.
 
 ## Environment Setup
 
-This template uses SingleStoreDB as a vectorstore and requires that `SINGLESTOREDB_URL` is set. It should take the form `admin:password@svc-xxx.svc.singlestore.com:port/db_name`
+This template uses `SingleStoreDB` as a vectorstore and requires that `SINGLESTOREDB_URL` is set. It should take the form `admin:password@svc-xxx.svc.singlestore.com:port/db_name`
 
-Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
+Set the `OPENAI_API_KEY` environment variable to access the `OpenAI` models.
 
 ## Usage
 

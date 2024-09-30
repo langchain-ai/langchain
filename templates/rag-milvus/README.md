@@ -1,6 +1,6 @@
-# rag-milvus
+# RAG - Milvus
 
-This template performs RAG using Milvus and OpenAI.
+This template performs RAG using `Milvus` and `OpenAI`.
 
 ## Environment Setup
 

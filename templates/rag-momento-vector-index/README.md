@@ -1,6 +1,6 @@
-# rag-momento-vector-index
+# RAG - Momento Vector Index
 
-This template performs RAG using Momento Vector Index (MVI) and OpenAI.
+This template performs RAG using `Momento Vector Index` (`MVI`) and `OpenAI`.
 
 > MVI: the most productive, easiest to use, serverless vector index for your data. To get started with MVI, simply sign up for an account. There's no need to handle infrastructure, manage servers, or be concerned about scaling. MVI is a service that scales automatically to meet your needs. Combine with other Momento services such as Momento Cache to cache prompts and as a session store or Momento Topics as a pub/sub system to broadcast events to your application.
 
@@ -8,7 +8,7 @@ To sign up and access MVI, visit the [Momento Console](https://console.gomomento
 
 ## Environment Setup
 
-This template uses Momento Vector Index as a vectorstore and requires that `MOMENTO_API_KEY`, and `MOMENTO_INDEX_NAME` are set.
+This template uses `Momento Vector Index` as a vectorstore and requires that `MOMENTO_API_KEY`, and `MOMENTO_INDEX_NAME` are set.
 
 Go to the [console](https://console.gomomento.com/) to get an API key.
 

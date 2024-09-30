@@ -1,11 +1,12 @@
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import root_validator
 from langchain_core.retrievers import BaseRetriever
+from pydantic import ConfigDict, model_validator
+from typing_extensions import Self
 
-from langchain_box.utilities import BoxAuth, _BoxAPIWrapper
+from langchain_box.utilities import BoxAuth, BoxSearchOptions, _BoxAPIWrapper
 
 
 class BoxRetriever(BaseRetriever):
@@ -32,6 +33,7 @@ class BoxRetriever(BaseRetriever):
     Instantiate:
 
         To use search:
+
         .. code-block:: python
 
             from langchain_box.retrievers import BoxRetriever
@@ -39,6 +41,7 @@ class BoxRetriever(BaseRetriever):
             retriever = BoxRetriever()
 
         To use Box AI:
+
         .. code-block:: python
 
             from langchain_box.retrievers import BoxRetriever
@@ -114,40 +117,48 @@ class BoxRetriever(BaseRetriever):
     """String containing the Box Developer Token generated in the developer console"""
 
     box_auth: Optional[BoxAuth] = None
-    """Configured langchain_box.utilities.BoxAuth object"""
+    """Configured 
+       `BoxAuth <https://python.langchain.com/v0.2/api_reference/box/utilities/langchain_box.utilities.box.BoxAuth.html>`_ 
+       object"""
 
     box_file_ids: Optional[List[str]] = None
     """List[str] containing Box file ids"""
+
     character_limit: Optional[int] = -1
     """character_limit is an int that caps the number of characters to
        return per document."""
 
+    box_search_options: Optional[BoxSearchOptions] = None
+    """Search options to configure BoxRetriever to narrow search results."""
+
     _box: Optional[_BoxAPIWrapper]
 
-    class Config:
-        arbitrary_types_allowed = True
-        extra = "allow"
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="allow",
+    )
 
-    @root_validator(allow_reuse=True)
-    def validate_box_loader_inputs(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="after")
+    def validate_box_loader_inputs(self) -> Self:
         _box = None
 
         """Validate that we have either a box_developer_token or box_auth."""
-        if not values.get("box_auth") and not values.get("box_developer_token"):
+        if not self.box_auth and not self.box_developer_token:
             raise ValueError(
                 "you must provide box_developer_token or a box_auth "
                 "generated with langchain_box.utilities.BoxAuth"
             )
 
         _box = _BoxAPIWrapper(  # type: ignore[call-arg]
-            box_developer_token=values.get("box_developer_token"),
-            box_auth=values.get("box_auth"),
-            character_limit=values.get("character_limit"),
+            box_developer_token=self.box_developer_token,
+            box_auth=self.box_auth,
+            character_limit=self.character_limit,
+            box_search_options=self.box_search_options,
         )
 
-        values["_box"] = _box
+        self._box = _box
 
-        return values
+        return self
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun

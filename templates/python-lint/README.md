@@ -1,6 +1,7 @@
-# python-lint
+# Python linting
 
-This agent specializes in generating high-quality Python code with a focus on proper formatting and linting. It uses `black`, `ruff`, and `mypy` to ensure the code meets standard quality checks.
+This agent specializes in generating high-quality `Python` code with 
+a focus on proper formatting and linting. It uses `black`, `ruff`, and `mypy` to ensure the code meets standard quality checks.
 
 This streamlines the coding process by integrating and responding to these checks, resulting in reliable and consistent code output.
 

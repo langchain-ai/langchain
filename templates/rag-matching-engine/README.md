@@ -1,9 +1,8 @@
+# RAG - Google Cloud Matching Engine
 
-# rag-matching-engine
+This template performs RAG using [Google Cloud Vertex Matching Engine](https://cloud.google.com/blog/products/ai-machine-learning/vertex-matching-engine-blazing-fast-and-massively-scalable-nearest-neighbor-search).
 
-This template performs RAG using Google Cloud Platform's Vertex AI with the matching engine.
-
-It will utilize a previously created index to retrieve relevant documents or contexts based on user-provided questions. 
+It utilizes a previously created index to retrieve relevant documents or contexts based on user-provided questions. 
 
 ## Environment Setup
 

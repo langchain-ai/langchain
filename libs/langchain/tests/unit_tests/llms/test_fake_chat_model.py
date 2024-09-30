@@ -9,7 +9,7 @@ from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
 from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
 
 from tests.unit_tests.llms.fake_chat_model import GenericFakeChatModel
-from tests.unit_tests.stubs import AnyStr, _AnyIdAIMessage, _AnyIdAIMessageChunk
+from tests.unit_tests.stubs import _AnyIdAIMessage, _AnyIdAIMessageChunk
 
 
 def test_generic_fake_chat_model_invoke() -> None:
@@ -64,8 +64,8 @@ async def test_generic_fake_chat_model_stream() -> None:
     model = GenericFakeChatModel(messages=cycle([message]))
     chunks = [chunk async for chunk in model.astream("meow")]
     assert chunks == [
-        AIMessageChunk(content="", additional_kwargs={"foo": 42}, id=AnyStr()),
-        AIMessageChunk(content="", additional_kwargs={"bar": 24}, id=AnyStr()),
+        _AnyIdAIMessageChunk(content="", additional_kwargs={"foo": 42}),
+        _AnyIdAIMessageChunk(content="", additional_kwargs={"bar": 24}),
     ]
 
     message = AIMessage(
