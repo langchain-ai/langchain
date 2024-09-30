@@ -26,8 +26,8 @@ class Generation(Serializable):
     """Generated text output."""
 
     generation_info: Optional[dict[str, Any]] = None
-    """Raw response from the provider. 
-    
+    """Raw response from the provider.
+
     May include things like the reason for finishing or token log probabilities.
     """
     type: Literal["Generation"] = "Generation"

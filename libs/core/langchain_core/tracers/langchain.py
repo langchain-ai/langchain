@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import logging
 import warnings
 from concurrent.futures import ThreadPoolExecutor
@@ -10,6 +11,7 @@ from typing import TYPE_CHECKING, Any, Optional, Union
 from uuid import UUID
 
 from langsmith import Client
+from langsmith import run_trees as rt
 from langsmith import utils as ls_utils
 from pydantic import PydanticDeprecationWarning
 from tenacity import (
@@ -21,6 +23,7 @@ from tenacity import (
 
 from langchain_core.env import get_runtime_environment
 from langchain_core.load import dumpd
+from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
 
@@ -29,7 +32,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 _LOGGED = set()
-_CLIENT: Optional[Client] = None
 _EXECUTOR: Optional[ThreadPoolExecutor] = None
 
 
@@ -49,17 +51,13 @@ def log_error_once(method: str, exception: Exception) -> None:
 
 def wait_for_all_tracers() -> None:
     """Wait for all tracers to finish."""
-    global _CLIENT
-    if _CLIENT is not None and _CLIENT.tracing_queue is not None:
-        _CLIENT.tracing_queue.join()
+    if rt._CLIENT is not None and rt._CLIENT.tracing_queue is not None:
+        rt._CLIENT.tracing_queue.join()
 
 
 def get_client() -> Client:
     """Get the client."""
-    global _CLIENT
-    if _CLIENT is None:
-        _CLIENT = Client()
-    return _CLIENT
+    return rt.get_cached_client()
 
 
 def _get_executor() -> ThreadPoolExecutor:
@@ -86,6 +84,8 @@ def _run_to_dict(run: Run) -> dict:
 class LangChainTracer(BaseTracer):
     """Implementation of the SharedTracer that POSTS to the LangChain endpoint."""
 
+    run_inline = True
+
     def __init__(
         self,
         example_id: Optional[Union[UUID, str]] = None,
@@ -111,6 +111,19 @@ class LangChainTracer(BaseTracer):
         self.client = client or get_client()
         self.tags = tags or []
         self.latest_run: Optional[Run] = None
+
+    def _start_trace(self, run: Run) -> None:
+        if self.project_name:
+            run.session_name = self.project_name
+        if self.tags is not None:
+            if run.tags:
+                run.tags = sorted(set(run.tags + self.tags))
+            else:
+                run.tags = self.tags.copy()
+
+        super()._start_trace(run)
+        if run._client is None:
+            run._client = self.client  # type: ignore
 
     def on_chat_model_start(
         self,
@@ -163,8 +176,7 @@ class LangChainTracer(BaseTracer):
         # run.model_copy
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=PydanticDeprecationWarning)
-
-            run_ = run.copy()
+            run_ = copy.copy(run)
         run_.reference_example_id = self.example_id
         self.latest_run = run_
 
@@ -230,6 +242,26 @@ class LangChainTracer(BaseTracer):
         if run.parent_run_id is None:
             run.reference_example_id = self.example_id
         self._persist_run_single(run)
+
+    def _llm_run_with_token_event(
+        self,
+        token: str,
+        run_id: UUID,
+        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
+        parent_run_id: Optional[UUID] = None,
+        **kwargs: Any,
+    ) -> Run:
+        """
+        Append token event to LLM run and return the run.
+        """
+        return super()._llm_run_with_token_event(
+            # Drop the chunk; we don't need to save it
+            token,
+            run_id,
+            chunk=None,
+            parent_run_id=parent_run_id,
+            **kwargs,
+        )
 
     def _on_chat_model_start(self, run: Run) -> None:
         """Persist an LLM run."""

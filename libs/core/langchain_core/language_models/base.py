@@ -14,7 +14,7 @@ from typing import (
 )
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
-from typing_extensions import TypeAlias, TypedDict
+from typing_extensions import TypeAlias, TypedDict, override
 
 from langchain_core._api import deprecated
 from langchain_core.messages import (
@@ -100,12 +100,12 @@ class BaseLanguageModel(
 
     cache: Union[BaseCache, bool, None] = None
     """Whether to cache the response.
-    
+
     * If true, will use the global cache.
     * If false, will not use a cache
     * If None, will use the global cache if it's set, otherwise no cache.
     * If instance of BaseCache, will use the provided cache.
-    
+
     Caching is not currently supported for streaming methods of models.
     """
     verbose: bool = Field(default_factory=_get_verbosity, exclude=True, repr=False)
@@ -143,6 +143,7 @@ class BaseLanguageModel(
             return verbose
 
     @property
+    @override
     def InputType(self) -> TypeAlias:
         """Get the input type for this runnable."""
         from langchain_core.prompt_values import (

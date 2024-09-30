@@ -12,6 +12,7 @@ from typing import (
 )
 
 from pydantic import BaseModel
+from typing_extensions import override
 
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.load.load import load
@@ -396,6 +397,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         )
 
     @property
+    @override
     def OutputType(self) -> type[Output]:
         output_type = self._history_chain.OutputType
         return output_type

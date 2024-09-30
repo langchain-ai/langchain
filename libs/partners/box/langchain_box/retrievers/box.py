@@ -6,7 +6,7 @@ from langchain_core.retrievers import BaseRetriever
 from pydantic import ConfigDict, model_validator
 from typing_extensions import Self
 
-from langchain_box.utilities import BoxAuth, _BoxAPIWrapper
+from langchain_box.utilities import BoxAuth, BoxSearchOptions, _BoxAPIWrapper
 
 
 class BoxRetriever(BaseRetriever):
@@ -128,7 +128,10 @@ class BoxRetriever(BaseRetriever):
     """character_limit is an int that caps the number of characters to
        return per document."""
 
-    _box: Optional[_BoxAPIWrapper] = None
+    box_search_options: Optional[BoxSearchOptions] = None
+    """Search options to configure BoxRetriever to narrow search results."""
+
+    _box: Optional[_BoxAPIWrapper]
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
@@ -150,6 +153,7 @@ class BoxRetriever(BaseRetriever):
             box_developer_token=self.box_developer_token,
             box_auth=self.box_auth,
             character_limit=self.character_limit,
+            box_search_options=self.box_search_options,
         )
 
         self._box = _box

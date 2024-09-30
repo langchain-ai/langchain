@@ -25,7 +25,7 @@ class BaseMessage(Serializable):
 
     additional_kwargs: dict = Field(default_factory=dict)
     """Reserved for additional payload data associated with the message.
-    
+
     For example, for a message from an AI, this could include tool calls as
     encoded by the model provider.
     """
@@ -35,16 +35,16 @@ class BaseMessage(Serializable):
 
     type: str
     """The type of the message. Must be a string that is unique to the message type.
-    
+
     The purpose of this field is to allow for easy identification of the message type
     when deserializing messages.
     """
 
     name: Optional[str] = None
-    """An optional name for the message. 
-    
+    """An optional name for the message.
+
     This can be used to provide a human-readable name for the message.
-    
+
     Usage of this field is optional, and whether it's used or not is up to the
     model implementation.
     """

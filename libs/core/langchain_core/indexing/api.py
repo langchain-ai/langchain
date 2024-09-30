@@ -92,7 +92,7 @@ class _HashedDocument(Document):
         values["metadata_hash"] = metadata_hash
         values["hash_"] = str(_hash_string_to_uuid(content_hash + metadata_hash))
 
-        _uid = values.get("uid", None)
+        _uid = values.get("uid")
 
         if _uid is None:
             values["uid"] = values["hash_"]
