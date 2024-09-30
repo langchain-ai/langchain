@@ -129,10 +129,8 @@ class ChatYandexGPT(_BaseYandexGPT, BaseChatModel):
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         stream_resp = completion_with_retry(self, messages=messages, stream=True)
-        current_text = ""
         for data in stream_resp:
-            delta = data[len(current_text) :]
-            current_text = data
+            delta = data
             chunk = ChatGenerationChunk(message=AIMessageChunk(content=delta))
             if run_manager:
                 run_manager.on_llm_new_token(delta, chunk=chunk)
@@ -142,24 +140,22 @@ class ChatYandexGPT(_BaseYandexGPT, BaseChatModel):
         self,
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
-        current_text = ""
         async for data in await acompletion_with_retry(
             self, messages=messages, stream=True
         ):
-            delta = data[len(current_text) :]
-            current_text = data
+            delta = data
             chunk = ChatGenerationChunk(message=AIMessageChunk(content=delta))
             if run_manager:
-                run_manager.on_llm_new_token(delta, chunk=chunk)
+                await run_manager.on_llm_new_token(delta, chunk=chunk)
             yield chunk
 
 
 def _generate_completion(
-    self: ChatYandexGPT, messages: List[BaseMessage], stream: bool = None
-):
+    self: ChatYandexGPT, messages: List[BaseMessage], stream: bool = False
+) -> Any:
     try:
         import grpc
         from google.protobuf.wrappers_pb2 import DoubleValue, Int64Value
@@ -206,11 +202,14 @@ def _generate_completion(
         messages=[Message(**message) for message in message_history],
     )
     stub = TextGenerationServiceStub(channel)
-    res = stub.Completion(request, metadata=self._grpc_metadata)
-    return list(res)[0].alternatives[0].message.text
+    res = stub.Completion(request, metadata=self.grpc_metadata)
+    # return list(res)[0].alternatives[0].message.text
+    return res
 
 
-async def _agenerate_completion(self, messages, stream=False):
+async def _agenerate_completion(
+    self: ChatYandexGPT, messages: List[BaseMessage], stream: bool = False
+) -> Any:
     try:
         import asyncio
 
@@ -267,7 +266,7 @@ async def _agenerate_completion(self, messages, stream=False):
             messages=[Message(**message) for message in message_history],
         )
         stub = TextGenerationAsyncServiceStub(channel)
-        operation = await stub.Completion(request, metadata=self._grpc_metadata)
+        operation = await stub.Completion(request, metadata=self.grpc_metadata)
 
         async with grpc.aio.secure_channel(
             operation_api_url, channel_credentials
@@ -290,22 +289,25 @@ async def _agenerate_completion(self, messages, stream=False):
 def _make_request_invoke(
     self: ChatYandexGPT,
     messages: List[BaseMessage],
-):
-    result = _generate_completion(self, messages, None)
-    return list(result)[0].alternatives[0].message.text
+) -> Any:
+    return (
+        list(_generate_completion(self, messages, False))[0]
+        .alternatives[0]
+        .message.text
+    )
 
 
 def _make_request_stream(
     self: ChatYandexGPT,
     messages: List[BaseMessage],
-):
+) -> Any:
     result = _generate_completion(self, messages, True)
     for chunk in result:
         yield chunk.alternatives[0].message.text
 
 
 async def _amake_request_invoke(llm: ChatYandexGPT, **kwargs: Any) -> Any:
-    result = await _agenerate_completion(llm, stream=None, **kwargs)
+    result = await _agenerate_completion(llm, stream=False, **kwargs)
     return result.alternatives[0].message.text
 
 
