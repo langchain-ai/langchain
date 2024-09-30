@@ -46,7 +46,7 @@ class GrobidParser(BaseBlobParser):
             raise ImportError(
                 "`bs4` package not found, please install it with " "`pip install bs4`"
             )
-        soup = BeautifulSoup(xml_data, "xml")
+        soup = BeautifulSoup(xml_data, "lxml")
         sections = soup.find_all("div")
         titles = soup.find_all("title")
         if titles:
