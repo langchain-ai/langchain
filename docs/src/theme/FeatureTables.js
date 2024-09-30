@@ -805,7 +805,7 @@ const FEATURE_TABLES = {
             {
                 name: "MathPix",
                 link: "mathpix",
-                source: "Uses MathPix to laod PDFs",
+                source: "Uses MathPix to load PDFs",
                 api: "Package",
                 apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.pdf.MathpixPDFLoader.html"
             },
