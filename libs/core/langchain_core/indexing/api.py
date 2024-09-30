@@ -198,7 +198,7 @@ def index(
     source_id_key: Union[str, Callable[[Document], str], None] = None,
     cleanup_batch_size: int = 1_000,
     force_update: bool = False,
-    **kwargs: Any
+    **kwargs: Any,
 ) -> IndexingResult:
     """Index data from the loader into the vector store.
 
@@ -439,7 +439,7 @@ async def aindex(
     source_id_key: Union[str, Callable[[Document], str], None] = None,
     cleanup_batch_size: int = 1_000,
     force_update: bool = False,
-    **kwargs: Any
+    **kwargs: Any,
 ) -> IndexingResult:
     """Async index data from the loader into the vector store.
 
