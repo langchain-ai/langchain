@@ -1,4 +1,4 @@
-from langchain_pipeshift import ChatPipeshift, PipeshiftEmbeddings
+from langchain_pipeshift import ChatPipeshift  # PipeshiftEmbeddings
 
 
 def test_chat_pipeshift_secrets() -> None:
@@ -7,7 +7,7 @@ def test_chat_pipeshift_secrets() -> None:
     assert "foo" not in s
 
 
-def test_pipeshift_embeddings_secrets() -> None:
-    o = PipeshiftEmbeddings(pipeshift_api_key="foo")  # type: ignore[call-arg]
-    s = str(o)
-    assert "foo" not in s
+# def test_pipeshift_embeddings_secrets() -> None:
+#     o = PipeshiftEmbeddings(pipeshift_api_key="foo")  # type: ignore[call-arg]
+#     s = str(o)
+#     assert "foo" not in s

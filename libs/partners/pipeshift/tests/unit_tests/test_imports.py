@@ -1,6 +1,6 @@
 from langchain_pipeshift import __all__
 
-EXPECTED_ALL = ["Pipeshift", "ChatPipeshift", "PipeshiftEmbeddings", "__version__"]
+EXPECTED_ALL = ["Pipeshift", "ChatPipeshift", "__version__"]  # "PipeshiftEmbeddings"
 
 
 def test_all_imports() -> None:
