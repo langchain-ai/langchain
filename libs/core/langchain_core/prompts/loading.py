@@ -164,10 +164,7 @@ def _load_prompt_from_file(
 ) -> BasePromptTemplate:
     """Load prompt from file."""
     # Convert file to a Path object.
-    if isinstance(file, str):
-        file_path = Path(file)
-    else:
-        file_path = file
+    file_path = Path(file) if isinstance(file, str) else file
     # Load from either json or yaml.
     if file_path.suffix == ".json":
         with open(file_path, encoding=encoding) as f:

@@ -332,6 +332,19 @@ def test_trim_messages_allow_partial_text_splitter() -> None:
     assert _MESSAGES_TO_TRIM == _MESSAGES_TO_TRIM_COPY
 
 
+def test_trim_messages_include_system_strategy_last_empty_messages() -> None:
+    expected: list[BaseMessage] = []
+
+    actual = trim_messages(
+        max_tokens=10,
+        token_counter=dummy_token_counter,
+        strategy="last",
+        include_system=True,
+    ).invoke([])
+
+    assert actual == expected
+
+
 def test_trim_messages_invoke() -> None:
     actual = trim_messages(max_tokens=10, token_counter=dummy_token_counter).invoke(
         _MESSAGES_TO_TRIM
