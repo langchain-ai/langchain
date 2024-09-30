@@ -116,14 +116,14 @@ These also have corresponding async methods that should be used with [asyncio](h
 
 The **input type** and **output type** varies by component:
 
-| Component | Input Type | Output Type |
-| --- | --- | --- |
-| Prompt | Dictionary | PromptValue |
-| ChatModel | Single string, list of chat messages or a PromptValue | ChatMessage |
-| LLM | Single string, list of chat messages or a PromptValue | String |
-| OutputParser | The output of an LLM or ChatModel | Depends on the parser |
-| Retriever | Single string | List of Documents |
-| Tool | Single string or dictionary, depending on the tool | Depends on the tool |
+| Component    | Input Type                                            | Output Type           |
+|--------------|-------------------------------------------------------|-----------------------|
+| Prompt       | Dictionary                                            | PromptValue           |
+| ChatModel    | Single string, list of chat messages or a PromptValue | ChatMessage           |
+| LLM          | Single string, list of chat messages or a PromptValue | String                |
+| OutputParser | The output of an LLM or ChatModel                     | Depends on the parser |
+| Retriever    | Single string                                         | List of Documents     |
+| Tool         | Single string or dictionary, depending on the tool    | Depends on the tool   |
 
 
 All runnables expose input and output **schemas** to inspect the inputs and outputs:
@@ -236,7 +236,7 @@ This is where information like log-probs and token usage may be stored.
 
 **`tool_calls`**
 
-These represent a decision from an language model to call a tool. They are included as part of an `AIMessage` output.
+These represent a decision from a language model to call a tool. They are included as part of an `AIMessage` output.
 They can be accessed from there with the `.tool_calls` property.
 
 This property returns a list of `ToolCall`s. A `ToolCall` is a dictionary with the following arguments:
@@ -255,6 +255,8 @@ This represents a message with role "tool", which contains the result of calling
 
 - a `tool_call_id` field which conveys the id of the call to the tool that was called to produce this result.
 - an `artifact` field which can be used to pass along arbitrary artifacts of the tool execution which are useful to track but which should not be sent to the model.
+
+With most chat models, a `ToolMessage` can only appear in the chat history after an `AIMessage` that has a populated `tool_calls` field.
 
 #### (Legacy) FunctionMessage
 

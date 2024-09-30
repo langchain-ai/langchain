@@ -1066,7 +1066,7 @@ async def test_passthrough_tap_async(mocker: MockerFixture) -> None:
     assert [
         part
         async for part in seq.astream(
-            "hello", dict(metadata={"key": "value"}), my_kwarg="value"
+            "hello", {"metadata": {"key": "value"}}, my_kwarg="value"
         )
     ] == [5]
     assert mock.call_args_list == [
@@ -1126,12 +1126,9 @@ async def test_passthrough_tap_async(mocker: MockerFixture) -> None:
         assert call in mock.call_args_list
     mock.reset_mock()
 
-    assert [
-        part
-        for part in seq.stream(
-            "hello", dict(metadata={"key": "value"}), my_kwarg="value"
-        )
-    ] == [5]
+    assert list(
+        seq.stream("hello", {"metadata": {"key": "value"}}, my_kwarg="value")
+    ) == [5]
     assert mock.call_args_list == [
         mocker.call("hello", my_kwarg="value"),
         mocker.call(5),
@@ -1156,13 +1153,13 @@ async def test_with_config_metadata_passthrough(mocker: MockerFixture) -> None:
     )
     assert spy.call_args_list[0].args[1:] == (
         "hello",
-        dict(
-            tags=["a-tag"],
-            callbacks=None,
-            recursion_limit=25,
-            configurable={"hello": "there", "__secret_key": "nahnah"},
-            metadata={"hello": "there", "bye": "now"},
-        ),
+        {
+            "tags": ["a-tag"],
+            "callbacks": None,
+            "recursion_limit": 25,
+            "configurable": {"hello": "there", "__secret_key": "nahnah"},
+            "metadata": {"hello": "there", "bye": "now"},
+        },
     )
     spy.reset_mock()
 
@@ -1175,7 +1172,7 @@ async def test_with_config(mocker: MockerFixture) -> None:
     assert spy.call_args_list == [
         mocker.call(
             "hello",
-            dict(tags=["a-tag"], metadata={}, configurable={}),
+            {"tags": ["a-tag"], "metadata": {}, "configurable": {}},
         ),
     ]
     spy.reset_mock()
@@ -1201,19 +1198,19 @@ async def test_with_config(mocker: MockerFixture) -> None:
 
     assert [
         *fake.with_config(tags=["a-tag"]).stream(
-            "hello", dict(metadata={"key": "value"})
+            "hello", {"metadata": {"key": "value"}}
         )
     ] == [5]
     assert spy.call_args_list == [
         mocker.call(
             "hello",
-            dict(tags=["a-tag"], metadata={"key": "value"}, configurable={}),
+            {"tags": ["a-tag"], "metadata": {"key": "value"}, "configurable": {}},
         ),
     ]
     spy.reset_mock()
 
     assert fake.with_config(recursion_limit=5).batch(
-        ["hello", "wooorld"], [dict(tags=["a-tag"]), dict(metadata={"key": "value"})]
+        ["hello", "wooorld"], [{"tags": ["a-tag"]}, {"metadata": {"key": "value"}}]
     ) == [5, 7]
 
     assert len(spy.call_args_list) == 2
@@ -1236,7 +1233,7 @@ async def test_with_config(mocker: MockerFixture) -> None:
         c
         for c in fake.with_config(recursion_limit=5).batch_as_completed(
             ["hello", "wooorld"],
-            [dict(tags=["a-tag"]), dict(metadata={"key": "value"})],
+            [{"tags": ["a-tag"]}, {"metadata": {"key": "value"}}],
         )
     ) == [(0, 5), (1, 7)]
 
@@ -1257,7 +1254,7 @@ async def test_with_config(mocker: MockerFixture) -> None:
     spy.reset_mock()
 
     assert fake.with_config(metadata={"a": "b"}).batch(
-        ["hello", "wooorld"], dict(tags=["a-tag"])
+        ["hello", "wooorld"], {"tags": ["a-tag"]}
     ) == [5, 7]
     assert len(spy.call_args_list) == 2
     for i, call in enumerate(spy.call_args_list):
@@ -1267,7 +1264,7 @@ async def test_with_config(mocker: MockerFixture) -> None:
     spy.reset_mock()
 
     assert sorted(
-        c for c in fake.batch_as_completed(["hello", "wooorld"], dict(tags=["a-tag"]))
+        c for c in fake.batch_as_completed(["hello", "wooorld"], {"tags": ["a-tag"]})
     ) == [(0, 5), (1, 7)]
     assert len(spy.call_args_list) == 2
     for i, call in enumerate(spy.call_args_list):
@@ -1285,7 +1282,12 @@ async def test_with_config(mocker: MockerFixture) -> None:
     assert spy.call_args_list == [
         mocker.call(
             "hello",
-            dict(callbacks=[handler], metadata={"a": "b"}, configurable={}, tags=[]),
+            {
+                "callbacks": [handler],
+                "metadata": {"a": "b"},
+                "configurable": {},
+                "tags": [],
+            },
         ),
     ]
     spy.reset_mock()
@@ -1294,12 +1296,12 @@ async def test_with_config(mocker: MockerFixture) -> None:
         part async for part in fake.with_config(metadata={"a": "b"}).astream("hello")
     ] == [5]
     assert spy.call_args_list == [
-        mocker.call("hello", dict(metadata={"a": "b"}, tags=[], configurable={})),
+        mocker.call("hello", {"metadata": {"a": "b"}, "tags": [], "configurable": {}}),
     ]
     spy.reset_mock()
 
     assert await fake.with_config(recursion_limit=5, tags=["c"]).abatch(
-        ["hello", "wooorld"], dict(metadata={"key": "value"})
+        ["hello", "wooorld"], {"metadata": {"key": "value"}}
     ) == [
         5,
         7,
@@ -1307,23 +1309,23 @@ async def test_with_config(mocker: MockerFixture) -> None:
     assert spy.call_args_list == [
         mocker.call(
             "hello",
-            dict(
-                metadata={"key": "value"},
-                tags=["c"],
-                callbacks=None,
-                recursion_limit=5,
-                configurable={},
-            ),
+            {
+                "metadata": {"key": "value"},
+                "tags": ["c"],
+                "callbacks": None,
+                "recursion_limit": 5,
+                "configurable": {},
+            },
         ),
         mocker.call(
             "wooorld",
-            dict(
-                metadata={"key": "value"},
-                tags=["c"],
-                callbacks=None,
-                recursion_limit=5,
-                configurable={},
-            ),
+            {
+                "metadata": {"key": "value"},
+                "tags": ["c"],
+                "callbacks": None,
+                "recursion_limit": 5,
+                "configurable": {},
+            },
         ),
     ]
     spy.reset_mock()
@@ -1333,7 +1335,7 @@ async def test_with_config(mocker: MockerFixture) -> None:
             c
             async for c in fake.with_config(
                 recursion_limit=5, tags=["c"]
-            ).abatch_as_completed(["hello", "wooorld"], dict(metadata={"key": "value"}))
+            ).abatch_as_completed(["hello", "wooorld"], {"metadata": {"key": "value"}})
         ]
     ) == [
         (0, 5),
@@ -1343,24 +1345,24 @@ async def test_with_config(mocker: MockerFixture) -> None:
     first_call = next(call for call in spy.call_args_list if call.args[0] == "hello")
     assert first_call == mocker.call(
         "hello",
-        dict(
-            metadata={"key": "value"},
-            tags=["c"],
-            callbacks=None,
-            recursion_limit=5,
-            configurable={},
-        ),
+        {
+            "metadata": {"key": "value"},
+            "tags": ["c"],
+            "callbacks": None,
+            "recursion_limit": 5,
+            "configurable": {},
+        },
     )
     second_call = next(call for call in spy.call_args_list if call.args[0] == "wooorld")
     assert second_call == mocker.call(
         "wooorld",
-        dict(
-            metadata={"key": "value"},
-            tags=["c"],
-            callbacks=None,
-            recursion_limit=5,
-            configurable={},
-        ),
+        {
+            "metadata": {"key": "value"},
+            "tags": ["c"],
+            "callbacks": None,
+            "recursion_limit": 5,
+            "configurable": {},
+        },
     )
 
 
@@ -1368,20 +1370,20 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
     fake = FakeRunnable()
     spy = mocker.spy(fake, "invoke")
 
-    assert fake.invoke("hello", dict(tags=["a-tag"])) == 5
+    assert fake.invoke("hello", {"tags": ["a-tag"]}) == 5
     assert spy.call_args_list == [
-        mocker.call("hello", dict(tags=["a-tag"])),
+        mocker.call("hello", {"tags": ["a-tag"]}),
     ]
     spy.reset_mock()
 
-    assert [*fake.stream("hello", dict(metadata={"key": "value"}))] == [5]
+    assert [*fake.stream("hello", {"metadata": {"key": "value"}})] == [5]
     assert spy.call_args_list == [
-        mocker.call("hello", dict(metadata={"key": "value"})),
+        mocker.call("hello", {"metadata": {"key": "value"}}),
     ]
     spy.reset_mock()
 
     assert fake.batch(
-        ["hello", "wooorld"], [dict(tags=["a-tag"]), dict(metadata={"key": "value"})]
+        ["hello", "wooorld"], [{"tags": ["a-tag"]}, {"metadata": {"key": "value"}}]
     ) == [5, 7]
 
     assert len(spy.call_args_list) == 2
@@ -1399,9 +1401,9 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
 
     spy.reset_mock()
 
-    assert fake.batch(["hello", "wooorld"], dict(tags=["a-tag"])) == [5, 7]
+    assert fake.batch(["hello", "wooorld"], {"tags": ["a-tag"]}) == [5, 7]
     assert len(spy.call_args_list) == 2
-    assert set(call.args[0] for call in spy.call_args_list) == {"hello", "wooorld"}
+    assert {call.args[0] for call in spy.call_args_list} == {"hello", "wooorld"}
     for call in spy.call_args_list:
         assert call.args[1].get("tags") == ["a-tag"]
         assert call.args[1].get("metadata") == {}
@@ -1409,7 +1411,7 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
 
     assert await fake.ainvoke("hello", config={"callbacks": []}) == 5
     assert spy.call_args_list == [
-        mocker.call("hello", dict(callbacks=[])),
+        mocker.call("hello", {"callbacks": []}),
     ]
     spy.reset_mock()
 
@@ -1419,19 +1421,19 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
     ]
     spy.reset_mock()
 
-    assert await fake.abatch(["hello", "wooorld"], dict(metadata={"key": "value"})) == [
+    assert await fake.abatch(["hello", "wooorld"], {"metadata": {"key": "value"}}) == [
         5,
         7,
     ]
-    assert set(call.args[0] for call in spy.call_args_list) == {"hello", "wooorld"}
+    assert {call.args[0] for call in spy.call_args_list} == {"hello", "wooorld"}
     for call in spy.call_args_list:
-        assert call.args[1] == dict(
-            metadata={"key": "value"},
-            tags=[],
-            callbacks=None,
-            recursion_limit=25,
-            configurable={},
-        )
+        assert call.args[1] == {
+            "metadata": {"key": "value"},
+            "tags": [],
+            "callbacks": None,
+            "recursion_limit": 25,
+            "configurable": {},
+        }
 
 
 async def test_prompt() -> None:
@@ -1699,7 +1701,7 @@ def test_prompt_with_chat_model(
     chat_spy = mocker.spy(chat.__class__, "invoke")
     tracer = FakeTracer()
     assert chain.invoke(
-        {"question": "What is your name?"}, dict(callbacks=[tracer])
+        {"question": "What is your name?"}, {"callbacks": [tracer]}
     ) == _any_id_ai_message(content="foo")
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
@@ -1723,7 +1725,7 @@ def test_prompt_with_chat_model(
             {"question": "What is your name?"},
             {"question": "What is your favorite color?"},
         ],
-        dict(callbacks=[tracer]),
+        {"callbacks": [tracer]},
     ) == [
         _any_id_ai_message(content="foo"),
         _any_id_ai_message(content="foo"),
@@ -1764,7 +1766,7 @@ def test_prompt_with_chat_model(
     chat_spy = mocker.spy(chat.__class__, "stream")
     tracer = FakeTracer()
     assert [
-        *chain.stream({"question": "What is your name?"}, dict(callbacks=[tracer]))
+        *chain.stream({"question": "What is your name?"}, {"callbacks": [tracer]})
     ] == [
         _any_id_ai_message_chunk(content="f"),
         _any_id_ai_message_chunk(content="o"),
@@ -1805,7 +1807,7 @@ async def test_prompt_with_chat_model_async(
     chat_spy = mocker.spy(chat.__class__, "ainvoke")
     tracer = FakeTracer()
     assert await chain.ainvoke(
-        {"question": "What is your name?"}, dict(callbacks=[tracer])
+        {"question": "What is your name?"}, {"callbacks": [tracer]}
     ) == _any_id_ai_message(content="foo")
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
@@ -1829,7 +1831,7 @@ async def test_prompt_with_chat_model_async(
             {"question": "What is your name?"},
             {"question": "What is your favorite color?"},
         ],
-        dict(callbacks=[tracer]),
+        {"callbacks": [tracer]},
     ) == [
         _any_id_ai_message(content="foo"),
         _any_id_ai_message(content="foo"),
@@ -1872,7 +1874,7 @@ async def test_prompt_with_chat_model_async(
     assert [
         a
         async for a in chain.astream(
-            {"question": "What is your name?"}, dict(callbacks=[tracer])
+            {"question": "What is your name?"}, {"callbacks": [tracer]}
         )
     ] == [
         _any_id_ai_message_chunk(content="f"),
@@ -1911,9 +1913,7 @@ async def test_prompt_with_llm(
     llm_spy = mocker.spy(llm.__class__, "ainvoke")
     tracer = FakeTracer()
     assert (
-        await chain.ainvoke(
-            {"question": "What is your name?"}, dict(callbacks=[tracer])
-        )
+        await chain.ainvoke({"question": "What is your name?"}, {"callbacks": [tracer]})
         == "foo"
     )
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
@@ -1936,7 +1936,7 @@ async def test_prompt_with_llm(
             {"question": "What is your name?"},
             {"question": "What is your favorite color?"},
         ],
-        dict(callbacks=[tracer]),
+        {"callbacks": [tracer]},
     ) == ["bar", "foo"]
     assert prompt_spy.call_args.args[1] == [
         {"question": "What is your name?"},
@@ -1967,7 +1967,7 @@ async def test_prompt_with_llm(
     assert [
         token
         async for token in chain.astream(
-            {"question": "What is your name?"}, dict(callbacks=[tracer])
+            {"question": "What is your name?"}, {"callbacks": [tracer]}
         )
     ] == ["bar"]
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
@@ -2111,7 +2111,7 @@ async def test_prompt_with_llm_parser(
     parser_spy = mocker.spy(parser.__class__, "ainvoke")
     tracer = FakeTracer()
     assert await chain.ainvoke(
-        {"question": "What is your name?"}, dict(callbacks=[tracer])
+        {"question": "What is your name?"}, {"callbacks": [tracer]}
     ) == ["bear", "dog", "cat"]
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert llm_spy.call_args.args[1] == ChatPromptValue(
@@ -2136,7 +2136,7 @@ async def test_prompt_with_llm_parser(
             {"question": "What is your name?"},
             {"question": "What is your favorite color?"},
         ],
-        dict(callbacks=[tracer]),
+        {"callbacks": [tracer]},
     ) == [["tomato", "lettuce", "onion"], ["bear", "dog", "cat"]]
     assert prompt_spy.call_args.args[1] == [
         {"question": "What is your name?"},
@@ -2172,7 +2172,7 @@ async def test_prompt_with_llm_parser(
     assert [
         token
         async for token in chain.astream(
-            {"question": "What is your name?"}, dict(callbacks=[tracer])
+            {"question": "What is your name?"}, {"callbacks": [tracer]}
         )
     ] == [["tomato"], ["lettuce"], ["onion"]]
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
@@ -2496,9 +2496,7 @@ async def test_prompt_with_llm_and_async_lambda(
     llm_spy = mocker.spy(llm.__class__, "ainvoke")
     tracer = FakeTracer()
     assert (
-        await chain.ainvoke(
-            {"question": "What is your name?"}, dict(callbacks=[tracer])
-        )
+        await chain.ainvoke({"question": "What is your name?"}, {"callbacks": [tracer]})
         == "foo"
     )
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
@@ -2540,7 +2538,7 @@ def test_prompt_with_chat_model_and_parser(
     parser_spy = mocker.spy(parser.__class__, "invoke")
     tracer = FakeTracer()
     assert chain.invoke(
-        {"question": "What is your name?"}, dict(callbacks=[tracer])
+        {"question": "What is your name?"}, {"callbacks": [tracer]}
     ) == ["foo", "bar"]
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
@@ -2609,7 +2607,7 @@ def test_combining_sequences(
     # Test invoke
     tracer = FakeTracer()
     assert combined_chain.invoke(
-        {"question": "What is your name?"}, dict(callbacks=[tracer])
+        {"question": "What is your name?"}, {"callbacks": [tracer]}
     ) == ["baz", "qux"]
 
     assert tracer.runs == snapshot
@@ -2659,7 +2657,7 @@ Question:
     chat_spy = mocker.spy(chat.__class__, "invoke")
     parser_spy = mocker.spy(parser.__class__, "invoke")
     tracer = FakeTracer()
-    assert chain.invoke("What is your name?", dict(callbacks=[tracer])) == [
+    assert chain.invoke("What is your name?", {"callbacks": [tracer]}) == [
         "foo",
         "bar",
     ]
@@ -2726,7 +2724,7 @@ def test_seq_prompt_dict(mocker: MockerFixture, snapshot: SnapshotAssertion) -> 
     llm_spy = mocker.spy(llm.__class__, "invoke")
     tracer = FakeTracer()
     assert chain.invoke(
-        {"question": "What is your name?"}, dict(callbacks=[tracer])
+        {"question": "What is your name?"}, {"callbacks": [tracer]}
     ) == {
         "chat": _any_id_ai_message(content="i'm a chatbot"),
         "llm": "i'm a textbot",
@@ -2789,7 +2787,7 @@ async def test_router_runnable(
     router_spy = mocker.spy(router.__class__, "invoke")
     tracer = FakeTracer()
     assert (
-        chain.invoke({"key": "math", "question": "2 + 2"}, dict(callbacks=[tracer]))
+        chain.invoke({"key": "math", "question": "2 + 2"}, {"callbacks": [tracer]})
         == "4"
     )
     assert router_spy.call_args.args[1] == {
@@ -2850,7 +2848,7 @@ async def test_higher_order_lambda_runnable(
     math_spy = mocker.spy(math_chain.__class__, "invoke")
     tracer = FakeTracer()
     assert (
-        chain.invoke({"key": "math", "question": "2 + 2"}, dict(callbacks=[tracer]))
+        chain.invoke({"key": "math", "question": "2 + 2"}, {"callbacks": [tracer]})
         == "4"
     )
     assert math_spy.call_args.args[1] == {
@@ -2881,7 +2879,7 @@ async def test_higher_order_lambda_runnable(
     tracer = FakeTracer()
     assert (
         await achain.ainvoke(
-            {"key": "math", "question": "2 + 2"}, dict(callbacks=[tracer])
+            {"key": "math", "question": "2 + 2"}, {"callbacks": [tracer]}
         )
         == "4"
     )
@@ -2935,7 +2933,7 @@ def test_seq_prompt_map(mocker: MockerFixture, snapshot: SnapshotAssertion) -> N
     llm_spy = mocker.spy(llm.__class__, "invoke")
     tracer = FakeTracer()
     assert chain.invoke(
-        {"question": "What is your name?"}, dict(callbacks=[tracer])
+        {"question": "What is your name?"}, {"callbacks": [tracer]}
     ) == {
         "chat": _any_id_ai_message(content="i'm a chatbot"),
         "llm": "i'm a textbot",
@@ -3348,9 +3346,9 @@ def test_bind_with_lambda() -> None:
         return 3 + kwargs.get("n", 0)
 
     runnable = RunnableLambda(my_function).bind(n=1)
-    assert 4 == runnable.invoke({})
+    assert runnable.invoke({}) == 4
     chunks = list(runnable.stream({}))
-    assert [4] == chunks
+    assert chunks == [4]
 
 
 async def test_bind_with_lambda_async() -> None:
@@ -3358,9 +3356,9 @@ async def test_bind_with_lambda_async() -> None:
         return 3 + kwargs.get("n", 0)
 
     runnable = RunnableLambda(my_function).bind(n=1)
-    assert 4 == await runnable.ainvoke({})
+    assert await runnable.ainvoke({}) == 4
     chunks = [item async for item in runnable.astream({})]
-    assert [4] == chunks
+    assert chunks == [4]
 
 
 def test_deep_stream() -> None:
@@ -3842,7 +3840,7 @@ async def test_async_retrying(mocker: MockerFixture) -> None:
 def test_runnable_lambda_stream() -> None:
     """Test that stream works for both normal functions & those returning Runnable."""
     # Normal output should work
-    output: list[Any] = [chunk for chunk in RunnableLambda(range).stream(5)]
+    output: list[Any] = list(RunnableLambda(range).stream(5))
     assert output == [range(5)]
 
     # Runnable output should also work
@@ -4018,7 +4016,7 @@ def test_seq_batch_return_exceptions(mocker: MockerFixture) -> None:
     spy = mocker.spy(ControlledExceptionRunnable, "batch")
     tracer = FakeTracer()
     inputs = ["foo", "bar", "baz", "qux"]
-    outputs = chain.batch(inputs, dict(callbacks=[tracer]), return_exceptions=True)
+    outputs = chain.batch(inputs, {"callbacks": [tracer]}, return_exceptions=True)
     assert len(outputs) == 4
     assert isinstance(outputs[0], ValueError)
     assert isinstance(outputs[1], ValueError)
@@ -4140,7 +4138,7 @@ async def test_seq_abatch_return_exceptions(mocker: MockerFixture) -> None:
     tracer = FakeTracer()
     inputs = ["foo", "bar", "baz", "qux"]
     outputs = await chain.abatch(
-        inputs, dict(callbacks=[tracer]), return_exceptions=True
+        inputs, {"callbacks": [tracer]}, return_exceptions=True
     )
     assert len(outputs) == 4
     assert isinstance(outputs[0], ValueError)
@@ -5085,13 +5083,13 @@ def test_invoke_stream_passthrough_assign_trace() -> None:
     chain = RunnablePassthrough.assign(urls=idchain_sync)
 
     tracer = FakeTracer()
-    chain.invoke({"example": [1, 2, 3]}, dict(callbacks=[tracer]))
+    chain.invoke({"example": [1, 2, 3]}, {"callbacks": [tracer]})
 
     assert tracer.runs[0].name == "RunnableAssign<urls>"
     assert tracer.runs[0].child_runs[0].name == "RunnableParallel<urls>"
 
     tracer = FakeTracer()
-    for _ in chain.stream({"example": [1, 2, 3]}, dict(callbacks=[tracer])):
+    for _ in chain.stream({"example": [1, 2, 3]}, {"callbacks": [tracer]}):
         pass
 
     assert tracer.runs[0].name == "RunnableAssign<urls>"
@@ -5105,13 +5103,13 @@ async def test_ainvoke_astream_passthrough_assign_trace() -> None:
     chain = RunnablePassthrough.assign(urls=idchain_sync)
 
     tracer = FakeTracer()
-    await chain.ainvoke({"example": [1, 2, 3]}, dict(callbacks=[tracer]))
+    await chain.ainvoke({"example": [1, 2, 3]}, {"callbacks": [tracer]})
 
     assert tracer.runs[0].name == "RunnableAssign<urls>"
     assert tracer.runs[0].child_runs[0].name == "RunnableParallel<urls>"
 
     tracer = FakeTracer()
-    async for _ in chain.astream({"example": [1, 2, 3]}, dict(callbacks=[tracer])):
+    async for _ in chain.astream({"example": [1, 2, 3]}, {"callbacks": [tracer]}):
         pass
 
     assert tracer.runs[0].name == "RunnableAssign<urls>"
@@ -5147,13 +5145,10 @@ async def test_astream_log_deep_copies() -> None:
 
     chain = RunnableLambda(add_one)
     chunks = []
-    final_output = None
+    final_output: Optional[RunLogPatch] = None
     async for chunk in chain.astream_log(1):
         chunks.append(chunk)
-        if final_output is None:
-            final_output = chunk
-        else:
-            final_output = final_output + chunk
+        final_output = chunk if final_output is None else final_output + chunk
 
     run_log = _get_run_log(chunks)
     state = run_log.state.copy()
@@ -5265,7 +5260,7 @@ async def test_default_atransform_with_dicts() -> None:
 def test_passthrough_transform_with_dicts() -> None:
     """Test that default transform works with dicts."""
     runnable = RunnablePassthrough(lambda x: x)
-    chunks = [chunk for chunk in runnable.transform(iter([{"foo": "a"}, {"foo": "n"}]))]
+    chunks = list(runnable.transform(iter([{"foo": "a"}, {"foo": "n"}])))
     assert chunks == [{"foo": "a"}, {"foo": "n"}]
 
 
