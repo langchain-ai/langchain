@@ -62,6 +62,9 @@ from langchain_core.utils.function_calling import (
     convert_to_gigachat_function,
     convert_to_gigachat_tool,
 )
+from langchain_core.utils.pydantic import (
+    is_basemodel_subclass,
+)
 
 from langchain_community.chat_models.gigachat_tools import (
     JsonOutputKeyToolsParser,
@@ -717,4 +720,4 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
 
 
 def _is_pydantic_class(obj: Any) -> bool:
-    return isinstance(obj, type) and issubclass(obj, BaseModel)
+    return isinstance(obj, type) and is_basemodel_subclass(obj)
