@@ -68,7 +68,6 @@ async def beta_async_function() -> str:
 class ClassWithBetaMethods:
     def __init__(self) -> None:
         """original doc"""
-        pass
 
     @beta()
     def beta_method(self) -> str:
@@ -244,7 +243,6 @@ def test_whole_class_beta() -> None:
     class BetaClass:
         def __init__(self) -> None:
             """original doc"""
-            pass
 
         @beta()
         def beta_method(self) -> str:

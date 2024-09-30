@@ -127,10 +127,9 @@ def beta(
 
             def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:
                 """Finalize the annotation of a class."""
-                try:
+                # Can't set new_doc on some extension objects.
+                with contextlib.suppress(AttributeError):
                     obj.__doc__ = new_doc
-                except AttributeError:  # Can't set on some extension objects.
-                    pass
 
                 def warn_if_direct_instance(
                     self: Any, *args: Any, **kwargs: Any
