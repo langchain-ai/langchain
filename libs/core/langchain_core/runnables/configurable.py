@@ -457,8 +457,6 @@ RunnableConfigurableFields.model_rebuild()
 class StrEnum(str, enum.Enum):
     """String enum."""
 
-    pass
-
 
 _enums_for_spec: WeakValueDictionary[
     Union[
