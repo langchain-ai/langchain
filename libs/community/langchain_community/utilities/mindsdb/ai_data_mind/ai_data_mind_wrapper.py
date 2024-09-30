@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Text
 from langchain_core.pydantic_v1 import BaseModel, Field
 
 from langchain_community.utilities.mindsdb.ai_data_mind.database_models import (
-    get_supported_data_sources,
+    get_supported_datasources,
 )
 from langchain_community.utilities.mindsdb.base_mind_wrapper import BaseMindWrapper
 
@@ -26,7 +26,7 @@ class DataSourceConfig(BaseModel):
         if not self.name:
             self.name = f"lc_datasource_{secrets.token_hex(5)}"
 
-        supported_data_sources = get_supported_data_sources()
+        supported_data_sources = get_supported_datasources()
         if self.engine not in supported_data_sources.keys():
             raise ValueError(
                 f"Data source engine '{self.engine}' is not supported. "
