@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List, Optional, Self
+from typing import Any, Dict, List, Optional
 
 import httpx
 from langchain_core.embeddings import Embeddings
@@ -10,6 +10,7 @@ from pydantic import (
     SecretStr,
     model_validator,
 )
+from typing_extensions import Self
 
 _DEFAULT_BASE_URL = "https://clovastudio.apigw.ntruss.com"
 

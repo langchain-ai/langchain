@@ -8,7 +8,6 @@ from typing import (
     Iterator,
     List,
     Optional,
-    Self,
     Tuple,
     Type,
     Union,
@@ -37,6 +36,7 @@ from langchain_core.messages import (
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.utils import convert_to_secret_str, get_from_env
 from pydantic import AliasChoices, Field, SecretStr, model_validator
+from typing_extensions import Self
 
 _DEFAULT_BASE_URL = "https://clovastudio.stream.ntruss.com"
 
