@@ -323,7 +323,7 @@ module.exports = {
             },
             {
               type: "category",
-              label: "Memory",
+              label: "Message histories",
               collapsible: false,
               items: [
                 {
