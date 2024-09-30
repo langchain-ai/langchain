@@ -69,6 +69,19 @@ class ZenGuardTool(BaseTool):
             )
         return v
 
+    @property
+    def _api_key(self) -> str:
+        if self.zenguard_api_key is None:
+            raise ValueError(
+                "API key is required for the ZenGuardTool. "
+                "Please provide the API key by either:\n"
+                "1. Manually specifying it when initializing the tool: "
+                "ZenGuardTool(zenguard_api_key='your_api_key')\n"
+                "2. Setting it as an environment variable:"
+                f" {self._ZENGUARD_API_KEY_ENV_NAME}"
+            )
+        return self.zenguard_api_key
+
     def _run(
         self,
         prompts: List[str],
@@ -91,7 +104,7 @@ class ZenGuardTool(BaseTool):
             response = requests.post(
                 self._ZENGUARD_API_URL_ROOT + postfix,
                 json=json,
-                headers={"x-api-key": self.zenguard_api_key},
+                headers={"x-api-key": self._api_key},
                 timeout=5,
             )
             response.raise_for_status()

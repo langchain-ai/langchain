@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-core"
-version = "0.3.2"
+version = "0.3.7"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -27,7 +27,7 @@ target-version = "py39"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-langsmith = "^0.1.117"
+langsmith = "^0.1.125"
 tenacity = "^8.1.0,!=8.4.0"
 jsonpatch = "^1.33"
 PyYAML = ">=5.3"
@@ -44,7 +44,7 @@ python = ">=3.12.4"
 [tool.poetry.extras]
 
 [tool.ruff.lint]
-select = [ "B", "E", "F", "I", "N", "T201", "UP",]
+select = [ "B", "C4", "E", "F", "I", "N", "PIE", "SIM", "T201", "UP", "W",]
 ignore = [ "UP007",]
 
 [tool.coverage.run]

@@ -131,10 +131,7 @@ def draw_mermaid(
                 else:
                     edge_label = f" -- &nbsp;{edge_data}&nbsp; --> "
             else:
-                if edge.conditional:
-                    edge_label = " -.-> "
-                else:
-                    edge_label = " --> "
+                edge_label = " -.-> " if edge.conditional else " --> "
 
             mermaid_graph += (
                 f"\t{_escape_node_label(source)}{edge_label}"
@@ -142,7 +139,7 @@ def draw_mermaid(
             )
 
         # Recursively add nested subgraphs
-        for nested_prefix in edge_groups.keys():
+        for nested_prefix in edge_groups:
             if not nested_prefix.startswith(prefix + ":") or nested_prefix == prefix:
                 continue
             add_subgraph(edge_groups[nested_prefix], nested_prefix)
@@ -154,7 +151,7 @@ def draw_mermaid(
     add_subgraph(edge_groups.get("", []), "")
 
     # Add remaining subgraphs
-    for prefix in edge_groups.keys():
+    for prefix in edge_groups:
         if ":" in prefix or prefix == "":
             continue
         add_subgraph(edge_groups[prefix], prefix)

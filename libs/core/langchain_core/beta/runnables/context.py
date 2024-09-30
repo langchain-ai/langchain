@@ -86,9 +86,9 @@ def _config_with_context(
         )
     }
     deps_by_key = {
-        key: set(
+        key: {
             _key_from_id(dep) for spec in group for dep in (spec[0].dependencies or [])
-        )
+        }
         for key, group in grouped_by_key.items()
     }
 
@@ -198,7 +198,7 @@ class ContextGet(RunnableSerializable):
         configurable = config.get("configurable", {})
         if isinstance(self.key, list):
             values = await asyncio.gather(*(configurable[id_]() for id_ in self.ids))
-            return {key: value for key, value in zip(self.key, values)}
+            return dict(zip(self.key, values))
         else:
             return await configurable[self.ids[0]]()
 
