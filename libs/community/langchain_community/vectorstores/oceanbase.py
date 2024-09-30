@@ -23,6 +23,8 @@ DEFAULT_OCEANBASE_HNSW_SEARCH_PARAM = {"efSearch": 64}
 OCEANBASE_SUPPORTED_VECTOR_INDEX_TYPE = "HNSW"
 DEFAULT_OCEANBASE_VECTOR_METRIC_TYPE = "l2"
 
+DEFAULT_METADATA_FIELD = "metadata"
+
 
 class OceanBase(VectorStore):
     """`OceanBase` vector store.
@@ -50,8 +52,8 @@ class OceanBase(VectorStore):
         primary_field (str): Name of the primary key column. Defaults to "id".
         vector_field (str): Name of the vector column. Defaults to "embedding".
         text_field (str): Name of the text column. Defaults to "document".
-        metadata_field (Optional[str]): Name of the metadata column. Defaults to None.
-            When `metadata_field` is specified,
+        metadata_field (Optional[str]): Name of the metadata column.
+            Defaults to "metadata". When `metadata_field` is specified,
             the document's metadata will store as json.
         vidx_name (str): Name of the vector index table.
         partitions (ObPartition): Partition strategy of table. Refer to `pyobvector`'s
@@ -97,7 +99,7 @@ class OceanBase(VectorStore):
         primary_field: str = "id",
         vector_field: str = "embedding",
         text_field: str = "document",
-        metadata_field: Optional[str] = None,
+        metadata_field: Optional[str] = DEFAULT_METADATA_FIELD,
         vidx_name: str = "vidx",
         partitions: Optional[Any] = None,
         extra_columns: Optional[List[Column]] = None,
@@ -130,7 +132,7 @@ class OceanBase(VectorStore):
         self.primary_field = primary_field
         self.vector_field = vector_field
         self.text_field = text_field
-        self.metadata_field = metadata_field
+        self.metadata_field = metadata_field or DEFAULT_METADATA_FIELD
         self.vidx_name = vidx_name
         self.partition = partitions
         self.hnsw_ef_search = -1
@@ -175,14 +177,14 @@ class OceanBase(VectorStore):
             autoload_with=self.obvector.engine,
         )
         column_names = [column.name for column in table.columns]
-        optional_len = len(self.extra_columns or []) + (1 if self.metadata_field else 0)
+        optional_len = len(self.extra_columns or []) + 1
         assert len(column_names) == (3 + optional_len)
 
         logging.info(f"load exist table with {column_names} columns")
         self.primary_field = column_names[0]
         self.vector_field = column_names[1]
         self.text_field = column_names[2]
-        self.metadata_field = None if len(column_names) == 3 else column_names[3]
+        self.metadata_field = column_names[3]
 
     def _create_table_with_index(self, embeddings: list) -> None:
         try:
@@ -204,9 +206,8 @@ class OceanBase(VectorStore):
             ),
             Column(self.vector_field, VECTOR(dim)),
             Column(self.text_field, Text),
+            Column(self.metadata_field, JSON),
         ]
-        if self.metadata_field is not None:
-            cols.append(Column(self.metadata_field, JSON))
         if self.extra_columns is not None:
             cols.extend(self.extra_columns)
 
@@ -282,12 +283,7 @@ class OceanBase(VectorStore):
         if total_count == 0:
             return []
 
-        if metadatas is not None:
-            self.metadata_field = "metadata"
         self._create_table_with_index(embeddings)
-
-        if metadatas is not None and self.metadata_field is None:
-            raise ValueError("metadata field is not set in table.")
 
         if ids is None:
             ids = [str(uuid.uuid4()) for _ in texts]
@@ -299,38 +295,22 @@ class OceanBase(VectorStore):
 
         pks: list[str] = []
         for i in range(0, total_count, batch_size):
-            if self.metadata_field is None:
-                data = [
-                    {
-                        self.primary_field: id,
-                        self.vector_field: embedding,
-                        self.text_field: text,
-                        **extra,
-                    }
-                    for id, embedding, text, extra in zip(
-                        ids[i : i + batch_size],
-                        embeddings[i : i + batch_size],
-                        texts[i : i + batch_size],
-                        extra_data[i : i + batch_size],
-                    )
-                ]
-            else:
-                data = [
-                    {
-                        self.primary_field: id,
-                        self.vector_field: embedding,
-                        self.text_field: text,
-                        self.metadata_field: metadata,
-                        **extra,
-                    }
-                    for id, embedding, text, metadata, extra in zip(
-                        ids[i : i + batch_size],
-                        embeddings[i : i + batch_size],
-                        texts[i : i + batch_size],
-                        metadatas[i : i + batch_size],
-                        extra_data[i : i + batch_size],
-                    )
-                ]
+            data = [
+                {
+                    self.primary_field: id,
+                    self.vector_field: embedding,
+                    self.text_field: text,
+                    self.metadata_field: metadata,
+                    **extra,
+                }
+                for id, embedding, text, metadata, extra in zip(
+                    ids[i : i + batch_size],
+                    embeddings[i : i + batch_size],
+                    texts[i : i + batch_size],
+                    metadatas[i : i + batch_size],
+                    extra_data[i : i + batch_size],
+                )
+            ]
             try:
                 self.obvector.insert(
                     table_name=self.table_name,
@@ -358,6 +338,7 @@ class OceanBase(VectorStore):
         drop_old: bool = False,
         *,
         ids: Optional[List[str]] = None,
+        extra_columns: Optional[List[Column]] = None,
         extras: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> "OceanBase":
@@ -379,6 +360,7 @@ class OceanBase(VectorStore):
             drop_old (bool): Whether to drop the current table. Defaults
                 to False.
             ids (Optional[List[str]]): List of text ids. Defaults to None.
+            extra_columns (Optional[List[Column]]): Extra columns to add to the table.
             extras (Optional[List[dict]]): Extra data to insert. Defaults to None.
 
         Returns:
@@ -391,6 +373,7 @@ class OceanBase(VectorStore):
             vidx_metric_type=vidx_metric_type,
             vidx_algo_params=vidx_algo_params,
             drop_old=drop_old,
+            extra_columns=extra_columns,
             **kwargs,
         )
         oceanbase.add_texts(texts, metadatas, ids=ids, extras=extras)
@@ -423,16 +406,12 @@ class OceanBase(VectorStore):
         res = self.obvector.get(
             table_name=self.table_name,
             ids=ids,
-            output_column_names=(
-                [self.text_field]
-                if self.metadata_field is None
-                else [self.text_field, self.metadata_field]
-            ),
+            output_column_names=[self.text_field, self.metadata_field],
         )
         return [
             Document(
                 page_content=r[0],
-                metadata=json.loads(r[1]) if self.metadata_field is not None else None,
+                metadata=json.loads(r[1]),
             )
             for r in res.fetchall()
         ]
@@ -535,18 +514,14 @@ class OceanBase(VectorStore):
             vec_column_name=self.vector_field,
             distance_func=self._parse_metric_type_str_to_dist_func(),
             topk=k,
-            output_column_names=(
-                [self.text_field]
-                if self.metadata_field is None
-                else [self.text_field, self.metadata_field]
-            ),
+            output_column_names=[self.text_field, self.metadata_field],
             where_clause=([text(fltr)] if fltr is not None else None),
             **kwargs,
         )
         return [
             Document(
                 page_content=r[0],
-                metadata=json.loads(r[1]) if self.metadata_field is not None else None,
+                metadata=json.loads(r[1]),
             )
             for r in res.fetchall()
         ]
@@ -592,11 +567,7 @@ class OceanBase(VectorStore):
             distance_func=self._parse_metric_type_str_to_dist_func(),
             with_dist=True,
             topk=k,
-            output_column_names=(
-                [self.text_field]
-                if self.metadata_field is None
-                else [self.text_field, self.metadata_field]
-            ),
+            output_column_names=[self.text_field, self.metadata_field],
             where_clause=([text(fltr)] if fltr is not None else None),
             **kwargs,
         )
@@ -604,9 +575,7 @@ class OceanBase(VectorStore):
             (
                 Document(
                     page_content=r[0],
-                    metadata=(
-                        json.loads(r[1]) if self.metadata_field is not None else None
-                    ),
+                    metadata=json.loads(r[1]),
                 ),
                 r[2],
             )
