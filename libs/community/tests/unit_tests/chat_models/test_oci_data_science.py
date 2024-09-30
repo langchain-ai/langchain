@@ -3,11 +3,10 @@
 import sys
 from unittest import mock
 import pytest
+from langchain_core.messages import AIMessage, AIMessageChunk
 from requests.exceptions import HTTPError
-from langchain_community.llms.oci_data_science_model_deployment_endpoint import (
-    OCIModelDeploymentTGI,
-    OCIModelDeploymentVLLM,
-)
+from langchain_community.chat_models import ChatOCIModelDeploymentVLLM, ChatOCIModelDeploymentTGI
+
 
 pytestmark = pytest.mark.skipif(
     sys.version_info < (3, 9), reason="Requires Python 3.9 or higher"
@@ -19,32 +18,50 @@ CONST_ENDPOINT = "https://oci.endpoint/ocid/predict"
 CONST_PROMPT = "This is a prompt."
 CONST_COMPLETION = "This is a completion."
 CONST_COMPLETION_RESPONSE = {
+    "id": "chat-123456789",
+    "object": "chat.completion",
+    "created": 123456789,
+    "model": "mistral",
     "choices": [
         {
             "index": 0,
-            "text": CONST_COMPLETION,
-            "logprobs": 0.1,
+            "message": {
+                "role": "assistant",
+                "content": CONST_COMPLETION,
+                "tool_calls": [],
+            },
+            "logprobs": None,
             "finish_reason": "length",
+            "stop_reason": None,
         }
     ],
+    "usage": {"prompt_tokens": 115, "total_tokens": 371, "completion_tokens": 256},
+    "prompt_logprobs": None,
 }
 CONST_COMPLETION_RESPONSE_TGI = {"generated_text": CONST_COMPLETION}
 CONST_STREAM_TEMPLATE = (
-    'data: {"id":"","object":"text_completion","created":123456,'
-    + '"choices":[{"index":0,"text":"<TOKEN>","finish_reason":""}]}'
+    'data: {"id":"chat-123456","object":"chat.completion.chunk","created":123456789,'
+    '"model":"odsc-llm","choices":[{"index":0,"delta":<DELTA>,"finish_reason":null}]}'
 )
+CONST_STREAM_DELTAS = ['{"role":"assistant","content":""}'] + [
+    '{"content":" ' + word + '"}' for word in CONST_COMPLETION.split(" ")
+]
 CONST_STREAM_RESPONSE = (
-    CONST_STREAM_TEMPLATE.replace("<TOKEN>", " " + word).encode()
-    for word in CONST_COMPLETION.split(" ")
+    content
+    for content in [
+        CONST_STREAM_TEMPLATE.replace("<DELTA>", delta).encode()
+        for delta in CONST_STREAM_DELTAS
+    ]
+    + [b"data: [DONE]"]
 )
 
 CONST_ASYNC_STREAM_TEMPLATE = (
-    '{"id":"","object":"text_completion","created":123456,'
-    + '"choices":[{"index":0,"text":"<TOKEN>","finish_reason":""}]}'
+    '{"id":"chat-123456","object":"chat.completion.chunk","created":123456789,'
+    '"model":"odsc-llm","choices":[{"index":0,"delta":<DELTA>,"finish_reason":null}]}'
 )
 CONST_ASYNC_STREAM_RESPONSE = (
-    CONST_ASYNC_STREAM_TEMPLATE.replace("<TOKEN>", " " + word).encode()
-    for word in CONST_COMPLETION.split(" ")
+    CONST_ASYNC_STREAM_TEMPLATE.replace("<DELTA>", delta).encode()
+    for delta in CONST_STREAM_DELTAS
 )
 
 
@@ -76,16 +93,10 @@ def mocked_requests_post(self, **kwargs):
             return ""
 
     payload = kwargs.get("json")
-    if "inputs" in payload:
-        prompt = payload.get("inputs")
-        is_tgi = True
-    else:
-        prompt = payload.get("prompt")
-        is_tgi = False
+    messages = payload.get("messages")
+    prompt = messages[0].get("content")
 
     if prompt == CONST_PROMPT:
-        if is_tgi:
-            return MockResponse(json_data=CONST_COMPLETION_RESPONSE_TGI)
         return MockResponse(json_data=CONST_COMPLETION_RESPONSE)
 
     return MockResponse(
@@ -94,49 +105,50 @@ def mocked_requests_post(self, **kwargs):
     )
 
 
-async def mocked_async_streaming_response(*args, **kwargs):
-    """Returns mocked response for async streaming."""
-    for item in CONST_ASYNC_STREAM_RESPONSE:
-        yield item
-
-
 @pytest.mark.requires("ads")
 @mock.patch("ads.common.auth.default_signer", return_value=dict(signer=None))
 @mock.patch("requests.post", side_effect=mocked_requests_post)
 def test_invoke_vllm(mock_post, mock_auth) -> None:
     """Tests invoking vLLM endpoint."""
-    llm = OCIModelDeploymentVLLM(endpoint=CONST_ENDPOINT, model=CONST_MODEL_NAME)
+    llm = ChatOCIModelDeploymentVLLM(endpoint=CONST_ENDPOINT, model=CONST_MODEL_NAME)
     output = llm.invoke(CONST_PROMPT)
-    assert output == CONST_COMPLETION
+    assert isinstance(output, AIMessage)
+    assert output.content == CONST_COMPLETION
 
 
 @pytest.mark.requires("ads")
 @mock.patch("ads.common.auth.default_signer", return_value=dict(signer=None))
 @mock.patch("requests.post", side_effect=mocked_requests_post)
-def test_stream_tgi(mock_post, mock_auth) -> None:
-    """Tests streaming with TGI endpoint using OpenAI spec."""
-    llm = OCIModelDeploymentTGI(
+def test_invoke_tgi(mock_post, mock_auth) -> None:
+    """Tests invoking TGI endpoint using OpenAI Spec."""
+    llm = ChatOCIModelDeploymentTGI(endpoint=CONST_ENDPOINT, model=CONST_MODEL_NAME)
+    output = llm.invoke(CONST_PROMPT)
+    assert isinstance(output, AIMessage)
+    assert output.content == CONST_COMPLETION
+
+
+@pytest.mark.requires("ads")
+@mock.patch("ads.common.auth.default_signer", return_value=dict(signer=None))
+@mock.patch("requests.post", side_effect=mocked_requests_post)
+def test_stream_vllm(mock_post, mock_auth) -> None:
+    """Tests streaming with vLLM endpoint using OpenAI spec."""
+    llm = ChatOCIModelDeploymentVLLM(
         endpoint=CONST_ENDPOINT, model=CONST_MODEL_NAME, streaming=True
     )
-    output = ""
+    output = AIMessageChunk("")
     count = 0
     for chunk in llm.stream(CONST_PROMPT):
+        assert isinstance(chunk, AIMessageChunk)
         output += chunk
         count += 1
-    assert count == 4
-    assert output.strip() == CONST_COMPLETION
+    assert count == 5
+    assert output.content.strip() == CONST_COMPLETION
 
 
-@pytest.mark.requires("ads")
-@mock.patch("ads.common.auth.default_signer", return_value=dict(signer=None))
-@mock.patch("requests.post", side_effect=mocked_requests_post)
-def test_generate_tgi(mock_post, mock_auth) -> None:
-    """Tests invoking TGI endpoint using TGI generate spec."""
-    llm = OCIModelDeploymentTGI(
-        endpoint=CONST_ENDPOINT, api="/generate", model=CONST_MODEL_NAME
-    )
-    output = llm.invoke(CONST_PROMPT)
-    assert output == CONST_COMPLETION
+async def mocked_async_streaming_response(*args, **kwargs):
+    """Returns mocked response for async streaming."""
+    for item in CONST_ASYNC_STREAM_RESPONSE:
+        yield item
 
 
 @pytest.mark.asyncio
@@ -150,7 +162,7 @@ def test_generate_tgi(mock_post, mock_auth) -> None:
 )
 async def test_stream_async(mock_auth):
     """Tests async streaming."""
-    llm = OCIModelDeploymentTGI(
+    llm = ChatOCIModelDeploymentVLLM(
         endpoint=CONST_ENDPOINT, model=CONST_MODEL_NAME, streaming=True
     )
     with mock.patch.object(
@@ -159,5 +171,5 @@ async def test_stream_async(mock_auth):
         mock.MagicMock(return_value=mocked_async_streaming_response()),
     ):
 
-        chunks = [chunk async for chunk in llm.astream(CONST_PROMPT)]
+        chunks = [chunk.content async for chunk in llm.astream(CONST_PROMPT)]
     assert "".join(chunks).strip() == CONST_COMPLETION
