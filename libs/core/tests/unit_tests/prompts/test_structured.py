@@ -1,7 +1,6 @@
 from functools import partial
 from inspect import isclass
 from typing import Any, Union, cast
-from typing import Optional as Optional
 
 from pydantic import BaseModel
 
@@ -128,7 +127,7 @@ def test_structured_prompt_template_format() -> None:
     prompt = StructuredPrompt(
         [("human", "hi {{person.name}}")], schema={}, template_format="mustache"
     )
-    assert prompt.messages[0].prompt.template_format == "mustache"
+    assert prompt.messages[0].prompt.template_format == "mustache"  # type: ignore[union-attr, union-attr]
     assert prompt.input_variables == ["person"]
     assert prompt.invoke({"person": {"name": "foo"}}).to_messages() == [
         HumanMessage("hi foo")
