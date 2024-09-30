@@ -51,8 +51,8 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
     @classmethod
     def check_examples_and_selector(cls, values: dict) -> Any:
         """Check that one and only one of examples/example_selector are provided."""
-        examples = values.get("examples", None)
-        example_selector = values.get("example_selector", None)
+        examples = values.get("examples")
+        example_selector = values.get("example_selector")
         if examples and example_selector:
             raise ValueError(
                 "Only one of 'examples' and 'example_selector' should be provided"
@@ -138,7 +138,7 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
             prefix_kwargs = {
                 k: v for k, v in kwargs.items() if k in self.prefix.input_variables
             }
-            for k in prefix_kwargs.keys():
+            for k in prefix_kwargs:
                 kwargs.pop(k)
             prefix = self.prefix.format(**prefix_kwargs)
 
@@ -146,7 +146,7 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
         suffix_kwargs = {
             k: v for k, v in kwargs.items() if k in self.suffix.input_variables
         }
-        for k in suffix_kwargs.keys():
+        for k in suffix_kwargs:
             kwargs.pop(k)
         suffix = self.suffix.format(
             **suffix_kwargs,
@@ -182,7 +182,7 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
             prefix_kwargs = {
                 k: v for k, v in kwargs.items() if k in self.prefix.input_variables
             }
-            for k in prefix_kwargs.keys():
+            for k in prefix_kwargs:
                 kwargs.pop(k)
             prefix = await self.prefix.aformat(**prefix_kwargs)
 
@@ -190,7 +190,7 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
         suffix_kwargs = {
             k: v for k, v in kwargs.items() if k in self.suffix.input_variables
         }
-        for k in suffix_kwargs.keys():
+        for k in suffix_kwargs:
             kwargs.pop(k)
         suffix = await self.suffix.aformat(
             **suffix_kwargs,

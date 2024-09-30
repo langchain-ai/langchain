@@ -2,11 +2,11 @@ from typing import Any, Dict, Iterable, List, Optional, Set, Union
 
 from langchain_core._api import beta
 from langchain_core.documents import Document
-from langchain_core.graph_vectorstores.links import Link
 
 from langchain_community.graph_vectorstores.extractors.link_extractor import (
     LinkExtractor,
 )
+from langchain_community.graph_vectorstores.links import Link
 
 # TypeAlias is not available in Python 3.9, we can't use that or the newer `type`.
 GLiNERInput = Union[str, Document]
@@ -34,7 +34,7 @@ class GLiNERLinkExtractor(LinkExtractor[GLiNERInput]):
     .. seealso::
 
             - :mod:`How to use a graph vector store <langchain_community.graph_vectorstores>`
-            - :class:`How to create links between documents <langchain_core.graph_vectorstores.links.Link>`
+            - :class:`How to create links between documents <langchain_community.graph_vectorstores.links.Link>`
 
     How to link Documents on common named entities
     ==============================================
@@ -59,12 +59,12 @@ class GLiNERLinkExtractor(LinkExtractor[GLiNERInput]):
 
     We can use :meth:`extract_one` on a document to get the links and add the links
     to the document metadata with
-    :meth:`~langchain_core.graph_vectorstores.links.add_links`::
+    :meth:`~langchain_community.graph_vectorstores.links.add_links`::
 
         from langchain_community.document_loaders import TextLoader
         from langchain_community.graph_vectorstores import CassandraGraphVectorStore
         from langchain_community.graph_vectorstores.extractors import GLiNERLinkExtractor
-        from langchain_core.graph_vectorstores.links import add_links
+        from langchain_community.graph_vectorstores.links import add_links
         from langchain_text_splitters import CharacterTextSplitter
 
         loader = TextLoader("state_of_the_union.txt")
@@ -113,7 +113,7 @@ class GLiNERLinkExtractor(LinkExtractor[GLiNERInput]):
 
         {'source': 'state_of_the_union.txt', 'links': [Link(kind='entity:Person', direction='bidir', tag='President Zelenskyy'), Link(kind='entity:Person', direction='bidir', tag='Vladimir Putin')]}
 
-    The documents with named entity links can then be added to a :class:`~langchain_core.graph_vectorstores.base.GraphVectorStore`::
+    The documents with named entity links can then be added to a :class:`~langchain_community.graph_vectorstores.base.GraphVectorStore`::
 
         from langchain_community.graph_vectorstores import CassandraGraphVectorStore
 

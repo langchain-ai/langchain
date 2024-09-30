@@ -6,8 +6,8 @@ from urllib.parse import urldefrag, urljoin, urlparse
 
 from langchain_core._api import beta
 from langchain_core.documents import Document
-from langchain_core.graph_vectorstores import Link
 
+from langchain_community.graph_vectorstores import Link
 from langchain_community.graph_vectorstores.extractors.link_extractor import (
     LinkExtractor,
 )
@@ -77,7 +77,7 @@ class HtmlLinkExtractor(LinkExtractor[HtmlInput]):
         .. seealso::
 
             - :mod:`How to use a graph vector store <langchain_community.graph_vectorstores>`
-            - :class:`How to create links between documents <langchain_core.graph_vectorstores.links.Link>`
+            - :class:`How to create links between documents <langchain_community.graph_vectorstores.links.Link>`
 
         How to link Documents on hyperlinks in HTML
         ===========================================
@@ -103,7 +103,7 @@ class HtmlLinkExtractor(LinkExtractor[HtmlInput]):
 
         We can use :meth:`extract_one` on a document to get the links and add the links
         to the document metadata with
-        :meth:`~langchain_core.graph_vectorstores.links.add_links`::
+        :meth:`~langchain_community.graph_vectorstores.links.add_links`::
 
             from langchain_community.document_loaders import AsyncHtmlLoader
             from langchain_community.graph_vectorstores.extractors import (
@@ -148,7 +148,7 @@ class HtmlLinkExtractor(LinkExtractor[HtmlInput]):
 
             from langchain_community.document_loaders import AsyncHtmlLoader
             from langchain_community.graph_vectorstores.extractors import HtmlLinkExtractor
-            from langchain_core.graph_vectorstores.links import add_links
+            from langchain_community.graph_vectorstores.links import add_links
 
             loader = AsyncHtmlLoader(
                 [
@@ -227,7 +227,7 @@ class HtmlLinkExtractor(LinkExtractor[HtmlInput]):
 
             Found link from https://python.langchain.com/v0.2/docs/integrations/providers/astradb/ to https://docs.datastax.com/en/astra/home/astra.html.
 
-        The documents with URL links can then be added to a :class:`~langchain_core.graph_vectorstores.base.GraphVectorStore`::
+        The documents with URL links can then be added to a :class:`~langchain_community.graph_vectorstores.base.GraphVectorStore`::
 
             from langchain_community.graph_vectorstores import CassandraGraphVectorStore
 

@@ -32,8 +32,6 @@ _LAST_TAG_LINE = None
 class ChevronError(SyntaxError):
     """Custom exception for Chevron errors."""
 
-    pass
-
 
 #
 # Helper functions
@@ -82,12 +80,9 @@ def l_sa_check(template: str, literal: str, is_standalone: bool) -> bool:
         padding = literal.split("\n")[-1]
 
         # If all the characters since the last newline are spaces
-        if padding.isspace() or padding == "":
-            # Then the next tag could be a standalone
-            return True
-        else:
-            # Otherwise it can't be
-            return False
+        # Then the next tag could be a standalone
+        # Otherwise it can't be
+        return padding.isspace() or padding == ""
     else:
         return False
 
@@ -109,10 +104,7 @@ def r_sa_check(template: str, tag_type: str, is_standalone: bool) -> bool:
         on_newline = template.split("\n", 1)
 
         # If the stuff to the right of us are spaces we're a standalone
-        if on_newline[0].isspace() or not on_newline[0]:
-            return True
-        else:
-            return False
+        return on_newline[0].isspace() or not on_newline[0]
 
     # If we're a tag can't be a standalone
     else:
@@ -176,14 +168,18 @@ def parse_tag(template: str, l_del: str, r_del: str) -> tuple[tuple[str, str], s
                 "unclosed set delimiter tag\n" f"at line {_CURRENT_LINE}"
             )
 
-    # If we might be a no html escape tag
-    elif tag_type == "no escape?":
+    elif (
+        # If we might be a no html escape tag
+        tag_type == "no escape?"
         # And we have a third curly brace
         # (And are using curly braces as delimiters)
-        if l_del == "{{" and r_del == "}}" and template.startswith("}"):
-            # Then we are a no html escape tag
-            template = template[1:]
-            tag_type = "no escape"
+        and l_del == "{{"
+        and r_del == "}}"
+        and template.startswith("}")
+    ):
+        # Then we are a no html escape tag
+        template = template[1:]
+        tag_type = "no escape"
 
     # Strip the whitespace off the key and return
     return ((tag_type, tag.strip()), template)
