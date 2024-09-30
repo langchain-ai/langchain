@@ -84,6 +84,8 @@ def _run_to_dict(run: Run) -> dict:
 class LangChainTracer(BaseTracer):
     """Implementation of the SharedTracer that POSTS to the LangChain endpoint."""
 
+    run_inline = True
+
     def __init__(
         self,
         example_id: Optional[Union[UUID, str]] = None,
@@ -121,7 +123,7 @@ class LangChainTracer(BaseTracer):
 
         super()._start_trace(run)
         if run._client is None:
-            run._client = self.client
+            run._client = self.client  # type: ignore
 
     def on_chat_model_start(
         self,

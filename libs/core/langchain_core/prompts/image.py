@@ -18,7 +18,7 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
         if "input_variables" not in kwargs:
             kwargs["input_variables"] = []
 
-        overlap = set(kwargs["input_variables"]) & set(("url", "path", "detail"))
+        overlap = set(kwargs["input_variables"]) & {"url", "path", "detail"}
         if overlap:
             raise ValueError(
                 "input_variables for the image template cannot contain"

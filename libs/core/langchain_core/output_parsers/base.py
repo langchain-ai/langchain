@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 from abc import ABC, abstractmethod
 from typing import (
     TYPE_CHECKING,
@@ -311,8 +312,6 @@ class BaseOutputParser(
     def dict(self, **kwargs: Any) -> dict:
         """Return dictionary representation of output parser."""
         output_parser_dict = super().dict(**kwargs)
-        try:
+        with contextlib.suppress(NotImplementedError):
             output_parser_dict["_type"] = self._type
-        except NotImplementedError:
-            pass
         return output_parser_dict
