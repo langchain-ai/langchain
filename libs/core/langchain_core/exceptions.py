@@ -40,12 +40,11 @@ class OutputParserException(ValueError, LangChainException):  # noqa: N818
         send_to_llm: bool = False,
     ):
         super().__init__(error)
-        if send_to_llm:
-            if observation is None or llm_output is None:
-                raise ValueError(
-                    "Arguments 'observation' & 'llm_output'"
-                    " are required if 'send_to_llm' is True"
-                )
+        if send_to_llm and (observation is None or llm_output is None):
+            raise ValueError(
+                "Arguments 'observation' & 'llm_output'"
+                " are required if 'send_to_llm' is True"
+            )
         self.observation = observation
         self.llm_output = llm_output
         self.send_to_llm = send_to_llm

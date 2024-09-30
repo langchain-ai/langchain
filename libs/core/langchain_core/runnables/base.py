@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import collections
+import contextlib
 import functools
 import inspect
 import threading
@@ -2466,10 +2467,8 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
             A JSON-serializable representation of the Runnable.
         """
         dumped = super().to_json()
-        try:
+        with contextlib.suppress(Exception):
             dumped["name"] = self.get_name()
-        except Exception:
-            pass
         return dumped
 
     def configurable_fields(
@@ -2763,9 +2762,8 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             ValueError: If the sequence has less than 2 steps.
         """
         steps_flat: list[Runnable] = []
-        if not steps:
-            if first is not None and last is not None:
-                steps_flat = [first] + (middle or []) + [last]
+        if not steps and first is not None and last is not None:
+            steps_flat = [first] + (middle or []) + [last]
         for step in steps:
             if isinstance(step, RunnableSequence):
                 steps_flat.extend(step.steps)
@@ -4180,12 +4178,9 @@ class RunnableGenerator(Runnable[Input, Output]):
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
-        final = None
+        final: Optional[Output] = None
         for output in self.stream(input, config, **kwargs):
-            if final is None:
-                final = output
-            else:
-                final = final + output
+            final = output if final is None else final + output  # type: ignore[operator]
         return cast(Output, final)
 
     def atransform(
@@ -4215,12 +4210,9 @@ class RunnableGenerator(Runnable[Input, Output]):
     async def ainvoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
-        final = None
+        final: Optional[Output] = None
         async for output in self.astream(input, config, **kwargs):
-            if final is None:
-                final = output
-            else:
-                final = final + output
+            final = output if final is None else final + output  # type: ignore[operator]
         return cast(Output, final)
 
 
