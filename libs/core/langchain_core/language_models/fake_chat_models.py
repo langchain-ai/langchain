@@ -194,10 +194,7 @@ class GenericFakeChatModel(BaseChatModel):
     ) -> ChatResult:
         """Top Level call"""
         message = next(self.messages)
-        if isinstance(message, str):
-            message_ = AIMessage(content=message)
-        else:
-            message_ = message
+        message_ = AIMessage(content=message) if isinstance(message, str) else message
         generation = ChatGeneration(message=message_)
         return ChatResult(generations=[generation])
 

@@ -6,8 +6,10 @@
 const { ProvidePlugin } = require("webpack");
 require("dotenv").config();
 
-const baseLightCodeBlockTheme = require("prism-react-renderer/themes/vsLight");
-const baseDarkCodeBlockTheme = require("prism-react-renderer/themes/vsDark");
+const prism = require("prism-react-renderer");
+
+const baseLightCodeBlockTheme = prism.themes.vsLight;
+const baseDarkCodeBlockTheme = prism.themes.vsDark;
 
 const baseUrl = "/";
 
@@ -124,13 +126,6 @@ const config = {
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
-      announcementBar: {
-        content:
-          'Share your thoughts on AI agents. <a target="_blank" href="https://langchain.typeform.com/state-of-agents">Take the 3-min survey</a>.',
-        isCloseable: true,
-        backgroundColor: "rgba(53, 151, 147, 0.1)",
-        textColor: "rgb(53, 151, 147)",
-      },
       docs: {
         sidebar: {
           hideable: true,
