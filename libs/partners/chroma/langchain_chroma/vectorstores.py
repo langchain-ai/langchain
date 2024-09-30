@@ -1145,4 +1145,4 @@ class Chroma(VectorStore):
             ids: List of ids to delete.
             kwargs: Additional keyword arguments.
         """
-        self._collection.delete(ids=ids)
+        self._collection.delete(ids=ids, **kwargs)

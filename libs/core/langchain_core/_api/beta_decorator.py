@@ -127,10 +127,9 @@ def beta(
 
             def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:
                 """Finalize the annotation of a class."""
-                try:
+                # Can't set new_doc on some extension objects.
+                with contextlib.suppress(AttributeError):
                     obj.__doc__ = new_doc
-                except AttributeError:  # Can't set on some extension objects.
-                    pass
 
                 def warn_if_direct_instance(
                     self: Any, *args: Any, **kwargs: Any
@@ -155,7 +154,7 @@ def beta(
             _name = _name or obj.fget.__qualname__
             old_doc = obj.__doc__
 
-            class _beta_property(property):
+            class _BetaProperty(property):
                 """A beta property."""
 
                 def __init__(self, fget=None, fset=None, fdel=None, doc=None):
@@ -186,7 +185,7 @@ def beta(
 
             def finalize(wrapper: Callable[..., Any], new_doc: str) -> Any:
                 """Finalize the property."""
-                return _beta_property(
+                return _BetaProperty(
                     fget=obj.fget, fset=obj.fset, fdel=obj.fdel, doc=new_doc
                 )
 

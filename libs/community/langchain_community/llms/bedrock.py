@@ -657,12 +657,12 @@ class BedrockBase(BaseModel, ABC):
         for chunk in LLMInputOutputAdapter.prepare_output_stream(
             provider, response, stop, True if messages else False
         ):
-            yield chunk
             # verify and raise callback error if any middleware intervened
             self._get_bedrock_services_signal(chunk.generation_info)  # type: ignore[arg-type]
 
             if run_manager is not None:
                 run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+            yield chunk
 
     async def _aprepare_input_and_invoke_stream(
         self,
@@ -703,13 +703,13 @@ class BedrockBase(BaseModel, ABC):
         async for chunk in LLMInputOutputAdapter.aprepare_output_stream(
             provider, response, stop
         ):
-            yield chunk
             if run_manager is not None and asyncio.iscoroutinefunction(
                 run_manager.on_llm_new_token
             ):
                 await run_manager.on_llm_new_token(chunk.text, chunk=chunk)
             elif run_manager is not None:
                 run_manager.on_llm_new_token(chunk.text, chunk=chunk)  # type: ignore[unused-coroutine]
+            yield chunk
 
 
 @deprecated(

@@ -1,5 +1,6 @@
 from typing import Any, Dict, List, Optional
 
+from langchain_core._api import deprecated
 from langchain_core.messages import BaseMessage, get_buffer_string
 from langchain_core.utils import pre_init
 
@@ -7,8 +8,23 @@ from langchain.memory.chat_memory import BaseChatMemory, BaseMemory
 from langchain.memory.utils import get_prompt_input_key
 
 
+@deprecated(
+    since="0.3.1",
+    removal="1.0.0",
+    message=(
+        "Please see the migration guide at: "
+        "https://python.langchain.com/docs/versions/migrating_memory/"
+    ),
+)
 class ConversationBufferMemory(BaseChatMemory):
-    """Buffer for storing conversation memory."""
+    """A basic memory implementation that simply stores the conversation history.
+
+    This stores the entire conversation history in memory without any
+    additional processing.
+
+    Note that additional processing may be required in some situations when the
+    conversation history is too large to fit in the context window of the model.
+    """
 
     human_prefix: str = "Human"
     ai_prefix: str = "AI"
@@ -71,8 +87,26 @@ class ConversationBufferMemory(BaseChatMemory):
         return {self.memory_key: buffer}
 
 
+@deprecated(
+    since="0.3.1",
+    removal="1.0.0",
+    message=(
+        "Please see the migration guide at: "
+        "https://python.langchain.com/docs/versions/migrating_memory/"
+    ),
+)
 class ConversationStringBufferMemory(BaseMemory):
-    """Buffer for storing conversation memory."""
+    """A basic memory implementation that simply stores the conversation history.
+
+    This stores the entire conversation history in memory without any
+    additional processing.
+
+    Equivalent to ConversationBufferMemory but tailored more specifically
+    for string-based conversations rather than chat models.
+
+    Note that additional processing may be required in some situations when the
+    conversation history is too large to fit in the context window of the model.
+    """
 
     human_prefix: str = "Human"
     ai_prefix: str = "AI"
