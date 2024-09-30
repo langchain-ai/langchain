@@ -1,11 +1,16 @@
-import pytest
-from typing import Text, Dict, Any
+from typing import Any, Dict, Text
 from unittest.mock import Mock, patch
 
+import pytest
 from langchain_core.pydantic_v1 import SecretStr
 
-from langchain_community.utilities.mindsdb.ai_data_mind.ai_data_mind_wrapper import AIDataMindWrapper
-from langchain_community.utilities.mindsdb.base_mind_wrapper import DEFAULT_API_BASE, DEFAULT_MODEL
+from langchain_community.utilities.mindsdb.ai_data_mind.ai_data_mind_wrapper import (
+    AIDataMindWrapper,
+)
+from langchain_community.utilities.mindsdb.base_mind_wrapper import (
+    DEFAULT_API_BASE,
+    DEFAULT_MODEL,
+)
 
 DATASOURCES = ["postgres", "mysql", "mariadb", "clickhouse", "snowflake", "bigquery"]
 
@@ -86,10 +91,10 @@ def datasource_configs() -> Dict[Text, Dict[Text, Any]]:
                     "project_id": "dummy_project_id",
                     "private_key_id": "dummy_private_key_id",
                     "private_key": "dummy_private_key",
-                }
+                },
             },
             "tables": ["dummy_table_1", "dummy_table_2"],
-        }
+        },
     }
 
 
@@ -98,10 +103,10 @@ def datasource_configs() -> Dict[Text, Dict[Text, Any]]:
 @patch("minds.client.Client")
 @patch("minds.datasources.DatabaseConfig")
 def test_init_with_single_datasource(
-    mock_database_config: Mock, 
-    mock_client: Mock, 
-    datasource_key: Text, 
-    datasource_configs: Dict[Text, Dict[Text, Any]]
+    mock_database_config: Mock,
+    mock_client: Mock,
+    datasource_key: Text,
+    datasource_configs: Dict[Text, Dict[Text, Any]],
 ) -> None:
     datasource_config = datasource_configs[datasource_key]
     ai_data_mind_config = {
@@ -111,13 +116,7 @@ def test_init_with_single_datasource(
     }
 
     mock_client.return_value = Mock(
-        minds=Mock(
-            create=Mock(
-                return_value=Mock(
-                    name="dummy_mind"
-                )
-            )
-        )                    
+        minds=Mock(create=Mock(return_value=Mock(name="dummy_mind")))
     )
 
     mock_database_config.return_value = Mock(
@@ -142,10 +141,10 @@ def test_init_with_single_datasource(
 @patch("minds.client.Client")
 @patch("minds.datasources.DatabaseConfig")
 def test_run_with_single_datasource(
-    mock_database_config: Mock, 
-    mock_client: Mock, 
-    datasource_key: Text, 
-    datasource_configs: Dict[Text, Dict[Text, Any]]
+    mock_database_config: Mock,
+    mock_client: Mock,
+    datasource_key: Text,
+    datasource_configs: Dict[Text, Dict[Text, Any]],
 ) -> None:
     datasource_config = datasource_configs[datasource_key]
     ai_data_mind_config = {
@@ -155,13 +154,7 @@ def test_run_with_single_datasource(
     }
 
     mock_client.return_value = Mock(
-        minds=Mock(
-            create=Mock(
-                return_value=Mock(
-                    name="dummy_mind"
-                )
-            )
-        )                    
+        minds=Mock(create=Mock(return_value=Mock(name="dummy_mind")))
     )
 
     mock_database_config.return_value = Mock(
@@ -176,15 +169,7 @@ def test_run_with_single_datasource(
     ai_data_mind_wrapper = AIDataMindWrapper(**ai_data_mind_config)
 
     ai_data_mind_wrapper.client = Mock(
-        create=Mock(
-            return_value=Mock(
-                choices=[
-                    Mock(
-                        content="dummy response"
-                    )
-                ]
-            )
-        )
+        create=Mock(return_value=Mock(choices=[Mock(content="dummy response")]))
     )
 
     ai_data_mind_wrapper.run(query)
@@ -200,9 +185,9 @@ def test_run_with_single_datasource(
 @patch("minds.client.Client")
 @patch("minds.datasources.DatabaseConfig")
 def test_init_with_multiple_datasources(
-    mock_database_config: Mock, 
-    mock_client: Mock, 
-    datasource_configs: Dict[Text, Dict[Text, Any]]
+    mock_database_config: Mock,
+    mock_client: Mock,
+    datasource_configs: Dict[Text, Dict[Text, Any]],
 ) -> None:
     ai_data_mind_config = {
         "name": "dummy_mind",
@@ -211,13 +196,7 @@ def test_init_with_multiple_datasources(
     }
 
     mock_client.return_value = Mock(
-        minds=Mock(
-            create=Mock(
-                return_value=Mock(
-                    name="dummy_mind"
-                )
-            )
-        )                    
+        minds=Mock(create=Mock(return_value=Mock(name="dummy_mind")))
     )
 
     mock_return_values = [
@@ -246,9 +225,9 @@ def test_init_with_multiple_datasources(
 @patch("minds.client.Client")
 @patch("minds.datasources.DatabaseConfig")
 def test_run_with_multiple_datasources(
-    mock_database_config: Mock, 
-    mock_client: Mock, 
-    datasource_configs: Dict[Text, Dict[Text, Any]]
+    mock_database_config: Mock,
+    mock_client: Mock,
+    datasource_configs: Dict[Text, Dict[Text, Any]],
 ) -> None:
     ai_data_mind_config = {
         "name": "dummy_mind",
@@ -257,13 +236,7 @@ def test_run_with_multiple_datasources(
     }
 
     mock_client.return_value = Mock(
-        minds=Mock(
-            create=Mock(
-                return_value=Mock(
-                    name="dummy_mind"
-                )
-            )
-        )                    
+        minds=Mock(create=Mock(return_value=Mock(name="dummy_mind")))
     )
 
     mock_return_values = [
@@ -283,15 +256,7 @@ def test_run_with_multiple_datasources(
     ai_data_mind_wrapper = AIDataMindWrapper(**ai_data_mind_config)
 
     ai_data_mind_wrapper.client = Mock(
-        create=Mock(
-            return_value=Mock(
-                choices=[
-                    Mock(
-                        content="dummy response"
-                    )
-                ]
-            )
-        )
+        create=Mock(return_value=Mock(choices=[Mock(content="dummy response")]))
     )
 
     ai_data_mind_wrapper.run(query)
@@ -300,4 +265,4 @@ def test_run_with_multiple_datasources(
         model=ai_data_mind_wrapper.mind.name,
         messages=[{"role": "user", "content": query}],
         stream=False,
-   )
+    )

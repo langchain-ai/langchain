@@ -52,7 +52,7 @@ class DataSourceConfig(BaseModel):
             engine=self.engine,
             description=self.description,
             connection_data=self.connection_data,
-            tables=self.tables
+            tables=self.tables,
         )
 
 
@@ -71,11 +71,10 @@ class AIDataMindWrapper(BaseMindWrapper):
                 "Could not import minds-sdk python package. "
                 "Please install it with `pip install minds-sdk`.",
             ) from e
-        
+
         # Create the Mind object.
         minds_client = Client(
-            self.minds_api_key.get_secret_value(),
-            self.minds_api_base
+            self.minds_api_key.get_secret_value(), self.minds_api_base
         )
 
         # Validate that the correct connection arguments are provided for
@@ -85,14 +84,13 @@ class AIDataMindWrapper(BaseMindWrapper):
             data_source_config_obj = DataSourceConfig(**data_source_config)
 
             database_config_obj = data_source_config_obj.to_database_config()
-            datasource = minds_client.datasources.create(database_config_obj, replace=True)
+            datasource = minds_client.datasources.create(
+                database_config_obj, replace=True
+            )
             datasources.append(datasource)
 
         self.mind = minds_client.minds.create(
-            name=self.name,
-            model_name=self.model,
-            datasources=datasources,
-            replace=True
+            name=self.name, model_name=self.model, datasources=datasources, replace=True
         )
 
     def run(self, query: Text) -> Text:

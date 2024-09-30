@@ -54,18 +54,24 @@ class PostgresModel(BaseModel):
             "database",
             "POSTGRES_DATABASE",
         )
-        self.database_schema = get_from_dict_or_env(
-            data,
-            "schema",
-            "POSTGRES_SCHEMA",
-            default="",
-        ) or None
-        self.sslmode = get_from_dict_or_env(
-            data,
-            "sslmode",
-            "POSTGRES_SSLMODE",
-            default="",
-        ) or None
+        self.database_schema = (
+            get_from_dict_or_env(
+                data,
+                "schema",
+                "POSTGRES_SCHEMA",
+                default="",
+            )
+            or None
+        )
+        self.sslmode = (
+            get_from_dict_or_env(
+                data,
+                "sslmode",
+                "POSTGRES_SSLMODE",
+                default="",
+            )
+            or None
+        )
 
     def dict(self, **kwargs: Any) -> Dict:
         base_dict = super().dict(**kwargs, exclude_none=True)
@@ -91,47 +97,67 @@ class MySQLModel(BaseModel):
 
     def __init__(self, **data: Any) -> None:
         super().__init__(**data)
-        self.user = get_from_dict_or_env(
-            data,
-            "user",
-            "MYSQL_USER",
-            default="",
-        ) or None
-        self.password = convert_to_secret_str(
+        self.user = (
             get_from_dict_or_env(
                 data,
-                "password",
-                "MYSQL_PASSWORD",
+                "user",
+                "MYSQL_USER",
                 default="",
             )
-        ) or None
-        self.host = get_from_dict_or_env(
-            data,
-            "host",
-            "MYSQL_HOST",
-            default="",
-        ) or None
+            or None
+        )
+        self.password = (
+            convert_to_secret_str(
+                get_from_dict_or_env(
+                    data,
+                    "password",
+                    "MYSQL_PASSWORD",
+                    default="",
+                )
+            )
+            or None
+        )
+        self.host = (
+            get_from_dict_or_env(
+                data,
+                "host",
+                "MYSQL_HOST",
+                default="",
+            )
+            or None
+        )
         self.port = get_from_dict_or_env(
             data,
             "port",
             "MYSQL_PORT",
             default=3306,
         )
-        self.database = get_from_dict_or_env(
-            data,
-            "database",
-            "MYSQL_DATABASE",
-            default="",
-        ) or None
-        self.url = get_from_dict_or_env(
-            data,
-            "url",
-            "MYSQL_URL",
-            default="",
-        ) or None
+        self.database = (
+            get_from_dict_or_env(
+                data,
+                "database",
+                "MYSQL_DATABASE",
+                default="",
+            )
+            or None
+        )
+        self.url = (
+            get_from_dict_or_env(
+                data,
+                "url",
+                "MYSQL_URL",
+                default="",
+            )
+            or None
+        )
 
-        if not self.url and not (self.host and self.user and self.password and self.database):
-            raise ValueError("Either a valid URL or required parameters (host, user, password, database) must be provided.")
+        if not self.url and not (
+            self.host and self.user and self.password and self.database
+        ):
+            raise ValueError(
+                "Either a valid URL or required parameters (host, user, password, "
+                "database) must be provided."
+            )
 
     def dict(self, **kwargs: Any) -> Dict:
         base_dict = super().dict(**kwargs, exclude_none=True)
@@ -144,44 +170,57 @@ class MySQLModel(BaseModel):
 class MariaDBModel(MySQLModel):
     def __init__(self, **data: Any) -> None:
         super().__init__(**data)
-        self.user = get_from_dict_or_env(
-            data,
-            "user",
-            "MARIADB_USER",
-            default="",
-        ) or None
+        self.user = (
+            get_from_dict_or_env(
+                data,
+                "user",
+                "MARIADB_USER",
+                default="",
+            )
+            or None
+        )
         self.password = convert_to_secret_str(
             get_from_dict_or_env(
                 data,
                 "password",
                 "MARIADB_PASSWORD",
                 default="",
-            ) or None
+            )
+            or None
         )
-        self.host = get_from_dict_or_env(
-            data,
-            "host",
-            "MARIADB_HOST",
-            default="",
-        ) or None
+        self.host = (
+            get_from_dict_or_env(
+                data,
+                "host",
+                "MARIADB_HOST",
+                default="",
+            )
+            or None
+        )
         self.port = get_from_dict_or_env(
             data,
             "port",
             "MARIADB_PORT",
             default=3306,
         )
-        self.database = get_from_dict_or_env(
-            data,
-            "database",
-            "MARIADB_DATABASE",
-            default="",
-        ) or None
-        self.url = get_from_dict_or_env(
-            data,
-            "url",
-            "MARIADB_URL",
-            default="",
-        ) or None
+        self.database = (
+            get_from_dict_or_env(
+                data,
+                "database",
+                "MARIADB_DATABASE",
+                default="",
+            )
+            or None
+        )
+        self.url = (
+            get_from_dict_or_env(
+                data,
+                "url",
+                "MARIADB_URL",
+                default="",
+            )
+            or None
+        )
 
 
 class ClickHouseModel(BaseModel):
@@ -265,29 +304,38 @@ class SnowflakeModel(BaseModel):
                 "SNOWFLAKE_PASSWORD",
             )
         )
-        self.warehouse = get_from_dict_or_env(
-            data,
-            "warehouse",
-            "SNOWFLAKE_WAREHOUSE",
-            default="",
-        ) or None
+        self.warehouse = (
+            get_from_dict_or_env(
+                data,
+                "warehouse",
+                "SNOWFLAKE_WAREHOUSE",
+                default="",
+            )
+            or None
+        )
         self.database = get_from_dict_or_env(
             data,
             "database",
             "SNOWFLAKE_DATABASE",
         )
-        self.database_schema = get_from_dict_or_env(
-            data,
-            "schema",
-            "SNOWFLAKE_SCHEMA",
-            default="",
-        ) or None
-        self.role = get_from_dict_or_env(
-            data,
-            "role",
-            "SNOWFLAKE_ROLE",
-            default="",
-        ) or None
+        self.database_schema = (
+            get_from_dict_or_env(
+                data,
+                "schema",
+                "SNOWFLAKE_SCHEMA",
+                default="",
+            )
+            or None
+        )
+        self.role = (
+            get_from_dict_or_env(
+                data,
+                "role",
+                "SNOWFLAKE_ROLE",
+                default="",
+            )
+            or None
+        )
 
     def dict(self, **kwargs: Any) -> Dict:
         base_dict = super().dict(**kwargs, exclude_none=True)
