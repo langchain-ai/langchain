@@ -671,11 +671,11 @@ def test_incremental_indexing_with_batch_size(
             "num_updated": 0,
         }
 
-    doc_texts = set(
+    doc_texts = {
         # Ignoring type since doc should be in the store and not a None
         vector_store.get_by_ids([uid])[0].page_content  # type: ignore
         for uid in vector_store.store
-    )
+    }
     assert doc_texts == {"1", "2", "3", "4"}
 
     with patch.object(
@@ -746,11 +746,11 @@ def test_incremental_indexing_with_batch_size_with_optimization(
             "num_updated": 0,
         }
 
-    doc_texts = set(
+    doc_texts = {
         # Ignoring type since doc should be in the store and not a None
         vector_store.get_by_ids([uid])[0].page_content  # type: ignore
         for uid in vector_store.store
-    )
+    }
     assert doc_texts == {"1", "2", "3", "4"}
 
     # Mutate content in first batch
@@ -792,11 +792,11 @@ def test_incremental_indexing_with_batch_size_with_optimization(
             "num_updated": 0,
         }
 
-    doc_texts = set(
+    doc_texts = {
         # Ignoring type since doc should be in the store and not a None
         vector_store.get_by_ids([uid])[0].page_content  # type: ignore
         for uid in vector_store.store
-    )
+    }
     assert doc_texts == {"updated 1", "2", "3", "4"}
 
     # Mutate content in second batch
@@ -838,11 +838,11 @@ def test_incremental_indexing_with_batch_size_with_optimization(
             "num_updated": 0,
         }
 
-    doc_texts = set(
+    doc_texts = {
         # Ignoring type since doc should be in the store and not a None
         vector_store.get_by_ids([uid])[0].page_content  # type: ignore
         for uid in vector_store.store
-    )
+    }
     assert doc_texts == {"updated 1", "2", "3", "updated 4"}
 
 
@@ -913,11 +913,11 @@ def test_incremental_delete_with_batch_size(
             "num_updated": 0,
         }
 
-    doc_texts = set(
+    doc_texts = {
         # Ignoring type since doc should be in the store and not a None
         vector_store.get_by_ids([uid])[0].page_content  # type: ignore
         for uid in vector_store.store
-    )
+    }
     assert doc_texts == {"1", "2", "3", "4"}
 
     # Attempt to index again verify that nothing changes
@@ -949,11 +949,11 @@ def test_incremental_delete_with_batch_size(
             "num_updated": 0,
         }
 
-    doc_texts = set(
+    doc_texts = {
         # Ignoring type since doc should be in the store and not a None
         vector_store.get_by_ids([uid])[0].page_content  # type: ignore
         for uid in vector_store.store
-    )
+    }
     assert doc_texts == {"1", "2", "3", "4"}
 
     # Attempt to index again verify that nothing changes
@@ -985,11 +985,11 @@ def test_incremental_delete_with_batch_size(
             "num_updated": 0,
         }
 
-    doc_texts = set(
+    doc_texts = {
         # Ignoring type since doc should be in the store and not a None
         vector_store.get_by_ids([uid])[0].page_content  # type: ignore
         for uid in vector_store.store
-    )
+    }
     assert doc_texts == {"1", "2", "3", "4"}
 
     # Try to index with changed docs now
@@ -1020,11 +1020,11 @@ def test_incremental_delete_with_batch_size(
             "num_updated": 0,
         }
 
-    doc_texts = set(
+    doc_texts = {
         # Ignoring type since doc should be in the store and not a None
         vector_store.get_by_ids([uid])[0].page_content  # type: ignore
         for uid in vector_store.store
-    )
+    }
     assert doc_texts == {"changed 1", "changed 2", "3", "4"}
 
 
@@ -1630,11 +1630,11 @@ async def test_incremental_aindexing_with_batch_size_with_optimization(
             "num_updated": 0,
         }
 
-    doc_texts = set(
+    doc_texts = {
         # Ignoring type since doc should be in the store and not a None
         vector_store.get_by_ids([uid])[0].page_content  # type: ignore
         for uid in vector_store.store
-    )
+    }
     assert doc_texts == {"1", "2", "3", "4"}
 
     # Mutate content in first batch
@@ -1676,11 +1676,11 @@ async def test_incremental_aindexing_with_batch_size_with_optimization(
             "num_updated": 0,
         }
 
-    doc_texts = set(
+    doc_texts = {
         # Ignoring type since doc should be in the store and not a None
         vector_store.get_by_ids([uid])[0].page_content  # type: ignore
         for uid in vector_store.store
-    )
+    }
     assert doc_texts == {"updated 1", "2", "3", "4"}
 
     # Mutate content in second batch
@@ -1722,9 +1722,9 @@ async def test_incremental_aindexing_with_batch_size_with_optimization(
             "num_updated": 0,
         }
 
-    doc_texts = set(
+    doc_texts = {
         # Ignoring type since doc should be in the store and not a None
         vector_store.get_by_ids([uid])[0].page_content  # type: ignore
         for uid in vector_store.store
-    )
+    }
     assert doc_texts == {"updated 1", "2", "3", "updated 4"}
