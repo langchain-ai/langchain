@@ -7,16 +7,16 @@ from langchain_core.pydantic_v1 import SecretStr
 from langchain_community.utilities.mindsdb.ai_data_mind.ai_data_mind_wrapper import AIDataMindWrapper
 from langchain_community.utilities.mindsdb.base_mind_wrapper import DEFAULT_API_BASE, DEFAULT_MODEL
 
-DATA_SOURCES = ["postgres", "mysql", "mariadb", "clickhouse", "snowflake", "bigquery"]
+DATASOURCES = ["postgres", "mysql", "mariadb", "clickhouse", "snowflake", "bigquery"]
 
 
 @pytest.fixture
-def data_source_configs() -> Dict[Text, Dict[Text, Any]]:
+def datasource_configs() -> Dict[Text, Dict[Text, Any]]:
     return {
         "postgres": {
-            "type": "postgres",
+            "engine": "postgres",
             "description": "dummy description",
-            "connection_args": {
+            "connection_data": {
                 "host": "dummy_host",
                 "port": 5432,
                 "user": "dummy_user",
@@ -27,9 +27,9 @@ def data_source_configs() -> Dict[Text, Dict[Text, Any]]:
             "tables": ["dummy_table_1", "dummy_table_2"],
         },
         "mysql": {
-            "type": "mysql",
+            "engine": "mysql",
             "description": "dummy description",
-            "connection_args": {
+            "connection_data": {
                 "host": "dummy_host",
                 "port": 3306,
                 "user": "dummy_user",
@@ -39,9 +39,9 @@ def data_source_configs() -> Dict[Text, Dict[Text, Any]]:
             "tables": ["dummy_table_1", "dummy_table_2"],
         },
         "mariadb": {
-            "type": "mariadb",
+            "engine": "mariadb",
             "description": "dummy description",
-            "connection_args": {
+            "connection_data": {
                 "host": "dummy_host",
                 "port": 3306,
                 "user": "dummy_user",
@@ -51,9 +51,9 @@ def data_source_configs() -> Dict[Text, Dict[Text, Any]]:
             "tables": ["dummy_table_1", "dummy_table_2"],
         },
         "clickhouse": {
-            "type": "clickhouse",
+            "engine": "clickhouse",
             "description": "dummy description",
-            "connection_args": {
+            "connection_data": {
                 "host": "dummy_host",
                 "port": 8123,
                 "user": "dummy_user",
@@ -63,9 +63,9 @@ def data_source_configs() -> Dict[Text, Dict[Text, Any]]:
             "tables": ["dummy_table_1", "dummy_table_2"],
         },
         "snowflake": {
-            "type": "snowflake",
+            "engine": "snowflake",
             "description": "dummy description",
-            "connection_args": {
+            "connection_data": {
                 "account": "dummy_account",
                 "user": "dummy_user",
                 "password": "dummy_password",
@@ -76,9 +76,9 @@ def data_source_configs() -> Dict[Text, Dict[Text, Any]]:
             "tables": ["dummy_table_1", "dummy_table_2"],
         },
         "bigquery": {
-            "type": "bigquery",
+            "engine": "bigquery",
             "description": "dummy description",
-            "connection_args": {
+            "connection_data": {
                 "project_id": "dummy_project_id",
                 "dataset": "dummy_dataset",
                 "service_account_json": {
@@ -93,67 +93,82 @@ def data_source_configs() -> Dict[Text, Dict[Text, Any]]:
     }
 
 
-@pytest.mark.requires("mindsdb_sdk")
-@pytest.mark.parametrize("data_source_key", DATA_SOURCES)
-@patch("mindsdb_sdk.utils.mind.create_mind")
-@patch("mindsdb_sdk.utils.mind.DatabaseConfig")
-def test_init_with_single_data_source(
+@pytest.mark.requires("minds")
+@pytest.mark.parametrize("datasource_key", DATASOURCES)
+@patch("minds.client.Client")
+@patch("minds.datasources.DatabaseConfig")
+def test_init_with_single_datasource(
     mock_database_config: Mock, 
-    mock_create_mind: Mock, 
-    data_source_key: Text, 
-    data_source_configs: Dict[Text, Dict[Text, Any]]
+    mock_client: Mock, 
+    datasource_key: Text, 
+    datasource_configs: Dict[Text, Dict[Text, Any]]
 ) -> None:
-    data_source_config = data_source_configs[data_source_key]
+    datasource_config = datasource_configs[datasource_key]
     ai_data_mind_config = {
         "name": "dummy_mind",
-        "mindsdb_api_key": "dummy_key",
-        "data_source_configs": [data_source_config],
+        "minds_api_key": "dummy_key",
+        "datasources": [datasource_config],
     }
 
-    mock_create_mind.return_value = Mock(name="dummy_mind")
+    mock_client.return_value = Mock(
+        minds=Mock(
+            create=Mock(
+                return_value=Mock(
+                    name="dummy_mind"
+                )
+            )
+        )                    
+    )
+
     mock_database_config.return_value = Mock(
-        type=data_source_config["type"],
-        description=data_source_config["description"],
-        connection_args=data_source_config["connection_args"],
-        tables=data_source_config["tables"],
+        engine=datasource_config["engine"],
+        description=datasource_config["description"],
+        connection_data=datasource_config["connection_data"],
+        tables=datasource_config["tables"],
     )
 
     ai_data_mind_wrapper = AIDataMindWrapper(**ai_data_mind_config)
 
     assert ai_data_mind_wrapper.mind is not None
-    assert ai_data_mind_wrapper.data_source_configs == [data_source_config]
+    assert ai_data_mind_wrapper.datasources == [datasource_config]
     assert ai_data_mind_wrapper.name == "dummy_mind"
-    assert ai_data_mind_wrapper.mindsdb_api_base == DEFAULT_API_BASE
+    assert ai_data_mind_wrapper.minds_api_base == DEFAULT_API_BASE
     assert ai_data_mind_wrapper.model == DEFAULT_MODEL
-    assert isinstance(ai_data_mind_wrapper.mindsdb_api_key, SecretStr)
+    assert isinstance(ai_data_mind_wrapper.minds_api_key, SecretStr)
 
 
-@pytest.mark.requires("mindsdb_sdk")
-@pytest.mark.parametrize("data_source_key", DATA_SOURCES)
-@patch("mindsdb_sdk.utils.mind.create_mind")
-@patch("mindsdb_sdk.utils.mind.DatabaseConfig")
-def test_run_with_single_data_source(
+@pytest.mark.requires("minds")
+@pytest.mark.parametrize("datasource_key", DATASOURCES)
+@patch("minds.client.Client")
+@patch("minds.datasources.DatabaseConfig")
+def test_run_with_single_datasource(
     mock_database_config: Mock, 
-    mock_create_mind: Mock, 
-    data_source_key: Text, 
-    data_source_configs: Dict[Text, Dict[Text, Any]]
+    mock_client: Mock, 
+    datasource_key: Text, 
+    datasource_configs: Dict[Text, Dict[Text, Any]]
 ) -> None:
-    data_source_config = data_source_configs[data_source_key]
+    datasource_config = datasource_configs[datasource_key]
     ai_data_mind_config = {
         "name": "dummy_mind",
-        "mindsdb_api_key": "dummy_key",
-        "data_source_configs": [data_source_config],
+        "minds_api_key": "dummy_key",
+        "datasources": [datasource_config],
     }
 
-    mock_mind = Mock()
-    mock_mind.name = "dummy_mind"
-    mock_create_mind.return_value = mock_mind
+    mock_client.return_value = Mock(
+        minds=Mock(
+            create=Mock(
+                return_value=Mock(
+                    name="dummy_mind"
+                )
+            )
+        )                    
+    )
 
     mock_database_config.return_value = Mock(
-        type=data_source_config["type"],
-        description=data_source_config["description"],
-        connection_args=data_source_config["connection_args"],
-        tables=data_source_config["tables"],
+        enine=datasource_config["engine"],
+        description=datasource_config["description"],
+        connection_data=datasource_config["connection_data"],
+        tables=datasource_config["tables"],
     )
 
     query = "dummy query"
@@ -181,30 +196,38 @@ def test_run_with_single_data_source(
     )
 
 
-@pytest.mark.requires("mindsdb_sdk")
-@patch("mindsdb_sdk.utils.mind.create_mind")
-@patch("mindsdb_sdk.utils.mind.DatabaseConfig")
-def test_init_with_multiple_data_sources(
+@pytest.mark.requires("minds")
+@patch("minds.client.Client")
+@patch("minds.datasources.DatabaseConfig")
+def test_init_with_multiple_datasources(
     mock_database_config: Mock, 
-    mock_create_mind: Mock, 
-    data_source_configs: Dict[Text, Dict[Text, Any]]
+    mock_client: Mock, 
+    datasource_configs: Dict[Text, Dict[Text, Any]]
 ) -> None:
     ai_data_mind_config = {
         "name": "dummy_mind",
-        "mindsdb_api_key": "dummy_key",
-        "data_source_configs": list(data_source_configs.values()),
+        "minds_api_key": "dummy_key",
+        "datasources": list(datasource_configs.values()),
     }
 
-    mock_create_mind.return_value = Mock(name="dummy_mind")
+    mock_client.return_value = Mock(
+        minds=Mock(
+            create=Mock(
+                return_value=Mock(
+                    name="dummy_mind"
+                )
+            )
+        )                    
+    )
 
     mock_return_values = [
         Mock(
-            type=config["type"],
+            engine=config["engine"],
             description=config["description"],
-            connection_args=config["connection_args"],
+            connection_data=config["connection_data"],
             tables=config["tables"],
         )
-        for config in data_source_configs.values()
+        for config in datasource_configs.values()
     ]
 
     mock_database_config.side_effect = mock_return_values
@@ -212,39 +235,45 @@ def test_init_with_multiple_data_sources(
     ai_data_mind_wrapper = AIDataMindWrapper(**ai_data_mind_config)
 
     assert ai_data_mind_wrapper.mind is not None
-    assert ai_data_mind_wrapper.data_source_configs == list(data_source_configs.values())
+    assert ai_data_mind_wrapper.datasources == list(datasource_configs.values())
     assert ai_data_mind_wrapper.name == "dummy_mind"
-    assert ai_data_mind_wrapper.mindsdb_api_base == DEFAULT_API_BASE
+    assert ai_data_mind_wrapper.minds_api_base == DEFAULT_API_BASE
     assert ai_data_mind_wrapper.model == DEFAULT_MODEL
-    assert isinstance(ai_data_mind_wrapper.mindsdb_api_key, SecretStr)
+    assert isinstance(ai_data_mind_wrapper.minds_api_key, SecretStr)
 
 
-@pytest.mark.requires("mindsdb_sdk")
-@patch("mindsdb_sdk.utils.mind.create_mind")
-@patch("mindsdb_sdk.utils.mind.DatabaseConfig")
-def test_run_with_multiple_data_sources(
+@pytest.mark.requires("minds")
+@patch("minds.client.Client")
+@patch("minds.datasources.DatabaseConfig")
+def test_run_with_multiple_datasources(
     mock_database_config: Mock, 
-    mock_create_mind: Mock, 
-    data_source_configs: Dict[Text, Dict[Text, Any]]
+    mock_client: Mock, 
+    datasource_configs: Dict[Text, Dict[Text, Any]]
 ) -> None:
     ai_data_mind_config = {
         "name": "dummy_mind",
-        "mindsdb_api_key": "dummy_key",
-        "data_source_configs": list(data_source_configs.values()),
+        "minds_api_key": "dummy_key",
+        "datasources": list(datasource_configs.values()),
     }
 
-    mock_mind = Mock()
-    mock_mind.name = "dummy_mind"
-    mock_create_mind.return_value = mock_mind
+    mock_client.return_value = Mock(
+        minds=Mock(
+            create=Mock(
+                return_value=Mock(
+                    name="dummy_mind"
+                )
+            )
+        )                    
+    )
 
     mock_return_values = [
         Mock(
-            type=config["type"],
+            engine=config["engine"],
             description=config["description"],
-            connection_args=config["connection_args"],
+            connection_data=config["connection_data"],
             tables=config["tables"],
         )
-        for config in data_source_configs.values()
+        for config in datasource_configs.values()
     ]
 
     mock_database_config.side_effect = mock_return_values

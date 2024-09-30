@@ -7,7 +7,7 @@ from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
 
-def get_supported_data_sources() -> Dict:
+def get_supported_datasources() -> Dict:
     return {
         name.lower().replace("model", ""): cls
         for name, cls in inspect.getmembers(sys.modules[__name__], inspect.isclass)
