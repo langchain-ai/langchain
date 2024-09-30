@@ -96,7 +96,6 @@ if TYPE_CHECKING:
     from langchain_community.retrievers.nimbleit import (
         NimbleItRetriever,
     )
-    
     from langchain_community.retrievers.outline import (
         OutlineRetriever,
     )
