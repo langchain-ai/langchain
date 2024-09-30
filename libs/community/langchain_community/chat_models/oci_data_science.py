@@ -34,11 +34,6 @@ from langchain_core.output_parsers import (
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.utils.function_calling import convert_to_openai_tool
-from langchain_openai.chat_models.base import (
-    _convert_delta_to_message_chunk,
-    _convert_message_to_dict,
-    _convert_dict_to_message,
-)
 
 from pydantic import BaseModel, Field
 from ads.llm.langchain.plugins.llms.oci_data_science_model_deployment_endpoint import (
@@ -190,6 +185,20 @@ class ChatOCIModelDeployment(BaseChatModel, BaseOCIModelDeployment):
     stop: Optional[List[str]] = None
     """Stop words to use when generating. Model output is cut off
     at the first occurrence of any of these substrings."""
+
+    @pre_init
+    def validate_environment(  # pylint: disable=no-self-argument
+        cls, values: Dict
+    ) -> Dict:
+        try:
+            import langchain_openai
+
+        except ImportError as ex:
+            raise ImportError(
+                "Could not import langchain_openai package. "
+                "Please install it with `pip install langchain_openai`."
+            ) from ex
+        return values
 
     @property
     def _llm_type(self) -> str:
@@ -545,6 +554,8 @@ class ChatOCIModelDeployment(BaseChatModel, BaseOCIModelDeployment):
                 converted messages and additional parameters.
 
         """
+        from langchain_openai.chat_models.base import _convert_message_to_dict
+
         return {
             "messages": [_convert_message_to_dict(m) for m in messages],
             **params,
@@ -571,6 +582,8 @@ class ChatOCIModelDeployment(BaseChatModel, BaseOCIModelDeployment):
             ValueError: If the response JSON is not well-formed or does not
                 contain the expected structure.
         """
+        from langchain_openai.chat_models.base import _convert_delta_to_message_chunk
+
         try:
             choice = response_json["choices"][0]
             if not isinstance(choice, dict):
@@ -609,6 +622,8 @@ class ChatOCIModelDeployment(BaseChatModel, BaseOCIModelDeployment):
             contain the expected structure.
 
         """
+        from langchain_openai.chat_models.base import _convert_dict_to_message
+
         generations = []
         try:
             choices = response_json["choices"]
