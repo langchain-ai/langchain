@@ -3345,9 +3345,9 @@ def test_bind_with_lambda() -> None:
         return 3 + kwargs.get("n", 0)
 
     runnable = RunnableLambda(my_function).bind(n=1)
-    assert 4 == runnable.invoke({})
+    assert runnable.invoke({}) == 4
     chunks = list(runnable.stream({}))
-    assert [4] == chunks
+    assert chunks == [4]
 
 
 async def test_bind_with_lambda_async() -> None:
@@ -3355,9 +3355,9 @@ async def test_bind_with_lambda_async() -> None:
         return 3 + kwargs.get("n", 0)
 
     runnable = RunnableLambda(my_function).bind(n=1)
-    assert 4 == await runnable.ainvoke({})
+    assert await runnable.ainvoke({}) == 4
     chunks = [item async for item in runnable.astream({})]
-    assert [4] == chunks
+    assert chunks == [4]
 
 
 def test_deep_stream() -> None:
@@ -5140,13 +5140,10 @@ async def test_astream_log_deep_copies() -> None:
 
     chain = RunnableLambda(add_one)
     chunks = []
-    final_output = None
+    final_output: Optional[RunLogPatch] = None
     async for chunk in chain.astream_log(1):
         chunks.append(chunk)
-        if final_output is None:
-            final_output = chunk
-        else:
-            final_output = final_output + chunk
+        final_output = chunk if final_output is None else final_output + chunk
 
     run_log = _get_run_log(chunks)
     state = run_log.state.copy()
