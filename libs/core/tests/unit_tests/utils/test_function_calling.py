@@ -38,7 +38,7 @@ from langchain_core.utils.function_calling import (
 
 @pytest.fixture()
 def pydantic() -> type[BaseModel]:
-    class dummy_function(BaseModel):
+    class dummy_function(BaseModel):  # noqa: N801
         """dummy function"""
 
         arg1: int = Field(..., description="foo")
@@ -48,13 +48,12 @@ def pydantic() -> type[BaseModel]:
 
 
 @pytest.fixture()
-def Annotated_function() -> Callable:
+def annotated_function() -> Callable:
     def dummy_function(
         arg1: ExtensionsAnnotated[int, "foo"],
         arg2: ExtensionsAnnotated[Literal["bar", "baz"], "one of 'bar', 'baz'"],
     ) -> None:
         """dummy function"""
-        pass
 
     return dummy_function
 
@@ -68,7 +67,6 @@ def function() -> Callable:
             arg1: foo
             arg2: one of 'bar', 'baz'
         """
-        pass
 
     return dummy_function
 
@@ -118,7 +116,7 @@ def dummy_structured_tool() -> StructuredTool:
 
 @pytest.fixture()
 def dummy_pydantic() -> type[BaseModel]:
-    class dummy_function(BaseModel):
+    class dummy_function(BaseModel):  # noqa: N801
         """dummy function"""
 
         arg1: int = Field(..., description="foo")
@@ -129,7 +127,7 @@ def dummy_pydantic() -> type[BaseModel]:
 
 @pytest.fixture()
 def dummy_pydantic_v2() -> type[BaseModelV2Maybe]:
-    class dummy_function(BaseModelV2Maybe):
+    class dummy_function(BaseModelV2Maybe):  # noqa: N801
         """dummy function"""
 
         arg1: int = FieldV2Maybe(..., description="foo")
@@ -142,7 +140,7 @@ def dummy_pydantic_v2() -> type[BaseModelV2Maybe]:
 
 @pytest.fixture()
 def dummy_typing_typed_dict() -> type:
-    class dummy_function(TypingTypedDict):
+    class dummy_function(TypingTypedDict):  # noqa: N801
         """dummy function"""
 
         arg1: TypingAnnotated[int, ..., "foo"]  # noqa: F821
@@ -153,7 +151,7 @@ def dummy_typing_typed_dict() -> type:
 
 @pytest.fixture()
 def dummy_typing_typed_dict_docstring() -> type:
-    class dummy_function(TypingTypedDict):
+    class dummy_function(TypingTypedDict):  # noqa: N801
         """dummy function
 
         Args:
@@ -169,7 +167,7 @@ def dummy_typing_typed_dict_docstring() -> type:
 
 @pytest.fixture()
 def dummy_extensions_typed_dict() -> type:
-    class dummy_function(ExtensionsTypedDict):
+    class dummy_function(ExtensionsTypedDict):  # noqa: N801
         """dummy function"""
 
         arg1: ExtensionsAnnotated[int, ..., "foo"]
@@ -180,7 +178,7 @@ def dummy_extensions_typed_dict() -> type:
 
 @pytest.fixture()
 def dummy_extensions_typed_dict_docstring() -> type:
-    class dummy_function(ExtensionsTypedDict):
+    class dummy_function(ExtensionsTypedDict):  # noqa: N801
         """dummy function
 
         Args:
@@ -220,7 +218,6 @@ class Dummy:
             arg1: foo
             arg2: one of 'bar', 'baz'
         """
-        pass
 
 
 class DummyWithClassMethod:
@@ -232,7 +229,6 @@ class DummyWithClassMethod:
             arg1: foo
             arg2: one of 'bar', 'baz'
         """
-        pass
 
 
 def test_convert_to_openai_function(
@@ -241,7 +237,7 @@ def test_convert_to_openai_function(
     dummy_structured_tool: StructuredTool,
     dummy_tool: BaseTool,
     json_schema: dict,
-    Annotated_function: Callable,
+    annotated_function: Callable,
     dummy_pydantic: type[BaseModel],
     runnable: Runnable,
     dummy_typing_typed_dict: type,
@@ -275,7 +271,7 @@ def test_convert_to_openai_function(
         expected,
         Dummy.dummy_function,
         DummyWithClassMethod.dummy_function,
-        Annotated_function,
+        annotated_function,
         dummy_pydantic,
         dummy_typing_typed_dict,
         dummy_typing_typed_dict_docstring,
@@ -334,7 +330,6 @@ def test_convert_to_openai_function_nested_v2() -> None:
 
     def my_function(arg1: NestedV2) -> None:
         """dummy function"""
-        pass
 
     convert_to_openai_function(my_function)
 
@@ -348,7 +343,6 @@ def test_convert_to_openai_function_nested() -> None:
 
     def my_function(arg1: Nested) -> None:
         """dummy function"""
-        pass
 
     expected = {
         "name": "my_function",
@@ -386,7 +380,6 @@ def test_convert_to_openai_function_nested_strict() -> None:
 
     def my_function(arg1: Nested) -> None:
         """dummy function"""
-        pass
 
     expected = {
         "name": "my_function",
@@ -429,7 +422,6 @@ def test_function_optional_param() -> None:
         c: Optional[list[Optional[str]]],
     ) -> None:
         """A test function"""
-        pass
 
     func = convert_to_openai_function(func5)
     req = func["parameters"]["required"]
@@ -439,7 +431,6 @@ def test_function_optional_param() -> None:
 def test_function_no_params() -> None:
     def nullary_function() -> None:
         """nullary function"""
-        pass
 
     func = convert_to_openai_function(nullary_function)
     req = func["parameters"].get("required")
@@ -522,21 +513,15 @@ def test_tool_outputs() -> None:
 def test__convert_typed_dict_to_openai_function(
     use_extension_typed_dict: bool, use_extension_annotated: bool
 ) -> None:
-    if use_extension_typed_dict:
-        TypedDict = ExtensionsTypedDict
-    else:
-        TypedDict = TypingTypedDict
-    if use_extension_annotated:
-        Annotated = TypingAnnotated
-    else:
-        Annotated = TypingAnnotated
+    typed_dict = ExtensionsTypedDict if use_extension_typed_dict else TypingTypedDict
+    annotated = TypingAnnotated if use_extension_annotated else TypingAnnotated
 
-    class SubTool(TypedDict):
+    class SubTool(typed_dict):
         """Subtool docstring"""
 
-        args: Annotated[dict[str, Any], {}, "this does bar"]  # noqa: F722  # type: ignore
+        args: annotated[dict[str, Any], {}, "this does bar"]  # noqa: F722  # type: ignore
 
-    class Tool(TypedDict):
+    class Tool(typed_dict):
         """Docstring
 
         Args:
@@ -546,20 +531,20 @@ def test__convert_typed_dict_to_openai_function(
         arg1: str
         arg2: Union[int, str, bool]
         arg3: Optional[list[SubTool]]
-        arg4: Annotated[Literal["bar", "baz"], ..., "this does foo"]  # noqa: F722
-        arg5: Annotated[Optional[float], None]
-        arg6: Annotated[
+        arg4: annotated[Literal["bar", "baz"], ..., "this does foo"]  # noqa: F722
+        arg5: annotated[Optional[float], None]
+        arg6: annotated[
             Optional[Sequence[Mapping[str, tuple[Iterable[Any], SubTool]]]], []
         ]
-        arg7: Annotated[list[SubTool], ...]
-        arg8: Annotated[tuple[SubTool], ...]
-        arg9: Annotated[Sequence[SubTool], ...]
-        arg10: Annotated[Iterable[SubTool], ...]
-        arg11: Annotated[set[SubTool], ...]
-        arg12: Annotated[dict[str, SubTool], ...]
-        arg13: Annotated[Mapping[str, SubTool], ...]
-        arg14: Annotated[MutableMapping[str, SubTool], ...]
-        arg15: Annotated[bool, False, "flag"]  # noqa: F821  # type: ignore
+        arg7: annotated[list[SubTool], ...]
+        arg8: annotated[tuple[SubTool], ...]
+        arg9: annotated[Sequence[SubTool], ...]
+        arg10: annotated[Iterable[SubTool], ...]
+        arg11: annotated[set[SubTool], ...]
+        arg12: annotated[dict[str, SubTool], ...]
+        arg13: annotated[Mapping[str, SubTool], ...]
+        arg14: annotated[MutableMapping[str, SubTool], ...]
+        arg15: annotated[bool, False, "flag"]  # noqa: F821  # type: ignore
 
     expected = {
         "name": "Tool",
@@ -781,7 +766,6 @@ def test_convert_union_type_py_39() -> None:
     @tool
     def magic_function(input: int | float) -> str:
         """Compute a magic function."""
-        pass
 
     result = convert_to_openai_function(magic_function)
     assert result["parameters"]["properties"]["input"] == {

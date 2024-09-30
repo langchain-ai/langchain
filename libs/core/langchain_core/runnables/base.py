@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import collections
+import contextlib
 import functools
 import inspect
 import threading
@@ -36,7 +37,7 @@ from typing import (
 )
 
 from pydantic import BaseModel, ConfigDict, Field, RootModel
-from typing_extensions import Literal, get_args
+from typing_extensions import Literal, get_args, override
 
 from langchain_core._api import beta_decorator
 from langchain_core.load.serializable import (
@@ -272,7 +273,7 @@ class Runnable(Generic[Input, Output], ABC):
             return name_
 
     @property
-    def InputType(self) -> type[Input]:
+    def InputType(self) -> type[Input]:  # noqa: N802
         """The type of input this Runnable accepts specified as a type annotation."""
         # First loop through all parent classes and if any of them is
         # a pydantic model, we will pick up the generic parameterization
@@ -297,7 +298,7 @@ class Runnable(Generic[Input, Output], ABC):
         )
 
     @property
-    def OutputType(self) -> type[Output]:
+    def OutputType(self) -> type[Output]:  # noqa: N802
         """The type of output this Runnable produces specified as a type annotation."""
         # First loop through bases -- this will help generic
         # any pydantic models.
@@ -2466,10 +2467,8 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
             A JSON-serializable representation of the Runnable.
         """
         dumped = super().to_json()
-        try:
+        with contextlib.suppress(Exception):
             dumped["name"] = self.get_name()
-        except Exception:
-            pass
         return dumped
 
     def configurable_fields(
@@ -2763,9 +2762,8 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             ValueError: If the sequence has less than 2 steps.
         """
         steps_flat: list[Runnable] = []
-        if not steps:
-            if first is not None and last is not None:
-                steps_flat = [first] + (middle or []) + [last]
+        if not steps and first is not None and last is not None:
+            steps_flat = [first] + (middle or []) + [last]
         for step in steps:
             if isinstance(step, RunnableSequence):
                 steps_flat.extend(step.steps)
@@ -2811,11 +2809,13 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
     )
 
     @property
+    @override
     def InputType(self) -> type[Input]:
         """The type of the input to the Runnable."""
         return self.first.InputType
 
     @property
+    @override
     def OutputType(self) -> type[Output]:
         """The type of the output of the Runnable."""
         return self.last.OutputType
@@ -3564,6 +3564,7 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
         return super().get_name(suffix, name=name)
 
     @property
+    @override
     def InputType(self) -> Any:
         """The type of the input to the Runnable."""
         for step in self.steps__.values():
@@ -3775,7 +3776,7 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
                     for key, step in steps.items()
                 )
             )
-            output = {key: value for key, value in zip(steps, results)}
+            output = dict(zip(steps, results))
         # finish the root run
         except BaseException as e:
             await run_manager.on_chain_error(e)
@@ -4057,6 +4058,7 @@ class RunnableGenerator(Runnable[Input, Output]):
             self.name = "RunnableGenerator"
 
     @property
+    @override
     def InputType(self) -> Any:
         func = getattr(self, "_transform", None) or self._atransform
         try:
@@ -4097,6 +4099,7 @@ class RunnableGenerator(Runnable[Input, Output]):
         )
 
     @property
+    @override
     def OutputType(self) -> Any:
         func = getattr(self, "_transform", None) or self._atransform
         try:
@@ -4175,12 +4178,9 @@ class RunnableGenerator(Runnable[Input, Output]):
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
-        final = None
+        final: Optional[Output] = None
         for output in self.stream(input, config, **kwargs):
-            if final is None:
-                final = output
-            else:
-                final = final + output
+            final = output if final is None else final + output  # type: ignore[operator]
         return cast(Output, final)
 
     def atransform(
@@ -4210,12 +4210,9 @@ class RunnableGenerator(Runnable[Input, Output]):
     async def ainvoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
-        final = None
+        final: Optional[Output] = None
         async for output in self.astream(input, config, **kwargs):
-            if final is None:
-                final = output
-            else:
-                final = final + output
+            final = output if final is None else final + output  # type: ignore[operator]
         return cast(Output, final)
 
 
@@ -4346,6 +4343,7 @@ class RunnableLambda(Runnable[Input, Output]):
             pass
 
     @property
+    @override
     def InputType(self) -> Any:
         """The type of the input to this Runnable."""
         func = getattr(self, "func", None) or self.afunc
@@ -4405,6 +4403,7 @@ class RunnableLambda(Runnable[Input, Output]):
         return super().get_input_schema(config)
 
     @property
+    @override
     def OutputType(self) -> Any:
         """The type of the output of this Runnable as a type annotation.
 
@@ -4958,6 +4957,7 @@ class RunnableEachBase(RunnableSerializable[list[Input], list[Output]]):
     )
 
     @property
+    @override
     def InputType(self) -> Any:
         return list[self.bound.InputType]  # type: ignore[name-defined]
 
@@ -4981,6 +4981,7 @@ class RunnableEachBase(RunnableSerializable[list[Input], list[Output]]):
         )
 
     @property
+    @override
     def OutputType(self) -> type[list[Output]]:
         return list[self.bound.OutputType]  # type: ignore[name-defined]
 
@@ -5274,6 +5275,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
         return self.bound.get_name(suffix, name=name)
 
     @property
+    @override
     def InputType(self) -> type[Input]:
         return (
             cast(type[Input], self.custom_input_type)
@@ -5282,6 +5284,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
         )
 
     @property
+    @override
     def OutputType(self) -> type[Output]:
         return (
             cast(type[Output], self.custom_output_type)

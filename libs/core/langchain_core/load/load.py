@@ -19,6 +19,17 @@ DEFAULT_NAMESPACES = [
     "langchain_anthropic",
     "langchain_groq",
     "langchain_google_genai",
+    "langchain_aws",
+    "langchain_openai",
+    "langchain_google_vertexai",
+    "langchain_mistralai",
+    "langchain_fireworks",
+]
+# Namespaces for which only deserializing via the SERIALIZABLE_MAPPING is allowed.
+# Load by path is not allowed.
+DISALLOW_LOAD_FROM_PATH = [
+    "langchain_community",
+    "langchain",
 ]
 
 ALL_SERIALIZABLE_MAPPINGS = {
@@ -56,14 +67,14 @@ class Reviver:
                 Defaults to None.
         """
         self.secrets_from_env = secrets_from_env
-        self.secrets_map = secrets_map or dict()
+        self.secrets_map = secrets_map or {}
         # By default, only support langchain, but user can pass in additional namespaces
         self.valid_namespaces = (
             [*DEFAULT_NAMESPACES, *valid_namespaces]
             if valid_namespaces
             else DEFAULT_NAMESPACES
         )
-        self.additional_import_mappings = additional_import_mappings or dict()
+        self.additional_import_mappings = additional_import_mappings or {}
         self.import_mappings = (
             {
                 **ALL_SERIALIZABLE_MAPPINGS,
@@ -75,9 +86,9 @@ class Reviver:
 
     def __call__(self, value: dict[str, Any]) -> Any:
         if (
-            value.get("lc", None) == 1
-            and value.get("type", None) == "secret"
-            and value.get("id", None) is not None
+            value.get("lc") == 1
+            and value.get("type") == "secret"
+            and value.get("id") is not None
         ):
             [key] = value["id"]
             if key in self.secrets_map:
@@ -88,9 +99,9 @@ class Reviver:
                 raise KeyError(f'Missing key "{key}" in load(secrets_map)')
 
         if (
-            value.get("lc", None) == 1
-            and value.get("type", None) == "not_implemented"
-            and value.get("id", None) is not None
+            value.get("lc") == 1
+            and value.get("type") == "not_implemented"
+            and value.get("id") is not None
         ):
             raise NotImplementedError(
                 "Trying to load an object that doesn't implement "
@@ -98,45 +109,37 @@ class Reviver:
             )
 
         if (
-            value.get("lc", None) == 1
-            and value.get("type", None) == "constructor"
-            and value.get("id", None) is not None
+            value.get("lc") == 1
+            and value.get("type") == "constructor"
+            and value.get("id") is not None
         ):
             [*namespace, name] = value["id"]
+            mapping_key = tuple(value["id"])
 
-            if namespace[0] not in self.valid_namespaces:
+            if (
+                namespace[0] not in self.valid_namespaces
+                # The root namespace ["langchain"] is not a valid identifier.
+                or namespace == ["langchain"]
+            ):
                 raise ValueError(f"Invalid namespace: {value}")
-
-            # The root namespace "langchain" is not a valid identifier.
-            if len(namespace) == 1 and namespace[0] == "langchain":
-                raise ValueError(f"Invalid namespace: {value}")
-
-            # If namespace is in known namespaces, try to use mapping
-            key = tuple(namespace + [name])
-            if namespace[0] in DEFAULT_NAMESPACES:
-                # Get the importable path
-                if key not in self.import_mappings:
-                    raise ValueError(
-                        "Trying to deserialize something that cannot "
-                        "be deserialized in current version of langchain-core: "
-                        f"{key}"
-                    )
-                import_path = self.import_mappings[key]
+            # Has explicit import path.
+            elif mapping_key in self.import_mappings:
+                import_path = self.import_mappings[mapping_key]
                 # Split into module and name
-                import_dir, import_obj = import_path[:-1], import_path[-1]
+                import_dir, name = import_path[:-1], import_path[-1]
                 # Import module
                 mod = importlib.import_module(".".join(import_dir))
-                # Import class
-                cls = getattr(mod, import_obj)
-            # Otherwise, load by path
+            elif namespace[0] in DISALLOW_LOAD_FROM_PATH:
+                raise ValueError(
+                    "Trying to deserialize something that cannot "
+                    "be deserialized in current version of langchain-core: "
+                    f"{mapping_key}."
+                )
+            # Otherwise, treat namespace as path.
             else:
-                if key in self.additional_import_mappings:
-                    import_path = self.import_mappings[key]
-                    mod = importlib.import_module(".".join(import_path[:-1]))
-                    name = import_path[-1]
-                else:
-                    mod = importlib.import_module(".".join(namespace))
-                cls = getattr(mod, name)
+                mod = importlib.import_module(".".join(namespace))
+
+            cls = getattr(mod, name)
 
             # The class must be a subclass of Serializable.
             if not issubclass(cls, Serializable):
@@ -144,7 +147,7 @@ class Reviver:
 
             # We don't need to recurse on kwargs
             # as json.loads will do that for us.
-            kwargs = value.get("kwargs", dict())
+            kwargs = value.get("kwargs", {})
             return cls(**kwargs)
 
         return value
