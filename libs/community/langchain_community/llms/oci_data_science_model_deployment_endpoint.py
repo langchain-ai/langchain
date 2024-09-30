@@ -14,6 +14,7 @@ from typing import (
 
 import aiohttp
 import requests
+import traceback
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -22,9 +23,8 @@ from langchain_core.language_models.llms import BaseLLM, create_base_retry_decor
 from langchain_core.load.serializable import Serializable
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.utils import get_from_dict_or_env, pre_init
-from pydantic import Field
-
 from langchain_community.utilities.requests import Requests
+from pydantic import Field
 
 logger = logging.getLogger(__name__)
 
@@ -37,13 +37,9 @@ DEFAULT_MODEL_NAME = "odsc-llm"
 class TokenExpiredError(Exception):
     """Raises when token expired."""
 
-    pass
-
 
 class ServerError(Exception):
     """Raises when encounter server error when making inference."""
-
-    pass
 
 
 def _create_retry_decorator(
@@ -173,6 +169,7 @@ class BaseOCIModelDeployment(Serializable):
             except TokenExpiredError as e:
                 raise e
             except Exception as err:
+                traceback.print_exc()
                 logger.debug(
                     f"Requests payload: {data}. Requests arguments: "
                     f"url={self.endpoint},timeout={request_timeout},stream={stream}. "
@@ -219,6 +216,7 @@ class BaseOCIModelDeployment(Serializable):
             except TokenExpiredError as e:
                 raise e
             except Exception as err:
+                traceback.print_exc()
                 logger.debug(
                     f"Requests payload: `{data}`. "
                     f"Stream mode={stream}. "
@@ -305,13 +303,16 @@ class BaseOCIModelDeployment(Serializable):
                 The processed line as a string if valid, otherwise `None`.
         """
         line = line.strip()
-        if line:
-            _line = line.decode("utf-8")
-            if "[DONE]" in _line:
-                return None
+        if not line:
+            return None
+        _line = line.decode("utf-8")
 
-            if _line.lower().startswith("data:"):
-                return _line[5:].lstrip()
+        if _line.lower().startswith("data:"):
+            _line = _line[5:].lstrip()
+
+            if _line.startswith("[DONE]"):
+                return None
+            return _line
         return None
 
     async def _aiter_sse(
@@ -587,11 +588,11 @@ class OCIModelDeploymentLLM(BaseLLM, BaseOCIModelDeployment):
         response = self.completion_with_retry(
             data=body, run_manager=run_manager, stream=True, **requests_kwargs
         )
-
         for line in self._parse_stream(response.iter_lines()):
             chunk = self._handle_sse_line(line)
             if run_manager:
                 run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+
             yield chunk
 
     async def _astream(
@@ -749,7 +750,7 @@ class OCIModelDeploymentTGI(OCIModelDeploymentLLM):
 
     """
 
-    api: Literal["/generate", "/v1/completions"] = "/generate"
+    api: Literal["/generate", "/v1/completions"] = "/v1/completions"
     """Api spec."""
 
     frequency_penalty: float = 0.0
