@@ -196,12 +196,12 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
     """Name of variable to use as messages."""
 
     optional: bool = False
-    """If True format_messages can be called with no arguments and will return an empty 
-        list. If False then a named argument with name `variable_name` must be passed 
+    """If True format_messages can be called with no arguments and will return an empty
+        list. If False then a named argument with name `variable_name` must be passed
         in, even if the value is an empty list."""
 
     n_messages: Optional[PositiveInt] = None
-    """Maximum number of messages to include. If None, then will include all. 
+    """Maximum number of messages to include. If None, then will include all.
     Defaults to None."""
 
     @classmethod

@@ -219,7 +219,7 @@ def test_mustache_prompt_from_template(snapshot: SnapshotAssertion) -> None:
         yo
     
         hello
-    is a test."""
+    is a test."""  # noqa: W293
     )
     assert prompt.input_variables == ["foo"]
     if PYDANTIC_VERSION >= (2, 9):
@@ -408,7 +408,7 @@ def test_prompt_from_jinja2_template() -> None:
     # Empty input variable.
     template = """Hello there
 There is no variable here {
-Will it get confused{ }? 
+Will it get confused{ }?
     """
     prompt = PromptTemplate.from_template(template, template_format="jinja2")
     expected_prompt = PromptTemplate(
