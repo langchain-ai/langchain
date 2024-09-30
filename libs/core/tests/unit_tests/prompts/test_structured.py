@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from langchain_core.language_models import FakeListChatModel
 from langchain_core.load.dump import dumps
 from langchain_core.load.load import loads
+from langchain_core.messages import HumanMessage
 from langchain_core.prompts.structured import StructuredPrompt
 from langchain_core.runnables.base import Runnable, RunnableLambda
 from langchain_core.utils.pydantic import is_basemodel_subclass
@@ -121,3 +122,14 @@ def test_structured_prompt_kwargs() -> None:
     chain = prompt | model
 
     assert chain.invoke({"hello": "there"}) == OutputSchema(name="yo", value=7)
+
+
+def test_structured_prompt_template_format() -> None:
+    prompt = StructuredPrompt(
+        [("human", "hi {{person.name}}")], schema={}, template_format="mustache"
+    )
+    assert prompt.messages[0].prompt.template_format == "mustache"
+    assert prompt.input_variables == ["person"]
+    assert prompt.invoke({"person": {"name": "foo"}}).to_messages() == [
+        HumanMessage("hi foo")
+    ]
