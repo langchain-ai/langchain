@@ -86,9 +86,9 @@ def _config_with_context(
         )
     }
     deps_by_key = {
-        key: set(
+        key: {
             _key_from_id(dep) for spec in group for dep in (spec[0].dependencies or [])
-        )
+        }
         for key, group in grouped_by_key.items()
     }
 
@@ -183,7 +183,9 @@ class ContextGet(RunnableSerializable):
             for id_ in self.ids
         ]
 
-    def invoke(self, input: Any, config: Optional[RunnableConfig] = None) -> Any:
+    def invoke(
+        self, input: Any, config: Optional[RunnableConfig] = None, **kwargs: Any
+    ) -> Any:
         config = ensure_config(config)
         configurable = config.get("configurable", {})
         if isinstance(self.key, list):
@@ -198,7 +200,7 @@ class ContextGet(RunnableSerializable):
         configurable = config.get("configurable", {})
         if isinstance(self.key, list):
             values = await asyncio.gather(*(configurable[id_]() for id_ in self.ids))
-            return {key: value for key, value in zip(self.key, values)}
+            return dict(zip(self.key, values))
         else:
             return await configurable[self.ids[0]]()
 
@@ -280,7 +282,9 @@ class ContextSet(RunnableSerializable):
             for id_ in self.ids
         ]
 
-    def invoke(self, input: Any, config: Optional[RunnableConfig] = None) -> Any:
+    def invoke(
+        self, input: Any, config: Optional[RunnableConfig] = None, **kwargs: Any
+    ) -> Any:
         config = ensure_config(config)
         configurable = config.get("configurable", {})
         for id_, mapper in zip(self.ids, self.keys.values()):
