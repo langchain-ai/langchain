@@ -65,6 +65,9 @@ jobs:
         with:
           repository: langchain-ai/langchain-experimental
           path: langchain-experimental
+      - uses: actions/checkout@v4
+        with:
+          repository: langchain-ai/langchain-milvus
 
 
       - name: Set Git config
@@ -87,7 +90,8 @@ jobs:
             langchain/libs/partners/ai21 \
             langchain/libs/partners/together \
             langchain/libs/standard-tests \
-            langchain/libs/experimental
+            langchain/libs/experimental \
+            langchain/libs/partners/milvus
           mv langchain-google/libs/genai langchain/libs/partners/google-genai
           mv langchain-google/libs/vertexai langchain/libs/partners/google-vertexai
           mv langchain-google/libs/community langchain/libs/partners/google-community
@@ -101,6 +105,7 @@ jobs:
           mv langchain-ai21/libs/ai21 langchain/libs/partners/ai21
           mv langchain-together/libs/together langchain/libs/partners/together
           mv langchain-experimental/libs/experimental langchain/libs/experimental
+          mv langchain-milvus/libs/milvus langchain/libs/partners/milvus
 
       - name: Rm old html
         run:
