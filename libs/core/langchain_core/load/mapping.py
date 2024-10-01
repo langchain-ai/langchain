@@ -9,7 +9,8 @@ across different LangChain versions.
 
 For example,
 
-The code for AIMessage class is located in langchain_core.messages.ai.AIMessage,
+The code for AIMessage class is located in
+langchain_core.messages.ai.AIMessage,
 This message is associated with the lc_namespace
 ["langchain", "schema", "messages", "AIMessage"],
 because this code was originally in langchain.schema.messages.AIMessage.
@@ -240,13 +241,23 @@ SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "base",
         "ChatOpenAI",
     ),
-    ("langchain", "output_parsers", "list", "CommaSeparatedListOutputParser"): (
+    (
+      "langchain",
+      "output_parsers",
+      "list",
+      "CommaSeparatedListOutputParser"
+    ): (
         "langchain_core",
         "output_parsers",
         "list",
         "CommaSeparatedListOutputParser",
     ),
-    ("langchain", "output_parsers", "list", "CommaSeparatedNumericListOutputParser"): (
+    (
+      "langchain",
+      "output_parsers",
+      "list",
+      "CommaSeparatedNumericListOutputParser"
+    ): (
         "langchain_core",
         "output_parsers",
         "list",
@@ -412,7 +423,12 @@ SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "chat",
         "ChatMessagePromptTemplate",
     ),
-    ("langchain", "prompts", "few_shot_with_templates", "FewShotPromptWithTemplates"): (
+    (
+      "langchain",
+      "prompts",
+      "few_shot_with_templates",
+      "FewShotPromptWithTemplates"
+    ): (
         "langchain_core",
         "prompts",
         "few_shot_with_templates",
@@ -758,13 +774,23 @@ OLD_CORE_NAMESPACES_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "string",
         "StrOutputParser",
     ),
-    ("langchain_core", "output_parsers", "list", "CommaSeparatedListOutputParser"): (
+    (
+      "langchain_core",
+      "output_parsers",
+      "list",
+      "CommaSeparatedListOutputParser"
+    ): (
         "langchain_core",
         "output_parsers",
         "list",
         "CommaSeparatedListOutputParser",
     ),
-    ("langchain_core", "output_parsers", "list", "CommaSeparatedNumericListOutputParser"): (
+    (
+      "langchain_core",
+      "output_parsers",
+      "list",
+      "CommaSeparatedNumericListOutputParser"
+    ): (
         "langchain_core",
         "output_parsers",
         "list",
@@ -921,7 +947,12 @@ OLD_CORE_NAMESPACES_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "configurable",
         "RunnableConfigurableAlternatives",
     ),
-    ("langchain_core", "runnables", "configurable", "RunnableConfigurableFields"): (
+    (
+      "langchain_core",
+      "runnables",
+      "configurable",
+      "RunnableConfigurableFields"
+    ): (
         "langchain_core",
         "runnables",
         "configurable",

@@ -6,7 +6,7 @@ EXPECTED_ALL = [
     "BaseOutputParser",
     "ListOutputParser",
     "CommaSeparatedListOutputParser",
-    "CommaSeparatedListOfNumbersOutputParser",
+    "CommaSeparatedNumericListOutputParser",
     "NumberedListOutputParser",
     "MarkdownListOutputParser",
     "StrOutputParser",
