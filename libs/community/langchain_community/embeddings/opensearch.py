@@ -1,14 +1,15 @@
 from __future__ import annotations
 
+import json
 from typing import TYPE_CHECKING, List
+
+from langchain_core.embeddings import Embeddings
 
 if TYPE_CHECKING:
     from opensearchpy import OpenSearch
 
-import json
-from langchain_core.embeddings import Embeddings
 
-class OpenSearchEmbedding(Embeddings):
+class OpenSearchEmbeddings(Embeddings):
     def __init__(
         self,
         client: OpenSearch,
@@ -18,40 +19,41 @@ class OpenSearchEmbedding(Embeddings):
         self.model_id = model_id
 
     @classmethod
-    def from_opensearch_connection(
+    def from_connection(
         cls,
         opensearch_connection: OpenSearch,
         model_id: str,
-    ) -> OpenSearchEmbedding:
+    ) -> OpenSearchEmbeddings:
         """
-        Class method to create an OpenSearchEmbedding object from an OpenSearch connection.
+        Class method to create an OpenSearchEmbeddings object
+        from an OpenSearch connection.
 
         Args:
             opensearch_connection (OpenSearch): The OpenSearch connection.
             model_id (str): The ML model ID for generating embeddings.
-            input_field (str, optional): The input field for the text (default: 'text_field').
 
         Returns:
-            OpenSearchEmbedding: An instance of the OpenSearchEmbedding class.
+            OpenSearchEmbeddings: An instance of the OpenSearchEmbedding class.
         """
         return cls(opensearch_connection, model_id)
 
     def _embedding_func(self, texts: List[str]) -> List[List[float]]:
         """
-        Internal method that sends a request to OpenSearch's text embedding endpoint
-        and retrieves embeddings for the provided texts.
+        Internal method that sends a request to OpenSearch's text
+        embedding endpoint and retrieves embeddings for the provided texts.
 
         Args:
             texts (List[str]): A list of strings to be embedded.
 
         Returns:
-            List[List[float]]: A list of embeddings, where each embedding is a list of floats.
+            List[List[float]]: A list of embeddings,
+            where each embedding is a list of floats.
         """
         endpoint = f"/_plugins/_ml/_predict/text_embedding/{self.model_id}"
         body = {
             "text_docs": texts,
             "return_number": True,
-            "target_response": ["sentence_embedding"]
+            "target_response": ["sentence_embedding"],
         }
 
         response = self.client.transport.perform_request(
@@ -59,8 +61,9 @@ class OpenSearchEmbedding(Embeddings):
             url=endpoint,
             body=json.dumps(body),
         )
-        # Extract embeddings from the response
-        embeddings = [item['output'][0]['data'] for item in response['inference_results']]
+        embeddings = [
+            item["output"][0]["data"] for item in response["inference_results"]
+        ]
         return embeddings
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
