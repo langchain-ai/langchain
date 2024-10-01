@@ -189,7 +189,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         +----------------------------------+--------------------------------------------------------------------+-------------------+
 
         Follow the guide for more information on how to implement a custom Chat Model:
-        [Guide](https://python.langchain.com/v0.2/docs/how_to/custom_chat_model/).
+        [Guide](https://python.langchain.com/docs/how_to/custom_chat_model/).
 
     """  # noqa: E501
 
@@ -208,8 +208,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     disable_streaming: Union[bool, Literal["tool_calling"]] = False
     """Whether to disable streaming for this model.
-    
-    If streaming is bypassed, then ``stream()/astream()`` will defer to 
+
+    If streaming is bypassed, then ``stream()/astream()`` will defer to
     ``invoke()/ainvoke()``.
 
     - If True, will always bypass streaming case.
@@ -357,7 +357,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         stop: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> Iterator[BaseMessageChunk]:
-        if not self._should_stream(async_api=False, **{**kwargs, **{"stream": True}}):
+        if not self._should_stream(async_api=False, **{**kwargs, "stream": True}):
             # model doesn't implement streaming, so use default implementation
             yield cast(
                 BaseMessageChunk, self.invoke(input, config=config, stop=stop, **kwargs)
@@ -427,7 +427,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         stop: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> AsyncIterator[BaseMessageChunk]:
-        if not self._should_stream(async_api=True, **{**kwargs, **{"stream": True}}):
+        if not self._should_stream(async_api=True, **{**kwargs, "stream": True}):
             # No async or sync stream is implemented, so fall back to ainvoke
             yield cast(
                 BaseMessageChunk,
@@ -463,7 +463,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         )
 
         if self.rate_limiter:
-            self.rate_limiter.acquire(blocking=True)
+            await self.rate_limiter.aacquire(blocking=True)
 
         generation: Optional[ChatGenerationChunk] = None
         try:
@@ -550,8 +550,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     def _get_llm_string(self, stop: Optional[list[str]] = None, **kwargs: Any) -> str:
         if self.is_lc_serializable():
-            params = {**kwargs, **{"stop": stop}}
-            param_string = str(sorted([(k, v) for k, v in params.items()]))
+            params = {**kwargs, "stop": stop}
+            param_string = str(sorted(params.items()))
             # This code is not super efficient as it goes back and forth between
             # json and dict.
             serialized_repr = self._serialized
@@ -561,7 +561,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         else:
             params = self._get_invocation_params(stop=stop, **kwargs)
             params = {**params, **kwargs}
-            return str(sorted([(k, v) for k, v in params.items()]))
+            return str(sorted(params.items()))
 
     def generate(
         self,
@@ -802,10 +802,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        if isinstance(self.cache, BaseCache):
-            llm_cache = self.cache
-        else:
-            llm_cache = get_llm_cache()
+        llm_cache = self.cache if isinstance(self.cache, BaseCache) else get_llm_cache()
         # We should check the cache unless it's explicitly set to False
         # A None cache means we should use the default global cache
         # if it's configured.
@@ -879,10 +876,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        if isinstance(self.cache, BaseCache):
-            llm_cache = self.cache
-        else:
-            llm_cache = get_llm_cache()
+        llm_cache = self.cache if isinstance(self.cache, BaseCache) else get_llm_cache()
         # We should check the cache unless it's explicitly set to False
         # A None cache means we should use the default global cache
         # if it's configured.
@@ -905,7 +899,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         # we usually don't want to rate limit cache lookups, but
         # we do want to rate limit API requests.
         if self.rate_limiter:
-            self.rate_limiter.acquire(blocking=True)
+            await self.rate_limiter.aacquire(blocking=True)
 
         # If stream is not explicitly set, check if implicitly requested by
         # astream_events() or astream_log(). Bail out if _astream not implemented
@@ -1054,10 +1048,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     def predict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
     ) -> str:
-        if stop is None:
-            _stop = None
-        else:
-            _stop = list(stop)
+        _stop = None if stop is None else list(stop)
         result = self([HumanMessage(content=text)], stop=_stop, **kwargs)
         if isinstance(result.content, str):
             return result.content
@@ -1072,20 +1063,14 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         stop: Optional[Sequence[str]] = None,
         **kwargs: Any,
     ) -> BaseMessage:
-        if stop is None:
-            _stop = None
-        else:
-            _stop = list(stop)
+        _stop = None if stop is None else list(stop)
         return self(messages, stop=_stop, **kwargs)
 
     @deprecated("0.1.7", alternative="ainvoke", removal="1.0")
     async def apredict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
     ) -> str:
-        if stop is None:
-            _stop = None
-        else:
-            _stop = list(stop)
+        _stop = None if stop is None else list(stop)
         result = await self._call_async(
             [HumanMessage(content=text)], stop=_stop, **kwargs
         )
@@ -1102,10 +1087,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         stop: Optional[Sequence[str]] = None,
         **kwargs: Any,
     ) -> BaseMessage:
-        if stop is None:
-            _stop = None
-        else:
-            _stop = list(stop)
+        _stop = None if stop is None else list(stop)
         return await self._call_async(messages, stop=_stop, **kwargs)
 
     @property
@@ -1121,7 +1103,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     def bind_tools(
         self,
-        tools: Sequence[Union[typing.Dict[str, Any], type, Callable, BaseTool]],  # noqa: UP006
+        tools: Sequence[
+            Union[typing.Dict[str, Any], type, Callable, BaseTool]  # noqa: UP006
+        ],
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         raise NotImplementedError()
@@ -1333,9 +1317,12 @@ def _cleanup_llm_representation(serialized: Any, depth: int) -> None:
     if not isinstance(serialized, dict):
         return
 
-    if "type" in serialized and serialized["type"] == "not_implemented":
-        if "repr" in serialized:
-            del serialized["repr"]
+    if (
+        "type" in serialized
+        and serialized["type"] == "not_implemented"
+        and "repr" in serialized
+    ):
+        del serialized["repr"]
 
     if "graph" in serialized:
         del serialized["graph"]
