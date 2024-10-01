@@ -444,6 +444,18 @@ class Neo4jVector(VectorStore):
         embedding: Any embedding function implementing
             `langchain.embeddings.base.Embeddings` interface.
         distance_strategy: The distance strategy to use. (default: COSINE)
+        search_type: The type of search to be performed, either
+            'vector' or 'hybrid'
+        node_label: The label used for nodes in the Neo4j database.
+            (default: "Chunk")
+        embedding_node_property: The property name in Neo4j to store embeddings.
+            (default: "embedding")
+        text_node_property: The property name in Neo4j to store the text.
+            (default: "text")
+        retrieval_query: The Cypher query to be used for customizing retrieval.
+            If empty, a default query will be used.
+        index_type: The type of index to be used, either
+            'NODE' or 'RELATIONSHIP'
         pre_delete_collection: If True, will delete existing data if it exists.
             (default: False). Useful for testing.
 
@@ -581,7 +593,7 @@ class Neo4jVector(VectorStore):
 
             self.query(
                 f"MATCH (n:`{self.node_label}`) "
-                "CALL { WITH n DETACH DELETE n } "
+                "CALL (n) { DETACH DELETE n } "
                 "IN TRANSACTIONS OF 10000 ROWS;"
             )
             # Delete index
@@ -753,18 +765,14 @@ class Neo4jVector(VectorStore):
         to create a new vector index in Neo4j.
         """
         index_query = (
-            "CALL db.index.vector.createNodeIndex("
-            "$index_name,"
-            "$node_label,"
-            "$embedding_node_property,"
-            "toInteger($embedding_dimension),"
-            "$similarity_metric )"
+            f"CREATE VECTOR INDEX {self.index_name} IF NOT EXISTS "
+            f"FOR (m:`{self.node_label}`) ON m.`{self.embedding_node_property}` "
+            "OPTIONS { indexConfig: { "
+            "`vector.dimensions`: toInteger($embedding_dimension), "
+            "`vector.similarity_function`: $similarity_metric }}"
         )
 
         parameters = {
-            "index_name": self.index_name,
-            "node_label": self.node_label,
-            "embedding_node_property": self.embedding_node_property,
             "embedding_dimension": self.embedding_dimension,
             "similarity_metric": DISTANCE_MAPPING[self._distance_strategy],
         }
