@@ -1,3 +1,4 @@
+import logging
 from hashlib import md5
 from typing import Any, Dict, List, Optional
 
@@ -5,6 +6,9 @@ from langchain_core.utils import get_from_dict_or_env
 
 from langchain_community.graphs.graph_document import GraphDocument
 from langchain_community.graphs.graph_store import GraphStore
+
+logger = logging.getLogger(__name__)
+
 
 BASE_ENTITY_LABEL = "__Entity__"
 
@@ -154,8 +158,7 @@ def get_reformated_schema(nodes, rels):
                     {
                         "key": prop["key"],
                         "types": [
-                            {"type": type_item.lower()}
-                            for type_item in prop["types"]
+                            {"type": type_item.lower()} for type_item in prop["types"]
                         ],
                     }
                     for prop in node["properties"]
@@ -343,7 +346,7 @@ class MemgraphGraph(GraphStore):
 
     def close(self):
         if self._driver:
-            print("Closing the driver connection.")
+            logger.info("Closing the driver connection.")
             self._driver.close()
             self._driver = None
 
@@ -391,8 +394,7 @@ class MemgraphGraph(GraphStore):
                     e.code == "Neo.ClientError.Statement.SemanticError"
                     and (
                         "in an open transaction is not possible" in e.message
-                        or "tried to execute in an explicit transaction"
-                        in e.message
+                        or "tried to execute in an explicit transaction" in e.message
                     )
                 )
                 or (
@@ -426,9 +428,7 @@ class MemgraphGraph(GraphStore):
 
         # first try with SHOW SCHEMA INFO
         try:
-            schema_result = ast.literal_eval(
-                self.query(SCHEMA_QUERY)[0].get("schema")
-            )
+            schema_result = ast.literal_eval(self.query(SCHEMA_QUERY)[0].get("schema"))
             assert schema_result is not None
             structured_schema = get_schema_subset(schema_result)
             self.structured_schema = structured_schema
@@ -439,7 +439,7 @@ class MemgraphGraph(GraphStore):
                 e.code == "Memgraph.ClientError.MemgraphError.MemgraphError"
                 and "SchemaInfo disabled" in e.message
             ):
-                print(
+                logger.info(
                     "Schema generation with SHOW SCHEMA INFO query failed. "
                     "Set --schema-info-enabled=true to use SHOW SCHEMA INFO query. "
                     "Falling back to alternative queries."
@@ -493,18 +493,14 @@ class MemgraphGraph(GraphStore):
                         document.source.page_content.encode("utf-8")
                     ).hexdigest()
 
-                self.query(
-                    INCLUDE_DOCS_QUERY, {"document": document.source.__dict__}
-                )
+                self.query(INCLUDE_DOCS_QUERY, {"document": document.source.__dict__})
 
             self.query(
                 NODE_IMPORT_QUERY,
                 {"data": _transform_nodes(document.nodes, baseEntityLabel)},
             )
 
-            rel_data = _transform_relationships(
-                document.relationships, baseEntityLabel
-            )
+            rel_data = _transform_relationships(document.relationships, baseEntityLabel)
             self.query(
                 REL_NODES_IMPORT_QUERY,
                 {"data": rel_data},
