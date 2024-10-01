@@ -17,6 +17,7 @@ from langchain_core.callbacks import (
 from langchain_core.language_models.llms import LLM
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 from pydantic import BaseModel, Field, SecretStr, model_validator
+from typing_extensions import Self
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
@@ -89,12 +90,17 @@ class MinimaxCommon(BaseModel):
             "MINIMAX_API_HOST",
             default="https://api.minimax.chat",
         )
-        values["_client"] = _MinimaxEndpointClient(  # type: ignore[call-arg]
-            host=values["minimax_api_host"],
-            api_key=values["minimax_api_key"],
-            group_id=values["minimax_group_id"],
-        )
         return values
+
+    @model_validator(mode="after")
+    def post_init(self) -> Self:
+        """Post initialization."""
+        self._client = _MinimaxEndpointClient(
+            host=self.minimax_api_host,
+            api_key=self.minimax_api_key,
+            group_id=self.minimax_group_id,
+        )
+        return self
 
     @property
     def _default_params(self) -> Dict[str, Any]:
