@@ -57,9 +57,9 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
 
     strict: bool = False
     """Whether to allow non-JSON-compliant strings.
-    
+
     See: https://docs.python.org/3/library/json.html#encoders-and-decoders
-    
+
     Useful when the parsed output may include unicode characters or new lines.
     """
 
@@ -226,7 +226,7 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
 
     pydantic_schema: Union[type[BaseModel], dict[str, type[BaseModel]]]
     """The pydantic schema to parse the output with.
-    
+
     If multiple schemas are provided, then the function name will be used to
     determine which schema to use.
     """

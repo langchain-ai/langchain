@@ -65,7 +65,7 @@ class AIMessage(BaseMessage):
 
     example: bool = False
     """Use to denote that a message is part of an example conversation.
-    
+
     At the moment, this is ignored by most models. Usage is discouraged.
     """
 
@@ -215,7 +215,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
     type: Literal["AIMessageChunk"] = "AIMessageChunk"  # type: ignore
-    """The type of the message (used for deserialization). 
+    """The type of the message (used for deserialization).
     Defaults to "AIMessageChunk"."""
 
     tool_call_chunks: list[ToolCallChunk] = []

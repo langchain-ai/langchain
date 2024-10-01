@@ -65,7 +65,7 @@ class RunnableConfig(TypedDict, total=False):
 
     max_concurrency: Optional[int]
     """
-    Maximum number of parallel calls to make. If not provided, defaults to 
+    Maximum number of parallel calls to make. If not provided, defaults to
     ThreadPoolExecutor's default.
     """
 
@@ -78,7 +78,7 @@ class RunnableConfig(TypedDict, total=False):
     """
     Runtime values for attributes previously made configurable on this Runnable,
     or sub-Runnables, through .configurable_fields() or .configurable_alternatives().
-    Check .output_schema() for a description of the attributes that have been made 
+    Check .output_schema() for a description of the attributes that have been made
     configurable.
     """
 
