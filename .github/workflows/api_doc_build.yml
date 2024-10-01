@@ -68,9 +68,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: langchain-ai/langchain-milvus
+          path: langchain-milvus
       - uses: actions/checkout@v4
         with:
           repository: langchain-ai/langchain-unstructured
+          path: langchain-unstructured
 
 
       - name: Set Git config
@@ -79,7 +81,7 @@ jobs:
           git config --local user.email "actions@github.com"
           git config --local user.name "Github Actions"
           
-      - name: Move google libs
+      - name: Move libs
         run: |
           rm -rf \
             langchain/libs/partners/google-genai \
