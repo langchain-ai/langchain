@@ -174,7 +174,7 @@ class BasePromptTemplate(
         return await self.aformat_prompt(**_inner_input)
 
     def invoke(
-        self, input: dict, config: Optional[RunnableConfig] = None
+        self, input: dict, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> PromptValue:
         """Invoke the prompt.
 

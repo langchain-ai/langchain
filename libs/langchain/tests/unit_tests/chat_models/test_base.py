@@ -126,8 +126,6 @@ def test_configurable() -> None:
             "tiktoken_model_name": None,
             "default_headers": None,
             "default_query": None,
-            "http_client": None,
-            "http_async_client": None,
             "stop": None,
             "extra_body": None,
             "include_response_headers": False,
