@@ -455,6 +455,10 @@
     "langchain_core.output_parsers.CommaSeparatedListOutputParser"
   ],
   [
+    "langchain.output_parsers.CommaSeparatedNumericListOutputParser",
+    "langchain_core.output_parsers.CommaSeparatedNumericListOutputParser"
+  ],
+  [
     "langchain.output_parsers.ListOutputParser",
     "langchain_core.output_parsers.ListOutputParser"
   ],
@@ -509,6 +513,10 @@
   [
     "langchain.output_parsers.list.CommaSeparatedListOutputParser",
     "langchain_core.output_parsers.CommaSeparatedListOutputParser"
+  ],
+  [
+    "langchain.output_parsers.list.CommaSeparatedNumericListOutputParser",
+    "langchain_core.output_parsers.CommaSeparatedNumericListOutputParser"
   ],
   [
     "langchain.output_parsers.list.NumberedListOutputParser",

@@ -246,6 +246,12 @@ SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "list",
         "CommaSeparatedListOutputParser",
     ),
+    ("langchain", "output_parsers", "list", "CommaSeparatedNumericListOutputParser"): (
+        "langchain_core",
+        "output_parsers",
+        "list",
+        "CommaSeparatedNumericListOutputParser",
+    ),
     ("langchain", "schema", "runnable", "RunnableParallel"): (
         "langchain_core",
         "runnables",
@@ -757,6 +763,12 @@ OLD_CORE_NAMESPACES_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "output_parsers",
         "list",
         "CommaSeparatedListOutputParser",
+    ),
+    ("langchain_core", "output_parsers", "list", "CommaSeparatedNumericListOutputParser"): (
+        "langchain_core",
+        "output_parsers",
+        "list",
+        "CommaSeparatedNumericListOutputParser",
     ),
     ("langchain_core", "runnables", "base", "RunnableParallel"): (
         "langchain_core",
