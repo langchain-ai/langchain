@@ -96,7 +96,7 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
         return ["langchain", "schema", "runnable"]
 
     def invoke(
-        self, input: RouterInput, config: Optional[RunnableConfig] = None
+        self, input: RouterInput, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
         key = input["key"]
         actual_input = input["input"]
