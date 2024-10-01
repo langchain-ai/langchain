@@ -189,10 +189,17 @@ def _convert_agent_observation_to_messages(
     Returns:
         AIMessage that corresponds to the original tool invocation.
     """
+
     if isinstance(agent_action, AgentActionMessageLog):
         return [_create_function_message(agent_action, observation)]
     else:
-        return [HumanMessage(content=observation)]
+        content = observation
+        if not isinstance(observation, str):
+            try:
+                content = json.dumps(observation, ensure_ascii=False)
+            except Exception:
+                content = str(observation)
+        return [HumanMessage(content=content)]
 
 
 def _create_function_message(
