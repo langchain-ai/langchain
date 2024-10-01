@@ -130,7 +130,7 @@ def create_tagging_chain_pydantic(
 
      .. code-block:: python
 
-            from langchain_core.pydantic_v1 import BaseModel, Field
+            from pydantic import BaseModel, Field
             from langchain_anthropic import ChatAnthropic
 
             class Joke(BaseModel):
@@ -156,7 +156,10 @@ def create_tagging_chain_pydantic(
     Returns:
         Chain (LLMChain) that can be used to extract information from a passage.
     """
-    openai_schema = pydantic_schema.schema()
+    if hasattr(pydantic_schema, "model_json_schema"):
+        openai_schema = pydantic_schema.model_json_schema()
+    else:
+        openai_schema = pydantic_schema.schema()
     function = _get_tagging_function(openai_schema)
     prompt = prompt or ChatPromptTemplate.from_template(_TAGGING_TEMPLATE)
     output_parser = PydanticOutputFunctionsParser(pydantic_schema=pydantic_schema)

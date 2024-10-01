@@ -1,5 +1,6 @@
 """Test Milvus functionality."""
 
+import tempfile
 from typing import Any, List, Optional
 
 import pytest
@@ -13,6 +14,7 @@ from tests.integration_tests.utils import (
     fake_texts,
 )
 
+
 #
 # To run this test properly, please start a Milvus server with the following command:
 #
@@ -24,12 +26,17 @@ from tests.integration_tests.utils import (
 # Here is the reference:
 # https://milvus.io/docs/install_standalone-docker.md
 #
+@pytest.fixture
+def temp_milvus_db() -> Any:
+    with tempfile.NamedTemporaryFile(suffix=".db") as temp_file:
+        yield temp_file.name
 
 
 def _milvus_from_texts(
     metadatas: Optional[List[dict]] = None,
     ids: Optional[List[str]] = None,
     drop: bool = True,
+    db_path: str = "./milvus_demo.db",
     **kwargs: Any,
 ) -> Milvus:
     return Milvus.from_texts(
@@ -38,7 +45,7 @@ def _milvus_from_texts(
         metadatas=metadatas,
         ids=ids,
         # connection_args={"uri": "http://127.0.0.1:19530"},
-        connection_args={"uri": "./milvus_demo.db"},
+        connection_args={"uri": db_path},
         drop_old=drop,
         consistency_level="Strong",
         **kwargs,
@@ -49,35 +56,37 @@ def _get_pks(expr: str, docsearch: Milvus) -> List[Any]:
     return docsearch.get_pks(expr)  # type: ignore[return-value]
 
 
-def test_milvus() -> None:
+def test_milvus(temp_milvus_db: Any) -> None:
     """Test end to end construction and search."""
-    docsearch = _milvus_from_texts()
+    docsearch = _milvus_from_texts(db_path=temp_milvus_db)
     output = docsearch.similarity_search("foo", k=1)
     assert_docs_equal_without_pk(output, [Document(page_content="foo")])
 
 
-def test_milvus_vector_search() -> None:
+def test_milvus_vector_search(temp_milvus_db: Any) -> None:
     """Test end to end construction and search by vector."""
-    docsearch = _milvus_from_texts()
+    docsearch = _milvus_from_texts(db_path=temp_milvus_db)
     output = docsearch.similarity_search_by_vector(
         FakeEmbeddings().embed_query("foo"), k=1
     )
     assert_docs_equal_without_pk(output, [Document(page_content="foo")])
 
 
-def test_milvus_with_metadata() -> None:
+def test_milvus_with_metadata(temp_milvus_db: Any) -> None:
     """Test with metadata"""
-    docsearch = _milvus_from_texts(metadatas=[{"label": "test"}] * len(fake_texts))
+    docsearch = _milvus_from_texts(
+        metadatas=[{"label": "test"}] * len(fake_texts), db_path=temp_milvus_db
+    )
     output = docsearch.similarity_search("foo", k=1)
     assert_docs_equal_without_pk(
         output, [Document(page_content="foo", metadata={"label": "test"})]
     )
 
 
-def test_milvus_with_id() -> None:
+def test_milvus_with_id(temp_milvus_db: Any) -> None:
     """Test with ids"""
     ids = ["id_" + str(i) for i in range(len(fake_texts))]
-    docsearch = _milvus_from_texts(ids=ids)
+    docsearch = _milvus_from_texts(ids=ids, db_path=temp_milvus_db)
     output = docsearch.similarity_search("foo", k=1)
     assert_docs_equal_without_pk(output, [Document(page_content="foo")])
 
@@ -86,16 +95,16 @@ def test_milvus_with_id() -> None:
 
     try:
         ids = ["dup_id" for _ in fake_texts]
-        _milvus_from_texts(ids=ids)
+        _milvus_from_texts(ids=ids, db_path=temp_milvus_db)
     except Exception as e:
         assert isinstance(e, AssertionError)
 
 
-def test_milvus_with_score() -> None:
+def test_milvus_with_score(temp_milvus_db: Any) -> None:
     """Test end to end construction and search with scores and IDs."""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": i} for i in range(len(texts))]
-    docsearch = _milvus_from_texts(metadatas=metadatas)
+    docsearch = _milvus_from_texts(metadatas=metadatas, db_path=temp_milvus_db)
     output = docsearch.similarity_search_with_score("foo", k=3)
     docs = [o[0] for o in output]
     scores = [o[1] for o in output]
@@ -110,11 +119,11 @@ def test_milvus_with_score() -> None:
     assert scores[0] < scores[1] < scores[2]
 
 
-def test_milvus_max_marginal_relevance_search() -> None:
+def test_milvus_max_marginal_relevance_search(temp_milvus_db: Any) -> None:
     """Test end to end construction and MRR search."""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": i} for i in range(len(texts))]
-    docsearch = _milvus_from_texts(metadatas=metadatas)
+    docsearch = _milvus_from_texts(metadatas=metadatas, db_path=temp_milvus_db)
     output = docsearch.max_marginal_relevance_search("foo", k=2, fetch_k=3)
     assert_docs_equal_without_pk(
         output,
@@ -125,11 +134,15 @@ def test_milvus_max_marginal_relevance_search() -> None:
     )
 
 
-def test_milvus_max_marginal_relevance_search_with_dynamic_field() -> None:
+def test_milvus_max_marginal_relevance_search_with_dynamic_field(
+    temp_milvus_db: Any,
+) -> None:
     """Test end to end construction and MRR search with enabling dynamic field."""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": i} for i in range(len(texts))]
-    docsearch = _milvus_from_texts(metadatas=metadatas, enable_dynamic_field=True)
+    docsearch = _milvus_from_texts(
+        metadatas=metadatas, enable_dynamic_field=True, db_path=temp_milvus_db
+    )
     output = docsearch.max_marginal_relevance_search("foo", k=2, fetch_k=3)
     assert_docs_equal_without_pk(
         output,
@@ -140,11 +153,11 @@ def test_milvus_max_marginal_relevance_search_with_dynamic_field() -> None:
     )
 
 
-def test_milvus_add_extra() -> None:
+def test_milvus_add_extra(temp_milvus_db: Any) -> None:
     """Test end to end construction and MRR search."""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": i} for i in range(len(texts))]
-    docsearch = _milvus_from_texts(metadatas=metadatas)
+    docsearch = _milvus_from_texts(metadatas=metadatas, db_path=temp_milvus_db)
 
     docsearch.add_texts(texts, metadatas)
 
@@ -152,45 +165,47 @@ def test_milvus_add_extra() -> None:
     assert len(output) == 6
 
 
-def test_milvus_no_drop() -> None:
+def test_milvus_no_drop(temp_milvus_db: Any) -> None:
     """Test construction without dropping old data."""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": i} for i in range(len(texts))]
-    docsearch = _milvus_from_texts(metadatas=metadatas)
+    docsearch = _milvus_from_texts(metadatas=metadatas, db_path=temp_milvus_db)
     del docsearch
 
-    docsearch = _milvus_from_texts(metadatas=metadatas, drop=False)
+    docsearch = _milvus_from_texts(
+        metadatas=metadatas, drop=False, db_path=temp_milvus_db
+    )
 
     output = docsearch.similarity_search("foo", k=10)
     assert len(output) == 6
 
 
-def test_milvus_get_pks() -> None:
+def test_milvus_get_pks(temp_milvus_db: Any) -> None:
     """Test end to end construction and get pks with expr"""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"id": i} for i in range(len(texts))]
-    docsearch = _milvus_from_texts(metadatas=metadatas)
+    docsearch = _milvus_from_texts(metadatas=metadatas, db_path=temp_milvus_db)
     expr = "id in [1,2]"
     output = _get_pks(expr, docsearch)
     assert len(output) == 2
 
 
-def test_milvus_delete_entities() -> None:
+def test_milvus_delete_entities(temp_milvus_db: Any) -> None:
     """Test end to end construction and delete entities"""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"id": i} for i in range(len(texts))]
-    docsearch = _milvus_from_texts(metadatas=metadatas)
+    docsearch = _milvus_from_texts(metadatas=metadatas, db_path=temp_milvus_db)
     expr = "id in [1,2]"
     pks = _get_pks(expr, docsearch)
     result = docsearch.delete(pks)
     assert result.delete_count == 2  # type: ignore[attr-defined]
 
 
-def test_milvus_upsert_entities() -> None:
+def test_milvus_upsert_entities(temp_milvus_db: Any) -> None:
     """Test end to end construction and upsert entities"""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"id": i} for i in range(len(texts))]
-    docsearch = _milvus_from_texts(metadatas=metadatas)
+    docsearch = _milvus_from_texts(metadatas=metadatas, db_path=temp_milvus_db)
     expr = "id in [1,2]"
     pks = _get_pks(expr, docsearch)
     documents = [
@@ -201,11 +216,13 @@ def test_milvus_upsert_entities() -> None:
     assert len(ids) == 2  # type: ignore[arg-type]
 
 
-def test_milvus_enable_dynamic_field() -> None:
+def test_milvus_enable_dynamic_field(temp_milvus_db: Any) -> None:
     """Test end to end construction and enable dynamic field"""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"id": i} for i in range(len(texts))]
-    docsearch = _milvus_from_texts(metadatas=metadatas, enable_dynamic_field=True)
+    docsearch = _milvus_from_texts(
+        metadatas=metadatas, enable_dynamic_field=True, db_path=temp_milvus_db
+    )
     output = docsearch.similarity_search("foo", k=10)
     assert len(output) == 3
 
@@ -223,11 +240,13 @@ def test_milvus_enable_dynamic_field() -> None:
     }
 
 
-def test_milvus_disable_dynamic_field() -> None:
+def test_milvus_disable_dynamic_field(temp_milvus_db: Any) -> None:
     """Test end to end construction and disable dynamic field"""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"id": i} for i in range(len(texts))]
-    docsearch = _milvus_from_texts(metadatas=metadatas, enable_dynamic_field=False)
+    docsearch = _milvus_from_texts(
+        metadatas=metadatas, enable_dynamic_field=False, db_path=temp_milvus_db
+    )
     output = docsearch.similarity_search("foo", k=10)
     assert len(output) == 3
     # ["pk", "text", "vector", "id"]
@@ -255,11 +274,13 @@ def test_milvus_disable_dynamic_field() -> None:
         docsearch.add_texts(texts, new_metadatas)
 
 
-def test_milvus_metadata_field() -> None:
+def test_milvus_metadata_field(temp_milvus_db: Any) -> None:
     """Test end to end construction and use metadata field"""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"id": i} for i in range(len(texts))]
-    docsearch = _milvus_from_texts(metadatas=metadatas, metadata_field="metadata")
+    docsearch = _milvus_from_texts(
+        metadatas=metadatas, metadata_field="metadata", db_path=temp_milvus_db
+    )
     output = docsearch.similarity_search("foo", k=10)
     assert len(output) == 3
 
@@ -277,7 +298,7 @@ def test_milvus_metadata_field() -> None:
     }
 
 
-def test_milvus_enable_dynamic_field_with_partition_key() -> None:
+def test_milvus_enable_dynamic_field_with_partition_key(temp_milvus_db: Any) -> None:
     """
     Test end to end construction and enable dynamic field
     with partition_key_field
@@ -286,7 +307,10 @@ def test_milvus_enable_dynamic_field_with_partition_key() -> None:
     metadatas = [{"id": i, "namespace": f"name_{i}"} for i in range(len(texts))]
 
     docsearch = _milvus_from_texts(
-        metadatas=metadatas, enable_dynamic_field=True, partition_key_field="namespace"
+        metadatas=metadatas,
+        enable_dynamic_field=True,
+        partition_key_field="namespace",
+        db_path=temp_milvus_db,
     )
 
     # filter on a single namespace
@@ -318,19 +342,27 @@ def test_milvus_sparse_embeddings() -> None:
         "in a surreal world of nightmares and illusions, where the boundaries between "
         "reality and fantasy blur.",
     ]
-    sparse_embedding_func = BM25SparseEmbedding(corpus=texts)
-    docsearch = Milvus.from_texts(
-        embedding=sparse_embedding_func,
-        texts=texts,
-        connection_args={"uri": "./milvus_demo.db"},
-        drop_old=True,
-    )
+    try:
+        sparse_embedding_func = BM25SparseEmbedding(corpus=texts)
+    except LookupError:
+        import nltk  # type: ignore[import]
 
-    output = docsearch.similarity_search("Pilgrim", k=1)
+        nltk.download("punkt_tab")
+        sparse_embedding_func = BM25SparseEmbedding(corpus=texts)
+
+    with tempfile.NamedTemporaryFile(suffix=".db") as temp_db:
+        docsearch = Milvus.from_texts(
+            embedding=sparse_embedding_func,
+            texts=texts,
+            connection_args={"uri": temp_db.name},
+            drop_old=True,
+        )
+
+        output = docsearch.similarity_search("Pilgrim", k=1)
     assert "Pilgrim" in output[0].page_content
 
 
-def test_milvus_array_field() -> None:
+def test_milvus_array_field(temp_milvus_db: Any) -> None:
     """Manually specify metadata schema, including an array_field.
     For more information about array data type and filtering, please refer to
     https://milvus.io/docs/array_data_type.md
@@ -353,6 +385,7 @@ def test_milvus_array_field() -> None:
             #     "dtype": DataType.INT64,
             # }
         },
+        db_path=temp_milvus_db,
     )
     output = docsearch.similarity_search("foo", k=10, expr="array_field[0] < 2")
     assert len(output) == 2
@@ -366,6 +399,7 @@ def test_milvus_array_field() -> None:
     docsearch = _milvus_from_texts(
         enable_dynamic_field=True,
         metadatas=metadatas,
+        db_path=temp_milvus_db,
     )
     output = docsearch.similarity_search("foo", k=10, expr="array_field[0] < 2")
     assert len(output) == 2

@@ -4,7 +4,7 @@ text prompts.
 LangChain has two main classes to work with language models: **Chat Models**
 and "old-fashioned" **LLMs**.
 
-## Chat Models
+**Chat Models**
 
 Language models that use a sequence of messages as inputs and return chat messages
 as outputs (as opposed to using plain text). These are traditionally newer models (
@@ -21,7 +21,7 @@ the following guide for more information on how to implement a custom Chat Model
 
 https://python.langchain.com/v0.2/docs/how_to/custom_chat_model/
 
-## LLMs
+**LLMs**
 
 Language models that takes a string as input and returns a string.
 These are traditionally older models (newer models generally are Chat Models, see below).
@@ -35,6 +35,8 @@ To implement a custom LLM, inherit from `BaseLLM` or `LLM`.
 Please see the following guide for more information on how to implement a custom LLM:
 
 https://python.langchain.com/v0.2/docs/how_to/custom_llm/
+
+
 """  # noqa: E501
 
 from langchain_core.language_models.base import (

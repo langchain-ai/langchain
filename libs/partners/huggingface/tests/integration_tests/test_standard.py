@@ -70,6 +70,10 @@ class TestHuggingFaceEndpoint(ChatModelIntegrationTests):
         super().test_structured_output_pydantic_2_v1(model)
 
     @pytest.mark.xfail(reason=("Not implemented"))
+    def test_structured_output_optional_param(self, model: BaseChatModel) -> None:
+        super().test_structured_output_optional_param(model)
+
+    @pytest.mark.xfail(reason=("Not implemented"))
     def test_tool_message_histories_list_content(self, model: BaseChatModel) -> None:
         super().test_tool_message_histories_list_content(model)
 

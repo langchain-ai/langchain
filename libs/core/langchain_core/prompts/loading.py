@@ -3,7 +3,7 @@
 import json
 import logging
 from pathlib import Path
-from typing import Callable, Dict, Optional, Union
+from typing import Callable, Optional, Union
 
 import yaml
 
@@ -164,10 +164,7 @@ def _load_prompt_from_file(
 ) -> BasePromptTemplate:
     """Load prompt from file."""
     # Convert file to a Path object.
-    if isinstance(file, str):
-        file_path = Path(file)
-    else:
-        file_path = file
+    file_path = Path(file) if isinstance(file, str) else file
     # Load from either json or yaml.
     if file_path.suffix == ".json":
         with open(file_path, encoding=encoding) as f:
@@ -181,7 +178,7 @@ def _load_prompt_from_file(
     return load_prompt_from_config(config)
 
 
-def _load_chat_prompt(config: Dict) -> ChatPromptTemplate:
+def _load_chat_prompt(config: dict) -> ChatPromptTemplate:
     """Load chat prompt from config"""
 
     messages = config.pop("messages")
@@ -194,7 +191,7 @@ def _load_chat_prompt(config: Dict) -> ChatPromptTemplate:
     return ChatPromptTemplate.from_template(template=template, **config)
 
 
-type_to_loader_dict: Dict[str, Callable[[dict], BasePromptTemplate]] = {
+type_to_loader_dict: dict[str, Callable[[dict], BasePromptTemplate]] = {
     "prompt": _load_prompt,
     "few_shot": _load_few_shot_prompt,
     "chat": _load_chat_prompt,

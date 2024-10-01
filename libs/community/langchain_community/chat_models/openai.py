@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import os
 import sys
+import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -44,13 +45,13 @@ from langchain_core.messages import (
     ToolMessageChunk,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.runnables import Runnable
 from langchain_core.utils import (
     get_from_dict_or_env,
     get_pydantic_field_names,
     pre_init,
 )
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from langchain_community.adapters.openai import (
     convert_dict_to_message,
@@ -144,6 +145,33 @@ def _convert_delta_to_message_chunk(
         return ChatMessageChunk(content=content, role=role)  # type: ignore[arg-type]
     else:
         return default_class(content=content)  # type: ignore[call-arg]
+
+
+def _update_token_usage(
+    overall_token_usage: Union[int, dict], new_usage: Union[int, dict]
+) -> Union[int, dict]:
+    # Token usage is either ints or dictionaries
+    # `reasoning_tokens` is nested inside `completion_tokens_details`
+    if isinstance(new_usage, int):
+        if not isinstance(overall_token_usage, int):
+            raise ValueError(
+                f"Got different types for token usage: "
+                f"{type(new_usage)} and {type(overall_token_usage)}"
+            )
+        return new_usage + overall_token_usage
+    elif isinstance(new_usage, dict):
+        if not isinstance(overall_token_usage, dict):
+            raise ValueError(
+                f"Got different types for token usage: "
+                f"{type(new_usage)} and {type(overall_token_usage)}"
+            )
+        return {
+            k: _update_token_usage(overall_token_usage.get(k, 0), v)
+            for k, v in new_usage.items()
+        }
+    else:
+        warnings.warn(f"Unexpected type for token usage: {type(new_usage)}")
+        return new_usage
 
 
 @deprecated(
@@ -244,11 +272,13 @@ class ChatOpenAI(BaseChatModel):
     http_client: Union[Any, None] = None
     """Optional httpx.Client."""
 
-    class Config:
-        allow_population_by_field_name = True
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
-    @root_validator(pre=True)
-    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})
@@ -374,7 +404,9 @@ class ChatOpenAI(BaseChatModel):
             if token_usage is not None:
                 for k, v in token_usage.items():
                     if k in overall_token_usage:
-                        overall_token_usage[k] += v
+                        overall_token_usage[k] = _update_token_usage(
+                            overall_token_usage[k], v
+                        )
                     else:
                         overall_token_usage[k] = v
             if system_fingerprint is None:

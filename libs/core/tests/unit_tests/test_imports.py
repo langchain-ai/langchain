@@ -3,7 +3,6 @@ import glob
 import importlib
 import subprocess
 from pathlib import Path
-from typing import Tuple
 
 
 def test_importable_all() -> None:
@@ -18,7 +17,7 @@ def test_importable_all() -> None:
             getattr(module, cls_)
 
 
-def try_to_import(module_name: str) -> Tuple[int, str]:
+def try_to_import(module_name: str) -> tuple[int, str]:
     """Try to import a module via subprocess."""
     module = importlib.import_module("langchain_core." + module_name)
     all_ = getattr(module, "__all__", [])

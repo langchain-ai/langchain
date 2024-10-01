@@ -21,7 +21,6 @@ from langchain_core.language_models import BaseLanguageModel, LangSmithParams
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
 from langchain_core.prompt_values import PromptValue
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import (
     get_pydantic_field_names,
 )
@@ -30,6 +29,8 @@ from langchain_core.utils.utils import (
     from_env,
     secret_from_env,
 )
+from pydantic import ConfigDict, Field, SecretStr, model_validator
+from typing_extensions import Self
 
 
 class _AnthropicCommon(BaseLanguageModel):
@@ -84,8 +85,9 @@ class _AnthropicCommon(BaseLanguageModel):
     count_tokens: Optional[Callable[[str], int]] = None
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
 
-    @root_validator(pre=True)
-    def build_extra(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: Dict) -> Any:
         extra = values.get("model_kwargs", {})
         all_required_field_names = get_pydantic_field_names(cls)
         values["model_kwargs"] = build_extra_kwargs(
@@ -93,25 +95,25 @@ class _AnthropicCommon(BaseLanguageModel):
         )
         return values
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="after")
+    def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
-        values["client"] = anthropic.Anthropic(
-            base_url=values["anthropic_api_url"],
-            api_key=values["anthropic_api_key"].get_secret_value(),
-            timeout=values["default_request_timeout"],
-            max_retries=values["max_retries"],
+        self.client = anthropic.Anthropic(
+            base_url=self.anthropic_api_url,
+            api_key=self.anthropic_api_key.get_secret_value(),
+            timeout=self.default_request_timeout,
+            max_retries=self.max_retries,
         )
-        values["async_client"] = anthropic.AsyncAnthropic(
-            base_url=values["anthropic_api_url"],
-            api_key=values["anthropic_api_key"].get_secret_value(),
-            timeout=values["default_request_timeout"],
-            max_retries=values["max_retries"],
+        self.async_client = anthropic.AsyncAnthropic(
+            base_url=self.anthropic_api_url,
+            api_key=self.anthropic_api_key.get_secret_value(),
+            timeout=self.default_request_timeout,
+            max_retries=self.max_retries,
         )
-        values["HUMAN_PROMPT"] = anthropic.HUMAN_PROMPT
-        values["AI_PROMPT"] = anthropic.AI_PROMPT
-        values["count_tokens"] = values["client"].count_tokens
-        return values
+        self.HUMAN_PROMPT = anthropic.HUMAN_PROMPT
+        self.AI_PROMPT = anthropic.AI_PROMPT
+        self.count_tokens = self.client.count_tokens
+        return self
 
     @property
     def _default_params(self) -> Mapping[str, Any]:
@@ -160,14 +162,14 @@ class AnthropicLLM(LLM, _AnthropicCommon):
             model = AnthropicLLM()
     """
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        populate_by_name=True,
+        arbitrary_types_allowed=True,
+    )
 
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
-
-    @root_validator(pre=True)
-    def raise_warning(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def raise_warning(cls, values: Dict) -> Any:
         """Raise warning that this class is deprecated."""
         warnings.warn(
             "This Anthropic LLM is deprecated. "

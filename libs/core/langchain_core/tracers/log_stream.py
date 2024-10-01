@@ -1,18 +1,15 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import copy
 import threading
 from collections import defaultdict
+from collections.abc import AsyncIterator, Iterator, Sequence
 from typing import (
     Any,
-    AsyncIterator,
-    Dict,
-    Iterator,
-    List,
     Literal,
     Optional,
-    Sequence,
     TypeVar,
     Union,
     overload,
@@ -42,16 +39,16 @@ class LogEntry(TypedDict):
     """Name of the object being run."""
     type: str
     """Type of the object being run, eg. prompt, chain, llm, etc."""
-    tags: List[str]
+    tags: list[str]
     """List of tags for the run."""
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
     """Key-value pairs of metadata for the run."""
     start_time: str
     """ISO-8601 timestamp of when the run started."""
 
-    streamed_output_str: List[str]
+    streamed_output_str: list[str]
     """List of LLM tokens streamed by this run, if applicable."""
-    streamed_output: List[Any]
+    streamed_output: list[Any]
     """List of output chunks streamed by this run, if available."""
     inputs: NotRequired[Optional[Any]]
     """Inputs to this run. Not available currently via astream_log."""
@@ -69,7 +66,7 @@ class RunState(TypedDict):
 
     id: str
     """ID of the run."""
-    streamed_output: List[Any]
+    streamed_output: list[Any]
     """List of output chunks streamed by Runnable.stream()"""
     final_output: Optional[Any]
     """Final output of the run, usually the result of aggregating (`+`) streamed_output.
@@ -83,7 +80,7 @@ class RunState(TypedDict):
     # Do we want tags/metadata on the root run? Client kinda knows it in most situations
     # tags: List[str]
 
-    logs: Dict[str, LogEntry]
+    logs: dict[str, LogEntry]
     """Map of run names to sub-runs. If filters were supplied, this list will
     contain only the runs that matched the filters."""
 
@@ -91,14 +88,14 @@ class RunState(TypedDict):
 class RunLogPatch:
     """Patch to the run log."""
 
-    ops: List[Dict[str, Any]]
+    ops: list[dict[str, Any]]
     """List of jsonpatch operations, which describe how to create the run state
     from an empty dict. This is the minimal representation of the log, designed to
     be serialized as JSON and sent over the wire to reconstruct the log on the other
     side. Reconstruction of the state can be done with any jsonpatch-compliant library,
     see https://jsonpatch.com for more information."""
 
-    def __init__(self, *ops: Dict[str, Any]) -> None:
+    def __init__(self, *ops: dict[str, Any]) -> None:
         self.ops = list(ops)
 
     def __add__(self, other: Union[RunLogPatch, Any]) -> RunLog:
@@ -127,7 +124,7 @@ class RunLog(RunLogPatch):
     state: RunState
     """Current state of the log, obtained from applying all ops in sequence."""
 
-    def __init__(self, *ops: Dict[str, Any], state: RunState) -> None:
+    def __init__(self, *ops: dict[str, Any], state: RunState) -> None:
         super().__init__(*ops)
         self.state = state
 
@@ -219,14 +216,14 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
         self.lock = threading.Lock()
         self.send_stream = memory_stream.get_send_stream()
         self.receive_stream = memory_stream.get_receive_stream()
-        self._key_map_by_run_id: Dict[UUID, str] = {}
-        self._counter_map_by_name: Dict[str, int] = defaultdict(int)
+        self._key_map_by_run_id: dict[UUID, str] = {}
+        self._counter_map_by_name: dict[str, int] = defaultdict(int)
         self.root_id: Optional[UUID] = None
 
     def __aiter__(self) -> AsyncIterator[RunLogPatch]:
         return self.receive_stream.__aiter__()
 
-    def send(self, *ops: Dict[str, Any]) -> bool:
+    def send(self, *ops: dict[str, Any]) -> bool:
         """Send a patch to the stream, return False if the stream is closed.
 
         Args:
@@ -257,18 +254,22 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
         """
         async for chunk in output:
             # root run is handled in .astream_log()
-            if run_id != self.root_id:
-                # if we can't find the run silently ignore
-                # eg. because this run wasn't included in the log
-                if key := self._key_map_by_run_id.get(run_id):
-                    if not self.send(
+            # if we can't find the run silently ignore
+            # eg. because this run wasn't included in the log
+            if (
+                run_id != self.root_id
+                and (key := self._key_map_by_run_id.get(run_id))
+                and (
+                    not self.send(
                         {
                             "op": "add",
                             "path": f"/logs/{key}/streamed_output/-",
                             "value": chunk,
                         }
-                    ):
-                        break
+                    )
+                )
+            ):
+                break
 
             yield chunk
 
@@ -284,18 +285,22 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
         """
         for chunk in output:
             # root run is handled in .astream_log()
-            if run_id != self.root_id:
-                # if we can't find the run silently ignore
-                # eg. because this run wasn't included in the log
-                if key := self._key_map_by_run_id.get(run_id):
-                    if not self.send(
+            # if we can't find the run silently ignore
+            # eg. because this run wasn't included in the log
+            if (
+                run_id != self.root_id
+                and (key := self._key_map_by_run_id.get(run_id))
+                and (
+                    not self.send(
                         {
                             "op": "add",
                             "path": f"/logs/{key}/streamed_output/-",
                             "value": chunk,
                         }
-                    ):
-                        break
+                    )
+                )
+            ):
+                break
 
             yield chunk
 
@@ -443,9 +448,8 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
 
             self.send(*ops)
         finally:
-            if run.id == self.root_id:
-                if self.auto_close:
-                    self.send_stream.close()
+            if run.id == self.root_id and self.auto_close:
+                self.send_stream.close()
 
     def _on_llm_new_token(
         self,
@@ -477,7 +481,7 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
 
 def _get_standardized_inputs(
     run: Run, schema_format: Literal["original", "streaming_events"]
-) -> Optional[Dict[str, Any]]:
+) -> Optional[dict[str, Any]]:
     """Extract standardized inputs from a run.
 
     Standardizes the inputs based on the type of the runnable used.
@@ -631,7 +635,7 @@ async def _astream_log_implementation(
                     except TypeError:
                         prev_final_output = None
                         final_output = chunk
-                patches: List[Dict[str, Any]] = []
+                patches: list[dict[str, Any]] = []
                 if with_streamed_output_list:
                     patches.append(
                         {
@@ -666,7 +670,5 @@ async def _astream_log_implementation(
                 yield state
     finally:
         # Wait for the runnable to finish, if not cancelled (eg. by break)
-        try:
+        with contextlib.suppress(asyncio.CancelledError):
             await task
-        except asyncio.CancelledError:
-            pass

@@ -14,6 +14,7 @@ from langchain_core.documents import Document
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
 from langchain_text_splitters import TextSplitter
+from pydantic import ConfigDict
 
 from langchain.chains import ReduceDocumentsChain
 from langchain.chains.base import Chain
@@ -77,9 +78,10 @@ class MapReduceChain(Chain):
             **kwargs,
         )
 
-    class Config:
-        arbitrary_types_allowed = True
-        extra = "forbid"
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
     @property
     def input_keys(self) -> List[str]:

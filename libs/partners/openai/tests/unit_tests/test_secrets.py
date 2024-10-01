@@ -2,7 +2,7 @@ from typing import Type, cast
 
 import pytest
 from langchain_core.load import dumpd
-from langchain_core.pydantic_v1 import SecretStr
+from pydantic import SecretStr
 from pytest import CaptureFixture, MonkeyPatch
 
 from langchain_openai import (

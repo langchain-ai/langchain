@@ -1,7 +1,9 @@
 import copy
 import json
 from json import JSONDecodeError
-from typing import Any, Dict, List, Optional
+from typing import Annotated, Any, Optional
+
+from pydantic import SkipValidation, ValidationError
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import AIMessage, InvalidToolCall
@@ -9,18 +11,17 @@ from langchain_core.messages.tool import invalid_tool_call
 from langchain_core.messages.tool import tool_call as create_tool_call
 from langchain_core.output_parsers.transform import BaseCumulativeTransformOutputParser
 from langchain_core.outputs import ChatGeneration, Generation
-from langchain_core.pydantic_v1 import ValidationError
 from langchain_core.utils.json import parse_partial_json
 from langchain_core.utils.pydantic import TypeBaseModel
 
 
 def parse_tool_call(
-    raw_tool_call: Dict[str, Any],
+    raw_tool_call: dict[str, Any],
     *,
     partial: bool = False,
     strict: bool = False,
     return_id: bool = True,
-) -> Optional[Dict[str, Any]]:
+) -> Optional[dict[str, Any]]:
     """Parse a single tool call.
 
     Args:
@@ -67,7 +68,7 @@ def parse_tool_call(
 
 
 def make_invalid_tool_call(
-    raw_tool_call: Dict[str, Any],
+    raw_tool_call: dict[str, Any],
     error_msg: Optional[str],
 ) -> InvalidToolCall:
     """Create an InvalidToolCall from a raw tool call.
@@ -88,12 +89,12 @@ def make_invalid_tool_call(
 
 
 def parse_tool_calls(
-    raw_tool_calls: List[dict],
+    raw_tool_calls: list[dict],
     *,
     partial: bool = False,
     strict: bool = False,
     return_id: bool = True,
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """Parse a list of tool calls.
 
     Args:
@@ -109,7 +110,7 @@ def parse_tool_calls(
     Raises:
         OutputParserException: If any of the tool calls are not valid JSON.
     """
-    final_tools: List[Dict[str, Any]] = []
+    final_tools: list[dict[str, Any]] = []
     exceptions = []
     for tool_call in raw_tool_calls:
         try:
@@ -149,7 +150,7 @@ class JsonOutputToolsParser(BaseCumulativeTransformOutputParser[Any]):
     If no tool calls are found, None will be returned. 
     """
 
-    def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
+    def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:
         """Parse the result of an LLM call to a list of tool calls.
 
         Args:
@@ -215,7 +216,7 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
     key_name: str
     """The type of tools to return."""
 
-    def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
+    def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:
         """Parse the result of an LLM call to a list of tool calls.
 
         Args:
@@ -252,12 +253,12 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
 class PydanticToolsParser(JsonOutputToolsParser):
     """Parse tools from OpenAI response."""
 
-    tools: List[TypeBaseModel]
+    tools: Annotated[list[TypeBaseModel], SkipValidation()]
     """The tools to parse."""
 
     # TODO: Support more granular streaming of objects. Currently only streams once all
     # Pydantic object fields are present.
-    def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
+    def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:
         """Parse the result of an LLM call to a list of Pydantic objects.
 
         Args:

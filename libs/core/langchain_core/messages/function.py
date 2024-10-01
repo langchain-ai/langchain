@@ -1,4 +1,4 @@
-from typing import Any, List, Literal
+from typing import Any, Literal
 
 from langchain_core.messages.base import (
     BaseMessage,
@@ -26,13 +26,13 @@ class FunctionMessage(BaseMessage):
     """The type of the message (used for serialization). Defaults to "function"."""
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
         Default is ["langchain", "schema", "messages"]."""
         return ["langchain", "schema", "messages"]
 
 
-FunctionMessage.update_forward_refs()
+FunctionMessage.model_rebuild()
 
 
 class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):
@@ -46,7 +46,7 @@ class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):
     Defaults to "FunctionMessageChunk"."""
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
         Default is ["langchain", "schema", "messages"]."""
         return ["langchain", "schema", "messages"]

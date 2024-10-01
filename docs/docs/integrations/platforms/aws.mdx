@@ -35,9 +35,9 @@ from langchain_aws import ChatBedrock
 ```
 
 ### Bedrock Converse
-AWS has recently released the Bedrock Converse API which provides a unified conversational interface for Bedrock models. This API does not yet support custom models. You can see a list of all [models that are supported here](https://docs.aws.amazon.com/bedrock/latest/userguide/conversation-inference.html). To improve reliability the ChatBedrock integration will switch to using the Bedrock Converse API as soon as it has feature parity with the existing Bedrock API. Until then a separate [ChatBedrockConverse](https://python.langchain.com/v0.2/api_reference/aws/chat_models/langchain_aws.chat_models.bedrock_converse.ChatBedrockConverse.html) integration has been released.
+AWS has recently released the Bedrock Converse API which provides a unified conversational interface for Bedrock models. This API does not yet support custom models. You can see a list of all [models that are supported here](https://docs.aws.amazon.com/bedrock/latest/userguide/conversation-inference.html). To improve reliability the ChatBedrock integration will switch to using the Bedrock Converse API as soon as it has feature parity with the existing Bedrock API. Until then a separate [ChatBedrockConverse](https://python.langchain.com/api_reference/aws/chat_models/langchain_aws.chat_models.bedrock_converse.ChatBedrockConverse.html) integration has been released.
 
-We recommend using `ChatBedrockConverse` for users who do not need to use custom models. See the [docs](/docs/integrations/chat/bedrock/#bedrock-converse-api) and [API reference](https://python.langchain.com/v0.2/api_reference/aws/chat_models/langchain_aws.chat_models.bedrock_converse.ChatBedrockConverse.html) for more detail.
+We recommend using `ChatBedrockConverse` for users who do not need to use custom models. See the [docs](/docs/integrations/chat/bedrock/#bedrock-converse-api) and [API reference](https://python.langchain.com/api_reference/aws/chat_models/langchain_aws.chat_models.bedrock_converse.ChatBedrockConverse.html) for more detail.
 
 ```python
 from langchain_aws import ChatBedrockConverse
