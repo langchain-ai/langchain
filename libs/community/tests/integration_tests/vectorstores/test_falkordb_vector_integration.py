@@ -24,7 +24,6 @@ from langchain_community.vectorstores.falkordb_vector import (
     process_index_data,
 )
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
-import enum
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -100,8 +99,8 @@ def test_falkordbvector() -> None:
         pre_delete_collection=True,
     )
     output = docsearch.similarity_search("foo", k=1)
-    assert type(output) == list
-    assert type(output[0]) == Document
+    assert type(output) is list
+    assert type(output[0]) is Document
     assert output[0].page_content == "foo"
 
     drop_vector_indexes(docsearch)
@@ -119,8 +118,8 @@ def test_falkordbvector_embeddings() -> None:
         pre_delete_collection=True,
     )
     output = docsearch.similarity_search("foo", k=1)
-    assert type(output) == list
-    assert type(output[0]) == Document
+    assert type(output) is list
+    assert type(output[0]) is Document
     assert output[0].page_content == "foo"
 
     drop_vector_indexes(docsearch)
@@ -138,14 +137,14 @@ def test_falkordbvector_catch_wrong_node_label() -> None:
         pre_delete_collection=True,
     )
     try:
-        existing = FalkorDBVector.from_existing_index(
+        FalkorDBVector.from_existing_index(
             embedding=FakeEmbeddingsWithOsDimension(),
             host=host,
             port=port,
             node_label="test",
         )
     except Exception as e:
-        assert type(e) == ValueError
+        assert type(e) is ValueError
         assert (
             str(e)
             == "The specified vector index node label `test` does not exist. Make sure to check if you spelled the node label correctly"
@@ -165,8 +164,8 @@ def test_falkordbvector_with_metadatas() -> None:
         pre_delete_collection=True,
     )
     output = docsearch.similarity_search("foo", k=1)
-    assert type(output) == list
-    assert type(output[0]) == Document
+    assert type(output) is list
+    assert type(output[0]) is Document
     assert output[0].metadata.get("page") == "0"
 
     drop_vector_indexes(docsearch)
