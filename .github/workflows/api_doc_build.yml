@@ -68,6 +68,9 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: langchain-ai/langchain-milvus
+      - uses: actions/checkout@v4
+        with:
+          repository: langchain-ai/langchain-unstructured
 
 
       - name: Set Git config
@@ -91,7 +94,8 @@ jobs:
             langchain/libs/partners/together \
             langchain/libs/standard-tests \
             langchain/libs/experimental \
-            langchain/libs/partners/milvus
+            langchain/libs/partners/milvus \
+            langchain/libs/partners/unstructured
           mv langchain-google/libs/genai langchain/libs/partners/google-genai
           mv langchain-google/libs/vertexai langchain/libs/partners/google-vertexai
           mv langchain-google/libs/community langchain/libs/partners/google-community
@@ -106,6 +110,7 @@ jobs:
           mv langchain-together/libs/together langchain/libs/partners/together
           mv langchain-experimental/libs/experimental langchain/libs/experimental
           mv langchain-milvus/libs/milvus langchain/libs/partners/milvus
+          mv langchain-unstructured/libs/unstructured langchain/libs/partners/unstructured
 
       - name: Rm old html
         run:
