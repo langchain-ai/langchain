@@ -66,7 +66,7 @@ class TestHuggingFaceEndpoint(ChatModelIntegrationTests):
         super().test_structured_output(model)
 
     @pytest.mark.xfail(reason=("Not implemented"))
-    def test_structured_output_async(self, model: BaseChatModel) -> None:
+    def test_structured_output_async(self, model: BaseChatModel) -> None:  # type: ignore[override]
         super().test_structured_output(model)
 
     @pytest.mark.xfail(reason=("Not implemented"))
