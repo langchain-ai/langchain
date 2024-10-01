@@ -5,7 +5,10 @@ from unittest import mock
 import pytest
 from langchain_core.messages import AIMessage, AIMessageChunk
 from requests.exceptions import HTTPError
-from langchain_community.chat_models import ChatOCIModelDeploymentVLLM, ChatOCIModelDeploymentTGI
+from langchain_community.chat_models import (
+    ChatOCIModelDeploymentVLLM,
+    ChatOCIModelDeploymentTGI,
+)
 
 
 pytestmark = pytest.mark.skipif(
@@ -106,6 +109,7 @@ def mocked_requests_post(self, **kwargs):
 
 
 @pytest.mark.requires("ads")
+@pytest.mark.requires("langchain-openai")
 @mock.patch("ads.common.auth.default_signer", return_value=dict(signer=None))
 @mock.patch("requests.post", side_effect=mocked_requests_post)
 def test_invoke_vllm(mock_post, mock_auth) -> None:
@@ -117,6 +121,7 @@ def test_invoke_vllm(mock_post, mock_auth) -> None:
 
 
 @pytest.mark.requires("ads")
+@pytest.mark.requires("langchain-openai")
 @mock.patch("ads.common.auth.default_signer", return_value=dict(signer=None))
 @mock.patch("requests.post", side_effect=mocked_requests_post)
 def test_invoke_tgi(mock_post, mock_auth) -> None:
@@ -128,6 +133,7 @@ def test_invoke_tgi(mock_post, mock_auth) -> None:
 
 
 @pytest.mark.requires("ads")
+@pytest.mark.requires("langchain-openai")
 @mock.patch("ads.common.auth.default_signer", return_value=dict(signer=None))
 @mock.patch("requests.post", side_effect=mocked_requests_post)
 def test_stream_vllm(mock_post, mock_auth) -> None:
@@ -153,6 +159,7 @@ async def mocked_async_streaming_response(*args, **kwargs):
 
 @pytest.mark.asyncio
 @pytest.mark.requires("ads")
+@pytest.mark.requires("langchain-openai")
 @mock.patch(
     "ads.common.auth.default_signer", return_value=dict(signer=mock.MagicMock())
 )
