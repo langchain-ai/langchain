@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING, Any
 
 from langchain_core.output_parsers import (
     CommaSeparatedListOutputParser,
+    CommaSeparatedNumericListOutputParser,
     ListOutputParser,
     MarkdownListOutputParser,
     NumberedListOutputParser,
@@ -64,6 +65,7 @@ __all__ = [
     "BooleanOutputParser",
     "CombiningOutputParser",
     "CommaSeparatedListOutputParser",
+    "CommaSeparatedNumericListOutputParser",
     "DatetimeOutputParser",
     "EnumOutputParser",
     "GuardrailsOutputParser",

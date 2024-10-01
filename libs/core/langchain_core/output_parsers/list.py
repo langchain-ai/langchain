@@ -4,7 +4,7 @@ import re
 from abc import abstractmethod
 from collections import deque
 from collections.abc import AsyncIterator, Iterator
-from typing import Optional as Optional
+from decimal import Decimal
 from typing import TypeVar, Union
 
 from langchain_core.messages import BaseMessage
@@ -167,6 +167,56 @@ class CommaSeparatedListOutputParser(ListOutputParser):
     @property
     def _type(self) -> str:
         return "comma-separated-list"
+
+
+class CommaSeparatedNumericListOutputParser(CommaSeparatedListOutputParser):
+    """Parse the output of an LLM call to a comma-separated numeric list."""
+
+    def parse(self, text: str) -> list[Decimal]:
+        import re
+
+        """Parse the output of an LLM call.
+
+        Args:
+            text: The output of an LLM call.
+
+        Returns:
+            A list of numbers.
+        """
+
+        parts = text.split(",")
+
+        numbers = []
+
+        for part in parts:
+            if not part:
+                continue
+            cleaned_part = part.rstrip('?!.;:').strip()
+            cleaned_part = re.sub(r'[^\d\.\-eE]+', '', cleaned_part).replace(
+                ',', ''
+            )
+            try:
+                number = int(cleaned_part)
+            except ValueError:
+                try:
+                    number = Decimal(cleaned_part)
+                except ValueError:
+                    continue
+            numbers.append(number)
+
+        return numbers
+
+    def get_format_instructions(self) -> str:
+        """Return the format instructions for the comma-separated list of numbers output."""
+        return (
+            "Your response should be a list of comma separated numeric "
+            "values. Ensure that decimal numbers use a dot (e.g., 3.14) "
+            "instead of a comma."
+        )
+
+    @property
+    def _type(self) -> str:
+        return "comma-separated-list-number"
 
 
 class NumberedListOutputParser(ListOutputParser):
