@@ -1,11 +1,14 @@
+from __future__ import annotations
+
 import os
 import time
 from enum import Enum
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import httpx
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.vectorstores import VectorStore
 from pydantic import model_validator
@@ -45,7 +48,7 @@ class AnsweritSDK:
         response.raise_for_status()
         return response.json()
 
-    def update_pipeline(self, pipeline_id, request_body: dict) -> str:
+    def update_pipeline(self, pipeline_id: str, request_body: dict) -> str:
         response = self.client.patch(url=f"/pipelines/{pipeline_id}", json=request_body)
         response.raise_for_status()
         return response.json()["pipeline_execution_id"]
@@ -64,7 +67,7 @@ class AnsweritSDK:
 
     def get_pipeline_execution(
         self, pipeline_id: str, pipeline_execution_id: str
-    ) -> str:
+    ) -> Dict:
         response = self.client.get(
             f"/pipelines/{pipeline_id}/pipeline-executions/{pipeline_execution_id}"
         )
@@ -74,7 +77,7 @@ class AnsweritSDK:
 
     def wait_for_pipeline_execution_to_finish(
         self, pipeline_id: str, pipeline_execution_id: str
-    ) -> str:
+    ) -> Dict:
         pipeline_execution = self.get_pipeline_execution(
             pipeline_id, pipeline_execution_id
         )
@@ -108,22 +111,26 @@ class WorkflowTimeout(Exception):
 
 
 class WorkflowAuth(Exception):
-    def __init__(self, msg=None) -> None:
+    def __init__(self, msg: str) -> None:
         super().__init__(msg)
 
 
-class Pipeline(VectorStore):
-    pipeline_id = None
+class NimbleItPipeline(VectorStore):
+    pipeline_id = ""
 
     def __init__(
-        self, answerit_url: str, authorization_token: str, sources: List[Dict] = None
+        self,
+        answerit_url: str,
+        authorization_token: str,
+        sources: Optional[List[Dict]] = None,
     ) -> None:
+        super().__init__()
         self.client = AnsweritSDK(answerit_url, authorization_token)
         self.pipeline_id = self.client.create_pipeline(
             {"questions": [], "sources": sources if sources else []}
         )["pipeline_id"]
 
-    def add_sources(self, sources: List[Dict], wait=False) -> None:
+    def add_sources(self, sources: List[Dict], wait: bool = False) -> None:
         pipeline_execution_id = self.client.update_pipeline(
             self.pipeline_id, request_body={"sources": sources}
         )
@@ -132,7 +139,7 @@ class Pipeline(VectorStore):
                 self.pipeline_id, pipeline_execution_id
             )
 
-    def invoke(self, query) -> Dict:
+    def invoke(self, query: str) -> Dict:
         pipeline_execution_id = self.client.update_pipeline(
             self.pipeline_id, request_body={"questions": [query], "sources": []}
         )
@@ -140,10 +147,19 @@ class Pipeline(VectorStore):
             self.pipeline_id, pipeline_execution_id
         )
 
-    def from_texts(cls) -> None:
+    @classmethod
+    def from_texts(
+        cls,
+        texts: list[str],
+        embedding: Embeddings,
+        metadatas: list[dict[Any, Any]] | None = ...,
+        **kwargs: Any,
+    ) -> NimbleItPipeline:
         raise NotImplementedError("Can't use 'from_texts'")
 
-    def similarity_search(self) -> list[Document]:
+    def similarity_search(
+        self, query: str, k: int = ..., **kwargs: Any
+    ) -> list[Document]:
         raise NotImplementedError("Can't use 'similarity_search'")
 
 
@@ -341,23 +357,23 @@ class NimbleItRetriever(BaseRetriever):
 
     """
 
-    answerit_url: str = None
+    answerit_url: str = ""
     authorization_token: str
 
-    store: Pipeline
+    store: NimbleItPipeline
     retriever: BaseRetriever
 
     @model_validator(mode="before")
     @classmethod
     def create_retriever(cls, values: Dict) -> Any:
         """Create the NimbleIt store and retriever."""
-        values["store"] = Pipeline(
+        values["store"] = NimbleItPipeline(
             values["answerit_url"], values["authorization_token"]
         )
         values["retriever"] = values["store"].as_retriever()
         return values
 
-    def add_sources(self, sources: List[dict], wait=False) -> None:
+    def add_sources(self, sources: List[dict], wait: bool = False) -> None:
         """Add sources to the NimbleIt Pipeline
 
         Args:
