@@ -1104,8 +1104,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     def bind_tools(
         self,
         tools: Sequence[
-            Union[typing.Dict[str, Any], type, Callable, BaseTool]
-        ],  # noqa: UP006
+            Union[typing.Dict[str, Any], type, Callable, BaseTool]  # noqa: UP006
+        ],
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         raise NotImplementedError()
