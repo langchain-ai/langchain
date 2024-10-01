@@ -4,10 +4,10 @@ import logging
 import os
 from typing import Any, AsyncIterator, Dict, Iterator, List, Mapping, Optional
 
-from huggingface_hub import (
+from huggingface_hub import (  # type: ignore[import-untyped]
     AsyncInferenceClient,
     InferenceClient,
-    login,  # type: ignore[import]
+    login,
 )
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
