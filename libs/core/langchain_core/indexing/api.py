@@ -251,7 +251,9 @@ def index(
             record manager. Useful if you are re-indexing with updated embeddings.
             Default is False.
         upsert_kwargs: Additional keyword arguments to pass to the add_documents
-                       method of the VectorStore.
+                       method of the VectorStore. For example,
+                       you can use this to specify a custom vector_field:
+                       upsert_kwargs={"vector_field": "embedding"}
 
     Returns:
         Indexing result which contains information about how many documents
@@ -488,7 +490,9 @@ async def aindex(
             record manager. Useful if you are re-indexing with updated embeddings.
             Default is False.
         upsert_kwargs: Additional keyword arguments to pass to the aadd_documents
-                       method of the VectorStore asynchronously.
+                       method of the VectorStore asynchronously. For example,
+                       you can use this to specify a custom vector_field:
+                       upsert_kwargs={"vector_field": "embedding"}
 
     Returns:
         Indexing result which contains information about how many documents
