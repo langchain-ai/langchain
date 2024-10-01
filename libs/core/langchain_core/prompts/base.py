@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import contextlib
 import json
-import typing
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from functools import cached_property
@@ -51,7 +50,7 @@ class BasePromptTemplate(
     """optional_variables: A list of the names of the variables for placeholder
        or MessagePlaceholder that are optional. These variables are auto inferred
        from the prompt and user need not provide them."""
-    input_types: typing.Dict[str, Any] = Field(default_factory=dict, exclude=True)  # noqa: UP006
+    input_types: dict[str, Any] = Field(default_factory=dict, exclude=True)
     """A dictionary of the types of the variables the prompt template expects.
     If not provided, all variables are assumed to be strings."""
     output_parser: Optional[BaseOutputParser] = None
@@ -61,7 +60,7 @@ class BasePromptTemplate(
 
     Partial variables populate the template so that you don't need to
     pass them in every time you call the prompt."""
-    metadata: Optional[typing.Dict[str, Any]] = None  # noqa: UP006
+    metadata: Optional[dict] = None
     """Metadata to be used for tracing."""
     tags: Optional[list[str]] = None
     """Tags to be used for tracing."""

@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import asyncio
+import builtins
 import inspect
 import json
-import typing
 import uuid
 import warnings
 from abc import ABC, abstractmethod
@@ -1103,20 +1103,18 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     def bind_tools(
         self,
-        tools: Sequence[
-            Union[typing.Dict[str, Any], type, Callable, BaseTool]  # noqa: UP006
-        ],
+        tools: Sequence[Union[builtins.dict[str, Any], type, Callable, BaseTool]],
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         raise NotImplementedError()
 
     def with_structured_output(
         self,
-        schema: Union[typing.Dict, type],  # noqa: UP006
+        schema: Union[builtins.dict, type],
         *,
         include_raw: bool = False,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, Union[typing.Dict, BaseModel]]:  # noqa: UP006
+    ) -> Runnable[LanguageModelInput, Union[builtins.dict, BaseModel]]:
         """Model wrapper that returns outputs formatted to match the given schema.
 
         Args:
