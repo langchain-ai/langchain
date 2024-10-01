@@ -28,6 +28,13 @@ def test_huggingface_tokenizer() -> None:
     output = text_splitter.split_text("foo bar")
     assert output == ["foo", "bar"]
 
+    from transformers import AutoTokenizer
+
+    tokenizer = AutoTokenizer.from_pretrained("cmarkea/bloomz-3b-retriever-v2")
+    splitter = TokenTextSplitter(tokenizer=tokenizer, chunk_size=1, chunk_overlap=0)
+    output = splitter.split_text("foo bar")
+    assert output == ["<s>", "foo", " bar", "</s>"]
+
 
 def test_token_text_splitter() -> None:
     """Test no overlap."""
