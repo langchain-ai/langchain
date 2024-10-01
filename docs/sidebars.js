@@ -104,7 +104,7 @@ module.exports = {
         },
         {
           type: "category",
-          label: "Migrating from v0.0 memory",
+          label: "Upgrading to LangGraph memory",
           link: {type: 'doc', id: 'versions/migrating_memory/index'},
           collapsible: false,
           collapsed: false,
