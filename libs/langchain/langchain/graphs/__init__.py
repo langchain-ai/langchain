@@ -35,9 +35,7 @@ DEPRECATED_LOOKUP = {
     "FalkorDBGraph": "langchain_community.graphs",
 }
 
-_import_attribute = create_importer(
-    __package__, deprecated_lookups=DEPRECATED_LOOKUP
-)
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
 def __getattr__(name: str) -> Any:
