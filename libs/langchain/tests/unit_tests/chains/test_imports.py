@@ -26,6 +26,7 @@ EXPECTED_ALL = [
     "MapReduceChain",
     "MapReduceDocumentsChain",
     "MapRerankDocumentsChain",
+    "MemgraphQAChain",
     "MultiPromptChain",
     "MultiRetrievalQAChain",
     "MultiRouteChain",
