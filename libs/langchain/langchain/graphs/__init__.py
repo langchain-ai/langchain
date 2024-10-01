@@ -10,7 +10,6 @@ if TYPE_CHECKING:
         FalkorDBGraph,
         HugeGraph,
         KuzuGraph,
-        MemgraphGraph,
         NebulaGraph,
         Neo4jGraph,
         NeptuneGraph,
@@ -23,7 +22,6 @@ if TYPE_CHECKING:
 # Used to consolidate logic for raising deprecation warnings and
 # handling optional imports.
 DEPRECATED_LOOKUP = {
-    "MemgraphGraph": "langchain_community.graphs",
     "NetworkxEntityGraph": "langchain_community.graphs",
     "Neo4jGraph": "langchain_community.graphs",
     "NebulaGraph": "langchain_community.graphs",
@@ -44,7 +42,6 @@ def __getattr__(name: str) -> Any:
 
 
 __all__ = [
-    "MemgraphGraph",
     "NetworkxEntityGraph",
     "Neo4jGraph",
     "NebulaGraph",

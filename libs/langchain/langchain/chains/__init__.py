@@ -42,7 +42,6 @@ _module_lookup = {
     "FalkorDBQAChain": "langchain_community.chains.graph_qa.falkordb",
     "HugeGraphQAChain": "langchain_community.chains.graph_qa.hugegraph",
     "KuzuQAChain": "langchain_community.chains.graph_qa.kuzu",
-    "MemgraphQAChain": "langchain_community.chains.graph_qa.Memgraph",
     "NebulaGraphQAChain": "langchain_community.chains.graph_qa.nebulagraph",
     "NeptuneOpenCypherQAChain": "langchain_community.chains.graph_qa.neptune_cypher",
     "NeptuneSparqlQAChain": "langchain_community.chains.graph_qa.neptune_sparql",

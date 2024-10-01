@@ -37,7 +37,10 @@ RETURN
     start_node_labels,
     rel_type,
     end_node_labels,
-    COLLECT(DISTINCT CASE WHEN property_info <> [] THEN property_info ELSE null END) AS properties_info
+    COLLECT(DISTINCT CASE 
+    WHEN property_info <> [] 
+    THEN property_info 
+    ELSE null END) AS properties_info
 """
 
 NODE_IMPORT_QUERY = """
@@ -151,7 +154,8 @@ def get_reformated_schema(nodes, rels):
                     {
                         "key": prop["key"],
                         "types": [
-                            {"type": type_item.lower()} for type_item in prop["types"]
+                            {"type": type_item.lower()}
+                            for type_item in prop["types"]
                         ],
                     }
                     for prop in node["properties"]
@@ -172,20 +176,28 @@ def transform_schema_to_text(schema):
         node_props_data += f"- labels: (:{':'.join(node['labels'])})\n"
         if node["properties"] == []:
             continue
-        node_props_data += f"  properties:\n"
+        node_props_data += "  properties:\n"
         for prop in node["properties"]:
-            node_props_data += f"    - {prop['key']}: {(' or ').join({prop_types['type'] for prop_types in prop['types']})}\n"
+            prop_types_str = " or ".join(
+                {prop_types["type"] for prop_types in prop["types"]}
+            )
+            node_props_data += f"    - {prop['key']}: {prop_types_str}\n"
 
     for rel in schema["edges"]:
         rel_type = rel["type"]
-        rel_data += f"(:{':'.join(rel['start_node_labels'])})-[:{rel_type}]->(:{':'.join(rel['end_node_labels'])})\n"
+        start_labels = ":".join(rel["start_node_labels"])
+        end_labels = ":".join(rel["end_node_labels"])
+        rel_data += f"(:{start_labels})-[:{rel_type}]->(:{end_labels})\n"
 
         if rel["properties"] == []:
             continue
 
         rel_props_data += f"- labels: {rel_type}\n  properties:\n"
         for prop in rel["properties"]:
-            rel_props_data += f"    - {prop['key']}: {(' or ').join({prop_types['type'].lower() for prop_types in prop['types']})}\n"
+            prop_types_str = " or ".join(
+                {prop_types["type"].lower() for prop_types in prop["types"]}
+            )
+            rel_props_data += f"    - {prop['key']}: {prop_types_str}\n"
 
     return "".join(
         [
@@ -244,7 +256,8 @@ class MemgraphGraph(GraphStore):
     username (Optional[str]): The username for database authentication.
     password (Optional[str]): The password for database authentication.
     database (str): The name of the database to connect to. Default is 'memgraph'.
-    refresh_schema (bool): A flag whether to refresh schema information at initialization. Default is True.
+    refresh_schema (bool): A flag whether to refresh schema information
+    at initialization. Default is True.
     driver_config (Dict): Configuration passed to Neo4j Driver.
 
     *Security note*: Make sure that the database connection uses credentials
@@ -378,7 +391,8 @@ class MemgraphGraph(GraphStore):
                     e.code == "Neo.ClientError.Statement.SemanticError"
                     and (
                         "in an open transaction is not possible" in e.message
-                        or "tried to execute in an explicit transaction" in e.message
+                        or "tried to execute in an explicit transaction"
+                        in e.message
                     )
                 )
                 or (
@@ -402,8 +416,9 @@ class MemgraphGraph(GraphStore):
         """
         Refreshes the Memgraph graph schema information.
         """
-        from neo4j.exceptions import Neo4jError
         import ast
+
+        from neo4j.exceptions import Neo4jError
 
         # leave schema empty if db is empty
         if self.query("MATCH (n) RETURN n LIMIT 1") == []:
@@ -411,7 +426,9 @@ class MemgraphGraph(GraphStore):
 
         # first try with SHOW SCHEMA INFO
         try:
-            schema_result = ast.literal_eval(self.query(SCHEMA_QUERY)[0].get("schema"))
+            schema_result = ast.literal_eval(
+                self.query(SCHEMA_QUERY)[0].get("schema")
+            )
             assert schema_result is not None
             structured_schema = get_schema_subset(schema_result)
             self.structured_schema = structured_schema
@@ -476,14 +493,18 @@ class MemgraphGraph(GraphStore):
                         document.source.page_content.encode("utf-8")
                     ).hexdigest()
 
-                self.query(INCLUDE_DOCS_QUERY, {"document": document.source.__dict__})
+                self.query(
+                    INCLUDE_DOCS_QUERY, {"document": document.source.__dict__}
+                )
 
             self.query(
                 NODE_IMPORT_QUERY,
                 {"data": _transform_nodes(document.nodes, baseEntityLabel)},
             )
 
-            rel_data = _transform_relationships(document.relationships, baseEntityLabel)
+            rel_data = _transform_relationships(
+                document.relationships, baseEntityLabel
+            )
             self.query(
                 REL_NODES_IMPORT_QUERY,
                 {"data": rel_data},
