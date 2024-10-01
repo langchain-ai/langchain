@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import json
 import typing
 from abc import ABC, abstractmethod
@@ -44,11 +45,11 @@ class BasePromptTemplate(
     """Base class for all prompt templates, returning a prompt."""
 
     input_variables: list[str]
-    """A list of the names of the variables whose values are required as inputs to the 
+    """A list of the names of the variables whose values are required as inputs to the
     prompt."""
     optional_variables: list[str] = Field(default=[])
     """optional_variables: A list of the names of the variables for placeholder
-       or MessagePlaceholder that are optional. These variables are auto inferred 
+       or MessagePlaceholder that are optional. These variables are auto inferred
        from the prompt and user need not provide them."""
     input_types: typing.Dict[str, Any] = Field(default_factory=dict, exclude=True)  # noqa: UP006
     """A dictionary of the types of the variables the prompt template expects.
@@ -57,7 +58,7 @@ class BasePromptTemplate(
     """How to parse the output of calling an LLM on this formatted prompt."""
     partial_variables: Mapping[str, Any] = Field(default_factory=dict)
     """A dictionary of the partial variables the prompt template carries.
-    
+
     Partial variables populate the template so that you don't need to
     pass them in every time you call the prompt."""
     metadata: Optional[typing.Dict[str, Any]] = None  # noqa: UP006
@@ -173,7 +174,7 @@ class BasePromptTemplate(
         return await self.aformat_prompt(**_inner_input)
 
     def invoke(
-        self, input: dict, config: Optional[RunnableConfig] = None
+        self, input: dict, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> PromptValue:
         """Invoke the prompt.
 
@@ -319,10 +320,8 @@ class BasePromptTemplate(
             NotImplementedError: If the prompt type is not implemented.
         """
         prompt_dict = super().model_dump(**kwargs)
-        try:
+        with contextlib.suppress(NotImplementedError):
             prompt_dict["_type"] = self._prompt_type
-        except NotImplementedError:
-            pass
         return prompt_dict
 
     def save(self, file_path: Union[Path, str]) -> None:
@@ -350,10 +349,7 @@ class BasePromptTemplate(
             raise NotImplementedError(f"Prompt {self} does not support saving.")
 
         # Convert file to Path object.
-        if isinstance(file_path, str):
-            save_path = Path(file_path)
-        else:
-            save_path = file_path
+        save_path = Path(file_path) if isinstance(file_path, str) else file_path
 
         directory_path = save_path.parent
         directory_path.mkdir(parents=True, exist_ok=True)
