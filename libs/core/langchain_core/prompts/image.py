@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any
 
 from pydantic import Field
 
@@ -18,7 +18,7 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
         if "input_variables" not in kwargs:
             kwargs["input_variables"] = []
 
-        overlap = set(kwargs["input_variables"]) & set(("url", "path", "detail"))
+        overlap = set(kwargs["input_variables"]) & {"url", "path", "detail"}
         if overlap:
             raise ValueError(
                 "input_variables for the image template cannot contain"
@@ -33,7 +33,7 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
         return "image-prompt"
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "prompts", "image"]
 

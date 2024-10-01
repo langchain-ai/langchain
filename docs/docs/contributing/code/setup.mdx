@@ -73,9 +73,9 @@ make docker_tests
 
 There are also [integration tests and code-coverage](/docs/contributing/testing/) available.
 
-### Only develop langchain_core or langchain_experimental
+### Only develop langchain_core or langchain_community
 
-If you are only developing `langchain_core` or `langchain_experimental`, you can simply install the dependencies for the respective projects and run tests:
+If you are only developing `langchain_core` or `langchain_community`, you can simply install the dependencies for the respective projects and run tests:
 
 ```bash
 cd libs/core
@@ -86,7 +86,7 @@ make test
 Or:
 
 ```bash
-cd libs/experimental
+cd libs/community
 poetry install --with test
 make test
 ```

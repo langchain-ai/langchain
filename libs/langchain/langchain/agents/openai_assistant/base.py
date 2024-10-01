@@ -277,7 +277,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
         return cls(assistant_id=assistant.id, client=client, **kwargs)
 
     def invoke(
-        self, input: dict, config: Optional[RunnableConfig] = None
+        self, input: dict, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> OutputType:
         """Invoke assistant.
 
@@ -310,7 +310,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
             inheritable_metadata=config.get("metadata"),
         )
         run_manager = callback_manager.on_chain_start(
-            dumpd(self), input, name=config.get("run_name")
+            dumpd(self), input, name=config.get("run_name") or self.get_name()
         )
         try:
             # Being run within AgentExecutor and there are tool outputs to submit.
@@ -429,7 +429,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
             inheritable_metadata=config.get("metadata"),
         )
         run_manager = callback_manager.on_chain_start(
-            dumpd(self), input, name=config.get("run_name")
+            dumpd(self), input, name=config.get("run_name") or self.get_name()
         )
         try:
             # Being run within AgentExecutor and there are tool outputs to submit.

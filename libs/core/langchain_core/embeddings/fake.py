@@ -2,7 +2,6 @@
 
 # Please do not add additional fake embedding model implementations here.
 import hashlib
-from typing import List
 
 from pydantic import BaseModel
 
@@ -51,15 +50,15 @@ class FakeEmbeddings(Embeddings, BaseModel):
     size: int
     """The size of the embedding vector."""
 
-    def _get_embedding(self) -> List[float]:
+    def _get_embedding(self) -> list[float]:
         import numpy as np  # type: ignore[import-not-found, import-untyped]
 
         return list(np.random.normal(size=self.size))
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
         return [self._get_embedding() for _ in texts]
 
-    def embed_query(self, text: str) -> List[float]:
+    def embed_query(self, text: str) -> list[float]:
         return self._get_embedding()
 
 
@@ -106,7 +105,7 @@ class DeterministicFakeEmbedding(Embeddings, BaseModel):
     size: int
     """The size of the embedding vector."""
 
-    def _get_embedding(self, seed: int) -> List[float]:
+    def _get_embedding(self, seed: int) -> list[float]:
         import numpy as np  # type: ignore[import-not-found, import-untyped]
 
         # set the seed for the random generator
@@ -117,8 +116,8 @@ class DeterministicFakeEmbedding(Embeddings, BaseModel):
         """Get a seed for the random generator, using the hash of the text."""
         return int(hashlib.sha256(text.encode("utf-8")).hexdigest(), 16) % 10**8
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
         return [self._get_embedding(seed=self._get_seed(_)) for _ in texts]
 
-    def embed_query(self, text: str) -> List[float]:
+    def embed_query(self, text: str) -> list[float]:
         return self._get_embedding(seed=self._get_seed(text))

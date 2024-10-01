@@ -11,7 +11,8 @@ used in the code.
 
 import asyncio
 from asyncio import AbstractEventLoop, Queue
-from typing import AsyncIterator, Generic, TypeVar
+from collections.abc import AsyncIterator
+from typing import Generic, TypeVar
 
 T = TypeVar("T")
 

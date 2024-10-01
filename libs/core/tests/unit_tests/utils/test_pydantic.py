@@ -1,6 +1,6 @@
 """Test for some custom pydantic decorators."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import pytest
 from pydantic import ConfigDict
@@ -24,7 +24,7 @@ def test_pre_init_decorator() -> None:
         y: int
 
         @pre_init
-        def validator(cls, v: Dict[str, Any]) -> Dict[str, Any]:
+        def validator(cls, v: dict[str, Any]) -> dict[str, Any]:
             v["y"] = v["x"] + 1
             return v
 
@@ -45,7 +45,7 @@ def test_pre_init_decorator_with_more_defaults() -> None:
         d: int = Field(default_factory=lambda: 3)
 
         @pre_init
-        def validator(cls, v: Dict[str, Any]) -> Dict[str, Any]:
+        def validator(cls, v: dict[str, Any]) -> dict[str, Any]:
             assert v["a"] == 1
             assert v["b"] is None
             assert v["c"] == 2
@@ -69,7 +69,7 @@ def test_with_aliases() -> None:
         )
 
         @pre_init
-        def validator(cls, v: Dict[str, Any]) -> Dict[str, Any]:
+        def validator(cls, v: dict[str, Any]) -> dict[str, Any]:
             v["z"] = v["x"]
             return v
 
@@ -142,7 +142,7 @@ def test_with_field_metadata() -> None:
     from pydantic import Field as FieldV2
 
     class Foo(BaseModelV2):
-        x: List[int] = FieldV2(
+        x: list[int] = FieldV2(
             description="List of integers", min_length=10, max_length=15
         )
 

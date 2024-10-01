@@ -1194,7 +1194,7 @@ test = ["ipykernel", "pre-commit", "pytest (<8)", "pytest-cov", "pytest-timeout"
 
 [[package]]
 name = "langchain"
-version = "0.3.0"
+version = "0.3.1"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -1204,7 +1204,7 @@ develop = true
 [package.dependencies]
 aiohttp = "^3.8.3"
 async-timeout = {version = "^4.0.0", markers = "python_version < \"3.11\""}
-langchain-core = "^0.3.0"
+langchain-core = "^0.3.6"
 langchain-text-splitters = "^0.3.0"
 langsmith = "^0.1.17"
 numpy = [
@@ -1223,7 +1223,7 @@ url = "libs/langchain"
 
 [[package]]
 name = "langchain-community"
-version = "0.3.0"
+version = "0.3.1"
 description = "Community contributed LangChain integrations."
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -1233,9 +1233,9 @@ develop = true
 [package.dependencies]
 aiohttp = "^3.8.3"
 dataclasses-json = ">= 0.5.7, < 0.7"
-langchain = "^0.3.0"
-langchain-core = "^0.3.0"
-langsmith = "^0.1.112"
+langchain = "^0.3.1"
+langchain-core = "^0.3.6"
+langsmith = "^0.1.125"
 numpy = [
     {version = ">=1,<2", markers = "python_version < \"3.12\""},
     {version = ">=1.26.0,<2.0.0", markers = "python_version >= \"3.12\""},
@@ -1252,7 +1252,7 @@ url = "libs/community"
 
 [[package]]
 name = "langchain-core"
-version = "0.3.0"
+version = "0.3.6"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -1261,7 +1261,7 @@ develop = true
 
 [package.dependencies]
 jsonpatch = "^1.33"
-langsmith = "^0.1.117"
+langsmith = "^0.1.125"
 packaging = ">=23.2,<25"
 pydantic = [
     {version = ">=2.5.2,<3.0.0", markers = "python_full_version < \"3.12.4\""},
@@ -1276,25 +1276,8 @@ type = "directory"
 url = "libs/core"
 
 [[package]]
-name = "langchain-experimental"
-version = "0.3.0"
-description = "Building applications with LLMs through composability"
-optional = false
-python-versions = ">=3.9,<4.0"
-files = []
-develop = true
-
-[package.dependencies]
-langchain-community = "^0.3.0"
-langchain-core = "^0.3.0"
-
-[package.source]
-type = "directory"
-url = "libs/experimental"
-
-[[package]]
 name = "langchain-openai"
-version = "0.2.0"
+version = "0.2.1"
 description = "An integration package connecting OpenAI and LangChain"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -1329,6 +1312,7 @@ url = "libs/text-splitters"
 [[package]]
 name = "langsmith"
 version = "0.1.129"
+
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
 optional = false
 python-versions = "<4.0,>=3.8.1"
@@ -1622,6 +1606,7 @@ files = [
 [[package]]
 name = "openai"
 version = "1.51.0"
+
 description = "The official Python library for the openai API"
 optional = false
 python-versions = ">=3.7.1"
@@ -2738,6 +2723,7 @@ tests = ["cython", "littleutils", "pygments", "pytest", "typeguard"]
 [[package]]
 name = "starlette"
 version = "0.39.2"
+
 description = "The little ASGI library that shines."
 optional = false
 python-versions = ">=3.8"
