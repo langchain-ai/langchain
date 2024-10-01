@@ -10,7 +10,7 @@ pip install -U langchain-milvus
 
 ## Milvus vector database
 
-See a [usage example](https://python.langchain.com/v0.2/docs/integrations/vectorstores/milvus/)
+See a [usage example](https://python.langchain.com/docs/integrations/vectorstores/milvus/)
 
 ```python
 from langchain_milvus import Milvus
@@ -18,7 +18,7 @@ from langchain_milvus import Milvus
 
 ## Milvus hybrid search
 
-See a [usage example](https://python.langchain.com/v0.2/docs/integrations/retrievers/milvus_hybrid_search/).
+See a [usage example](https://python.langchain.com/docs/integrations/retrievers/milvus_hybrid_search/).
 
 ```python
 from langchain_milvus import MilvusCollectionHybridSearchRetriever
@@ -27,7 +27,7 @@ from langchain_milvus import MilvusCollectionHybridSearchRetriever
 
 ## Zilliz Cloud vector database
 
-See a [usage example](https://python.langchain.com/v0.2/docs/integrations/vectorstores/zilliz/).
+See a [usage example](https://python.langchain.com/docs/integrations/vectorstores/zilliz/).
 
 ```python
 from langchain_milvus import Zilliz
@@ -35,7 +35,7 @@ from langchain_milvus import Zilliz
 
 ## Zilliz Cloud Pipeline Retriever
 
-See a [usage example](https://python.langchain.com/v0.2/docs/integrations/retrievers/zilliz_cloud_pipeline/).
+See a [usage example](https://python.langchain.com/docs/integrations/retrievers/zilliz_cloud_pipeline/).
 
 ```python
 from langchain_milvus import ZillizCloudPipelineRetriever
