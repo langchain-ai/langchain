@@ -11,7 +11,7 @@ from tests.integration_tests.llms.utils import assert_llm_equality
 
 def test_huggingface_endpoint_call_error() -> None:
     """Test valid call to HuggingFace that errors."""
-    llm = HuggingFaceEndpoint(endpoint_url="", model_kwargs={"max_new_tokens": -1})  # type: ignore[call-arg]
+    llm = HuggingFaceEndpoint(repo_id="", max_new_tokens=-1)  # type: ignore[call-arg]
     with pytest.raises(ValueError):
         llm.invoke("Say foo:")
 
@@ -28,43 +28,57 @@ def test_saving_loading_endpoint_llm(tmp_path: Path) -> None:
 
 def test_huggingface_text_generation() -> None:
     """Test valid call to HuggingFace text generation model."""
-    llm = HuggingFaceEndpoint(repo_id="gpt2", model_kwargs={"max_new_tokens": 10})  # type: ignore[call-arg]
+    llm = HuggingFaceEndpoint(repo_id="gpt2", max_new_tokens=10)  # type: ignore[call-arg]
     output = llm.invoke("Say foo:")
+    print(output)  # noqa: T201
+    assert isinstance(output, str)
+
+
+def test_huggingface_text_generation_wo_stop_sequence() -> None:
+    """Test valid call to HuggingFace text generation model."""
+    llm = HuggingFaceEndpoint(repo_id="google/flan-t5-small", max_new_tokens=10)  # type: ignore[call-arg]
+    output = llm.invoke(
+        "Say foo:", stop_sequences=None, return_full_text=None, watermark=None
+    )
     print(output)  # noqa: T201
     assert isinstance(output, str)
 
 
 def test_huggingface_text2text_generation() -> None:
     """Test valid call to HuggingFace text2text model."""
-    llm = HuggingFaceEndpoint(repo_id="google/flan-t5-xl")  # type: ignore[call-arg]
-    output = llm.invoke("The capital of New York is")
-    assert output == "Albany"
+    llm = HuggingFaceEndpoint(repo_id="google/flan-t5-large", max_new_tokens=10)  # type: ignore[call-arg]
+    output = llm.invoke(
+        "say foo:", stop_sequences=None, return_full_text=None, watermark=None
+    )
+    assert output == "foo"
 
 
 def test_huggingface_summarization() -> None:
     """Test valid call to HuggingFace summarization model."""
-    llm = HuggingFaceEndpoint(repo_id="facebook/bart-large-cnn")  # type: ignore[call-arg]
-    output = llm.invoke("Say foo:")
+    llm = HuggingFaceEndpoint(repo_id="facebook/bart-large-cnn", max_new_tokens=10)  # type: ignore[call-arg]
+    output = llm.invoke(
+        "Say foo:", stop_sequences=None, return_full_text=None, watermark=None
+    )
     assert isinstance(output, str)
 
 
 def test_huggingface_call_error() -> None:
     """Test valid call to HuggingFace that errors."""
-    llm = HuggingFaceEndpoint(repo_id="gpt2", model_kwargs={"max_new_tokens": -1})  # type: ignore[call-arg]
+    llm = HuggingFaceEndpoint(repo_id="gpt2", max_new_tokens=-1)  # type: ignore[call-arg]
     with pytest.raises(ValueError):
         llm.invoke("Say foo:")
 
 
 def test_saving_loading_llm(tmp_path: Path) -> None:
     """Test saving/loading an HuggingFaceEndpoint LLM."""
-    llm = HuggingFaceEndpoint(repo_id="gpt2", model_kwargs={"max_new_tokens": 10})  # type: ignore[call-arg]
+    llm = HuggingFaceEndpoint(repo_id="gpt2", max_new_tokens=10)  # type: ignore[call-arg]
     llm.save(file_path=tmp_path / "hf.yaml")
     loaded_llm = load_llm(tmp_path / "hf.yaml")
     assert_llm_equality(llm, loaded_llm)
 
 
 def test_invocation_params_stop_sequences() -> None:
-    llm = HuggingFaceEndpoint()  # type: ignore[call-arg]
+    llm = HuggingFaceEndpoint(repo_id="gpt2", max_new_tokens=10)  # type: ignore[call-arg]
     assert llm._default_params["stop_sequences"] == []
 
     runtime_stop = None

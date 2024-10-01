@@ -72,7 +72,18 @@ class HuggingFaceEndpoint(LLM):
                 huggingfacehub_api_token="my-api-key"
             )
             print(llm.invoke("What is Deep Learning?"))
+            
+    .. note::
+        For some specific Hugging Face Hub models, the parameters ``stop``, ``watermark``, 
+        and ``return_full_text`` are unused. In such cases, these parameters should be 
+        set to ``None`` when calling ``invoke``.
 
+        Example:
+        .. code-block:: python
+
+            output = llm.invoke(
+                "Say foo:", stop_sequences=None, return_full_text=None, watermark=None
+            )
     """  # noqa: E501
 
     endpoint_url: Optional[str] = None
@@ -243,7 +254,9 @@ class HuggingFaceEndpoint(LLM):
         self, runtime_stop: Optional[List[str]], **kwargs: Any
     ) -> Dict[str, Any]:
         params = {**self._default_params, **kwargs}
-        params["stop_sequences"] = params["stop_sequences"] + (runtime_stop or [])
+        if isinstance(params["stop_sequences"], list):
+            params["stop_sequences"] = params["stop_sequences"] + (runtime_stop or [])
+
         return params
 
     def _call(
@@ -270,15 +283,18 @@ class HuggingFaceEndpoint(LLM):
                 task=self.task,
             )
             try:
-                response_text = json.loads(response.decode())[0]["generated_text"]
+                response = json.loads(response.decode())[0]
             except KeyError:
-                response_text = json.loads(response.decode())["generated_text"]
+                response = json.loads(response.decode())
+
+            response_text = response.get("generated_text", response.get("summary_text"))
 
             # Maybe the generation has stopped at one of the stop sequences:
             # then we remove this stop sequence from the end of the generated text
-            for stop_seq in invocation_params["stop_sequences"]:
-                if response_text[-len(stop_seq) :] == stop_seq:
-                    response_text = response_text[: -len(stop_seq)]
+            if invocation_params["stop_sequences"]:
+                for stop_seq in invocation_params["stop_sequences"]:
+                    if response_text[-len(stop_seq) :] == stop_seq:
+                        response_text = response_text[: -len(stop_seq)]
             return response_text
 
     async def _acall(
@@ -303,10 +319,13 @@ class HuggingFaceEndpoint(LLM):
                 stream=False,
                 task=self.task,
             )
+
             try:
-                response_text = json.loads(response.decode())[0]["generated_text"]
+                response = json.loads(response.decode())[0]
             except KeyError:
-                response_text = json.loads(response.decode())["generated_text"]
+                response = json.loads(response.decode())
+
+            response_text = response.get("generated_text", response.get("summary_text"))
 
             # Maybe the generation has stopped at one of the stop sequences:
             # then remove this stop sequence from the end of the generated text
