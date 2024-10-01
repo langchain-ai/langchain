@@ -185,7 +185,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     """
     message_dict: Dict[str, Any] = {
         "role": "",
-        "content": _format_message_content(message.content)
+        "content": _format_message_content(message.content),
     }
     if (name := message.name or message.additional_kwargs.get("name")) is not None:
         message_dict["name"] = name
