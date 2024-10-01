@@ -64,7 +64,7 @@ def _rm_titles(kv: dict, prev_key: str = "") -> dict:
     new_kv = {}
     for k, v in kv.items():
         if k == "title":
-            if isinstance(v, dict) and prev_key == "properties" and "title" in v.keys():
+            if isinstance(v, dict) and prev_key == "properties" and "title" in v:
                 new_kv[k] = _rm_titles(v, k)
             else:
                 continue
