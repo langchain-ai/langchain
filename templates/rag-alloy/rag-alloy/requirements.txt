@@ -1,0 +1,5 @@
+google-cloud-aiplatform[reasoningengine,langchain]==1.65.0
+langchain-google-alloydb-pg==0.6.0
+langchain-google-vertexai==1.0.10
+google-cloud-resource-manager==1.12.5
+langchain-community==0.2.16

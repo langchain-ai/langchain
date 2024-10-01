@@ -1,0 +1,31 @@
+[tool.poetry]
+name = "rag-alloy"
+version = "0.1.0"
+description = "RAG using AlloyDB"
+authors = ["Google LLC <googleapis-packages@google.com>"]
+readme = "README.md"
+packages = [{include = "rag-alloy"}]
+
+[tool.poetry.dependencies]
+python = ">=3.9, ^3.11"
+langchain = ">=0.2.5"
+langchain-core = ">=0.2.36, <1.0.0"
+langchain-google-alloydb-pg = ">=0.7.0"
+langchain-google-vertexai = ">=2.0.0"
+
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.21"
+
+[tool.langserve]
+export_module = "rag_alloy"
+export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "rag"
+author = "Google LLC"
+integrations = ["VertexAI", "AlloyDB"]
+tags = ["vectordbs"]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
