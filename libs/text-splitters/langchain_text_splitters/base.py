@@ -227,6 +227,7 @@ class TokenTextSplitter(TextSplitter):
         model_name: Optional[str] = None,
         allowed_special: Union[Literal["all"], AbstractSet[str]] = set(),
         disallowed_special: Union[Literal["all"], Collection[str]] = "all",
+        tokenizer: Optional[Any] = None,
         **kwargs: Any,
     ) -> None:
         """Create a new TextSplitter."""
@@ -242,6 +243,8 @@ class TokenTextSplitter(TextSplitter):
 
         if model_name is not None:
             enc = tiktoken.encoding_for_model(model_name)
+        elif tokenizer is not None:
+            enc = tokenizer
         else:
             enc = tiktoken.get_encoding(encoding_name)
         self._tokenizer = enc
@@ -250,11 +253,16 @@ class TokenTextSplitter(TextSplitter):
 
     def split_text(self, text: str) -> List[str]:
         def _encode(_text: str) -> List[int]:
-            return self._tokenizer.encode(
-                _text,
-                allowed_special=self._allowed_special,
-                disallowed_special=self._disallowed_special,
-            )
+            if hasattr(self._tokenizer, "allowed_special") and hasattr(
+                self._tokenizer, "disallowed_special"
+            ):
+                return self._tokenizer.encode(
+                    _text,
+                    allowed_special=self._allowed_special,
+                    disallowed_special=self._disallowed_special,
+                )
+            else:
+                return self._tokenizer.encode(_text)
 
         tokenizer = Tokenizer(
             chunk_overlap=self._chunk_overlap,
