@@ -127,8 +127,8 @@ def _get_search_client(
         def get_token(
             self,
             *scopes: str,
-            claims: str | None = None,
-            tenant_id: str | None = None,
+            claims: Optional[str] = None,
+            tenant_id: Optional[str] = None,
             enable_cae: bool = False,
             **kwargs: Any,
         ) -> AccessToken:
@@ -1831,3 +1831,5 @@ def _peek(iterable: Iterable, default: Optional[Any] = None) -> Tuple[Iterable, 
         return iterable, value
     except StopIteration:
         return iterable, default
+
+
