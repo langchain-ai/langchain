@@ -38,6 +38,9 @@
   --ifm-menu-link-padding-horizontal: 0.5rem;
   --ifm-menu-link-padding-vertical: 0.5rem;
   --doc-sidebar-width: 275px !important;
+
+  /* Code block syntax highlighting */
+  --docusaurus-highlighted-code-line-bg: rgb(176, 227, 199);
 }
 
 /* For readability concerns, you should choose a lighter palette in dark mode. */
@@ -49,6 +52,9 @@
   --ifm-color-primary-light: #29d5b0;
   --ifm-color-primary-lighter: #32d8b4;
   --ifm-color-primary-lightest: #4fddbf;
+
+  /* Code block syntax highlighting */
+  --docusaurus-highlighted-code-line-bg: rgb(14, 73, 60);
 }
 
 nav, h1, h2, h3, h4 {

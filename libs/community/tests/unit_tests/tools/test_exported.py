@@ -23,13 +23,15 @@ def _get_tool_classes(skip_tools_without_default_names: bool) -> List[Type[BaseT
         if isinstance(tool_class, type) and issubclass(tool_class, BaseTool):
             if tool_class in _EXCLUDE:
                 continue
-            if skip_tools_without_default_names and get_fields(tool_class)[
-                "name"
-            ].default in [  # type: ignore
+            default_name = get_fields(tool_class)["name"].default
+            if skip_tools_without_default_names and default_name in [  # type: ignore
                 None,
                 "",
             ]:
                 continue
+            if not isinstance(default_name, str):
+                continue
+
             results.append(tool_class)
     return results
 
@@ -37,6 +39,6 @@ def _get_tool_classes(skip_tools_without_default_names: bool) -> List[Type[BaseT
 def test_tool_names_unique() -> None:
     """Test that the default names for our core tools are unique."""
     tool_classes = _get_tool_classes(skip_tools_without_default_names=True)
-    names = sorted([get_fields(tool_cls)["name"].default for tool_cls in tool_classes])
+    names = sorted([tool_cls.model_fields["name"].default for tool_cls in tool_classes])
     duplicated_names = [name for name in names if names.count(name) > 1]
     assert not duplicated_names

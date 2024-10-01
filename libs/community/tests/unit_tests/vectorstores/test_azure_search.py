@@ -190,3 +190,40 @@ def test_additional_search_options() -> None:
         )
         assert vector_store.client is not None
         assert vector_store.client._api_version == "test"
+
+
+@pytest.mark.requires("azure.search.documents")
+def test_ids_used_correctly() -> None:
+    """Check whether vector store uses the document ids when provided with them."""
+    from azure.search.documents import SearchClient
+    from azure.search.documents.indexes import SearchIndexClient
+    from langchain_core.documents import Document
+
+    class Response:
+        def __init__(self) -> None:
+            self.succeeded: bool = True
+
+    def mock_upload_documents(self, documents: List[object]) -> List[Response]:  # type: ignore[no-untyped-def]
+        # assume all documents uploaded successfuly
+        response = [Response() for _ in documents]
+        return response
+
+    documents = [
+        Document(
+            page_content="page zero Lorem Ipsum",
+            metadata={"source": "document.pdf", "page": 0, "id": "ID-document-1"},
+        ),
+        Document(
+            page_content="page one Lorem Ipsum",
+            metadata={"source": "document.pdf", "page": 1, "id": "ID-document-2"},
+        ),
+    ]
+    ids_provided = [i.metadata.get("id") for i in documents]
+
+    with patch.object(
+        SearchClient, "upload_documents", mock_upload_documents
+    ), patch.object(SearchIndexClient, "get_index", mock_default_index):
+        vector_store = create_vector_store()
+        ids_used_at_upload = vector_store.add_documents(documents, ids=ids_provided)
+        assert len(ids_provided) == len(ids_used_at_upload)
+        assert ids_provided == ids_used_at_upload

@@ -1,18 +1,13 @@
-import sys
+from collections.abc import AsyncIterator, Iterator, Sequence
 from typing import (
     Any,
-    AsyncIterator,
     Callable,
-    Dict,
-    Iterator,
-    List,
     Optional,
-    Sequence,
-    Type,
     Union,
 )
 
 import pytest
+from pydantic import BaseModel
 from syrupy import SnapshotAssertion
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
@@ -25,7 +20,6 @@ from langchain_core.load import dumps
 from langchain_core.messages import BaseMessage
 from langchain_core.outputs import ChatResult
 from langchain_core.prompts import PromptTemplate
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import (
     Runnable,
     RunnableBinding,
@@ -98,8 +92,7 @@ async def test_fallbacks(
     assert await runnable.ainvoke("hello") == "bar"
     assert await runnable.abatch(["hi", "hey", "bye"]) == ["bar"] * 3
     assert list(await runnable.ainvoke("hello")) == list("bar")
-    if sys.version_info >= (3, 9):
-        assert dumps(runnable, pretty=True) == snapshot
+    assert dumps(runnable, pretty=True) == snapshot
 
 
 def _runnable(inputs: dict) -> str:
@@ -271,7 +264,7 @@ def test_fallbacks_stream() -> None:
     runnable = RunnableGenerator(_generate_immediate_error).with_fallbacks(
         [RunnableGenerator(_generate)]
     )
-    assert list(runnable.stream({})) == [c for c in "foo bar"]
+    assert list(runnable.stream({})) == list("foo bar")
 
     with pytest.raises(ValueError):
         runnable = RunnableGenerator(_generate_delayed_error).with_fallbacks(
@@ -316,8 +309,8 @@ class FakeStructuredOutputModel(BaseChatModel):
 
     def _generate(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
@@ -326,14 +319,14 @@ class FakeStructuredOutputModel(BaseChatModel):
 
     def bind_tools(
         self,
-        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        tools: Sequence[Union[dict[str, Any], type[BaseModel], Callable, BaseTool]],
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         return self.bind(tools=tools)
 
     def with_structured_output(
-        self, schema: Union[Dict, Type[BaseModel]], **kwargs: Any
-    ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
+        self, schema: Union[dict, type[BaseModel]], **kwargs: Any
+    ) -> Runnable[LanguageModelInput, Union[dict, BaseModel]]:
         return RunnableLambda(lambda x: {"foo": self.foo})
 
     @property
@@ -346,8 +339,8 @@ class FakeModel(BaseChatModel):
 
     def _generate(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
@@ -356,7 +349,7 @@ class FakeModel(BaseChatModel):
 
     def bind_tools(
         self,
-        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        tools: Sequence[Union[dict[str, Any], type[BaseModel], Callable, BaseTool]],
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         return self.bind(tools=tools)

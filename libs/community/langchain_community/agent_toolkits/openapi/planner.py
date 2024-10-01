@@ -9,8 +9,8 @@ import yaml
 from langchain_core.callbacks import BaseCallbackManager
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate, PromptTemplate
-from langchain_core.pydantic_v1 import Field
 from langchain_core.tools import BaseTool, Tool
+from pydantic import Field
 
 from langchain_community.agent_toolkits.openapi.planner_prompt import (
     API_CONTROLLER_PROMPT,
@@ -69,7 +69,7 @@ class RequestsGetToolWithParsing(BaseRequestsTool, BaseTool):
 
     name: str = "requests_get"
     """Tool name."""
-    description = REQUESTS_GET_TOOL_DESCRIPTION
+    description: str = REQUESTS_GET_TOOL_DESCRIPTION
     """Tool description."""
     response_length: int = MAX_RESPONSE_LENGTH
     """Maximum length of the response to be returned."""
@@ -103,7 +103,7 @@ class RequestsPostToolWithParsing(BaseRequestsTool, BaseTool):
 
     name: str = "requests_post"
     """Tool name."""
-    description = REQUESTS_POST_TOOL_DESCRIPTION
+    description: str = REQUESTS_POST_TOOL_DESCRIPTION
     """Tool description."""
     response_length: int = MAX_RESPONSE_LENGTH
     """Maximum length of the response to be returned."""
@@ -134,7 +134,7 @@ class RequestsPatchToolWithParsing(BaseRequestsTool, BaseTool):
 
     name: str = "requests_patch"
     """Tool name."""
-    description = REQUESTS_PATCH_TOOL_DESCRIPTION
+    description: str = REQUESTS_PATCH_TOOL_DESCRIPTION
     """Tool description."""
     response_length: int = MAX_RESPONSE_LENGTH
     """Maximum length of the response to be returned."""
@@ -167,7 +167,7 @@ class RequestsPutToolWithParsing(BaseRequestsTool, BaseTool):
 
     name: str = "requests_put"
     """Tool name."""
-    description = REQUESTS_PUT_TOOL_DESCRIPTION
+    description: str = REQUESTS_PUT_TOOL_DESCRIPTION
     """Tool description."""
     response_length: int = MAX_RESPONSE_LENGTH
     """Maximum length of the response to be returned."""
@@ -198,7 +198,7 @@ class RequestsDeleteToolWithParsing(BaseRequestsTool, BaseTool):
 
     name: str = "requests_delete"
     """The name of the tool."""
-    description = REQUESTS_DELETE_TOOL_DESCRIPTION
+    description: str = REQUESTS_DELETE_TOOL_DESCRIPTION
     """The description of the tool."""
 
     response_length: Optional[int] = MAX_RESPONSE_LENGTH
