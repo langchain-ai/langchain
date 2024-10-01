@@ -33,6 +33,7 @@ from langchain_core.output_parsers import (
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
+from langchain_core.utils import pre_init
 from langchain_core.utils.function_calling import convert_to_openai_tool
 
 from pydantic import BaseModel, Field
@@ -111,7 +112,7 @@ class ChatOCIModelDeployment(BaseChatModel, BaseOCIModelDeployment):
             content='!' id='run-23df02c6-c43f-42de-87c6-8ad382e125c3'
             content='' response_metadata={'finish_reason': 'stop'} id='run-23df02c6-c43f-42de-87c6-8ad382e125c3'
 
-    Asyc:
+    Async:
         .. code-block:: python
 
             await chat.ainvoke(messages)
@@ -121,7 +122,11 @@ class ChatOCIModelDeployment(BaseChatModel, BaseOCIModelDeployment):
 
         .. code-block:: python
 
-            AIMessage(content='Bonjour le monde!', response_metadata={'finish_reason': 'stop'}, id='run-8657a105-96b7-4bb6-b98e-b69ca420e5d1-0')
+            AIMessage(
+                content='Bonjour le monde!',
+                response_metadata={'finish_reason': 'stop'},
+                id='run-8657a105-96b7-4bb6-b98e-b69ca420e5d1-0'
+            )
 
     Structured output:
         .. code-block:: python
