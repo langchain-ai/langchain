@@ -31,15 +31,15 @@ def test_huggingface_tokenizer() -> None:
     from transformers import AutoTokenizer
 
     tokenizer_2 = AutoTokenizer.from_pretrained("cmarkea/bloomz-3b-retriever-v2")
-    splitter = TokenTextSplitter(tokenizer=tokenizer_2, chunk_size=1, chunk_overlap=0)
-    output = splitter.split_text("foo bar")
+    splitter_2 = TokenTextSplitter(tokenizer=tokenizer_2, chunk_size=1, chunk_overlap=0)
+    output = splitter_2.split_text("foo bar")
     assert output == ["<s>", "foo", " bar", "</s>"]
 
     tokenizer_3 = AutoTokenizer.from_pretrained("cmarkea/bloomz-3b-retriever-v2")
-    splitter = TokenTextSplitter.from_huggingface_tokenizer(
+    splitter_3 = TokenTextSplitter.from_huggingface_tokenizer(
         tokenizer_3, chunk_size=1, chunk_overlap=0
     )
-    output = splitter.split_text("foo bar")
+    output = splitter_3.split_text("foo bar")
     assert output == ["<s>", "foo", " bar", "</s>"]
 
 
