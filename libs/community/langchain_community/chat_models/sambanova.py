@@ -51,7 +51,7 @@ def _create_message_dicts(
     messages: List[BaseMessage]
 ) -> List[Dict[str, Any]]:
     """
-    convert a list of BaseMessages to a list of dictionaries with Role / content
+    Convert a list of BaseMessages to a list of dictionaries with Role / content
 
     Args:
         messages: list of BaseMessages
@@ -67,7 +67,7 @@ class ChatSambaNovaCloud(BaseChatModel):
     SambaNova Cloud chat model.
 
     Setup:
-        To use, you should have the environment variables
+        To use, you should have the environment variables:
         ``SAMBANOVA_URL`` set with your SambaNova Cloud URL.
         ``SAMBANOVA_API_KEY`` set with your SambaNova Cloud API Key.
         http://cloud.sambanova.ai/
@@ -77,7 +77,6 @@ class ChatSambaNovaCloud(BaseChatModel):
                 sambanova_url = SambaNova cloud endpoint URL,
                 sambanova_api_key = set with your SambaNova cloud API key,
                 model = model name,
-                streaming = set True for use streaming API
                 max_tokens = max number of tokens to generate,
                 temperature = model temperature,
                 top_p = model top p,
@@ -87,9 +86,9 @@ class ChatSambaNovaCloud(BaseChatModel):
 
     Key init args — completion params:
         model: str
-            The name of the model to use, e.g., llama3-8b.
+            The name of the model to use, e.g., Meta-Llama-3-70B-Instruct.
         streaming: bool
-            Whether to use streaming or not
+            Whether to use streaming handler when using non streaming methods
         max_tokens: int
             max tokens to generate
         temperature: float
@@ -116,7 +115,6 @@ class ChatSambaNovaCloud(BaseChatModel):
                 sambanova_url = SambaNova cloud endpoint URL,
                 sambanova_api_key = set with your SambaNova cloud API key,
                 model = model name,
-                streaming = set True for streaming
                 max_tokens = max number of tokens to generate,
                 temperature = model temperature,
                 top_p = model top p,
@@ -166,7 +164,7 @@ class ChatSambaNovaCloud(BaseChatModel):
     """The name of the model"""
 
     streaming: bool = Field(default=False)
-    """Whether to use streaming or not"""
+    """Whether to use streaming handler when using non streaming methods"""
 
     max_tokens: int = Field(default=1024)
     """max tokens to generate"""
@@ -174,10 +172,10 @@ class ChatSambaNovaCloud(BaseChatModel):
     temperature: float = Field(default=0.7)
     """model temperature"""
 
-    top_p: float = Field(default=0.0)
+    top_p: Optional[float] = Field()
     """model top p"""
 
-    top_k: int = Field(default=1)
+    top_k: Optional[int] = Field()
     """model top k"""
 
     stream_options: dict = Field(default={"include_usage": True})
@@ -286,7 +284,7 @@ class ChatSambaNovaCloud(BaseChatModel):
             messages_dicts: List of role / content dicts to use as input.
             stop: list of stop tokens
 
-        Returns:
+        Yields:
             An iterator of response dicts.
         """
         try:
@@ -328,41 +326,37 @@ class ChatSambaNovaCloud(BaseChatModel):
             )
 
         for event in client.events():
-            chunk = {
-                "event": event.event,
-                "data": event.data,
-                "status_code": response.status_code,
-            }
-
-            if chunk["event"] == "error_event" or chunk["status_code"] != 200:
+            
+            if event.event == "error_event":
                 raise RuntimeError(
                     f"Sambanova /complete call failed with status code "
-                    f"{chunk['status_code']}."
-                    f"{chunk}."
+                    f"{response.status_code}."
+                    f"{event.data}."
                 )
 
             try:
                 # check if the response is a final event
                 # in that case event data response is '[DONE]'
-                if chunk["data"] != "[DONE]":
-                    if isinstance(chunk["data"], str):
-                        data = json.loads(chunk["data"])
+                if event.data != "[DONE]":
+                    if isinstance(event.data, str):
+                        data = json.loads(event.data)
                     else:
                         raise RuntimeError(
                             f"Sambanova /complete call failed with status code "
-                            f"{chunk['status_code']}."
-                            f"{chunk}."
+                            f"{response.status_code}."
+                            f"{event.data}."
                         )
                     if data.get("error"):
                         raise RuntimeError(
                             f"Sambanova /complete call failed with status code "
-                            f"{chunk['status_code']}."
-                            f"{chunk}."
+                            f"{response.status_code}."
+                            f"{event.data}."
                         )
                     yield data
-            except Exception:
-                raise Exception(
-                    f"Error getting content chunk raw streamed response: {chunk}"
+            except Exception as e:
+                raise RuntimeError(
+                    f"Error getting content chunk raw streamed response: {e}",
+                    f"data: {event.data}"
                 )
 
     def _generate(
@@ -373,9 +367,7 @@ class ChatSambaNovaCloud(BaseChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         """
-        SambaNovaCloud chat model logic.
-
-        Call SambaNovaCloud API.
+        Call SambaNovaCloud models.
 
         Args:
             messages: the prompt composed of a list of messages.
@@ -386,6 +378,9 @@ class ChatSambaNovaCloud(BaseChatModel):
                   it makes it much easier to parse the output of the model
                   downstream and understand why generation stopped.
             run_manager: A run manager with callbacks for the LLM.
+           
+        Returns: 
+            result: ChatResult with model generation
         """
         if self.streaming:
             stream_iter = self._stream(
@@ -430,6 +425,9 @@ class ChatSambaNovaCloud(BaseChatModel):
                   it makes it much easier to parse the output of the model
                   downstream and understand why generation stopped.
             run_manager: A run manager with callbacks for the LLM.
+            
+        Yields:
+            chunk: ChatGenerationChunk with model partial generation     
         """
         messages_dicts = _create_message_dicts(messages)
         finish_reason = None
@@ -469,7 +467,7 @@ class ChatSambaStudio(BaseChatModel):
     SambaStudio chat model.
 
     Setup:
-        To use, you should have the environment variables
+        To use, you should have the environment variables:
         ``SAMBASTUDIO_URL`` set with your SambaStudio deployed endpoint URL.
         ``SAMBASTUDIO_API_KEY`` set with your SambaStudio deployed endpoint Key.
         https://docs.sambanova.ai/sambastudio/latest/index.html
@@ -478,22 +476,24 @@ class ChatSambaStudio(BaseChatModel):
             ChatSambaStudio(
                 sambastudio_url = set with your SambaStudio deployed endpoint URL,
                 sambastudio_api_key = set with your SambaStudio deployed endpoint Key.
-                model = model name,
-                streaming = set True for use streaming API
+                model = model or expert name (set for CoE endpoints),
                 max_tokens = max number of tokens to generate,
                 temperature = model temperature,
                 top_p = model top p,
                 top_k = model top k,
+                do_sample = wether to do sample
+                process_prompt = wether to process prompt (set for CoE generic v1 and v2 endpoints)
                 stream_options = include usage to get generation metrics
+                special_tokens = start, start_role, end_role, end special tokens (set for CoE generic v1 and v2 endpoints when process prompt set to false or for StandAlone v1 and v2 endpoints)
                 model_kwargs: Optional = Extra Key word arguments to pass to the model.
             )
 
     Key init args — completion params:
         model: str
-            The name of the model to use, e.g., llama3-8b.
+            The name of the model to use, e.g., Meta-Llama-3-70B-Instruct-4096 (set for CoE endpoints).
         streaming: bool
-            Whether to use streaming or not
-        max_tokens: int
+            Whether to use streaming 
+        max_tokens: inthandler when using non streaming methods
             max tokens to generate
         temperature: float
             model temperature
@@ -501,8 +501,14 @@ class ChatSambaStudio(BaseChatModel):
             model top p
         top_k: int
             model top k
+        do_sample: bool
+            wether to do sample
+        process_prompt:
+            wether to process prompt (set for CoE generic v1 and v2 endpoints)
         stream_options: dict
             stream options, include usage to get generation metrics
+        special_tokens: dict
+            start, start_role, end_role and end special tokens (set for CoE generic v1 and v2 endpoints when process prompt set to false or for StandAlone v1 and v2 endpoints) default to llama3 special tokens
         model_kwargs: dict
             Extra Key word arguments to pass to the model.
 
@@ -517,18 +523,19 @@ class ChatSambaStudio(BaseChatModel):
 
             from langchain_community.chat_models import ChatSambaStudio
 
-            ChatSambaStudio(
+            chat = ChatSambaStudio=(
                 sambastudio_url = set with your SambaStudio deployed endpoint URL,
                 sambastudio_api_key = set with your SambaStudio deployed endpoint Key.
-                model = model name,
-                streaming = set True for streaming
+                model = model or expert name (set for CoE endpoints),
                 max_tokens = max number of tokens to generate,
                 temperature = model temperature,
                 top_p = model top p,
                 top_k = model top k,
-                process_prompt = wether to process prompt or not (for generic api v1 and v2),
-                do_sample = wether to do sample or not (for generic api v1 and v2),
-                stream_options = include usage to get generation metrics (for openai api)
+                do_sample = wether to do sample
+                process_prompt = wether to process prompt (set for CoE generic v1 and v2 endpoints)
+                stream_options = include usage to get generation metrics
+                special_tokens = start, start_role, end_role, and special tokens (set for CoE generic v1 and v2 endpoints when process prompt set to false or for StandAlone v1 and v2 endpoints)
+                model_kwargs: Optional = Extra Key word arguments to pass to the model.
             )
     Invoke:
         .. code-block:: python
@@ -575,29 +582,29 @@ class ChatSambaStudio(BaseChatModel):
     streaming_url: str = Field(default="", exclude=True)
     """SambaStudio streaming Url"""
 
-    model: str = Field(default="Meta-Llama-3.1-8B-Instruct")
-    """The name of the model or expert to use"""
+    model: Optional[str] = Field()
+    """The name of the model or expert to use (for CoE endpoints)"""
 
     streaming: bool = Field(default=False)
-    """Whether to use streaming api or not when using invoke method"""
+    """Whether to use streaming handler when using non streaming methods"""
 
     max_tokens: int = Field(default=1024)
     """max tokens to generate"""
 
-    temperature: float = Field(default=0.7)
+    temperature: Optional[float] = Field(default=0.7)
     """model temperature"""
 
-    top_p: float = Field()
+    top_p: Optional[float] = Field()
     """model top p"""
 
-    top_k: int = Field()
+    top_k: Optional[int] = Field()
     """model top k"""
     
-    do_sample: bool = Field(default=True)
+    do_sample: Optional[bool] = Field()
     """whether to do sampling"""
     
-    process_prompt: bool = Field(default=False)
-    """whether process prompt"""
+    process_prompt: Optional[bool] = Field()
+    """whether process prompt (for CoE generic v1 and v2 endpoints)"""
 
     stream_options: dict = Field(default={"include_usage": True})
     """stream options, include usage to get generation metrics"""
@@ -610,6 +617,7 @@ class ChatSambaStudio(BaseChatModel):
         "end" : "<|start_header_id|>assistant<|end_header_id|>\n"
         }
     )
+    """start, start_role, end_role and end special tokens (set for CoE generic v1 and v2 endpoints when process prompt set to false or for StandAlone v1 and v2 endpoints) default to llama3 special tokens"""
     
     model_kwargs: Optional[dict] = None
     """Key word arguments to pass to the model."""
@@ -643,7 +651,10 @@ class ChatSambaStudio(BaseChatModel):
             "temperature": self.temperature,
             "top_p": self.top_p,
             "top_k": self.top_k,
+            "do_sample": self.do_sample,
+            "process_prompt": self.process_prompt,
             "stream_options": self.stream_options,
+            "special_tokens": self.special_tokens,
             "model_kwargs": self.model_kwargs
         }
 
@@ -666,6 +677,13 @@ class ChatSambaStudio(BaseChatModel):
      
     def _get_role(self, message:BaseMessage) -> str:
         """
+        Get the role of LangChain BaseMessage
+        
+        Args:
+            message: LangChain BaseMessage
+            
+        Returns:
+            str: Role of the LangChain BaseMessage
         """
         if isinstance(message, ChatMessage):
             role = message.role
@@ -682,6 +700,16 @@ class ChatSambaStudio(BaseChatModel):
         return role
     def _messages_to_string(self, messages: List[BaseMessage]) -> str:
         """
+        Convert a list of BaseMessages to a:
+        - dumped json string with Role / content dict structure when process_prompt is true,
+        - string with special tokens if process_prompt is false
+        for generic V1 and V2 endpoints
+        
+        Args:
+            messages: list of BaseMessages
+            
+        Returns:
+            str: string to send as model input depending on process_prompt param 
         """ 
         if self.process_prompt:
             messages_dict={
@@ -710,6 +738,14 @@ class ChatSambaStudio(BaseChatModel):
             
     def _get_sambastudio_urls(self, url: str) -> Tuple[str, str]:
         """
+        Get streaming and non streaming URLs from the given URL
+        
+        Args: 
+            url: string with sambastudio base or streaming endpoint url
+            
+        Returns:
+            base_url: string with url to do non streaming calls 
+            streaming_url: string with url to do streaming calls
         """
         if "openai" in url:
             base_url = url
@@ -731,7 +767,18 @@ class ChatSambaStudio(BaseChatModel):
         messages: List[BaseMessage], 
         stop: Optional[List[str]] = None,
         streaming: Optional[bool] = False
-    ) -> Dict[str, Any]:
+    ) -> Response:
+        """
+        Performs a post request to the LLM API.
+        
+        Args:
+        messages_dicts: List of role / content dicts to use as input.
+        stop: list of stop tokens
+        streaming: wether to do a streaming call
+
+        Returns:
+            A request Response object
+        """
         
         # create request payload for openai compatible API
         if "openai" in self.sambastudio_url:
@@ -744,7 +791,8 @@ class ChatSambaStudio(BaseChatModel):
                 "temperature": self.temperature,
                 "top_p": self.top_p,
                 "top_k": self.top_k,
-                "streaming": streaming,
+                "stream": streaming,
+                "stream_options": self.stream_options
             }
             data = {key:value for key, value in data.items() if value is not None}
             headers = {
@@ -784,10 +832,16 @@ class ChatSambaStudio(BaseChatModel):
             if self.model_kwargs is not None:
                 params = {**params, **self.model_kwargs}
             params = {key:{"type":type(value).__name__, "value": str(value)} for key, value in params.items() if value is not None}
-            data = {
-                "instances": [self._messages_to_string(messages)],
-                "params": params
-                }
+            if streaming:
+                data = {
+                    "instance": self._messages_to_string(messages),
+                    "params": params
+                    }
+            else:
+                data = {
+                    "instances": [self._messages_to_string(messages)],
+                    "params": params
+                    }
             headers = {"key": self.sambastudio_api_key.get_secret_value()}   
             
         else:
@@ -796,11 +850,19 @@ class ChatSambaStudio(BaseChatModel):
         
              
         http_session = requests.Session()
-        response = http_session.post(
+        if streaming:
+            response = http_session.post(
+                self.streaming_url,
+                headers=headers,
+                json=data,
+                stream = True
+            ) 
+        else:
+            response = http_session.post(
                 self.base_url,
                 headers=headers,
                 json=data,
-                stream = streaming
+                stream = False
             ) 
         if response.status_code != 200:
             raise RuntimeError(
@@ -808,12 +870,18 @@ class ChatSambaStudio(BaseChatModel):
                 f"{response.status_code}."
                 f"{response.text}."
             )
-
         return response
         
     
     def _process_response(self, response: Response) -> AIMessage:
         """
+        Process a non streaming response from the api
+            
+        Args:
+            response: A request Response object
+            
+        Returns
+            generation: an AIMessage with model generation 
         """
         
         #Extract json payload form response
@@ -846,7 +914,7 @@ class ChatSambaStudio(BaseChatModel):
         # process response payload for generic v1 API
         elif "api/predict/generic" in self.sambastudio_url:
             content = response_dict["predictions"][0]["completion"]
-            id = ""
+            id = None
             response_metadata = response_dict
         
         else:
@@ -860,33 +928,157 @@ class ChatSambaStudio(BaseChatModel):
                 id=id,
             )
         
-    def _process_stream_response(self, response: Response):
+    def _process_stream_response(self, response: Response) -> AIMessageChunk:
         """
+        Process a streaming response from the api
+            
+        Args:
+            response: An iterable request Response object
+            
+        Yields:
+            generation: an AIMessageChunk with model partial generation 
         """
         
-        # process response payload for openai compatible API
+        try:
+            import sseclient
+        except ImportError:
+            raise ImportError(
+                "could not import sseclient library"
+                "Please install it with `pip install sseclient-py`."
+            )
+           
+        # process response payload for openai compatible API   
         if "openai" in self.sambastudio_url:
-            pass  
-            
+            finish_reason = ""
+            client = sseclient.SSEClient(response)
+            for event in client.events():
+                if event.event == "error_event":
+                    raise RuntimeError(
+                        f"Sambanova /complete call failed with status code "
+                        f"{response.status_code}."
+                        f"{event.data}."
+                    )
+                try:
+                    # check if the response is not a final event ("[DONE]")
+                    if event.data != "[DONE]":
+                        if isinstance(event.data, str):
+                            data = json.loads(event.data)
+                        else:
+                            raise RuntimeError(
+                                f"Sambanova /complete call failed with status code "
+                                f"{response.status_code}."
+                                f"{event.data}."
+                            )
+                        if data.get("error"):
+                            raise RuntimeError(
+                                f"Sambanova /complete call failed with status code "
+                                f"{response.status_code}."
+                                f"{event.data}."
+                            )
+                        if len(data["choices"]) > 0:
+                            finish_reason = data["choices"][0].get("finish_reason")
+                            content = data["choices"][0]["delta"]["content"]
+                            id = data["id"]
+                            metadata = {}
+                        else:
+                            content = ""
+                            id = data["id"]
+                            metadata = {
+                                "finish_reason": finish_reason,
+                                "usage": data.get("usage"),
+                                "model_name": data["model"],
+                                "system_fingerprint": data["system_fingerprint"],
+                                "created": data["created"]
+                        }
+                        yield AIMessageChunk(
+                            content=content,
+                            id=id,
+                            response_metadata=metadata,
+                            additional_kwargs={},
+                        )
+
+                except Exception as e:
+                    raise RuntimeError(
+                        f"Error getting content chunk raw streamed response: {e}",
+                        f"data: {event.data}"
+                    )
+                
         # process response payload for generic v2 API
         elif "api/v2/predict/generic" in self.sambastudio_url:   
-            pass
-        
-        # process response payload for generic v1 API
-        elif "api/predict/generic" in self.sambastudio_url:   
-            pass
-        
-        content = ""
-        response_metadata = {}
-        id = ""
-        return ChatGenerationChunk(
-                    message=AIMessageChunk(
+            for line in response.iter_lines():
+                try:
+                    data = json.loads(line)
+                    content = data["result"]["items"][0]["value"]["stream_token"]
+                    id = data["result"]["items"][0]["id"]
+                    if data["result"]["items"][0]["value"]["is_last_response"]:
+                        metadata = {
+                            "finish_reason": data["result"]["items"][0]["value"].get("stop_reason"),
+                            "prompt":  data["result"]["items"][0]["value"].get("prompt"),
+                            "usage": {
+                                "prompt_tokens_count": data["result"]["items"][0]["value"].get("prompt_tokens_count"),
+                                "completion_tokens_count": data["result"]["items"][0]["value"].get("completion_tokens_count"),
+                                "total_tokens_count": data["result"]["items"][0]["value"].get("total_tokens_count"),
+                                "start_time": data["result"]["items"][0]["value"].get("start_time"),
+                                "end_time": data["result"]["items"][0]["value"].get("end_time"),
+                                "model_execution_time": data["result"]["items"][0]["value"].get("model_execution_time"),
+                                "time_to_first_token": data["result"]["items"][0]["value"].get("time_to_first_token"),
+                                "throughput_after_first_token": data["result"]["items"][0]["value"].get("throughput_after_first_token"),
+                                "batch_size_used": data["result"]["items"][0]["value"].get("batch_size_used")
+                                } 
+                        }
+                    else:
+                        metadata = {}
+                    yield AIMessageChunk(
                         content=content,
                         id=id,
-                        response_metadata=response_metadata,
+                        response_metadata=metadata,
                         additional_kwargs={},
                     )
-                )
+                        
+                except Exception as e:
+                    raise RuntimeError(f"Error getting content chunk raw streamed response: {e}",
+                                       f"line: {line}")
+        
+        # process response payload for generic v1 API
+        elif "api/predict/generic" in self.sambastudio_url:
+            for line in response.iter_lines():
+                try:
+                    data = json.loads(line)
+                    content = data["result"]["responses"][0]["stream_token"]
+                    id = None
+                    if data["result"]["responses"][0]["is_last_response"]:
+                        metadata = {
+                            "finish_reason": data["result"]["responses"][0].get("stop_reason"),
+                            "prompt":  data["result"]["responses"][0].get("prompt"),
+                            "usage": {
+                                "prompt_tokens_count": data["result"]["responses"][0].get("prompt_tokens_count"),
+                                "completion_tokens_count": data["result"]["responses"][0].get("completion_tokens_count"),
+                                "total_tokens_count": data["result"]["responses"][0].get("total_tokens_count"),
+                                "start_time": data["result"]["responses"][0].get("start_time"),
+                                "end_time": data["result"]["responses"][0].get("end_time"),
+                                "model_execution_time": data["result"]["responses"][0].get("model_execution_time"),
+                                "time_to_first_token": data["result"]["responses"][0].get("time_to_first_token"),
+                                "throughput_after_first_token": data["result"]["responses"][0].get("throughput_after_first_token"),
+                                "batch_size_used": data["result"]["responses"][0].get("batch_size_used")
+                                } 
+                        }
+                    else:
+                        metadata = {}
+                    yield AIMessageChunk(
+                        content=content,
+                        id=id,
+                        response_metadata=metadata,
+                        additional_kwargs={},
+                    )
+                    
+                except Exception as e:
+                    raise RuntimeError(f"Error getting content chunk raw streamed response: {e}",
+                                       f"line: {line}")
+                    
+        else:
+            raise ValueError(f"Unsupported URL{self.sambastudio_url}",
+                             "only openai, generic v1 and generic v2 APIs are supported")
+        
     
     def _generate(
         self,
@@ -896,6 +1088,20 @@ class ChatSambaStudio(BaseChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         """
+        Call SambaStudio models.
+
+        Args:
+            messages: the prompt composed of a list of messages.
+            stop: a list of strings on which the model should stop generating.
+                  If generation stops due to a stop token, the stop token itself
+                  SHOULD BE INCLUDED as part of the output. This is not enforced
+                  across models right now, but it's a good practice to follow since
+                  it makes it much easier to parse the output of the model
+                  downstream and understand why generation stopped.
+            run_manager: A run manager with callbacks for the LLM.
+            
+        Returns:
+            result: ChatResult with model generation
         """
         if self.streaming:
             stream_iter = self._stream(
@@ -916,9 +1122,25 @@ class ChatSambaStudio(BaseChatModel):
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         """
+        Stream the output of the SambaStudio model.
+
+        Args:
+            messages: the prompt composed of a list of messages.
+            stop: a list of strings on which the model should stop generating.
+                  If generation stops due to a stop token, the stop token itself
+                  SHOULD BE INCLUDED as part of the output. This is not enforced
+                  across models right now, but it's a good practice to follow since
+                  it makes it much easier to parse the output of the model
+                  downstream and understand why generation stopped.
+            run_manager: A run manager with callbacks for the LLM.
+            
+        Yields:
+            chunk: ChatGenerationChunk with model partial generation   
         """
         response = self._handle_request(messages, stop, streaming=True) 
-        for chunk in self._process_stream_response(response): #TODO process stream response method method
+        for ai_message_chunk in self._process_stream_response(response): #TODO process stream response method method
+            chunk = ChatGenerationChunk(message=ai_message_chunk)
             if run_manager:
                 run_manager.on_llm_new_token(chunk.text, chunk=chunk)
             yield chunk
+            
