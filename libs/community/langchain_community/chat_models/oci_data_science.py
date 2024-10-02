@@ -56,15 +56,40 @@ def _is_pydantic_class(obj: Any) -> bool:
 class ChatOCIModelDeployment(BaseChatModel, BaseOCIModelDeployment):
     """OCI Data Science Model Deployment chat model integration.
 
-    To use, you must provide the model HTTP endpoint from your deployed
-    chat model, e.g. https://modeldeployment.<region>.oci.customer-oci.com/<md_ocid>/predict.
+    Setup:
+        Install ``oracle-ads`` and ``langchain-openai``.
 
-    To authenticate, `oracle-ads` has been used to automatically load
-    credentials: https://accelerated-data-science.readthedocs.io/en/latest/user_guide/cli/authentication.html
+        .. code-block:: bash
 
-    Make sure to have the required policies to access the OCI Data
-    Science Model Deployment endpoint. See:
-    https://docs.oracle.com/en-us/iaas/data-science/using/model-dep-policies-auth.htm#model_dep_policies_auth__predict-endpoint
+            pip install -U oracle-ads langchain-openai
+
+        Use `ads.set_auth()` to configure authentication.
+        For example, to use OCI resource_principal for authentication:
+
+        .. code-block:: python
+
+            import ads
+            ads.set_auth("resource_principal")
+
+        For more details on authentication, see:
+        https://accelerated-data-science.readthedocs.io/en/latest/user_guide/cli/authentication.html
+
+        Make sure to have the required policies to access the OCI Data
+        Science Model Deployment endpoint. See:
+        https://docs.oracle.com/en-us/iaas/data-science/using/model-dep-policies-auth.htm
+
+
+    Key init args - completion params:
+        model: str
+            Name of the model specified in the deployment. Defaults to ``odsc-llm``.
+        temperature: float
+            Sampling temperature.
+        max_tokens: Optional[int]
+            Max number of tokens to generate.
+
+    Key init args — client params:
+        auth: dict
+            ADS auth dictionary for OCI authentication.
 
     Instantiate:
         .. code-block:: python
@@ -95,7 +120,19 @@ class ChatOCIModelDeployment(BaseChatModel, BaseOCIModelDeployment):
         .. code-block:: python
 
             AIMessage(
-                content='Bonjour le monde!',response_metadata={'token_usage': {'prompt_tokens': 40, 'total_tokens': 50, 'completion_tokens': 10},'model_name': 'odsc-llm','system_fingerprint': '','finish_reason': 'stop'},id='run-cbed62da-e1b3-4abd-9df3-ec89d69ca012-0')
+                content='Bonjour le monde!',
+                response_metadata={
+                    'token_usage': {
+                        'prompt_tokens': 40,
+                        'total_tokens': 50,
+                        'completion_tokens': 10
+                    },
+                    'model_name': 'odsc-llm',
+                    'system_fingerprint': '',
+                    'finish_reason': 'stop'
+                },
+                id='run-cbed62da-e1b3-4abd-9df3-ec89d69ca012-0'
+            )
 
     Streaming:
         .. code-block:: python
@@ -149,14 +186,16 @@ class ChatOCIModelDeployment(BaseChatModel, BaseOCIModelDeployment):
 
         .. code-block:: python
 
-            Joke(setup='Why did the cat get stuck in the tree?',punchline='Because it was chasing its tail!')
+            Joke(
+                setup='Why did the cat get stuck in the tree?',
+                punchline='Because it was chasing its tail!'
+            )
 
         See ``ChatOCIModelDeployment.with_structured_output()`` for more.
 
     Customized Usage:
-
-    You can inherit from base class and overwrite the `_process_response`, `_process_stream_response`,
-    `_construct_json_body` for satisfying customized needed.
+        You can inherit from base class and overwrite the `_process_response`,
+        `_process_stream_response`, `_construct_json_body` for customized usage.
 
         .. code-block:: python
 
@@ -177,13 +216,32 @@ class ChatOCIModelDeployment(BaseChatModel, BaseOCIModelDeployment):
                     }
 
             chat = MyChatModel(
-                endpoint=f"https://modeldeployment.us-ashburn-1.oci.customer-oci.com/{ocid}/predict",
+                endpoint=f"https://modeldeployment.<region>.oci.customer-oci.com/{ocid}/predict",
                 model="odsc-llm",
             }
 
             chat.invoke("tell me a joke")
 
-    """  # noqa: E501
+    Response metadata
+        .. code-block:: python
+
+            ai_msg = chat.invoke(messages)
+            ai_msg.response_metadata
+
+        .. code-block:: python
+
+            {
+                'token_usage': {
+                    'prompt_tokens': 40,
+                    'total_tokens': 50,
+                    'completion_tokens': 10
+                },
+                'model_name': 'odsc-llm',
+                'system_fingerprint': '',
+                'finish_reason': 'stop'
+            }
+
+    """
 
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Keyword arguments to pass to the model."""
