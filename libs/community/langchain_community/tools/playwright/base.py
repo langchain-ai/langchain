@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, Optional, Tuple, Type
 
 from langchain_core.tools import BaseTool
 from langchain_core.utils import guard_import
-from pydantic import model_validator
+from pydantic import model_validator, BaseModel
 
 if TYPE_CHECKING:
     from playwright.async_api import Browser as AsyncBrowser
@@ -31,9 +31,13 @@ def lazy_import_playwright_browsers() -> Tuple[Type[AsyncBrowser], Type[SyncBrow
         guard_import(module_name="playwright.sync_api").Browser,
     )
 
+class BaseBrowserToolInput(BaseModel):
+    """Base class for browser tool input when tool has no arguments."""
 
 class BaseBrowserTool(BaseTool):
     """Base class for browser tools."""
+
+    args_schema: Type[BaseModel] = BaseBrowserToolInput
 
     sync_browser: Optional["SyncBrowser"] = None
     async_browser: Optional["AsyncBrowser"] = None

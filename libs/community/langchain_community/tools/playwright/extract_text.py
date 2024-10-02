@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from typing import Any, Optional, Type
+from typing import Any, Optional
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from pydantic import BaseModel, model_validator
+from pydantic import model_validator
 
 from langchain_community.tools.playwright.base import BaseBrowserTool
 from langchain_community.tools.playwright.utils import (
@@ -14,13 +14,11 @@ from langchain_community.tools.playwright.utils import (
     get_current_page,
 )
 
-
 class ExtractTextTool(BaseBrowserTool):
     """Tool for extracting all the text on the current webpage."""
 
     name: str = "extract_text"
     description: str = "Extract all the text on the current webpage"
-    args_schema: Type[BaseModel] = BaseModel
 
     @model_validator(mode="before")
     @classmethod
