@@ -1,6 +1,9 @@
 from langchain_core.messages import AIMessage, HumanMessage
 
-from langchain_community.chat_models.sambanova import ChatSambaNovaCloud, ChatSambaStudio
+from langchain_community.chat_models.sambanova import (
+    ChatSambaNovaCloud,
+    ChatSambaStudio,
+)
 
 
 def test_chat_sambanova_cloud() -> None:
@@ -9,7 +12,8 @@ def test_chat_sambanova_cloud() -> None:
     response = chat.invoke([message])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
-    
+
+
 def test_chat_sambastudio() -> None:
     chat = ChatSambaStudio()
     message = HumanMessage(content="Hello")
