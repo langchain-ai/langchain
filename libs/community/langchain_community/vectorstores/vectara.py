@@ -888,6 +888,7 @@ class VectaraRAG(Runnable):
         self,
         input: str,
         config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
     ) -> dict:
         res = {"answer": ""}
         for chunk in self.stream(input):
