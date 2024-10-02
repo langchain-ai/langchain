@@ -279,7 +279,7 @@ def _create_subset_model_v2(
             field_info.metadata = field.metadata
         fields[field_name] = (field.annotation, field_info)
 
-    rtn = create_model(
+    rtn = create_model(  # type: ignore
         name, **fields, model_config=ConfigDict(arbitrary_types_allowed=True)
     )
 
