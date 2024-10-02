@@ -1,3 +1,7 @@
+# Copyright (c) 2024, Oracle and/or its affiliates.
+
+"""Chat model for OCI data science model deployment endpoint."""
+
 import json
 import logging
 from operator import itemgetter

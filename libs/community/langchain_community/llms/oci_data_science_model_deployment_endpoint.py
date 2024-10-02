@@ -1,3 +1,7 @@
+# Copyright (c) 2023, 2024, Oracle and/or its affiliates.
+
+"""LLM for OCI data science model deployment endpoint."""
+
 import json
 import logging
 from typing import (

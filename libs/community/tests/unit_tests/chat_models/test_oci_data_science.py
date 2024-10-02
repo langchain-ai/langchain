@@ -1,4 +1,6 @@
-"""Test OCI Data Science Model Deployment Endpoint."""
+# Copyright (c) 2024, Oracle and/or its affiliates.
+
+"""Test Chat model for OCI Data Science Model Deployment Endpoint."""
 
 import sys
 from unittest import mock
