@@ -2104,4 +2104,4 @@ def test_injected_arg_with_complex_type() -> None:
         """Tool that has an injected tool arg."""
         return foo.value
 
-    assert injected_tool.invoke({"x": 5, "foo": Foo()}) == "bar"
+    assert injected_tool.invoke({"x": 5, "foo": Foo()}) == "bar"  # type: ignore
