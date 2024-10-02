@@ -1,6 +1,4 @@
-from typing import List, Optional, Union, Sequence
-import string
-import random
+from typing import List, Optional, Union
 import os
 import redis.exceptions
 
@@ -14,20 +12,6 @@ from langchain_core.messages import (
 from langchain_community.graphs import FalkorDBGraph
 
 
-def generate_random_string(length: int) -> str:
-    """Generate a random string of the specified length using uppercase and lowercase letters.
-
-    Args:
-        length (int): Length of the random string to generate.
-
-    Returns:
-        str: A random string of the specified length.
-    """
-    characters = string.ascii_letters
-    random_string = "".join(random.choice(characters) for _ in range(length))
-    return random_string
-
-
 class FalkorDBChatMessageHistory(BaseChatMessageHistory):
     """Chat message history stored in a Falkor database.
 
@@ -36,12 +20,12 @@ class FalkorDBChatMessageHistory(BaseChatMessageHistory):
     between subsequent messages.
 
     Args:
-        session_id (Union[str, int]): The session ID for storing and retrieving messages.
+        session_id (Union[str, int]): The session ID for storing and retrieving messages
+                                also the name of the database.
         username (Optional[str]): Username for authenticating with FalkorDB.
         password (Optional[str]): Password for authenticating with FalkorDB.
         host (str): Host where the FalkorDB is running. Defaults to 'localhost'.
         port (int): Port number where the FalkorDB is running. Defaults to 6379.
-        database (Optional[str]): The database name. Defaults to a randomly generated string.
         node_label (str): Label for the session node in the graph. Defaults to "Session".
         window (int): The number of messages to retrieve when querying the history. Defaults to 3.
         ssl (bool): Whether to use SSL for connecting to the database. Defaults to False.
@@ -66,7 +50,6 @@ class FalkorDBChatMessageHistory(BaseChatMessageHistory):
         password: Optional[str] = None,
         host: str = "localhost",
         port: int = 6379,
-        database: Optional[str] = generate_random_string(4),
         node_label: str = "Session",
         window: int = 3,
         ssl: bool = False,
@@ -114,8 +97,7 @@ class FalkorDBChatMessageHistory(BaseChatMessageHistory):
                     "Please ensure that the username and password are correct."
                 )
 
-        self.database_name = database
-        self._database = self._driver.select_graph(database)
+        self._database = self._driver.select_graph(session_id)
         self._session_id = session_id
         self._node_label = node_label
         self._window = window

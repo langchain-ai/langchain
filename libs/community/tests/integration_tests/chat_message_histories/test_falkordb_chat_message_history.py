@@ -14,15 +14,13 @@ Test Cases:
    when passing the FalkorDB driver through a graph object.
 
 """
-import os
+from langchain_core.messages import AIMessage, HumanMessage
 
-from langchain_core.messages import AIMessage, HumanMessage 
-
-from langchain_community.chat_message_histories import FalkorDBChatMessageHistory, generate_random_string
+from langchain_community.chat_message_histories.falkordb import FalkorDBChatMessageHistory
 from langchain_community.graphs import FalkorDBGraph
 
 def test_add_messages() -> None:
-    """Basic testing: add messages to the Neo4jChatMessageHistory."""
+    """Basic testing: add messages to the FalkorDBChatMessageHistory."""
     message_store = FalkorDBChatMessageHistory("500daysofSadiya")
     message_store.clear()
     assert len(message_store.messages) == 0
@@ -60,12 +58,13 @@ def test_add_messages() -> None:
     assert len(message_store.messages) == 0
     assert len(message_store_another.messages) == 0
 
+
 def test_add_messages_graph_object() -> None:
     """Basic testing: Passing driver through graph object."""
-    graph = FalkorDBGraph(
-        database=generate_random_string(4)
+    graph = FalkorDBGraph("NeverGonnaLetYouDownNevergonnagiveyouup")
+    message_store = FalkorDBChatMessageHistory(
+        "Gonnahavetoteachmehowtoloveyouagain", graph=graph
     )
-    message_store = FalkorDBChatMessageHistory("Gonnahavetoteachmehowtoloveyouagain", graph=graph)
     message_store.clear()
     assert len(message_store.messages) == 0
     message_store.add_user_message("Hello! Language Chain!")
