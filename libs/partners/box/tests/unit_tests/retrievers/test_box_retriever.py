@@ -3,7 +3,13 @@ from langchain_core.documents import Document
 from pytest_mock import MockerFixture
 
 from langchain_box.retrievers import BoxRetriever
-from langchain_box.utilities import BoxAuth, BoxAuthType
+from langchain_box.utilities import (
+    BoxAuth,
+    BoxAuthType,
+    BoxSearchOptions,
+    DocumentFiles,
+    SearchTypeFilter,
+)
 
 
 # Test auth types
@@ -54,6 +60,44 @@ def test_search(mocker: MockerFixture) -> None:
     )
 
     documents = retriever.invoke("query")
+    assert documents == [
+        Document(
+            page_content="Test file mode\ndocument contents",
+            metadata={"title": "Testing Files"},
+        )
+    ]
+
+
+# test search options
+def test_search_options(mocker: MockerFixture) -> None:
+    mocker.patch(
+        "langchain_box.utilities._BoxAPIWrapper.search_box",
+        return_value=(
+            [
+                Document(
+                    page_content="Test file mode\ndocument contents",
+                    metadata={"title": "Testing Files"},
+                )
+            ]
+        ),
+    )
+
+    box_search_options = BoxSearchOptions(
+        ancestor_folder_ids=["box_folder_id"],
+        search_type_filter=[SearchTypeFilter.FILE_CONTENT],
+        created_date_range=["2023-01-01T00:00:00-07:00", "2024-08-01T00:00:00-07:00,"],
+        file_extensions=[DocumentFiles.DOCX, DocumentFiles.PDF],
+        k=200,
+        size_range=[1, 1000000],
+        updated_date_range=None,
+    )
+
+    retriever = BoxRetriever(  # type: ignore[call-arg]
+        box_developer_token="box_developer_token", box_search_options=box_search_options
+    )
+
+    documents = retriever.invoke("query")
+
     assert documents == [
         Document(
             page_content="Test file mode\ndocument contents",

@@ -20,13 +20,13 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatResult, LLMResult
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_standard_tests.integration_tests.chat_models import (
     _validate_tool_call_message,
 )
 from langchain_standard_tests.integration_tests.chat_models import (
     magic_function as invalid_magic_function,
 )
+from pydantic import BaseModel, Field
 
 from langchain_openai import ChatOpenAI
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
@@ -686,11 +686,43 @@ def test_openai_proxy() -> None:
         assert proxy.port == 8080
 
 
-def test_openai_response_headers_invoke() -> None:
+def test_openai_response_headers() -> None:
     """Test ChatOpenAI response headers."""
     chat_openai = ChatOpenAI(include_response_headers=True)
-    result = chat_openai.invoke("I'm Pickle Rick")
+    query = "I'm Pickle Rick"
+    result = chat_openai.invoke(query, max_tokens=10)
     headers = result.response_metadata["headers"]
+    assert headers
+    assert isinstance(headers, dict)
+    assert "content-type" in headers
+
+    # Stream
+    full: Optional[BaseMessageChunk] = None
+    for chunk in chat_openai.stream(query, max_tokens=10):
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessage)
+    headers = full.response_metadata["headers"]
+    assert headers
+    assert isinstance(headers, dict)
+    assert "content-type" in headers
+
+
+async def test_openai_response_headers_async() -> None:
+    """Test ChatOpenAI response headers."""
+    chat_openai = ChatOpenAI(include_response_headers=True)
+    query = "I'm Pickle Rick"
+    result = await chat_openai.ainvoke(query, max_tokens=10)
+    headers = result.response_metadata["headers"]
+    assert headers
+    assert isinstance(headers, dict)
+    assert "content-type" in headers
+
+    # Stream
+    full: Optional[BaseMessageChunk] = None
+    async for chunk in chat_openai.astream(query, max_tokens=10):
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessage)
+    headers = full.response_metadata["headers"]
     assert headers
     assert isinstance(headers, dict)
     assert "content-type" in headers

@@ -7,8 +7,8 @@ import json
 from typing import Any, Dict, Optional
 
 import requests
-from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, model_validator
 
 POLYGON_BASE_URL = "https://api.polygon.io/"
 
@@ -18,8 +18,9 @@ class PolygonAPIWrapper(BaseModel):
 
     polygon_api_key: Optional[str] = None
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that api key in environment."""
         polygon_api_key = get_from_dict_or_env(
             values, "polygon_api_key", "POLYGON_API_KEY"

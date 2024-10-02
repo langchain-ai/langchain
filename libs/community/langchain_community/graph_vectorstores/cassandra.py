@@ -12,12 +12,12 @@ from typing import (
 from langchain_core._api import beta
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.graph_vectorstores.base import (
+
+from langchain_community.graph_vectorstores.base import (
     GraphVectorStore,
     Node,
     nodes_to_documents,
 )
-
 from langchain_community.utilities.cassandra import SetupMode
 
 if TYPE_CHECKING:

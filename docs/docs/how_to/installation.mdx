@@ -9,7 +9,7 @@ functionality to install.
 
 ## Official release
 
-To install the main LangChain package, run:
+To install the main `langchain` package, run:
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
@@ -26,8 +26,7 @@ import CodeBlock from "@theme/CodeBlock";
 
 While this package acts as a sane starting point to using LangChain,
 much of the value of LangChain comes when integrating it with various model providers, datastores, etc.
-By default, the dependencies needed to do that are NOT installed. You will need to install the dependencies for specific integrations separately.
-We'll show how to do that in the next sections of this guide.
+By default, the dependencies needed to do that are NOT installed. You will need to install the dependencies for specific integrations separately, which we show below.
 
 ## Ecosystem packages
 
@@ -41,14 +40,6 @@ When installing a package, you do not need to explicitly install that package's 
 However, you may choose to if you are using a feature only available in a certain version of that dependency.
 If you do, you should make sure that the installed or pinned version is compatible with any other integration packages you use.
 
-### From source
-
-If you want to install from source, you can do so by cloning the repo and be sure that the directory is `PATH/TO/REPO/langchain/libs/langchain` running:
-
-```bash
-pip install -e .
-```
-
 ### LangChain core
 The `langchain-core` package contains base abstractions that the rest of the LangChain ecosystem uses, along with the LangChain Expression Language. It is automatically installed by `langchain`, but can also be used separately. Install with:
 
@@ -56,8 +47,18 @@ The `langchain-core` package contains base abstractions that the rest of the Lan
 pip install langchain-core
 ```
 
-### LangChain community
-The `langchain-community` package contains third-party integrations. Install with:
+### Integration packages
+
+Certain integrations like OpenAI and Anthropic have their own packages.
+Any integrations that require their own package will be documented as such in the [Integration docs](/docs/integrations/platforms/).
+You can see a list of all integration packages in the [API reference](https://api.python.langchain.com) under the "Partner libs" dropdown.
+To install one of these run:
+
+```bash
+pip install langchain-openai
+```
+
+Any integrations that haven't been split out into their own packages will live in the `langchain-community` package. Install with:
 
 ```bash
 pip install langchain-community
@@ -89,7 +90,7 @@ pip install "langserve[all]"
 ```
 for both client and server dependencies. Or `pip install "langserve[client]"` for client code, and `pip install "langserve[server]"` for server code.
 
-## LangChain CLI
+### LangChain CLI
 The LangChain CLI is useful for working with LangChain templates and other LangServe projects.
 Install with:
 
@@ -105,3 +106,13 @@ If you are not using LangChain, you can install it with:
 ```bash
 pip install langsmith
 ```
+
+### From source
+
+If you want to install a package from source, you can do so by cloning the [main LangChain repo](https://github.com/langchain-ai/langchain), enter the directory of the package you want to install `PATH/TO/REPO/langchain/libs/{package}`, and run:
+
+```bash
+pip install -e .
+```
+
+LangGraph, LangSmith SDK, and certain integration packages live outside the main LangChain repo. You can see [all repos here](https://github.com/langchain-ai).
