@@ -22,7 +22,7 @@ env_vars_set: bool = all(os.getenv(var) for var in required_env_vars)
 
 
 @pytest.fixture
-def record_manager() -> None:
+def record_manager() -> SQLRecordManager:
     if not env_vars_set:
         pytest.skip(
             "Skipping MSSQL integration test due to missing environment variables"
@@ -34,14 +34,15 @@ def record_manager() -> None:
     ODBC_driver_version: Optional[str] = os.getenv("ODBC_driver_version")
     username: Optional[str] = os.getenv("mssql_username")
     password: Optional[str] = os.getenv("mssql_password")
-    record_manager_db_url: Optional[str] = (
+    record_manager_db_url: str = (
         f"mssql+pyodbc://{username}:{password}@{database_address}{database_name}"
         f"?driver={ODBC_driver_version}"
     )
+    assert namespace is not None
     record_manager = SQLRecordManager(namespace, db_url=record_manager_db_url)
     record_manager.create_schema()
     # enusre the index table does not contain any remains from past
-    with record_manager.engine.connect() as connection:
+    with record_manager.engine.connect() as connection:  # type: ignore
         drop_sql = text("TRUNCATE TABLE [upsertion_record]")
         connection.execute(drop_sql)
         connection.commit()
@@ -64,7 +65,7 @@ def documents() -> List[Document]:
 
 
 def test_create_index(record_manager: SQLRecordManager) -> None:
-    with record_manager.engine.connect() as connection:
+    with record_manager.engine.connect() as connection:  # type: ignore
         # confirm schema was created
         get_cols_sql = text(
             "SELECT COLUMN_NAME, DATA_TYPE "
