@@ -107,11 +107,11 @@ class HuggingFaceEndpoint(LLM):
     repetition_penalty: Optional[float] = None
     """The parameter for repetition penalty. 1.0 means no penalty.
     See [this paper](https://arxiv.org/pdf/1909.05858.pdf) for more details."""
-    return_full_text: bool = False
+    return_full_text: Optional[bool] = None
     """Whether to prepend the prompt to the generated text"""
     truncate: Optional[int] = None
     """Truncate inputs tokens to the given size"""
-    stop_sequences: List[str] = Field(default_factory=list)
+    stop_sequences: Optional[List[str]] = None
     """Stop generating tokens if a member of `stop_sequences` is generated"""
     seed: Optional[int] = None
     """Random sampling seed"""
@@ -123,7 +123,7 @@ class HuggingFaceEndpoint(LLM):
     """Whether to generate a stream of tokens asynchronously"""
     do_sample: bool = False
     """Activate logits sampling"""
-    watermark: bool = False
+    watermark: Optional[bool] = None
     """Watermarking with [A Watermark for Large Language Models]
     (https://arxiv.org/abs/2301.10226)"""
     server_kwargs: Dict[str, Any] = Field(default_factory=dict)
