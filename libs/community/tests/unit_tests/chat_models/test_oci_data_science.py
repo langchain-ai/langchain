@@ -111,7 +111,7 @@ def mocked_requests_post(self, **kwargs):
 
 
 @pytest.mark.requires("ads")
-@pytest.mark.requires("langchain-openai")
+@pytest.mark.requires("langchain_openai")
 @mock.patch("ads.common.auth.default_signer", return_value=dict(signer=None))
 @mock.patch("requests.post", side_effect=mocked_requests_post)
 def test_invoke_vllm(mock_post, mock_auth) -> None:
@@ -123,7 +123,7 @@ def test_invoke_vllm(mock_post, mock_auth) -> None:
 
 
 @pytest.mark.requires("ads")
-@pytest.mark.requires("langchain-openai")
+@pytest.mark.requires("langchain_openai")
 @mock.patch("ads.common.auth.default_signer", return_value=dict(signer=None))
 @mock.patch("requests.post", side_effect=mocked_requests_post)
 def test_invoke_tgi(mock_post, mock_auth) -> None:
@@ -135,7 +135,7 @@ def test_invoke_tgi(mock_post, mock_auth) -> None:
 
 
 @pytest.mark.requires("ads")
-@pytest.mark.requires("langchain-openai")
+@pytest.mark.requires("langchain_openai")
 @mock.patch("ads.common.auth.default_signer", return_value=dict(signer=None))
 @mock.patch("requests.post", side_effect=mocked_requests_post)
 def test_stream_vllm(mock_post, mock_auth) -> None:
@@ -161,7 +161,7 @@ async def mocked_async_streaming_response(*args, **kwargs):
 
 @pytest.mark.asyncio
 @pytest.mark.requires("ads")
-@pytest.mark.requires("langchain-openai")
+@pytest.mark.requires("langchain_openai")
 @mock.patch(
     "ads.common.auth.default_signer", return_value=dict(signer=mock.MagicMock())
 )
