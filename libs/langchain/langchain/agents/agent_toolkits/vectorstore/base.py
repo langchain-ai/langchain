@@ -23,7 +23,7 @@ from langchain.chains.llm import LLMChain
         "See API reference for this function for a replacement implementation: "
         "https://api.python.langchain.com/en/latest/agents/langchain.agents.agent_toolkits.vectorstore.base.create_vectorstore_agent.html "  # noqa: E501
         "Read more here on how to create agents that query vector stores: "
-        "https://python.langchain.com/v0.2/docs/how_to/qa_chat_history_how_to/#agents"
+        "https://python.langchain.com/docs/how_to/qa_chat_history_how_to/#agents"
     ),
 )
 def create_vectorstore_agent(
@@ -112,7 +112,7 @@ def create_vectorstore_agent(
         "See API reference for this function for a replacement implementation: "
         "https://api.python.langchain.com/en/latest/agents/langchain.agents.agent_toolkits.vectorstore.base.create_vectorstore_router_agent.html "  # noqa: E501
         "Read more here on how to create agents that query vector stores: "
-        "https://python.langchain.com/v0.2/docs/how_to/qa_chat_history_how_to/#agents"
+        "https://python.langchain.com/docs/how_to/qa_chat_history_how_to/#agents"
     ),
 )
 def create_vectorstore_router_agent(

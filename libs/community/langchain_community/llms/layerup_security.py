@@ -3,7 +3,7 @@ from typing import Any, Callable, Dict, List, Optional
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from langchain_core.pydantic_v1 import root_validator
+from pydantic import model_validator
 
 logger = logging.getLogger(__name__)
 
@@ -47,8 +47,9 @@ class LayerupSecurity(LLM):
     )
     client: Any  #: :meta private:
 
-    @root_validator(pre=True)
-    def validate_layerup_sdk(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_layerup_sdk(cls, values: Dict[str, Any]) -> Any:
         try:
             from layerup_security import LayerupSecurity as LayerupSecuritySDK
 

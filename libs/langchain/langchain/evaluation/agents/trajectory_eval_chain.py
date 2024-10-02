@@ -28,8 +28,8 @@ from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.output_parsers import BaseOutputParser
-from langchain_core.pydantic_v1 import Field
 from langchain_core.tools import BaseTool
+from pydantic import ConfigDict, Field
 
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.agents.trajectory_eval_prompt import (
@@ -156,8 +156,9 @@ class TrajectoryEvalChain(AgentTrajectoryEvaluator, LLMEvalChain):
     return_reasoning: bool = False  # :meta private:
     """DEPRECATED. Reasoning always returned."""
 
-    class Config:
-        extra = "ignore"
+    model_config = ConfigDict(
+        extra="ignore",
+    )
 
     @property
     def requires_reference(self) -> bool:
