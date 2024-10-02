@@ -1,6 +1,7 @@
 """Integration tests for the PanelCallbackHandler module."""
 
 import pytest
+from langchain_openai import ChatOpenAI
 
 # Import the internal PanelCallbackHandler from its module - and not from
 # the `langchain_community.callbacks.streamlit` package - so that we don't end up using
@@ -8,7 +9,6 @@ import pytest
 from langchain_community.callbacks.panel_callback import (
     PanelCallbackHandler,
 )
-from langchain_openai import ChatOpenAI
 
 
 @pytest.mark.requires("panel")
