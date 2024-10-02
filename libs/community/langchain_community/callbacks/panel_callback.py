@@ -43,22 +43,25 @@ class PanelCallbackHandler(BaseCallbackHandler):
         instance: "ChatFeed" | "ChatInterface",
         user: str = "LangChain",
         avatar: str | None = None,
+        step_width: int = 500,
     ):
         if BaseCallbackHandler is object:
             raise ImportError(
                 "LangChainCallbackHandler requires `langchain` to be installed."
             )
 
-        panel = import_panel()
-        self._default_avatars = panel.chat.message.DEFAULT_AVATARS
+        self._pn = import_panel()
+        self._default_avatars = self._pn.chat.message.DEFAULT_AVATARS
         avatar = avatar or self._default_avatars["langchain"]
 
         self.instance = instance
+        self._step = None
         self._message = None
         self._active_user = user
         self._active_avatar = avatar
         self._disabled_state = self.instance.disabled
         self._is_streaming = None
+        self._step_width = step_width
 
         self._input_user = user  # original user
         self._input_avatar = avatar
@@ -128,12 +131,21 @@ class PanelCallbackHandler(BaseCallbackHandler):
         self, serialized: dict[str, Any], input_str: str, *args, **kwargs
     ):
         self._update_active(self._default_avatars["tool"], serialized["name"])
-        self._stream(f"Tool input: {input_str}")
+        self._step = self.instance.add_step(
+            title=f"Tool input: {input_str}",
+            status="running",
+            user=self._active_user,
+            avatar=self._active_avatar,
+            width=self._step_width,
+            default_layout="column",
+        )
         return super().on_tool_start(serialized, input_str, *args, **kwargs)
 
     def on_tool_end(self, output: str, *args, **kwargs):
-        self._stream(output)
+        self._step.stream(output)
+        self._step.status = "success"
         self._reset_active()
+        self._step = None
         return super().on_tool_end(output, *args, **kwargs)
 
     def on_tool_error(
@@ -160,13 +172,11 @@ class PanelCallbackHandler(BaseCallbackHandler):
 
     def on_retriever_end(self, documents, **kwargs: Any) -> Any:
         """Run when Retriever ends running."""
-        panel = import_panel()
-
         objects = [
             (f"Document {index}", document.page_content)
             for index, document in enumerate(documents)
         ]
-        message = panel.Accordion(
+        message = self._pn.Accordion(
             *objects, sizing_mode="stretch_width", margin=(10, 13, 10, 5)
         )
         self.instance.send(
