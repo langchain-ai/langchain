@@ -280,7 +280,7 @@ def _create_subset_model_v2(
         fields[field_name] = (field.annotation, field_info)
 
     rtn = create_model(  # type: ignore
-        name, **fields, model_config=ConfigDict(arbitrary_types_allowed=True)
+        name, **fields, __config__=ConfigDict(arbitrary_types_allowed=True)
     )
 
     # TODO(0.3): Determine if there is a more "pydantic" way to preserve annotations.
