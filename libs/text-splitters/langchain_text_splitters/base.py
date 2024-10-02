@@ -151,18 +151,24 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         """Text splitter that uses HuggingFace tokenizer to count length."""
         try:
             from transformers import PreTrainedTokenizerBase
-
-            if not isinstance(tokenizer, PreTrainedTokenizerBase):
-                raise ValueError(
-                    "Tokenizer received was not an instance of PreTrainedTokenizerBase"
-                )
-
         except ImportError:
             raise ValueError(
                 "Could not import transformers python package. "
                 "Please install it with `pip install transformers`."
             )
-        return cls(tokenizer=tokenizer, **kwargs)
+
+        if not isinstance(tokenizer, PreTrainedTokenizerBase):
+            raise ValueError(
+                "Tokenizer received was not an instance of PreTrainedTokenizerBase"
+            )
+
+        def _huggingface_tokenizer_length(text: str) -> int:
+            return len(tokenizer.encode(text))
+
+        if issubclass(cls, TokenTextSplitter):
+            extra_kwargs = {"tokenizer": tokenizer}
+            kwargs = {**kwargs, **extra_kwargs}
+        return cls(length_function=_huggingface_tokenizer_length, **kwargs)
 
     @classmethod
     def from_tiktoken_encoder(
@@ -188,8 +194,18 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         else:
             enc = tiktoken.get_encoding(encoding_name)
 
+        def _tiktoken_encoder(text: str) -> int:
+            return len(
+                enc.encode(
+                    text,
+                    allowed_special=allowed_special,
+                    disallowed_special=disallowed_special,
+                )
+            )
+
         if issubclass(cls, TokenTextSplitter):
             extra_kwargs = {
+                "tokenizer": enc,
                 "encoding_name": encoding_name,
                 "model_name": model_name,
                 "allowed_special": allowed_special,
@@ -197,7 +213,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             }
             kwargs = {**kwargs, **extra_kwargs}
 
-        return cls(tokenizer=enc, **kwargs)
+        return cls(length_function=_tiktoken_encoder, **kwargs)
 
     def transform_documents(
         self, documents: Sequence[Document], **kwargs: Any
