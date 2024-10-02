@@ -1,5 +1,5 @@
 import os
-from typing import List
+from typing import List, Optional
 
 import pytest
 from langchain_core.documents import Document
@@ -8,18 +8,44 @@ from sqlalchemy import text
 from langchain.indexes import SQLRecordManager, index
 from tests.unit_tests.indexes.test_indexing import InMemoryVectorStore
 
-collection_name: str = os.getenv("collection_name")
-namespace: str = os.getenv("namespace")
-access_token: str = os.getenv("access_token")
-database_address: str = os.getenv("database_address")
-database_name: str = os.getenv("database_name")
-ODBC_driver_version: str = os.getenv("ODBC_driver_version")
-username: str = os.getenv("mssql_username")
-password: str = os.getenv("mssql_password")
-record_manager_db_url: str = (
-    f"mssql+pyodbc://{username}:{password}@{database_address}{database_name}"
-    f"?driver={ODBC_driver_version}"
-)
+required_env_vars: List[str] = [
+    "collection_name",
+    "namespace",
+    "access_token",
+    "database_address",
+    "database_name",
+    "mssql_username",
+    "mssql_password",
+    "ODBC_driver_version",
+]
+env_vars_set: bool = all(os.getenv(var) for var in required_env_vars)
+
+
+@pytest.fixture
+def record_manager() -> None:
+    if not env_vars_set:
+        pytest.skip(
+            "Skipping MSSQL integration test due to missing environment variables"
+        )
+
+    namespace: Optional[str] = os.getenv("namespace")
+    database_address: Optional[str] = os.getenv("database_address")
+    database_name: Optional[str] = os.getenv("database_name")
+    ODBC_driver_version: Optional[str] = os.getenv("ODBC_driver_version")
+    username: Optional[str] = os.getenv("mssql_username")
+    password: Optional[str] = os.getenv("mssql_password")
+    record_manager_db_url: Optional[str] = (
+        f"mssql+pyodbc://{username}:{password}@{database_address}{database_name}"
+        f"?driver={ODBC_driver_version}"
+    )
+    record_manager = SQLRecordManager(namespace, db_url=record_manager_db_url)
+    record_manager.create_schema()
+    # enusre the index table does not contain any remains from past
+    with record_manager.engine.connect() as connection:
+        drop_sql = text("TRUNCATE TABLE [upsertion_record]")
+        connection.execute(drop_sql)
+        connection.commit()
+    return record_manager
 
 
 @pytest.fixture
@@ -35,18 +61,6 @@ def documents() -> List[Document]:
         ),
     ]
     return documents
-
-
-@pytest.fixture
-def record_manager() -> None:
-    record_manager = SQLRecordManager(namespace, db_url=record_manager_db_url)
-    record_manager.create_schema()
-    # enusre the index table does not contain any remains from past
-    with record_manager.engine.connect() as connection:
-        drop_sql = text("TRUNCATE TABLE [upsertion_record]")
-        connection.execute(drop_sql)
-        connection.commit()
-    return record_manager
 
 
 def test_create_index(record_manager: SQLRecordManager) -> None:
