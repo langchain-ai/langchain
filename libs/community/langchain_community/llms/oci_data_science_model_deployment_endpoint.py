@@ -19,7 +19,6 @@ from typing import (
 
 import aiohttp
 import requests
-from langchain_community.utilities.requests import Requests
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -29,6 +28,8 @@ from langchain_core.load.serializable import Serializable
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.utils import get_from_dict_or_env
 from pydantic import Field, model_validator
+
+from langchain_community.utilities.requests import Requests
 
 logger = logging.getLogger(__name__)
 

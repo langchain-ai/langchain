@@ -4,14 +4,15 @@
 
 import sys
 from unittest import mock
+
 import pytest
 from langchain_core.messages import AIMessage, AIMessageChunk
 from requests.exceptions import HTTPError
-from langchain_community.chat_models import (
-    ChatOCIModelDeploymentVLLM,
-    ChatOCIModelDeploymentTGI,
-)
 
+from langchain_community.chat_models import (
+    ChatOCIModelDeploymentTGI,
+    ChatOCIModelDeploymentVLLM,
+)
 
 pytestmark = pytest.mark.skipif(
     sys.version_info < (3, 9), reason="Requires Python 3.9 or higher"
