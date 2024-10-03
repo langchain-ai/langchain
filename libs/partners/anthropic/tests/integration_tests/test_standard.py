@@ -48,7 +48,10 @@ class TestAnthropicStandard(ChatModelIntegrationTests):
         return ["cache_read_input", "cache_creation_input"]
 
     def invoke_with_cache_creation_input(self, *, stream: bool = False) -> AIMessage:
-        llm = ChatAnthropic(model="claude-3-5-sonnet-20240620")
+        llm = ChatAnthropic(
+            model="claude-3-5-sonnet-20240620",
+            extra_headers={"anthropic-beta": "prompt-caching-2024-07-31"},
+        )
         with open(REPO_ROOT_DIR / "README.md", "r") as f:
             readme = f.read()
 
@@ -56,10 +59,28 @@ class TestAnthropicStandard(ChatModelIntegrationTests):
 
         {readme}
         """
-        return _invoke(llm, input_, stream)
+        return _invoke(
+            llm,
+            [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": input_,
+                            "cache_control": {"type": "ephemeral"},
+                        }
+                    ],
+                }
+            ],
+            stream,
+        )
 
     def invoke_with_cache_read_input(self, *, stream: bool = False) -> AIMessage:
-        llm = ChatAnthropic(model="claude-3-5-sonnet-20240620")
+        llm = ChatAnthropic(
+            model="claude-3-5-sonnet-20240620",
+            extra_headers={"anthropic-beta": "prompt-caching-2024-07-31"},
+        )
         with open(REPO_ROOT_DIR / "README.md", "r") as f:
             readme = f.read()
 
@@ -69,11 +90,41 @@ class TestAnthropicStandard(ChatModelIntegrationTests):
         """
 
         # invoke twice so first invocation is cached
-        _invoke(llm, input_, stream)
-        return _invoke(llm, input_, stream)
+        _invoke(
+            llm,
+            [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": input_,
+                            "cache_control": {"type": "ephemeral"},
+                        }
+                    ],
+                }
+            ],
+            stream,
+        )
+        return _invoke(
+            llm,
+            [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": input_,
+                            "cache_control": {"type": "ephemeral"},
+                        }
+                    ],
+                }
+            ],
+            stream,
+        )
 
 
-def _invoke(llm: ChatAnthropic, input_: str, stream: bool) -> AIMessage:
+def _invoke(llm: ChatAnthropic, input_: list, stream: bool) -> AIMessage:
     if stream:
         full = None
         for chunk in llm.stream(input_):
