@@ -161,6 +161,5 @@ async def test_stream_async(mock_auth):
         "_aiter_sse",
         mock.MagicMock(return_value=mocked_async_streaming_response()),
     ):
-
         chunks = [chunk async for chunk in llm.astream(CONST_PROMPT)]
     assert "".join(chunks).strip() == CONST_COMPLETION
