@@ -5,7 +5,11 @@ from typing import Any, Optional, Union
 from uuid import UUID
 
 from langchain_core.callbacks.base import AsyncCallbackHandler
-from langchain_core.language_models import GenericFakeChatModel, ParrotFakeChatModel
+from langchain_core.language_models import (
+    FakeListChatModel,
+    GenericFakeChatModel,
+    ParrotFakeChatModel,
+)
 from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
 from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
 from tests.unit_tests.stubs import (
@@ -205,3 +209,16 @@ def test_chat_model_inputs() -> None:
     assert fake.invoke([AIMessage(content="blah")]) == _any_id_ai_message(
         content="blah"
     )
+
+
+def test_fake_list_chat_model_batch() -> None:
+    expected = [
+        _any_id_ai_message(content="a"),
+        _any_id_ai_message(content="b"),
+        _any_id_ai_message(content="c"),
+    ]
+    for _ in range(20):
+        # run this 20 times to test race condition in batch
+        fake = FakeListChatModel(responses=["a", "b", "c"])
+        resp = fake.batch(["1", "2", "3"])
+        assert resp == expected

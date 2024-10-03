@@ -538,7 +538,7 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
 
     prefix_keys: bool
     """Whether to prefix configurable fields of each alternative with a namespace
-    of the form <which.id>==<alternative_key>, eg. a key named "temperature" used by 
+    of the form <which.id>==<alternative_key>, eg. a key named "temperature" used by
     the alternative named "gpt3" becomes "model==gpt3/temperature"."""
 
     @classmethod
