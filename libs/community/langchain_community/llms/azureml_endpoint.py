@@ -17,8 +17,6 @@ DEFAULT_TIMEOUT = 50
 class AzureMLEndpointClient(object):
     """AzureML Managed Endpoint client."""
 
-    model_config = ConfigDict(protected_namespaces=())
-
     def __init__(
         self,
         endpoint_url: str,
@@ -383,6 +381,8 @@ class AzureMLBaseEndpoint(BaseModel):
 
     model_kwargs: Optional[dict] = None
     """Keyword arguments to pass to the model."""
+
+    model_config = ConfigDict(protected_namespaces=())
 
     @model_validator(mode="before")
     @classmethod
