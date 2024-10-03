@@ -43,9 +43,9 @@ class InfinityEmbeddings(BaseModel, Embeddings):
     client: Any = None  #: :meta private:
     """Infinity client."""
 
-    embed_instruction: str = "passage: "
+    embed_instruction: str = ""
     """Instruction used to embed documents."""
-    query_instruction: str = "query: "
+    query_instruction: str = ""
     """Instruction used to embed the query."""
 
     # LLM call kwargs
