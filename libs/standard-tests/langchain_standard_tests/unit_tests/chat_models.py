@@ -138,6 +138,10 @@ class ChatModelTests(BaseStandardTests):
     def supports_image_tool_message(self) -> bool:
         return False
 
+    @property
+    def supported_usage_metadata_details(self) -> List[str]:
+        return []
+
 
 class ChatModelUnitTests(ChatModelTests):
     @property
