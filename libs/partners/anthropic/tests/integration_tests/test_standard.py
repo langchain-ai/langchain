@@ -1,12 +1,15 @@
 """Standard LangChain interface tests"""
 
-from typing import Type, List, Literal
+from pathlib import Path
+from typing import List, Literal, Type, cast
 
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage
 from langchain_standard_tests.integration_tests import ChatModelIntegrationTests
 
 from langchain_anthropic import ChatAnthropic
+
+REPO_ROOT_DIR = Path(__file__).parents[5]
 
 
 class TestAnthropicStandard(ChatModelIntegrationTests):
@@ -44,8 +47,37 @@ class TestAnthropicStandard(ChatModelIntegrationTests):
     ]:
         return ["cache_read_input", "cache_creation_input"]
 
-    def invoke_with_cache_read_input(self, *, stream: bool = False) -> AIMessage:
-        ...
-
     def invoke_with_cache_creation_input(self, *, stream: bool = False) -> AIMessage:
-        ...
+        llm = ChatAnthropic(model="claude-3-5-sonnet-20240620")
+        with open(REPO_ROOT_DIR / "README.md", "r") as f:
+            readme = f.read()
+
+        input_ = f"""What's langchain? Here's the langchain README:
+
+        {readme}
+        """
+        return _invoke(llm, input_, stream)
+
+    def invoke_with_cache_read_input(self, *, stream: bool = False) -> AIMessage:
+        llm = ChatAnthropic(model="claude-3-5-sonnet-20240620")
+        with open(REPO_ROOT_DIR / "README.md", "r") as f:
+            readme = f.read()
+
+        input_ = f"""What's langchain? Here's the langchain README:
+
+        {readme}
+        """
+
+        # invoke twice so first invocation is cached
+        _invoke(llm, input_, stream)
+        return _invoke(llm, input_, stream)
+
+
+def _invoke(llm: ChatAnthropic, input_: str, stream: bool) -> AIMessage:
+    if stream:
+        full = None
+        for chunk in llm.stream(input_):
+            full = full + chunk if full else chunk  # type: ignore[operator]
+        return cast(AIMessage, full)
+    else:
+        return cast(AIMessage, llm.invoke(input_))

@@ -1259,6 +1259,6 @@ def _create_usage_metadata(anthropic_usage: BaseModel) -> UsageMetadata:
         output_tokens=output_tokens,
         total_tokens=input_tokens + output_tokens,
         input_token_details=InputTokenDetails(
-            **{k: v for k, v in input_token_details if v is not None}
+            **{k: v for k, v in input_token_details.items() if v is not None}
         ),
     )
