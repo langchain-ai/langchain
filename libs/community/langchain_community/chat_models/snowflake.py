@@ -11,7 +11,6 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatResult
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import (
     convert_to_secret_str,
     get_from_dict_or_env,
@@ -19,6 +18,7 @@ from langchain_core.utils import (
     pre_init,
 )
 from langchain_core.utils.utils import build_extra_kwargs
+from pydantic import Field, SecretStr, model_validator
 
 SUPPORTED_ROLES: List[str] = [
     "system",
@@ -126,8 +126,9 @@ class ChatSnowflakeCortex(BaseChatModel):
     snowflake_role: Optional[str] = Field(default=None, alias="role")
     """Automatically inferred from env var `SNOWFLAKE_ROLE` if not provided."""
 
-    @root_validator(pre=True)
-    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})

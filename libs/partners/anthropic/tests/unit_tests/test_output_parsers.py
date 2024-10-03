@@ -2,7 +2,7 @@ from typing import Any, List, Literal
 
 from langchain_core.messages import AIMessage
 from langchain_core.outputs import ChatGeneration
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel
 
 from langchain_anthropic.output_parsers import ToolsOutputParser
 

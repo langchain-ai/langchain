@@ -98,7 +98,7 @@ class CogniswitchKnowledgeStatus(BaseTool):
     cs_token: str
     OAI_token: str
     apiKey: str
-    knowledge_status_url = (
+    knowledge_status_url: str = (
         "https://api.cogniswitch.ai:8243/cs-api/0.0.1/cs/knowledgeSource/status"
     )
 
@@ -200,7 +200,7 @@ class CogniswitchKnowledgeSourceFile(BaseTool):
     cs_token: str
     OAI_token: str
     apiKey: str
-    knowledgesource_file = (
+    knowledgesource_file: str = (
         "https://api.cogniswitch.ai:8243/cs-api/0.0.1/cs/knowledgeSource/file"
     )
 
@@ -312,7 +312,7 @@ class CogniswitchKnowledgeSourceURL(BaseTool):
     cs_token: str
     OAI_token: str
     apiKey: str
-    knowledgesource_url = (
+    knowledgesource_url: str = (
         "https://api.cogniswitch.ai:8243/cs-api/0.0.1/cs/knowledgeSource/url"
     )
 
