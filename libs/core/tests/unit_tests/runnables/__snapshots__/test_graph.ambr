@@ -1052,6 +1052,8 @@
                             "cache_creation": 200,
                             "cache_read": 100,
                         }
+                
+                .. versionadded:: 0.3.9
               ''',
               'properties': dict({
                 'audio': dict({
@@ -1150,6 +1152,8 @@
                             "audio": 10,
                             "reasoning": 200,
                         }
+                
+                .. versionadded:: 0.3.9
               ''',
               'properties': dict({
                 'audio': dict({
@@ -1679,6 +1683,10 @@
                                 "reasoning": 200,
                             }
                         }
+                
+                .. versionchanged:: 0.3.9
+                
+                    Added ``input_token_details`` and ``output_token_details``.
               ''',
               'properties': dict({
                 'input_token_details': dict({
