@@ -242,7 +242,7 @@ class ChatOCIModelDeployment(BaseChatModel, BaseOCIModelDeployment):
                 'finish_reason': 'stop'
             }
 
-    """
+    """  # noqa: E501
 
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Keyword arguments to pass to the model."""
@@ -833,8 +833,9 @@ class ChatOCIModelDeploymentVLLM(ChatOCIModelDeployment):
     tool_choice: Optional[str] = None
     """Whether to use tool calling.
     Defaults to None, tool calling is disabled.
-    Tool calling requires model support and vLLM to be configured with `--tool-call-parser`.
-    Set this to `auto` for the model to determine whether to make tool calls automatically.
+    Tool calling requires model support and the vLLM to be configured 
+    with `--tool-call-parser`.
+    Set this to `auto` for the model to make tool calls automatically.
     Set this to `required` to force the model to always call one or more tools.
     """
 
