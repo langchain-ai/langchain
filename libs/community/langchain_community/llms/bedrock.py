@@ -295,6 +295,8 @@ class LLMInputOutputAdapter:
 class BedrockBase(BaseModel, ABC):
     """Base class for Bedrock models."""
 
+    model_config = ConfigDict(protected_namespaces=())
+
     client: Any = Field(exclude=True)  #: :meta private:
 
     region_name: Optional[str] = None
