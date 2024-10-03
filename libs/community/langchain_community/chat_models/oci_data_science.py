@@ -40,7 +40,7 @@ from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.utils import pre_init
 from langchain_core.utils.function_calling import convert_to_openai_tool
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from ads.llm.langchain.plugins.llms.oci_data_science_model_deployment_endpoint import (
     DEFAULT_MODEL_NAME,
     BaseOCIModelDeployment,
@@ -253,10 +253,10 @@ class ChatOCIModelDeployment(BaseChatModel, BaseOCIModelDeployment):
     """Stop words to use when generating. Model output is cut off
     at the first occurrence of any of these substrings."""
 
-    @pre_init
-    def validate_environment(  # pylint: disable=no-self-argument
-        cls, values: Dict
-    ) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_openai(cls, values: Any) -> Any:
+        """Checks if langchain_openai is installed."""
         try:
             import langchain_openai
 
