@@ -330,6 +330,9 @@ class ChatPipeshift(BaseChatOpenAI):
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
+        if self.pipeshift_api_key is None:
+            raise ValueError("Pipeshift API key not found.")
+        """validate n value"""
         if self.n < 1:
             raise ValueError("n must be at least 1.")
         if self.n > 1 and self.streaming:

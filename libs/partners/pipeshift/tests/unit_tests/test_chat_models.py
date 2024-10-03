@@ -1,4 +1,6 @@
 import json
+import os
+from unittest.mock import patch
 
 import pytest  # type: ignore[import-not-found]
 from langchain_core.messages import (
@@ -18,16 +20,18 @@ from langchain_pipeshift import ChatPipeshift
 
 def test_initialization() -> None:
     """Test chat model initialization."""
-    ChatPipeshift()
+    with patch.dict(os.environ, {"PIPESHIFT_API_KEY": "dummy_key"}):
+        ChatPipeshift()
 
 
 def test_pipeshift_model_param() -> None:
-    llm = ChatPipeshift(model="foo")
-    assert llm.model_name == "foo"
-    llm = ChatPipeshift(model_name="foo")  # type: ignore[call-arg]
-    assert llm.model_name == "foo"
-    ls_params = llm._get_ls_params()
-    assert ls_params["ls_provider"] == "pipeshift"
+    with patch.dict(os.environ, {"PIPESHIFT_API_KEY": "dummy_key"}):
+        llm = ChatPipeshift(model="foo")
+        assert llm.model_name == "foo"
+        llm = ChatPipeshift(model_name="foo")  # type: ignore[call-arg]
+        assert llm.model_name == "foo"
+        ls_params = llm._get_ls_params()
+        assert ls_params["ls_provider"] == "pipeshift"
 
 
 def test_function_dict_to_message_function_message() -> None:

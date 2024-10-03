@@ -17,7 +17,10 @@ class TestPipeshiftStandard(ChatModelUnitTests):
 
     @property
     def chat_model_params(self) -> dict:
-        return {"model": "meta-llama/Llama-2-7b-chat-hf"}
+        return {
+            "pipeshift_api_key": "my_api_key",
+            "model": "meta-llama/Llama-2-7b-chat-hf",
+        }
 
     @property
     def init_from_env_params(self) -> Tuple[dict, dict, dict]:
