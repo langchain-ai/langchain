@@ -1,9 +1,8 @@
+from __future__ import annotations
+
 import joblib
 import pickle
 from pathlib import Path
-
-from __future__ import annotations
-
 from typing import Any, Callable, Dict, Iterable, List, Optional
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
