@@ -340,7 +340,6 @@ class SagemakerEndpoint(LLM):
         content_type = self.content_handler.content_type
         accepts = self.content_handler.accepts
         
-        # Determine the endpoint invocation based on endpoint or Inference Component
         invocation_params = {
             "EndpointName": self.endpoint_name,
             "Body": body,
