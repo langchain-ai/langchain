@@ -89,7 +89,19 @@ class NetworkxEntityGraph:
             )
         graph = nx.read_gml(gml_path)
         return cls(graph)
-
+        
+    @classmethod
+    def from_pickle(cls, pickle_path: str) -> NetworkxEntityGraph:
+        try:
+            import pickle
+        except ImportError:
+            raise ImportError(
+                "Could not import pickle python package. "
+                "Please install it with `pip install pickle`."
+            )
+        graph = pickle.load(open(pickle_path, 'rb'))
+        return cls(graph)
+        
     def add_triple(self, knowledge_triple: KnowledgeTriple) -> None:
         """Add a triple to the graph."""
         # Creates nodes if they don't exist
