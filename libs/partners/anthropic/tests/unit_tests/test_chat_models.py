@@ -10,7 +10,6 @@ from anthropic.types.beta.prompt_caching import (
     PromptCachingBetaUsage,
 )
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
-from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.runnables import RunnableBinding
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel, Field, SecretStr
