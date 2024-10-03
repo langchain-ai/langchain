@@ -80,8 +80,8 @@ class ChatOCIModelDeployment(BaseChatModel, BaseOCIModelDeployment):
 
 
     Key init args - completion params:
-        model: str
-            Name of the model specified in the deployment. Defaults to ``odsc-llm``.
+        endpoint: str
+            The OCI model deployment endpoint.
         temperature: float
             Sampling temperature.
         max_tokens: Optional[int]
