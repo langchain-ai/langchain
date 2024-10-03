@@ -9,13 +9,15 @@ from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, LLMResult
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
-from pydantic import BaseModel, SecretStr, model_validator, validator
+from pydantic import BaseModel, ConfigDict, SecretStr, model_validator, validator
 
 DEFAULT_TIMEOUT = 50
 
 
 class AzureMLEndpointClient(object):
     """AzureML Managed Endpoint client."""
+
+    model_config = ConfigDict(protected_namespaces=())
 
     def __init__(
         self,
