@@ -4,6 +4,7 @@
 
 import json
 import logging
+import traceback
 from typing import (
     Any,
     AsyncIterator,
@@ -18,7 +19,7 @@ from typing import (
 
 import aiohttp
 import requests
-import traceback
+from langchain_community.utilities.requests import Requests
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -27,7 +28,6 @@ from langchain_core.language_models.llms import BaseLLM, create_base_retry_decor
 from langchain_core.load.serializable import Serializable
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.utils import get_from_dict_or_env
-from langchain_community.utilities.requests import Requests
 from pydantic import Field, model_validator
 
 logger = logging.getLogger(__name__)
@@ -83,7 +83,9 @@ class BaseOCIModelDeployment(Serializable):
     @model_validator(mode="before")
     @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
-        """Checks if oracle-ads is installed and get credentials/endpoint from environment."""
+        """Checks if oracle-ads is installed and
+        get credentials/endpoint from environment.
+        """
         try:
             import ads
 

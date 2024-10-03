@@ -2,23 +2,28 @@
 
 """Chat model for OCI data science model deployment endpoint."""
 
+import importlib
 import json
 import logging
 from operator import itemgetter
 from typing import (
     Any,
     AsyncIterator,
+    Callable,
     Dict,
     Iterator,
     List,
     Literal,
     Optional,
+    Sequence,
     Type,
     Union,
-    Sequence,
-    Callable,
 )
 
+from langchain_community.llms.oci_data_science_model_deployment_endpoint import (
+    DEFAULT_MODEL_NAME,
+    BaseOCIModelDeployment,
+)
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -38,10 +43,7 @@ from langchain_core.output_parsers import (
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.utils.function_calling import convert_to_openai_tool
-from langchain_community.llms.oci_data_science_model_deployment_endpoint import (
-    DEFAULT_MODEL_NAME,
-    BaseOCIModelDeployment,
-)
+
 from pydantic import BaseModel, Field, model_validator
 
 logger = logging.getLogger(__name__)
@@ -95,7 +97,7 @@ class ChatOCIModelDeployment(BaseChatModel, BaseOCIModelDeployment):
             from langchain_community.chat_models import ChatOCIModelDeployment
 
             chat = ChatOCIModelDeployment(
-                endpoint="https://modeldeployment.us-ashburn-1.oci.customer-oci.com/<ocid>/predict",
+                endpoint="https://modeldeployment.<region>.oci.customer-oci.com/<ocid>/predict",
                 model="odsc-llm",
                 streaming=True,
                 max_retries=3,
@@ -110,7 +112,7 @@ class ChatOCIModelDeployment(BaseChatModel, BaseOCIModelDeployment):
         .. code-block:: python
 
             messages = [
-                ("system", "You are a helpful translator. Translate the user sentence to French."),
+                ("system", "Translate the user sentence to French."),
                 ("human", "Hello World!"),
             ]
             chat.invoke(messages)
@@ -140,16 +142,16 @@ class ChatOCIModelDeployment(BaseChatModel, BaseOCIModelDeployment):
 
         .. code-block:: python
 
-            content='' id='run-23df02c6-c43f-42de-87c6-8ad382e125c3'
-            content='\n' id='run-23df02c6-c43f-42de-87c6-8ad382e125c3'
-            content='B' id='run-23df02c6-c43f-42de-87c6-8ad382e125c3'
-            content='on' id='run-23df02c6-c43f-42de-87c6-8ad382e125c3'
-            content='j' id='run-23df02c6-c43f-42de-87c6-8ad382e125c3'
-            content='our' id='run-23df02c6-c43f-42de-87c6-8ad382e125c3'
-            content=' le' id='run-23df02c6-c43f-42de-87c6-8ad382e125c3'
-            content=' monde' id='run-23df02c6-c43f-42de-87c6-8ad382e125c3'
-            content='!' id='run-23df02c6-c43f-42de-87c6-8ad382e125c3'
-            content='' response_metadata={'finish_reason': 'stop'} id='run-23df02c6-c43f-42de-87c6-8ad382e125c3'
+            content='' id='run-02c6-c43f-42de'
+            content='\n' id='run-02c6-c43f-42de'
+            content='B' id='run-02c6-c43f-42de'
+            content='on' id='run-02c6-c43f-42de'
+            content='j' id='run-02c6-c43f-42de'
+            content='our' id='run-02c6-c43f-42de'
+            content=' le' id='run-02c6-c43f-42de'
+            content=' monde' id='run-02c6-c43f-42de'
+            content='!' id='run-02c6-c43f-42de'
+            content='' response_metadata={'finish_reason': 'stop'} id='run-02c6-c43f-42de'
 
     Async:
         .. code-block:: python
@@ -179,7 +181,8 @@ class ChatOCIModelDeployment(BaseChatModel, BaseOCIModelDeployment):
 
             structured_llm = chat.with_structured_output(Joke, method="json_mode")
             structured_llm.invoke(
-                "Tell me a joke about cats, respond in JSON with `setup` and `punchline` keys"
+                "Tell me a joke about cats, "
+                "respond in JSON with `setup` and `punchline` keys"
             )
 
         .. code-block:: python
@@ -255,14 +258,11 @@ class ChatOCIModelDeployment(BaseChatModel, BaseOCIModelDeployment):
     @classmethod
     def validate_openai(cls, values: Any) -> Any:
         """Checks if langchain_openai is installed."""
-        try:
-            import langchain_openai
-
-        except ImportError as ex:
+        if not importlib.util.find_spec("langchain_openai"):
             raise ImportError(
                 "Could not import langchain_openai package. "
                 "Please install it with `pip install langchain_openai`."
-            ) from ex
+            )
         return values
 
     @property
