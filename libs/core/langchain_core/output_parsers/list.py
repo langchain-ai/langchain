@@ -171,10 +171,12 @@ class CommaSeparatedListOutputParser(ListOutputParser):
         return "comma-separated-list"
 
 
-class CommaSeparatedNumericListOutputParser(CommaSeparatedListOutputParser):
+class CommaSeparatedNumericListOutputParser(
+    BaseTransformOutputParser[list[Union[int, Decimal]]]
+):
     """Parse the output of an LLM call to a comma-separated numeric list."""
 
-    def parse(self, text: str) -> list[Decimal]:
+    def parse(self, text: str) -> list[Union[int, Decimal]]:
         import re
 
         """Parse the output of an LLM call.
@@ -188,15 +190,15 @@ class CommaSeparatedNumericListOutputParser(CommaSeparatedListOutputParser):
 
         parts = text.split(",")
 
-        numbers = []
+        numbers: list[Union[int, Decimal]] = []
 
         for part in parts:
+            part = part.strip()
             if not part:
                 continue
-            cleaned_part = part.rstrip('?!.;:').strip()
-            cleaned_part = re.sub(r'[^\d\.\-eE]+', '', cleaned_part).replace(
-                ',', ''
-            )
+            cleaned_part = part.rstrip("?!.;:").strip()
+            cleaned_part = re.sub(r"[^\d\.\-eE]+", "", cleaned_part).replace(",", "")  # noqa E501
+            number: Union[int, Decimal]
             try:
                 number = int(cleaned_part)
             except ValueError:
@@ -217,6 +219,25 @@ class CommaSeparatedNumericListOutputParser(CommaSeparatedListOutputParser):
             "values. Ensure that decimal numbers use a dot (e.g., 3.14) "
             "instead of a comma."
         )
+
+    def _transform(
+        self, input: Iterator[Union[str, BaseMessage]]
+    ) -> Iterator[list[Union[int, Decimal]]]:
+        buffer = ""
+
+        for chunk in input:
+            if isinstance(chunk, BaseMessage):
+                # extract text
+                chunk_content = chunk.content
+                if not isinstance(chunk_content, str):
+                    continue
+                chunk = chunk_content
+            # add current chunk to buffer
+            buffer += chunk
+
+        # yield the last part
+        for part in self.parse(buffer):
+            yield [part]
 
     @property
     def _type(self) -> str:
@@ -270,10 +291,7 @@ class MarkdownListOutputParser(ListOutputParser):
 
     def get_format_instructions(self) -> str:
         """Return the format instructions for the Markdown list output."""
-        return (
-            "Your response should be a markdown list, "
-            "eg: `- foo\n- bar\n- baz`"
-        )
+        return "Your response should be a markdown list, " "eg: `- foo\n- bar\n- baz`"  # noqa E501
 
     def parse(self, text: str) -> list[str]:
         """Parse the output of an LLM call.

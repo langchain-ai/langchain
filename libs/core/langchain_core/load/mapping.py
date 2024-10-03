@@ -241,23 +241,13 @@ SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "base",
         "ChatOpenAI",
     ),
-    (
-      "langchain",
-      "output_parsers",
-      "list",
-      "CommaSeparatedListOutputParser"
-    ): (
+    ("langchain", "output_parsers", "list", "CommaSeparatedListOutputParser"): (
         "langchain_core",
         "output_parsers",
         "list",
         "CommaSeparatedListOutputParser",
     ),
-    (
-      "langchain",
-      "output_parsers",
-      "list",
-      "CommaSeparatedNumericListOutputParser"
-    ): (
+    ("langchain", "output_parsers", "list", "CommaSeparatedNumericListOutputParser"): (
         "langchain_core",
         "output_parsers",
         "list",
@@ -423,12 +413,7 @@ SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "chat",
         "ChatMessagePromptTemplate",
     ),
-    (
-      "langchain",
-      "prompts",
-      "few_shot_with_templates",
-      "FewShotPromptWithTemplates"
-    ): (
+    ("langchain", "prompts", "few_shot_with_templates", "FewShotPromptWithTemplates"): (
         "langchain_core",
         "prompts",
         "few_shot_with_templates",
@@ -774,22 +759,17 @@ OLD_CORE_NAMESPACES_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "string",
         "StrOutputParser",
     ),
-    (
-      "langchain_core",
-      "output_parsers",
-      "list",
-      "CommaSeparatedListOutputParser"
-    ): (
+    ("langchain_core", "output_parsers", "list", "CommaSeparatedListOutputParser"): (
         "langchain_core",
         "output_parsers",
         "list",
         "CommaSeparatedListOutputParser",
     ),
     (
-      "langchain_core",
-      "output_parsers",
-      "list",
-      "CommaSeparatedNumericListOutputParser"
+        "langchain_core",
+        "output_parsers",
+        "list",
+        "CommaSeparatedNumericListOutputParser",
     ): (
         "langchain_core",
         "output_parsers",
@@ -947,12 +927,7 @@ OLD_CORE_NAMESPACES_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "configurable",
         "RunnableConfigurableAlternatives",
     ),
-    (
-      "langchain_core",
-      "runnables",
-      "configurable",
-      "RunnableConfigurableFields"
-    ): (
+    ("langchain_core", "runnables", "configurable", "RunnableConfigurableFields"): (
         "langchain_core",
         "runnables",
         "configurable",
