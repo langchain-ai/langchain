@@ -2,6 +2,7 @@ from collections.abc import Iterator, Mapping, Sequence
 from typing import (
     Any,
     Callable,
+    Literal,
     Optional,
     Union,
 )
@@ -37,6 +38,7 @@ class StructuredPrompt(ChatPromptTemplate):
         schema_: Optional[Union[dict, type[BaseModel]]] = None,
         *,
         structured_output_kwargs: Optional[dict[str, Any]] = None,
+        template_format: Literal["f-string", "mustache", "jinja2"] = "f-string",
         **kwargs: Any,
     ) -> None:
         schema_ = schema_ or kwargs.pop("schema")
@@ -47,6 +49,7 @@ class StructuredPrompt(ChatPromptTemplate):
             messages=messages,
             schema_=schema_,
             structured_output_kwargs=structured_output_kwargs,
+            template_format=template_format,
             **kwargs,
         )
 

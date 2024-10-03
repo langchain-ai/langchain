@@ -183,7 +183,9 @@ class ContextGet(RunnableSerializable):
             for id_ in self.ids
         ]
 
-    def invoke(self, input: Any, config: Optional[RunnableConfig] = None) -> Any:
+    def invoke(
+        self, input: Any, config: Optional[RunnableConfig] = None, **kwargs: Any
+    ) -> Any:
         config = ensure_config(config)
         configurable = config.get("configurable", {})
         if isinstance(self.key, list):
@@ -280,7 +282,9 @@ class ContextSet(RunnableSerializable):
             for id_ in self.ids
         ]
 
-    def invoke(self, input: Any, config: Optional[RunnableConfig] = None) -> Any:
+    def invoke(
+        self, input: Any, config: Optional[RunnableConfig] = None, **kwargs: Any
+    ) -> Any:
         config = ensure_config(config)
         configurable = config.get("configurable", {})
         for id_, mapper in zip(self.ids, self.keys.values()):

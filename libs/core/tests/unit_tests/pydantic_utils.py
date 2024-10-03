@@ -115,10 +115,7 @@ def _normalize_schema(obj: Any) -> dict[str, Any]:
     Args:
         obj: The object to generate the schema for
     """
-    if isinstance(obj, BaseModel):
-        data = obj.model_json_schema()
-    else:
-        data = obj
+    data = obj.model_json_schema() if isinstance(obj, BaseModel) else obj
     remove_all_none_default(data)
     replace_all_of_with_ref(data)
     _remove_enum(data)
