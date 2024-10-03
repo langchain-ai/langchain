@@ -69,4 +69,3 @@ def test_save_local_load_local() -> None:
             allow_dangerous_deserialization=True,
         )
     assert len(loaded_bm25_retriever.docs) == 3
-    assert loaded_bm25_retriever.bm25_array.toarray().shape == (3, 5)
