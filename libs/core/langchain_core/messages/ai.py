@@ -99,11 +99,14 @@ class UsageMetadata(TypedDict):
                 "output_tokens": 20,
                 "total_tokens": 30,
                 "input_token_details": {
-                    ...
+                    "audio": 10,
+                    "cache_creation": 200,
+                    "cache_read": 100,
                 },
                 "output_token_details": {
-                    ...
-                },
+                    "audio": 10,
+                    "reasoning": 200,
+                }
             }
     """
 
