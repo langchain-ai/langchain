@@ -1,3 +1,7 @@
+import os
+from datetime import datetime
+from tempfile import TemporaryDirectory
+
 import pytest
 from langchain_core.documents import Document
 
@@ -43,3 +47,25 @@ def test_repr() -> None:
     ]
     bm25_retriever = BM25Retriever.from_documents(documents=input_docs)
     assert "I have a pen" not in repr(bm25_retriever)
+
+@pytest.mark.requires("sklearn")
+def test_save_local_load_local() -> None:
+    input_texts = ["I have a pen.", "Do you have a pen?", "I have a bag."]
+    bm25_retriever = BM25Retriever.from_texts(texts=input_texts)
+
+    file_name = "bm25_vectorizer"
+    temp_timestamp = datetime.utcnow().strftime("%Y%m%d-%H%M%S")
+    with TemporaryDirectory(suffix="_" + temp_timestamp + "/") as temp_folder:
+        bm25_retriever.save_local(
+            folder_path=temp_folder,
+            file_name=file_name,
+        )
+        assert os.path.exists(os.path.join(temp_folder, f"{file_name}.joblib"))
+        assert os.path.exists(os.path.join(temp_folder, f"{file_name}.pkl"))
+
+        loaded_bm25_retriever = BM25Retriever.load_local(
+            folder_path=temp_folder,
+            file_name=file_name,
+        )
+    assert len(loaded_bm25_retriever.docs) == 3
+    assert loaded_bm25_retriever.bm25_array.toarray().shape == (3, 5)
