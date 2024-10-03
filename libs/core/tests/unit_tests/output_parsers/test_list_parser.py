@@ -76,11 +76,11 @@ def test_single_numeric_list_item() -> None:
     assert parser.parse(text) == expected
     assert add(parser.transform(t for t in text)) == expected
     assert list(parser.transform(t for t in text)) == [[a] for a in expected]
-    assert list(parser.transform(t for t in text.splitlines(keepends=True))) == [ # noqa E501
+    assert list(parser.transform(t for t in text.splitlines(keepends=True))) == [  # noqa E501
         [a] for a in expected
     ]
     assert list(
-        parser.transform(" " + t if i > 0 else t for i, t in enumerate(text.split(" "))) # noqa E501
+        parser.transform(" " + t if i > 0 else t for i, t in enumerate(text.split(" ")))  # noqa E501
     ) == [[a] for a in expected]
     assert list(parser.transform(iter([text]))) == [[a] for a in expected]
 
