@@ -32,9 +32,9 @@ class BaseMedia(Serializable):
     id: Optional[str] = None
     """An optional identifier for the document.
 
-    Ideally this should be unique across the document collection and formatted 
+    Ideally this should be unique across the document collection and formatted
     as a UUID, but this will not be enforced.
-    
+
     .. versionadded:: 0.2.11
     """
 

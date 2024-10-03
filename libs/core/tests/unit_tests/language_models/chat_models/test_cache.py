@@ -303,9 +303,7 @@ def test_llm_representation_for_serializable() -> None:
     chat = CustomChat(cache=cache, messages=iter([]))
     assert chat._get_llm_string() == (
         '{"id": ["tests", "unit_tests", "language_models", "chat_models", '
-        '"test_cache", "CustomChat"], "kwargs": {"cache": {"id": ["tests", '
-        '"unit_tests", "language_models", "chat_models", "test_cache", '
-        '"InMemoryCache"], "lc": 1, "type": "not_implemented"}, "messages": {"id": '
+        '"test_cache", "CustomChat"], "kwargs": {"messages": {"id": '
         '["builtins", "list_iterator"], "lc": 1, "type": "not_implemented"}}, "lc": '
         '1, "name": "CustomChat", "type": "constructor"}---[(\'stop\', None)]'
     )
@@ -324,20 +322,6 @@ def test_cleanup_serialized() -> None:
             "CustomChat",
         ],
         "kwargs": {
-            "cache": {
-                "lc": 1,
-                "type": "not_implemented",
-                "id": [
-                    "tests",
-                    "unit_tests",
-                    "language_models",
-                    "chat_models",
-                    "test_cache",
-                    "InMemoryCache",
-                ],
-                "repr": "<tests.unit_tests.language_models.chat_models."
-                "test_cache.InMemoryCache object at 0x79ff437fe7d0>",
-            },
             "messages": {
                 "lc": 1,
                 "type": "not_implemented",
@@ -380,18 +364,6 @@ def test_cleanup_serialized() -> None:
             "CustomChat",
         ],
         "kwargs": {
-            "cache": {
-                "id": [
-                    "tests",
-                    "unit_tests",
-                    "language_models",
-                    "chat_models",
-                    "test_cache",
-                    "InMemoryCache",
-                ],
-                "lc": 1,
-                "type": "not_implemented",
-            },
             "messages": {
                 "id": ["builtins", "list_iterator"],
                 "lc": 1,
