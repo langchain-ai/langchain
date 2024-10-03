@@ -86,9 +86,9 @@ class Reviver:
 
     def __call__(self, value: dict[str, Any]) -> Any:
         if (
-            value.get("lc", None) == 1
-            and value.get("type", None) == "secret"
-            and value.get("id", None) is not None
+            value.get("lc") == 1
+            and value.get("type") == "secret"
+            and value.get("id") is not None
         ):
             [key] = value["id"]
             if key in self.secrets_map:
@@ -99,9 +99,9 @@ class Reviver:
                 raise KeyError(f'Missing key "{key}" in load(secrets_map)')
 
         if (
-            value.get("lc", None) == 1
-            and value.get("type", None) == "not_implemented"
-            and value.get("id", None) is not None
+            value.get("lc") == 1
+            and value.get("type") == "not_implemented"
+            and value.get("id") is not None
         ):
             raise NotImplementedError(
                 "Trying to load an object that doesn't implement "
@@ -109,17 +109,18 @@ class Reviver:
             )
 
         if (
-            value.get("lc", None) == 1
-            and value.get("type", None) == "constructor"
-            and value.get("id", None) is not None
+            value.get("lc") == 1
+            and value.get("type") == "constructor"
+            and value.get("id") is not None
         ):
             [*namespace, name] = value["id"]
             mapping_key = tuple(value["id"])
 
-            if namespace[0] not in self.valid_namespaces:
-                raise ValueError(f"Invalid namespace: {value}")
-            # The root namespace ["langchain"] is not a valid identifier.
-            elif namespace == ["langchain"]:
+            if (
+                namespace[0] not in self.valid_namespaces
+                # The root namespace ["langchain"] is not a valid identifier.
+                or namespace == ["langchain"]
+            ):
                 raise ValueError(f"Invalid namespace: {value}")
             # Has explicit import path.
             elif mapping_key in self.import_mappings:

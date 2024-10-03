@@ -93,13 +93,13 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     """A sequence of fallbacks to try."""
     exceptions_to_handle: tuple[type[BaseException], ...] = (Exception,)
     """The exceptions on which fallbacks should be tried.
-    
+
     Any exception that is not a subclass of these exceptions will be raised immediately.
     """
     exception_key: Optional[str] = None
-    """If string is specified then handled exceptions will be passed to fallbacks as 
+    """If string is specified then handled exceptions will be passed to fallbacks as
         part of the input under the specified key. If None, exceptions
-        will not be passed to fallbacks. If used, the base Runnable and its fallbacks 
+        will not be passed to fallbacks. If used, the base Runnable and its fallbacks
         must accept a dictionary as input."""
 
     model_config = ConfigDict(
@@ -619,7 +619,8 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                 return self.__class__(
                     **{
                         **self.model_dump(),
-                        **{"runnable": new_runnable, "fallbacks": new_fallbacks},
+                        "runnable": new_runnable,
+                        "fallbacks": new_fallbacks,
                     }
                 )
 

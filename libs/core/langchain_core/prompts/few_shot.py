@@ -59,8 +59,8 @@ class _FewShotPromptTemplateMixin(BaseModel):
             ValueError: If neither or both examples and example_selector are provided.
             ValueError: If both examples and example_selector are provided.
         """
-        examples = values.get("examples", None)
-        example_selector = values.get("example_selector", None)
+        examples = values.get("examples")
+        example_selector = values.get("example_selector")
         if examples and example_selector:
             raise ValueError(
                 "Only one of 'examples' and 'example_selector' should be provided"

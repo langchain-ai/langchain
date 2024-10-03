@@ -11,7 +11,7 @@ from langchain_core.callbacks.manager import (
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.utils import pre_init
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from langchain_community.utilities.vertexai import (
     create_retry_decorator,
@@ -100,6 +100,8 @@ async def acompletion_with_retry(
 
 
 class _VertexAIBase(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
+
     project: Optional[str] = None
     "The default GCP project to use when making Vertex API calls."
     location: str = "us-central1"
