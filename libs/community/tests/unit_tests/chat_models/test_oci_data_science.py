@@ -14,11 +14,6 @@ from langchain_community.chat_models import (
     ChatOCIModelDeploymentVLLM,
 )
 
-pytestmark = pytest.mark.skipif(
-    sys.version_info < (3, 9), reason="Requires Python 3.9 or higher"
-)
-
-
 CONST_MODEL_NAME = "odsc-vllm"
 CONST_ENDPOINT = "https://oci.endpoint/ocid/predict"
 CONST_PROMPT = "This is a prompt."
@@ -68,6 +63,10 @@ CONST_ASYNC_STREAM_TEMPLATE = (
 CONST_ASYNC_STREAM_RESPONSE = (
     CONST_ASYNC_STREAM_TEMPLATE.replace("<DELTA>", delta).encode()
     for delta in CONST_STREAM_DELTAS
+)
+
+pytestmark = pytest.mark.skipif(
+    sys.version_info < (3, 9), reason="Requires Python 3.9 or higher"
 )
 
 
