@@ -7,7 +7,6 @@ from typing import AsyncGenerator, Dict, Generator
 from unittest import mock
 
 import pytest
-import requests
 from requests.exceptions import HTTPError
 
 from langchain_community.llms.oci_data_science_model_deployment_endpoint import (
@@ -53,32 +52,34 @@ pytestmark = pytest.mark.skipif(
 )
 
 
-def mocked_requests_post(self: requests.Request, **kwargs):
+class MockResponse:
+    """Represents a mocked response."""
+
+    def __init__(self, json_data: Dict, status_code: int = 200) -> None:
+        self.json_data = json_data
+        self.status_code = status_code
+
+    def raise_for_status(self) -> None:
+        """Mocked raise for status."""
+        if 400 <= self.status_code < 600:
+            raise HTTPError("", response=self)
+
+    def json(self) -> Dict:
+        """Returns mocked json data."""
+        return self.json_data
+
+    def iter_lines(self, chunk_size: int = 4096) -> Generator[bytes, None, None]:
+        """Returns a generator of mocked streaming response."""
+        return CONST_STREAM_RESPONSE
+
+    @property
+    def text(self) -> str:
+        """Returns the mocked text representation."""
+        return ""
+
+
+def mocked_requests_post(*args, **kwargs) -> MockResponse:
     """Method to mock post requests"""
-
-    class MockResponse:
-        """Represents a mocked response."""
-
-        def __init__(self, json_data: Dict, status_code: int = 200) -> None:
-            self.json_data = json_data
-            self.status_code = status_code
-
-        def raise_for_status(self) -> None:
-            """Mocked raise for status."""
-            if 400 <= self.status_code < 600:
-                raise HTTPError("", response=self)
-
-        def json(self) -> Dict:
-            """Returns mocked json data."""
-            return self.json_data
-
-        def iter_lines(self, chunk_size: int = 4096) -> Generator[bytes]:
-            """Returns a generator of mocked streaming response."""
-            return CONST_STREAM_RESPONSE
-
-        @property
-        def text(self) -> str:
-            return ""
 
     payload = kwargs.get("json")
     if "inputs" in payload:
@@ -155,7 +156,7 @@ def test_generate_tgi(*args) -> None:
     "langchain_community.utilities.requests.Requests.apost",
     mock.MagicMock(),
 )
-async def test_stream_async(*args):
+async def test_stream_async(*args) -> None:
     """Tests async streaming."""
     llm = OCIModelDeploymentTGI(
         endpoint=CONST_ENDPOINT, model=CONST_MODEL_NAME, streaming=True

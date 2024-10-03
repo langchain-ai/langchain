@@ -3,7 +3,7 @@
 """Test Chat model for OCI Data Science Model Deployment Endpoint."""
 
 import sys
-from typing import AsyncGenerator, Dict
+from typing import AsyncGenerator, Dict, Generator
 from unittest import mock
 
 import pytest
@@ -71,32 +71,34 @@ pytestmark = pytest.mark.skipif(
 )
 
 
+class MockResponse:
+    """Represents a mocked response."""
+
+    def __init__(self, json_data: Dict, status_code: int = 200):
+        self.json_data = json_data
+        self.status_code = status_code
+
+    def raise_for_status(self) -> None:
+        """Mocked raise for status."""
+        if 400 <= self.status_code < 600:
+            raise HTTPError("", response=self)
+
+    def json(self):
+        """Returns mocked json data."""
+        return self.json_data
+
+    def iter_lines(self, chunk_size: int = 4096) -> Generator[bytes, None, None]:
+        """Returns a generator of mocked streaming response."""
+        return CONST_STREAM_RESPONSE
+
+    @property
+    def text(self):
+        """Returns the mocked text representation."""
+        return ""
+
+
 def mocked_requests_post(*args, **kwargs):
     """Method to mock post requests"""
-
-    class MockResponse:
-        """Represents a mocked response."""
-
-        def __init__(self, json_data: Dict, status_code: int = 200):
-            self.json_data = json_data
-            self.status_code = status_code
-
-        def raise_for_status(self) -> None:
-            """Mocked raise for status."""
-            if 400 <= self.status_code < 600:
-                raise HTTPError("", response=self)
-
-        def json(self):
-            """Returns mocked json data."""
-            return self.json_data
-
-        def iter_lines(self, chunk_size: int = 4096):
-            """Returns a generator of mocked streaming response."""
-            return CONST_STREAM_RESPONSE
-
-        @property
-        def text(self):
-            return ""
 
     payload = kwargs.get("json")
     messages = payload.get("messages")
