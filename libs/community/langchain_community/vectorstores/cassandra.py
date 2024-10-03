@@ -143,6 +143,9 @@ class Cassandra(VectorStore):
             **kwargs,
         )
 
+        if self.session is None:
+            self.session = self.table.session
+
     @property
     def embeddings(self) -> Embeddings:
         return self.embedding
@@ -334,6 +337,100 @@ class Cassandra(VectorStore):
         return ids
 
     @staticmethod
+    def _row_to_document(row: Dict[str, Any]) -> Document:
+        return Document(
+            id=row["row_id"],
+            page_content=row["body_blob"],
+            metadata=row["metadata"],
+        )
+
+    def get_by_document_id(self, document_id: str) -> Document | None:
+        """Get by document ID.
+
+        Args:
+            document_id: the document ID to get.
+        """
+        row = self.table.get(row_id=document_id)
+        if row is None:
+            return None
+        return self._row_to_document(row=row)
+
+    async def aget_by_document_id(self, document_id: str) -> Document | None:
+        """Get by document ID.
+
+        Args:
+            document_id: the document ID to get.
+        """
+        row = await self.table.aget(row_id=document_id)
+        if row is None:
+            return None
+        return self._row_to_document(row=row)
+
+    def metadata_search(
+        self,
+        metadata: dict[str, Any] = {},  # noqa: B006
+        n: int = 5,
+    ) -> Iterable[Document]:
+        """Get documents via a metadata search.
+
+        Args:
+            metadata: the metadata to query for.
+        """
+        rows = self.table.find_entries(metadata=metadata, n=n)
+        return [self._row_to_document(row=row) for row in rows if row]
+
+    async def ametadata_search(
+        self,
+        metadata: dict[str, Any] = {},  # noqa: B006
+        n: int = 5,
+    ) -> Iterable[Document]:
+        """Get documents via a metadata search.
+
+        Args:
+            metadata: the metadata to query for.
+        """
+        rows = await self.table.afind_entries(metadata=metadata, n=n)
+        return [self._row_to_document(row=row) for row in rows]
+
+    async def asimilarity_search_with_embedding_id_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        filter: Optional[Dict[str, str]] = None,
+        body_search: Optional[Union[str, List[str]]] = None,
+    ) -> List[Tuple[Document, List[float], str]]:
+        """Return docs most similar to embedding vector.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Filter on the metadata to apply.
+            body_search: Document textual search terms to apply.
+                Only supported by Astra DB at the moment.
+        Returns:
+            List of (Document, embedding, id), the most similar to the query vector.
+        """
+        kwargs: Dict[str, Any] = {}
+        if filter is not None:
+            kwargs["metadata"] = filter
+        if body_search is not None:
+            kwargs["body_search"] = body_search
+
+        hits = await self.table.aann_search(
+            vector=embedding,
+            n=k,
+            **kwargs,
+        )
+        return [
+            (
+                self._row_to_document(row=hit),
+                hit["vector"],
+                hit["row_id"],
+            )
+            for hit in hits
+        ]
+
+    @staticmethod
     def _search_to_documents(
         hits: Iterable[Dict[str, Any]],
     ) -> List[Tuple[Document, float, str]]:
@@ -341,10 +438,7 @@ class Cassandra(VectorStore):
         # (1=most relevant), as required by this class' contract.
         return [
             (
-                Document(
-                    page_content=hit["body_blob"],
-                    metadata=hit["metadata"],
-                ),
+                Cassandra._row_to_document(row=hit),
                 0.5 + 0.5 * hit["distance"],
                 hit["row_id"],
             )
@@ -375,7 +469,6 @@ class Cassandra(VectorStore):
             kwargs["metadata"] = filter
         if body_search is not None:
             kwargs["body_search"] = body_search
-
         hits = self.table.metric_ann_search(
             vector=embedding,
             n=k,
@@ -712,13 +805,7 @@ class Cassandra(VectorStore):
             for pf_index, pf_hit in enumerate(prefetch_hits)
             if pf_index in mmr_chosen_indices
         ]
-        return [
-            Document(
-                page_content=hit["body_blob"],
-                metadata=hit["metadata"],
-            )
-            for hit in mmr_hits
-        ]
+        return [Cassandra._row_to_document(row=hit) for hit in mmr_hits]
 
     def max_marginal_relevance_search_by_vector(
         self,

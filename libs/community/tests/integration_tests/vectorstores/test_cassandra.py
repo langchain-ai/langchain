@@ -17,6 +17,17 @@ from tests.integration_tests.vectorstores.fake_embeddings import (
 )
 
 
+def _strip_docs(documents: List[Document]) -> List[Document]:
+    return [_strip_doc(doc) for doc in documents]
+
+
+def _strip_doc(document: Document) -> Document:
+    return Document(
+        page_content=document.page_content,
+        metadata=document.metadata,
+    )
+
+
 def _vectorstore_from_texts(
     texts: List[str],
     metadatas: Optional[List[dict]] = None,
@@ -110,9 +121,9 @@ async def test_cassandra() -> None:
     texts = ["foo", "bar", "baz"]
     docsearch = _vectorstore_from_texts(texts)
     output = docsearch.similarity_search("foo", k=1)
-    assert output == [Document(page_content="foo")]
+    assert _strip_docs(output) == _strip_docs([Document(page_content="foo")])
     output = await docsearch.asimilarity_search("foo", k=1)
-    assert output == [Document(page_content="foo")]
+    assert _strip_docs(output) == _strip_docs([Document(page_content="foo")])
 
 
 async def test_cassandra_with_score() -> None:
@@ -130,13 +141,13 @@ async def test_cassandra_with_score() -> None:
     output = docsearch.similarity_search_with_score("foo", k=3)
     docs = [o[0] for o in output]
     scores = [o[1] for o in output]
-    assert docs == expected_docs
+    assert _strip_docs(docs) == _strip_docs(expected_docs)
     assert scores[0] > scores[1] > scores[2]
 
     output = await docsearch.asimilarity_search_with_score("foo", k=3)
     docs = [o[0] for o in output]
     scores = [o[1] for o in output]
-    assert docs == expected_docs
+    assert _strip_docs(docs) == _strip_docs(expected_docs)
     assert scores[0] > scores[1] > scores[2]
 
 
