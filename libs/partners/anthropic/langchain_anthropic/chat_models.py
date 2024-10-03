@@ -41,7 +41,7 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
 )
-from langchain_core.messages.ai import UsageMetadata
+from langchain_core.messages.ai import InputTokenDetails, UsageMetadata
 from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
 from langchain_core.output_parsers import (
     JsonOutputKeyToolsParser,
@@ -766,24 +766,7 @@ class ChatAnthropic(BaseChatModel):
             )
         else:
             msg = AIMessage(content=content)
-
-        input_token_details = (
-            {
-                "cache_read": getattr(data.usage, "cache_read_input_tokens", None),
-                "cache_creation": getattr(
-                    data.usage, "cache_creation_input_tokens", None
-                ),
-            },
-        )
-        # Collect token usage
-        msg.usage_metadata = {
-            "input_tokens": data.usage.input_tokens,
-            "output_tokens": data.usage.output_tokens,
-            "total_tokens": data.usage.input_tokens + data.usage.output_tokens,
-            "input_token_details": {
-                k: v for k, v in input_token_details if v is not None
-            },
-        }
+        msg.usage_metadata = _create_usage_metadata(data.usage)
         return ChatResult(
             generations=[ChatGeneration(message=msg)],
             llm_output=llm_output,
@@ -1264,14 +1247,11 @@ class ChatAnthropicMessages(ChatAnthropic):
 
 
 def _create_usage_metadata(anthropic_usage: BaseModel) -> UsageMetadata:
-    input_token_details: dict = (
-        {
-            "cache_read": getattr(anthropic_usage, "cache_read_input_tokens", None),
-            "cache_creation": getattr(
-                anthropic_usage, "cache_creation_input_tokens", None
-            ),
-        },
-    )
+    input_token_details: Dict = {
+        "cache_read": getattr(anthropic_usage, "cache_read_input_tokens", None),
+        "cache_creation": getattr(anthropic_usage, "cache_creation_input_tokens", None),
+    }
+
     input_tokens = getattr(anthropic_usage, "input_tokens", 0)
     output_tokens = getattr(anthropic_usage, "output_tokens", 0)
     return UsageMetadata(
