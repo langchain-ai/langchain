@@ -48,6 +48,7 @@ def test_repr() -> None:
     bm25_retriever = BM25Retriever.from_documents(documents=input_docs)
     assert "I have a pen" not in repr(bm25_retriever)
 
+
 @pytest.mark.requires("sklearn")
 def test_save_local_load_local() -> None:
     input_texts = ["I have a pen.", "Do you have a pen?", "I have a bag."]
@@ -69,3 +70,4 @@ def test_save_local_load_local() -> None:
             allow_dangerous_deserialization=True,
         )
     assert len(loaded_bm25_retriever.docs) == 3
+    assert loaded_bm25_retriever.vectorizer.doc_len == [4, 5, 4]
