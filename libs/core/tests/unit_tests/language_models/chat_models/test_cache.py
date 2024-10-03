@@ -199,19 +199,13 @@ async def test_global_cache_abatch() -> None:
         assert results[0].content == "hello"
         assert results[1].content == "hello"
 
-        ## RACE CONDITION -- note behavior is different from sync
-        # Now, reset cache and test the race condition
-        # For now we just hard-code the result, if this changes
-        # we can investigate further
         global_cache = InMemoryCache()
         set_llm_cache(global_cache)
         assert global_cache._cache == {}
         results = await chat_model.abatch(["prompt", "prompt"])
-        # suspecting that tasks will be scheduled and executed in order
-        # if this ever fails, we can relax to a set comparison
-        # Cache misses likely guaranteed?
+
         assert results[0].content == "meow"
-        assert results[1].content == "woof"
+        assert results[1].content == "meow"
     finally:
         set_llm_cache(None)
 
