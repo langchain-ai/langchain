@@ -3,6 +3,7 @@
 """Test Chat model for OCI Data Science Model Deployment Endpoint."""
 
 import sys
+from typing import Dict
 from unittest import mock
 
 import pytest
@@ -70,17 +71,17 @@ pytestmark = pytest.mark.skipif(
 )
 
 
-def mocked_requests_post(self, **kwargs):
+def mocked_requests_post(*args, **kwargs):
     """Method to mock post requests"""
 
     class MockResponse:
         """Represents a mocked response."""
 
-        def __init__(self, json_data, status_code=200):
+        def __init__(self, json_data: Dict, status_code: int = 200):
             self.json_data = json_data
             self.status_code = status_code
 
-        def raise_for_status(self):
+        def raise_for_status(self) -> None:
             """Mocked raise for status."""
             if 400 <= self.status_code < 600:
                 raise HTTPError("", response=self)
@@ -89,7 +90,7 @@ def mocked_requests_post(self, **kwargs):
             """Returns mocked json data."""
             return self.json_data
 
-        def iter_lines(self, chunk_size=4096):
+        def iter_lines(self, chunk_size: int = 4096):
             """Returns a generator of mocked streaming response."""
             return CONST_STREAM_RESPONSE
 
@@ -114,7 +115,7 @@ def mocked_requests_post(self, **kwargs):
 @pytest.mark.requires("langchain_openai")
 @mock.patch("ads.common.auth.default_signer", return_value=dict(signer=None))
 @mock.patch("requests.post", side_effect=mocked_requests_post)
-def test_invoke_vllm(mock_post, mock_auth) -> None:
+def test_invoke_vllm(*args) -> None:
     """Tests invoking vLLM endpoint."""
     llm = ChatOCIModelDeploymentVLLM(endpoint=CONST_ENDPOINT, model=CONST_MODEL_NAME)
     output = llm.invoke(CONST_PROMPT)
@@ -126,7 +127,7 @@ def test_invoke_vllm(mock_post, mock_auth) -> None:
 @pytest.mark.requires("langchain_openai")
 @mock.patch("ads.common.auth.default_signer", return_value=dict(signer=None))
 @mock.patch("requests.post", side_effect=mocked_requests_post)
-def test_invoke_tgi(mock_post, mock_auth) -> None:
+def test_invoke_tgi(*args) -> None:
     """Tests invoking TGI endpoint using OpenAI Spec."""
     llm = ChatOCIModelDeploymentTGI(endpoint=CONST_ENDPOINT, model=CONST_MODEL_NAME)
     output = llm.invoke(CONST_PROMPT)
@@ -138,7 +139,7 @@ def test_invoke_tgi(mock_post, mock_auth) -> None:
 @pytest.mark.requires("langchain_openai")
 @mock.patch("ads.common.auth.default_signer", return_value=dict(signer=None))
 @mock.patch("requests.post", side_effect=mocked_requests_post)
-def test_stream_vllm(mock_post, mock_auth) -> None:
+def test_stream_vllm(*args) -> None:
     """Tests streaming with vLLM endpoint using OpenAI spec."""
     llm = ChatOCIModelDeploymentVLLM(
         endpoint=CONST_ENDPOINT, model=CONST_MODEL_NAME, streaming=True
@@ -169,7 +170,7 @@ async def mocked_async_streaming_response(*args, **kwargs):
     "langchain_community.utilities.requests.Requests.apost",
     mock.MagicMock(),
 )
-async def test_stream_async(mock_auth):
+async def test_stream_async(*args):
     """Tests async streaming."""
     llm = ChatOCIModelDeploymentVLLM(
         endpoint=CONST_ENDPOINT, model=CONST_MODEL_NAME, streaming=True
