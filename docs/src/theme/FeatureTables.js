@@ -2,7 +2,7 @@ import React from "react";
 import {useCurrentSidebarCategory} from '@docusaurus/theme-common';
 import {
   useDocById,
-} from '@docusaurus/theme-common/internal';
+} from '@docusaurus/plugin-content-docs/client';
 
 const FEATURE_TABLES = {
     chat: {
@@ -354,7 +354,7 @@ const FEATURE_TABLES = {
             },
             {
                 name: "Nomic",
-                link: "cohere",
+                link: "nomic",
                 package: "langchain-nomic",
                 apiLink: "https://python.langchain.com/api_reference/nomic/embeddings/langchain_nomic.embeddings.NomicEmbeddings.html"
             },
@@ -363,6 +363,12 @@ const FEATURE_TABLES = {
                 link: "databricks",
                 package: "langchain-databricks",
                 apiLink: "https://python.langchain.com/api_reference/nomic/embeddings/langchain_databricks.embeddings.DatabricksEmbeddings.html"
+            },
+            {
+                name: "VoyageAI",
+                link: "voyageai",
+                package: "langchain-voyageai",
+                apiLink: "https://python.langchain.com/api_reference/voyageai/embeddings/langchain_voyageai.embeddings.VoyageAIEmbeddings.html"
             },
         ]
     },
@@ -736,6 +742,13 @@ const FEATURE_TABLES = {
                 apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.web_base.WebBaseLoader.html"
             },
             {
+                name: "Unstructured",
+                link: "unstructured_file",
+                source: "Uses Unstructured to load and parse web pages",
+                api: "Package",
+                apiLink: "https://python.langchain.com/api_reference/unstructured/document_loaders/langchain_unstructured.document_loaders.UnstructuredLoader.html"
+            },
+            {
                 name: "RecursiveURL",
                 link: "recursive_url",
                 source: "Recursively scrapes all child links from a root URL",
@@ -792,7 +805,7 @@ const FEATURE_TABLES = {
             {
                 name: "MathPix",
                 link: "mathpix",
-                source: "Uses MathPix to laod PDFs",
+                source: "Uses MathPix to load PDFs",
                 api: "Package",
                 apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.pdf.MathpixPDFLoader.html"
             },
@@ -816,13 +829,6 @@ const FEATURE_TABLES = {
                 source: "Load PDF files using PyPDFium2",
                 api: "Package",
                 apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.pdf.PyPDFium2Loader.html"
-            },
-            {
-                name: "UnstructuredPDFLoader",
-                link: "unstructured_pdfloader",
-                source: "Load PDF files using Unstructured",
-                api: "Package",
-                apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.pdf.UnstructuredPDFLoader.html"
             },
             {
                 name: "PyMuPDF",
@@ -864,7 +870,7 @@ const FEATURE_TABLES = {
             {
                 name: "Unstructured",
                 link: "unstructured_file",
-                source: "All file types",
+                source: "Many file types (see https://docs.unstructured.io/platform/supported-file-types)",
                 apiLink: "https://python.langchain.com/api_reference/unstructured/document_loaders/langchain_unstructured.document_loaders.UnstructuredLoader.html"
             },
             {
@@ -874,23 +880,11 @@ const FEATURE_TABLES = {
                 apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.json_loader.JSONLoader.html"
             },
             {
-                name: "UnstructuredMarkdownLoader",
-                link: "unstructured_markdown",
-                source: "Markdown files",
-                apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.markdown.UnstructuredMarkdownLoader.html"
-            },
-            {
                 name: "BSHTMLLoader",
                 link: "bshtml",
                 source: "HTML files",
                 apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.html_bs.BSHTMLLoader.html"
             },
-            {
-                name: "UnstrucutredXMLLoader",
-                link: "xml",
-                source: "XML files",
-                apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.xml.UnstructuredXMLLoader.html"
-            }
         ]
     },
     vectorstores: {
@@ -1089,6 +1083,19 @@ const FEATURE_TABLES = {
                 async: true,
                 passesStandardTests: false,
                 multiTenancy: false,
+                local: true,
+                idsInAddDocuments: false,
+            },
+            {
+                name: "Weaviate",
+                link: "weaviate",
+                deleteById: true,
+                filtering: true,
+                searchByVector: true,
+                searchWithScore: true,
+                async: true,
+                passesStandardTests: false,
+                multiTenancy: true,
                 local: true,
                 idsInAddDocuments: false,
             }

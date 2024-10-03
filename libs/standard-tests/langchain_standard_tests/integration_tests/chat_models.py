@@ -151,6 +151,31 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(result.usage_metadata["output_tokens"], int)
         assert isinstance(result.usage_metadata["total_tokens"], int)
 
+        if "audio_input" in self.supported_usage_metadata_details:
+            msg = self.invoke_with_audio_input()
+            assert isinstance(msg.usage_metadata["input_token_details"]["audio"], int)  # type: ignore[index]
+        if "audio_output" in self.supported_usage_metadata_details:
+            msg = self.invoke_with_audio_output()
+            assert isinstance(msg.usage_metadata["output_token_details"]["audio"], int)  # type: ignore[index]
+        if "reasoning_output" in self.supported_usage_metadata_details:
+            msg = self.invoke_with_reasoning_output()
+            assert isinstance(
+                msg.usage_metadata["output_token_details"]["reasoning"],  # type: ignore[index]
+                int,
+            )
+        if "cache_read_input" in self.supported_usage_metadata_details:
+            msg = self.invoke_with_cache_read_input()
+            assert isinstance(
+                msg.usage_metadata["input_token_details"]["cache_read"],  # type: ignore[index]
+                int,
+            )
+        if "cache_creation_input" in self.supported_usage_metadata_details:
+            msg = self.invoke_with_cache_creation_input()
+            assert isinstance(
+                msg.usage_metadata["input_token_details"]["cache_creation"],  # type: ignore[index]
+                int,
+            )
+
     def test_usage_metadata_streaming(self, model: BaseChatModel) -> None:
         if not self.returns_usage_metadata:
             pytest.skip("Not implemented.")
@@ -163,6 +188,31 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(full.usage_metadata["input_tokens"], int)
         assert isinstance(full.usage_metadata["output_tokens"], int)
         assert isinstance(full.usage_metadata["total_tokens"], int)
+
+        if "audio_input" in self.supported_usage_metadata_details:
+            msg = self.invoke_with_audio_input(stream=True)
+            assert isinstance(msg.usage_metadata["input_token_details"]["audio"], int)  # type: ignore[index]
+        if "audio_output" in self.supported_usage_metadata_details:
+            msg = self.invoke_with_audio_output(stream=True)
+            assert isinstance(msg.usage_metadata["output_token_details"]["audio"], int)  # type: ignore[index]
+        if "reasoning_output" in self.supported_usage_metadata_details:
+            msg = self.invoke_with_reasoning_output(stream=True)
+            assert isinstance(
+                msg.usage_metadata["output_token_details"]["reasoning"],  # type: ignore[index]
+                int,
+            )
+        if "cache_read_input" in self.supported_usage_metadata_details:
+            msg = self.invoke_with_cache_read_input(stream=True)
+            assert isinstance(
+                msg.usage_metadata["input_token_details"]["cache_read"],  # type: ignore[index]
+                int,
+            )
+        if "cache_creation_input" in self.supported_usage_metadata_details:
+            msg = self.invoke_with_cache_creation_input(stream=True)
+            assert isinstance(
+                msg.usage_metadata["input_token_details"]["cache_creation"],  # type: ignore[index]
+                int,
+            )
 
     def test_stop_sequence(self, model: BaseChatModel) -> None:
         result = model.invoke("hi", stop=["you"])
@@ -482,6 +532,37 @@ class ChatModelIntegrationTests(ChatModelTests):
         )
         model.invoke([message])
 
+    def test_image_tool_message(self, model: BaseChatModel) -> None:
+        if not self.supports_image_tool_message:
+            return
+        image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
+        image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
+        messages = [
+            HumanMessage("get a random image using the tool and describe the weather"),
+            AIMessage(
+                [],
+                tool_calls=[
+                    {"type": "tool_call", "id": "1", "name": "random_image", "args": {}}
+                ],
+            ),
+            ToolMessage(
+                content=[
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
+                    },
+                ],
+                tool_call_id="1",
+                name="random_image",
+            ),
+        ]
+
+        def random_image() -> str:
+            """Return a random image."""
+            return ""
+
+        model.bind_tools([random_image]).invoke(messages)
+
     def test_anthropic_inputs(self, model: BaseChatModel) -> None:
         if not self.supports_anthropic_inputs:
             return
@@ -577,3 +658,18 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(result, AIMessage)
         assert isinstance(result.content, str)
         assert len(result.content) > 0
+
+    def invoke_with_audio_input(self, *, stream: bool = False) -> AIMessage:
+        raise NotImplementedError()
+
+    def invoke_with_audio_output(self, *, stream: bool = False) -> AIMessage:
+        raise NotImplementedError()
+
+    def invoke_with_reasoning_output(self, *, stream: bool = False) -> AIMessage:
+        raise NotImplementedError()
+
+    def invoke_with_cache_read_input(self, *, stream: bool = False) -> AIMessage:
+        raise NotImplementedError()
+
+    def invoke_with_cache_creation_input(self, *, stream: bool = False) -> AIMessage:
+        raise NotImplementedError()

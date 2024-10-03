@@ -23,6 +23,7 @@ from typing import (
     cast,
 )
 
+from langchain_core._api import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -650,6 +651,11 @@ class ChatGroq(BaseChatModel):
             combined["system_fingerprint"] = system_fingerprint
         return combined
 
+    @deprecated(
+        since="0.2.1",
+        alternative="langchain_groq.chat_models.ChatGroq.bind_tools",
+        removal="0.3.0",
+    )
     def bind_functions(
         self,
         functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
@@ -674,8 +680,8 @@ class ChatGroq(BaseChatModel):
                 Must be the name of the single provided function or
                 "auto" to automatically determine which function to call
                 (if any).
-            **kwargs: Any additional parameters to pass to the
-                :class:`~langchain.runnable.Runnable` constructor.
+            **kwargs: Any additional parameters to pass to
+                :meth:`~langchain_groq.chat_models.ChatGroq.bind`.
         """
 
         formatted_functions = [convert_to_openai_function(fn) for fn in functions]
@@ -733,31 +739,11 @@ class ChatGroq(BaseChatModel):
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
         if tool_choice is not None and tool_choice:
             if tool_choice == "any":
-                if len(tools) > 1:
-                    raise ValueError(
-                        f"Groq does not currently support {tool_choice=}. Should "
-                        f"be one of 'auto', 'none', or the name of the tool to call."
-                    )
-                else:
-                    tool_choice = convert_to_openai_tool(tools[0])["function"]["name"]
+                tool_choice = "required"
             if isinstance(tool_choice, str) and (
-                tool_choice not in ("auto", "any", "none")
+                tool_choice not in ("auto", "none", "required")
             ):
                 tool_choice = {"type": "function", "function": {"name": tool_choice}}
-            # TODO: Remove this update once 'any' is supported.
-            if isinstance(tool_choice, dict) and (len(formatted_tools) != 1):
-                raise ValueError(
-                    "When specifying `tool_choice`, you must provide exactly one "
-                    f"tool. Received {len(formatted_tools)} tools."
-                )
-            if isinstance(tool_choice, dict) and (
-                formatted_tools[0]["function"]["name"]
-                != tool_choice["function"]["name"]
-            ):
-                raise ValueError(
-                    f"Tool choice {tool_choice} was specified, but the only "
-                    f"provided tool was {formatted_tools[0]['function']['name']}."
-                )
             if isinstance(tool_choice, bool):
                 if len(tools) > 1:
                     raise ValueError(

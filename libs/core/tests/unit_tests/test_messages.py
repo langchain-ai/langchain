@@ -1,6 +1,6 @@
 import unittest
 import uuid
-from typing import List, Type, Union
+from typing import Optional, Union
 
 import pytest
 
@@ -10,6 +10,7 @@ from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
+    BaseMessageChunk,
     ChatMessage,
     ChatMessageChunk,
     FunctionMessage,
@@ -429,16 +430,12 @@ def test_message_chunk_to_message() -> None:
     expected = AIMessage(
         content="I am",
         tool_calls=[
-            create_tool_call(**{"name": "tool1", "args": {"a": 1}, "id": "1"}),  # type: ignore[arg-type]
-            create_tool_call(**{"name": "tool2", "args": {}, "id": "2"}),  # type: ignore[arg-type]
+            create_tool_call(name="tool1", args={"a": 1}, id="1"),  # type: ignore[arg-type]
+            create_tool_call(name="tool2", args={}, id="2"),  # type: ignore[arg-type]
         ],
         invalid_tool_calls=[
-            create_invalid_tool_call(
-                **{"name": "tool3", "args": None, "id": "3", "error": None}
-            ),
-            create_invalid_tool_call(
-                **{"name": "tool4", "args": "abc", "id": "4", "error": None}
-            ),
+            create_invalid_tool_call(name="tool3", args=None, id="3", error=None),
+            create_invalid_tool_call(name="tool4", args="abc", id="4", error=None),
         ],
     )
     assert message_chunk_to_message(chunk) == expected
@@ -447,11 +444,11 @@ def test_message_chunk_to_message() -> None:
 
 
 def test_tool_calls_merge() -> None:
-    chunks: List[dict] = [
-        dict(content=""),
-        dict(
-            content="",
-            additional_kwargs={
+    chunks: list[dict] = [
+        {"content": ""},
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 0,
@@ -461,10 +458,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 0,
@@ -474,10 +471,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 0,
@@ -487,10 +484,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 0,
@@ -500,10 +497,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 0,
@@ -513,10 +510,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 0,
@@ -526,10 +523,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 0,
@@ -539,10 +536,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 1,
@@ -552,10 +549,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 1,
@@ -565,10 +562,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 1,
@@ -578,10 +575,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 1,
@@ -591,10 +588,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 1,
@@ -604,10 +601,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 1,
@@ -617,10 +614,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 1,
@@ -630,18 +627,15 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(content=""),
+        },
+        {"content": ""},
     ]
 
-    final = None
+    final: Optional[BaseMessageChunk] = None
 
     for chunk in chunks:
         msg = AIMessageChunk(**chunk)
-        if final is None:
-            final = msg
-        else:
-            final = final + msg
+        final = msg if final is None else final + msg
 
     assert final == AIMessageChunk(
         content="",
@@ -781,7 +775,7 @@ def test_convert_to_messages() -> None:
 
 
 @pytest.mark.parametrize(
-    "MessageClass",
+    "message_class",
     [
         AIMessage,
         AIMessageChunk,
@@ -790,39 +784,39 @@ def test_convert_to_messages() -> None:
         SystemMessage,
     ],
 )
-def test_message_name(MessageClass: Type) -> None:
-    msg = MessageClass(content="foo", name="bar")
+def test_message_name(message_class: type) -> None:
+    msg = message_class(content="foo", name="bar")
     assert msg.name == "bar"
 
-    msg2 = MessageClass(content="foo", name=None)
+    msg2 = message_class(content="foo", name=None)
     assert msg2.name is None
 
-    msg3 = MessageClass(content="foo")
+    msg3 = message_class(content="foo")
     assert msg3.name is None
 
 
 @pytest.mark.parametrize(
-    "MessageClass",
+    "message_class",
     [FunctionMessage, FunctionMessageChunk],
 )
-def test_message_name_function(MessageClass: Type) -> None:
+def test_message_name_function(message_class: type) -> None:
     # functionmessage doesn't support name=None
-    msg = MessageClass(name="foo", content="bar")
+    msg = message_class(name="foo", content="bar")
     assert msg.name == "foo"
 
 
 @pytest.mark.parametrize(
-    "MessageClass",
+    "message_class",
     [ChatMessage, ChatMessageChunk],
 )
-def test_message_name_chat(MessageClass: Type) -> None:
-    msg = MessageClass(content="foo", role="user", name="bar")
+def test_message_name_chat(message_class: type) -> None:
+    msg = message_class(content="foo", role="user", name="bar")
     assert msg.name == "bar"
 
-    msg2 = MessageClass(content="foo", role="user", name=None)
+    msg2 = message_class(content="foo", role="user", name=None)
     assert msg2.name is None
 
-    msg3 = MessageClass(content="foo", role="user")
+    msg3 = message_class(content="foo", role="user")
     assert msg3.name is None
 
 

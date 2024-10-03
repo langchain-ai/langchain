@@ -1,6 +1,6 @@
 import inspect
 import warnings
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 from pydantic import BaseModel
@@ -55,7 +55,7 @@ from langchain_core._api.deprecation import (
         ),
     ],
 )
-def test_warn_deprecated(kwargs: Dict[str, Any], expected_message: str) -> None:
+def test_warn_deprecated(kwargs: dict[str, Any], expected_message: str) -> None:
     """Test warn deprecated."""
     with warnings.catch_warnings(record=True) as warning_list:
         warnings.simplefilter("always")
@@ -88,7 +88,6 @@ async def deprecated_async_function() -> str:
 class ClassWithDeprecatedMethods:
     def __init__(self) -> None:
         """original doc"""
-        pass
 
     @deprecated(since="2.0.0", removal="3.0.0")
     def deprecated_method(self) -> str:
@@ -268,7 +267,6 @@ def test_whole_class_deprecation() -> None:
     class DeprecatedClass:
         def __init__(self) -> None:
             """original doc"""
-            pass
 
         @deprecated(since="2.0.0", removal="3.0.0")
         def deprecated_method(self) -> str:
@@ -311,7 +309,6 @@ def test_whole_class_inherited_deprecation() -> None:
     class DeprecatedClass:
         def __init__(self) -> None:
             """original doc"""
-            pass
 
         @deprecated(since="2.0.0", removal="3.0.0")
         def deprecated_method(self) -> str:
@@ -324,7 +321,6 @@ def test_whole_class_inherited_deprecation() -> None:
 
         def __init__(self) -> None:
             """original doc"""
-            pass
 
         @deprecated(since="2.2.0", removal="3.2.0")
         def deprecated_method(self) -> str:

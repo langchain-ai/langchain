@@ -85,7 +85,7 @@ jobs:
           path: langchain
           sparse-checkout: | # this only grabs files for relevant dir
             ${{ inputs.working-directory }}
-          ref: master # this scopes to just master branch
+          ref: ${{ github.ref }} # this scopes to just ref'd branch
           fetch-depth: 0 # this fetches entire commit history
       - name: Check Tags
         id: check-tags
@@ -269,6 +269,7 @@ jobs:
           AZURE_OPENAI_API_BASE: ${{ secrets.AZURE_OPENAI_API_BASE }}
           AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
           AZURE_OPENAI_CHAT_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_CHAT_DEPLOYMENT_NAME }}
+          AZURE_OPENAI_LEGACY_CHAT_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_LEGACY_CHAT_DEPLOYMENT_NAME }}
           AZURE_OPENAI_LLM_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_LLM_DEPLOYMENT_NAME }}
           AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME }}
           NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
@@ -293,7 +294,6 @@ jobs:
           VOYAGE_API_KEY: ${{ secrets.VOYAGE_API_KEY }}
           UPSTAGE_API_KEY: ${{ secrets.UPSTAGE_API_KEY }}
           FIREWORKS_API_KEY: ${{ secrets.FIREWORKS_API_KEY }}
-          UNSTRUCTURED_API_KEY: ${{ secrets.UNSTRUCTURED_API_KEY }}
         run: make integration_tests
         working-directory: ${{ inputs.working-directory }}
 

@@ -102,7 +102,7 @@ def create_stuff_documents_chain(
     message=(
         "This class is deprecated. Use the `create_stuff_documents_chain` constructor "
         "instead. See migration guide here: "
-        "https://python.langchain.com/v0.2/docs/versions/migrating_chains/stuff_docs_chain/"  # noqa: E501
+        "https://python.langchain.com/docs/versions/migrating_chains/stuff_docs_chain/"  # noqa: E501
     ),
 )
 class StuffDocumentsChain(BaseCombineDocumentsChain):

@@ -1,5 +1,3 @@
-from typing import Dict
-
 from pydantic import ConfigDict, Field
 
 from langchain_core.load import Serializable, dumpd, load
@@ -56,7 +54,7 @@ def test_simple_serialization_secret() -> None:
             return True
 
         @property
-        def lc_secrets(self) -> Dict[str, str]:
+        def lc_secrets(self) -> dict[str, str]:
             return {"secret": "MASKED_SECRET", "secret_2": "MASKED_SECRET_2"}
 
     foo = Foo(
