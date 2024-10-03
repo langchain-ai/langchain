@@ -95,10 +95,10 @@ class MinimaxCommon(BaseModel):
     @model_validator(mode="after")
     def post_init(self) -> Self:
         """Post initialization."""
-        self._client = _MinimaxEndpointClient(
-            host=self.minimax_api_host,
-            api_key=self.minimax_api_key,
-            group_id=self.minimax_group_id,
+        self._client = _MinimaxEndpointClient(  # type: ignore
+            host=self.minimax_api_host,  # type: ignore
+            api_key=self.minimax_api_key,  # type: ignore
+            group_id=self.minimax_group_id,  # type: ignore
         )
         return self
 

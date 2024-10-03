@@ -95,6 +95,10 @@ class SolarCommon(BaseModel):
 
     @model_validator(mode="after")
     def post_init(self) -> Self:
+        if not isinstance(self.solar_api_key, SecretStr):
+            raise ValueError(
+                f"solar_api_key must be specified. Got type: {type(self.solar_api_key)}"
+            )
         self._client = _SolarClient(api_key=self.solar_api_key, base_url=self.base_url)
         return self
 
