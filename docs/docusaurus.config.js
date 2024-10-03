@@ -6,8 +6,10 @@
 const { ProvidePlugin } = require("webpack");
 require("dotenv").config();
 
-const baseLightCodeBlockTheme = require("prism-react-renderer/themes/vsLight");
-const baseDarkCodeBlockTheme = require("prism-react-renderer/themes/vsDark");
+const prism = require("prism-react-renderer");
+
+const baseLightCodeBlockTheme = prism.themes.vsLight;
+const baseDarkCodeBlockTheme = prism.themes.vsDark;
 
 const baseUrl = "/";
 

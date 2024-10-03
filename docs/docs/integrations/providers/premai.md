@@ -229,9 +229,10 @@ query_result = embedder.embed_query(query)
 
 print(query_result[:5])
 ```
-<Note>
+
+:::note
 Setting `model_name` argument in mandatory for PremAIEmbeddings unlike chat. 
-</Note>
+:::
 
 Finally, let's embed some sample document
 

@@ -440,11 +440,11 @@ class BaseChatOpenAI(BaseChatModel):
     default_query: Union[Mapping[str, object], None] = None
     # Configure a custom httpx client. See the
     # [httpx documentation](https://www.python-httpx.org/api/#client) for more details.
-    http_client: Union[Any, None] = None
+    http_client: Union[Any, None] = Field(default=None, exclude=True)
     """Optional httpx.Client. Only used for sync invocations. Must specify 
         http_async_client as well if you'd like a custom client for async invocations.
     """
-    http_async_client: Union[Any, None] = None
+    http_async_client: Union[Any, None] = Field(default=None, exclude=True)
     """Optional httpx.AsyncClient. Only used for async invocations. Must specify 
         http_client as well if you'd like a custom client for sync invocations."""
     stop: Optional[Union[List[str], str]] = Field(default=None, alias="stop_sequences")
@@ -1217,12 +1217,12 @@ class BaseChatOpenAI(BaseChatModel):
             Support for ``strict`` argument added.
             Support for ``method`` = "json_schema" added.
 
-        .. note:: Planned breaking changes in version `0.2.0`
+        .. note:: Planned breaking changes in version `0.3.0`
 
             - ``method`` default will be changed to "json_schema" from
                 "function_calling".
             - ``strict`` will default to True when ``method`` is
-                "function_calling" as of version `0.2.0`.
+                "function_calling" as of version `0.3.0`.
 
 
         .. dropdown:: Example: schema=Pydantic class, method="function_calling", include_raw=False, strict=True
