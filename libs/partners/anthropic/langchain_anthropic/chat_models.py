@@ -766,11 +766,23 @@ class ChatAnthropic(BaseChatModel):
             )
         else:
             msg = AIMessage(content=content)
+
+        input_token_details = (
+            {
+                "cache_read": getattr(data.usage, "cache_read_input_tokens", None),
+                "cache_creation": getattr(
+                    data.usage, "cache_creation_input_tokens", None
+                ),
+            },
+        )
         # Collect token usage
         msg.usage_metadata = {
             "input_tokens": data.usage.input_tokens,
             "output_tokens": data.usage.output_tokens,
             "total_tokens": data.usage.input_tokens + data.usage.output_tokens,
+            "input_token_details": {
+                k: v for k, v in input_token_details if v is not None
+            },
         }
         return ChatResult(
             generations=[ChatGeneration(message=msg)],
@@ -1182,14 +1194,10 @@ def _make_message_chunk_from_anthropic_event(
     message_chunk: Optional[AIMessageChunk] = None
     # See https://github.com/anthropics/anthropic-sdk-python/blob/main/src/anthropic/lib/streaming/_messages.py  # noqa: E501
     if event.type == "message_start" and stream_usage:
-        input_tokens = event.message.usage.input_tokens
+        usage_metadata = _create_usage_metadata(event.message.usage)
         message_chunk = AIMessageChunk(
             content="" if coerce_content_to_string else [],
-            usage_metadata=UsageMetadata(
-                input_tokens=input_tokens,
-                output_tokens=0,
-                total_tokens=input_tokens,
-            ),
+            usage_metadata=usage_metadata,
         )
     elif (
         event.type == "content_block_start"
@@ -1235,14 +1243,10 @@ def _make_message_chunk_from_anthropic_event(
                 tool_call_chunks=[tool_call_chunk],  # type: ignore
             )
     elif event.type == "message_delta" and stream_usage:
-        output_tokens = event.usage.output_tokens
+        usage_metadata = _create_usage_metadata(event.usage)
         message_chunk = AIMessageChunk(
             content="",
-            usage_metadata=UsageMetadata(
-                input_tokens=0,
-                output_tokens=output_tokens,
-                total_tokens=output_tokens,
-            ),
+            usage_metadata=usage_metadata,
             response_metadata={
                 "stop_reason": event.delta.stop_reason,
                 "stop_sequence": event.delta.stop_sequence,
@@ -1257,3 +1261,24 @@ def _make_message_chunk_from_anthropic_event(
 @deprecated(since="0.1.0", removal="0.3.0", alternative="ChatAnthropic")
 class ChatAnthropicMessages(ChatAnthropic):
     pass
+
+
+def _create_usage_metadata(anthropic_usage: BaseModel) -> UsageMetadata:
+    input_token_details: dict = (
+        {
+            "cache_read": getattr(anthropic_usage, "cache_read_input_tokens", None),
+            "cache_creation": getattr(
+                anthropic_usage, "cache_creation_input_tokens", None
+            ),
+        },
+    )
+    input_tokens = getattr(anthropic_usage, "input_tokens", 0)
+    output_tokens = getattr(anthropic_usage, "output_tokens", 0)
+    return UsageMetadata(
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        total_tokens=input_tokens + output_tokens,
+        input_token_details=InputTokenDetails(
+            **{k: v for k, v in input_token_details if v is not None}
+        ),
+    )
