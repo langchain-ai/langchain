@@ -151,6 +151,31 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(result.usage_metadata["output_tokens"], int)
         assert isinstance(result.usage_metadata["total_tokens"], int)
 
+        if "audio_input" in self.supported_usage_metadata_details:
+            msg = self.invoke_with_audio_input()
+            assert isinstance(msg.usage_metadata["input_token_details"]["audio"], int)  # type: ignore[index]
+        if "audio_output" in self.supported_usage_metadata_details:
+            msg = self.invoke_with_audio_output()
+            assert isinstance(msg.usage_metadata["output_token_details"]["audio"], int)  # type: ignore[index]
+        if "reasoning_output" in self.supported_usage_metadata_details:
+            msg = self.invoke_with_reasoning_output()
+            assert isinstance(
+                msg.usage_metadata["output_token_details"]["reasoning"],  # type: ignore[index]
+                int,
+            )
+        if "cache_read_input" in self.supported_usage_metadata_details:
+            msg = self.invoke_with_cache_read_input()
+            assert isinstance(
+                msg.usage_metadata["input_token_details"]["cache_read"],  # type: ignore[index]
+                int,
+            )
+        if "cache_creation_input" in self.supported_usage_metadata_details:
+            msg = self.invoke_with_cache_creation_input()
+            assert isinstance(
+                msg.usage_metadata["input_token_details"]["cache_creation"],  # type: ignore[index]
+                int,
+            )
+
     def test_usage_metadata_streaming(self, model: BaseChatModel) -> None:
         if not self.returns_usage_metadata:
             pytest.skip("Not implemented.")
@@ -163,6 +188,31 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(full.usage_metadata["input_tokens"], int)
         assert isinstance(full.usage_metadata["output_tokens"], int)
         assert isinstance(full.usage_metadata["total_tokens"], int)
+
+        if "audio_input" in self.supported_usage_metadata_details:
+            msg = self.invoke_with_audio_input(stream=True)
+            assert isinstance(msg.usage_metadata["input_token_details"]["audio"], int)  # type: ignore[index]
+        if "audio_output" in self.supported_usage_metadata_details:
+            msg = self.invoke_with_audio_output(stream=True)
+            assert isinstance(msg.usage_metadata["output_token_details"]["audio"], int)  # type: ignore[index]
+        if "reasoning_output" in self.supported_usage_metadata_details:
+            msg = self.invoke_with_reasoning_output(stream=True)
+            assert isinstance(
+                msg.usage_metadata["output_token_details"]["reasoning"],  # type: ignore[index]
+                int,
+            )
+        if "cache_read_input" in self.supported_usage_metadata_details:
+            msg = self.invoke_with_cache_read_input(stream=True)
+            assert isinstance(
+                msg.usage_metadata["input_token_details"]["cache_read"],  # type: ignore[index]
+                int,
+            )
+        if "cache_creation_input" in self.supported_usage_metadata_details:
+            msg = self.invoke_with_cache_creation_input(stream=True)
+            assert isinstance(
+                msg.usage_metadata["input_token_details"]["cache_creation"],  # type: ignore[index]
+                int,
+            )
 
     def test_stop_sequence(self, model: BaseChatModel) -> None:
         result = model.invoke("hi", stop=["you"])
@@ -608,3 +658,18 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(result, AIMessage)
         assert isinstance(result.content, str)
         assert len(result.content) > 0
+
+    def invoke_with_audio_input(self, *, stream: bool = False) -> AIMessage:
+        raise NotImplementedError()
+
+    def invoke_with_audio_output(self, *, stream: bool = False) -> AIMessage:
+        raise NotImplementedError()
+
+    def invoke_with_reasoning_output(self, *, stream: bool = False) -> AIMessage:
+        raise NotImplementedError()
+
+    def invoke_with_cache_read_input(self, *, stream: bool = False) -> AIMessage:
+        raise NotImplementedError()
+
+    def invoke_with_cache_creation_input(self, *, stream: bool = False) -> AIMessage:
+        raise NotImplementedError()
