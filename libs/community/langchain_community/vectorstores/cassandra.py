@@ -234,6 +234,70 @@ class Cassandra(VectorStore):
             await self.adelete_by_document_id(document_id)
         return True
 
+    def delete_by_metadata_filter(
+        self,
+        filter: dict[str, Any],
+        *,
+        batch_size: int = 50,
+    ) -> int:
+        """Delete all documents matching a certain metadata filtering condition.
+
+        This operation does not use the vector embeddings in any way, it simply
+        removes all documents whose metadata match the provided condition.
+
+        Args:
+            filter: Filter on the metadata to apply. The filter cannot be empty.
+            batch_size: amount of deletions per each batch (until exhaustion of
+                the matching documents).
+
+        Returns:
+            A number expressing the amount of deleted documents.
+        """
+        if not filter:
+            msg = (
+                "Method `delete_by_metadata_filter` does not accept an empty "
+                "filter. Use the `clear()` method if you really want to empty "
+                "the vector store."
+            )
+            raise ValueError(msg)
+
+        return self.table.find_and_delete_entries(
+            metadata=filter,
+            batch_size=batch_size,
+        )
+
+    async def adelete_by_metadata_filter(
+        self,
+        filter: dict[str, Any],
+        *,
+        batch_size: int = 50,
+    ) -> int:
+        """Delete all documents matching a certain metadata filtering condition.
+
+        This operation does not use the vector embeddings in any way, it simply
+        removes all documents whose metadata match the provided condition.
+
+        Args:
+            filter: Filter on the metadata to apply. The filter cannot be empty.
+            batch_size: amount of deletions per each batch (until exhaustion of
+                the matching documents).
+
+        Returns:
+            A number expressing the amount of deleted documents.
+        """
+        if not filter:
+            msg = (
+                "Method `delete_by_metadata_filter` does not accept an empty "
+                "filter. Use the `clear()` method if you really want to empty "
+                "the vector store."
+            )
+            raise ValueError(msg)
+
+        return await self.table.afind_and_delete_entries(
+            metadata=filter,
+            batch_size=batch_size,
+        )
+
     def add_texts(
         self,
         texts: Iterable[str],
@@ -335,6 +399,86 @@ class Cassandra(VectorStore):
             ]
             await asyncio.gather(*tasks)
         return ids
+
+    def replace_metadata(
+        self,
+        id_to_metadata: dict[str, dict],
+        *,
+        batch_size: int = 50,
+    ) -> None:
+        """Replace the metadata of documents.
+
+        For each document to update, identified by its ID, the new metadata
+        dictionary completely replaces what is on the store. This includes
+        passing empty metadata `{}` to erase the currently-stored information.
+
+        Args:
+            id_to_metadata: map from the Document IDs to modify to the
+                new metadata for updating.
+                Keys in this dictionary that do not correspond to an existing
+                document will not cause an error, rather will result in new
+                rows being written into the Cassandra table but without an
+                associated vector: hence unreachable through vector search.
+            batch_size: Number of concurrent requests to send to the server.
+
+        Returns:
+            None if the writes succeed (otherwise an error is raised).
+        """
+        ids_and_metadatas = list(id_to_metadata.items())
+        for i in range(0, len(ids_and_metadatas), batch_size):
+            batch_i_m = ids_and_metadatas[i : i + batch_size]
+            futures = [
+                self.table.put_async(
+                    row_id=doc_id,
+                    metadata=doc_md,
+                )
+                for doc_id, doc_md in batch_i_m
+            ]
+            for future in futures:
+                future.result()
+        return
+
+    async def areplace_metadata(
+        self,
+        id_to_metadata: dict[str, dict],
+        *,
+        concurrency: int = 50,
+    ) -> None:
+        """Replace the metadata of documents.
+
+        For each document to update, identified by its ID, the new metadata
+        dictionary completely replaces what is on the store. This includes
+        passing empty metadata `{}` to erase the currently-stored information.
+
+        Args:
+            id_to_metadata: map from the Document IDs to modify to the
+                new metadata for updating.
+                Keys in this dictionary that do not correspond to an existing
+                document will not cause an error, rather will result in new
+                rows being written into the Cassandra table but without an
+                associated vector: hence unreachable through vector search.
+            concurrency: Number of concurrent queries to the database.
+                Defaults to 50.
+
+        Returns:
+            None if the writes succeed (otherwise an error is raised).
+        """
+        ids_and_metadatas = list(id_to_metadata.items())
+
+        sem = asyncio.Semaphore(concurrency)
+
+        async def send_concurrently(doc_id: str, doc_md: dict) -> None:
+            async with sem:
+                await self.table.aput(
+                    row_id=doc_id,
+                    metadata=doc_md,
+                )
+
+        for doc_id, doc_md in ids_and_metadatas:
+            tasks = [asyncio.create_task(send_concurrently(doc_id, doc_md))]
+            await asyncio.gather(*tasks)
+
+        return
 
     @staticmethod
     def _row_to_document(row: Dict[str, Any]) -> Document:
