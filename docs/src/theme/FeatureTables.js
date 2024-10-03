@@ -96,6 +96,17 @@ const FEATURE_TABLES = {
                 "apiLink": "https://python.langchain.com/api_reference/google_vertexai/chat_models/langchain_google_vertexai.chat_models.ChatVertexAI.html"
             },
             {
+                "name": "ChatPipeshift",
+                "package": "langchain-pipeshift",
+                "link": "pipeshift/",
+                "structured_output": true,
+                "tool_calling": true,
+                "json_mode": true,
+                "multimodal": false,
+                "local": false,
+                "apiLink": "https://python.langchain.com/api_reference/pipeshift/chat_models/langchain_pipeshift.chat_models.ChatPipeshift.html"
+            },
+            {
                 "name": "ChatGoogleGenerativeAI",
                 "package": "langchain-google-genai",
                 "link": "google_generative_ai/",
@@ -288,6 +299,12 @@ const FEATURE_TABLES = {
                 link: "google_vertexai",
                 package: "langchain-google_vertexai",
                 apiLink: "https://python.langchain.com/api_reference/google_vertexai/llms/langchain_google_vertexai.llms.VertexAI.html"
+            },
+            {
+                name: "PipeshiftLLM",
+                link: "pipeshift",
+                package: "langchain-pipeshift",
+                apiLink: "https://python.langchain.com/api_reference/pipeshift/llms/langchain_pipeshift.llms.Pipeshift.html"
             },
         ],
     },
