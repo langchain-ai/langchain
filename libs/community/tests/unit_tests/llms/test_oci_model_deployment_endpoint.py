@@ -3,7 +3,7 @@
 """Test LLM for OCI Data Science Model Deployment Endpoint."""
 
 import sys
-from typing import Dict, Generator, AsyncGenerator
+from typing import AsyncGenerator, Dict, Generator
 from unittest import mock
 
 import pytest
@@ -99,7 +99,9 @@ def mocked_requests_post(self: requests.Request, **kwargs):
     )
 
 
-async def mocked_async_streaming_response(*args, **kwargs) -> AsyncGenerator[bytes]:
+async def mocked_async_streaming_response(
+    *args, **kwargs
+) -> AsyncGenerator[bytes, None]:
     """Returns mocked response for async streaming."""
     for item in CONST_ASYNC_STREAM_RESPONSE:
         yield item

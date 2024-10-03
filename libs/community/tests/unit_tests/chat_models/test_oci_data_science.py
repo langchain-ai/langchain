@@ -3,7 +3,7 @@
 """Test Chat model for OCI Data Science Model Deployment Endpoint."""
 
 import sys
-from typing import Dict
+from typing import AsyncGenerator, Dict
 from unittest import mock
 
 import pytest
@@ -154,7 +154,9 @@ def test_stream_vllm(*args) -> None:
     assert output.content.strip() == CONST_COMPLETION
 
 
-async def mocked_async_streaming_response(*args, **kwargs):
+async def mocked_async_streaming_response(
+    *args, **kwargs
+) -> AsyncGenerator[bytes, None]:
     """Returns mocked response for async streaming."""
     for item in CONST_ASYNC_STREAM_RESPONSE:
         yield item
