@@ -63,7 +63,8 @@ from langchain_core.messages import (
     ToolMessage,
     ToolMessageChunk,
 )
-from langchain_core.messages.ai import UsageMetadata
+from langchain_core.messages.ai import UsageMetadata, InputTokenDetails, \
+    OutputTokenDetails
 from langchain_core.messages.tool import tool_call_chunk
 from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
 from langchain_core.output_parsers.openai_tools import (
@@ -284,13 +285,33 @@ def _convert_delta_to_message_chunk(
 def _convert_chunk_to_generation_chunk(
     chunk: dict, default_chunk_class: Type, base_generation_info: Optional[Dict]
 ) -> Optional[ChatGenerationChunk]:
-    token_usage = chunk.get("usage")
+    token_usage = chunk.get("usage", {})
     choices = chunk.get("choices", [])
+
+    input_tokens = token_usage.get("prompt_tokens", 0)
+    output_tokens = token_usage.get("completion_tokens", 0)
+    total_tokens = token_usage.get("total_tokens", input_tokens + output_tokens)
+    input_token_details = {
+        "audio": token_usage.get("prompt_tokens_details", {}).get("audio_tokens"),
+        "cache_read": token_usage.get("prompt_tokens_details", {}).get("cached_tokens"),
+    }
+    output_token_details = {
+        "audio": token_usage.get("completion_tokens_details", {}).get("audio_tokens"),
+        "reasoning": token_usage.get("completion_token_details", {}).get(
+            "reasoning_tokens"
+        ),
+    }
     usage_metadata: Optional[UsageMetadata] = (
         UsageMetadata(
-            input_tokens=token_usage.get("prompt_tokens", 0),
-            output_tokens=token_usage.get("completion_tokens", 0),
-            total_tokens=token_usage.get("total_tokens", 0),
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            total_tokens=total_tokens,
+            input_token_details=InputTokenDetails(**{
+                k: v for k, v in input_token_details.items() if v is not None
+            }),
+            output_token_details=OutputTokenDetails(**{
+                k: v for k, v in output_token_details.items() if v is not None
+            }),
         )
         if token_usage
         else None
