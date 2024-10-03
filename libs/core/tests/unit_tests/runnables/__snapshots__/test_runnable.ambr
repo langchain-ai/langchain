@@ -2639,6 +2639,39 @@
         'title': 'HumanMessageChunk',
         'type': 'object',
       }),
+      'InputTokenDetails': dict({
+        'description': '''
+          Breakdown of input token counts.
+          
+          Does *not* need to sum to full input token count. Does *not* need to have all keys.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  {
+                      "audio": 10,
+                      "cache_creation": 200,
+                      "cache_read": 100,
+                  }
+        ''',
+        'properties': dict({
+          'audio': dict({
+            'title': 'Audio',
+            'type': 'integer',
+          }),
+          'cache_creation': dict({
+            'title': 'Cache Creation',
+            'type': 'integer',
+          }),
+          'cache_read': dict({
+            'title': 'Cache Read',
+            'type': 'integer',
+          }),
+        }),
+        'title': 'InputTokenDetails',
+        'type': 'object',
+      }),
       'InvalidToolCall': dict({
         'description': '''
           Allowance for errors made by LLM.
@@ -2703,6 +2736,34 @@
           'error',
         ]),
         'title': 'InvalidToolCall',
+        'type': 'object',
+      }),
+      'OutputTokenDetails': dict({
+        'description': '''
+          Breakdown of output token counts.
+          
+          Does *not* need to sum to full output token count. Does *not* need to have all keys.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  {
+                      "audio": 10,
+                      "reasoning": 200,
+                  }
+        ''',
+        'properties': dict({
+          'audio': dict({
+            'title': 'Audio',
+            'type': 'integer',
+          }),
+          'reasoning': dict({
+            'title': 'Reasoning',
+            'type': 'integer',
+          }),
+        }),
+        'title': 'OutputTokenDetails',
         'type': 'object',
       }),
       'SystemMessage': dict({
@@ -3209,13 +3270,28 @@
                   {
                       "input_tokens": 10,
                       "output_tokens": 20,
-                      "total_tokens": 30
+                      "total_tokens": 30,
+                      "input_token_details": {
+                          "audio": 10,
+                          "cache_creation": 200,
+                          "cache_read": 100,
+                      },
+                      "output_token_details": {
+                          "audio": 10,
+                          "reasoning": 200,
+                      }
                   }
         ''',
         'properties': dict({
+          'input_token_details': dict({
+            '$ref': '#/$defs/InputTokenDetails',
+          }),
           'input_tokens': dict({
             'title': 'Input Tokens',
             'type': 'integer',
+          }),
+          'output_token_details': dict({
+            '$ref': '#/$defs/OutputTokenDetails',
           }),
           'output_tokens': dict({
             'title': 'Output Tokens',
@@ -4028,6 +4104,39 @@
         'title': 'HumanMessageChunk',
         'type': 'object',
       }),
+      'InputTokenDetails': dict({
+        'description': '''
+          Breakdown of input token counts.
+          
+          Does *not* need to sum to full input token count. Does *not* need to have all keys.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  {
+                      "audio": 10,
+                      "cache_creation": 200,
+                      "cache_read": 100,
+                  }
+        ''',
+        'properties': dict({
+          'audio': dict({
+            'title': 'Audio',
+            'type': 'integer',
+          }),
+          'cache_creation': dict({
+            'title': 'Cache Creation',
+            'type': 'integer',
+          }),
+          'cache_read': dict({
+            'title': 'Cache Read',
+            'type': 'integer',
+          }),
+        }),
+        'title': 'InputTokenDetails',
+        'type': 'object',
+      }),
       'InvalidToolCall': dict({
         'description': '''
           Allowance for errors made by LLM.
@@ -4092,6 +4201,34 @@
           'error',
         ]),
         'title': 'InvalidToolCall',
+        'type': 'object',
+      }),
+      'OutputTokenDetails': dict({
+        'description': '''
+          Breakdown of output token counts.
+          
+          Does *not* need to sum to full output token count. Does *not* need to have all keys.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  {
+                      "audio": 10,
+                      "reasoning": 200,
+                  }
+        ''',
+        'properties': dict({
+          'audio': dict({
+            'title': 'Audio',
+            'type': 'integer',
+          }),
+          'reasoning': dict({
+            'title': 'Reasoning',
+            'type': 'integer',
+          }),
+        }),
+        'title': 'OutputTokenDetails',
         'type': 'object',
       }),
       'StringPromptValue': dict({
@@ -4617,13 +4754,28 @@
                   {
                       "input_tokens": 10,
                       "output_tokens": 20,
-                      "total_tokens": 30
+                      "total_tokens": 30,
+                      "input_token_details": {
+                          "audio": 10,
+                          "cache_creation": 200,
+                          "cache_read": 100,
+                      },
+                      "output_token_details": {
+                          "audio": 10,
+                          "reasoning": 200,
+                      }
                   }
         ''',
         'properties': dict({
+          'input_token_details': dict({
+            '$ref': '#/$defs/InputTokenDetails',
+          }),
           'input_tokens': dict({
             'title': 'Input Tokens',
             'type': 'integer',
+          }),
+          'output_token_details': dict({
+            '$ref': '#/$defs/OutputTokenDetails',
           }),
           'output_tokens': dict({
             'title': 'Output Tokens',
@@ -5448,6 +5600,39 @@
         'title': 'HumanMessageChunk',
         'type': 'object',
       }),
+      'InputTokenDetails': dict({
+        'description': '''
+          Breakdown of input token counts.
+          
+          Does *not* need to sum to full input token count. Does *not* need to have all keys.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  {
+                      "audio": 10,
+                      "cache_creation": 200,
+                      "cache_read": 100,
+                  }
+        ''',
+        'properties': dict({
+          'audio': dict({
+            'title': 'Audio',
+            'type': 'integer',
+          }),
+          'cache_creation': dict({
+            'title': 'Cache Creation',
+            'type': 'integer',
+          }),
+          'cache_read': dict({
+            'title': 'Cache Read',
+            'type': 'integer',
+          }),
+        }),
+        'title': 'InputTokenDetails',
+        'type': 'object',
+      }),
       'InvalidToolCall': dict({
         'description': '''
           Allowance for errors made by LLM.
@@ -5512,6 +5697,34 @@
           'error',
         ]),
         'title': 'InvalidToolCall',
+        'type': 'object',
+      }),
+      'OutputTokenDetails': dict({
+        'description': '''
+          Breakdown of output token counts.
+          
+          Does *not* need to sum to full output token count. Does *not* need to have all keys.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  {
+                      "audio": 10,
+                      "reasoning": 200,
+                  }
+        ''',
+        'properties': dict({
+          'audio': dict({
+            'title': 'Audio',
+            'type': 'integer',
+          }),
+          'reasoning': dict({
+            'title': 'Reasoning',
+            'type': 'integer',
+          }),
+        }),
+        'title': 'OutputTokenDetails',
         'type': 'object',
       }),
       'StringPromptValue': dict({
@@ -6037,13 +6250,28 @@
                   {
                       "input_tokens": 10,
                       "output_tokens": 20,
-                      "total_tokens": 30
+                      "total_tokens": 30,
+                      "input_token_details": {
+                          "audio": 10,
+                          "cache_creation": 200,
+                          "cache_read": 100,
+                      },
+                      "output_token_details": {
+                          "audio": 10,
+                          "reasoning": 200,
+                      }
                   }
         ''',
         'properties': dict({
+          'input_token_details': dict({
+            '$ref': '#/definitions/InputTokenDetails',
+          }),
           'input_tokens': dict({
             'title': 'Input Tokens',
             'type': 'integer',
+          }),
+          'output_token_details': dict({
+            '$ref': '#/definitions/OutputTokenDetails',
           }),
           'output_tokens': dict({
             'title': 'Output Tokens',
@@ -6744,6 +6972,39 @@
         'title': 'HumanMessageChunk',
         'type': 'object',
       }),
+      'InputTokenDetails': dict({
+        'description': '''
+          Breakdown of input token counts.
+          
+          Does *not* need to sum to full input token count. Does *not* need to have all keys.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  {
+                      "audio": 10,
+                      "cache_creation": 200,
+                      "cache_read": 100,
+                  }
+        ''',
+        'properties': dict({
+          'audio': dict({
+            'title': 'Audio',
+            'type': 'integer',
+          }),
+          'cache_creation': dict({
+            'title': 'Cache Creation',
+            'type': 'integer',
+          }),
+          'cache_read': dict({
+            'title': 'Cache Read',
+            'type': 'integer',
+          }),
+        }),
+        'title': 'InputTokenDetails',
+        'type': 'object',
+      }),
       'InvalidToolCall': dict({
         'description': '''
           Allowance for errors made by LLM.
@@ -6808,6 +7069,34 @@
           'error',
         ]),
         'title': 'InvalidToolCall',
+        'type': 'object',
+      }),
+      'OutputTokenDetails': dict({
+        'description': '''
+          Breakdown of output token counts.
+          
+          Does *not* need to sum to full output token count. Does *not* need to have all keys.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  {
+                      "audio": 10,
+                      "reasoning": 200,
+                  }
+        ''',
+        'properties': dict({
+          'audio': dict({
+            'title': 'Audio',
+            'type': 'integer',
+          }),
+          'reasoning': dict({
+            'title': 'Reasoning',
+            'type': 'integer',
+          }),
+        }),
+        'title': 'OutputTokenDetails',
         'type': 'object',
       }),
       'SystemMessage': dict({
@@ -7314,13 +7603,28 @@
                   {
                       "input_tokens": 10,
                       "output_tokens": 20,
-                      "total_tokens": 30
+                      "total_tokens": 30,
+                      "input_token_details": {
+                          "audio": 10,
+                          "cache_creation": 200,
+                          "cache_read": 100,
+                      },
+                      "output_token_details": {
+                          "audio": 10,
+                          "reasoning": 200,
+                      }
                   }
         ''',
         'properties': dict({
+          'input_token_details': dict({
+            '$ref': '#/definitions/InputTokenDetails',
+          }),
           'input_tokens': dict({
             'title': 'Input Tokens',
             'type': 'integer',
+          }),
+          'output_token_details': dict({
+            '$ref': '#/definitions/OutputTokenDetails',
           }),
           'output_tokens': dict({
             'title': 'Output Tokens',
@@ -8175,6 +8479,39 @@
         'title': 'HumanMessageChunk',
         'type': 'object',
       }),
+      'InputTokenDetails': dict({
+        'description': '''
+          Breakdown of input token counts.
+          
+          Does *not* need to sum to full input token count. Does *not* need to have all keys.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  {
+                      "audio": 10,
+                      "cache_creation": 200,
+                      "cache_read": 100,
+                  }
+        ''',
+        'properties': dict({
+          'audio': dict({
+            'title': 'Audio',
+            'type': 'integer',
+          }),
+          'cache_creation': dict({
+            'title': 'Cache Creation',
+            'type': 'integer',
+          }),
+          'cache_read': dict({
+            'title': 'Cache Read',
+            'type': 'integer',
+          }),
+        }),
+        'title': 'InputTokenDetails',
+        'type': 'object',
+      }),
       'InvalidToolCall': dict({
         'description': '''
           Allowance for errors made by LLM.
@@ -8239,6 +8576,34 @@
           'error',
         ]),
         'title': 'InvalidToolCall',
+        'type': 'object',
+      }),
+      'OutputTokenDetails': dict({
+        'description': '''
+          Breakdown of output token counts.
+          
+          Does *not* need to sum to full output token count. Does *not* need to have all keys.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  {
+                      "audio": 10,
+                      "reasoning": 200,
+                  }
+        ''',
+        'properties': dict({
+          'audio': dict({
+            'title': 'Audio',
+            'type': 'integer',
+          }),
+          'reasoning': dict({
+            'title': 'Reasoning',
+            'type': 'integer',
+          }),
+        }),
+        'title': 'OutputTokenDetails',
         'type': 'object',
       }),
       'StringPromptValue': dict({
@@ -8764,13 +9129,28 @@
                   {
                       "input_tokens": 10,
                       "output_tokens": 20,
-                      "total_tokens": 30
+                      "total_tokens": 30,
+                      "input_token_details": {
+                          "audio": 10,
+                          "cache_creation": 200,
+                          "cache_read": 100,
+                      },
+                      "output_token_details": {
+                          "audio": 10,
+                          "reasoning": 200,
+                      }
                   }
         ''',
         'properties': dict({
+          'input_token_details': dict({
+            '$ref': '#/definitions/InputTokenDetails',
+          }),
           'input_tokens': dict({
             'title': 'Input Tokens',
             'type': 'integer',
+          }),
+          'output_token_details': dict({
+            '$ref': '#/definitions/OutputTokenDetails',
           }),
           'output_tokens': dict({
             'title': 'Output Tokens',
@@ -9516,6 +9896,39 @@
         'title': 'HumanMessageChunk',
         'type': 'object',
       }),
+      'InputTokenDetails': dict({
+        'description': '''
+          Breakdown of input token counts.
+          
+          Does *not* need to sum to full input token count. Does *not* need to have all keys.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  {
+                      "audio": 10,
+                      "cache_creation": 200,
+                      "cache_read": 100,
+                  }
+        ''',
+        'properties': dict({
+          'audio': dict({
+            'title': 'Audio',
+            'type': 'integer',
+          }),
+          'cache_creation': dict({
+            'title': 'Cache Creation',
+            'type': 'integer',
+          }),
+          'cache_read': dict({
+            'title': 'Cache Read',
+            'type': 'integer',
+          }),
+        }),
+        'title': 'InputTokenDetails',
+        'type': 'object',
+      }),
       'InvalidToolCall': dict({
         'description': '''
           Allowance for errors made by LLM.
@@ -9580,6 +9993,34 @@
           'error',
         ]),
         'title': 'InvalidToolCall',
+        'type': 'object',
+      }),
+      'OutputTokenDetails': dict({
+        'description': '''
+          Breakdown of output token counts.
+          
+          Does *not* need to sum to full output token count. Does *not* need to have all keys.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  {
+                      "audio": 10,
+                      "reasoning": 200,
+                  }
+        ''',
+        'properties': dict({
+          'audio': dict({
+            'title': 'Audio',
+            'type': 'integer',
+          }),
+          'reasoning': dict({
+            'title': 'Reasoning',
+            'type': 'integer',
+          }),
+        }),
+        'title': 'OutputTokenDetails',
         'type': 'object',
       }),
       'SystemMessage': dict({
@@ -10086,13 +10527,28 @@
                   {
                       "input_tokens": 10,
                       "output_tokens": 20,
-                      "total_tokens": 30
+                      "total_tokens": 30,
+                      "input_token_details": {
+                          "audio": 10,
+                          "cache_creation": 200,
+                          "cache_read": 100,
+                      },
+                      "output_token_details": {
+                          "audio": 10,
+                          "reasoning": 200,
+                      }
                   }
         ''',
         'properties': dict({
+          'input_token_details': dict({
+            '$ref': '#/definitions/InputTokenDetails',
+          }),
           'input_tokens': dict({
             'title': 'Input Tokens',
             'type': 'integer',
+          }),
+          'output_token_details': dict({
+            '$ref': '#/definitions/OutputTokenDetails',
           }),
           'output_tokens': dict({
             'title': 'Output Tokens',
@@ -10855,6 +11311,39 @@
         'title': 'HumanMessageChunk',
         'type': 'object',
       }),
+      'InputTokenDetails': dict({
+        'description': '''
+          Breakdown of input token counts.
+          
+          Does *not* need to sum to full input token count. Does *not* need to have all keys.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  {
+                      "audio": 10,
+                      "cache_creation": 200,
+                      "cache_read": 100,
+                  }
+        ''',
+        'properties': dict({
+          'audio': dict({
+            'title': 'Audio',
+            'type': 'integer',
+          }),
+          'cache_creation': dict({
+            'title': 'Cache Creation',
+            'type': 'integer',
+          }),
+          'cache_read': dict({
+            'title': 'Cache Read',
+            'type': 'integer',
+          }),
+        }),
+        'title': 'InputTokenDetails',
+        'type': 'object',
+      }),
       'InvalidToolCall': dict({
         'description': '''
           Allowance for errors made by LLM.
@@ -10919,6 +11408,34 @@
           'error',
         ]),
         'title': 'InvalidToolCall',
+        'type': 'object',
+      }),
+      'OutputTokenDetails': dict({
+        'description': '''
+          Breakdown of output token counts.
+          
+          Does *not* need to sum to full output token count. Does *not* need to have all keys.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  {
+                      "audio": 10,
+                      "reasoning": 200,
+                  }
+        ''',
+        'properties': dict({
+          'audio': dict({
+            'title': 'Audio',
+            'type': 'integer',
+          }),
+          'reasoning': dict({
+            'title': 'Reasoning',
+            'type': 'integer',
+          }),
+        }),
+        'title': 'OutputTokenDetails',
         'type': 'object',
       }),
       'PromptTemplateOutput': dict({
@@ -11455,13 +11972,28 @@
                   {
                       "input_tokens": 10,
                       "output_tokens": 20,
-                      "total_tokens": 30
+                      "total_tokens": 30,
+                      "input_token_details": {
+                          "audio": 10,
+                          "cache_creation": 200,
+                          "cache_read": 100,
+                      },
+                      "output_token_details": {
+                          "audio": 10,
+                          "reasoning": 200,
+                      }
                   }
         ''',
         'properties': dict({
+          'input_token_details': dict({
+            '$ref': '#/definitions/InputTokenDetails',
+          }),
           'input_tokens': dict({
             'title': 'Input Tokens',
             'type': 'integer',
+          }),
+          'output_token_details': dict({
+            '$ref': '#/definitions/OutputTokenDetails',
           }),
           'output_tokens': dict({
             'title': 'Output Tokens',
@@ -12236,6 +12768,39 @@
         'title': 'HumanMessageChunk',
         'type': 'object',
       }),
+      'InputTokenDetails': dict({
+        'description': '''
+          Breakdown of input token counts.
+          
+          Does *not* need to sum to full input token count. Does *not* need to have all keys.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  {
+                      "audio": 10,
+                      "cache_creation": 200,
+                      "cache_read": 100,
+                  }
+        ''',
+        'properties': dict({
+          'audio': dict({
+            'title': 'Audio',
+            'type': 'integer',
+          }),
+          'cache_creation': dict({
+            'title': 'Cache Creation',
+            'type': 'integer',
+          }),
+          'cache_read': dict({
+            'title': 'Cache Read',
+            'type': 'integer',
+          }),
+        }),
+        'title': 'InputTokenDetails',
+        'type': 'object',
+      }),
       'InvalidToolCall': dict({
         'description': '''
           Allowance for errors made by LLM.
@@ -12300,6 +12865,34 @@
           'error',
         ]),
         'title': 'InvalidToolCall',
+        'type': 'object',
+      }),
+      'OutputTokenDetails': dict({
+        'description': '''
+          Breakdown of output token counts.
+          
+          Does *not* need to sum to full output token count. Does *not* need to have all keys.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  {
+                      "audio": 10,
+                      "reasoning": 200,
+                  }
+        ''',
+        'properties': dict({
+          'audio': dict({
+            'title': 'Audio',
+            'type': 'integer',
+          }),
+          'reasoning': dict({
+            'title': 'Reasoning',
+            'type': 'integer',
+          }),
+        }),
+        'title': 'OutputTokenDetails',
         'type': 'object',
       }),
       'StringPromptValue': dict({
@@ -12825,13 +13418,28 @@
                   {
                       "input_tokens": 10,
                       "output_tokens": 20,
-                      "total_tokens": 30
+                      "total_tokens": 30,
+                      "input_token_details": {
+                          "audio": 10,
+                          "cache_creation": 200,
+                          "cache_read": 100,
+                      },
+                      "output_token_details": {
+                          "audio": 10,
+                          "reasoning": 200,
+                      }
                   }
         ''',
         'properties': dict({
+          'input_token_details': dict({
+            '$ref': '#/definitions/InputTokenDetails',
+          }),
           'input_tokens': dict({
             'title': 'Input Tokens',
             'type': 'integer',
+          }),
+          'output_token_details': dict({
+            '$ref': '#/definitions/OutputTokenDetails',
           }),
           'output_tokens': dict({
             'title': 'Output Tokens',
