@@ -43,6 +43,11 @@ class InfinityEmbeddings(BaseModel, Embeddings):
     client: Any = None  #: :meta private:
     """Infinity client."""
 
+    embed_instruction: str = "passage: "
+    """Instruction used to embed documents."""
+    query_instruction: str = "query: "
+    """Instruction used to embed the query."""
+
     # LLM call kwargs
     model_config = ConfigDict(
         extra="forbid",
@@ -73,7 +78,7 @@ class InfinityEmbeddings(BaseModel, Embeddings):
         """
         embeddings = self.client.embed(
             model=self.model,
-            texts=texts,
+            texts=[self.embed_instruction + text for text in texts],
         )
         return embeddings
 
@@ -88,7 +93,7 @@ class InfinityEmbeddings(BaseModel, Embeddings):
         """
         embeddings = await self.client.aembed(
             model=self.model,
-            texts=texts,
+            texts=[self.embed_instruction + text for text in texts],
         )
         return embeddings
 
@@ -101,7 +106,9 @@ class InfinityEmbeddings(BaseModel, Embeddings):
         Returns:
             Embeddings for the text.
         """
-        return self.embed_documents([text])[0]
+        return self.client.embed(
+            model=self.model, texts=[self.query_instruction + text]
+        )[0]
 
     async def aembed_query(self, text: str) -> List[float]:
         """Async call out to Infinity's embedding endpoint.
@@ -112,7 +119,9 @@ class InfinityEmbeddings(BaseModel, Embeddings):
         Returns:
             Embeddings for the text.
         """
-        embeddings = await self.aembed_documents([text])
+        embeddings = await self.client.aembed(
+            model=self.model, texts=[self.query_instruction + text]
+        )
         return embeddings[0]
 
 

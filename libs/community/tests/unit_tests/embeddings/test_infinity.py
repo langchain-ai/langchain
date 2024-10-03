@@ -44,7 +44,7 @@ def mocked_requests_post(
             v = [0.0, 0.9, 0.0]
         else:
             v = [0.0, 0.0, -1.0]
-        if len(inp) > 10:
+        if len(inp) > 19:  # 10 + 9 for "passage: "
             v[2] += 0.1
         embeddings.append({"embedding": v})
 
