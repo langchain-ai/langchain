@@ -129,7 +129,7 @@ class BM25Retriever(BaseRetriever):
         allow_dangerous_deserialization: bool = False,
         file_name: str = "bm25_vectorizer",
     ) -> BM25Retriever:
-        """Load the retriever from local storage with enhancements.
+        """Load the retriever from local storage.
 
         Args:
             folder_path: Folder path to load from.
@@ -137,7 +137,7 @@ class BM25Retriever(BaseRetriever):
             file_name: File name to load from.
 
         Returns:
-            EnhancedBM25Retriever: Loaded retriever with enhancements.
+            BM25Retriever: Loaded retriever.
         """
         if not allow_dangerous_deserialization:
             raise ValueError(
