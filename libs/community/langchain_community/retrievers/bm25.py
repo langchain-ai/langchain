@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import joblib
 import pickle
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Optional
@@ -110,6 +109,14 @@ class BM25Retriever(BaseRetriever):
         folder_path: str,
         file_name: str = "bm25_vectorizer",
     ) -> None:
+        
+        try:
+            import joblib
+        except ImportError:
+            raise ImportError(
+                "Could not import joblib, please install with `pip install joblib`."
+            )
+        
         path = Path(folder_path)
         path.mkdir(exist_ok=True, parents=True)
 
@@ -138,6 +145,14 @@ class BM25Retriever(BaseRetriever):
         Returns:
             BM25Retriever: Loaded retriever.
         """
+
+        try:
+            import joblib
+        except ImportError:
+            raise ImportError(
+                "Could not import joblib, please install with `pip install joblib`."
+            )
+        
         if not allow_dangerous_deserialization:
             raise ValueError(
                 "The de-serialization of this retriever is based on .joblib and "
