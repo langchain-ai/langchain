@@ -3,7 +3,7 @@
 """Test LLM for OCI Data Science Model Deployment Endpoint."""
 
 import sys
-from typing import AsyncGenerator, Dict, Generator
+from typing import Any, AsyncGenerator, Dict, Generator
 from unittest import mock
 
 import pytest
@@ -62,7 +62,7 @@ class MockResponse:
     def raise_for_status(self) -> None:
         """Mocked raise for status."""
         if 400 <= self.status_code < 600:
-            raise HTTPError("", response=self)
+            raise HTTPError()
 
     def json(self) -> Dict:
         """Returns mocked json data."""
@@ -78,10 +78,10 @@ class MockResponse:
         return ""
 
 
-def mocked_requests_post(*args, **kwargs) -> MockResponse:
+def mocked_requests_post(url: str, **kwargs: Any) -> MockResponse:
     """Method to mock post requests"""
 
-    payload = kwargs.get("json")
+    payload: dict = kwargs.get("json", {})
     if "inputs" in payload:
         prompt = payload.get("inputs")
         is_tgi = True
@@ -101,7 +101,7 @@ def mocked_requests_post(*args, **kwargs) -> MockResponse:
 
 
 async def mocked_async_streaming_response(
-    *args, **kwargs
+    *args: Any, **kwargs: Any
 ) -> AsyncGenerator[bytes, None]:
     """Returns mocked response for async streaming."""
     for item in CONST_ASYNC_STREAM_RESPONSE:
@@ -111,7 +111,7 @@ async def mocked_async_streaming_response(
 @pytest.mark.requires("ads")
 @mock.patch("ads.common.auth.default_signer", return_value=dict(signer=None))
 @mock.patch("requests.post", side_effect=mocked_requests_post)
-def test_invoke_vllm(*args) -> None:
+def test_invoke_vllm(*args: Any) -> None:
     """Tests invoking vLLM endpoint."""
     llm = OCIModelDeploymentVLLM(endpoint=CONST_ENDPOINT, model=CONST_MODEL_NAME)
     output = llm.invoke(CONST_PROMPT)
@@ -121,7 +121,7 @@ def test_invoke_vllm(*args) -> None:
 @pytest.mark.requires("ads")
 @mock.patch("ads.common.auth.default_signer", return_value=dict(signer=None))
 @mock.patch("requests.post", side_effect=mocked_requests_post)
-def test_stream_tgi(*args) -> None:
+def test_stream_tgi(*args: Any) -> None:
     """Tests streaming with TGI endpoint using OpenAI spec."""
     llm = OCIModelDeploymentTGI(
         endpoint=CONST_ENDPOINT, model=CONST_MODEL_NAME, streaming=True
@@ -138,7 +138,7 @@ def test_stream_tgi(*args) -> None:
 @pytest.mark.requires("ads")
 @mock.patch("ads.common.auth.default_signer", return_value=dict(signer=None))
 @mock.patch("requests.post", side_effect=mocked_requests_post)
-def test_generate_tgi(*args) -> None:
+def test_generate_tgi(*args: Any) -> None:
     """Tests invoking TGI endpoint using TGI generate spec."""
     llm = OCIModelDeploymentTGI(
         endpoint=CONST_ENDPOINT, api="/generate", model=CONST_MODEL_NAME
@@ -156,7 +156,7 @@ def test_generate_tgi(*args) -> None:
     "langchain_community.utilities.requests.Requests.apost",
     mock.MagicMock(),
 )
-async def test_stream_async(*args) -> None:
+async def test_stream_async(*args: Any) -> None:
     """Tests async streaming."""
     llm = OCIModelDeploymentTGI(
         endpoint=CONST_ENDPOINT, model=CONST_MODEL_NAME, streaming=True

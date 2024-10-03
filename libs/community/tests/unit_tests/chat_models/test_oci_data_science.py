@@ -3,7 +3,7 @@
 """Test Chat model for OCI Data Science Model Deployment Endpoint."""
 
 import sys
-from typing import AsyncGenerator, Dict, Generator
+from typing import Any, AsyncGenerator, Dict, Generator
 from unittest import mock
 
 import pytest
@@ -81,9 +81,9 @@ class MockResponse:
     def raise_for_status(self) -> None:
         """Mocked raise for status."""
         if 400 <= self.status_code < 600:
-            raise HTTPError("", response=self)
+            raise HTTPError()
 
-    def json(self):
+    def json(self) -> Dict:
         """Returns mocked json data."""
         return self.json_data
 
@@ -92,16 +92,16 @@ class MockResponse:
         return CONST_STREAM_RESPONSE
 
     @property
-    def text(self):
+    def text(self) -> str:
         """Returns the mocked text representation."""
         return ""
 
 
-def mocked_requests_post(*args, **kwargs):
+def mocked_requests_post(url: str, **kwargs: Any) -> MockResponse:
     """Method to mock post requests"""
 
-    payload = kwargs.get("json")
-    messages = payload.get("messages")
+    payload: dict = kwargs.get("json", {})
+    messages: list = payload.get("messages", [])
     prompt = messages[0].get("content")
 
     if prompt == CONST_PROMPT:
@@ -117,7 +117,7 @@ def mocked_requests_post(*args, **kwargs):
 @pytest.mark.requires("langchain_openai")
 @mock.patch("ads.common.auth.default_signer", return_value=dict(signer=None))
 @mock.patch("requests.post", side_effect=mocked_requests_post)
-def test_invoke_vllm(*args) -> None:
+def test_invoke_vllm(*args: Any) -> None:
     """Tests invoking vLLM endpoint."""
     llm = ChatOCIModelDeploymentVLLM(endpoint=CONST_ENDPOINT, model=CONST_MODEL_NAME)
     output = llm.invoke(CONST_PROMPT)
@@ -129,7 +129,7 @@ def test_invoke_vllm(*args) -> None:
 @pytest.mark.requires("langchain_openai")
 @mock.patch("ads.common.auth.default_signer", return_value=dict(signer=None))
 @mock.patch("requests.post", side_effect=mocked_requests_post)
-def test_invoke_tgi(*args) -> None:
+def test_invoke_tgi(*args: Any) -> None:
     """Tests invoking TGI endpoint using OpenAI Spec."""
     llm = ChatOCIModelDeploymentTGI(endpoint=CONST_ENDPOINT, model=CONST_MODEL_NAME)
     output = llm.invoke(CONST_PROMPT)
@@ -141,23 +141,28 @@ def test_invoke_tgi(*args) -> None:
 @pytest.mark.requires("langchain_openai")
 @mock.patch("ads.common.auth.default_signer", return_value=dict(signer=None))
 @mock.patch("requests.post", side_effect=mocked_requests_post)
-def test_stream_vllm(*args) -> None:
+def test_stream_vllm(*args: Any) -> None:
     """Tests streaming with vLLM endpoint using OpenAI spec."""
     llm = ChatOCIModelDeploymentVLLM(
         endpoint=CONST_ENDPOINT, model=CONST_MODEL_NAME, streaming=True
     )
-    output = AIMessageChunk("")
+    output = None
     count = 0
     for chunk in llm.stream(CONST_PROMPT):
         assert isinstance(chunk, AIMessageChunk)
-        output += chunk
+        if output is None:
+            output = chunk
+        else:
+            output += chunk
         count += 1
     assert count == 5
-    assert output.content.strip() == CONST_COMPLETION
+    assert output is not None
+    if output is not None:
+        assert str(output.content).strip() == CONST_COMPLETION
 
 
 async def mocked_async_streaming_response(
-    *args, **kwargs
+    *args: Any, **kwargs: Any
 ) -> AsyncGenerator[bytes, None]:
     """Returns mocked response for async streaming."""
     for item in CONST_ASYNC_STREAM_RESPONSE:
@@ -174,7 +179,7 @@ async def mocked_async_streaming_response(
     "langchain_community.utilities.requests.Requests.apost",
     mock.MagicMock(),
 )
-async def test_stream_async(*args):
+async def test_stream_async(*args: Any) -> None:
     """Tests async streaming."""
     llm = ChatOCIModelDeploymentVLLM(
         endpoint=CONST_ENDPOINT, model=CONST_MODEL_NAME, streaming=True
@@ -184,5 +189,5 @@ async def test_stream_async(*args):
         "_aiter_sse",
         mock.MagicMock(return_value=mocked_async_streaming_response()),
     ):
-        chunks = [chunk.content async for chunk in llm.astream(CONST_PROMPT)]
+        chunks = [str(chunk.content) async for chunk in llm.astream(CONST_PROMPT)]
     assert "".join(chunks).strip() == CONST_COMPLETION
