@@ -172,6 +172,8 @@ class BM25Retriever(BaseRetriever):
 
         # Load docs and preprocess_func as pickle.
         with open(path / f"{file_name}.pkl", "rb") as f:
-            docs, preprocess_func = pickle.load(f)
+            # This code path can only be triggered if the user
+            # passed allow_dangerous_deserialization=True
+            docs, preprocess_func = pickle.load(f)  # ignore[pickle]: explicit-opt-in
 
         return cls(vectorizer=vectorizer, docs=docs, preprocess_func=preprocess_func)
