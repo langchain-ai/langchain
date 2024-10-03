@@ -1,0 +1,41 @@
+# Retrieval for Structured Data
+
+## Motivation
+
+Language models (LLMs) are trained on vast but fixed datasets, which limits their ability to access up-to-date or domain-specific information. 
+
+To enhance their performance on specific tasks, we can augment their knowledge using retrieval systems.
+
+Retrieval systems fetch relevant information from external sources, which can then be included in the prompt given to the model. 
+
+Key benefits of using retrieval systems include:
+
+1. Access to recent or private information
+2. Improved accuracy on domain-specific tasks
+3. Reduced hallucination by grounding responses in retrieved facts
+4. Cost-effective alternative to fine-tuning for factual recall
+
+## Structured Data
+
+A large fraction of the world's operational data is structured, often organized into database tables with a specific schema.
+
+Various DSLs (Domain Specific Languages) have been developed to interact with these systems including SQL, Cypher, and PQL.
+
+## Query Construction
+
+A popular approach to interacting with structured data is to use an LLM to convert natural language queries into a DSL for the relevant database.  
+
+In particular, [text-to-SQL](/docs/tutorials/sql_qa/) and [text-to-Cypher](/docs/tutorials/graph/) are useful ways to interact with structured and graph databases respectively. 
+
+| Name                                        | When to Use                                                                                                                                   | Description                                                                                                                                                                                                                                                                                      |
+|---------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [Text to SQL](/docs/tutorials/sql_qa/)      | If users are asking questions that require information housed in a relational database, accessible via SQL.                                   | This uses an LLM to transform user input into a SQL query.                                             |
+| [Text-to-Cypher](/docs/tutorials/graph/)    | If users are asking questions that require information housed in a graph database, accessible via Cypher.                                     | This uses an LLM to transform user input into a Cypher query.                                              |
+
+See our tutorials on [text-to-SQL](/docs/tutorials/sql_qa/) and [text-to-Cypher](/docs/tutorials/graph/) for more details.
+
+:::tip
+
+See our [blog post overview](https://blog.langchain.dev/query-construction/) and RAG from Scratch video on [query construction](https://youtu.be/kl6NwWYxvbM?feature=shared).
+
+:::

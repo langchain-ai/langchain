@@ -1,0 +1,133 @@
+# Tool Calling
+
+## Motivation 
+
+Many AI applications interact directly with humans (e.g., chatbots). In these cases, it is approrpiate for models to respond in natural langague. 
+
+But what about cases where we want a model to interact *directly* with another system (e.g., a databases or an API)?
+
+These systems often have a particular input schema (e.g., APIs have a required payload structure), making natural language inapporpiate for use.
+
+This motivates the concept of tool calling:
+
+* Tools (e.g., a databases or an API) can be bound to models.
+* Models can respond in the input schema required to run the tool.
+
+## Basic Usage
+
+:::info
+You will sometimes hear the term `function calling`. We use this term interchangeably with `tool calling`. 
+:::
+
+When using tools, we need to specify two things:
+
+* A model that supports tool calling.
+* Tools that the model can call.
+
+#### Model
+
+While tool calling is not universal, many model providers support it.
+
+See our [model integration page](/docs/integrations/chat/) for a list of models that support tool calling.
+
+LangChain provides a standardized interface for tool calling that is consistent across different models.
+
+`ChatModel.bind_tools()` is a method for specifying which tools are available for a model to call. 
+
+If a model has been initialized as `llm` without tools, we can bind tools to it as a list:
+
+```python
+llm_with_tools = llm.bind_tools([tool])
+```
+
+#### Tool
+
+Of course, need to specify a `tool` that the model can call.
+
+In LangChain, any function can be bound as a tool.
+
+```python
+def multiply(a: int, b: int) -> int:
+    """Multiply a and b.
+
+    Args:
+        a: first int
+        b: second int
+    """
+    return a * b
+
+llm_with_tools = llm.bind_tools([multiply])
+```
+
+For more details on usage, see our [how-to guide focused on creating tools](docs/how_to/#tools)!
+
+In addition to user-defined functions, LangChain also offers many toolkit [integrations](/docs/integrations/tools/) that can be used off-the-shelf.
+
+## Invoking 
+
+![Diagram of a tool call by a chat model](/img/tool_call_example.png)
+
+If we pass an input that is relevant to the tool - e.g., `What is 2 multiplied by 3` - the model will return a tool call.
+
+```python
+result = llm_with_tools.invoke("What is 2 multiplied by 3?")
+```
+
+The tool call has specific arguments needed to run the tool, as explained below.
+
+## Tool Call Output
+
+It is important to note that the model only generates the *arguments* to invoke the tool. 
+
+Actually running the tool is up to the user or application (downstream of the model).
+
+As an exaple, the output `result` from the above invocation will be an `AIMessage`. 
+
+If the tool was called, the `result` will have a `tool_calls` attribute.
+
+This attribute has the tool name, arguments, and id:
+
+```
+result.tool_calls
+{'name': 'multiply', 'args': {'a': 2, 'b': 3}, 'id': 'xxx', 'type': 'tool_call'}
+```
+
+The arguments can be easily extracted and passed to the tool directly:
+
+```python
+args = tool_call.tool_calls[0]['args']
+result = multiply(**args)
+```
+
+For more details on usage, see our [how-to guides](docs/how_to/#tools)!
+
+## Common patterns  
+
+We saw that a model can call a tool, returning the payload needed to invoke the tool.
+
+We saw the arguments can be easily extracted from this payload and passed to the tool. 
+
+What if the tool output is *passed back* to the model?
+
+![Diagram of a tool calling agent](/img/tool_calling_agent.png)
+
+This loop can be repeated, allowing a model to call multiple (potentially different) tools in sequence to perform a task.
+
+This is the intuition behind ReAct, a general purpose tool-calling agent architecture. 
+
+* Act - let the model call specific tools
+* Observe - pass the tool output back to the model
+* Reason - let the model reason about the tool output to decide what to do next (e.g., call another tool or just respond directly)
+
+This general purpose architecture can be applied to many types of tools.
+
+See our detailed [how-to guide focused on tool calling agents](https://langchain-ai.github.io/langgraph/how-tos/create-react-agent/) for more details!
+
+## Best practices
+
+When designing tools to be used by a model, it is important to keep in mind that:
+
+* Models that have explicit [tool-calling APIs](/docs/concepts/#functiontool-calling) will be better at tool calling than non-fine-tuned models.
+* Models will perform better if the tools have well-chosen names and descriptions.
+* Simple, narrowly scoped tools are easier for models to use than complex tools.
+* Asking the model to select from a large list of tools poses challenges for the model.
