@@ -37,14 +37,12 @@ from langchain_core.output_parsers import (
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
-from langchain_core.utils import pre_init
 from langchain_core.utils.function_calling import convert_to_openai_tool
-
-from pydantic import BaseModel, Field, model_validator
-from ads.llm.langchain.plugins.llms.oci_data_science_model_deployment_endpoint import (
+from langchain_community.llms.oci_data_science_model_deployment_endpoint import (
     DEFAULT_MODEL_NAME,
     BaseOCIModelDeployment,
 )
+from pydantic import BaseModel, Field, model_validator
 
 logger = logging.getLogger(__name__)
 
