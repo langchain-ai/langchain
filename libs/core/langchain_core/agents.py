@@ -8,7 +8,7 @@
 
     Please see the migration guide for information on how to migrate existing
     agents to modern langgraph agents:
-    https://python.langchain.com/v0.2/docs/how_to/migrate_agent/
+    https://python.langchain.com/docs/how_to/migrate_agent/
 
 Agents use language models to choose a sequence of actions to take.
 
