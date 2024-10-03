@@ -103,7 +103,7 @@ class BM25Retriever(BaseRetriever):
         processed_query = self.preprocess_func(query)
         return_docs = self.vectorizer.get_top_n(processed_query, self.docs, n=self.k)
         return return_docs
-    
+
     def save_local(
         self,
         folder_path: str,
@@ -115,7 +115,7 @@ class BM25Retriever(BaseRetriever):
             raise ImportError(
                 "Could not import joblib, please install with `pip install joblib`."
             )
-        
+
         path = Path(folder_path)
         path.mkdir(exist_ok=True, parents=True)
 
