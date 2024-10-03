@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import importlib.metadata
 import typing
 import uuid
 from typing import (
@@ -18,6 +19,7 @@ from typing import (
 )
 
 import numpy as np
+from packaging.version import Version  # this is a lancghain-core dependency
 
 if typing.TYPE_CHECKING:
     from cassandra.cluster import Session
@@ -30,6 +32,7 @@ from langchain_community.utilities.cassandra import SetupMode
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
 CVST = TypeVar("CVST", bound="Cassandra")
+MIN_CASSIO_VERSION = Version("0.1.10")
 
 
 class Cassandra(VectorStore):
@@ -110,6 +113,15 @@ class Cassandra(VectorStore):
                 "Could not import cassio python package. "
                 "Please install it with `pip install cassio`."
             )
+        cassio_version = Version(importlib.metadata.version("cassio"))
+
+        if cassio_version is not None and cassio_version < MIN_CASSIO_VERSION:
+            msg = (
+                "Cassio version not supported. Please upgrade cassio "
+                f"to version {MIN_CASSIO_VERSION} or higher."
+            )
+            raise ImportError(msg)
+
         if not table_name:
             raise ValueError("Missing required parameter 'table_name'.")
         self.embedding = embedding
