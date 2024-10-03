@@ -1306,9 +1306,9 @@
               .. code-block:: python
           
                   {
-                      "input_tokens": 10,
-                      "output_tokens": 20,
-                      "total_tokens": 30,
+                      "input_tokens": 350,
+                      "output_tokens": 240,
+                      "total_tokens": 590,
                       "input_token_details": {
                           "audio": 10,
                           "cache_creation": 200,
@@ -2713,9 +2713,9 @@
               .. code-block:: python
           
                   {
-                      "input_tokens": 10,
-                      "output_tokens": 20,
-                      "total_tokens": 30,
+                      "input_tokens": 350,
+                      "output_tokens": 240,
+                      "total_tokens": 590,
                       "input_token_details": {
                           "audio": 10,
                           "cache_creation": 200,
