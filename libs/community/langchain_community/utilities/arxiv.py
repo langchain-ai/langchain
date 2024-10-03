@@ -200,15 +200,7 @@ class ArxivAPIWrapper(BaseModel):
         try:
             # Remove the ":" and "-" from the query, as they can cause search problems
             query = query.replace(":", "").replace("-", "")
-            if self.is_arxiv_identifier(query):
-                results = self.arxiv_search(
-                    id_list=query[: self.ARXIV_MAX_QUERY_LENGTH].split(),
-                    max_results=self.load_max_docs,
-                ).results()
-            else:
-                results = self.arxiv_search(  # type: ignore
-                    query[: self.ARXIV_MAX_QUERY_LENGTH], max_results=self.load_max_docs
-                ).results()
+            results = self._fetch_results(query)  # Using helper function to fetch results
         except self.arxiv_exceptions as ex:
             logger.debug("Error on arxiv: %s", ex)
             return
