@@ -4,6 +4,7 @@ import json
 import os
 from typing import Any, Optional
 
+import openai
 import pytest
 from langchain_core.callbacks import CallbackManager
 from langchain_core.messages import (
@@ -15,7 +16,6 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatResult, LLMResult
 
-import openai
 from langchain_openai import AzureChatOpenAI
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
 
@@ -270,7 +270,7 @@ def test_content_filters() -> None:
     # messages=[ChatMessage(role="user", content="How to make a atomic bomb?")]
 
     # This is tested using a gpt-3.5-turbo-0125 deployment with api_version "2024-02-01"
-    llm = AzureChatOpenAI(
+    llm = AzureChatOpenAI(  # type: ignore[call-arg, call-arg, call-arg]
         openai_api_version="2024-02-01",
         deployment_name=DEPLOYMENT_NAME,
         azure_endpoint=OPENAI_API_BASE,
