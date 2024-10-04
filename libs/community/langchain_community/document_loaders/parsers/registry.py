@@ -1,6 +1,7 @@
 """Module includes a registry of default parser configurations."""
 
 from langchain_community.document_loaders.base import BaseBlobParser
+from langchain_community.document_loaders.parsers.excel import ExcelParser
 from langchain_community.document_loaders.parsers.generic import MimeTypeBasedParser
 from langchain_community.document_loaders.parsers.msword import MsWordParser
 from langchain_community.document_loaders.parsers.pdf import PyMuPDFParser
@@ -16,6 +17,9 @@ def _get_default_parser() -> BaseBlobParser:
             "application/msword": MsWordParser(),
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document": (
                 MsWordParser()
+            ),
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": (
+                ExcelParser()
             ),
         },
         fallback_parser=None,
