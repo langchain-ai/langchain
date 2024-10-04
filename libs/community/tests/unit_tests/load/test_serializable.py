@@ -112,6 +112,11 @@ def test_serializable_mapping() -> None:
             "chat_models",
             "ChatGroq",
         ),
+        ("langchain_aws", "chat_models", "ChatBedrockConverse"): (
+            "langchain_aws",
+            "chat_models",
+            "ChatBedrockConverse",
+        ),
     }
     serializable_modules = import_all_modules("langchain")
 
