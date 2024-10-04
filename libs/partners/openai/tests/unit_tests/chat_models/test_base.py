@@ -23,6 +23,7 @@ from langchain_openai import ChatOpenAI
 from langchain_openai.chat_models.base import (
     _convert_dict_to_message,
     _convert_message_to_dict,
+    _create_usage_metadata,
     _format_message_content,
 )
 
@@ -730,3 +731,21 @@ def test_schema_from_with_structured_output(schema: Type) -> None:
     }
     actual = structured_llm.get_output_schema().model_json_schema()
     assert actual == expected
+
+
+def test__create_usage_metadata() -> None:
+    usage_metadata = {
+        "completion_tokens": 15,
+        "prompt_tokens_details": None,
+        "completion_tokens_details": None,
+        "prompt_tokens": 11,
+        "total_tokens": 26,
+    }
+    result = _create_usage_metadata(usage_metadata)
+    assert result == UsageMetadata(
+        output_tokens=15,
+        input_tokens=11,
+        total_tokens=26,
+        input_token_details={},
+        output_token_details={},
+    )

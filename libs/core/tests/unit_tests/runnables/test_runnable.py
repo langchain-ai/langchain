@@ -63,6 +63,7 @@ from langchain_core.runnables import (
     ConfigurableFieldSingleOption,
     RouterRunnable,
     Runnable,
+    RunnableAssign,
     RunnableBinding,
     RunnableBranch,
     RunnableConfig,
@@ -193,6 +194,7 @@ class FakeRunnableSerializable(RunnableSerializable[str, int]):
         self,
         input: str,
         config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
     ) -> int:
         return len(input)
 
@@ -3345,9 +3347,9 @@ def test_bind_with_lambda() -> None:
         return 3 + kwargs.get("n", 0)
 
     runnable = RunnableLambda(my_function).bind(n=1)
-    assert 4 == runnable.invoke({})
+    assert runnable.invoke({}) == 4
     chunks = list(runnable.stream({}))
-    assert [4] == chunks
+    assert chunks == [4]
 
 
 async def test_bind_with_lambda_async() -> None:
@@ -3355,9 +3357,9 @@ async def test_bind_with_lambda_async() -> None:
         return 3 + kwargs.get("n", 0)
 
     runnable = RunnableLambda(my_function).bind(n=1)
-    assert 4 == await runnable.ainvoke({})
+    assert await runnable.ainvoke({}) == 4
     chunks = [item async for item in runnable.astream({})]
-    assert [4] == chunks
+    assert chunks == [4]
 
 
 def test_deep_stream() -> None:
@@ -3966,7 +3968,9 @@ def test_seq_batch_return_exceptions(mocker: MockerFixture) -> None:
         def __init__(self, fail_starts_with: str) -> None:
             self.fail_starts_with = fail_starts_with
 
-        def invoke(self, input: Any, config: Optional[RunnableConfig] = None) -> Any:
+        def invoke(
+            self, input: Any, config: Optional[RunnableConfig] = None, **kwargs: Any
+        ) -> Any:
             raise NotImplementedError()
 
         def _batch(
@@ -4085,7 +4089,9 @@ async def test_seq_abatch_return_exceptions(mocker: MockerFixture) -> None:
         def __init__(self, fail_starts_with: str) -> None:
             self.fail_starts_with = fail_starts_with
 
-        def invoke(self, input: Any, config: Optional[RunnableConfig] = None) -> Any:
+        def invoke(
+            self, input: Any, config: Optional[RunnableConfig] = None, **kwargs: Any
+        ) -> Any:
             raise NotImplementedError()
 
         async def _abatch(
@@ -5140,13 +5146,10 @@ async def test_astream_log_deep_copies() -> None:
 
     chain = RunnableLambda(add_one)
     chunks = []
-    final_output = None
+    final_output: Optional[RunLogPatch] = None
     async for chunk in chain.astream_log(1):
         chunks.append(chunk)
-        if final_output is None:
-            final_output = chunk
-        else:
-            final_output = final_output + chunk
+        final_output = chunk if final_output is None else final_output + chunk
 
     run_log = _get_run_log(chunks)
     state = run_log.state.copy()
@@ -5208,7 +5211,7 @@ def test_default_transform_with_dicts() -> None:
 
     class CustomRunnable(RunnableSerializable[Input, Output]):
         def invoke(
-            self, input: Input, config: Optional[RunnableConfig] = None
+            self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
         ) -> Output:
             return cast(Output, input)  # type: ignore
 
@@ -5229,7 +5232,7 @@ async def test_default_atransform_with_dicts() -> None:
 
     class CustomRunnable(RunnableSerializable[Input, Output]):
         def invoke(
-            self, input: Input, config: Optional[RunnableConfig] = None
+            self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
         ) -> Output:
             return cast(Output, input)
 
@@ -5411,3 +5414,14 @@ def test_schema_for_prompt_and_chat_model() -> None:
         "title": "PromptInput",
         "type": "object",
     }
+
+
+def test_runnable_assign() -> None:
+    def add_ten(x: dict[str, int]) -> dict[str, int]:
+        return {"added": x["input"] + 10}
+
+    mapper = RunnableParallel({"add_step": RunnableLambda(add_ten)})
+    runnable_assign = RunnableAssign(mapper)
+
+    result = runnable_assign.invoke({"input": 5})
+    assert result == {"input": 5, "add_step": {"added": 15}}

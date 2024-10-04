@@ -332,9 +332,8 @@ def from_env(
             for k in key:
                 if k in os.environ:
                     return os.environ[k]
-        if isinstance(key, str):
-            if key in os.environ:
-                return os.environ[key]
+        if isinstance(key, str) and key in os.environ:
+            return os.environ[key]
 
         if isinstance(default, (str, type(None))):
             return default
@@ -395,9 +394,8 @@ def secret_from_env(
             for k in key:
                 if k in os.environ:
                     return SecretStr(os.environ[k])
-        if isinstance(key, str):
-            if key in os.environ:
-                return SecretStr(os.environ[key])
+        if isinstance(key, str) and key in os.environ:
+            return SecretStr(os.environ[key])
         if isinstance(default, str):
             return SecretStr(default)
         elif isinstance(default, type(None)):

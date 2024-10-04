@@ -513,14 +513,8 @@ def test_tool_outputs() -> None:
 def test__convert_typed_dict_to_openai_function(
     use_extension_typed_dict: bool, use_extension_annotated: bool
 ) -> None:
-    if use_extension_typed_dict:
-        typed_dict = ExtensionsTypedDict
-    else:
-        typed_dict = TypingTypedDict
-    if use_extension_annotated:
-        annotated = TypingAnnotated
-    else:
-        annotated = TypingAnnotated
+    typed_dict = ExtensionsTypedDict if use_extension_typed_dict else TypingTypedDict
+    annotated = TypingAnnotated if use_extension_annotated else TypingAnnotated
 
     class SubTool(typed_dict):
         """Subtool docstring"""
