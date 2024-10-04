@@ -191,7 +191,6 @@ class ChatModelIntegrationTests(ChatModelTests):
                 (v or 0) for v in msg.usage_metadata["input_token_details"].values()
             )
 
-
     def test_usage_metadata_streaming(self, model: BaseChatModel) -> None:
         if not self.returns_usage_metadata:
             pytest.skip("Not implemented.")
