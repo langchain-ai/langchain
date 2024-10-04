@@ -50,9 +50,6 @@ COPY libs/core ../core
 # Copy the community library for installation
 COPY libs/community/ ../community/
 
-# Copy the text-splitters library for installation
-COPY libs/text-splitters/ ../text-splitters/
-
 # Copy the partners library for installation
 COPY libs/partners ../partners/
 

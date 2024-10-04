@@ -196,7 +196,7 @@ def _import_forefrontai() -> Any:
 
 
 def _import_gigachat() -> Any:
-    from langchain_community.llms.gigachat import GigaChat
+    from langchain_gigachat.llms.gigachat import GigaChat
 
     return GigaChat
 

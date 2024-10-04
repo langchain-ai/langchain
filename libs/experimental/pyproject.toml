@@ -25,7 +25,7 @@ exclude = [ "notebooks", "examples", "example_data",]
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-gigachain-core = "^0.2.38"
+langchain-core = "^0.2.38"
 gigachain-community = "^0.2.16"
 
 [tool.ruff.lint]
@@ -69,6 +69,8 @@ setuptools = "^67.6.1"
 [tool.poetry.group.test.dependencies]
 pytest = "^7.3.0"
 pytest-asyncio = "^0.20.3"
+langchain-text-splitters = "^0.2.0"
+
 [[tool.poetry.group.test.dependencies.numpy]]
 version = "^1.24.0"
 python = "<3.12"
@@ -81,20 +83,12 @@ python = ">=3.12"
 path = "../langchain"
 develop = true
 
-[tool.poetry.group.typing.dependencies.gigachain-core]
-path = "../core"
-develop = true
-
 [tool.poetry.group.typing.dependencies.gigachain-community]
 path = "../community"
 develop = true
 
 [tool.poetry.group.dev.dependencies.gigachain]
 path = "../langchain"
-develop = true
-
-[tool.poetry.group.dev.dependencies.gigachain-core]
-path = "../core"
 develop = true
 
 [tool.poetry.group.dev.dependencies.gigachain-community]
@@ -105,30 +99,17 @@ develop = true
 path = "../langchain"
 develop = true
 
-[tool.poetry.group.test.dependencies.gigachain-core]
-path = "../core"
-develop = true
-
 [tool.poetry.group.test.dependencies.gigachain-community]
 path = "../community"
 develop = true
 
-[tool.poetry.group.test.dependencies.gigachain-text-splitters]
-path = "../text-splitters"
-develop = true
+[tool.poetry.group.test_integration.dependencies]
+langchain-openai = "^0.1.23"
 
 [tool.poetry.group.test_integration.dependencies.gigachain]
 path = "../langchain"
 develop = true
 
-[tool.poetry.group.test_integration.dependencies.gigachain-core]
-path = "../core"
-develop = true
-
 [tool.poetry.group.test_integration.dependencies.gigachain-community]
 path = "../community"
-develop = true
-
-[tool.poetry.group.test_integration.dependencies.gigachain-openai]
-path = "../partners/openai"
 develop = true

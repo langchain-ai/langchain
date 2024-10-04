@@ -35,9 +35,9 @@ ignore-words-list = "momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogy
 langchain-server = "langchain.server:main"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
-gigachain-core = "^0.2.38"
-gigachain-text-splitters = "^0.2.0"
+python = ">=3.9,<4.0"
+langchain-core = "^0.2.38"
+langchain-text-splitters = "^0.2.0"
 langsmith = "^0.1.17"
 pydantic = ">=1,<3"
 SQLAlchemy = ">=1.4,<3"
@@ -46,6 +46,7 @@ PyYAML = ">=5.3"
 aiohttp = "^3.8.3"
 tenacity = "^8.1.0,!=8.4.0"
 gigachat = "^0.1.35"
+
 [[tool.poetry.dependencies.numpy]]
 version = "^1"
 python = "<3.12"
@@ -102,6 +103,7 @@ pytest-mock = "^3.10.0"
 pytest-socket = "^0.6.0"
 syrupy = "^4.0.2"
 requests-mock = "^1.11.0"
+langchain_openai = "^0.1.23"
 
 [tool.poetry.group.codespell.dependencies]
 codespell = "^2.2.0"
@@ -131,43 +133,6 @@ jupyter = "^1.0.0"
 playwright = "^1.28.0"
 setuptools = "^67.6.1"
 
-[tool.poetry.group.test.dependencies.gigachain-standard-tests]
+[tool.poetry.group.test.dependencies.langchain-standard-tests]
 path = "../standard-tests"
-develop = true
-
-[tool.poetry.group.test.dependencies.gigachain-core]
-path = "../core"
-develop = true
-
-[tool.poetry.group.test.dependencies.gigachain-text-splitters]
-path = "../text-splitters"
-develop = true
-
-[tool.poetry.group.test.dependencies.gigachain-openai]
-path = "../partners/openai"
-optional = true
-develop = true
-
-[tool.poetry.group.test_integration.dependencies.gigachain-core]
-path = "../core"
-develop = true
-
-[tool.poetry.group.test_integration.dependencies.gigachain-text-splitters]
-path = "../text-splitters"
-develop = true
-
-[tool.poetry.group.typing.dependencies.gigachain-core]
-path = "../core"
-develop = true
-
-[tool.poetry.group.typing.dependencies.gigachain-text-splitters]
-path = "../text-splitters"
-develop = true
-
-[tool.poetry.group.dev.dependencies.gigachain-core]
-path = "../core"
-develop = true
-
-[tool.poetry.group.dev.dependencies.gigachain-text-splitters]
-path = "../text-splitters"
 develop = true

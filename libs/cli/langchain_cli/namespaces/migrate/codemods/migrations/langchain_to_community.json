@@ -921,7 +921,7 @@
   ],
   [
     "langchain.chat_models.GigaChat",
-    "langchain_community.chat_models.GigaChat"
+    "langchain_gigachat.chat_models.gigachat"
   ],
   [
     "langchain.chat_models.VolcEngineMaasChat",
@@ -997,7 +997,7 @@
   ],
   [
     "langchain.chat_models.gigachat.GigaChat",
-    "langchain_community.chat_models.GigaChat"
+    "langchain_gigachat.chat_models.gigachat"
   ],
   [
     "langchain.chat_models.google_palm.ChatGooglePalm",
@@ -3481,7 +3481,7 @@
   ],
   [
     "langchain.llms.GigaChat",
-    "langchain_community.llms.GigaChat"
+    "langchain_gigachat.llms.gigachat"
   ],
   [
     "langchain.llms.GPT4All",
@@ -3853,7 +3853,7 @@
   ],
   [
     "langchain.llms.gigachat.GigaChat",
-    "langchain_community.llms.GigaChat"
+    "langchain_gigachat.llms.gigachat"
   ],
   [
     "langchain.llms.google_palm.GooglePalm",

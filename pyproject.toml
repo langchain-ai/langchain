@@ -9,7 +9,7 @@ repository = "https://www.github.com/ai-forever/gigachain"
 
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
+python = ">=3.9,<4.0"
 
 [tool.poetry.group.docs.dependencies]
 autodoc_pydantic = "^1"
@@ -21,24 +21,24 @@ toml = "^0.10.2"
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.5.0"
-gigachain-core = { path = "libs/core/", develop = true }
-gigachain-text-splitters = { path = "libs/text-splitters", develop = true }
+langchain-core = "^0.2.38"
+langchain-text-splitters = "^0.2.0"
 gigachain-community = { path = "libs/community/", develop = true }
 gigachain = { path = "libs/langchain/", develop = true }
 gigachain-experimental = { path = "libs/experimental/", develop = true }
-gigachain-openai = { path = "libs/partners/openai", develop = true }
+langchain-openai = "^0.1.23"
 
 [tool.poetry.group.codespell.dependencies]
 codespell = "^2.2.0"
 
 
 [tool.poetry.group.dev.dependencies]
-gigachain-core = { path = "libs/core/", develop = true }
-gigachain-text-splitters = { path = "libs/text-splitters", develop = true }
+langchain-core = "^0.2.38"
+langchain-text-splitters = "^0.2.0"
 gigachain-community = { path = "libs/community/", develop = true }
 gigachain = { path = "libs/langchain/", develop = true }
 gigachain-experimental = { path = "libs/experimental/", develop = true }
-gigachain-openai = { path = "libs/partners/openai", develop = true }
+langchain-openai = "^0.1.23"
 ipykernel = "^6.29.2"
 
 # Support Python 3.8 and 3.12+.

@@ -8,7 +8,7 @@ on:
         required: true
         type: choice
         options:
-          - gigachain-core
+          - langchain-core
           - gigachain-community
       publish:
         description: 'Publish distrib to pypi'
@@ -22,7 +22,6 @@ on:
         default: false
 
 env:
-  build-dir-gigachain-core: "libs/core"
   build-dir-gigachain-community: "libs/community"
 
 jobs:

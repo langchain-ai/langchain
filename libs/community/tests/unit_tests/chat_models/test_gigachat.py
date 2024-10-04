@@ -22,7 +22,7 @@ from langchain.schema.messages import (
     SystemMessage,
 )
 from langchain.tools import tool
-from langchain_community.chat_models.gigachat import (
+from langchain_gigachat.chat_models.gigachat import (
     GigaChat,
     _convert_dict_to_message,
     _convert_message_to_dict,

@@ -10,11 +10,11 @@ from langchain_core.prompts.chat import (
 )
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import BaseTool
-from langchain_core.utils.function_calling import format_tool_to_gigachat_function
-
-from langchain.agents.format_scratchpad.gigachat_functions import (
+from langchain_gigachat.tools.gigachat_functions import (
     format_to_gigachat_function_messages,
 )
+from langchain_gigachat.tools.gigachat_tools import format_tool_to_gigachat_function
+
 from langchain.agents.output_parsers.gigachat_functions import (
     GigaChatFunctionsAgentOutputParser,
 )

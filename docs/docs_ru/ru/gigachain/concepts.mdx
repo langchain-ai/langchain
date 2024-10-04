@@ -9,7 +9,7 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 
 Фреймворк GigaChain состоит из нескольких пакетов.
 
-### `gigachain-core`
+### `langchain-core`
 
 Пакет содержит базовые абстракции различных компонентов и способы их объединения.
 Здесь определены интерфейсы для основных компонентов:LLM, векторных хранилищ, ретриверов и других.
@@ -18,7 +18,7 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 
 ### Пакеты популярных сервисов
 
-Тогда как полный список интеграций содержится в `gigachain-community`, интеграции с популярными сервисами выделены в собственные пакеты (например, `gigachain-openai`, `gigachain-anthropic` и т.д.).
+Тогда как полный список интеграций содержится в `gigachain-community`, интеграции с популярными сервисами выделены в собственные пакеты (например, `langchain-openai`, `gigachain-anthropic` и т.д.).
 
 ### `gigachain`
 
@@ -117,7 +117,7 @@ GigaGraph предоставляет высокоуровневые интерф
 - `ainvoke`: вызов цепочки с входными данными асинхронно
 - `abatch`: вызов цепочки со списком входных данных асинхронно
 - `astream_log`: потоковая передача промежуточных шагов по мере их выполнения, в дополнение к окончательному ответу
-- `astream_events`: **beta** потоковая передача событий по мере их выполнения в цепочке (введено в `gigachain-core` версии 0.1.14)
+- `astream_events`: **beta** потоковая передача событий по мере их выполнения в цепочке (введено в `langchain-core` версии 0.1.14)
 
 Типы входных и выходных данных варьируются в зависимости от компонента:
 
@@ -493,7 +493,7 @@ GigaChain предоставляет систему колбэков, котор
 
 #### Обработчики колбэков
 
-`CallbackHandlers` — это объекты, которые реализуют интерфейс [`CallbackHandler`](https://api.python.langchain.com/en/latest/callbacks/langchain_core.callbacks.base.BaseCallbackHandler.html#gigachain-core-callbacks-base-basecallbackhandler), включающий метод для каждого события, на которое можно подписаться.
+`CallbackHandlers` — это объекты, которые реализуют интерфейс [`CallbackHandler`](https://api.python.langchain.com/en/latest/callbacks/langchain_core.callbacks.base.BaseCallbackHandler.html#langchain-core-callbacks-base-basecallbackhandler), включающий метод для каждого события, на которое можно подписаться.
 При получении события объект `CallbackManager` вызывает соответствующий метод каждого обработчика.
 
 ```python
@@ -626,7 +626,7 @@ GigaChain предоставляет стандартизированный ин
 ### Разделение текста
 
 GigaChain предлагает множество различных типов разделителей текста.
-Все они содержатся в пакете `gigachain-text-splitters`.
+Все они содержатся в пакете `langchain-text-splitters`.
 
 Колонки таблицы:
 

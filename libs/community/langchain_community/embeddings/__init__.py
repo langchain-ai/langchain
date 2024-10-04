@@ -80,7 +80,7 @@ if TYPE_CHECKING:
     from langchain_community.embeddings.fastembed import (
         FastEmbedEmbeddings,
     )
-    from langchain_community.embeddings.gigachat import (
+    from langchain_gigachat.embeddings.gigachat import (
         GigaChatEmbeddings,
     )
     from langchain_community.embeddings.google_palm import (
@@ -346,7 +346,7 @@ _module_lookup = {
     "GPT4AllEmbeddings": "langchain_community.embeddings.gpt4all",
     "GooglePalmEmbeddings": "langchain_community.embeddings.google_palm",
     "GradientEmbeddings": "langchain_community.embeddings.gradient_ai",
-    "GigaChatEmbeddings": "langchain_community.embeddings.gigachat",
+    "GigaChatEmbeddings": "langchain_gigachat.embeddings.gigachat",
     "HuggingFaceBgeEmbeddings": "langchain_community.embeddings.huggingface",
     "HuggingFaceEmbeddings": "langchain_community.embeddings.huggingface",
     "HuggingFaceHubEmbeddings": "langchain_community.embeddings.huggingface_hub",

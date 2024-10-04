@@ -223,7 +223,7 @@ def _import_friendli() -> Type[BaseLLM]:
 
 
 def _import_gigachat() -> Type[BaseLLM]:
-    from langchain_community.llms.gigachat import GigaChat
+    from langchain_gigachat.llms.gigachat import GigaChat
 
     return GigaChat
 

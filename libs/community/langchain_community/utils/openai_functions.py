@@ -2,7 +2,6 @@
 
 from langchain_core.utils.function_calling import (
     FunctionDescription,
-    GigaFunctionDescription,
     ToolDescription,
     convert_pydantic_to_openai_function,
     convert_pydantic_to_openai_tool,
@@ -10,7 +9,6 @@ from langchain_core.utils.function_calling import (
 
 __all__ = [
     "FunctionDescription",
-    "GigaFunctionDescription",
     "ToolDescription",
     "convert_pydantic_to_openai_function",
     "convert_pydantic_to_openai_tool",
