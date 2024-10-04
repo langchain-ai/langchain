@@ -34,8 +34,10 @@ def test_anthropic_model_kwargs() -> None:
 
 @pytest.mark.requires("anthropic")
 def test_anthropic_invalid_model_kwargs() -> None:
-    with pytest.raises(ValueError):
-        ChatAnthropic(model_kwargs={"max_tokens_to_sample": 5})
+    llm = ChatAnthropic(model_kwargs={"max_tokens_to_sample": 5})
+    assert llm.max_tokens == 5
+    llm = ChatAnthropic(model_kwargs={"max_tokens": 5})
+    assert llm.max_tokens == 5
 
 
 @pytest.mark.requires("anthropic")

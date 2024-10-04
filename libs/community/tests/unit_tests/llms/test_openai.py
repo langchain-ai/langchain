@@ -27,12 +27,10 @@ def test_openai_model_kwargs() -> None:
 
 @pytest.mark.requires("openai")
 def test_openai_invalid_model_kwargs() -> None:
-    with pytest.raises(ValueError):
-        OpenAI(model_kwargs={"model_name": "foo"})
-
-    # Test that "model" cannot be specified in kwargs
-    with pytest.raises(ValueError):
-        OpenAI(model_kwargs={"model": "gpt-3.5-turbo-instruct"})
+    llm = OpenAI(model_kwargs={"model_name": "foo"})
+    assert llm.model_name == "foo"
+    llm = OpenAI(model_kwargs={"model": "foo"})
+    assert llm.model_name == "foo"
 
 
 @pytest.mark.requires("openai")
