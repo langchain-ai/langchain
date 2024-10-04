@@ -159,6 +159,13 @@ def test__merge_messages() -> None:
                     "text": None,
                     "name": "blah",
                 },
+                {
+                    "tool_input": {"a": "c"},
+                    "type": "tool_use",
+                    "id": "3",
+                    "text": None,
+                    "name": "blah",
+                },
             ]
         ),
         ToolMessage("buz output", tool_call_id="1", status="error"),  # type: ignore[misc]
@@ -175,6 +182,7 @@ def test__merge_messages() -> None:
             ],
             tool_call_id="2",
         ),  # type: ignore[misc]
+        ToolMessage([], tool_call_id="3"),  # type: ignore[misc]
         HumanMessage("next thing"),  # type: ignore[misc]
     ]
     expected = [
@@ -195,6 +203,13 @@ def test__merge_messages() -> None:
                     "tool_input": {"a": "c"},
                     "type": "tool_use",
                     "id": "2",
+                    "text": None,
+                    "name": "blah",
+                },
+                {
+                    "tool_input": {"a": "c"},
+                    "type": "tool_use",
+                    "id": "3",
                     "text": None,
                     "name": "blah",
                 },
@@ -221,6 +236,12 @@ def test__merge_messages() -> None:
                         },
                     ],
                     "tool_use_id": "2",
+                    "is_error": False,
+                },
+                {
+                    "type": "tool_result",
+                    "content": [],
+                    "tool_use_id": "3",
                     "is_error": False,
                 },
                 {"type": "text", "text": "next thing"},
