@@ -128,9 +128,9 @@ def test__format_output_cached() -> None:
     expected = AIMessage(  # type: ignore[misc]
         "bar",
         usage_metadata={
-            "input_tokens": 2,
+            "input_tokens": 9,
             "output_tokens": 1,
-            "total_tokens": 3,
+            "total_tokens": 10,
             "input_token_details": {"cache_creation": 3, "cache_read": 4},
         },
     )
