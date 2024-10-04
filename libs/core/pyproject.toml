@@ -45,7 +45,7 @@ python = ">=3.12.4"
 
 [tool.ruff.lint]
 select = [ "B", "C4", "E", "F", "I", "N", "PIE", "SIM", "T201", "UP", "W",]
-ignore = [ "UP007",]
+ignore = [ "UP007", 'W293']
 
 [tool.coverage.run]
 omit = [ "tests/*",]
