@@ -266,7 +266,7 @@ def _create_subset_model_v2(
     fn_description: Optional[str] = None,
 ) -> type[pydantic.BaseModel]:
     """Create a pydantic model with a subset of the model fields."""
-    from pydantic import create_model
+    from pydantic import ConfigDict, create_model
     from pydantic.fields import FieldInfo
 
     descriptions_ = descriptions or {}
@@ -278,7 +278,10 @@ def _create_subset_model_v2(
         if field.metadata:
             field_info.metadata = field.metadata
         fields[field_name] = (field.annotation, field_info)
-    rtn = create_model(name, **fields)  # type: ignore
+
+    rtn = create_model(  # type: ignore
+        name, **fields, __config__=ConfigDict(arbitrary_types_allowed=True)
+    )
 
     # TODO(0.3): Determine if there is a more "pydantic" way to preserve annotations.
     # This is done to preserve __annotations__ when working with pydantic 2.x
