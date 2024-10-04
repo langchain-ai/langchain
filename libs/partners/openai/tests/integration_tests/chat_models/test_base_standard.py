@@ -40,10 +40,7 @@ class TestOpenAIStandard(ChatModelIntegrationTests):
             ]
         ],
     ]:
-        return {
-            "invoke": ["reasoning_output", "cache_read_input"],
-            "stream": [],
-        }
+        return {"invoke": ["reasoning_output", "cache_read_input"], "stream": []}
 
     def invoke_with_cache_read_input(self, *, stream: bool = False) -> AIMessage:
         with open(REPO_ROOT_DIR / "README.md", "r") as f:
