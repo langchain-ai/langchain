@@ -492,7 +492,6 @@ def _package_dir(package_name: str = "langchain") -> Path:
         "langchain",
         "experimental",
         "community",
-        "core",
         "cli",
         "text-splitters",
     ):
@@ -534,7 +533,7 @@ def _build_index(dirs: List[str]) -> None:
         "aws": "AWS",
         "ai21": "AI21",
     }
-    ordered = ["core", "langchain", "text-splitters", "community", "experimental"]
+    ordered = ["langchain", "text-splitters", "community", "experimental"]
     main_ = [dir_ for dir_ in ordered if dir_ in dirs]
     integrations = sorted(dir_ for dir_ in dirs if dir_ not in main_)
     doc = """# LangChain Python API Reference

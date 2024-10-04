@@ -9,7 +9,6 @@ from pathlib import Path
 
 
 LANGCHAIN_DIRS = [
-    "libs/core",
     "libs/langchain",
     "libs/community",
     "libs/experimental",
@@ -98,11 +97,6 @@ def add_dependents(dirs_to_eval: Set[str], dependents: dict) -> List[str]:
 
 
 def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
-    if dir_ == "libs/core":
-        return [
-            {"working-directory": dir_, "python-version": f"3.{v}"}
-            for v in range(8, 13)
-        ]
     min_python = "3.8"
     max_python = "3.12"
 
