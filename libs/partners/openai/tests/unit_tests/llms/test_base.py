@@ -30,7 +30,8 @@ def test_openai_model_kwargs() -> None:
     assert llm.model_kwargs == {"foo": "bar"}
 
 
-def test_openai_invalid_model_kwargs() -> None:
+def test_openai_fields_in_model_kwargs() -> None:
+    """Test that for backwards compatibility fields can be passed in as model_kwargs."""
     llm = OpenAI(model_kwargs={"model_name": "foo"})
     assert llm.model_name == "foo"
     llm = OpenAI(model_kwargs={"model": "foo"})
