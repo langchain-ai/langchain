@@ -249,6 +249,7 @@ def build_model_kwargs(
         for k in invalid_model_kwargs:
             values[k] = extra_kwargs.pop(k)
 
+    values["model_kwargs"] = extra_kwargs
     return values
 
 

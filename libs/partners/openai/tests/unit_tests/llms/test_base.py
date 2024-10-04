@@ -31,8 +31,10 @@ def test_openai_model_kwargs() -> None:
 
 
 def test_openai_invalid_model_kwargs() -> None:
-    with pytest.raises(ValueError):
-        OpenAI(model_kwargs={"model_name": "foo"})
+    llm = OpenAI(model_kwargs={"model_name": "foo"})
+    assert llm.model_name == 'foo'
+    llm = OpenAI(model_kwargs={"model": "foo"})
+    assert llm.model_name == 'foo'
 
 
 def test_openai_incorrect_field() -> None:
