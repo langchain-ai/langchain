@@ -244,7 +244,8 @@ def build_model_kwargs(
     if invalid_model_kwargs:
         warnings.warn(
             f"Parameters {invalid_model_kwargs} should be specified explicitly. "
-            f"Instead they were passed in as part of `model_kwargs` parameter."
+            f"Instead they were passed in as part of `model_kwargs` parameter.",
+            stacklevel=7,
         )
         for k in invalid_model_kwargs:
             values[k] = extra_kwargs.pop(k)
