@@ -1615,6 +1615,7 @@ def test_faiss_document_ids() -> None:
     vstore = FAISS.from_texts(texts, FakeEmbeddings(), ids=ids)
     for id_, text in (ids, texts):
         doc = vstore.docstore.search(id_)
+        assert isinstance(doc, Document)
         assert doc.id == id_
         assert doc.page_content == text
 
