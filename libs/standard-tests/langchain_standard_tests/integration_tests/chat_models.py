@@ -176,6 +176,15 @@ class ChatModelIntegrationTests(ChatModelTests):
                 int,
             )
 
+        if msg.uage_metadata.get("input_token_details"):
+            assert msg.usage_metadata["input_tokens"] >= sum(
+                (v or 0) for v in msg.usage_metadata["input_token_details"].values()
+            )
+        if msg.uage_metadata.get("output_token_details"):
+            assert msg.usage_metadata["output_tokens"] >= sum(
+                (v or 0) for v in msg.usage_metadata["output_token_details"].values()
+            )
+
     def test_usage_metadata_streaming(self, model: BaseChatModel) -> None:
         if not self.returns_usage_metadata:
             pytest.skip("Not implemented.")
