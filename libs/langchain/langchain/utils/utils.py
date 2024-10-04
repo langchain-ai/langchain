@@ -1,5 +1,5 @@
 from langchain_core.utils.utils import (
-    _build_model_kwargs,
+    build_extra_kwargs,
     check_package_version,
     convert_to_secret_str,
     get_pydantic_field_names,
@@ -16,6 +16,6 @@ __all__ = [
     "guard_import",
     "check_package_version",
     "get_pydantic_field_names",
-    "_build_model_kwargs",
+    "build_extra_kwargs",
     "convert_to_secret_str",
 ]
