@@ -27,9 +27,9 @@ def test_openai_model_kwargs() -> None:
 
 @pytest.mark.requires("openai")
 def test_openai_invalid_model_kwargs() -> None:
-    llm = OpenAI(model_kwargs={"model_name": "foo"})
+    llm = OpenAI(model_kwargs={"model_name": "foo"}, openai_api_key="foo")
     assert llm.model_name == "foo"
-    llm = OpenAI(model_kwargs={"model": "foo"})
+    llm = OpenAI(model_kwargs={"model": "foo"}, openai_api_key="foo")
     assert llm.model_name == "foo"
 
 
