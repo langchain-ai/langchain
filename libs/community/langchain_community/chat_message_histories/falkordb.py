@@ -103,9 +103,17 @@ class FalkorDBChatMessageHistory(BaseChatMessageHistory):
         self._window = window
 
         self._database.query(
-            f"MERGE (s:`{self._node_label}` {{id:$session_id}})",
+            f"MERGE (s:{self._node_label} {{id:$session_id}})",
             {"session_id": self._session_id},
         )
+
+        try:
+            self._database.create_node_vector_index(
+                f"{self._node_label}", "id", dim=5, similarity_function="cosine"
+            )
+        except Exception as e:
+            if "already indexed" in e:
+                raise ValueError(f"{self._node_label} has already been indexed")
 
     def _process_records(self, records: list) -> list:
         """Process the records from FalkorDB and convert them into BaseMessage objects.
@@ -147,7 +155,7 @@ class FalkorDBChatMessageHistory(BaseChatMessageHistory):
             List[BaseMessage]: A list of messages in the current session.
         """
         query = (
-            f"MATCH (s:`{self._node_label}`)-[:LAST_MESSAGE]->(last_message) "
+            f"MATCH (s:{self._node_label})-[:LAST_MESSAGE]->(last_message) "
             "WHERE s.id = $session_id MATCH p=(last_message)<-[:NEXT*0.."
             f"{self._window*2}]-() WITH p, length(p) AS length "
             "ORDER BY length DESC LIMIT 1 UNWIND reverse(nodes(p)) AS node "
@@ -176,7 +184,7 @@ class FalkorDBChatMessageHistory(BaseChatMessageHistory):
             message (BaseMessage): The message object to add to the session.
         """
         create_query = (
-            f"MATCH (s:`{self._node_label}`) WHERE s.id = $session_id "
+            f"MATCH (s:{self._node_label}) WHERE s.id = $session_id "
             "CREATE (new:Message {type: $type, content: $content}) "
             "WITH s, new "
             "OPTIONAL MATCH (s)-[lm:LAST_MESSAGE]->(last_message:Message) "
@@ -203,7 +211,7 @@ class FalkorDBChatMessageHistory(BaseChatMessageHistory):
             ValueError: If there is an issue with the query or the session.
         """
         query = (
-            f"MATCH (s:`{self._node_label}`)-[:LAST_MESSAGE|NEXT*0..]->(m:Message) "
+            f"MATCH (s:{self._node_label})-[:LAST_MESSAGE|NEXT*0..]->(m:Message) "
             "WHERE s.id = $session_id "
             "WITH m DELETE m"
         )
