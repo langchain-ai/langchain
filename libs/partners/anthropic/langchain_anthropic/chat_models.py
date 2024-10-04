@@ -56,13 +56,13 @@ from langchain_core.runnables import (
 )
 from langchain_core.tools import BaseTool
 from langchain_core.utils import (
-    _build_model_kwargs,
     from_env,
     get_pydantic_field_names,
     secret_from_env,
 )
 from langchain_core.utils.function_calling import convert_to_openai_tool
 from langchain_core.utils.pydantic import is_basemodel_subclass
+from langchain_core.utils.utils import _build_model_kwargs
 from pydantic import (
     BaseModel,
     ConfigDict,
