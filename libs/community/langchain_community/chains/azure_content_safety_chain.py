@@ -78,7 +78,7 @@ class AzureAIContentSafetyChain(Chain):
             moderated_chain.invoke({"input": "Hey, How are you?"})
     """
 
-    client: Any  #: :meta private:
+    client: Any = None #: :meta private:
     error: bool = False
     """Whether or not to error if bad content was found."""
     input_key: str = "input"  #: :meta private:
