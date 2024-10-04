@@ -191,6 +191,7 @@ class FireCrawlLoader(BaseLoader):
         url: str,
         *,
         api_key: Optional[str] = None,
+        api_url: Optional[str] = None,
         mode: Literal["crawl", "scrape", "map"] = "crawl",
         params: Optional[dict] = None,
     ):
