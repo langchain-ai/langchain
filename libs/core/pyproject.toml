@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-core"
-version = "0.3.8"
+version = "0.3.9"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -45,7 +45,7 @@ python = ">=3.12.4"
 
 [tool.ruff.lint]
 select = [ "B", "C4", "E", "F", "I", "N", "PIE", "SIM", "T201", "UP", "W",]
-ignore = [ "UP007", 'W293']
+ignore = [ "UP007", "W293",]
 
 [tool.coverage.run]
 omit = [ "tests/*",]
