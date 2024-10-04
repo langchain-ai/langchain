@@ -5,8 +5,11 @@ from typing import Any, Callable, Dict, Literal, Type, cast
 
 import pytest
 from anthropic.types import Message, TextBlock, Usage
+from anthropic.types.beta.prompt_caching import (
+    PromptCachingBetaMessage,
+    PromptCachingBetaUsage,
+)
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
-from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.runnables import RunnableBinding
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel, Field, SecretStr
@@ -89,30 +92,49 @@ def test__format_output() -> None:
         usage=Usage(input_tokens=2, output_tokens=1),
         type="message",
     )
-    expected = ChatResult(
-        generations=[
-            ChatGeneration(
-                message=AIMessage(  # type: ignore[misc]
-                    "bar",
-                    usage_metadata={
-                        "input_tokens": 2,
-                        "output_tokens": 1,
-                        "total_tokens": 3,
-                    },
-                )
-            ),
-        ],
-        llm_output={
-            "id": "foo",
-            "model": "baz",
-            "stop_reason": None,
-            "stop_sequence": None,
-            "usage": {"input_tokens": 2, "output_tokens": 1},
+    expected = AIMessage(  # type: ignore[misc]
+        "bar",
+        usage_metadata={
+            "input_tokens": 2,
+            "output_tokens": 1,
+            "total_tokens": 3,
+            "input_token_details": {},
         },
     )
     llm = ChatAnthropic(model="test", anthropic_api_key="test")  # type: ignore[call-arg, call-arg]
     actual = llm._format_output(anthropic_msg)
-    assert expected == actual
+    assert actual.generations[0].message == expected
+
+
+def test__format_output_cached() -> None:
+    anthropic_msg = PromptCachingBetaMessage(
+        id="foo",
+        content=[TextBlock(type="text", text="bar")],
+        model="baz",
+        role="assistant",
+        stop_reason=None,
+        stop_sequence=None,
+        usage=PromptCachingBetaUsage(
+            input_tokens=2,
+            output_tokens=1,
+            cache_creation_input_tokens=3,
+            cache_read_input_tokens=4,
+        ),
+        type="message",
+    )
+    expected = AIMessage(  # type: ignore[misc]
+        "bar",
+        usage_metadata={
+            "input_tokens": 2,
+            "output_tokens": 1,
+            "total_tokens": 3,
+            "input_token_details": {"cache_creation": 3, "cache_read": 4},
+        },
+    )
+
+    llm = ChatAnthropic(model="test", anthropic_api_key="test")  # type: ignore[call-arg, call-arg]
+    actual = llm._format_output(anthropic_msg)
+    assert actual.generations[0].message == expected
 
 
 def test__merge_messages() -> None:
