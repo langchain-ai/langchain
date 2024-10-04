@@ -32,7 +32,7 @@ async def test_inline_handlers_share_parent_context() -> None:
     which in some cases were triggered with multiple prompts and as a result
     triggering multiple tasks that were launched in parallel.
     """
-    some_var = contextvars.ContextVar("some_var")
+    some_var: contextvars.ContextVar[str] = contextvars.ContextVar("some_var")
 
     class CustomHandler(AsyncCallbackHandler):
         """A handler that sets the context variable.
@@ -45,7 +45,7 @@ async def test_inline_handlers_share_parent_context() -> None:
             """Initialize the handler."""
             self.run_inline = run_inline
 
-        async def on_llm_start(self, *args, **kwargs) -> None:
+        async def on_llm_start(self, *args: Any, **kwargs: Any) -> None:
             """Update the callstack with the name of the callback."""
             some_var.set("on_llm_start")
 
