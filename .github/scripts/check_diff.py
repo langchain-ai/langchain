@@ -97,7 +97,7 @@ def add_dependents(dirs_to_eval: Set[str], dependents: dict) -> List[str]:
 
 
 def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
-    min_python = "3.8"
+    min_python = "3.9"
     max_python = "3.12"
 
     # custom logic for specific directories
