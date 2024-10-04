@@ -1253,7 +1253,12 @@ def _create_usage_metadata(anthropic_usage: BaseModel) -> UsageMetadata:
         "cache_creation": getattr(anthropic_usage, "cache_creation_input_tokens", None),
     }
 
-    input_tokens = getattr(anthropic_usage, "input_tokens", 0)
+    # Anthropic input_tokens exclude cached token counts.
+    input_tokens = (
+        getattr(anthropic_usage, "input_tokens", 0)
+        + (input_token_details["cache_read"] or 0)
+        + (input_token_details["cache_creation"] or 0)
+    )
     output_tokens = getattr(anthropic_usage, "output_tokens", 0)
     return UsageMetadata(
         input_tokens=input_tokens,
