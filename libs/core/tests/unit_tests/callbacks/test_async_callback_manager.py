@@ -13,15 +13,12 @@ from uuid import UUID
 from langchain_core.callbacks import (
     AsyncCallbackHandler,
     AsyncCallbackManager,
-)
-from langchain_core.callbacks import (
     BaseCallbackHandler,
 )
 
 
-async def test_inline_handlers_inherit_context_from_parent_scope() -> None:
-    """Verify that handlers that are configured to run_inline share
-    the same context as the parent scope.
+async def test_inline_handlers_share_parent_context() -> None:
+    """Verify that handlers that are configured to run_inline can update parent context.
 
     This test was created because some of the inline handlers were getting
     their own context as the handling logic was kicked off using asyncio.gather
@@ -35,10 +32,7 @@ async def test_inline_handlers_inherit_context_from_parent_scope() -> None:
     which in some cases were triggered with multiple prompts and as a result
     triggering multiple tasks that were launched in parallel.
     """
-    # The context variable that will be used to store the name of the callback that was
-    # called.
-    # We'll use this to verify that the correct callback was called.
-    call_stack = contextvars.ContextVar("call_stack")
+    some_var = contextvars.ContextVar("some_var")
 
     class CustomHandler(AsyncCallbackHandler):
         """A handler that sets the context variable.
@@ -47,46 +41,38 @@ async def test_inline_handlers_inherit_context_from_parent_scope() -> None:
         called.
         """
 
-        def __init__(self, name: str, run_inline: bool) -> None:
+        def __init__(self, run_inline: bool) -> None:
             """Initialize the handler."""
-            self.name = name
             self.run_inline = run_inline
 
         async def on_llm_start(self, *args, **kwargs) -> None:
             """Update the callstack with the name of the callback."""
-            stack = call_stack.get()
-            stack.append(f"{self.name}:on_llm_start")
-            call_stack.set(stack)
+            some_var.set("on_llm_start")
 
     # The manager serves as a callback dispatcher.
     # It's responsible for dispatching callbacks to all registered handlers.
-    manager = AsyncCallbackManager(
-        handlers=[CustomHandler(name="foo", run_inline=True)]
-    )
+    manager = AsyncCallbackManager(handlers=[CustomHandler(run_inline=True)])
 
     # Check on_llm_start
-    call_stack.set([])
+    some_var.set("unset")
     await manager.on_llm_start({}, ["prompt 1"])
-    assert call_stack.get() == ["foo:on_llm_start"]
-    call_stack.set([])
-    # Will be called twice
-    await manager.on_llm_start({}, ["prompt 1", "prompt 2"])
-    assert call_stack.get() == ["foo:on_llm_start", "foo:on_llm_start"]
+    assert some_var.get() == "on_llm_start"
 
-    # This unit test will confirm that when the handler is not inline
-    # that the context is not shared. (This is the expected behavior)
-
+    # Check what happens when run_inline is False
+    # We don't expect the context to be updated
     manager2 = AsyncCallbackManager(
-        handlers=[CustomHandler(name="foo", run_inline=False)]
+        handlers=[
+            CustomHandler(run_inline=False),
+        ]
     )
-    # Check on_llm_start
-    call_stack.set([])
-    assert call_stack.get() == []
+
+    some_var.set("unset")
     await manager2.on_llm_start({}, ["prompt 1"])
-    assert call_stack.get() == []
+    # Will not be updated because the handler is not inline
+    assert some_var.get() == "unset"
 
 
-async def test_inline_handlers_inherit_context_from_parent_scope_multiple() -> None:
+async def test_inline_handlers_share_parent_context_multiple() -> None:
     """A slightly more complex variation of the test unit test above.
 
     This unit test verifies that things work correctly when there are multiple prompts,
