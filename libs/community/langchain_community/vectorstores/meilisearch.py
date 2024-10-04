@@ -65,15 +65,9 @@ class Meilisearch(VectorStore):
             # api_key is optional; provide it if your meilisearch instance requires it
             client = meilisearch.Client(url='http://127.0.0.1:7700', api_key='***')
             embeddings = OpenAIEmbeddings()
-            embedders = {
-                "theEmbedderName": {
-                    "source": "userProvided",
-                    "dimensions": "1536"
-                }
-            }
+
             vectorstore = Meilisearch(
                 embedding=embeddings,
-                embedders=embedders,
                 client=client,
                 index_name='langchain_demo',
                 text_key='text')
@@ -88,8 +82,6 @@ class Meilisearch(VectorStore):
         index_name: str = "langchain-demo",
         text_key: str = "text",
         metadata_key: str = "metadata",
-        *,
-        embedders: Optional[Dict[str, Any]] = None,
     ):
         """Initialize with Meilisearch client."""
         client = _create_client(client=client, url=url, api_key=api_key)
@@ -99,10 +91,6 @@ class Meilisearch(VectorStore):
         self._embedding = embedding
         self._text_key = text_key
         self._metadata_key = metadata_key
-        self._embedders = embedders
-        self._embedders_settings = self._client.index(
-            str(self._index_name)
-        ).update_embedders(embedders)
 
     def add_texts(
         self,
@@ -301,7 +289,6 @@ class Meilisearch(VectorStore):
         ids: Optional[List[str]] = None,
         text_key: Optional[str] = "text",
         metadata_key: Optional[str] = "metadata",
-        embedders: Dict[str, Any] = {},
         embedder_name: Optional[str] = "default",
         **kwargs: Any,
     ) -> Meilisearch:
@@ -324,7 +311,6 @@ class Meilisearch(VectorStore):
                 # in your Meilisearch console
                 client = meilisearch.Client(url='http://127.0.0.1:7700', api_key='***')
                 embedding = OpenAIEmbeddings()
-                embedders: Embedders index setting.
                 embedder_name: Name of the embedder. Defaults to "default".
                 docsearch = Meilisearch.from_texts(
                     client=client,
@@ -335,7 +321,6 @@ class Meilisearch(VectorStore):
 
         vectorstore = cls(
             embedding=embedding,
-            embedders=embedders,
             client=client,
             index_name=index_name,
         )
