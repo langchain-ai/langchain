@@ -1,27 +1,40 @@
 import pytest
-from langchain_community.document_loaders.needle import NeedleLoader
+from needle.v1.models import CollectionFile, FileToAdd
 from pytest_mock import MockerFixture
-from needle.v1.models import FileToAdd, CollectionFile
+
+from langchain_community.document_loaders.needle import NeedleLoader
+
 
 # Mock NeedleClient class to simulate the Needle API interaction
 class MockNeedleClient:
     def __init__(self):
         self.collections = MockCollections()
 
+
 class MockCollections:
     def __init__(self):
         self.files = MockFiles()
 
+
 class MockFiles:
     def add(self, collection_id: str, files: list[FileToAdd]):
         # Simulate adding files successfully
-        return [CollectionFile(id="mock_id", name=file.name, url=file.url, status="indexed") for file in files]
+        return [
+            CollectionFile(id="mock_id", name=file.name, url=file.url, status="indexed")
+            for file in files
+        ]
 
     def list(self, collection_id: str):
         # Simulate listing files from the collection
         return [
-            CollectionFile(id="mock_id", name="tech-radar-30.pdf", url="https://mock-url.com", status="indexed")
+            CollectionFile(
+                id="mock_id",
+                name="tech-radar-30.pdf",
+                url="https://mock-url.com",
+                status="indexed",
+            )
         ]
+
 
 # Need to pass real API key and collection ID to test this function, otherwise fails
 @pytest.mark.usefixtures("socket_enabled")
@@ -31,8 +44,7 @@ def test_add_and_fetch_files(mocker: MockerFixture):
 
     # Initialize NeedleLoader with mock API key and collection ID
     document_store = NeedleLoader(
-        needle_api_key="YOUR_API_KEY",
-        collection_id="YOUR_COLLECTION_ID"
+        needle_api_key="YOUR_API_KEY", collection_id="YOUR_COLLECTION_ID"
     )
 
     # Define files to add
@@ -52,4 +64,3 @@ def test_add_and_fetch_files(mocker: MockerFixture):
     assert added_files[0].page_content == ""  # Mocked empty content
 
     print("Test passed: Files added and fetched successfully.")
-

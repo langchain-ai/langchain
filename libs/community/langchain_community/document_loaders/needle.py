@@ -1,8 +1,9 @@
 from typing import Iterator, List, Optional
-from needle.v1 import NeedleClient
-from needle.v1.models import FileToAdd
+
 from langchain_core.document_loaders.base import BaseLoader
 from langchain_core.documents import Document
+from needle.v1 import NeedleClient
+from needle.v1.models import FileToAdd
 
 
 class NeedleLoader(BaseLoader):
@@ -31,7 +32,9 @@ class NeedleLoader(BaseLoader):
     def _get_collection(self) -> None:
         """Ensures the collection ID is set."""
         if not self.client:
-            raise ValueError("NeedleClient is not initialized. Provide a valid API key.")
+            raise ValueError(
+                "NeedleClient is not initialized. Provide a valid API key."
+            )
         if not self.collection_id:
             raise ValueError("Collection ID must be provided.")
 
@@ -43,7 +46,9 @@ class NeedleLoader(BaseLoader):
         for name, url in files.items():
             files_to_add.append(FileToAdd(name=name, url=url))
 
-        self.client.collections.files.add(collection_id=self.collection_id, files=files_to_add)
+        self.client.collections.files.add(
+            collection_id=self.collection_id, files=files_to_add
+        )
 
     def _fetch_documents(self) -> List[Document]:
         """Lists documents from the Needle collection."""
@@ -56,10 +61,10 @@ class NeedleLoader(BaseLoader):
                 doc = Document(
                     page_content="",  # Empty content since Needle doesn't provide file content fetching
                     metadata={
-                        "source": file.url, 
+                        "source": file.url,
                         "title": file.name,
-                        "size": file.size if hasattr(file, 'size') else None,
-                    }
+                        "size": file.size if hasattr(file, "size") else None,
+                    },
                 )
                 docs.append(doc)
         return docs
@@ -67,7 +72,7 @@ class NeedleLoader(BaseLoader):
     def load(self) -> List[Document]:
         """Load documents from the Needle collection."""
         return self._fetch_documents()
-    
+
     def lazy_load(self) -> Iterator[Document]:
         """Lazy load documents."""
         for doc in self._fetch_documents():
