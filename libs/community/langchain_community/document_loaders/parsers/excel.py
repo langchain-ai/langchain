@@ -20,13 +20,14 @@ class ExcelParser(BaseBlobParser):
                 "htmltabletomd`."
             ) from e
         last_page = None
+        page_text: str = ""
         for element in elements:
             if element.metadata.page_number != last_page:
                 if last_page:
                     metadata = {"source": source, "title": element.metadata.page_name}  # type: ignore[attr-defined]
-                    yield Document(page_content=page_text, metadata=metadata)
-                page_text = f"# {element.metadata.page_name}\n"
-                last_page = element.metadata.page_number
+                    yield Document(page_content=page_text, metadata=metadata)  # type: ignore[attr-defined]
+                page_text: str = f"# {element.metadata.page_name}\n"
+                last_page: int = element.metadata.page_number
 
             if type(element).__name__ == "Title":
                 page_text += f"## {element.text}\n"
