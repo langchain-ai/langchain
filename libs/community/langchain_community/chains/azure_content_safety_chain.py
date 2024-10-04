@@ -49,7 +49,7 @@ class AzureAIContentSafetyChain(Chain):
 
     Setup:
         1. Follow the instructions here to deploy Azure AI Content Safety:
-            https://learn.microsoft.com/en-us/azure/ai-services/content-safety/overview
+            https://learn.microsoft.com/azure/ai-services/content-safety/overview
 
         2. Install ``langchain`` ``langchain_community`` and set the following
         environment variables:
