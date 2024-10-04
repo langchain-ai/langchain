@@ -23,8 +23,8 @@ from langchain_openai import ChatOpenAI
 from langchain_openai.chat_models.base import (
     _convert_dict_to_message,
     _convert_message_to_dict,
-    _format_message_content,
     _create_usage_metadata,
+    _format_message_content,
 )
 
 
