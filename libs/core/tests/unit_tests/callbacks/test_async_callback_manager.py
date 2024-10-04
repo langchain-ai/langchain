@@ -1,63 +1,142 @@
+"""Unit tests for verifying event dispatching.
+
+Much of this code is indirectly tested already through many end-to-end tests
+that generate traces based on the callbacks. The traces are all verified
+via snapshot testing (e.g., see unit tests for runnables).
+"""
+
 import contextvars
 from contextlib import asynccontextmanager
 from typing import Any, Optional
 from uuid import UUID
 
-import pytest
-
 from langchain_core.callbacks import (
     AsyncCallbackHandler,
     AsyncCallbackManager,
+)
+from langchain_core.callbacks import (
     BaseCallbackHandler,
 )
 
-counter_var = contextvars.ContextVar("counter", default=0)
 
-shared_stack = []
+async def test_inline_handlers_inherit_context_from_parent_scope() -> None:
+    """Verify that handlers that are configured to run_inline share
+    the same context as the parent scope.
+
+    This test was created because some of the inline handlers were getting
+    their own context as the handling logic was kicked off using asyncio.gather
+    which does not automatically propagate the parent context (by design).
+
+    This issue was affecting only a few specific handlers:
+
+    * on_llm_start
+    * on_chat_model_start
+
+    which in some cases were triggered with multiple prompts and as a result
+    triggering multiple tasks that were launched in parallel.
+    """
+    # The context variable that will be used to store the name of the callback that was
+    # called.
+    # We'll use this to verify that the correct callback was called.
+    call_stack = contextvars.ContextVar("call_stack")
+
+    class CustomHandler(AsyncCallbackHandler):
+        """A handler that sets the context variable.
+
+        The handler sets the context variable to the name of the callback that was
+        called.
+        """
+
+        def __init__(self, name: str, run_inline: bool) -> None:
+            """Initialize the handler."""
+            self.name = name
+            self.run_inline = run_inline
+
+        async def on_llm_start(self, *args, **kwargs) -> None:
+            """Update the callstack with the name of the callback."""
+            stack = call_stack.get()
+            stack.append(f"{self.name}:on_llm_start")
+            call_stack.set(stack)
+
+    # The manager serves as a callback dispatcher.
+    # It's responsible for dispatching callbacks to all registered handlers.
+    manager = AsyncCallbackManager(
+        handlers=[CustomHandler(name="foo", run_inline=True)]
+    )
+
+    # Check on_llm_start
+    call_stack.set([])
+    await manager.on_llm_start({}, ["prompt 1"])
+    assert call_stack.get() == ["foo:on_llm_start"]
+    call_stack.set([])
+    # Will be called twice
+    await manager.on_llm_start({}, ["prompt 1", "prompt 2"])
+    assert call_stack.get() == ["foo:on_llm_start", "foo:on_llm_start"]
+
+    # This unit test will confirm that when the handler is not inline
+    # that the context is not shared. (This is the expected behavior)
+
+    manager2 = AsyncCallbackManager(
+        handlers=[CustomHandler(name="foo", run_inline=False)]
+    )
+    # Check on_llm_start
+    call_stack.set([])
+    assert call_stack.get() == []
+    await manager2.on_llm_start({}, ["prompt 1"])
+    assert call_stack.get() == []
 
 
-@asynccontextmanager
-async def set_counter_var() -> Any:
-    token = counter_var.set(0)
-    try:
-        yield
-    finally:
-        counter_var.reset(token)
+async def test_inline_handlers_inherit_context_from_parent_scope_multiple() -> None:
+    """A slightly more complex variation of the test unit test above.
 
+    This unit test verifies that things work correctly when there are multiple prompts,
+    and multiple handlers that are configured to run inline.
+    """
+    counter_var = contextvars.ContextVar("counter", default=0)
 
-class StatefulAsyncCallbackHandler(AsyncCallbackHandler):
-    def __init__(self, name: str, run_inline: bool = True):
-        self.name = name
-        self.run_inline = run_inline
+    shared_stack = []
 
-    async def on_llm_start(
-        self,
-        serialized: dict[str, Any],
-        prompts: list[str],
-        *,
-        run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        **kwargs: Any,
-    ) -> None:
-        if self.name == "StateModifier":
-            current_counter = counter_var.get()
-            counter_var.set(current_counter + 1)
-            state = counter_var.get()
-        elif self.name == "StateReader":
-            state = counter_var.get()
-        else:
-            state = None
+    @asynccontextmanager
+    async def set_counter_var() -> Any:
+        token = counter_var.set(0)
+        try:
+            yield
+        finally:
+            counter_var.reset(token)
 
-        shared_stack.append(state)
+    class StatefulAsyncCallbackHandler(AsyncCallbackHandler):
+        def __init__(self, name: str, run_inline: bool = True):
+            self.name = name
+            self.run_inline = run_inline
 
-        await super().on_llm_start(
-            serialized, prompts, run_id=run_id, parent_run_id=parent_run_id, **kwargs
-        )
+        async def on_llm_start(
+            self,
+            serialized: dict[str, Any],
+            prompts: list[str],
+            *,
+            run_id: UUID,
+            parent_run_id: Optional[UUID] = None,
+            **kwargs: Any,
+        ) -> None:
+            if self.name == "StateModifier":
+                current_counter = counter_var.get()
+                counter_var.set(current_counter + 1)
+                state = counter_var.get()
+            elif self.name == "StateReader":
+                state = counter_var.get()
+            else:
+                state = None
 
+            shared_stack.append(state)
 
-@pytest.mark.xfail(reason="Context is not maintained across async calls")
-@pytest.mark.asyncio
-async def test_async_callback_manager_context_loss() -> None:
+            await super().on_llm_start(
+                serialized,
+                prompts,
+                run_id=run_id,
+                parent_run_id=parent_run_id,
+                **kwargs,
+            )
+
     handlers: list[BaseCallbackHandler] = [
         StatefulAsyncCallbackHandler("StateModifier", run_inline=True),
         StatefulAsyncCallbackHandler("StateReader", run_inline=True),
