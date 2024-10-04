@@ -520,6 +520,11 @@ SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "structured",
         "StructuredPrompt",
     ),
+    ("langchain_aws", "chat_models", "ChatBedrockConverse"): (
+        "langchain_aws",
+        "chat_models",
+        "ChatBedrockConverse",
+    ),
 }
 
 # Needed for backwards compatibility for old versions of LangChain where things
