@@ -1,7 +1,7 @@
 """Standard LangChain interface tests"""
 
 from pathlib import Path
-from typing import List, Literal, Type, cast
+from typing import Dict, List, Literal, Type, cast
 
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage
@@ -36,16 +36,22 @@ class TestAnthropicStandard(ChatModelIntegrationTests):
     @property
     def supported_usage_metadata_details(
         self,
-    ) -> List[
-        Literal[
-            "audio_input",
-            "audio_output",
-            "reasoning_output",
-            "cache_read_input",
-            "cache_creation_input",
-        ]
+    ) -> Dict[
+        Literal["invoke", "stream"],
+        List[
+            Literal[
+                "audio_input",
+                "audio_output",
+                "reasoning_output",
+                "cache_read_input",
+                "cache_creation_input",
+            ]
+        ],
     ]:
-        return ["cache_read_input", "cache_creation_input"]
+        return {
+            "invoke": ["cache_read_input", "cache_creation_input"],
+            "stream": ["cache_read_input", "cache_creation_input"],
+        }
 
     def invoke_with_cache_creation_input(self, *, stream: bool = False) -> AIMessage:
         llm = ChatAnthropic(
