@@ -25,7 +25,7 @@ from langchain_core.utils import (
     get_pydantic_field_names,
 )
 from langchain_core.utils.utils import (
-    build_model_kwargs,
+    _build_model_kwargs,
     from_env,
     secret_from_env,
 )
@@ -89,7 +89,7 @@ class _AnthropicCommon(BaseLanguageModel):
     @classmethod
     def build_extra(cls, values: Dict) -> Any:
         all_required_field_names = get_pydantic_field_names(cls)
-        values = build_model_kwargs(values, all_required_field_names)
+        values = _build_model_kwargs(values, all_required_field_names)
         return values
 
     @model_validator(mode="after")

@@ -210,7 +210,7 @@ def get_pydantic_field_names(pydantic_cls: Any) -> set[str]:
     return all_required_field_names
 
 
-def build_model_kwargs(
+def _build_model_kwargs(
     values: dict[str, Any],
     all_required_field_names: set[str],
 ) -> dict[str, Any]:
@@ -252,6 +252,48 @@ def build_model_kwargs(
 
     values["model_kwargs"] = extra_kwargs
     return values
+
+
+# DON'T USE! Kept for backwards-compatibility but should never have been public.
+def build_extra_kwargs(
+    extra_kwargs: dict[str, Any],
+    values: dict[str, Any],
+    all_required_field_names: set[str],
+) -> dict[str, Any]:
+    """Build extra kwargs from values and extra_kwargs.
+
+    Args:
+        extra_kwargs: Extra kwargs passed in by user.
+        values: Values passed in by user.
+        all_required_field_names: All required field names for the pydantic class.
+
+    Returns:
+        Dict[str, Any]: Extra kwargs.
+
+    Raises:
+        ValueError: If a field is specified in both values and extra_kwargs.
+        ValueError: If a field is specified in model_kwargs.
+    """
+    for field_name in list(values):
+        if field_name in extra_kwargs:
+            raise ValueError(f"Found {field_name} supplied twice.")
+        if field_name not in all_required_field_names:
+            warnings.warn(
+                f"""WARNING! {field_name} is not default parameter.
+                {field_name} was transferred to model_kwargs.
+                Please confirm that {field_name} is what you intended.""",
+                stacklevel=7,
+            )
+            extra_kwargs[field_name] = values.pop(field_name)
+
+    invalid_model_kwargs = all_required_field_names.intersection(extra_kwargs.keys())
+    if invalid_model_kwargs:
+        raise ValueError(
+            f"Parameters {invalid_model_kwargs} should be specified explicitly. "
+            f"Instead they were passed in as part of `model_kwargs` parameter."
+        )
+
+    return extra_kwargs
 
 
 def convert_to_secret_str(value: Union[SecretStr, str]) -> SecretStr:

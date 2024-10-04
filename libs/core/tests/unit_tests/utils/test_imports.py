@@ -18,7 +18,7 @@ EXPECTED_ALL = [
     "xor_args",
     "try_load_from_hub",
     "image",
-    "build_model_kwargs",
+    "build_extra_kwargs",
     "get_from_dict_or_env",
     "get_from_env",
     "stringify_dict",
