@@ -1417,7 +1417,7 @@ class LLM(BaseLLM):
     Please see the following guide for more information on how to
     implement a custom LLM:
 
-    https://python.langchain.com/v0.2/docs/how_to/custom_llm/
+    https://python.langchain.com/docs/how_to/custom_llm/
     """
 
     @abstractmethod

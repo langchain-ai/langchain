@@ -189,7 +189,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         +----------------------------------+--------------------------------------------------------------------+-------------------+
 
         Follow the guide for more information on how to implement a custom Chat Model:
-        [Guide](https://python.langchain.com/v0.2/docs/how_to/custom_chat_model/).
+        [Guide](https://python.langchain.com/docs/how_to/custom_chat_model/).
 
     """  # noqa: E501
 
@@ -1103,7 +1103,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     def bind_tools(
         self,
-        tools: Sequence[Union[typing.Dict[str, Any], type, Callable, BaseTool]],  # noqa: UP006
+        tools: Sequence[
+            Union[typing.Dict[str, Any], type, Callable, BaseTool]  # noqa: UP006
+        ],
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         raise NotImplementedError()
