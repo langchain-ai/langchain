@@ -93,6 +93,7 @@ if TYPE_CHECKING:
         MilvusRetriever,
     )
     from langchain_community.retrievers.nanopq import NanoPQRetriever
+    from langchain_community.retrievers.needle import NeedleRetriever
     from langchain_community.retrievers.outline import (
         OutlineRetriever,
     )
