@@ -98,7 +98,7 @@ class BaseLanguageModel(
     All language model wrappers inherited from BaseLanguageModel.
     """
 
-    cache: Union[BaseCache, bool, None] = None
+    cache: Union[BaseCache, bool, None] = Field(default=None, exclude=True)
     """Whether to cache the response.
 
     * If true, will use the global cache.
