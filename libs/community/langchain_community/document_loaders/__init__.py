@@ -299,7 +299,7 @@ if TYPE_CHECKING:
     from langchain_community.document_loaders.mongodb import (
         MongodbLoader,
     )
-        from langchain_community.document_loaders.needle import (
+    from langchain_community.document_loaders.needle import (
         NeedleLoader,
     )
     from langchain_community.document_loaders.news import (
