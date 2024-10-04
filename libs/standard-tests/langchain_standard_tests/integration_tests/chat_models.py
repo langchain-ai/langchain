@@ -154,14 +154,23 @@ class ChatModelIntegrationTests(ChatModelTests):
         if "audio_input" in self.supported_usage_metadata_details["invoke"]:
             msg = self.invoke_with_audio_input()
             assert isinstance(msg.usage_metadata["input_token_details"]["audio"], int)  # type: ignore[index]
+            assert msg.usage_metadata["input_tokens"] >= sum(
+                (v or 0) for v in msg.usage_metadata["input_token_details"].values()
+            )
         if "audio_output" in self.supported_usage_metadata_details["invoke"]:
             msg = self.invoke_with_audio_output()
             assert isinstance(msg.usage_metadata["output_token_details"]["audio"], int)  # type: ignore[index]
+            assert msg.usage_metadata["output_tokens"] >= sum(
+                (v or 0) for v in msg.usage_metadata["output_token_details"].values()
+            )
         if "reasoning_output" in self.supported_usage_metadata_details["invoke"]:
             msg = self.invoke_with_reasoning_output()
             assert isinstance(
                 msg.usage_metadata["output_token_details"]["reasoning"],  # type: ignore[index]
                 int,
+            )
+            assert msg.usage_metadata["output_tokens"] >= sum(
+                (v or 0) for v in msg.usage_metadata["output_token_details"].values()
             )
         if "cache_read_input" in self.supported_usage_metadata_details["invoke"]:
             msg = self.invoke_with_cache_read_input()
@@ -169,21 +178,19 @@ class ChatModelIntegrationTests(ChatModelTests):
                 msg.usage_metadata["input_token_details"]["cache_read"],  # type: ignore[index]
                 int,
             )
+            assert msg.usage_metadata["input_tokens"] >= sum(
+                (v or 0) for v in msg.usage_metadata["input_token_details"].values()
+            )
         if "cache_creation_input" in self.supported_usage_metadata_details["invoke"]:
             msg = self.invoke_with_cache_creation_input()
             assert isinstance(
                 msg.usage_metadata["input_token_details"]["cache_creation"],  # type: ignore[index]
                 int,
             )
-
-        if msg.usage_metadata.get("input_token_details"):
             assert msg.usage_metadata["input_tokens"] >= sum(
                 (v or 0) for v in msg.usage_metadata["input_token_details"].values()
             )
-        if msg.usage_metadata.get("output_token_details"):
-            assert msg.usage_metadata["output_tokens"] >= sum(
-                (v or 0) for v in msg.usage_metadata["output_token_details"].values()
-            )
+
 
     def test_usage_metadata_streaming(self, model: BaseChatModel) -> None:
         if not self.returns_usage_metadata:
