@@ -67,15 +67,15 @@ spell_fix:
 
 ## lint: Run linting on the project.
 lint lint_package lint_tests:
-	poetry run ruff check docs templates cookbook
-	poetry run ruff format docs templates cookbook --diff
-	poetry run ruff check --select I docs templates cookbook
-	git grep 'from langchain import' docs/docs templates cookbook | grep -vE 'from langchain import (hub)' && exit 1 || exit 0
+	poetry run ruff check docs cookbook
+	poetry run ruff format docs cookbook --diff
+	poetry run ruff check --select I docs cookbook
+	git grep 'from langchain import' docs/docs cookbook | grep -vE 'from langchain import (hub)' && exit 1 || exit 0
 
 ## format: Format the project files.
 format format_diff:
-	poetry run ruff format docs templates cookbook
-	poetry run ruff check --select I --fix docs templates cookbook
+	poetry run ruff format docs cookbook
+	poetry run ruff check --select I --fix docs cookbook
 
 ## resolve_lock_conflicts: Resolve all git conflicts in all poetry.lock files in all directories and add this files to the git index
 resolve_lock_conflicts:

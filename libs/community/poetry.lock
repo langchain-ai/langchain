@@ -1784,6 +1784,21 @@ tenacity = ">=8.1.0,<8.4.0 || >8.4.0,<9.0.0"
 typing-extensions = ">=4.7"
 
 [[package]]
+name = "langchain-gigachat"
+version = "0.2.1b6"
+description = "An integration package connecting GigaChat and LangChain"
+optional = false
+python-versions = "<4.0,>=3.9"
+files = [
+    {file = "langchain_gigachat-0.2.1b6-py3-none-any.whl", hash = "sha256:43a7232e598d99cbde8fa5151c56b85f9f0ea138ccd2dbc03c775df95e2aba81"},
+    {file = "langchain_gigachat-0.2.1b6.tar.gz", hash = "sha256:b05ff59b68f456a89c1d22eab085b4c47165c890147ba977d7ab507d82eaf69a"},
+]
+
+[package.dependencies]
+gigachat = ">=0.1.35,<0.2.0"
+langchain-core = ">=0.2.38,<0.3.0"
+
+[[package]]
 name = "langchain-standard-tests"
 version = "0.1.1"
 description = "Standard tests for LangChain implementations"
@@ -4344,4 +4359,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0"
-content-hash = "de391c56a2461f85838b4ac0b25c43c1978cba5c8daa5b0f935a07d5699f0b6b"
+content-hash = "b074bb5357e858986ca3523e95b5e19b6377526a7bc0688b507aeca4b03fc4a5"
