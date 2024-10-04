@@ -210,16 +210,14 @@ def get_pydantic_field_names(pydantic_cls: Any) -> set[str]:
     return all_required_field_names
 
 
-def build_extra_kwargs(
-    extra_kwargs: dict[str, Any],
+def build_model_kwargs(
     values: dict[str, Any],
     all_required_field_names: set[str],
 ) -> dict[str, Any]:
-    """Build extra kwargs from values and extra_kwargs.
+    """Build "model_kwargs" param from Pydanitc constructor values.
 
     Args:
-        extra_kwargs: Extra kwargs passed in by user.
-        values: Values passed in by user.
+        values: All init args passed in by user.
         all_required_field_names: All required field names for the pydantic class.
 
     Returns:
@@ -229,6 +227,7 @@ def build_extra_kwargs(
         ValueError: If a field is specified in both values and extra_kwargs.
         ValueError: If a field is specified in model_kwargs.
     """
+    extra_kwargs = values.get("model_kwargs", {})
     for field_name in list(values):
         if field_name in extra_kwargs:
             raise ValueError(f"Found {field_name} supplied twice.")
@@ -243,12 +242,14 @@ def build_extra_kwargs(
 
     invalid_model_kwargs = all_required_field_names.intersection(extra_kwargs.keys())
     if invalid_model_kwargs:
-        raise ValueError(
+        warnings.warn(
             f"Parameters {invalid_model_kwargs} should be specified explicitly. "
             f"Instead they were passed in as part of `model_kwargs` parameter."
         )
+        for k in invalid_model_kwargs:
+            values[k] = extra_kwargs.pop(k)
 
-    return extra_kwargs
+    return values
 
 
 def convert_to_secret_str(value: Union[SecretStr, str]) -> SecretStr:
