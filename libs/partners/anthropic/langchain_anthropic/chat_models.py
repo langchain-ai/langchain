@@ -56,13 +56,13 @@ from langchain_core.runnables import (
 )
 from langchain_core.tools import BaseTool
 from langchain_core.utils import (
-    build_extra_kwargs,
     from_env,
     get_pydantic_field_names,
     secret_from_env,
 )
 from langchain_core.utils.function_calling import convert_to_openai_tool
 from langchain_core.utils.pydantic import is_basemodel_subclass
+from langchain_core.utils.utils import _build_model_kwargs
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -118,9 +118,13 @@ def _merge_messages(
     for curr in messages:
         curr = curr.model_copy(deep=True)
         if isinstance(curr, ToolMessage):
-            if isinstance(curr.content, list) and all(
-                isinstance(block, dict) and block.get("type") == "tool_result"
-                for block in curr.content
+            if (
+                isinstance(curr.content, list)
+                and curr.content
+                and all(
+                    isinstance(block, dict) and block.get("type") == "tool_result"
+                    for block in curr.content
+                )
             ):
                 curr = HumanMessage(curr.content)  # type: ignore[misc]
             else:
@@ -646,11 +650,8 @@ class ChatAnthropic(BaseChatModel):
     @model_validator(mode="before")
     @classmethod
     def build_extra(cls, values: Dict) -> Any:
-        extra = values.get("model_kwargs", {})
         all_required_field_names = get_pydantic_field_names(cls)
-        values["model_kwargs"] = build_extra_kwargs(
-            extra, values, all_required_field_names
-        )
+        values = _build_model_kwargs(values, all_required_field_names)
         return values
 
     @model_validator(mode="after")
@@ -1252,7 +1253,12 @@ def _create_usage_metadata(anthropic_usage: BaseModel) -> UsageMetadata:
         "cache_creation": getattr(anthropic_usage, "cache_creation_input_tokens", None),
     }
 
-    input_tokens = getattr(anthropic_usage, "input_tokens", 0)
+    # Anthropic input_tokens exclude cached token counts.
+    input_tokens = (
+        getattr(anthropic_usage, "input_tokens", 0)
+        + (input_token_details["cache_read"] or 0)
+        + (input_token_details["cache_creation"] or 0)
+    )
     output_tokens = getattr(anthropic_usage, "output_tokens", 0)
     return UsageMetadata(
         input_tokens=input_tokens,
