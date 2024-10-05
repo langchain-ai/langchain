@@ -179,22 +179,27 @@ def pre_init(func: Callable) -> Any:
             for name, field_info in fields.items():
                 # Check if allow_population_by_field_name is enabled
                 # If yes, then set the field name to the alias
-                if hasattr(cls, "Config"):
-                    if hasattr(cls.Config, "allow_population_by_field_name"):
-                        if cls.Config.allow_population_by_field_name:
-                            if field_info.alias in values:
-                                values[name] = values.pop(field_info.alias)
-                if hasattr(cls, "model_config"):
-                    if cls.model_config.get("populate_by_name"):
-                        if field_info.alias in values:
-                            values[name] = values.pop(field_info.alias)
+                if (
+                    hasattr(cls, "Config")
+                    and hasattr(cls.Config, "allow_population_by_field_name")
+                    and cls.Config.allow_population_by_field_name
+                    and field_info.alias in values
+                ):
+                    values[name] = values.pop(field_info.alias)
+                if (
+                    hasattr(cls, "model_config")
+                    and cls.model_config.get("populate_by_name")
+                    and field_info.alias in values
+                ):
+                    values[name] = values.pop(field_info.alias)
 
-                if name not in values or values[name] is None:
-                    if not field_info.is_required():
-                        if field_info.default_factory is not None:
-                            values[name] = field_info.default_factory()
-                        else:
-                            values[name] = field_info.default
+                if (
+                    name not in values or values[name] is None
+                ) and not field_info.is_required():
+                    if field_info.default_factory is not None:
+                        values[name] = field_info.default_factory()
+                    else:
+                        values[name] = field_info.default
 
             # Call the decorated function
             return func(cls, values)
@@ -261,7 +266,7 @@ def _create_subset_model_v2(
     fn_description: Optional[str] = None,
 ) -> type[pydantic.BaseModel]:
     """Create a pydantic model with a subset of the model fields."""
-    from pydantic import create_model
+    from pydantic import ConfigDict, create_model
     from pydantic.fields import FieldInfo
 
     descriptions_ = descriptions or {}
@@ -273,7 +278,10 @@ def _create_subset_model_v2(
         if field.metadata:
             field_info.metadata = field.metadata
         fields[field_name] = (field.annotation, field_info)
-    rtn = create_model(name, **fields)  # type: ignore
+
+    rtn = create_model(  # type: ignore
+        name, **fields, __config__=ConfigDict(arbitrary_types_allowed=True)
+    )
 
     # TODO(0.3): Determine if there is a more "pydantic" way to preserve annotations.
     # This is done to preserve __annotations__ when working with pydantic 2.x
