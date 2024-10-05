@@ -5,6 +5,7 @@ https://learn.microsoft.com/en-us/graph/auth/
 """
 
 from datetime import datetime as dt
+from zoneinfo import ZoneInfo
 from typing import List, Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
@@ -46,7 +47,6 @@ class SendEventSchema(BaseModel):
         " hours from Coordinated Universal Time (UTC).",
     )
 
-
 class O365SendEvent(O365BaseTool):
     """Tool for sending calendar events in Office 365."""
 
@@ -73,12 +73,11 @@ class O365SendEvent(O365BaseTool):
 
         event.body = body
         event.subject = subject
-        event.start = dt.strptime(start_datetime, UTC_FORMAT)
-        event.end = dt.strptime(end_datetime, UTC_FORMAT)
+        event.start = dt.fromisoformat(start_datetime).replace(tzinfo=ZoneInfo("UTC"))
+        event.end = dt.fromisoformat(end_datetime).replace(tzinfo=ZoneInfo("UTC"))
         for attendee in attendees:
             event.attendees.add(attendee)
 
-        # TO-DO: Look into PytzUsageWarning
         event.save()
 
         output = "Event sent: " + str(event)
