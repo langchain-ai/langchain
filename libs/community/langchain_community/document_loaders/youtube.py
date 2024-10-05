@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+import collections.abc
 import logging
-from enum import Enum
+from enum import Enum, auto
 from pathlib import Path
 from typing import Any, Dict, Generator, List, Optional, Sequence, Union
 from urllib.parse import parse_qs, urlparse
@@ -114,7 +115,11 @@ ALLOWED_NETLOCS = {
 
 
 def _parse_video_id(url: str) -> Optional[str]:
-    """Parse a YouTube URL and return the video ID if valid, otherwise None."""
+    """
+    Parse a YouTube URL and return the video ID if valid, otherwise ``None``.
+    ``pytube.extract.video_id()`` could be used to extract the video ID, but
+    this function is more precise.
+    """
     parsed_url = urlparse(url)
 
     if parsed_url.scheme not in ALLOWED_SCHEMES:
@@ -123,11 +128,8 @@ def _parse_video_id(url: str) -> Optional[str]:
     if parsed_url.netloc not in ALLOWED_NETLOCS:
         return None
 
-    path = parsed_url.path
-
-    if path.endswith("/watch"):
-        query = parsed_url.query
-        parsed_query = parse_qs(query)
+    if parsed_url.path.endswith("/watch"):
+        parsed_query = parse_qs(parsed_url.query)
         if "v" in parsed_query:
             ids = parsed_query["v"]
             video_id = ids if isinstance(ids, str) else ids[0]
@@ -146,37 +148,66 @@ def _parse_video_id(url: str) -> Optional[str]:
 class TranscriptFormat(Enum):
     """Output formats of transcripts from `YoutubeLoader`."""
 
-    TEXT = "text"
-    LINES = "lines"
-    CHUNKS = "chunks"
+    TEXT = auto()
+    LINES = auto()
+    CHUNKS = auto()
 
 
 class YoutubeLoader(BaseLoader):
     """Load `YouTube` video transcripts."""
 
+    ADD_VIDEO_INFO_DEFAULT = False
+    LANGUAGE_DEFAULT = ["en"]
+    TRANSLATION_DEFAULT = None
+    TRANSCRIPT_FORMAT_DEFAULT = TranscriptFormat.TEXT
+    CHUNK_SIZE_SECONDS_DEFAULT = 120.0
+
     def __init__(
         self,
         video_id: str,
-        add_video_info: bool = False,
-        language: Union[str, Sequence[str]] = "en",
-        translation: Optional[str] = None,
-        transcript_format: TranscriptFormat = TranscriptFormat.TEXT,
-        continue_on_failure: bool = False,
-        chunk_size_seconds: int = 120,
+        add_video_info: bool = ADD_VIDEO_INFO_DEFAULT,
+        language: Union[Sequence[str], str] = LANGUAGE_DEFAULT,
+        translation: Optional[str] = TRANSLATION_DEFAULT,
+        transcript_format: TranscriptFormat = TRANSCRIPT_FORMAT_DEFAULT,
+        chunk_size_seconds: float = CHUNK_SIZE_SECONDS_DEFAULT,
     ):
-        """Initialize with YouTube video ID."""
-        self.video_id = video_id
-        self._metadata = {"source": video_id}
-        self.add_video_info = add_video_info
-        self.language = language
-        if isinstance(language, str):
-            self.language = [language]
+        """
+        Initialize with YouTube video ID.
+
+        :param video_id: ID string of YouTube video.
+        :param add_video_info: Boolean flag to add video info to transcripts.
+        :param language: List of language codes, in order of preference.
+        :param translation: Code of language to which transcripts will be translated.
+        :param transcript_format: Specifies which output format of transcripts to load.
+          Values from `TranscriptFormat` are `TEXT`, `LINES`, or `CHUNKS`.  All
+          formats are treated as `CHUNKS`, with `TEXT` using a `chunk_size_seconds`
+          value of `float("inf")` and `LINES` using a `chunk_size_seconds` value of `0`.
+        :param chunk_size_seconds: The maximum length of each chunk in seconds.
+        """
+
+        self.video_id = str(video_id).strip()
+        if len(self.video_id) == 0:
+            raise ValueError("Video ID cannot be empty.")
+
+        self._metadata = {"source": self.video_id}
+        self.add_video_info = bool(add_video_info)
+
+        self.language = (
+            language
+            if isinstance(language, collections.abc.MutableSequence)
+            else [str(language).strip()]
+        )
+
+        self.translation = None if translation is None else str(translation).strip()
+
+        if transcript_format == TranscriptFormat.TEXT:
+            self.chunk_size_seconds = float("inf")
+        elif transcript_format == TranscriptFormat.LINES:
+            self.chunk_size_seconds = 0.0
+        elif transcript_format == TranscriptFormat.CHUNKS:
+            self.chunk_size_seconds = float(chunk_size_seconds)
         else:
-            self.language = language
-        self.translation = translation
-        self.transcript_format = transcript_format
-        self.continue_on_failure = continue_on_failure
-        self.chunk_size_seconds = chunk_size_seconds
+            raise ValueError("Unknown transcript format.")
 
     @staticmethod
     def extract_video_id(youtube_url: str) -> str:
@@ -196,26 +227,36 @@ class YoutubeLoader(BaseLoader):
         video_id = cls.extract_video_id(youtube_url)
         return cls(video_id, **kwargs)
 
-    def _make_chunk_document(
-        self, chunk_pieces: List[Dict], chunk_start_seconds: int
+    def _make_document(
+        self,
+        transcript_pieces: List[Dict],
+        additional_metadata: Dict[str, Any] = {},
     ) -> Document:
         """Create Document from chunk of transcript pieces."""
-        m, s = divmod(chunk_start_seconds, 60)
-        h, m = divmod(m, 60)
         return Document(
             page_content=" ".join(
-                map(lambda chunk_piece: chunk_piece["text"].strip(" "), chunk_pieces)
+                map(
+                    lambda transcript_pieces: transcript_pieces["text"].strip(" "),
+                    transcript_pieces,
+                )
             ),
             metadata={
                 **self._metadata,
-                "start_seconds": chunk_start_seconds,
-                "start_timestamp": f"{h:02d}:{m:02d}:{s:02d}",
-                "source":
-                # replace video ID with URL to start time
-                f"https://www.youtube.com/watch?v={self.video_id}"
-                f"&t={chunk_start_seconds}s",
+                **additional_metadata,
             },
         )
+
+    def _make_chunk_metadata(
+        self, video_id: str, chunk_start_seconds: int
+    ) -> Dict[str, Any]:
+        m, s = divmod(chunk_start_seconds, 60)
+        h, m = divmod(m, 60)
+        return {
+            "start_seconds": chunk_start_seconds,
+            "start_timestamp": f"{h:02d}:{m:02d}:{s:02d}",
+            # replace video ID with URL to start time
+            "source": f"https://www.youtube.com/watch?v={self.video_id}&t={chunk_start_seconds}s",
+        }
 
     def _get_transcript_chunks(
         self, transcript_pieces: List[Dict]
@@ -227,7 +268,12 @@ class YoutubeLoader(BaseLoader):
             piece_end = transcript_piece["start"] + transcript_piece["duration"]
             if piece_end > chunk_time_limit:
                 if chunk_pieces:
-                    yield self._make_chunk_document(chunk_pieces, chunk_start_seconds)
+                    yield self._make_document(
+                        chunk_pieces,
+                        additional_metadata=self._make_chunk_metadata(
+                            self.video_id, chunk_start_seconds
+                        ),
+                    )
                 chunk_pieces = []
                 chunk_start_seconds = chunk_time_limit
                 chunk_time_limit += self.chunk_size_seconds
@@ -235,7 +281,12 @@ class YoutubeLoader(BaseLoader):
             chunk_pieces.append(transcript_piece)
 
         if len(chunk_pieces) > 0:
-            yield self._make_chunk_document(chunk_pieces, chunk_start_seconds)
+            yield self._make_document(
+                chunk_pieces,
+                additional_metadata=self._make_chunk_metadata(
+                    self.video_id, chunk_start_seconds
+                ),
+            )
 
     def load(self) -> List[Document]:
         """Load YouTube transcripts into `Document` objects."""
@@ -273,22 +324,14 @@ class YoutubeLoader(BaseLoader):
         transcript_pieces: List[Dict[str, Any]] = transcript.fetch()
 
         if self.transcript_format == TranscriptFormat.TEXT:
-            transcript = " ".join(
-                map(
-                    lambda transcript_piece: transcript_piece["text"].strip(" "),
-                    transcript_pieces,
-                )
-            )
-            return [Document(page_content=transcript, metadata=self._metadata)]
+            return [self._make_document(transcript_pieces)]
         elif self.transcript_format == TranscriptFormat.LINES:
             return list(
                 map(
-                    lambda transcript_piece: Document(
-                        page_content=transcript_piece["text"].strip(" "),
-                        metadata=dict(
-                            filter(
-                                lambda item: item[0] != "text", transcript_piece.items()
-                            )
+                    lambda transcript_piece: self._make_document(
+                        [transcript_piece],
+                        additional_metadata=dict(
+                            filter(lambda i: i[0] != "text", transcript_piece.items())
                         ),
                     ),
                     transcript_pieces,
@@ -296,7 +339,6 @@ class YoutubeLoader(BaseLoader):
             )
         elif self.transcript_format == TranscriptFormat.CHUNKS:
             return list(self._get_transcript_chunks(transcript_pieces))
-
         else:
             raise ValueError("Unknown transcript format.")
 
