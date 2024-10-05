@@ -63,7 +63,11 @@ from langchain_core.messages import (
     ToolMessage,
     ToolMessageChunk,
 )
-from langchain_core.messages.ai import UsageMetadata
+from langchain_core.messages.ai import (
+    InputTokenDetails,
+    OutputTokenDetails,
+    UsageMetadata,
+)
 from langchain_core.messages.tool import tool_call_chunk
 from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
 from langchain_core.output_parsers.openai_tools import (
@@ -86,7 +90,7 @@ from langchain_core.utils.pydantic import (
     TypeBaseModel,
     is_basemodel_subclass,
 )
-from langchain_core.utils.utils import build_extra_kwargs, from_env, secret_from_env
+from langchain_core.utils.utils import _build_model_kwargs, from_env, secret_from_env
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
@@ -286,16 +290,10 @@ def _convert_chunk_to_generation_chunk(
 ) -> Optional[ChatGenerationChunk]:
     token_usage = chunk.get("usage")
     choices = chunk.get("choices", [])
-    usage_metadata: Optional[UsageMetadata] = (
-        UsageMetadata(
-            input_tokens=token_usage.get("prompt_tokens", 0),
-            output_tokens=token_usage.get("completion_tokens", 0),
-            total_tokens=token_usage.get("total_tokens", 0),
-        )
-        if token_usage
-        else None
-    )
 
+    usage_metadata: Optional[UsageMetadata] = (
+        _create_usage_metadata(token_usage) if token_usage else None
+    )
     if len(choices) == 0:
         # logprobs is implicitly None
         generation_chunk = ChatGenerationChunk(
@@ -440,11 +438,11 @@ class BaseChatOpenAI(BaseChatModel):
     default_query: Union[Mapping[str, object], None] = None
     # Configure a custom httpx client. See the
     # [httpx documentation](https://www.python-httpx.org/api/#client) for more details.
-    http_client: Union[Any, None] = None
+    http_client: Union[Any, None] = Field(default=None, exclude=True)
     """Optional httpx.Client. Only used for sync invocations. Must specify 
         http_async_client as well if you'd like a custom client for async invocations.
     """
-    http_async_client: Union[Any, None] = None
+    http_async_client: Union[Any, None] = Field(default=None, exclude=True)
     """Optional httpx.AsyncClient. Only used for async invocations. Must specify 
         http_client as well if you'd like a custom client for sync invocations."""
     stop: Optional[Union[List[str], str]] = Field(default=None, alias="stop_sequences")
@@ -479,10 +477,7 @@ class BaseChatOpenAI(BaseChatModel):
     def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
-        extra = values.get("model_kwargs", {})
-        values["model_kwargs"] = build_extra_kwargs(
-            extra, values, all_required_field_names
-        )
+        values = _build_model_kwargs(values, all_required_field_names)
         return values
 
     @model_validator(mode="after")
@@ -721,15 +716,11 @@ class BaseChatOpenAI(BaseChatModel):
         if response_dict.get("error"):
             raise ValueError(response_dict.get("error"))
 
-        token_usage = response_dict.get("usage", {})
+        token_usage = response_dict.get("usage")
         for res in response_dict["choices"]:
             message = _convert_dict_to_message(res["message"])
             if token_usage and isinstance(message, AIMessage):
-                message.usage_metadata = {
-                    "input_tokens": token_usage.get("prompt_tokens", 0),
-                    "output_tokens": token_usage.get("completion_tokens", 0),
-                    "total_tokens": token_usage.get("total_tokens", 0),
-                }
+                message.usage_metadata = _create_usage_metadata(token_usage)
             generation_info = generation_info or {}
             generation_info["finish_reason"] = (
                 res.get("finish_reason")
@@ -1217,12 +1208,12 @@ class BaseChatOpenAI(BaseChatModel):
             Support for ``strict`` argument added.
             Support for ``method`` = "json_schema" added.
 
-        .. note:: Planned breaking changes in version `0.2.0`
+        .. note:: Planned breaking changes in version `0.3.0`
 
             - ``method`` default will be changed to "json_schema" from
                 "function_calling".
             - ``strict`` will default to True when ``method`` is
-                "function_calling" as of version `0.2.0`.
+                "function_calling" as of version `0.3.0`.
 
 
         .. dropdown:: Example: schema=Pydantic class, method="function_calling", include_raw=False, strict=True
@@ -2160,3 +2151,36 @@ class OpenAIRefusalError(Exception):
 
     .. versionadded:: 0.1.21
     """
+
+
+def _create_usage_metadata(oai_token_usage: dict) -> UsageMetadata:
+    input_tokens = oai_token_usage.get("prompt_tokens", 0)
+    output_tokens = oai_token_usage.get("completion_tokens", 0)
+    total_tokens = oai_token_usage.get("total_tokens", input_tokens + output_tokens)
+    input_token_details: dict = {
+        "audio": (oai_token_usage.get("prompt_tokens_details") or {}).get(
+            "audio_tokens"
+        ),
+        "cache_read": (oai_token_usage.get("prompt_tokens_details") or {}).get(
+            "cached_tokens"
+        ),
+    }
+    output_token_details: dict = {
+        "audio": (oai_token_usage.get("completion_tokens_details") or {}).get(
+            "audio_tokens"
+        ),
+        "reasoning": (oai_token_usage.get("completion_tokens_details") or {}).get(
+            "reasoning_tokens"
+        ),
+    }
+    return UsageMetadata(
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        total_tokens=total_tokens,
+        input_token_details=InputTokenDetails(
+            **{k: v for k, v in input_token_details.items() if v is not None}
+        ),
+        output_token_details=OutputTokenDetails(
+            **{k: v for k, v in output_token_details.items() if v is not None}
+        ),
+    )

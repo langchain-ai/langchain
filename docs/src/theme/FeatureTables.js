@@ -364,6 +364,12 @@ const FEATURE_TABLES = {
                 package: "langchain-databricks",
                 apiLink: "https://python.langchain.com/api_reference/nomic/embeddings/langchain_databricks.embeddings.DatabricksEmbeddings.html"
             },
+            {
+                name: "VoyageAI",
+                link: "voyageai",
+                package: "langchain-voyageai",
+                apiLink: "https://python.langchain.com/api_reference/voyageai/embeddings/langchain_voyageai.embeddings.VoyageAIEmbeddings.html"
+            },
         ]
     },
     document_retrievers: {
@@ -799,7 +805,7 @@ const FEATURE_TABLES = {
             {
                 name: "MathPix",
                 link: "mathpix",
-                source: "Uses MathPix to laod PDFs",
+                source: "Uses MathPix to load PDFs",
                 api: "Package",
                 apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.pdf.MathpixPDFLoader.html"
             },
@@ -1077,6 +1083,19 @@ const FEATURE_TABLES = {
                 async: true,
                 passesStandardTests: false,
                 multiTenancy: false,
+                local: true,
+                idsInAddDocuments: false,
+            },
+            {
+                name: "Weaviate",
+                link: "weaviate",
+                deleteById: true,
+                filtering: true,
+                searchByVector: true,
+                searchWithScore: true,
+                async: true,
+                passesStandardTests: false,
+                multiTenancy: true,
                 local: true,
                 idsInAddDocuments: false,
             }
