@@ -101,4 +101,3 @@ class ElevenLabsText2SpeechTool(BaseTool):
             stream(speech_stream)
         except Exception as e:
             raise RuntimeError(f"Error while streaming ElevenLabsText2SpeechTool: {e}")
-
