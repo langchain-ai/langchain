@@ -10,8 +10,8 @@ from pydantic import model_validator
 
 def _import_elevenlabs() -> Any:
     try:
-        from elevenlabs.client import ElevenLabs
         from elevenlabs import play, stream
+        from elevenlabs.client import ElevenLabs
     except ImportError as e:
         raise ImportError(
             "Cannot import elevenlabs, please install `pip install elevenlabs`."
