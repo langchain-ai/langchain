@@ -49,7 +49,9 @@ class ElevenLabsText2SpeechTool(BaseTool):
     def validate_environment(cls, values: Dict) -> Any:
         """Validate that API key exists in environment or is provided directly."""
         if not values.get("eleven_api_key"):
-            values["eleven_api_key"] = get_from_dict_or_env({}, "eleven_api_key", "ELEVEN_API_KEY")
+            values["eleven_api_key"] = get_from_dict_or_env(
+                {}, "eleven_api_key", "ELEVEN_API_KEY"
+            )
         return values
 
     def _run(
@@ -59,7 +61,9 @@ class ElevenLabsText2SpeechTool(BaseTool):
         ElevenLabs, _, _ = _import_elevenlabs()
         try:
             # Use the API key provided during initialization
-            api_key = self.eleven_api_key or get_from_dict_or_env({}, "eleven_api_key", "ELEVEN_API_KEY")
+            api_key = self.eleven_api_key or get_from_dict_or_env(
+                {}, "eleven_api_key", "ELEVEN_API_KEY"
+            )
             client = ElevenLabs(api_key=api_key)
             speech = client.generate(text=query, model=self.model)
 
@@ -87,7 +91,9 @@ class ElevenLabsText2SpeechTool(BaseTool):
         ElevenLabs, _, stream = _import_elevenlabs()
         try:
             # Use the API key provided during initialization
-            api_key = self.eleven_api_key or get_from_dict_or_env({}, "eleven_api_key", "ELEVEN_API_KEY")
+            api_key = self.eleven_api_key or get_from_dict_or_env(
+                {}, "eleven_api_key", "ELEVEN_API_KEY"
+            )
             client = ElevenLabs(api_key=api_key)
             # Generate the audio stream
             speech_stream = client.generate(text=query, model=self.model, stream=True)
