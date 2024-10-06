@@ -131,3 +131,73 @@ def test_ai(mocker: MockerFixture) -> None:
             metadata={"title": "Testing Files"},
         )
     ]
+
+
+# test ai retrieval with answer and citations
+def test_ai_answer_citations(mocker: MockerFixture) -> None:
+    mocker.patch(
+        "langchain_box.utilities._BoxAPIWrapper.ask_box_ai",
+        return_value=(
+            [
+                Document(
+                    page_content="Test file mode\ndocument contents",
+                    metadata={"title": "Testing Files"},
+                ),
+                Document(page_content="citation 1", metadata={"source": "source 1"}),
+                Document(page_content="citation 2", metadata={"source": "source 2"}),
+                Document(page_content="citation 3", metadata={"source": "source 3"}),
+                Document(page_content="citation 4", metadata={"source": "source 4"}),
+                Document(page_content="citation 5", metadata={"source": "source 5"}),
+            ]
+        ),
+    )
+
+    retriever = BoxRetriever(  # type: ignore[call-arg]
+        box_developer_token="box_developer_token",
+        box_file_ids=["box_file_ids"],
+        citations=True,
+    )
+
+    documents = retriever.invoke("query")
+    assert documents == [
+        Document(
+            page_content="Test file mode\ndocument contents",
+            metadata={"title": "Testing Files"},
+        ),
+        Document(page_content="citation 1", metadata={"source": "source 1"}),
+        Document(page_content="citation 2", metadata={"source": "source 2"}),
+        Document(page_content="citation 3", metadata={"source": "source 3"}),
+        Document(page_content="citation 4", metadata={"source": "source 4"}),
+        Document(page_content="citation 5", metadata={"source": "source 5"}),
+    ]
+
+
+# test ai retrieval with citations only
+def test_ai_citations_only(mocker: MockerFixture) -> None:
+    mocker.patch(
+        "langchain_box.utilities._BoxAPIWrapper.ask_box_ai",
+        return_value=(
+            [
+                Document(page_content="citation 1", metadata={"source": "source 1"}),
+                Document(page_content="citation 2", metadata={"source": "source 2"}),
+                Document(page_content="citation 3", metadata={"source": "source 3"}),
+                Document(page_content="citation 4", metadata={"source": "source 4"}),
+                Document(page_content="citation 5", metadata={"source": "source 5"}),
+            ]
+        ),
+    )
+
+    retriever = BoxRetriever(  # type: ignore[call-arg]
+        box_developer_token="box_developer_token",
+        box_file_ids=["box_file_ids"],
+        citations=True,
+    )
+
+    documents = retriever.invoke("query")
+    assert documents == [
+        Document(page_content="citation 1", metadata={"source": "source 1"}),
+        Document(page_content="citation 2", metadata={"source": "source 2"}),
+        Document(page_content="citation 3", metadata={"source": "source 3"}),
+        Document(page_content="citation 4", metadata={"source": "source 4"}),
+        Document(page_content="citation 5", metadata={"source": "source 5"}),
+    ]
