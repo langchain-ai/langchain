@@ -92,7 +92,7 @@ class _HashedDocument(Document):
         values["metadata_hash"] = metadata_hash
         values["hash_"] = str(_hash_string_to_uuid(content_hash + metadata_hash))
 
-        _uid = values.get("uid", None)
+        _uid = values.get("uid")
 
         if _uid is None:
             values["uid"] = values["hash_"]
@@ -386,16 +386,17 @@ def index(
 
             # mypy isn't good enough to determine that source ids cannot be None
             # here due to a check that's happening above, so we check again.
-            for source_id in source_ids:
-                if source_id is None:
-                    raise AssertionError("Source ids cannot be None here.")
+            if any(source_id is None for source_id in source_ids):
+                raise AssertionError("Source ids cannot be if cleanup=='incremental'.")
 
-            _source_ids = cast(Sequence[str], source_ids)
+            indexed_source_ids = cast(
+                Sequence[str], [source_id_assigner(doc) for doc in docs_to_index]
+            )
 
             uids_to_delete = record_manager.list_keys(
-                group_ids=_source_ids, before=index_start_dt
+                group_ids=indexed_source_ids, before=index_start_dt
             )
-            if uids_to_delete:
+            if indexed_source_ids and uids_to_delete:
                 # Then delete from vector store.
                 destination.delete(uids_to_delete)
                 # First delete from record store.
@@ -626,16 +627,17 @@ async def aindex(
 
             # mypy isn't good enough to determine that source ids cannot be None
             # here due to a check that's happening above, so we check again.
-            for source_id in source_ids:
-                if source_id is None:
-                    raise AssertionError("Source ids cannot be None here.")
+            if any(source_id is None for source_id in source_ids):
+                raise AssertionError("Source ids cannot be if cleanup=='incremental'.")
 
-            _source_ids = cast(Sequence[str], source_ids)
+            indexed_source_ids = cast(
+                Sequence[str], [source_id_assigner(doc) for doc in docs_to_index]
+            )
 
             uids_to_delete = await record_manager.alist_keys(
-                group_ids=_source_ids, before=index_start_dt
+                group_ids=indexed_source_ids, before=index_start_dt
             )
-            if uids_to_delete:
+            if indexed_source_ids and uids_to_delete:
                 # Then delete from vector store.
                 await destination.adelete(uids_to_delete)
                 # First delete from record store.
