@@ -18,12 +18,12 @@ class TreeSitterSegmenter(CodeSegmenter):
 
         try:
             import tree_sitter  # noqa: F401
-            import tree_sitter_languages  # noqa: F401
+            import tree_sitter_language_pack  # noqa: F401
         except ImportError:
             raise ImportError(
-                "Could not import tree_sitter/tree_sitter_languages Python packages. "
-                "Please install them with "
-                "`pip install tree-sitter tree-sitter-languages`."
+                "Could not import tree_sitter/tree_sitter_language_pack Python "
+                "packages. Please install them with "
+                "`pip install tree-sitter tree-sitter-language-pack`."
             )
 
     def is_valid(self) -> bool:

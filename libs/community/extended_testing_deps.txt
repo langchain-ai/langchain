@@ -85,7 +85,7 @@ tidb-vector>=0.0.3,<1.0.0
 timescale-vector==0.0.1
 tqdm>=4.48.0
 tree-sitter>=0.20.2,<0.21
-tree-sitter-languages>=1.8.0,<2
+tree-sitter-language-pack>=0.2.0,<0.3
 upstash-redis>=1.1.0,<2
 upstash-ratelimit>=1.1.0,<2
 vdms>=0.0.20

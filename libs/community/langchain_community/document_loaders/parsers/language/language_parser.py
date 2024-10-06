@@ -126,7 +126,7 @@ class LanguageParser(BaseBlobParser):
     - TypeScript: "ts" (*)
 
     Items marked with (*) require the packages `tree_sitter` and
-    `tree_sitter_languages`. It is straightforward to add support for additional
+    `tree_sitter_language_pack`. It is straightforward to add support for additional
     languages using `tree_sitter`, although this currently requires modifying LangChain.
 
     The language used for parsing can be configured, along with the minimum number of
