@@ -2090,3 +2090,18 @@ def test_structured_tool_direct_init() -> None:
 
     with pytest.raises(NotImplementedError):
         assert tool.invoke("hello") == "hello"
+
+
+def test_injected_arg_with_complex_type() -> None:
+    """Test that an injected tool arg can be a complex type."""
+
+    class Foo:
+        def __init__(self) -> None:
+            self.value = "bar"
+
+    @tool
+    def injected_tool(x: int, foo: Annotated[Foo, InjectedToolArg]) -> str:
+        """Tool that has an injected tool arg."""
+        return foo.value
+
+    assert injected_tool.invoke({"x": 5, "foo": Foo()}) == "bar"  # type: ignore
