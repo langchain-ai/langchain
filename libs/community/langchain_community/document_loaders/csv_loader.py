@@ -146,9 +146,7 @@ class CSVLoader(BaseLoader):
                     except UnicodeDecodeError:
                         continue
             else:
-                raise RuntimeError(f"Error loading {self.file_path}") from e
-        except Exception as e:
-            raise RuntimeError(f"Error loading {self.file_path}") from e
+                raise UnicodeDecodeError(f"Error loading {self.file_path}") from e
 
     def __read_file(self, csvfile: TextIOWrapper) -> Iterator[Document]:
         csv_reader = csv.DictReader(csvfile, **self.csv_args)

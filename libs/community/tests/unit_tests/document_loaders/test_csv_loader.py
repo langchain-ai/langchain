@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import pytest
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders.csv_loader import CSVLoader
@@ -128,6 +129,34 @@ class TestCSVLoader:
 
         # Assert
         assert result == expected_docs
+
+    def test_csv_loader_raise(self) -> None:
+        # Setup
+
+        file_path = self._get_csv_file_path("test_raise.csv")
+        missing_column = "missing_column"
+
+        with pytest.raises(
+            ValueError,
+            match=f"Source column '{missing_column}' not found in CSV file.",
+        ):
+            # Exercise
+            loader = CSVLoader(
+                file_path=file_path,
+                source_column=missing_column,
+            )
+            loader.load()
+
+        with pytest.raises(
+            ValueError,
+            match=f"Metadata column '{missing_column}' not found in CSV file.",
+        ):
+            # Exercise
+            loader = CSVLoader(
+                file_path=file_path,
+                metadata_columns=(missing_column, "colum1", "colum2", "colum3"),
+            )
+            loader.load()
 
     # utility functions
     def _get_csv_file_path(self, file_name: str) -> str:
