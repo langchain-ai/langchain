@@ -9,7 +9,7 @@ ALLOWED_TOP_LEVEL_PKGS = {
     "langchain_community",
     "langchain_core",
     "langchain",
-    "langchain_gigachat"
+    "langchain_gigachat",
 }
 
 

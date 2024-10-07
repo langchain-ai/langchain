@@ -15,6 +15,10 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
+    from langchain_gigachat.embeddings.gigachat import (
+        GigaChatEmbeddings,
+    )
+
     from langchain_community.embeddings.aleph_alpha import (
         AlephAlphaAsymmetricSemanticEmbedding,
         AlephAlphaSymmetricSemanticEmbedding,
@@ -79,9 +83,6 @@ if TYPE_CHECKING:
     )
     from langchain_community.embeddings.fastembed import (
         FastEmbedEmbeddings,
-    )
-    from langchain_gigachat.embeddings.gigachat import (
-        GigaChatEmbeddings,
     )
     from langchain_community.embeddings.google_palm import (
         GooglePalmEmbeddings,

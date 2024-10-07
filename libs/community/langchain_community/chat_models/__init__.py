@@ -21,6 +21,10 @@ import importlib
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
+    from langchain_gigachat.chat_models.gigachat import (
+        GigaChat,
+    )
+
     from langchain_community.chat_models.anthropic import (
         ChatAnthropic,
     )
@@ -66,9 +70,6 @@ if TYPE_CHECKING:
     )
     from langchain_community.chat_models.friendli import (
         ChatFriendli,
-    )
-    from langchain_gigachat.chat_models.gigachat import (
-        GigaChat,
     )
     from langchain_community.chat_models.google_palm import (
         ChatGooglePalm,
