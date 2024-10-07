@@ -255,6 +255,7 @@ def index(
                        DocumentIndex. For example, you can use this to
                        specify a custom vector_field:
                        upsert_kwargs={"vector_field": "embedding"}
+            .. versionadded:: 0.3.10
 
     Returns:
         Indexing result which contains information about how many documents
@@ -498,6 +499,7 @@ async def aindex(
                        DocumentIndex. For example, you can use this to
                        specify a custom vector_field:
                        upsert_kwargs={"vector_field": "embedding"}
+            .. versionadded:: 0.3.10
 
     Returns:
         Indexing result which contains information about how many documents
