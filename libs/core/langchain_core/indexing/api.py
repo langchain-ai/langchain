@@ -198,6 +198,7 @@ def index(
     source_id_key: Union[str, Callable[[Document], str], None] = None,
     cleanup_batch_size: int = 1_000,
     force_update: bool = False,
+    upsert_kwargs: Optional[dict[str, Any]] = None,
 ) -> IndexingResult:
     """Index data from the loader into the vector store.
 
@@ -249,6 +250,12 @@ def index(
         force_update: Force update documents even if they are present in the
             record manager. Useful if you are re-indexing with updated embeddings.
             Default is False.
+        upsert_kwargs: Additional keyword arguments to pass to the add_documents
+                       method of the VectorStore or the upsert method of the
+                       DocumentIndex. For example, you can use this to
+                       specify a custom vector_field:
+                       upsert_kwargs={"vector_field": "embedding"}
+            .. versionadded:: 0.3.10
 
     Returns:
         Indexing result which contains information about how many documents
@@ -363,10 +370,16 @@ def index(
         if docs_to_index:
             if isinstance(destination, VectorStore):
                 destination.add_documents(
-                    docs_to_index, ids=uids, batch_size=batch_size
+                    docs_to_index,
+                    ids=uids,
+                    batch_size=batch_size,
+                    **(upsert_kwargs or {}),
                 )
             elif isinstance(destination, DocumentIndex):
-                destination.upsert(docs_to_index)
+                destination.upsert(
+                    docs_to_index,
+                    **(upsert_kwargs or {}),
+                )
 
             num_added += len(docs_to_index) - len(seen_docs)
             num_updated += len(seen_docs)
@@ -438,6 +451,7 @@ async def aindex(
     source_id_key: Union[str, Callable[[Document], str], None] = None,
     cleanup_batch_size: int = 1_000,
     force_update: bool = False,
+    upsert_kwargs: Optional[dict[str, Any]] = None,
 ) -> IndexingResult:
     """Async index data from the loader into the vector store.
 
@@ -480,6 +494,12 @@ async def aindex(
         force_update: Force update documents even if they are present in the
             record manager. Useful if you are re-indexing with updated embeddings.
             Default is False.
+        upsert_kwargs: Additional keyword arguments to pass to the aadd_documents
+                       method of the VectorStore or the aupsert method of the
+                       DocumentIndex. For example, you can use this to
+                       specify a custom vector_field:
+                       upsert_kwargs={"vector_field": "embedding"}
+            .. versionadded:: 0.3.10
 
     Returns:
         Indexing result which contains information about how many documents
@@ -604,10 +624,16 @@ async def aindex(
         if docs_to_index:
             if isinstance(destination, VectorStore):
                 await destination.aadd_documents(
-                    docs_to_index, ids=uids, batch_size=batch_size
+                    docs_to_index,
+                    ids=uids,
+                    batch_size=batch_size,
+                    **(upsert_kwargs or {}),
                 )
             elif isinstance(destination, DocumentIndex):
-                await destination.aupsert(docs_to_index)
+                await destination.aupsert(
+                    docs_to_index,
+                    **(upsert_kwargs or {}),
+                )
             num_added += len(docs_to_index) - len(seen_docs)
             num_updated += len(seen_docs)
 
