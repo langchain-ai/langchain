@@ -20,12 +20,14 @@ def create_bm25_vectorizer(corpus: Iterable[Iterable[str]], **bm25_params: Any) 
     Create a BM25 vectorizer from the given corpus.
 
     Args:
-        corpus: An iterable of tokenized documents, where each document is an iterable of strings.
-        **bm25_params: Additional parameters to be passed to the BM25Okapi constructor.
+        corpus: An iterable of tokenized documents, where each document is
+                an iterable of strings.
+        **bm25_params: Additional parameters to be passed to the BM25Okapi
+                constructor.
 
     Returns:
-        Any: A BM25Vectorizer instance, which is a custom class that extends BM25Okapi
-             with additional functionality for vectorization.
+        Any: A BM25Vectorizer instance, which is a custom class that extends
+             BM25Okapi with additional functionality for vectorization.
     """
     try:
         from rank_bm25 import BM25Okapi
