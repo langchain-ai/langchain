@@ -26,7 +26,7 @@ class AzureAiServicesImageAnalysisTool(BaseTool):
     azure_ai_services_endpoint: Optional[str] = None  #: :meta private:
     visual_features: Optional[List[str]] = None
     image_analysis_client: Any  #: :meta private:
-    formatted_features: Any #: :meta private:
+    formatted_features: Any  #: :meta private:
 
     name: str = "azure_ai_services_image_analysis"
     description: str = (
@@ -68,11 +68,11 @@ class AzureAiServicesImageAnalysisTool(BaseTool):
             raise RuntimeError(
                 f"Initialization of Azure AI Vision Image Analysis client failed: {e}"
             )
-            
+
         visual_features: List[str] = values.get("visual_features", ["TAGS"])
         values["formatted_features"] = [
-                        VisualFeatures[feat.upper()] for feat in visual_features
-                        ]
+            VisualFeatures[feat.upper()] for feat in visual_features
+        ]
 
         return values
 
@@ -85,7 +85,7 @@ class AzureAiServicesImageAnalysisTool(BaseTool):
 
         self.image_analysis_client: ImageAnalysisClient
         self.formatted_features: List[VisualFeatures]
-        
+
         image_src_type = detect_file_src_type(image_path)
         if image_src_type == "local":
             with open(image_path, "rb") as image_file:
