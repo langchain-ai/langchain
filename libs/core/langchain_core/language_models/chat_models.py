@@ -977,7 +977,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     async def _astream(
         self,
@@ -1112,7 +1112,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         ],
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def with_structured_output(
         self,

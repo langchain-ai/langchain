@@ -1336,7 +1336,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         Args:
             file_path: path to file.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def pretty_repr(self, html: bool = False) -> str:
         """Human-readable representation.

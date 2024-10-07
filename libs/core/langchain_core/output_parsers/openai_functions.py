@@ -151,7 +151,7 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
         Returns:
             The parsed JSON object.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class JsonKeyOutputFunctionsParser(JsonOutputFunctionsParser):

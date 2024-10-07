@@ -453,7 +453,7 @@ def secret_from_env(
             return SecretStr(os.environ[key])
         if isinstance(default, str):
             return SecretStr(default)
-        elif isinstance(default, type(None)):
+        elif default is None:
             return None
         else:
             if error_message:

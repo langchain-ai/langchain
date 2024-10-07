@@ -132,4 +132,4 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
         Returns:
             A pretty representation of the prompt.
         """
-        raise NotImplementedError()
+        raise NotImplementedError

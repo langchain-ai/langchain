@@ -653,7 +653,7 @@ def test_with_types_with_type_generics() -> None:
 
     def foo(x: int) -> None:
         """Add one to the input."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
     # Try specifying some
     RunnableLambda(foo).with_types(
@@ -3980,7 +3980,7 @@ def test_seq_batch_return_exceptions(mocker: MockerFixture) -> None:
         def invoke(
             self, input: Any, config: Optional[RunnableConfig] = None, **kwargs: Any
         ) -> Any:
-            raise NotImplementedError()
+            raise NotImplementedError
 
         def _batch(
             self,
@@ -4101,7 +4101,7 @@ async def test_seq_abatch_return_exceptions(mocker: MockerFixture) -> None:
         def invoke(
             self, input: Any, config: Optional[RunnableConfig] = None, **kwargs: Any
         ) -> Any:
-            raise NotImplementedError()
+            raise NotImplementedError
 
         async def _abatch(
             self,
@@ -5352,7 +5352,7 @@ async def test_listeners_async() -> None:
     assert value2 in shared_state.values(), "Value not found in the dictionary."
 
 
-async def test_closing_iterator_doesnt_raise_error() -> None:
+def test_closing_iterator_doesnt_raise_error() -> None:
     """Test that closing an iterator calls on_chain_end rather than on_chain_error."""
     import time
 
@@ -5361,9 +5361,10 @@ async def test_closing_iterator_doesnt_raise_error() -> None:
     from langchain_core.output_parsers import StrOutputParser
 
     on_chain_error_triggered = False
+    on_chain_end_triggered = False
 
     class MyHandler(BaseCallbackHandler):
-        async def on_chain_error(
+        def on_chain_error(
             self,
             error: BaseException,
             *,
@@ -5376,6 +5377,17 @@ async def test_closing_iterator_doesnt_raise_error() -> None:
             nonlocal on_chain_error_triggered
             on_chain_error_triggered = True
 
+        def on_chain_end(
+            self,
+            outputs: dict[str, Any],
+            *,
+            run_id: UUID,
+            parent_run_id: Optional[UUID] = None,
+            **kwargs: Any,
+        ) -> None:
+            nonlocal on_chain_end_triggered
+            on_chain_end_triggered = True
+
     llm = GenericFakeChatModel(messages=iter(["hi there"]))
     chain = llm | StrOutputParser()
     chain_ = chain.with_config({"callbacks": [MyHandler()]})
@@ -5386,6 +5398,7 @@ async def test_closing_iterator_doesnt_raise_error() -> None:
     # Wait for a bit to make sure that the callback is called.
     time.sleep(0.05)
     assert on_chain_error_triggered is False
+    assert on_chain_end_triggered is True
 
 
 def test_pydantic_protected_namespaces() -> None:

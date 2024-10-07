@@ -44,8 +44,42 @@ python = ">=3.12.4"
 [tool.poetry.extras]
 
 [tool.ruff.lint]
-select = [ "B", "C4", "E", "EM", "F", "I", "N", "PIE", "SIM", "T201", "UP", "W",]
-ignore = [ "UP007", "W293",]
+select = [
+    "ASYNC",
+    "B",
+    "C4",
+    "COM",
+    "DJ",
+    "E",
+    "EM",
+    "EXE",
+    "F",
+    "FLY",
+    "FURB",
+    "I",
+    "ICN",
+    "INT",
+    "LOG",
+    "N",
+    "NPY",
+    "PD",
+    "PIE",
+    "Q",
+    "RSE",
+    "SIM",
+    "SLOT",
+    "T10",
+    "T201",
+    "TID",
+    "UP",
+    "W",
+    "YTT"
+]
+ignore = [
+    "COM812", # Messes with the formatter
+    "UP007", # Incompatible with pydantic + Python 3.9
+    "W293", # 
+]
 
 [tool.coverage.run]
 omit = [ "tests/*",]

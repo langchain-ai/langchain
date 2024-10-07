@@ -59,7 +59,7 @@ def test_base_transform_output_parser() -> None:
 
         def parse(self, text: str) -> str:
             """Parse a single string into a specific format."""
-            raise NotImplementedError()
+            raise NotImplementedError
 
         def parse_result(
             self, result: list[Generation], *, partial: bool = False

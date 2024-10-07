@@ -2067,7 +2067,7 @@ class StreamingRunnable(Runnable[Input, Output]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> Iterator[Output]:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     async def astream(
         self,

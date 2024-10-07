@@ -237,7 +237,7 @@ class BaseLanguageModel(
         """Not implemented on this class."""
         # Implement this on child class if there is a way of steering the model to
         # generate responses that match a given schema.
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @deprecated("0.1.7", alternative="invoke", removal="1.0")
     @abstractmethod
