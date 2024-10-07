@@ -45,7 +45,7 @@ def test_required_dependencies(poetry_conf: Mapping[str, Any]) -> None:
             "async-timeout",
             "langchain-core",
             "langchain-text-splitters",
-            'langchain_gigachat',
+            "langchain_gigachat",
             "gigachat",
             "langsmith",
             "numpy",
