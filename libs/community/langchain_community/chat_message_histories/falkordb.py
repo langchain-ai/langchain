@@ -156,7 +156,7 @@ class FalkorDBChatMessageHistory(BaseChatMessageHistory):
         """
         query = (
             f"MATCH (s:{self._node_label})-[:LAST_MESSAGE]->(last_message) "
-            "WHERE s.id = $session_id MATCH p=(last_message)<-[:NEXT*0.."
+            "MATCH p=(last_message)<-[:NEXT*0.."
             f"{self._window*2}]-() WITH p, length(p) AS length "
             "ORDER BY length DESC LIMIT 1 UNWIND reverse(nodes(p)) AS node "
             "RETURN {data:{content: node.content}, type:node.type} AS result"
@@ -212,7 +212,6 @@ class FalkorDBChatMessageHistory(BaseChatMessageHistory):
         """
         query = (
             f"MATCH (s:{self._node_label})-[:LAST_MESSAGE|NEXT*0..]->(m:Message) "
-            "WHERE s.id = $session_id "
             "WITH m DELETE m"
         )
         self._database.query(query, {"session_id": self._session_id})
