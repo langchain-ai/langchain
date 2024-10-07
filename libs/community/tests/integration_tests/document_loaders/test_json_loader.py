@@ -1,10 +1,10 @@
 from pathlib import Path
-from typing import Any, Dict
+from typing import Dict
 
 from langchain_community.document_loaders import JSONLoader
 
 
-def call_back(sample: str, additional_fields: Dict[str, Any]) -> Dict[str, Any]:
+def call_back(sample: Dict, additional_fields: Dict) -> Dict:
     metadata = additional_fields.copy()
     metadata["source"] += f"#seq_num={metadata['seq_num']}"
     return metadata
