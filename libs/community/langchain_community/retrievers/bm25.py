@@ -1,17 +1,32 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, Iterable, List, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
 from pydantic import ConfigDict, Field
 
+if TYPE_CHECKING:
+    from scipy.sparse import csr_matrix
+
 
 def default_preprocessing_func(text: str) -> List[str]:
     return text.split()
 
-def create_bm25_vectorizer(corpus, **bm25_params):
+
+def create_bm25_vectorizer(corpus: Iterable[Iterable[str]], **bm25_params: Any) -> Any:
+    """
+    Create a BM25 vectorizer from the given corpus.
+
+    Args:
+        corpus: An iterable of tokenized documents, where each document is an iterable of strings.
+        **bm25_params: Additional parameters to be passed to the BM25Okapi constructor.
+
+    Returns:
+        Any: A BM25Vectorizer instance, which is a custom class that extends BM25Okapi
+             with additional functionality for vectorization.
+    """
     try:
         from rank_bm25 import BM25Okapi
     except ImportError:
@@ -19,14 +34,14 @@ def create_bm25_vectorizer(corpus, **bm25_params):
             "Could not import rank_bm25, please install with `pip install "
             "rank_bm25`."
         )
-    
+
     class BM25Vectorizer(BM25Okapi):
-        def __init__(self, corpus, **bm25_params):            
+        def __init__(self, corpus: Iterable[Iterable[str]], **bm25_params: Any):
             super().__init__(corpus, **bm25_params)
             self.vocabulary = list(self.idf.keys())
             self.word_to_id = {word: i for i, word in enumerate(self.vocabulary)}
-        
-        def transform(self, queries: list[list[str]]) -> scipy.sparse.csr_matrix:
+
+        def transform(self, queries: list[list[str]]) -> csr_matrix:
             try:
                 from scipy.sparse import csr_matrix
             except ImportError:
@@ -34,33 +49,37 @@ def create_bm25_vectorizer(corpus, **bm25_params):
                     "Could not import scipy, please install with `pip install "
                     "scipy`."
                 )
-            
+
             rows = []
             cols = []
             data = []
-            
+
             for i, query in enumerate(queries):
                 query_len = len(query)
-                
+
                 for word in set(query):
                     if word in self.word_to_id:
                         word_id = self.word_to_id[word]
                         tf = query.count(word)
                         idf = self.idf.get(word, 0)
-                        
+
                         # BM25 scoring formula
                         numerator = idf * tf * (self.k1 + 1)
-                        denominator = tf + self.k1 * (1 - self.b + self.b * query_len / self.avgdl)
-                        
+                        denominator = tf + self.k1 * (
+                            1 - self.b + self.b * query_len / self.avgdl
+                        )
+
                         score = numerator / denominator
-                        
+
                         rows.append(i)
                         cols.append(word_id)
                         data.append(score)
-            
-            return csr_matrix((data, (rows, cols)), shape=(len(queries), len(self.vocabulary)))
-        
-        def count_transform(self, queries: list[list[str]]) -> scipy.sparse.csr_matrix:
+
+            return csr_matrix(
+                (data, (rows, cols)), shape=(len(queries), len(self.vocabulary))
+            )
+
+        def count_transform(self, queries: list[list[str]]) -> "csr_matrix":
             try:
                 from scipy.sparse import csr_matrix
             except ImportError:
@@ -68,11 +87,11 @@ def create_bm25_vectorizer(corpus, **bm25_params):
                     "Could not import scipy, please install with `pip install "
                     "scipy`."
                 )
-            
+
             rows = []
             cols = []
             data = []
-            
+
             for i, query in enumerate(queries):
                 for word in query:
                     if word in self.word_to_id:
@@ -80,10 +99,13 @@ def create_bm25_vectorizer(corpus, **bm25_params):
                         rows.append(i)
                         cols.append(word_id)
                         data.append(1)  # Count is always 1 for each occurrence
-            
-            return csr_matrix((data, (rows, cols)), shape=(len(queries), len(self.vocabulary)))
-    
+
+            return csr_matrix(
+                (data, (rows, cols)), shape=(len(queries), len(self.vocabulary))
+            )
+
     return BM25Vectorizer(corpus, **bm25_params)
+
 
 class BM25Retriever(BaseRetriever):
     """`BM25` retriever without Elasticsearch."""
@@ -131,7 +153,11 @@ class BM25Retriever(BaseRetriever):
         metadatas = metadatas or ({} for _ in texts)
         docs = [Document(page_content=t, metadata=m) for t, m in zip(texts, metadatas)]
         return cls(
-            vectorizer=vectorizer, docs=docs, bm25_array=bm25_array, preprocess_func=preprocess_func, **kwargs
+            vectorizer=vectorizer,
+            docs=docs,
+            bm25_array=bm25_array,
+            preprocess_func=preprocess_func,
+            **kwargs,
         )
 
     @classmethod
