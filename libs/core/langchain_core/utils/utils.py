@@ -236,7 +236,8 @@ def _build_model_kwargs(
     extra_kwargs = values.get("model_kwargs", {})
     for field_name in list(values):
         if field_name in extra_kwargs:
-            raise ValueError(f"Found {field_name} supplied twice.")
+            msg = f"Found {field_name} supplied twice."
+            raise ValueError(msg)
         if field_name not in all_required_field_names:
             warnings.warn(
                 f"""WARNING! {field_name} is not default parameter.
