@@ -247,13 +247,13 @@ standard = ["email-validator (>=2.0.0)", "fastapi-cli[standard] (>=0.0.5)", "htt
 
 [[package]]
 name = "gigachain-core"
-version = "0.2.38.post2"
+version = "0.2.41.post2"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "gigachain_core-0.2.38.post2-py3-none-any.whl", hash = "sha256:ea89e8b662f8ef74e3f93c88699ad7d433e37bcdeb2774986d7e95163129f227"},
-    {file = "gigachain_core-0.2.38.post2.tar.gz", hash = "sha256:523308011afeb969bdfcb4999d6e407eff285d58ad505a763d2b22cafa8507ad"},
+    {file = "gigachain_core-0.2.41.post2-py3-none-any.whl", hash = "sha256:ea89e8b662f8ef74e3f93c88699ad7d433e37bcdeb2774986d7e95163129f227"},
+    {file = "gigachain_core-0.2.41.post2.tar.gz", hash = "sha256:523308011afeb969bdfcb4999d6e407eff285d58ad505a763d2b22cafa8507ad"},
 ]
 
 [package.dependencies]
@@ -262,8 +262,8 @@ langfuse = ">=2.41.0,<3.0.0"
 langsmith = ">=0.1.112,<0.2.0"
 packaging = ">=23.2,<25"
 pydantic = [
-    {version = ">=2.7.4,<3.0.0", markers = "python_full_version >= \"3.12.4\""},
     {version = ">=1,<3", markers = "python_full_version < \"3.12.4\""},
+    {version = ">=2.7.4,<3.0.0", markers = "python_full_version >= \"3.12.4\""},
 ]
 PyYAML = ">=5.3"
 tenacity = ">=8.1.0,<8.4.0 || >8.4.0,<9.0.0"
@@ -282,7 +282,6 @@ files = [
 
 [package.dependencies]
 fastapi = {version = ">=0.90.1,<1", optional = true, markers = "extra == \"client\" or extra == \"server\" or extra == \"all\""}
-gigachain-core = ">=0.1,<0.3"
 httpx = ">=0.23.0"
 orjson = ">=2"
 pydantic = ">=1"
@@ -533,8 +532,8 @@ files = [
 httpx = ">=0.23.0,<1"
 orjson = ">=3.9.14,<4.0.0"
 pydantic = [
-    {version = ">=2.7.4,<3.0.0", markers = "python_full_version >= \"3.12.4\""},
     {version = ">=1,<3", markers = "python_full_version < \"3.12.4\""},
+    {version = ">=2.7.4,<3.0.0", markers = "python_full_version >= \"3.12.4\""},
 ]
 requests = ">=2,<3"
 requests-toolbelt = ">=1.0.0,<2.0.0"
@@ -761,8 +760,8 @@ files = [
 annotated-types = ">=0.6.0"
 pydantic-core = "2.23.4"
 typing-extensions = [
-    {version = ">=4.12.2", markers = "python_version >= \"3.13\""},
     {version = ">=4.6.1", markers = "python_version < \"3.13\""},
+    {version = ">=4.12.2", markers = "python_version >= \"3.13\""},
 ]
 
 [package.extras]

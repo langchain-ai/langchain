@@ -25,7 +25,7 @@ exclude = [ "notebooks", "examples", "example_data",]
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-langchain-core = "^0.2.38"
+langchain-core = "^0.2.41"
 gigachain-community = "^0.2.16"
 
 [tool.ruff.lint]
@@ -69,7 +69,7 @@ setuptools = "^67.6.1"
 [tool.poetry.group.test.dependencies]
 pytest = "^7.3.0"
 pytest-asyncio = "^0.20.3"
-langchain-text-splitters = "^0.2.0"
+langchain-text-splitters = "^0.2.4"
 
 [[tool.poetry.group.test.dependencies.numpy]]
 version = "^1.24.0"

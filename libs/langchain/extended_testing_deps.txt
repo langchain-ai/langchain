@@ -4,7 +4,7 @@ rapidfuzz>=3.1.1,<4
 aiosqlite>=0.19.0,<0.20
 greenlet==3.1.1
 langchain_anthropic==0.1.23
-langchain_openai==0.1.25
+langchain_openai==0.1.23
 langchain_fireworks==0.1.7
 langchain_mistralai==0.1.13
 langchain_groq==0.1.9

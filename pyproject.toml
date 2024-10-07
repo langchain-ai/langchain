@@ -21,8 +21,8 @@ toml = "^0.10.2"
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.5.0"
-langchain-core = "^0.2.38"
-langchain-text-splitters = "^0.2.0"
+langchain-core = "^0.2.41"
+langchain-text-splitters = "^0.2.4"
 gigachain-community = { path = "libs/community/", develop = true }
 gigachain = { path = "libs/langchain/", develop = true }
 gigachain-experimental = { path = "libs/experimental/", develop = true }
@@ -33,8 +33,8 @@ codespell = "^2.2.0"
 
 
 [tool.poetry.group.dev.dependencies]
-langchain-core = "^0.2.38"
-langchain-text-splitters = "^0.2.0"
+langchain-core = "^0.2.41"
+langchain-text-splitters = "^0.2.4"
 gigachain-community = { path = "libs/community/", develop = true }
 gigachain = { path = "libs/langchain/", develop = true }
 gigachain-experimental = { path = "libs/experimental/", develop = true }
