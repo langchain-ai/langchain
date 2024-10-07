@@ -16,45 +16,63 @@ This guide covers how to migrate.
 
 Previously:
 
-`pip install -U langchain`
+```bash
+pip install -U langchain
+```
 
 Now (only if you want to access things in experimental):
 
-`pip install -U langchain langchain_experimental`
+```bash
+pip install -U langchain langchain_experimental
+```
 
 ### Things in `langchain.experimental`
 
 Previously:
 
-`from langchain.experimental import ...`
+```bash
+from langchain.experimental import ...
+```
 
 Now:
 
-`from langchain_experimental import ...`
+```bash
+from langchain_experimental import ...
+```
 
 ### PALChain
 
 Previously:
 
-`from langchain.chains import PALChain`
+```bash
+from langchain.chains import PALChain
+```
 
 Now:
 
-`from langchain_experimental.pal_chain import PALChain`
+```bash
+from langchain_experimental.pal_chain import PALChain
+```
 
 ### SQLDatabaseChain
 
 Previously:
 
-`from langchain.chains import SQLDatabaseChain`
+```bash
+from langchain.chains import SQLDatabaseChain
+```
 
 Now:
 
-`from langchain_experimental.sql import SQLDatabaseChain`
+```bash
+from langchain_experimental.sql import SQLDatabaseChain
+```
 
-Alternatively, if you are just interested in using the query generation part of the SQL chain, you can check out this [`SQL question-answering tutorial`](https://python.langchain.com/v0.2/docs/tutorials/sql_qa/#convert-question-to-sql-query)
+Alternatively, if you are interested in using the query generation part of the SQL chain, you can check out this link: [`SQL question-answering tutorial`](https://python.langchain.com/v0.2/docs/tutorials/sql_qa/#convert-question-to-sql-query)
 
-`from langchain.chains import create_sql_query_chain`
+```bash
+from langchain.chains import create_sql_query_chain
+```
 
 ### `load_prompt` for Python files
 
@@ -63,8 +81,12 @@ If you want to load json/yaml files, no change is needed.
 
 Previously:
 
-`from langchain.prompts import load_prompt`
+```bash
+from langchain.prompts import load_prompt
+```
 
 Now:
 
-`from langchain_experimental.prompts import load_prompt`
+```bash
+from langchain_experimental.prompts import load_prompt
+```
