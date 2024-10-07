@@ -1,8 +1,8 @@
 import asyncio
 import math
 import time
+from collections.abc import AsyncIterator
 from concurrent.futures import ThreadPoolExecutor
-from typing import AsyncIterator
 
 from langchain_core.tracers.memory_stream import _MemoryStream
 

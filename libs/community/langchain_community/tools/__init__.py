@@ -22,11 +22,15 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from langchain_core.tools import (
-        BaseTool,
-        StructuredTool,
-        Tool,
-        tool,
+        BaseTool as BaseTool,
     )
+    from langchain_core.tools import (
+        StructuredTool as StructuredTool,
+    )
+    from langchain_core.tools import (
+        Tool as Tool,
+    )
+    from langchain_core.tools.convert import tool as tool
 
     from langchain_community.tools.ainetwork.app import (
         AINAppOps,
@@ -120,6 +124,15 @@ if TYPE_CHECKING:
         ReadFileTool,
         WriteFileTool,
     )
+    from langchain_community.tools.financial_datasets.balance_sheets import (
+        BalanceSheets,
+    )
+    from langchain_community.tools.financial_datasets.cash_flow_statements import (
+        CashFlowStatements,
+    )
+    from langchain_community.tools.financial_datasets.income_statements import (
+        IncomeStatements,
+    )
     from langchain_community.tools.gmail import (
         GmailCreateDraft,
         GmailGetMessage,
@@ -153,6 +166,7 @@ if TYPE_CHECKING:
     from langchain_community.tools.interaction.tool import (
         StdInInquireTool,
     )
+    from langchain_community.tools.jina_search.tool import JinaSearch
     from langchain_community.tools.jira.tool import (
         JiraAction,
     )
@@ -295,6 +309,10 @@ if TYPE_CHECKING:
     from langchain_community.tools.steamship_image_generation import (
         SteamshipImageGenerationTool,
     )
+    from langchain_community.tools.tavily_search import (
+        TavilyAnswer,
+        TavilySearchResults,
+    )
     from langchain_community.tools.vectorstore.tool import (
         VectorStoreQATool,
         VectorStoreQAWithSourcesTool,
@@ -325,6 +343,10 @@ if TYPE_CHECKING:
     )
 
 __all__ = [
+    "BaseTool",
+    "Tool",
+    "tool",
+    "StructuredTool",
     "AINAppOps",
     "AINOwnerOps",
     "AINRuleOps",
@@ -344,15 +366,16 @@ __all__ = [
     "AzureCogsSpeech2TextTool",
     "AzureCogsText2SpeechTool",
     "AzureCogsTextAnalyticsHealthTool",
+    "BalanceSheets",
     "BaseGraphQLTool",
     "BaseRequestsTool",
     "BaseSQLDatabaseTool",
     "BaseSparkSQLTool",
-    "BaseTool",
     "BearlyInterpreterTool",
     "BingSearchResults",
     "BingSearchRun",
     "BraveSearch",
+    "CashFlowStatements",
     "ClickTool",
     "CogniswitchKnowledgeRequest",
     "CogniswitchKnowledgeSourceFile",
@@ -392,10 +415,12 @@ __all__ = [
     "GoogleSerperRun",
     "HumanInputRun",
     "IFTTTWebhook",
+    "IncomeStatements",
     "InfoPowerBITool",
     "InfoSQLDatabaseTool",
     "InfoSparkSQLTool",
     "JiraAction",
+    "JinaSearch",
     "JsonGetValueTool",
     "JsonListKeysTool",
     "ListDirectoryTool",
@@ -449,8 +474,8 @@ __all__ = [
     "StdInInquireTool",
     "SteamWebAPIQueryRun",
     "SteamshipImageGenerationTool",
-    "StructuredTool",
-    "Tool",
+    "TavilyAnswer",
+    "TavilySearchResults",
     "VectorStoreQATool",
     "VectorStoreQAWithSourcesTool",
     "WikipediaQueryRun",
@@ -466,7 +491,6 @@ __all__ = [
     "ZenGuardTool",
     "authenticate",
     "format_tool_to_openai_function",
-    "tool",
 ]
 
 # Used for internal purposes
@@ -492,6 +516,7 @@ _module_lookup = {
     "AzureCogsSpeech2TextTool": "langchain_community.tools.azure_cognitive_services",
     "AzureCogsText2SpeechTool": "langchain_community.tools.azure_cognitive_services",
     "AzureCogsTextAnalyticsHealthTool": "langchain_community.tools.azure_cognitive_services",  # noqa: E501
+    "BalanceSheets": "langchain_community.tools.financial_datasets.balance_sheets",
     "BaseGraphQLTool": "langchain_community.tools.graphql.tool",
     "BaseRequestsTool": "langchain_community.tools.requests.tool",
     "BaseSQLDatabaseTool": "langchain_community.tools.sql_database.tool",
@@ -501,6 +526,7 @@ _module_lookup = {
     "BingSearchResults": "langchain_community.tools.bing_search.tool",
     "BingSearchRun": "langchain_community.tools.bing_search.tool",
     "BraveSearch": "langchain_community.tools.brave_search.tool",
+    "CashFlowStatements": "langchain_community.tools.financial_datasets.cash_flow_statements",  # noqa: E501
     "ClickTool": "langchain_community.tools.playwright",
     "CogniswitchKnowledgeRequest": "langchain_community.tools.cogniswitch.tool",
     "CogniswitchKnowledgeSourceFile": "langchain_community.tools.cogniswitch.tool",
@@ -541,10 +567,12 @@ _module_lookup = {
     "GoogleSerperRun": "langchain_community.tools.google_serper.tool",
     "HumanInputRun": "langchain_community.tools.human.tool",
     "IFTTTWebhook": "langchain_community.tools.ifttt",
+    "IncomeStatements": "langchain_community.tools.financial_datasets.income_statements",  # noqa: E501
     "InfoPowerBITool": "langchain_community.tools.powerbi.tool",
     "InfoSQLDatabaseTool": "langchain_community.tools.sql_database.tool",
     "InfoSparkSQLTool": "langchain_community.tools.spark_sql.tool",
     "JiraAction": "langchain_community.tools.jira.tool",
+    "JinaSearch": "langchain_community.tools.jina_search.tool",
     "JsonGetValueTool": "langchain_community.tools.json.tool",
     "JsonListKeysTool": "langchain_community.tools.json.tool",
     "ListDirectoryTool": "langchain_community.tools.file_management",
@@ -599,6 +627,8 @@ _module_lookup = {
     "SteamWebAPIQueryRun": "langchain_community.tools.steam.tool",
     "SteamshipImageGenerationTool": "langchain_community.tools.steamship_image_generation",  # noqa: E501
     "StructuredTool": "langchain_core.tools",
+    "TavilyAnswer": "langchain_community.tools.tavily_search",
+    "TavilySearchResults": "langchain_community.tools.tavily_search",
     "Tool": "langchain_core.tools",
     "VectorStoreQATool": "langchain_community.tools.vectorstore.tool",
     "VectorStoreQAWithSourcesTool": "langchain_community.tools.vectorstore.tool",

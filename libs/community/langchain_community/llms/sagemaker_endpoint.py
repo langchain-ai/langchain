@@ -7,8 +7,8 @@ from typing import Any, Dict, Generic, Iterator, List, Mapping, Optional, TypeVa
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from langchain_core.pydantic_v1 import Extra
 from langchain_core.utils import pre_init
+from pydantic import ConfigDict
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
@@ -245,10 +245,9 @@ class SagemakerEndpoint(LLM):
     .. _boto3: <https://boto3.amazonaws.com/v1/documentation/api/latest/index.html>
     """
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:

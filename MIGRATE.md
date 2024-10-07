@@ -52,7 +52,7 @@ Now:
 
 `from langchain_experimental.sql import SQLDatabaseChain`
 
-Alternatively, if you are just interested in using the query generation part of the SQL chain, you can check out [`create_sql_query_chain`](https://github.com/langchain-ai/langchain/blob/master/docs/extras/use_cases/tabular/sql_query.ipynb)
+Alternatively, if you are just interested in using the query generation part of the SQL chain, you can check out this [`SQL question-answering tutorial`](https://python.langchain.com/v0.2/docs/tutorials/sql_qa/#convert-question-to-sql-query)
 
 `from langchain.chains import create_sql_query_chain`
 

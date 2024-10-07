@@ -36,7 +36,7 @@ class JsonSchemaEvaluator(StringEvaluator):
         """Initializes the JsonSchemaEvaluator.
 
         Args:
-            **kwargs: Additional keyword arguments.
+            kwargs: Additional keyword arguments.
 
         Raises:
             ImportError: If the jsonschema package is not installed.

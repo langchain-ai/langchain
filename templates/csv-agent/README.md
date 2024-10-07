@@ -1,7 +1,6 @@
+# CSV agent
 
-# csv-agent
-
-This template uses a [csv agent](https://python.langchain.com/docs/integrations/toolkits/csv) with tools (Python REPL) and memory (vectorstore) for interaction (question-answering) with text data.
+This template uses a [CSV agent](https://python.langchain.com/docs/integrations/toolkits/csv) with tools (Python REPL) and memory (vectorstore) for interaction (question-answering) with text data.
 
 ## Environment Setup
 

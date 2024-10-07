@@ -1,6 +1,8 @@
-# RAG example on Intel Xeon
-This template performs RAG using Chroma and Text Generation Inference on Intel® Xeon® Scalable Processors.
-Intel® Xeon® Scalable processors feature built-in accelerators for more performance-per-core and unmatched AI performance, with advanced security technologies for the most in-demand workload requirements—all while offering the greatest cloud choice and application portability, please check [Intel® Xeon® Scalable Processors](https://www.intel.com/content/www/us/en/products/details/processors/xeon/scalable.html).
+# RAG - Intel Xeon
+
+This template performs RAG using `Chroma` and `Hugging Face Text Generation Inference` 
+on `Intel® Xeon® Scalable` Processors.
+`Intel® Xeon® Scalable` processors feature built-in accelerators for more performance-per-core and unmatched AI performance, with advanced security technologies for the most in-demand workload requirements—all while offering the greatest cloud choice and application portability, please check [Intel® Xeon® Scalable Processors](https://www.intel.com/content/www/us/en/products/details/processors/xeon/scalable.html).
 
 ## Environment Setup
 To use [🤗 text-generation-inference](https://github.com/huggingface/text-generation-inference) on Intel® Xeon® Scalable Processors, please follow these steps:

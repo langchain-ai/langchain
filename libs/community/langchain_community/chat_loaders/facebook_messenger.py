@@ -16,9 +16,6 @@ class SingleFileFacebookMessengerChatLoader(BaseChatLoader):
     Args:
         path (Union[Path, str]): The path to the chat file.
 
-    Attributes:
-        path (Path): The path to the chat file.
-
     """
 
     def __init__(self, path: Union[Path, str]) -> None:
@@ -57,9 +54,6 @@ class FolderFacebookMessengerChatLoader(BaseChatLoader):
     Args:
         path (Union[str, Path]): The path to the directory
             containing the chat files.
-
-    Attributes:
-        path (Path): The path to the directory containing the chat files.
 
     """
 

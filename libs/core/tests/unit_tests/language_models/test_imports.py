@@ -6,6 +6,7 @@ EXPECTED_ALL = [
     "SimpleChatModel",
     "BaseLLM",
     "LLM",
+    "LangSmithParams",
     "LanguageModelInput",
     "LanguageModelOutput",
     "LanguageModelLike",

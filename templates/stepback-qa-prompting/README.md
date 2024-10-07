@@ -1,10 +1,10 @@
-# stepback-qa-prompting
+# Step-Back Question-Answering
 
 This template replicates the "Step-Back" prompting technique that improves performance on complex questions by first asking a "step back" question. 
 
 This technique can be combined with regular question-answering applications by doing retrieval on both the original and step-back question.
 
-Read more about this in the paper [here](https://arxiv.org/abs/2310.06117) and an excellent blog post by Cobus Greyling [here](https://cobusgreyling.medium.com/a-new-prompt-engineering-technique-has-been-introduced-called-step-back-prompting-b00e8954cacb)
+Read more about this in the [Take a Step Back: Evoking Reasoning via Abstraction in Large Language Models](https://arxiv.org/abs/2310.06117) paper and an excellent blog post by Cobus Greyling [here](https://cobusgreyling.medium.com/a-new-prompt-engineering-technique-has-been-introduced-called-step-back-prompting-b00e8954cacb)
 
 We will modify the prompts slightly to work better with chat models in this template.
 

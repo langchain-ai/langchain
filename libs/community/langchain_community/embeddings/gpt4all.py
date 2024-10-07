@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from pydantic import BaseModel, model_validator
 
 
 class GPT4AllEmbeddings(BaseModel, Embeddings):
@@ -28,8 +28,9 @@ class GPT4AllEmbeddings(BaseModel, Embeddings):
     gpt4all_kwargs: Optional[dict] = {}
     client: Any  #: :meta private:
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that GPT4All library is installed."""
         try:
             from gpt4all import Embed4All
@@ -38,7 +39,7 @@ class GPT4AllEmbeddings(BaseModel, Embeddings):
                 model_name=values.get("model_name"),
                 n_threads=values.get("n_threads"),
                 device=values.get("device"),
-                **values.get("gpt4all_kwargs"),
+                **(values.get("gpt4all_kwargs") or {}),
             )
         except ImportError:
             raise ImportError(

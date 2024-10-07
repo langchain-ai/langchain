@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "rag-matching-engine"
 version = "0.0.1"
-description = "RAG using Google Cloud Platform's Vertex AI"
+description = "RAG using Google Cloud Platform's Vertex AI Matching Engine"
 authors = ["Leonid Kuligin"]
 readme = "README.md"
 

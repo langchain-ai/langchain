@@ -1,7 +1,6 @@
+# RAG - Lantern
 
-# rag_lantern
-
-This template performs RAG with Lantern.
+This template performs RAG with `Lantern`.
 
 [Lantern](https://lantern.dev) is an open-source vector database built on top of [PostgreSQL](https://en.wikipedia.org/wiki/PostgreSQL). It enables vector search and embedding generation inside your database.
 

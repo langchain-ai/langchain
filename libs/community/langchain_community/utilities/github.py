@@ -6,8 +6,8 @@ import json
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 import requests
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, ConfigDict, model_validator
 
 if TYPE_CHECKING:
     from github.Issue import Issue
@@ -29,21 +29,21 @@ def _import_tiktoken() -> Any:
 class GitHubAPIWrapper(BaseModel):
     """Wrapper for GitHub API."""
 
-    github: Any  #: :meta private:
-    github_repo_instance: Any  #: :meta private:
+    github: Any = None  #: :meta private:
+    github_repo_instance: Any = None  #: :meta private:
     github_repository: Optional[str] = None
     github_app_id: Optional[str] = None
     github_app_private_key: Optional[str] = None
     active_branch: Optional[str] = None
     github_base_branch: Optional[str] = None
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
-        extra = Extra.forbid
-
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that api key and python package exists in environment."""
         github_repository = get_from_dict_or_env(
             values, "github_repository", "GITHUB_REPOSITORY"
@@ -492,7 +492,7 @@ class GitHubAPIWrapper(BaseModel):
         response_dict: Dict[str, str] = {}
         add_to_dict(response_dict, "title", pull.title)
         add_to_dict(response_dict, "number", str(pr_number))
-        add_to_dict(response_dict, "body", pull.body)
+        add_to_dict(response_dict, "body", pull.body if pull.body else "")
 
         comments: List[str] = []
         page = 0

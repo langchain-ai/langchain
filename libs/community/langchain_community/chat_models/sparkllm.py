@@ -8,7 +8,7 @@ import threading
 from datetime import datetime
 from queue import Queue
 from time import mktime
-from typing import Any, Dict, Generator, Iterator, List, Mapping, Optional, Type
+from typing import Any, Dict, Generator, Iterator, List, Mapping, Optional, Type, cast
 from urllib.parse import urlencode, urlparse, urlunparse
 from wsgiref.handlers import format_date_time
 
@@ -26,20 +26,27 @@ from langchain_core.messages import (
     BaseMessageChunk,
     ChatMessage,
     ChatMessageChunk,
+    FunctionMessageChunk,
     HumanMessage,
     HumanMessageChunk,
     SystemMessage,
+    ToolMessageChunk,
+)
+from langchain_core.output_parsers.openai_tools import (
+    make_invalid_tool_call,
+    parse_tool_call,
 )
 from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,
     ChatResult,
 )
-from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.utils import (
     get_from_dict_or_env,
     get_pydantic_field_names,
 )
+from langchain_core.utils.pydantic import get_fields
+from pydantic import ConfigDict, Field, model_validator
 
 logger = logging.getLogger(__name__)
 
@@ -47,13 +54,24 @@ SPARK_API_URL = "wss://spark-api.xf-yun.com/v3.5/chat"
 SPARK_LLM_DOMAIN = "generalv3.5"
 
 
-def _convert_message_to_dict(message: BaseMessage) -> dict:
+def convert_message_to_dict(message: BaseMessage) -> dict:
+    message_dict: Dict[str, Any]
     if isinstance(message, ChatMessage):
         message_dict = {"role": "user", "content": message.content}
     elif isinstance(message, HumanMessage):
         message_dict = {"role": "user", "content": message.content}
     elif isinstance(message, AIMessage):
         message_dict = {"role": "assistant", "content": message.content}
+        if "function_call" in message.additional_kwargs:
+            message_dict["function_call"] = message.additional_kwargs["function_call"]
+            # If function call only, content is None not empty string
+            if message_dict["content"] == "":
+                message_dict["content"] = None
+        if "tool_calls" in message.additional_kwargs:
+            message_dict["tool_calls"] = message.additional_kwargs["tool_calls"]
+            # If tool calls only, content is None not empty string
+            if message_dict["content"] == "":
+                message_dict["content"] = None
     elif isinstance(message, SystemMessage):
         message_dict = {"role": "system", "content": message.content}
     else:
@@ -62,14 +80,35 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     return message_dict
 
 
-def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
+def convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     msg_role = _dict["role"]
     msg_content = _dict["content"]
     if msg_role == "user":
         return HumanMessage(content=msg_content)
     elif msg_role == "assistant":
+        invalid_tool_calls = []
+        additional_kwargs: Dict = {}
+        if function_call := _dict.get("function_call"):
+            additional_kwargs["function_call"] = dict(function_call)
+        tool_calls = []
+        if raw_tool_calls := _dict.get("tool_calls"):
+            additional_kwargs["tool_calls"] = raw_tool_calls
+            for raw_tool_call in _dict["tool_calls"]:
+                try:
+                    tool_calls.append(parse_tool_call(raw_tool_call, return_id=True))
+                except Exception as e:
+                    invalid_tool_calls.append(
+                        make_invalid_tool_call(raw_tool_call, str(e))
+                    )
+        else:
+            additional_kwargs = {}
         content = msg_content or ""
-        return AIMessage(content=content)
+        return AIMessage(
+            content=content,
+            additional_kwargs=additional_kwargs,
+            tool_calls=tool_calls,
+            invalid_tool_calls=invalid_tool_calls,
+        )
     elif msg_role == "system":
         return SystemMessage(content=msg_content)
     else:
@@ -79,12 +118,24 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
 def _convert_delta_to_message_chunk(
     _dict: Mapping[str, Any], default_class: Type[BaseMessageChunk]
 ) -> BaseMessageChunk:
-    msg_role = _dict["role"]
-    msg_content = _dict.get("content", "")
+    msg_role = cast(str, _dict.get("role"))
+    msg_content = cast(str, _dict.get("content") or "")
+    additional_kwargs: Dict = {}
+    if _dict.get("function_call"):
+        function_call = dict(_dict["function_call"])
+        if "name" in function_call and function_call["name"] is None:
+            function_call["name"] = ""
+        additional_kwargs["function_call"] = function_call
+    if _dict.get("tool_calls"):
+        additional_kwargs["tool_calls"] = _dict["tool_calls"]
     if msg_role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=msg_content)
     elif msg_role == "assistant" or default_class == AIMessageChunk:
-        return AIMessageChunk(content=msg_content)
+        return AIMessageChunk(content=msg_content, additional_kwargs=additional_kwargs)
+    elif msg_role == "function" or default_class == FunctionMessageChunk:
+        return FunctionMessageChunk(content=msg_content, name=_dict["name"])
+    elif msg_role == "tool" or default_class == ToolMessageChunk:
+        return ToolMessageChunk(content=msg_content, tool_call_id=_dict["tool_call_id"])
     elif msg_role or default_class == ChatMessageChunk:
         return ChatMessageChunk(content=msg_content, role=msg_role)
     else:
@@ -125,9 +176,9 @@ class ChatSparkLLM(BaseChatModel):
 
             from langchain_community.chat_models import ChatSparkLLM
 
-            chat = MiniMaxChat(
-                api_key=api_key,
-                api_secret=ak,
+            chat = ChatSparkLLM(
+                api_key="your-api-key",
+                api_secret="your-api-secret",
                 model='Spark4.0 Ultra',
                 # temperature=...,
                 # other params...
@@ -245,13 +296,13 @@ class ChatSparkLLM(BaseChatModel):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for API call not explicitly specified."""
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
-        allow_population_by_field_name = True
-
-    @root_validator(pre=True)
-    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})
@@ -277,8 +328,9 @@ class ChatSparkLLM(BaseChatModel):
 
         return values
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         values["spark_app_id"] = get_from_dict_or_env(
             values,
             ["spark_app_id", "app_id"],
@@ -310,7 +362,7 @@ class ChatSparkLLM(BaseChatModel):
         # put extra params into model_kwargs
         default_values = {
             name: field.default
-            for name, field in cls.__fields__.items()
+            for name, field in get_fields(cls).items()
             if field.default is not None
         }
         values["model_kwargs"]["temperature"] = default_values.get("temperature")
@@ -336,7 +388,7 @@ class ChatSparkLLM(BaseChatModel):
         default_chunk_class = AIMessageChunk
 
         self.client.arun(
-            [_convert_message_to_dict(m) for m in messages],
+            [convert_message_to_dict(m) for m in messages],
             self.spark_user_id,
             self.model_kwargs,
             streaming=True,
@@ -366,7 +418,7 @@ class ChatSparkLLM(BaseChatModel):
             return generate_from_stream(stream_iter)
 
         self.client.arun(
-            [_convert_message_to_dict(m) for m in messages],
+            [convert_message_to_dict(m) for m in messages],
             self.spark_user_id,
             self.model_kwargs,
             False,
@@ -379,7 +431,7 @@ class ChatSparkLLM(BaseChatModel):
             if "data" not in content:
                 continue
             completion = content["data"]
-        message = _convert_dict_to_message(completion)
+        message = convert_dict_to_message(completion)
         generations = [ChatGeneration(message=message)]
         return ChatResult(generations=generations, llm_output=llm_output)
 

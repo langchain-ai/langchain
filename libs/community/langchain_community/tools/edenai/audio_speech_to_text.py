@@ -7,7 +7,7 @@ from typing import List, Optional, Type
 
 import requests
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import BaseModel, Field, HttpUrl, validator
+from pydantic import BaseModel, Field, HttpUrl, validator
 
 from langchain_community.tools.edenai.edenai_base_tool import EdenaiTool
 
@@ -29,10 +29,8 @@ class EdenAiSpeechToTextTool(EdenaiTool):
     You can find your token here: https://app.edenai.run/admin/account/settings
     """
 
-    edenai_api_key: Optional[str] = None
-
     name: str = "edenai_speech_to_text"
-    description = (
+    description: str = (
         "A wrapper around edenai Services speech to text "
         "Useful for when you have to convert audio to text."
         "Input should be a url to an audio file."

@@ -129,7 +129,9 @@ class OpenAIWhisperParser(BaseBlobParser):
                 continue
 
             yield Document(
-                page_content=transcript.text,
+                page_content=transcript.text
+                if not isinstance(transcript, str)
+                else transcript,
                 metadata={"source": blob.source, "chunk": split_number},
             )
 

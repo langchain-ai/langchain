@@ -4,8 +4,8 @@ from typing import Any, Dict, List, Mapping, Optional
 from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from langchain_core.pydantic_v1 import Extra
 from langchain_core.utils import get_from_dict_or_env, pre_init
+from pydantic import ConfigDict
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
@@ -22,7 +22,7 @@ VALID_TASKS_DICT = {
 
 @deprecated(
     "0.0.21",
-    removal="0.3.0",
+    removal="1.0",
     alternative_import="langchain_huggingface.HuggingFaceEndpoint",
 )
 class HuggingFaceHub(LLM):
@@ -43,7 +43,7 @@ class HuggingFaceHub(LLM):
             hf = HuggingFaceHub(repo_id="gpt2", huggingfacehub_api_token="my-api-key")
     """
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     repo_id: Optional[str] = None
     """Model name to use. 
     If not provided, the default model for the chosen task will be used."""
@@ -56,10 +56,9 @@ class HuggingFaceHub(LLM):
 
     huggingfacehub_api_token: Optional[str] = None
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:

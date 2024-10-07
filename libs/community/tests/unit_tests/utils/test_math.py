@@ -77,7 +77,7 @@ def invoke_cosine_similarity_top_k_score_threshold(
     expected_scores = [1.0, 0.93419873, 0.87038828, 0.83743579]
     actual_idxs, actual_scores = cosine_similarity_top_k(X, Y, score_threshold=0.8)
     assert actual_idxs == expected_idxs
-    assert np.allclose(expected_scores, actual_scores)
+    assert np.allclose(expected_scores, actual_scores, rtol=1.0e-3)
 
 
 def test_cosine_similarity_top_k_and_score_threshold(

@@ -7,7 +7,8 @@ from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
 import yaml
-from langchain_core.pydantic_v1 import BaseModel, Field, validator
+from langchain_core.utils.pydantic import get_fields
+from pydantic import BaseModel, Field, field_validator, validator
 from typing_extensions import TYPE_CHECKING, Literal
 
 from langchain_community.vectorstores.redis.constants import REDIS_VECTOR_DTYPE_MAP
@@ -99,7 +100,8 @@ class RedisVectorField(RedisField):
     distance_metric: RedisDistanceMetric = Field(default="COSINE")
     initial_cap: Optional[int] = None
 
-    @validator("algorithm", "datatype", "distance_metric", pre=True, each_item=True)
+    @field_validator("algorithm", "datatype", "distance_metric", mode="before")
+    @classmethod
     def uppercase_strings(cls, v: str) -> str:
         return v.upper()
 
@@ -255,7 +257,7 @@ class RedisModel(BaseModel):
         if self.is_empty:
             return redis_fields
 
-        for field_name in self.__fields__.keys():
+        for field_name in get_fields(self).keys():
             if field_name not in ["content_key", "content_vector_key", "extra"]:
                 field_group = getattr(self, field_name)
                 if field_group is not None:
@@ -269,7 +271,7 @@ class RedisModel(BaseModel):
         if self.is_empty:
             return keys
 
-        for field_name in self.__fields__.keys():
+        for field_name in get_fields(self).keys():
             field_group = getattr(self, field_name)
             if field_group is not None:
                 for field in field_group:

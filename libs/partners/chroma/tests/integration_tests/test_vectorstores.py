@@ -346,7 +346,7 @@ def test_chroma_large_batch() -> None:
         "my_collection",
         embedding_function=embedding_function.embed_documents,  # type: ignore
     )
-    docs = ["This is a test document"] * (client.max_batch_size + 100)
+    docs = ["This is a test document"] * (client.max_batch_size + 100)  # type: ignore
     db = Chroma.from_texts(
         client=client,
         collection_name=col.name,
@@ -374,7 +374,7 @@ def test_chroma_large_batch_update() -> None:
         "my_collection",
         embedding_function=embedding_function.embed_documents,  # type: ignore
     )
-    docs = ["This is a test document"] * (client.max_batch_size + 100)
+    docs = ["This is a test document"] * (client.max_batch_size + 100)  # type: ignore
     ids = [str(uuid.uuid4()) for _ in range(len(docs))]
     db = Chroma.from_texts(
         client=client,
@@ -526,5 +526,25 @@ def test_reset_collection(client: chromadb.ClientAPI) -> None:
     assert vectorstore._client.get_collection("test_collection") is not None
     assert vectorstore._collection.name == "test_collection"
     assert vectorstore._collection.count() == 0
+    # Clean up
+    vectorstore.delete_collection()
+
+
+def test_delete_where_clause(client: chromadb.ClientAPI) -> None:
+    """Tests delete_where_clause method."""
+    vectorstore = Chroma(
+        client=client,
+        collection_name="test_collection",
+        embedding_function=FakeEmbeddings(),
+    )
+    vectorstore.add_documents(
+        [
+            Document(page_content="foo", metadata={"test": "bar"}),
+            Document(page_content="bar", metadata={"test": "foo"}),
+        ]
+    )
+    assert vectorstore._collection.count() == 2
+    vectorstore.delete(where={"test": "bar"})
+    assert vectorstore._collection.count() == 1
     # Clean up
     vectorstore.delete_collection()

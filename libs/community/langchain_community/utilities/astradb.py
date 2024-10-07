@@ -133,7 +133,7 @@ class _AstraDBCollectionEnvironment(_AstraDBEnvironment):
                 if pre_delete_collection:
                     await async_astra_db.delete_collection(collection_name)
                 if inspect.isawaitable(embedding_dimension):
-                    dimension = await embedding_dimension
+                    dimension: Optional[int] = await embedding_dimension
                 else:
                     dimension = embedding_dimension
                 await async_astra_db.create_collection(

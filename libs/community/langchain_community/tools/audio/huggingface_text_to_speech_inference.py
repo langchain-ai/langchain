@@ -6,8 +6,8 @@ from typing import Callable, Literal, Optional
 
 import requests
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import SecretStr
 from langchain_core.tools import BaseTool
+from pydantic import SecretStr
 
 logger = logging.getLogger(__name__)
 
@@ -48,10 +48,12 @@ class HuggingFaceTextToSpeechModelInference(BaseTool):
         destination_dir: str = "./tts",
         file_naming_func: Literal["uuid", "timestamp"] = "uuid",
         huggingface_api_key: Optional[SecretStr] = None,
+        _HUGGINGFACE_API_KEY_ENV_NAME: str = "HUGGINGFACE_API_KEY",
+        _HUGGINGFACE_API_URL_ROOT: str = "https://api-inference.huggingface.co/models",
     ) -> None:
         if not huggingface_api_key:
             huggingface_api_key = SecretStr(
-                os.getenv(self._HUGGINGFACE_API_KEY_ENV_NAME, "")
+                os.getenv(_HUGGINGFACE_API_KEY_ENV_NAME, "")
             )
 
         if (
@@ -60,7 +62,7 @@ class HuggingFaceTextToSpeechModelInference(BaseTool):
             or huggingface_api_key.get_secret_value() == ""
         ):
             raise ValueError(
-                f"'{self._HUGGINGFACE_API_KEY_ENV_NAME}' must be or set or passed"
+                f"'{_HUGGINGFACE_API_KEY_ENV_NAME}' must be or set or passed"
             )
 
         if file_naming_func == "uuid":
@@ -75,10 +77,12 @@ class HuggingFaceTextToSpeechModelInference(BaseTool):
         super().__init__(  # type: ignore[call-arg]
             model=model,
             file_extension=file_extension,
-            api_url=f"{self._HUGGINGFACE_API_URL_ROOT}/{model}",
+            api_url=f"{_HUGGINGFACE_API_URL_ROOT}/{model}",
             destination_dir=destination_dir,
             file_namer=file_namer,
             huggingface_api_key=huggingface_api_key,
+            _HUGGINGFACE_API_KEY_ENV_NAME=_HUGGINGFACE_API_KEY_ENV_NAME,
+            _HUGGINGFACE_API_URL_ROOT=_HUGGINGFACE_API_URL_ROOT,
         )
 
     def _run(

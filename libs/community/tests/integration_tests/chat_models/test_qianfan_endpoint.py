@@ -13,7 +13,7 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, LLMResult
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
-from langchain_core.pydantic_v1 import SecretStr
+from pydantic import SecretStr
 from pytest import CaptureFixture, MonkeyPatch
 
 from langchain_community.chat_models.baidu_qianfan_endpoint import (
@@ -306,7 +306,10 @@ def test_functions_call() -> None:
 
 def test_rate_limit() -> None:
     chat = QianfanChatEndpoint(model="ERNIE-Bot", init_kwargs={"query_per_second": 2})  # type: ignore[call-arg]
-    assert chat.client._client._rate_limiter._sync_limiter._query_per_second == 2
+    assert (
+        chat.client._client._rate_limiter._internal_qps_rate_limiter._sync_limiter._query_per_second
+        == 1.8
+    )
     responses = chat.batch(
         [
             [HumanMessage(content="Hello")],

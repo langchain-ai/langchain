@@ -39,7 +39,75 @@ def _build_metadata(soup: Any, url: str) -> dict:
 
 
 class WebBaseLoader(BaseLoader):
-    """Load HTML pages using `urllib` and parse them with `BeautifulSoup'."""
+    """
+    WebBaseLoader document loader integration
+
+    Setup:
+        Install ``langchain_community``.
+
+        .. code-block:: bash
+
+            pip install -U langchain_community
+
+    Instantiate:
+        .. code-block:: python
+
+            from langchain_community.document_loaders import WebBaseLoader
+
+            loader = WebBaseLoader(
+                web_path = "https://www.espn.com/"
+                # header_template = None,
+                # verify_ssl = True,
+                # proxies = None,
+                # continue_on_failure = False,
+                # autoset_encoding = True,
+                # encoding = None,
+                # web_paths = (),
+                # requests_per_second = 2,
+                # default_parser = "html.parser",
+                # requests_kwargs = None,
+                # raise_for_status = False,
+                # bs_get_text_kwargs = None,
+                # bs_kwargs = None,
+                # session = None,
+                # show_progress = True,
+            )
+
+    Lazy load:
+        .. code-block:: python
+
+            docs = []
+            docs_lazy = loader.lazy_load()
+
+            # async variant:
+            # docs_lazy = await loader.alazy_load()
+
+            for doc in docs_lazy:
+                docs.append(doc)
+            print(docs[0].page_content[:100])
+            print(docs[0].metadata)
+
+        .. code-block:: python
+
+            ESPN - Serving Sports Fans. Anytime. Anywhere.
+
+            {'source': 'https://www.espn.com/', 'title': 'ESPN - Serving Sports Fans. Anytime. Anywhere.', 'description': 'Visit ESPN for live scores, highlights and sports news. Stream exclusive games on ESPN+ and play fantasy sports.', 'language': 'en'}
+
+
+    Async load:
+        .. code-block:: python
+
+            docs = await loader.aload()
+            print(docs[0].page_content[:100])
+            print(docs[0].metadata)
+
+        .. code-block:: python
+
+            ESPN - Serving Sports Fans. Anytime. Anywhere.
+
+            {'source': 'https://www.espn.com/', 'title': 'ESPN - Serving Sports Fans. Anytime. Anywhere.', 'description': 'Visit ESPN for live scores, highlights and sports news. Stream exclusive games on ESPN+ and play fantasy sports.', 'language': 'en'}
+
+    """  # noqa: E501
 
     def __init__(
         self,
@@ -134,12 +202,13 @@ class WebBaseLoader(BaseLoader):
         async with aiohttp.ClientSession() as session:
             for i in range(retries):
                 try:
-                    async with session.get(
-                        url,
+                    kwargs: Dict = dict(
                         headers=self.session.headers,
-                        ssl=None if self.session.verify else False,
                         cookies=self.session.cookies.get_dict(),
-                    ) as response:
+                    )
+                    if not self.session.verify:
+                        kwargs["ssl"] = False
+                    async with session.get(url, **kwargs) as response:
                         if self.raise_for_status:
                             response.raise_for_status()
                         return await response.text()

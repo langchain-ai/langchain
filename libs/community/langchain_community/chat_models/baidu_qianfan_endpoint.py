@@ -34,23 +34,25 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_core.messages.ai import UsageMetadata
+from langchain_core.messages.tool import tool_call_chunk
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
     PydanticToolsParser,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import (
-    BaseModel,
-    Field,
-    SecretStr,
-    root_validator,
-)
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from langchain_core.utils.function_calling import convert_to_openai_tool
-from langchain_core.utils.pydantic import is_basemodel_subclass
+from langchain_core.utils.pydantic import get_fields, is_basemodel_subclass
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    SecretStr,
+    model_validator,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -104,13 +106,18 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> AIMessage:
             # align to api sample, which affects the llm function_call output
             additional_kwargs["function_call"].pop("thoughts")
 
+    # DO NOT ADD ANY NUMERIC OBJECT TO `msg_additional_kwargs` AND `additional_kwargs`
+    # ALONG WITH THEIRS SUB-CONTAINERS !!!
+    # OR IT WILL RAISE A DEADLY EXCEPTION FROM `merge_dict`
+    # 不要往 `msg_additional_kwargs` 和 `additional_kwargs` 里面加任何数值类对象！
+    # 子容器也不行！
+    # 不然 `merge_dict` 会报错导致代码无法运行
     additional_kwargs = {**_dict.get("body", {}), **additional_kwargs}
     msg_additional_kwargs = dict(
         finish_reason=additional_kwargs.get("finish_reason", ""),
         request_id=additional_kwargs["id"],
         object=additional_kwargs.get("object", ""),
         search_info=additional_kwargs.get("search_info", []),
-        usage=additional_kwargs.get("usage", None),
     )
 
     if additional_kwargs.get("function_call", {}):
@@ -125,21 +132,19 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> AIMessage:
             }
         ]
 
-    if usage := additional_kwargs.get("usage", None):
-        return AIMessage(
-            content=content,
-            additional_kwargs=msg_additional_kwargs,
-            usage_metadata=UsageMetadata(
-                input_tokens=usage.get("prompt_tokens", 0),
-                output_tokens=usage.get("completion_tokens", 0),
-                total_tokens=usage.get("total_tokens", 0),
-            ),
-        )
-
-    return AIMessage(
+    ret = AIMessage(
         content=content,
         additional_kwargs=msg_additional_kwargs,
     )
+
+    if usage := additional_kwargs.get("usage", None):
+        ret.usage_metadata = UsageMetadata(
+            input_tokens=usage.get("prompt_tokens", 0),
+            output_tokens=usage.get("completion_tokens", 0),
+            total_tokens=usage.get("total_tokens", 0),
+        )
+
+    return ret
 
 
 class QianfanChatEndpoint(BaseChatModel):
@@ -196,7 +201,7 @@ class QianfanChatEndpoint(BaseChatModel):
                 ("system", "你是一名专业的翻译家，可以将用户的中文翻译为英文。"),
                 ("human", "我喜欢编程。"),
             ]
-            qianfan_chat.invoke(message)
+            qianfan_chat.invoke(messages)
 
         .. code-block:: python
 
@@ -215,6 +220,7 @@ class QianfanChatEndpoint(BaseChatModel):
 
         .. code-block:: python
 
+            stream = chat.stream(messages)
             full = next(stream)
             for chunk in stream:
                 full += chunk
@@ -243,7 +249,7 @@ class QianfanChatEndpoint(BaseChatModel):
     Tool calling:
         .. code-block:: python
 
-            from langchain_core.pydantic_v1 import BaseModel, Field
+            from pydantic import BaseModel, Field
 
 
             class GetWeather(BaseModel):
@@ -282,7 +288,7 @@ class QianfanChatEndpoint(BaseChatModel):
 
             from typing import Optional
 
-            from langchain_core.pydantic_v1 import BaseModel, Field
+            from pydantic import BaseModel, Field
 
 
             class Joke(BaseModel):
@@ -340,9 +346,11 @@ class QianfanChatEndpoint(BaseChatModel):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """extra params for model invoke using with `do`."""
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
 
-    qianfan_ak: SecretStr = Field(alias="api_key")
+    # It could be empty due to the use of Console API
+    # And they're not list here
+    qianfan_ak: Optional[SecretStr] = Field(default=None, alias="api_key")
     """Qianfan API KEY"""
     qianfan_sk: Optional[SecretStr] = Field(default=None, alias="secret_key")
     """Qianfan SECRET KEY"""
@@ -361,43 +369,39 @@ class QianfanChatEndpoint(BaseChatModel):
     In the case of other model, passing these params will not affect the result.
     """
 
-    model: str = "ERNIE-Lite-8K"
+    model: Optional[str] = Field(default=None)
     """Model name.
     you could get from https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Nlks5zkzu
     
     preset models are mapping to an endpoint.
     `model` will be ignored if `endpoint` is set.
-    Default is ERNIE-Lite-8K.
+    Default is set by `qianfan` SDK, not here
     """
 
     endpoint: Optional[str] = None
     """Endpoint of the Qianfan LLM, required if custom model used."""
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
-        allow_population_by_field_name = True
-
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         values["qianfan_ak"] = convert_to_secret_str(
             get_from_dict_or_env(
-                values,
-                ["qianfan_ak", "api_key"],
-                "QIANFAN_AK",
+                values, ["qianfan_ak", "api_key"], "QIANFAN_AK", default=""
             )
         )
         values["qianfan_sk"] = convert_to_secret_str(
             get_from_dict_or_env(
-                values,
-                ["qianfan_sk", "secret_key"],
-                "QIANFAN_SK",
+                values, ["qianfan_sk", "secret_key"], "QIANFAN_SK", default=""
             )
         )
 
         default_values = {
             name: field.default
-            for name, field in cls.__fields__.items()
+            for name, field in get_fields(cls).items()
             if field.default is not None
         }
         default_values.update(values)
@@ -511,6 +515,7 @@ class QianfanChatEndpoint(BaseChatModel):
         if self.streaming:
             completion = ""
             chat_generation_info: Dict = {}
+            usage_metadata: Optional[UsageMetadata] = None
             for chunk in self._stream(messages, stop, run_manager, **kwargs):
                 chat_generation_info = (
                     chunk.generation_info
@@ -518,7 +523,14 @@ class QianfanChatEndpoint(BaseChatModel):
                     else chat_generation_info
                 )
                 completion += chunk.text
-            lc_msg = AIMessage(content=completion, additional_kwargs={})
+                if isinstance(chunk.message, AIMessageChunk):
+                    usage_metadata = chunk.message.usage_metadata
+
+            lc_msg = AIMessage(
+                content=completion,
+                additional_kwargs={},
+                usage_metadata=usage_metadata,
+            )
             gen = ChatGeneration(
                 message=lc_msg,
                 generation_info=dict(finish_reason="stop"),
@@ -526,7 +538,7 @@ class QianfanChatEndpoint(BaseChatModel):
             return ChatResult(
                 generations=[gen],
                 llm_output={
-                    "token_usage": chat_generation_info.get("usage", {}),
+                    "token_usage": usage_metadata or {},
                     "model_name": self.model,
                 },
             )
@@ -555,6 +567,7 @@ class QianfanChatEndpoint(BaseChatModel):
         if self.streaming:
             completion = ""
             chat_generation_info: Dict = {}
+            usage_metadata: Optional[UsageMetadata] = None
             async for chunk in self._astream(messages, stop, run_manager, **kwargs):
                 chat_generation_info = (
                     chunk.generation_info
@@ -563,7 +576,14 @@ class QianfanChatEndpoint(BaseChatModel):
                 )
                 completion += chunk.text
 
-            lc_msg = AIMessage(content=completion, additional_kwargs={})
+                if isinstance(chunk.message, AIMessageChunk):
+                    usage_metadata = chunk.message.usage_metadata
+
+            lc_msg = AIMessage(
+                content=completion,
+                additional_kwargs={},
+                usage_metadata=usage_metadata,
+            )
             gen = ChatGeneration(
                 message=lc_msg,
                 generation_info=dict(finish_reason="stop"),
@@ -571,7 +591,7 @@ class QianfanChatEndpoint(BaseChatModel):
             return ChatResult(
                 generations=[gen],
                 llm_output={
-                    "token_usage": chat_generation_info.get("usage", {}),
+                    "token_usage": usage_metadata or {},
                     "model_name": self.model,
                 },
             )
@@ -613,6 +633,15 @@ class QianfanChatEndpoint(BaseChatModel):
                         role="assistant",
                         additional_kwargs=additional_kwargs,
                         usage_metadata=msg.usage_metadata,
+                        tool_call_chunks=[
+                            tool_call_chunk(
+                                name=tc["name"],
+                                args=json.dumps(tc["args"]),
+                                id=tc["id"],
+                                index=None,
+                            )
+                            for tc in msg.tool_calls
+                        ],
                     ),
                     generation_info=msg.additional_kwargs,
                 )
@@ -641,6 +670,15 @@ class QianfanChatEndpoint(BaseChatModel):
                         role="assistant",
                         additional_kwargs=additional_kwargs,
                         usage_metadata=msg.usage_metadata,
+                        tool_call_chunks=[
+                            tool_call_chunk(
+                                name=tc["name"],
+                                args=json.dumps(tc["args"]),
+                                id=tc["id"],
+                                index=None,
+                            )
+                            for tc in msg.tool_calls
+                        ],
                     ),
                     generation_info=msg.additional_kwargs,
                 )
@@ -712,7 +750,7 @@ class QianfanChatEndpoint(BaseChatModel):
             .. code-block:: python
 
                 from langchain_mistralai import QianfanChatEndpoint
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
 
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
@@ -733,7 +771,7 @@ class QianfanChatEndpoint(BaseChatModel):
             .. code-block:: python
 
                 from langchain_mistralai import QianfanChatEndpoint
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
 
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
@@ -754,7 +792,7 @@ class QianfanChatEndpoint(BaseChatModel):
             .. code-block:: python
 
                 from langchain_mistralai import QianfanChatEndpoint
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
                 from langchain_core.utils.function_calling import convert_to_openai_tool
 
                 class AnswerWithJustification(BaseModel):

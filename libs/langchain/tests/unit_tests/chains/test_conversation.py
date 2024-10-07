@@ -16,7 +16,7 @@ from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
 class DummyLLM(LLM):
-    last_prompt = ""
+    last_prompt: str = ""
 
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)

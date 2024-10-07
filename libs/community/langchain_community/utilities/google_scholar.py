@@ -1,9 +1,9 @@
 """Util that calls Google Scholar Search."""
 
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, ConfigDict, model_validator
 
 
 class GoogleScholarAPIWrapper(BaseModel):
@@ -46,13 +46,13 @@ class GoogleScholarAPIWrapper(BaseModel):
     lr: str = "lang_en"
     serp_api_key: Optional[str] = None
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
-        extra = Extra.forbid
-
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that api key and python package exists in environment."""
         serp_api_key = get_from_dict_or_env(values, "serp_api_key", "SERP_API_KEY")
         values["SERP_API_KEY"] = serp_api_key

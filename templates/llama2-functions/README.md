@@ -1,7 +1,6 @@
+# Llama.cpp functions
 
-# llama2-functions
-
-This template performs extraction of structured data from unstructured data using a [LLaMA2 model that supports a specified JSON output schema](https://github.com/ggerganov/llama.cpp/blob/master/grammars/README.md). 
+This template performs extraction of structured data from unstructured data using  [Llama.cpp package with the LLaMA2 model that supports a specified JSON output schema](https://github.com/ggerganov/llama.cpp/blob/master/grammars/README.md). 
 
 The extraction schema can be set in `chain.py`.
 

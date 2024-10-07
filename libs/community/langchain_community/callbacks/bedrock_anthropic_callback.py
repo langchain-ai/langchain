@@ -9,6 +9,7 @@ MODEL_COST_PER_1K_INPUT_TOKENS = {
     "anthropic.claude-v2": 0.008,
     "anthropic.claude-v2:1": 0.008,
     "anthropic.claude-3-sonnet-20240229-v1:0": 0.003,
+    "anthropic.claude-3-5-sonnet-20240620-v1:0": 0.003,
     "anthropic.claude-3-haiku-20240307-v1:0": 0.00025,
 }
 
@@ -17,6 +18,7 @@ MODEL_COST_PER_1K_OUTPUT_TOKENS = {
     "anthropic.claude-v2": 0.024,
     "anthropic.claude-v2:1": 0.024,
     "anthropic.claude-3-sonnet-20240229-v1:0": 0.015,
+    "anthropic.claude-3-5-sonnet-20240620-v1:0": 0.015,
     "anthropic.claude-3-haiku-20240307-v1:0": 0.00125,
 }
 

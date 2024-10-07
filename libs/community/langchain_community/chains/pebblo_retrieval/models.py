@@ -2,7 +2,7 @@
 
 from typing import Any, List, Optional, Union
 
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel
 
 
 class AuthContext(BaseModel):
@@ -109,7 +109,7 @@ class VectorDB(BaseModel):
     embedding_model: Optional[str] = None
 
 
-class Chains(BaseModel):
+class ChainInfo(BaseModel):
     name: str
     model: Optional[Model]
     vector_dbs: Optional[List[VectorDB]]
@@ -121,8 +121,9 @@ class App(BaseModel):
     description: Optional[str]
     runtime: Runtime
     framework: Framework
-    chains: List[Chains]
+    chains: List[ChainInfo]
     plugin_version: str
+    client_version: Framework
 
 
 class Context(BaseModel):
@@ -133,7 +134,10 @@ class Context(BaseModel):
 
 
 class Prompt(BaseModel):
-    data: str
+    data: Optional[Union[list, str]]
+    entityCount: Optional[int] = None
+    entities: Optional[dict] = None
+    prompt_gov_enabled: Optional[bool] = None
 
 
 class Qa(BaseModel):

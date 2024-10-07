@@ -21,7 +21,7 @@ DEFAULT_TOPN = 4
 class AwaDB(VectorStore):
     """`AwaDB` vector store."""
 
-    _DEFAULT_TABLE_NAME = "langchain_awadb"
+    _DEFAULT_TABLE_NAME: str = "langchain_awadb"
 
     def __init__(
         self,

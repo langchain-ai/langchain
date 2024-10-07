@@ -6,6 +6,7 @@ import pytest
 # https://docs.pytest.org/en/7.1.x/how-to/writing_plugins.html#assertion-rewriting
 modules = [
     "chat_models",
+    "embeddings",
 ]
 
 for module in modules:
@@ -13,4 +14,4 @@ for module in modules:
 
 from langchain_standard_tests.unit_tests.chat_models import ChatModelUnitTests
 
-__all__ = ["ChatModelUnitTests"]
+__all__ = ["ChatModelUnitTests", "EmbeddingsUnitTests"]

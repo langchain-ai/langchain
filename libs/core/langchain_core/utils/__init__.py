@@ -22,14 +22,17 @@ from langchain_core.utils.utils import (
     build_extra_kwargs,
     check_package_version,
     convert_to_secret_str,
+    from_env,
     get_pydantic_field_names,
     guard_import,
     mock_now,
     raise_for_status_with_text,
+    secret_from_env,
     xor_args,
 )
 
 __all__ = [
+    "build_extra_kwargs",
     "StrictFormatter",
     "check_package_version",
     "convert_to_secret_str",
@@ -44,7 +47,6 @@ __all__ = [
     "raise_for_status_with_text",
     "xor_args",
     "try_load_from_hub",
-    "build_extra_kwargs",
     "image",
     "get_from_env",
     "get_from_dict_or_env",
@@ -54,4 +56,6 @@ __all__ = [
     "pre_init",
     "batch_iterate",
     "abatch_iterate",
+    "from_env",
+    "secret_from_env",
 ]

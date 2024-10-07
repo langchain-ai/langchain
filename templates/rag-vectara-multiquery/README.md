@@ -1,7 +1,6 @@
+# RAG - Vectara - multi-query
 
-# rag-vectara-multiquery
-
-This template performs multiquery RAG with vectara.
+This template performs multiquery RAG with `Vectara` vectorstore.
 
 ## Environment Setup
 

@@ -1,13 +1,18 @@
+import importlib
+import importlib.metadata
 from typing import Any, Dict, List, Literal, Optional
 
 import numpy as np
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra
 from langchain_core.utils import pre_init
+from pydantic import BaseModel, ConfigDict
+
+MIN_VERSION = "0.2.0"
 
 
 class FastEmbedEmbeddings(BaseModel, Embeddings):
     """Qdrant FastEmbedding models.
+
     FastEmbed is a lightweight, fast, Python library built for embedding generation.
     See more documentation at:
     * https://github.com/qdrant/fastembed/
@@ -33,12 +38,12 @@ class FastEmbedEmbeddings(BaseModel, Embeddings):
     Unknown behavior for values > 512.
     """
 
-    cache_dir: Optional[str]
+    cache_dir: Optional[str] = None
     """The path to the cache directory.
     Defaults to `local_cache` in the parent directory
     """
 
-    threads: Optional[int]
+    threads: Optional[int] = None
     """The number of threads single onnxruntime session can use.
     Defaults to None
     """
@@ -48,12 +53,21 @@ class FastEmbedEmbeddings(BaseModel, Embeddings):
     The available options are: "default" and "passage"
     """
 
-    _model: Any  # : :meta private:
+    batch_size: int = 256
+    """Batch size for encoding. Higher values will use more memory, but be faster.
+    Defaults to 256.
+    """
 
-    class Config:
-        """Configuration for this pydantic object."""
+    parallel: Optional[int] = None
+    """If `>1`, parallel encoding is used, recommended for encoding of large datasets.
+    If `0`, use all available cores.
+    If `None`, don't use data-parallel processing, use default onnxruntime threading.
+    Defaults to `None`.
+    """
 
-        extra = Extra.forbid
+    model: Any = None  # : :meta private:
+
+    model_config = ConfigDict(extra="allow", protected_namespaces=())
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
@@ -64,31 +78,25 @@ class FastEmbedEmbeddings(BaseModel, Embeddings):
         threads = values.get("threads")
 
         try:
-            # >= v0.2.0
-            from fastembed import TextEmbedding
+            fastembed = importlib.import_module("fastembed")
 
-            values["_model"] = TextEmbedding(
-                model_name=model_name,
-                max_length=max_length,
-                cache_dir=cache_dir,
-                threads=threads,
+        except ModuleNotFoundError:
+            raise ImportError(
+                "Could not import 'fastembed' Python package. "
+                "Please install it with `pip install fastembed`."
             )
-        except ImportError as ie:
-            try:
-                # < v0.2.0
-                from fastembed.embedding import FlagEmbedding
 
-                values["_model"] = FlagEmbedding(
-                    model_name=model_name,
-                    max_length=max_length,
-                    cache_dir=cache_dir,
-                    threads=threads,
-                )
-            except ImportError:
-                raise ImportError(
-                    "Could not import 'fastembed' Python package. "
-                    "Please install it with `pip install fastembed`."
-                ) from ie
+        if importlib.metadata.version("fastembed") < MIN_VERSION:
+            raise ImportError(
+                'FastEmbedEmbeddings requires `pip install -U "fastembed>=0.2.0"`.'
+            )
+
+        values["model"] = fastembed.TextEmbedding(
+            model_name=model_name,
+            max_length=max_length,
+            cache_dir=cache_dir,
+            threads=threads,
+        )
         return values
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
@@ -102,9 +110,13 @@ class FastEmbedEmbeddings(BaseModel, Embeddings):
         """
         embeddings: List[np.ndarray]
         if self.doc_embed_type == "passage":
-            embeddings = self._model.passage_embed(texts)
+            embeddings = self.model.passage_embed(
+                texts, batch_size=self.batch_size, parallel=self.parallel
+            )
         else:
-            embeddings = self._model.embed(texts)
+            embeddings = self.model.embed(
+                texts, batch_size=self.batch_size, parallel=self.parallel
+            )
         return [e.tolist() for e in embeddings]
 
     def embed_query(self, text: str) -> List[float]:
@@ -116,5 +128,9 @@ class FastEmbedEmbeddings(BaseModel, Embeddings):
         Returns:
             Embeddings for the text.
         """
-        query_embeddings: np.ndarray = next(self._model.query_embed(text))
+        query_embeddings: np.ndarray = next(
+            self.model.query_embed(
+                text, batch_size=self.batch_size, parallel=self.parallel
+            )
+        )
         return query_embeddings.tolist()

@@ -1,4 +1,4 @@
-:mod:`{{module}}`.{{objname}}
+{{ objname }}
 {{ underline }}==============
 
 .. currentmodule:: {{ module }}
@@ -11,7 +11,7 @@
 
    .. autosummary::
    {% for item in attributes %}
-      ~{{ name }}.{{ item }}
+      ~{{ item }}
    {%- endfor %}
    {% endif %}
    {% endblock %}
@@ -22,11 +22,11 @@
 
    .. autosummary::
    {% for item in methods %}
-      ~{{ name }}.{{ item }}
+      ~{{ item }}
    {%- endfor %}
 
    {% for item in methods %}
-   .. automethod:: {{ name }}.{{ item }}
+   .. automethod:: {{ item }}
    {%- endfor %}
 
    {% endif %}

@@ -6,6 +6,7 @@ from typing import Any, Union
 
 import yaml
 from langchain_core.language_models.llms import BaseLLM
+from langchain_core.utils.pydantic import get_fields
 
 from langchain_community.llms import get_type_to_cls_dict
 
@@ -26,7 +27,7 @@ def load_llm_from_config(config: dict, **kwargs: Any) -> BaseLLM:
     llm_cls = type_to_cls_dict[config_type]()
 
     load_kwargs = {}
-    if _ALLOW_DANGEROUS_DESERIALIZATION_ARG in llm_cls.__fields__:
+    if _ALLOW_DANGEROUS_DESERIALIZATION_ARG in get_fields(llm_cls):
         load_kwargs[_ALLOW_DANGEROUS_DESERIALIZATION_ARG] = kwargs.get(
             _ALLOW_DANGEROUS_DESERIALIZATION_ARG, False
         )

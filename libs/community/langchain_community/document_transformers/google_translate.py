@@ -8,7 +8,7 @@ from langchain_community.utilities.vertexai import get_client_info
 
 @deprecated(
     since="0.0.32",
-    removal="0.3.0",
+    removal="1.0",
     alternative_import="langchain_google_community.DocAIParser",
 )
 class GoogleTranslateTransformer(BaseDocumentTransformer):

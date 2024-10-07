@@ -1,6 +1,10 @@
-# pii-protected-chatbot
+# PII-protected chatbot
 
-This template creates a chatbot that flags any incoming PII and doesn't pass it to the LLM.
+This template creates a chatbot that flags any incoming 
+`Personal Identification Information` (`PII`) and doesn't pass it to the LLM.
+
+It uses the [Microsoft Presidio](https://microsoft.github.io/presidio/), 
+the Data Protection and De-identification SDK.
 
 ## Environment Setup
 

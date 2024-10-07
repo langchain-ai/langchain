@@ -272,7 +272,7 @@ class Clarifai(VectorStore):
             token (Optional[str], optional): Session token. Defaults to None.
             metadatas (Optional[List[dict]]): Optional list
             of metadatas. Defaults to None.
-            **kwargs: Additional keyword arguments to be passed to the Search.
+            kwargs: Additional keyword arguments to be passed to the Search.
 
         Returns:
             Clarifai: Clarifai vectorstore.
@@ -310,7 +310,7 @@ class Clarifai(VectorStore):
             to return during vector search. Defaults to None.
             pat (Optional[str], optional): Personal access token. Defaults to None.
             token (Optional[str], optional): Session token. Defaults to None.
-            **kwargs: Additional keyword arguments to be passed to the Search.
+            kwargs: Additional keyword arguments to be passed to the Search.
 
         Returns:
             Clarifai: Clarifai vectorstore.

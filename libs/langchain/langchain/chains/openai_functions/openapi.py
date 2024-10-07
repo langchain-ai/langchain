@@ -6,6 +6,7 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union
 
 import requests
+from langchain_core._api import deprecated
 from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers.openai_functions import JsonOutputFunctionsParser
@@ -242,6 +243,15 @@ class SimpleRequestChain(Chain):
         return {self.output_key: response}
 
 
+@deprecated(
+    since="0.2.13",
+    message=(
+        "This function is deprecated and will be removed in langchain 1.0. "
+        "See API reference for replacement: "
+        "https://api.python.langchain.com/en/latest/chains/langchain.chains.openai_functions.openapi.get_openapi_chain.html"  # noqa: E501
+    ),
+    removal="1.0",
+)
 def get_openapi_chain(
     spec: Union[OpenAPISpec, str],
     llm: Optional[BaseLanguageModel] = None,
@@ -255,13 +265,90 @@ def get_openapi_chain(
 ) -> SequentialChain:
     """Create a chain for querying an API from a OpenAPI spec.
 
+    Note: this class is deprecated. See below for a replacement implementation.
+        The benefits of this implementation are:
+
+        - Uses LLM tool calling features to encourage properly-formatted API requests;
+        - Includes async support.
+
+        .. code-block:: python
+
+            from typing import Any
+
+            from langchain.chains.openai_functions.openapi import openapi_spec_to_openai_fn
+            from langchain_community.utilities.openapi import OpenAPISpec
+            from langchain_core.prompts import ChatPromptTemplate
+            from langchain_openai import ChatOpenAI
+
+            # Define API spec. Can be JSON or YAML
+            api_spec = \"\"\"
+            {
+            "openapi": "3.1.0",
+            "info": {
+                "title": "JSONPlaceholder API",
+                "version": "1.0.0"
+            },
+            "servers": [
+                {
+                "url": "https://jsonplaceholder.typicode.com"
+                }
+            ],
+            "paths": {
+                "/posts": {
+                "get": {
+                    "summary": "Get posts",
+                    "parameters": [
+                    {
+                        "name": "_limit",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                        "type": "integer",
+                        "example": 2
+                        },
+                        "description": "Limit the number of results"
+                    }
+                    ]
+                }
+                }
+            }
+            }
+            \"\"\"
+
+            parsed_spec = OpenAPISpec.from_text(api_spec)
+            openai_fns, call_api_fn = openapi_spec_to_openai_fn(parsed_spec)
+            tools = [
+                {"type": "function", "function": fn}
+                for fn in openai_fns
+            ]
+
+            prompt = ChatPromptTemplate.from_template(
+                "Use the provided APIs to respond to this user query:\\n\\n{query}"
+            )
+            llm = ChatOpenAI(model="gpt-4o-mini", temperature=0).bind_tools(tools)
+
+            def _execute_tool(message) -> Any:
+                if tool_calls := message.tool_calls:
+                    tool_call = message.tool_calls[0]
+                    response = call_api_fn(name=tool_call["name"], fn_args=tool_call["args"])
+                    response.raise_for_status()
+                    return response.json()
+                else:
+                    return message.content
+
+            chain = prompt | llm | _execute_tool
+
+        .. code-block:: python
+
+            response = chain.invoke({"query": "Get me top two posts."})
+
     Args:
         spec: OpenAPISpec or url/file/text string corresponding to one.
         llm: language model, should be an OpenAI function-calling model, e.g.
             `ChatOpenAI(model="gpt-3.5-turbo-0613")`.
         prompt: Main prompt template to use.
         request_chain: Chain for taking the functions output and executing the request.
-    """
+    """  # noqa: E501
     try:
         from langchain_community.utilities.openapi import OpenAPISpec
     except ImportError as e:

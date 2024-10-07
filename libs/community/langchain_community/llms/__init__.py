@@ -172,7 +172,7 @@ def _import_databricks() -> Type[BaseLLM]:
 def _import_databricks_chat() -> Any:
     warn_deprecated(
         since="0.0.22",
-        removal="0.3",
+        removal="1.0",
         alternative_import="langchain_community.chat_models.ChatDatabricks",
     )
     from langchain_community.chat_models.databricks import ChatDatabricks
@@ -342,7 +342,7 @@ def _import_mlflow() -> Type[BaseLLM]:
 def _import_mlflow_chat() -> Any:
     warn_deprecated(
         since="0.0.22",
-        removal="0.3",
+        removal="1.0",
         alternative_import="langchain_community.chat_models.ChatMlflow",
     )
     from langchain_community.chat_models.mlflow import ChatMlflow
@@ -508,12 +508,6 @@ def _import_sagemaker_endpoint() -> Type[BaseLLM]:
     from langchain_community.llms.sagemaker_endpoint import SagemakerEndpoint
 
     return SagemakerEndpoint
-
-
-def _import_sambaverse() -> Type[BaseLLM]:
-    from langchain_community.llms.sambanova import Sambaverse
-
-    return Sambaverse
 
 
 def _import_sambastudio() -> Type[BaseLLM]:
@@ -817,8 +811,6 @@ def __getattr__(name: str) -> Any:
         return _import_rwkv()
     elif name == "SagemakerEndpoint":
         return _import_sagemaker_endpoint()
-    elif name == "Sambaverse":
-        return _import_sambaverse()
     elif name == "SambaStudio":
         return _import_sambastudio()
     elif name == "SelfHostedPipeline":
@@ -954,7 +946,6 @@ __all__ = [
     "RWKV",
     "Replicate",
     "SagemakerEndpoint",
-    "Sambaverse",
     "SambaStudio",
     "SelfHostedHuggingFaceLLM",
     "SelfHostedPipeline",
@@ -1051,7 +1042,6 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "replicate": _import_replicate,
         "rwkv": _import_rwkv,
         "sagemaker_endpoint": _import_sagemaker_endpoint,
-        "sambaverse": _import_sambaverse,
         "sambastudio": _import_sambastudio,
         "self_hosted": _import_self_hosted,
         "self_hosted_hugging_face": _import_self_hosted_hugging_face,

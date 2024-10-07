@@ -10,10 +10,10 @@ from langchain_core.callbacks import (
 )
 from langchain_core.documents import Document
 from langchain_core.prompts import BasePromptTemplate, PromptTemplate
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables.config import RunnableConfig
 from langchain_core.runnables.utils import create_model
 from langchain_text_splitters import RecursiveCharacterTextSplitter, TextSplitter
+from pydantic import BaseModel, Field
 
 from langchain.chains.base import Chain
 
@@ -22,11 +22,11 @@ DOCUMENTS_KEY = "context"
 DEFAULT_DOCUMENT_PROMPT = PromptTemplate.from_template("{page_content}")
 
 
-def _validate_prompt(prompt: BasePromptTemplate) -> None:
-    if DOCUMENTS_KEY not in prompt.input_variables:
+def _validate_prompt(prompt: BasePromptTemplate, document_variable_name: str) -> None:
+    if document_variable_name not in prompt.input_variables:
         raise ValueError(
-            f"Prompt must accept {DOCUMENTS_KEY} as an input variable. Received prompt "
-            f"with input variables: {prompt.input_variables}"
+            f"Prompt must accept {document_variable_name} as an input variable. "
+            f"Received prompt with input variables: {prompt.input_variables}"
         )
 
 

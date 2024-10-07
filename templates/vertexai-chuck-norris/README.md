@@ -1,7 +1,6 @@
+# Vertex AI - Chuck Norris
 
-# vertexai-chuck-norris
-
-This template makes jokes about Chuck Norris using Vertex AI PaLM2. 
+This template makes jokes about Chuck Norris using `Google Cloud Vertex AI PaLM2`. 
 
 ## Environment Setup
 

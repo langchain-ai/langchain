@@ -8,8 +8,10 @@ from typing import Any, Callable, Dict, Optional, Sequence, cast
 from langchain_core.callbacks.manager import Callbacks
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseLanguageModel
-from langchain_core.output_parsers import BaseOutputParser
+from langchain_core.output_parsers import BaseOutputParser, StrOutputParser
 from langchain_core.prompts import PromptTemplate
+from langchain_core.runnables import Runnable
+from pydantic import ConfigDict
 
 from langchain.chains.llm import LLMChain
 from langchain.retrievers.document_compressors.base import BaseDocumentCompressor
@@ -49,11 +51,15 @@ class LLMChainExtractor(BaseDocumentCompressor):
     """Document compressor that uses an LLM chain to extract
     the relevant parts of documents."""
 
-    llm_chain: LLMChain
+    llm_chain: Runnable
     """LLM wrapper to use for compressing documents."""
 
     get_input: Callable[[str, Document], dict] = default_get_input
     """Callable for constructing the chain input from the query and a Document."""
+
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     def compress_documents(
         self,
@@ -65,10 +71,13 @@ class LLMChainExtractor(BaseDocumentCompressor):
         compressed_docs = []
         for doc in documents:
             _input = self.get_input(query, doc)
-            output_dict = self.llm_chain.invoke(_input, config={"callbacks": callbacks})
-            output = output_dict[self.llm_chain.output_key]
-            if self.llm_chain.prompt.output_parser is not None:
-                output = self.llm_chain.prompt.output_parser.parse(output)
+            output_ = self.llm_chain.invoke(_input, config={"callbacks": callbacks})
+            if isinstance(self.llm_chain, LLMChain):
+                output = output_[self.llm_chain.output_key]
+                if self.llm_chain.prompt.output_parser is not None:
+                    output = self.llm_chain.prompt.output_parser.parse(output)
+            else:
+                output = output_
             if len(output) == 0:
                 continue
             compressed_docs.append(
@@ -85,9 +94,7 @@ class LLMChainExtractor(BaseDocumentCompressor):
         """Compress page content of raw documents asynchronously."""
         outputs = await asyncio.gather(
             *[
-                self.llm_chain.apredict_and_parse(
-                    **self.get_input(query, doc), callbacks=callbacks
-                )
+                self.llm_chain.ainvoke(self.get_input(query, doc), callbacks=callbacks)
                 for doc in documents
             ]
         )
@@ -111,5 +118,9 @@ class LLMChainExtractor(BaseDocumentCompressor):
         """Initialize from LLM."""
         _prompt = prompt if prompt is not None else _get_default_chain_prompt()
         _get_input = get_input if get_input is not None else default_get_input
-        llm_chain = LLMChain(llm=llm, prompt=_prompt, **(llm_chain_kwargs or {}))
+        if _prompt.output_parser is not None:
+            parser = _prompt.output_parser
+        else:
+            parser = StrOutputParser()
+        llm_chain = _prompt | llm | parser
         return cls(llm_chain=llm_chain, get_input=_get_input)  # type: ignore[arg-type]

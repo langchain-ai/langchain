@@ -7,12 +7,25 @@ import logging
 import time
 from collections.abc import AsyncIterator, Iterator
 from contextlib import asynccontextmanager, contextmanager
-from typing import Any, Dict, List, Optional, Tuple, Type, Union
+from operator import itemgetter
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+)
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
+from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
     agenerate_from_stream,
@@ -29,15 +42,28 @@ from langchain_core.messages import (
     HumanMessageChunk,
     SystemMessage,
     SystemMessageChunk,
+    ToolMessage,
+)
+from langchain_core.output_parsers.base import OutputParserLike
+from langchain_core.output_parsers.openai_tools import (
+    JsonOutputKeyToolsParser,
+    PydanticToolsParser,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
+from langchain_core.tools import BaseTool
 from langchain_core.utils import get_from_dict_or_env
+from langchain_core.utils.function_calling import convert_to_openai_tool
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 logger = logging.getLogger(__name__)
 
 API_TOKEN_TTL_SECONDS = 3 * 60
 ZHIPUAI_API_BASE = "https://open.bigmodel.cn/api/paas/v4/chat/completions"
+
+
+def _is_pydantic_class(obj: Any) -> bool:
+    return isinstance(obj, type) and issubclass(obj, BaseModel)
 
 
 @contextmanager
@@ -48,7 +74,7 @@ def connect_sse(client: Any, method: str, url: str, **kwargs: Any) -> Iterator:
         client: The HTTP client.
         method: The HTTP method.
         url: The URL.
-        **kwargs: Additional keyword arguments.
+        kwargs: Additional keyword arguments.
 
     Yields:
         The event source.
@@ -69,7 +95,7 @@ async def aconnect_sse(
         client: The HTTP client.
         method: The HTTP method.
         url: The URL.
-        **kwargs: Additional keyword arguments.
+        kwargs: Additional keyword arguments.
 
     Yields:
         The event source.
@@ -91,7 +117,12 @@ def _get_jwt_token(api_key: str) -> str:
     Returns:
         The JWT token.
     """
-    import jwt
+    try:
+        import jwt
+    except ImportError:
+        raise ImportError(
+            "jwt package not found, please install it with" "`pip install pyjwt`"
+        )
 
     try:
         id, secret = api_key.split(".")
@@ -125,6 +156,15 @@ def _convert_dict_to_message(dct: Dict[str, Any]) -> BaseMessage:
         if tool_calls is not None:
             additional_kwargs["tool_calls"] = tool_calls
         return AIMessage(content=content, additional_kwargs=additional_kwargs)
+    if role == "tool":
+        additional_kwargs = {}
+        if "name" in dct:
+            additional_kwargs["name"] = dct["name"]
+        return ToolMessage(
+            content=content,
+            tool_call_id=dct.get("tool_call_id"),  # type: ignore[arg-type]
+            additional_kwargs=additional_kwargs,
+        )
     return ChatMessage(role=role, content=content)  # type: ignore[arg-type]
 
 
@@ -146,6 +186,13 @@ def _convert_message_to_dict(message: BaseMessage) -> Dict[str, Any]:
         message_dict = {"role": "user", "content": message.content}
     elif isinstance(message, AIMessage):
         message_dict = {"role": "assistant", "content": message.content}
+    elif isinstance(message, ToolMessage):
+        message_dict = {
+            "role": "tool",
+            "content": message.content,
+            "tool_call_id": message.tool_call_id,
+            "name": message.name or message.additional_kwargs.get("name"),
+        }
     else:
         raise TypeError(f"Got unknown type '{message.__class__.__name__}'.")
     return message_dict
@@ -157,7 +204,7 @@ def _convert_delta_to_message_chunk(
     role = dct.get("role")
     content = dct.get("content", "")
     additional_kwargs = {}
-    tool_calls = dct.get("tool_call", None)
+    tool_calls = dct.get("tool_calls", None)
     if tool_calls is not None:
         additional_kwargs["tool_calls"] = tool_calls
 
@@ -199,7 +246,7 @@ class ChatZhipuAI(BaseChatModel):
 
     Key init args — completion params:
         model: Optional[str]
-            Name of OpenAI model to use.
+            Name of ZhipuAI model to use.
         temperature: float
             Sampling temperature.
         max_tokens: Optional[int]
@@ -207,9 +254,9 @@ class ChatZhipuAI(BaseChatModel):
 
     Key init args — client params:
         api_key: Optional[str]
-        ZhipuAI API key. If not passed in will be read from env var ZHIPUAI_API_KEY.
+            ZhipuAI API key. If not passed in will be read from env var ZHIPUAI_API_KEY.
         api_base: Optional[str]
-        Base URL for API requests.
+            Base URL for API requests.
 
     See full list of supported init args and their descriptions in the params section.
 
@@ -255,7 +302,7 @@ class ChatZhipuAI(BaseChatModel):
 
         .. code-block:: python
 
-            stream = llm.stream(messages)
+            stream = zhipuai_chat.stream(messages)
             full = next(stream)
             for chunk in stream:
                 full += chunk
@@ -280,6 +327,67 @@ class ChatZhipuAI(BaseChatModel):
         .. code-block:: python
 
             [AIMessage(content='I enjoy programming.', response_metadata={'token_usage': {'completion_tokens': 6, 'prompt_tokens': 23, 'total_tokens': 29}, 'model_name': 'glm-4', 'finish_reason': 'stop'}, id='run-ba06af9d-4baa-40b2-9298-be9c62aa0849-0')]
+
+    Tool calling:
+        .. code-block:: python
+
+            from pydantic import BaseModel, Field
+
+
+            class GetWeather(BaseModel):
+                '''Get the current weather in a given location'''
+
+                location: str = Field(
+                    ..., description="The city and state, e.g. San Francisco, CA"
+                )
+
+
+            class GetPopulation(BaseModel):
+                '''Get the current population in a given location'''
+
+                location: str = Field(
+                    ..., description="The city and state, e.g. San Francisco, CA"
+                )
+
+            chat_with_tools = zhipuai_chat.bind_tools([GetWeather, GetPopulation])
+            ai_msg = chat_with_tools.invoke(
+                "Which city is hotter today and which is bigger: LA or NY?"
+            )
+            ai_msg.tool_calls
+
+        .. code-block:: python
+
+            [
+                {
+                    'name': 'GetWeather',
+                    'args': {'location': 'Los Angeles, CA'},
+                    'id': 'call_202408222146464ea49ec8731145a9',
+                    'type': 'tool_call'
+                }
+            ]
+
+    Structured output:
+        .. code-block:: python
+
+            from typing import Optional
+
+            from pydantic import BaseModel, Field
+
+
+            class Joke(BaseModel):
+                '''Joke to tell user.'''
+
+                setup: str = Field(description="The setup of the joke")
+                punchline: str = Field(description="The punchline to the joke")
+                rating: Optional[int] = Field(description="How funny the joke is, from 1 to 10")
+
+
+            structured_chat = zhipuai_chat.with_structured_output(Joke)
+            structured_chat.invoke("Tell me a joke about cats")
+
+        .. code-block:: python
+
+            Joke(setup='What do cats like to eat for breakfast?', punchline='Mice Krispies!', rating=None)
 
     Response metadata
         .. code-block:: python
@@ -372,13 +480,13 @@ class ChatZhipuAI(BaseChatModel):
     max_tokens: Optional[int] = None
     """Maximum number of tokens to generate."""
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
-        allow_population_by_field_name = True
-
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict[str, Any]) -> Any:
         values["zhipuai_api_key"] = get_from_dict_or_env(
             values, ["zhipuai_api_key", "api_key"], "ZHIPUAI_API_KEY"
         )
@@ -589,3 +697,178 @@ class ChatZhipuAI(BaseChatModel):
 
                     if finish_reason is not None:
                         break
+
+    def bind_tools(
+        self,
+        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        *,
+        tool_choice: Optional[
+            Union[dict, str, Literal["auto", "any", "none"], bool]
+        ] = None,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        """Bind tool-like objects to this chat model.
+        Args:
+            tools: A list of tool definitions to bind to this chat model.
+                Can be  a dictionary, pydantic model, callable, or BaseTool. Pydantic
+                models, callables, and BaseTools will be automatically converted to
+                their schema dictionary representation.
+            tool_choice: Currently this can only be auto for this chat model.
+            **kwargs: Any additional parameters to pass to the
+                :class:`~langchain.runnable.Runnable` constructor.
+        """
+        if self.model_name == "glm-4v":
+            raise ValueError("glm-4v currently does not support tool calling")
+
+        formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
+        if tool_choice and tool_choice != "auto":
+            raise ValueError("ChatZhipuAI currently only supports `auto` tool choice")
+        elif tool_choice and tool_choice == "auto":
+            kwargs["tool_choice"] = tool_choice
+        return self.bind(tools=formatted_tools, **kwargs)
+
+    def with_structured_output(
+        self,
+        schema: Optional[Union[Dict, Type[BaseModel]]] = None,
+        *,
+        method: Literal["function_calling", "json_mode"] = "function_calling",
+        include_raw: bool = False,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
+        """Model wrapper that returns outputs formatted to match the given schema.
+
+        Args:
+            schema: The output schema as a dict or a Pydantic class. If a Pydantic class
+                then the model output will be an object of that class. If a dict then
+                the model output will be a dict. With a Pydantic class the returned
+                attributes will be validated, whereas with a dict they will not be. If
+                `method` is "function_calling" and `schema` is a dict, then the dict
+                must match the OpenAI function-calling spec.
+            method: The method for steering model generation, either "function_calling"
+                or "json_mode". ZhipuAI only supports "function_calling" which
+                converts the schema to a OpenAI function and the model will make use of the
+                function-calling API.
+            include_raw: If False then only the parsed structured output is returned. If
+                an error occurs during model output parsing it will be raised. If True
+                then both the raw model response (a BaseMessage) and the parsed model
+                response will be returned. If an error occurs during output parsing it
+                will be caught and returned as well. The final output is always a dict
+                with keys "raw", "parsed", and "parsing_error".
+
+        Returns:
+            A Runnable that takes any ChatModel input and returns as output:
+
+                If include_raw is True then a dict with keys:
+                    raw: BaseMessage
+                    parsed: Optional[_DictOrPydantic]
+                    parsing_error: Optional[BaseException]
+
+                If include_raw is False then just _DictOrPydantic is returned,
+                where _DictOrPydantic depends on the schema:
+
+                If schema is a Pydantic class then _DictOrPydantic is the Pydantic
+                    class.
+
+                If schema is a dict then _DictOrPydantic is a dict.
+
+        Example: Function-calling, Pydantic schema (method="function_calling", include_raw=False):
+            .. code-block:: python
+
+                from langchain_community.chat_models import ChatZhipuAI
+                from pydantic import BaseModel
+
+                class AnswerWithJustification(BaseModel):
+                    '''An answer to the user question along with justification for the answer.'''
+                    answer: str
+                    justification: str
+
+                llm = ChatZhipuAI(temperature=0)
+                structured_llm = llm.with_structured_output(AnswerWithJustification)
+
+                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+                # -> AnswerWithJustification(
+                #     answer='A pound of bricks and a pound of feathers weigh the same.'
+                #     justification="Both a pound of bricks and a pound of feathers have been defined to have the same weight. The 'pound' is a unit of weight, so any two things that are described as weighing a pound will weigh the same."
+                # )
+
+        Example: Function-calling, Pydantic schema (method="function_calling", include_raw=True):
+            .. code-block:: python
+
+                from langchain_community.chat_models import ChatZhipuAI
+                from pydantic import BaseModel
+
+                class AnswerWithJustification(BaseModel):
+                    '''An answer to the user question along with justification for the answer.'''
+                    answer: str
+                    justification: str
+
+                llm = ChatZhipuAI(temperature=0)
+                structured_llm = llm.with_structured_output(AnswerWithJustification, include_raw=True)
+
+                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+                # -> {
+                #     'raw': AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_01htjn3cspevxbqc1d7nkk8wab', 'function': {'arguments': '{"answer": "A pound of bricks and a pound of feathers weigh the same.", "justification": "Both a pound of bricks and a pound of feathers have been defined to have the same weight. The \'pound\' is a unit of weight, so any two things that are described as weighing a pound will weigh the same.", "unit": "pounds"}', 'name': 'AnswerWithJustification'}, 'type': 'function'}]}, id='run-456beee6-65f6-4e80-88af-a6065480822c-0'),
+                #     'parsed': AnswerWithJustification(answer='A pound of bricks and a pound of feathers weigh the same.', justification="Both a pound of bricks and a pound of feathers have been defined to have the same weight. The 'pound' is a unit of weight, so any two things that are described as weighing a pound will weigh the same."),
+                #     'parsing_error': None
+                # }
+
+        Example: Function-calling, dict schema (method="function_calling", include_raw=False):
+            .. code-block:: python
+
+                from langchain_community.chat_models import ChatZhipuAI
+                from pydantic import BaseModel
+                from langchain_core.utils.function_calling import convert_to_openai_tool
+
+                class AnswerWithJustification(BaseModel):
+                    '''An answer to the user question along with justification for the answer.'''
+                    answer: str
+                    justification: str
+
+                dict_schema = convert_to_openai_tool(AnswerWithJustification)
+                llm = ChatZhipuAI(temperature=0)
+                structured_llm = llm.with_structured_output(dict_schema)
+
+                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+                # -> {
+                #     'answer': 'A pound of bricks and a pound of feathers weigh the same.',
+                #     'justification': "Both a pound of bricks and a pound of feathers have been defined to have the same weight. The 'pound' is a unit of weight, so any two things that are described as weighing a pound will weigh the same.", 'unit': 'pounds'}
+                # }
+
+        """  # noqa: E501
+        if kwargs:
+            raise ValueError(f"Received unsupported arguments {kwargs}")
+        is_pydantic_schema = _is_pydantic_class(schema)
+        if method == "function_calling":
+            if schema is None:
+                raise ValueError(
+                    "schema must be specified when method is 'function_calling'. "
+                    "Received None."
+                )
+            tool_name = convert_to_openai_tool(schema)["function"]["name"]
+            llm = self.bind_tools([schema], tool_choice="auto")
+            if is_pydantic_schema:
+                output_parser: OutputParserLike = PydanticToolsParser(
+                    tools=[schema],  # type: ignore[list-item]
+                    first_tool_only=True,  # type: ignore[list-item]
+                )
+            else:
+                output_parser = JsonOutputKeyToolsParser(
+                    key_name=tool_name, first_tool_only=True
+                )
+        else:
+            raise ValueError(
+                f"""Unrecognized method argument. Expected 'function_calling'.
+                Received: '{method}'"""
+            )
+
+        if include_raw:
+            parser_assign = RunnablePassthrough.assign(
+                parsed=itemgetter("raw") | output_parser, parsing_error=lambda _: None
+            )
+            parser_none = RunnablePassthrough.assign(parsed=lambda _: None)
+            parser_with_fallback = parser_assign.with_fallbacks(
+                [parser_none], exception_key="parsing_error"
+            )
+            return RunnableMap(raw=llm) | parser_with_fallback
+        else:
+            return llm | output_parser

@@ -9,6 +9,7 @@ modules = [
     "cache",
     "chat_models",
     "vectorstores",
+    "embeddings",
 ]
 
 for module in modules:
@@ -19,7 +20,11 @@ for module in modules:
 from langchain_standard_tests.integration_tests.chat_models import (
     ChatModelIntegrationTests,
 )
+from langchain_standard_tests.integration_tests.embeddings import (
+    EmbeddingsIntegrationTests,
+)
 
 __all__ = [
     "ChatModelIntegrationTests",
+    "EmbeddingsIntegrationTests",
 ]

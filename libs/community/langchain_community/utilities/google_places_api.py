@@ -4,13 +4,13 @@ import logging
 from typing import Any, Dict, Optional
 
 from langchain_core._api.deprecation import deprecated
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, ConfigDict, model_validator
 
 
 @deprecated(
     since="0.0.33",
-    removal="0.3.0",
+    removal="1.0",
     alternative_import="langchain_google_community.GooglePlacesAPIWrapper",
 )
 class GooglePlacesAPIWrapper(BaseModel):
@@ -34,17 +34,17 @@ class GooglePlacesAPIWrapper(BaseModel):
     """
 
     gplaces_api_key: Optional[str] = None
-    google_map_client: Any  #: :meta private:
+    google_map_client: Any = None  #: :meta private:
     top_k_results: Optional[int] = None
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
-
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that api key is in your environment variable."""
         gplaces_api_key = get_from_dict_or_env(
             values, "gplaces_api_key", "GPLACES_API_KEY"

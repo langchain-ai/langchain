@@ -1,9 +1,9 @@
-# rag-google-cloud-sensitive-data-protection
+# RAG - Google Cloud Sensitive Data Protection
 
-This template is an application that utilizes Google Vertex AI Search, a machine learning powered search service, and
+This template is an application that utilizes `Google Vertex AI Search`, a machine learning powered search service, and
 PaLM 2 for Chat (chat-bison). The application uses a Retrieval chain to answer questions based on your documents.
 
-This template is an application that utilizes Google Sensitive Data Protection, a service for detecting and redacting
+This template is an application that utilizes `Google Sensitive Data Protection`, a service for detecting and redacting
 sensitive data in text, and PaLM 2 for Chat (chat-bison), although you can use any model.
 
 For more context on using Sensitive Data Protection,

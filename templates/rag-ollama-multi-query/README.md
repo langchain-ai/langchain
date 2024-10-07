@@ -1,9 +1,8 @@
+# RAG - Ollama - multi-query
 
-# rag-ollama-multi-query
+This template performs RAG using `Ollama` and `OpenAI` with a multi-query retriever. 
 
-This template performs RAG using Ollama and OpenAI with a multi-query retriever. 
-
-The multi-query retriever is an example of query transformation, generating multiple queries from different perspectives based on the user's input query. 
+The `multi-query retriever` is an example of query transformation, generating multiple queries from different perspectives based on the user's input query. 
 
 For each query, it retrieves a set of relevant documents and takes the unique union across all queries for answer synthesis.
 
@@ -11,7 +10,7 @@ We use a private, local LLM for the narrow task of query generation to avoid exc
 
 See an example trace for Ollama LLM performing the query expansion [here](https://smith.langchain.com/public/8017d04d-2045-4089-b47f-f2d66393a999/r).
 
-But we use OpenAI for the more challenging task of answer syntesis (full trace example [here](https://smith.langchain.com/public/ec75793b-645b-498d-b855-e8d85e1f6738/r)).
+But we use OpenAI for the more challenging task of answer synthesis (full trace example [here](https://smith.langchain.com/public/ec75793b-645b-498d-b855-e8d85e1f6738/r)).
 
 ## Environment Setup
 

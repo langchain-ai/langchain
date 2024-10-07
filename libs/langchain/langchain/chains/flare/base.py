@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
@@ -9,10 +8,12 @@ from langchain_core.callbacks import (
     CallbackManagerForChainRun,
 )
 from langchain_core.language_models import BaseLanguageModel
-from langchain_core.outputs import Generation
+from langchain_core.messages import AIMessage
+from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import BasePromptTemplate
-from langchain_core.pydantic_v1 import Field
 from langchain_core.retrievers import BaseRetriever
+from langchain_core.runnables import Runnable
+from pydantic import Field
 
 from langchain.chains.base import Chain
 from langchain.chains.flare.prompts import (
@@ -23,51 +24,14 @@ from langchain.chains.flare.prompts import (
 from langchain.chains.llm import LLMChain
 
 
-class _ResponseChain(LLMChain):
-    """Base class for chains that generate responses."""
-
-    prompt: BasePromptTemplate = PROMPT
-
-    @classmethod
-    def is_lc_serializable(cls) -> bool:
-        return False
-
-    @property
-    def input_keys(self) -> List[str]:
-        return self.prompt.input_variables
-
-    def generate_tokens_and_log_probs(
-        self,
-        _input: Dict[str, Any],
-        *,
-        run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Tuple[Sequence[str], Sequence[float]]:
-        llm_result = self.generate([_input], run_manager=run_manager)
-        return self._extract_tokens_and_log_probs(llm_result.generations[0])
-
-    @abstractmethod
-    def _extract_tokens_and_log_probs(
-        self, generations: List[Generation]
-    ) -> Tuple[Sequence[str], Sequence[float]]:
-        """Extract tokens and log probs from response."""
-
-
-class _OpenAIResponseChain(_ResponseChain):
-    """Chain that generates responses from user input and context."""
-
-    llm: BaseLanguageModel
-
-    def _extract_tokens_and_log_probs(
-        self, generations: List[Generation]
-    ) -> Tuple[Sequence[str], Sequence[float]]:
-        tokens = []
-        log_probs = []
-        for gen in generations:
-            if gen.generation_info is None:
-                raise ValueError
-            tokens.extend(gen.generation_info["logprobs"]["tokens"])
-            log_probs.extend(gen.generation_info["logprobs"]["token_logprobs"])
-        return tokens, log_probs
+def _extract_tokens_and_log_probs(response: AIMessage) -> Tuple[List[str], List[float]]:
+    """Extract tokens and log probabilities from chat model response."""
+    tokens = []
+    log_probs = []
+    for token in response.response_metadata["logprobs"]["content"]:
+        tokens.append(token["token"])
+        log_probs.append(token["logprob"])
+    return tokens, log_probs
 
 
 class QuestionGeneratorChain(LLMChain):
@@ -109,11 +73,14 @@ def _low_confidence_spans(
 
 class FlareChain(Chain):
     """Chain that combines a retriever, a question generator,
-    and a response generator."""
+    and a response generator.
 
-    question_generator_chain: QuestionGeneratorChain
+    See [Active Retrieval Augmented Generation](https://arxiv.org/abs/2305.06983) paper.
+    """
+
+    question_generator_chain: Runnable
     """Chain that generates questions from uncertain spans."""
-    response_chain: _ResponseChain
+    response_chain: Runnable
     """Chain that generates responses from user input and context."""
     output_parser: FinishedOutputParser = Field(default_factory=FinishedOutputParser)
     """Parser that determines whether the chain is finished."""
@@ -152,12 +119,16 @@ class FlareChain(Chain):
         for question in questions:
             docs.extend(self.retriever.invoke(question))
         context = "\n\n".join(d.page_content for d in docs)
-        result = self.response_chain.predict(
-            user_input=user_input,
-            context=context,
-            response=response,
-            callbacks=callbacks,
+        result = self.response_chain.invoke(
+            {
+                "user_input": user_input,
+                "context": context,
+                "response": response,
+            },
+            {"callbacks": callbacks},
         )
+        if isinstance(result, AIMessage):
+            result = result.content
         marginal, finished = self.output_parser.parse(result)
         return marginal, finished
 
@@ -178,13 +149,18 @@ class FlareChain(Chain):
             for span in low_confidence_spans
         ]
         callbacks = _run_manager.get_child()
-        question_gen_outputs = self.question_generator_chain.apply(
-            question_gen_inputs, callbacks=callbacks
-        )
-        questions = [
-            output[self.question_generator_chain.output_keys[0]]
-            for output in question_gen_outputs
-        ]
+        if isinstance(self.question_generator_chain, LLMChain):
+            question_gen_outputs = self.question_generator_chain.apply(
+                question_gen_inputs, callbacks=callbacks
+            )
+            questions = [
+                output[self.question_generator_chain.output_keys[0]]
+                for output in question_gen_outputs
+            ]
+        else:
+            questions = self.question_generator_chain.batch(
+                question_gen_inputs, config={"callbacks": callbacks}
+            )
         _run_manager.on_text(
             f"Generated Questions: {questions}", color="yellow", end="\n"
         )
@@ -206,8 +182,10 @@ class FlareChain(Chain):
                 f"Current Response: {response}", color="blue", end="\n"
             )
             _input = {"user_input": user_input, "context": "", "response": response}
-            tokens, log_probs = self.response_chain.generate_tokens_and_log_probs(
-                _input, run_manager=_run_manager
+            tokens, log_probs = _extract_tokens_and_log_probs(
+                self.response_chain.invoke(
+                    _input, {"callbacks": _run_manager.get_child()}
+                )
             )
             low_confidence_spans = _low_confidence_spans(
                 tokens,
@@ -245,24 +223,22 @@ class FlareChain(Chain):
         Args:
             llm: Language model to use.
             max_generation_len: Maximum length of the generated response.
-            **kwargs: Additional arguments to pass to the constructor.
+            kwargs: Additional arguments to pass to the constructor.
 
         Returns:
             FlareChain class with the given language model.
         """
         try:
-            from langchain_openai import OpenAI
+            from langchain_openai import ChatOpenAI
         except ImportError:
             raise ImportError(
                 "OpenAI is required for FlareChain. "
                 "Please install langchain-openai."
                 "pip install langchain-openai"
             )
-        question_gen_chain = QuestionGeneratorChain(llm=llm)
-        response_llm = OpenAI(
-            max_tokens=max_generation_len, model_kwargs={"logprobs": 1}, temperature=0
-        )
-        response_chain = _OpenAIResponseChain(llm=response_llm)
+        llm = ChatOpenAI(max_tokens=max_generation_len, logprobs=True, temperature=0)
+        response_chain = PROMPT | llm
+        question_gen_chain = QUESTION_GENERATOR_PROMPT | llm | StrOutputParser()
         return cls(
             question_generator_chain=question_gen_chain,
             response_chain=response_chain,

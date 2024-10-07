@@ -53,7 +53,7 @@ class Bagel(VectorStore):
                 vectorstore = Bagel(cluster_name="langchain_store")
     """
 
-    _LANGCHAIN_DEFAULT_CLUSTER_NAME = "langchain"
+    _LANGCHAIN_DEFAULT_CLUSTER_NAME: str = "langchain"
 
     def __init__(
         self,

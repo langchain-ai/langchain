@@ -1,7 +1,7 @@
 # Ollama
 
 >[Ollama](https://ollama.com/) allows you to run open-source large language models, 
-> such as LLaMA2, locally.
+> such as [Llama3.1](https://ai.meta.com/blog/meta-llama-3-1/), locally.
 >
 >`Ollama` bundles model weights, configuration, and data into a single package, defined by a Modelfile. 
 >It optimizes setup and configuration details, including GPU usage.
@@ -11,14 +11,36 @@ See [this guide](/docs/how_to/local_llms) for more details
 on how to use `Ollama` with LangChain.
 
 ## Installation and Setup
-
-Follow [these instructions](https://github.com/ollama/ollama?tab=readme-ov-file#ollama)
+### Ollama installation
+Follow [these instructions](https://github.com/ollama/ollama?tab=readme-ov-file#ollama) 
 to set up and run a local Ollama instance.
 
+Ollama will start as a background service automatically, if this is disabled, run:
+
+```bash
+# export OLLAMA_HOST=127.0.0.1 # environment variable to set ollama host
+# export OLLAMA_PORT=11434 # environment variable to set the ollama port
+ollama serve
+```
+
+After starting ollama, run `ollama pull <model_checkpoint>` to download a model 
+from the [Ollama model library](https://ollama.ai/library).
+
+```bash
+ollama pull llama3.1
+```
+
+We're now ready to install the `langchain-ollama` partner package and run a model.
+
+### Ollama LangChain partner package install
+Install the integration package with:
+```bash
+pip install langchain-ollama
+```
 ## LLM
 
 ```python
-from langchain_community.llms import Ollama
+from langchain_ollama.llms import OllamaLLM
 ```
 
 See the notebook example [here](/docs/integrations/llms/ollama).
@@ -28,18 +50,17 @@ See the notebook example [here](/docs/integrations/llms/ollama).
 ### Chat Ollama
 
 ```python
-from langchain_community.chat_models import ChatOllama
+from langchain_ollama.chat_models import ChatOllama
 ```
 
 See the notebook example [here](/docs/integrations/chat/ollama).
 
-### Ollama functions
-
-```python
-from langchain_experimental.llms.ollama_functions import OllamaFunctions
-```
-
-See the notebook example [here](/docs/integrations/chat/ollama_functions).
+### Ollama tool calling
+[Ollama tool calling](https://ollama.com/blog/tool-support) uses the
+OpenAI compatible web server specification, and can be used with
+the default `BaseChatModel.bind_tools()` methods
+as described [here](/docs/how_to/tool_calling/).
+Make sure to select an ollama model that supports [tool calling](https://ollama.com/search?&c=tools).
 
 ## Embedding models
 

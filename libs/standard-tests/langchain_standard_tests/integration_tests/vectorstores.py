@@ -1,6 +1,5 @@
 """Test suite to test vectostores."""
 
-import inspect
 from abc import abstractmethod
 
 import pytest
@@ -169,38 +168,30 @@ class ReadWriteTestSuite(BaseStandardTests):
         documents = vectorstore.get_by_ids(["1", "2", "3"])
         assert documents == []
 
-    def test_upsert_documents(self, vectorstore: VectorStore) -> None:
-        """Run upsert tests."""
+    def test_add_documents_documents(self, vectorstore: VectorStore) -> None:
+        """Run add_documents tests."""
         documents = [
             Document(page_content="foo", metadata={"id": 1}),
             Document(page_content="bar", metadata={"id": 2}),
         ]
-        response = vectorstore.upsert(documents)
-        ids = response["succeeded"]
+        ids = vectorstore.add_documents(documents)
         assert vectorstore.get_by_ids(ids) == [
             Document(page_content="foo", metadata={"id": 1}, id=ids[0]),
             Document(page_content="bar", metadata={"id": 2}, id=ids[1]),
         ]
 
-    def test_upsert_with_existing_ids(self, vectorstore: VectorStore) -> None:
-        """Test that upserting with existing IDs is idempotent."""
+    def test_add_documents_with_existing_ids(self, vectorstore: VectorStore) -> None:
+        """Test that add_documentsing with existing IDs is idempotent."""
         documents = [
             Document(id="foo", page_content="foo", metadata={"id": 1}),
             Document(page_content="bar", metadata={"id": 2}),
         ]
-        response = vectorstore.upsert(documents)
-        ids = response["succeeded"]
-        assert response["failed"] == []
+        ids = vectorstore.add_documents(documents)
         assert "foo" in ids
         assert vectorstore.get_by_ids(ids) == [
             Document(page_content="foo", metadata={"id": 1}, id="foo"),
             Document(page_content="bar", metadata={"id": 2}, id=ids[1]),
         ]
-
-    def test_upsert_documents_has_no_ids(self, vectorstore: VectorStore) -> None:
-        """Verify that there is not parameter called ids in upsert"""
-        signature = inspect.signature(vectorstore.upsert)
-        assert "ids" not in signature.parameters
 
 
 class AsyncReadWriteTestSuite(BaseStandardTests):
@@ -359,35 +350,29 @@ class AsyncReadWriteTestSuite(BaseStandardTests):
         # This should not raise an exception
         assert await vectorstore.aget_by_ids(["1", "2", "3"]) == []
 
-    async def test_upsert_documents(self, vectorstore: VectorStore) -> None:
-        """Run upsert tests."""
+    async def test_add_documents_documents(self, vectorstore: VectorStore) -> None:
+        """Run add_documents tests."""
         documents = [
             Document(page_content="foo", metadata={"id": 1}),
             Document(page_content="bar", metadata={"id": 2}),
         ]
-        response = await vectorstore.aupsert(documents)
-        ids = response["succeeded"]
+        ids = await vectorstore.aadd_documents(documents)
         assert await vectorstore.aget_by_ids(ids) == [
             Document(page_content="foo", metadata={"id": 1}, id=ids[0]),
             Document(page_content="bar", metadata={"id": 2}, id=ids[1]),
         ]
 
-    async def test_upsert_with_existing_ids(self, vectorstore: VectorStore) -> None:
-        """Test that upserting with existing IDs is idempotent."""
+    async def test_add_documents_with_existing_ids(
+        self, vectorstore: VectorStore
+    ) -> None:
+        """Test that add_documentsing with existing IDs is idempotent."""
         documents = [
             Document(id="foo", page_content="foo", metadata={"id": 1}),
             Document(page_content="bar", metadata={"id": 2}),
         ]
-        response = await vectorstore.aupsert(documents)
-        ids = response["succeeded"]
-        assert response["failed"] == []
+        ids = await vectorstore.aadd_documents(documents)
         assert "foo" in ids
         assert await vectorstore.aget_by_ids(ids) == [
             Document(page_content="foo", metadata={"id": 1}, id="foo"),
             Document(page_content="bar", metadata={"id": 2}, id=ids[1]),
         ]
-
-    async def test_upsert_documents_has_no_ids(self, vectorstore: VectorStore) -> None:
-        """Verify that there is not parameter called ids in upsert"""
-        signature = inspect.signature(vectorstore.aupsert)
-        assert "ids" not in signature.parameters

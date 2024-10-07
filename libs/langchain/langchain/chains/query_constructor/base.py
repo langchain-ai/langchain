@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from typing import Any, Callable, List, Optional, Sequence, Tuple, Union, cast
 
+from langchain_core._api import deprecated
 from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import BaseOutputParser
@@ -217,7 +218,7 @@ def get_query_constructor_prompt(
         enable_limit: Whether to enable the limit operator. Defaults to False.
         schema_prompt: Prompt for describing query schema. Should have string input
             variables allowed_comparators and allowed_operators.
-        **kwargs: Additional named params to pass to FewShotPromptTemplate init.
+        kwargs: Additional named params to pass to FewShotPromptTemplate init.
 
     Returns:
         A prompt template that can be used to construct queries.
@@ -257,6 +258,11 @@ def get_query_constructor_prompt(
     )
 
 
+@deprecated(
+    since="0.2.13",
+    alternative="load_query_constructor_runnable",
+    removal="1.0",
+)
 def load_query_constructor_chain(
     llm: BaseLanguageModel,
     document_contents: str,
@@ -339,7 +345,7 @@ def load_query_constructor_runnable(
             variables allowed_comparators and allowed_operators.
         fix_invalid: Whether to fix invalid filter directives by ignoring invalid
             operators, comparators and attributes.
-        **kwargs: Additional named params to pass to FewShotPromptTemplate init.
+        kwargs: Additional named params to pass to FewShotPromptTemplate init.
 
     Returns:
         A Runnable that can be used to construct queries.

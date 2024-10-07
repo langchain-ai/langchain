@@ -16,6 +16,7 @@ from typing import (
 
 import aiohttp
 import requests
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -23,7 +24,7 @@ from langchain_core.callbacks import (
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import GenerationChunk, LLMResult
-from langchain_core.pydantic_v1 import Extra
+from pydantic import ConfigDict
 
 
 def _stream_response_to_generation_chunk(
@@ -318,9 +319,9 @@ class _OllamaCommon(BaseLanguageModel):
                     "Content-Type": "application/json",
                     **(self.headers if isinstance(self.headers, dict) else {}),
                 },
-                auth=self.auth,
+                auth=self.auth,  # type: ignore[arg-type]
                 json=request_payload,
-                timeout=self.timeout,
+                timeout=self.timeout,  # type: ignore[arg-type]
             ) as response:
                 if response.status != 200:
                     if response.status == 404:
@@ -389,6 +390,11 @@ class _OllamaCommon(BaseLanguageModel):
         return final_chunk
 
 
+@deprecated(
+    since="0.3.1",
+    removal="1.0.0",
+    alternative_import="langchain_ollama.OllamaLLM",
+)
 class Ollama(BaseLLM, _OllamaCommon):
     """Ollama locally runs large language models.
     To use, follow the instructions at https://ollama.ai/.
@@ -398,10 +404,9 @@ class Ollama(BaseLLM, _OllamaCommon):
             ollama = Ollama(model="llama2")
     """
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @property
     def _llm_type(self) -> str:

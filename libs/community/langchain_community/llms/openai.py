@@ -28,13 +28,14 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import BaseLLM, create_base_retry_decorator
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
-from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.utils import (
     get_from_dict_or_env,
     get_pydantic_field_names,
     pre_init,
 )
-from langchain_core.utils.utils import build_extra_kwargs
+from langchain_core.utils.pydantic import get_fields
+from langchain_core.utils.utils import _build_model_kwargs
+from pydantic import ConfigDict, Field, model_validator
 
 from langchain_community.utils.openai import is_openai_v1
 
@@ -258,19 +259,16 @@ class BaseOpenAI(BaseLLM):
             return OpenAIChat(**data)
         return super().__new__(cls)
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
-        allow_population_by_field_name = True
-
-    @root_validator(pre=True)
-    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
-        extra = values.get("model_kwargs", {})
-        values["model_kwargs"] = build_extra_kwargs(
-            extra, values, all_required_field_names
-        )
+        values = _build_model_kwargs(values, all_required_field_names)
         return values
 
     @pre_init
@@ -731,9 +729,7 @@ class BaseOpenAI(BaseLLM):
         return self.max_context_size - num_tokens
 
 
-@deprecated(
-    since="0.0.10", removal="0.3.0", alternative_import="langchain_openai.OpenAI"
-)
+@deprecated(since="0.0.10", removal="1.0", alternative_import="langchain_openai.OpenAI")
 class OpenAI(BaseOpenAI):
     """OpenAI large language models.
 
@@ -761,7 +757,7 @@ class OpenAI(BaseOpenAI):
 
 
 @deprecated(
-    since="0.0.10", removal="0.3.0", alternative_import="langchain_openai.AzureOpenAI"
+    since="0.0.10", removal="1.0", alternative_import="langchain_openai.AzureOpenAI"
 )
 class AzureOpenAI(BaseOpenAI):
     """Azure-specific OpenAI large language models.
@@ -969,7 +965,7 @@ class AzureOpenAI(BaseOpenAI):
 
 @deprecated(
     since="0.0.1",
-    removal="0.3.0",
+    removal="1.0",
     alternative_import="langchain_openai.ChatOpenAI",
 )
 class OpenAIChat(BaseLLM):
@@ -1015,10 +1011,11 @@ class OpenAIChat(BaseLLM):
     disallowed_special: Union[Literal["all"], Collection[str]] = "all"
     """Set of special tokens that are not allowed。"""
 
-    @root_validator(pre=True)
-    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
-        all_required_field_names = {field.alias for field in cls.__fields__.values()}
+        all_required_field_names = {field.alias for field in get_fields(cls).values()}
 
         extra = values.get("model_kwargs", {})
         for field_name in list(values):

@@ -8,8 +8,8 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain_core.pydantic_v1 import Field, validator
 from langchain_core.tools import BaseTool
+from pydantic import ConfigDict, Field, model_validator
 
 from langchain_community.chat_models.openai import _import_tiktoken
 from langchain_community.tools.powerbi.prompt import (
@@ -31,7 +31,7 @@ class QueryPowerBITool(BaseTool):
 
     Example Input: "How many rows are in table1?"
     """  # noqa: E501
-    llm_chain: Any
+    llm_chain: Any = None
     powerbi: PowerBIDataset = Field(exclude=True)
     examples: Optional[str] = DEFAULT_FEWSHOT_EXAMPLES
     session_cache: Dict[str, Any] = Field(default_factory=dict, exclude=True)
@@ -39,23 +39,24 @@ class QueryPowerBITool(BaseTool):
     output_token_limit: int = 4000
     tiktoken_model_name: Optional[str] = None  # "cl100k_base"
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
-        arbitrary_types_allowed = True
-
-    @validator("llm_chain")
+    @model_validator(mode="before")
+    @classmethod
     def validate_llm_chain_input_variables(  # pylint: disable=E0213
-        cls, llm_chain: Any
-    ) -> Any:
+        cls, values: dict
+    ) -> dict:
         """Make sure the LLM chain has the correct input variables."""
+        llm_chain = values["llm_chain"]
         for var in llm_chain.prompt.input_variables:
             if var not in ["tool_input", "tables", "schemas", "examples"]:
                 raise ValueError(
                     "LLM chain for QueryPowerBITool must have input variables ['tool_input', 'tables', 'schemas', 'examples'], found %s",  # noqa: E501 # pylint: disable=C0301
                     llm_chain.prompt.input_variables,
                 )
-        return llm_chain
+        return values
 
     def _check_cache(self, tool_input: str) -> Optional[str]:
         """Check if the input is present in the cache.
@@ -227,10 +228,9 @@ class InfoPowerBITool(BaseTool):
     """  # noqa: E501
     powerbi: PowerBIDataset = Field(exclude=True)
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     def _run(
         self,
@@ -255,10 +255,9 @@ class ListPowerBITool(BaseTool):
     description: str = "Input is an empty string, output is a comma separated list of tables in the database."  # noqa: E501 # pylint: disable=C0301
     powerbi: PowerBIDataset = Field(exclude=True)
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     def _run(
         self,

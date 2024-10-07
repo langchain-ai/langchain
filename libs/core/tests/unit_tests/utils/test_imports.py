@@ -17,14 +17,16 @@ EXPECTED_ALL = [
     "raise_for_status_with_text",
     "xor_args",
     "try_load_from_hub",
-    "build_extra_kwargs",
     "image",
+    "build_extra_kwargs",
     "get_from_dict_or_env",
     "get_from_env",
     "stringify_dict",
     "comma_list",
     "stringify_value",
     "pre_init",
+    "from_env",
+    "secret_from_env",
 ]
 
 

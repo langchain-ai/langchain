@@ -181,7 +181,7 @@ class InMemoryRateLimiter(BaseRateLimiter):
             the caller should try again later.
         """
         with self._consume_lock:
-            now = time.time()
+            now = time.monotonic()
 
             # initialize on first call to avoid a burst
             if self.last is None:

@@ -15,8 +15,8 @@ from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models.llms import LLM
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
@@ -31,8 +31,9 @@ class _MinimaxEndpointClient(BaseModel):
     api_key: SecretStr
     api_url: str
 
-    @root_validator(pre=True, allow_reuse=True)
-    def set_api_url(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def set_api_url(cls, values: Dict[str, Any]) -> Any:
         if "api_url" not in values:
             host = values["host"]
             group_id = values["group_id"]
@@ -56,6 +57,8 @@ class _MinimaxEndpointClient(BaseModel):
 
 class MinimaxCommon(BaseModel):
     """Common parameters for Minimax large language models."""
+
+    model_config = ConfigDict(protected_namespaces=())
 
     _client: _MinimaxEndpointClient
     model: str = "abab5.5-chat"

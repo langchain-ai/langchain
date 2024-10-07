@@ -11,7 +11,7 @@ if __name__ == "__main__":
         try:
             SourceFileLoader("x", file).load_module()
         except Exception:
-            has_faillure = True
+            has_failure = True
             print(file)  # noqa: T201
             traceback.print_exc()
             print()  # noqa: T201
