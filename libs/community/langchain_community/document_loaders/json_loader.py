@@ -175,7 +175,7 @@ class JSONLoader(BaseLoader):
         else:
             content = sample
 
-        if self._text_content and not isinstance(content, str):
+        if self._text_content and not isinstance(content, str) and content is not None:
             raise ValueError(
                 f"Expected page_content is string, got {type(content)} instead. \
                     Set `text_content=False` if the desired input for \
