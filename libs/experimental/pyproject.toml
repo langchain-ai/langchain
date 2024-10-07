@@ -26,7 +26,7 @@ exclude = [ "notebooks", "examples", "example_data",]
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
 langchain-core = "^0.2.41"
-gigachain-community = "^0.2.16"
+gigachain-community = "^0.2.17b1"
 
 [tool.ruff.lint]
 select = [ "E", "F", "I", "T201",]

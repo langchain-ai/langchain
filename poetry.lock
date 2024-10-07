@@ -811,7 +811,7 @@ files = []
 develop = true
 
 [package.dependencies]
-gigachain-community = "^0.2.16"
+gigachain-community = "^0.2.17b1"
 langchain-core = "^0.2.41"
 
 [package.source]
