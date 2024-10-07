@@ -1054,6 +1054,7 @@ aiohttp = "^3.8.3"
 async-timeout = {version = "^4.0.0", markers = "python_version < \"3.11\""}
 gigachat = "^0.1.35"
 langchain-core = "^0.2.38"
+langchain_gigachat = "^0.2.1b6"
 langchain-text-splitters = "^0.2.0"
 langsmith = "^0.1.17"
 numpy = [
