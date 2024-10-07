@@ -60,11 +60,12 @@ def get_tokenizer() -> Any:
     try:
         from transformers import GPT2TokenizerFast  # type: ignore[import]
     except ImportError as e:
-        raise ImportError(
+        msg = (
             "Could not import transformers python package. "
             "This is needed in order to calculate get_token_ids. "
             "Please install it with `pip install transformers`."
-        ) from e
+        )
+        raise ImportError(msg) from e
     # create a GPT-2 tokenizer instance
     return GPT2TokenizerFast.from_pretrained("gpt2")
 
@@ -98,7 +99,7 @@ class BaseLanguageModel(
     All language model wrappers inherited from BaseLanguageModel.
     """
 
-    cache: Union[BaseCache, bool, None] = None
+    cache: Union[BaseCache, bool, None] = Field(default=None, exclude=True)
     """Whether to cache the response.
 
     * If true, will use the global cache.

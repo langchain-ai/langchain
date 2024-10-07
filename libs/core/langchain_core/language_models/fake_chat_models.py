@@ -13,6 +13,7 @@ from langchain_core.callbacks import (
 from langchain_core.language_models.chat_models import BaseChatModel, SimpleChatModel
 from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.runnables import RunnableConfig
 
 
 class FakeMessagesListChatModel(BaseChatModel):
@@ -128,6 +129,33 @@ class FakeListChatModel(SimpleChatModel):
     def _identifying_params(self) -> dict[str, Any]:
         return {"responses": self.responses}
 
+    # manually override batch to preserve batch ordering with no concurrency
+    def batch(
+        self,
+        inputs: list[Any],
+        config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
+        *,
+        return_exceptions: bool = False,
+        **kwargs: Any,
+    ) -> list[BaseMessage]:
+        if isinstance(config, list):
+            return [self.invoke(m, c, **kwargs) for m, c in zip(inputs, config)]
+        return [self.invoke(m, config, **kwargs) for m in inputs]
+
+    async def abatch(
+        self,
+        inputs: list[Any],
+        config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
+        *,
+        return_exceptions: bool = False,
+        **kwargs: Any,
+    ) -> list[BaseMessage]:
+        if isinstance(config, list):
+            # do Not use an async iterator here because need explicit ordering
+            return [await self.ainvoke(m, c, **kwargs) for m, c in zip(inputs, config)]
+        # do Not use an async iterator here because need explicit ordering
+        return [await self.ainvoke(m, config, **kwargs) for m in inputs]
+
 
 class FakeChatModel(SimpleChatModel):
     """Fake Chat Model wrapper for testing purposes."""
@@ -210,18 +238,20 @@ class GenericFakeChatModel(BaseChatModel):
             messages, stop=stop, run_manager=run_manager, **kwargs
         )
         if not isinstance(chat_result, ChatResult):
-            raise ValueError(
+            msg = (
                 f"Expected generate to return a ChatResult, "
                 f"but got {type(chat_result)} instead."
             )
+            raise ValueError(msg)
 
         message = chat_result.generations[0].message
 
         if not isinstance(message, AIMessage):
-            raise ValueError(
+            msg = (
                 f"Expected invoke to return an AIMessage, "
                 f"but got {type(message)} instead."
             )
+            raise ValueError(msg)
 
         content = message.content
 

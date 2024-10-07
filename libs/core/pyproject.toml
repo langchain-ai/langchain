@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-core"
-version = "0.3.7"
+version = "0.3.9"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -51,6 +51,7 @@ select = [
     "COM",
     "DJ",
     "E",
+    "EM",
     "EXE",
     "F",
     "FLY",
@@ -77,6 +78,7 @@ select = [
 ignore = [
     "COM812", # Messes with the formatter
     "UP007", # Incompatible with pydantic + Python 3.9
+    "W293", # 
 ]
 
 [tool.coverage.run]
