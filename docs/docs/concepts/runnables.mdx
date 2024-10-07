@@ -1,0 +1,162 @@
+# Runnable Interface
+
+The Runnable interface in LangChain defines a standard way to `invoke`, `batch`, `stream`, and compose units of code. This guide covers the main concepts and methods of the Runnable interface, which allows developers to interact with various LangChain components in a consistent and predictable manner.
+
+:::note Related Resources
+* The ["Runnable" Interface API Reference](https://python.langchain.com/api_reference/core/runnables/langchain_core.runnables.base.Runnable.html#langchain_core.runnables.base.Runnable) provides a detailed overview of the Runnable interface and its methods.
+* A list of built-in `Runnables` can be found in the [LangChain Core API Reference](https://python.langchain.com/api_reference/core/runnables.html). Many of these Runnables are useful when composing custom "chains" in LangChain using the [LangChain Expression Language (LCEL)](/docs/concepts/lcel).
+* The [LCEL cheatsheet](https://python.langchain.com/docs/how_to/lcel_cheatsheet/) shows common patterns that involve the Runnable interface and LCEL expressions.
+:::
+
+## Overview of Runnable Interface
+
+A Runnable can be thought of as a unit of work that can be:
+
+* Invoked: A single input is transformed into an output.
+* Batched: Multiple inputs are efficiently transformed into outputs.
+* Streamed: Outputs are streamed as they are produced.
+* Inspected: Schematic information about Runnable's input, output, and configuration can be accessed.
+* Composed: Multiple Runnables can be composed to work together using [the LangChain Expression Language (LCEL)](/docs/concepts/lcel).
+
+The Runnable interface is foundational for working with LangChain components, and it's implemented across many of them, such as language models, output parsers, retrievers, and more. Components that implement the Runnable interface can be combined using the [LangChain Expression Language (LCEL)](/docs/concepts/lcel) resulting a new Runnable that can be invoked, batched, streamed, and composed in a standard way.
+
+### Optimized Parallel Execution (Batch)
+
+LangChain optimizes for parallel execution to minimize latency.
+
+Batching options include `batch` and `batch_as_completed`:
+
+* `batch`: Executes steps in parallel, returning results in the order of inputs.
+* `batch_as_completed`: Prioritizes speed, returning results as they complete. Results may arrive out of order, but each includes the input index for matching.
+
+Using `batch` and `batch_as_completed` can significantly improve performance when working with multiple inputs.
+
+### Asynchronous Support
+
+Asynchronous programming is a paradigm that allows a program to perform multiple tasks concurrently without blocking the execution of other tasks, improving efficiency and responsiveness, particularly in I/O-bound operations
+
+Runnables expose an asynchronous API, allowing them to be called using the `await` syntax in Python. This enables using the same code for prototypes and in production, providing great performance and the ability to handle many concurrent requests in the same server. Asynchronous methods can be identified by the "a" prefix (e.g., `ainvoke`, `abatch`, `astream`).
+
+:::note
+Users are recommended to read the [asyncio documentation](https://docs.python.org/3/library/asyncio.html) to understand how to use the asynchronous programming
+paradigm in Python.
+:::
+
+## Streaming
+
+Streaming is critical in making applications based on LLMs feel responsive to end-users.
+
+There are two general approaches to streaming the outputs from a Runnable:
+
+* `stream` and `astream`: a default implementation of streaming that streams the final output from the chain.
+* async astream_events and async astream_log: these provide a way to stream both intermediate steps and final output from the chain.
+
+There are few different ways of streaming outputs from a Runnable:
+
+| Feature        | Description                                                                                  |
+|----------------|----------------------------------------------------------------------------------------------|
+| stream/astream | Streams output from a single input as it's produced.                                         |
+| astream_events | Streams events as they happen asynchronously.                                                |
+| astream_log    | Streams intermediate steps as they happen, in addition to the final response asynchronously. |
+
+Please refer to the [Streaming Guide](/docs/concepts/streaming) for more details on streaming in LangChain.
+
+
+## Inputs and Outputs
+
+The Runnable interface allows interacting with LangChain components
+in a predictable way and to make it easy to combine those components together using
+the [LangChain Expression Language (LCEL)](/docs/concepts/lcel).
+
+The **input type** and **output type** varies by component:
+
+| Component      | Input Type                                            | Output Type           |
+|----------------|-------------------------------------------------------|-----------------------|
+| Prompt         | Dictionary                                            | PromptValue           |
+| ChatModel      | Single string, list of chat messages or a PromptValue | ChatMessage           |
+| LLM            | Single string, list of chat messages or a PromptValue | String                |
+| OutputParser   | The output of an LLM or ChatModel                     | Depends on the parser |
+| Retriever      | Single string                                         | List of Documents     |
+| Tool           | Single string or dictionary, depending on the tool    | Depends on the tool   |
+
+
+### Schemas
+
+All Runnables expose input and output **schemas** that can be used to inspect the inputs and outputs:
+
+| Method                  | Description                                                 |
+|-------------------------|-------------------------------------------------------------|
+| `get_input_jsonschema`  | Gives the JSONSchema of the input schema for the Runnable.  |
+| `get_output_jsonschema` | Gives the JSONSchema of the output schema for the Runnable. |
+| `get_config_jsonschema` | Gives the JSONSchema of the config schema for the Runnable. |
+
+```python
+
+from langchain_core.runnables import RunnableLambda
+
+# Define a simple RunnableLambda
+def document(text: str) -> dict:
+
+```
+
+## Custom Runnables
+
+Users should create custom Runnables by creating either a `RunnableLambda` or a `RunnableGenerator`.
+
+Users create a custom Runnable by
+
+For more complex workflows, users can create custom Runnables by extending the interface. There are two main types of custom Runnables:
+
+* `RunnableLambda`: For simple transformations where streaming is not required.
+* `RunnableGenerator`: For more complex transformations when streaming is needed.
+
+## RunnableLambda
+
+
+## RunnableGenerator
+
+
+## Built-in optimizations
+
+## batch
+
+**Batch**: By default, batch runs invoke() in parallel using a thread pool executor.
+Override to optimize batching.
+
+### async
+
+- **Async**: Methods with "a" suffix are asynchronous. By default, they execute
+the sync counterpart using asyncio's thread pool. Override for native async.
+
+This interface is designed to make it easy to define custom chains as well as invoke them in a standard way. The standard interface includes:
+
+Many components in LangChain are designed to be composable and reusable. These components implement
+the standard ["Runnable" interface](https://python.langchain.com/api_reference/core/runnables/langchain_core.runnables.base.Runnable.html#langchain_core.runnables.base.Runnable).
+
+To make it as easy as possible to create custom chains, we've implemented a ["Runnable"](https://python.langchain.com/api_reference/core/runnables/langchain_core.runnables.base.Runnable.html#langchain_core.runnables.base.Runnable) protocol. Many LangChain components implement the `Runnable` protocol, including chat models, LLMs, output parsers, retrievers, prompt templates, and more. There are also several useful primitives for working with runnables, which you can read about below.
+
+## Debugging and Tracing
+
+The standard interface includes a number of methods for debugging and tracing, including:
+
+- **Callbacks**: You can pass existing or custom callbacks to any given chain to debug and trace the chain.
+- **Debugging**: You can set the global debug flag to True to enable debug output for all chains.
+
+You can set the global debug flag to True to enable debug output for all chains:
+
+      .. code-block:: python
+
+          from langchain_core.globals import set_debug
+          set_debug(True)
+
+Alternatively, you can pass existing or custom callbacks to any given chain:
+
+      .. code-block:: python
+
+          from langchain_core.tracers import ConsoleCallbackHandler
+
+          chain.invoke(
+              ...,
+              config={'callbacks': [ConsoleCallbackHandler()]}
+          )
+
