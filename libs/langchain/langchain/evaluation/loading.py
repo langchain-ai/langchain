@@ -134,16 +134,13 @@ def load_evaluator(
             try:
                 from langchain_openai import ChatOpenAI
             except ImportError:
-                try:
-                    from langchain_community.chat_models.openai import ChatOpenAI
-                except ImportError:
-                    raise ImportError(
-                        "Could not import langchain_openai or fallback onto "
-                        "langchain_community. Please install langchain_openai "
-                        "or specify a language model explicitly. "
-                        "It's recommended to install langchain_openai AND "
-                        "specify a language model explicitly."
-                    )
+                raise ImportError(
+                    "Could not import langchain_openai or fallback onto "
+                    "langchain_community. Please install langchain_openai "
+                    "or specify a language model explicitly. "
+                    "It's recommended to install langchain_openai AND "
+                    "specify a language model explicitly."
+                )
 
             llm = llm or ChatOpenAI(  # type: ignore[call-arg]
                 model="gpt-4", seed=42, temperature=0

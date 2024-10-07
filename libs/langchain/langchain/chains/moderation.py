@@ -64,7 +64,7 @@ class OpenAIModerationChain(Chain):
             except ValueError:
                 values["openai_pre_1_0"] = True
             if values["openai_pre_1_0"]:
-                values["client"] = openai.Moderation
+                values["client"] = openai.Moderation  # type: ignore
             else:
                 values["client"] = openai.OpenAI()
                 values["async_client"] = openai.AsyncOpenAI()
