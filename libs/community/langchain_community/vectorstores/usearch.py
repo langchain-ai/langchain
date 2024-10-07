@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
 from langchain_core.documents import Document
@@ -42,7 +42,7 @@ class USearch(VectorStore):
         self,
         texts: Iterable[str],
         metadatas: Optional[List[Dict]] = None,
-        ids: Optional[np.ndarray] = None,
+        ids: Optional[Union[np.ndarray, list[str]]] = None,
         **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
@@ -69,6 +69,8 @@ class USearch(VectorStore):
         last_id = int(self.ids[-1]) + 1
         if ids is None:
             ids = np.array([str(last_id + id) for id, _ in enumerate(texts)])
+        elif isinstance(ids, list):
+            ids = np.array(ids)
 
         self.index.add(np.array(ids), np.array(embeddings))
         self.docstore.add(dict(zip(ids, documents)))
@@ -134,7 +136,7 @@ class USearch(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[Dict]] = None,
-        ids: Optional[np.ndarray] = None,
+        ids: Optional[Union[np.ndarray, list[str]]] = None,
         metric: str = "cos",
         **kwargs: Any,
     ) -> USearch:
@@ -159,6 +161,8 @@ class USearch(VectorStore):
         documents: List[Document] = []
         if ids is None:
             ids = np.array([str(id) for id, _ in enumerate(texts)])
+        elif isinstance(ids, list):
+            ids = np.array(ids)
         for i, text in enumerate(texts):
             metadata = metadatas[i] if metadatas else {}
             documents.append(Document(page_content=text, metadata=metadata))
