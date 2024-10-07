@@ -1161,7 +1161,7 @@ class Runnable(Generic[Input, Output], ABC):
         - ``data``: **Dict[str, Any]**
 
 
-        Below is a table that illustrates some evens that might be emitted by various
+        Below is a table that illustrates some events that might be emitted by various
         chains. Metadata fields have been omitted from the table for brevity.
         Chain definitions have been included after the table.
 
