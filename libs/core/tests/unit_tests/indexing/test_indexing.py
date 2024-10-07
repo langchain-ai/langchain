@@ -7,6 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 import pytest_asyncio
+from pytest_mock import MockerFixture
 
 from langchain_core.document_loaders.base import BaseLoader
 from langchain_core.documents import Document
@@ -1775,6 +1776,84 @@ def test_index_with_upsert_kwargs(
         # Check other arguments
         assert kwargs["batch_size"] == 100
         assert kwargs["vector_field"] == "embedding"
+
+
+def test_index_with_upsert_kwargs_for_document_indexer(
+    record_manager: InMemoryRecordManager,
+    mocker: MockerFixture,
+) -> None:
+    """Test that kwargs are passed to the upsert method of the document indexer."""
+
+    document_index = InMemoryDocumentIndex()
+    upsert_spy = mocker.spy(document_index.__class__, "upsert")
+    docs = [
+        Document(
+            page_content="This is a test document.",
+            metadata={"source": "1"},
+        ),
+        Document(
+            page_content="This is another document.",
+            metadata={"source": "2"},
+        ),
+    ]
+
+    upsert_kwargs = {"vector_field": "embedding"}
+
+    assert index(
+        docs,
+        record_manager,
+        document_index,
+        cleanup="full",
+        upsert_kwargs=upsert_kwargs,
+    ) == {
+        "num_added": 2,
+        "num_deleted": 0,
+        "num_skipped": 0,
+        "num_updated": 0,
+    }
+
+    assert upsert_spy.call_count == 1
+    # assert call kwargs were passed as kwargs
+    assert upsert_spy.call_args.kwargs == upsert_kwargs
+
+
+async def test_aindex_with_upsert_kwargs_for_document_indexer(
+    arecord_manager: InMemoryRecordManager,
+    mocker: MockerFixture,
+) -> None:
+    """Test that kwargs are passed to the upsert method of the document indexer."""
+
+    document_index = InMemoryDocumentIndex()
+    upsert_spy = mocker.spy(document_index.__class__, "aupsert")
+    docs = [
+        Document(
+            page_content="This is a test document.",
+            metadata={"source": "1"},
+        ),
+        Document(
+            page_content="This is another document.",
+            metadata={"source": "2"},
+        ),
+    ]
+
+    upsert_kwargs = {"vector_field": "embedding"}
+
+    assert await aindex(
+        docs,
+        arecord_manager,
+        document_index,
+        cleanup="full",
+        upsert_kwargs=upsert_kwargs,
+    ) == {
+        "num_added": 2,
+        "num_deleted": 0,
+        "num_skipped": 0,
+        "num_updated": 0,
+    }
+
+    assert upsert_spy.call_count == 1
+    # assert call kwargs were passed as kwargs
+    assert upsert_spy.call_args.kwargs == upsert_kwargs
 
 
 async def test_aindex_with_upsert_kwargs(

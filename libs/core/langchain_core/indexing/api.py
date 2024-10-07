@@ -251,8 +251,9 @@ def index(
             record manager. Useful if you are re-indexing with updated embeddings.
             Default is False.
         upsert_kwargs: Additional keyword arguments to pass to the add_documents
-                       method of the VectorStore. For example,
-                       you can use this to specify a custom vector_field:
+                       method of the VectorStore or the upsert method of the
+                       DocumentIndex. For example, you can use this to
+                       specify a custom vector_field:
                        upsert_kwargs={"vector_field": "embedding"}
 
     Returns:
@@ -374,7 +375,10 @@ def index(
                     **(upsert_kwargs or {}),
                 )
             elif isinstance(destination, DocumentIndex):
-                destination.upsert(docs_to_index)
+                destination.upsert(
+                    docs_to_index,
+                    **(upsert_kwargs or {}),
+                )
 
             num_added += len(docs_to_index) - len(seen_docs)
             num_updated += len(seen_docs)
@@ -490,8 +494,9 @@ async def aindex(
             record manager. Useful if you are re-indexing with updated embeddings.
             Default is False.
         upsert_kwargs: Additional keyword arguments to pass to the aadd_documents
-                       method of the VectorStore asynchronously. For example,
-                       you can use this to specify a custom vector_field:
+                       method of the VectorStore or the aupsert method of the
+                       DocumentIndex. For example, you can use this to
+                       specify a custom vector_field:
                        upsert_kwargs={"vector_field": "embedding"}
 
     Returns:
@@ -623,7 +628,10 @@ async def aindex(
                     **(upsert_kwargs or {}),
                 )
             elif isinstance(destination, DocumentIndex):
-                await destination.aupsert(docs_to_index)
+                await destination.aupsert(
+                    docs_to_index,
+                    **(upsert_kwargs or {}),
+                )
             num_added += len(docs_to_index) - len(seen_docs)
             num_updated += len(seen_docs)
 
