@@ -73,13 +73,16 @@ select = [
     "TID",
     "UP",
     "W",
-    "YTT"
+    "YTT",
+    "PLW1514",
 ]
 ignore = [
     "COM812", # Messes with the formatter
     "UP007", # Incompatible with pydantic + Python 3.9
     "W293", # 
 ]
+preview = true
+explicit-preview-rules = true
 
 [tool.coverage.run]
 omit = [ "tests/*",]
