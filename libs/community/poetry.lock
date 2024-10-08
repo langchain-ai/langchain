@@ -1817,7 +1817,7 @@ pydantic = "^2.7.4"
 PyYAML = ">=5.3"
 requests = "^2"
 SQLAlchemy = ">=1.4,<3"
-tenacity = ">=8.1.0,!=8.4.0"
+tenacity = ">=8.1.0,!=8.4.0,<10"
 
 [package.source]
 type = "directory"
@@ -1841,7 +1841,7 @@ pydantic = [
     {version = ">=2.7.4,<3.0.0", markers = "python_full_version >= \"3.12.4\""},
 ]
 PyYAML = ">=5.3"
-tenacity = ">=8.1.0,!=8.4.0"
+tenacity = ">=8.1.0,!=8.4.0,<10.0.0"
 typing-extensions = ">=4.7"
 
 [package.source]
@@ -4547,4 +4547,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0"
-content-hash = "a80248fee16ed21517095497b866daf98b85f698f516ff4ef99e70b731706ef4"
+content-hash = "03e3346b801fd4ba798f0096b6f143cfdfa4bfdb2bd6a12794eb3c28a90ccad7"

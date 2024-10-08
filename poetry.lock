@@ -1227,7 +1227,7 @@ pydantic = "^2.7.4"
 PyYAML = ">=5.3"
 requests = "^2"
 SQLAlchemy = ">=1.4,<3"
-tenacity = ">=8.1.0,!=8.4.0"
+tenacity = ">=8.1.0,!=8.4.0,<10"
 
 [package.source]
 type = "directory"
@@ -1256,7 +1256,7 @@ pydantic-settings = "^2.4.0"
 PyYAML = ">=5.3"
 requests = "^2"
 SQLAlchemy = ">=1.4,<3"
-tenacity = ">=8.1.0,!=8.4.0"
+tenacity = ">=8.1.0,!=8.4.0,<10"
 
 [package.source]
 type = "directory"
@@ -1280,7 +1280,7 @@ pydantic = [
     {version = ">=2.7.4,<3.0.0", markers = "python_full_version >= \"3.12.4\""},
 ]
 PyYAML = ">=5.3"
-tenacity = ">=8.1.0,!=8.4.0"
+tenacity = ">=8.1.0,!=8.4.0,<10.0.0"
 typing-extensions = ">=4.7"
 
 [package.source]
