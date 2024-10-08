@@ -876,7 +876,7 @@ files = [
 name = "distro"
 version = "1.9.0"
 description = "Distro - an OS platform information API"
-optional = false
+optional = true
 python-versions = ">=3.6"
 files = [
     {file = "distro-1.9.0-py3-none-any.whl", hash = "sha256:7bffd925d65168f85027d8da9af6bddab658135b840670a223589bc0c8ef02b2"},
@@ -1463,7 +1463,7 @@ i18n = ["Babel (>=2.7)"]
 name = "jiter"
 version = "0.6.0"
 description = "Fast iterable JSON parser."
-optional = false
+optional = true
 python-versions = ">=3.8"
 files = [
     {file = "jiter-0.6.0-cp310-cp310-macosx_10_12_x86_64.whl", hash = "sha256:0f0926955ab2c9096ee2a00c3cf4e683e992afd97ff3f6fb7dd55b8db217cd66"},
@@ -1926,7 +1926,7 @@ langchain-core = ">=0.2.41,<0.3.0"
 name = "langchain-openai"
 version = "0.1.25"
 description = "An integration package connecting OpenAI and LangChain"
-optional = false
+optional = true
 python-versions = "<4.0,>=3.8.1"
 files = [
     {file = "langchain_openai-0.1.25-py3-none-any.whl", hash = "sha256:f0b34a233d0d9cb8fce6006c903e57085c493c4f0e32862b99063b96eaedb109"},
@@ -2477,7 +2477,7 @@ files = [
 name = "openai"
 version = "1.51.0"
 description = "The official Python library for the openai API"
-optional = false
+optional = true
 python-versions = ">=3.7.1"
 files = [
     {file = "openai-1.51.0-py3-none-any.whl", hash = "sha256:d9affafb7e51e5a27dce78589d4964ce4d6f6d560307265933a94b2e3f3c5d2c"},
@@ -3457,7 +3457,7 @@ rpds-py = ">=0.7.0"
 name = "regex"
 version = "2024.9.11"
 description = "Alternative regular expression module, to replace re."
-optional = false
+optional = true
 python-versions = ">=3.8"
 files = [
     {file = "regex-2024.9.11-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:1494fa8725c285a81d01dc8c06b55287a1ee5e0e382d8413adc0a9197aac6408"},
@@ -4017,7 +4017,7 @@ typing = ["mypy (>=1.6,<2.0)", "traitlets (>=5.11.1)"]
 name = "tiktoken"
 version = "0.8.0"
 description = "tiktoken is a fast BPE tokeniser for use with OpenAI's models"
-optional = false
+optional = true
 python-versions = ">=3.9"
 files = [
     {file = "tiktoken-0.8.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:b07e33283463089c81ef1467180e3e00ab00d46c2c4bbcef0acab5f771d6695e"},
@@ -4124,7 +4124,7 @@ files = [
 name = "tqdm"
 version = "4.66.5"
 description = "Fast, Extensible Progress Meter"
-optional = false
+optional = true
 python-versions = ">=3.7"
 files = [
     {file = "tqdm-4.66.5-py3-none-any.whl", hash = "sha256:90279a3770753eafc9194a0364852159802111925aa30eb3f9d85b0e805ac7cd"},
@@ -4256,20 +4256,6 @@ types-pyOpenSSL = "*"
 
 [[package]]
 name = "types-requests"
-version = "2.31.0.6"
-description = "Typing stubs for requests"
-optional = false
-python-versions = ">=3.7"
-files = [
-    {file = "types-requests-2.31.0.6.tar.gz", hash = "sha256:cd74ce3b53c461f1228a9b783929ac73a666658f223e28ed29753771477b3bd0"},
-    {file = "types_requests-2.31.0.6-py3-none-any.whl", hash = "sha256:a2db9cb228a81da8348b49ad6db3f5519452dd20a9c1e1a868c83c5fe88fd1a9"},
-]
-
-[package.dependencies]
-types-urllib3 = "*"
-
-[[package]]
-name = "types-requests"
 version = "2.32.0.20240914"
 description = "Typing stubs for requests"
 optional = false
@@ -4302,17 +4288,6 @@ python-versions = ">=3.8"
 files = [
     {file = "types-toml-0.10.8.20240310.tar.gz", hash = "sha256:3d41501302972436a6b8b239c850b26689657e25281b48ff0ec06345b8830331"},
     {file = "types_toml-0.10.8.20240310-py3-none-any.whl", hash = "sha256:627b47775d25fa29977d9c70dc0cbab3f314f32c8d8d0c012f2ef5de7aaec05d"},
-]
-
-[[package]]
-name = "types-urllib3"
-version = "1.26.25.14"
-description = "Typing stubs for urllib3"
-optional = false
-python-versions = "*"
-files = [
-    {file = "types-urllib3-1.26.25.14.tar.gz", hash = "sha256:229b7f577c951b8c1b92c1bc2b2fdb0b49847bd2af6d1cc2a2e3dd340f3bda8f"},
-    {file = "types_urllib3-1.26.25.14-py3-none-any.whl", hash = "sha256:9683bbb7fb72e32bfe9d2be6e04875fbe1b3eeec3cbb4ea231435aa7fd6b4f0e"},
 ]
 
 [[package]]
@@ -4353,22 +4328,6 @@ dev = ["flake8", "flake8-annotations", "flake8-bandit", "flake8-bugbear", "flake
 
 [[package]]
 name = "urllib3"
-version = "1.26.20"
-description = "HTTP library with thread-safe connection pooling, file post, and more."
-optional = false
-python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,>=2.7"
-files = [
-    {file = "urllib3-1.26.20-py2.py3-none-any.whl", hash = "sha256:0ed14ccfbf1c30a9072c7ca157e4319b70d65f623e91e7b32fadb2853431016e"},
-    {file = "urllib3-1.26.20.tar.gz", hash = "sha256:40c2dc0c681e47eb8f90e7e27bf6ff7df2e677421fd46756da1161c39ca70d32"},
-]
-
-[package.extras]
-brotli = ["brotli (==1.0.9)", "brotli (>=1.0.9)", "brotlicffi (>=0.8.0)", "brotlipy (>=0.6.0)"]
-secure = ["certifi", "cryptography (>=1.3.4)", "idna (>=2.0.0)", "ipaddress", "pyOpenSSL (>=0.14)", "urllib3-secure-extra"]
-socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
-
-[[package]]
-name = "urllib3"
 version = "2.2.3"
 description = "HTTP library with thread-safe connection pooling, file post, and more."
 optional = false
@@ -4386,6 +4345,23 @@ zstd = ["zstandard (>=0.18.0)"]
 
 [[package]]
 name = "vcrpy"
+version = "4.3.0"
+description = "Automatically mock your HTTP interactions to simplify and speed up testing"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "vcrpy-4.3.0-py2.py3-none-any.whl", hash = "sha256:8fbd4be412e8a7f35f623dd61034e6380a1c8dbd0edf6e87277a3289f6e98093"},
+    {file = "vcrpy-4.3.0.tar.gz", hash = "sha256:49c270ce67e826dba027d83e20d25b67a5885487697e97bca6dbdf53d750a0ac"},
+]
+
+[package.dependencies]
+PyYAML = "*"
+six = ">=1.5"
+wrapt = "*"
+yarl = "*"
+
+[[package]]
+name = "vcrpy"
 version = "6.0.2"
 description = "Automatically mock your HTTP interactions to simplify and speed up testing"
 optional = false
@@ -4397,10 +4373,7 @@ files = [
 
 [package.dependencies]
 PyYAML = "*"
-urllib3 = [
-    {version = "*", markers = "platform_python_implementation != \"PyPy\" and python_version >= \"3.10\""},
-    {version = "<2", markers = "platform_python_implementation == \"PyPy\" or python_version < \"3.10\""},
-]
+urllib3 = {version = "*", markers = "platform_python_implementation != \"PyPy\" and python_version >= \"3.10\""}
 wrapt = "*"
 yarl = "*"
 
@@ -4719,4 +4692,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0"
-content-hash = "952a4a0ce722e1831f6c3bdc51cddf00ba875f2281a549b19bb407bd23440420"
+content-hash = "7a5a03d913e8490fcf8d044c6fc2c06616db8adfff124cd2f20fe62f690dd6a0"
