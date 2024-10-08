@@ -53,7 +53,7 @@ def _load_template(var_name: str, config: dict) -> dict:
         template_path = Path(config.pop(f"{var_name}_path"))
         # Load the template.
         if template_path.suffix == ".txt":
-            with open(template_path) as f:
+            with open(template_path, encoding="utf-8") as f:
                 template = f.read()
         else:
             raise ValueError
@@ -67,7 +67,7 @@ def _load_examples(config: dict) -> dict:
     if isinstance(config["examples"], list):
         pass
     elif isinstance(config["examples"], str):
-        with open(config["examples"]) as f:
+        with open(config["examples"], encoding="utf-8") as f:
             if config["examples"].endswith(".json"):
                 examples = json.load(f)
             elif config["examples"].endswith((".yaml", ".yml")):

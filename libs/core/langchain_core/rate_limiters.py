@@ -248,7 +248,7 @@ class InMemoryRateLimiter(BaseRateLimiter):
         if not blocking:
             return self._consume()
 
-        while not self._consume():
+        while not self._consume():  # noqa: ASYNC110
             await asyncio.sleep(self.check_every_n_seconds)
         return True
 

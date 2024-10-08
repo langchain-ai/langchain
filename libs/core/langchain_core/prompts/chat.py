@@ -588,7 +588,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
         Returns:
             A new instance of this class.
         """
-        with open(str(template_file)) as f:
+        with open(str(template_file), encoding="utf-8") as f:
             template = f.read()
         return cls.from_template(template, input_variables=input_variables, **kwargs)
 

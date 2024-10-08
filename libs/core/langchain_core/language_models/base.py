@@ -375,7 +375,7 @@ class BaseLanguageModel(
         Returns:
             The sum of the number of tokens across the messages.
         """
-        return sum([self.get_num_tokens(get_buffer_string([m])) for m in messages])
+        return sum(self.get_num_tokens(get_buffer_string([m])) for m in messages)
 
     @classmethod
     def _all_required_field_names(cls) -> set:
