@@ -136,9 +136,8 @@ class PngDrawer:
         try:
             import pygraphviz as pgv  # type: ignore[import]
         except ImportError as exc:
-            raise ImportError(
-                "Install pygraphviz to draw graphs: `pip install pygraphviz`."
-            ) from exc
+            msg = "Install pygraphviz to draw graphs: `pip install pygraphviz`."
+            raise ImportError(msg) from exc
 
         # Create a directed graph
         viz = pgv.AGraph(directed=True, nodesep=0.9, ranksep=1.0)

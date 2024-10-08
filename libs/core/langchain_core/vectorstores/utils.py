@@ -35,10 +35,11 @@ def _cosine_similarity(x: Matrix, y: Matrix) -> np.ndarray:
     try:
         import numpy as np
     except ImportError as e:
-        raise ImportError(
+        msg = (
             "cosine_similarity requires numpy to be installed. "
             "Please install numpy with `pip install numpy`."
-        ) from e
+        )
+        raise ImportError(msg) from e
 
     if len(x) == 0 or len(y) == 0:
         return np.array([])
@@ -46,10 +47,11 @@ def _cosine_similarity(x: Matrix, y: Matrix) -> np.ndarray:
     x = np.array(x)
     y = np.array(y)
     if x.shape[1] != y.shape[1]:
-        raise ValueError(
+        msg = (
             f"Number of columns in X and Y must be the same. X has shape {x.shape} "
             f"and Y has shape {y.shape}."
         )
+        raise ValueError(msg)
     try:
         import simsimd as simd  # type: ignore[import-not-found]
 
@@ -94,10 +96,11 @@ def maximal_marginal_relevance(
     try:
         import numpy as np
     except ImportError as e:
-        raise ImportError(
+        msg = (
             "maximal_marginal_relevance requires numpy to be installed. "
             "Please install numpy with `pip install numpy`."
-        ) from e
+        )
+        raise ImportError(msg) from e
 
     if min(k, len(embedding_list)) <= 0:
         return []
