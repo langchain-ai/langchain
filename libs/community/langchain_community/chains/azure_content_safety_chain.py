@@ -26,7 +26,7 @@ class AzureHarmfulContentError(LangChainException):
             input (str): The input given by the user to the model.
         """
         self.input = input
-        self.message = ("The input has breached Azure's Content Safety Policy")
+        self.message = "The input has breached Azure's Content Safety Policy"
         super().__init__(self.message)
 
 
