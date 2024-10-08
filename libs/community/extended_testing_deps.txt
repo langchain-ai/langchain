@@ -4,6 +4,7 @@ anthropic>=0.3.11,<0.4
 arxiv>=1.4,<2
 assemblyai>=0.17.0,<0.18
 atlassian-python-api>=3.36.0,<4
+azure-ai-contentsafety>=1.0.0
 azure-ai-documentintelligence>=1.0.0b1,<2
 azure-identity>=1.15.0,<2
 azure-search-documents==11.4.0

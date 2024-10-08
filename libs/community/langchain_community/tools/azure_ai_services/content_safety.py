@@ -92,7 +92,7 @@ class AzureContentSafetyTextTool(BaseTool):
     def _format_response(self, result: list) -> str:
         formatted_result = ""
         for c in result:
-            formatted_result += f"{c.category}: {c.severity}\n"
+            formatted_result += f"{c['category']}: {c['severity']}\n"
         return formatted_result
 
     def _run(
