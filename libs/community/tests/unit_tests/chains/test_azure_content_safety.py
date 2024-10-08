@@ -9,6 +9,7 @@ from langchain_community.chains.azure_content_safety_chain import (
     AzureHarmfulContentError,
 )
 
+
 @pytest.mark.requires("azure.ai.contentsafety")
 def test_content_safety(mocker: Any) -> None:
     mocker.patch("azure.ai.contentsafety.ContentSafetyClient", autospec=True)
@@ -22,6 +23,7 @@ def test_content_safety(mocker: Any) -> None:
     )
     assert chain.content_safety_key == key
     assert chain.content_safety_endpoint == endpoint
+
 
 @pytest.mark.requires("azure.ai.contentsafety")
 def test_raise_error_when_harmful_content_detected(mocker: Any) -> None:
@@ -44,6 +46,7 @@ def test_raise_error_when_harmful_content_detected(mocker: Any) -> None:
     text = "This text contains harmful content"
     with pytest.raises(AzureHarmfulContentError):
         chain._call({chain.input_key: text})
+
 
 @pytest.mark.requires("azure.ai.contentsafety")
 def test_no_harmful_content_detected(mocker: Any) -> None:
