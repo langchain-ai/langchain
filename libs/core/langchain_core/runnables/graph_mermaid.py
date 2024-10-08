@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import re
 from dataclasses import asdict
@@ -104,11 +105,12 @@ def draw_mermaid(
         if prefix and not self_loop:
             subgraph = prefix.split(":")[-1]
             if subgraph in seen_subgraphs:
-                raise ValueError(
+                msg = (
                     f"Found duplicate subgraph '{subgraph}' -- this likely means that "
                     "you're reusing a subgraph node with the same name. "
                     "Please adjust your graph to have subgraph nodes with unique names."
                 )
+                raise ValueError(msg)
 
             seen_subgraphs.add(subgraph)
             mermaid_graph += f"\tsubgraph {subgraph}\n"
@@ -214,10 +216,11 @@ def draw_mermaid_png(
         )
     else:
         supported_methods = ", ".join([m.value for m in MermaidDrawMethod])
-        raise ValueError(
+        msg = (
             f"Invalid draw method: {draw_method}. "
             f"Supported draw methods are: {supported_methods}"
         )
+        raise ValueError(msg)
 
     return img_bytes
 
@@ -233,9 +236,8 @@ async def _render_mermaid_using_pyppeteer(
     try:
         from pyppeteer import launch  # type: ignore[import]
     except ImportError as e:
-        raise ImportError(
-            "Install Pyppeteer to use the Pyppeteer method: `pip install pyppeteer`."
-        ) from e
+        msg = "Install Pyppeteer to use the Pyppeteer method: `pip install pyppeteer`."
+        raise ImportError(msg) from e
 
     browser = await launch()
     page = await browser.newPage()
@@ -288,9 +290,14 @@ async def _render_mermaid_using_pyppeteer(
     img_bytes = await page.screenshot({"fullPage": False})
     await browser.close()
 
+    def write_to_file(path: str, bytes: bytes) -> None:
+        with open(path, "wb") as file:
+            file.write(bytes)
+
     if output_file_path is not None:
-        with open(output_file_path, "wb") as file:
-            file.write(img_bytes)
+        await asyncio.get_event_loop().run_in_executor(
+            None, write_to_file, output_file_path, img_bytes
+        )
 
     return img_bytes
 
@@ -304,10 +311,11 @@ def _render_mermaid_using_api(
     try:
         import requests  # type: ignore[import]
     except ImportError as e:
-        raise ImportError(
+        msg = (
             "Install the `requests` module to use the Mermaid.INK API: "
             "`pip install requests`."
-        ) from e
+        )
+        raise ImportError(msg) from e
 
     # Use Mermaid API to render the image
     mermaid_syntax_encoded = base64.b64encode(mermaid_syntax.encode("utf8")).decode(
@@ -332,7 +340,8 @@ def _render_mermaid_using_api(
 
         return img_bytes
     else:
-        raise ValueError(
+        msg = (
             f"Failed to render the graph using the Mermaid.INK API. "
             f"Status code: {response.status_code}."
         )
+        raise ValueError(msg)

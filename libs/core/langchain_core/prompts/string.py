@@ -42,13 +42,14 @@ def jinja2_formatter(template: str, /, **kwargs: Any) -> str:
     try:
         from jinja2.sandbox import SandboxedEnvironment
     except ImportError as e:
-        raise ImportError(
+        msg = (
             "jinja2 not installed, which is needed to use the jinja2_formatter. "
             "Please install it with `pip install jinja2`."
             "Please be cautious when using jinja2 templates. "
             "Do not expand jinja2 templates using unverified or user-controlled "
             "inputs as that can result in arbitrary Python code execution."
-        ) from e
+        )
+        raise ImportError(msg) from e
 
     # This uses a sandboxed environment to prevent arbitrary code execution.
     # Jinja2 uses an opt-out rather than opt-in approach for sand-boxing.
@@ -89,10 +90,11 @@ def _get_jinja2_variables_from_template(template: str) -> set[str]:
     try:
         from jinja2 import Environment, meta
     except ImportError as e:
-        raise ImportError(
+        msg = (
             "jinja2 not installed, which is needed to use the jinja2_formatter. "
             "Please install it with `pip install jinja2`."
-        ) from e
+        )
+        raise ImportError(msg) from e
     env = Environment()
     ast = env.parse(template)
     variables = meta.find_undeclared_variables(ast)
@@ -217,17 +219,19 @@ def check_valid_template(
     try:
         validator_func = DEFAULT_VALIDATOR_MAPPING[template_format]
     except KeyError as exc:
-        raise ValueError(
+        msg = (
             f"Invalid template format {template_format!r}, should be one of"
             f" {list(DEFAULT_FORMATTER_MAPPING)}."
-        ) from exc
+        )
+        raise ValueError(msg) from exc
     try:
         validator_func(template, input_variables)
     except (KeyError, IndexError) as exc:
-        raise ValueError(
+        msg = (
             "Invalid prompt schema; check for mismatched or missing input parameters"
             f" from {input_variables}."
-        ) from exc
+        )
+        raise ValueError(msg) from exc
 
 
 def get_template_variables(template: str, template_format: str) -> list[str]:
@@ -253,7 +257,8 @@ def get_template_variables(template: str, template_format: str) -> list[str]:
     elif template_format == "mustache":
         input_variables = mustache_template_vars(template)
     else:
-        raise ValueError(f"Unsupported template format: {template_format}")
+        msg = f"Unsupported template format: {template_format}"
+        raise ValueError(msg)
 
     return sorted(input_variables)
 
