@@ -1,5 +1,6 @@
 import json
-from typing import Any, Literal, Optional, Union
+import operator
+from typing import Any, Literal, Optional, Union, cast
 
 from pydantic import model_validator
 from typing_extensions import NotRequired, Self, TypedDict
@@ -27,6 +28,7 @@ from langchain_core.messages.tool import (
 )
 from langchain_core.utils._merge import merge_dicts, merge_lists
 from langchain_core.utils.json import parse_partial_json
+from langchain_core.utils.usage import _dict_int_op
 
 
 class InputTokenDetails(TypedDict, total=False):
@@ -432,17 +434,9 @@ def add_ai_message_chunks(
 
     # Token usage
     if left.usage_metadata or any(o.usage_metadata is not None for o in others):
-        usage_metadata_: UsageMetadata = left.usage_metadata or UsageMetadata(
-            input_tokens=0, output_tokens=0, total_tokens=0
-        )
+        usage_metadata: Optional[UsageMetadata] = left.usage_metadata
         for other in others:
-            if other.usage_metadata is not None:
-                usage_metadata_["input_tokens"] += other.usage_metadata["input_tokens"]
-                usage_metadata_["output_tokens"] += other.usage_metadata[
-                    "output_tokens"
-                ]
-                usage_metadata_["total_tokens"] += other.usage_metadata["total_tokens"]
-        usage_metadata: Optional[UsageMetadata] = usage_metadata_
+            usage_metadata = add_usage(usage_metadata, other.usage_metadata)
     else:
         usage_metadata = None
 
@@ -454,4 +448,44 @@ def add_ai_message_chunks(
         response_metadata=response_metadata,
         usage_metadata=usage_metadata,
         id=left.id,
+    )
+
+
+def add_usage(
+    left: Optional[UsageMetadata], right: Optional[UsageMetadata]
+) -> UsageMetadata:
+    if not (left or right):
+        return UsageMetadata(input_tokens=0, output_tokens=0, total_tokens=0)
+    if not (left and right):
+        return cast(UsageMetadata, left or right)
+
+    return UsageMetadata(
+        **cast(
+            UsageMetadata,
+            _dict_int_op(
+                cast(dict, left),
+                cast(dict, right),
+                operator.add,
+            ),
+        )
+    )
+
+
+def subtract_usage(
+    left: Optional[UsageMetadata], right: Optional[UsageMetadata]
+) -> UsageMetadata:
+    if not (left or right):
+        return UsageMetadata(input_tokens=0, output_tokens=0, total_tokens=0)
+    if not (left and right):
+        return cast(UsageMetadata, left or right)
+
+    return UsageMetadata(
+        **cast(
+            UsageMetadata,
+            _dict_int_op(
+                cast(dict, left),
+                cast(dict, right),
+                (lambda le, ri: max(le - ri, 0)),
+            ),
+        )
     )
