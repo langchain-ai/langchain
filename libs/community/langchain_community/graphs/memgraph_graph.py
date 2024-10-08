@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 
 from langchain_core.utils import get_from_dict_or_env
 
-from langchain_community.graphs.graph_document import GraphDocument
+from langchain_community.graphs.graph_document import GraphDocument, Relationship, Node
 from langchain_community.graphs.graph_store import GraphStore
 
 logger = logging.getLogger(__name__)
@@ -217,7 +217,7 @@ def _remove_backticks(text: str) -> str:
     return text.replace("`", "")
 
 
-def _transform_nodes(nodes: List[Dict[str, Any]], baseEntityLabel: bool) -> List[dict]:
+def _transform_nodes(nodes: list[Node], baseEntityLabel: bool) -> List[dict]:
     transformed_nodes = []
     for node in nodes:
         properties_dict = node.properties | {"id": node.id}
@@ -232,7 +232,7 @@ def _transform_nodes(nodes: List[Dict[str, Any]], baseEntityLabel: bool) -> List
 
 
 def _transform_relationships(
-    relationships: List[Dict[str, Any]], baseEntityLabel: bool
+    relationships: list[Relationship], baseEntityLabel: bool
 ) -> List[dict]:
     transformed_relationships = []
     for rel in relationships:
