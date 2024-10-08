@@ -3,8 +3,8 @@
 from typing import Any, Dict, List, Optional
 
 from langchain_core._api.deprecation import deprecated
-from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, ConfigDict, model_validator
 
 
 @deprecated(
@@ -60,27 +60,15 @@ class GoogleSearchAPIWrapper(BaseModel):
 
     """
 
-    search_engine: Any  #: :meta private:
+    search_engine: Any = None  #: :meta private:
     google_api_key: Optional[str] = None
     google_cse_id: Optional[str] = None
     k: int = 10
     siterestrict: bool = False
 
-    def __init__(
-        self,
-        **kwargs: Any,
-    ) -> None:
-        try:
-            import httplib2
-        except ImportError as e:
-            raise ImportError(
-                "Unable to import httplib2, please install with `pip install httplib2`."
-            ) from e
-        super().__init__(**kwargs)
-        self.http: Optional[httplib2.Http] = None
-
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     def _google_search_results(self, search_term: str, **kwargs: Any) -> List[dict]:
         cse = self.search_engine.cse()
@@ -89,8 +77,9 @@ class GoogleSearchAPIWrapper(BaseModel):
         res = cse.list(q=search_term, cx=self.google_cse_id, **kwargs).execute()
         return res.get("items", [])
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that api key and python package exists in environment."""
         google_api_key = get_from_dict_or_env(
             values, "google_api_key", "GOOGLE_API_KEY"

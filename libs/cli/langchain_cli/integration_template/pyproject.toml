@@ -12,8 +12,8 @@ license = "MIT"
 "Release Notes" = "https://github.com/ai-forever/gigachain/releases?q=tag%3A%22__package_name_short__%3D%3D0%22&expanded=true"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
-langchain-core = "^0.2.41"
+python = ">=3.9,<4.0"
+langchain-core = "^0.3.0"
 
 [tool.poetry.group.test]
 optional = true
@@ -22,7 +22,7 @@ optional = true
 pytest = "^7.4.3"
 pytest-asyncio = "^0.23.2"
 pytest-socket = "^0.7.0"
-langchain-core = "^0.2.41"
+langchain-core = "^0.3.9"
 pytest-watcher = "^0.3.4"
 
 [tool.poetry.group.codespell]
@@ -44,13 +44,13 @@ ruff = "^0.5"
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^1.10"
-langchain-core = "^0.2.41"
+langchain-core = "^0.3.9"
 
 [tool.poetry.group.dev]
 optional = true
 
 [tool.poetry.group.dev.dependencies]
-langchain-core = "^0.2.41"
+langchain-core = "^0.3.9"
 
 [tool.ruff.lint]
 select = [

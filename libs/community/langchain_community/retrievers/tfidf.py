@@ -7,6 +7,7 @@ from typing import Any, Dict, Iterable, List, Optional
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
+from pydantic import ConfigDict
 
 
 class TFIDFRetriever(BaseRetriever):
@@ -16,17 +17,18 @@ class TFIDFRetriever(BaseRetriever):
     https://github.com/asvskartheek/Text-Retrieval/blob/master/TF-IDF%20Search%20Engine%20(SKLEARN).ipynb
     """
 
-    vectorizer: Any
+    vectorizer: Any = None
     """TF-IDF vectorizer."""
     docs: List[Document]
     """Documents."""
-    tfidf_array: Any
+    tfidf_array: Any = None
     """TF-IDF array."""
     k: int = 4
     """Number of documents to return."""
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     @classmethod
     def from_texts(

@@ -1,5 +1,6 @@
 import ast
 import importlib
+import warnings
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -11,29 +12,38 @@ COMMUNITY_NOT_INSTALLED = importlib.util.find_spec("langchain_community") is Non
 
 def test_import_all() -> None:
     """Generate the public API for this package."""
-    library_code = PKG_ROOT / "langchain"
-    for path in library_code.rglob("*.py"):
-        # Calculate the relative path to the module
-        module_name = (
-            path.relative_to(PKG_ROOT).with_suffix("").as_posix().replace("/", ".")
-        )
-        if module_name.endswith("__init__"):
-            # Without init
-            module_name = module_name.rsplit(".", 1)[0]
+    with warnings.catch_warnings():
+        warnings.filterwarnings(action="ignore", category=UserWarning)
+        library_code = PKG_ROOT / "langchain"
+        for path in library_code.rglob("*.py"):
+            # Calculate the relative path to the module
+            module_name = (
+                path.relative_to(PKG_ROOT).with_suffix("").as_posix().replace("/", ".")
+            )
+            if module_name.endswith("__init__"):
+                # Without init
+                module_name = module_name.rsplit(".", 1)[0]
 
-        mod = importlib.import_module(module_name)
+            mod = importlib.import_module(module_name)
 
-        all = getattr(mod, "__all__", [])
+            all = getattr(mod, "__all__", [])
 
-        for name in all:
-            # Attempt to import the name from the module
-            try:
-                obj = getattr(mod, name)
-                assert obj is not None
-            except ModuleNotFoundError as e:
-                # If the module is not installed, we suppress the error
-                if "Module langchain_community" in str(e) and COMMUNITY_NOT_INSTALLED:
-                    pass
+            for name in all:
+                # Attempt to import the name from the module
+                try:
+                    obj = getattr(mod, name)
+                    assert obj is not None
+                except ModuleNotFoundError as e:
+                    # If the module is not installed, we suppress the error
+                    if (
+                        "Module langchain_community" in str(e)
+                        and COMMUNITY_NOT_INSTALLED
+                    ):
+                        pass
+                except Exception as e:
+                    raise AssertionError(
+                        f"Could not import {module_name}.{name}"
+                    ) from e
 
 
 def test_import_all_using_dir() -> None:

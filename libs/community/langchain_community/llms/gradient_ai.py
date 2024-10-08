@@ -11,8 +11,9 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, LLMResult
-from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import ConfigDict, Field, model_validator
+from typing_extensions import Self
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
@@ -73,12 +74,14 @@ class GradientLLM(BaseLLM):
     """ClientSession, private, subject to change in upcoming releases."""
 
     # LLM call kwargs
-    class Config:
-        allow_population_by_field_name = True
-        extra = "forbid"
+    model_config = ConfigDict(
+        populate_by_name=True,
+        extra="forbid",
+    )
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that api key and python package exists in environment."""
 
         values["gradient_access_token"] = get_from_dict_or_env(
@@ -93,8 +96,8 @@ class GradientLLM(BaseLLM):
         )
         return values
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def post_init(cls, values: Dict) -> Dict:
+    @model_validator(mode="after")
+    def post_init(self) -> Self:
         """Post init validation."""
         # Can be most to post_init_validation
         try:
@@ -108,20 +111,14 @@ class GradientLLM(BaseLLM):
             pass
 
         # Can be most to post_init_validation
-        if (
-            values["gradient_access_token"] is None
-            or len(values["gradient_access_token"]) < 10
-        ):
+        if self.gradient_access_token is None or len(self.gradient_access_token) < 10:
             raise ValueError("env variable `GRADIENT_ACCESS_TOKEN` must be set")
 
-        if (
-            values["gradient_workspace_id"] is None
-            or len(values["gradient_access_token"]) < 3
-        ):
+        if self.gradient_workspace_id is None or len(self.gradient_access_token) < 3:
             raise ValueError("env variable `GRADIENT_WORKSPACE_ID` must be set")
 
-        if values["model_kwargs"]:
-            kw = values["model_kwargs"]
+        if self.model_kwargs:
+            kw = self.model_kwargs
             if not 0 <= kw.get("temperature", 0.5) <= 1:
                 raise ValueError("`temperature` must be in the range [0.0, 1.0]")
 
@@ -134,7 +131,7 @@ class GradientLLM(BaseLLM):
             if 0 >= kw.get("max_generated_token_count", 1):
                 raise ValueError("`max_generated_token_count` must be positive")
 
-        return values
+        return self
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:

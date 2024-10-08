@@ -22,7 +22,7 @@ integration_tests:
 	poetry run pytest $(TEST_FILE)
 
 test_watch:
-	poetry run ptw --disable-socket --allow-unix-socket --snapshot-update --now . -- -vv -x tests/unit_tests
+	poetry run ptw --disable-socket --allow-unix-socket --snapshot-update --now . -- -vv tests/unit_tests
 
 check_imports: $(shell find langchain_community -name '*.py')
 	poetry run python ./scripts/check_imports.py $^
@@ -45,7 +45,7 @@ lint_tests: PYTHON_FILES=tests
 lint_tests: MYPY_CACHE=.mypy_cache_test
 
 lint lint_diff lint_package lint_tests:
-	poetry install --with lint,typing --sync
+	# poetry install --with lint,typing --sync
 	./scripts/check_pydantic.sh .
 	./scripts/lint_imports.sh .
 	./scripts/check_pickle.sh .
