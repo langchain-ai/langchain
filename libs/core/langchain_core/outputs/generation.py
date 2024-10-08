@@ -64,6 +64,7 @@ class GenerationChunk(Generation):
                 generation_info=generation_info or None,
             )
         else:
-            raise TypeError(
+            msg = (
                 f"unsupported operand type(s) for +: '{type(self)}' and '{type(other)}'"
             )
+            raise TypeError(msg)

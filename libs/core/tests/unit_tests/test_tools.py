@@ -401,7 +401,7 @@ def test_structured_tool_from_function_docstring() -> None:
             bar: the bar value
             baz: the baz value
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     structured_tool = StructuredTool.from_function(foo)
     assert structured_tool.name == "foo"
@@ -435,7 +435,7 @@ def test_structured_tool_from_function_docstring_complex_args() -> None:
             bar: int
             baz: List[str]
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     structured_tool = StructuredTool.from_function(foo)
     assert structured_tool.name == "foo"
@@ -781,7 +781,7 @@ def test_structured_tool_from_function() -> None:
             bar: the bar value
             baz: the baz value
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     structured_tool = StructuredTool.from_function(foo)
     assert structured_tool.name == "foo"
@@ -854,7 +854,7 @@ def test_validation_error_handling_non_validation_error(
             self,
             tool_input: Union[str, dict],
         ) -> Union[str, dict[str, Any]]:
-            raise NotImplementedError()
+            raise NotImplementedError
 
         def _run(self) -> str:
             return "dummy"
@@ -916,7 +916,7 @@ async def test_async_validation_error_handling_non_validation_error(
             self,
             tool_input: Union[str, dict],
         ) -> Union[str, dict[str, Any]]:
-            raise NotImplementedError()
+            raise NotImplementedError
 
         def _run(self) -> str:
             return "dummy"
