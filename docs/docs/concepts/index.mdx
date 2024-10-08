@@ -1,9 +1,16 @@
+---
+sidebar_position: 0
+sidebar_class_name: hidden
+---
+
 # Conceptual guide
 
 import ThemedImage from '@theme/ThemedImage';
 import useBaseUrl from '@docusaurus/useBaseUrl';
 
-This section contains introductions to key parts of LangChain.
+In this section, you'll find explanations of the key concepts, providing a deeper understanding of core principles.
+
+The conceptual guide will not cover step-by-step instructions or specific implementation details — those are found in the [How-To Guides](/docs/how_to/) and [Tutorials](/docs/tutorials) sections. For detailed reference material, please visit the [API Reference](https://python.langchain.com/api_reference/).
 
 ## Architecture
 
@@ -611,7 +618,7 @@ Read more about [defining tools that return artifacts here](/docs/how_to/tool_ar
 When designing tools to be used by a model, it is important to keep in mind that:
 
 - Chat models that have explicit [tool-calling APIs](/docs/concepts/#functiontool-calling) will be better at tool calling than non-fine-tuned models.
-- Models will perform better if the tools have well-chosen names, descriptions, and JSON schemas. This another form of prompt engineering.
+- Models will perform better if the tools have well-chosen names, descriptions, and JSON schemas. This is another form of prompt engineering.
 - Simple, narrowly scoped tools are easier for models to use than complex tools.
 
 #### Related
