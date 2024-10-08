@@ -437,8 +437,6 @@ class MemgraphGraph(GraphStore):
                 schema_result = ast.literal_eval(result)
             else:
                 schema_result = result
-
-            schema_result = ast.literal_eval(self.query(SCHEMA_QUERY)[0].get("schema"))
             assert schema_result is not None
             structured_schema = get_schema_subset(schema_result)
             self.structured_schema = structured_schema
