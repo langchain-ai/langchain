@@ -3,7 +3,8 @@ from typing import List, Optional
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
-from pydantic import ConfigDict, model_validator
+from langchain_core.utils import from_env
+from pydantic import ConfigDict, Field, model_validator
 from typing_extensions import Self
 
 from langchain_box.utilities import BoxAuth, BoxSearchOptions, _BoxAPIWrapper
@@ -113,8 +114,9 @@ class BoxRetriever(BaseRetriever):
             he decides to go to the pool with Carlos.'
     """  # noqa: E501
 
-    box_developer_token: Optional[str] = None
-    """String containing the Box Developer Token generated in the developer console"""
+    box_developer_token: Optional[str] = Field(
+        default_factory=from_env("BOX_DEVELOPER_TOKEN", default=None)
+    )
 
     box_auth: Optional[BoxAuth] = None
     """Configured 
@@ -130,6 +132,15 @@ class BoxRetriever(BaseRetriever):
 
     box_search_options: Optional[BoxSearchOptions] = None
     """Search options to configure BoxRetriever to narrow search results."""
+
+    answer: Optional[bool] = True
+    """When using Box AI, return the answer to the prompt as a `Document` 
+       object. Returned as `List[Document`]. Default is `True`."""
+
+    citations: Optional[bool] = False
+    """When using Box AI, return the citations from to the prompt as 
+       `Document` objects. Can be used with answer. Returned as `List[Document`].
+       Default is `False`."""
 
     _box: Optional[_BoxAPIWrapper]
 
@@ -164,6 +175,11 @@ class BoxRetriever(BaseRetriever):
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
         if self.box_file_ids:  # If using Box AI
-            return self._box.ask_box_ai(query=query, box_file_ids=self.box_file_ids)  #  type: ignore[union-attr]
+            return self._box.ask_box_ai(  #  type: ignore[union-attr]
+                query=query,
+                box_file_ids=self.box_file_ids,
+                answer=self.answer,  #  type: ignore[arg-type]
+                citations=self.citations,  #  type: ignore[arg-type]
+            )
         else:  # If using Search
             return self._box.search_box(query=query)  #  type: ignore[union-attr]

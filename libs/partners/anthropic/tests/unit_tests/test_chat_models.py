@@ -5,8 +5,11 @@ from typing import Any, Callable, Dict, Literal, Type, cast
 
 import pytest
 from anthropic.types import Message, TextBlock, Usage
+from anthropic.types.beta.prompt_caching import (
+    PromptCachingBetaMessage,
+    PromptCachingBetaUsage,
+)
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
-from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.runnables import RunnableBinding
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel, Field, SecretStr
@@ -58,9 +61,12 @@ def test_anthropic_model_kwargs() -> None:
 
 
 @pytest.mark.requires("anthropic")
-def test_anthropic_invalid_model_kwargs() -> None:
-    with pytest.raises(ValueError):
-        ChatAnthropic(model="foo", model_kwargs={"max_tokens_to_sample": 5})  # type: ignore[call-arg]
+def test_anthropic_fields_in_model_kwargs() -> None:
+    """Test that for backwards compatibility fields can be passed in as model_kwargs."""
+    llm = ChatAnthropic(model="foo", model_kwargs={"max_tokens_to_sample": 5})  # type: ignore[call-arg]
+    assert llm.max_tokens == 5
+    llm = ChatAnthropic(model="foo", model_kwargs={"max_tokens": 5})  # type: ignore[call-arg]
+    assert llm.max_tokens == 5
 
 
 @pytest.mark.requires("anthropic")
@@ -89,30 +95,49 @@ def test__format_output() -> None:
         usage=Usage(input_tokens=2, output_tokens=1),
         type="message",
     )
-    expected = ChatResult(
-        generations=[
-            ChatGeneration(
-                message=AIMessage(  # type: ignore[misc]
-                    "bar",
-                    usage_metadata={
-                        "input_tokens": 2,
-                        "output_tokens": 1,
-                        "total_tokens": 3,
-                    },
-                )
-            ),
-        ],
-        llm_output={
-            "id": "foo",
-            "model": "baz",
-            "stop_reason": None,
-            "stop_sequence": None,
-            "usage": {"input_tokens": 2, "output_tokens": 1},
+    expected = AIMessage(  # type: ignore[misc]
+        "bar",
+        usage_metadata={
+            "input_tokens": 2,
+            "output_tokens": 1,
+            "total_tokens": 3,
+            "input_token_details": {},
         },
     )
     llm = ChatAnthropic(model="test", anthropic_api_key="test")  # type: ignore[call-arg, call-arg]
     actual = llm._format_output(anthropic_msg)
-    assert expected == actual
+    assert actual.generations[0].message == expected
+
+
+def test__format_output_cached() -> None:
+    anthropic_msg = PromptCachingBetaMessage(
+        id="foo",
+        content=[TextBlock(type="text", text="bar")],
+        model="baz",
+        role="assistant",
+        stop_reason=None,
+        stop_sequence=None,
+        usage=PromptCachingBetaUsage(
+            input_tokens=2,
+            output_tokens=1,
+            cache_creation_input_tokens=3,
+            cache_read_input_tokens=4,
+        ),
+        type="message",
+    )
+    expected = AIMessage(  # type: ignore[misc]
+        "bar",
+        usage_metadata={
+            "input_tokens": 9,
+            "output_tokens": 1,
+            "total_tokens": 10,
+            "input_token_details": {"cache_creation": 3, "cache_read": 4},
+        },
+    )
+
+    llm = ChatAnthropic(model="test", anthropic_api_key="test")  # type: ignore[call-arg, call-arg]
+    actual = llm._format_output(anthropic_msg)
+    assert actual.generations[0].message == expected
 
 
 def test__merge_messages() -> None:
@@ -137,6 +162,13 @@ def test__merge_messages() -> None:
                     "text": None,
                     "name": "blah",
                 },
+                {
+                    "tool_input": {"a": "c"},
+                    "type": "tool_use",
+                    "id": "3",
+                    "text": None,
+                    "name": "blah",
+                },
             ]
         ),
         ToolMessage("buz output", tool_call_id="1", status="error"),  # type: ignore[misc]
@@ -153,6 +185,7 @@ def test__merge_messages() -> None:
             ],
             tool_call_id="2",
         ),  # type: ignore[misc]
+        ToolMessage([], tool_call_id="3"),  # type: ignore[misc]
         HumanMessage("next thing"),  # type: ignore[misc]
     ]
     expected = [
@@ -173,6 +206,13 @@ def test__merge_messages() -> None:
                     "tool_input": {"a": "c"},
                     "type": "tool_use",
                     "id": "2",
+                    "text": None,
+                    "name": "blah",
+                },
+                {
+                    "tool_input": {"a": "c"},
+                    "type": "tool_use",
+                    "id": "3",
                     "text": None,
                     "name": "blah",
                 },
@@ -199,6 +239,12 @@ def test__merge_messages() -> None:
                         },
                     ],
                     "tool_use_id": "2",
+                    "is_error": False,
+                },
+                {
+                    "type": "tool_result",
+                    "content": [],
+                    "tool_use_id": "3",
                     "is_error": False,
                 },
                 {"type": "text", "text": "next thing"},

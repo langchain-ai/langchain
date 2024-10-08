@@ -389,7 +389,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
             # returns {'input': 5, 'add_step': {'added': 15}}
     """
 
-    mapper: RunnableParallel[dict[str, Any]]
+    mapper: RunnableParallel
 
     def __init__(self, mapper: RunnableParallel[dict[str, Any]], **kwargs: Any) -> None:
         super().__init__(mapper=mapper, **kwargs)  # type: ignore[call-arg]

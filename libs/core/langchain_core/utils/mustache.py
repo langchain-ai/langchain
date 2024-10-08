@@ -144,7 +144,8 @@ def parse_tag(template: str, l_del: str, r_del: str) -> tuple[tuple[str, str], s
     try:
         tag, template = template.split(r_del, 1)
     except ValueError as e:
-        raise ChevronError("unclosed tag " f"at line {_CURRENT_LINE}") from e
+        msg = "unclosed tag " f"at line {_CURRENT_LINE}"
+        raise ChevronError(msg) from e
 
     # Find the type meaning of the first character
     tag_type = tag_types.get(tag[0], "variable")
@@ -164,9 +165,8 @@ def parse_tag(template: str, l_del: str, r_del: str) -> tuple[tuple[str, str], s
 
         # Otherwise we should complain
         else:
-            raise ChevronError(
-                "unclosed set delimiter tag\n" f"at line {_CURRENT_LINE}"
-            )
+            msg = "unclosed set delimiter tag\n" f"at line {_CURRENT_LINE}"
+            raise ChevronError(msg)
 
     elif (
         # If we might be a no html escape tag
@@ -275,18 +275,20 @@ def tokenize(
             try:
                 last_section = open_sections.pop()
             except IndexError as e:
-                raise ChevronError(
+                msg = (
                     f'Trying to close tag "{tag_key}"\n'
                     "Looks like it was not opened.\n"
                     f"line {_CURRENT_LINE + 1}"
-                ) from e
+                )
+                raise ChevronError(msg) from e
             if tag_key != last_section:
                 # Otherwise we need to complain
-                raise ChevronError(
+                msg = (
                     f'Trying to close tag "{tag_key}"\n'
                     f'last open tag is "{last_section}"\n'
                     f"line {_CURRENT_LINE + 1}"
                 )
+                raise ChevronError(msg)
 
         # Do the second check to see if we're a standalone
         is_standalone = r_sa_check(template, tag_type, is_standalone)
@@ -313,11 +315,12 @@ def tokenize(
     # If there are any open sections when we're done
     if open_sections:
         # Then we need to complain
-        raise ChevronError(
+        msg = (
             "Unexpected EOF\n"
             f'the tag "{open_sections[-1]}" was never closed\n'
             f"was opened at line {_LAST_TAG_LINE}"
         )
+        raise ChevronError(msg)
 
 
 #
