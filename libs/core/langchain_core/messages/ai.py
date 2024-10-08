@@ -373,7 +373,8 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                         )
                     )
                 else:
-                    raise ValueError("Malformed args.")
+                    msg = "Malformed args."
+                    raise ValueError(msg)
             except Exception:
                 invalid_tool_calls.append(
                     create_invalid_tool_call(
@@ -402,9 +403,8 @@ def add_ai_message_chunks(
 ) -> AIMessageChunk:
     """Add multiple AIMessageChunks together."""
     if any(left.example != o.example for o in others):
-        raise ValueError(
-            "Cannot concatenate AIMessageChunks with different example values."
-        )
+        msg = "Cannot concatenate AIMessageChunks with different example values."
+        raise ValueError(msg)
 
     content = merge_content(left.content, *(o.content for o in others))
     additional_kwargs = merge_dicts(
