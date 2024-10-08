@@ -335,9 +335,23 @@ class ConfluenceLoader(BaseLoader):
         keep_newlines = self._resolve_param("keep_newlines", kwargs)
 
         if not space_key and not page_ids and not label and not cql:
-            raise ValueError(
-                "Must specify at least one among `space_key`, `page_ids`, "
-                "`label`, `cql` parameters."
+            pages = self.paginate_request(
+                self.confluence.get_all_pages_from_space,
+                space=None,
+                limit=limit,
+                max_pages=max_pages,
+                status="any" if include_archived_content else "current",
+                expand=f"{content_format.value},version",
+            )
+            yield from self.process_pages(
+                pages,
+                include_restricted_content,
+                include_attachments,
+                include_comments,
+                content_format,
+                ocr_languages=ocr_languages,
+                keep_markdown_format=keep_markdown_format,
+                keep_newlines=keep_newlines,
             )
 
         if space_key:
@@ -448,7 +462,8 @@ class ConfluenceLoader(BaseLoader):
         seems to cap the response to 100. Also, due to the Atlassian Python
         package, we don't get the "next" values from the "_links" key because
         they only return the value from the result key. So here, the pagination
-        starts from 0 and goes until the max_pages, getting the `limit` number
+        starts from 0 and goes until the max_pages (if set, otherwise gets all the
+        pages until the end), getting the `limit` number
         of pages with each request. We have to manually check if there
         are more docs based on the length of the returned list of pages, rather than
         just checking for the presence of a `next` key in the response like this page
@@ -461,9 +476,11 @@ class ConfluenceLoader(BaseLoader):
         :rtype: List
         """
 
-        max_pages = kwargs.pop("max_pages")
         docs: List[dict] = []
-        while len(docs) < max_pages:
+        max_pages = kwargs.pop("max_pages", -1)
+        pages_limit_condition = (len(docs) < max_pages) if max_pages != -1 else True
+
+        while pages_limit_condition:
             get_pages = retry(
                 reraise=True,
                 stop=stop_after_attempt(
@@ -480,7 +497,7 @@ class ConfluenceLoader(BaseLoader):
             if not batch:
                 break
             docs.extend(batch)
-        return docs[:max_pages]
+        return docs[:max_pages] if max_pages != -1 else docs
 
     def is_public_page(self, page: dict) -> bool:
         """Check if a page is publicly accessible."""
