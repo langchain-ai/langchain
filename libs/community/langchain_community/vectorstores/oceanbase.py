@@ -1,6 +1,7 @@
 import json
 import logging
 import uuid
+import traceback
 from typing import Any, Iterable, List, Optional, Sequence, Tuple
 
 from langchain_core.documents import Document
@@ -312,18 +313,19 @@ class OceanBase(VectorStore):
                     extra_data[i : i + batch_size],
                 )
             ]
-            # try:
-            self.obvector.insert(
-                table_name=self.table_name,
-                data=data,
-                partition_name=(partition_name or ""),
-            )
-            pks.extend(ids[i : i + batch_size])
-            # except Exception:
-            #     end_idx = i + batch_size
-            #     logger.error(
-            #         f"Failed to insert batch starting at entity: [{i}, {end_idx})"
-            #     )
+            try:
+                self.obvector.insert(
+                    table_name=self.table_name,
+                    data=data,
+                    partition_name=(partition_name or ""),
+                )
+                pks.extend(ids[i : i + batch_size])
+            except Exception:
+                end_idx = i + batch_size
+                logger.error(
+                    f"Failed to insert batch starting at entity: [{i}, {end_idx})"
+                )
+                traceback.print_stack()
         return pks
 
     @classmethod
