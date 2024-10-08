@@ -7,7 +7,18 @@ from langchain_community.document_loaders.blob_loaders import Blob
 
 
 class ExcelParser(BaseBlobParser):
-    """Parse the Microsoft Excel documents from a blob."""
+    """Parse the Microsoft Excel documents from a blob.
+    - Uses Unstructured for parsing
+    - Each sheet is returned as a separate document.
+    - Metadata contains:
+      - source: from blob.source
+      - title: sheet name
+      - page: ordinal number of the sheet
+    - page_content contains Markdown:
+      - Elements identified as "Title" are prepended with `# `
+      - Table element's html representation is parsed using `htmltabletomd`
+      - All other elements are passed in "as is"
+    """
 
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:  # type: ignore[valid-type]
         """Parse a Microsoft Excel document into the Document iterator.
@@ -54,13 +65,14 @@ class ExcelParser(BaseBlobParser):
                         metadata = {
                             "source": blob.source,
                             "title": element.metadata.page_name,
+                            "page": element.metadata.page_number,
                         }  # type: ignore[attr-defined]
                         yield Document(page_content=page_text, metadata=metadata)  # type: ignore[attr-defined]
-                    page_text = f"# {element.metadata.page_name}\n"
+                    page_text = ""
                     last_page = element.metadata.page_number
 
                 if type(element).__name__ == "Title":
-                    page_text += f"## {element.text}\n"
+                    page_text += f"# {element.text}\n"
                 elif type(element).__name__ == "Table":
                     page_text += (
                         htmltabletomd.convert_table(element.metadata.text_as_html)
@@ -69,5 +81,9 @@ class ExcelParser(BaseBlobParser):
                 else:
                     page_text += f"{element.text}\n"
             # yield last page
-            metadata = {"source": blob.source, "title": element.metadata.page_name}  # type: ignore[attr-defined]
+            metadata = {
+                "source": blob.source,
+                "title": element.metadata.page_name,
+                "page": element.metadata.page_number,
+            }  # type: ignore[attr-defined]
             yield Document(page_content=page_text, metadata=metadata)
