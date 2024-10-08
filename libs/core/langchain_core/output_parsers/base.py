@@ -177,10 +177,11 @@ class BaseOutputParser(
                 if "args" in metadata and len(metadata["args"]) > 0:
                     return metadata["args"][0]
 
-        raise TypeError(
+        msg = (
             f"Runnable {self.__class__.__name__} doesn't have an inferable OutputType. "
             "Override the OutputType property to specify the output type."
         )
+        raise TypeError(msg)
 
     def invoke(
         self,
@@ -310,10 +311,11 @@ class BaseOutputParser(
     @property
     def _type(self) -> str:
         """Return the output parser type for serialization."""
-        raise NotImplementedError(
+        msg = (
             f"_type property is not implemented in class {self.__class__.__name__}."
             " This is required for serialization."
         )
+        raise NotImplementedError(msg)
 
     def dict(self, **kwargs: Any) -> dict:
         """Return dictionary representation of output parser."""
