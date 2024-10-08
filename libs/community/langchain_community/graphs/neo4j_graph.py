@@ -430,7 +430,7 @@ class Neo4jGraph(GraphStore):
         try:
             data, _, _ = self._driver.execute_query(
                 Query(text=query, timeout=self.timeout),
-                database=self._database,
+                database_=self._database,
                 parameters_=params,
             )
             json_data = [r.data() for r in data]
