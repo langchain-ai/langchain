@@ -321,11 +321,10 @@ class OceanBase(VectorStore):
                 )
                 pks.extend(ids[i : i + batch_size])
             except Exception:
-                end_idx = i + batch_size
+                traceback.print_exc()
                 logger.error(
-                    f"Failed to insert batch starting at entity: [{i}, {end_idx})"
+                    f"Failed to insert batch starting at entity: [{i}, {i + batch_size})"
                 )
-                traceback.print_stack()
         return pks
 
     @classmethod
