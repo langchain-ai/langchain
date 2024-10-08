@@ -175,10 +175,11 @@ class InMemoryVectorStore(VectorStore):
         vectors = self.embedding.embed_documents(texts)
 
         if ids and len(ids) != len(texts):
-            raise ValueError(
+            msg = (
                 f"ids must be the same length as texts. "
                 f"Got {len(ids)} ids and {len(texts)} texts."
             )
+            raise ValueError(msg)
 
         id_iterator: Iterator[Optional[str]] = (
             iter(ids) if ids else iter(doc.id for doc in documents)
@@ -207,10 +208,11 @@ class InMemoryVectorStore(VectorStore):
         vectors = await self.embedding.aembed_documents(texts)
 
         if ids and len(ids) != len(texts):
-            raise ValueError(
+            msg = (
                 f"ids must be the same length as texts. "
                 f"Got {len(ids)} ids and {len(texts)} texts."
             )
+            raise ValueError(msg)
 
         id_iterator: Iterator[Optional[str]] = (
             iter(ids) if ids else iter(doc.id for doc in documents)
@@ -432,10 +434,11 @@ class InMemoryVectorStore(VectorStore):
         try:
             import numpy as np
         except ImportError as e:
-            raise ImportError(
+            msg = (
                 "numpy must be installed to use max_marginal_relevance_search "
                 "pip install numpy"
-            ) from e
+            )
+            raise ImportError(msg) from e
 
         mmr_chosen_indices = maximal_marginal_relevance(
             np.array(embedding, dtype=np.float32),
