@@ -632,7 +632,8 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
             else:
                 return (alt(), config)
         else:
-            raise ValueError(f"Unknown alternative: {which}")
+            msg = f"Unknown alternative: {which}"
+            raise ValueError(msg)
 
 
 def _strremoveprefix(s: str, prefix: str) -> str:
