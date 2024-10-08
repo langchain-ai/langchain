@@ -76,17 +76,20 @@ def test_simple_serialization_secret() -> None:
 def test__is_field_useful() -> None:
     class ArrayObj:
         def __bool__(self) -> bool:
-            raise ValueError("Truthiness can't be determined")
+            msg = "Truthiness can't be determined"
+            raise ValueError(msg)
 
         def __eq__(self, other: object) -> bool:
             return self  # type: ignore[return-value]
 
     class NonBoolObj:
         def __bool__(self) -> bool:
-            raise ValueError("Truthiness can't be determined")
+            msg = "Truthiness can't be determined"
+            raise ValueError(msg)
 
         def __eq__(self, other: object) -> bool:
-            raise ValueError("Equality can't be determined")
+            msg = "Equality can't be determined"
+            raise ValueError(msg)
 
     default_x = ArrayObj()
     default_y = NonBoolObj()
