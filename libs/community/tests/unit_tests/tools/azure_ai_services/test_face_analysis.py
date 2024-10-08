@@ -36,8 +36,8 @@ def test_faces_detected(mocker: Any) -> None:
     key = "key"
     endpoint = "endpoint"
 
+    mocker.patch("azure.ai.vision.face.FaceClient", autospec=True)
     mocker.patch("azure.core.credentials.AzureKeyCredential", autospec=True)
-    mocker.patch("azure.ai.contentsafety.ContentSafetyClient", autospec=True)
     tool = AzureAIFaceAnalysisTool(
         azure_ai_face_key=key, azure_ai_face_endpoint=endpoint
     )
@@ -61,8 +61,8 @@ def test_no_faces_detected(mocker: Any) -> None:
     key = "key"
     endpoint = "endpoint"
 
+    mocker.patch("azure.ai.vision.face.FaceClient", autospec=True)
     mocker.patch("azure.core.credentials.AzureKeyCredential", autospec=True)
-    mocker.patch("azure.ai.contentsafety.ContentSafetyClient", autospec=True)
     tool = AzureAIFaceAnalysisTool(
         azure_ai_face_key=key, azure_ai_face_endpoint=endpoint
     )
