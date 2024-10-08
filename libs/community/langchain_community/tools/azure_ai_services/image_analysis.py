@@ -19,7 +19,19 @@ class AzureAiServicesImageAnalysisTool(BaseTool):
     """Tool that queries the Azure AI Services Image Analysis API.
 
     In order to set this up, follow instructions at:
-    https://learn.microsoft.com/en-us/azure/ai-services/computer-vision/quickstarts-sdk/image-analysis-client-library-40
+    https://learn.microsoft.com/azure/ai-services/computer-vision/quickstarts-sdk/image-analysis-client-library-40
+
+    Attributes:
+    azure_ai_services_key (Optional[str]): The API key for Azure AI Services.
+    azure_ai_services_endpoint (Optional[str]): The endpoint URL for Azure AI Services.
+    visual_features (Optional[List[str]]): The visual features to analyze in the image
+        (e.g., TAGS, CAPTION).
+    image_analysis_client (Any): The client for interacting
+        with Azure AI Services Image Analysis.
+    formatted_features (Any): Formatted visual features that are used during analysis.
+    name (str): The name of the tool.
+    description (str): A description of the tool,
+        including its purpose and expected input.
     """
 
     azure_ai_services_key: Optional[str] = None  #: :meta private:
