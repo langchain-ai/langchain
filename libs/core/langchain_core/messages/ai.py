@@ -454,6 +454,41 @@ def add_ai_message_chunks(
 def add_usage(
     left: Optional[UsageMetadata], right: Optional[UsageMetadata]
 ) -> UsageMetadata:
+    """Recursively add two UsageMetadata objects.
+
+    Example:
+        .. code-block:: python
+
+            from langchain_core.messages.ai import add_usage
+
+            left = UsageMetadata(
+                input_tokens=5,
+                output_tokens=0,
+                total_tokens=5,
+                input_token_details=InputTokenDetails(cache_read=3)
+            )
+            right = UsageMetadata(
+                input_tokens=0,
+                output_tokens=10,
+                total_tokens=10,
+                output_token_details=OutputTokenDetails(reasoning=4)
+            )
+
+            add_usage(left, right)
+
+        results in
+
+        .. code-block:: python
+
+            UsageMetadata(
+                input_tokens=5,
+                output_tokens=10,
+                total_tokens=15,
+                input_token_details=InputTokenDetails(cache_read=3),
+                output_token_details=OutputTokenDetails(reasoning=4)
+            )
+
+    """
     if not (left or right):
         return UsageMetadata(input_tokens=0, output_tokens=0, total_tokens=0)
     if not (left and right):
@@ -474,6 +509,43 @@ def add_usage(
 def subtract_usage(
     left: Optional[UsageMetadata], right: Optional[UsageMetadata]
 ) -> UsageMetadata:
+    """Recursively subtract two UsageMetadata objects.
+
+    Token counts cannot be negative so the actual operation is max(left - right, 0).
+
+    Example:
+        .. code-block:: python
+
+            from langchain_core.messages.ai import subtract_usage
+
+            left = UsageMetadata(
+                input_tokens=5,
+                output_tokens=10,
+                total_tokens=15,
+                input_token_details=InputTokenDetails(cache_read=4)
+            )
+            right = UsageMetadata(
+                input_tokens=3,
+                output_tokens=8,
+                total_tokens=11,
+                output_token_details=OutputTokenDetails(reasoning=4)
+            )
+
+            subtract_usage(left, right)
+
+        results in
+
+        .. code-block:: python
+
+            UsageMetadata(
+                input_tokens=2,
+                output_tokens=2,
+                total_tokens=4,
+                input_token_details=InputTokenDetails(cache_read=4),
+                output_token_details=OutputTokenDetails(reasoning=0)
+            )
+
+    """
     if not (left or right):
         return UsageMetadata(input_tokens=0, output_tokens=0, total_tokens=0)
     if not (left and right):
