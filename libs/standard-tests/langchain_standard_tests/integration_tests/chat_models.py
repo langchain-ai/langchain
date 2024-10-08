@@ -209,10 +209,21 @@ class ChatModelIntegrationTests(ChatModelTests):
     def test_usage_metadata_streaming(self, model: BaseChatModel) -> None:
         if not self.returns_usage_metadata:
             pytest.skip("Not implemented.")
-        full: Optional[BaseMessageChunk] = None
-        for chunk in model.stream("Hello"):
+        full: Optional[AIMessageChunk] = None
+        for chunk in model.stream("Write me 2 haikus. Only include the haikus."):
             assert isinstance(chunk, AIMessageChunk)
+            # only one chunk is allowed to set usage_metadata.input_tokens
+            # if multiple do, it's likely a bug that will result in overcounting
+            # input tokens
+            if full and full.usage_metadata and full.usage_metadata["input_tokens"]:
+                assert (
+                    not chunk.usage_metadata or not chunk.usage_metadata["input_tokens"]
+                ), (
+                    "Only one chunk should set input_tokens,"
+                    " the rest should be 0 or None"
+                )
             full = chunk if full is None else full + chunk
+
         assert isinstance(full, AIMessageChunk)
         assert full.usage_metadata is not None
         assert isinstance(full.usage_metadata["input_tokens"], int)
