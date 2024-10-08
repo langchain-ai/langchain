@@ -63,8 +63,7 @@ class TestYouRetriever:
         expected_result = NEWS_RESPONSE_PARSED
         assert results == expected_result
 
-    @pytest.mark.asyncio
-    async def test_ainvoke(self) -> None:
+        async def test_ainvoke(self) -> None:
         instance = YouRetriever(ydc_api_key="test_api_key")
 
         # Mock response object to simulate aiohttp response

@@ -1,5 +1,5 @@
 [build-system]
-requires = [ "poetry-core>=1.0.0",]
+requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
@@ -12,10 +12,16 @@ readme = "README.md"
 repository = "https://github.com/langchain-ai/langchain"
 
 [tool.mypy]
-exclude = [ "notebooks", "examples", "example_data", "langchain_core/pydantic", "tests/unit_tests/utils/test_function_calling.py",]
+exclude = [
+    "notebooks",
+    "examples",
+    "example_data",
+    "langchain_core/pydantic",
+    "tests/unit_tests/utils/test_function_calling.py",
+]
 disallow_untyped_defs = "True"
 [[tool.mypy.overrides]]
-module = [ "numpy", "pytest",]
+module = ["numpy", "pytest"]
 ignore_missing_imports = true
 
 [tool.ruff]
@@ -73,22 +79,27 @@ select = [
     "TID",
     "UP",
     "W",
-    "YTT"
+    "YTT",
 ]
 ignore = [
     "COM812", # Messes with the formatter
-    "UP007", # Incompatible with pydantic + Python 3.9
-    "W293", # 
+    "UP007",  # Incompatible with pydantic + Python 3.9
+    "W293",   # 
 ]
 
 [tool.coverage.run]
-omit = [ "tests/*",]
+omit = ["tests/*"]
 
 [tool.pytest.ini_options]
 addopts = "--snapshot-warn-unused --strict-markers --strict-config --durations=5"
-markers = [ "requires: mark tests as requiring a specific library", "asyncio: mark tests as requiring asyncio", "compile: mark placeholder test used to compile integration tests without running them",]
+markers = [
+    "requires: mark tests as requiring a specific library",
+    "compile: mark placeholder test used to compile integration tests without running them",
+]
 asyncio_mode = "auto"
-filterwarnings = [ "ignore::langchain_core._api.beta_decorator.LangChainBetaWarning",]
+filterwarnings = [
+    "ignore::langchain_core._api.beta_decorator.LangChainBetaWarning",
+]
 
 [tool.poetry.group.lint]
 optional = true
@@ -106,12 +117,17 @@ optional = true
 optional = true
 
 [tool.ruff.lint.pep8-naming]
-classmethod-decorators = [ "classmethod", "langchain_core.utils.pydantic.pre_init", "pydantic.field_validator", "pydantic.v1.root_validator",]
+classmethod-decorators = [
+    "classmethod",
+    "langchain_core.utils.pydantic.pre_init",
+    "pydantic.field_validator",
+    "pydantic.v1.root_validator",
+]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/unit_tests/prompts/test_chat.py" = [ "E501",]
-"tests/unit_tests/runnables/test_runnable.py" = [ "E501",]
-"tests/unit_tests/runnables/test_graph.py" = [ "E501",]
+"tests/unit_tests/prompts/test_chat.py" = ["E501"]
+"tests/unit_tests/runnables/test_runnable.py" = ["E501"]
+"tests/unit_tests/runnables/test_graph.py" = ["E501"]
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.5"

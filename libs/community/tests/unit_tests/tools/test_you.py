@@ -68,8 +68,7 @@ class TestYouSearchTool:
         expected_result = NEWS_RESPONSE_PARSED
         assert results == expected_result
 
-    @pytest.mark.asyncio
-    async def test_ainvoke(self) -> None:
+        async def test_ainvoke(self) -> None:
         you_tool = YouSearchTool(api_wrapper=YouSearchAPIWrapper(ydc_api_key="test"))  # type: ignore[call-arg]
 
         # Mock response object to simulate aiohttp response
