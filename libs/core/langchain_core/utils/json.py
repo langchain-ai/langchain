@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import re
-from typing import Any, Callable, List
+from typing import Any, Callable
 
 from langchain_core.exceptions import OutputParserException
 
@@ -139,11 +139,8 @@ def parse_json_markdown(
         match = _json_markdown_re.search(json_string)
 
         # If no match found, assume the entire string is a JSON string
-        if match is None:
-            json_str = json_string
-        else:
-            # If match found, use the content within the backticks
-            json_str = match.group(2)
+        # Else, use the content within the backticks
+        json_str = json_string if match is None else match.group(2)
     return _parse_json(json_str, parser=parser)
 
 
@@ -163,7 +160,7 @@ def _parse_json(
     return parser(json_str)
 
 
-def parse_and_check_json_markdown(text: str, expected_keys: List[str]) -> dict:
+def parse_and_check_json_markdown(text: str, expected_keys: list[str]) -> dict:
     """
     Parse a JSON string from a Markdown string and check that it
     contains the expected keys.
@@ -182,11 +179,13 @@ def parse_and_check_json_markdown(text: str, expected_keys: List[str]) -> dict:
     try:
         json_obj = parse_json_markdown(text)
     except json.JSONDecodeError as e:
-        raise OutputParserException(f"Got invalid JSON object. Error: {e}") from e
+        msg = f"Got invalid JSON object. Error: {e}"
+        raise OutputParserException(msg) from e
     for key in expected_keys:
         if key not in json_obj:
-            raise OutputParserException(
+            msg = (
                 f"Got invalid return object. Expected key `{key}` "
                 f"to be present, but got {json_obj}"
             )
+            raise OutputParserException(msg)
     return json_obj

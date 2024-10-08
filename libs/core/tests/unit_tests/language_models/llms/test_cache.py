@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Optional
 
 from langchain_core.caches import RETURN_VAL_TYPE, BaseCache
 from langchain_core.globals import set_llm_cache
@@ -10,7 +10,7 @@ class InMemoryCache(BaseCache):
 
     def __init__(self) -> None:
         """Initialize with empty cache."""
-        self._cache: Dict[Tuple[str, str], RETURN_VAL_TYPE] = {}
+        self._cache: dict[tuple[str, str], RETURN_VAL_TYPE] = {}
 
     def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
         """Look up based on prompt and llm_string."""
@@ -62,15 +62,17 @@ class InMemoryCacheBad(BaseCache):
 
     def __init__(self) -> None:
         """Initialize with empty cache."""
-        self._cache: Dict[Tuple[str, str], RETURN_VAL_TYPE] = {}
+        self._cache: dict[tuple[str, str], RETURN_VAL_TYPE] = {}
 
     def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
         """Look up based on prompt and llm_string."""
-        raise NotImplementedError("This code should not be triggered")
+        msg = "This code should not be triggered"
+        raise NotImplementedError(msg)
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
         """Update cache based on prompt and llm_string."""
-        raise NotImplementedError("This code should not be triggered")
+        msg = "This code should not be triggered"
+        raise NotImplementedError(msg)
 
     def clear(self, **kwargs: Any) -> None:
         """Clear cache."""

@@ -17,12 +17,13 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_core.messages.ai import UsageMetadata
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel
 
 from langchain_openai import ChatOpenAI
 from langchain_openai.chat_models.base import (
     _convert_dict_to_message,
     _convert_message_to_dict,
+    _create_usage_metadata,
     _format_message_content,
 )
 
@@ -633,7 +634,9 @@ def test_bind_tools_tool_choice(tool_choice: Any, strict: Optional[bool]) -> Non
     )
 
 
-@pytest.mark.parametrize("schema", [GenerateUsername, GenerateUsername.schema()])
+@pytest.mark.parametrize(
+    "schema", [GenerateUsername, GenerateUsername.model_json_schema()]
+)
 @pytest.mark.parametrize("method", ["json_schema", "function_calling", "json_mode"])
 @pytest.mark.parametrize("include_raw", [True, False])
 @pytest.mark.parametrize("strict", [True, False, None])
@@ -694,3 +697,55 @@ def test_get_num_tokens_from_messages() -> None:
     expected = 176
     actual = llm.get_num_tokens_from_messages(messages)
     assert expected == actual
+
+
+class Foo(BaseModel):
+    bar: int
+
+
+# class FooV1(BaseModelV1):
+#     bar: int
+
+
+@pytest.mark.parametrize(
+    "schema",
+    [
+        Foo
+        # FooV1
+    ],
+)
+def test_schema_from_with_structured_output(schema: Type) -> None:
+    """Test schema from with_structured_output."""
+
+    llm = ChatOpenAI()
+
+    structured_llm = llm.with_structured_output(
+        schema, method="json_schema", strict=True
+    )
+
+    expected = {
+        "properties": {"bar": {"title": "Bar", "type": "integer"}},
+        "required": ["bar"],
+        "title": schema.__name__,
+        "type": "object",
+    }
+    actual = structured_llm.get_output_schema().model_json_schema()
+    assert actual == expected
+
+
+def test__create_usage_metadata() -> None:
+    usage_metadata = {
+        "completion_tokens": 15,
+        "prompt_tokens_details": None,
+        "completion_tokens_details": None,
+        "prompt_tokens": 11,
+        "total_tokens": 26,
+    }
+    result = _create_usage_metadata(usage_metadata)
+    assert result == UsageMetadata(
+        output_tokens=15,
+        input_tokens=11,
+        total_tokens=26,
+        input_token_details={},
+        output_token_details={},
+    )

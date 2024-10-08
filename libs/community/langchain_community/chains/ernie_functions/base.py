@@ -22,9 +22,9 @@ from langchain_core.output_parsers import (
     BaseOutputParser,
 )
 from langchain_core.prompts import BasePromptTemplate
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import Runnable
 from langchain_core.utils.pydantic import is_basemodel_subclass
+from pydantic import BaseModel
 
 from langchain_community.output_parsers.ernie_functions import (
     JsonOutputFunctionsParser,
@@ -243,7 +243,7 @@ def create_ernie_fn_runnable(
                 from langchain.chains.ernie_functions import create_ernie_fn_chain
                 from langchain_community.chat_models import ErnieBotChat
                 from langchain_core.prompts import ChatPromptTemplate
-                from langchain.pydantic_v1 import BaseModel, Field
+                from pydantic import BaseModel, Field
 
 
                 class RecordPerson(BaseModel):
@@ -317,7 +317,7 @@ def create_structured_output_runnable(
             from langchain.chains.ernie_functions import create_structured_output_chain
             from langchain_community.chat_models import ErnieBotChat
             from langchain_core.prompts import ChatPromptTemplate
-            from langchain.pydantic_v1 import BaseModel, Field
+            from pydantic import BaseModel, Field
 
             class Dog(BaseModel):
                 \"\"\"Identifying information about a dog.\"\"\"
@@ -415,7 +415,7 @@ def create_ernie_fn_chain(
                 from langchain_community.chat_models import ErnieBotChat
                 from langchain_core.prompts import ChatPromptTemplate
 
-                from langchain.pydantic_v1 import BaseModel, Field
+                from pydantic import BaseModel, Field
 
 
                 class RecordPerson(BaseModel):
@@ -502,7 +502,7 @@ def create_structured_output_chain(
                 from langchain_community.chat_models import ErnieBotChat
                 from langchain_core.prompts import ChatPromptTemplate
 
-                from langchain.pydantic_v1 import BaseModel, Field
+                from pydantic import BaseModel, Field
 
                 class Dog(BaseModel):
                     \"\"\"Identifying information about a dog.\"\"\"

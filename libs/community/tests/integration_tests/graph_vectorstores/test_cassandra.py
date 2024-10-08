@@ -4,9 +4,9 @@ from typing import Iterable, List, Optional, Type
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.graph_vectorstores.links import METADATA_LINKS_KEY, Link
 
 from langchain_community.graph_vectorstores import CassandraGraphVectorStore
+from langchain_community.graph_vectorstores.links import METADATA_LINKS_KEY, Link
 
 CASSANDRA_DEFAULT_KEYSPACE = "graph_test_keyspace"
 

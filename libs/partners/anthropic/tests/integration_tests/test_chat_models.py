@@ -16,8 +16,8 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, LLMResult
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import tool
+from pydantic import BaseModel, Field
 
 from langchain_anthropic import ChatAnthropic, ChatAnthropicMessages
 from tests.unit_tests._utils import FakeCallbackHandler
