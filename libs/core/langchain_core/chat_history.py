@@ -157,10 +157,11 @@ class BaseChatMessageHistory(ABC):
             # method, so we should use it.
             self.add_messages([message])
         else:
-            raise NotImplementedError(
+            msg = (
                 "add_message is not implemented for this class. "
                 "Please implement add_message or add_messages."
             )
+            raise NotImplementedError(msg)
 
     def add_messages(self, messages: Sequence[BaseMessage]) -> None:
         """Add a list of messages.

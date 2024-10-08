@@ -236,10 +236,11 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
             else kwargs[self.variable_name]
         )
         if not isinstance(value, list):
-            raise ValueError(
+            msg = (
                 f"variable {self.variable_name} should be a list of base messages, "
                 f"got {value} of type {type(value)}"
             )
+            raise ValueError(msg)
         value = convert_to_messages(value)
         if self.n_messages:
             value = value[-self.n_messages :]
@@ -514,9 +515,8 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
             return cls(prompt=prompt, **kwargs)
         elif isinstance(template, list):
             if (partial_variables is not None) and len(partial_variables) > 0:
-                raise ValueError(
-                    "Partial variables are not supported for list of templates."
-                )
+                msg = "Partial variables are not supported for list of templates."
+                raise ValueError(msg)
             prompt = []
             for tmpl in template:
                 if isinstance(tmpl, str) or isinstance(tmpl, dict) and "text" in tmpl:
@@ -536,11 +536,12 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                         vars = get_template_variables(img_template, "f-string")
                         if vars:
                             if len(vars) > 1:
-                                raise ValueError(
+                                msg = (
                                     "Only one format variable allowed per image"
                                     f" template.\nGot: {vars}"
                                     f"\nFrom: {tmpl}"
                                 )
+                                raise ValueError(msg)
                             input_variables = [vars[0]]
                         img_template = {"url": img_template}
                         img_template_obj = ImagePromptTemplate(
@@ -559,13 +560,16 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                             input_variables=input_variables, template=img_template
                         )
                     else:
-                        raise ValueError(f"Invalid image template: {tmpl}")
+                        msg = f"Invalid image template: {tmpl}"
+                        raise ValueError(msg)
                     prompt.append(img_template_obj)
                 else:
-                    raise ValueError(f"Invalid template: {tmpl}")
+                    msg = f"Invalid template: {tmpl}"
+                    raise ValueError(msg)
             return cls(prompt=prompt, **kwargs)
         else:
-            raise ValueError(f"Invalid template: {template}")
+            msg = f"Invalid template: {template}"
+            raise ValueError(msg)
 
     @classmethod
     def from_template_file(
@@ -1042,7 +1046,8 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
             prompt = HumanMessagePromptTemplate.from_template(other)
             return ChatPromptTemplate(messages=self.messages + [prompt])  # type: ignore[call-arg]
         else:
-            raise NotImplementedError(f"Unsupported operand type for +: {type(other)}")
+            msg = f"Unsupported operand type for +: {type(other)}"
+            raise NotImplementedError(msg)
 
     @model_validator(mode="before")
     @classmethod
@@ -1085,11 +1090,12 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
             input_vars = input_vars - optional_variables
         if "input_variables" in values and values.get("validate_template"):
             if input_vars != set(values["input_variables"]):
-                raise ValueError(
+                msg = (
                     "Got mismatched input_variables. "
                     f"Expected: {input_vars}. "
                     f"Got: {values['input_variables']}"
                 )
+                raise ValueError(msg)
         else:
             values["input_variables"] = sorted(input_vars)
         if optional_variables:
@@ -1214,7 +1220,8 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
                 message = message_template.format_messages(**kwargs)
                 result.extend(message)
             else:
-                raise ValueError(f"Unexpected input: {message_template}")
+                msg = f"Unexpected input: {message_template}"
+                raise ValueError(msg)
         return result
 
     async def aformat_messages(self, **kwargs: Any) -> list[BaseMessage]:
@@ -1241,7 +1248,8 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
                 message = await message_template.aformat_messages(**kwargs)
                 result.extend(message)
             else:
-                raise ValueError(f"Unexpected input: {message_template}")
+                msg = f"Unexpected input: {message_template}"
+                raise ValueError(msg)
         return result
 
     def partial(self, **kwargs: Any) -> ChatPromptTemplate:
@@ -1328,7 +1336,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         Args:
             file_path: path to file.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def pretty_repr(self, html: bool = False) -> str:
         """Human-readable representation.
@@ -1376,38 +1384,43 @@ def _create_template_from_message_type(
     elif message_type == "placeholder":
         if isinstance(template, str):
             if template[0] != "{" or template[-1] != "}":
-                raise ValueError(
+                msg = (
                     f"Invalid placeholder template: {template}."
                     " Expected a variable name surrounded by curly braces."
                 )
+                raise ValueError(msg)
             var_name = template[1:-1]
             message = MessagesPlaceholder(variable_name=var_name, optional=True)
         elif len(template) == 2 and isinstance(template[1], bool):
             var_name_wrapped, is_optional = template
             if not isinstance(var_name_wrapped, str):
-                raise ValueError(
+                msg = (
                     "Expected variable name to be a string." f" Got: {var_name_wrapped}"
                 )
+                raise ValueError(msg)
             if var_name_wrapped[0] != "{" or var_name_wrapped[-1] != "}":
-                raise ValueError(
+                msg = (
                     f"Invalid placeholder template: {var_name_wrapped}."
                     " Expected a variable name surrounded by curly braces."
                 )
+                raise ValueError(msg)
             var_name = var_name_wrapped[1:-1]
 
             message = MessagesPlaceholder(variable_name=var_name, optional=is_optional)
         else:
-            raise ValueError(
+            msg = (
                 "Unexpected arguments for placeholder message type."
                 " Expected either a single string variable name"
                 " or a list of [variable_name: str, is_optional: bool]."
                 f" Got: {template}"
             )
+            raise ValueError(msg)
     else:
-        raise ValueError(
+        msg = (
             f"Unexpected message type: {message_type}. Use one of 'human',"
             f" 'user', 'ai', 'assistant', or 'system'."
         )
+        raise ValueError(msg)
     return message
 
 
@@ -1448,7 +1461,8 @@ def _convert_to_message(
         )
     elif isinstance(message, tuple):
         if len(message) != 2:
-            raise ValueError(f"Expected 2-tuple of (role, template), got {message}")
+            msg = f"Expected 2-tuple of (role, template), got {message}"
+            raise ValueError(msg)
         message_type_str, template = message
         if isinstance(message_type_str, str):
             _message = _create_template_from_message_type(
@@ -1461,6 +1475,7 @@ def _convert_to_message(
                 )
             )
     else:
-        raise NotImplementedError(f"Unsupported message type: {type(message)}")
+        msg = f"Unsupported message type: {type(message)}"
+        raise NotImplementedError(msg)
 
     return _message

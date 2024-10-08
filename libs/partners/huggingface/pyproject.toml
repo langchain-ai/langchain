@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-huggingface"
-version = "0.1.1"
+version = "0.1.0"
 description = "An integration package connecting Hugging Face and LangChain"
 authors = []
 readme = "README.md"
@@ -20,7 +20,7 @@ disallow_untyped_defs = "True"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-langchain-core = ">=0.3.7,<0.4"
+langchain-core = ">=0.3.0,<0.4"
 tokenizers = ">=0.19.1"
 transformers = ">=4.39.0"
 sentence-transformers = ">=2.6.0"
