@@ -6,7 +6,8 @@ from typing import Any, Iterable, List, Optional, Sequence, Tuple
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
-from sqlalchemy import JSON, Column, String, Table, Text, func, text
+from sqlalchemy import JSON, Column, String, Table, func, text
+from sqlalchemy.dialects.mysql import LONGTEXT
 
 logger = logging.getLogger(__name__)
 
@@ -205,7 +206,7 @@ class OceanBase(VectorStore):
                 self.primary_field, String(4096), primary_key=True, autoincrement=False
             ),
             Column(self.vector_field, VECTOR(dim)),
-            Column(self.text_field, Text),
+            Column(self.text_field, LONGTEXT),
             Column(self.metadata_field, JSON),
         ]
         if self.extra_columns is not None:
