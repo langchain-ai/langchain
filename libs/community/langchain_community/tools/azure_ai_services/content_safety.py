@@ -33,7 +33,7 @@ class AzureContentSafetyTextTool(BaseTool):
 
     content_safety_key: str = ""  #: :meta private:
     content_safety_endpoint: str = ""  #: :meta private:
-    content_safety_client: Any = None #: :meta private:
+    content_safety_client: Any = None  #: :meta private:
 
     name: str = "azure_content_safety_tool"
     description: str = (
