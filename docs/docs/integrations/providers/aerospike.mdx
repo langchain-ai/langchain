@@ -1,0 +1,24 @@
+# Aerospike
+
+>[Aerospike Vector Search](https://aerospike.com/docs/vector) (AVS) is an extension to 
+> the `Aerospike Database` that enables searches across very large datasets stored in `Aerospike`.
+> This new service lives outside of `Aerospike` and builds an index to perform those searches.
+
+
+## Installation and Setup
+
+You need to have a running `AVS` instance. Use one of the [installation methods](https://aerospike.com/docs/vector/install).
+
+You need to install `aerospike-vector-search` python package.
+
+```bash
+pip install aerospike-vector-search
+```
+
+## Vectorstore
+
+See a [usage example](/docs/integrations/vectorstores/aerospike).
+
+```python
+from langchain_community.vectorstores import Aerospike
+```
