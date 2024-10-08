@@ -379,7 +379,7 @@ class MemgraphGraph(GraphStore):
         try:
             data, _, _ = self._driver.execute_query(
                 query,
-                database=self._database,
+                database_=self._database,
                 parameters_=params,
             )
             json_data = [r.data() for r in data]
@@ -413,7 +413,7 @@ class MemgraphGraph(GraphStore):
                 raise
 
         # fallback to allow implicit transactions
-        with self._driver.session() as session:
+        with self._driver.session(database=self._database) as session:
             data = session.run(query, params)
             json_data = [r.data() for r in data]
             return json_data
