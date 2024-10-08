@@ -47,7 +47,8 @@ class InMemoryDocumentIndex(DocumentIndex):
     def delete(self, ids: Optional[list[str]] = None, **kwargs: Any) -> DeleteResponse:
         """Delete by ID."""
         if ids is None:
-            raise ValueError("IDs must be provided for deletion")
+            msg = "IDs must be provided for deletion"
+            raise ValueError(msg)
 
         ok_ids = []
 

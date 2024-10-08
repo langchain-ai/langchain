@@ -16,8 +16,8 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import LLM
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
-from pydantic import BaseModel, Field, SecretStr, model_validator
 from typing_extensions import Self
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
@@ -58,6 +58,8 @@ class _MinimaxEndpointClient(BaseModel):
 
 class MinimaxCommon(BaseModel):
     """Common parameters for Minimax large language models."""
+
+    model_config = ConfigDict(protected_namespaces=())
 
     _client: _MinimaxEndpointClient
     model: str = "abab5.5-chat"
