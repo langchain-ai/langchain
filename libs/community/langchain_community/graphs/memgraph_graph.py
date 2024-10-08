@@ -98,7 +98,7 @@ Nodes are connected with the following relationships:
 """
 
 
-def get_schema_subset(data):
+def get_schema_subset(data: Dict[str, Any]) -> Dict[str, Any]:
     return {
         "edges": [
             {
@@ -137,7 +137,9 @@ def get_schema_subset(data):
     }
 
 
-def get_reformated_schema(nodes, rels):
+def get_reformated_schema(
+    nodes: List[Dict[str, Any]], rels: List[Dict[str, Any]]
+) -> Dict[str, Any]:
     return {
         "edges": [
             {
@@ -170,7 +172,7 @@ def get_reformated_schema(nodes, rels):
     }
 
 
-def transform_schema_to_text(schema):
+def transform_schema_to_text(schema: Dict[str, Any]) -> str:
     node_props_data = ""
     rel_props_data = ""
     rel_data = ""
@@ -215,7 +217,7 @@ def _remove_backticks(text: str) -> str:
     return text.replace("`", "")
 
 
-def _transform_nodes(nodes, baseEntityLabel):
+def _transform_nodes(nodes: List[Dict[str, Any]], baseEntityLabel: bool) -> List[dict]:
     transformed_nodes = []
     for node in nodes:
         properties_dict = node.properties | {"id": node.id}
@@ -229,7 +231,9 @@ def _transform_nodes(nodes, baseEntityLabel):
     return transformed_nodes
 
 
-def _transform_relationships(relationships, baseEntityLabel):
+def _transform_relationships(
+    relationships: List[Dict[str, Any]], baseEntityLabel: bool
+) -> List[dict]:
     transformed_relationships = []
     for rel in relationships:
         rel_dict = {
@@ -344,7 +348,7 @@ class MemgraphGraph(GraphStore):
             except neo4j.exceptions.ClientError as e:
                 raise e
 
-    def close(self):
+    def close(self) -> None:
         if self._driver:
             logger.info("Closing the driver connection.")
             self._driver.close()
@@ -428,6 +432,12 @@ class MemgraphGraph(GraphStore):
 
         # first try with SHOW SCHEMA INFO
         try:
+            result = self.query(SCHEMA_QUERY)[0].get("schema")
+            if result is not None and isinstance(result, (str, ast.AST)):
+                schema_result = ast.literal_eval(result)
+            else:
+                schema_result = result
+
             schema_result = ast.literal_eval(self.query(SCHEMA_QUERY)[0].get("schema"))
             assert schema_result is not None
             structured_schema = get_schema_subset(schema_result)
