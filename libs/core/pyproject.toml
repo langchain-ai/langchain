@@ -138,7 +138,6 @@ mypy = ">=1.10,<1.11"
 types-pyyaml = "^6.0.12.2"
 types-requests = "^2.28.11.5"
 types-jinja2 = "^2.11.9"
-simsimd = "^5.0.0"
 
 [tool.poetry.group.dev.dependencies]
 jupyter = "^1.0.0"
