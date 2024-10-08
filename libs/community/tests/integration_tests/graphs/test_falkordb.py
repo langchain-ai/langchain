@@ -9,7 +9,7 @@ class TestFalkorDB(unittest.TestCase):
     def setUp(self) -> None:
         self.host = "localhost"
         self.graph = "test_falkordb"
-        self.port = 6379
+        self.port = 6026
 
     @patch("redis.Redis")
     def test_init(self, mock_client: Any) -> None:

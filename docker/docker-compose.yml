@@ -78,6 +78,11 @@ services:
     container_name: vdms_container
     ports:
       - "6025:55555"
+  falkordb:
+    image: falkordb/falkordb:edge
+    container_name: falkordb_container
+    ports:
+      - "6026:6379"
 
 volumes:
   postgres_data:
