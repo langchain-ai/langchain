@@ -139,7 +139,7 @@ def _get_search_client(
     else:
         credential = DefaultAzureCredential()
     index_client: SearchIndexClient = SearchIndexClient(
-        endpoint=endpoint, credential=credential, user_agent=user_agent
+        endpoint=endpoint, credential=credential, user_agent=user_agent, **additional_search_client_options
     )
     try:
         index_client.get_index(name=index_name)
