@@ -269,7 +269,7 @@ class HanaDB(VectorStore):
         default parameters from the database are used. If provided values exceed the
         valid ranges, an error will be raised.
         The index is always created in ONLINE mode.
-        
+
         Args:
             m: (Optional) Maximum number of neighbors per graph node
                 (Valid Range: [4, 1000])
