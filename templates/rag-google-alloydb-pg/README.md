@@ -1,6 +1,6 @@
-# RAG - AlloyDB
+# RAG - Google AlloyDB for PostgreSQL
 
-This template performs RAG using `AlloyDB` and `VertexAI`.
+This template performs RAG using `AlloyDB for PostgreSQL` and `VertexAI`.
 
 ## Environment Setup
 
@@ -21,7 +21,7 @@ Use the following templates to deploy Retrieval Augmented Generation (RAG) appli
 11. Use `create_embeddings.py` to add data to your vector store.
 
 Set these environments to run the template
-  * `CLUSTER`
+  * `CLUSTER_ID`
   * `DATABASE`
   * `INSTANCE`
   * `PASSWORD`
@@ -41,21 +41,21 @@ pip install -U langchain-cli
 To create a new LangChain project and install this as the only package, you can do:
 
 ```shell
-langchain app new my-app --package rag-alloy
+langchain app new my-app --package rag-google-alloydb-pg
 ```
 
 If you want to add this to an existing project, you can just run:
 
 ```shell
-langchain app add rag-alloy
+langchain app add rag-google-alloydb-pg
 ```
 
 And add the following code to your `server.py` file:
 
 ```python
-from rag_alloy.chain import chain as rag_alloy_chain
+from rag_google_alloydb_pg.chain import chain as rag_google_alloydb_pg_chain
 
-add_routes(app, rag_alloy_chain, path="/rag-alloy")
+add_routes(app, rag_google_alloydb_pg_chain, path="/rag-google-alloydb-pg")
 ```
 
 (Optional) Let's now configure LangSmith.
@@ -80,11 +80,11 @@ This will start the FastAPI app with a server running locally at
 
 We can see all templates at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 We can access the playground
-at [http://127.0.0.1:8000/rag-alloy/playground](http://127.0.0.1:8000/rag-alloy/playground)
+at [http://127.0.0.1:8000/rag-google-alloydb-pg/playground](http://127.0.0.1:8000/rag-alloy/playground)
 
 We can access the template from code with:
 
 ```python
 from langserve.client import RemoteRunnable
 
-runnable = RemoteRunnable("http://localhost:8000/rag-alloy")
+runnable = RemoteRunnable("http://localhost:8000/rag-google-alloydb-pg")

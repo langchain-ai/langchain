@@ -13,13 +13,12 @@
 # limitations under the License.
 import os
 
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_google_vertexai import VertexAI, VertexAIEmbeddings
 from langchain_core.output_parsers import StrOutputParser
-from pydantic import RootModel
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableParallel, RunnablePassthrough
-
 from langchain_google_cloud_sql_pg import PostgresEngine, PostgresVectorStore
+from langchain_google_vertexai import ChatVertexAI, VertexAIEmbeddings
+from pydantic import RootModel
 
 # This sample requires a vector store table
 # Create this table using `PostgresEngine` method `init_vectorstore_table()`
@@ -55,7 +54,7 @@ prompt = ChatPromptTemplate.from_messages(
         ("human", "{question}"),
     ]
 )
-llm = VertexAI(model_name="gemini-pro", project=PROJECT_ID)
+llm = ChatVertexAI(model_name="gemini-pro", project=PROJECT_ID)
 
 # Initialize the vector store and retriever
 engine = PostgresEngine.from_instance(

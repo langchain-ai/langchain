@@ -1,6 +1,6 @@
-# RAG - CloudSQL for Postgres
+# RAG - Google Cloud SQL for PostgreSQL
 
-This template performs RAG using `CloudSQL` and `VertexAI`.
+This template performs RAG using `Cloud SQL for PostgreSQL` and `VertexAI`.
 
 ## Environment Setup
 
@@ -20,13 +20,13 @@ Use the following templates to deploy Retrieval Augmented Generation (RAG) appli
 11. Use [`create_embeddings.py`](create_embeddings.py) to add data to your vector store.
 
 Set these environments to run the template
-  * `DATABASE`
-  * `INSTANCE`
-  * `PASSWORD`
+  * `DATABASE_ID`
+  * `INSTANCE_ID`
+  * `DB_PASSWORD`
   * `PROJECT_ID`
   * `REGION`
   * `TABLE_NAME`
-  * `USER`
+  * `DB_USER`
 
 ## Usage
 
@@ -39,21 +39,21 @@ pip install -U langchain-cli
 To create a new LangChain project and install this as the only package, you can do:
 
 ```shell
-langchain app new my-app --package rag-cloudsql
+langchain app new my-app --package rag-google-cloud-sql-pg
 ```
 
 If you want to add this to an existing project, you can just run:
 
 ```shell
-langchain app add rag-cloudsql
+langchain app add rag-google-cloud-sql-pg
 ```
 
 And add the following code to your `server.py` file:
 
 ```python
-from rag_cloudsql.chain import chain as rag_cloudsql_chain
+from rag_google_cloud_sql_pg.chain import chain as rag_google_cloud_sql_pg_chain
 
-add_routes(app, rag_cloudsql_chain, path="/rag-cloudsql")
+add_routes(app, rag_google_cloud_sql_pg_chain, path="/rag-google-cloud-sql-pg")
 ```
 
 (Optional) Let's now configure LangSmith.
@@ -78,11 +78,11 @@ This will start the FastAPI app with a server running locally at
 
 We can see all templates at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 We can access the playground
-at [http://127.0.0.1:8000/rag-cloudsql/playground](http://127.0.0.1:8000/rag-cloudsql/playground)
+at [http://127.0.0.1:8000/rag-google-cloud-sql-pg/playground](http://127.0.0.1:8000/rag-google-cloud-sql-pg/playground)
 
 We can access the template from code with:
 
 ```python
 from langserve.client import RemoteRunnable
 
-runnable = RemoteRunnable("http://localhost:8000/rag-cloudsql")
+runnable = RemoteRunnable("http://localhost:8000/rag-google-cloud-sql-pg")

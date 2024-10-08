@@ -14,13 +14,12 @@
 import os
 
 from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_google_vertexai import VertexAI, VertexAIEmbeddings
 from langchain_core.output_parsers import StrOutputParser
-from pydantic import RootModel
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableParallel, RunnablePassthrough
-
 from langchain_google_alloydb_pg import AlloyDBEngine, AlloyDBVectorStore
+from langchain_google_vertexai import ChatVertexAI, VertexAIEmbeddings
+from pydantic import RootModel
 
 # This sample requires a vector store table
 # Create these tables using `AlloyDBEngine` method `init_vectorstore_table()`
@@ -57,7 +56,7 @@ prompt = ChatPromptTemplate.from_messages(
         ("human", "{question}"),
     ]
 )
-llm = VertexAI(model_name="gemini-pro", project=PROJECT_ID)
+llm = ChatVertexAI(model_name="gemini-pro", project=PROJECT_ID)
 
 # Initialize the vector store and retriever
 engine = AlloyDBEngine.from_instance(
