@@ -49,7 +49,7 @@ def test_faces_detected(mocker: Any) -> None:
 
     tool.face_client = mock_content_client
 
-    input: str = FACE
+    input: str = str(FACE)
     output = "FACE: 1\nfaceId: 69d017e8-464e-42c1-adfb-5b7fec0526ea\n"
 
     result = tool._run(input)
@@ -72,7 +72,7 @@ def test_no_faces_detected(mocker: Any) -> None:
 
     tool.face_client = mock_content_client
 
-    input: str = NO_FACE
+    input: str = str(NO_FACE)
     output = "No faces found"
 
     result = tool._run(input)
