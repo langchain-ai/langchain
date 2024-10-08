@@ -1,6 +1,6 @@
 import base64
 import json
-from typing import List, Optional
+from typing import List, Optional, cast
 
 import httpx
 import pytest
@@ -222,7 +222,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                     "Only one chunk should set input_tokens,"
                     " the rest should be 0 or None"
                 )
-            full = chunk if full is None else full + chunk
+            full = chunk if full is None else cast(AIMessageChunk, full + chunk)
 
         assert isinstance(full, AIMessageChunk)
         assert full.usage_metadata is not None
