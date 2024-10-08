@@ -79,7 +79,7 @@ class RecursiveUrlLoader(BaseLoader):
         GET request to an endpoint on Bob's site. Both sites are hosted on the
         same host, so such a request would not be prevented by default.
 
-        See https://python.langchain.com/v0.2/docs/security/
+        See https://python.langchain.com/docs/security/
 
     Setup:
 
@@ -227,7 +227,7 @@ class RecursiveUrlLoader(BaseLoader):
                 "https://docs.python.org/3.9/",
                 prevent_outside=True,
                 base_url="https://docs.python.org",
-                link_regex=r'<a\s+(?:[^>]*?\s+)?href="([^"]*(?=index)[^"]*)"',
+                link_regex=r'<a\\s+(?:[^>]*?\\s+)?href="([^"]*(?=index)[^"]*)"',
                 exclude_dirs=['https://docs.python.org/3.9/faq']
             )
             docs = loader.load()

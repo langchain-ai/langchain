@@ -9,11 +9,11 @@ from langchain_core.callbacks.manager import (
 )
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseLanguageModel
-from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import Runnable
 from langchain_core.structured_query import StructuredQuery, Visitor
 from langchain_core.vectorstores import VectorStore
+from pydantic import ConfigDict, Field, model_validator
 
 from langchain.chains.query_constructor.base import load_query_constructor_runnable
 from langchain.chains.query_constructor.schema import AttributeInfo
@@ -223,12 +223,14 @@ class SelfQueryRetriever(BaseRetriever):
     use_original_query: bool = False
     """Use original query instead of the revised new query from LLM"""
 
-    class Config:
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        populate_by_name=True,
+        arbitrary_types_allowed=True,
+    )
 
-    @root_validator(pre=True)
-    def validate_translator(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_translator(cls, values: Dict) -> Any:
         """Validate translator."""
         if "structured_query_translator" not in values:
             values["structured_query_translator"] = _get_builtin_translator(

@@ -2,8 +2,8 @@ from enum import Enum
 from typing import Any, Dict, Iterator, List, Mapping, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.utils import pre_init
+from pydantic import BaseModel, ConfigDict
 
 CUSTOM_ENDPOINT_PREFIX = "ocid1.generativeaiendpoint"
 
@@ -46,9 +46,9 @@ class OCIGenAIEmbeddings(BaseModel, Embeddings):
             )
     """
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
 
-    service_models: Any  #: :meta private:
+    service_models: Any = None  #: :meta private:
 
     auth_type: Optional[str] = "API_KEY"
     """Authentication type, could be 
@@ -66,16 +66,16 @@ class OCIGenAIEmbeddings(BaseModel, Embeddings):
     If not specified , DEFAULT will be used 
     """
 
-    model_id: str = None  # type: ignore[assignment]
+    model_id: Optional[str] = None
     """Id of the model to call, e.g., cohere.embed-english-light-v2.0"""
 
     model_kwargs: Optional[Dict] = None
     """Keyword arguments to pass to the model"""
 
-    service_endpoint: str = None  # type: ignore[assignment]
+    service_endpoint: Optional[str] = None
     """service endpoint url"""
 
-    compartment_id: str = None  # type: ignore[assignment]
+    compartment_id: Optional[str] = None
     """OCID of compartment"""
 
     truncate: Optional[str] = "END"
@@ -85,8 +85,7 @@ class OCIGenAIEmbeddings(BaseModel, Embeddings):
     """Batch size of OCI GenAI embedding requests. OCI GenAI may handle up to 96 texts
      per request"""
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:  # pylint: disable=no-self-argument
@@ -179,6 +178,9 @@ class OCIGenAIEmbeddings(BaseModel, Embeddings):
             List of embeddings, one for each text.
         """
         from oci.generative_ai_inference import models
+
+        if not self.model_id:
+            raise ValueError("Model ID is required to embed documents")
 
         if self.model_id.startswith(CUSTOM_ENDPOINT_PREFIX):
             serving_mode = models.DedicatedServingMode(endpoint_id=self.model_id)
