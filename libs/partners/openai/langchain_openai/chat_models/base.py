@@ -485,7 +485,7 @@ class BaseChatOpenAI(BaseChatModel):
     def validate_temperature(cls, values: Dict[str, Any]) -> Any:
         """Currently o1 models only allow temperature=1."""
         model = values.get("model_name") or values.get("model") or ""
-        if "o1" in model and "temperature" not in values:
+        if model.startswith("o1") and "temperature" not in values:
             values["temperature"] = 1
         return values
 
