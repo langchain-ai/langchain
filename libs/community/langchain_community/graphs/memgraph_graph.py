@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 
 from langchain_core.utils import get_from_dict_or_env
 
-from langchain_community.graphs.graph_document import GraphDocument, Relationship, Node
+from langchain_community.graphs.graph_document import GraphDocument, Node, Relationship
 from langchain_community.graphs.graph_store import GraphStore
 
 logger = logging.getLogger(__name__)
