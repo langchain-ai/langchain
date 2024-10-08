@@ -3,6 +3,7 @@ from langchain_community.agent_toolkits import __all__, _module_lookup
 EXPECTED_ALL = [
     "AINetworkToolkit",
     "AmadeusToolkit",
+    "AtlassianToolkit",
     "AzureAiServicesToolkit",
     "AzureCognitiveServicesToolkit",
     "ConneryToolkit",
