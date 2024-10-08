@@ -11,6 +11,7 @@ from tests.unit_tests.llms.fake_chat_model import FakeChatModel
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
+@pytest.mark.requires("langchain_openai")
 @pytest.mark.requires("rapidfuzz")
 @pytest.mark.parametrize("evaluator_type", EvaluatorType)
 def test_load_evaluators(evaluator_type: EvaluatorType) -> None:
