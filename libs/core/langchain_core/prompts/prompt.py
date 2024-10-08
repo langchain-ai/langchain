@@ -89,12 +89,12 @@ class PromptTemplate(StringPromptTemplate):
 
         if values.get("validate_template"):
             if values["template_format"] == "mustache":
-                raise ValueError("Mustache templates cannot be validated.")
+                msg = "Mustache templates cannot be validated."
+                raise ValueError(msg)
 
             if "input_variables" not in values:
-                raise ValueError(
-                    "Input variables must be provided to validate the template."
-                )
+                msg = "Input variables must be provided to validate the template."
+                raise ValueError(msg)
 
             all_inputs = values["input_variables"] + list(values["partial_variables"])
             check_valid_template(
@@ -131,13 +131,11 @@ class PromptTemplate(StringPromptTemplate):
         # Allow for easy combining
         if isinstance(other, PromptTemplate):
             if self.template_format != "f-string":
-                raise ValueError(
-                    "Adding prompt templates only supported for f-strings."
-                )
+                msg = "Adding prompt templates only supported for f-strings."
+                raise ValueError(msg)
             if other.template_format != "f-string":
-                raise ValueError(
-                    "Adding prompt templates only supported for f-strings."
-                )
+                msg = "Adding prompt templates only supported for f-strings."
+                raise ValueError(msg)
             input_variables = list(
                 set(self.input_variables) | set(other.input_variables)
             )
@@ -147,7 +145,8 @@ class PromptTemplate(StringPromptTemplate):
             partial_variables = dict(self.partial_variables.items())
             for k, v in other.partial_variables.items():
                 if k in partial_variables:
-                    raise ValueError("Cannot have same variable partialed twice.")
+                    msg = "Cannot have same variable partialed twice."
+                    raise ValueError(msg)
                 else:
                     partial_variables[k] = v
             return PromptTemplate(
@@ -161,7 +160,8 @@ class PromptTemplate(StringPromptTemplate):
             prompt = PromptTemplate.from_template(other)
             return self + prompt
         else:
-            raise NotImplementedError(f"Unsupported operand type for +: {type(other)}")
+            msg = f"Unsupported operand type for +: {type(other)}"
+            raise NotImplementedError(msg)
 
     @property
     def _prompt_type(self) -> str:
