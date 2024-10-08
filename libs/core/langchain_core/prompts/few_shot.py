@@ -289,6 +289,7 @@ class FewShotChatMessagePromptTemplate(
                 examples=examples,
                 # This is a prompt template used to format each individual example.
                 example_prompt=example_prompt,
+                input_variables=[],
             )
 
             final_prompt = ChatPromptTemplate.from_messages(
@@ -332,8 +333,6 @@ class FewShotChatMessagePromptTemplate(
             from langchain_core.prompts.few_shot import FewShotChatMessagePromptTemplate
 
             few_shot_prompt = FewShotChatMessagePromptTemplate(
-                # Which variable(s) will be passed to the example selector.
-                input_variables=["input"],
                 example_selector=example_selector,
                 # Define how each example will be formatted.
                 # In this case, each example will become 2 messages:
@@ -342,6 +341,7 @@ class FewShotChatMessagePromptTemplate(
                     HumanMessagePromptTemplate.from_template("{input}")
                     + AIMessagePromptTemplate.from_template("{output}")
                 ),
+                input_variables=[],
             )
             # Define the overall prompt.
             final_prompt = (
