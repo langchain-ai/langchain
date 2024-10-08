@@ -69,7 +69,7 @@ def test_oceanbase_with_metadatas_with_scores() -> None:
     assert output == [(Document(page_content="foo", metadata={"page": "0"}), 0.0)]
 
 def test_oceanbase_with_filter_match() -> None:
-    """Test end to end construction and search."""
+    """Test end to end construction and search with filter."""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
     docsearch = OceanBase.from_texts(
@@ -81,3 +81,19 @@ def test_oceanbase_with_filter_match() -> None:
     )
     output = docsearch.similarity_search_with_score("foo", k=1, fltr="metadata->'$.page' = '0'")
     assert output == [(Document(page_content="foo", metadata={"page": "0"}), 0.0)]
+
+# def test_oceanbase_with_filter_distant_match() -> None:
+#     """Test end to end construction and search."""
+#     texts = ["foo", "bar", "baz"]
+#     metadatas = [{"page": str(i)} for i in range(len(texts))]
+#     docsearch = OceanBase.from_texts(
+#         texts=texts,
+#         embedding=FakeEmbeddings(),
+#         metadatas=metadatas,
+#         connection_args=CONNECTION_ARGS,
+#         drop_old=True,
+#     )
+#     output = docsearch.similarity_search_with_score("foo", k=1, fltr="metadata->'$.page' = '2'")
+#     assert output == [
+#         (Document(page_content="baz", metadata={"page": "2"}), 0.0013003906671379406)
+#     ]

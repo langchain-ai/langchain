@@ -311,18 +311,18 @@ class OceanBase(VectorStore):
                     extra_data[i : i + batch_size],
                 )
             ]
-            try:
-                self.obvector.insert(
-                    table_name=self.table_name,
-                    data=data,
-                    partition_name=(partition_name or ""),
-                )
-                pks.extend(ids[i : i + batch_size])
-            except Exception:
-                end_idx = i + batch_size
-                logger.error(
-                    f"Failed to insert batch starting at entity: [{i}, {end_idx})"
-                )
+            # try:
+            self.obvector.insert(
+                table_name=self.table_name,
+                data=data,
+                partition_name=(partition_name or ""),
+            )
+            pks.extend(ids[i : i + batch_size])
+            # except Exception:
+            #     end_idx = i + batch_size
+            #     logger.error(
+            #         f"Failed to insert batch starting at entity: [{i}, {end_idx})"
+            #     )
         return pks
 
     @classmethod
