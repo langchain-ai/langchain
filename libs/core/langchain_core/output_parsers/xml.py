@@ -1,3 +1,4 @@
+import contextlib
 import re
 import xml
 import xml.etree.ElementTree as ET  # noqa: N817
@@ -11,12 +12,12 @@ from langchain_core.output_parsers.transform import BaseTransformOutputParser
 from langchain_core.runnables.utils import AddableDict
 
 XML_FORMAT_INSTRUCTIONS = """The output should be formatted as a XML file.
-1. Output should conform to the tags below. 
+1. Output should conform to the tags below.
 2. If tags are not given, make them on your own.
 3. Remember to always open and close all the tags.
 
 As an example, for the tags ["foo", "bar", "baz"]:
-1. String "<foo>\n   <bar>\n      <baz></baz>\n   </bar>\n</foo>" is a well-formatted instance of the schema. 
+1. String "<foo>\n   <bar>\n      <baz></baz>\n   </bar>\n</foo>" is a well-formatted instance of the schema.
 2. String "<foo>\n   <bar>\n   </foo>" is a badly-formatted instance.
 3. String "<foo>\n   <tag>\n   </tag>\n</foo>" is a badly-formatted instance.
 
@@ -48,11 +49,12 @@ class _StreamingParser:
             try:
                 import defusedxml  # type: ignore
             except ImportError as e:
-                raise ImportError(
+                msg = (
                     "defusedxml is not installed. "
                     "Please install it to use the defusedxml parser."
                     "You can install it with `pip install defusedxml` "
-                ) from e
+                )
+                raise ImportError(msg) from e
             _parser = defusedxml.ElementTree.DefusedXMLParser(target=TreeBuilder())
         else:
             _parser = None
@@ -131,11 +133,9 @@ class _StreamingParser:
         Raises:
             xml.etree.ElementTree.ParseError: If the XML is not well-formed.
         """
-        try:
+        # Ignore ParseError. This will ignore any incomplete XML at the end of the input
+        with contextlib.suppress(xml.etree.ElementTree.ParseError):
             self.pull_parser.close()
-        except xml.etree.ElementTree.ParseError:
-            # Ignore. This will ignore any incomplete XML at the end of the input
-            pass
 
 
 class XMLOutputParser(BaseTransformOutputParser):
@@ -147,23 +147,23 @@ class XMLOutputParser(BaseTransformOutputParser):
     )
     parser: Literal["defusedxml", "xml"] = "defusedxml"
     """Parser to use for XML parsing. Can be either 'defusedxml' or 'xml'.
-    
-    * 'defusedxml' is the default parser and is used to prevent XML vulnerabilities 
+
+    * 'defusedxml' is the default parser and is used to prevent XML vulnerabilities
        present in some distributions of Python's standard library xml.
        `defusedxml` is a wrapper around the standard library parser that
        sets up the parser with secure defaults.
     * 'xml' is the standard library parser.
-    
+
     Use `xml` only if you are sure that your distribution of the standard library
-    is not vulnerable to XML vulnerabilities. 
-    
+    is not vulnerable to XML vulnerabilities.
+
     Please review the following resources for more information:
-    
+
     * https://docs.python.org/3/library/xml.html#xml-vulnerabilities
-    * https://github.com/tiran/defusedxml 
-    
+    * https://github.com/tiran/defusedxml
+
     The standard library relies on libexpat for parsing XML:
-    https://github.com/libexpat/libexpat 
+    https://github.com/libexpat/libexpat
     """
 
     def get_format_instructions(self) -> str:
@@ -189,15 +189,16 @@ class XMLOutputParser(BaseTransformOutputParser):
         # likely if you're reading this you can move them to the top of the file
         if self.parser == "defusedxml":
             try:
-                import defusedxml  # type: ignore
+                from defusedxml import ElementTree  # type: ignore
             except ImportError as e:
-                raise ImportError(
+                msg = (
                     "defusedxml is not installed. "
                     "Please install it to use the defusedxml parser."
                     "You can install it with `pip install defusedxml`"
                     "See https://github.com/tiran/defusedxml for more details"
-                ) from e
-            _et = defusedxml.ElementTree  # Use the defusedxml parser
+                )
+                raise ImportError(msg) from e
+            _et = ElementTree  # Use the defusedxml parser
         else:
             _et = ET  # Use the standard library parser
 
@@ -211,10 +212,9 @@ class XMLOutputParser(BaseTransformOutputParser):
 
         text = text.strip()
         try:
-            root = ET.fromstring(text)
+            root = _et.fromstring(text)
             return self._root_to_dict(root)
-
-        except ET.ParseError as e:
+        except _et.ParseError as e:
             msg = f"Failed to parse XML format from completion {text}. Got: {e}"
             raise OutputParserException(msg, llm_output=text) from e
 

@@ -106,7 +106,8 @@ def test_is_basemodel_subclass() -> None:
 
         assert is_basemodel_subclass(BaseModelV1)
     else:
-        raise ValueError(f"Unsupported Pydantic version: {PYDANTIC_MAJOR_VERSION}")
+        msg = f"Unsupported Pydantic version: {PYDANTIC_MAJOR_VERSION}"
+        raise ValueError(msg)
 
 
 def test_is_basemodel_instance() -> None:
@@ -132,7 +133,8 @@ def test_is_basemodel_instance() -> None:
 
         assert is_basemodel_instance(Bar(x=5))
     else:
-        raise ValueError(f"Unsupported Pydantic version: {PYDANTIC_MAJOR_VERSION}")
+        msg = f"Unsupported Pydantic version: {PYDANTIC_MAJOR_VERSION}"
+        raise ValueError(msg)
 
 
 @pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Only tests Pydantic v2")

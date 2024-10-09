@@ -29,10 +29,9 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
                 elif issubclass(self.pydantic_object, pydantic.v1.BaseModel):
                     return self.pydantic_object.parse_obj(obj)
                 else:
-                    raise OutputParserException(
-                        f"Unsupported model version for PydanticOutputParser: \
+                    msg = f"Unsupported model version for PydanticOutputParser: \
                             {self.pydantic_object.__class__}"
-                    )
+                    raise OutputParserException(msg)
             except (pydantic.ValidationError, pydantic.v1.ValidationError) as e:
                 raise self._parser_exception(e, obj) from e
         else:  # pydantic v1
@@ -90,7 +89,7 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
             The format instructions for the JSON output.
         """
         # Copy schema to avoid altering original Pydantic schema.
-        schema = {k: v for k, v in self.pydantic_object.model_json_schema().items()}
+        schema = dict(self.pydantic_object.model_json_schema().items())
 
         # Remove extraneous fields.
         reduced_schema = schema

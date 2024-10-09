@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel
 from syrupy import SnapshotAssertion
@@ -356,13 +356,14 @@ def test_runnable_get_graph_with_invalid_input_type() -> None:
         @property
         @override
         def InputType(self) -> type:
-            raise TypeError()
+            raise TypeError
 
         @override
         def invoke(
             self,
             input: int,
             config: Optional[RunnableConfig] = None,
+            **kwargs: Any,
         ) -> int:
             return input
 
@@ -380,13 +381,14 @@ def test_runnable_get_graph_with_invalid_output_type() -> None:
         @property
         @override
         def OutputType(self) -> type:
-            raise TypeError()
+            raise TypeError
 
         @override
         def invoke(
             self,
             input: int,
             config: Optional[RunnableConfig] = None,
+            **kwargs: Any,
         ) -> int:
             return input
 

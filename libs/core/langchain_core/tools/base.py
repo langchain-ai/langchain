@@ -35,6 +35,7 @@ from pydantic import (
     validate_arguments,
 )
 from pydantic.v1 import BaseModel as BaseModelV1
+from pydantic.v1 import ValidationError as ValidationErrorV1
 from pydantic.v1 import validate_arguments as validate_arguments_v1
 
 from langchain_core._api import deprecated
@@ -127,9 +128,8 @@ def _validate_docstring_args_against_annotations(
     """Raise error if docstring arg is not in type annotations."""
     for docstring_arg in arg_descriptions:
         if docstring_arg not in annotations:
-            raise ValueError(
-                f"Arg {docstring_arg} in docstring not found in function signature."
-            )
+            msg = f"Arg {docstring_arg} in docstring not found in function signature."
+            raise ValueError(msg)
 
 
 def _infer_arg_descriptions(
@@ -183,10 +183,11 @@ def _function_annotations_are_pydantic_v1(
         for parameter in signature.parameters.values()
     )
     if any_v1_annotations and any_v2_annotations:
-        raise NotImplementedError(
+        msg = (
             f"Function {func} contains a mix of Pydantic v1 and v2 annotations. "
             "Only one version of Pydantic annotations per function is supported."
         )
+        raise NotImplementedError(msg)
     return any_v1_annotations and not any_v2_annotations
 
 
@@ -248,11 +249,8 @@ def create_schema_from_function(
             validated = validate_arguments(func, config=_SchemaConfig)  # type: ignore
 
     # Let's ignore `self` and `cls` arguments for class and instance methods
-    if func.__qualname__ and "." in func.__qualname__:
-        # Then it likely belongs in a class namespace
-        in_class = True
-    else:
-        in_class = False
+    # If qualified name has a ".", then it likely belongs in a class namespace
+    in_class = bool(func.__qualname__ and "." in func.__qualname__)
 
     has_args = False
     has_kwargs = False
@@ -289,12 +287,10 @@ def create_schema_from_function(
     # Pydantic adds placeholder virtual fields we need to strip
     valid_properties = []
     for field in get_fields(inferred_model):
-        if not has_args:
-            if field == "args":
-                continue
-        if not has_kwargs:
-            if field == "kwargs":
-                continue
+        if not has_args and field == "args":
+            continue
+        if not has_kwargs and field == "kwargs":
+            continue
 
         if field == "v__duplicate_kwargs":  # Internal pydantic field
             continue
@@ -320,8 +316,6 @@ class ToolException(Exception):  # noqa: N818
     to the agent as observation, and printed in red on the console.
     """
 
-    pass
-
 
 class BaseTool(RunnableSerializable[Union[str, dict, ToolCall], Any]):
     """Interface LangChain tools must implement."""
@@ -342,7 +336,7 @@ class ChildTool(BaseTool):
     args_schema: Type[BaseModel] = SchemaClass
     ..."""
             name = cls.__name__
-            raise SchemaAnnotationError(
+            msg = (
                 f"Tool definition for {name} must include valid type annotations"
                 f" for argument 'args_schema' to behave as expected.\n"
                 f"Expected annotation of 'Type[BaseModel]'"
@@ -350,12 +344,13 @@ class ChildTool(BaseTool):
                 f"Expected class looks like:\n"
                 f"{typehint_mandate}"
             )
+            raise SchemaAnnotationError(msg)
 
     name: str
     """The unique name of the tool that clearly communicates its purpose."""
     description: str
     """Used to tell the model how/when/why to use the tool.
-    
+
     You can provide few-shot examples as a part of the description.
     """
 
@@ -363,17 +358,17 @@ class ChildTool(BaseTool):
         default=None, description="The tool schema."
     )
     """Pydantic model class to validate and parse the tool's input arguments.
-    
-    Args schema should be either: 
-    
+
+    Args schema should be either:
+
     - A subclass of pydantic.BaseModel.
-    or 
+    or
     - A subclass of pydantic.v1.BaseModel if accessing v1 namespace in pydantic 2
     """
     return_direct: bool = False
-    """Whether to return the tool's output directly. 
-    
-    Setting this to True means    
+    """Whether to return the tool's output directly.
+
+    Setting this to True means
     that after the tool is called, the AgentExecutor will stop looping.
     """
     verbose: bool = False
@@ -410,26 +405,30 @@ class ChildTool(BaseTool):
     """Handle the content of the ToolException thrown."""
 
     handle_validation_error: Optional[
-        Union[bool, str, Callable[[ValidationError], str]]
+        Union[bool, str, Callable[[Union[ValidationError, ValidationErrorV1]], str]]
     ] = False
     """Handle the content of the ValidationError thrown."""
 
     response_format: Literal["content", "content_and_artifact"] = "content"
     """The tool response format. Defaults to 'content'.
 
-    If "content" then the output of the tool is interpreted as the contents of a 
-    ToolMessage. If "content_and_artifact" then the output is expected to be a 
+    If "content" then the output of the tool is interpreted as the contents of a
+    ToolMessage. If "content_and_artifact" then the output is expected to be a
     two-tuple corresponding to the (content, artifact) of a ToolMessage.
     """
 
     def __init__(self, **kwargs: Any) -> None:
         """Initialize the tool."""
-        if "args_schema" in kwargs and kwargs["args_schema"] is not None:
-            if not is_basemodel_subclass(kwargs["args_schema"]):
-                raise TypeError(
-                    f"args_schema must be a subclass of pydantic BaseModel. "
-                    f"Got: {kwargs['args_schema']}."
-                )
+        if (
+            "args_schema" in kwargs
+            and kwargs["args_schema"] is not None
+            and not is_basemodel_subclass(kwargs["args_schema"])
+        ):
+            msg = (
+                f"args_schema must be a subclass of pydantic BaseModel. "
+                f"Got: {kwargs['args_schema']}."
+            )
+            raise TypeError(msg)
         super().__init__(**kwargs)
 
     model_config = ConfigDict(
@@ -519,10 +518,11 @@ class ChildTool(BaseTool):
                     result = input_args.parse_obj(tool_input)
                     result_dict = result.dict()
                 else:
-                    raise NotImplementedError(
+                    msg = (
                         "args_schema must be a Pydantic BaseModel, "
                         f"got {self.args_schema}"
                     )
+                    raise NotImplementedError(msg)
                 return {
                     k: getattr(result, k)
                     for k, v in result_dict.items()
@@ -657,17 +657,18 @@ class ChildTool(BaseTool):
             response = context.run(self._run, *tool_args, **tool_kwargs)
             if self.response_format == "content_and_artifact":
                 if not isinstance(response, tuple) or len(response) != 2:
-                    raise ValueError(
+                    msg = (
                         "Since response_format='content_and_artifact' "
                         "a two-tuple of the message content and raw tool output is "
                         f"expected. Instead generated response of type: "
                         f"{type(response)}."
                     )
+                    raise ValueError(msg)
                 content, artifact = response
             else:
                 content = response
             status = "success"
-        except ValidationError as e:
+        except (ValidationError, ValidationErrorV1) as e:
             if not self.handle_validation_error:
                 error_to_raise = e
             else:
@@ -773,12 +774,13 @@ class ChildTool(BaseTool):
                 response = await coro
             if self.response_format == "content_and_artifact":
                 if not isinstance(response, tuple) or len(response) != 2:
-                    raise ValueError(
+                    msg = (
                         "Since response_format='content_and_artifact' "
                         "a two-tuple of the message content and raw tool output is "
                         f"expected. Instead generated response of type: "
                         f"{type(response)}."
                     )
+                    raise ValueError(msg)
                 content, artifact = response
             else:
                 content = response
@@ -818,9 +820,11 @@ def _is_tool_call(x: Any) -> bool:
 
 
 def _handle_validation_error(
-    e: ValidationError,
+    e: Union[ValidationError, ValidationErrorV1],
     *,
-    flag: Union[Literal[True], str, Callable[[ValidationError], str]],
+    flag: Union[
+        Literal[True], str, Callable[[Union[ValidationError, ValidationErrorV1]], str]
+    ],
 ) -> str:
     if isinstance(flag, bool):
         content = "Tool input validation error"
@@ -829,10 +833,11 @@ def _handle_validation_error(
     elif callable(flag):
         content = flag(e)
     else:
-        raise ValueError(
+        msg = (
             f"Got unexpected type of `handle_validation_error`. Expected bool, "
             f"str or callable. Received: {flag}"
         )
+        raise ValueError(msg)
     return content
 
 
@@ -842,19 +847,17 @@ def _handle_tool_error(
     flag: Optional[Union[Literal[True], str, Callable[[ToolException], str]]],
 ) -> str:
     if isinstance(flag, bool):
-        if e.args:
-            content = e.args[0]
-        else:
-            content = "Tool execution error"
+        content = e.args[0] if e.args else "Tool execution error"
     elif isinstance(flag, str):
         content = flag
     elif callable(flag):
         content = flag(e)
     else:
-        raise ValueError(
+        msg = (
             f"Got unexpected type of `handle_tool_error`. Expected bool, str "
             f"or callable. Received: {flag}"
         )
+        raise ValueError(msg)
     return content
 
 
@@ -904,12 +907,11 @@ def _format_output(
 
 def _is_message_content_type(obj: Any) -> bool:
     """Check for OpenAI or Anthropic format tool message content."""
-    if isinstance(obj, str):
-        return True
-    elif isinstance(obj, list) and all(_is_message_content_block(e) for e in obj):
-        return True
-    else:
-        return False
+    return (
+        isinstance(obj, str)
+        or isinstance(obj, list)
+        and all(_is_message_content_block(e) for e in obj)
+    )
 
 
 def _is_message_content_block(obj: Any) -> bool:
@@ -975,7 +977,7 @@ def _get_all_basemodel_annotations(
             ) and name not in fields:
                 continue
             annotations[name] = param.annotation
-        orig_bases: tuple = getattr(cls, "__orig_bases__", tuple())
+        orig_bases: tuple = getattr(cls, "__orig_bases__", ())
     # cls has subscript: cls = FooBar[int]
     else:
         annotations = _get_all_basemodel_annotations(
@@ -1007,11 +1009,9 @@ def _get_all_basemodel_annotations(
             # parent_origin = Baz,
             # generic_type_vars = (type vars in Baz)
             # generic_map = {type var in Baz: str}
-            generic_type_vars: tuple = getattr(parent_origin, "__parameters__", tuple())
-            generic_map = {
-                type_var: t for type_var, t in zip(generic_type_vars, get_args(parent))
-            }
-            for field in getattr(parent_origin, "__annotations__", dict()):
+            generic_type_vars: tuple = getattr(parent_origin, "__parameters__", ())
+            generic_map = dict(zip(generic_type_vars, get_args(parent)))
+            for field in getattr(parent_origin, "__annotations__", {}):
                 annotations[field] = _replace_type_vars(
                     annotations[field], generic_map, default_to_bound
                 )

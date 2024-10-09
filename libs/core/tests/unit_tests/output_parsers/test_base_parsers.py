@@ -32,15 +32,13 @@ def test_base_generation_parser() -> None:
                          that support streaming
             """
             if len(result) != 1:
-                raise NotImplementedError(
-                    "This output parser can only be used with a single generation."
-                )
+                msg = "This output parser can only be used with a single generation."
+                raise NotImplementedError(msg)
             generation = result[0]
             if not isinstance(generation, ChatGeneration):
                 # Say that this one only works with chat generations
-                raise OutputParserException(
-                    "This output parser can only be used with a chat generation."
-                )
+                msg = "This output parser can only be used with a chat generation."
+                raise OutputParserException(msg)
 
             content = generation.message.content
             assert isinstance(content, str)
@@ -61,7 +59,7 @@ def test_base_transform_output_parser() -> None:
 
         def parse(self, text: str) -> str:
             """Parse a single string into a specific format."""
-            raise NotImplementedError()
+            raise NotImplementedError
 
         def parse_result(
             self, result: list[Generation], *, partial: bool = False
@@ -77,15 +75,13 @@ def test_base_transform_output_parser() -> None:
                          that support streaming
             """
             if len(result) != 1:
-                raise NotImplementedError(
-                    "This output parser can only be used with a single generation."
-                )
+                msg = "This output parser can only be used with a single generation."
+                raise NotImplementedError(msg)
             generation = result[0]
             if not isinstance(generation, ChatGeneration):
                 # Say that this one only works with chat generations
-                raise OutputParserException(
-                    "This output parser can only be used with a chat generation."
-                )
+                msg = "This output parser can only be used with a chat generation."
+                raise OutputParserException(msg)
             content = generation.message.content
             assert isinstance(content, str)
             return content.swapcase()  # type: ignore
@@ -93,5 +89,5 @@ def test_base_transform_output_parser() -> None:
     model = GenericFakeChatModel(messages=iter([AIMessage(content="hello world")]))
     chain = model | StrInvertCase()
     # inputs to models are ignored, response is hard-coded in model definition
-    chunks = [chunk for chunk in chain.stream("")]
+    chunks = list(chain.stream(""))
     assert chunks == ["HELLO", " ", "WORLD"]
