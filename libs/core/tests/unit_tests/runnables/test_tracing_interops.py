@@ -314,7 +314,7 @@ async def test_runnable_sequence_parallel_trace_nesting(method: str) -> None:
         "other_thing": "RunnableParallel<chain_result,other_thing>",
         "after": "RunnableSequence",
     }
-    assert len(posts) == sum([1 if isinstance(n, str) else len(n) for n in name_order])
+    assert len(posts) == sum(1 if isinstance(n, str) else len(n) for n in name_order)
     prev_dotted_order = None
     dotted_order_map = {}
     id_map = {}
