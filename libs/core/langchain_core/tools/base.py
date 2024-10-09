@@ -35,6 +35,7 @@ from pydantic import (
     validate_arguments,
 )
 from pydantic.v1 import BaseModel as BaseModelV1
+from pydantic.v1 import ValidationError as ValidationErrorV1
 from pydantic.v1 import validate_arguments as validate_arguments_v1
 
 from langchain_core._api import deprecated
@@ -127,9 +128,8 @@ def _validate_docstring_args_against_annotations(
     """Raise error if docstring arg is not in type annotations."""
     for docstring_arg in arg_descriptions:
         if docstring_arg not in annotations:
-            raise ValueError(
-                f"Arg {docstring_arg} in docstring not found in function signature."
-            )
+            msg = f"Arg {docstring_arg} in docstring not found in function signature."
+            raise ValueError(msg)
 
 
 def _infer_arg_descriptions(
@@ -183,10 +183,11 @@ def _function_annotations_are_pydantic_v1(
         for parameter in signature.parameters.values()
     )
     if any_v1_annotations and any_v2_annotations:
-        raise NotImplementedError(
+        msg = (
             f"Function {func} contains a mix of Pydantic v1 and v2 annotations. "
             "Only one version of Pydantic annotations per function is supported."
         )
+        raise NotImplementedError(msg)
     return any_v1_annotations and not any_v2_annotations
 
 
@@ -335,7 +336,7 @@ class ChildTool(BaseTool):
     args_schema: Type[BaseModel] = SchemaClass
     ..."""
             name = cls.__name__
-            raise SchemaAnnotationError(
+            msg = (
                 f"Tool definition for {name} must include valid type annotations"
                 f" for argument 'args_schema' to behave as expected.\n"
                 f"Expected annotation of 'Type[BaseModel]'"
@@ -343,6 +344,7 @@ class ChildTool(BaseTool):
                 f"Expected class looks like:\n"
                 f"{typehint_mandate}"
             )
+            raise SchemaAnnotationError(msg)
 
     name: str
     """The unique name of the tool that clearly communicates its purpose."""
@@ -403,7 +405,7 @@ class ChildTool(BaseTool):
     """Handle the content of the ToolException thrown."""
 
     handle_validation_error: Optional[
-        Union[bool, str, Callable[[ValidationError], str]]
+        Union[bool, str, Callable[[Union[ValidationError, ValidationErrorV1]], str]]
     ] = False
     """Handle the content of the ValidationError thrown."""
 
@@ -422,10 +424,11 @@ class ChildTool(BaseTool):
             and kwargs["args_schema"] is not None
             and not is_basemodel_subclass(kwargs["args_schema"])
         ):
-            raise TypeError(
+            msg = (
                 f"args_schema must be a subclass of pydantic BaseModel. "
                 f"Got: {kwargs['args_schema']}."
             )
+            raise TypeError(msg)
         super().__init__(**kwargs)
 
     model_config = ConfigDict(
@@ -515,10 +518,11 @@ class ChildTool(BaseTool):
                     result = input_args.parse_obj(tool_input)
                     result_dict = result.dict()
                 else:
-                    raise NotImplementedError(
+                    msg = (
                         "args_schema must be a Pydantic BaseModel, "
                         f"got {self.args_schema}"
                     )
+                    raise NotImplementedError(msg)
                 return {
                     k: getattr(result, k)
                     for k, v in result_dict.items()
@@ -653,17 +657,18 @@ class ChildTool(BaseTool):
             response = context.run(self._run, *tool_args, **tool_kwargs)
             if self.response_format == "content_and_artifact":
                 if not isinstance(response, tuple) or len(response) != 2:
-                    raise ValueError(
+                    msg = (
                         "Since response_format='content_and_artifact' "
                         "a two-tuple of the message content and raw tool output is "
                         f"expected. Instead generated response of type: "
                         f"{type(response)}."
                     )
+                    raise ValueError(msg)
                 content, artifact = response
             else:
                 content = response
             status = "success"
-        except ValidationError as e:
+        except (ValidationError, ValidationErrorV1) as e:
             if not self.handle_validation_error:
                 error_to_raise = e
             else:
@@ -769,12 +774,13 @@ class ChildTool(BaseTool):
                 response = await coro
             if self.response_format == "content_and_artifact":
                 if not isinstance(response, tuple) or len(response) != 2:
-                    raise ValueError(
+                    msg = (
                         "Since response_format='content_and_artifact' "
                         "a two-tuple of the message content and raw tool output is "
                         f"expected. Instead generated response of type: "
                         f"{type(response)}."
                     )
+                    raise ValueError(msg)
                 content, artifact = response
             else:
                 content = response
@@ -814,9 +820,11 @@ def _is_tool_call(x: Any) -> bool:
 
 
 def _handle_validation_error(
-    e: ValidationError,
+    e: Union[ValidationError, ValidationErrorV1],
     *,
-    flag: Union[Literal[True], str, Callable[[ValidationError], str]],
+    flag: Union[
+        Literal[True], str, Callable[[Union[ValidationError, ValidationErrorV1]], str]
+    ],
 ) -> str:
     if isinstance(flag, bool):
         content = "Tool input validation error"
@@ -825,10 +833,11 @@ def _handle_validation_error(
     elif callable(flag):
         content = flag(e)
     else:
-        raise ValueError(
+        msg = (
             f"Got unexpected type of `handle_validation_error`. Expected bool, "
             f"str or callable. Received: {flag}"
         )
+        raise ValueError(msg)
     return content
 
 
@@ -844,10 +853,11 @@ def _handle_tool_error(
     elif callable(flag):
         content = flag(e)
     else:
-        raise ValueError(
+        msg = (
             f"Got unexpected type of `handle_tool_error`. Expected bool, str "
             f"or callable. Received: {flag}"
         )
+        raise ValueError(msg)
     return content
 
 

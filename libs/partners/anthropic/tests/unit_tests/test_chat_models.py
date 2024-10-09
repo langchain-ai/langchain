@@ -61,9 +61,12 @@ def test_anthropic_model_kwargs() -> None:
 
 
 @pytest.mark.requires("anthropic")
-def test_anthropic_invalid_model_kwargs() -> None:
-    with pytest.raises(ValueError):
-        ChatAnthropic(model="foo", model_kwargs={"max_tokens_to_sample": 5})  # type: ignore[call-arg]
+def test_anthropic_fields_in_model_kwargs() -> None:
+    """Test that for backwards compatibility fields can be passed in as model_kwargs."""
+    llm = ChatAnthropic(model="foo", model_kwargs={"max_tokens_to_sample": 5})  # type: ignore[call-arg]
+    assert llm.max_tokens == 5
+    llm = ChatAnthropic(model="foo", model_kwargs={"max_tokens": 5})  # type: ignore[call-arg]
+    assert llm.max_tokens == 5
 
 
 @pytest.mark.requires("anthropic")
@@ -125,9 +128,9 @@ def test__format_output_cached() -> None:
     expected = AIMessage(  # type: ignore[misc]
         "bar",
         usage_metadata={
-            "input_tokens": 2,
+            "input_tokens": 9,
             "output_tokens": 1,
-            "total_tokens": 3,
+            "total_tokens": 10,
             "input_token_details": {"cache_creation": 3, "cache_read": 4},
         },
     )
@@ -159,6 +162,13 @@ def test__merge_messages() -> None:
                     "text": None,
                     "name": "blah",
                 },
+                {
+                    "tool_input": {"a": "c"},
+                    "type": "tool_use",
+                    "id": "3",
+                    "text": None,
+                    "name": "blah",
+                },
             ]
         ),
         ToolMessage("buz output", tool_call_id="1", status="error"),  # type: ignore[misc]
@@ -175,6 +185,7 @@ def test__merge_messages() -> None:
             ],
             tool_call_id="2",
         ),  # type: ignore[misc]
+        ToolMessage([], tool_call_id="3"),  # type: ignore[misc]
         HumanMessage("next thing"),  # type: ignore[misc]
     ]
     expected = [
@@ -195,6 +206,13 @@ def test__merge_messages() -> None:
                     "tool_input": {"a": "c"},
                     "type": "tool_use",
                     "id": "2",
+                    "text": None,
+                    "name": "blah",
+                },
+                {
+                    "tool_input": {"a": "c"},
+                    "type": "tool_use",
+                    "id": "3",
                     "text": None,
                     "name": "blah",
                 },
@@ -221,6 +239,12 @@ def test__merge_messages() -> None:
                         },
                     ],
                     "tool_use_id": "2",
+                    "is_error": False,
+                },
+                {
+                    "type": "tool_result",
+                    "content": [],
+                    "tool_use_id": "3",
                     "is_error": False,
                 },
                 {"type": "text", "text": "next thing"},

@@ -618,7 +618,8 @@ def test_prompt_falsy_vars(
     elif template_format == "mustache":
         template = "{{my_var}}"
     else:
-        raise ValueError(f"Invalid template format: {template_format}")
+        msg = f"Invalid template format: {template_format}"
+        raise ValueError(msg)
 
     prompt = PromptTemplate.from_template(template, template_format=template_format)
 
