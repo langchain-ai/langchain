@@ -5,7 +5,7 @@ from langchain_community.tools.playwright.utils import create_sync_playwright_br
 
 
 def test_playwright_tools_schemas() -> None:
-    """Test calling 'tool_call_schema' for every tool to check to serialization issues."""
+    """Test calling 'tool_call_schema' for every tool to check to init issues."""
 
     sync_browser = create_sync_playwright_browser()
     tools = PlayWrightBrowserToolkit.from_browser(sync_browser=sync_browser).get_tools()
