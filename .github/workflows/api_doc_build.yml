@@ -101,8 +101,8 @@ jobs:
           mv langchain-google/libs/genai langchain/libs/partners/google-genai
           mv langchain-google/libs/vertexai langchain/libs/partners/google-vertexai
           mv langchain-google/libs/community langchain/libs/partners/google-community
-          # mv langchain-datastax/libs/astradb langchain/libs/partners/astradb
-          # mv langchain-nvidia/libs/ai-endpoints langchain/libs/partners/nvidia-ai-endpoints
+          mv langchain-datastax/libs/astradb langchain/libs/partners/astradb
+          mv langchain-nvidia/libs/ai-endpoints langchain/libs/partners/nvidia-ai-endpoints
           mv langchain-cohere/libs/cohere langchain/libs/partners/cohere
           mv langchain-elastic/libs/elasticsearch langchain/libs/partners/elasticsearch
           mv langchain-postgres langchain/libs/partners/postgres

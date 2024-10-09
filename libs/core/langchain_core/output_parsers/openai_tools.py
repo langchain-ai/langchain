@@ -52,11 +52,12 @@ def parse_tool_call(
                 raw_tool_call["function"]["arguments"], strict=strict
             )
         except JSONDecodeError as e:
-            raise OutputParserException(
+            msg = (
                 f"Function {raw_tool_call['function']['name']} arguments:\n\n"
                 f"{raw_tool_call['function']['arguments']}\n\nare not valid JSON. "
                 f"Received JSONDecodeError {e}"
-            ) from e
+            )
+            raise OutputParserException(msg) from e
     parsed = {
         "name": raw_tool_call["function"]["name"] or "",
         "args": function_args or {},
@@ -170,9 +171,8 @@ class JsonOutputToolsParser(BaseCumulativeTransformOutputParser[Any]):
 
         generation = result[0]
         if not isinstance(generation, ChatGeneration):
-            raise OutputParserException(
-                "This output parser can only be used with a chat generation."
-            )
+            msg = "This output parser can only be used with a chat generation."
+            raise OutputParserException(msg)
         message = generation.message
         if isinstance(message, AIMessage) and message.tool_calls:
             tool_calls = [dict(tc) for tc in message.tool_calls]
@@ -207,7 +207,7 @@ class JsonOutputToolsParser(BaseCumulativeTransformOutputParser[Any]):
         Returns:
             The parsed tool calls.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class JsonOutputKeyToolsParser(JsonOutputToolsParser):
@@ -285,10 +285,11 @@ class PydanticToolsParser(JsonOutputToolsParser):
         for res in json_results:
             try:
                 if not isinstance(res["args"], dict):
-                    raise ValueError(
+                    msg = (
                         f"Tool arguments must be specified as a dict, received: "
                         f"{res['args']}"
                     )
+                    raise ValueError(msg)
                 pydantic_objects.append(name_dict[res["type"]](**res["args"]))
             except (ValidationError, ValueError) as e:
                 if partial:

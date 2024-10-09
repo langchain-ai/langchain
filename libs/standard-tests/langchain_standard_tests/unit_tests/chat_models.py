@@ -2,7 +2,7 @@
 
 import os
 from abc import abstractmethod
-from typing import Any, List, Literal, Optional, Tuple, Type
+from typing import Any, Dict, List, Literal, Optional, Tuple, Type
 from unittest import mock
 
 import pytest
@@ -141,16 +141,19 @@ class ChatModelTests(BaseStandardTests):
     @property
     def supported_usage_metadata_details(
         self,
-    ) -> List[
-        Literal[
-            "audio_input",
-            "audio_output",
-            "reasoning_output",
-            "cache_read_input",
-            "cache_creation_input",
-        ]
+    ) -> Dict[
+        Literal["invoke", "stream"],
+        List[
+            Literal[
+                "audio_input",
+                "audio_output",
+                "reasoning_output",
+                "cache_read_input",
+                "cache_creation_input",
+            ]
+        ],
     ]:
-        return []
+        return {"invoke": [], "stream": []}
 
 
 class ChatModelUnitTests(ChatModelTests):

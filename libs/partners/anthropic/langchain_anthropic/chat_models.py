@@ -295,7 +295,7 @@ class ChatAnthropic(BaseChatModel):
             Name of Anthropic model to use. E.g. "claude-3-sonnet-20240229".
         temperature: float
             Sampling temperature. Ranges from 0.0 to 1.0.
-        max_tokens: Optional[int]
+        max_tokens: int
             Max number of tokens to generate.
 
     Key init args — client params:
@@ -1253,7 +1253,12 @@ def _create_usage_metadata(anthropic_usage: BaseModel) -> UsageMetadata:
         "cache_creation": getattr(anthropic_usage, "cache_creation_input_tokens", None),
     }
 
-    input_tokens = getattr(anthropic_usage, "input_tokens", 0)
+    # Anthropic input_tokens exclude cached token counts.
+    input_tokens = (
+        getattr(anthropic_usage, "input_tokens", 0)
+        + (input_token_details["cache_read"] or 0)
+        + (input_token_details["cache_creation"] or 0)
+    )
     output_tokens = getattr(anthropic_usage, "output_tokens", 0)
     return UsageMetadata(
         input_tokens=input_tokens,
