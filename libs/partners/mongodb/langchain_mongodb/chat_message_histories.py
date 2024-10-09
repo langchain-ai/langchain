@@ -123,7 +123,7 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
         self.collection = self.db[collection_name]
 
         if _motor_available:
-            self.async_client: AsyncIOMotorClient = AsyncIOMotorClient(connection_string)
+            self.async_client = AsyncIOMotorClient(connection_string)
             self.async_db = self.async_client[database_name]
             self.async_collection = self.async_db[collection_name]
         else:
@@ -169,7 +169,8 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
         if not _motor_available:
             logger.warning(
                 "Motor library is not installed. "
-                "Using `run_in_executor` for aget_messages, which may be less efficient."
+                "Using `run_in_executor` for aget_messages, "
+                "which may be less efficient."
             )
             return await super().aget_messages()
 
@@ -211,7 +212,8 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
         if not _motor_available:
             logger.warning(
                 "Motor library is not installed. "
-                "Using `run_in_executor` for aadd_messages, which may be less efficient."
+                "Using `run_in_executor` for aadd_messages, "
+                "which may be less efficient."
             )
             return await super().aadd_messages(messages)
 
