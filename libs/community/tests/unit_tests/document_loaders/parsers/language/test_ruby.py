@@ -5,7 +5,7 @@ import pytest
 from langchain_community.document_loaders.parsers.language.ruby import RubySegmenter
 
 
-@pytest.mark.requires("tree_sitter", "tree_sitter_languages")
+@pytest.mark.requires("tree_sitter", "tree_sitter_language_pack")
 class TestRubySegmenter(unittest.TestCase):
     def setUp(self) -> None:
         self.example_code = """def foo

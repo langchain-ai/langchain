@@ -22,7 +22,7 @@ class ScalaSegmenter(TreeSitterSegmenter):
     """Code segmenter for Scala."""
 
     def get_language(self) -> "Language":
-        from tree_sitter_languages import get_language
+        from tree_sitter_language_pack import get_language
 
         return get_language("scala")
 

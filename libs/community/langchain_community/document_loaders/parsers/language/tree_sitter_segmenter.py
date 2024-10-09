@@ -18,12 +18,12 @@ class TreeSitterSegmenter(CodeSegmenter):
 
         try:
             import tree_sitter  # noqa: F401
-            import tree_sitter_languages  # noqa: F401
+            import tree_sitter_language_pack  # noqa: F401
         except ImportError:
             raise ImportError(
-                "Could not import tree_sitter/tree_sitter_languages Python packages. "
-                "Please install them with "
-                "`pip install tree-sitter tree-sitter-languages`."
+                "Could not import tree_sitter/tree_sitter_language_pack Python "
+                "packages. Please install them with "
+                "`pip install tree-sitter tree-sitter-language-pack`."
             )
 
     def is_valid(self) -> bool:
@@ -77,12 +77,14 @@ class TreeSitterSegmenter(CodeSegmenter):
             if any(line in processed_lines for line in lines):
                 continue
 
-            simplified_lines[start_line] = self.make_line_comment(
-                f"Code for: {self.source_lines[start_line]}"
-            )
+            if start_line < len(simplified_lines):
+                simplified_lines[start_line] = self.make_line_comment(
+                    f"Code for: {self.source_lines[start_line]}"
+                )
 
             for line_num in range(start_line + 1, end_line + 1):
-                simplified_lines[line_num] = None  # type: ignore
+                if line_num < len(simplified_lines):
+                    simplified_lines[line_num] = None  # type: ignore
 
             processed_lines.update(lines)
 
