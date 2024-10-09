@@ -18,7 +18,7 @@ DEFAULT_SESSION_ID_KEY = "SessionId"
 DEFAULT_HISTORY_KEY = "History"
 
 try:
-    from motor.motor_asyncio import AsyncIOMotorClient
+    from motor.motor_asyncio import AsyncIOMotorClient  # type: ignore
 
     _motor_available = True
 except ImportError:
@@ -155,7 +155,6 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
                 )
         except errors.OperationFailure as error:
             logger.error(error)
-            cursor = []
 
         if cursor:
             items = [json.loads(document[self.history_key]) for document in cursor]
