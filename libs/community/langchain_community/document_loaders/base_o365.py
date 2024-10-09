@@ -50,6 +50,7 @@ class _FileType(str, Enum):
     DOC = "doc"
     DOCX = "docx"
     PDF = "pdf"
+    XLSX = "xlsx"
 
 
 def fetch_mime_types(file_types: Sequence[_FileType]) -> Dict[str, str]:
@@ -64,6 +65,10 @@ def fetch_mime_types(file_types: Sequence[_FileType]) -> Dict[str, str]:
             )
         elif file_type.value == "pdf":
             mime_types_mapping[file_type.value] = "application/pdf"
+        elif file_type.value == "xlsx":
+            mime_types_mapping[file_type.value] = (
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
     return mime_types_mapping
 
 
