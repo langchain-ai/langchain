@@ -48,6 +48,7 @@ def test_required_dependencies(poetry_conf: Mapping[str, Any]) -> None:
             "numpy",
             "python",
             "requests",
+            "pydantic-settings",
             "tenacity",
             "langchain",
         ]
@@ -92,6 +93,8 @@ def test_test_group_dependencies(poetry_conf: Mapping[str, Any]) -> None:
             "responses",
             "syrupy",
             "requests-mock",
+            # TODO: Hack to get around cffi 1.17.1 not working with py3.9, remove when
+            # fix is released.
             "cffi",
         ]
     )

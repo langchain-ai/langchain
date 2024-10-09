@@ -1,5 +1,6 @@
 from typing import Any, Dict, List, Union
 
+from langchain_core._api import deprecated
 from langchain_core.messages import BaseMessage, get_buffer_string
 from langchain_core.utils import pre_init
 
@@ -7,8 +8,21 @@ from langchain.memory.chat_memory import BaseChatMemory
 from langchain.memory.summary import SummarizerMixin
 
 
+@deprecated(
+    since="0.3.1",
+    removal="1.0.0",
+    message=(
+        "Please see the migration guide at: "
+        "https://python.langchain.com/docs/versions/migrating_memory/"
+    ),
+)
 class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin):
-    """Buffer with summarizer for storing conversation memory."""
+    """Buffer with summarizer for storing conversation memory.
+
+    Provides a running summary of the conversation together with the most recent
+    messages in the conversation under the constraint that the total number of
+    tokens in the conversation does not exceed a certain limit.
+    """
 
     max_token_limit: int = 2000
     moving_summary_buffer: str = ""

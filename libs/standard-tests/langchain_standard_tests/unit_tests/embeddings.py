@@ -5,7 +5,7 @@ from unittest import mock
 
 import pytest
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import SecretStr
+from pydantic import SecretStr
 
 from langchain_standard_tests.base import BaseStandardTests
 

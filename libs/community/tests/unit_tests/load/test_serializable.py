@@ -112,6 +112,20 @@ def test_serializable_mapping() -> None:
             "chat_models",
             "ChatGroq",
         ),
+        # TODO(0.3): For now we're skipping the below two tests. Need to fix
+        # so that it only runs when langchain-aws, langchain-google-genai
+        # are installed.
+        ("langchain", "chat_models", "bedrock", "ChatBedrock"): (
+            "langchain_aws",
+            "chat_models",
+            "bedrock",
+            "ChatBedrock",
+        ),
+        ("langchain_google_genai", "chat_models", "ChatGoogleGenerativeAI"): (
+            "langchain_google_genai",
+            "chat_models",
+            "ChatGoogleGenerativeAI",
+        ),
     }
     serializable_modules = import_all_modules("langchain")
 
