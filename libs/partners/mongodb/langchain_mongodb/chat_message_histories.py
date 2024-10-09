@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Sequence
 
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.messages import (
@@ -16,6 +16,18 @@ DEFAULT_DBNAME = "chat_history"
 DEFAULT_COLLECTION_NAME = "message_store"
 DEFAULT_SESSION_ID_KEY = "SessionId"
 DEFAULT_HISTORY_KEY = "History"
+
+try:
+    from motor.motor_asyncio import AsyncIOMotorClient
+    _motor_available = True
+except ImportError:
+    AsyncIOMotorClient = None
+    _motor_available = False
+    logger.warning(
+        "Motor library is not installed. Asynchronous methods will fall back to using "
+        "`run_in_executor`, which is less efficient. "
+        "Install motor with `pip install motor` for improved performance."
+    )
 
 
 class MongoDBChatMessageHistory(BaseChatMessageHistory):
@@ -110,6 +122,15 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
         self.db = self.client[database_name]
         self.collection = self.db[collection_name]
 
+        if _motor_available:
+            self.async_client: AsyncIOMotorClient = AsyncIOMotorClient(connection_string)
+            self.async_db = self.async_client[database_name]
+            self.async_collection = self.async_db[collection_name]
+        else:
+            self.async_client = None
+            self.async_db = None
+            self.async_collection = None
+
         if create_index:
             index_kwargs = index_kwargs or {}
             self.collection.create_index(self.session_id_key, **index_kwargs)
@@ -133,11 +154,42 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
                 )
         except errors.OperationFailure as error:
             logger.error(error)
+            cursor = []
 
         if cursor:
             items = [json.loads(document[self.history_key]) for document in cursor]
         else:
             items = []
+
+        messages = messages_from_dict(items)
+        return messages
+
+    async def aget_messages(self) -> List[BaseMessage]:
+        """Async version of getting messages from MongoDB"""
+        if not _motor_available:
+            logger.warning(
+                "Motor library is not installed. "
+                "Using `run_in_executor` for aget_messages, which may be less efficient."
+            )
+            return await super().aget_messages()
+
+        if self.history_size is None:
+            cursor = self.async_collection.find({self.session_id_key: self.session_id})
+        else:
+            total_count = await self.async_collection.count_documents(
+                {self.session_id_key: self.session_id}
+            )
+            skip_count = max(
+                0,
+                total_count - self.history_size,
+            )
+            cursor = self.async_collection.find(
+                {self.session_id_key: self.session_id}, skip=skip_count
+            )
+
+        items = []
+        async for document in cursor:
+            items.append(json.loads(document[self.history_key]))
 
         messages = messages_from_dict(items)
         return messages
@@ -154,9 +206,38 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
         except errors.WriteError as err:
             logger.error(err)
 
+    async def aadd_messages(self, messages: Sequence[BaseMessage]) -> None:
+        """Async add a list of messages to MongoDB"""
+        if not _motor_available:
+            logger.warning(
+                "Motor library is not installed. "
+                "Using `run_in_executor` for aadd_messages, which may be less efficient."
+            )
+            return await super().aadd_messages(messages)
+
+        documents = [
+            {
+                self.session_id_key: self.session_id,
+                self.history_key: json.dumps(message_to_dict(message)),
+            }
+            for message in messages
+        ]
+        await self.async_collection.insert_many(documents)
+
     def clear(self) -> None:
         """Clear session memory from MongoDB"""
         try:
             self.collection.delete_many({self.session_id_key: self.session_id})
         except errors.WriteError as err:
             logger.error(err)
+
+    async def aclear(self) -> None:
+        """Async clear session memory from MongoDB"""
+        if not _motor_available:
+            logger.warning(
+                "Motor library is not installed. "
+                "Using `run_in_executor` for aclear, which may be less efficient."
+            )
+            return await super().aclear()
+
+        await self.async_collection.delete_many({self.session_id_key: self.session_id})
