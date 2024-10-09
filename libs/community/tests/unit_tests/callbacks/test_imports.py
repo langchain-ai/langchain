@@ -2,6 +2,7 @@ from langchain_community.callbacks import __all__, _module_lookup
 
 EXPECTED_ALL = [
     "AimCallbackHandler",
+    "StreamingAmazonAPIGatewayWebSocketCallbackHandler",
     "ArgillaCallbackHandler",
     "ArizeCallbackHandler",
     "PromptLayerCallbackHandler",

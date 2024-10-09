@@ -360,6 +360,18 @@ See a [usage example](/docs/integrations/callbacks/sagemaker_tracking).
 from langchain_community.callbacks import SageMakerCallbackHandler
 ```
 
+### Amazon API Gateway WebSocket Streaming
+
+> [Amazon API Gateway](https://aws.amazon.com/api-gateway/) is a fully managed service that makes it easy for developers to create, publish, maintain, monitor, and secure APIs at any scale.
+
+> A WebSocket API in API Gateway is a collection of WebSocket routes that are integrated with backend HTTP endpoints, Lambda functions, or other AWS services. You can use API Gateway features to help you with all aspects of the API lifecycle, from creation through monitoring your production APIs. For more information, see [Working with WebSocket APIs](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-websocket-api.html).
+
+See a [usage example](/docs/integrations/callbacks/amazon_apigateway_websocket).
+
+```python
+from langchain.callbacks import StreamingAmazonAPIGatewayWebSocketCallbackHandler
+```
+
 ## Chains
 
 ### Amazon Comprehend Moderation Chain
