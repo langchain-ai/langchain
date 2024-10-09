@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pickle
+from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Optional
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
@@ -101,3 +103,74 @@ class BM25Retriever(BaseRetriever):
         processed_query = self.preprocess_func(query)
         return_docs = self.vectorizer.get_top_n(processed_query, self.docs, n=self.k)
         return return_docs
+
+    def save_local(
+        self,
+        folder_path: str,
+        file_name: str = "bm25_vectorizer",
+    ) -> None:
+        try:
+            import joblib
+        except ImportError:
+            raise ImportError(
+                "Could not import joblib, please install with `pip install joblib`."
+            )
+
+        path = Path(folder_path)
+        path.mkdir(exist_ok=True, parents=True)
+
+        # Save vectorizer with joblib dump.
+        joblib.dump(self.vectorizer, path / f"{file_name}.joblib")
+
+        # Save docs and preprocess_func as pickle.
+        with open(path / f"{file_name}.pkl", "wb") as f:
+            pickle.dump((self.docs, self.preprocess_func), f)
+
+    @classmethod
+    def load_local(
+        cls,
+        folder_path: str,
+        *,
+        allow_dangerous_deserialization: bool = False,
+        file_name: str = "bm25_vectorizer",
+    ) -> BM25Retriever:
+        """Load the retriever from local storage.
+
+        Args:
+            folder_path: Folder path to load from.
+            allow_dangerous_deserialization: Whether to allow dangerous deserialization.
+            file_name: File name to load from.
+
+        Returns:
+            BM25Retriever: Loaded retriever.
+        """
+        try:
+            import joblib
+        except ImportError:
+            raise ImportError(
+                "Could not import joblib, please install with `pip install joblib`."
+            )
+        if not allow_dangerous_deserialization:
+            raise ValueError(
+                "The de-serialization of this retriever is based on .joblib and "
+                ".pkl files."
+                "Such files can be modified to deliver a malicious payload that "
+                "results in execution of arbitrary code on your machine."
+                "You will need to set `allow_dangerous_deserialization` to `True` to "
+                "load this retriever. If you do this, make sure you trust the source "
+                "of the file, and you are responsible for validating the file "
+                "came from a trusted source."
+            )
+
+        path = Path(folder_path)
+
+        # Load vectorizer with joblib load.
+        vectorizer = joblib.load(path / f"{file_name}.joblib")
+
+        # Load docs and preprocess_func as pickle.
+        with open(path / f"{file_name}.pkl", "rb") as f:
+            # This code path can only be triggered if the user
+            # passed allow_dangerous_deserialization=True
+            docs, preprocess_func = pickle.load(f)  # ignore[pickle]: explicit-opt-in
+
+        return cls(vectorizer=vectorizer, docs=docs, preprocess_func=preprocess_func)
