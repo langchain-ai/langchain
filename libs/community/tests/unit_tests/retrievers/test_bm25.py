@@ -63,8 +63,12 @@ def test_doc_id() -> None:
         Document(page_content="I have a bag.", id="3"),
     ]
     bm25_retriever_with_ids = BM25Retriever.from_documents(documents=docs_with_ids)
-    bm25_retriever_without_ids = BM25Retriever.from_documents(documents=docs_without_ids)
-    bm25_retriever_with_some_ids = BM25Retriever.from_documents(documents=docs_with_some_ids)
+    bm25_retriever_without_ids = BM25Retriever.from_documents(
+        documents=docs_without_ids
+    )
+    bm25_retriever_with_some_ids = BM25Retriever.from_documents(
+        documents=docs_with_some_ids
+    )
     for doc in bm25_retriever_with_ids.docs:
         assert doc.id is not None
     for doc in bm25_retriever_without_ids.docs:
@@ -78,4 +82,3 @@ def test_doc_id() -> None:
             assert doc.id == "3"
         else:
             raise ValueError("Unexpected document")
-
