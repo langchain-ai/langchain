@@ -215,9 +215,9 @@ class CommaSeparatedNumericListOutputParser(
         output."""
 
         return (
-            "Your response should be a list of comma separated numeric "
-            "values. Ensure that decimal numbers use a dot (e.g., 3.14) "
-            "instead of a comma."
+            "Your response should be a list of comma separated digits. "
+            "Ensure that decimal numbers use a dot (.) as the decimal "
+            "separator (e.g., 3.14 instead of 3,14)."
         )
 
     def _transform(
