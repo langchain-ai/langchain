@@ -4,6 +4,7 @@ EXPECTED_ALL = [
     "AimCallbackHandler",
     "ArgillaCallbackHandler",
     "ArizeCallbackHandler",
+    "PanelCallbackHandler",
     "PromptLayerCallbackHandler",
     "ArthurCallbackHandler",
     "ClearMLCallbackHandler",
