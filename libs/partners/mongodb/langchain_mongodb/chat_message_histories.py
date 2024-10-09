@@ -19,6 +19,7 @@ DEFAULT_HISTORY_KEY = "History"
 
 try:
     from motor.motor_asyncio import AsyncIOMotorClient
+
     _motor_available = True
 except ImportError:
     AsyncIOMotorClient = None
