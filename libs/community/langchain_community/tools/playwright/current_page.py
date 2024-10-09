@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from typing import Optional
+from typing import Optional, Type
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
+from pydantic import BaseModel
 
 from langchain_community.tools.playwright.base import BaseBrowserTool
 from langchain_community.tools.playwright.utils import (
@@ -14,11 +15,16 @@ from langchain_community.tools.playwright.utils import (
 )
 
 
+class CurrentWebPage(BaseModel):
+    """Get the current webpage."""
+
+
 class CurrentWebPageTool(BaseBrowserTool):
     """Tool for getting the URL of the current webpage."""
 
     name: str = "current_webpage"
     description: str = "Returns the URL of the current page"
+    args_schema: Type[BaseModel] = CurrentWebPage
 
     def _run(
         self,
