@@ -264,22 +264,20 @@ See a [usage example](/docs/integrations/document_loaders/url/#playwright-url-lo
 from langchain_community.document_loaders.onenote import OneNoteLoader
 ```
 
-## AI Agent Memory System
-
-[AI agent](https://learn.microsoft.com/en-us/azure/cosmos-db/ai-agents) needs robust memory systems that support multi-modality, offer strong operational performance, and enable agent memory sharing as well as separation.
+## Vector Stores
 
 ### Azure Cosmos DB
 AI agents can rely on Azure Cosmos DB as a unified [memory system](https://learn.microsoft.com/en-us/azure/cosmos-db/ai-agents#memory-can-make-or-break-agents) solution, enjoying speed, scale, and simplicity. This service successfully [enabled OpenAI's ChatGPT service](https://www.youtube.com/watch?v=6IIUtEFKJec&t) to scale dynamically with high reliability and low maintenance. Powered by an atom-record-sequence engine, it is the world's first globally distributed [NoSQL](https://learn.microsoft.com/en-us/azure/cosmos-db/distributed-nosql), [relational](https://learn.microsoft.com/en-us/azure/cosmos-db/distributed-relational), and [vector database](https://learn.microsoft.com/en-us/azure/cosmos-db/vector-database) service that offers a serverless mode. 
 
 Below are two available Azure Cosmos DB APIs that can provide vector store functionalities.
 
-### Azure Cosmos DB for MongoDB (vCore)
+#### Azure Cosmos DB for MongoDB (vCore)
 
 >[Azure Cosmos DB for MongoDB vCore](https://learn.microsoft.com/en-us/azure/cosmos-db/mongodb/vcore/) makes it easy to create a database with full native MongoDB support.
 > You can apply your MongoDB experience and continue to use your favorite MongoDB drivers, SDKs, and tools by pointing your application to the API for MongoDB vCore account's connection string.
 > Use vector search in Azure Cosmos DB for MongoDB vCore to seamlessly integrate your AI-based applications with your data that's stored in Azure Cosmos DB.
 
-#### Installation and Setup
+##### Installation and Setup
 
 See [detail configuration instructions](/docs/integrations/vectorstores/azure_cosmos_db).
 
@@ -289,7 +287,7 @@ We need to install `pymongo` python package.
 pip install pymongo
 ```
 
-#### Deploy Azure Cosmos DB on Microsoft Azure
+##### Deploy Azure Cosmos DB on Microsoft Azure
 
 Azure Cosmos DB for MongoDB vCore provides developers with a fully managed MongoDB-compatible database service for building modern applications with a familiar architecture.
 
@@ -303,7 +301,7 @@ See a [usage example](/docs/integrations/vectorstores/azure_cosmos_db).
 from langchain_community.vectorstores import AzureCosmosDBVectorSearch
 ```
 
-### Azure Cosmos DB NoSQL
+#### Azure Cosmos DB NoSQL
 
 >[Azure Cosmos DB for NoSQL](https://learn.microsoft.com/en-us/azure/cosmos-db/nosql/vector-search) now offers vector indexing and search in preview.
 This feature is designed to handle high-dimensional vectors, enabling efficient and accurate vector search at any scale. You can now store vectors
@@ -312,7 +310,7 @@ but also high-dimensional vectors as other properties of the documents. This col
 as the vectors are stored in the same logical unit as the data they represent. This simplifies data management, AI application architectures, and the
 efficiency of vector-based operations.
 
-#### Installation and Setup
+##### Installation and Setup
 
 See [detail configuration instructions](/docs/integrations/vectorstores/azure_cosmos_db_no_sql).
 
@@ -322,7 +320,7 @@ We need to install `azure-cosmos` python package.
 pip install azure-cosmos
 ```
 
-#### Deploy Azure Cosmos DB on Microsoft Azure
+##### Deploy Azure Cosmos DB on Microsoft Azure
 
 Azure Cosmos DB offers a solution for modern apps and intelligent workloads by being very responsive with dynamic and elastic autoscale. It is available
 in every Azure region and can automatically replicate data closer to users. It has SLA guaranteed low-latency and high availability.
@@ -336,6 +334,7 @@ from langchain_community.vectorstores import AzureCosmosDBNoSQLVectorSearch
 ```
 
 ### Azure Database for PostgreSQL
+
 >[Azure Database for PostgreSQL - Flexible Server](https://learn.microsoft.com/en-us/azure/postgresql/flexible-server/service-overview) is a relational database service based on the open-source Postgres database engine. It's a fully managed database-as-a-service that can handle mission-critical workloads with predictable performance, security, high availability, and dynamic scalability.
 
 See [set up instructions](https://learn.microsoft.com/en-us/azure/postgresql/flexible-server/quickstart-create-server-portal) for Azure Database for PostgreSQL. 
@@ -446,6 +445,38 @@ The `azure_ai_services` toolkit includes the following tools:
 - Text to Speech: [AzureAiServicesTextToSpeechTool](https://python.langchain.com/api_reference/community/tools/langchain_community.tools.azure_ai_services.text_to_speech.AzureAiServicesTextToSpeechTool.html)
 - Text Analytics for Health: [AzureAiServicesTextAnalyticsForHealthTool](https://python.langchain.com/api_reference/community/tools/langchain_community.tools.azure_ai_services.text_analytics_for_health.AzureAiServicesTextAnalyticsForHealthTool.html)
 
+### Azure Cognitive Services
+
+We need to install several python packages.
+
+```bash
+pip install azure-ai-formrecognizer azure-cognitiveservices-speech azure-ai-vision-imageanalysis
+```
+
+See a [usage example](/docs/integrations/tools/azure_cognitive_services).
+
+```python
+from langchain_community.agent_toolkits import AzureCognitiveServicesToolkit
+```
+
+#### Azure AI Services individual tools
+
+The `azure_ai_services` toolkit includes the tools that queries the `Azure Cognitive Services`:
+- `AzureCogsFormRecognizerTool`: Form Recognizer API
+- `AzureCogsImageAnalysisTool`: Image Analysis API
+- `AzureCogsSpeech2TextTool`: Speech2Text API
+- `AzureCogsText2SpeechTool`: Text2Speech API
+- `AzureCogsTextAnalyticsHealthTool`: Text Analytics for Health API
+
+```python
+from langchain_community.tools.azure_cognitive_services import (
+    AzureCogsFormRecognizerTool,
+    AzureCogsImageAnalysisTool,
+    AzureCogsSpeech2TextTool,
+    AzureCogsText2SpeechTool,
+    AzureCogsTextAnalyticsHealthTool,
+)
+```
 
 ### Microsoft Office 365 email and calendar
 
@@ -465,11 +496,11 @@ from langchain_community.agent_toolkits import O365Toolkit
 #### Office 365 individual tools
 
 You can use individual tools from the Office 365 Toolkit:
-- `O365CreateDraftMessage`: tool for creating a draft email in Office 365
-- `O365SearchEmails`: tool for searching email messages in Office 365
-- `O365SearchEvents`: tool for searching calendar events in Office 365
-- `O365SendEvent`: tool for sending calendar events in Office 365
-- `O365SendMessage`: tool for sending an email in Office 365
+- `O365CreateDraftMessage`: creating a draft email in Office 365
+- `O365SearchEmails`: searching email messages in Office 365
+- `O365SearchEvents`: searching calendar events in Office 365
+- `O365SendEvent`: sending calendar events in Office 365
+- `O365SendMessage`: sending an email in Office 365
 
 ```python
 from langchain_community.tools.office365 import O365CreateDraftMessage
@@ -497,9 +528,9 @@ from langchain_community.utilities.powerbi import PowerBIDataset
 #### PowerBI individual tools
 
 You can use individual tools from the Azure PowerBI Toolkit:
-- `InfoPowerBITool`: tool for getting metadata about a PowerBI Dataset
-- `ListPowerBITool`: tool for getting tables names
-- `QueryPowerBITool`: tool for querying a PowerBI Dataset
+- `InfoPowerBITool`: getting metadata about a PowerBI Dataset
+- `ListPowerBITool`: getting tables names
+- `QueryPowerBITool`: querying a PowerBI Dataset
 
 ```python
 from langchain_community.tools.powerbi.tool import InfoPowerBITool

@@ -480,6 +480,15 @@ class BaseChatOpenAI(BaseChatModel):
         values = _build_model_kwargs(values, all_required_field_names)
         return values
 
+    @model_validator(mode="before")
+    @classmethod
+    def validate_temperature(cls, values: Dict[str, Any]) -> Any:
+        """Currently o1 models only allow temperature=1."""
+        model = values.get("model_name") or values.get("model") or ""
+        if model.startswith("o1") and "temperature" not in values:
+            values["temperature"] = 1
+        return values
+
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
