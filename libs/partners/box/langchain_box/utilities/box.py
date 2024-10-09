@@ -805,7 +805,13 @@ class _BoxAPIWrapper(BaseModel):
                 f"BoxSDKError: Error getting search results: {bse.message}"
             )
 
-    def ask_box_ai(self, query: str, box_file_ids: List[str]) -> List[Document]:
+    def ask_box_ai(
+        self,
+        query: str,
+        box_file_ids: List[str],
+        answer: bool = True,
+        citations: bool = False,
+    ) -> List[Document]:
         if self._box is None:
             self.get_box_client()
 
@@ -819,13 +825,16 @@ class _BoxAPIWrapper(BaseModel):
         items = []
 
         for file_id in box_file_ids:
-            item = box_sdk_gen.CreateAiAskItems(
-                id=file_id, type=box_sdk_gen.CreateAiAskItemsTypeField.FILE.value
+            item = box_sdk_gen.AiItemBase(
+                id=file_id, type=box_sdk_gen.AiItemBaseTypeField.FILE.value
             )
             items.append(item)
 
         try:
-            response = self._box.ai.create_ai_ask(ai_mode, query, items)  #  type: ignore[union-attr]
+            response = self._box.ai.create_ai_ask(  #  type: ignore[union-attr]
+                mode=ai_mode, prompt=query, items=items, include_citations=citations
+            )
+
         except box_sdk_gen.BoxAPIError as bae:
             raise RuntimeError(
                 f"BoxAPIError: Error getting Box AI result: {bae.message}"
@@ -835,8 +844,32 @@ class _BoxAPIWrapper(BaseModel):
                 f"BoxSDKError: Error getting Box AI result: {bse.message}"
             )
 
-        content = response.answer
+        docs = []
 
-        metadata = {"source": "Box AI", "title": f"Box AI {query}"}
+        if answer:
+            content = response.answer
+            metadata = {"source": "Box AI", "title": f"Box AI {query}"}
 
-        return [Document(page_content=content, metadata=metadata)]
+            document = Document(page_content=content, metadata=metadata)
+            docs.append(document)
+
+        if citations:
+            box_citations = response.citations
+
+            for citation in box_citations:
+                content = citation.content
+                file_name = citation.name
+                file_id = citation.id
+                file_type = citation.type.value
+
+                metadata = {
+                    "source": f"Box AI {query}",
+                    "file_name": file_name,
+                    "file_id": file_id,
+                    "file_type": file_type,
+                }
+
+                document = Document(page_content=content, metadata=metadata)
+                docs.append(document)
+
+        return docs

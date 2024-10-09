@@ -1769,6 +1769,8 @@ def _reorder_results_with_maximal_marginal_relevance(
         )
         for result in results
     ]
+    if not docs:
+        return []
     documents, scores, vectors = map(list, zip(*docs))
 
     # Get the new order of results.
