@@ -92,7 +92,8 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             ValueError: If a branch is not of length 2.
         """
         if len(branches) < 2:
-            raise ValueError("RunnableBranch requires at least two branches")
+            msg = "RunnableBranch requires at least two branches"
+            raise ValueError(msg)
 
         default = branches[-1]
 
@@ -100,9 +101,8 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             default,
             (Runnable, Callable, Mapping),  # type: ignore[arg-type]
         ):
-            raise TypeError(
-                "RunnableBranch default must be Runnable, callable or mapping."
-            )
+            msg = "RunnableBranch default must be Runnable, callable or mapping."
+            raise TypeError(msg)
 
         default_ = cast(
             Runnable[Input, Output], coerce_to_runnable(cast(RunnableLike, default))
@@ -112,16 +112,18 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
 
         for branch in branches[:-1]:
             if not isinstance(branch, (tuple, list)):  # type: ignore[arg-type]
-                raise TypeError(
+                msg = (
                     f"RunnableBranch branches must be "
                     f"tuples or lists, not {type(branch)}"
                 )
+                raise TypeError(msg)
 
-            if not len(branch) == 2:
-                raise ValueError(
+            if len(branch) != 2:
+                msg = (
                     f"RunnableBranch branches must be "
                     f"tuples or lists of length 2, not {len(branch)}"
                 )
+                raise ValueError(msg)
             condition, runnable = branch
             condition = cast(Runnable[Input, bool], coerce_to_runnable(condition))
             runnable = coerce_to_runnable(runnable)
@@ -185,7 +187,8 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             and s.id.endswith(CONTEXT_CONFIG_SUFFIX_SET)
             for s in specs
         ):
-            raise ValueError("RunnableBranch cannot contain context setters.")
+            msg = "RunnableBranch cannot contain context setters."
+            raise ValueError(msg)
         return specs
 
     def invoke(
