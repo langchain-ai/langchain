@@ -23,6 +23,7 @@ from langchain_openai import ChatOpenAI
 from langchain_openai.chat_models.base import (
     _convert_dict_to_message,
     _convert_message_to_dict,
+    _create_usage_metadata,
     _format_message_content,
 )
 
@@ -32,6 +33,13 @@ def test_openai_model_param() -> None:
     assert llm.model_name == "foo"
     llm = ChatOpenAI(model_name="foo")  # type: ignore[call-arg]
     assert llm.model_name == "foo"
+
+
+def test_openai_o1_temperature() -> None:
+    llm = ChatOpenAI(model="o1-preview")
+    assert llm.temperature == 1
+    llm = ChatOpenAI(model_name="o1-mini")  # type: ignore[call-arg]
+    assert llm.temperature == 1
 
 
 def test_function_message_dict_to_function_message() -> None:
@@ -730,3 +738,21 @@ def test_schema_from_with_structured_output(schema: Type) -> None:
     }
     actual = structured_llm.get_output_schema().model_json_schema()
     assert actual == expected
+
+
+def test__create_usage_metadata() -> None:
+    usage_metadata = {
+        "completion_tokens": 15,
+        "prompt_tokens_details": None,
+        "completion_tokens_details": None,
+        "prompt_tokens": 11,
+        "total_tokens": 26,
+    }
+    result = _create_usage_metadata(usage_metadata)
+    assert result == UsageMetadata(
+        output_tokens=15,
+        input_tokens=11,
+        total_tokens=26,
+        input_token_details={},
+        output_token_details={},
+    )

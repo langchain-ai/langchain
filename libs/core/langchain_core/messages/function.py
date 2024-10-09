@@ -54,9 +54,8 @@ class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
         if isinstance(other, FunctionMessageChunk):
             if self.name != other.name:
-                raise ValueError(
-                    "Cannot concatenate FunctionMessageChunks with different names."
-                )
+                msg = "Cannot concatenate FunctionMessageChunks with different names."
+                raise ValueError(msg)
 
             return self.__class__(
                 name=self.name,

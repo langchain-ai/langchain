@@ -106,7 +106,7 @@ class BaseCumulativeTransformOutputParser(BaseTransformOutputParser[T]):
         Returns:
             The diff between the previous and current parsed output.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def _transform(self, input: Iterator[Union[str, BaseMessage]]) -> Iterator[Any]:
         prev_parsed = None
