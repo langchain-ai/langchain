@@ -225,8 +225,8 @@ class FireCrawlLoader(BaseLoader):
         if not url:
             raise ValueError("Url must be provided")
 
-        api_key = api_key or get_from_env("api_key", "FIREWALL_API_KEY")
-        self.firecrawl = FirecrawlApp(api_key=api_key)
+        api_key = api_key or get_from_env("api_key", "FIRECRAWL_API_KEY")
+        self.firecrawl = FirecrawlApp(api_key=api_key, api_url=api_url)
         self.url = url
         self.mode = mode
         self.params = params
