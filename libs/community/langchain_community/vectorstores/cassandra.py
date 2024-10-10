@@ -501,10 +501,13 @@ class Cassandra(VectorStore):
         )
 
     def get_by_document_id(self, document_id: str) -> Document | None:
-        """Get by document ID.
+        """Retrieve a single document from the store, given its document ID.
 
         Args:
-            document_id: the document ID to get.
+            document_id: The document ID
+
+        Returns:
+            The the document if it exists. Otherwise None.
         """
         row = self.table.get(row_id=document_id)
         if row is None:
@@ -512,10 +515,13 @@ class Cassandra(VectorStore):
         return self._row_to_document(row=row)
 
     async def aget_by_document_id(self, document_id: str) -> Document | None:
-        """Get by document ID.
+        """Retrieve a single document from the store, given its document ID.
 
         Args:
-            document_id: the document ID to get.
+            document_id: The document ID
+
+        Returns:
+            The the document if it exists. Otherwise None.
         """
         row = await self.table.aget(row_id=document_id)
         if row is None:
@@ -524,28 +530,30 @@ class Cassandra(VectorStore):
 
     def metadata_search(
         self,
-        metadata: dict[str, Any] = {},  # noqa: B006
+        filter: dict[str, Any] = {},  # noqa: B006
         n: int = 5,
     ) -> Iterable[Document]:
         """Get documents via a metadata search.
 
         Args:
-            metadata: the metadata to query for.
+            filter: the metadata to query for.
+            n: the maximum number of documents to return.
         """
-        rows = self.table.find_entries(metadata=metadata, n=n)
+        rows = self.table.find_entries(metadata=filter, n=n)
         return [self._row_to_document(row=row) for row in rows if row]
 
     async def ametadata_search(
         self,
-        metadata: dict[str, Any] = {},  # noqa: B006
+        filter: dict[str, Any] = {},  # noqa: B006
         n: int = 5,
     ) -> Iterable[Document]:
         """Get documents via a metadata search.
 
         Args:
-            metadata: the metadata to query for.
+            filter: the metadata to query for.
+            n: the maximum number of documents to return.
         """
-        rows = await self.table.afind_entries(metadata=metadata, n=n)
+        rows = await self.table.afind_entries(metadata=filter, n=n)
         return [self._row_to_document(row=row) for row in rows]
 
     async def asimilarity_search_with_embedding_id_by_vector(
