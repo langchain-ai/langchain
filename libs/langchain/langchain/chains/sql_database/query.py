@@ -13,7 +13,47 @@ if TYPE_CHECKING:
     from langchain_community.utilities.sql_database import SQLDatabase
 
 
+import re
+
+
 def _strip(text: str) -> str:
+    """
+    Extracts the pure SQL query from the LLM output.
+
+    Supports the following formats:
+    1. Contains a ```sql``` code block
+    2. Starts with "SQLQuery:"
+    3. Contains only an SQL statement
+
+    If both a ```sql``` code block and an "SQLQuery:" prefix are present, the SQL code block is prioritized.
+
+    Args:
+        text (str): The original output from the LLM.
+
+    Returns:
+        str: The extracted SQL query.
+    """
+    # Try to match all ```sql ... ``` code blocks
+    code_block_pattern = re.compile(r"```sql\s*(.*?)\s*```", re.DOTALL | re.IGNORECASE)
+    code_blocks = code_block_pattern.findall(text)
+    if code_blocks:
+        # If multiple code blocks are found, assume the first one is the desired SQL query
+        return code_blocks[0].strip()
+
+    # If no code block is found, try to match the "SQLQuery:" prefix
+    prefix_pattern = re.compile(r"^SQLQuery:\s*(.*)", re.IGNORECASE | re.DOTALL)
+    prefix_match = prefix_pattern.search(text)
+    if prefix_match:
+        # Extract the content following "SQLQuery:" and try to remove potential code block markers
+        sql_part = prefix_match.group(1).strip()
+        # Try to extract SQL from a nested code block, if present
+        nested_code_match = code_block_pattern.search(sql_part)
+        if nested_code_match:
+            return nested_code_match.group(1).strip()
+        else:
+            return sql_part
+
+    # If none of the above matches, assume the entire text is an SQL query
     return text.strip()
 
 
