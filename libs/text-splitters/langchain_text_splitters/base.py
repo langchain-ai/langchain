@@ -229,7 +229,7 @@ class TokenTextSplitter(TextSplitter):
     def from_huggingface_tokenizer(
         cls, tokenizer: Any, **kwargs: Any
     ) -> TokenTextSplitter:
-        """Token Text splitter that uses HuggingFace tokenizer to count length."""
+        """Token Text splitter that uses HuggingFace tokenizer"""
         try:
             from transformers import PreTrainedTokenizerBase
         except ImportError:
@@ -243,13 +243,7 @@ class TokenTextSplitter(TextSplitter):
                 "Tokenizer received was not an instance of PreTrainedTokenizerBase"
             )
 
-        def _huggingface_tokenizer_length(text: str) -> int:
-            return len(tokenizer.encode(text))
-
-        if issubclass(cls, TokenTextSplitter):
-            extra_kwargs = {"tokenizer": tokenizer}
-            kwargs = {**kwargs, **extra_kwargs}
-        return cls(length_function=_huggingface_tokenizer_length, **kwargs)
+        return cls(tokenizer=tokenizer, **kwargs)
 
     @classmethod
     def from_tiktoken_encoder(
@@ -260,7 +254,7 @@ class TokenTextSplitter(TextSplitter):
         disallowed_special: Union[Literal["all"], Collection[str]] = "all",
         **kwargs: Any,
     ) -> TokenTextSplitter:
-        """Token Text splitter that uses tiktoken encoder to count length."""
+        """Token Text splitter that uses tiktoken encoder."""
         try:
             import tiktoken
         except ImportError:
@@ -275,26 +269,13 @@ class TokenTextSplitter(TextSplitter):
         else:
             enc = tiktoken.get_encoding(encoding_name)
 
-        def _tiktoken_encoder(text: str) -> int:
-            return len(
-                enc.encode(
-                    text,
-                    allowed_special=allowed_special,
-                    disallowed_special=disallowed_special,
-                )
-            )
 
-        if issubclass(cls, TokenTextSplitter):
-            extra_kwargs = {
-                "tokenizer": enc,
+        return cls(tokenizer=enc, **{**kwargs, **{
                 "encoding_name": encoding_name,
                 "model_name": model_name,
                 "allowed_special": allowed_special,
                 "disallowed_special": disallowed_special,
-            }
-            kwargs = {**kwargs, **extra_kwargs}
-
-        return cls(length_function=_tiktoken_encoder, **kwargs)
+            }})
 
 
 class Language(str, Enum):
