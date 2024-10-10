@@ -2,8 +2,7 @@
 
 import os
 
-import pytest
-import sqlalchemy
+import logging
 from langchain_core.documents import Document
 
 from langchain_community.vectorstores.oceanbase import (
@@ -18,6 +17,9 @@ from tests.integration_tests.vectorstores.fixtures.filtering_test_cases import (
     TYPE_4_FILTERING_TEST_CASES,
     TYPE_5_FILTERING_TEST_CASES,
 )
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 CONNECTION_ARGS = {
     "host": os.environ.get("TEST_OCEANBASE_HOST", "localhost"),
@@ -35,6 +37,7 @@ def test_oceanbase() -> None:
         embedding=FakeEmbeddings(),
         connection_args=CONNECTION_ARGS,
         drop_old=True,
+        normalize=True,
     )
     output = docsearch.similarity_search("foo", k=1)
     print(f"output={output}")
@@ -50,6 +53,7 @@ def test_oceanbase_with_metadatas() -> None:
         metadatas=metadatas,
         connection_args=CONNECTION_ARGS,
         drop_old=True,
+        normalize=True,
     )
     output = docsearch.similarity_search("foo", k=1)
     assert output == [Document(page_content="foo", metadata={"page": "0"})]
@@ -64,6 +68,7 @@ def test_oceanbase_with_metadatas_with_scores() -> None:
         metadatas=metadatas,
         connection_args=CONNECTION_ARGS,
         drop_old=True,
+        normalize=True,
     )
     output = docsearch.similarity_search_with_score("foo", k=1)
     assert output == [(Document(page_content="foo", metadata={"page": "0"}), 0.0)]
@@ -78,22 +83,61 @@ def test_oceanbase_with_filter_match() -> None:
         metadatas=metadatas,
         connection_args=CONNECTION_ARGS,
         drop_old=True,
+        normalize=True,
     )
     output = docsearch.similarity_search_with_score("foo", k=1, fltr="metadata->'$.page' = '0'")
     assert output == [(Document(page_content="foo", metadata={"page": "0"}), 0.0)]
 
-# def test_oceanbase_with_filter_distant_match() -> None:
-#     """Test end to end construction and search."""
-#     texts = ["foo", "bar", "baz"]
-#     metadatas = [{"page": str(i)} for i in range(len(texts))]
-#     docsearch = OceanBase.from_texts(
-#         texts=texts,
-#         embedding=FakeEmbeddings(),
-#         metadatas=metadatas,
-#         connection_args=CONNECTION_ARGS,
-#         drop_old=True,
-#     )
-#     output = docsearch.similarity_search_with_score("foo", k=1, fltr="metadata->'$.page' = '2'")
-#     assert output == [
-#         (Document(page_content="baz", metadata={"page": "2"}), 0.0013003906671379406)
-#     ]
+def test_oceanbase_with_filter_no_match() -> None:
+    """Test end to end construction and search in case of mismatches."""
+    texts = ["foo", "bar", "baz"]
+    metadatas = [{"page": str(i)} for i in range(len(texts))]
+    docsearch = OceanBase.from_texts(
+        texts=texts,
+        embedding=FakeEmbeddings(),
+        metadatas=metadatas,
+        connection_args=CONNECTION_ARGS,
+        drop_old=True,
+        normalize=True,
+    )
+    output = docsearch.similarity_search_with_score("foo", k=1, fltr="metadata->'$.page' = '5'")
+    assert output == []
+
+def test_oceanbase_delete_docs() -> None:
+    """Test docs deletion."""
+    texts = ["foo", "bar", "baz"]
+    metadatas = [{"page": str(i)} for i in range(len(texts))]
+    docsearch = OceanBase.from_texts(
+        texts=texts,
+        embedding=FakeEmbeddings(),
+        metadatas=metadatas,
+        connection_args=CONNECTION_ARGS,
+        ids=["1", "2", "3"],
+        drop_old=True,
+        normalize=True,
+    )
+    docsearch.delete(ids=["1", "2"])
+    res = docsearch.obvector.perform_raw_text_sql("SELECT id FROM langchain_vector")
+    assert [r[0] for r in res] == ["3"]
+
+def test_pgvector_retriever_search_threshold() -> None:
+    """Test using retriever for searching with threshold."""
+    texts = ["foo", "bar", "baz"]
+    metadatas = [{"page": str(i)} for i in range(len(texts))]
+    docsearch = OceanBase.from_texts(
+        texts=texts,
+        embedding=FakeEmbeddings(),
+        metadatas=metadatas,
+        connection_args=CONNECTION_ARGS,
+        drop_old=True,
+        normalize=True,
+    )
+    retriever = docsearch.as_retriever(
+        search_type="similarity_score_threshold",
+        search_kwargs={"k": 3, "score_threshold": 0.7},
+    )
+    output = retriever.invoke("summer")
+    assert output == [
+        Document(metadata={'page': '0'}, page_content='foo'),
+        Document(metadata={'page': '1'}, page_content='bar'),
+    ]

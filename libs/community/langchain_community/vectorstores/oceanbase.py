@@ -2,13 +2,14 @@ import json
 import logging
 import uuid
 import traceback
-from typing import Any, Iterable, List, Optional, Sequence, Tuple
+from typing import Any, Iterable, List, Optional, Sequence, Tuple, Callable
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 from sqlalchemy import JSON, Column, String, Table, func, text
 from sqlalchemy.dialects.mysql import LONGTEXT
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -105,6 +106,7 @@ class OceanBase(VectorStore):
         vidx_name: str = "vidx",
         partitions: Optional[Any] = None,
         extra_columns: Optional[List[Column]] = None,
+        normalize: bool = False,
         **kwargs,
     ):
         """Initialize the OceanBase vector store."""
@@ -117,6 +119,7 @@ class OceanBase(VectorStore):
             else DEFAULT_OCEANBASE_CONNECTION
         )
         self.extra_columns = extra_columns
+        self.normalize = normalize
         self._create_client(**kwargs)
         assert self.obvector is not None
 
@@ -239,6 +242,12 @@ class OceanBase(VectorStore):
             return func.inner_product
         raise ValueError(f"Invalid vector index metric type: {self.vidx_metric_type}")
 
+    def _normalize(self, vector: List[float]) -> List[float]:
+        arr = np.array(vector)
+        norm = np.linalg.norm(arr)
+        arr = arr / norm
+        return arr.tolist()
+
     def add_texts(
         self,
         texts: Iterable[str],
@@ -300,7 +309,9 @@ class OceanBase(VectorStore):
             data = [
                 {
                     self.primary_field: id,
-                    self.vector_field: embedding,
+                    self.vector_field: (
+                        embedding if not self.normalize else self._normalize(embedding)
+                    ),
                     self.text_field: text,
                     self.metadata_field: metadata,
                     **extra,
@@ -341,6 +352,7 @@ class OceanBase(VectorStore):
         *,
         ids: Optional[List[str]] = None,
         extra_columns: Optional[List[Column]] = None,
+        normalize: bool = False,
         extras: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> "OceanBase":
@@ -376,6 +388,7 @@ class OceanBase(VectorStore):
             vidx_algo_params=vidx_algo_params,
             drop_old=drop_old,
             extra_columns=extra_columns,
+            normalize=normalize,
             **kwargs,
         )
         oceanbase.add_texts(texts, metadatas, ids=ids, extras=extras)
@@ -512,7 +525,9 @@ class OceanBase(VectorStore):
 
         res = self.obvector.ann_search(
             table_name=self.table_name,
-            vec_data=embedding,
+            vec_data=(
+                embedding if not self.normalize else self._normalize(embedding)
+            ),
             vec_column_name=self.vector_field,
             distance_func=self._parse_metric_type_str_to_dist_func(),
             topk=k,
@@ -564,7 +579,9 @@ class OceanBase(VectorStore):
 
         res = self.obvector.ann_search(
             table_name=self.table_name,
-            vec_data=embedding,
+            vec_data=(
+                embedding if not self.normalize else self._normalize(embedding)
+            ),
             vec_column_name=self.vector_field,
             distance_func=self._parse_metric_type_str_to_dist_func(),
             with_dist=True,
@@ -583,3 +600,17 @@ class OceanBase(VectorStore):
             )
             for r in res.fetchall()
         ]
+
+    def _select_relevance_score_fn(self) -> Callable[[float], float]:
+        """
+        Select the relevance score function based on the distance strategy.
+        """
+        if self.vidx_metric_type == "ip":
+            return self._max_inner_product_relevance_score_fn
+        elif self.vidx_metric_type == "l2":
+            return self._euclidean_relevance_score_fn
+        else:
+            raise ValueError(
+                "No supported normalization function"
+                f" for distance_strategy of {self.vidx_metric_type}."
+            )
