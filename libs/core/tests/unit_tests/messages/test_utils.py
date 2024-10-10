@@ -670,12 +670,16 @@ def test_convert_to_openai_messages_openai_image() -> None:
     assert result == expected
 
 
-def test_convert_to_openai_messages_anthropic_image() -> None:
+def test_convert_to_openai_messages_anthropic() -> None:
     image_data = create_image_data()
     messages = [
         HumanMessage(
             content=[
-                {"type": "text", "text": "Here's an image:"},
+                {
+                    "type": "text",
+                    "text": "Here's an image:",
+                    "cache_control": {"type": "ephemeral"},
+                },
                 {
                     "type": "image",
                     "source": {
@@ -688,8 +692,16 @@ def test_convert_to_openai_messages_anthropic_image() -> None:
         )
     ]
     result = convert_to_openai_messages(messages)
-    assert result[0]["content"][1]["type"] == "image_url"
-    assert result[0]["content"][1]["image_url"]["url"] == create_base64_image()
+    expected = [
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "Here's an image:"},
+                {"type": "image_url", "image_url": {"url": create_base64_image()}},
+            ],
+        },
+    ]
+    assert result == expected
 
 
 def test_convert_to_openai_messages_bedrock_converse_image() -> None:
