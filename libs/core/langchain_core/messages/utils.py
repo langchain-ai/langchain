@@ -12,7 +12,6 @@ from __future__ import annotations
 import base64
 import inspect
 import json
-import re
 from collections.abc import Iterable, Sequence
 from functools import partial
 from typing import (
@@ -1366,59 +1365,6 @@ def _is_message_type(
 
 def _bytes_to_b64_str(bytes_: bytes) -> str:
     return base64.b64encode(bytes_).decode("utf-8")
-
-
-def _openai_image_to_anthropic(image: dict) -> dict:
-    """
-    Formats an image of format data:image/jpeg;base64,{b64_string}
-    to a dict for anthropic api
-
-    {
-      "type": "base64",
-      "media_type": "image/jpeg",
-      "data": "/9j/4AAQSkZJRg...",
-    }
-
-    And throws an error if it's not a b64 image
-    """
-    regex = r"^data:(?P<media_type>image/.+);base64,(?P<data>.+)$"
-    match = re.match(regex, image["image_url"]["url"])
-    if match is None:
-        msg = (
-            "Anthropic only supports base64-encoded images currently."
-            " Example: data:image/png;base64,'/9j/4AAQSk'..."
-        )
-        raise ValueError(msg)
-    return {
-        "type": "image",
-        "source": {
-            "type": "base64",
-            "media_type": match.group("media_type"),
-            "data": match.group("data"),
-        },
-    }
-
-
-def _bedrock_converse_image_to_anthropic(image: dict) -> dict:
-    return {
-        "type": "image",
-        "source": {
-            "media_type": f"image/{image['format']}",
-            "type": "base64",
-            "data": _bytes_to_b64_str(image["source"]["bytes"]),
-        },
-    }
-
-
-def _vertexai_image_to_anthropic(image: dict) -> dict:
-    return {
-        "type": "image",
-        "source": {
-            "media_type": image["mime_type"],
-            "type": "base64",
-            "data": _bytes_to_b64_str(image["data"]),
-        },
-    }
 
 
 def _get_message_openai_role(message: BaseMessage) -> str:

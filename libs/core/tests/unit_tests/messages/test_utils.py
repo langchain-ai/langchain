@@ -1,3 +1,4 @@
+import base64
 import json
 
 import pytest
@@ -12,7 +13,6 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_core.messages.utils import (
-    _bytes_to_b64_str,
     convert_to_messages,
     convert_to_openai_messages,
     filter_messages,
@@ -687,7 +687,46 @@ def test_convert_to_openai_messages_anthropic_image() -> None:
             ]
         )
     ]
-    result = convert_to_openai_messages(messages, text_format="block")
+    result = convert_to_openai_messages(messages)
+    assert result[0]["content"][1]["type"] == "image_url"
+    assert result[0]["content"][1]["image_url"]["url"] == create_base64_image()
+
+
+def test_convert_to_openai_messages_bedrock_converse_image() -> None:
+    image_data = create_image_data()
+    messages = [
+        HumanMessage(
+            content=[
+                {"type": "text", "text": "Here's an image:"},
+                {
+                    "image": {
+                        "format": "jpeg",
+                        "source": {"bytes": base64.b64decode(image_data)},
+                    }
+                },
+            ]
+        )
+    ]
+    result = convert_to_openai_messages(messages)
+    assert result[0]["content"][1]["type"] == "image_url"
+    assert result[0]["content"][1]["image_url"]["url"] == create_base64_image()
+
+
+def test_convert_to_openai_messages_vertexai_image() -> None:
+    image_data = create_image_data()
+    messages = [
+        HumanMessage(
+            content=[
+                {"type": "text", "text": "Here's an image:"},
+                {
+                    "type": "media",
+                    "mime_type": "image/jpeg",
+                    "data": base64.b64decode(image_data),
+                },
+            ]
+        )
+    ]
+    result = convert_to_openai_messages(messages)
     assert result[0]["content"][1]["type"] == "image_url"
     assert result[0]["content"][1]["image_url"]["url"] == create_base64_image()
 
@@ -695,6 +734,7 @@ def test_convert_to_openai_messages_anthropic_image() -> None:
 def test_convert_to_openai_messages_tool_message() -> None:
     tool_message = ToolMessage(content="Tool result", tool_call_id="123")
     result = convert_to_openai_messages([tool_message], text_format="block")
+    assert len(result) == 1
     assert result[0]["content"] == [{"type": "text", "text": "Tool result"}]
     assert result[0]["tool_call_id"] == "123"
 
@@ -741,22 +781,6 @@ def test_convert_to_openai_messages_guard_content() -> None:
     result = convert_to_openai_messages(messages, text_format="block")
     assert result[0]["content"][0]["type"] == "text"
     assert result[0]["content"][0]["text"] == "Protected content"
-
-
-def test_convert_to_openai_messages_vertexai_image() -> None:
-    messages = [
-        HumanMessage(
-            content=[
-                {"type": "media", "mime_type": "image/jpeg", "data": b"image_bytes"}
-            ]
-        )
-    ]
-    result = convert_to_openai_messages(messages, text_format="block")
-    assert result[0]["content"][0]["type"] == "image_url"
-    assert (
-        result[0]["content"][0]["image_url"]["url"]
-        == f"data:image/jpeg;base64,{_bytes_to_b64_str(b'image_bytes')}"
-    )
 
 
 def test_convert_to_openai_messages_invalid_block() -> None:
