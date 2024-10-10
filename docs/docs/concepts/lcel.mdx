@@ -11,9 +11,9 @@ This means that you describe what you want to happen, rather than how you want i
 We often refer to a `Runnable` created using LCEL as a "chain". It's important to remember that a "chain" is `Runnable` and it implements the full [Runnable Interface](/docs/concepts/runnables).
 
 :::note
-* Please see the following list of [how-to guides](/docs/how_to/#langchain-expression-language-lcel)
-* A list of built-in `Runnables` can be found in the [LangChain Core API Reference](https://python.langchain.com/api_reference/core/runnables.html). Many of these Runnables are useful when composing custom "chains" in LangChain using LCEL.
 * The [LCEL cheatsheet](https://python.langchain.com/docs/how_to/lcel_cheatsheet/) shows common patterns that involve the Runnable interface and LCEL expressions.
+* Please see the following list of [how-to guides](/docs/how_to/#langchain-expression-language-lcel) that cover common tasks with LCEL.
+* A list of built-in `Runnables` can be found in the [LangChain Core API Reference](https://python.langchain.com/api_reference/core/runnables.html). Many of these Runnables are useful when composing custom "chains" in LangChain using LCEL.
 :::
 
 ## Benefits of LCEL
@@ -32,17 +32,13 @@ With LCEL, **all** steps are automatically logged to [LangSmith](https://docs.sm
 - **Standard API**: Because all chains are built using the Runnable interface, they can be used in the same way as any other Runnable.
 - [**Deployable with LangServe**](/docs/concepts/langserve): Chains built with LCEL can be deployed using for production use.
 
+## When to use LCEL
 
-## Orchestration using LCEL
+LCEL is an [orchestration solution](https://en.wikipedia.org/wiki/Orchestration_(computing)) -- it allows LangChain to handle run-time execution of chains in an optimized way.
 
-LCEL [orchestration solution](https://en.wikipedia.org/wiki/Orchestration_(computing)) -- it allows LangChain to handle run-time execution of chains in an optimized way.
+While we have seen users run chains with hundreds of steps in production, we generally recommend using LCEL for simpler orchestration tasks. When the application requires complex state management, branching, cycles or multiple agents, we recommend that users take advantage of [LangGraph](/docs/concepts/langgraph).
 
-
-TBD
-
-However, LCEL is not necessarily the best solution for all use cases. It works perfectly for simple
-applications that require chaining together a few Runnables, but for more complex applications that may involve
-multiple agents, branching or complex state management, we'd recommend using [LangGraph](/docs/concepts/langgraph).
+In LangGraph, users define graphs that specify the flow of the application. This allows users to keep using LCEL within individual nodes when LCEL is needed, while making it easy to define complex orchestration logic that is more readable and maintainable.
 
 ## Composition Primitives
 
@@ -109,88 +105,104 @@ Will yield a `final_output` dictionary with the same keys as the input dictionar
 }
 ```
 
-But of course under the hood, the runnables are executed in parallel, so while the result
-is the same as dictionary comprehension shown above, the execution time is much faster.
-
-`RunnableParallel` supports both `sync` and `async` runnables. The `sync` runnables are run in parallel using a `ThreadPoolExecutor`, while the `async` runnables are run concurrently using `asyncio`.
-
-`RunnableParallel` uses a `ThreadPoolExecutor` to run the runnables concurrently when
-
+Recall, that the runnables are executed in parallel, so while the result is the same as
+dictionary comprehension shown above, the execution time is much faster.
 
 :::note
-`runnable1` and `runnable2` are placeholders for any `Runnable` that you want to run in parallel.
+`RunnableParallel`supports both synchronous and asynchronous execution (as all `Runnables` do).
+
+* For synchronous execution, `RunnableParallel` uses a [ThreadPoolExecutor](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.ThreadPoolExecutor) to run the runnables concurrently.
+* For asynchronous execution, `RunnableParallel` uses [asyncio.gather](https://docs.python.org/3/library/asyncio.html#asyncio.gather) to run the runnables concurrently.
 :::
 
-### Shorthand Syntax
+## Composition Syntax
 
-The usage of `RunnableSequence` and `RunnableParallel` is so common that that we've
+The usage of `RunnableSequence` and `RunnableParallel` is so common that we created a shorthand syntax for using them. This helps
+to make the code more readable and concise.
 
-LCEL provides a shorthand syntax for creating chains using `RunnableSequence` and `RunnableParallel`.
+### The `|` operator
 
-Th
-
-###
-
-One point about LangChain Expression Language is that any two runnables can be "chained" together into sequences. The output of the previous runnable's .invoke() call is passed as input to the next runnable. This can be done using the pipe operator (|), or the more explicit .pipe() method, which does the same thing.
-
-The resulting RunnableSequence is itself a runnable, which means it can be invoked, streamed, or further chained just like any other runnable. Advantages of chaining runnables in this way are efficient streaming (the sequence will stream output as soon as it is available), and debugging and tracing with tools like LangSmith.
-
-## Coercion
-
-We can even combine this chain with more runnables to create another chain. This may involve some input/output formatting using other types of runnables, depending on the required inputs and outputs of the chain components.
-
-For example, let's say we wanted to compose the joke generating chain with another chain that evaluates whether or not the generated joke was funny.
-
-We would need to be careful with how we format the input into the next chain. In the below example, the dict in the chain is automatically parsed and converted into a RunnableParallel, which runs all of its values in parallel and returns a dict with the results.
-
-### Composition Syntax
-
-To make it easier to compose chains, LCEL provides a simple syntax for creating chains using `RunnableSequence` and `RunnableParallel`.
-
-#### RunnableSequence
+We have [overloaded](https://docs.python.org/3/reference/datamodel.html#special-method-names) the `|` operator to create a `RunnableSequence` from two `Runnables`.
 
 ```python
-from langchain_core.runnables import RunnableSequence
-
-chain = RunnableSequence([
-    runnable1,
-    runnable2,
-    runnable3,
-])
+chain = runnable1 | runnable2
 ```
 
-Is equivalent to:
+is Equivalent to:
 
 ```python
-chain = runnable1 | runnable2 | runnable3
+chain = RunnableSequence([runnable1, runnable2])
 ```
 
-#### RunnableParallel
+### The `.pipe` method`
 
-https://python.langchain.com/docs/how_to/functions/
+If you have moral qualms with operator overloading, you can use the `.pipe` method instead. This is equivalent to the `|` operator.
 
 ```python
+chain = runnable1.pipe(runnable2)
+```
 
-from langchain_core.runnables import RunnableParallel
+### Coercion
 
-chain = RunnableParallel({
+LCEL applies automatic type coercion to make it easier to compose chains.
+
+If you do not understand the type coercion, you can always use the `RunnableSequence` and `RunnableParallel` classes directly.
+
+This will make the code more verbose, but it will also make it more explicit.
+
+#### Dictionary to RunnableParallel
+
+Inside an LCEL expression, a dictionary is automatically converted to a `RunnableParallel`.
+
+For example, the following code:
+
+```python
+mapping = {
     "key1": runnable1,
     "key2": runnable2,
-    "key3": runnable3,
-})
+}
+
+chain = mapping | runnable3
 ```
 
-Is equivalent to:
+It gets automatically converted to the following:
 
 ```python
-
-chain = {
-    "key1": runnable1,
-    "key2": runnable2,
-    "key3": runnable3,
-} | another_runnable
+chain = RunnableSequence([RunnableParallel(mapping), runnable3])
 ```
 
+:::caution
+You have to be careful because the `mapping` dictionary is not a `RunnableParallel` object, it is just a dictionary. This means that the following code will raise an `AttributeError`:
+
+```python
+mapping.invoke(some_input)
+```
+:::
+
+#### Function to RunnableLambda
+
+Inside an LCEL expression, a function is automatically converted to a `RunnableLambda`.
+
+```
+def some_func(x):
+    return x
+
+chain = some_func | runnable1
+```
+
+It gets automatically converted to the following:
+
+```python
+chain = RunnableSequence([RunnableLambda(some_func), runnable1])
+```
+
+:::caution
+You have to be careful because the lambda function is not a `RunnableLambda` object, it is just a function. This means that the following code will raise an `AttributeError`:
+
+```python
+lambda x: x + 1.invoke(some_input)
+```
+:::
 
 ## Legacy Chains
 
