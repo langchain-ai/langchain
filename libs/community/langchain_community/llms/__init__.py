@@ -572,6 +572,12 @@ def _import_tongyi() -> Type[BaseLLM]:
     return Tongyi
 
 
+def _import_trustworthy_language_model() -> Type[BaseLLM]:
+    from langchain_community.llms.cleanlab import TrustworthyLanguageModel
+
+    return TrustworthyLanguageModel
+
+
 def _import_vertex() -> Type[BaseLLM]:
     from langchain_community.llms.vertexai import VertexAI
 
@@ -831,6 +837,8 @@ def __getattr__(name: str) -> Any:
         return _import_together()
     elif name == "Tongyi":
         return _import_tongyi()
+    elif name == "TrustworthyLanguageModel":
+        return _import_trustworthy_language_model()
     elif name == "VertexAI":
         return _import_vertex()
     elif name == "VertexAIModelGarden":
@@ -956,6 +964,7 @@ __all__ = [
     "TitanTakeoffPro",
     "Together",
     "Tongyi",
+    "TrustworthyLanguageModel",
     "VLLM",
     "VLLMOpenAI",
     "VertexAI",
@@ -1050,6 +1059,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "tongyi": _import_tongyi,
         "titan_takeoff": _import_titan_takeoff,
         "titan_takeoff_pro": _import_titan_takeoff_pro,
+        "trustworthy_language_model": _import_trustworthy_language_model,
         "vertexai": _import_vertex,
         "vertexai_model_garden": _import_vertex_model_garden,
         "openllm": _import_openllm,
