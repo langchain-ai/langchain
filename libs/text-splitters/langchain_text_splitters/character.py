@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import Any, List, Literal, Optional, Union, AbstractSet, Collection
+from typing import Any, List, Literal, Optional, Union
 
 from langchain_text_splitters.base import Language, TextSplitter
 
