@@ -25,7 +25,7 @@ from langchain_core.documents import BaseDocumentTransformer, Document
 
 logger = logging.getLogger(__name__)
 TS = TypeVar("TS", bound="TextSplitter")
-TTS = TypeVar("TS", bound="TokenTextSplitter")
+TTS = TypeVar("TSS", bound="TokenTextSplitter")
 
 
 def _tiktoken_encoder(
