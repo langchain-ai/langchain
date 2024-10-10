@@ -21,8 +21,29 @@ from typing import (
 )
 
 from langchain_core.documents import BaseDocumentTransformer, Document
+from functools import partial
 
 logger = logging.getLogger(__name__)
+TS = TypeVar("TS", bound="TextSplitter")
+
+
+def _tiktoken_encoder(
+    text: str,
+    enc: Any,
+    disallowed_special: Union[Literal["all"], Collection[str]],
+    allowed_special: Union[Literal["all"], AbstractSet[str]] = set(),
+) -> int:
+    return len(
+        enc.encode(
+            text,
+            allowed_special=allowed_special,
+            disallowed_special=disallowed_special,
+        )
+    )
+
+
+def _huggingface_tokenizer_length(text: str, tokenizer: Any) -> int:
+    return len(tokenizer.encode(text))
 
 
 class TextSplitter(BaseDocumentTransformer, ABC):
@@ -150,6 +171,61 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         """Transform sequence of documents by splitting them."""
         return self.split_documents(list(documents))
 
+    @classmethod
+    def from_huggingface_tokenizer(cls, tokenizer: Any, **kwargs: Any) -> TextSplitter:
+        """Text splitter that uses HuggingFace tokenizer to count length."""
+        try:
+            from transformers import PreTrainedTokenizerBase
+        except ImportError:
+            raise ValueError(
+                "Could not import transformers python package. "
+                "Please install it with `pip install transformers`."
+            )
+
+        if not isinstance(tokenizer, PreTrainedTokenizerBase):
+            raise ValueError(
+                "Tokenizer received was not an instance of PreTrainedTokenizerBase"
+            )
+
+        return cls(
+            length_function=partial(_huggingface_tokenizer_length, tokenizer=tokenizer),
+            **kwargs,
+        )
+
+    @classmethod
+    def from_tiktoken_encoder(
+        cls: Type[TS],
+        encoding_name: str = "gpt2",
+        model_name: Optional[str] = None,
+        allowed_special: Union[Literal["all"], AbstractSet[str]] = set(),
+        disallowed_special: Union[Literal["all"], Collection[str]] = "all",
+        **kwargs: Any,
+    ) -> TS:
+        """Text splitter that uses tiktoken encoder to count length."""
+        try:
+            import tiktoken
+        except ImportError:
+            raise ImportError(
+                "Could not import tiktoken python package. "
+                "This is needed in order to calculate max_tokens_for_prompt. "
+                "Please install it with `pip install tiktoken`."
+            )
+
+        if model_name is not None:
+            enc = tiktoken.encoding_for_model(model_name)
+        else:
+            enc = tiktoken.get_encoding(encoding_name)
+
+        return cls(
+            length_function=partial(
+                _tiktoken_encoder,
+                enc=enc,
+                disallowed_special=disallowed_special,
+                allowed_special=allowed_special,
+            ),
+            **kwargs,
+        )
+
 
 class TokenTextSplitter(TextSplitter):
     """A text splitter that uses tokenization to split text into smaller chunks,
@@ -243,17 +319,21 @@ class TokenTextSplitter(TextSplitter):
                 "Tokenizer received was not an instance of PreTrainedTokenizerBase"
             )
 
-        return cls(tokenizer=tokenizer, **kwargs)
+        return cls(
+            length_function=partial(_huggingface_tokenizer_length, tokenizer=tokenizer),
+            tokenizer=tokenizer,
+            **kwargs,
+        )
 
     @classmethod
     def from_tiktoken_encoder(
-        cls: TokenTextSplitter,
+        cls: Type[TS],
         encoding_name: str = "gpt2",
         model_name: Optional[str] = None,
         allowed_special: Union[Literal["all"], AbstractSet[str]] = set(),
         disallowed_special: Union[Literal["all"], Collection[str]] = "all",
         **kwargs: Any,
-    ) -> TokenTextSplitter:
+    ) -> TS:
         """Token Text splitter that uses tiktoken encoder."""
         try:
             import tiktoken
@@ -269,13 +349,24 @@ class TokenTextSplitter(TextSplitter):
         else:
             enc = tiktoken.get_encoding(encoding_name)
 
-
-        return cls(tokenizer=enc, **{**kwargs, **{
-                "encoding_name": encoding_name,
-                "model_name": model_name,
-                "allowed_special": allowed_special,
-                "disallowed_special": disallowed_special,
-            }})
+        return cls(
+            length_function=partial(
+                _tiktoken_encoder,
+                enc=enc,
+                disallowed_special=disallowed_special,
+                allowed_special=allowed_special,
+            ),
+            tokenizer=enc,
+            **{
+                **kwargs,
+                **{
+                    "encoding_name": encoding_name,
+                    "model_name": model_name,
+                    "allowed_special": allowed_special,
+                    "disallowed_special": disallowed_special,
+                },
+            },
+        )
 
 
 class Language(str, Enum):
