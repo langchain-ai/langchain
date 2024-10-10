@@ -32,7 +32,7 @@ EXPECTED_ALL = [
     "filter_messages",
     "merge_message_runs",
     "trim_messages",
-    "format_messages",
+    "convert_to_openai_messages",
 ]
 
 
