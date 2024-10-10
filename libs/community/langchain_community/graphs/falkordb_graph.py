@@ -210,3 +210,8 @@ class FalkorDBGraph(GraphStore):
             graph_name (str): The name of the graph to switch to.
         """
         self._graph = self._driver.select_graph(graph_name)
+        
+        try:
+            self.refresh_schema()
+        except Exception as e:
+            raise ValueError(f"Could not refresh schema. Error: {e}")
