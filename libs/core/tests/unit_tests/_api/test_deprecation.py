@@ -137,7 +137,6 @@ def test_deprecated_function() -> None:
     assert not inspect.iscoroutinefunction(deprecated_function)
 
 
-@pytest.mark.asyncio
 async def test_deprecated_async_function() -> None:
     """Test deprecated async function."""
     with warnings.catch_warnings(record=True) as warning_list:
@@ -179,7 +178,6 @@ def test_deprecated_method() -> None:
     assert not inspect.iscoroutinefunction(obj.deprecated_method)
 
 
-@pytest.mark.asyncio
 async def test_deprecated_async_method() -> None:
     """Test deprecated async method."""
     with warnings.catch_warnings(record=True) as warning_list:

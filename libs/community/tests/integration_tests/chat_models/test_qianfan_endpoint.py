@@ -201,7 +201,6 @@ def test_stream() -> None:
     assert len(list(res)) >= 1
 
 
-@pytest.mark.asyncio
 async def test_async_invoke() -> None:
     chat = QianfanChatEndpoint()  # type: ignore[call-arg]
     res = await chat.ainvoke([HumanMessage(content="Hello")])
@@ -209,7 +208,6 @@ async def test_async_invoke() -> None:
     assert res.content != ""
 
 
-@pytest.mark.asyncio
 async def test_async_generate() -> None:
     """Tests chat agenerate works."""
     chat = QianfanChatEndpoint()  # type: ignore[call-arg]
@@ -229,7 +227,6 @@ async def test_async_generate() -> None:
             assert isinstance(generation.text, str)
 
 
-@pytest.mark.asyncio
 async def test_async_stream() -> None:
     chat = QianfanChatEndpoint(streaming=True)  # type: ignore[call-arg]
     async for token in chat.astream(

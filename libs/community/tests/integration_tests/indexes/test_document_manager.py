@@ -43,7 +43,6 @@ def test_update(manager: MongoDocumentManager) -> None:
     assert sorted(all_keys) == sorted(read_keys + updated_keys)
 
 
-@pytest.mark.asyncio
 @pytest.mark.requires("motor")
 async def test_aupdate(amanager: MongoDocumentManager) -> None:
     """Test updating records in the MongoDB."""
