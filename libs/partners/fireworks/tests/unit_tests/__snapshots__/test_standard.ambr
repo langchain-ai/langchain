@@ -22,6 +22,7 @@
       'request_timeout': 60.0,
       'stop': list([
       ]),
+      'temperature': 0.0,
     }),
     'lc': 1,
     'name': 'ChatFireworks',
