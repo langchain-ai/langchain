@@ -862,7 +862,7 @@ def test_convert_to_openai_messages_mixed_content_types() -> None:
             content=[
                 "Text message",
                 {"type": "text", "text": "Structured text"},
-                {"type": "image_url", "image_url": create_base64_image()},
+                {"type": "image_url", "image_url": {"url": create_base64_image()}},
             ]
         )
     ]
