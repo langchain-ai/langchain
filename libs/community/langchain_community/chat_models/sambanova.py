@@ -1012,7 +1012,7 @@ class ChatSambaStudio(BaseChatModel):
                                 "system_fingerprint": data["system_fingerprint"],
                                 "created": data["created"],
                             }
-                        if data.get('usage') is not None:
+                        if data.get("usage") is not None:
                             content = ""
                             id = data["id"]
                             metadata = {
