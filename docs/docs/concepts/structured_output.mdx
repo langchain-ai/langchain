@@ -1,0 +1,120 @@
+# Structured output
+
+## Motivation 
+
+While many AI applications, such as chatbots, typically respond in natural language, there are scenarios where we need models to output in a structured format. 
+
+This is what we call structured output. Structured output is particularly useful when:
+
+1. The output needs to be stored in a database
+2. We're extracting specific information from unstructured text
+3. We want to ensure consistency in the response format
+
+A common example is having a model return a JSON object with predefined fields.
+
+There are several ways to get structured output from models.
+
+## Raw prompting
+
+The most obvious way to get a model to structure output is to ask nicely via raw prompting.
+
+While this is flexible, it is generally not recommended due:
+
+* Poor reliability
+* Idiosyncratic and sometimes model-specific prompting required 
+* Difficulity specifying complex output schemas 
+
+Centrally, better approaches exist, as discussed below.
+
+## JSON mode
+
+Some model providers support a feature called JSON mode. 
+
+You can find a table of which model providers support JSON mode [here](/docs/integrations/chat/).
+
+The usage will depend on the model provider, but the inution is simple: you can enforce the model to produce JSON.
+
+Here is an example of how to use JSON mode with OpenAI:
+
+```python
+from langchain_openai import ChatOpenAI
+
+model = ChatOpenAI(model="gpt-4o", model_kwargs={ "response_format": { "type": "json_object" } })
+ai_msg = model.invoke("Return a JSON object with key 'random_ints' and a value of 10 random ints in [0-99]")
+ai_msg.content
+'\n{\n  "random_ints": [23, 47, 89, 15, 34, 76, 58, 3, 62, 91]\n}'
+```
+
+One important concept to flag: the model returns a string. 
+
+We need to parse the string into a JSON object, which we can trivially do with the `json` library.
+
+```python
+import json
+json_object = json.loads(ai_msg.content)
+{'random_ints': [23, 47, 89, 15, 34, 76, 58, 3, 62, 91]}
+```
+
+LangChain also has support for parsing JSON output, with some advanced functionality (e.g., streaming partial JSON objects).
+
+For more details on usage, see our [how-to guide](/docs/how_to/output_parser_json)!
+
+## Tool calling
+
+Many [model providers support](/docs/integrations/chat/) tool calling.
+
+See our conceptual guide on [tool calling](/docs/concepts/tool_calling) for more details, but for structured output the intuition is simple:
+
+1. Bind a particular output schema to a model as a tool 
+2. Invoke the model
+3. Parse the output
+
+Let's supply the output schema as a [Pydantic object](https://docs.pydantic.dev/latest/), a popular Python library for data validation and schema definition.
+
+```python
+from pydantic import BaseModel, Field
+from langchain_openai import ChatOpenAI
+
+class ResponseFormatter(BaseModel):
+    """Always use this tool to structure your response to the user."""
+    answer: str = Field(description="The answer to the user's question")
+    followup_question: str = Field(description="A followup question the user could ask")
+
+model = ChatOpenAI(
+    model="gpt-4o",
+    temperature=0,
+)
+
+# Bind the tool to the model
+model_with_tools = model.bind_tools([ResponseFormatter])
+# Invoke the model
+ai_msg = model_with_tools.invoke("What is the powerhouse of the cell?")
+ai_msg.tool_calls[0]["args"]
+{'answer': "The powerhouse of the cell is the mitochondrion. Mitochondria are organelles that generate most of the cell's supply of adenosine triphosphate (ATP), which is used as a source of chemical energy.",
+ 'followup_question': 'What is the function of ATP in the cell?'}
+```
+
+We can convert the tool call payload back into a Pydantic object.
+```
+pydantic_object = ResponseFormatter.model_validate(ai_msg.tool_calls[0]["args"])
+```
+
+Because this workflow is so common, LangChain provides a helper function to streamline it: `with_structured_output()`.
+
+![Diagram of with structured output](/img/with_structured_output.png)
+
+This both binds the schema to the model as a tool and parses the output to the specified output schema. 
+
+```python
+# Bind the schema to the model
+model_with_structure = model.with_structured_output(ResponseFormatter)
+# Invoke the model
+structured_output = model_with_structure.invoke("What is the powerhouse of the cell?")
+# Get back the Pydantic object
+structured_output
+ResponseFormatter(answer="The powerhouse of the cell is the mitochondrion. Mitochondria are organelles that generate most of the cell's supply of adenosine triphosphate (ATP), which is used as a source of chemical energy.", followup_question='What is the function of ATP in the cell?')
+```
+
+For more details on usage, see our [how-to guide](/docs/how_to/structured_output/#the-with_structured_output-method)!
+
+We recommend this method as a starting point when working with structured output. 

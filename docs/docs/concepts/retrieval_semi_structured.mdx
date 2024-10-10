@@ -1,0 +1,45 @@
+# Retrieval for Semi-Structured Data
+
+## Motivation
+
+Language models (LLMs) are trained on vast but fixed datasets, which limits their ability to access up-to-date or domain-specific information. 
+
+To enhance their performance on specific tasks, we can augment their knowledge using retrieval systems.
+
+Retrieval systems fetch relevant information from external sources, which can then be included in the prompt given to the model. 
+
+Key benefits of using retrieval systems include:
+
+1. Access to recent or private information
+2. Improved accuracy on domain-specific tasks
+3. Reduced hallucination by grounding responses in retrieved facts
+4. Cost-effective alternative to fine-tuning for factual recall
+
+## Semi-Structured Data
+
+Some retrieval systems, such as vectorstore, work with semi-structured data. 
+
+In the case of vectorstores, it is common to have unstructured data (e.g., raw text documents) and structured data (e.g., metadata associated with the documents). 
+
+This allows for querying in two different ways:
+
+1. **Semantic search**: Query the unstructured data directly, often using via embedding or keyword similarity.
+2. **Metadata search**: Apply structured query to the metadata, filering specific documents.
+
+## Query Construction
+
+A popular approach to interacting with this type of semi-structured data is to use an LLM to convert a natural language query into a metadata filter.
+
+This allows for structured filtering of documents based on metadata, which can then be followed by a semantic search across the filtered documents.
+
+| Name                                        | When to Use                                                                                                                                   | Description                                                                                                                                                                                                                                                                                      |
+|---------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [Self Query](/docs/how_to/self_query/)      | If users are asking questions that are better answered by fetching documents based on metadata rather than similarity with the text.          | This uses an LLM to transform user input into two things: (1) a string to look up semantically, (2) a metadata filter to go along with it. This is useful because oftentimes questions are about the METADATA of documents (not the content itself).                                              |
+
+See our tutorial on [query analysis for metadata filters](/docs/tutorials/query_analysis/#query-analysis) for more details. 
+
+:::tip
+
+See our [blog post overview](https://blog.langchain.dev/query-construction/) and RAG from Scratch video on [query construction](https://youtu.be/kl6NwWYxvbM?feature=shared).
+
+:::
