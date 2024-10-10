@@ -3,40 +3,23 @@
 ## Overview 
 
 Many AI applications interact directly with humans. In these cases, it is approrpiate for models to respond in natural langague. 
-
-But what about cases where we want a model to also interact *directly* with external systems, such as databases or an API?
-
-These systems often have a particular input schema; for example, APIs have a required payload structure.
- 
-This need motivates the concept of tool calling, which various model providers support.
+But what about cases where we want a model to also interact *directly* with systems, such as databases or an API?
+These systems often have a particular input schema; for example, APIs frequentlyhave a required payload structure.
+ This need motivates the concept of *tool calling*. You can use [tool calling](https://platform.openai.com/docs/guides/function-calling/example-use-cases) to request model responses that match a particular schema.
 
 :::info
 You will sometimes hear the term `function calling`. We use this term interchangeably with `tool calling`. 
 :::
 
-You can use [tool calling](https://platform.openai.com/docs/guides/function-calling/example-use-cases) to request model responses that match a particular schema.
-
 ![Conceptual overview of tool calling](/img/tool_calling_concept.png)
 
 ## Key Concepts 
 
-(1) Tool Creation
-
-The tool needs to be described so that the model knows what arguments to provide.
-TODO: @eyurtsev to elaborate. 
-
-(2) Tool Binding 
-
-The tool needs to be connected to a model that supports tool calling. 
-This gives the model awarenes of the schema required by the tool.
-
-(3) Tool Calling
-
-When appropriate, the model can generate a response that conforms to the tool's schema.
-
-(4) Tool Execution
-
-If the model decides to call the tool, the tool can be executed using the arguments provided by the model.
+**(1) Tool Creation:** The tool needs to be described to the model so that the model knows what arguments to provide when it decides to call the tool.
+TODO: @eyurtsev to elaborate. **(2) Tool Binding:** The tool needs to be connected to a model that supports tool calling. 
+This gives the model awarenes of the tool and the associated input schema required by the tool.
+**(3) Tool Calling:** When appropriate, the model can decide to call a tool and ensure its response conforms to the tool's input schema.
+**(4) Tool Execution:** The tool can be executed using the arguments provided by the model.
 
 ![Conceptual parts of tool calling](/img/tool_calling_components.png)
 
@@ -52,10 +35,8 @@ TODO: @eyurtsev to add links and summary of the conceptual guide.
 See our [model integration page](/docs/integrations/chat/) for a list of providers that support tool calling.
 :::
 
-The central concept to understand is that LangChain provides a standardized interface for connecting tools to models.
-
+The central concept to understand is that LangChain provides a standardized interface for connecting tools to models. 
 The `.bind_tools()` method can be used to specify which tools are available for a model to call. 
-
 
 ```python
 model_with_tools = model.bind_tools([tools_list])
@@ -81,26 +62,22 @@ llm_with_tools = tool_calling_model.bind_tools([multiply])
 ![Diagram of a tool call by a model](/img/tool_call_example.png)
 
 A key principle of tool calling is that the model decides when to use a tool based on the input's relevance. The model doesn't always need to call a tool.
-
-For example, given an unrelated input, the model would likely respond without using the tool:
+For example, given an unrelated input, the model would not call the tool:
 
 ```python
 result = llm_with_tools.invoke("Hello world!")
 ```
 
-Result is an `AIMessage` containing the model's response in natural language (e.g., "Hello!").
-
-However, if we pass an input relevant to the tool, the model may choose to use it. For example:
+The result would be an `AIMessage` containing the model's response in natural language (e.g., "Hello!").
+However, if we pass an input *relevant to the tool*, the model should choose to call it:
 
 ```python
 result = llm_with_tools.invoke("What is 2 multiplied by 3?")
 ```
 
-As before, the output `result` from the above invocation will be an `AIMessage`. 
-
-But, if the tool was called, the `result` will have a `tool_calls` attribute.
-
-This attribute has the tool name, arguments, and ID:
+As before, the output `result` will be an `AIMessage`. 
+But, if the tool was called, `result` will have a `tool_calls` attribute.
+This attribute includes everything needed to execute the tool, including the tool name and input arguments:
 
 ```
 result.tool_calls
