@@ -60,11 +60,12 @@ def get_tokenizer() -> Any:
     try:
         from transformers import GPT2TokenizerFast  # type: ignore[import]
     except ImportError as e:
-        raise ImportError(
+        msg = (
             "Could not import transformers python package. "
             "This is needed in order to calculate get_token_ids. "
             "Please install it with `pip install transformers`."
-        ) from e
+        )
+        raise ImportError(msg) from e
     # create a GPT-2 tokenizer instance
     return GPT2TokenizerFast.from_pretrained("gpt2")
 
@@ -236,7 +237,7 @@ class BaseLanguageModel(
         """Not implemented on this class."""
         # Implement this on child class if there is a way of steering the model to
         # generate responses that match a given schema.
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @deprecated("0.1.7", alternative="invoke", removal="1.0")
     @abstractmethod

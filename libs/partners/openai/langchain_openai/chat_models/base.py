@@ -90,7 +90,7 @@ from langchain_core.utils.pydantic import (
     TypeBaseModel,
     is_basemodel_subclass,
 )
-from langchain_core.utils.utils import build_extra_kwargs, from_env, secret_from_env
+from langchain_core.utils.utils import _build_model_kwargs, from_env, secret_from_env
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
@@ -477,10 +477,16 @@ class BaseChatOpenAI(BaseChatModel):
     def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
-        extra = values.get("model_kwargs", {})
-        values["model_kwargs"] = build_extra_kwargs(
-            extra, values, all_required_field_names
-        )
+        values = _build_model_kwargs(values, all_required_field_names)
+        return values
+
+    @model_validator(mode="before")
+    @classmethod
+    def validate_temperature(cls, values: Dict[str, Any]) -> Any:
+        """Currently o1 models only allow temperature=1."""
+        model = values.get("model_name") or values.get("model") or ""
+        if model.startswith("o1") and "temperature" not in values:
+            values["temperature"] = 1
         return values
 
     @model_validator(mode="after")
@@ -2161,16 +2167,18 @@ def _create_usage_metadata(oai_token_usage: dict) -> UsageMetadata:
     output_tokens = oai_token_usage.get("completion_tokens", 0)
     total_tokens = oai_token_usage.get("total_tokens", input_tokens + output_tokens)
     input_token_details: dict = {
-        "audio": oai_token_usage.get("prompt_tokens_details", {}).get("audio_tokens"),
-        "cache_read": oai_token_usage.get("prompt_tokens_details", {}).get(
+        "audio": (oai_token_usage.get("prompt_tokens_details") or {}).get(
+            "audio_tokens"
+        ),
+        "cache_read": (oai_token_usage.get("prompt_tokens_details") or {}).get(
             "cached_tokens"
         ),
     }
     output_token_details: dict = {
-        "audio": oai_token_usage.get("completion_tokens_details", {}).get(
+        "audio": (oai_token_usage.get("completion_tokens_details") or {}).get(
             "audio_tokens"
         ),
-        "reasoning": oai_token_usage.get("completion_tokens_details", {}).get(
+        "reasoning": (oai_token_usage.get("completion_tokens_details") or {}).get(
             "reasoning_tokens"
         ),
     }

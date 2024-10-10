@@ -223,11 +223,12 @@ class BaseMessageChunk(BaseMessage):
                 response_metadata=response_metadata,
             )
         else:
-            raise TypeError(
+            msg = (
                 'unsupported operand type(s) for +: "'
                 f"{self.__class__.__name__}"
                 f'" and "{other.__class__.__name__}"'
             )
+            raise TypeError(msg)
 
 
 def message_to_dict(message: BaseMessage) -> dict:
