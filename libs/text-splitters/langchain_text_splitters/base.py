@@ -303,7 +303,7 @@ class TokenTextSplitter(TextSplitter):
 
     @classmethod
     def from_huggingface_tokenizer(
-        cls, tokenizer: Any, **kwargs: Any
+        cls: TokenTextSplitter, tokenizer: Any, **kwargs: Any
     ) -> TokenTextSplitter:
         """Token Text splitter that uses HuggingFace tokenizer"""
         try:
@@ -327,13 +327,13 @@ class TokenTextSplitter(TextSplitter):
 
     @classmethod
     def from_tiktoken_encoder(
-        cls: Type[TS],
+        cls: TokenTextSplitter,
         encoding_name: str = "gpt2",
         model_name: Optional[str] = None,
         allowed_special: Union[Literal["all"], AbstractSet[str]] = set(),
         disallowed_special: Union[Literal["all"], Collection[str]] = "all",
         **kwargs: Any,
-    ) -> TS:
+    ) -> TokenTextSplitter:
         """Token Text splitter that uses tiktoken encoder."""
         try:
             import tiktoken
