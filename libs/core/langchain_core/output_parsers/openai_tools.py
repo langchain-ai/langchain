@@ -290,7 +290,8 @@ class PydanticToolsParser(JsonOutputToolsParser):
                         f"{res['args']}"
                     )
                     raise ValueError(msg)
-                pydantic_objects.append(name_dict[res["type"]](**res["args"]))
+                if res["type"]:
+                    pydantic_objects.append(name_dict[res["type"]](**res["args"]))
             except (ValidationError, ValueError) as e:
                 if partial:
                     continue
