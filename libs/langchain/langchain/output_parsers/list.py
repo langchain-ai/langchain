@@ -1,5 +1,6 @@
 from langchain_core.output_parsers.list import (
     CommaSeparatedListOutputParser,
+    CommaSeparatedNumericListOutputParser,
     ListOutputParser,
     MarkdownListOutputParser,
     NumberedListOutputParser,
@@ -8,6 +9,7 @@ from langchain_core.output_parsers.list import (
 __all__ = [
     "ListOutputParser",
     "CommaSeparatedListOutputParser",
+    "CommaSeparatedNumericListOutputParser",
     "NumberedListOutputParser",
     "MarkdownListOutputParser",
 ]

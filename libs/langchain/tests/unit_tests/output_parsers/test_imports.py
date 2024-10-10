@@ -4,6 +4,7 @@ EXPECTED_ALL = [
     "BooleanOutputParser",
     "CombiningOutputParser",
     "CommaSeparatedListOutputParser",
+    "CommaSeparatedNumericListOutputParser",
     "DatetimeOutputParser",
     "EnumOutputParser",
     "GuardrailsOutputParser",
