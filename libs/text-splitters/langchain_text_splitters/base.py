@@ -146,6 +146,87 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             docs.append(doc)
         return docs
 
+    def transform_documents(
+        self, documents: Sequence[Document], **kwargs: Any
+    ) -> Sequence[Document]:
+        """Transform sequence of documents by splitting them."""
+        return self.split_documents(list(documents))
+
+
+class TokenTextSplitter(TextSplitter):
+    """A text splitter that uses tokenization to split text into smaller chunks,
+    leveraging model-specific tokenizers such as those from OpenAI's `tiktoken`
+    or HuggingFace's `transformers` libraries.
+
+    Args:
+        encoding_name (str): The name of the encoding to use for tokenization.
+            Defaults to 'gpt2'.
+        model_name (Optional[str]): The model name whose tokenizer encoding should
+            be used. If provided, this takes precedence over `encoding_name`.
+            Defaults to `None`.
+        allowed_special (Union[Literal["all"], AbstractSet[str]]): Set of special
+            tokens that are allowed during tokenization. Defaults to an empty set.
+        disallowed_special (Union[Literal["all"], Collection[str]]): Set of special
+            tokens that are disallowed during tokenization. Defaults to 'all'.
+        tokenizer (Optional[Any]): Optional tokenizer object to use directly. If
+            provided, it bypasses both `encoding_name` and `model_name`. Defaults
+            to `None`.
+        **kwargs (Any): Additional arguments passed to the parent `TextSplitter`.
+
+    """
+
+    def __init__(
+        self,
+        encoding_name: str = "gpt2",
+        model_name: Optional[str] = None,
+        allowed_special: Union[Literal["all"], AbstractSet[str]] = set(),
+        disallowed_special: Union[Literal["all"], Collection[str]] = "all",
+        tokenizer: Optional[Any] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Create a new TextSplitter."""
+        super().__init__(**kwargs)
+        try:
+            import tiktoken
+        except ImportError:
+            raise ImportError(
+                "Could not import tiktoken python package. "
+                "This is needed in order to for TokenTextSplitter. "
+                "Please install it with `pip install tiktoken`."
+            )
+
+        if model_name is not None:
+            enc = tiktoken.encoding_for_model(model_name)
+        elif tokenizer is not None:
+            enc = tokenizer
+        else:
+            enc = tiktoken.get_encoding(encoding_name)
+        self._tokenizer = enc
+        self._allowed_special = allowed_special
+        self._disallowed_special = disallowed_special
+
+    def split_text(self, text: str) -> List[str]:
+        def _encode(_text: str) -> List[int]:
+            if hasattr(self._tokenizer, "allowed_special") and hasattr(
+                self._tokenizer, "disallowed_special"
+            ):
+                return self._tokenizer.encode(
+                    _text,
+                    allowed_special=self._allowed_special,
+                    disallowed_special=self._disallowed_special,
+                )
+            else:
+                return self._tokenizer.encode(_text)
+
+        tokenizer = Tokenizer(
+            chunk_overlap=self._chunk_overlap,
+            tokens_per_chunk=self._chunk_size,
+            decode=self._tokenizer.decode,
+            encode=_encode,
+        )
+
+        return split_text_on_tokens(text=text, tokenizer=tokenizer)
+
     @classmethod
     def from_huggingface_tokenizer(cls, tokenizer: Any, **kwargs: Any) -> TextSplitter:
         """Text splitter that uses HuggingFace tokenizer to count length."""
@@ -214,68 +295,6 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             kwargs = {**kwargs, **extra_kwargs}
 
         return cls(length_function=_tiktoken_encoder, **kwargs)
-
-    def transform_documents(
-        self, documents: Sequence[Document], **kwargs: Any
-    ) -> Sequence[Document]:
-        """Transform sequence of documents by splitting them."""
-        return self.split_documents(list(documents))
-
-
-class TokenTextSplitter(TextSplitter):
-    """Splitting text to tokens using model tokenizer."""
-
-    def __init__(
-        self,
-        encoding_name: str = "gpt2",
-        model_name: Optional[str] = None,
-        allowed_special: Union[Literal["all"], AbstractSet[str]] = set(),
-        disallowed_special: Union[Literal["all"], Collection[str]] = "all",
-        tokenizer: Optional[Any] = None,
-        **kwargs: Any,
-    ) -> None:
-        """Create a new TextSplitter."""
-        super().__init__(**kwargs)
-        try:
-            import tiktoken
-        except ImportError:
-            raise ImportError(
-                "Could not import tiktoken python package. "
-                "This is needed in order to for TokenTextSplitter. "
-                "Please install it with `pip install tiktoken`."
-            )
-
-        if model_name is not None:
-            enc = tiktoken.encoding_for_model(model_name)
-        elif tokenizer is not None:
-            enc = tokenizer
-        else:
-            enc = tiktoken.get_encoding(encoding_name)
-        self._tokenizer = enc
-        self._allowed_special = allowed_special
-        self._disallowed_special = disallowed_special
-
-    def split_text(self, text: str) -> List[str]:
-        def _encode(_text: str) -> List[int]:
-            if hasattr(self._tokenizer, "allowed_special") and hasattr(
-                self._tokenizer, "disallowed_special"
-            ):
-                return self._tokenizer.encode(
-                    _text,
-                    allowed_special=self._allowed_special,
-                    disallowed_special=self._disallowed_special,
-                )
-            else:
-                return self._tokenizer.encode(_text)
-
-        tokenizer = Tokenizer(
-            chunk_overlap=self._chunk_overlap,
-            tokens_per_chunk=self._chunk_size,
-            decode=self._tokenizer.decode,
-            encode=_encode,
-        )
-
-        return split_text_on_tokens(text=text, tokenizer=tokenizer)
 
 
 class Language(str, Enum):
