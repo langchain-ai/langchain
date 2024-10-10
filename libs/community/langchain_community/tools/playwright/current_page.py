@@ -15,12 +15,16 @@ from langchain_community.tools.playwright.utils import (
 )
 
 
+class CurrentWebPage(BaseModel):
+    """Get the current webpage."""
+
+
 class CurrentWebPageTool(BaseBrowserTool):
     """Tool for getting the URL of the current webpage."""
 
     name: str = "current_webpage"
     description: str = "Returns the URL of the current page"
-    args_schema: Type[BaseModel] = BaseModel
+    args_schema: Type[BaseModel] = CurrentWebPage
 
     def _run(
         self,
