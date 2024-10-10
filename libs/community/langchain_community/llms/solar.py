@@ -11,6 +11,7 @@ from pydantic import (
     SecretStr,
     model_validator,
 )
+from typing_extensions import Self
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
@@ -90,11 +91,16 @@ class SolarCommon(BaseModel):
 
         if "base_url" in values and not values["base_url"].startswith(SOLAR_SERVICE):
             raise ValueError("base_url must match with: " + SOLAR_SERVICE)
-
-        values["_client"] = _SolarClient(
-            api_key=values["solar_api_key"], base_url=values["base_url"]
-        )
         return values
+
+    @model_validator(mode="after")
+    def post_init(self) -> Self:
+        if not isinstance(self.solar_api_key, SecretStr):
+            raise ValueError(
+                f"solar_api_key must be specified. Got type: {type(self.solar_api_key)}"
+            )
+        self._client = _SolarClient(api_key=self.solar_api_key, base_url=self.base_url)
+        return self
 
     @property
     def _llm_type(self) -> str:

@@ -1,9 +1,9 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, List
 
 import numpy as np
 from langchain_core.embeddings import Embeddings
-from langchain_core.utils import pre_init
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, model_validator
+from typing_extensions import Self
 
 LASER_MULTILINGUAL_MODEL: str = "laser2"
 
@@ -27,7 +27,7 @@ class LaserEmbeddings(BaseModel, Embeddings):
         embeddings = encoder.encode_sentences(["Hello", "World"])
     """
 
-    lang: Optional[str] = None
+    lang: str = LASER_MULTILINGUAL_MODEL
     """The language or language code you'd like to use
     If empty, this implementation will default
     to using a multilingual earlier LASER encoder model (called laser2)
@@ -41,25 +41,18 @@ class LaserEmbeddings(BaseModel, Embeddings):
         extra="forbid",
     )
 
-    @pre_init
-    def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that laser_encoders has been installed."""
+    @model_validator(mode="after")
+    def post_init(self) -> Self:
         try:
             from laser_encoders import LaserEncoderPipeline
-
-            lang = values.get("lang")
-            if lang:
-                encoder_pipeline = LaserEncoderPipeline(lang=lang)
-            else:
-                encoder_pipeline = LaserEncoderPipeline(laser=LASER_MULTILINGUAL_MODEL)
-            values["_encoder_pipeline"] = encoder_pipeline
-
         except ImportError as e:
             raise ImportError(
                 "Could not import 'laser_encoders' Python package. "
                 "Please install it with `pip install laser_encoders`."
             ) from e
-        return values
+
+        self._encoder_pipeline = LaserEncoderPipeline(lang=self.lang)
+        return self
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Generate embeddings for documents using LASER.
