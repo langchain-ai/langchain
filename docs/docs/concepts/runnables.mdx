@@ -24,6 +24,7 @@ The Runnable way defines a standard interface that allows a Runnable component t
 Please review the [LCEL Cheatsheet](/docs/how_to/lcel_cheatsheet) for some common patterns that involve the Runnable interface and LCEL expressions.
 
 ### Optimized Parallel Execution (Batch)
+<span data-heading-keywords="batch"></span>
 
 LangChain Runnables offer a built-in `batch` (and `batch_as_completed`) API that allow you to process multiple inputs in parallel.
 
@@ -51,18 +52,14 @@ Chat Models also have a built-in [rate limiter](/docs/concepts/chat_models#rate-
 :::
 
 ### Asynchronous Support
+<span data-heading-keywords="async-api"></span>
 
-Asynchronous programming is a paradigm that allows a program to perform multiple tasks concurrently without blocking the execution of other tasks, improving efficiency and responsiveness, particularly in I/O-bound operations
+Runnables expose an asynchronous API, allowing them to be called using the `await` syntax in Python. Asynchronous methods can be identified by the "a" prefix (e.g., `ainvoke`, `abatch`, `astream`, `abatch_as_completed`).
 
-Runnables expose an asynchronous API, allowing them to be called using the `await` syntax in Python. This enables using the same code for prototypes as would be used in production, providing great performance and the ability to handle many concurrent requests on the same server. 
-
-Asynchronous methods can be identified by the "a" prefix (e.g., `ainvoke`, `abatch`, `astream`, `abatch_as_completed`).
-
-:::note
-Users are recommended to read the [asyncio documentation](https://docs.python.org/3/library/asyncio.html) to understand how to use the asynchronous programming paradigm in Python.
-:::
+Please refer to the [Async Programming with LangChain](/docs/concepts/async) guide for more details.
 
 ## Streaming APIs
+<span data-heading-keywords="streaming-api"></span>
 
 Streaming is critical in making applications based on LLMs feel responsive to end-users.
 
