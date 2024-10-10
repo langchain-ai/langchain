@@ -63,6 +63,7 @@ from langchain_core.runnables import (
     ConfigurableFieldSingleOption,
     RouterRunnable,
     Runnable,
+    RunnableAssign,
     RunnableBinding,
     RunnableBranch,
     RunnableConfig,
@@ -193,6 +194,7 @@ class FakeRunnableSerializable(RunnableSerializable[str, int]):
         self,
         input: str,
         config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
     ) -> int:
         return len(input)
 
@@ -651,7 +653,7 @@ def test_with_types_with_type_generics() -> None:
 
     def foo(x: int) -> None:
         """Add one to the input."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
     # Try specifying some
     RunnableLambda(foo).with_types(
@@ -2822,7 +2824,8 @@ async def test_higher_order_lambda_runnable(
         elif input["key"] == "english":
             return itemgetter("input") | english_chain
         else:
-            raise ValueError(f"Unknown key: {input['key']}")
+            msg = f"Unknown key: {input['key']}"
+            raise ValueError(msg)
 
     chain: Runnable = input_map | router
     assert dumps(chain, pretty=True) == snapshot
@@ -2871,7 +2874,8 @@ async def test_higher_order_lambda_runnable(
         elif input["key"] == "english":
             return itemgetter("input") | english_chain
         else:
-            raise ValueError(f"Unknown key: {input['key']}")
+            msg = f"Unknown key: {input['key']}"
+            raise ValueError(msg)
 
     achain: Runnable = input_map | arouter
     math_spy = mocker.spy(math_chain.__class__, "ainvoke")
@@ -3063,7 +3067,8 @@ def test_map_stream() -> None:
         streamed_chunks[0] == {"llm": "i"}
         or {"chat": _any_id_ai_message_chunk(content="i")}
     ):
-        raise AssertionError(f"Got an unexpected chunk: {streamed_chunks[0]}")
+        msg = f"Got an unexpected chunk: {streamed_chunks[0]}"
+        raise AssertionError(msg)
 
     assert len(streamed_chunks) == len(llm_res) + len(chat_res)
 
@@ -3345,9 +3350,9 @@ def test_bind_with_lambda() -> None:
         return 3 + kwargs.get("n", 0)
 
     runnable = RunnableLambda(my_function).bind(n=1)
-    assert 4 == runnable.invoke({})
+    assert runnable.invoke({}) == 4
     chunks = list(runnable.stream({}))
-    assert [4] == chunks
+    assert chunks == [4]
 
 
 async def test_bind_with_lambda_async() -> None:
@@ -3355,9 +3360,9 @@ async def test_bind_with_lambda_async() -> None:
         return 3 + kwargs.get("n", 0)
 
     runnable = RunnableLambda(my_function).bind(n=1)
-    assert 4 == await runnable.ainvoke({})
+    assert await runnable.ainvoke({}) == 4
     chunks = [item async for item in runnable.astream({})]
-    assert [4] == chunks
+    assert chunks == [4]
 
 
 def test_deep_stream() -> None:
@@ -3712,9 +3717,11 @@ def test_recursive_lambda() -> None:
 def test_retrying(mocker: MockerFixture) -> None:
     def _lambda(x: int) -> Union[int, Runnable]:
         if x == 1:
-            raise ValueError("x is 1")
+            msg = "x is 1"
+            raise ValueError(msg)
         elif x == 2:
-            raise RuntimeError("x is 2")
+            msg = "x is 2"
+            raise RuntimeError(msg)
         else:
             return x
 
@@ -3775,9 +3782,11 @@ def test_retrying(mocker: MockerFixture) -> None:
 async def test_async_retrying(mocker: MockerFixture) -> None:
     def _lambda(x: int) -> Union[int, Runnable]:
         if x == 1:
-            raise ValueError("x is 1")
+            msg = "x is 1"
+            raise ValueError(msg)
         elif x == 2:
-            raise RuntimeError("x is 2")
+            msg = "x is 2"
+            raise RuntimeError(msg)
         else:
             return x
 
@@ -3870,7 +3879,8 @@ def test_runnable_lambda_stream_with_callbacks() -> None:
 
     def raise_value_error(x: int) -> int:
         """Raise a value error."""
-        raise ValueError("x is too large")
+        msg = "x is too large"
+        raise ValueError(msg)
 
     # Check that the chain on error is invoked
     with pytest.raises(ValueError):
@@ -3948,7 +3958,8 @@ async def test_runnable_lambda_astream_with_callbacks() -> None:
 
     def raise_value_error(x: int) -> int:
         """Raise a value error."""
-        raise ValueError("x is too large")
+        msg = "x is too large"
+        raise ValueError(msg)
 
     # Check that the chain on error is invoked
     with pytest.raises(ValueError):
@@ -3966,8 +3977,10 @@ def test_seq_batch_return_exceptions(mocker: MockerFixture) -> None:
         def __init__(self, fail_starts_with: str) -> None:
             self.fail_starts_with = fail_starts_with
 
-        def invoke(self, input: Any, config: Optional[RunnableConfig] = None) -> Any:
-            raise NotImplementedError()
+        def invoke(
+            self, input: Any, config: Optional[RunnableConfig] = None, **kwargs: Any
+        ) -> Any:
+            raise NotImplementedError
 
         def _batch(
             self,
@@ -4085,8 +4098,10 @@ async def test_seq_abatch_return_exceptions(mocker: MockerFixture) -> None:
         def __init__(self, fail_starts_with: str) -> None:
             self.fail_starts_with = fail_starts_with
 
-        def invoke(self, input: Any, config: Optional[RunnableConfig] = None) -> Any:
-            raise NotImplementedError()
+        def invoke(
+            self, input: Any, config: Optional[RunnableConfig] = None, **kwargs: Any
+        ) -> Any:
+            raise NotImplementedError
 
         async def _abatch(
             self,
@@ -4279,7 +4294,8 @@ def test_runnable_branch_invoke() -> None:
     # Test with single branch
     def raise_value_error(x: int) -> int:
         """Raise a value error."""
-        raise ValueError("x is too large")
+        msg = "x is too large"
+        raise ValueError(msg)
 
     branch = RunnableBranch[int, int](
         (lambda x: x > 100, raise_value_error),
@@ -4343,7 +4359,8 @@ def test_runnable_branch_invoke_callbacks() -> None:
 
     def raise_value_error(x: int) -> int:
         """Raise a value error."""
-        raise ValueError("x is too large")
+        msg = "x is too large"
+        raise ValueError(msg)
 
     branch = RunnableBranch[int, int](
         (lambda x: x > 100, raise_value_error),
@@ -4370,7 +4387,8 @@ async def test_runnable_branch_ainvoke_callbacks() -> None:
 
     async def raise_value_error(x: int) -> int:
         """Raise a value error."""
-        raise ValueError("x is too large")
+        msg = "x is too large"
+        raise ValueError(msg)
 
     branch = RunnableBranch[int, int](
         (lambda x: x > 100, raise_value_error),
@@ -4424,7 +4442,8 @@ def test_runnable_branch_stream_with_callbacks() -> None:
 
     def raise_value_error(x: str) -> Any:
         """Raise a value error."""
-        raise ValueError(f"x is {x}")
+        msg = f"x is {x}"
+        raise ValueError(msg)
 
     llm_res = "i'm a textbot"
     # sleep to better simulate a real stream
@@ -4501,7 +4520,8 @@ async def test_runnable_branch_astream_with_callbacks() -> None:
 
     def raise_value_error(x: str) -> Any:
         """Raise a value error."""
-        raise ValueError(f"x is {x}")
+        msg = f"x is {x}"
+        raise ValueError(msg)
 
     llm_res = "i'm a textbot"
     # sleep to better simulate a real stream
@@ -5140,13 +5160,10 @@ async def test_astream_log_deep_copies() -> None:
 
     chain = RunnableLambda(add_one)
     chunks = []
-    final_output = None
+    final_output: Optional[RunLogPatch] = None
     async for chunk in chain.astream_log(1):
         chunks.append(chunk)
-        if final_output is None:
-            final_output = chunk
-        else:
-            final_output = final_output + chunk
+        final_output = chunk if final_output is None else final_output + chunk
 
     run_log = _get_run_log(chunks)
     state = run_log.state.copy()
@@ -5208,7 +5225,7 @@ def test_default_transform_with_dicts() -> None:
 
     class CustomRunnable(RunnableSerializable[Input, Output]):
         def invoke(
-            self, input: Input, config: Optional[RunnableConfig] = None
+            self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
         ) -> Output:
             return cast(Output, input)  # type: ignore
 
@@ -5229,7 +5246,7 @@ async def test_default_atransform_with_dicts() -> None:
 
     class CustomRunnable(RunnableSerializable[Input, Output]):
         def invoke(
-            self, input: Input, config: Optional[RunnableConfig] = None
+            self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
         ) -> Output:
             return cast(Output, input)
 
@@ -5335,7 +5352,7 @@ async def test_listeners_async() -> None:
     assert value2 in shared_state.values(), "Value not found in the dictionary."
 
 
-async def test_closing_iterator_doesnt_raise_error() -> None:
+def test_closing_iterator_doesnt_raise_error() -> None:
     """Test that closing an iterator calls on_chain_end rather than on_chain_error."""
     import time
 
@@ -5344,9 +5361,10 @@ async def test_closing_iterator_doesnt_raise_error() -> None:
     from langchain_core.output_parsers import StrOutputParser
 
     on_chain_error_triggered = False
+    on_chain_end_triggered = False
 
     class MyHandler(BaseCallbackHandler):
-        async def on_chain_error(
+        def on_chain_error(
             self,
             error: BaseException,
             *,
@@ -5359,6 +5377,17 @@ async def test_closing_iterator_doesnt_raise_error() -> None:
             nonlocal on_chain_error_triggered
             on_chain_error_triggered = True
 
+        def on_chain_end(
+            self,
+            outputs: dict[str, Any],
+            *,
+            run_id: UUID,
+            parent_run_id: Optional[UUID] = None,
+            **kwargs: Any,
+        ) -> None:
+            nonlocal on_chain_end_triggered
+            on_chain_end_triggered = True
+
     llm = GenericFakeChatModel(messages=iter(["hi there"]))
     chain = llm | StrOutputParser()
     chain_ = chain.with_config({"callbacks": [MyHandler()]})
@@ -5369,6 +5398,7 @@ async def test_closing_iterator_doesnt_raise_error() -> None:
     # Wait for a bit to make sure that the callback is called.
     time.sleep(0.05)
     assert on_chain_error_triggered is False
+    assert on_chain_end_triggered is True
 
 
 def test_pydantic_protected_namespaces() -> None:
@@ -5411,3 +5441,14 @@ def test_schema_for_prompt_and_chat_model() -> None:
         "title": "PromptInput",
         "type": "object",
     }
+
+
+def test_runnable_assign() -> None:
+    def add_ten(x: dict[str, int]) -> dict[str, int]:
+        return {"added": x["input"] + 10}
+
+    mapper = RunnableParallel({"add_step": RunnableLambda(add_ten)})
+    runnable_assign = RunnableAssign(mapper)
+
+    result = runnable_assign.invoke({"input": 5})
+    assert result == {"input": 5, "add_step": {"added": 15}}

@@ -232,9 +232,9 @@ class MLXPipeline(LLM):
             # yield text, if any
             if text:
                 chunk = GenerationChunk(text=text)
-                yield chunk
                 if run_manager:
                     run_manager.on_llm_new_token(chunk.text)
+                yield chunk
 
             # break if stop sequence found
             if token == eos_token_id or (stop is not None and text in stop):
