@@ -52,7 +52,7 @@ class FalkorDBGraph(GraphStore):
 
     def __init__(
         self,
-        database: str,
+        database: str = 'falkor',
         host: str = "localhost",
         port: int = 6379,
         username: Optional[str] = None,
