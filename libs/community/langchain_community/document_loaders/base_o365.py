@@ -118,8 +118,8 @@ class O365BaseLoader(BaseLoader, BaseModel):
                         metadata_dict[file.name] = {
                             "source": file.web_url,
                             "mime_type": file.mime_type,
-                            "created": file.created,
-                            "modified": file.modified,
+                            "created": str(file.created),
+                            "modified": str(file.modified),
                             "created_by": str(file.created_by),
                             "modified_by": str(file.modified_by),
                             "description": file.description,
