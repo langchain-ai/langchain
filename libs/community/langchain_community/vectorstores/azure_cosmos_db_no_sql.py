@@ -15,6 +15,8 @@ if TYPE_CHECKING:
     from azure.cosmos import ContainerProxy, CosmosClient
     from azure.identity import ClientSecretCredential
 
+USER_AGENT = ("LlamaIndex-CDBNoSql-VectorStore-Python",)
+
 
 class AzureCosmosDBNoSqlVectorSearch(VectorStore):
     """`Azure Cosmos DB for NoSQL` vector store.
@@ -249,7 +251,9 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> AzureCosmosDBNoSqlVectorSearch:
-        cosmos_client = CosmosClient(connection_string, clientSecretCredential)
+        cosmos_client = CosmosClient(
+            connection_string, clientSecretCredential, user_agent=USER_AGENT
+        )
         kwargs["cosmos_client"] = cosmos_client
         vectorstore = cls._from_kwargs(embedding, **kwargs)
         vectorstore.add_texts(
@@ -268,7 +272,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> AzureCosmosDBNoSqlVectorSearch:
-        cosmos_client = CosmosClient(connection_string, key)
+        cosmos_client = CosmosClient(connection_string, key, user_agent=USER_AGENT)
         kwargs["cosmos_client"] = cosmos_client
         vectorstore = cls._from_kwargs(embedding, **kwargs)
         vectorstore.add_texts(
