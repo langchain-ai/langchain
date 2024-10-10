@@ -25,6 +25,7 @@ from langchain_core.documents import BaseDocumentTransformer, Document
 
 logger = logging.getLogger(__name__)
 TS = TypeVar("TS", bound="TextSplitter")
+TTS = TypeVar("TS", bound="TokenTextSplitter")
 
 
 def _tiktoken_encoder(
@@ -327,13 +328,13 @@ class TokenTextSplitter(TextSplitter):
 
     @classmethod
     def from_tiktoken_encoder(
-        cls: Type[TS],
+        cls: Type[TTS],
         encoding_name: str = "gpt2",
         model_name: Optional[str] = None,
         allowed_special: Union[Literal["all"], AbstractSet[str]] = set(),
         disallowed_special: Union[Literal["all"], Collection[str]] = "all",
         **kwargs: Any,
-    ) -> Type[TS]:
+    ) -> Type[TTS]:
         """Token Text splitter that uses tiktoken encoder."""
         try:
             import tiktoken
