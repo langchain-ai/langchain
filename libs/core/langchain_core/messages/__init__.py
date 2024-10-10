@@ -43,8 +43,8 @@ from langchain_core.messages.utils import (
     MessageLikeRepresentation,
     _message_from_dict,
     convert_to_messages,
+    convert_to_openai_messages,
     filter_messages,
-    format_messages,
     get_buffer_string,
     merge_message_runs,
     message_chunk_to_message,
@@ -84,5 +84,5 @@ __all__ = [
     "filter_messages",
     "merge_message_runs",
     "trim_messages",
-    "format_messages",
+    "convert_to_openai_messages",
 ]

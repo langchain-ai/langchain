@@ -1,13 +1,10 @@
 import json
-from collections.abc import Iterator
-from typing import Any, Callable
 
 import pytest
 
 from langchain_core.language_models.fake_chat_models import FakeChatModel
 from langchain_core.messages import (
     AIMessage,
-    AIMessageChunk,
     BaseMessage,
     HumanMessage,
     SystemMessage,
@@ -17,12 +14,11 @@ from langchain_core.messages import (
 from langchain_core.messages.utils import (
     _bytes_to_b64_str,
     convert_to_messages,
+    convert_to_openai_messages,
     filter_messages,
-    format_messages,
     merge_message_runs,
     trim_messages,
 )
-from langchain_core.runnables import RunnableLambda
 
 
 @pytest.mark.parametrize("msg_cls", [HumanMessage, AIMessage, SystemMessage])
@@ -571,40 +567,49 @@ def test_convert_to_messages() -> None:
     assert expected == actual
 
 
-@pytest.mark.xfail(reason="AI message does not support refusal key yet.")
 def test_convert_to_messages_openai_refusal() -> None:
-    convert_to_messages([{"role": "assistant", "refusal": "9.1"}])
+    actual = convert_to_messages(
+        [{"role": "assistant", "content": "", "refusal": "9.1"}]
+    )
+    expected = [AIMessage("", additional_kwargs={"refusal": "9.1"})]
+    assert actual == expected
+
+    # Raises error if content is missing.
+    with pytest.raises(ValueError):
+        convert_to_messages([{"role": "assistant", "refusal": "9.1"}])
+
+
+def create_image_data() -> str:
+    return "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD3+iiigD//2Q=="  # noqa: E501
 
 
 def create_base64_image(format: str = "jpeg") -> str:
-    return f"data:image/{format};base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD3+iiigD//2Q=="  # noqa: E501
+    data = create_image_data()
+    return f"data:image/{format};base64,{data}"  # noqa: E501
 
 
-def test_format_messages_single_message() -> None:
+def test_convert_to_openai_messages_single_message() -> None:
     message = HumanMessage(content="Hello")
-    result = format_messages(message, format="langchain-openai", text_format="string")
-    assert isinstance(result, BaseMessage)
-    assert result.content == "Hello"
+    result = convert_to_openai_messages(message)
+    assert result == {"role": "user", "content": "Hello"}
 
 
-def test_format_messages_multiple_messages() -> None:
+def test_convert_to_openai_messages_multiple_messages() -> None:
     messages = [
         SystemMessage(content="System message"),
         HumanMessage(content="Human message"),
         AIMessage(content="AI message"),
     ]
-    result = format_messages(messages, format="langchain-openai", text_format="string")
-    assert isinstance(result, list)
-    assert len(result) == 3
-    assert all(isinstance(msg, BaseMessage) for msg in result)
-    assert [msg.content for msg in result] == [
-        "System message",
-        "Human message",
-        "AI message",
+    result = convert_to_openai_messages(messages)
+    expected = [
+        {"role": "system", "content": "System message"},
+        {"role": "user", "content": "Human message"},
+        {"role": "assistant", "content": "AI message"},
     ]
+    assert result == expected
 
 
-def test_format_messages_openai_string() -> None:
+def test_convert_to_openai_messages_openai_string() -> None:
     messages = [
         HumanMessage(
             content=[
@@ -616,62 +621,33 @@ def test_format_messages_openai_string() -> None:
             content=[{"type": "text", "text": "Hi"}, {"type": "text", "text": "there"}]
         ),
     ]
-    result = format_messages(messages, format="langchain-openai", text_format="string")
-    assert [msg.content for msg in result] == ["Hello\nWorld", "Hi\nthere"]
-
-
-def test_format_messages_openai_block() -> None:
-    messages = [
-        HumanMessage(content="Hello"),
-        AIMessage(content="Hi there"),
+    result = convert_to_openai_messages(messages)
+    expected = [
+        {"role": "user", "content": "Hello\nWorld"},
+        {"role": "assistant", "content": "Hi\nthere"},
     ]
-    result = format_messages(messages, format="langchain-openai", text_format="block")
-    assert [msg.content for msg in result] == [
-        [{"type": "text", "text": "Hello"}],
-        [{"type": "text", "text": "Hi there"}],
+    assert result == expected
+
+
+def test_convert_to_openai_messages_openai_block() -> None:
+    messages = [HumanMessage(content="Hello"), AIMessage(content="Hi there")]
+    result = convert_to_openai_messages(messages, text_format="block")
+    expected = [
+        {"role": "user", "content": [{"type": "text", "text": "Hello"}]},
+        {"role": "assistant", "content": [{"type": "text", "text": "Hi there"}]},
     ]
+    assert result == expected
 
 
-def test_format_messages_anthropic_string() -> None:
-    messages = [
-        HumanMessage(
-            content=[
-                {"type": "text", "text": "Hello"},
-                {"type": "text", "text": "World"},
-            ]
-        ),
-        AIMessage(
-            content=[{"type": "text", "text": "Hi"}, {"type": "text", "text": "there"}]
-        ),
-    ]
-    result = format_messages(
-        messages, format="langchain-anthropic", text_format="string"
-    )
-    assert [msg.content for msg in result] == ["Hello\nWorld", "Hi\nthere"]
-
-
-def test_format_messages_anthropic_block() -> None:
-    messages = [
-        HumanMessage(content="Hello"),
-        AIMessage(content="Hi there"),
-    ]
-    result = format_messages(
-        messages, format="langchain-anthropic", text_format="block"
-    )
-    assert [msg.content for msg in result] == [
-        [{"type": "text", "text": "Hello"}],
-        [{"type": "text", "text": "Hi there"}],
-    ]
-
-
-def test_format_messages_invalid_format() -> None:
-    with pytest.raises(ValueError, match="Unrecognized format="):
-        format_messages(
-            [HumanMessage(content="Hello")], format="invalid", text_format="string"
+def test_convert_to_openai_messages_invalid_format() -> None:
+    with pytest.raises(ValueError, match="Unrecognized text_format="):
+        convert_to_openai_messages(
+            [HumanMessage(content="Hello")],
+            text_format="invalid",  # type: ignore[arg-type]
         )
 
 
-def test_format_messages_openai_image() -> None:
+def test_convert_to_openai_messages_openai_image() -> None:
     base64_image = create_base64_image()
     messages = [
         HumanMessage(
@@ -681,62 +657,77 @@ def test_format_messages_openai_image() -> None:
             ]
         )
     ]
-    result = format_messages(messages, format="langchain-openai", text_format="block")
-    assert result[0].content[1]["type"] == "image_url"
-    assert result[0].content[1]["image_url"]["url"] == base64_image
+    result = convert_to_openai_messages(messages, text_format="block")
+    expected = [
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "Here's an image:"},
+                {"type": "image_url", "image_url": {"url": base64_image}},
+            ],
+        }
+    ]
+    assert result == expected
 
 
-def test_format_messages_anthropic_image() -> None:
-    base64_image = create_base64_image()
+def test_convert_to_openai_messages_anthropic_image() -> None:
+    image_data = create_image_data()
     messages = [
         HumanMessage(
             content=[
                 {"type": "text", "text": "Here's an image:"},
-                {"type": "image_url", "image_url": {"url": base64_image}},
+                {
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": "image/jpeg",
+                        "data": image_data,
+                    },
+                },
             ]
         )
     ]
-    result = format_messages(
-        messages, format="langchain-anthropic", text_format="block"
-    )
-    assert result[0].content[1]["type"] == "image"
-    assert result[0].content[1]["source"]["type"] == "base64"
-    assert result[0].content[1]["source"]["media_type"] == "image/jpeg"
+    result = convert_to_openai_messages(messages, text_format="block")
+    assert result[0]["content"][1]["type"] == "image_url"
+    assert result[0]["content"][1]["image_url"]["url"] == create_base64_image()
 
 
-def test_format_messages_tool_message() -> None:
+def test_convert_to_openai_messages_tool_message() -> None:
     tool_message = ToolMessage(content="Tool result", tool_call_id="123")
-    result = format_messages(
-        [tool_message], format="langchain-openai", text_format="block"
-    )
-    assert isinstance(result[0], ToolMessage)
-    assert result[0].content == [{"type": "text", "text": "Tool result"}]
-    assert result[0].tool_call_id == "123"
+    result = convert_to_openai_messages([tool_message], text_format="block")
+    assert result[0]["content"] == [{"type": "text", "text": "Tool result"}]
+    assert result[0]["tool_call_id"] == "123"
 
 
-def test_format_messages_tool_use() -> None:
+def test_convert_to_openai_messages_tool_use() -> None:
     messages = [
         AIMessage(
             content=[
-                {"type": "tool_use", "id": "123", "name": "calculator", "input": "2+2"}
+                {
+                    "type": "tool_use",
+                    "id": "123",
+                    "name": "calculator",
+                    "input": {"a": "b"},
+                }
             ]
         )
     ]
-    result = format_messages(messages, format="langchain-openai", text_format="block")
-    assert result[0].tool_calls[0]["id"] == "123"
-    assert result[0].tool_calls[0]["name"] == "calculator"
-    assert result[0].tool_calls[0]["args"] == "2+2"
+    result = convert_to_openai_messages(messages, text_format="block")
+    assert result[0]["tool_calls"][0]["type"] == "function"
+    assert result[0]["tool_calls"][0]["id"] == "123"
+    assert result[0]["tool_calls"][0]["function"]["name"] == "calculator"
+    assert result[0]["tool_calls"][0]["function"]["args"] == json.dumps({"a": "b"})
 
 
-def test_format_messages_json() -> None:
+def test_convert_to_openai_messages_json() -> None:
     json_data = {"key": "value"}
     messages = [HumanMessage(content=[{"type": "json", "json": json_data}])]
-    result = format_messages(messages, format="langchain-openai", text_format="block")
-    assert result[0].content[0]["type"] == "text"
-    assert json.loads(result[0].content[0]["text"]) == json_data
+    result = convert_to_openai_messages(messages, text_format="block")
+    assert result[0]["content"][0]["type"] == "text"
+    assert json.loads(result[0]["content"][0]["text"]) == json_data
 
 
-def test_format_messages_guard_content() -> None:
+def test_convert_to_openai_messages_guard_content() -> None:
     messages = [
         HumanMessage(
             content=[
@@ -747,12 +738,12 @@ def test_format_messages_guard_content() -> None:
             ]
         )
     ]
-    result = format_messages(messages, format="langchain-openai", text_format="block")
-    assert result[0].content[0]["type"] == "text"
-    assert result[0].content[0]["text"] == "Protected content"
+    result = convert_to_openai_messages(messages, text_format="block")
+    assert result[0]["content"][0]["type"] == "text"
+    assert result[0]["content"][0]["text"] == "Protected content"
 
 
-def test_format_messages_vertexai_image() -> None:
+def test_convert_to_openai_messages_vertexai_image() -> None:
     messages = [
         HumanMessage(
             content=[
@@ -760,35 +751,31 @@ def test_format_messages_vertexai_image() -> None:
             ]
         )
     ]
-    result = format_messages(messages, format="langchain-openai", text_format="block")
-    assert result[0].content[0]["type"] == "image_url"
+    result = convert_to_openai_messages(messages, text_format="block")
+    assert result[0]["content"][0]["type"] == "image_url"
     assert (
-        result[0].content[0]["image_url"]["url"]
+        result[0]["content"][0]["image_url"]["url"]
         == f"data:image/jpeg;base64,{_bytes_to_b64_str(b'image_bytes')}"
     )
 
 
-def test_format_messages_invalid_block() -> None:
+def test_convert_to_openai_messages_invalid_block() -> None:
     messages = [HumanMessage(content=[{"type": "invalid", "foo": "bar"}])]
     with pytest.raises(ValueError, match="Unrecognized content block"):
-        format_messages(messages, format="langchain-openai", text_format="block")
-    with pytest.raises(ValueError, match="Unrecognized content block"):
-        format_messages(messages, format="langchain-anthropic", text_format="block")
+        convert_to_openai_messages(messages, text_format="block")
 
 
-def test_format_messages_empty_message() -> None:
-    result = format_messages(
-        HumanMessage(content=""), format="langchain-openai", text_format="string"
-    )
-    assert result.content == ""
+def test_convert_to_openai_messages_empty_message() -> None:
+    result = convert_to_openai_messages(HumanMessage(content=""))
+    assert result == {"role": "user", "content": ""}
 
 
-def test_format_messages_empty_list() -> None:
-    result = format_messages([], format="langchain-openai", text_format="string")
+def test_convert_to_openai_messages_empty_list() -> None:
+    result = convert_to_openai_messages([])
     assert result == []
 
 
-def test_format_messages_mixed_content_types() -> None:
+def test_convert_to_openai_messages_mixed_content_types() -> None:
     messages = [
         HumanMessage(
             content=[
@@ -798,618 +785,8 @@ def test_format_messages_mixed_content_types() -> None:
             ]
         )
     ]
-    result = format_messages(messages, format="langchain-openai", text_format="block")
-    assert len(result[0].content) == 3
-    assert isinstance(result[0].content[0], dict)
-    assert isinstance(result[0].content[1], dict)
-    assert isinstance(result[0].content[2], dict)
-
-
-def test_format_messages_anthropic_tool_calls() -> None:
-    message = AIMessage(
-        "blah",
-        tool_calls=[
-            {"type": "tool_call", "name": "foo", "id": "1", "args": {"bar": "baz"}}
-        ],
-    )
-    result = format_messages(
-        message, format="langchain-anthropic", text_format="string"
-    )
-    assert result.content == [
-        {"type": "text", "text": "blah"},
-        {"type": "tool_use", "id": "1", "name": "foo", "input": {"bar": "baz"}},
-    ]
-    assert result.tool_calls == message.tool_calls
-
-
-def test_format_messages_declarative() -> None:
-    formatter = format_messages(format="langchain-openai", text_format="block")
-    base64_image = create_base64_image()
-    messages = [
-        HumanMessage(
-            content=[
-                {"type": "text", "text": "Here's an image:"},
-                {"type": "image_url", "image_url": {"url": base64_image}},
-            ]
-        )
-    ]
-    result = formatter.invoke(messages)
-    assert result[0].content[1]["type"] == "image_url"
-    assert result[0].content[1]["image_url"]["url"] == base64_image
-
-
-def _stream_oai(input_: Any) -> Iterator:
-    chunks = [
-        AIMessageChunk(content=""),
-        AIMessageChunk(content="Certainly"),
-        AIMessageChunk(content="!"),
-        AIMessageChunk(
-            content="",
-            tool_calls=[
-                {
-                    "name": "multiply",
-                    "args": {},
-                    "id": "call_hr4yN4ZN7zv9Vmc5Cuahp4K8",
-                    "type": "tool_call",
-                }
-            ],
-            tool_call_chunks=[
-                {
-                    "name": "multiply",
-                    "args": "",
-                    "id": "call_hr4yN4ZN7zv9Vmc5Cuahp4K8",
-                    "index": 0,
-                    "type": "tool_call_chunk",
-                }
-            ],
-        ),
-        AIMessageChunk(
-            content="",
-            tool_calls=[{"name": "", "args": {}, "id": None, "type": "tool_call"}],
-            tool_call_chunks=[
-                {
-                    "name": None,
-                    "args": '{"',
-                    "id": None,
-                    "index": 0,
-                    "type": "tool_call_chunk",
-                }
-            ],
-        ),
-        AIMessageChunk(
-            content="",
-            invalid_tool_calls=[
-                {
-                    "name": None,
-                    "args": 'a": 5, "b": 2',
-                    "id": None,
-                    "error": None,
-                    "type": "invalid_tool_call",
-                }
-            ],
-            tool_call_chunks=[
-                {
-                    "name": None,
-                    "args": 'a": 5, "b": 2',
-                    "id": None,
-                    "index": 0,
-                    "type": "tool_call_chunk",
-                }
-            ],
-        ),
-        AIMessageChunk(
-            content="",
-            invalid_tool_calls=[
-                {
-                    "name": None,
-                    "args": "}",
-                    "id": None,
-                    "error": None,
-                    "type": "invalid_tool_call",
-                }
-            ],
-            tool_call_chunks=[
-                {
-                    "name": None,
-                    "args": "}",
-                    "id": None,
-                    "index": 0,
-                    "type": "tool_call_chunk",
-                }
-            ],
-        ),
-        AIMessageChunk(
-            content="",
-        ),
-    ]
-    yield from chunks
-
-
-def _stream_anthropic(input_: Any) -> Iterator:
-    chunks = [
-        AIMessageChunk(content=[]),
-        AIMessageChunk(content=[{"text": "Certainly", "type": "text", "index": 0}]),
-        AIMessageChunk(content=[{"text": "!", "type": "text", "index": 0}]),
-        AIMessageChunk(
-            content=[
-                {
-                    "id": "call_hr4yN4ZN7zv9Vmc5Cuahp4K8",
-                    "input": {},
-                    "name": "multiply",
-                    "type": "tool_use",
-                    "index": 1,
-                }
-            ],
-            tool_calls=[
-                {
-                    "name": "multiply",
-                    "args": {},
-                    "id": "call_hr4yN4ZN7zv9Vmc5Cuahp4K8",
-                    "type": "tool_call",
-                }
-            ],
-            tool_call_chunks=[
-                {
-                    "name": "multiply",
-                    "args": "",
-                    "id": "call_hr4yN4ZN7zv9Vmc5Cuahp4K8",
-                    "index": 1,
-                    "type": "tool_call_chunk",
-                }
-            ],
-        ),
-        AIMessageChunk(
-            content=[{"partial_json": '{"', "type": "tool_use", "index": 1}],
-            tool_calls=[{"name": "", "args": {}, "id": None, "type": "tool_call"}],
-            tool_call_chunks=[
-                {
-                    "name": None,
-                    "args": '{"',
-                    "id": None,
-                    "index": 1,
-                    "type": "tool_call_chunk",
-                }
-            ],
-        ),
-        AIMessageChunk(
-            content=[{"partial_json": 'a": 5, "b": 2', "type": "tool_use", "index": 1}],
-            invalid_tool_calls=[
-                {
-                    "name": None,
-                    "args": 'a": 5, "b": 2',
-                    "id": None,
-                    "error": None,
-                    "type": "invalid_tool_call",
-                }
-            ],
-            tool_call_chunks=[
-                {
-                    "name": None,
-                    "args": 'a": 5, "b": 2',
-                    "id": None,
-                    "index": 1,
-                    "type": "tool_call_chunk",
-                }
-            ],
-        ),
-        AIMessageChunk(
-            content=[{"partial_json": "}", "type": "tool_use", "index": 1}],
-            invalid_tool_calls=[
-                {
-                    "name": None,
-                    "args": "}",
-                    "id": None,
-                    "error": None,
-                    "type": "invalid_tool_call",
-                }
-            ],
-            tool_call_chunks=[
-                {
-                    "name": None,
-                    "args": "}",
-                    "id": None,
-                    "index": 1,
-                    "type": "tool_call_chunk",
-                }
-            ],
-        ),
-        AIMessageChunk(content=""),
-    ]
-    yield from chunks
-
-
-@pytest.mark.parametrize("stream", [_stream_oai, _stream_anthropic])
-def test_format_messages_openai_string_stream(stream: Callable) -> None:
-    formatter = format_messages(format="langchain-openai", text_format="string")
-
-    chain = RunnableLambda(stream) | formatter
-    tool_call_idx = 1 if stream == _stream_anthropic else 0
-    expected = [
-        AIMessageChunk(content=""),
-        AIMessageChunk(content="Certainly"),
-        AIMessageChunk(content="!"),
-        AIMessageChunk(
-            content="",
-            tool_calls=[
-                {
-                    "name": "multiply",
-                    "args": {},
-                    "id": "call_hr4yN4ZN7zv9Vmc5Cuahp4K8",
-                    "type": "tool_call",
-                }
-            ],
-            tool_call_chunks=[
-                {
-                    "name": "multiply",
-                    "args": "",
-                    "id": "call_hr4yN4ZN7zv9Vmc5Cuahp4K8",
-                    "index": tool_call_idx,
-                    "type": "tool_call_chunk",
-                }
-            ],
-        ),
-        AIMessageChunk(
-            content="",
-            tool_calls=[{"name": "", "args": {}, "id": None, "type": "tool_call"}],
-            tool_call_chunks=[
-                {
-                    "name": None,
-                    "args": '{"',
-                    "id": None,
-                    "index": tool_call_idx,
-                    "type": "tool_call_chunk",
-                }
-            ],
-        ),
-        AIMessageChunk(
-            content="",
-            invalid_tool_calls=[
-                {
-                    "name": None,
-                    "args": 'a": 5, "b": 2',
-                    "id": None,
-                    "error": None,
-                    "type": "invalid_tool_call",
-                }
-            ],
-            tool_call_chunks=[
-                {
-                    "name": None,
-                    "args": 'a": 5, "b": 2',
-                    "id": None,
-                    "index": tool_call_idx,
-                    "type": "tool_call_chunk",
-                }
-            ],
-        ),
-        AIMessageChunk(
-            content="",
-            invalid_tool_calls=[
-                {
-                    "name": None,
-                    "args": "}",
-                    "id": None,
-                    "error": None,
-                    "type": "invalid_tool_call",
-                }
-            ],
-            tool_call_chunks=[
-                {
-                    "name": None,
-                    "args": "}",
-                    "id": None,
-                    "index": tool_call_idx,
-                    "type": "tool_call_chunk",
-                }
-            ],
-        ),
-        AIMessageChunk(
-            content="",
-        ),
-    ]
-
-    actual = list(chain.stream({}))
-    assert expected == actual
-
-
-@pytest.mark.parametrize("stream", [_stream_oai, _stream_anthropic])
-def test_format_messages_openai_block_stream(stream: Callable) -> None:
-    formatter = format_messages(format="langchain-openai", text_format="block")
-
-    chain = RunnableLambda(stream) | formatter
-    tool_call_idx = 1 if stream == _stream_anthropic else 0
-    expected = [
-        AIMessageChunk(content=[]),
-        AIMessageChunk(content=[{"type": "text", "text": "Certainly"}]),
-        AIMessageChunk(content=[{"type": "text", "text": "!"}]),
-        AIMessageChunk(
-            content=[],
-            tool_calls=[
-                {
-                    "name": "multiply",
-                    "args": {},
-                    "id": "call_hr4yN4ZN7zv9Vmc5Cuahp4K8",
-                    "type": "tool_call",
-                }
-            ],
-            tool_call_chunks=[
-                {
-                    "name": "multiply",
-                    "args": "",
-                    "id": "call_hr4yN4ZN7zv9Vmc5Cuahp4K8",
-                    "index": tool_call_idx,
-                    "type": "tool_call_chunk",
-                }
-            ],
-        ),
-        AIMessageChunk(
-            content=[],
-            tool_calls=[{"name": "", "args": {}, "id": None, "type": "tool_call"}],
-            tool_call_chunks=[
-                {
-                    "name": None,
-                    "args": '{"',
-                    "id": None,
-                    "index": tool_call_idx,
-                    "type": "tool_call_chunk",
-                }
-            ],
-        ),
-        AIMessageChunk(
-            content=[],
-            invalid_tool_calls=[
-                {
-                    "name": None,
-                    "args": 'a": 5, "b": 2',
-                    "id": None,
-                    "error": None,
-                    "type": "invalid_tool_call",
-                }
-            ],
-            tool_call_chunks=[
-                {
-                    "name": None,
-                    "args": 'a": 5, "b": 2',
-                    "id": None,
-                    "index": tool_call_idx,
-                    "type": "tool_call_chunk",
-                }
-            ],
-        ),
-        AIMessageChunk(
-            content=[],
-            invalid_tool_calls=[
-                {
-                    "name": None,
-                    "args": "}",
-                    "id": None,
-                    "error": None,
-                    "type": "invalid_tool_call",
-                }
-            ],
-            tool_call_chunks=[
-                {
-                    "name": None,
-                    "args": "}",
-                    "id": None,
-                    "index": tool_call_idx,
-                    "type": "tool_call_chunk",
-                }
-            ],
-        ),
-        AIMessageChunk(
-            content=[],
-        ),
-    ]
-    actual = list(chain.stream({}))
-    assert expected == actual
-
-
-@pytest.mark.parametrize("stream", [_stream_oai, _stream_anthropic])
-def test_format_messages_anthropic_block_stream(stream: Callable) -> None:
-    formatter = format_messages(format="langchain-anthropic", text_format="block")
-
-    chain = RunnableLambda(stream) | formatter
-    expected = [
-        AIMessageChunk(content=[]),
-        AIMessageChunk(content=[{"text": "Certainly", "type": "text", "index": 0}]),
-        AIMessageChunk(content=[{"text": "!", "type": "text", "index": 0}]),
-        AIMessageChunk(
-            content=[
-                {
-                    "id": "call_hr4yN4ZN7zv9Vmc5Cuahp4K8",
-                    "name": "multiply",
-                    "type": "tool_use",
-                    "index": 1,
-                    **(
-                        {"input": {}}
-                        if stream == _stream_anthropic
-                        else {"partial_json": ""}
-                    ),
-                }
-            ],
-            tool_calls=[
-                {
-                    "name": "multiply",
-                    "args": {},
-                    "id": "call_hr4yN4ZN7zv9Vmc5Cuahp4K8",
-                    "type": "tool_call",
-                }
-            ],
-            tool_call_chunks=[
-                {
-                    "name": "multiply",
-                    "args": "",
-                    "id": "call_hr4yN4ZN7zv9Vmc5Cuahp4K8",
-                    "index": 1,
-                    "type": "tool_call_chunk",
-                }
-            ],
-        ),
-        AIMessageChunk(
-            content=[{"partial_json": '{"', "type": "tool_use", "index": 1}],
-            tool_calls=[{"name": "", "args": {}, "id": None, "type": "tool_call"}],
-            tool_call_chunks=[
-                {
-                    "name": None,
-                    "args": '{"',
-                    "id": None,
-                    "index": 1,
-                    "type": "tool_call_chunk",
-                }
-            ],
-        ),
-        AIMessageChunk(
-            content=[{"partial_json": 'a": 5, "b": 2', "type": "tool_use", "index": 1}],
-            invalid_tool_calls=[
-                {
-                    "name": None,
-                    "args": 'a": 5, "b": 2',
-                    "id": None,
-                    "error": None,
-                    "type": "invalid_tool_call",
-                }
-            ],
-            tool_call_chunks=[
-                {
-                    "name": None,
-                    "args": 'a": 5, "b": 2',
-                    "id": None,
-                    "index": 1,
-                    "type": "tool_call_chunk",
-                }
-            ],
-        ),
-        AIMessageChunk(
-            content=[{"partial_json": "}", "type": "tool_use", "index": 1}],
-            invalid_tool_calls=[
-                {
-                    "name": None,
-                    "args": "}",
-                    "id": None,
-                    "error": None,
-                    "type": "invalid_tool_call",
-                }
-            ],
-            tool_call_chunks=[
-                {
-                    "name": None,
-                    "args": "}",
-                    "id": None,
-                    "index": 1,
-                    "type": "tool_call_chunk",
-                }
-            ],
-        ),
-        AIMessageChunk(content=[]),
-    ]
-    actual = list(chain.stream({}))
-    assert expected == actual
-
-
-@pytest.mark.parametrize("stream", [_stream_oai, _stream_anthropic])
-def test_format_messages_anthropic_string_stream(stream: Callable) -> None:
-    formatter = format_messages(format="langchain-anthropic", text_format="string")
-
-    chain = RunnableLambda(stream) | formatter
-    expected = [
-        AIMessageChunk(content=""),
-        AIMessageChunk(content="Certainly"),
-        AIMessageChunk(content="!"),
-        AIMessageChunk(
-            content=[
-                {
-                    "type": "tool_use",
-                    "id": "call_hr4yN4ZN7zv9Vmc5Cuahp4K8",
-                    "name": "multiply",
-                    "index": 1,
-                    **(
-                        {"input": {}}
-                        if stream == _stream_anthropic
-                        else {"partial_json": ""}
-                    ),
-                },
-            ],
-            tool_calls=[
-                {
-                    "name": "multiply",
-                    "args": {},
-                    "id": "call_hr4yN4ZN7zv9Vmc5Cuahp4K8",
-                    "type": "tool_call",
-                }
-            ],
-            tool_call_chunks=[
-                {
-                    "name": "multiply",
-                    "args": "",
-                    "id": "call_hr4yN4ZN7zv9Vmc5Cuahp4K8",
-                    "index": 1,
-                    "type": "tool_call_chunk",
-                }
-            ],
-        ),
-        AIMessageChunk(
-            content=[
-                {"type": "tool_use", "partial_json": '{"', "index": 1},
-            ],
-            tool_calls=[{"name": "", "args": {}, "id": None, "type": "tool_call"}],
-            tool_call_chunks=[
-                {
-                    "name": None,
-                    "args": '{"',
-                    "id": None,
-                    "index": 1,
-                    "type": "tool_call_chunk",
-                }
-            ],
-        ),
-        AIMessageChunk(
-            content=[
-                {"type": "tool_use", "partial_json": 'a": 5, "b": 2', "index": 1},
-            ],
-            invalid_tool_calls=[
-                {
-                    "name": None,
-                    "args": 'a": 5, "b": 2',
-                    "id": None,
-                    "error": None,
-                    "type": "invalid_tool_call",
-                }
-            ],
-            tool_call_chunks=[
-                {
-                    "name": None,
-                    "args": 'a": 5, "b": 2',
-                    "id": None,
-                    "index": 1,
-                    "type": "tool_call_chunk",
-                }
-            ],
-        ),
-        AIMessageChunk(
-            content=[
-                {"type": "tool_use", "partial_json": "}", "index": 1},
-            ],
-            invalid_tool_calls=[
-                {
-                    "name": None,
-                    "args": "}",
-                    "id": None,
-                    "error": None,
-                    "type": "invalid_tool_call",
-                }
-            ],
-            tool_call_chunks=[
-                {
-                    "name": None,
-                    "args": "}",
-                    "id": None,
-                    "index": 1,
-                    "type": "tool_call_chunk",
-                }
-            ],
-        ),
-        AIMessageChunk(content=""),
-    ]
-    actual = list(chain.stream({}))
-    assert expected == actual
+    result = convert_to_openai_messages(messages, text_format="block")
+    assert len(result[0]["content"]) == 3
+    assert isinstance(result[0]["content"][0], dict)
+    assert isinstance(result[0]["content"][1], dict)
+    assert isinstance(result[0]["content"][2], dict)
