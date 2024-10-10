@@ -24,8 +24,6 @@ from langchain_core.documents import BaseDocumentTransformer, Document
 
 logger = logging.getLogger(__name__)
 
-TS = TypeVar("TS", bound="TextSplitter")
-
 
 class TextSplitter(BaseDocumentTransformer, ABC):
     """Interface for splitting text into chunks."""
@@ -228,8 +226,8 @@ class TokenTextSplitter(TextSplitter):
         return split_text_on_tokens(text=text, tokenizer=tokenizer)
 
     @classmethod
-    def from_huggingface_tokenizer(cls, tokenizer: Any, **kwargs: Any) -> TextSplitter:
-        """Text splitter that uses HuggingFace tokenizer to count length."""
+    def from_huggingface_tokenizer(cls, tokenizer: Any, **kwargs: Any) -> TokenTextSplitter:
+        """Token Text splitter that uses HuggingFace tokenizer to count length."""
         try:
             from transformers import PreTrainedTokenizerBase
         except ImportError:
@@ -253,14 +251,14 @@ class TokenTextSplitter(TextSplitter):
 
     @classmethod
     def from_tiktoken_encoder(
-        cls: Type[TS],
+        cls: TokenTextSplitter,
         encoding_name: str = "gpt2",
         model_name: Optional[str] = None,
         allowed_special: Union[Literal["all"], AbstractSet[str]] = set(),
         disallowed_special: Union[Literal["all"], Collection[str]] = "all",
         **kwargs: Any,
-    ) -> TS:
-        """Text splitter that uses tiktoken encoder to count length."""
+    ) -> TokenTextSplitter:
+        """Token Text splitter that uses tiktoken encoder to count length."""
         try:
             import tiktoken
         except ImportError:
