@@ -174,10 +174,10 @@ class ChatSambaNovaCloud(BaseChatModel):
     temperature: float = Field(default=0.7)
     """model temperature"""
 
-    top_p: Optional[float] = Field()
+    top_p: Optional[float] = Field(default=None)
     """model top p"""
 
-    top_k: Optional[int] = Field()
+    top_k: Optional[int] = Field(default=None)
     """model top k"""
 
     stream_options: dict = Field(default={"include_usage": True})
@@ -593,7 +593,7 @@ class ChatSambaStudio(BaseChatModel):
     streaming_url: str = Field(default="", exclude=True)
     """SambaStudio streaming Url"""
 
-    model: Optional[str] = Field()
+    model: Optional[str] = Field(default=None)
     """The name of the model or expert to use (for CoE endpoints)"""
 
     streaming: bool = Field(default=False)
@@ -605,16 +605,16 @@ class ChatSambaStudio(BaseChatModel):
     temperature: Optional[float] = Field(default=0.7)
     """model temperature"""
 
-    top_p: Optional[float] = Field()
+    top_p: Optional[float] = Field(default=None)
     """model top p"""
 
-    top_k: Optional[int] = Field()
+    top_k: Optional[int] = Field(default=None)
     """model top k"""
 
-    do_sample: Optional[bool] = Field()
+    do_sample: Optional[bool] = Field(default=None)
     """whether to do sampling"""
 
-    process_prompt: Optional[bool] = Field()
+    process_prompt: Optional[bool] = Field(default=True)
     """whether process prompt (for CoE generic v1 and v2 endpoints)"""
 
     stream_options: dict = Field(default={"include_usage": True})
@@ -1003,6 +1003,16 @@ class ChatSambaStudio(BaseChatModel):
                             id = data["id"]
                             metadata = {}
                         else:
+                            content = ""
+                            id = data["id"]
+                            metadata = {
+                                "finish_reason": finish_reason,
+                                "usage": data.get("usage"),
+                                "model_name": data["model"],
+                                "system_fingerprint": data["system_fingerprint"],
+                                "created": data["created"],
+                            }
+                        if data.get("usage") is not None:
                             content = ""
                             id = data["id"]
                             metadata = {
