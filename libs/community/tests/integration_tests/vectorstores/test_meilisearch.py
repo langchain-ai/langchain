@@ -19,30 +19,34 @@ TEST_MEILI_MASTER_KEY = "masterKey"
 
 class TestMeilisearchVectorSearch:
     @pytest.fixture(scope="class", autouse=True)
-    def enable_vector_search(self) -> Generator[str, None, None]:
+    def vector_search_setup(self) -> Generator[str, None, None]:
+        # Enable vector search
         requests.patch(
             f"{TEST_MEILI_HTTP_ADDR}/experimental-features",
             headers={"Authorization": f"Bearer {TEST_MEILI_MASTER_KEY}"},
             json={"vectorStore": True},
             timeout=10,
         )
+
+        # Set up embedder
+        client =  meilisearch.Client(TEST_MEILI_HTTP_ADDR, TEST_MEILI_MASTER_KEY)
+        embedders = {
+            "default": {
+                "source": "userProvided",
+                "dimensions": 10,
+            }
+        }
+        task = client.index(INDEX_NAME).update_embedders(embedders)
+        client.wait_for_task(task.task_uid)
+
         yield "done"
+        # Disable vector search
         requests.patch(
             f"{TEST_MEILI_HTTP_ADDR}/experimental-features",
             headers={"Authorization": f"Bearer {TEST_MEILI_MASTER_KEY}"},
             json={"vectorStore": False},
             timeout=10,
         )
-
-    @pytest.fixture
-    def new_embedders(self) -> Dict[str, Dict[str, Any]]:
-        return {
-            "default": {
-                "source": "userProvided",
-                # Dimension defined in FakeEmbeddings as [float(1.0)] * 9 + [float(0.0)]
-                "dimensions": 10,
-            }
-        }
 
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
@@ -74,14 +78,13 @@ class TestMeilisearchVectorSearch:
         # Wait for the last task to be completed
         client.wait_for_task(tasks.results[0].uid)
 
-    def test_meilisearch(self, new_embedders: Dict[str, Any]) -> None:
+    def test_meilisearch(self) -> None:
         """Test end to end construction and search."""
         texts = ["foo", "bar", "baz"]
         vectorstore = Meilisearch.from_texts(
             texts=texts,
             embedding=FakeEmbeddings(),
-            embedders=new_embedders,
-            embedder_name=list(new_embedders)[0],
+            embedder_name="default",
             url=TEST_MEILI_HTTP_ADDR,
             api_key=TEST_MEILI_MASTER_KEY,
             index_name=INDEX_NAME,
@@ -90,14 +93,13 @@ class TestMeilisearchVectorSearch:
         output = vectorstore.similarity_search("foo", k=1)
         assert output == [Document(page_content="foo")]
 
-    def test_meilisearch_with_client(self, new_embedders: Dict[str, Any]) -> None:
+    def test_meilisearch_with_client(self) -> None:
         """Test end to end construction and search."""
         texts = ["foo", "bar", "baz"]
         vectorstore = Meilisearch.from_texts(
             texts=texts,
             embedding=FakeEmbeddings(),
-            embedders=new_embedders,
-            embedder_name=list(new_embedders)[0],
+            embedder_name="default",
             client=self.client(),
             index_name=INDEX_NAME,
         )
@@ -105,15 +107,14 @@ class TestMeilisearchVectorSearch:
         output = vectorstore.similarity_search("foo", k=1)
         assert output == [Document(page_content="foo")]
 
-    def test_meilisearch_with_metadatas(self, new_embedders: Dict[str, Any]) -> None:
+    def test_meilisearch_with_metadatas(self) -> None:
         """Test end to end construction and search."""
         texts = ["foo", "bar", "baz"]
         metadatas = [{"page": i} for i in range(len(texts))]
         docsearch = Meilisearch.from_texts(
             texts=texts,
             embedding=FakeEmbeddings(),
-            embedders=new_embedders,
-            embedder_name=list(new_embedders)[0],
+            embedder_name="default",
             url=TEST_MEILI_HTTP_ADDR,
             api_key=TEST_MEILI_MASTER_KEY,
             index_name=INDEX_NAME,
@@ -126,17 +127,14 @@ class TestMeilisearchVectorSearch:
         assert output[0].metadata["page"] == 0
         assert output == [Document(page_content="foo", metadata={"page": 0})]
 
-    def test_meilisearch_with_metadatas_with_scores(
-        self, new_embedders: Dict[str, Any]
-    ) -> None:
+    def test_meilisearch_with_metadatas_with_scores(self) -> None:
         """Test end to end construction and scored search."""
         texts = ["foo", "bar", "baz"]
         metadatas = [{"page": str(i)} for i in range(len(texts))]
         docsearch = Meilisearch.from_texts(
             texts=texts,
             embedding=FakeEmbeddings(),
-            embedders=new_embedders,
-            embedder_name=list(new_embedders)[0],
+            embedder_name="default",
             url=TEST_MEILI_HTTP_ADDR,
             api_key=TEST_MEILI_MASTER_KEY,
             index_name=INDEX_NAME,
@@ -146,9 +144,7 @@ class TestMeilisearchVectorSearch:
         output = docsearch.similarity_search_with_score("foo", k=1)
         assert output == [(Document(page_content="foo", metadata={"page": "0"}), 1.0)]
 
-    def test_meilisearch_with_metadatas_with_scores_using_vector(
-        self, new_embedders: Dict[str, Any]
-    ) -> None:
+    def test_meilisearch_with_metadatas_with_scores_using_vector(self) -> None:
         """Test end to end construction and scored search, using embedding vector."""
         texts = ["foo", "bar", "baz"]
         metadatas = [{"page": str(i)} for i in range(len(texts))]
@@ -157,8 +153,7 @@ class TestMeilisearchVectorSearch:
         docsearch = Meilisearch.from_texts(
             texts=texts,
             embedding=FakeEmbeddings(),
-            embedders=new_embedders,
-            embedder_name=list(new_embedders)[0],
+            embedder_name="default",
             url=TEST_MEILI_HTTP_ADDR,
             api_key=TEST_MEILI_MASTER_KEY,
             index_name=INDEX_NAME,
