@@ -1081,7 +1081,7 @@ def convert_to_openai_messages(
                                     "id": block["id"],
                                     "function": {
                                         "name": block["name"],
-                                        "args": json.dumps(block["input"]),
+                                        "arguments": json.dumps(block["input"]),
                                     },
                                 }
                             )
@@ -1181,7 +1181,10 @@ def convert_to_openai_messages(
                 ):
                     content = "\n".join(block["text"] for block in content)
         oai_msg["content"] = content
-        oai_messages.extend([oai_msg, *tool_messages])
+        if message.content and not oai_msg["content"] and tool_messages:
+            oai_messages.extend(tool_messages)
+        else:
+            oai_messages.extend([oai_msg, *tool_messages])
 
     if is_single:
         return oai_messages[0]

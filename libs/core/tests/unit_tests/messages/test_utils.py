@@ -689,7 +689,31 @@ def test_convert_to_openai_messages_anthropic() -> None:
                     },
                 },
             ]
-        )
+        ),
+        AIMessage(
+            content=[
+                {"type": "tool_use", "name": "foo", "input": {"bar": "baz"}, "id": "1"}
+            ]
+        ),
+        HumanMessage(
+            content=[
+                {
+                    "type": "tool_result",
+                    "tool_use_id": "1",
+                    "is_error": False,
+                    "content": [
+                        {
+                            "type": "image",
+                            "source": {
+                                "type": "base64",
+                                "media_type": "image/jpeg",
+                                "data": image_data,
+                            },
+                        },
+                    ],
+                }
+            ]
+        ),
     ]
     result = convert_to_openai_messages(messages)
     expected = [
@@ -699,6 +723,27 @@ def test_convert_to_openai_messages_anthropic() -> None:
                 {"type": "text", "text": "Here's an image:"},
                 {"type": "image_url", "image_url": {"url": create_base64_image()}},
             ],
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "foo",
+                        "arguments": json.dumps({"bar": "baz"}),
+                    },
+                    "id": "1",
+                }
+            ],
+        },
+        {
+            "role": "tool",
+            "content": [
+                {"type": "image_url", "image_url": {"url": create_base64_image()}}
+            ],
+            "tool_call_id": "1",
         },
     ]
     assert result == expected
@@ -768,7 +813,7 @@ def test_convert_to_openai_messages_tool_use() -> None:
     assert result[0]["tool_calls"][0]["type"] == "function"
     assert result[0]["tool_calls"][0]["id"] == "123"
     assert result[0]["tool_calls"][0]["function"]["name"] == "calculator"
-    assert result[0]["tool_calls"][0]["function"]["args"] == json.dumps({"a": "b"})
+    assert result[0]["tool_calls"][0]["function"]["arguments"] == json.dumps({"a": "b"})
 
 
 def test_convert_to_openai_messages_json() -> None:
