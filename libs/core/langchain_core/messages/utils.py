@@ -278,9 +278,7 @@ def _create_message_from_message_type(
     return message
 
 
-def _convert_to_message(
-    message: MessageLikeRepresentation, *, copy: bool = False
-) -> BaseMessage:
+def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
     """Instantiate a message from a variety of message formats.
 
     The message format can be one of the following:
@@ -302,7 +300,7 @@ def _convert_to_message(
         ValueError: if the message dict does not contain the required keys.
     """
     if isinstance(message, BaseMessage):
-        _message = message.__class__(**message.dict()) if copy else message
+        _message = message
     elif isinstance(message, str):
         _message = _create_message_from_message_type("human", message)
     elif isinstance(message, Sequence) and len(message) == 2:
@@ -333,8 +331,6 @@ def _convert_to_message(
 
 def convert_to_messages(
     messages: Union[Iterable[MessageLikeRepresentation], PromptValue],
-    *,
-    copy: bool = False,
 ) -> list[BaseMessage]:
     """Convert a sequence of messages to a list of messages.
 
@@ -349,7 +345,7 @@ def convert_to_messages(
 
     if isinstance(messages, PromptValue):
         return messages.to_messages()
-    return [_convert_to_message(m, copy=copy) for m in messages]
+    return [_convert_to_message(m) for m in messages]
 
 
 def _runnable_support(func: Callable) -> Callable:
@@ -944,7 +940,7 @@ def convert_to_openai_messages(
 
     if is_single := isinstance(messages, (BaseMessage, dict)):
         messages = [messages]
-    messages = convert_to_messages(messages, copy=True)
+    messages = convert_to_messages(messages)
 
     for i, message in enumerate(messages):
         oai_msg: dict = {"role": _get_message_openai_role(message)}
