@@ -101,7 +101,6 @@ def test_configurable() -> None:
         "name": None,
         "bound": {
             "name": None,
-            "cache": None,
             "disable_streaming": False,
             "disabled_params": None,
             "model_name": "gpt-4o",
@@ -189,7 +188,6 @@ def test_configurable_with_default() -> None:
         "name": None,
         "bound": {
             "name": None,
-            "cache": None,
             "disable_streaming": False,
             "model": "claude-3-sonnet-20240229",
             "max_tokens": 1024,
