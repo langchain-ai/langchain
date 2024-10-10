@@ -632,7 +632,7 @@ class GraphVectorStore(VectorStore):
         elif search_type == "traversal":
             return [doc async for doc in self.atraversal_search(query, **kwargs)]
         elif search_type == "mmr_traversal":
-            return list(self.ammr_traversal_search(query, **kwargs))
+            return [doc async for doc in self.ammr_traversal_search(query, **kwargs)]
         else:
             raise ValueError(
                 f"search_type of {search_type} not allowed. Expected "

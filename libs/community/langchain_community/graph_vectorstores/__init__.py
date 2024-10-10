@@ -152,5 +152,5 @@ __all__ = [
     "Node",
     "Link",
     "CassandraGraphVectorStore",
-    "MmrHelper"
+    "MmrHelper",
 ]

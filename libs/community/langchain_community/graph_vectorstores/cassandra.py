@@ -447,7 +447,7 @@ class CassandraGraphVectorStore(GraphVectorStore):
         return [
             self._restore_links(doc)
             for doc in self.vector_store.metadata_search(
-                filter=filter,
+                filter=filter or {},
                 n=n,
             )
         ]
@@ -466,7 +466,7 @@ class CassandraGraphVectorStore(GraphVectorStore):
         return [
             self._restore_links(doc)
             for doc in await self.vector_store.ametadata_search(
-                filter=filter,
+                filter=filter or {},
                 n=n,
             )
         ]
@@ -594,7 +594,7 @@ class CassandraGraphVectorStore(GraphVectorStore):
                     retrieved_docs[doc_id] = doc
 
                 if doc_id not in outgoing_links_map:
-                    node = self._doc_to_node(doc)
+                    node = _doc_to_node(doc)
                     outgoing_links_map[doc_id] = _outgoing_links(node=node)
                     candidates[doc_id] = embedding
             helper.add_candidates(candidates)
@@ -952,7 +952,7 @@ class CassandraGraphVectorStore(GraphVectorStore):
 
         for doc in docs:
             if doc is not None:
-                node = self._doc_to_node(doc=doc)
+                node = _doc_to_node(doc=doc)
                 links.update(_outgoing_links(node=node))
 
         return links
