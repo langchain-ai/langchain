@@ -84,7 +84,7 @@ class TestMeilisearchVectorSearch:
         vectorstore = Meilisearch.from_texts(
             texts=texts,
             embedding=FakeEmbeddings(),
-            embedder_name="default",
+            embedder="default",
             url=TEST_MEILI_HTTP_ADDR,
             api_key=TEST_MEILI_MASTER_KEY,
             index_name=INDEX_NAME,
@@ -99,7 +99,7 @@ class TestMeilisearchVectorSearch:
         vectorstore = Meilisearch.from_texts(
             texts=texts,
             embedding=FakeEmbeddings(),
-            embedder_name="default",
+            embedder="default",
             client=self.client(),
             index_name=INDEX_NAME,
         )
@@ -114,7 +114,7 @@ class TestMeilisearchVectorSearch:
         docsearch = Meilisearch.from_texts(
             texts=texts,
             embedding=FakeEmbeddings(),
-            embedder_name="default",
+            embedder="default",
             url=TEST_MEILI_HTTP_ADDR,
             api_key=TEST_MEILI_MASTER_KEY,
             index_name=INDEX_NAME,
@@ -134,7 +134,7 @@ class TestMeilisearchVectorSearch:
         docsearch = Meilisearch.from_texts(
             texts=texts,
             embedding=FakeEmbeddings(),
-            embedder_name="default",
+            embedder="default",
             url=TEST_MEILI_HTTP_ADDR,
             api_key=TEST_MEILI_MASTER_KEY,
             index_name=INDEX_NAME,
@@ -153,7 +153,7 @@ class TestMeilisearchVectorSearch:
         docsearch = Meilisearch.from_texts(
             texts=texts,
             embedding=FakeEmbeddings(),
-            embedder_name="default",
+            embedder="default",
             url=TEST_MEILI_HTTP_ADDR,
             api_key=TEST_MEILI_MASTER_KEY,
             index_name=INDEX_NAME,
