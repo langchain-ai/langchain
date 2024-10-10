@@ -334,7 +334,7 @@ class TokenTextSplitter(TextSplitter):
         allowed_special: Union[Literal["all"], AbstractSet[str]] = set(),
         disallowed_special: Union[Literal["all"], Collection[str]] = "all",
         **kwargs: Any,
-    ) -> Type[TTS]:
+    ) -> TTS:
         """Token Text splitter that uses tiktoken encoder."""
         try:
             import tiktoken
