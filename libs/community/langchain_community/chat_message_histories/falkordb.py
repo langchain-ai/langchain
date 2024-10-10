@@ -162,9 +162,7 @@ class FalkorDBChatMessageHistory(BaseChatMessageHistory):
             "RETURN {data:{content: node.content}, type:node.type} AS result"
         )
 
-        records = self._database.query(
-            query, {"session_id": self._session_id}
-        ).result_set
+        records = self._database.query(query).result_set
 
         messages = self._process_records(records)
         return messages
@@ -184,7 +182,7 @@ class FalkorDBChatMessageHistory(BaseChatMessageHistory):
             message (BaseMessage): The message object to add to the session.
         """
         create_query = (
-            f"MATCH (s:{self._node_label}) WHERE s.id = $session_id "
+            f"MATCH (s:{self._node_label}) "
             "CREATE (new:Message {type: $type, content: $content}) "
             "WITH s, new "
             "OPTIONAL MATCH (s)-[lm:LAST_MESSAGE]->(last_message:Message) "
@@ -198,7 +196,6 @@ class FalkorDBChatMessageHistory(BaseChatMessageHistory):
             {
                 "type": message.type,
                 "content": message.content,
-                "session_id": self._session_id,
             },
         )
 
@@ -214,4 +211,4 @@ class FalkorDBChatMessageHistory(BaseChatMessageHistory):
             f"MATCH (s:{self._node_label})-[:LAST_MESSAGE|NEXT*0..]->(m:Message) "
             "WITH m DELETE m"
         )
-        self._database.query(query, {"session_id": self._session_id})
+        self._database.query(query)
