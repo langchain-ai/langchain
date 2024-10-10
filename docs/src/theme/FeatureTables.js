@@ -1120,7 +1120,7 @@ const DEPRECATED_DOC_IDS = [
   "integrations/text_embedding/ernie",
 ];
 
-function toTable(columns, items) {
+function toTable(columns, items, mode) {
     const headers = columns.map((col) => col.title);
     return (
         <table>
@@ -1132,7 +1132,7 @@ function toTable(columns, items) {
             <tbody>
                 {items.map((item, i) => (
                     <tr key={`row-${i}`}>
-                        {columns.map((col, j) => <td key={`cell-${i}-${j}`}>{col.formatter(item)}</td>)}
+                        {columns.filter(col => !col.mode || col.mode === mode).map((col, j) => <td key={`cell-${i}-${j}`}>{col.formatter(item)}</td>)}
                     </tr>
                 ))}
             </tbody>
@@ -1142,7 +1142,7 @@ function toTable(columns, items) {
 
 export function CategoryTable({ category }) {
     const cat = FEATURE_TABLES[category];
-    const rtn = toTable(cat.columns, cat.items);
+    const rtn = toTable(cat.columns, cat.items, "category");
     return rtn;
 }
 
@@ -1152,7 +1152,7 @@ export function ItemTable({ category, item }) {
     if (!row) {
         throw new Error(`Item ${item} not found in category ${category}`);
     }
-    const rtn = toTable(cat.columns, [row]);
+    const rtn = toTable(cat.columns, [row], "item");
     return rtn;
 }
 
@@ -1185,6 +1185,7 @@ export function IndexTable() {
       },
     ],
     rows,
+    "index",
   );
   return rtn;
 }
