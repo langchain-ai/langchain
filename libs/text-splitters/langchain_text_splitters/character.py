@@ -3,10 +3,10 @@ from __future__ import annotations
 import re
 from typing import Any, List, Literal, Optional, Union
 
-from langchain_text_splitters.base import Language, TextSplitter
+from langchain_text_splitters.base import Language, TextSplitter,TokenTextSplitter
 
 
-class CharacterTextSplitter(TextSplitter):
+class CharacterTextSplitter(TokenTextSplitter):
     """Splitting text that looks at characters."""
 
     def __init__(
@@ -55,7 +55,7 @@ def _split_text_with_regex(
     return [s for s in splits if s != ""]
 
 
-class RecursiveCharacterTextSplitter(TextSplitter):
+class RecursiveCharacterTextSplitter(TokenTextSplitter):
     """Splitting text by recursively look at characters.
 
     Recursively tries to split by different characters to find one
