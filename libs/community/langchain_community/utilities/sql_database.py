@@ -457,6 +457,11 @@ class SQLDatabase:
                         (self._schema,),
                         execution_options=execution_options,
                     )
+                elif self.dialect == "hana":
+                    connection.exec_driver_sql(
+                        f"SET SCHEMA {self._schema}",
+                        execution_options=execution_options,
+                    )
 
             if isinstance(command, str):
                 command = text(command)
