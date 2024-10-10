@@ -1,3 +1,4 @@
+import base64
 import json
 
 import pytest
@@ -13,6 +14,7 @@ from langchain_core.messages import (
 )
 from langchain_core.messages.utils import (
     convert_to_messages,
+    convert_to_openai_messages,
     filter_messages,
     merge_message_runs,
     trim_messages,
@@ -565,6 +567,307 @@ def test_convert_to_messages() -> None:
     assert expected == actual
 
 
-@pytest.mark.xfail(reason="AI message does not support refusal key yet.")
 def test_convert_to_messages_openai_refusal() -> None:
-    convert_to_messages([{"role": "assistant", "refusal": "9.1"}])
+    actual = convert_to_messages(
+        [{"role": "assistant", "content": "", "refusal": "9.1"}]
+    )
+    expected = [AIMessage("", additional_kwargs={"refusal": "9.1"})]
+    assert actual == expected
+
+    # Raises error if content is missing.
+    with pytest.raises(ValueError):
+        convert_to_messages([{"role": "assistant", "refusal": "9.1"}])
+
+
+def create_image_data() -> str:
+    return "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD3+iiigD//2Q=="  # noqa: E501
+
+
+def create_base64_image(format: str = "jpeg") -> str:
+    data = create_image_data()
+    return f"data:image/{format};base64,{data}"  # noqa: E501
+
+
+def test_convert_to_openai_messages_single_message() -> None:
+    message = HumanMessage(content="Hello")
+    result = convert_to_openai_messages(message)
+    assert result == {"role": "user", "content": "Hello"}
+
+
+def test_convert_to_openai_messages_multiple_messages() -> None:
+    messages = [
+        SystemMessage(content="System message"),
+        HumanMessage(content="Human message"),
+        AIMessage(content="AI message"),
+    ]
+    result = convert_to_openai_messages(messages)
+    expected = [
+        {"role": "system", "content": "System message"},
+        {"role": "user", "content": "Human message"},
+        {"role": "assistant", "content": "AI message"},
+    ]
+    assert result == expected
+
+
+def test_convert_to_openai_messages_openai_string() -> None:
+    messages = [
+        HumanMessage(
+            content=[
+                {"type": "text", "text": "Hello"},
+                {"type": "text", "text": "World"},
+            ]
+        ),
+        AIMessage(
+            content=[{"type": "text", "text": "Hi"}, {"type": "text", "text": "there"}]
+        ),
+    ]
+    result = convert_to_openai_messages(messages)
+    expected = [
+        {"role": "user", "content": "Hello\nWorld"},
+        {"role": "assistant", "content": "Hi\nthere"},
+    ]
+    assert result == expected
+
+
+def test_convert_to_openai_messages_openai_block() -> None:
+    messages = [HumanMessage(content="Hello"), AIMessage(content="Hi there")]
+    result = convert_to_openai_messages(messages, text_format="block")
+    expected = [
+        {"role": "user", "content": [{"type": "text", "text": "Hello"}]},
+        {"role": "assistant", "content": [{"type": "text", "text": "Hi there"}]},
+    ]
+    assert result == expected
+
+
+def test_convert_to_openai_messages_invalid_format() -> None:
+    with pytest.raises(ValueError, match="Unrecognized text_format="):
+        convert_to_openai_messages(
+            [HumanMessage(content="Hello")],
+            text_format="invalid",  # type: ignore[arg-type]
+        )
+
+
+def test_convert_to_openai_messages_openai_image() -> None:
+    base64_image = create_base64_image()
+    messages = [
+        HumanMessage(
+            content=[
+                {"type": "text", "text": "Here's an image:"},
+                {"type": "image_url", "image_url": {"url": base64_image}},
+            ]
+        )
+    ]
+    result = convert_to_openai_messages(messages, text_format="block")
+    expected = [
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "Here's an image:"},
+                {"type": "image_url", "image_url": {"url": base64_image}},
+            ],
+        }
+    ]
+    assert result == expected
+
+
+def test_convert_to_openai_messages_anthropic() -> None:
+    image_data = create_image_data()
+    messages = [
+        HumanMessage(
+            content=[
+                {
+                    "type": "text",
+                    "text": "Here's an image:",
+                    "cache_control": {"type": "ephemeral"},
+                },
+                {
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": "image/jpeg",
+                        "data": image_data,
+                    },
+                },
+            ]
+        ),
+        AIMessage(
+            content=[
+                {"type": "tool_use", "name": "foo", "input": {"bar": "baz"}, "id": "1"}
+            ]
+        ),
+        HumanMessage(
+            content=[
+                {
+                    "type": "tool_result",
+                    "tool_use_id": "1",
+                    "is_error": False,
+                    "content": [
+                        {
+                            "type": "image",
+                            "source": {
+                                "type": "base64",
+                                "media_type": "image/jpeg",
+                                "data": image_data,
+                            },
+                        },
+                    ],
+                }
+            ]
+        ),
+    ]
+    result = convert_to_openai_messages(messages)
+    expected = [
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "Here's an image:"},
+                {"type": "image_url", "image_url": {"url": create_base64_image()}},
+            ],
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "foo",
+                        "arguments": json.dumps({"bar": "baz"}),
+                    },
+                    "id": "1",
+                }
+            ],
+        },
+        {
+            "role": "tool",
+            "content": [
+                {"type": "image_url", "image_url": {"url": create_base64_image()}}
+            ],
+            "tool_call_id": "1",
+        },
+    ]
+    assert result == expected
+
+
+def test_convert_to_openai_messages_bedrock_converse_image() -> None:
+    image_data = create_image_data()
+    messages = [
+        HumanMessage(
+            content=[
+                {"type": "text", "text": "Here's an image:"},
+                {
+                    "image": {
+                        "format": "jpeg",
+                        "source": {"bytes": base64.b64decode(image_data)},
+                    }
+                },
+            ]
+        )
+    ]
+    result = convert_to_openai_messages(messages)
+    assert result[0]["content"][1]["type"] == "image_url"
+    assert result[0]["content"][1]["image_url"]["url"] == create_base64_image()
+
+
+def test_convert_to_openai_messages_vertexai_image() -> None:
+    image_data = create_image_data()
+    messages = [
+        HumanMessage(
+            content=[
+                {"type": "text", "text": "Here's an image:"},
+                {
+                    "type": "media",
+                    "mime_type": "image/jpeg",
+                    "data": base64.b64decode(image_data),
+                },
+            ]
+        )
+    ]
+    result = convert_to_openai_messages(messages)
+    assert result[0]["content"][1]["type"] == "image_url"
+    assert result[0]["content"][1]["image_url"]["url"] == create_base64_image()
+
+
+def test_convert_to_openai_messages_tool_message() -> None:
+    tool_message = ToolMessage(content="Tool result", tool_call_id="123")
+    result = convert_to_openai_messages([tool_message], text_format="block")
+    assert len(result) == 1
+    assert result[0]["content"] == [{"type": "text", "text": "Tool result"}]
+    assert result[0]["tool_call_id"] == "123"
+
+
+def test_convert_to_openai_messages_tool_use() -> None:
+    messages = [
+        AIMessage(
+            content=[
+                {
+                    "type": "tool_use",
+                    "id": "123",
+                    "name": "calculator",
+                    "input": {"a": "b"},
+                }
+            ]
+        )
+    ]
+    result = convert_to_openai_messages(messages, text_format="block")
+    assert result[0]["tool_calls"][0]["type"] == "function"
+    assert result[0]["tool_calls"][0]["id"] == "123"
+    assert result[0]["tool_calls"][0]["function"]["name"] == "calculator"
+    assert result[0]["tool_calls"][0]["function"]["arguments"] == json.dumps({"a": "b"})
+
+
+def test_convert_to_openai_messages_json() -> None:
+    json_data = {"key": "value"}
+    messages = [HumanMessage(content=[{"type": "json", "json": json_data}])]
+    result = convert_to_openai_messages(messages, text_format="block")
+    assert result[0]["content"][0]["type"] == "text"
+    assert json.loads(result[0]["content"][0]["text"]) == json_data
+
+
+def test_convert_to_openai_messages_guard_content() -> None:
+    messages = [
+        HumanMessage(
+            content=[
+                {
+                    "type": "guard_content",
+                    "guard_content": {"text": "Protected content"},
+                }
+            ]
+        )
+    ]
+    result = convert_to_openai_messages(messages, text_format="block")
+    assert result[0]["content"][0]["type"] == "text"
+    assert result[0]["content"][0]["text"] == "Protected content"
+
+
+def test_convert_to_openai_messages_invalid_block() -> None:
+    messages = [HumanMessage(content=[{"type": "invalid", "foo": "bar"}])]
+    with pytest.raises(ValueError, match="Unrecognized content block"):
+        convert_to_openai_messages(messages, text_format="block")
+
+
+def test_convert_to_openai_messages_empty_message() -> None:
+    result = convert_to_openai_messages(HumanMessage(content=""))
+    assert result == {"role": "user", "content": ""}
+
+
+def test_convert_to_openai_messages_empty_list() -> None:
+    result = convert_to_openai_messages([])
+    assert result == []
+
+
+def test_convert_to_openai_messages_mixed_content_types() -> None:
+    messages = [
+        HumanMessage(
+            content=[
+                "Text message",
+                {"type": "text", "text": "Structured text"},
+                {"type": "image_url", "image_url": {"url": create_base64_image()}},
+            ]
+        )
+    ]
+    result = convert_to_openai_messages(messages, text_format="block")
+    assert len(result[0]["content"]) == 3
+    assert isinstance(result[0]["content"][0], dict)
+    assert isinstance(result[0]["content"][1], dict)
+    assert isinstance(result[0]["content"][2], dict)
