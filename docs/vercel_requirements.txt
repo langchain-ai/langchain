@@ -2,6 +2,7 @@
 -e ../libs/langchain
 -e ../libs/community
 -e ../libs/text-splitters
+langgraph
 langchain-cohere
 urllib3==1.26.19
 nbconvert==7.16.4

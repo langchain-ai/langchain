@@ -116,10 +116,7 @@ def test_check_package_version(
 def test_merge_dicts(
     left: dict, right: dict, expected: Union[dict, AbstractContextManager]
 ) -> None:
-    if isinstance(expected, AbstractContextManager):
-        err = expected
-    else:
-        err = nullcontext()
+    err = expected if isinstance(expected, AbstractContextManager) else nullcontext()
 
     left_copy = deepcopy(left)
     right_copy = deepcopy(right)
@@ -147,10 +144,7 @@ def test_merge_dicts(
 def test_merge_dicts_0_3(
     left: dict, right: dict, expected: Union[dict, AbstractContextManager]
 ) -> None:
-    if isinstance(expected, AbstractContextManager):
-        err = expected
-    else:
-        err = nullcontext()
+    err = expected if isinstance(expected, AbstractContextManager) else nullcontext()
 
     left_copy = deepcopy(left)
     right_copy = deepcopy(right)
@@ -183,7 +177,8 @@ def test_guard_import(
     elif package is not None and pip_name is not None:
         ret = guard_import(module_name, pip_name=pip_name, package=package)
     else:
-        raise ValueError("Invalid test case")
+        msg = "Invalid test case"
+        raise ValueError(msg)
     assert ret == expected
 
 
@@ -210,7 +205,8 @@ def test_guard_import_failure(
         elif package is not None and pip_name is not None:
             guard_import(module_name, pip_name=pip_name, package=package)
         else:
-            raise ValueError("Invalid test case")
+            msg = "Invalid test case"
+            raise ValueError(msg)
     pip_name = pip_name or module_name.split(".")[0].replace("_", "-")
     err_msg = (
         f"Could not import {module_name} python package. "

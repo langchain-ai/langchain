@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import json
 import typing
 from abc import ABC, abstractmethod
@@ -44,11 +45,11 @@ class BasePromptTemplate(
     """Base class for all prompt templates, returning a prompt."""
 
     input_variables: list[str]
-    """A list of the names of the variables whose values are required as inputs to the 
+    """A list of the names of the variables whose values are required as inputs to the
     prompt."""
     optional_variables: list[str] = Field(default=[])
     """optional_variables: A list of the names of the variables for placeholder
-       or MessagePlaceholder that are optional. These variables are auto inferred 
+       or MessagePlaceholder that are optional. These variables are auto inferred
        from the prompt and user need not provide them."""
     input_types: typing.Dict[str, Any] = Field(default_factory=dict, exclude=True)  # noqa: UP006
     """A dictionary of the types of the variables the prompt template expects.
@@ -57,7 +58,7 @@ class BasePromptTemplate(
     """How to parse the output of calling an LLM on this formatted prompt."""
     partial_variables: Mapping[str, Any] = Field(default_factory=dict)
     """A dictionary of the partial variables the prompt template carries.
-    
+
     Partial variables populate the template so that you don't need to
     pass them in every time you call the prompt."""
     metadata: Optional[typing.Dict[str, Any]] = None  # noqa: UP006
@@ -69,21 +70,22 @@ class BasePromptTemplate(
     def validate_variable_names(self) -> Self:
         """Validate variable names do not include restricted names."""
         if "stop" in self.input_variables:
-            raise ValueError(
+            msg = (
                 "Cannot have an input variable named 'stop', as it is used internally,"
                 " please rename."
             )
+            raise ValueError(msg)
         if "stop" in self.partial_variables:
-            raise ValueError(
+            msg = (
                 "Cannot have an partial variable named 'stop', as it is used "
                 "internally, please rename."
             )
+            raise ValueError(msg)
 
         overall = set(self.input_variables).intersection(self.partial_variables)
         if overall:
-            raise ValueError(
-                f"Found overlapping input and partial variables: {overall}"
-            )
+            msg = f"Found overlapping input and partial variables: {overall}"
+            raise ValueError(msg)
         return self
 
     @classmethod
@@ -142,10 +144,11 @@ class BasePromptTemplate(
                 inner_input = {var_name: inner_input}
 
             else:
-                raise TypeError(
+                msg = (
                     f"Expected mapping type as input to {self.__class__.__name__}. "
                     f"Received {type(inner_input)}."
                 )
+                raise TypeError(msg)
         missing = set(self.input_variables).difference(inner_input)
         if missing:
             msg = (
@@ -173,7 +176,7 @@ class BasePromptTemplate(
         return await self.aformat_prompt(**_inner_input)
 
     def invoke(
-        self, input: dict, config: Optional[RunnableConfig] = None
+        self, input: dict, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> PromptValue:
         """Invoke the prompt.
 
@@ -319,10 +322,8 @@ class BasePromptTemplate(
             NotImplementedError: If the prompt type is not implemented.
         """
         prompt_dict = super().model_dump(**kwargs)
-        try:
+        with contextlib.suppress(NotImplementedError):
             prompt_dict["_type"] = self._prompt_type
-        except NotImplementedError:
-            pass
         return prompt_dict
 
     def save(self, file_path: Union[Path, str]) -> None:
@@ -342,18 +343,17 @@ class BasePromptTemplate(
             prompt.save(file_path="path/prompt.yaml")
         """
         if self.partial_variables:
-            raise ValueError("Cannot save prompt with partial variables.")
+            msg = "Cannot save prompt with partial variables."
+            raise ValueError(msg)
 
         # Fetch dictionary to save
         prompt_dict = self.dict()
         if "_type" not in prompt_dict:
-            raise NotImplementedError(f"Prompt {self} does not support saving.")
+            msg = f"Prompt {self} does not support saving."
+            raise NotImplementedError(msg)
 
         # Convert file to Path object.
-        if isinstance(file_path, str):
-            save_path = Path(file_path)
-        else:
-            save_path = file_path
+        save_path = Path(file_path) if isinstance(file_path, str) else file_path
 
         directory_path = save_path.parent
         directory_path.mkdir(parents=True, exist_ok=True)
@@ -365,7 +365,8 @@ class BasePromptTemplate(
             with open(file_path, "w") as f:
                 yaml.dump(prompt_dict, f, default_flow_style=False)
         else:
-            raise ValueError(f"{save_path} must be json or yaml")
+            msg = f"{save_path} must be json or yaml"
+            raise ValueError(msg)
 
 
 def _get_document_info(doc: Document, prompt: BasePromptTemplate[str]) -> dict:
@@ -375,11 +376,12 @@ def _get_document_info(doc: Document, prompt: BasePromptTemplate[str]) -> dict:
         required_metadata = [
             iv for iv in prompt.input_variables if iv != "page_content"
         ]
-        raise ValueError(
+        msg = (
             f"Document prompt requires documents to have metadata variables: "
             f"{required_metadata}. Received document with missing metadata: "
             f"{list(missing_metadata)}."
         )
+        raise ValueError(msg)
     return {k: base_info[k] for k in prompt.input_variables}
 
 
