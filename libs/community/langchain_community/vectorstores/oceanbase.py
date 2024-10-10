@@ -1,15 +1,15 @@
 import json
 import logging
-import uuid
 import traceback
-from typing import Any, Iterable, List, Optional, Sequence, Tuple, Callable
+import uuid
+from typing import Any, Callable, Iterable, List, Optional, Sequence, Tuple
 
+import numpy as np
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 from sqlalchemy import JSON, Column, String, Table, func, text
 from sqlalchemy.dialects.mysql import LONGTEXT
-import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -161,11 +161,11 @@ class OceanBase(VectorStore):
                 "Please install it with `pip install pyobvector`."
             )
 
-        host: str = self.connection_args.get("host", "localhost")
-        port: str = self.connection_args.get("port", "2881")
-        user: str = self.connection_args.get("user", "root@test")
-        password: str = self.connection_args.get("password", "")
-        db_name: str = self.connection_args.get("db_name", "test")
+        host = self.connection_args.get("host", "localhost")
+        port = self.connection_args.get("port", "2881")
+        user = self.connection_args.get("user", "root@test")
+        password = self.connection_args.get("password", "")
+        db_name = self.connection_args.get("db_name", "test")
 
         self.obvector = ObVecClient(
             uri=host + ":" + port,
@@ -334,7 +334,7 @@ class OceanBase(VectorStore):
             except Exception:
                 traceback.print_exc()
                 logger.error(
-                    f"Failed to insert batch starting at entity: [{i}, {i + batch_size})"
+                    f"Failed to insert batch starting at entity:[{i}, {i + batch_size})"
                 )
         return pks
 
@@ -525,9 +525,7 @@ class OceanBase(VectorStore):
 
         res = self.obvector.ann_search(
             table_name=self.table_name,
-            vec_data=(
-                embedding if not self.normalize else self._normalize(embedding)
-            ),
+            vec_data=(embedding if not self.normalize else self._normalize(embedding)),
             vec_column_name=self.vector_field,
             distance_func=self._parse_metric_type_str_to_dist_func(),
             topk=k,
@@ -579,9 +577,7 @@ class OceanBase(VectorStore):
 
         res = self.obvector.ann_search(
             table_name=self.table_name,
-            vec_data=(
-                embedding if not self.normalize else self._normalize(embedding)
-            ),
+            vec_data=(embedding if not self.normalize else self._normalize(embedding)),
             vec_column_name=self.vector_field,
             distance_func=self._parse_metric_type_str_to_dist_func(),
             with_dist=True,
