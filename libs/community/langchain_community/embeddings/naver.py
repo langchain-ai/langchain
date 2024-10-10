@@ -72,7 +72,7 @@ class ClovaXEmbeddings(BaseModel, Embeddings):
     Automatically inferred from env are  `NCP_CLOVASTUDIO_API_BASE_URL` if not provided.
     """
 
-    app_id: Optional[str] = Field(default=None, alias="clovastudio_app_id")
+    app_id: Optional[str] = Field(default=None)
     service_app: bool = Field(
         default=False,
         description="false: use testapp, true: use service app on NCP Clova Studio",
