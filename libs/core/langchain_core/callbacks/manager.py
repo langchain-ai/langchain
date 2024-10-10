@@ -1510,11 +1510,12 @@ class CallbackManager(BaseCallbackManager):
         .. versionadded:: 0.2.14
         """
         if kwargs:
-            raise ValueError(
+            msg = (
                 "The dispatcher API does not accept additional keyword arguments."
                 "Please do not pass any additional keyword arguments, instead "
                 "include them in the data field."
             )
+            raise ValueError(msg)
         if run_id is None:
             run_id = uuid.uuid4()
 
@@ -1729,7 +1730,12 @@ class AsyncCallbackManager(BaseCallbackManager):
                 to each prompt.
         """
 
-        tasks = []
+        inline_tasks = []
+        non_inline_tasks = []
+        inline_handlers = [handler for handler in self.handlers if handler.run_inline]
+        non_inline_handlers = [
+            handler for handler in self.handlers if not handler.run_inline
+        ]
         managers = []
 
         for prompt in prompts:
@@ -1739,20 +1745,36 @@ class AsyncCallbackManager(BaseCallbackManager):
             else:
                 run_id_ = uuid.uuid4()
 
-            tasks.append(
-                ahandle_event(
-                    self.handlers,
-                    "on_llm_start",
-                    "ignore_llm",
-                    serialized,
-                    [prompt],
-                    run_id=run_id_,
-                    parent_run_id=self.parent_run_id,
-                    tags=self.tags,
-                    metadata=self.metadata,
-                    **kwargs,
+            if inline_handlers:
+                inline_tasks.append(
+                    ahandle_event(
+                        inline_handlers,
+                        "on_llm_start",
+                        "ignore_llm",
+                        serialized,
+                        [prompt],
+                        run_id=run_id_,
+                        parent_run_id=self.parent_run_id,
+                        tags=self.tags,
+                        metadata=self.metadata,
+                        **kwargs,
+                    )
                 )
-            )
+            else:
+                non_inline_tasks.append(
+                    ahandle_event(
+                        non_inline_handlers,
+                        "on_llm_start",
+                        "ignore_llm",
+                        serialized,
+                        [prompt],
+                        run_id=run_id_,
+                        parent_run_id=self.parent_run_id,
+                        tags=self.tags,
+                        metadata=self.metadata,
+                        **kwargs,
+                    )
+                )
 
             managers.append(
                 AsyncCallbackManagerForLLMRun(
@@ -1767,7 +1789,13 @@ class AsyncCallbackManager(BaseCallbackManager):
                 )
             )
 
-        await asyncio.gather(*tasks)
+        # Run inline tasks sequentially
+        for inline_task in inline_tasks:
+            await inline_task
+
+        # Run non-inline tasks concurrently
+        if non_inline_tasks:
+            await asyncio.gather(*non_inline_tasks)
 
         return managers
 
@@ -1791,7 +1819,8 @@ class AsyncCallbackManager(BaseCallbackManager):
                 async callback managers, one for each LLM Run
                 corresponding to each inner  message list.
         """
-        tasks = []
+        inline_tasks = []
+        non_inline_tasks = []
         managers = []
 
         for message_list in messages:
@@ -1801,9 +1830,9 @@ class AsyncCallbackManager(BaseCallbackManager):
             else:
                 run_id_ = uuid.uuid4()
 
-            tasks.append(
-                ahandle_event(
-                    self.handlers,
+            for handler in self.handlers:
+                task = ahandle_event(
+                    [handler],
                     "on_chat_model_start",
                     "ignore_chat_model",
                     serialized,
@@ -1814,7 +1843,10 @@ class AsyncCallbackManager(BaseCallbackManager):
                     metadata=self.metadata,
                     **kwargs,
                 )
-            )
+                if handler.run_inline:
+                    inline_tasks.append(task)
+                else:
+                    non_inline_tasks.append(task)
 
             managers.append(
                 AsyncCallbackManagerForLLMRun(
@@ -1829,7 +1861,14 @@ class AsyncCallbackManager(BaseCallbackManager):
                 )
             )
 
-        await asyncio.gather(*tasks)
+        # Run inline tasks sequentially
+        for task in inline_tasks:
+            await task
+
+        # Run non-inline tasks concurrently
+        if non_inline_tasks:
+            await asyncio.gather(*non_inline_tasks)
+
         return managers
 
     async def on_chain_start(
@@ -1951,11 +1990,12 @@ class AsyncCallbackManager(BaseCallbackManager):
             run_id = uuid.uuid4()
 
         if kwargs:
-            raise ValueError(
+            msg = (
                 "The dispatcher API does not accept additional keyword arguments."
                 "Please do not pass any additional keyword arguments, instead "
                 "include them in the data field."
             )
+            raise ValueError(msg)
         await ahandle_event(
             self.handlers,
             "on_custom_event",
@@ -2298,11 +2338,12 @@ def _configure(
 
     if v1_tracing_enabled_ and not tracing_v2_enabled_:
         # if both are enabled, can silently ignore the v1 tracer
-        raise RuntimeError(
+        msg = (
             "Tracing using LangChainTracerV1 is no longer supported. "
             "Please set the LANGCHAIN_TRACING_V2 environment variable to enable "
             "tracing instead."
         )
+        raise RuntimeError(msg)
 
     tracer_project = _get_tracer_project()
     debug = _get_debug()
@@ -2481,13 +2522,14 @@ async def adispatch_custom_event(
     # within a tool or a lambda and have the metadata events associated
     # with the parent run rather than have a new run id generated for each.
     if callback_manager.parent_run_id is None:
-        raise RuntimeError(
+        msg = (
             "Unable to dispatch an adhoc event without a parent run id."
             "This function can only be called from within an existing run (e.g.,"
             "inside a tool or a RunnableLambda or a RunnableGenerator.)"
             "If you are doing that and still seeing this error, try explicitly"
             "passing the config parameter to this function."
         )
+        raise RuntimeError(msg)
 
     await callback_manager.on_custom_event(
         name,
@@ -2550,13 +2592,14 @@ def dispatch_custom_event(
     # within a tool or a lambda and have the metadata events associated
     # with the parent run rather than have a new run id generated for each.
     if callback_manager.parent_run_id is None:
-        raise RuntimeError(
+        msg = (
             "Unable to dispatch an adhoc event without a parent run id."
             "This function can only be called from within an existing run (e.g.,"
             "inside a tool or a RunnableLambda or a RunnableGenerator.)"
             "If you are doing that and still seeing this error, try explicitly"
             "passing the config parameter to this function."
         )
+        raise RuntimeError(msg)
     callback_manager.on_custom_event(
         name,
         data,
