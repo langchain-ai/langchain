@@ -5,6 +5,7 @@ import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
+from functools import partial
 from typing import (
     AbstractSet,
     Any,
@@ -21,7 +22,6 @@ from typing import (
 )
 
 from langchain_core.documents import BaseDocumentTransformer, Document
-from functools import partial
 
 logger = logging.getLogger(__name__)
 TS = TypeVar("TS", bound="TextSplitter")
