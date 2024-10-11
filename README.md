@@ -32,6 +32,15 @@ With conda:
 conda install langchain -c conda-forge
 ```
 
+## Cloning the Repository
+
+To begin, clone the repository to your local environment and navigate into the project directory with the following commands:
+
+```bash
+git clone https://github.com/langchain-ai/langchain.git
+cd langchain
+```
+
 ## 🤔 What is LangChain?
 
 **LangChain** is a framework for developing applications powered by large language models (LLMs).
