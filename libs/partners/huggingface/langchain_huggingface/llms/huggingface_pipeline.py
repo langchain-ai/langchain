@@ -308,6 +308,7 @@ class HuggingFacePipeline(BaseLLM):
     ) -> Iterator[GenerationChunk]:
         from threading import Thread
 
+        import torch
         from transformers import (
             StoppingCriteria,
             StoppingCriteriaList,
@@ -320,22 +321,25 @@ class HuggingFacePipeline(BaseLLM):
         stopping_list = stop or []
 
         class StopSequenceCriteria(StoppingCriteria):
-            def __init__(self, stop_sequences, tokenizer):
+            def __init__(self, stop_sequences: List[str]):
                 if isinstance(stop_sequences, str):
                     stop_sequences = [stop_sequences]
                 self.stop_sequences = stop_sequences
-                self.tokenizer = tokenizer
+                self.tokenizer = self.pipeline.tokenizer
 
-            def __call__(self, input_ids, scores, **kwargs) -> bool:
+            def __call__(
+                self,
+                input_ids: torch.LongTensor,
+                scores: torch.FloatTensor,
+                **kwargs: Any,
+            ) -> bool:
                 decoded_output = self.tokenizer.decode(input_ids.tolist()[0])
                 return any(
                     decoded_output.endswith(stop_sequence)
                     for stop_sequence in self.stop_sequences
                 )
 
-        stopping_criteria = StoppingCriteriaList(
-            [StopSequenceCriteria(stopping_list, self.pipeline.tokenizer)]
-        )
+        stopping_criteria = StoppingCriteriaList([StopSequenceCriteria(stopping_list)])
 
         inputs = self.pipeline.tokenizer(prompt, return_tensors="pt")
         streamer = TextIteratorStreamer(
