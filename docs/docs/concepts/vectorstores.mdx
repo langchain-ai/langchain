@@ -1,0 +1,19 @@
+# Vector stores
+
+<span data-heading-keywords="vector,vectorstore,vectorstores,vector store,vector stores"></span>
+
+One of the most common ways to store and search over unstructured data is to embed it and store the resulting embedding vectors,
+and then at query time to embed the unstructured query and retrieve the embedding vectors that are 'most similar' to the embedded query.
+A vector store takes care of storing embedded data and performing vector search for you.
+
+Most vector stores can also store metadata about embedded vectors and support filtering on that metadata before
+similarity search, allowing you more control over returned documents.
+
+Vector stores can be converted to the retriever interface by doing:
+
+```python
+vectorstore = MyVectorStore()
+retriever = vectorstore.as_retriever()
+```
+
+For specifics on how to use vector stores, see the [relevant how-to guides here](/docs/how_to/#vector-stores).
