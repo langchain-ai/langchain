@@ -147,12 +147,12 @@ if TYPE_CHECKING:
     from langchain_community.chat_models.promptlayer_openai import (
         PromptLayerChatOpenAI,
     )
-    from langchain_community.chat_models.sambanova import (
-        ChatSambaNovaCloud,
-        ChatSambaStudio
-    )
     from langchain_community.chat_models.reka import (
         ChatReka,
+    )
+    from langchain_community.chat_models.sambanova import (
+        ChatSambaNovaCloud,
+        ChatSambaStudio,
     )
     from langchain_community.chat_models.snowflake import (
         ChatSnowflakeCortex,
