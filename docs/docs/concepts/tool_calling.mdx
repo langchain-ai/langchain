@@ -23,6 +23,24 @@ This gives the model awarenes of the tool and the associated input schema requir
 
 ![Conceptual parts of tool calling](/img/tool_calling_components.png)
 
+## Recommended usage
+
+This psuedo-code illustrates the recommended workflow for using tool calling. 
+Created tools are passed to `.bind_tools()` method as a list.
+This model can be called, as usual. If a tool call is made, model's response will contain the tool call arguments.
+The tool call arguemtns can be passed directly to the tool.
+
+```python
+# Tool creation
+tools = [my_tool]
+# Tool binding
+modelwtools = model.bind_tools(tools)
+# Tool calling 
+response = modelwtools.invoke(user_input)
+# Tool execution
+tool_output = my_tool(response.tool_calls)
+```
+
 ## Tool Creation 
 
 TODO: @eyurtsev to add links and summary of the conceptual guide. 

@@ -14,6 +14,21 @@ This need motivates the concept of structured output, where models can be instru
 **(1) Schema definition:** The output structure is represented as a schema, which can be defined in several ways. 
 **(2) Returning structured output:** The model is given this schema, and is instructed to return output that conforms to it.
 
+## Recommended usage
+
+This psuedo-code illustrates the recommended workflow when using structured output.
+LangChain provides a helper function, `with_structured_output()`, that automates the process of binding the schema to the model and parsing the output.
+This helper function is available for all model providers that support structured output. 
+
+```python
+# Define schema
+schema = {"foo": "bar"}
+# Bind schema to model
+model_with_structure = model.with_structured_output(schema)
+# Invoke the model to produce structured output that matches the schema
+structured_output = model_with_structure.invoke(user_input)
+```
+
 ## Schema definition
 
 The central concept is that the output structure of model responses needs to be represented in some way. 
