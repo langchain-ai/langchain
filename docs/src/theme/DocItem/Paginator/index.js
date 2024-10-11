@@ -14,7 +14,7 @@ export default function PaginatorWrapper(props) {
         categoryId="DIC_kwDOIPDwls4CjJYb"
         mapping="pathname"
         strict="0"
-        reactionsEnabled="1"
+        reactionsEnabled="0"
         emitMetadata="0"
         inputPosition="bottom"
         theme="preferred_color_scheme"
