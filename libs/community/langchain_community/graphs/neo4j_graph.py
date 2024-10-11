@@ -430,7 +430,7 @@ class Neo4jGraph(GraphStore):
         try:
             data, _, _ = self._driver.execute_query(
                 Query(text=query, timeout=self.timeout),
-                database=self._database,
+                database_=self._database,
                 parameters_=params,
             )
             json_data = [r.data() for r in data]
@@ -457,7 +457,7 @@ class Neo4jGraph(GraphStore):
             ):
                 raise
         # fallback to allow implicit transactions
-        with self._driver.session() as session:
+        with self._driver.session(database=self._database) as session:
             data = session.run(Query(text=query, timeout=self.timeout), params)
             json_data = [r.data() for r in data]
             if self.sanitize:

@@ -238,18 +238,20 @@ class GenericFakeChatModel(BaseChatModel):
             messages, stop=stop, run_manager=run_manager, **kwargs
         )
         if not isinstance(chat_result, ChatResult):
-            raise ValueError(
+            msg = (
                 f"Expected generate to return a ChatResult, "
                 f"but got {type(chat_result)} instead."
             )
+            raise ValueError(msg)
 
         message = chat_result.generations[0].message
 
         if not isinstance(message, AIMessage):
-            raise ValueError(
+            msg = (
                 f"Expected invoke to return an AIMessage, "
                 f"but got {type(message)} instead."
             )
+            raise ValueError(msg)
 
         content = message.content
 
