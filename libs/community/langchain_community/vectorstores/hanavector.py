@@ -591,7 +591,7 @@ class HanaDB(VectorStore):
                             where_str_logical,
                             query_tuple_logical,
                         ) = self._process_filter_object(logical_operand)
-                        where_str += where_str_logical
+                        where_str += "(" + where_str_logical + ")"
                         query_tuple += query_tuple_logical
                     continue
 
