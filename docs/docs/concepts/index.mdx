@@ -12,43 +12,40 @@ In this section, you'll find explanations of the key concepts, providing a deepe
 
 The conceptual guide will not cover step-by-step instructions or specific implementation details — those are found in the [How-To Guides](/docs/how_to/) and [Tutorials](/docs/tutorials) sections. For detailed reference material, please visit the [API Reference](https://python.langchain.com/api_reference/).
 
-| Concept                                                        | Description                                                                                                                     |
-|----------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------|
-| [Runnable interface](/docs/concepts/runnables)                 | A standard interface for creating and invoking custom chains, with methods like invoke, stream, and batch, both sync and async. |
-| [LangChain Expression Language (LCEL)](/docs/concepts/lcel)    | A declarative way to chain LangChain components with features like streaming, async support, retries, and more.                 |
-| [Chat models](/docs/concepts/chat_models)                      | Models that process sequences of messages as input and output, with support for roles like 'user', 'assistant', and 'system'.   |
-| [LLMs](/docs/concepts/llms)                                    | Older or lower-level models that process plain text input and output plain text, often replaced by chat models.                 |
-| [Messages](/docs/concepts/messages)                            | Different message types representing the roles and content of conversational exchanges in LangChain.                            |
-| [Prompt templates](/docs/concepts/prompts)                     | Templates that help guide a model's response by formatting user inputs and parameters into prompts.                             |
-| [Output parsers](/docs/concepts/output_parsers)                | Components that transform model output into structured formats, useful for LLMs generating structured data.                     |
-| Example selectors                                              | Classes responsible for selecting and formatting examples into prompts to improve model performance.                            |
-| Chat history                                                   | A class that stores and manages the history of inputs and outputs in a conversation, keeping track of previous interactions.    |
-| Documents                                                      | An object that contains the text and metadata associated with a piece of information in LangChain.                              |
-| Document loaders                                               | Classes responsible for loading document data from various external sources like Slack, Google Drive, or Notion.                |
-| [Text splitters](/docs/concepts/text_splitters)                | Tools for splitting text into smaller, semantically meaningful chunks to fit into model context windows.                        |
-| [Embedding models](/docs/concepts/embedding_models)            | Create vector representations of text for similarity search and retrieval in natural language tasks.                            |
-| [Vector stores](/docs/concepts/vectorstores)                   | Tools for storing and searching embedded data, allowing you to perform vector searches based on similarity.                     |
-| [Retrievers](/docs/concepts/retrievers)                        | Interfaces that return relevant documents based on an unstructured query, more general than vector stores.                      |
-| Key-value stores                                               | Storage mechanism for key-value pairs, helpful for caching embeddings or storing multiple vectors per document.                 |
-| Tools                                                          | Utilities designed to be invoked by models, allowing models to interact with code or external APIs.                             |
-| Toolkits                                                       | Collections of tools designed for specific tasks, often with convenient loading methods.                                        |
-| Agents                                                         | Systems that use LLMs as reasoning engines to choose actions and determine inputs, iterating until task completion.             |
-| Callbacks                                                      | LangChain's system for logging and tracking various stages of execution, including models, chains, and tools.                   |
-| Streaming                                                      | Allows consuming partial output as it is generated, helping to reduce latency in complex chains and agents.                     |
-| [Function/tool calling](/docs/concepts/#function-tool-calling) | Allows a model to generate output arguments that invoke external tools or functions for more complex tasks.                     |
-| Structured output                                              | Constrains a model's output to a specific format, such as JSON, to improve the usability of generated responses.                |
-| [Few-shot prompting](/docs/concepts/#few-shot-prompting)       | A prompting technique where example inputs and outputs are added to a model prompt to improve performance.                      |
-| Retrieval                                                      | The process of providing relevant data to an LLM at query time to improve its response to the user.                             |
-| Query Translation                                              | Techniques for improving retrieval accuracy by refining or altering the original query.                                         |
-| Routing                                                        | Methods for routing queries to appropriate data sources based on content or context.                                            |
-| Query Construction                                             | Techniques for transforming natural language queries into queries specific to the data source's format, such as SQL.            |
-| Indexing                                                       | Creating and storing documents for efficient search and retrieval, often by using embedding models and vector stores.           |
-| Post-processing                                                | Techniques for filtering or ranking retrieved documents to improve the quality of results passed to the LLM.                    |
-| Generation                                                     | Methods for self-correcting errors in responses, such as hallucinations, by iterating on the answer.                            |
-| Text splitting                                                 | Mechanisms for splitting text into smaller chunks, either by character, sentence, or semantically related units.                |
-| Evaluation                                                     | The process of assessing the quality and performance of an LLM's responses in an application.                                   |
-| Tracing                                                        | A system for tracking and observing the sequence of operations in a LangChain application to help diagnose issues.              |
-
+- [Runnable interface](/docs/concepts/runnables): A standard interface for creating and invoking custom chains, with methods like invoke, stream, and batch, both sync and async.
+- [LangChain Expression Language (LCEL)](/docs/concepts/lcel): A declarative way to chain LangChain components with features like streaming, async support, retries, and more.
+- [Chat models](/docs/concepts/chat_models): Models that process sequences of messages as input and output, with support for roles like 'user', 'assistant', and 'system'.
+- [LLMs](/docs/concepts/llms): Older or lower-level models that process plain text input and output plain text, often replaced by chat models.
+- [Messages](/docs/concepts/messages): Different message types representing the roles and content of conversational exchanges in LangChain.
+- [Prompt templates](/docs/concepts/prompts): Templates that help guide a model's response by formatting user inputs and parameters into prompts.
+- [Output parsers](/docs/concepts/output_parsers): Components that transform model output into structured formats, useful for LLMs generating structured data.
+- Example selectors: Classes responsible for selecting and formatting examples into prompts to improve model performance.
+- Chat history: A class that stores and manages the history of inputs and outputs in a conversation, keeping track of previous interactions.
+- Documents: An object that contains the text and metadata associated with a piece of information in LangChain.
+- Document loaders: Classes responsible for loading document data from various external sources like Slack, Google Drive, or Notion.
+- [Text splitters](/docs/concepts/text_splitters): Tools for splitting text into smaller, semantically meaningful chunks to fit into model context windows.
+- [Embedding models](/docs/concepts/embedding_models): Create vector representations of text for similarity search and retrieval in natural language tasks.
+- [Vector stores](/docs/concepts/vectorstores): Tools for storing and searching embedded data, allowing you to perform vector searches based on similarity.
+- [Retrievers](/docs/concepts/retrievers): Interfaces that return relevant documents based on an unstructured query, more general than vector stores.
+- Key-value stores: Storage mechanism for key-value pairs, helpful for caching embeddings or storing multiple vectors per document.
+- Tools: Utilities designed to be invoked by models, allowing models to interact with code or external APIs.
+- Toolkits: Collections of tools designed for specific tasks, often with convenient loading methods.
+- Agents: Systems that use LLMs as reasoning engines to choose actions and determine inputs, iterating until task completion.
+- Callbacks: LangChain's system for logging and tracking various stages of execution, including models, chains, and tools.
+- Streaming: Allows consuming partial output as it is generated, helping to reduce latency in complex chains and agents.
+- [Function/tool calling](/docs/concepts/#function-tool-calling): Allows a model to generate output arguments that invoke external tools or functions for more complex tasks.
+- Structured output: Constrains a model's output to a specific format, such as JSON, to improve the usability of generated responses.
+- [Few-shot prompting](/docs/concepts/#few-shot-prompting): A prompting technique where example inputs and outputs are added to a model prompt to improve performance.
+- Retrieval: The process of providing relevant data to an LLM at query time to improve its response to the user.
+- Query Translation: Techniques for improving retrieval accuracy by refining or altering the original query.
+- Routing: Methods for routing queries to appropriate data sources based on content or context.
+- Query Construction: Techniques for transforming natural language queries into queries specific to the data source's format, such as SQL.
+- Indexing: Creating and storing documents for efficient search and retrieval, often by using embedding models and vector stores.
+- Post-processing: Techniques for filtering or ranking retrieved documents to improve the quality of results passed to the LLM.
+- Generation: Methods for self-correcting errors in responses, such as hallucinations, by iterating on the answer.
+- Text splitting: Mechanisms for splitting text into smaller chunks, either by character, sentence, or semantically related units.
+- Evaluation: The process of assessing the quality and performance of an LLM's responses in an application.
+- Tracing: A system for tracking and observing the sequence of operations in a LangChain application to help diagnose issues.
 
 
 
