@@ -1,0 +1,17 @@
+# Callbacks
+
+The lowest level way to stream outputs from LLMs in LangChain is via the [callbacks](/docs/concepts/#callbacks) system. You can pass a
+callback handler that handles the [`on_llm_new_token`](https://python.langchain.com/api_reference/langchain/callbacks/langchain.callbacks.streaming_aiter.AsyncIteratorCallbackHandler.html#langchain.callbacks.streaming_aiter.AsyncIteratorCallbackHandler.on_llm_new_token) event into LangChain components. When that component is invoked, any
+[LLM](/docs/concepts/#llms) or [chat model](/docs/concepts/#chat-models) contained in the component calls
+the callback with the generated token. Within the callback, you could pipe the tokens into some other destination, e.g. a HTTP response.
+You can also handle the [`on_llm_end`](https://python.langchain.com/api_reference/langchain/callbacks/langchain.callbacks.streaming_aiter.AsyncIteratorCallbackHandler.html#langchain.callbacks.streaming_aiter.AsyncIteratorCallbackHandler.on_llm_end) event to perform any necessary cleanup.
+
+You can see [this how-to section](/docs/how_to/#callbacks) for more specifics on using callbacks.
+
+Callbacks were the first technique for streaming introduced in LangChain. While powerful and generalizable,
+they can be unwieldy for developers. For example:
+
+- You need to explicitly initialize and manage some aggregator or other stream to collect results.
+- The execution order isn't explicitly guaranteed, and you could theoretically have a callback run after the `.invoke()` method finishes.
+- Providers would often make you pass an additional parameter to stream outputs instead of returning them all at once.
+- You would often ignore the result of the actual model call in favor of callback results.
