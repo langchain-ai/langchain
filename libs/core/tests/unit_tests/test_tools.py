@@ -22,6 +22,7 @@ from typing import (
 import pytest
 from pydantic import BaseModel, Field, ValidationError
 from pydantic.v1 import BaseModel as BaseModelV1
+from pydantic.v1 import ValidationError as ValidationErrorV1
 from typing_extensions import TypedDict
 
 from langchain_core import tools
@@ -825,7 +826,7 @@ def test_validation_error_handling_callable() -> None:
     """Test that validation errors are handled correctly."""
     expected = "foo bar"
 
-    def handling(e: ValidationError) -> str:
+    def handling(e: Union[ValidationError, ValidationErrorV1]) -> str:
         return expected
 
     _tool = _MockStructuredTool(handle_validation_error=handling)
@@ -842,7 +843,9 @@ def test_validation_error_handling_callable() -> None:
     ],
 )
 def test_validation_error_handling_non_validation_error(
-    handler: Union[bool, str, Callable[[ValidationError], str]],
+    handler: Union[
+        bool, str, Callable[[Union[ValidationError, ValidationErrorV1]], str]
+    ],
 ) -> None:
     """Test that validation errors are handled correctly."""
 
@@ -887,7 +890,7 @@ async def test_async_validation_error_handling_callable() -> None:
     """Test that validation errors are handled correctly."""
     expected = "foo bar"
 
-    def handling(e: ValidationError) -> str:
+    def handling(e: Union[ValidationError, ValidationErrorV1]) -> str:
         return expected
 
     _tool = _MockStructuredTool(handle_validation_error=handling)
@@ -904,7 +907,9 @@ async def test_async_validation_error_handling_callable() -> None:
     ],
 )
 async def test_async_validation_error_handling_non_validation_error(
-    handler: Union[bool, str, Callable[[ValidationError], str]],
+    handler: Union[
+        bool, str, Callable[[Union[ValidationError, ValidationErrorV1]], str]
+    ],
 ) -> None:
     """Test that validation errors are handled correctly."""
 
