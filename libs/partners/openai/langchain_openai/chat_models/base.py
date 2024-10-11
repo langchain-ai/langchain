@@ -567,7 +567,7 @@ class BaseChatOpenAI(BaseChatModel):
             "top_logprobs": self.top_logprobs,
             "logit_bias": self.logit_bias,
             "stop": self.stop or None,  # also exclude empty list for this
-            "max_completion_tokens": self.max_tokens,
+            "max_tokens": self.max_tokens,
             "extra_body": self.extra_body,
         }
 
@@ -703,10 +703,6 @@ class BaseChatOpenAI(BaseChatModel):
         if stop is not None:
             kwargs["stop"] = stop
 
-        # max_tokens was deprecated in favor of max_completion_tokens
-        # in September 2024 release
-        if "max_tokens" in kwargs:
-            kwargs["max_completion_tokens"] = kwargs.pop("max_tokens")
         return {
             "messages": [_convert_message_to_dict(m) for m in messages],
             **self._default_params,
@@ -1985,6 +1981,29 @@ class ChatOpenAI(BaseChatOpenAI):
     def is_lc_serializable(cls) -> bool:
         """Return whether this model can be serialized by Langchain."""
         return True
+
+    @property
+    def _default_params(self) -> Dict[str, Any]:
+        """Get the default parameters for calling OpenAI API."""
+        params = super()._default_params
+        if "max_tokens" in params:
+            params["max_completion_tokens"] = params.pop("max_tokens")
+
+        return params
+
+    def _get_request_payload(
+        self,
+        input_: LanguageModelInput,
+        *,
+        stop: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> dict:
+        payload = super()._get_request_payload(input_, stop=stop, **kwargs)
+        # max_tokens was deprecated in favor of max_completion_tokens
+        # in September 2024 release
+        if "max_tokens" in payload:
+            payload["max_completion_tokens"] = payload.pop("max_tokens")
+        return payload
 
     def _should_stream_usage(
         self, stream_usage: Optional[bool] = None, **kwargs: Any
