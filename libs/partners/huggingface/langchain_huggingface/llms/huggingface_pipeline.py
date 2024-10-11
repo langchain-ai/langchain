@@ -307,6 +307,7 @@ class HuggingFacePipeline(BaseLLM):
         **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
         from threading import Thread
+
         from transformers import (
             StoppingCriteria,
             StoppingCriteriaList,
@@ -317,6 +318,7 @@ class HuggingFacePipeline(BaseLLM):
         skip_prompt = kwargs.get("skip_prompt", True)
 
         stopping_list = stop or []
+
         class StopSequenceCriteria(StoppingCriteria):
             def __init__(self, stop_sequences, tokenizer):
                 if isinstance(stop_sequences, str):
@@ -326,9 +328,14 @@ class HuggingFacePipeline(BaseLLM):
 
             def __call__(self, input_ids, scores, **kwargs) -> bool:
                 decoded_output = self.tokenizer.decode(input_ids.tolist()[0])
-                return any(decoded_output.endswith(stop_sequence) for stop_sequence in self.stop_sequences)
+                return any(
+                    decoded_output.endswith(stop_sequence)
+                    for stop_sequence in self.stop_sequences
+                )
 
-        stopping_criteria = StoppingCriteriaList([StopSequenceCriteria(stopping_list, self.pipeline.tokenizer)])
+        stopping_criteria = StoppingCriteriaList(
+            [StopSequenceCriteria(stopping_list, self.pipeline.tokenizer)]
+        )
 
         inputs = self.pipeline.tokenizer(prompt, return_tensors="pt")
         streamer = TextIteratorStreamer(
