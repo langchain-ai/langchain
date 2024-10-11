@@ -1,0 +1,39 @@
+# Embedding models
+<span data-heading-keywords="embedding,embeddings"></span>
+
+Embedding models create a vector representation of a piece of text. You can think of a vector as an array of numbers that captures the semantic meaning of the text.
+By representing the text in this way, you can perform mathematical operations that allow you to do things like search for other pieces of text that are most similar in meaning.
+These natural language search capabilities underpin many types of [context retrieval](/docs/concepts/#retrieval),
+where we provide an LLM with the relevant data it needs to effectively respond to a query.
+
+![](/img/embeddings.png)
+
+The `Embeddings` class is a class designed for interfacing with text embedding models. There are many different embedding model providers (OpenAI, Cohere, Hugging Face, etc) and local models, and this class is designed to provide a standard interface for all of them.
+
+The base Embeddings class in LangChain provides two methods: one for embedding documents and one for embedding a query. The former takes as input multiple texts, while the latter takes a single text. The reason for having these as two separate methods is that some embedding providers have different embedding methods for documents (to be searched over) vs queries (the search query itself).
+
+For specifics on how to use embedding models, see the [relevant how-to guides here](/docs/how_to/#embedding-models).
+
+There are a few ways to improve the quality of similarity search. 
+
+Embedding models compress text into fixed-length (vector) representations that capture the semantic content of the document. 
+
+This compression is useful for search / retrieval, but puts a heavy burden on that single vector representation to capture the semantic nuance / detail of the document. 
+
+In some cases, irrelevant or redundant content can dilute the semantic usefulness of the embedding.
+
+[ColBERT](https://docs.google.com/presentation/d/1IRhAdGjIevrrotdplHNcc4aXgIYyKamUKTWtB3m3aMU/edit?usp=sharing) is an interesting approach to address this with a higher granularity embeddings: (1) produce a contextually influenced embedding for each token in the document and query, (2) score similarity between each query token and all document tokens, (3) take the max, (4) do this for all query tokens, and (5) take the sum of the max scores (in step 3) for all query tokens to get a query-document similarity score; this token-wise scoring can yield strong results. 
+
+![](/img/colbert.png)
+
+There are some additional tricks to improve the quality of your retrieval. Embeddings excel at capturing semantic information, but may struggle with keyword-based queries. Many [vector stores](/docs/integrations/retrievers/pinecone_hybrid_search/) offer built-in [hybrid-search](https://docs.pinecone.io/guides/data/understanding-hybrid-search) to combine keyword and semantic similarity, which marries the benefits of both approaches. Furthermore, many vector stores have [maximal marginal relevance](https://python.langchain.com/v0.1/docs/modules/model_io/prompts/example_selectors/mmr/), which attempts to diversify the results of a search to avoid returning similar and redundant documents. 
+
+| Name              | When to use                                              | Description                                                                                                                                                                            |
+|-------------------|----------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [ColBERT](/docs/integrations/providers/ragatouille/#using-colbert-as-a-reranker)           | When higher granularity embeddings are needed.           | ColBERT uses contextually influenced embeddings for each token in the document and query to get a granular query-document similarity score. [Paper](https://arxiv.org/abs/2112.01488). |
+
+:::tip
+
+See our RAG from Scratch video on [ColBERT](https://youtu.be/cN6S0Ehm7_8?feature=shared>).
+
+:::

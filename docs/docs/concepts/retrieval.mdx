@@ -1,0 +1,104 @@
+# Retrieval
+
+## Conceptual Prerequisites
+
+* [Embeddings](/docs/concepts/embedding_models/)
+* [Vectorstores](/docs/concepts/vectorstores/)
+* [Retrievers](/docs/concepts/retrievers/)
+
+## Overview 
+
+As discussed in the [retrievers](/docs/concepts/retrievers/) conceptual overview, a retriever is an interface that returns documents given an unstructured query.
+The goal is return documents that are the most relevant to the query.
+However, a well-posed question paired with a poorly designed retriever will *still return irrelevant documents*, and vice-versa.
+With this in mind, we present two useful concepts to improve retrieval performance that address both the query and the retriever design.
+
+![Retrieval](/img/retrieval_concept.png)
+
+## Key Concepts 
+
+**(1) Preserve full documents:** Documents need to be indexed for retrieval. 
+Indexing can be done in a variety of ways, but often involves a transformation (e.g., document splitting or summarization) followed by compression (e.g., via embedding models) into a concise representation that is easily searchable.
+Whatever method is used, it is very useful to retain a link between the transformed document and the original, giving the retriever the ability to return the original document as the retrieval result.
+**(2) Query analysis:** User queries are unstructured and may be poorly worded (e.g., terse or verbose) for retrieval. Furthermore, retrievers may require a specific query format, such as a domain-specific language (e.g., SQL). Query analysis is the concept of transforming a raw search query into a form that is optimized for retrieval.
+
+## Preserving full documents
+
+Documents need to be indexed for retrieval. 
+A prequisite for indexing is often a transformation step. 
+This can include such as document splitting or summarization to create chunks or more compact representations.
+In this transformation step, it is useful to retain a linkage *back to the original document*.
+This gives the retriever the ability to return the original document as the retrieval result.
+
+This effectively decouples the benefit of retaining the full document from the need to transform the document to optimize indexing.
+Specifically, retaining the full document allows for no loss in context for downstream applications.
+But, this still allows for transformations that can improve the performance of the retriever.
+
+There are at least two approaches that can be used out-of-the-box with LangChain to achieve this. 
+The [Multi-Vector](/docs/how_to/multi_vector/) retriever allows the user to transform documents into any form (e.g., use an LLM to write a summary) that is well-suited for indexing while retaining linkage to the origional document. 
+The [ParentDocument](/docs/how_to/parent_document_retriever/) retain a linkage between document chunks (e.g., from a text-splitter) and the origional document. 
+
+| Name                      | Index Type                   | Uses an LLM               | When to Use                                                                                                                                   | Description                                                                                                                                                                                                                                                                                      |
+|---------------------------|------------------------------|---------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [ParentDocument](/docs/how_to/parent_document_retriever/)            | Vector store + Document Store | No                        | If your pages have lots of smaller pieces of distinct information that are best indexed by themselves, but best retrieved all together.       | This involves indexing multiple chunks for each document. Then you find the chunks that are most similar in embedding space, but you retrieve the whole parent document and return that (rather than individual chunks).                                                                         |
+| [Multi Vector](/docs/how_to/multi_vector/)              | Vector store + Document Store | Sometimes during indexing | If you are able to extract information from documents that you think is more relevant to index than the text itself.                          | This involves creating multiple vectors for each document. Each vector could be created in a myriad of ways - examples include summaries of the text and hypothetical questions.                                                                                                                 |
+
+:::tip
+
+- See our RAG from Scratch video on [multi vector retriever](https://youtu.be/gTCU9I6QqCE?feature=shared)
+
+:::
+
+## Query Analysis
+
+Query analysis is the concept of transforming a raw search query into a form that is optimized for retrieval.
+Here, we highlight two conceptual approaches, query translation and query construction.
+The first approach uses an LLM to translate the raw query into a new query that is better optimized for retrieval.
+The second approach uses an LLM to construct a query in a domain-specific language (e.g., SQL) based upon the raw query.
+
+### Query translation
+
+Ideally, a retrieval system can handle a wide range of (user) inputs, from poorly worded to complex multi-part queries.
+A popular approch is to use an LLM as a general buffer, translating raw user query into a query that is better optimized for the retrieval system. 
+For example, this can be as simple as extracting keywords or as complex as generating multiple sub-questions for a complex query.
+Several different approaches can be used to achieve this.
+
+| Name          | When to use | Description                                                                                                                                                                                                                                                                            |
+|---------------|-------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [Multi-query](/docs/how_to/MultiQueryRetriever/)   | When you need to cover multiple perspectives of a question. | Rewrite the user question from multiple perspectives, retrieve documents for each rewritten question, return the unique documents for all queries. |
+| [Decomposition](https://github.com/langchain-ai/rag-from-scratch/blob/main/rag_from_scratch_5_to_9.ipynb) | When a question can be broken down into smaller subproblems. | Decompose a question into a set of subproblems / questions, which can either be solved sequentially (use the answer from first + retrieval to answer the second) or in parallel (consolidate each answer into final answer).                                                           |
+| [Step-back](https://github.com/langchain-ai/rag-from-scratch/blob/main/rag_from_scratch_5_to_9.ipynb)     | When a higher-level conceptual understanding is required. | First prompt the LLM to ask a generic step-back question about higher-level concepts or principles, and retrieve relevant facts about them. Use this grounding to help answer the user question. [Paper](https://arxiv.org/pdf/2310.06117).                                            |
+| [HyDE](https://github.com/langchain-ai/rag-from-scratch/blob/main/rag_from_scratch_5_to_9.ipynb)          | If you have challenges retrieving relevant documents using the raw user inputs. | Use an LLM to convert questions into hypothetical documents that answer the question. Use the embedded hypothetical documents to retrieve real documents with the premise that doc-doc similarity search can produce more relevant matches. [Paper](https://arxiv.org/abs/2212.10496). |
+
+:::tip
+
+See our RAG from Scratch videos for a few different specific approaches:
+- [Multi-query](https://youtu.be/JChPi0CRnDY?feature=shared)
+- [Decomposition](https://youtu.be/h0OPWlEOank?feature=shared)
+- [Step-back](https://youtu.be/xn1jEjRyJ2U?feature=shared)
+- [HyDE](https://youtu.be/SaDzIVkYqyY?feature=shared)
+
+:::
+
+### Query construction
+
+Various DSLs (Domain Specific Languages) have been developed to interact with retrieval systems including SQL, Cypher, and PQL.
+A popular approach to interacting with structured data is to use an LLM to convert natural language queries into a DSL for the relevant retriever.  
+
+For retrievers that house structured data, [text-to-SQL](/docs/tutorials/sql_qa/) and [text-to-Cypher](/docs/tutorials/graph/) are particularly popular. 
+For retrievers that house semi-structured data, such as vector stores that utilize metadata, a popular approach is to use an LLM to convert a natural language query into a metadata filter.
+This allows for structured filtering of documents based on metadata, which can then be followed by a semantic search across the filtered documents.
+
+| Name                                        | When to Use                                                                                                                                   | Description                                                                                                                                                                                                                                                                                      |
+|---------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [Self Query](/docs/how_to/self_query/)      | If users are asking questions that are better answered by fetching documents based on metadata rather than similarity with the text.          | This uses an LLM to transform user input into two things: (1) a string to look up semantically, (2) a metadata filter to go along with it. This is useful because oftentimes questions are about the METADATA of documents (not the content itself).                                              |
+| [Text to SQL](/docs/tutorials/sql_qa/)      | If users are asking questions that require information housed in a relational database, accessible via SQL.                                   | This uses an LLM to transform user input into a SQL query.                                             |
+| [Text-to-Cypher](/docs/tutorials/graph/)    | If users are asking questions that require information housed in a graph database, accessible via Cypher.                                     | This uses an LLM to transform user input into a Cypher query.                                              |
+
+See our tutorials on [text-to-SQL](/docs/tutorials/sql_qa/), [text-to-Cypher](/docs/tutorials/graph/), and [query analysis for metadata filters](/docs/tutorials/query_analysis/#query-analysis)for more details.
+
+:::tip
+
+See our [blog post overview](https://blog.langchain.dev/query-construction/) and RAG from Scratch video on [query construction](https://youtu.be/kl6NwWYxvbM?feature=shared).
+
+:::
