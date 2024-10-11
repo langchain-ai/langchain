@@ -104,9 +104,8 @@ class RunLogPatch:
             state = jsonpatch.apply_patch(None, copy.deepcopy(ops))
             return RunLog(*ops, state=state)
 
-        raise TypeError(
-            f"unsupported operand type(s) for +: '{type(self)}' and '{type(other)}'"
-        )
+        msg = f"unsupported operand type(s) for +: '{type(self)}' and '{type(other)}'"
+        raise TypeError(msg)
 
     def __repr__(self) -> str:
         from pprint import pformat
@@ -134,9 +133,8 @@ class RunLog(RunLogPatch):
             state = jsonpatch.apply_patch(self.state, other.ops)
             return RunLog(*ops, state=state)
 
-        raise TypeError(
-            f"unsupported operand type(s) for +: '{type(self)}' and '{type(other)}'"
-        )
+        msg = f"unsupported operand type(s) for +: '{type(self)}' and '{type(other)}'"
+        raise TypeError(msg)
 
     def __repr__(self) -> str:
         from pprint import pformat
@@ -197,10 +195,11 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
             ValueError: If an invalid schema format is provided (internal use only).
         """
         if _schema_format not in {"original", "streaming_events"}:
-            raise ValueError(
+            msg = (
                 f"Invalid schema format: {_schema_format}. "
                 f"Expected one of 'original', 'streaming_events'."
             )
+            raise ValueError(msg)
         super().__init__(_schema_format=_schema_format)
 
         self.auto_close = auto_close
@@ -496,11 +495,12 @@ def _get_standardized_inputs(
         None means that the input is not yet known!
     """
     if schema_format == "original":
-        raise NotImplementedError(
+        msg = (
             "Do not assign inputs with original schema drop the key for now."
             "When inputs are added to astream_log they should be added with "
             "standardized schema for streaming events."
         )
+        raise NotImplementedError(msg)
 
     inputs = load(run.inputs)
 
@@ -613,10 +613,11 @@ async def _astream_log_implementation(
         callbacks.add_handler(stream, inherit=True)
         config["callbacks"] = callbacks
     else:
-        raise ValueError(
+        msg = (
             f"Unexpected type for callbacks: {callbacks}."
             "Expected None, list or AsyncCallbackManager."
         )
+        raise ValueError(msg)
 
     # Call the runnable in streaming mode,
     # add each chunk to the output stream

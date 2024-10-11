@@ -346,7 +346,7 @@ class TestGetBufferString(unittest.TestCase):
             self.chat_msg,
             self.tool_calls_msg,
         ]
-        expected_output = "\n".join(
+        expected_output = "\n".join(  # noqa: FLY002
             [
                 "Human: human",
                 "AI: ai",

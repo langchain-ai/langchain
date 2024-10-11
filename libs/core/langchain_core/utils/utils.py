@@ -44,11 +44,12 @@ def xor_args(*arg_groups: tuple[str, ...]) -> Callable:
             invalid_groups = [i for i, count in enumerate(counts) if count != 1]
             if invalid_groups:
                 invalid_group_names = [", ".join(arg_groups[i]) for i in invalid_groups]
-                raise ValueError(
+                msg = (
                     "Exactly one argument in each of the following"
                     " groups must be defined:"
                     f" {', '.join(invalid_group_names)}"
                 )
+                raise ValueError(msg)
             return func(*args, **kwargs)
 
         return wrapper
@@ -134,10 +135,11 @@ def guard_import(
         module = importlib.import_module(module_name, package)
     except (ImportError, ModuleNotFoundError) as e:
         pip_name = pip_name or module_name.split(".")[0].replace("_", "-")
-        raise ImportError(
+        msg = (
             f"Could not import {module_name} python package. "
             f"Please install it with `pip install {pip_name}`."
-        ) from e
+        )
+        raise ImportError(msg) from e
     return module
 
 
@@ -166,25 +168,29 @@ def check_package_version(
     """
     imported_version = parse(version(package))
     if lt_version is not None and imported_version >= parse(lt_version):
-        raise ValueError(
+        msg = (
             f"Expected {package} version to be < {lt_version}. Received "
             f"{imported_version}."
         )
+        raise ValueError(msg)
     if lte_version is not None and imported_version > parse(lte_version):
-        raise ValueError(
+        msg = (
             f"Expected {package} version to be <= {lte_version}. Received "
             f"{imported_version}."
         )
+        raise ValueError(msg)
     if gt_version is not None and imported_version <= parse(gt_version):
-        raise ValueError(
+        msg = (
             f"Expected {package} version to be > {gt_version}. Received "
             f"{imported_version}."
         )
+        raise ValueError(msg)
     if gte_version is not None and imported_version < parse(gte_version):
-        raise ValueError(
+        msg = (
             f"Expected {package} version to be >= {gte_version}. Received "
             f"{imported_version}."
         )
+        raise ValueError(msg)
 
 
 def get_pydantic_field_names(pydantic_cls: Any) -> set[str]:
@@ -230,7 +236,8 @@ def _build_model_kwargs(
     extra_kwargs = values.get("model_kwargs", {})
     for field_name in list(values):
         if field_name in extra_kwargs:
-            raise ValueError(f"Found {field_name} supplied twice.")
+            msg = f"Found {field_name} supplied twice."
+            raise ValueError(msg)
         if field_name not in all_required_field_names:
             warnings.warn(
                 f"""WARNING! {field_name} is not default parameter.
@@ -276,7 +283,8 @@ def build_extra_kwargs(
     """
     for field_name in list(values):
         if field_name in extra_kwargs:
-            raise ValueError(f"Found {field_name} supplied twice.")
+            msg = f"Found {field_name} supplied twice."
+            raise ValueError(msg)
         if field_name not in all_required_field_names:
             warnings.warn(
                 f"""WARNING! {field_name} is not default parameter.
@@ -288,10 +296,11 @@ def build_extra_kwargs(
 
     invalid_model_kwargs = all_required_field_names.intersection(extra_kwargs.keys())
     if invalid_model_kwargs:
-        raise ValueError(
+        msg = (
             f"Parameters {invalid_model_kwargs} should be specified explicitly. "
             f"Instead they were passed in as part of `model_kwargs` parameter."
         )
+        raise ValueError(msg)
 
     return extra_kwargs
 
@@ -386,11 +395,12 @@ def from_env(
             if error_message:
                 raise ValueError(error_message)
             else:
-                raise ValueError(
+                msg = (
                     f"Did not find {key}, please add an environment variable"
                     f" `{key}` which contains it, or pass"
                     f" `{key}` as a named parameter."
                 )
+                raise ValueError(msg)
 
     return get_from_env_fn
 
@@ -443,16 +453,17 @@ def secret_from_env(
             return SecretStr(os.environ[key])
         if isinstance(default, str):
             return SecretStr(default)
-        elif isinstance(default, type(None)):
+        elif default is None:
             return None
         else:
             if error_message:
                 raise ValueError(error_message)
             else:
-                raise ValueError(
+                msg = (
                     f"Did not find {key}, please add an environment variable"
                     f" `{key}` which contains it, or pass"
                     f" `{key}` as a named parameter."
                 )
+                raise ValueError(msg)
 
     return get_secret_from_env
