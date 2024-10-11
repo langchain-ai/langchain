@@ -12,7 +12,7 @@ pip install langchain-huggingface
 
 ## Chat models
 
-### Models from Hugging Face
+### ChatHuggingFace
 
 We can use the `Hugging Face` LLM classes or directly use the `ChatHuggingFace` class.
 
@@ -24,7 +24,16 @@ from langchain_huggingface import ChatHuggingFace
 
 ## LLMs
 
-### Hugging Face Local Pipelines
+### HuggingFaceEndpoint
+
+
+See a [usage example](/docs/integrations/llms/huggingface_endpoint).
+
+```python
+from langchain_huggingface import HuggingFaceEndpoint
+```
+
+### HuggingFacePipeline
 
 Hugging Face models can be run locally through the `HuggingFacePipeline` class.
 
@@ -42,6 +51,22 @@ See a [usage example](/docs/integrations/text_embedding/huggingfacehub).
 
 ```python
 from langchain_huggingface import HuggingFaceEmbeddings
+```
+
+### HuggingFaceEndpointEmbeddings
+
+See a [usage example](/docs/integrations/text_embedding/huggingfacehub).
+
+```python
+from langchain_huggingface import HuggingFaceEndpointEmbeddings
+```
+
+### HuggingFaceInferenceAPIEmbeddings
+
+See a [usage example](/docs/integrations/text_embedding/huggingfacehub).
+
+```python
+from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
 ```
 
 ### HuggingFaceInstructEmbeddings
@@ -62,25 +87,6 @@ See a [usage example](/docs/integrations/text_embedding/bge_huggingface).
 ```python
 from langchain_community.embeddings import HuggingFaceBgeEmbeddings
 ```
-
-### Hugging Face Text Embeddings Inference (TEI)
-
->[Hugging Face Text Embeddings Inference (TEI)](https://huggingface.co/docs/text-generation-inference/index) is a toolkit for deploying and serving open-source
-> text embeddings and sequence classification models. `TEI` enables high-performance extraction for the most popular models,
->including `FlagEmbedding`, `Ember`, `GTE` and `E5`.
-
-We need to install `huggingface-hub` python package.
-
-```bash
-pip install huggingface-hub
-```
-
-See a [usage example](/docs/integrations/text_embedding/text_embeddings_inference).
-
-```python
-from langchain_community.embeddings import HuggingFaceHubEmbeddings
-```
-
 
 ## Document Loaders
 
@@ -104,7 +110,34 @@ See a [usage example](/docs/integrations/document_loaders/hugging_face_dataset).
 from langchain_community.document_loaders.hugging_face_dataset import HuggingFaceDatasetLoader
 ```
 
+### Hugging Face model loader
 
+>Load model information from `Hugging Face Hub`, including README content.
+>
+>This loader interfaces with the `Hugging Face Models API` to fetch 
+> and load model metadata and README files. 
+> The API allows you to search and filter models based on 
+> specific criteria such as model tags, authors, and more.
+
+```python
+from langchain_community.document_loaders import HuggingFaceModelLoader
+```
+
+### Image captions
+
+It uses the Hugging Face models to generate image captions.
+
+We need to install several python packages.
+
+```bash
+pip install transformers pillow
+```
+
+See a [usage example](/docs/integrations/document_loaders/image_captions).
+
+```python
+from langchain_community.document_loaders import ImageCaptionLoader
+```
 
 ## Tools
 
@@ -124,3 +157,12 @@ See a [usage example](/docs/integrations/tools/huggingface_tools).
 ```python
 from langchain_community.agent_toolkits.load_tools import load_huggingface_tool
 ```
+
+### Hugging Face Text-to-Speech Model Inference.
+
+> It is a wrapper around `OpenAI Text-to-Speech API`.
+
+```python
+from langchain_community.tools.audio import HuggingFaceTextToSpeechModelInference
+```
+

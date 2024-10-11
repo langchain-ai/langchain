@@ -1,9 +1,12 @@
-from typing import Any, Dict, List
+from typing import List
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
 from langchain_core.utils import secret_from_env
-from openai import OpenAI  # type: ignore
+from openai import OpenAI
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
+from typing_extensions import Self
+
+# type: ignore
 
 
 class FireworksEmbeddings(BaseModel, Embeddings):
@@ -65,7 +68,7 @@ class FireworksEmbeddings(BaseModel, Embeddings):
              [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
     """
 
-    _client: OpenAI = Field(default=None)
+    client: OpenAI = Field(default=None, exclude=True)  #: :meta private:
     fireworks_api_key: SecretStr = Field(
         alias="api_key",
         default_factory=secret_from_env(
@@ -79,20 +82,25 @@ class FireworksEmbeddings(BaseModel, Embeddings):
     """
     model: str = "nomic-ai/nomic-embed-text-v1.5"
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def validate_environment(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    model_config = ConfigDict(
+        populate_by_name=True,
+        arbitrary_types_allowed=True,
+    )
+
+    @model_validator(mode="after")
+    def validate_environment(self) -> Self:
         """Validate environment variables."""
-        values["_client"] = OpenAI(
-            api_key=values["fireworks_api_key"].get_secret_value(),
+        self.client = OpenAI(
+            api_key=self.fireworks_api_key.get_secret_value(),
             base_url="https://api.fireworks.ai/inference/v1",
         )
-        return values
+        return self
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Embed search docs."""
         return [
             i.embedding
-            for i in self._client.embeddings.create(input=texts, model=self.model).data
+            for i in self.client.embeddings.create(input=texts, model=self.model).data
         ]
 
     def embed_query(self, text: str) -> List[float]:

@@ -4,6 +4,7 @@ import requests
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.utils import get_from_dict_or_env, pre_init
+from pydantic import ConfigDict
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
@@ -63,8 +64,9 @@ class Writer(LLM):
     base_url: Optional[str] = None
     """Base url to use, if None decides based on model name."""
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
