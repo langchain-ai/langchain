@@ -8,7 +8,8 @@ const FEATURE_TABLES = {
     chat: {
         link: "/docs/integrations/chat",
         columns: [
-            {title: "Provider", formatter: (item) => <a href={item.link}>{item.name}</a>},
+            {title: "Provider", mode: "category", formatter: (item) => <a href={item.link}>{item.name}</a>},
+            {title: "Provider", mode: "item", formatter: (item) => <a href={item.link}>{item.name}</a>},
             {title: <a href="/docs/how_to/tool_calling">Tool calling</a>, formatter: (item) => item.tool_calling ? "✅" : "❌"},
             {title: <a href="/docs/how_to/structured_output/">Structured output</a>, formatter: (item) => item.structured_output ? "✅" : "❌"},
             {title: "JSON mode", formatter: (item) => item.json_mode ? "✅" : "❌"},
@@ -221,7 +222,7 @@ const FEATURE_TABLES = {
     llms: {
         link: "/docs/integrations/llms",
         columns: [
-            {title: "Provider", formatter: (item) => <a href={
+            {title: "Provider", mode: "category", formatter: (item) => <a href={
                 item.link
             }>{item.name}</a>},
             {title: "Package", formatter: (item) => <a href={
@@ -294,7 +295,8 @@ const FEATURE_TABLES = {
     text_embedding: {
         link: "/docs/integrations/text_embedding",
         columns: [
-            {title: "Provider", formatter: (item) => <a href={item.link}>{item.name}</a>},
+            {title: "Provider", mode: "category", formatter: (item) => <a href={item.link}>{item.name}</a>},
+            {title: "Provider", mode: "item", formatter: (item) => <a href={`/docs/integrations/${item.top ? "platforms":"providers"}/${item.link}`}>{item.name}</a>},
             {title: "Package", formatter: (item) => <a href={item.apiLink}>{item.package}</a>},
         ],
         items:[
@@ -1120,7 +1122,7 @@ const DEPRECATED_DOC_IDS = [
   "integrations/text_embedding/ernie",
 ];
 
-function toTable(columns, items) {
+function toTable(columns, items, mode) {
     const headers = columns.map((col) => col.title);
     return (
         <table>
@@ -1132,7 +1134,7 @@ function toTable(columns, items) {
             <tbody>
                 {items.map((item, i) => (
                     <tr key={`row-${i}`}>
-                        {columns.map((col, j) => <td key={`cell-${i}-${j}`}>{col.formatter(item)}</td>)}
+                        {columns.filter(col => !col.mode || col.mode === mode).map((col, j) => <td key={`cell-${i}-${j}`}>{col.formatter(item)}</td>)}
                     </tr>
                 ))}
             </tbody>
@@ -1142,7 +1144,7 @@ function toTable(columns, items) {
 
 export function CategoryTable({ category }) {
     const cat = FEATURE_TABLES[category];
-    const rtn = toTable(cat.columns, cat.items);
+    const rtn = toTable(cat.columns, cat.items, "category");
     return rtn;
 }
 
@@ -1152,7 +1154,7 @@ export function ItemTable({ category, item }) {
     if (!row) {
         throw new Error(`Item ${item} not found in category ${category}`);
     }
-    const rtn = toTable(cat.columns, [row]);
+    const rtn = toTable(cat.columns, [row], "item");
     return rtn;
 }
 
@@ -1185,6 +1187,7 @@ export function IndexTable() {
       },
     ],
     rows,
+    "index",
   );
   return rtn;
 }
