@@ -64,7 +64,7 @@ class FireCrawlLoader(BaseLoader):
 
     """  # noqa: E501
 
-    def legacy_crawler_options_adapter(self, params):
+    def legacy_crawler_options_adapter(self, params: dict) -> dict:
         use_legacy_options = False
         legacy_keys = [
             "includes",
@@ -112,7 +112,7 @@ class FireCrawlLoader(BaseLoader):
 
         return params
 
-    def legacy_scrape_options_adapter(self, params):
+    def legacy_scrape_options_adapter(self, params: dict) -> dict:
         use_legacy_options = False
         formats = ["markdown"]
 
