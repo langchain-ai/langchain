@@ -65,8 +65,8 @@ Streaming is critical in making applications based on LLMs feel responsive to en
 
 Runnables expose the following three streaming APIs:
 
-1. The `stream` and `astream`: a default implementation of streaming that streams the final output
-2. The async `astream_events`: a more advanced streaming API that allows streaming intermediate steps and final output  
+1. sync [stream](https://python.langchain.com/api_reference/core/runnables/langchain_core.runnables.base.Runnable.html#langchain_core.runnables.base.Runnable.stream) and async [astream](https://python.langchain.com/api_reference/core/runnables/langchain_core.runnables.base.Runnable.html#langchain_core.runnables.base.Runnable.astream): yields the output a Runnable as it is generated.
+2. The async `astream_events`: a more advanced streaming API that allows streaming intermediate steps and final output
 3. The **legacy** async `astream_log`: a legacy streaming API that streams intermediate steps and final output
 
 Please refer to the [Streaming Conceptual Guide](/docs/concepts/streaming) for more details on how to stream in LangChain.
