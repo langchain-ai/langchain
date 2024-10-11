@@ -438,64 +438,16 @@ For specifics on how to use callbacks, see the [relevant how-to guides here](/do
 Conceptual Guide: [Streaming](/docs/concepts/streaming)
 
 #### `.stream()` and `.astream()`
-
-Conceptual Guide: [Streaming](/docs/concepts/streaming#stream)
+TODO(concepts): Add URL fragment
 
 #### `.astream_events()`
 <span data-heading-keywords="astream_events,stream_events,stream events"></span>
-
-While the `.stream()` method is intuitive, it can only return the final generated value of your chain. This is fine for single LLM calls,
-but as you build more complex chains of several LLM calls together, you may want to use the intermediate values of
-the chain alongside the final output - for example, returning sources alongside the final generation when building a chat
-over documents app.
-
-There are ways to do this [using callbacks](/docs/concepts/#callbacks-1), or by constructing your chain in such a way that it passes intermediate
-values to the end with something like chained [`.assign()`](/docs/how_to/passthrough/) calls, but LangChain also includes an
-`.astream_events()` method that combines the flexibility of callbacks with the ergonomics of `.stream()`. When called, it returns an iterator
-which yields [various types of events](/docs/how_to/streaming/#event-reference) that you can filter and process according
-to the needs of your project.
-
-Here's one small example that prints just events containing streamed chat model output:
-
-```python
-from langchain_core.output_parsers import StrOutputParser
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_anthropic import ChatAnthropic
-
-model = ChatAnthropic(model="claude-3-sonnet-20240229")
-
-prompt = ChatPromptTemplate.from_template("tell me a joke about {topic}")
-parser = StrOutputParser()
-chain = prompt | model | parser
-
-async for event in chain.astream_events({"topic": "parrot"}, version="v2"):
-    kind = event["event"]
-    if kind == "on_chat_model_stream":
-        print(event, end="|", flush=True)
-```
-
-You can roughly think of it as an iterator over callback events (though the format differs) - and you can use it on almost all LangChain components!
-
-See [this guide](/docs/how_to/streaming/#using-stream-events) for more detailed information on how to use `.astream_events()`,
-including a table listing available events.
+TODO(concepts): Add URL fragment
 
 #### Callbacks
 
-The lowest level way to stream outputs from LLMs in LangChain is via the [callbacks](/docs/concepts/#callbacks) system. You can pass a
-callback handler that handles the [`on_llm_new_token`](https://python.langchain.com/api_reference/langchain/callbacks/langchain.callbacks.streaming_aiter.AsyncIteratorCallbackHandler.html#langchain.callbacks.streaming_aiter.AsyncIteratorCallbackHandler.on_llm_new_token) event into LangChain components. When that component is invoked, any
-[LLM](/docs/concepts/#llms) or [chat model](/docs/concepts/#chat-models) contained in the component calls
-the callback with the generated token. Within the callback, you could pipe the tokens into some other destination, e.g. a HTTP response.
-You can also handle the [`on_llm_end`](https://python.langchain.com/api_reference/langchain/callbacks/langchain.callbacks.streaming_aiter.AsyncIteratorCallbackHandler.html#langchain.callbacks.streaming_aiter.AsyncIteratorCallbackHandler.on_llm_end) event to perform any necessary cleanup.
-
-You can see [this how-to section](/docs/how_to/#callbacks) for more specifics on using callbacks.
-
-Callbacks were the first technique for streaming introduced in LangChain. While powerful and generalizable,
-they can be unwieldy for developers. For example:
-
-- You need to explicitly initialize and manage some aggregator or other stream to collect results.
-- The execution order isn't explicitly guaranteed, and you could theoretically have a callback run after the `.invoke()` method finishes.
-- Providers would often make you pass an additional parameter to stream outputs instead of returning them all at once.
-- You would often ignore the result of the actual model call in favor of callback results.
+* Conceptual Guide: [Callbacks](/docs/concepts/callbacks)
+* How-to Guides: [How to use Callbacks](/docs/how_to/#callbacks)
 
 #### Tokens
 
