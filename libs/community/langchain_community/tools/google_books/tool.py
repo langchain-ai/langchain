@@ -5,7 +5,7 @@ from typing import Optional
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool
 
-from langchain_community.utilities.google_scholar import GoogleScholarAPIWrapper
+from langchain_community.utilities.google_books import GoogleBooksAPIWrapper
 
 
 class GoogleBooksQueryRun(BaseTool):
@@ -18,7 +18,7 @@ class GoogleBooksQueryRun(BaseTool):
         "books from Google Books"
         "Input should be a search query."
     )
-    api_wrapper: GoogleScholarAPIWrapper
+    api_wrapper: GoogleBooksAPIWrapper
 
     def _run(
         self,
