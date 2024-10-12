@@ -54,7 +54,9 @@ class GoogleBooksAPIWrapper(BaseModel):
 
         # some error handeling
         if response.status_code != 200:
-            return f'Unable to retrieve books got status code ${response.status_code}: {json.get('error', {}).get('message', 'Internal failure')}'
+            code = response.status_code
+            error = json.get('error', {}).get('message', 'Internal failure')
+            return f'Unable to retrieve books got status code {code}: {error}'
 
         # send back data
         return self._format(query, json.get('items', []))
@@ -63,7 +65,10 @@ class GoogleBooksAPIWrapper(BaseModel):
         if not books:
             return f'Sorry no books could be found for your query: {query}'
 
-        results = [f'Here are {len(books)} suggestions based off your search for books related to {query}']
+        start = f'Here are {len(books)} suggestions for books related to {query}:'
+
+        results = []
+        results.append(start)
         i = 1
 
         for book in books:
@@ -73,7 +78,9 @@ class GoogleBooksAPIWrapper(BaseModel):
             summary = info['description']
             source = info['infoLink']
 
-            results.append(f'{i}. "{title}" by {authors}: {summary}\nYou can read more at {source}')
+            desc = f'{i}. "{title}" by {authors}: {summary}\n'
+            desc += f'You can read more at {source}'
+            results.append(desc)
 
             i += 1
 
