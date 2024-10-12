@@ -1,11 +1,7 @@
-"""Chain that calls Google Books API."""
 import requests
-
 from typing import Any, Dict, Optional
-
 from langchain_core.utils import get_from_dict_or_env
 from pydantic import BaseModel, ConfigDict, model_validator
-
 
 
 class GoogleBooksAPIWrapper(BaseModel):
@@ -25,9 +21,10 @@ class GoogleBooksAPIWrapper(BaseModel):
             values, "gbooks_api_key", "GBOOKS_API_KEY"
         )
         values["gbooks_api_key"] = gbooks_api_key
-    
+        return values
+
     def run(self, query: str) -> str:
-        """"""
+        """Query Google Books API and return a formatted string of book details."""
         url = f'https://www.googleapis.com/books/v1/volumes'
     
         # Set up query parameters
@@ -42,16 +39,16 @@ class GoogleBooksAPIWrapper(BaseModel):
         # If the request was successful, return the books
         if response.status_code == 200:
             books = response.json().get('items', [])
-            formatted_books = []
-            for book in books:
+            formatted_books = [f"Here are a few books related to {query}:\n"]
+            for i, book in enumerate(books, start=1):
                 title = book['volumeInfo'].get('title', 'No title available')
                 authors = book['volumeInfo'].get('authors', 'No authors available')
                 description = book['volumeInfo'].get('description', 'No description available')
 
-                formatted_book = f'"{title}" by {", ".join(authors) if isinstance(authors, list) else authors}: {description}'
+                # Format each book's details
+                formatted_book = f'{i}. "{title}" by {", ".join(authors) if isinstance(authors, list) else authors}: {description}'
                 formatted_books.append(formatted_book)
             
-            return formatted_books
+            return "\n\n".join(formatted_books)
         else:
-            print(f"Failed to retrieve books: {response.status_code}")
-            return []
+            return f"Failed to retrieve books: {response.status_code}"
