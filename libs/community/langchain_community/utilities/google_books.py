@@ -41,7 +41,7 @@ class GoogleBooksAPIWrapper(BaseModel):
         return values
 
     def run(self, query: str) -> str:
-        # build Url based on API key and query
+        # build Url based on API key, query, and max results
         params = {
             'q': query,
             'maxResults': self.top_k_results,
@@ -56,7 +56,7 @@ class GoogleBooksAPIWrapper(BaseModel):
         if response.status_code != 200:
             return f'Unable to retrieve books got status code ${response.status_code}: {json.get('error', {}).get('message', 'Internal failure')}'
 
-        # send back data (format style tbd)
+        # send back data
         return self._format(query, json.get('items', []))
 
     def _format(self, query: str, books: List) -> str:
