@@ -1,0 +1,74 @@
+# Streaming
+
+<span data-heading-keywords="stream,streaming"></span>
+
+Individual LLM calls often run for much longer than traditional resource requests.
+This compounds when you build more complex chains or agents that require multiple reasoning steps.
+
+Fortunately, LLMs generate output iteratively, which means it's possible to show sensible intermediate results
+before the final response is ready. Consuming output as soon as it becomes available has therefore become a vital part of the UX
+around building apps with LLMs to help alleviate latency issues, and LangChain aims to have first-class support for streaming.
+
+Below, we'll discuss some concepts and considerations around streaming in LangChain.
+
+## `.stream()` and `.astream()`
+
+Most modules in LangChain include the `.stream()` method (and the equivalent `.astream()` method for [async](https://docs.python.org/3/library/asyncio.html) environments) as an ergonomic streaming interface.
+`.stream()` returns an iterator, which you can consume with a simple `for` loop. Here's an example with a chat model:
+
+```python
+from langchain_anthropic import ChatAnthropic
+
+model = ChatAnthropic(model="claude-3-sonnet-20240229")
+
+for chunk in model.stream("what color is the sky?"):
+    print(chunk.content, end="|", flush=True)
+```
+
+For models (or other components) that don't support streaming natively, this iterator would just yield a single chunk, but
+you could still use the same general pattern when calling them. Using `.stream()` will also automatically call the model in streaming mode
+without the need to provide additional config.
+
+The type of each outputted chunk depends on the type of component - for example, chat models yield [`AIMessageChunks`](https://python.langchain.com/api_reference/core/messages/langchain_core.messages.ai.AIMessageChunk.html).
+Because this method is part of [LangChain Expression Language](/docs/concepts/#langchain-expression-language-lcel),
+you can handle formatting differences from different outputs using an [output parser](/docs/concepts/#output-parsers) to transform
+each yielded chunk.
+
+You can check out [this guide](/docs/how_to/streaming/#using-stream) for more detail on how to use `.stream()`.
+
+## `.astream_events()`
+<span data-heading-keywords="astream_events,stream_events,stream events"></span>
+
+While the `.stream()` method is intuitive, it can only return the final generated value of your chain. This is fine for single LLM calls,
+but as you build more complex chains of several LLM calls together, you may want to use the intermediate values of
+the chain alongside the final output - for example, returning sources alongside the final generation when building a chat
+over documents app.
+
+There are ways to do this [using callbacks](/docs/concepts/#callbacks-1), or by constructing your chain in such a way that it passes intermediate
+values to the end with something like chained [`.assign()`](/docs/how_to/passthrough/) calls, but LangChain also includes an
+`.astream_events()` method that combines the flexibility of callbacks with the ergonomics of `.stream()`. When called, it returns an iterator
+which yields [various types of events](/docs/how_to/streaming/#event-reference) that you can filter and process according
+to the needs of your project.
+
+Here's one small example that prints just events containing streamed chat model output:
+
+```python
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_anthropic import ChatAnthropic
+
+model = ChatAnthropic(model="claude-3-sonnet-20240229")
+
+prompt = ChatPromptTemplate.from_template("tell me a joke about {topic}")
+parser = StrOutputParser()
+chain = prompt | model | parser
+
+async for event in chain.astream_events({"topic": "parrot"}, version="v2"):
+    kind = event["event"]
+    if kind == "on_chat_model_stream":
+        print(event, end="|", flush=True)
+```
+
+You can roughly think of it as an iterator over callback events (though the format differs) - and you can use it on almost all LangChain components!
+
+See [this guide](/docs/how_to/streaming/#using-stream-events) for more detailed information on how to use `.astream_events()`, including a table listing available events.
