@@ -19,7 +19,31 @@ class Outlines(LLM):
     client: Any  # :meta private:
 
     model_identifier: str = Field(..., alias="model")
-    """Identifier for the model to use with Outlines."""
+    """Identifier for the model to use with Outlines.
+    
+    The model_identifier should be a string in the format "provider/model_name", where:
+    
+    - "provider" specifies the model type or source. Supported providers are:
+      - "llamacpp": For GGUF models using llama.cpp
+      - "transformers": For Hugging Face Transformers models
+      - "transformers_vision": For vision-language models (e.g., LLaVA)
+      - "vllm": For models using the vLLM library
+      - "mlxlm": For models using the MLX framework
+    
+    - "model_name" is the specific model identifier, which can be:
+      - A Hugging Face model name (e.g., "meta-llama/Llama-2-7b-chat-hf")
+      - A local path to a model
+      - For GGUF models, the format is "repo_id/file_name"
+        (e.g., "TheBloke/Llama-2-7B-Chat-GGUF/llama-2-7b-chat.Q4_K_M.gguf")
+    
+    Examples:
+    - "llamacpp/TheBloke/Llama-2-7B-Chat-GGUF/llama-2-7b-chat.Q4_K_M.gguf"
+    - "transformers/meta-llama/Llama-2-7b-chat-hf"
+    - "vllm/meta-llama/Llama-2-7b-chat-hf"
+    
+    Note: Ensure you have the necessary dependencies installed for the chosen provider.
+    The system will attempt to import required packages and may raise an ImportError
+    if they are not available."""
 
     max_tokens: int = 256
     """The maximum number of tokens to generate."""
@@ -146,10 +170,10 @@ class Outlines(LLM):
         if model_identifier.startswith("llamacpp/"):
             check_packages_installed([("llama_cpp", "llama-cpp-python")])
             repo_id, file_name = model_path.split("/", 1)
-            model = models.llamacpp(repo_id, file_name)
+            model = models.llamacpp(repo_id, file_name, **values["model_kwargs"])
         elif model_identifier.startswith("transformers/"):
             check_packages_installed(["transformers", "torch", "datasets"])
-            model = models.transformers(model_path)
+            model = models.transformers(model_path, **values["model_kwargs"])
         elif model_identifier.startswith("transformers_vision/"):
             check_packages_installed(
                 ["transformers", "datasets", "torchvision", "PIL", "flash_attn"]
@@ -181,10 +205,6 @@ class Outlines(LLM):
     def _default_params(self) -> Dict[str, Any]:
         return {
             "max_tokens": self.max_tokens,
-            # "temperature": self.temperature,
-            # "top_p": self.top_p,
-            # "top_k": self.top_k,
-            # "repetition_penalty": self.repetition_penalty,
             "stop_at": self.stop,
             **self.model_kwargs,
         }
@@ -270,7 +290,13 @@ class Outlines(LLM):
                 run_manager.on_llm_new_token(token)
             yield GenerationChunk(text=token)
 
-    def get_num_tokens(self, text: str) -> int:
-        tokenizer = self.client.tokenizer
-        # todo: check if this is the correct way to get tokenizer across all models
-        return len(tokenizer(text))
+    @property
+    def tokenizer(self) -> Any:
+        """Access the tokenizer for the underlying model.
+
+        .encode() to tokenize text.
+        .decode() to convert tokens back to text.
+        """
+        if hasattr(self.client, "tokenizer"):
+            return self.client.tokenizer
+        raise ValueError("Tokenizer not found")
