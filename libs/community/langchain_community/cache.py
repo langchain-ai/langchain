@@ -2610,7 +2610,8 @@ class MemcachedCache(BaseCache):
         Initialize an instance of MemcachedCache.
 
         Args:
-            client_ (str): An instance of any of pymemcache's Clients (Client, PooledClient, HashClient)
+            client_ (str): An instance of any of pymemcache's Clients
+                (Client, PooledClient, HashClient)
         Example:
         .. code-block:: python
             ifrom langchain.globals import set_llm_cache
@@ -2657,7 +2658,7 @@ class MemcachedCache(BaseCache):
         key = _hash(prompt + llm_string)
         try:
             result = self.client.get(key)
-        except:
+        except pymemcache.MemcacheError:
             return None
 
         return _loads_generations(result) if result is not None else None
