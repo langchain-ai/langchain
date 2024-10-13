@@ -32,6 +32,7 @@ EXPECTED_ALL = [
     "ChatOCIGenAI",
     "ChatOllama",
     "ChatOpenAI",
+    "ChatOutlines",
     "ChatPerplexity",
     "ChatPremAI",
     "ChatSambaNovaCloud",
