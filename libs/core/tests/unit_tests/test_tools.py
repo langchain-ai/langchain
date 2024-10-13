@@ -22,6 +22,7 @@ from typing import (
 import pytest
 from pydantic import BaseModel, Field, ValidationError
 from pydantic.v1 import BaseModel as BaseModelV1
+from pydantic.v1 import ValidationError as ValidationErrorV1
 from typing_extensions import TypedDict
 
 from langchain_core import tools
@@ -357,7 +358,6 @@ def test_structured_tool_types_parsed_pydantic_mixed() -> None:
             some_base_model: SomeBaseModel, another_base_model: AnotherBaseModel
         ) -> None:
             """Return the arguments directly."""
-            pass
 
 
 def test_base_tool_inheritance_base_schema() -> None:
@@ -402,7 +402,7 @@ def test_structured_tool_from_function_docstring() -> None:
             bar: the bar value
             baz: the baz value
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     structured_tool = StructuredTool.from_function(foo)
     assert structured_tool.name == "foo"
@@ -436,7 +436,7 @@ def test_structured_tool_from_function_docstring_complex_args() -> None:
             bar: int
             baz: List[str]
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     structured_tool = StructuredTool.from_function(foo)
     assert structured_tool.name == "foo"
@@ -782,7 +782,7 @@ def test_structured_tool_from_function() -> None:
             bar: the bar value
             baz: the baz value
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     structured_tool = StructuredTool.from_function(foo)
     assert structured_tool.name == "foo"
@@ -826,7 +826,7 @@ def test_validation_error_handling_callable() -> None:
     """Test that validation errors are handled correctly."""
     expected = "foo bar"
 
-    def handling(e: ValidationError) -> str:
+    def handling(e: Union[ValidationError, ValidationErrorV1]) -> str:
         return expected
 
     _tool = _MockStructuredTool(handle_validation_error=handling)
@@ -843,7 +843,9 @@ def test_validation_error_handling_callable() -> None:
     ],
 )
 def test_validation_error_handling_non_validation_error(
-    handler: Union[bool, str, Callable[[ValidationError], str]],
+    handler: Union[
+        bool, str, Callable[[Union[ValidationError, ValidationErrorV1]], str]
+    ],
 ) -> None:
     """Test that validation errors are handled correctly."""
 
@@ -855,7 +857,7 @@ def test_validation_error_handling_non_validation_error(
             self,
             tool_input: Union[str, dict],
         ) -> Union[str, dict[str, Any]]:
-            raise NotImplementedError()
+            raise NotImplementedError
 
         def _run(self) -> str:
             return "dummy"
@@ -888,7 +890,7 @@ async def test_async_validation_error_handling_callable() -> None:
     """Test that validation errors are handled correctly."""
     expected = "foo bar"
 
-    def handling(e: ValidationError) -> str:
+    def handling(e: Union[ValidationError, ValidationErrorV1]) -> str:
         return expected
 
     _tool = _MockStructuredTool(handle_validation_error=handling)
@@ -905,7 +907,9 @@ async def test_async_validation_error_handling_callable() -> None:
     ],
 )
 async def test_async_validation_error_handling_non_validation_error(
-    handler: Union[bool, str, Callable[[ValidationError], str]],
+    handler: Union[
+        bool, str, Callable[[Union[ValidationError, ValidationErrorV1]], str]
+    ],
 ) -> None:
     """Test that validation errors are handled correctly."""
 
@@ -917,7 +921,7 @@ async def test_async_validation_error_handling_non_validation_error(
             self,
             tool_input: Union[str, dict],
         ) -> Union[str, dict[str, Any]]:
-            raise NotImplementedError()
+            raise NotImplementedError
 
         def _run(self) -> str:
             return "dummy"
@@ -1421,7 +1425,7 @@ class InjectedTool(BaseTool):
         return y
 
 
-class fooSchema(BaseModel):
+class fooSchema(BaseModel):  # noqa: N801
     """foo."""
 
     x: int = Field(..., description="abc")
@@ -1568,14 +1572,14 @@ def test_tool_injected_arg() -> None:
 
 
 def test_tool_inherited_injected_arg() -> None:
-    class barSchema(BaseModel):
+    class BarSchema(BaseModel):
         """bar."""
 
         y: Annotated[str, "foobar comment", InjectedToolArg()] = Field(
             ..., description="123"
         )
 
-    class fooSchema(barSchema):
+    class FooSchema(BarSchema):
         """foo."""
 
         x: int = Field(..., description="abc")
@@ -1583,14 +1587,14 @@ def test_tool_inherited_injected_arg() -> None:
     class InheritedInjectedArgTool(BaseTool):
         name: str = "foo"
         description: str = "foo."
-        args_schema: type[BaseModel] = fooSchema
+        args_schema: type[BaseModel] = FooSchema
 
         def _run(self, x: int, y: str) -> Any:
             return y
 
     tool_ = InheritedInjectedArgTool()
     assert tool_.get_input_schema().model_json_schema() == {
-        "title": "fooSchema",  # Matches the title from the provided schema
+        "title": "FooSchema",  # Matches the title from the provided schema
         "description": "foo.",
         "type": "object",
         "properties": {
@@ -1877,15 +1881,15 @@ def test__get_all_basemodel_annotations_v2(use_v1_namespace: bool) -> None:
     A = TypeVar("A")
 
     if use_v1_namespace:
-        from pydantic.v1 import BaseModel as BM1
+        from pydantic.v1 import BaseModel as BaseModel1
 
-        class ModelA(BM1, Generic[A], extra="allow"):
+        class ModelA(BaseModel1, Generic[A], extra="allow"):
             a: A
     else:
-        from pydantic import BaseModel as BM2
+        from pydantic import BaseModel as BaseModel2
         from pydantic import ConfigDict
 
-        class ModelA(BM2, Generic[A]):  # type: ignore[no-redef]
+        class ModelA(BaseModel2, Generic[A]):  # type: ignore[no-redef]
             a: A
             model_config = ConfigDict(arbitrary_types_allowed=True, extra="allow")
 
@@ -2081,13 +2085,28 @@ def test_structured_tool_direct_init() -> None:
     def foo(bar: str) -> str:
         return bar
 
-    async def asyncFoo(bar: str) -> str:
+    async def async_foo(bar: str) -> str:
         return bar
 
-    class fooSchema(BaseModel):
+    class FooSchema(BaseModel):
         bar: str = Field(..., description="The bar")
 
-    tool = StructuredTool(name="foo", args_schema=fooSchema, coroutine=asyncFoo)
+    tool = StructuredTool(name="foo", args_schema=FooSchema, coroutine=async_foo)
 
     with pytest.raises(NotImplementedError):
         assert tool.invoke("hello") == "hello"
+
+
+def test_injected_arg_with_complex_type() -> None:
+    """Test that an injected tool arg can be a complex type."""
+
+    class Foo:
+        def __init__(self) -> None:
+            self.value = "bar"
+
+    @tool
+    def injected_tool(x: int, foo: Annotated[Foo, InjectedToolArg]) -> str:
+        """Tool that has an injected tool arg."""
+        return foo.value
+
+    assert injected_tool.invoke({"x": 5, "foo": Foo()}) == "bar"  # type: ignore

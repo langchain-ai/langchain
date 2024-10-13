@@ -60,7 +60,8 @@ def py_anext(
             Callable[[AsyncIterator[T]], Awaitable[T]], type(iterator).__anext__
         )
     except AttributeError as e:
-        raise TypeError(f"{iterator!r} is not an async iterator") from e
+        msg = f"{iterator!r} is not an async iterator"
+        raise TypeError(msg) from e
 
     if default is _no_default:
         return __anext__(iterator)
@@ -235,7 +236,7 @@ class Tee(Generic[T]):
 atee = Tee
 
 
-class aclosing(AbstractAsyncContextManager):
+class aclosing(AbstractAsyncContextManager):  # noqa: N801
     """Async context manager for safely finalizing an asynchronously cleaned-up
     resource such as an async generator, calling its ``aclose()`` method.
 

@@ -27,7 +27,7 @@ from tests.unit_tests.fake.callbacks import (
     FakeAsyncCallbackHandler,
     FakeCallbackHandler,
 )
-from tests.unit_tests.stubs import _AnyIdAIMessage, _AnyIdAIMessageChunk
+from tests.unit_tests.stubs import _any_id_ai_message, _any_id_ai_message_chunk
 
 
 @pytest.fixture
@@ -53,10 +53,10 @@ def test_batch_size(messages: list, messages_2: list) -> None:
     with collect_runs() as cb:
         llm.batch([messages, messages_2], {"callbacks": [cb]})
         assert len(cb.traced_runs) == 2
-        assert all([(r.extra or {}).get("batch_size") == 1 for r in cb.traced_runs])
+        assert all((r.extra or {}).get("batch_size") == 1 for r in cb.traced_runs)
     with collect_runs() as cb:
         llm.batch([messages], {"callbacks": [cb]})
-        assert all([(r.extra or {}).get("batch_size") == 1 for r in cb.traced_runs])
+        assert all((r.extra or {}).get("batch_size") == 1 for r in cb.traced_runs)
         assert len(cb.traced_runs) == 1
 
     with collect_runs() as cb:
@@ -76,11 +76,11 @@ async def test_async_batch_size(messages: list, messages_2: list) -> None:
     # so we expect batch_size to always be 1
     with collect_runs() as cb:
         await llm.abatch([messages, messages_2], {"callbacks": [cb]})
-        assert all([(r.extra or {}).get("batch_size") == 1 for r in cb.traced_runs])
+        assert all((r.extra or {}).get("batch_size") == 1 for r in cb.traced_runs)
         assert len(cb.traced_runs) == 2
     with collect_runs() as cb:
         await llm.abatch([messages], {"callbacks": [cb]})
-        assert all([(r.extra or {}).get("batch_size") == 1 for r in cb.traced_runs])
+        assert all((r.extra or {}).get("batch_size") == 1 for r in cb.traced_runs)
         assert len(cb.traced_runs) == 1
 
     with collect_runs() as cb:
@@ -107,7 +107,7 @@ async def test_stream_error_callback() -> None:
         else:
             assert llm_result.generations[0][0].text == message[:i]
 
-    for i in range(0, 2):
+    for i in range(2):
         llm = FakeListChatModel(
             responses=[message],
             error_on_chunk_number=i,
@@ -146,11 +146,11 @@ async def test_astream_fallback_to_ainvoke() -> None:
             return "fake-chat-model"
 
     model = ModelWithGenerate()
-    chunks = [chunk for chunk in model.stream("anything")]
-    assert chunks == [_AnyIdAIMessage(content="hello")]
+    chunks = list(model.stream("anything"))
+    assert chunks == [_any_id_ai_message(content="hello")]
 
     chunks = [chunk async for chunk in model.astream("anything")]
-    assert chunks == [_AnyIdAIMessage(content="hello")]
+    assert chunks == [_any_id_ai_message(content="hello")]
 
 
 async def test_astream_implementation_fallback_to_stream() -> None:
@@ -165,7 +165,7 @@ async def test_astream_implementation_fallback_to_stream() -> None:
             **kwargs: Any,
         ) -> ChatResult:
             """Top Level call"""
-            raise NotImplementedError()
+            raise NotImplementedError
 
         def _stream(
             self,
@@ -183,17 +183,17 @@ async def test_astream_implementation_fallback_to_stream() -> None:
             return "fake-chat-model"
 
     model = ModelWithSyncStream()
-    chunks = [chunk for chunk in model.stream("anything")]
+    chunks = list(model.stream("anything"))
     assert chunks == [
-        _AnyIdAIMessageChunk(content="a"),
-        _AnyIdAIMessageChunk(content="b"),
+        _any_id_ai_message_chunk(content="a"),
+        _any_id_ai_message_chunk(content="b"),
     ]
     assert len({chunk.id for chunk in chunks}) == 1
     assert type(model)._astream == BaseChatModel._astream
     astream_chunks = [chunk async for chunk in model.astream("anything")]
     assert astream_chunks == [
-        _AnyIdAIMessageChunk(content="a"),
-        _AnyIdAIMessageChunk(content="b"),
+        _any_id_ai_message_chunk(content="a"),
+        _any_id_ai_message_chunk(content="b"),
     ]
     assert len({chunk.id for chunk in astream_chunks}) == 1
 
@@ -210,7 +210,7 @@ async def test_astream_implementation_uses_astream() -> None:
             **kwargs: Any,
         ) -> ChatResult:
             """Top Level call"""
-            raise NotImplementedError()
+            raise NotImplementedError
 
         async def _astream(  # type: ignore
             self,
@@ -230,8 +230,8 @@ async def test_astream_implementation_uses_astream() -> None:
     model = ModelWithAsyncStream()
     chunks = [chunk async for chunk in model.astream("anything")]
     assert chunks == [
-        _AnyIdAIMessageChunk(content="a"),
-        _AnyIdAIMessageChunk(content="b"),
+        _any_id_ai_message_chunk(content="a"),
+        _any_id_ai_message_chunk(content="b"),
     ]
     assert len({chunk.id for chunk in chunks}) == 1
 

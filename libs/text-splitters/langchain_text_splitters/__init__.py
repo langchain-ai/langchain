@@ -39,6 +39,7 @@ from langchain_text_splitters.json import RecursiveJsonSplitter
 from langchain_text_splitters.konlpy import KonlpyTextSplitter
 from langchain_text_splitters.latex import LatexTextSplitter
 from langchain_text_splitters.markdown import (
+    ExperimentalMarkdownSyntaxTextSplitter,
     HeaderType,
     LineType,
     MarkdownHeaderTextSplitter,
@@ -73,4 +74,5 @@ __all__ = [
     "MarkdownHeaderTextSplitter",
     "MarkdownTextSplitter",
     "CharacterTextSplitter",
+    "ExperimentalMarkdownSyntaxTextSplitter",
 ]

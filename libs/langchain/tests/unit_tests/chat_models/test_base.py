@@ -101,8 +101,8 @@ def test_configurable() -> None:
         "name": None,
         "bound": {
             "name": None,
-            "cache": None,
             "disable_streaming": False,
+            "disabled_params": None,
             "model_name": "gpt-4o",
             "temperature": 0.7,
             "model_kwargs": {},
@@ -125,8 +125,6 @@ def test_configurable() -> None:
             "tiktoken_model_name": None,
             "default_headers": None,
             "default_query": None,
-            "http_client": None,
-            "http_async_client": None,
             "stop": None,
             "extra_body": None,
             "include_response_headers": False,
@@ -190,7 +188,6 @@ def test_configurable_with_default() -> None:
         "name": None,
         "bound": {
             "name": None,
-            "cache": None,
             "disable_streaming": False,
             "model": "claude-3-sonnet-20240229",
             "max_tokens": 1024,

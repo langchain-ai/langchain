@@ -35,7 +35,7 @@ class ChatMessageChunk(ChatMessage, BaseMessageChunk):
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
     type: Literal["ChatMessageChunk"] = "ChatMessageChunk"  # type: ignore
-    """The type of the message (used during serialization). 
+    """The type of the message (used during serialization).
     Defaults to "ChatMessageChunk"."""
 
     @classmethod
@@ -48,9 +48,8 @@ class ChatMessageChunk(ChatMessage, BaseMessageChunk):
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
         if isinstance(other, ChatMessageChunk):
             if self.role != other.role:
-                raise ValueError(
-                    "Cannot concatenate ChatMessageChunks with different roles."
-                )
+                msg = "Cannot concatenate ChatMessageChunks with different roles."
+                raise ValueError(msg)
 
             return self.__class__(
                 role=self.role,

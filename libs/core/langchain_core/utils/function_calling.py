@@ -64,7 +64,7 @@ def _rm_titles(kv: dict, prev_key: str = "") -> dict:
     new_kv = {}
     for k, v in kv.items():
         if k == "title":
-            if isinstance(v, dict) and prev_key == "properties" and "title" in v.keys():
+            if isinstance(v, dict) and prev_key == "properties" and "title" in v:
                 new_kv[k] = _rm_titles(v, k)
             else:
                 continue
@@ -105,7 +105,8 @@ def convert_pydantic_to_openai_function(
     elif hasattr(model, "schema"):
         schema = model.schema()  # Pydantic 1
     else:
-        raise TypeError("Model must be a Pydantic model.")
+        msg = "Model must be a Pydantic model."
+        raise TypeError(msg)
     schema = dereference_refs(schema)
     if "definitions" in schema:  # pydantic 1
         schema.pop("definitions", None)
@@ -233,17 +234,16 @@ def _convert_any_typed_dicts_to_pydantic(
                 new_arg_type = _convert_any_typed_dicts_to_pydantic(
                     annotated_args[0], depth=depth + 1, visited=visited
                 )
-                field_kwargs = {
-                    k: v for k, v in zip(("default", "description"), annotated_args[1:])
-                }
+                field_kwargs = dict(zip(("default", "description"), annotated_args[1:]))
                 if (field_desc := field_kwargs.get("description")) and not isinstance(
                     field_desc, str
                 ):
-                    raise ValueError(
+                    msg = (
                         f"Invalid annotation for field {arg}. Third argument to "
                         f"Annotated must be a string description, received value of "
                         f"type {type(field_desc)}."
                     )
+                    raise ValueError(msg)
                 elif arg_desc := arg_descriptions.get(arg):
                     field_kwargs["description"] = arg_desc
                 else:
@@ -389,12 +389,13 @@ def convert_to_openai_function(
     elif callable(function):
         oai_function = cast(dict, convert_python_function_to_openai_function(function))
     else:
-        raise ValueError(
+        msg = (
             f"Unsupported function\n\n{function}\n\nFunctions must be passed in"
             " as Dict, pydantic.BaseModel, or Callable. If they're a dict they must"
             " either be in OpenAI function format or valid JSON schema with top-level"
             " 'title' and 'description' keys."
         )
+        raise ValueError(msg)
 
     if strict is not None:
         oai_function["strict"] = strict
@@ -555,7 +556,8 @@ def _parse_google_docstring(
             if filtered_annotations and (
                 len(docstring_blocks) < 2 or not docstring_blocks[1].startswith("Args:")
             ):
-                raise ValueError("Found invalid Google-Style docstring.")
+                msg = "Found invalid Google-Style docstring."
+                raise ValueError(msg)
         descriptors = []
         args_block = None
         past_descriptors = False
@@ -563,7 +565,7 @@ def _parse_google_docstring(
             if block.startswith("Args:"):
                 args_block = block
                 break
-            elif block.startswith("Returns:") or block.startswith("Example:"):
+            elif block.startswith(("Returns:", "Example:")):
                 # Don't break in case Args come after
                 past_descriptors = True
             elif not past_descriptors:
@@ -573,7 +575,8 @@ def _parse_google_docstring(
         description = " ".join(descriptors)
     else:
         if error_on_invalid_docstring:
-            raise ValueError("Found invalid Google-Style docstring.")
+            msg = "Found invalid Google-Style docstring."
+            raise ValueError(msg)
         description = ""
         args_block = None
     arg_descriptions = {}

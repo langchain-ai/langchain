@@ -16,6 +16,7 @@ from typing import (
 )
 
 from pydantic import BaseModel, RootModel
+from typing_extensions import override
 
 from langchain_core.runnables.base import (
     Other,
@@ -193,10 +194,12 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
         return ["langchain", "schema", "runnable"]
 
     @property
+    @override
     def InputType(self) -> Any:
         return self.input_type or Any
 
     @property
+    @override
     def OutputType(self) -> Any:
         return self.input_type or Any
 
@@ -386,7 +389,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
             # returns {'input': 5, 'add_step': {'added': 15}}
     """
 
-    mapper: RunnableParallel[dict[str, Any]]
+    mapper: RunnableParallel
 
     def __init__(self, mapper: RunnableParallel[dict[str, Any]], **kwargs: Any) -> None:
         super().__init__(mapper=mapper, **kwargs)  # type: ignore[call-arg]

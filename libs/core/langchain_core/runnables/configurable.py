@@ -16,6 +16,7 @@ from typing import (
 from weakref import WeakValueDictionary
 
 from pydantic import BaseModel, ConfigDict
+from typing_extensions import override
 
 from langchain_core.runnables.base import Runnable, RunnableSerializable
 from langchain_core.runnables.config import (
@@ -68,10 +69,12 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
         return ["langchain", "schema", "runnable"]
 
     @property
+    @override
     def InputType(self) -> type[Input]:
         return self.default.InputType
 
     @property
+    @override
     def OutputType(self) -> type[Output]:
         return self.default.OutputType
 
@@ -454,8 +457,6 @@ RunnableConfigurableFields.model_rebuild()
 class StrEnum(str, enum.Enum):
     """String enum."""
 
-    pass
-
 
 _enums_for_spec: WeakValueDictionary[
     Union[
@@ -537,7 +538,7 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
 
     prefix_keys: bool
     """Whether to prefix configurable fields of each alternative with a namespace
-    of the form <which.id>==<alternative_key>, eg. a key named "temperature" used by 
+    of the form <which.id>==<alternative_key>, eg. a key named "temperature" used by
     the alternative named "gpt3" becomes "model==gpt3/temperature"."""
 
     @classmethod
@@ -631,7 +632,8 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
             else:
                 return (alt(), config)
         else:
-            raise ValueError(f"Unknown alternative: {which}")
+            msg = f"Unknown alternative: {which}"
+            raise ValueError(msg)
 
 
 def _strremoveprefix(s: str, prefix: str) -> str:
