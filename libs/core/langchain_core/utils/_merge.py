@@ -34,10 +34,11 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
             elif right_v is None:
                 continue
             elif type(merged[right_k]) is not type(right_v):
-                raise TypeError(
+                msg = (
                     f'additional_kwargs["{right_k}"] already exists in this message,'
                     " but with a different type."
                 )
+                raise TypeError(msg)
             elif isinstance(merged[right_k], str):
                 # TODO: Add below special handling for 'type' key in 0.3 and remove
                 # merge_lists 'type' logic.
@@ -60,10 +61,11 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
             elif merged[right_k] == right_v:
                 continue
             else:
-                raise TypeError(
+                msg = (
                     f"Additional kwargs key {right_k} already exists in left dict and "
                     f"value has unsupported type {type(merged[right_k])}."
                 )
+                raise TypeError(msg)
     return merged
 
 
@@ -125,10 +127,11 @@ def merge_obj(left: Any, right: Any) -> Any:
     if left is None or right is None:
         return left if left is not None else right
     elif type(left) is not type(right):
-        raise TypeError(
+        msg = (
             f"left and right are of different types. Left type:  {type(left)}. Right "
             f"type: {type(right)}."
         )
+        raise TypeError(msg)
     elif isinstance(left, str):
         return left + right
     elif isinstance(left, dict):
@@ -138,7 +141,8 @@ def merge_obj(left: Any, right: Any) -> Any:
     elif left == right:
         return left
     else:
-        raise ValueError(
+        msg = (
             f"Unable to merge {left=} and {right=}. Both must be of type str, dict, or "
             f"list, or else be two equal objects."
         )
+        raise ValueError(msg)
