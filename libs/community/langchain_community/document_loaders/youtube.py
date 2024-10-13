@@ -52,10 +52,10 @@ class GoogleApiClient:
 
     @model_validator(mode="before")
     @classmethod
-    def validate_channel_or_videoIds_is_set(cls, values: Dict[str, Any]) -> Any:
-        """Validate that either folder_id or document_ids is set, but not both."""
+    def validate_credentials_path_or_service_account_path_is_set(cls, values: Dict[str, Any]) -> Any:
+        """Validate that either folder_id or document_ids is set."""
 
-        if not values.get("credentials_path") and not values.get(
+        if not values.kwargs.get("credentials_path") and not values.kwargs.get(
             "service_account_path"
         ):
             raise ValueError("Must specify either channel_name or video_ids")
@@ -393,8 +393,8 @@ class GoogleApiYoutubeLoader(BaseLoader):
     @model_validator(mode="before")
     @classmethod
     def validate_channel_or_videoIds_is_set(cls, values: Dict[str, Any]) -> Any:
-        """Validate that either folder_id or document_ids is set, but not both."""
-        if not values.get("channel_name") and not values.get("video_ids"):
+        """Validate that either channel_name or video_ids is set."""
+        if not values.kwargs.get("channel_name") and not values.kwargs.get("video_ids"):
             raise ValueError("Must specify either channel_name or video_ids")
         return values
 
