@@ -6,13 +6,14 @@ from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence, Tupl
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.callbacks.manager import AsyncCallbackManagerForLLMRun
+from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.prompt_values import PromptValue
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 from langchain_core.utils import pre_init
+from langchain_core.utils.function_calling import convert_to_openai_tool
 from pydantic import BaseModel, Field
 
 from langchain_community.adapters.openai import convert_message_to_dict
@@ -142,6 +143,7 @@ class ChatOutlines(BaseChatModel):
 
     @pre_init
     def validate_environment(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        # todo sync with LLM version
         """Validate that outlines is installed and create a model instance."""
         try:
             import outlines.models as models
@@ -157,6 +159,7 @@ class ChatOutlines(BaseChatModel):
             raise ValueError(f"Unsupported model identifier: {model_identifier}")
 
         model_name = model_identifier.split("/", 1)[1]
+        # todo add auto-file-selection if no file is given
         if ".gguf" in model_name:
             repo_id, file_name = model_name.split("/", 1)
         else:
@@ -304,15 +307,47 @@ class ChatOutlines(BaseChatModel):
     def bind_tools(
         self,
         tools: Sequence[Dict[str, Any] | type | Callable[..., Any] | BaseTool],
+        *,
+        tool_choice: Optional[Union[Dict, bool, str]] = None,
         **kwargs: Any,
-    ) -> Runnable[
-        PromptValue
-        | str
-        | Sequence[BaseMessage | list[str] | tuple[str, str] | str | dict[str, Any]],
-        BaseMessage,
-    ]:
-        return super().bind_tools(tools, **kwargs)
-        # todo implement
+    ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
+        """Bind tool-like objects to this chat model
+
+        tool_choice: does not currently support "any", "auto" choices like OpenAI
+            tool-calling API. should be a dict of the form to force this tool
+            {"type": "function", "function": {"name": <<tool_name>>}}.
+        """
+        formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
+        tool_names = [ft["function"]["name"] for ft in formatted_tools]
+        if tool_choice:
+            if isinstance(tool_choice, dict):
+                if not any(
+                    tool_choice["function"]["name"] == name for name in tool_names
+                ):
+                    raise ValueError(
+                        f"Tool choice {tool_choice=} was specified, but the only "
+                        f"provided tools were {tool_names}."
+                    )
+            elif isinstance(tool_choice, str):
+                chosen = [
+                    f for f in formatted_tools if f["function"]["name"] == tool_choice
+                ]
+                if not chosen:
+                    raise ValueError(
+                        f"Tool choice {tool_choice=} was specified, but the only "
+                        f"provided tools were {tool_names}."
+                    )
+            elif isinstance(tool_choice, bool):
+                if len(formatted_tools) > 1:
+                    raise ValueError(
+                        "tool_choice=True can only be specified when a single tool is "
+                        f"passed in. Received {len(tools)} tools."
+                    )
+                tool_choice = formatted_tools[0]
+
+        kwargs["tool_choice"] = tool_choice
+        formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
+        return super().bind(tools=formatted_tools, **kwargs)
 
     def with_structured_output(
         self,
@@ -320,12 +355,7 @@ class ChatOutlines(BaseChatModel):
         *,
         include_raw: bool = False,
         **kwargs: Any,
-    ) -> Runnable[
-        PromptValue
-        | str
-        | Sequence[BaseMessage | List[str] | Tuple[str] | str | Dict[str, Any]],
-        Dict | BaseModel,
-    ]:
+    ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
         return super().with_structured_output(schema, include_raw=include_raw, **kwargs)
         # todo implement
 
