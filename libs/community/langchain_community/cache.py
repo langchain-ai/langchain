@@ -2605,7 +2605,7 @@ class SingleStoreDBSemanticCache(BaseCache):
 class MemcachedCache(BaseCache):
     """Cache that uses Memcached backend through pymemcache client lib"""
 
-    def _init__(self, client_: Any):
+    def __init__(self, client_: Any):
         """
         Initialize an instance of MemcachedCache.
         
