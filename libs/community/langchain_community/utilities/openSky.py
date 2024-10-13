@@ -88,7 +88,7 @@ class OpenSkyAPIWrapper(BaseModel):
                 "Estimated Departure Airport": flight.get("estDepartureAirport"),
                 "Last Seen": datetime.fromtimestamp(flight.get("lastSeen")).isoformat(),
                 "Estimated Arrival Airport": flight.get("estArrivalAirport"),
-                "Callsign": flight.get("callsign").strip(),
+                "Callsign": flight.get("callsign"),
                 "Departure Candidates": flight.get("departureAirportCandidatesCount"),
                 "Arrival Candidates": flight.get("arrivalAirportCandidatesCount"),
             }
