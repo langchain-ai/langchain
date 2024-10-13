@@ -91,9 +91,9 @@ logger = logging.getLogger(__file__)
 
 if TYPE_CHECKING:
     import momento
+    import pymemcache
     from astrapy.db import AstraDB, AsyncAstraDB
     from cassandra.cluster import Session as CassandraSession
-    import pymemcache
 
 
 def _hash(_input: str) -> str:
@@ -2608,7 +2608,7 @@ class MemcachedCache(BaseCache):
     def __init__(self, client_: Any):
         """
         Initialize an instance of MemcachedCache.
-        
+
         Args:
             client_ (str): An instance of any of pymemcache's Clients (Client, PooledClient, HashClient)
         Example:
@@ -2628,20 +2628,30 @@ class MemcachedCache(BaseCache):
             # The second time it is, so it goes faster
             llm.invoke("Which city is the most crowded city in the USA?")
         """
-        
+
         try:
-            from pymemcache.client import Client, PooledClient, HashClient, RetryingClient
+            from pymemcache.client import (
+                Client,
+                HashClient,
+                PooledClient,
+                RetryingClient,
+            )
         except (ImportError, ModuleNotFoundError):
             raise ImportError(
                 "Could not import pymemcache python package. "
                 "Please install it with `pip install -U pymemcache`."
             )
-        
-        if not (isinstance(client_, Client) or isinstance(client_, PooledClient) or isinstance(client_, HashClient) or isinstance(client_, RetryingClient)):
+
+        if not (
+            isinstance(client_, Client)
+            or isinstance(client_, PooledClient)
+            or isinstance(client_, HashClient)
+            or isinstance(client_, RetryingClient)
+        ):
             raise ValueError("Please pass a valid pymemcached client")
-        
+
         self.client = client_
-    
+
     def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
         """Look up based on prompt and llm_string."""
         key = _hash(prompt + llm_string)
@@ -2649,21 +2659,21 @@ class MemcachedCache(BaseCache):
             result = self.client.get(key)
         except:
             return None
-        
+
         return _loads_generations(result) if result is not None else None
-    
+
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
         """Update cache based on prompt and llm_string."""
         key = _hash(prompt + llm_string)
-        
+
         # Validate input is made of standard LLM generations
         for gen in return_val:
             if not isinstance(gen, Generation):
                 raise ValueError(
-                    "Memcached only supports caching of normal LLM generations, " +
-                    f"got {type(gen)}"
+                    "Memcached only supports caching of normal LLM generations, "
+                    + f"got {type(gen)}"
                 )
-        
+
         # Deserialize return_val into string and update cache
         value = _dumps_generations(return_val)
         self.client.set(key, value)
@@ -2671,7 +2681,7 @@ class MemcachedCache(BaseCache):
     def clear(self, **kwargs: Any) -> None:
         """
         Clear the entire cache. Takes optional kwargs:
-        
+
         delay: optional int, the number of seconds to wait before flushing,
                 or zero to flush immediately (the default). NON-BLOCKING, returns
                 immediately.

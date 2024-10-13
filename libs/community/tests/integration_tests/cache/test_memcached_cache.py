@@ -1,13 +1,14 @@
 """Test Memcached llm cache functionality. Requires running instance of Memcached on localhost default port (11211) and pymemcache"""
 
 import pytest
-from langchain_core.outputs import Generation, LLMResult
 from langchain.globals import get_llm_cache, set_llm_cache
+from langchain_core.outputs import Generation, LLMResult
 
 from langchain_community.cache import MemcachedCache
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
-DEFAULT_MEMCACHED_URL = 'localhost'
+DEFAULT_MEMCACHED_URL = "localhost"
+
 
 @pytest.mark.requires("pymemcache")
 def test_memcached_cache() -> None:
@@ -30,6 +31,7 @@ def test_memcached_cache() -> None:
     # clear the cache
     get_llm_cache().clear()
 
+
 @pytest.mark.requires("pymemcache")
 def test_memcached_cache_flush() -> None:
     """Test flushing Memcached cache"""
@@ -49,7 +51,7 @@ def test_memcached_cache_flush() -> None:
     )
     assert output == expected_output
     # clear the cache
-    get_llm_cache().clear(delay= 0, noreply = False)
+    get_llm_cache().clear(delay=0, noreply=False)
 
     # After cache has been cleared, the result shouldn't be the same
     output = llm.generate(["foo"])
