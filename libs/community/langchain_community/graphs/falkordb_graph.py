@@ -52,7 +52,7 @@ class FalkorDBGraph(GraphStore):
 
     def __init__(
         self,
-        database: str = 'falkor',
+        database: str = "falkor",
         host: str = "localhost",
         port: int = 6379,
         username: Optional[str] = None,
@@ -199,10 +199,10 @@ class FalkorDBGraph(GraphStore):
                     ),
                     {"properties": rel.properties},
                 )
-                
+
     def switch_graph(self, graph_name: str) -> None:
         """Switch to the given graph name (`graph_name`).
-        
+
         This method allows users to change the active graph within the same 
         database connection.
 
@@ -210,7 +210,7 @@ class FalkorDBGraph(GraphStore):
             graph_name (str): The name of the graph to switch to.
         """
         self._graph = self._driver.select_graph(graph_name)
-        
+
         try:
             self.refresh_schema()
         except Exception as e:
