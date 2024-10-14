@@ -15,8 +15,8 @@ from langchain_community.tools.playwright.utils import (
 )
 
 
-class NavigateBack(BaseModel):
-    """Navigate back to the previous page in the browser history."""
+class NavigateBackToolInput(BaseModel):
+    """Explicit no-args input for NavigateBackTool."""
 
 
 class NavigateBackTool(BaseBrowserTool):
@@ -24,7 +24,7 @@ class NavigateBackTool(BaseBrowserTool):
 
     name: str = "previous_webpage"
     description: str = "Navigate back to the previous page in the browser history"
-    args_schema: Type[BaseModel] = NavigateBack
+    args_schema: Type[BaseModel] = NavigateBackToolInput
 
     def _run(self, run_manager: Optional[CallbackManagerForToolRun] = None) -> str:
         """Use the tool."""

@@ -15,8 +15,8 @@ from langchain_community.tools.playwright.utils import (
 )
 
 
-class CurrentWebPage(BaseModel):
-    """Get the current webpage."""
+class CurrentWebPageToolInput(BaseModel):
+    """Explicit no-args input for CurrentWebPageTool."""
 
 
 class CurrentWebPageTool(BaseBrowserTool):
@@ -24,7 +24,7 @@ class CurrentWebPageTool(BaseBrowserTool):
 
     name: str = "current_webpage"
     description: str = "Returns the URL of the current page"
-    args_schema: Type[BaseModel] = CurrentWebPage
+    args_schema: Type[BaseModel] = CurrentWebPageToolInput
 
     def _run(
         self,
