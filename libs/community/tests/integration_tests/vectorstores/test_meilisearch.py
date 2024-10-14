@@ -1,6 +1,6 @@
 """Test Meilisearch functionality."""
 
-from typing import TYPE_CHECKING, Any, Dict, Generator
+from typing import TYPE_CHECKING, Generator
 
 import pytest
 import requests
@@ -57,7 +57,7 @@ class TestMeilisearchVectorSearch:
         import meilisearch
 
         return meilisearch.Client(TEST_MEILI_HTTP_ADDR, TEST_MEILI_MASTER_KEY)
-    
+
     def setup_embedder(self) -> None:
         client = self.client()
         embedders = {
