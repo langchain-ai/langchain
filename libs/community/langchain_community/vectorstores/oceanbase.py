@@ -1,5 +1,6 @@
 import json
 import logging
+import math
 import traceback
 import uuid
 from typing import Any, Callable, Iterable, List, Optional, Sequence, Tuple
@@ -29,6 +30,14 @@ DEFAULT_OCEANBASE_VECTOR_METRIC_TYPE = "l2"
 DEFAULT_METADATA_FIELD = "metadata"
 
 
+def _euclidean_similarity(distance: float) -> float:
+    return 1.0 - distance / math.sqrt(2)
+
+
+def _neg_inner_product_similarity(distance: float) -> float:
+    return -distance
+
+
 class OceanBase(VectorStore):
     """`OceanBase` vector store.
 
@@ -37,7 +46,7 @@ class OceanBase(VectorStore):
     See the following documentation for how to deploy OceanBase:
     https://github.com/oceanbase/oceanbase-doc/blob/V4.3.1/en-US/400.deploy/500.deploy-oceanbase-database-community-edition/100.deployment-overview.md
 
-    IF USING L2/IP metric, IT IS HIGHLY SUGGESTED TO NORMALIZE YOUR DATA.
+    IF USING L2/INNER_PRODUCT metric, IT IS HIGHLY SUGGESTED TO NORMALIZE YOUR DATA.
 
     Args:
         embedding_function (Embeddings): Function used to embed the text.
@@ -46,7 +55,7 @@ class OceanBase(VectorStore):
             this class comes in the form of a dict. Refer to
             `DEFAULT_OCEANBASE_CONNECTION` for example.
         vidx_metric_type (str): Metric method of distance between vectors.
-            This parameter takes values in `l2` and `ip`. Defaults to `l2`.
+            This parameter takes values in `l2` and `inner_product`. Defaults to `l2`.
         vidx_algo_params (Optional[dict]): Which index params to use. Now OceanBase
             supports HNSW only. Refer to `DEFAULT_OCEANBASE_HNSW_BUILD_PARAM`
             for example.
@@ -124,8 +133,10 @@ class OceanBase(VectorStore):
         assert self.obvector is not None
 
         self.vidx_metric_type = vidx_metric_type.lower()
-        if self.vidx_metric_type not in ("l2", "ip"):
-            raise ValueError("`vidx_metric_type` should be set in `l2`/`ip`.")
+        if self.vidx_metric_type not in ("l2", "inner_product"):
+            raise ValueError(
+                "`vidx_metric_type` should be set in `l2`/`inner_product`."
+            )
 
         self.vidx_algo_params = (
             vidx_algo_params
@@ -238,8 +249,8 @@ class OceanBase(VectorStore):
             return func.l2_distance
         if self.vidx_metric_type == "cosine":
             return func.cosine_distance
-        if self.vidx_metric_type == "ip":
-            return func.inner_product
+        if self.vidx_metric_type == "inner_product":
+            return func.negative_inner_product
         raise ValueError(f"Invalid vector index metric type: {self.vidx_metric_type}")
 
     def _normalize(self, vector: List[float]) -> List[float]:
@@ -367,7 +378,8 @@ class OceanBase(VectorStore):
             connection_args (Optional[dict[str, Any]]): Refer to
                 `DEFAULT_OCEANBASE_CONNECTION` for example.
             vidx_metric_type (str): Metric method of distance between vectors.
-                This parameter takes values in `l2` and `ip`. Defaults to `l2`.
+                This parameter takes values in `l2` and `inner_product`.
+                Defaults to `l2`.
             vidx_algo_params (Optional[dict]): Which index params to use. Now OceanBase
                 supports HNSW only. Refer to `DEFAULT_OCEANBASE_HNSW_BUILD_PARAM`
                 for example.
@@ -601,10 +613,10 @@ class OceanBase(VectorStore):
         """
         Select the relevance score function based on the distance strategy.
         """
-        if self.vidx_metric_type == "ip":
-            return self._max_inner_product_relevance_score_fn
+        if self.vidx_metric_type == "inner_product":
+            return _neg_inner_product_similarity
         elif self.vidx_metric_type == "l2":
-            return self._euclidean_relevance_score_fn
+            return _euclidean_similarity
         else:
             raise ValueError(
                 "No supported normalization function"
