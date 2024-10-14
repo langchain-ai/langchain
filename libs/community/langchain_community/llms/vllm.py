@@ -3,8 +3,8 @@ from typing import Any, Dict, List, Optional
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, LLMResult
-from langchain_core.pydantic_v1 import Field
 from langchain_core.utils import pre_init
+from pydantic import Field
 
 from langchain_community.llms.openai import BaseOpenAI
 from langchain_community.utils.openai import is_openai_v1
@@ -72,7 +72,7 @@ class VLLM(BaseLLM):
     vllm_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `vllm.LLM` call not explicitly specified."""
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:

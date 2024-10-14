@@ -2,7 +2,7 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel
 
 
 def is_relative_to(path: Path, root: Path) -> bool:

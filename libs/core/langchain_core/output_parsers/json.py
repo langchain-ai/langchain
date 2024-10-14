@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import json
 from json import JSONDecodeError
-from typing import Any, List, Optional, Type, TypeVar, Union
+from typing import Annotated, Any, Optional, TypeVar, Union
 
 import jsonpatch  # type: ignore[import]
-import pydantic  # pydantic: ignore
+import pydantic
+from pydantic import SkipValidation
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers.format_instructions import JSON_FORMAT_INSTRUCTIONS
@@ -22,7 +23,7 @@ if PYDANTIC_MAJOR_VERSION < 2:
     PydanticBaseModel = pydantic.BaseModel
 
 else:
-    from pydantic.v1 import BaseModel  # pydantic: ignore
+    from pydantic.v1 import BaseModel
 
     # Union type needs to be last assignment to PydanticBaseModel to make mypy happy.
     PydanticBaseModel = Union[BaseModel, pydantic.BaseModel]  # type: ignore
@@ -40,22 +41,20 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
     describing the difference between the previous and the current object.
     """
 
-    pydantic_object: Optional[Type[TBaseModel]] = None  # type: ignore
-    """The Pydantic object to use for validation. 
+    pydantic_object: Annotated[Optional[type[TBaseModel]], SkipValidation()] = None  # type: ignore
+    """The Pydantic object to use for validation.
     If None, no validation is performed."""
 
     def _diff(self, prev: Optional[Any], next: Any) -> Any:
         return jsonpatch.make_patch(prev, next).patch
 
-    def _get_schema(self, pydantic_object: Type[TBaseModel]) -> dict[str, Any]:
-        if PYDANTIC_MAJOR_VERSION == 2:
-            if issubclass(pydantic_object, pydantic.BaseModel):
-                return pydantic_object.model_json_schema()
-            elif issubclass(pydantic_object, pydantic.v1.BaseModel):
-                return pydantic_object.schema()
-        return pydantic_object.schema()
+    def _get_schema(self, pydantic_object: type[TBaseModel]) -> dict[str, Any]:
+        if issubclass(pydantic_object, pydantic.BaseModel):
+            return pydantic_object.model_json_schema()
+        elif issubclass(pydantic_object, pydantic.v1.BaseModel):
+            return pydantic_object.schema()
 
-    def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
+    def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:
         """Parse the result of an LLM call to a JSON object.
 
         Args:
@@ -107,7 +106,7 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
             return "Return a JSON object."
         else:
             # Copy schema to avoid altering original Pydantic schema.
-            schema = {k: v for k, v in self._get_schema(self.pydantic_object).items()}
+            schema = dict(self._get_schema(self.pydantic_object).items())
 
             # Remove extraneous fields.
             reduced_schema = schema

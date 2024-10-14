@@ -38,7 +38,7 @@ Passage:
         "See API reference for this function for replacement: "
         "<https://api.python.langchain.com/en/latest/chains/langchain.chains.openai_functions.tagging.create_tagging_chain.html> "  # noqa: E501
         "You can read more about `with_structured_output` here: "
-        "<https://python.langchain.com/v0.2/docs/how_to/structured_output/>. "
+        "<https://python.langchain.com/docs/how_to/structured_output/>. "
         "If you notice other issues, please provide "
         "feedback here: "
         "<https://github.com/langchain-ai/langchain/discussions/18154>"
@@ -78,7 +78,7 @@ def create_tagging_chain(
                 "Why did the cat cross the road? To get to the other "
                 "side... and then lay down in the middle of it!"
             )
-    Read more here: https://python.langchain.com/v0.2/docs/how_to/structured_output/
+    Read more here: https://python.langchain.com/docs/how_to/structured_output/
 
     Args:
         schema: The schema of the entities to extract.
@@ -109,7 +109,7 @@ def create_tagging_chain(
         "See API reference for this function for replacement: "
         "<https://api.python.langchain.com/en/latest/chains/langchain.chains.openai_functions.tagging.create_tagging_chain_pydantic.html> "  # noqa: E501
         "You can read more about `with_structured_output` here: "
-        "<https://python.langchain.com/v0.2/docs/how_to/structured_output/>. "
+        "<https://python.langchain.com/docs/how_to/structured_output/>. "
         "If you notice other issues, please provide "
         "feedback here: "
         "<https://github.com/langchain-ai/langchain/discussions/18154>"
@@ -130,7 +130,7 @@ def create_tagging_chain_pydantic(
 
      .. code-block:: python
 
-            from langchain_core.pydantic_v1 import BaseModel, Field
+            from pydantic import BaseModel, Field
             from langchain_anthropic import ChatAnthropic
 
             class Joke(BaseModel):
@@ -147,7 +147,7 @@ def create_tagging_chain_pydantic(
                 "Why did the cat cross the road? To get to the other "
                 "side... and then lay down in the middle of it!"
             )
-    Read more here: https://python.langchain.com/v0.2/docs/how_to/structured_output/
+    Read more here: https://python.langchain.com/docs/how_to/structured_output/
 
     Args:
         pydantic_schema: The pydantic schema of the entities to extract.
@@ -156,7 +156,10 @@ def create_tagging_chain_pydantic(
     Returns:
         Chain (LLMChain) that can be used to extract information from a passage.
     """
-    openai_schema = pydantic_schema.schema()
+    if hasattr(pydantic_schema, "model_json_schema"):
+        openai_schema = pydantic_schema.model_json_schema()
+    else:
+        openai_schema = pydantic_schema.schema()
     function = _get_tagging_function(openai_schema)
     prompt = prompt or ChatPromptTemplate.from_template(_TAGGING_TEMPLATE)
     output_parser = PydanticOutputFunctionsParser(pydantic_schema=pydantic_schema)

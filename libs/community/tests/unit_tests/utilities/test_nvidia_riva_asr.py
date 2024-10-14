@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, Generator
 from unittest.mock import patch
 
 import pytest
+from pydantic import AnyHttpUrl
 
 from langchain_community.utilities.nvidia_riva import (
     AudioStream,
@@ -126,7 +127,10 @@ def stream() -> AudioStream:
 def test_init(asr: RivaASR) -> None:
     """Test that ASR accepts valid arguments."""
     for key, expected_val in CONFIG.items():
-        assert getattr(asr, key, None) == expected_val
+        if key == "url":
+            assert asr.url == AnyHttpUrl(expected_val)  # type: ignore
+        else:
+            assert getattr(asr, key, None) == expected_val
 
 
 @pytest.mark.requires("riva.client")
@@ -162,7 +166,7 @@ def test_get_service(asr: RivaASR) -> None:
     svc = asr._get_service()
     assert str(svc.auth.ssl_cert) == CONFIG["ssl_cert"]
     assert svc.auth.use_ssl == SVC_USE_SSL
-    assert svc.auth.uri == SVC_URI
+    assert str(svc.auth.uri) == SVC_URI
 
 
 @pytest.mark.requires("riva.client")
