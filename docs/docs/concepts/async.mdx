@@ -13,6 +13,10 @@ Asynchronous programming (or async programming) is a paradigm that allows a prog
 
 Many LLM based applications are I/O-bound as they involve making API calls to language models, databases, or other services. As such, async programming is a natural fit for these applications.
 
+## Compatibility
+
+LangChain is only compatible with the `asyncio` library, which is distributed as part of the Python standard library. It will not work with other async libraries like `trio` or `curio`.
+
 ## LangChain Asynchronous APIs
 
 Many LangChain APIs are designed to be asynchronous, allowing you to build efficient and responsive applications.
