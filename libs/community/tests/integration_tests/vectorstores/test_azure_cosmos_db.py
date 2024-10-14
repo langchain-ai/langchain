@@ -949,12 +949,11 @@ class TestAzureCosmosDBVectorSearch:
 
         # Create the DiskANN index that will be leveraged later for vector search
         vectorstore.create_index(
-            num_lists,
-            dimensions,
-            similarity_algorithm,
-            CosmosDBVectorSearchType.VECTOR_DISKANN,
-            maxDegree,
-            lBuild,
+            dimensions=dimensions,
+            similarity=similarity_algorithm,
+            kind=CosmosDBVectorSearchType.VECTOR_DISKANN,
+            max_degree=maxDegree,
+            l_build=lBuild,
         )
         sleep(2)  # waits for the index to be set up
 
@@ -992,12 +991,11 @@ class TestAzureCosmosDBVectorSearch:
 
         # Create the DiskANN index that will be leveraged later for vector search
         vectorstore.create_index(
-            num_lists,
-            dimensions,
-            similarity_algorithm,
-            CosmosDBVectorSearchType.VECTOR_DISKANN,
-            maxDegree,
-            lBuild,
+            dimensions=dimensions,
+            similarity=similarity_algorithm,
+            kind=CosmosDBVectorSearchType.VECTOR_DISKANN,
+            max_degree=maxDegree,
+            l_build=lBuild,
         )
         sleep(2)  # waits for the index to be set up
 
@@ -1032,12 +1030,11 @@ class TestAzureCosmosDBVectorSearch:
 
         # Create the DiskANN index that will be leveraged later for vector search
         vectorstore.create_index(
-            num_lists,
-            dimensions,
-            similarity_algorithm,
-            CosmosDBVectorSearchType.VECTOR_DISKANN,
-            maxDegree,
-            lBuild,
+            dimensions=dimensions,
+            similarity=similarity_algorithm,
+            kind=CosmosDBVectorSearchType.VECTOR_DISKANN,
+            max_degree=maxDegree,
+            l_build=lBuild,
         )
         sleep(2)  # waits for the index to be set up
 
@@ -1072,12 +1069,11 @@ class TestAzureCosmosDBVectorSearch:
 
         # Create the DiskANN index that will be leveraged later for vector search
         vectorstore.create_index(
-            num_lists,
-            dimensions,
-            similarity_algorithm,
-            CosmosDBVectorSearchType.VECTOR_DISKANN,
-            maxDegree,
-            lBuild,
+            dimensions=dimensions,
+            similarity=similarity_algorithm,
+            kind=CosmosDBVectorSearchType.VECTOR_DISKANN,
+            max_degree=maxDegree,
+            l_build=lBuild,
         )
         sleep(2)  # waits for the index to be set up
 
@@ -1114,12 +1110,11 @@ class TestAzureCosmosDBVectorSearch:
 
         # Create the DiskANN index that will be leveraged later for vector search
         vectorstore.create_index(
-            num_lists,
-            dimensions,
-            similarity_algorithm,
-            CosmosDBVectorSearchType.VECTOR_DISKANN,
-            maxDegree,
-            lBuild,
+            dimensions=dimensions,
+            similarity=similarity_algorithm,
+            kind=CosmosDBVectorSearchType.VECTOR_DISKANN,
+            max_degree=maxDegree,
+            l_build=lBuild,
         )
         sleep(2)  # waits for the index to be set up
 
@@ -1171,12 +1166,11 @@ class TestAzureCosmosDBVectorSearch:
 
         # Create the DiskANN index that will be leveraged later for vector search
         vectorstore.create_index(
-            num_lists,
-            dimensions,
-            similarity_algorithm,
-            CosmosDBVectorSearchType.VECTOR_DISKANN,
-            maxDegree,
-            lBuild,
+            dimensions=dimensions,
+            similarity=similarity_algorithm,
+            kind=CosmosDBVectorSearchType.VECTOR_DISKANN,
+            max_degree=maxDegree,
+            l_build=lBuild,
         )
         sleep(2)  # waits for the index to be set up
 
@@ -1233,12 +1227,11 @@ class TestAzureCosmosDBVectorSearch:
 
         # Create the DiskANN index that will be leveraged later for vector search
         vectorstore.create_index(
-            num_lists,
-            dimensions,
-            similarity_algorithm,
-            CosmosDBVectorSearchType.VECTOR_DISKANN,
-            maxDegree,
-            lBuild,
+            dimensions=dimensions,
+            similarity=similarity_algorithm,
+            kind=CosmosDBVectorSearchType.VECTOR_DISKANN,
+            max_degree=maxDegree,
+            l_build=lBuild,
         )
         sleep(2)  # waits for the index to be set up
 
@@ -1268,12 +1261,11 @@ class TestAzureCosmosDBVectorSearch:
 
         # Create the IVF index that will be leveraged later for vector search
         vectorstore.create_index(
-            num_lists,
-            dimensions,
-            similarity_algorithm,
-            CosmosDBVectorSearchType.VECTOR_DISKANN,
-            maxDegree,
-            lBuild,
+            dimensions=dimensions,
+            similarity=similarity_algorithm,
+            kind=CosmosDBVectorSearchType.VECTOR_DISKANN,
+            max_degree=maxDegree,
+            l_build=lBuild,
         )
         sleep(2)  # waits for the index to be set up
 
@@ -1306,12 +1298,11 @@ class TestAzureCosmosDBVectorSearch:
 
         # Create the DiskANN index that will be leveraged later for vector search
         vectorstore.create_index(
-            num_lists,
-            dimensions,
-            similarity_algorithm,
-            CosmosDBVectorSearchType.VECTOR_DISKANN,
-            maxDegree,
-            lBuild,
+            dimensions=dimensions,
+            similarity=similarity_algorithm,
+            kind=CosmosDBVectorSearchType.VECTOR_DISKANN,
+            max_degree=maxDegree,
+            l_build=lBuild,
         )
         sleep(2)  # waits for the index to be set up
 

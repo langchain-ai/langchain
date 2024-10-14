@@ -183,8 +183,8 @@ class AzureCosmosDBVectorSearch(VectorStore):
         kind: str = "vector-ivf",
         m: int = 16,
         ef_construction: int = 64,
-        maxDegree: int = 32,
-        lBuild: int = 50,
+        max_degree: int = 32,
+        l_build: int = 50,
     ) -> dict[str, Any]:
         """Creates an index using the index name specified at
             instance construction
@@ -244,10 +244,10 @@ class AzureCosmosDBVectorSearch(VectorStore):
                             better index quality and higher accuracy, but it will
                             also increase the time required to build the index.
                             ef_construction has to be at least 2 * m
-            maxDegree: Max number of neighbors.
+            max_degree: Max number of neighbors.
                 Default value is 32, range from 20 to 2048.
                 Only vector-diskann search supports this for now.
-            lBuild: l value for index building.
+            l_build: l value for index building.
                 Default value is 50, range from 10 to 500.
                 Only vector-diskann search supports this for now.
         Returns:
@@ -267,7 +267,7 @@ class AzureCosmosDBVectorSearch(VectorStore):
             )
         elif kind == CosmosDBVectorSearchType.VECTOR_DISKANN:
             create_index_commands = self._get_vector_index_diskann(
-                kind, maxDegree, lBuild, similarity, dimensions
+                kind, max_degree, l_build, similarity, dimensions
             )
 
         # retrieve the database object
