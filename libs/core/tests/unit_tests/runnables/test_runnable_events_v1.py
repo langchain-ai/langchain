@@ -1596,7 +1596,8 @@ async def test_event_stream_with_retry() -> None:
 
     def fail(inputs: str) -> None:
         """Simple func."""
-        raise Exception("fail")
+        msg = "fail"
+        raise Exception(msg)
 
     chain = RunnableLambda(success) | RunnableLambda(fail).with_retry(
         stop_after_attempt=1,
