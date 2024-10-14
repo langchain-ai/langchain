@@ -1,7 +1,6 @@
-from langchain_core.vectorstores import VectorStore
-
 from langchain_community import vectorstores
 from langchain_community.vectorstores import __all__, _module_lookup
+from langchain_core.vectorstores import VectorStore
 
 EXPECTED_ALL = [
     "Aerospike",
@@ -95,7 +94,7 @@ EXPECTED_ALL = [
     "USearch",
     "VDMS",
     "Vald",
-    "Vearch",
+    "VearchDb",
     "Vectara",
     "VectorStore",
     "VespaStore",
