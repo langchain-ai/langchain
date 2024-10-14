@@ -13,7 +13,6 @@
 # limitations under the License.
 import os
 
-from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableParallel, RunnablePassthrough
@@ -22,7 +21,9 @@ from langchain_google_vertexai import ChatVertexAI, VertexAIEmbeddings
 from pydantic import RootModel
 
 # This sample requires a vector store table
-# Create these tables using `AlloyDBEngine` method `init_vectorstore_table()`
+# Create this table using the `AlloyDBEngine` method `init_vectorstore_table()`
+# Learn more about setting up an `AlloyDBVectorStore` at
+# https://github.com/googleapis/langchain-google-alloydb-pg-python/blob/main/docs/vector_store.ipynb
 
 
 def get_env_var(key: str, desc: str) -> str:
@@ -31,15 +32,14 @@ def get_env_var(key: str, desc: str) -> str:
         raise ValueError(f"Must set env var {key} to: {desc}")
     return v
 
-
+PROJECT_ID = get_env_var("PROJECT_ID", "project id for google cloud")
+REGION = get_env_var("REGION", "region for AlloyDB instance")
 CLUSTER = get_env_var("CLUSTER_ID", "cluster for AlloyDB")
 DATABASE = get_env_var("DATABASE_ID", "database name on AlloyDB instance")
 INSTANCE = get_env_var("INSTANCE_ID", "instance for AlloyDB")
-PASSWORD = get_env_var("DB_PASSWORD", "database password for AlloyDB")
-PROJECT_ID = get_env_var("PROJECT_ID", "project id for google cloud")
-REGION = get_env_var("REGION", "region for AlloyDB instance")
 TABLE_NAME = get_env_var("TABLE_NAME", "table name on AlloyDB instance")
 USER = get_env_var("DB_USER", "database user for AlloyDB")
+PASSWORD = get_env_var("DB_PASSWORD", "database password for AlloyDB")
 
 system_prompt = (
     "You are an assistant for question-answering tasks. "

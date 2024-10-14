@@ -22,6 +22,8 @@ from pydantic import RootModel
 
 # This sample requires a vector store table
 # Create this table using `PostgresEngine` method `init_vectorstore_table()`
+# Learn more about setting up an `PostgresVectorStorec` at
+# https://github.com/googleapis/langchain-google-cloud-sql-pg-python/blob/main/docs/vector_store.ipynb
 
 
 def get_env_var(key: str, desc: str) -> str:
@@ -30,14 +32,13 @@ def get_env_var(key: str, desc: str) -> str:
         raise ValueError(f"Must set env var {key} to: {desc}")
     return v
 
-
-DATABASE = get_env_var("DATABASE_ID", "database name on Cloud SQL instance")
-INSTANCE = get_env_var("INSTANCE_ID", "instance name for Cloud SQL")
-PASSWORD = get_env_var("DB_PASSWORD", "database password for Cloud SQL")
 PROJECT_ID = get_env_var("PROJECT_ID", "project id for google cloud")
 REGION = get_env_var("REGION", "region for Cloud SQL instance")
+INSTANCE = get_env_var("INSTANCE_ID", "instance name for Cloud SQL")
+DATABASE = get_env_var("DATABASE_ID", "database name on Cloud SQL instance")
 TABLE_NAME = get_env_var("TABLE_NAME", "table name on Cloud SQL instance")
 USER = get_env_var("DB_USER", "database user for Cloud SQL")
+PASSWORD = get_env_var("DB_PASSWORD", "database password for Cloud SQL")
 
 system_prompt = (
     "You are an assistant for question-answering tasks. "
@@ -64,7 +65,6 @@ engine = PostgresEngine.from_instance(
     DATABASE,
     user=USER,
     password=PASSWORD,
-    quota_project=PROJECT_ID,  # Set quota project to ensure use of project's credentials
 )
 vector_store = PostgresVectorStore.create_sync(
     engine,
