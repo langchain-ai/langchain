@@ -241,7 +241,7 @@ class OceanBase(VectorStore):
             columns=cols,
             indexes=None,
             vidxs=vidx_params,
-            paritions=self.partition,
+            partitions=self.partition,
         )
 
     def _parse_metric_type_str_to_dist_func(self) -> Any:
