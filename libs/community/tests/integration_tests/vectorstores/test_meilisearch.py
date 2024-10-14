@@ -19,28 +19,14 @@ TEST_MEILI_MASTER_KEY = "masterKey"
 
 class TestMeilisearchVectorSearch:
     @pytest.fixture(scope="class", autouse=True)
-    def vector_search_setup(self) -> Generator[str, None, None]:
-        # Enable vector search
+    def enable_vector_search(self) -> Generator[str, None, None]:
         requests.patch(
             f"{TEST_MEILI_HTTP_ADDR}/experimental-features",
             headers={"Authorization": f"Bearer {TEST_MEILI_MASTER_KEY}"},
             json={"vectorStore": True},
             timeout=10,
         )
-
-        # Set up embedder
-        client =  meilisearch.Client(TEST_MEILI_HTTP_ADDR, TEST_MEILI_MASTER_KEY)
-        embedders = {
-            "default": {
-                "source": "userProvided",
-                "dimensions": 10,
-            }
-        }
-        task = client.index(INDEX_NAME).update_embedders(embedders)
-        client.wait_for_task(task.task_uid)
-
         yield "done"
-        # Disable vector search
         requests.patch(
             f"{TEST_MEILI_HTTP_ADDR}/experimental-features",
             headers={"Authorization": f"Bearer {TEST_MEILI_MASTER_KEY}"},
@@ -51,6 +37,7 @@ class TestMeilisearchVectorSearch:
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
         self.delete_all_indexes()
+        self.setup_embedder()
 
     @pytest.fixture(scope="class", autouse=True)
     def teardown_test(self) -> Generator[str, None, None]:
@@ -70,6 +57,17 @@ class TestMeilisearchVectorSearch:
         import meilisearch
 
         return meilisearch.Client(TEST_MEILI_HTTP_ADDR, TEST_MEILI_MASTER_KEY)
+    
+    def setup_embedder(self) -> None:
+        client = self.client()
+        embedders = {
+            "default": {
+                "source": "userProvided",
+                "dimensions": 10,
+            }
+        }
+        response = client.index(INDEX_NAME).update_embedders(embedders)
+        client.wait_for_task(response.task_uid)
 
     def _wait_last_task(self) -> None:
         client = self.client()
