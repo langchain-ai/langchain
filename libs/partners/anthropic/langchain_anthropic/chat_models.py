@@ -295,7 +295,7 @@ class ChatAnthropic(BaseChatModel):
             Name of Anthropic model to use. E.g. "claude-3-sonnet-20240229".
         temperature: float
             Sampling temperature. Ranges from 0.0 to 1.0.
-        max_tokens: Optional[int]
+        max_tokens: int
             Max number of tokens to generate.
 
     Key init args — client params:

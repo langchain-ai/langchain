@@ -330,7 +330,8 @@ class Graph:
             ValueError: If a node with the same id already exists.
         """
         if id is not None and id in self.nodes:
-            raise ValueError(f"Node with id {id} already exists")
+            msg = f"Node with id {id} already exists"
+            raise ValueError(msg)
         id = id or self.next_id()
         node = Node(id=id, data=data, metadata=metadata, name=node_data_str(id, data))
         self.nodes[node.id] = node
@@ -371,9 +372,11 @@ class Graph:
             ValueError: If the source or target node is not in the graph.
         """
         if source.id not in self.nodes:
-            raise ValueError(f"Source node {source.id} not in graph")
+            msg = f"Source node {source.id} not in graph"
+            raise ValueError(msg)
         if target.id not in self.nodes:
-            raise ValueError(f"Target node {target.id} not in graph")
+            msg = f"Target node {target.id} not in graph"
+            raise ValueError(msg)
         edge = Edge(
             source=source.id, target=target.id, data=data, conditional=conditional
         )

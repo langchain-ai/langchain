@@ -119,7 +119,7 @@ Agents allow an LLM autonomy over how a task is accomplished. Agents make decisi
 Please see [here](https://python.langchain.com) for full documentation, which includes:
 
 - [Introduction](https://python.langchain.com/docs/introduction/): Overview of the framework and the structure of the docs.
-- [Tutorials](https://python.langchain.com/docs/use_cases/): If you're looking to build something specific or are more of a hands-on learner, check out our tutorials. This is the best place to get started.
+- [Tutorials](https://python.langchain.com/docs/tutorials/): If you're looking to build something specific or are more of a hands-on learner, check out our tutorials. This is the best place to get started.
 - [How-to guides](https://python.langchain.com/docs/how_to/): Answers to “How do I….?” type questions. These guides are goal-oriented and concrete; they're meant to help you complete a specific task.
 - [Conceptual guide](https://python.langchain.com/docs/concepts/): Conceptual explanations of the key parts of the framework.
 - [API Reference](https://api.python.langchain.com): Thorough documentation of every class and method.
