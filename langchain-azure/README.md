@@ -1,4 +1,4 @@
-# 🦜️🔗 LangChain 🤝 Amazon Web Services (AWS)
+# 🦜️🔗 LangChain 💜 Azure
 
 This repository provides LangChain components for various Azure services. 
 
@@ -30,7 +30,7 @@ Here's a simple example of how to use the `langchain-azure` package.
 ```python
 from langchain_azure import AzureOpenAI
 
-# Initialize the Bedrock LLM
+# Initialize the AzureOpenAI with gpt 3-5
 llm = AzureOpenAI(
     deployment_name="gpt-35-turbo-instruct-0914",
 )
