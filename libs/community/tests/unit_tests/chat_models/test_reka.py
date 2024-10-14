@@ -1,10 +1,12 @@
 """Test Reka Chat wrapper."""
 
+import json
 import os
 from typing import List
+from unittest.mock import MagicMock, patch
 
 import pytest
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 
 from langchain_community.chat_models import ChatReka
 from langchain_community.chat_models.reka import (
@@ -133,7 +135,7 @@ def test_convert_to_reka_messages(
     messages: List[BaseMessage], expected: List[dict]
 ) -> None:
     result = convert_to_reka_messages(messages)
-    assert [message.dict() for message in result] == expected
+    assert result == expected
 
 
 @pytest.mark.requires("reka")
@@ -177,3 +179,38 @@ def test_reka_identifying_params() -> None:
 def test_reka_llm_type() -> None:
     llm = ChatReka()
     assert llm._llm_type == "reka-chat"
+
+
+@pytest.mark.requires("reka")
+def test_reka_tool_use_with_mocked_response() -> None:
+    with patch("langchain_community.chat_models.reka.Reka") as MockReka:
+        # Mock the Reka client
+        mock_client = MockReka.return_value
+        mock_chat = MagicMock()
+        mock_client.chat = mock_chat
+        mock_response = MagicMock()
+        mock_message = MagicMock()
+        mock_tool_call = MagicMock()
+        mock_tool_call.id = "tool_call_1"
+        mock_tool_call.name = "search_tool"
+        mock_tool_call.parameters = {"query": "LangChain"}
+        mock_message.tool_calls = [mock_tool_call]
+        mock_message.content = None
+        mock_response.responses = [MagicMock(message=mock_message)]
+        mock_chat.create.return_value = mock_response
+
+        llm = ChatReka()
+        messages = [HumanMessage(content="Tell me about LangChain")]
+        result = llm._generate(messages)
+
+        assert len(result.generations) == 1
+        ai_message = result.generations[0].message
+        assert ai_message.content == ""
+        assert "tool_calls" in ai_message.additional_kwargs
+        tool_calls = ai_message.additional_kwargs["tool_calls"]
+        assert len(tool_calls) == 1
+        assert tool_calls[0]["id"] == "tool_call_1"
+        assert tool_calls[0]["function"]["name"] == "search_tool"
+        assert tool_calls[0]["function"]["arguments"] == json.dumps(
+            {"query": "LangChain"}
+        )
