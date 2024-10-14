@@ -8,14 +8,14 @@ Learn more about the methods used in this template from [AlloyDB for PostgreSQL 
 To run this template, you will need to setup an AlloyDB instance and store vectors into a database. Learn more about initializing an `AlloyDBVectorStore` from the [Google AlloyDB Vector Store Getting Started](https://github.com/googleapis/langchain-google-alloydb-pg-python/blob/main/docs/vector_store.ipynb)
 
 Set these environments to run the template
-  * `CLUSTER_ID`
-  * `DATABASE`
-  * `INSTANCE`
-  * `PASSWORD`
   * `PROJECT_ID`
   * `REGION`
+  * `CLUSTER_ID`
+  * `INSTANCE_ID`
+  * `DATABASE_ID`
   * `TABLE_NAME`
-  * `USER`
+  * `DB_USER`
+  * `DB_PASSWORD`
 
 This uses public IP is required for local testing but not required when deployed to Google Cloud VPC network.
 

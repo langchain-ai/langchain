@@ -8,13 +8,13 @@ Learn more about the methods used in this template from [Cloud SQL for PostgreSQ
 To run this template, you will need to setup a Cloud SQL instance and store vectors into a database. Learn more about initializing an `PostgresVectorStore` from the [Google Cloud SQL Vector Store Getting Started](https://github.com/googleapis/langchain-google-cloud-sql-pg-python/blob/main/docs/vector_store.ipynb)
 
 Set these environments to run the template
-  * `DATABASE_ID`
-  * `INSTANCE_ID`
-  * `DB_PASSWORD`
   * `PROJECT_ID`
   * `REGION`
+  * `INSTANCE_ID`
+  * `DATABASE_ID`
   * `TABLE_NAME`
   * `DB_USER`
+  * `DB_PASSWORD`
 
 This uses public IP is required for local testing but not required when deployed to Google Cloud VPC network.
 
