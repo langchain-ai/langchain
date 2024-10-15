@@ -4,8 +4,8 @@ import warnings
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List, Mapping, Optional
 
-from langchain_core._api import deprecated
 import requests
+from langchain_core._api import deprecated
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import LLM
 from pydantic import (
@@ -266,7 +266,7 @@ def _pickle_fn_to_hex_string(fn: Callable) -> str:
 @deprecated(
     since="0.3.3",
     removal="1.0",
-    alternative_import="langchain_databricks.ChatDatabricks"
+    alternative_import="langchain_databricks.ChatDatabricks",
 )
 class Databricks(LLM):
     """Databricks serving endpoint or a cluster driver proxy app for LLM.

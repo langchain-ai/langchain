@@ -3,8 +3,9 @@ from __future__ import annotations
 from typing import Iterator, List
 from urllib.parse import urlparse
 
-from langchain_community.embeddings.mlflow import MlflowEmbeddings
 from langchain_core._api import deprecated
+
+from langchain_community.embeddings.mlflow import MlflowEmbeddings
 
 
 def _chunk(texts: List[str], size: int) -> Iterator[List[str]]:
@@ -15,7 +16,7 @@ def _chunk(texts: List[str], size: int) -> Iterator[List[str]]:
 @deprecated(
     since="0.3.3",
     removal="1.0",
-    alternative_import="langchain_databricks.DatabricksEmbeddings"
+    alternative_import="langchain_databricks.DatabricksEmbeddings",
 )
 class DatabricksEmbeddings(MlflowEmbeddings):
     """Databricks embeddings.
