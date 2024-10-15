@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from enum import Enum
-from typing import Any, List, Optional, Sequence, Union
+from typing import Any, Optional, Union
 
 from pydantic import BaseModel
 
@@ -18,18 +19,26 @@ class Visitor(ABC):
     """Allowed operators for the visitor."""
 
     def _validate_func(self, func: Union[Operator, Comparator]) -> None:
-        if isinstance(func, Operator) and self.allowed_operators is not None:
-            if func not in self.allowed_operators:
-                raise ValueError(
-                    f"Received disallowed operator {func}. Allowed "
-                    f"comparators are {self.allowed_operators}"
-                )
-        if isinstance(func, Comparator) and self.allowed_comparators is not None:
-            if func not in self.allowed_comparators:
-                raise ValueError(
-                    f"Received disallowed comparator {func}. Allowed "
-                    f"comparators are {self.allowed_comparators}"
-                )
+        if (
+            isinstance(func, Operator)
+            and self.allowed_operators is not None
+            and func not in self.allowed_operators
+        ):
+            msg = (
+                f"Received disallowed operator {func}. Allowed "
+                f"comparators are {self.allowed_operators}"
+            )
+            raise ValueError(msg)
+        if (
+            isinstance(func, Comparator)
+            and self.allowed_comparators is not None
+            and func not in self.allowed_comparators
+        ):
+            msg = (
+                f"Received disallowed comparator {func}. Allowed "
+                f"comparators are {self.allowed_comparators}"
+            )
+            raise ValueError(msg)
 
     @abstractmethod
     def visit_operation(self, operation: Operation) -> Any:
@@ -142,10 +151,10 @@ class Operation(FilterDirective):
     """
 
     operator: Operator
-    arguments: List[FilterDirective]
+    arguments: list[FilterDirective]
 
     def __init__(
-        self, operator: Operator, arguments: List[FilterDirective], **kwargs: Any
+        self, operator: Operator, arguments: list[FilterDirective], **kwargs: Any
     ) -> None:
         # super exists from BaseModel
         super().__init__(  # type: ignore[call-arg]

@@ -38,7 +38,7 @@ class _O365Settings(BaseSettings):
     client_secret: SecretStr = Field(..., alias="O365_CLIENT_SECRET")
 
     model_config = SettingsConfigDict(
-        case_sensitive=False, env_file=".env", env_prefix=""
+        case_sensitive=False, env_file=".env", env_prefix="", extra="ignore"
     )
 
 
@@ -118,8 +118,8 @@ class O365BaseLoader(BaseLoader, BaseModel):
                         metadata_dict[file.name] = {
                             "source": file.web_url,
                             "mime_type": file.mime_type,
-                            "created": file.created,
-                            "modified": file.modified,
+                            "created": str(file.created),
+                            "modified": str(file.modified),
                             "created_by": str(file.created_by),
                             "modified_by": str(file.modified_by),
                             "description": file.description,

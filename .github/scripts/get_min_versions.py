@@ -21,7 +21,14 @@ MIN_VERSION_LIBS = [
     "SQLAlchemy",
 ]
 
-SKIP_IF_PULL_REQUEST = ["langchain-core"]
+# some libs only get checked on release because of simultaneous changes in
+# multiple libs
+SKIP_IF_PULL_REQUEST = [
+    "langchain-core",
+    "langchain-text-splitters",
+    "langchain",
+    "langchain-community",
+]
 
 
 def get_min_version(version: str) -> str:
@@ -70,7 +77,7 @@ def get_min_version_from_toml(
     for lib in set(MIN_VERSION_LIBS + (include or [])):
         if versions_for == "pull_request" and lib in SKIP_IF_PULL_REQUEST:
             # some libs only get checked on release because of simultaneous
-            # changes
+            # changes in multiple libs
             continue
         # Check if the lib is present in the dependencies
         if lib in dependencies:
@@ -87,7 +94,6 @@ def get_min_version_from_toml(
                     for vs in version_string
                     if check_python_version(python_version, vs["python"])
                 ][0]["version"]
-
 
             # Use parse_version to get the minimum supported version from version_string
             min_version = get_min_version(version_string)
