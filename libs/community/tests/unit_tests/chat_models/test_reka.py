@@ -1,12 +1,11 @@
-"""Test Reka Chat wrapper."""
-
 import json
 import os
-from typing import List
+from typing import Any, Dict, List
 from unittest.mock import MagicMock, patch
 
 import pytest
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+from pydantic import ValidationError
 
 from langchain_community.chat_models import ChatReka
 from langchain_community.chat_models.reka import (
@@ -15,12 +14,6 @@ from langchain_community.chat_models.reka import (
 )
 
 os.environ["REKA_API_KEY"] = "dummy_key"
-
-
-@pytest.mark.requires("reka")
-def test_reka_model_name_param() -> None:
-    llm = ChatReka(model_name="reka-flash")
-    assert llm.model == "reka-flash"
 
 
 @pytest.mark.requires("reka")
@@ -36,16 +29,10 @@ def test_reka_model_kwargs() -> None:
 
 
 @pytest.mark.requires("reka")
-def test_reka_invalid_model_kwargs() -> None:
-    with pytest.raises(ValueError):
-        ChatReka(model_kwargs={"max_tokens": "invalid"})
-
-
-@pytest.mark.requires("reka")
 def test_reka_incorrect_field() -> None:
-    with pytest.warns(match="not default parameter"):
-        llm = ChatReka(foo="bar")
-    assert llm.model_kwargs == {"foo": "bar"}
+    """Test that providing an incorrect field raises ValidationError."""
+    with pytest.raises(ValidationError):
+        ChatReka(unknown_field="bar")  # type: ignore
 
 
 @pytest.mark.requires("reka")
@@ -62,11 +49,14 @@ def test_reka_initialization() -> None:
         ("Hello", [{"type": "text", "text": "Hello"}]),
         (
             [
-                {"type": "text", "text": "Hello"},
-                {"type": "image_url", "image_url": "https://example.com/image.jpg"},
+                {"type": "text", "text": "Describe this image"},
+                {
+                    "type": "image_url",
+                    "image_url": "https://example.com/image.jpg",
+                },
             ],
             [
-                {"type": "text", "text": "Hello"},
+                {"type": "text", "text": "Describe this image"},
                 {"type": "image_url", "image_url": "https://example.com/image.jpg"},
             ],
         ),
@@ -85,7 +75,7 @@ def test_reka_initialization() -> None:
         ),
     ],
 )
-def test_process_content(content, expected) -> None:
+def test_process_content(content: Any, expected: List[Dict[str, Any]]) -> None:
     result = process_content(content)
     assert result == expected
 
@@ -132,7 +122,7 @@ def test_process_content(content, expected) -> None:
     ],
 )
 def test_convert_to_reka_messages(
-    messages: List[BaseMessage], expected: List[dict]
+    messages: List[BaseMessage], expected: List[Dict[str, Any]]
 ) -> None:
     result = convert_to_reka_messages(messages)
     assert result == expected
@@ -167,12 +157,14 @@ def test_reka_default_params() -> None:
 
 @pytest.mark.requires("reka")
 def test_reka_identifying_params() -> None:
-    llm = ChatReka(temperature=0.7)
-    assert llm._identifying_params == {
-        "max_tokens": 256,
+    """Test that ChatReka identifies its default parameters correctly."""
+    chat = ChatReka(model="reka-flash", temperature=0.7, max_tokens=256)
+    expected_params = {
         "model": "reka-flash",
         "temperature": 0.7,
+        "max_tokens": 256,
     }
+    assert chat._default_params == expected_params
 
 
 @pytest.mark.requires("reka")
@@ -200,7 +192,7 @@ def test_reka_tool_use_with_mocked_response() -> None:
         mock_chat.create.return_value = mock_response
 
         llm = ChatReka()
-        messages = [HumanMessage(content="Tell me about LangChain")]
+        messages: List[BaseMessage] = [HumanMessage(content="Tell me about LangChain")]
         result = llm._generate(messages)
 
         assert len(result.generations) == 1

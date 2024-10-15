@@ -37,14 +37,13 @@ from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 from langchain_core.utils import (
     get_from_dict_or_env,
-    get_pydantic_field_names,
 )
 from langchain_core.utils.function_calling import convert_to_openai_tool
-from langchain_core.utils.utils import build_extra_kwargs, convert_to_secret_str
-from pydantic import Field, SecretStr, model_validator
+from pydantic import ConfigDict, Field, model_validator
 
 try:
-    from reka import ChatMessage, ToolCall
+    from reka import ChatMessage as RekaChatMessage
+    from reka import ToolCall
     from reka.client import AsyncReka, Reka
 except ImportError:
     raise ValueError(
@@ -59,6 +58,8 @@ REKA_MODELS = [
 
 DEFAULT_REKA_MODEL = "reka-flash"
 
+ContentType = Union[str, List[Union[str, Dict[str, Any]]]]
+
 
 def process_content_item(item: Dict[str, Any]) -> Dict[str, Any]:
     """Process a single content item."""
@@ -70,42 +71,62 @@ def process_content_item(item: Dict[str, Any]) -> Dict[str, Any]:
     return item
 
 
-def process_content(content: Union[str, List[Dict[str, Any]]]) -> List[Dict[str, Any]]:
+def process_content(content: ContentType) -> List[Dict[str, Any]]:
     """Process content to handle both text and media inputs,
-    Returning a list of content items."""
+    returning a list of content items."""
     if isinstance(content, str):
         return [{"type": "text", "text": content}]
     elif isinstance(content, list):
-        return [process_content_item(item) for item in content]
+        result = []
+        for item in content:
+            if isinstance(item, str):
+                result.append({"type": "text", "text": item})
+            elif isinstance(item, dict):
+                result.append(process_content_item(item))
+            else:
+                raise ValueError(f"Invalid content item format: {item}")
+        return result
     else:
         raise ValueError("Invalid content format")
 
 
-def convert_to_reka_messages(messages: List[Any]) -> List[Dict[str, Any]]:
+def convert_to_reka_messages(messages: List[BaseMessage]) -> List[Dict[str, Any]]:
     """Convert LangChain messages to Reka message format."""
-    reka_messages = []
-    system_message = None  # Double check on the system message
+    reka_messages: List[Dict[str, Any]] = []
+    system_message: Optional[str] = None
 
     for message in messages:
         if isinstance(message, SystemMessage):
             if system_message is None:
-                system_message = message.content
+                if isinstance(message.content, str):
+                    system_message = message.content
+                else:
+                    raise TypeError("SystemMessage content must be a string.")
             else:
                 raise ValueError("Multiple system messages are not supported.")
         elif isinstance(message, HumanMessage):
-            content = process_content(message.content)
+            processed_content = process_content(message.content)
             if system_message:
-                if isinstance(content[0], dict) and content[0].get("type") == "text":
-                    content[0]["text"] = f"{system_message}\n{content[0]['text']}"
+                if (
+                    processed_content
+                    and isinstance(processed_content[0], dict)
+                    and processed_content[0].get("type") == "text"
+                    and "text" in processed_content[0]
+                ):
+                    processed_content[0]["text"] = (
+                        f"{system_message}\n{processed_content[0]['text']}"
+                    )
                 else:
-                    content.insert(0, {"type": "text", "text": system_message})
+                    processed_content.insert(
+                        0, {"type": "text", "text": system_message}
+                    )
                 system_message = None
-            reka_messages.append({"role": "user", "content": content})
+            reka_messages.append({"role": "user", "content": processed_content})
         elif isinstance(message, AIMessage):
-            reka_message = {"role": "assistant"}
+            reka_message: Dict[str, Any] = {"role": "assistant"}
             if message.content:
-                reka_message["content"] = process_content(message.content)
-
+                processed_content = process_content(message.content)
+                reka_message["content"] = processed_content
             if "tool_calls" in message.additional_kwargs:
                 tool_calls = message.additional_kwargs["tool_calls"]
                 formatted_tool_calls = []
@@ -119,20 +140,22 @@ def convert_to_reka_messages(messages: List[Any]) -> List[Dict[str, Any]]:
                 reka_message["tool_calls"] = formatted_tool_calls
             reka_messages.append(reka_message)
         elif isinstance(message, ToolMessage):
+            content_list: List[Dict[str, Any]] = []
+            content_list.append(
+                {
+                    "tool_call_id": message.tool_call_id,
+                    "output": json.dumps({"status": message.content}),
+                }
+            )
             reka_messages.append(
                 {
                     "role": "tool_output",
-                    "content": [
-                        {
-                            "tool_call_id": message.tool_call_id,
-                            "output": json.dumps({"status": message.content}),
-                        }
-                    ],
+                    "content": content_list,
                 }
             )
-        elif isinstance(message, ChatMessage):
-            content = process_content(message.content)
-            reka_messages.append({"role": message.role, "content": content})
+        elif isinstance(message, RekaChatMessage):
+            processed_content = process_content(message.content)
+            reka_messages.append({"role": message.role, "content": processed_content})
         else:
             raise ValueError(f"Unsupported message type: {type(message)}")
 
@@ -142,83 +165,77 @@ def convert_to_reka_messages(messages: List[Any]) -> List[Dict[str, Any]]:
 class RekaCommon(BaseLanguageModel):
     client: Any = None  #: :meta private:
     async_client: Any = None  #: :meta private:
-    model: str = Field(default=DEFAULT_REKA_MODEL, alias="model_name")
+    model: str = Field(default=DEFAULT_REKA_MODEL)
     max_tokens: int = Field(default=256)
     temperature: Optional[float] = None
     streaming: bool = False
     default_request_timeout: Optional[float] = None
     max_retries: int = 2
-    reka_api_key: Optional[SecretStr] = None
+    reka_api_key: Optional[str] = None
     count_tokens: Optional[Callable[[str], int]] = None
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
 
-    @model_validator(mode="before")
-    def build_extra(cls, values: Dict) -> Dict:
-        extra = values.get("model_kwargs", {})
-        all_required_field_names = get_pydantic_field_names(cls)
-        values["model_kwargs"] = build_extra_kwargs(
-            extra, values, all_required_field_names
-        )
-        return values
+    # @model_validator(mode="before")
+    # @classmethod
+    # def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    #     extra = values.get("model_kwargs", {})
+    #     all_field_names = set(cls.model_fields)
+    #     for field in list(values.keys()):
+    #         if field not in all_field_names:
+    #             extra[field] = values.pop(field)
+    #     values["model_kwargs"] = extra
+    #     return values
 
-    @model_validator(mode="after")
-    def validate_environment(cls, self: "RekaCommon") -> "RekaCommon":
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate that API key and Python package exist in the environment."""
-        self.reka_api_key = convert_to_secret_str(
-            get_from_dict_or_env(self, "reka_api_key", "REKA_API_KEY")
+        reka_api_key = values.get("reka_api_key")
+        reka_api_key = get_from_dict_or_env(
+            {"reka_api_key": reka_api_key}, "reka_api_key", "REKA_API_KEY"
         )
+        values["reka_api_key"] = reka_api_key
 
         try:
-            self.client = Reka(
-                api_key=self.reka_api_key.get_secret_value(),
+            values["client"] = Reka(
+                api_key=reka_api_key,
             )
-            self.async_client = AsyncReka(
-                api_key=self.reka_api_key.get_secret_value(),
+            values["async_client"] = AsyncReka(
+                api_key=reka_api_key,
             )
-
         except ImportError:
             raise ImportError(
                 "Could not import Reka Python package. "
                 "Please install it with `pip install reka-api`."
             )
-        return self
+        return values
 
     @property
     def _default_params(self) -> Mapping[str, Any]:
         """Get the default parameters for calling Reka API."""
-        d = {
-            "max_tokens": self.max_tokens,
+        params = {
             "model": self.model,
+            "max_tokens": self.max_tokens,
         }
         if self.temperature is not None:
-            d["temperature"] = self.temperature
-        return {**d, **self.model_kwargs}
-
-    @property
-    def _identifying_params(self) -> Mapping[str, Any]:
-        """Get the identifying parameters."""
-        return {**{}, **self._default_params}
+            params["temperature"] = self.temperature
+        return {**params, **self.model_kwargs}
 
 
 class ChatReka(BaseChatModel, RekaCommon):
     """Reka chat large language models."""
 
+    model: str = Field(default=DEFAULT_REKA_MODEL)
+    reka_api_key: Optional[str] = None
+    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    temperature: Optional[float] = None
+    max_tokens: int = Field(default=256)
+    model_config = ConfigDict(extra="forbid")
+
     @property
     def _llm_type(self) -> str:
         """Return type of chat model."""
         return "reka-chat"
-
-    @property
-    def _default_params(self) -> Mapping[str, Any]:
-        """Get the default parameters for calling Reka API."""
-        d = {
-            "max_tokens": self.max_tokens,
-            "model": self.model,
-        }
-        if self.temperature is not None:
-            d["temperature"] = self.temperature
-
-        return {**d, **self.model_kwargs}
 
     def _stream(
         self,
@@ -360,82 +377,51 @@ class ChatReka(BaseChatModel, RekaCommon):
         self,
         tools: Sequence[Union[Dict[str, Any], Type, Callable, BaseTool]],
         *,
-        tool_choice: Optional[
-            Union[dict, str, Literal["auto", "none", "required", "any"], bool]
-        ] = "auto",
+        tool_choice: Literal["auto", "none", "tool"] = "auto",
         strict: Optional[bool] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind tool-like objects to this chat model.
 
-        Assumes model is compatible with OpenAI tool-calling API.
+        The `tool_choice` parameter controls how the model uses the tools you pass.
+        There are three available options:
+
+        - `"auto"`: Lets the model decide whether or not to invoke a tool. This is the
+          recommended way to do function calling with our models.
+        - `"none"`: Disables tool calling. In this case, even if you pass tools to
+          the model, the model will not invoke any tools.
+        - `"tool"`: Forces the model to invoke one or more of the tools it has
+          been passed.
 
         Args:
             tools: A list of tool definitions to bind to this chat model.
                 Supports any tool definition handled by
                 :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`.
-            tool_choice: Which tool to require the model to call. Options are:
+            tool_choice: Controls how the model uses the tools you pass.
+                Options are "auto", "none", or "tool". Defaults to "auto".
+            strict:
+            If True, model output is guaranteed to exactly match the JSON Schema
+                provided in the tool definition.
+                If False, input schema will not be validated
+                and model output will not be validated.
+                If None, ``strict`` argument will not
+                be passed to the model.
+            kwargs: Any additional parameters are passed directly to the model.
 
-                - str of the form ``"<<tool_name>>"``: calls <<tool_name>> tool.
-                - ``"auto"``: automatically selects a tool (including no tool).
-                - ``"none"``: does not call a tool.
-                - ``"any"`` or ``"required"`` or ``True``: force at least one tool to be called.
-                - dict of the form ``{"type": "function", "function": {"name": <<tool_name>>}}``: calls <<tool_name>> tool.
-                - ``False`` or ``None``: no effect, default OpenAI behavior.
-            strict: If True, model output is guaranteed to exactly match the JSON Schema
-                provided in the tool definition. If True, the input schema will be
-                validated according to
-                https://platform.openai.com/docs/guides/structured-outputs/supported-schemas.
-                If False, input schema will not be validated and model output will not
-                be validated.
-                If None, ``strict`` argument will not be passed to the model.
-            kwargs: Any additional parameters are passed directly to
-                :meth:`~langchain_openai.chat_models.base.ChatOpenAI.bind`.
-
-        .. versionchanged:: 0.1.21
-
-            Support for ``strict`` argument added.
-
-        """  # noqa: E501
-
+        Returns:
+            Runnable: An executable chain or component.
+        """
         formatted_tools = [
             convert_to_openai_tool(tool, strict=strict) for tool in tools
         ]
-        if tool_choice:
-            if isinstance(tool_choice, str):
-                # tool_choice is a tool/function name
-                if tool_choice not in ("auto", "none", "any", "required"):
-                    tool_choice = {
-                        "type": "function",
-                        "function": {"name": tool_choice},
-                    }
-                # 'any' is not natively supported by OpenAI API.
-                # We support 'any' since other models use this instead of 'required'.
-                if tool_choice == "any":
-                    tool_choice = "required"
-            elif isinstance(tool_choice, bool):
-                tool_choice = "required"
-            elif isinstance(tool_choice, dict):
-                tool_names = [
-                    formatted_tool["function"]["name"]
-                    for formatted_tool in formatted_tools
-                ]
-                if not any(
-                    tool_name == tool_choice["function"]["name"]
-                    for tool_name in tool_names
-                ):
-                    raise ValueError(
-                        f"Tool choice {tool_choice} was specified, but the only "
-                        f"provided tools were {tool_names}."
-                    )
-            else:
-                raise ValueError(
-                    f"Unrecognized tool_choice type. Expected str, bool or dict. "
-                    f"Received: {tool_choice}"
-                )
-            kwargs["tool_choice"] = tool_choice
-        # Formatting hack TODO
-        formatted_tools = [
-            formatted_tool["function"] for formatted_tool in formatted_tools
-        ]
+
+        # Ensure tool_choice is one of the allowed options
+        if tool_choice not in ("auto", "none", "tool"):
+            raise ValueError("Must be one of 'auto', 'none', or 'tool'.")
+
+        # Map tool_choice to the parameter expected by the Reka API
+        kwargs["tool_choice"] = tool_choice
+
+        # Pass the tools and updated kwargs to the model
+        formatted_tools = [tool["function"] for tool in formatted_tools]
         return super().bind(tools=formatted_tools, **kwargs)
