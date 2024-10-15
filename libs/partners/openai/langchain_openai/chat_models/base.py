@@ -6,6 +6,7 @@ import base64
 import json
 import logging
 import os
+import re
 import sys
 import warnings
 from io import BytesIO
@@ -496,6 +497,13 @@ class BaseChatOpenAI(BaseChatModel):
             raise ValueError("n must be at least 1.")
         if self.n > 1 and self.streaming:
             raise ValueError("n must be 1 when streaming.")
+
+        if self.openai_api_key:
+            api_key = self.openai_api_key.get_secret_value()
+            if not bool(re.match(r"^[A-Za-z0-9-_=]+$", api_key)):
+                raise ValueError(
+                    "Invalid API key: Unicode or disallowed characters found."
+                )
 
         # Check OPENAI_ORGANIZATION for backwards compatibility.
         self.openai_organization = (
