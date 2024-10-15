@@ -136,7 +136,7 @@ These providers have standalone `langchain-{{provider}}` packages for improved v
 
 ## All Providers
 
-Click [here](/docs/integrations/providers/) to see all providers.
+Click [here](/docs/integrations/providers/all) to see all providers.
 
 """
 
