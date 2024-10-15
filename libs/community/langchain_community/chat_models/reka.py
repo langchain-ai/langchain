@@ -1,4 +1,5 @@
 import json
+import warnings
 from typing import (
     Any,
     AsyncIterator,
@@ -6,7 +7,6 @@ from typing import (
     Dict,
     Iterator,
     List,
-    Literal,
     Mapping,
     Optional,
     Sequence,
@@ -377,7 +377,7 @@ class ChatReka(BaseChatModel, RekaCommon):
         self,
         tools: Sequence[Union[Dict[str, Any], Type, Callable, BaseTool]],
         *,
-        tool_choice: Literal["auto", "none", "tool"] = "auto",
+        tool_choice: str = "auto",
         strict: Optional[bool] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
@@ -417,7 +417,13 @@ class ChatReka(BaseChatModel, RekaCommon):
 
         # Ensure tool_choice is one of the allowed options
         if tool_choice not in ("auto", "none", "tool"):
-            raise ValueError("Must be one of 'auto', 'none', or 'tool'.")
+            warnings.warn(
+                f"Invalid tool_choice '{tool_choice}' provided. "
+                "Reka model cannot be forced to use this tool name. "
+                "Defaulting to 'tool', which will force the model "
+                "to invoke one or more of the tools it has been passed."
+            )
+            tool_choice = "tool"
 
         # Map tool_choice to the parameter expected by the Reka API
         kwargs["tool_choice"] = tool_choice
