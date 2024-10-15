@@ -356,7 +356,7 @@ def _create_api_controller_tool(
         for endpoint_name in endpoint_names:
             found_match = False
             for name, _, docs in api_spec.endpoints:
-                regex_name = re.compile(re.sub("\{.*?\}", ".*", name))
+                regex_name = re.compile(re.sub("\\{.*?\\}", ".*", name))
                 if regex_name.match(endpoint_name):
                     found_match = True
                     docs_str += f"== Docs for {endpoint_name} == \n{yaml.dump(docs)}\n"
