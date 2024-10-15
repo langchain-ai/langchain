@@ -1,7 +1,6 @@
 from typing import Any, Dict, List, Optional, Union
 from unittest.mock import AsyncMock, patch
 
-import pytest
 import responses
 from langchain_core.documents import Document
 

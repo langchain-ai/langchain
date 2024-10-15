@@ -2,7 +2,6 @@
 
 from typing import Any, cast
 
-import pytest
 from langchain_core.callbacks import CallbackManager
 from langchain_core.messages import (
     AIMessage,
