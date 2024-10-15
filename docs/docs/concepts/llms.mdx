@@ -1,22 +1,39 @@
-# LLMs
+# Large Language Models (LLMs)
+
+Large Language Models (LLMs) are advanced machine learning models that excel in a wide range of language-related tasks such as
+text generation, translation, summarization, question answering, and more, without needing task-specific tuning for every scenario.
+
+## Chat Models
+
+Modern LLMs are typically exposed to users via a [Chat Model interface](/docs/concepts/chat_models). These models process sequences of [messages](/docs/concepts/messages) as input and output messages.
+
+Popular chat models support native [tool calling](/docs/concepts#tool-calling) capabilities, which allows building applications
+that can interact with external services, APIs, databases, extract structured information from unstructured text, and more.
+
+Modern LLMs are not limited to processing natural language text. They can also process other types of data, such as images, audio, and video. This is known as [multimodality](/docs/concepts/multimodality). Please see the [Chat Model Concept Guide](/docs/concepts/chat_models) page for more information.
+
+## Terminology
+
+In documentation, we will often use the terms "LLM" and "Chat Model" interchangeably. This is because most modern LLMs are exposed to users via a chat model interface.
+
+However, users must know that there are two distinct interfaces for LLMs in LangChain:
+
+1. Modern LLMs implement the [BaseChatModel](https://python.langchain.com/api_reference/core/language_models/langchain_core.language_models.chat_models.BaseChatModel.html) interface. These are chat models that process sequences of messages as input and output messages. Such models will typically be named with a convention that prefixes "Chat" to their class names (e.g., `ChatOllama`, `ChatAnthropic`, `ChatOpenAI`, etc.).
+2. Older LLMs implement the [BaseLLM](https://python.langchain.com/api_reference/core/language_models/langchain_core.language_models.llms.BaseLLM.html#langchain_core.language_models.llms.BaseLLM) interface. These are LLMs that take as input text strings and output text strings. Such models are typically named just using the provider's name (e.g., `Ollama`, `Anthropic`, `OpenAI`, etc.). Generally, users should not use these models.
+
+## Related Resources
+
+Modern LLMs (aka Chat Models):
+
+* [Conceptual Guide about Chat Models](/docs/concepts/chat_models/)
+* [Chat Model Integrations](/docs/integrations/chat_models/)
+* How-to Guides: [LLMs](/docs/how_to/#chat_models)
+
+Text-in, text-out LLMs (older or lower-level models):
 
 :::caution
-Pure text-in/text-out LLMs tend to be older or lower-level. Many new popular models are best used as [chat completion models](/docs/concepts/#chat-models),
-even for non-chat use cases.
-
-You are probably looking for [the section above instead](/docs/concepts/#chat-models).
+Unless you have a specific use case that requires using these models, you should use the chat models instead.
 :::
 
-Available LLM Integrations: [LangChain LLM Integrations](/docs/integrations/llms/)
-
-Language models that takes a string as input and returns a string.
-
-These are traditionally older models (newer models generally are [Chat Models](/docs/concepts/#chat-models), see above).
-
-Although the underlying models are string in, string out, the LangChain wrappers also allow these models to take messages as input.
-This gives them the same interface as [Chat Models](/docs/concepts/#chat-models).
-When messages are passed in as input, they will be formatted into a string under the hood before being passed to the underlying model.
-
-LangChain does not host any LLMs, rather we rely on third party integrations.
-
-For specifics on how to use LLMs, see the [how-to guides](/docs/how_to/#llms).
+* [LLM Integrations](/docs/integrations/llms/)
+* How-to Guides: [LLMs](/docs/how_to/#llms)
