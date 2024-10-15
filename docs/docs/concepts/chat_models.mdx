@@ -15,7 +15,7 @@ In addition, some chat models offer additional capabilities:
 
 LangChain provides a consistent interface for working with chat models from different providers while offering additional features for monitoring, debugging, and optimizing the performance of applications that use LLMs.
 
-* Integrations with many chat model providers (e.g., Anthropic, OpenAI, Ollama, Cohere, Hugging Face, Groq, Microsoft Azure, Google Vertex, Amazon Bedrock). Please see [chat model integrations](/docs/integrations/chat_models/) for an up-to-date list of supported models.
+* Integrations with many chat model providers (e.g., Anthropic, OpenAI, Ollama, Cohere, Hugging Face, Groq, Microsoft Azure, Google Vertex, Amazon Bedrock). Please see [chat model integrations](/docs/integrations/chats/) for an up-to-date list of supported models.
 * Use either LangChain's [messages](/docs/concepts/messages) format or OpenAI format.
 * Standard [tool calling API](/docs/concepts#tool-calling): standard interface for binding tools to models, accessing tool call requests made by models, and sending tool results back to the model. 
 * Provides support for [async programming](/docs/concepts/async), [efficient batching](/docs/concepts/runnables#batch), [a rich streaming API](/docs/concepts/streaming).
@@ -31,7 +31,7 @@ LangChain chat models fall into two categories:
 
 LangChain chat models are named with a convention that prefixes "Chat" to their class names (e.g., `ChatOllama`, `ChatAnthropic`, `ChatOpenAI`, etc.).
 
-Please review the [chat model integrations](/docs/integrations/chat_models/) for a list of supported models.
+Please review the [chat model integrations](/docs/integrations/chat/) for a list of supported models.
 
 :::note
 Models that do **not** include `Chat` or include "LLM" as a suffix in their name typically refer to older models that do not follow the chat model interface and
@@ -96,6 +96,12 @@ LangChain supports two message formats to interact with chat models:
 Chat models can call [tools](/docs/concepts/tools) to perform tasks such as fetching data from a database, making API requests, or running custom code. Please
 see the [tool calling](/docs/concepts#tool-calling) guide for more information.
 
+## Structured Outputs
+
+Chat models can be requested to respond in a particular format (e.g., JSON or matching a particular schema). This feature is extremely
+useful for information extraction tasks. Please read more about
+the technique in the [structured outputs](/docs/concepts#structured_output) guide.
+
 ## Multimodality
 
 Large Language Models (LLMs) are not limited to processing text. They can also be used to process other types of data, such as images, audio, and video. This is known as [multimodality](/docs/concepts/multimodality).
@@ -108,7 +114,7 @@ A chat model's context window refers to the maximum size of the input sequence t
 
 If the input exceeds the context window, the model may not be able to process the entire input and could raise an error. In conversational applications, this is especially important because the context window determines how much information the model can "remember" throughout a conversation. Developers often need to manage the input within the context window to maintain a coherent dialogue without exceeding the limit. For more details on handling memory in conversations, refer to the [memory](/docs/concepts/memory).
 
-The size of the input is measured in **tokens** which are the unit of processing that the model uses. Read the [tokenization](/docs/concepts#tokenization) guide for more information on tokenization and tokens.
+The size of the input is measured in [tokens](/docs/concepts/tokens) which are the unit of processing that the model uses.
 
 ## Advanced Topics 
  
@@ -145,7 +151,7 @@ Please see the [how to cache chat model responses](/docs/how_to/#chat-model-cach
 ## Related Resources
 
 * How-to guides on using chat models: [how-to guides](/docs/how_to/#chat-models).
-* List of supported chat models: [chat model integrations](/docs/integrations/chat_models/).
+* List of supported chat models: [chat model integrations](/docs/integrations/chats/).
 
 ### Conceptual guides
 
@@ -153,6 +159,7 @@ Please see the [how to cache chat model responses](/docs/how_to/#chat-model-cach
 * [Tool calling](/docs/concepts#tool-calling)
 * [Multimodality](/docs/concepts/multimodality)
 * [Structured outputs](/docs/concepts#structured_output)
+* [Tokens](/docs/concepts/tokens)
 
 
 
