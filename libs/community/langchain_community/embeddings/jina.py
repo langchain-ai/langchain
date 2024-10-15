@@ -74,13 +74,15 @@ class JinaEmbeddings(BaseModel, Embeddings):
 
     def _embed(self, input: Any) -> List[List[float]]:
         # Call Jina AI Embedding API
-        resp = self.session.post(  # type: ignore
-            JINA_API_URL, json={"input": input, "model": self.model_name}
-        ).json()
-        if "data" not in resp:
-            raise RuntimeError(resp["detail"])
-
-        embeddings = resp["data"]
+        chunks = [input[i : i + 2047] for i in range(0, len(input), 2047)]
+        embeddings = []
+        for chunk in chunks:
+            resp = self.session.post(  # type: ignore
+                JINA_API_URL, json={"input": chunk, "model": self.model_name}
+            ).json()
+            if "data" not in resp:
+                raise RuntimeError(resp["detail"])
+            embeddings.extend(resp["data"])
 
         # Sort resulting embeddings by index
         sorted_embeddings = sorted(embeddings, key=lambda e: e["index"])  # type: ignore
