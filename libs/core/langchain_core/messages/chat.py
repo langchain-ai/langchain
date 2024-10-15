@@ -48,9 +48,8 @@ class ChatMessageChunk(ChatMessage, BaseMessageChunk):
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
         if isinstance(other, ChatMessageChunk):
             if self.role != other.role:
-                raise ValueError(
-                    "Cannot concatenate ChatMessageChunks with different roles."
-                )
+                msg = "Cannot concatenate ChatMessageChunks with different roles."
+                raise ValueError(msg)
 
             return self.__class__(
                 role=self.role,

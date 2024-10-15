@@ -1,5 +1,6 @@
 import json
-from typing import Any, Literal, Optional, Union
+import operator
+from typing import Any, Literal, Optional, Union, cast
 
 from pydantic import model_validator
 from typing_extensions import NotRequired, Self, TypedDict
@@ -27,6 +28,7 @@ from langchain_core.messages.tool import (
 )
 from langchain_core.utils._merge import merge_dicts, merge_lists
 from langchain_core.utils.json import parse_partial_json
+from langchain_core.utils.usage import _dict_int_op
 
 
 class InputTokenDetails(TypedDict, total=False):
@@ -373,7 +375,8 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                         )
                     )
                 else:
-                    raise ValueError("Malformed args.")
+                    msg = "Malformed args."
+                    raise ValueError(msg)
             except Exception:
                 invalid_tool_calls.append(
                     create_invalid_tool_call(
@@ -402,9 +405,8 @@ def add_ai_message_chunks(
 ) -> AIMessageChunk:
     """Add multiple AIMessageChunks together."""
     if any(left.example != o.example for o in others):
-        raise ValueError(
-            "Cannot concatenate AIMessageChunks with different example values."
-        )
+        msg = "Cannot concatenate AIMessageChunks with different example values."
+        raise ValueError(msg)
 
     content = merge_content(left.content, *(o.content for o in others))
     additional_kwargs = merge_dicts(
@@ -432,17 +434,9 @@ def add_ai_message_chunks(
 
     # Token usage
     if left.usage_metadata or any(o.usage_metadata is not None for o in others):
-        usage_metadata_: UsageMetadata = left.usage_metadata or UsageMetadata(
-            input_tokens=0, output_tokens=0, total_tokens=0
-        )
+        usage_metadata: Optional[UsageMetadata] = left.usage_metadata
         for other in others:
-            if other.usage_metadata is not None:
-                usage_metadata_["input_tokens"] += other.usage_metadata["input_tokens"]
-                usage_metadata_["output_tokens"] += other.usage_metadata[
-                    "output_tokens"
-                ]
-                usage_metadata_["total_tokens"] += other.usage_metadata["total_tokens"]
-        usage_metadata: Optional[UsageMetadata] = usage_metadata_
+            usage_metadata = add_usage(usage_metadata, other.usage_metadata)
     else:
         usage_metadata = None
 
@@ -454,4 +448,116 @@ def add_ai_message_chunks(
         response_metadata=response_metadata,
         usage_metadata=usage_metadata,
         id=left.id,
+    )
+
+
+def add_usage(
+    left: Optional[UsageMetadata], right: Optional[UsageMetadata]
+) -> UsageMetadata:
+    """Recursively add two UsageMetadata objects.
+
+    Example:
+        .. code-block:: python
+
+            from langchain_core.messages.ai import add_usage
+
+            left = UsageMetadata(
+                input_tokens=5,
+                output_tokens=0,
+                total_tokens=5,
+                input_token_details=InputTokenDetails(cache_read=3)
+            )
+            right = UsageMetadata(
+                input_tokens=0,
+                output_tokens=10,
+                total_tokens=10,
+                output_token_details=OutputTokenDetails(reasoning=4)
+            )
+
+            add_usage(left, right)
+
+        results in
+
+        .. code-block:: python
+
+            UsageMetadata(
+                input_tokens=5,
+                output_tokens=10,
+                total_tokens=15,
+                input_token_details=InputTokenDetails(cache_read=3),
+                output_token_details=OutputTokenDetails(reasoning=4)
+            )
+
+    """
+    if not (left or right):
+        return UsageMetadata(input_tokens=0, output_tokens=0, total_tokens=0)
+    if not (left and right):
+        return cast(UsageMetadata, left or right)
+
+    return UsageMetadata(
+        **cast(
+            UsageMetadata,
+            _dict_int_op(
+                cast(dict, left),
+                cast(dict, right),
+                operator.add,
+            ),
+        )
+    )
+
+
+def subtract_usage(
+    left: Optional[UsageMetadata], right: Optional[UsageMetadata]
+) -> UsageMetadata:
+    """Recursively subtract two UsageMetadata objects.
+
+    Token counts cannot be negative so the actual operation is max(left - right, 0).
+
+    Example:
+        .. code-block:: python
+
+            from langchain_core.messages.ai import subtract_usage
+
+            left = UsageMetadata(
+                input_tokens=5,
+                output_tokens=10,
+                total_tokens=15,
+                input_token_details=InputTokenDetails(cache_read=4)
+            )
+            right = UsageMetadata(
+                input_tokens=3,
+                output_tokens=8,
+                total_tokens=11,
+                output_token_details=OutputTokenDetails(reasoning=4)
+            )
+
+            subtract_usage(left, right)
+
+        results in
+
+        .. code-block:: python
+
+            UsageMetadata(
+                input_tokens=2,
+                output_tokens=2,
+                total_tokens=4,
+                input_token_details=InputTokenDetails(cache_read=4),
+                output_token_details=OutputTokenDetails(reasoning=0)
+            )
+
+    """
+    if not (left or right):
+        return UsageMetadata(input_tokens=0, output_tokens=0, total_tokens=0)
+    if not (left and right):
+        return cast(UsageMetadata, left or right)
+
+    return UsageMetadata(
+        **cast(
+            UsageMetadata,
+            _dict_int_op(
+                cast(dict, left),
+                cast(dict, right),
+                (lambda le, ri: max(le - ri, 0)),
+            ),
+        )
     )
