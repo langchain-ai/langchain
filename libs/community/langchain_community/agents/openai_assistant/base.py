@@ -243,6 +243,9 @@ class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
             model: Assistant model to use.
             client: OpenAI or AzureOpenAI client.
                 Will create default OpenAI client (Assistant v2) if not specified.
+            model_kwargs: Additional model arguments. Only available for temperature
+            and top_p parameters.
+            extra_body: Additional body parameters to be passed to the assistant.
 
         Returns:
             OpenAIAssistantRunnable configured to run using the created assistant.
@@ -259,7 +262,7 @@ class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
             tools=[_get_assistants_tool(tool) for tool in tools],  # type: ignore
             tool_resources=tool_resources,
             model=model,
-            extra_body = extra_body,
+            extra_body=extra_body,
             **model_kwargs,
         )
         return cls(assistant_id=assistant.id, client=client, **kwargs)
