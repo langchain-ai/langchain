@@ -2,66 +2,57 @@
 
 ## Conceptual Prerequisites
 
-* [Embeddings](/docs/concepts/embedding_models/)
-* [Vectorstores](/docs/concepts/vectorstores/)
 * [Retrievers](/docs/concepts/retrievers/)
+* [Vectorstores](/docs/concepts/vectorstores/)
+* [Embeddings](/docs/concepts/embedding_models/)
+* [Text splitters](/docs/concepts/text_splitters/)
 
 ## Overview 
 
-As discussed in the [retrievers](/docs/concepts/retrievers/) conceptual overview, a retriever is an interface that returns documents given an unstructured query.
-The goal is return documents that are the most relevant to the query.
-However, a well-posed question paired with a poorly designed retriever will *still return irrelevant documents*, and vice-versa.
-With this in mind, we present two useful concepts to improve retrieval performance that address both the query and the retriever design.
+![Retrieval](/img/retrieval_high_level.png)
+
+Search engines are one of the most widely-used applications of machine learning and AI, enabling search over large collections of documents.  
+Retrieval is a core component of search engines.
+From a large set of documents, a retrieval system indentifies a much smaller set of documents are that are most *relevant* to the search query.
+Retrieval systems are very useful for AI applications, such as [Retrieval Augmented Generation](/docs/concepts/rag/), because they can extend the model's internal knowledge.
+
+## Key concepts 
 
 ![Retrieval](/img/retrieval_concept.png)
 
-## Key Concepts 
+(1) Search index: A search index enables efficient retrieval of documents based upon the search query.
+(2) Query analysis: A model can be used to transform or construct the search query. 
 
-**(1) Preserve full documents:** Documents need to be indexed for retrieval. 
-Indexing can be done in a variety of ways, but often involves a transformation (e.g., document splitting or summarization) followed by compression (e.g., via embedding models) into a concise representation that is easily searchable.
-Whatever method is used, it is very useful to retain a link between the transformed document and the original, giving the retriever the ability to return the original document as the retrieval result.
-**(2) Query analysis:** User queries are unstructured and may be poorly worded (e.g., terse or verbose) for retrieval. Furthermore, retrievers may require a specific query format, such as a domain-specific language (e.g., SQL). Query analysis is the concept of transforming a raw search query into a form that is optimized for retrieval.
+## Search Index 
 
-## Preserving full documents
+An search index is a data structure that improves the speed and efficiency of retrieval. 
 
-Documents need to be indexed for retrieval. 
-A prequisite for indexing is often a transformation step. 
-This can include such as document splitting or summarization to create chunks or more compact representations.
-In this transformation step, it is useful to retain a linkage *back to the original document*.
-This gives the retriever the ability to return the original document as the retrieval result.
+### Unstructured data 
 
-This effectively decouples the benefit of retaining the full document from the need to transform the document to optimize indexing.
-Specifically, retaining the full document allows for no loss in context for downstream applications.
-But, this still allows for transformations that can improve the performance of the retriever.
+For indexing unstructured data, LangChain uses the `retriever` abstraction. 
+A `retriever` is an interface that returns documents given an unstructured text input (e.g., a natural language user query).
+Many retrievers use some kind of index (e.g., an **inverted index** for lexical search or a **vector index** for semantic search) to find documents that are most relevant to the search query.
+See our conceptual overview of [retrievers](/docs/concepts/retrievers/) for more details.
 
-There are at least two approaches that can be used out-of-the-box with LangChain to achieve this. 
-The [Multi-Vector](/docs/how_to/multi_vector/) retriever allows the user to transform documents into any form (e.g., use an LLM to write a summary) that is well-suited for indexing while retaining linkage to the origional document. 
-The [ParentDocument](/docs/how_to/parent_document_retriever/) retain a linkage between document chunks (e.g., from a text-splitter) and the origional document. 
+### Structured data 
 
-| Name                      | Index Type                   | Uses an LLM               | When to Use                                                                                                                                   | Description                                                                                                                                                                                                                                                                                      |
-|---------------------------|------------------------------|---------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [ParentDocument](/docs/how_to/parent_document_retriever/)            | Vector store + Document Store | No                        | If your pages have lots of smaller pieces of distinct information that are best indexed by themselves, but best retrieved all together.       | This involves indexing multiple chunks for each document. Then you find the chunks that are most similar in embedding space, but you retrieve the whole parent document and return that (rather than individual chunks).                                                                         |
-| [Multi Vector](/docs/how_to/multi_vector/)              | Vector store + Document Store | Sometimes during indexing | If you are able to extract information from documents that you think is more relevant to index than the text itself.                          | This involves creating multiple vectors for each document. Each vector could be created in a myriad of ways - examples include summaries of the text and hypothetical questions.                                                                                                                 |
+For indexing structured data, many kinds of relational or graph databases can be used.
+In relational databases, for example, indexes are typically created on specific columns to speed up query performance. 
+They work like a book's table of contents, allowing the database to quickly locate the data without scanning the entire table.
 
-:::tip
+## Query Analysis 
 
-- See our RAG from Scratch video on [multi vector retriever](https://youtu.be/gTCU9I6QqCE?feature=shared)
+Users typically interact with a retrieval system using natural language.
+However, search indexes often require a specific query syntax (e.g., SQL or metadata filters) or can benefit from use of specific keywords (e.g., for semantic or lexical search).
+Query analysis is a powerful concept to help bridge the gap between raw, natural language queries and queries optimized for search indexes.
+The concept is simply to use a model to transform or construct the search query from a raw user input query.
 
-:::
+### Unstructured data
 
-## Query Analysis
-
-Query analysis is the concept of transforming a raw search query into a form that is optimized for retrieval.
-Here, we highlight two conceptual approaches, query translation and query construction.
-The first approach uses an LLM to translate the raw query into a new query that is better optimized for retrieval.
-The second approach uses an LLM to construct a query in a domain-specific language (e.g., SQL) based upon the raw query.
-
-### Query translation
-
-Ideally, a retrieval system can handle a wide range of (user) inputs, from poorly worded to complex multi-part queries.
-A popular approch is to use an LLM as a general buffer, translating raw user query into a query that is better optimized for the retrieval system. 
+Ideally a retrieval system that indexes unstructured data can handle a wide range of (user) inputs, from poorly worded to complex multi-part queries.
+To enable this, a popular approch is to use an LLM to translate a raw user query into a query that is better optimized for the retrieval system. 
 For example, this can be as simple as extracting keywords or as complex as generating multiple sub-questions for a complex query.
-Several different approaches can be used to achieve this.
+There are various approaches for achieving this, including:
 
 | Name          | When to use | Description                                                                                                                                                                                                                                                                            |
 |---------------|-------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -80,14 +71,12 @@ See our RAG from Scratch videos for a few different specific approaches:
 
 :::
 
-### Query construction
+### Semi-structured and structred data
 
 Various DSLs (Domain Specific Languages) have been developed to interact with retrieval systems including SQL, Cypher, and PQL.
-A popular approach to interacting with structured data is to use an LLM to convert natural language queries into a DSL for the relevant retriever.  
-
-For retrievers that house structured data, [text-to-SQL](/docs/tutorials/sql_qa/) and [text-to-Cypher](/docs/tutorials/graph/) are particularly popular. 
-For retrievers that house semi-structured data, such as vector stores that utilize metadata, a popular approach is to use an LLM to convert a natural language query into a metadata filter.
-This allows for structured filtering of documents based on metadata, which can then be followed by a semantic search across the filtered documents.
+A popular approach to interacting with structured data is to use a model to convert natural language queries into a DSL for the relevant retrieval systems.  
+For structured data, [text-to-SQL](/docs/tutorials/sql_qa/) and [text-to-Cypher](/docs/tutorials/graph/) are particularly popular. 
+For semi-structured data, such as vector stores that utilize metadata, a popular approach is to use an LLM to convert a natural language query into a metadata filter.
 
 | Name                                        | When to Use                                                                                                                                   | Description                                                                                                                                                                                                                                                                                      |
 |---------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|

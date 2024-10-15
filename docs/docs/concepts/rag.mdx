@@ -1,5 +1,11 @@
 # Retrieval Augmented Generation (RAG)
 
+## Conceptual Prerequisites
+
+* [Retrievers](/docs/concepts/retrievers/)
+
+## Overview
+
 Language models (LLMs) are trained on vast but fixed datasets, which limits their ability to access up-to-date or domain-specific information. 
 
 To enhance their performance on specific tasks, we can augment their knowledge using retrieval systems.
@@ -12,3 +18,17 @@ Key benefits of using retrieval systems include:
 2. Improved accuracy on domain-specific tasks
 3. Reduced hallucination by grounding responses in retrieved facts
 4. Cost-effective alternative to fine-tuning for factual recall
+
+
+Given an input query, we normally respond to this query with an LLM by simply ingesting the query (possibly as part of a prompt template) and generating a response with the LLM. RAG modifies this approach by combining the LLM with a searchable knowledge base. In other words, we first use the input query to search for relevant information within an external dataset. Then, we add the info that we find to the model’s prompt when generating output, allowing the LLM to use this context (via its in context learning abilities) to generate a better and more factual response; see below. By combining the LLM with a non-parametric data source, we can feed the model correct, specific, and up-to-date information.
+
+https://cameronrwolfe.substack.com/p/a-practitioners-guide-to-retrieval?utm_source=profile&utm_medium=reader2
+
+## Cost
+
+Implementing RAG allows us to specialize an LLM over a knowledge base of our choosing. Compared to other knowledge injection techniques—finetuning (or continued pretraining) is the primary alternative—RAG is both simpler to implement and computationally cheaper. As we will see, RAG also produces much better results compared to continued pretraining! However, implementing RAG still requires extra effort compared to just prompting a pretrained LLM, so we will briefly cover here the core benefits of RAG that make it worthwhile.
+
+## Hallucination
+
+Reducing hallucinations. The primary reason that RAG is so commonly-used in practice is its ability to reduce hallucinations (i.e., generation of false information by the LLM). While LLMs tend to produce incorrect information when relying upon their parametric knowledge, the incorporation of RAG can drastically reduce the frequency of hallucinations, thus improving the overall quality of any LLM application and building more trust among users. Plus, RAG provides us with direct references to data that is used to generate information within the model’s output. We can easily provide the user with references to this information so that the LLM’s output can be verified against the actual data; see below.
+

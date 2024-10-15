@@ -1,12 +1,40 @@
 # Embedding models
 <span data-heading-keywords="embedding,embeddings"></span>
 
+## Overview
+
 Embedding models create a vector representation of a piece of text. You can think of a vector as an array of numbers that captures the semantic meaning of the text.
 By representing the text in this way, you can perform mathematical operations that allow you to do things like search for other pieces of text that are most similar in meaning.
 These natural language search capabilities underpin many types of [context retrieval](/docs/concepts/#retrieval),
 where we provide an LLM with the relevant data it needs to effectively respond to a query.
 
 ![](/img/embeddings.png)
+
+## Encoder 
+
+### Bi-Encoder
+
+The short answer is that we can use deep learning to improve both the retrieval and ranking process. There are two types of models in particular that we use for this purpose—bi-encoders and cross-encoders—both of which are typically implemented using encoder-only (BERT) [1] models.
+
+Bi-encoders form the basis of dense retrieval1 algorithms. At the simplest level, bi-encoders take a sequence of text as input and produce a dense vector as output. However, the vectors produced by bi-encoders are semantically meaningful—similar sequences of text produce vectors that are nearby in the vector space when processed by the bi-encoder. As a result, we can match queries to documents by embedding both with a bi-encoder and performing a vector search to find documents with the highest cosine similarity2 relative to the query; see below
+
+Using algorithms like hierarchical navigable small word (HNSW) [6], we can perform approximate nearest neighbor vector searches efficiently. Similar to performing lexical search, we can store document vectors within a database like Elastic or RediSearch and build an HNSW search index. Then, vector search can be performed by i) using the bi-encoder to produce a vector for the user’s query and ii) performing vector search to find the most similar documents; see below.
+
+https://cameronrwolfe.substack.com/p/the-basics-of-ai-powered-vector-search?utm_source=profile&utm_medium=reader2
+
+Creating vector embeddings. Before moving on, we need to discuss how BERT can be used to create a vector embedding for a sequence of text. Such an approach is leveraged by bi-encoders to craft vectors that can be used for vector search. Each layer of a BERT model takes a sequence of token vectors as input and produces an equal-size sequence of token vectors as output. As such, the output of BERT is a sequence of token vectors, and every intermediate layer within the model produces a sequence of vectors with the same size; see below.
+
+Main takeaway. BERT models are great for a variety of tasks, but BERT’s textual embeddings are not semantically meaningful by default. The finetuning procedure proposed in [2] improves the semantic meaningfulness of BERT embeddings. As such, sBERT is appropriate for a broader range of tasks, including semantic similarity tasks like clustering and semantic (vector) search. Using optimized index structures, we can find similar documents with sBERT in milliseconds, whereas performing a similarity search with vanilla BERT (using a cross-encoder setup) could take tens or hundreds of hours10!
+
+
+
+### Cross-Encoder
+
+Cross-encoders are similar to bi-encoders in that they allow us to score the similarity between two sequences of text. Instead of separately creating a vector for each textual sequence, however, cross-encoders ingest both textual sequences using the same model; see below. The model is trained to predict an accurate similarity score for these textual sequences. Cross-encoders can more accurately predict textual similarity relative to bi-encoders. However, searching for similar documents with a cross-encoder is much more computationally expensive
+
+
+
+
 
 The `Embeddings` class is a class designed for interfacing with text embedding models. There are many different embedding model providers (OpenAI, Cohere, Hugging Face, etc) and local models, and this class is designed to provide a standard interface for all of them.
 

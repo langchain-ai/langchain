@@ -2,9 +2,24 @@
 
 <span data-heading-keywords="vector,vectorstore,vectorstores,vector store,vector stores"></span>
 
-One of the most common ways to store and search over unstructured data is to embed it and store the resulting embedding vectors,
+## Overview
+
+Vectorstores are one of the most common ways to index unstructured data.
+The utilize a vector index, which is a data structure that allows for efficient similarity search .
+
+ are one of the most common ways to store and search over unstructured data is to embed it and store the resulting embedding vectors,
 and then at query time to embed the unstructured query and retrieve the embedding vectors that are 'most similar' to the embedded query.
 A vector store takes care of storing embedded data and performing vector search for you.
+
+
+## Key concepts
+
+![Vectorstores](/img/vectorstores.png)
+ 
+ (1) Generate retrieval units
+ (2) Create an easily searchable representation for retrieval units
+ (3) Index them for efficient search retrieval
+
 
 Most vector stores can also store metadata about embedded vectors and support filtering on that metadata before
 similarity search, allowing you more control over returned documents.
@@ -18,9 +33,28 @@ retriever = vectorstore.as_retriever()
 
 For specifics on how to use vector stores, see the [relevant how-to guides here](/docs/how_to/#vector-stores).
 
+
+
+
+## Retrieval Units
+
+From raw data, generate units of retrieval.
+
+Text splitting. 
+
+However, the external data sources that we use for RAG might contain data in a variety of different formats (e.g., pdf, markdown, and more). As such, we must first clean the data and extract the raw textual information from these heterogenous data sources. Once this is done, we can “chunk” the data, or split it into sets of shorter sequences that typically contain around 100-500 tokens; see below.
+
+The goal of chunking is to split the data into units of retrieval (i.e., pieces of text that we can retrieve as search results). An entire document could be too large to serve as a unit of retrieval, so we must split this document into smaller chunks. The most common chunking strategy is a fixed-size approach, which breaks longer texts into shorter sequences that each contain a fixed number of tokens. However, this is not the only approach! Our data may be naturally divided into chunks (e.g., social media posts or product descriptions on an e-commerce store) or contain separators that allow us to use a variable-size chunking strategy.
+
+
+
 To add -- 
 
 In the case of vectorstores, it is common to have unstructured data (e.g., raw text documents) and structured data (e.g., metadata associated with the documents). 
+
+First, we will want to build a dense retrieval system by i) using an embedding model2 to produce a corresponding vector representation for each of our chunks and ii) indexing all of these vector representations within a vector database. Then, we can embed the input query using the same embedding model and perform an efficient vector search to retrieve semantically-related chunks; see above.
+
+## Relevance 
 
 This allows for querying in two different ways:
 

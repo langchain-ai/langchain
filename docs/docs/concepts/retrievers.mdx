@@ -2,15 +2,85 @@
 
 <span data-heading-keywords="retriever,retrievers"></span>
 
-A retriever is an interface that returns documents given an unstructured query.
-It is more general than a vector store.
-A retriever does not need to be able to store documents, only to return (or retrieve) them.
-Retrievers can be created from vector stores, but are also broad enough to include [Wikipedia search](/docs/integrations/retrievers/wikipedia/) and [Amazon Kendra](/docs/integrations/retrievers/amazon_kendra_retriever/).
+## Conceptual Prerequisites
 
-Retrievers accept a string query as input and return a list of Document's as output.
+* [Vectorstores](/docs/concepts/vectorstores/)
+* [Embeddings](/docs/concepts/embedding_models/)
+* [Text splitters](/docs/concepts/text_splitters/)
 
-For specifics on how to use retrievers, see the [relevant how-to guides here](/docs/how_to/#retrievers).
+## Overview
 
-TODO:
+Unstructured data is extremely useful for AI applications, because it can be passed to models in order to [augment](/docs/concepts/rag/) their internal knowledge.
+However, it is challenge to work with due to its diverse formats and the variety of ways to access it.
+A retriever is a LangChain interface that returns unstructured data in a standard form (as documents) given an *unstructured* text input (e.g., a natural language user query).
 
-- See our RAG from Scratch video on [indexing fundamentals](https://youtu.be/bjb_EMsTDKI?feature=shared)
+## Key concepts
+
+![Retriever](/img/retriever_concept.png)
+ 
+(1) Index unstructured documents: Many retrievers use some kind of index (e.g., an **inverted index** for lexical search or a **vector index** for semantic search) to find documents that are most relevant to the search query.
+(2) Documents: The central function of a retriever is the ability to return documents, a LangChain object with standard attributes for unstructured data. 
+
+## Index unstructured documents 
+
+The only requirement for a retriever is the ability to return documents. 
+This means that retrievers don't need to actually store documents; for example, they can be built on top of search APIs such as [Amazon Kendra](https://python.langchain.com/docs/integrations/retrievers/amazon_kendra_retriever/) or [Wikipedia Search](https://python.langchain.com/docs/integrations/retrievers/wikipedia/). 
+However, there are a few common types of retrievers.
+
+### Lexical search index
+
+Many search engines are based upon matching words in a user’s query to the words in each document. 
+This approach is called lexical retrieval, using search algorithms that are typically based upon word frequencies. 
+The intution is simple: a word appears frequently both in the user’s query and a particular document, then this document might be a good match.
+
+The particular data structure used to implement this is an [*inverted index*](https://www.geeksforgeeks.org/inverted-index/), which contains a list of words and a mapping of each word to a list of locations at which it occurs in various documents. 
+Using this data structure, it is possible to efficiently match the words in search queries to the documents in which they appear.
+BM25 and TF-IDF are [two popular lexical search algorithms](https://cameronrwolfe.substack.com/p/the-basics-of-ai-powered-vector-search?utm_source=profile&utm_medium=reader2).
+
+TODO: Add examples (Redis, Elasticsearch)
+
+### Vector index
+
+Vector indexes are an alternative way to index unstructured documents. 
+Rather than using word frequencies, they use a model to compress documents and queries into a common high-dimensional vector representation, which allows for efficient similarity search.
+See our conceptual overview of [vectorstores](/docs/concepts/vectorstores/) for a detailed overview.
+
+### Hybrid Search
+
+Vector search can be augmented with a lexical (or keyword-based) retrieval component, forming a [hybrid search algorithm](https://cameronrwolfe.substack.com/p/a-practitioners-guide-to-retrieval?utm_source=profile&utm_medium=reader2). 
+
+TODO: Add examples 
+
+## Documents 
+
+Retrievers return a list of Document objects, which have two attributes:
+
+* `page_content`: The content of this document. Currently is only a string.
+* `metadata`: Arbitrary metadata associated with this document. Can track the document id, file name, etc.
+
+### Preserving full documents
+
+![Retrieval with full docs](/img/retriever_full_docs.png)
+
+As discussed, many retriers utilize some kind of index to make documents more easily searchable.
+The process of indexing can include a transformation step (e.g., document splitting or summarization). 
+Whatever method is used, can be very useful to retain a link between the transformed document and the original, giving the retriever the ability to return the *original* document as the retrieval result.
+This is particularly useful in AI applications, because it allows for no loss in document context for the model.
+
+LangChain has two different out-of-the-box retrievers that can be used to achieve this. 
+The [Multi-Vector](/docs/how_to/multi_vector/) retriever allows the user to use any document transformation (e.g., use an LLM to write a summary of the document) for indexing while retaining linkage to the origional document. 
+The [ParentDocument](/docs/how_to/parent_document_retriever/) retriever links document chunks from a text-splitter transformation for indexing while retaining linkage to the origional document. 
+
+| Name                      | Index Type                   | Uses an LLM               | When to Use                                                                                                                                   | Description                                                                                                                                                                                                                                                                                      |
+|---------------------------|------------------------------|---------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [ParentDocument](/docs/how_to/parent_document_retriever/)            | Vector store + Document Store | No                        | If your pages have lots of smaller pieces of distinct information that are best indexed by themselves, but best retrieved all together.       | This involves indexing multiple chunks for each document. Then you find the chunks that are most similar in embedding space, but you retrieve the whole parent document and return that (rather than individual chunks).                                                                         |
+| [Multi Vector](/docs/how_to/multi_vector/)              | Vector store + Document Store | Sometimes during indexing | If you are able to extract information from documents that you think is more relevant to index than the text itself.                          | This involves creating multiple vectors for each document. Each vector could be created in a myriad of ways - examples include summaries of the text and hypothetical questions.                                                                                                                 |
+
+:::tip
+
+- See our RAG from Scratch video on [multi vector retriever](https://youtu.be/gTCU9I6QqCE?feature=shared)
+
+:::
+
+
+
