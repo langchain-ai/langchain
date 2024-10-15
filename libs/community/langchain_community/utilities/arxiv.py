@@ -93,13 +93,17 @@ class ArxivAPIWrapper(BaseModel):
                 "Please install it with `pip install arxiv`."
             )
         return values
-    
+
     def _fetch_results(self, query: str) -> Any:
         """Helper function to fetch arxiv results based on query."""
         if self.is_arxiv_identifier(query):
-            return self.arxiv_search(id_list=query.split(), max_results=self.top_k_results).results()
-        return self.arxiv_search(query[:self.ARXIV_MAX_QUERY_LENGTH], max_results=self.top_k_results).results()
-    
+            return self.arxiv_search(
+                id_list=query.split(), max_results=self.top_k_results
+            ).results()
+        return self.arxiv_search(
+            query[: self.ARXIV_MAX_QUERY_LENGTH], max_results=self.top_k_results
+        ).results()
+
     def get_summaries_as_docs(self, query: str) -> List[Document]:
         """
         Performs an arxiv search and returns list of
@@ -113,7 +117,9 @@ class ArxivAPIWrapper(BaseModel):
             query: a plaintext search query
         """
         try:
-            results = self._fetch_results(query)  # Using helper function to fetch results
+            results = self._fetch_results(
+                query
+            )  # Using helper function to fetch results
         except self.arxiv_exceptions as ex:
             logger.error(f"Arxiv exception: {ex}")  # Added error logging
             return [Document(page_content=f"Arxiv exception: {ex}")]
@@ -145,7 +151,9 @@ class ArxivAPIWrapper(BaseModel):
             query: a plaintext search query
         """
         try:
-            results = self._fetch_results(query)  # Using helper function to fetch results
+            results = self._fetch_results(
+                query
+            )  # Using helper function to fetch results
         except self.arxiv_exceptions as ex:
             logger.error(f"Arxiv exception: {ex}")  # Added error logging
             return f"Arxiv exception: {ex}"
@@ -200,7 +208,9 @@ class ArxivAPIWrapper(BaseModel):
         try:
             # Remove the ":" and "-" from the query, as they can cause search problems
             query = query.replace(":", "").replace("-", "")
-            results = self._fetch_results(query)  # Using helper function to fetch results
+            results = self._fetch_results(
+                query
+            )  # Using helper function to fetch results
         except self.arxiv_exceptions as ex:
             logger.debug("Error on arxiv: %s", ex)
             return
