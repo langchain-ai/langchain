@@ -1,6 +1,6 @@
 import base64
 import json
-from typing import List, Optional
+from typing import List, Optional, cast
 
 import httpx
 import pytest
@@ -151,63 +151,104 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(result.usage_metadata["output_tokens"], int)
         assert isinstance(result.usage_metadata["total_tokens"], int)
 
-        if "audio_input" in self.supported_usage_metadata_details:
+        if "audio_input" in self.supported_usage_metadata_details["invoke"]:
             msg = self.invoke_with_audio_input()
-            assert isinstance(msg.usage_metadata["input_token_details"]["audio"], int)  # type: ignore[index]
-        if "audio_output" in self.supported_usage_metadata_details:
+            assert msg.usage_metadata is not None
+            assert msg.usage_metadata["input_token_details"] is not None
+            assert isinstance(msg.usage_metadata["input_token_details"]["audio"], int)
+            assert msg.usage_metadata["input_tokens"] >= sum(
+                (v or 0)  # type: ignore[misc]
+                for v in msg.usage_metadata["input_token_details"].values()
+            )
+        if "audio_output" in self.supported_usage_metadata_details["invoke"]:
             msg = self.invoke_with_audio_output()
-            assert isinstance(msg.usage_metadata["output_token_details"]["audio"], int)  # type: ignore[index]
-        if "reasoning_output" in self.supported_usage_metadata_details:
+            assert msg.usage_metadata is not None
+            assert msg.usage_metadata["output_token_details"] is not None
+            assert isinstance(msg.usage_metadata["output_token_details"]["audio"], int)
+            assert int(msg.usage_metadata["output_tokens"]) >= sum(
+                (v or 0)  # type: ignore[misc]
+                for v in msg.usage_metadata["output_token_details"].values()
+            )
+        if "reasoning_output" in self.supported_usage_metadata_details["invoke"]:
             msg = self.invoke_with_reasoning_output()
+            assert msg.usage_metadata is not None
+            assert msg.usage_metadata["output_token_details"] is not None
             assert isinstance(
-                msg.usage_metadata["output_token_details"]["reasoning"],  # type: ignore[index]
+                msg.usage_metadata["output_token_details"]["reasoning"],
                 int,
             )
-        if "cache_read_input" in self.supported_usage_metadata_details:
+            assert msg.usage_metadata["output_tokens"] >= sum(
+                (v or 0)  # type: ignore[misc]
+                for v in msg.usage_metadata["output_token_details"].values()
+            )
+        if "cache_read_input" in self.supported_usage_metadata_details["invoke"]:
             msg = self.invoke_with_cache_read_input()
+            assert msg.usage_metadata is not None
+            assert msg.usage_metadata["input_token_details"] is not None
             assert isinstance(
-                msg.usage_metadata["input_token_details"]["cache_read"],  # type: ignore[index]
+                msg.usage_metadata["input_token_details"]["cache_read"],
                 int,
             )
-        if "cache_creation_input" in self.supported_usage_metadata_details:
+            assert msg.usage_metadata["input_tokens"] >= sum(
+                (v or 0)  # type: ignore[misc]
+                for v in msg.usage_metadata["input_token_details"].values()
+            )
+        if "cache_creation_input" in self.supported_usage_metadata_details["invoke"]:
             msg = self.invoke_with_cache_creation_input()
+            assert msg.usage_metadata is not None
+            assert msg.usage_metadata["input_token_details"] is not None
             assert isinstance(
-                msg.usage_metadata["input_token_details"]["cache_creation"],  # type: ignore[index]
+                msg.usage_metadata["input_token_details"]["cache_creation"],
                 int,
+            )
+            assert msg.usage_metadata["input_tokens"] >= sum(
+                (v or 0)  # type: ignore[misc]
+                for v in msg.usage_metadata["input_token_details"].values()
             )
 
     def test_usage_metadata_streaming(self, model: BaseChatModel) -> None:
         if not self.returns_usage_metadata:
             pytest.skip("Not implemented.")
-        full: Optional[BaseMessageChunk] = None
-        for chunk in model.stream("Hello"):
+        full: Optional[AIMessageChunk] = None
+        for chunk in model.stream("Write me 2 haikus. Only include the haikus."):
             assert isinstance(chunk, AIMessageChunk)
-            full = chunk if full is None else full + chunk
+            # only one chunk is allowed to set usage_metadata.input_tokens
+            # if multiple do, it's likely a bug that will result in overcounting
+            # input tokens
+            if full and full.usage_metadata and full.usage_metadata["input_tokens"]:
+                assert (
+                    not chunk.usage_metadata or not chunk.usage_metadata["input_tokens"]
+                ), (
+                    "Only one chunk should set input_tokens,"
+                    " the rest should be 0 or None"
+                )
+            full = chunk if full is None else cast(AIMessageChunk, full + chunk)
+
         assert isinstance(full, AIMessageChunk)
         assert full.usage_metadata is not None
         assert isinstance(full.usage_metadata["input_tokens"], int)
         assert isinstance(full.usage_metadata["output_tokens"], int)
         assert isinstance(full.usage_metadata["total_tokens"], int)
 
-        if "audio_input" in self.supported_usage_metadata_details:
+        if "audio_input" in self.supported_usage_metadata_details["stream"]:
             msg = self.invoke_with_audio_input(stream=True)
             assert isinstance(msg.usage_metadata["input_token_details"]["audio"], int)  # type: ignore[index]
-        if "audio_output" in self.supported_usage_metadata_details:
+        if "audio_output" in self.supported_usage_metadata_details["stream"]:
             msg = self.invoke_with_audio_output(stream=True)
             assert isinstance(msg.usage_metadata["output_token_details"]["audio"], int)  # type: ignore[index]
-        if "reasoning_output" in self.supported_usage_metadata_details:
+        if "reasoning_output" in self.supported_usage_metadata_details["stream"]:
             msg = self.invoke_with_reasoning_output(stream=True)
             assert isinstance(
                 msg.usage_metadata["output_token_details"]["reasoning"],  # type: ignore[index]
                 int,
             )
-        if "cache_read_input" in self.supported_usage_metadata_details:
+        if "cache_read_input" in self.supported_usage_metadata_details["stream"]:
             msg = self.invoke_with_cache_read_input(stream=True)
             assert isinstance(
                 msg.usage_metadata["input_token_details"]["cache_read"],  # type: ignore[index]
                 int,
             )
-        if "cache_creation_input" in self.supported_usage_metadata_details:
+        if "cache_creation_input" in self.supported_usage_metadata_details["stream"]:
             msg = self.invoke_with_cache_creation_input(stream=True)
             assert isinstance(
                 msg.usage_metadata["input_token_details"]["cache_creation"],  # type: ignore[index]

@@ -54,14 +54,12 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
         examples = values.get("examples")
         example_selector = values.get("example_selector")
         if examples and example_selector:
-            raise ValueError(
-                "Only one of 'examples' and 'example_selector' should be provided"
-            )
+            msg = "Only one of 'examples' and 'example_selector' should be provided"
+            raise ValueError(msg)
 
         if examples is None and example_selector is None:
-            raise ValueError(
-                "One of 'examples' and 'example_selector' should be provided"
-            )
+            msg = "One of 'examples' and 'example_selector' should be provided"
+            raise ValueError(msg)
 
         return values
 
@@ -76,10 +74,11 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
                 expected_input_variables |= set(self.prefix.input_variables)
             missing_vars = expected_input_variables.difference(input_variables)
             if missing_vars:
-                raise ValueError(
+                msg = (
                     f"Got input_variables={input_variables}, but based on "
                     f"prefix/suffix expected {expected_input_variables}"
                 )
+                raise ValueError(msg)
         else:
             self.input_variables = sorted(
                 set(self.suffix.input_variables)
@@ -216,5 +215,6 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
             ValueError: If example_selector is provided.
         """
         if self.example_selector:
-            raise ValueError("Saving an example selector is not currently supported")
+            msg = "Saving an example selector is not currently supported"
+            raise ValueError(msg)
         return super().save(file_path)

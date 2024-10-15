@@ -219,12 +219,14 @@ def get_config_list(
 
     """
     if length < 0:
-        raise ValueError(f"length must be >= 0, but got {length}")
+        msg = f"length must be >= 0, but got {length}"
+        raise ValueError(msg)
     if isinstance(config, Sequence) and len(config) != length:
-        raise ValueError(
+        msg = (
             f"config must be a list of the same length as inputs, "
             f"but got {len(config)} configs for {length} inputs"
         )
+        raise ValueError(msg)
 
     if isinstance(config, Sequence):
         return list(map(ensure_config, config))
