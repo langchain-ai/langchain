@@ -2,10 +2,16 @@ import logging
 from urllib.parse import urlparse
 
 from langchain_community.chat_models.mlflow import ChatMlflow
+from langchain_core._api import deprecated
 
 logger = logging.getLogger(__name__)
 
 
+@deprecated(
+    since="0.3.3",
+    removal="1.0",
+    alternative_import="langchain_databricks.ChatDatabricks"
+)
 class ChatDatabricks(ChatMlflow):
     """`Databricks` chat models API.
 
