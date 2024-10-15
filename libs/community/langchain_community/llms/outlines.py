@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import logging
-from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, Iterator, List, Literal, Optional, Tuple, Union
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
@@ -16,34 +16,38 @@ logger = logging.getLogger(__name__)
 class Outlines(LLM):
     """LLM wrapper for the Outlines library."""
 
-    client: Any  # :meta private:
+    client: Any = None  # :meta private:
 
-    model_identifier: str = Field(..., alias="model")
+    model: str
     """Identifier for the model to use with Outlines.
     
-    The model_identifier should be a string in the format "provider/model_name", where:
-    
-    - "provider" specifies the model type or source. Supported providers are:
-      - "llamacpp": For GGUF models using llama.cpp
-      - "transformers": For Hugging Face Transformers models
-      - "transformers_vision": For vision-language models (e.g., LLaVA)
-      - "vllm": For models using the vLLM library
-      - "mlxlm": For models using the MLX framework
-    
-    - "model_name" is the specific model identifier, which can be:
-      - A Hugging Face model name (e.g., "meta-llama/Llama-2-7b-chat-hf")
-      - A local path to a model
-      - For GGUF models, the format is "repo_id/file_name"
-        (e.g., "TheBloke/Llama-2-7B-Chat-GGUF/llama-2-7b-chat.Q4_K_M.gguf")
+    The model identifier should be a string specifying:
+    - A Hugging Face model name (e.g., "meta-llama/Llama-2-7b-chat-hf")
+    - A local path to a model
+    - For GGUF models, the format is "repo_id/file_name"
+      (e.g., "TheBloke/Llama-2-7B-Chat-GGUF/llama-2-7b-chat.Q4_K_M.gguf")
     
     Examples:
-    - "llamacpp/TheBloke/Llama-2-7B-Chat-GGUF/llama-2-7b-chat.Q4_K_M.gguf"
-    - "transformers/meta-llama/Llama-2-7b-chat-hf"
-    - "vllm/meta-llama/Llama-2-7b-chat-hf"
+    - "TheBloke/Llama-2-7B-Chat-GGUF/llama-2-7b-chat.Q4_K_M.gguf"
+    - "meta-llama/Llama-2-7b-chat-hf"
+    """
+
+    backend: Literal[
+        "llamacpp", "transformers", "transformers_vision", "vllm", "mlxlm"
+    ] = "transformers"
+    """Specifies the backend to use for the model.
     
-    Note: Ensure you have the necessary dependencies installed for the chosen provider.
+    Supported backends are:
+    - "llamacpp": For GGUF models using llama.cpp
+    - "transformers": For Hugging Face Transformers models (default)
+    - "transformers_vision": For vision-language models (e.g., LLaVA)
+    - "vllm": For models using the vLLM library
+    - "mlxlm": For models using the MLX framework
+    
+    Note: Ensure you have the necessary dependencies installed for the chosen backend.
     The system will attempt to import required packages and may raise an ImportError
-    if they are not available."""
+    if they are not available.
+    """
 
     max_tokens: int = 256
     """The maximum number of tokens to generate."""
@@ -81,7 +85,7 @@ class Outlines(LLM):
     For more details, see: https://dottxt-ai.github.io/outlines/reference/generation/format/
     """
 
-    json: Optional[Union[BaseModel, Dict, Callable]] = None
+    json_schema: Optional[Union[BaseModel, Dict, Callable]] = None
     """Pydantic model, JSON Schema, or callable (function signature)
     for structured JSON generation.
     
@@ -146,12 +150,16 @@ class Outlines(LLM):
                 "Please install it with `pip install outlines`."
             )
 
-        model_identifier: str = values["model_identifier"]
+        model: str = values["model"]
+        backend: str = values["backend"]
 
-        if "/" not in model_identifier:
-            raise ValueError(f"Unsupported model identifier: {model_identifier}")
-
-        model_path = model_identifier.split("/", 1)[1]
+        # todo add auto-file-selection if no file is given
+        if ".gguf" in model:
+            creator, repo_name, file_name = model.split("/", 2)
+            repo_id = f"{creator}/{repo_name}"
+        else:
+            repo_id = model
+            file_name = None
 
         def check_packages_installed(packages: List[Union[str, Tuple[str, str]]]):
             missing_packages = [
@@ -161,38 +169,37 @@ class Outlines(LLM):
                 is None
             ]
             if missing_packages:
-                raise ImportError(
+                raise ImportError(  # todo this is displaying wrong
                     f"Missing packages: {', '.join(missing_packages)}. "
                     "You can install them with:\n\n"
                     f"    pip install {' '.join(missing_packages)}"
                 )
 
-        if model_identifier.startswith("llamacpp/"):
-            check_packages_installed([("llama_cpp", "llama-cpp-python")])
-            repo_id, file_name = model_path.split("/", 1)
+        if backend == "llamacpp":
+            check_packages_installed([("llama-cpp-python", "llama_cpp")])
             model = models.llamacpp(repo_id, file_name, **values["model_kwargs"])
-        elif model_identifier.startswith("transformers/"):
+        elif backend == "transformers":
             check_packages_installed(["transformers", "torch", "datasets"])
-            model = models.transformers(model_path, **values["model_kwargs"])
-        elif model_identifier.startswith("transformers_vision/"):
+            model = models.transformers(repo_id, **values["model_kwargs"])
+        elif backend == "transformers_vision":
             check_packages_installed(
                 ["transformers", "datasets", "torchvision", "PIL", "flash_attn"]
             )
             from transformers import LlavaNextForConditionalGeneration
 
             model = models.transformers_vision(
-                model_path,
+                repo_id,
                 model_class=LlavaNextForConditionalGeneration,
                 **values["model_kwargs"],
             )
-        elif model_identifier.startswith("vllm/"):
+        elif backend == "vllm":
             check_packages_installed(["vllm"])
-            model = models.vllm(model_path, **values["model_kwargs"])
-        elif model_identifier.startswith("mlxlm/"):
+            model = models.vllm(repo_id, **values["model_kwargs"])
+        elif backend == "mlxlm":
             check_packages_installed(["mlx"])
-            model = models.mlxlm(model_path, **values["model_kwargs"])
+            model = models.mlxlm(repo_id, **values["model_kwargs"])
         else:
-            raise ValueError(f"Unsupported model identifier: {model_identifier}")
+            raise ValueError(f"Unsupported backend: {backend}")
         values["client"] = model
 
         return values
@@ -212,10 +219,11 @@ class Outlines(LLM):
     @property
     def _identifying_params(self) -> Dict[str, Any]:
         return {
-            "model_identifier": self.model_identifier,
+            "model": self.model,
+            "backend": self.backend,
             "regex": self.regex,
             "type_constraints": self.type_constraints,
-            "json": self.json,
+            "json_schema": self.json_schema,
             "grammar": self.grammar,
             **self._default_params,
         }
@@ -231,23 +239,24 @@ class Outlines(LLM):
                 [
                     self.regex is not None,
                     self.type_constraints is not None,
-                    self.json is not None,
+                    self.json_schema is not None,
                     self.grammar is not None,
                 ]
             )
             > 1
         ):
             raise ValueError(
-                "Only one of regex, type_constraints, json, or grammar can be provided."
+                "Only one of regex, type_constraints, "
+                "json_schema, or grammar can be provided."
             )
         if self.regex:
-            return generate.regex(self.client, regex=self.regex)
+            return generate.regex(self.client, regex_str=self.regex)
         if self.type_constraints:
             return generate.format(self.client, python_type=self.type_constraints)
-        if self.json:
-            return generate.json(self.client, schema_object=self.json)
+        if self.json_schema:
+            return generate.json(self.client, schema_object=self.json_schema)
         if self.grammar:
-            return generate.cfg(self.client, grammar=self.grammar)
+            return generate.cfg(self.client, cfg_str=self.grammar)
         return generate.text(self.client)
 
     def _call(
