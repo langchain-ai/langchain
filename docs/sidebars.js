@@ -162,7 +162,7 @@ module.exports = {
           ],
           link: {
             type: "generated-index",
-            slug: "integrations/providers",
+            slug: "integrations/providers/all",
           },
         },
       ],
