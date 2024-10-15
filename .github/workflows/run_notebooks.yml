@@ -43,7 +43,7 @@ jobs:
 
       - name: Prepare notebooks
         run: |
-          poetry run python docs/scripts/prepare_notebooks_for_ci.py --comment-install-cells
+          poetry run python docs/scripts/prepare_notebooks_for_ci.py --comment-install-cells --working-directory ${{ github.event.inputs.working-directory || 'all' }}
 
       - name: Run notebooks
         env:
