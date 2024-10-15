@@ -110,7 +110,7 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
         return _get_pydantic_test_configs(dir_)
 
     if dir_ == "libs/core":
-        py_versions = ["3.9", "3.10", "3.11", "3.12"]
+        py_versions = ["3.9", "3.10", "3.11", "3.12", "3.13"]
     # custom logic for specific directories
     elif dir_ == "libs/partners/milvus":
         # milvus poetry doesn't allow 3.12 because they
@@ -126,7 +126,7 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
         # community integration deps are slow in 3.12
         py_versions = ["3.9", "3.11"]
     else:
-        py_versions = ["3.9", "3.12"]
+        py_versions = ["3.9", "3.13"]
 
     return [{"working-directory": dir_, "python-version": py_v} for py_v in py_versions]
 
@@ -305,7 +305,7 @@ if __name__ == "__main__":
         ]
     }
     map_job_to_configs["test-doc-imports"] = (
-        [{"python-version": "3.12"}] if docs_edited else []
+        [{"python-version": "3.13"}] if docs_edited else []
     )
 
     for key, value in map_job_to_configs.items():
