@@ -53,7 +53,7 @@ class FakeEmbeddings(Embeddings, BaseModel):
     def _get_embedding(self) -> list[float]:
         import numpy as np  # type: ignore[import-not-found, import-untyped]
 
-        return list(np.random.normal(size=self.size))
+        return list(np.random.default_rng().normal(size=self.size))
 
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
         return [self._get_embedding() for _ in texts]
@@ -109,8 +109,8 @@ class DeterministicFakeEmbedding(Embeddings, BaseModel):
         import numpy as np  # type: ignore[import-not-found, import-untyped]
 
         # set the seed for the random generator
-        np.random.seed(seed)
-        return list(np.random.normal(size=self.size))
+        rng = np.random.default_rng(seed)
+        return list(rng.normal(size=self.size))
 
     def _get_seed(self, text: str) -> int:
         """Get a seed for the random generator, using the hash of the text."""

@@ -52,4 +52,5 @@ def test_importable_all_via_subprocess() -> None:
             result = future.result()  # Will raise an exception if the callable raised
             code, module_name = result
             if code != 0:
-                raise ValueError(f"Failed to import {module_name}.")
+                msg = f"Failed to import {module_name}."
+                raise ValueError(msg)

@@ -146,7 +146,8 @@ def tool(
                 runnable = dec_func
 
                 if runnable.input_schema.model_json_schema().get("type") != "object":
-                    raise ValueError("Runnable must have an object schema.")
+                    msg = "Runnable must have an object schema."
+                    raise ValueError(msg)
 
                 async def ainvoke_wrapper(
                     callbacks: Optional[Callbacks] = None, **kwargs: Any
@@ -189,10 +190,11 @@ def tool(
             # If someone doesn't want a schema applied, we must treat it as
             # a simple string->string function
             if dec_func.__doc__ is None:
-                raise ValueError(
+                msg = (
                     "Function must have a docstring if "
                     "description not provided and infer_schema is False."
                 )
+                raise ValueError(msg)
             return Tool(
                 name=tool_name,
                 func=func,
@@ -222,7 +224,8 @@ def tool(
 
         return _partial
     else:
-        raise ValueError("Too many arguments for tool decorator")
+        msg = "Too many arguments for tool decorator"
+        raise ValueError(msg)
 
 
 def _get_description_from_runnable(runnable: Runnable) -> str:
@@ -241,11 +244,12 @@ def _get_schema_from_runnable_and_arg_types(
         try:
             arg_types = get_type_hints(runnable.InputType)
         except TypeError as e:
-            raise TypeError(
+            msg = (
                 "Tool input must be str or dict. If dict, dict arguments must be "
                 "typed. Either annotate types (e.g., with TypedDict) or pass "
                 f"arg_types into `.as_tool` to specify. {str(e)}"
-            ) from e
+            )
+            raise TypeError(msg) from e
     fields = {key: (key_type, Field(...)) for key, key_type in arg_types.items()}
     return create_model(name, **fields)  # type: ignore
 

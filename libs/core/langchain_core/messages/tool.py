@@ -58,11 +58,11 @@ class ToolMessage(BaseMessage):
 
     artifact: Any = None
     """Artifact of the Tool execution which is not meant to be sent to the model.
-    
-    Should only be specified if it is different from the message content, e.g. if only 
+
+    Should only be specified if it is different from the message content, e.g. if only
     a subset of the full tool output is being passed as message content but the full
     output is needed in other parts of the code.
-    
+
     .. versionadded:: 0.2.17
     """
 
@@ -94,11 +94,12 @@ class ToolMessage(BaseMessage):
             try:
                 values["content"] = str(content)
             except ValueError as e:
-                raise ValueError(
+                msg = (
                     "ToolMessage content should be a string or a list of string/dicts. "
                     f"Received:\n\n{content=}\n\n which could not be coerced into a "
                     "string."
-                ) from e
+                )
+                raise ValueError(msg) from e
         elif isinstance(content, list):
             values["content"] = []
             for i, x in enumerate(content):
@@ -106,12 +107,13 @@ class ToolMessage(BaseMessage):
                     try:
                         values["content"].append(str(x))
                     except ValueError as e:
-                        raise ValueError(
+                        msg = (
                             "ToolMessage content should be a string or a list of "
                             "string/dicts. Received a list but "
                             f"element ToolMessage.content[{i}] is not a dict and could "
                             f"not be coerced to a string.:\n\n{x}"
-                        ) from e
+                        )
+                        raise ValueError(msg) from e
                 else:
                     values["content"].append(x)
         else:
@@ -147,9 +149,8 @@ class ToolMessageChunk(ToolMessage, BaseMessageChunk):
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
         if isinstance(other, ToolMessageChunk):
             if self.tool_call_id != other.tool_call_id:
-                raise ValueError(
-                    "Cannot concatenate ToolMessageChunks with different names."
-                )
+                msg = "Cannot concatenate ToolMessageChunks with different names."
+                raise ValueError(msg)
 
             return self.__class__(
                 tool_call_id=self.tool_call_id,
@@ -191,7 +192,7 @@ class ToolCall(TypedDict):
     """The arguments to the tool call."""
     id: Optional[str]
     """An identifier associated with the tool call.
-    
+
     An identifier is needed to associate a tool call request with a tool
     call result in events when multiple concurrent tool calls are made.
     """
