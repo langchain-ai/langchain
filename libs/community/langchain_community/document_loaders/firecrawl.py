@@ -264,7 +264,7 @@ class FireCrawlLoader(BaseLoader):
         self.firecrawl = FirecrawlApp(api_key=api_key, api_url=api_url)
         self.url = url
         self.mode = mode
-        self.params = params
+        self.params = params or {}
 
     def lazy_load(self) -> Iterator[Document]:
         if self.mode == "scrape":
