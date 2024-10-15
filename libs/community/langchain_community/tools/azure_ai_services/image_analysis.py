@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool
@@ -24,11 +24,11 @@ class AzureAiServicesImageAnalysisTool(BaseTool):
     Attributes:
     azure_ai_services_key (Optional[str]): The API key for Azure AI Services.
     azure_ai_services_endpoint (Optional[str]): The endpoint URL for Azure AI Services.
-    visual_features (Optional[List[str]]): The visual features to analyze in the image
-        (e.g., TAGS, CAPTION).
+    visual_features Any: The visual features to analyze in the image, can be set as
+        either strings or VisualFeatures.
+        (e.g. 'TAGS', VisualFeatures.CAPTION).
     image_analysis_client (Any): The client for interacting
         with Azure AI Services Image Analysis.
-    formatted_features (Any): Formatted visual features that are used during analysis.
     name (str): The name of the tool.
     description (str): A description of the tool,
         including its purpose and expected input.
@@ -36,9 +36,8 @@ class AzureAiServicesImageAnalysisTool(BaseTool):
 
     azure_ai_services_key: Optional[str] = None  #: :meta private:
     azure_ai_services_endpoint: Optional[str] = None  #: :meta private:
-    visual_features: Optional[List[str]] = None
-    image_analysis_client: Any  #: :meta private:
-    formatted_features: Any  #: :meta private:
+    visual_features: Any = None
+    image_analysis_client: Any = None  #: :meta private:
 
     name: str = "azure_ai_services_image_analysis"
     description: str = (
@@ -81,22 +80,25 @@ class AzureAiServicesImageAnalysisTool(BaseTool):
                 f"Initialization of Azure AI Vision Image Analysis client failed: {e}"
             )
 
-        visual_features: List[str] = values.get("visual_features", ["TAGS"])
-        values["formatted_features"] = [
-            VisualFeatures[feat.upper()] for feat in visual_features
-        ]
-
+        visual_features = values.get(
+            "visual_features",
+            [
+                VisualFeatures.TAGS,
+                VisualFeatures.OBJECTS,
+                VisualFeatures.CAPTION,
+                VisualFeatures.READ,
+            ],
+        )
+        values["visual_features"] = visual_features
         return values
 
     def _image_analysis(self, image_path: str) -> Dict:
         try:
             from azure.ai.vision.imageanalysis import ImageAnalysisClient
-            from azure.ai.vision.imageanalysis.models import VisualFeatures
         except ImportError:
             pass
 
         self.image_analysis_client: ImageAnalysisClient
-        self.formatted_features: List[VisualFeatures]
 
         image_src_type = detect_file_src_type(image_path)
         if image_src_type == "local":
@@ -104,12 +106,12 @@ class AzureAiServicesImageAnalysisTool(BaseTool):
                 image_data = image_file.read()
             result = self.image_analysis_client.analyze(
                 image_data=image_data,
-                visual_features=self.formatted_features,
+                visual_features=self.visual_features,
             )
         elif image_src_type == "remote":
             result = self.image_analysis_client.analyze_from_url(
                 image_url=image_path,
-                visual_features=self.formatted_features,
+                visual_features=self.visual_features,
             )
         else:
             raise ValueError(f"Invalid image path: {image_path}")
@@ -127,6 +129,17 @@ class AzureAiServicesImageAnalysisTool(BaseTool):
 
             if result.read is not None and len(result.read.blocks) > 0:
                 res_dict["text"] = [line.text for line in result.read.blocks[0].lines]
+
+            if result.dense_captions is not None and len(result.dense_captions) > 0:
+                res_dict["dense_captions"] = [
+                    str(dc) for dc in result.dense_captions.list
+                ]
+
+            if result.smart_crops is not None and len(result.smart_crops) > 0:
+                res_dict["smart_crops"] = [str(sc) for sc in result.smart_crops.list]
+
+            if result.people is not None and len(result.people) > 0:
+                res_dict["people"] = [str(p) for p in result.people.list]
 
         return res_dict
 
@@ -148,6 +161,21 @@ class AzureAiServicesImageAnalysisTool(BaseTool):
 
         if "text" in image_analysis_result and len(image_analysis_result["text"]) > 0:
             formatted_result.append("Text: " + ", ".join(image_analysis_result["text"]))
+
+        if "dense_captions" in image_analysis_result:
+            formatted_result.append(
+                "Dense Captions: " + ", ".join(image_analysis_result["dense_captions"])
+            )
+
+        if "smart_crops" in image_analysis_result:
+            formatted_result.append(
+                "Smart Crops: " + ", ".join(image_analysis_result["smart_crops"])
+            )
+
+        if "people" in image_analysis_result:
+            formatted_result.append(
+                "People: " + ", ".join(image_analysis_result["people"])
+            )
 
         return "\n".join(formatted_result)
 
