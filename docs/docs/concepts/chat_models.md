@@ -11,33 +11,90 @@ In addition, some chat models offer additional capabilities:
 * [Tool Calling](/docs/concepts#tool-calling): Many popular chat models offer a native [tool calling](/docs/concepts#tool-calling) API. Tool calling can be used to build rich applications that use AI to interact with external services, APIs, databases, to extract structured information from unstructured data and more.
 * [Multimodality](/docs/concepts/multimodality): The ability to work with data other than text; for example, images, audio, and video.
 
-## Why use LangChain?
+## Features
 
 LangChain provides a consistent interface for working with chat models from different providers while offering additional features for monitoring, debugging, and optimizing the performance of applications that use LLMs.
-
-**Key Features**:
 
 * Integrations with many chat model providers (e.g., Anthropic, OpenAI, Ollama, Cohere, Hugging Face, Groq, Microsoft Azure, Google Vertex, Amazon Bedrock). Please see [chat model integrations](/docs/integrations/chat_models/) for an up-to-date list of supported models.
 * Use either LangChain's [messages](/docs/concepts/messages) format or OpenAI format.
 * Standard [tool calling API](/docs/concepts#tool-calling): standard interface for binding tools to models, accessing tool call requests made by models, and sending tool results back to the model. 
 * Provides support for [async programming](/docs/concepts/async), [efficient batching](/docs/concepts/runnables#batch), [a rich streaming API](/docs/concepts/streaming).
 * Integration with [LangSmith](https://docs.smith.langchain.com) for monitoring and debugging production-grade applications based on LLMs.
-* Standardized [token usage](/docs/concepts/messages).
-* Additional features like: [rate limiting](#rate-limiting), [caching](#cache)
+* Additional features like standardized [token usage](/docs/concepts/messages#token_usage), [rate limiting](#rate-limiting), [caching](#cache) and more.
 
-* Standardized model output metadata for easy integration with downstream applications; e.g., token usage, tool call requests etc.
+##  Chat Model Integrations
 
-## Naming Conventions
+LangChain chat models fall into two categories:
 
-In the LangChain ecosystem, chat models are typically named with a convention that prefixes "Chat" to their class names (e.g., `ChatOllama`, `ChatAnthropic`, `ChatOpenAI`, etc.).
+1. **Official Models**: These are models that are officially supported by LangChain and/or model provider. You can find these models in the `langchain-<provider>` packages.
+2. **Community Models**: There are models that are mostly contributed and supported by the community. You can find these models in the `langchain-community` package.
+
+LangChain chat models are named with a convention that prefixes "Chat" to their class names (e.g., `ChatOllama`, `ChatAnthropic`, `ChatOpenAI`, etc.).
+
+Please review the [chat model integrations](/docs/integrations/chat_models/) for a list of supported models.
 
 :::note
-Do not confuse chat models with older LLMs, which are named without the "Chat" prefix (e.g., `Ollama`, `Anthropic`, `OpenAI`, etc.).
+Models that do **not** include `Chat` or include "LLM" as a suffix in their name typically refer to older models that do not follow the chat model interface and
+instead use an interface that takes a string as input and returns a string as output.
 :::
 
-## Runnable Interface
+## Interface
 
-LangChain chat models implement the [Runnable Interface](/docs/concepts/runnables) which provides a [standard streaming interface](/docs/concepts/streaming), support for [async programming](/docs/concepts/async), optimized [batching](/docs/concepts/runnables#batch), and more.
+LangChain chat models implement the [Runnable Interface](/docs/concepts/runnables) which provides a [standard streaming interface](/docs/concepts/streaming), support for [async programming](/docs/concepts/async), optimized [batching](/docs/concepts/runnables#batch), and more. Please see the [Runnable Interface](/docs/concepts/runnables) for more details.
+
+The main parameters and key methods of a chat model are described below.
+
+### Standard Parameters
+
+Many chat models have standardized parameters that can be used to configure the model.
+
+We have standardized the following parameter names for constructing chat models:
+
+| Parameter      | Description                                                                                                                                                                                                                                                                                                    |
+|----------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `model`        | The name or identifier of the specific AI model you want to use (e.g., `"gpt-3.5-turbo"` or `"gpt-4"`).                                                                                                                                                                                                        |
+| `temperature`  | Controls the randomness of the model's output. A higher value (e.g., 1.0) makes responses more creative, while a lower value (e.g., 0.1) makes them more deterministic and focused.                                                                                                                            |
+| `timeout`      | The maximum time (in seconds) to wait for a response from the model before canceling the request. Ensures the request doesn’t hang indefinitely.                                                                                                                                                               |
+| `max_tokens`   | Limits the total number of tokens (words and punctuation) in the response. This controls how long the output can be.                                                                                                                                                                                           |
+| `stop`         | Specifies stop sequences that indicate when the model should stop generating tokens. For example, you might use specific strings to signal the end of a response.                                                                                                                                              |
+| `max_retries`  | The maximum number of attempts the system will make to resend a request if it fails due to issues like network timeouts or rate limits.                                                                                                                                                                        |
+| `api_key`      | The API key required for authenticating with the model provider. This is usually issued when you sign up for access to the model.                                                                                                                                                                              |
+| `base_url`     | The URL of the API endpoint where requests are sent. This is typically provided by the model's provider and is necessary for directing your requests.                                                                                                                                                          |
+| `rate_limiter` | An optional [BaseRateLimiter](https://python.langchain.com/api_reference/core/rate_limiters/langchain_core.rate_limiters.BaseRateLimiter.html#langchain_core.rate_limiters.BaseRateLimiter) to space out requests to avoid exceeding rate limits.  See [rate-limiting](#rate-limiting) below for more details. |                                                                                                                                                      
+
+Some important things to note:
+
+- Standard parameters only apply to model providers that expose parameters with the intended functionality. For example, some providers do not expose a configuration for maximum output tokens, so max_tokens can't be supported on these.
+- Standard params are currently only enforced on integrations that have their own integration packages (e.g. `langchain-openai`, `langchain-anthropic`, etc.), they're not enforced on models in ``langchain-community``.
+
+ChatModels also accept other parameters that are specific to that integration. To find all the parameters supported by a ChatModel head to the [API reference](https://python.langchain.com/api_reference/) for that model.
+
+
+### Key Methods
+
+The key methods of a chat model are:
+
+1. **invoke**: The primary method for interacting with a chat model. It takes a list of [messages](/docs/concepts/messages) as input and returns a list of messages as output.
+2. **stream**: A method that allows you to stream the output of a chat model as it is generated.
+3. **batch**: A method that allows you to batch multiple requests to a chat model together for more efficient processing.
+4. **bind_tools**: A method that allows you to bind a tool to a chat model for use in the model's execution context.
+5. **with_structured_output**: A wrapper around the `invoke` method for models that natively support [structured output](/docs/concepts#structured_output).
+
+Other important methods can be found in the [BaseChatModel API Reference](https://python.langchain.com/api_reference/core/language_models/langchain_core.language_models.chat_models.BaseChatModel.html).
+
+### Inputs and Outputs 
+
+Modern LLMs are typically accessed through a chat model interface that takes [messages](/docs/concepts/messages) as input and returns [messages](/docs/concept/messages) as output. Messages are typically associated with a role (e.g., "system", "human", "assistant") and one or more content blocks that contain text or potentially multimodal data (e.g., images, audio, video).
+
+LangChain supports two message formats to interact with chat models:
+
+1. **LangChain Message Format**: LangChain's own message format, which is used by default and is used internally by LangChain.
+2. **OpenAI's Message Format**: OpenAI's message format.
+
+## Tool Calling
+
+Chat models can call [tools](/docs/concepts/tools) to perform tasks such as fetching data from a database, making API requests, or running custom code. Please
+see the [tool calling](/docs/concepts#tool-calling) guide for more information.
 
 ## Multimodality
 
@@ -45,105 +102,57 @@ Large Language Models (LLMs) are not limited to processing text. They can also b
 
 Currently, only some LLMs support multimodal inputs, and almost none support multimodal outputs. Please consult the specific model documentation for details.
 
-LLMs are best thought of as models that operate on sequences of tokens to predict the next token in a sequence. Tokens are abstract representations of input data that can take a variety of forms, such as text, code, images, audio, video, and more.
+## Context Window
 
-* Learn more about [MultiModality](/docs/concepts/multimodality).
+A chat model's context window refers to the maximum size of the input sequence the model can process at one time. While the context windows of modern LLMs are quite large, they still present a limitation that developers must keep in mind when working with chat models.
 
-## Tokenization
+If the input exceeds the context window, the model may not be able to process the entire input and could raise an error. In conversational applications, this is especially important because the context window determines how much information the model can "remember" throughout a conversation. Developers often need to manage the input within the context window to maintain a coherent dialogue without exceeding the limit. For more details on handling memory in conversations, refer to the [memory](/docs/concepts/memory).
 
-Despite their name, LLMs are not limited to processing natural language text. The underlying technology, based on the transformer architecture, operates on sequences of tokens. These tokens are abstract representations of input data
-which can take a variety of forms, such as text, code, images, audio, and more.
+The size of the input is measured in **tokens** which are the unit of processing that the model uses. Read the [tokenization](/docs/concepts#tokenization) guide for more information on tokenization and tokens.
 
-* Read more about [Tokenization](/docs/concepts/tokenization).
-
-
-## LangChain?
-
-LangChain does not host any Chat Models, rather we rely on third party integrations.
-
-## Standardization
-
-### Standard Parameters
-
-We have some standardized parameters when constructing ChatModels:
-
-| Parameter     | Description                                                                     |
-|---------------|---------------------------------------------------------------------------------|
-| `model`       | the name of the model                                                           |
-| `temperature` | the sampling temperature; higher values result in more randomness in the output |
-| `timeout`     | request timeout                                                                 |
-| `max_tokens`  | max tokens to generate                                                          |
-| `stop`        | default stop sequences                                                          |
-| `max_retries` | max number of times to retry requests                                           |
-| `api_key`     | API key for the model provider                                                  |
-| `base_url`    | endpoint to send requests to                                                    |
-
-Some important things to note:
-- standard parameters only apply to model providers that expose parameters with the intended functionality. For example, some providers do not expose a configuration for maximum output tokens, so max_tokens can't be supported on these.
-- standard params are currently only enforced on integrations that have their own integration packages (e.g. `langchain-openai`, `langchain-anthropic`, etc.), they're not enforced on models in ``langchain-community``.
-
-ChatModels also accept other parameters that are specific to that integration. To find all the parameters supported by a ChatModel head to the API reference for that model.
-
-:::important
-Some chat models have been fine-tuned for **tool calling** and provide a dedicated API for it.
-Generally, such models are better at tool calling than non-fine-tuned models, and are recommended for use cases that require tool calling.
-Please see the [tool calling section](/docs/concepts/#functiontool-calling) for more information.
-:::
-
-For specifics on how to use chat models, see the [relevant how-to guides here](/docs/how_to/#chat-models).
-
-## Messages
-
-Chat models take a sequence of messages as input and return messages as output. Messages are structured data that contain the text of the message, the role of the speaker, and any other relevant metadata.
-
-Although the underlying models are messages in, message out, the LangChain wrappers also allow these models to take a string as input. This means you can easily use chat models in place of LLMs.
-
-When a string is passed in as input, it is converted to a `HumanMessage` and then passed to the underlying model.
-
-
-## Cache
-
-### Should chat model results be cached?
-
-* Cache is available, but should be exercised with caution.
-* Cache hits are unlikely below the first or second level of conversation if using exact matches.
-* Would need to use a semantic cache to get more hits, but even then conceptually it is not a good idea to cache too much
-
-## Tokenization
-
-Tokenization refers to the process of breaking down text into smaller units called tokens. These tokens can be words, subwords, or even characters, depending on the method used. Tokenization is essential because most NLP models work with structured inputs, and tokenization allows for converting raw text into a form that models can process effectively.
-
-Please see the [tokenization section](/docs/concepts/#text-splitting) for more information.
-
-## Retries
-
-## Rate-limiting
+## Advanced Topics 
+ 
+### Rate-limiting
 
 Many chat model providers impose a limit on the number of requests that can be made in a given time period.
 
 If you hit a rate limit, you will typically receive a rate limit error response from the provider, and will need to wait before making more requests.
 
-There are a few different strategies for dealing with rate limits:
+You have a few options to deal with rate limits:
 
-1. **Backoff**: If you receive a rate limit error, you can wait a certain amount of time before retrying the request. The amount of time to wait can be increased with each subsequent rate limit error. Some of the chat models in LangChain have built-in backoff and retry mechanisms.
-2. Using different model providers
+1. Try to avoid hitting rate limits by spacing out requests: Chat models accept a `rate_limiter` parameter that can be provided during initialization. This parameter is used to control the rate at which requests are made to the model provider. Spacing out the requests to a given model is a particularly useful strategy when benchmarking models to evaluate their performance. Please see the [how to handle rate limits](https://python.langchain.com/docs/how_to/chat_model_rate_limiting/) for more information on how to use this feature.
+2. Try to recover from rate limit errors: If you receive a rate limit error, you can wait a certain amount of time before retrying the request. The amount of time to wait can be increased with each subsequent rate limit error. Chat models have a `max_retries` parameter that can be used to control the number of retries. See the [standard parameters](#standard-parameters) section for more information.
+3. Fallback to another chat model: If you hit a rate limit with one chat model, you can switch to another chat model that is not rate-limited.
 
-There are two strategies for dealing with rate limits:
-
+### Caching
 
 :::note
+This is an advanced topic. If you're new to chat models, you may want to skip this section for now.
 :::
 
+Chat model APIs can be slow, so a natural question is whether to cache the results of previous conversations. Theoretically, caching can help improve performance by reducing the number of requests made to the model provider. In practice, caching chat model responses is a complex problem and should be approached with caution.
+
+The reason is that getting a cache hit is unlikely after the first or second interaction in a conversation if relying on caching the **exact** inputs into the model. For example, how likely do you think that multiple conversations start with the exact same message? What about the exact same three messages?
+
+An alternative approach is to use semantic caching, where you cache responses based on the meaning of the input rather than the exact input itself. This can be effective in some situations, but not in others.
+
+A semantic cache introduces a dependency on another model on the critical path of your application (e.g., the semantic cache may rely on an [embedding model](/docs/concepts/embedding_models) to convert text to a vector representation), and it's not guaranteed to capture the meaning of the input accurately.
+
+However, there might be situations where caching chat model responses is beneficial. For example, if you have a chat model that is used to answer frequently asked questions, caching responses can help reduce the load on the model provider and improve response times.
+
+Please see the [how to cache chat model responses](/docs/how_to/#chat-model-caching) guide for more details.
+
+## Related Resources
+
+* How-to guides on using chat models: [how-to guides](/docs/how_to/#chat-models).
+* List of supported chat models: [chat model integrations](/docs/integrations/chat_models/).
+
+### Conceptual guides
+
+* [Messages](/docs/concepts/messages)
+* [Tool calling](/docs/concepts#tool-calling)
+* [Multimodality](/docs/concepts/multimodality)
+* [Structured outputs](/docs/concepts#structured_output)
 
 
-## In LangChain
 
-These are traditionally older models (newer models generally are [Chat Models](/docs/concepts/#chat-models), see above).
-
-Although the underlying models are string in, string out, the LangChain wrappers also allow these models to take messages as input.
-This gives them the same interface as [Chat Models](/docs/concepts/#chat-models).
-When messages are passed in as input, they will be formatted into a string under the hood before being passed to the underlying model.
-
-LangChain does not host any LLMs, rather we rely on third party integrations.
-
-For specifics on how to use LLMs, see the [how-to guides](/docs/how_to/#llms).

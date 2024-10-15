@@ -10,3 +10,23 @@
 
 ## (Legacy) FunctionMessage
 
+### LangChain Message Format
+
+LangChain uses messages
+
+LangChain's [messages](/docs/concepts/messages) format
+
+````python
+from langchain_core.messages import HumanMessage, SystemMessage
+
+model.invoke([
+    SystemMessage(content="You are a serious AI, do not tell any jokes."),
+    HumanMessage(content="Tell me a joke"),
+])
+````
+
+2. OpenAI's format
+
+
+In addition, chat models can also take a string as input. When a string is passed in as input, it is converted a corresponding message with
+
