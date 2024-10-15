@@ -372,7 +372,12 @@ class RecursiveUrlLoader(BaseLoader):
         # Get all links that can be accessed from the current URL
         visited.add(url)
         try:
-            response = requests.get(url, timeout=self.timeout, headers=self.headers,proxies=self.proxies)
+            response = requests.get(
+                url, 
+                timeout=self.timeout, 
+                headers=self.headers, 
+                proxies=self.proxies
+            )
 
             if self.encoding is not None:
                 response.encoding = self.encoding
