@@ -295,6 +295,8 @@ class LLMInputOutputAdapter:
 class BedrockBase(BaseModel, ABC):
     """Base class for Bedrock models."""
 
+    model_config = ConfigDict(protected_namespaces=())
+
     client: Any = Field(exclude=True)  #: :meta private:
 
     region_name: Optional[str] = None
@@ -394,7 +396,7 @@ class BedrockBase(BaseModel, ABC):
         """Validate that AWS credentials to and python package exists in environment."""
 
         # Skip creating new client if passed in constructor
-        if values["client"] is not None:
+        if values.get("client") is not None:
             return values
 
         try:

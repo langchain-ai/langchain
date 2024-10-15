@@ -215,11 +215,12 @@ class Serializable(BaseModel, ABC):
 
                 for attr in deprecated_attributes:
                     if hasattr(cls, attr):
-                        raise ValueError(
+                        msg = (
                             f"Class {self.__class__} has a deprecated "
                             f"attribute {attr}. Please use the corresponding "
                             f"classmethod instead."
                         )
+                        raise ValueError(msg)
 
             # Get a reference to self bound to each class in the MRO
             this = cast(Serializable, self if cls is None else super(cls, self))

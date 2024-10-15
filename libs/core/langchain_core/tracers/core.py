@@ -137,17 +137,19 @@ class _TracerCore(ABC):
         try:
             run = self.run_map[str(run_id)]
         except KeyError as exc:
-            raise TracerException(f"No indexed run ID {run_id}.") from exc
+            msg = f"No indexed run ID {run_id}."
+            raise TracerException(msg) from exc
 
         if isinstance(run_type, str):
             run_types: Union[set[str], None] = {run_type}
         else:
             run_types = run_type
         if run_types is not None and run.run_type not in run_types:
-            raise TracerException(
+            msg = (
                 f"Found {run.run_type} run at ID {run_id}, "
                 f"but expected {run_types} run."
             )
+            raise TracerException(msg)
         return run
 
     def _create_chat_model_run(
@@ -170,10 +172,11 @@ class _TracerCore(ABC):
             # This can eventually be cleaned up by writing a "modern" tracer
             # that has all the updated schema changes corresponding to
             # the "streaming_events" format.
-            raise NotImplementedError(
+            msg = (
                 f"Chat model tracing is not supported in "
                 f"for {self._schema_format} format."
             )
+            raise NotImplementedError(msg)
         start_time = datetime.now(timezone.utc)
         if metadata:
             kwargs.update({"metadata": metadata})
@@ -338,7 +341,8 @@ class _TracerCore(ABC):
                 "input": inputs,
             }
         else:
-            raise ValueError(f"Invalid format: {self._schema_format}")
+            msg = f"Invalid format: {self._schema_format}"
+            raise ValueError(msg)
 
     def _get_chain_outputs(self, outputs: Any) -> Any:
         """Get the outputs for a chain run."""
@@ -349,7 +353,8 @@ class _TracerCore(ABC):
                 "output": outputs,
             }
         else:
-            raise ValueError(f"Invalid format: {self._schema_format}")
+            msg = f"Invalid format: {self._schema_format}"
+            raise ValueError(msg)
 
     def _complete_chain_run(
         self,
@@ -404,7 +409,8 @@ class _TracerCore(ABC):
         elif self._schema_format == "streaming_events":
             inputs = {"input": inputs}
         else:
-            raise AssertionError(f"Invalid format: {self._schema_format}")
+            msg = f"Invalid format: {self._schema_format}"
+            raise AssertionError(msg)
 
         return Run(
             id=run_id,
