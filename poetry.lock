@@ -1047,6 +1047,40 @@ files = [
 tests = ["asttokens (>=2.1.0)", "coverage", "coverage-enable-subprocess", "ipython", "littleutils", "pytest", "rich"]
 
 [[package]]
+name = "faiss-cpu"
+version = "1.9.0"
+description = "A library for efficient similarity search and clustering of dense vectors."
+optional = false
+python-versions = ">=3.9"
+files = [
+    {file = "faiss_cpu-1.9.0-cp310-cp310-macosx_10_14_x86_64.whl", hash = "sha256:e415a149893629db2215776395460d0cf79ac5f56a62242de68f788a22b66818"},
+    {file = "faiss_cpu-1.9.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:81f211896107a114450297571210684701d1fce5b998d8a06e2549f6be7af20c"},
+    {file = "faiss_cpu-1.9.0-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:cf76982c45027817df7816232dad9d2f6471637ceaa76c1cc72e858c6e31d8d3"},
+    {file = "faiss_cpu-1.9.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:091d3df18dc9ae43e47203ff0c3c8ffcd51939a6de17e851751dcc263c86b16b"},
+    {file = "faiss_cpu-1.9.0-cp310-cp310-win_amd64.whl", hash = "sha256:eababc154e95930045f86d2483aeb4ed8451b1bb9b97451a2633df20190f5ee2"},
+    {file = "faiss_cpu-1.9.0-cp311-cp311-macosx_10_14_x86_64.whl", hash = "sha256:b0e9208a36da519dc2eb90e4c44c66a6812a5b68457582d8ed21d04e910e3d1f"},
+    {file = "faiss_cpu-1.9.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:6a4b2871057560020b83ad7bb5aaf3b97b64f980f9af2ca99ba34eeb4fe38bdf"},
+    {file = "faiss_cpu-1.9.0-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:7f1dc3a42ea386f49a86a9d09a3e30a40fa2e678395df5c2f5706c3f26f06751"},
+    {file = "faiss_cpu-1.9.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:2baeed5f1d8b006533c71184cc29065892647774a3df9c6f6dc31c1b694f57fa"},
+    {file = "faiss_cpu-1.9.0-cp311-cp311-win_amd64.whl", hash = "sha256:81d8fcb0ef92c9e7af2f7104e321895462681a598aff6d526a8da8272a61c1dd"},
+    {file = "faiss_cpu-1.9.0-cp312-cp312-macosx_10_14_x86_64.whl", hash = "sha256:2ed784120f6be7a7cde90f507831e670b4edc94f20cc7955eef3ae5fba70d449"},
+    {file = "faiss_cpu-1.9.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:358be27446389c9df374fba17221ae5e45a7a8c943c4c675f81814d6fb7c31b1"},
+    {file = "faiss_cpu-1.9.0-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:31a0b5ec546c7455cf526326194ace125199769ccbc90bb69b464cd4a26b7f4d"},
+    {file = "faiss_cpu-1.9.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:89f03a4882e27c71ead60d84d06263d3f8592c842f0f469eeaf7883cfd4f2bfa"},
+    {file = "faiss_cpu-1.9.0-cp312-cp312-win_amd64.whl", hash = "sha256:39a163c2c3c33df10b82fd3b61cb6c8bd7884e2526f1393de32ed71814c5cbfb"},
+    {file = "faiss_cpu-1.9.0-cp39-cp39-macosx_10_14_x86_64.whl", hash = "sha256:b04745b9b93736a7bdf18dd459a3362d154a6dae2e450de3f804f193154d79c9"},
+    {file = "faiss_cpu-1.9.0-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:25dd895a952b5f6dad5dcdb901f853e33359e24ee2b871f418b87af054ed06e0"},
+    {file = "faiss_cpu-1.9.0-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:0010ddfd16f7c71e1119111973fe2f34b6abc6b40492b688244e821b5a931964"},
+    {file = "faiss_cpu-1.9.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5908e619b3ab2cd1f23f939a995cc2559408dffa9795b69ca78f89a08b993873"},
+    {file = "faiss_cpu-1.9.0-cp39-cp39-win_amd64.whl", hash = "sha256:bc40f1029515baa0228c0c5113b870c5d94961d3232ca25f127162945424375b"},
+    {file = "faiss_cpu-1.9.0.tar.gz", hash = "sha256:587fcea9fa478e9307a388754824a032849d317894a607586c3cdd8c8aeb7233"},
+]
+
+[package.dependencies]
+numpy = ">=1.25.0,<3.0"
+packaging = "*"
+
+[[package]]
 name = "fastapi"
 version = "0.115.2"
 description = "FastAPI framework, high performance, easy to learn, fast to code, ready for production"
@@ -5911,4 +5945,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0"
-content-hash = "902d9070fe45548499254fd0b004885e5cd4a4a15903435c0e7e575614654096"
+content-hash = "18d3fafdb2b5509b9f476aa2ed52de9aeac9ef1990ab7e85c91240c1caec0d9f"
