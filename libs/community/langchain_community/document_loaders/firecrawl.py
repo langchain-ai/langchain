@@ -104,7 +104,7 @@ class FireCrawlLoader(BaseLoader):
                 del params["allowExternalContentLinks"]
 
             if "pageOptions" in params:
-                if params["pageOptions"] is True:
+                if isinstance(params["pageOptions"], dict):
                     params["scrapeOptions"] = self.legacy_scrape_options_adapter(
                         params["pageOptions"]
                     )
