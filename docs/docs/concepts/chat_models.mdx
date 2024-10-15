@@ -4,7 +4,7 @@
 
 Large Language Models (LLMs) are advanced machine learning models that excel in a wide range of language-related tasks such as text generation, translation, summarization, question answering, and more, without needing task-specific tuning for every scenario.
 
-Modern LLMs are typically accessed through a chat model interface that takes [messages](/docs/concepts/messages) as input and returns [messages](/docs/concept/messages) as output.
+Modern LLMs are typically accessed through a chat model interface that takes [messages](/docs/concepts/messages) as input and returns [messages](/docs/concepts/messages) as output.
 
 In addition, some chat models offer additional capabilities:
 
@@ -15,7 +15,7 @@ In addition, some chat models offer additional capabilities:
 
 LangChain provides a consistent interface for working with chat models from different providers while offering additional features for monitoring, debugging, and optimizing the performance of applications that use LLMs.
 
-* Integrations with many chat model providers (e.g., Anthropic, OpenAI, Ollama, Cohere, Hugging Face, Groq, Microsoft Azure, Google Vertex, Amazon Bedrock). Please see [chat model integrations](/docs/integrations/chats/) for an up-to-date list of supported models.
+* Integrations with many chat model providers (e.g., Anthropic, OpenAI, Ollama, Cohere, Hugging Face, Groq, Microsoft Azure, Google Vertex, Amazon Bedrock). Please see [chat model integrations](/docs/integrations/chat/) for an up-to-date list of supported models.
 * Use either LangChain's [messages](/docs/concepts/messages) format or OpenAI format.
 * Standard [tool calling API](/docs/concepts#tool-calling): standard interface for binding tools to models, accessing tool call requests made by models, and sending tool results back to the model. 
 * Provides support for [async programming](/docs/concepts/async), [efficient batching](/docs/concepts/runnables#batch), [a rich streaming API](/docs/concepts/streaming).
@@ -84,7 +84,7 @@ Other important methods can be found in the [BaseChatModel API Reference](https:
 
 ### Inputs and Outputs 
 
-Modern LLMs are typically accessed through a chat model interface that takes [messages](/docs/concepts/messages) as input and returns [messages](/docs/concept/messages) as output. Messages are typically associated with a role (e.g., "system", "human", "assistant") and one or more content blocks that contain text or potentially multimodal data (e.g., images, audio, video).
+Modern LLMs are typically accessed through a chat model interface that takes [messages](/docs/concepts/messages) as input and returns [messages](/docs/concepts/messages) as output. Messages are typically associated with a role (e.g., "system", "human", "assistant") and one or more content blocks that contain text or potentially multimodal data (e.g., images, audio, video).
 
 LangChain supports two message formats to interact with chat models:
 
@@ -112,7 +112,7 @@ Currently, only some LLMs support multimodal inputs, and almost none support mul
 
 A chat model's context window refers to the maximum size of the input sequence the model can process at one time. While the context windows of modern LLMs are quite large, they still present a limitation that developers must keep in mind when working with chat models.
 
-If the input exceeds the context window, the model may not be able to process the entire input and could raise an error. In conversational applications, this is especially important because the context window determines how much information the model can "remember" throughout a conversation. Developers often need to manage the input within the context window to maintain a coherent dialogue without exceeding the limit. For more details on handling memory in conversations, refer to the [memory](/docs/concepts/memory).
+If the input exceeds the context window, the model may not be able to process the entire input and could raise an error. In conversational applications, this is especially important because the context window determines how much information the model can "remember" throughout a conversation. Developers often need to manage the input within the context window to maintain a coherent dialogue without exceeding the limit. For more details on handling memory in conversations, refer to the [memory](https://langchain-ai.github.io/langgraph/concepts/memory/).
 
 The size of the input is measured in [tokens](/docs/concepts/tokens) which are the unit of processing that the model uses.
 
@@ -151,7 +151,7 @@ Please see the [how to cache chat model responses](/docs/how_to/#chat-model-cach
 ## Related Resources
 
 * How-to guides on using chat models: [how-to guides](/docs/how_to/#chat-models).
-* List of supported chat models: [chat model integrations](/docs/integrations/chats/).
+* List of supported chat models: [chat model integrations](/docs/integrations/chat/).
 
 ### Conceptual guides
 
