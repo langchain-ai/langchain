@@ -24,8 +24,6 @@ class KDBAI(VectorStore):
         table: kdbai_client.Table object to use as storage,
         embedding: Any embedding function implementing
             `langchain.embeddings.base.Embeddings` interface,
-        distance_strategy: One option from DistanceStrategy.EUCLIDEAN_DISTANCE,
-            DistanceStrategy.DOT_PRODUCT or DistanceStrategy.COSINE.
 
     See the example [notebook](https://github.com/KxSystems/langchain/blob/KDB.AI/docs/docs/integrations/vectorstores/kdbai.ipynb).
     """
@@ -34,9 +32,6 @@ class KDBAI(VectorStore):
         self,
         table: Any,
         embedding: Embeddings,
-        distance_strategy: Optional[
-            DistanceStrategy
-        ] = DistanceStrategy.EUCLIDEAN_DISTANCE,
     ):
         try:
             import kdbai_client  # noqa
@@ -47,7 +42,6 @@ class KDBAI(VectorStore):
             )
         self._table = table
         self._embedding = embedding
-        self.distance_strategy = distance_strategy
 
     @property
     def embeddings(self) -> Optional[Embeddings]:
@@ -204,7 +198,7 @@ class KDBAI(VectorStore):
         *,
         index: str,
         k: int = 1,
-        filter: Optional[List] = [],
+        filter: Optional[List],
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return documents most similar to embedding, along with scores.
@@ -224,8 +218,13 @@ class KDBAI(VectorStore):
             index = kwargs.pop("index")
         elif "options" in kwargs and ('distanceColumn' in kwargs['options'].keys()):
             dist = kwargs['options']["distanceColumn"]
+
+        if filter:
+            if kwargs.get("filter"):
+                filter.extend(kwargs.pop("filter"))
+            kwargs["filter"] = filter    
         
-        matches = self._table.search(vectors={index:[embedding]}, n=k, filter=filter, **kwargs)
+        matches = self._table.search(vectors={index:[embedding]}, n=k, **kwargs)
         docs: list = []
         if isinstance(matches, list):
             matches = matches[0]
