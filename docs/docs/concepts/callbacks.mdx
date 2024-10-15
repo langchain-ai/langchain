@@ -1,5 +1,9 @@
 # Callbacks
 
+:::note Pre-requisites
+- [Runnable interface](/docs/concepts/#runnable-interface)
+:::
+
 The lowest level way to stream outputs from LLMs in LangChain is via the [callbacks](/docs/concepts/#callbacks) system. You can pass a
 callback handler that handles the [`on_llm_new_token`](https://python.langchain.com/api_reference/langchain/callbacks/langchain.callbacks.streaming_aiter.AsyncIteratorCallbackHandler.html#langchain.callbacks.streaming_aiter.AsyncIteratorCallbackHandler.on_llm_new_token) event into LangChain components. When that component is invoked, any
 [LLM](/docs/concepts/#llms) or [chat model](/docs/concepts/#chat-models) contained in the component calls
