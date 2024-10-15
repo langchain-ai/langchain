@@ -93,6 +93,9 @@ if TYPE_CHECKING:
         MilvusRetriever,
     )
     from langchain_community.retrievers.nanopq import NanoPQRetriever
+    from langchain_community.retrievers.nimbleit import (
+        NimbleItRetriever,
+    )
     from langchain_community.retrievers.outline import (
         OutlineRetriever,
     )
@@ -173,6 +176,7 @@ _module_lookup = {
     "MetalRetriever": "langchain_community.retrievers.metal",
     "MilvusRetriever": "langchain_community.retrievers.milvus",
     "NanoPQRetriever": "langchain_community.retrievers.nanopq",
+    "NimbleItRetriever": "langchain_community.retrievers.nimbleit",
     "OutlineRetriever": "langchain_community.retrievers.outline",
     "PineconeHybridSearchRetriever": "langchain_community.retrievers.pinecone_hybrid_search",  # noqa: E501
     "PubMedRetriever": "langchain_community.retrievers.pubmed",
@@ -230,6 +234,7 @@ __all__ = [
     "MilvusRetriever",
     "NanoPQRetriever",
     "NeuralDBRetriever",
+    "NimbleItRetriever",
     "OutlineRetriever",
     "PineconeHybridSearchRetriever",
     "PubMedRetriever",
