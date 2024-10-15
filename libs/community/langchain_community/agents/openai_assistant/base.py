@@ -227,8 +227,10 @@ class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
         tools: Sequence[Union[BaseTool, dict]],
         model: str,
         *,
+        model_kwargs: dict[str, float] = {},
         client: Optional[Union[openai.OpenAI, openai.AzureOpenAI]] = None,
         tool_resources: Optional[Union[AssistantToolResources, dict, NotGiven]] = None,
+        extra_body: Optional[object] = None,
         **kwargs: Any,
     ) -> OpenAIAssistantRunnable:
         """Create an OpenAI Assistant and instantiate the Runnable.
@@ -257,6 +259,8 @@ class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
             tools=[_get_assistants_tool(tool) for tool in tools],  # type: ignore
             tool_resources=tool_resources,
             model=model,
+            extra_body = extra_body,
+            **model_kwargs,
         )
         return cls(assistant_id=assistant.id, client=client, **kwargs)
 
