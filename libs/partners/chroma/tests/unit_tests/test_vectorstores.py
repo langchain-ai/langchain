@@ -17,8 +17,8 @@ class TestChromaSearch:
         ]
         vectorstore = Chroma.from_documents(
             collection_name="test_collection",
-            documents = documents,
-            embedding = FakeEmbeddings(size=10),
+            documents=documents,
+            embedding=FakeEmbeddings(size=10),
         )
 
         results = vectorstore.similarity_search("What is a sandwich?")
@@ -27,8 +27,6 @@ class TestChromaSearch:
         newDoc = Document(page_content="This is a new document.", metadata={"x": 1})
         vectorstore.update_document(id, newDoc)
         assert vectorstore.get(id)['documents'][0] == newDoc.page_content, "The first result is not the same as the updated document"
-
-
 
     def test_from_texts(self) -> None:
         """Test end to end construction and search."""
@@ -40,8 +38,8 @@ class TestChromaSearch:
         ]
         vectorstore = Chroma.from_texts(
             collection_name="test_collection",
-            texts = texts,
-            embedding = FakeEmbeddings(size=10),
+            texts=texts,
+            embedding=FakeEmbeddings(size=10),
         )
 
         results = vectorstore.similarity_search("sandwich")
