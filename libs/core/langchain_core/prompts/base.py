@@ -77,18 +77,18 @@ class BasePromptTemplate(
                 "Cannot have an input variable named 'stop', as it is used internally,"
                 " please rename."
             )
-            raise ValueError(msg)
+            raise InvalidPromptInputError(msg)
         if "stop" in self.partial_variables:
             msg = (
                 "Cannot have an partial variable named 'stop', as it is used "
                 "internally, please rename."
             )
-            raise ValueError(msg)
+            raise InvalidPromptInputError(msg)
 
         overall = set(self.input_variables).intersection(self.partial_variables)
         if overall:
             msg = f"Found overlapping input and partial variables: {overall}"
-            raise ValueError(msg)
+            raise InvalidPromptInputError(msg)
         return self
 
     @classmethod
@@ -151,7 +151,7 @@ class BasePromptTemplate(
                     f"Expected mapping type as input to {self.__class__.__name__}. "
                     f"Received {type(inner_input)}."
                 )
-                raise TypeError(msg)
+                raise InvalidPromptInputError(msg)
         missing = set(self.input_variables).difference(inner_input)
         if missing:
             msg = (
@@ -384,7 +384,7 @@ def _get_document_info(doc: Document, prompt: BasePromptTemplate[str]) -> dict:
             f"{required_metadata}. Received document with missing metadata: "
             f"{list(missing_metadata)}."
         )
-        raise ValueError(msg)
+        raise InvalidPromptInputError(msg)
     return {k: base_info[k] for k in prompt.input_variables}
 
 
