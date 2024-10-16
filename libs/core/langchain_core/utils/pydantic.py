@@ -63,7 +63,8 @@ elif PYDANTIC_MAJOR_VERSION == 2:
     PydanticBaseModel = Union[BaseModel, pydantic.BaseModel]  # type: ignore
     TypeBaseModel = Union[type[BaseModel], type[pydantic.BaseModel]]  # type: ignore
 else:
-    raise ValueError(f"Unsupported Pydantic version: {PYDANTIC_MAJOR_VERSION}")
+    msg = f"Unsupported Pydantic version: {PYDANTIC_MAJOR_VERSION}"
+    raise ValueError(msg)
 
 
 TBaseModel = TypeVar("TBaseModel", bound=PydanticBaseModel)
@@ -116,7 +117,8 @@ def is_basemodel_subclass(cls: type) -> bool:
         if issubclass(cls, BaseModelV1):
             return True
     else:
-        raise ValueError(f"Unsupported Pydantic version: {PYDANTIC_MAJOR_VERSION}")
+        msg = f"Unsupported Pydantic version: {PYDANTIC_MAJOR_VERSION}"
+        raise ValueError(msg)
     return False
 
 
@@ -144,7 +146,8 @@ def is_basemodel_instance(obj: Any) -> bool:
         if isinstance(obj, BaseModelV1):
             return True
     else:
-        raise ValueError(f"Unsupported Pydantic version: {PYDANTIC_MAJOR_VERSION}")
+        msg = f"Unsupported Pydantic version: {PYDANTIC_MAJOR_VERSION}"
+        raise ValueError(msg)
     return False
 
 
@@ -233,9 +236,8 @@ def _create_subset_model_v1(
     elif PYDANTIC_MAJOR_VERSION == 2:
         from pydantic.v1 import create_model  # type: ignore
     else:
-        raise NotImplementedError(
-            f"Unsupported pydantic version: {PYDANTIC_MAJOR_VERSION}"
-        )
+        msg = f"Unsupported pydantic version: {PYDANTIC_MAJOR_VERSION}"
+        raise NotImplementedError(msg)
 
     fields = {}
 
@@ -339,9 +341,8 @@ def _create_subset_model(
                 fn_description=fn_description,
             )
     else:
-        raise NotImplementedError(
-            f"Unsupported pydantic version: {PYDANTIC_MAJOR_VERSION}"
-        )
+        msg = f"Unsupported pydantic version: {PYDANTIC_MAJOR_VERSION}"
+        raise NotImplementedError(msg)
 
 
 if PYDANTIC_MAJOR_VERSION == 2:
@@ -376,7 +377,8 @@ if PYDANTIC_MAJOR_VERSION == 2:
         elif hasattr(model, "__fields__"):
             return model.__fields__  # type: ignore
         else:
-            raise TypeError(f"Expected a Pydantic model. Got {type(model)}")
+            msg = f"Expected a Pydantic model. Got {type(model)}"
+            raise TypeError(msg)
 elif PYDANTIC_MAJOR_VERSION == 1:
     from pydantic import BaseModel as BaseModelV1_
 
@@ -386,7 +388,8 @@ elif PYDANTIC_MAJOR_VERSION == 1:
         """Get the field names of a Pydantic model."""
         return model.__fields__  # type: ignore
 else:
-    raise ValueError(f"Unsupported Pydantic version: {PYDANTIC_MAJOR_VERSION}")
+    msg = f"Unsupported Pydantic version: {PYDANTIC_MAJOR_VERSION}"
+    raise ValueError(msg)
 
 _SchemaConfig = ConfigDict(
     arbitrary_types_allowed=True, frozen=True, protected_namespaces=()
@@ -536,11 +539,12 @@ def _remap_field_definitions(field_definitions: dict[str, Any]) -> dict[str, Any
         if key.startswith("_") or key in _RESERVED_NAMES:
             # Let's add a prefix to avoid colliding with internal pydantic fields
             if isinstance(value, FieldInfo):
-                raise NotImplementedError(
+                msg = (
                     f"Remapping for fields starting with '_' or fields with a name "
                     f"matching a reserved name {_RESERVED_NAMES} is not supported if "
                     f" the field is a pydantic Field instance. Got {key}."
                 )
+                raise NotImplementedError(msg)
             type_, default_ = value
             remapped[f"private_{key}"] = (
                 type_,
@@ -583,10 +587,11 @@ def create_model_v2(
 
     if root:
         if field_definitions:
-            raise NotImplementedError(
+            msg = (
                 "When specifying __root__ no other "
                 f"fields should be provided. Got {field_definitions}"
             )
+            raise NotImplementedError(msg)
 
         if isinstance(root, tuple):
             kwargs = {"type_": root[0], "default_": root[1]}
