@@ -29,10 +29,11 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatResult, LLMResult
-from langchain_core.pydantic_v1 import root_validator
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_tool
+from pydantic import model_validator
+from typing_extensions import Self
 
 from langchain_huggingface.llms.huggingface_endpoint import HuggingFaceEndpoint
 from langchain_huggingface.llms.huggingface_pipeline import HuggingFacePipeline
@@ -265,7 +266,7 @@ class ChatHuggingFace(BaseChatModel):
     Tool calling:
         .. code-block:: python
 
-            from langchain_core.pydantic_v1 import BaseModel, Field
+            from pydantic import BaseModel, Field
 
             class GetWeather(BaseModel):
                 '''Get the current weather in a given location'''
@@ -325,20 +326,20 @@ class ChatHuggingFace(BaseChatModel):
             else self.tokenizer
         )
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def validate_llm(cls, values: dict) -> dict:
+    @model_validator(mode="after")
+    def validate_llm(self) -> Self:
         if (
-            not _is_huggingface_hub(values["llm"])
-            and not _is_huggingface_textgen_inference(values["llm"])
-            and not _is_huggingface_endpoint(values["llm"])
-            and not _is_huggingface_pipeline(values["llm"])
+            not _is_huggingface_hub(self.llm)
+            and not _is_huggingface_textgen_inference(self.llm)
+            and not _is_huggingface_endpoint(self.llm)
+            and not _is_huggingface_pipeline(self.llm)
         ):
             raise TypeError(
                 "Expected llm to be one of HuggingFaceTextGenInference, "
                 "HuggingFaceEndpoint, HuggingFaceHub, HuggingFacePipeline "
-                f"received {type(values['llm'])}"
+                f"received {type(self.llm)}"
             )
-        return values
+        return self
 
     def _create_chat_result(self, response: TGI_RESPONSE) -> ChatResult:
         generations = []

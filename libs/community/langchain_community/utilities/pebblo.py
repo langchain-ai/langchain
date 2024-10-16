@@ -11,8 +11,8 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from langchain_core.documents import Document
 from langchain_core.env import get_runtime_environment
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel
 from requests import Response, request
 from requests.exceptions import RequestException
 
@@ -154,6 +154,8 @@ class Doc(BaseModel):
     """Owner of the source of the loader."""
     classifier_location: str
     """Location of the classifier."""
+    anonymize_snippets: bool
+    """Whether to anonymize snippets going into VectorDB and the generated reports"""
 
 
 def get_full_path(path: str) -> str:
@@ -424,6 +426,8 @@ class PebbloLoaderAPIWrapper(BaseModel):
     """URL of the Pebblo Classifier"""
     cloud_url: Optional[str]
     """URL of the Pebblo Cloud"""
+    anonymize_snippets: bool = False
+    """Whether to anonymize snippets going into VectorDB and the generated reports"""
 
     def __init__(self, **kwargs: Any):
         """Validate that api key in environment."""
@@ -522,6 +526,8 @@ class PebbloLoaderAPIWrapper(BaseModel):
                 # If local classifier is used add the classified information
                 # and remove doc content
                 self.update_doc_data(payload["docs"], classified_docs)
+            # Remove the anonymize_snippets key from payload
+            payload.pop("anonymize_snippets", None)
             self.send_docs_to_pebblo_cloud(payload)
         elif self.classifier_location == "pebblo-cloud":
             logger.warning("API key is missing for sending docs to Pebblo cloud.")
@@ -599,6 +605,7 @@ class PebbloLoaderAPIWrapper(BaseModel):
             "loading_end": "false",
             "source_owner": source_owner,
             "classifier_location": self.classifier_location,
+            "anonymize_snippets": self.anonymize_snippets,
         }
         if loading_end is True:
             payload["loading_end"] = "true"

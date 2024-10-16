@@ -1,6 +1,5 @@
 from unittest.mock import AsyncMock, patch
 
-import pytest
 import responses
 
 from langchain_community.tools.you import YouSearchTool
@@ -68,7 +67,6 @@ class TestYouSearchTool:
         expected_result = NEWS_RESPONSE_PARSED
         assert results == expected_result
 
-    @pytest.mark.asyncio
     async def test_ainvoke(self) -> None:
         you_tool = YouSearchTool(api_wrapper=YouSearchAPIWrapper(ydc_api_key="test"))  # type: ignore[call-arg]
 
