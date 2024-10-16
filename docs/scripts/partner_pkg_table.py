@@ -8,7 +8,7 @@ DOCS_DIR = Path(__file__).parents[1]
 PLATFORMS = {
     path.split("/")[-1][:-4]
     for path in glob.glob(
-        str(DOCS_DIR) + "/docs/integrations/platforms/*.mdx", recursive=True
+        str(DOCS_DIR) + "/docs/integrations/providers/*.mdx", recursive=True
     )
 }
 EXTERNAL_PACKAGES = {
@@ -71,15 +71,15 @@ CUSTOM_NAME = {
     "airbyte": "Airbyte",
 }
 CUSTOM_PROVIDER_PAGES = {
-    "azure-dynamic-sessions": "/docs/integrations/platforms/microsoft/",
-    "google-community": "/docs/integrations/platforms/google/",
-    "google-genai": "/docs/integrations/platforms/google/",
-    "google-vertexai": "/docs/integrations/platforms/google/",
+    "azure-dynamic-sessions": "/docs/integrations/providers/microsoft/",
+    "google-community": "/docs/integrations/providers/google/",
+    "google-genai": "/docs/integrations/providers/google/",
+    "google-vertexai": "/docs/integrations/providers/google/",
     "nvidia-ai-endpoints": "/docs/integrations/providers/nvidia/",
     "exa": "/docs/integrations/providers/exa_search/",
     "mongodb": "/docs/integrations/providers/mongodb_atlas/",
 }
-PLATFORM_PAGES = {name: f"/docs/integrations/platforms/{name}/" for name in PLATFORMS}
+PLATFORM_PAGES = {name: f"/docs/integrations/providers/{name}/" for name in PLATFORMS}
 PROVIDER_PAGES = {
     name: f"/docs/integrations/providers/{name}/"
     for name in ALL_PACKAGES
@@ -104,7 +104,7 @@ def package_row(name: str) -> str:
 
 
 def table() -> str:
-    header = """| Provider | Package | Downloads | Latest | [JS](https://js.langchain.com/docs/integrations/platforms/) |
+    header = """| Provider | Package | Downloads | Latest | [JS](https://js.langchain.com/docs/integrations/providers/) |
 | :--- | :---: | :---: | :---: | :---: |
 """
     return header + "\n".join(package_row(name) for name in sorted(ALL_PACKAGES))
@@ -136,12 +136,12 @@ These providers have standalone `langchain-{{provider}}` packages for improved v
 
 ## All Providers
 
-Click [here](/docs/integrations/providers/) to see all providers.
+Click [here](/docs/integrations/providers/all) to see all providers.
 
 """
 
 
 if __name__ == "__main__":
-    output_dir = Path(sys.argv[1]) / "integrations" / "platforms"
+    output_dir = Path(sys.argv[1]) / "integrations" / "providers"
     with open(output_dir / "index.mdx", "w") as f:
         f.write(doc())
