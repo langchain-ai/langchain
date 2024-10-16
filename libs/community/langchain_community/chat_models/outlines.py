@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import platform
 from collections.abc import AsyncIterator
 from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 
@@ -160,6 +161,20 @@ class ChatOutlines(BaseChatModel):
         model: str = values["model"]
         backend: str = values["backend"]
 
+        num_constraints = sum(
+            [
+                bool(values["regex"]),
+                bool(values["type_constraints"]),
+                bool(values["json_schema"]),
+                bool(values["grammar"]),
+            ]
+        )
+        if num_constraints > 1:
+            raise ValueError(
+                "Either none or exactly one of regex, type_constraints, "
+                "json_schema, or grammar can be provided."
+            )
+
         def check_packages_installed(packages: List[Union[str, Tuple[str, str]]]):
             missing_packages = [
                 pkg if isinstance(pkg, str) else pkg[0]
@@ -168,20 +183,19 @@ class ChatOutlines(BaseChatModel):
                 is None
             ]
             if missing_packages:
-                raise ImportError(  # todo this is displaying wrong
+                raise ImportError(
                     f"Missing packages: {', '.join(missing_packages)}. "
                     "You can install them with:\n\n"
                     f"    pip install {' '.join(missing_packages)}"
                 )
 
         if backend == "llamacpp":
-            check_packages_installed([("llama_cpp", "llama-cpp-python")])
+            check_packages_installed([("llama-cpp-python", "llama_cpp")])
             if ".gguf" in model:
                 creator, repo_name, file_name = model.split("/", 2)
                 repo_id = f"{creator}/{repo_name}"
-            else:
-                repo_id = model
-                file_name = None
+            else:  # todo add auto-file-selection if no file is given
+                raise ValueError("GGUF file_name must be provided for llama.cpp.")
             model = models.llamacpp(repo_id, file_name, **values["model_kwargs"])
         elif backend == "transformers":
             check_packages_installed(["transformers", "torch", "datasets"])
@@ -198,6 +212,8 @@ class ChatOutlines(BaseChatModel):
                 **values["model_kwargs"],
             )
         elif backend == "vllm":
+            if platform.system() == "Darwin":
+                raise ValueError("vLLM backend is not supported on macOS.")
             check_packages_installed(["vllm"])
             model = models.vllm(model, **values["model_kwargs"])
         elif backend == "mlxlm":
@@ -238,19 +254,18 @@ class ChatOutlines(BaseChatModel):
 
         if self.custom_generator:
             return self.custom_generator
-        if (
-            sum(
-                [
-                    self.regex is not None,
-                    self.type_constraints is not None,
-                    self.json_schema is not None,
-                    self.grammar is not None,
-                ]
-            )
-            > 1
-        ):
+        constraints = [
+            self.regex,
+            self.type_constraints,
+            self.json_schema,
+            self.grammar,
+        ]
+        print("constraints", constraints)
+        num_constraints = sum(constraint is not None for constraint in constraints)
+        print("num_constraints", num_constraints)
+        if num_constraints != 1 and num_constraints != 0:
             raise ValueError(
-                "Only one of regex, type_constraints, "
+                "Either none or exactly one of regex, type_constraints, "
                 "json_schema, or grammar can be provided."
             )
         if self.regex:
@@ -374,7 +389,7 @@ class ChatOutlines(BaseChatModel):
             params["stop_at"] = stop
 
         prompt = self._convert_messages_to_prompt(messages)
-        # todo maybe stop = return assistant token mask
+        # todo? stop = return assistant token mask
 
         response = ""
         if self.streaming:
@@ -389,7 +404,6 @@ class ChatOutlines(BaseChatModel):
             response = self._generator(prompt, **params)
 
         message = AIMessage(content=response)
-        # todo maybe add better conversion thatn just ai message
         generation = ChatGeneration(message=message)
         return ChatResult(generations=[generation])
 
@@ -410,7 +424,6 @@ class ChatOutlines(BaseChatModel):
             if run_manager:
                 run_manager.on_llm_new_token(token)
             message_chunk = AIMessageChunk(content=token)
-            # todo maybe add better conversion thatn just ai message chunk
             chunk = ChatGenerationChunk(message=message_chunk)
             yield chunk
 

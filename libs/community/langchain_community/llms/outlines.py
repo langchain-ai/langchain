@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import logging
+import platform
 from typing import Any, Callable, Dict, Iterator, List, Literal, Optional, Tuple, Union
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
@@ -52,7 +53,7 @@ class Outlines(LLM):
     max_tokens: int = 256
     """The maximum number of tokens to generate."""
 
-    stop: Optional[List[str]] = Field(None, alias="stop_at")
+    stop: Optional[List[str]] = None
     """A list of strings to stop generation when encountered."""
 
     streaming: bool = True
@@ -153,13 +154,19 @@ class Outlines(LLM):
         model: str = values["model"]
         backend: str = values["backend"]
 
-        # todo add auto-file-selection if no file is given
-        if ".gguf" in model:
-            creator, repo_name, file_name = model.split("/", 2)
-            repo_id = f"{creator}/{repo_name}"
-        else:
-            repo_id = model
-            file_name = None
+        num_constraints = sum(
+            [
+                bool(values["regex"]),
+                bool(values["type_constraints"]),
+                bool(values["json_schema"]),
+                bool(values["grammar"]),
+            ]
+        )
+        if num_constraints > 1:
+            raise ValueError(
+                "Either none or exactly one of regex, type_constraints, "
+                "json_schema, or grammar can be provided."
+            )
 
         def check_packages_installed(packages: List[Union[str, Tuple[str, str]]]):
             missing_packages = [
@@ -176,11 +183,16 @@ class Outlines(LLM):
                 )
 
         if backend == "llamacpp":
+            if ".gguf" in model:
+                creator, repo_name, file_name = model.split("/", 2)
+                repo_id = f"{creator}/{repo_name}"
+            else:  # todo add auto-file-selection if no file is given
+                raise ValueError("GGUF file_name must be provided for llama.cpp.")
             check_packages_installed([("llama-cpp-python", "llama_cpp")])
             model = models.llamacpp(repo_id, file_name, **values["model_kwargs"])
         elif backend == "transformers":
             check_packages_installed(["transformers", "torch", "datasets"])
-            model = models.transformers(repo_id, **values["model_kwargs"])
+            model = models.transformers(model, **values["model_kwargs"])
         elif backend == "transformers_vision":
             check_packages_installed(
                 ["transformers", "datasets", "torchvision", "PIL", "flash_attn"]
@@ -188,16 +200,18 @@ class Outlines(LLM):
             from transformers import LlavaNextForConditionalGeneration
 
             model = models.transformers_vision(
-                repo_id,
+                model,
                 model_class=LlavaNextForConditionalGeneration,
                 **values["model_kwargs"],
             )
         elif backend == "vllm":
+            if platform.system() == "Darwin":
+                raise ValueError("vLLM backend is not supported on macOS.")
             check_packages_installed(["vllm"])
-            model = models.vllm(repo_id, **values["model_kwargs"])
+            model = models.vllm(model, **values["model_kwargs"])
         elif backend == "mlxlm":
             check_packages_installed(["mlx"])
-            model = models.mlxlm(repo_id, **values["model_kwargs"])
+            model = models.mlxlm(model, **values["model_kwargs"])
         else:
             raise ValueError(f"Unsupported backend: {backend}")
         values["client"] = model
@@ -234,21 +248,6 @@ class Outlines(LLM):
 
         if self.custom_generator:
             return self.custom_generator
-        if (
-            sum(
-                [
-                    self.regex is not None,
-                    self.type_constraints is not None,
-                    self.json_schema is not None,
-                    self.grammar is not None,
-                ]
-            )
-            > 1
-        ):
-            raise ValueError(
-                "Only one of regex, type_constraints, "
-                "json_schema, or grammar can be provided."
-            )
         if self.regex:
             return generate.regex(self.client, regex_str=self.regex)
         if self.type_constraints:
