@@ -18,8 +18,7 @@ Streaming is critical in making applications based on [LLMs](/docs/concepts/chat
 ## Why Streaming?
 
 [LLMs](/docs/concepts/chat_models) have noticeable latency on the order of seconds. This is much longer than the typical response time for most APIs, which are usually sub-second. The latency issue compounds quickly
-as you build more complex applications that involve multiple
-calls to a model.
+as you build more complex applications that involve multiple calls to a model.
 
 Fortunately, LLMs generate output iteratively, which means it's possible to show sensible intermediate results before the final response is ready. Consuming output as soon as it becomes available has therefore become a vital part of the UX around building apps with LLMs to help alleviate latency issues, and LangChain aims to have first-class support for streaming.
 
