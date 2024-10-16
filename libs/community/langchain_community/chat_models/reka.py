@@ -35,20 +35,9 @@ from langchain_core.messages import (
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
-from langchain_core.utils import (
-    get_from_dict_or_env,
-)
+from langchain_core.utils import get_from_dict_or_env
 from langchain_core.utils.function_calling import convert_to_openai_tool
-from pydantic import ConfigDict, Field, model_validator
-
-try:
-    from reka import ChatMessage as RekaChatMessage
-    from reka import ToolCall
-    from reka.client import AsyncReka, Reka
-except ImportError:
-    raise ValueError(
-        "Reka is not installed. Please install it with `pip install reka-api`."
-    )
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 REKA_MODELS = [
     "reka-edge",
@@ -131,11 +120,11 @@ def convert_to_reka_messages(messages: List[BaseMessage]) -> List[Dict[str, Any]
                 tool_calls = message.additional_kwargs["tool_calls"]
                 formatted_tool_calls = []
                 for tool_call in tool_calls:
-                    formatted_tool_call = ToolCall(
-                        id=tool_call["id"],
-                        name=tool_call["function"]["name"],
-                        parameters=json.loads(tool_call["function"]["arguments"]),
-                    )
+                    formatted_tool_call = {
+                        "id": tool_call["id"],
+                        "name": tool_call["function"]["name"],
+                        "parameters": json.loads(tool_call["function"]["arguments"]),
+                    }
                     formatted_tool_calls.append(formatted_tool_call)
                 reka_message["tool_calls"] = formatted_tool_calls
             reka_messages.append(reka_message)
@@ -153,9 +142,6 @@ def convert_to_reka_messages(messages: List[BaseMessage]) -> List[Dict[str, Any]
                     "content": content_list,
                 }
             )
-        elif isinstance(message, RekaChatMessage):
-            processed_content = process_content(message.content)
-            reka_messages.append({"role": message.role, "content": processed_content})
         else:
             raise ValueError(f"Unsupported message type: {type(message)}")
 
@@ -175,17 +161,6 @@ class RekaCommon(BaseLanguageModel):
     count_tokens: Optional[Callable[[str], int]] = None
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
 
-    # @model_validator(mode="before")
-    # @classmethod
-    # def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-    #     extra = values.get("model_kwargs", {})
-    #     all_field_names = set(cls.model_fields)
-    #     for field in list(values.keys()):
-    #         if field not in all_field_names:
-    #             extra[field] = values.pop(field)
-    #     values["model_kwargs"] = extra
-    #     return values
-
     @model_validator(mode="before")
     @classmethod
     def validate_environment(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -197,6 +172,9 @@ class RekaCommon(BaseLanguageModel):
         values["reka_api_key"] = reka_api_key
 
         try:
+            # Import reka libraries here
+            from reka.client import AsyncReka, Reka
+
             values["client"] = Reka(
                 api_key=reka_api_key,
             )
@@ -253,10 +231,10 @@ class ChatReka(BaseChatModel, RekaCommon):
 
         for chunk in stream:
             content = chunk.responses[0].chunk.content
-            chunk = ChatGenerationChunk(message=AIMessageChunk(content=content))
-            yield chunk
+            chat_chunk = ChatGenerationChunk(message=AIMessageChunk(content=content))
             if run_manager:
-                run_manager.on_llm_new_token(content, chunk=chunk)
+                run_manager.on_llm_new_token(content, chunk=chat_chunk)
+            yield chat_chunk
 
     async def _astream(
         self,
@@ -274,10 +252,10 @@ class ChatReka(BaseChatModel, RekaCommon):
 
         async for chunk in stream:
             content = chunk.responses[0].chunk.content
-            chunk = ChatGenerationChunk(message=AIMessageChunk(content=content))
-            yield chunk
+            chat_chunk = ChatGenerationChunk(message=AIMessageChunk(content=content))
             if run_manager:
-                await run_manager.on_llm_new_token(content, chunk=chunk)
+                await run_manager.on_llm_new_token(content, chunk=chat_chunk)
+            yield chat_chunk
 
     def _generate(
         self,
@@ -375,7 +353,7 @@ class ChatReka(BaseChatModel, RekaCommon):
 
     def bind_tools(
         self,
-        tools: Sequence[Union[Dict[str, Any], Type, Callable, BaseTool]],
+        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
         *,
         tool_choice: str = "auto",
         strict: Optional[bool] = None,
