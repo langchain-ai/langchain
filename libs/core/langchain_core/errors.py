@@ -11,7 +11,7 @@ class ErrorCode(Enum):
     OUTPUT_PARSING_FAILURE = "OUTPUT_PARSING_FAILURE"
 
 
-class LangChainException(Exception):
+class LangChainException(Exception):  # noqa: N818
     """Base exception class for LangChain errors."""
 
     def __init__(self, message: str, error_code: ErrorCode):
