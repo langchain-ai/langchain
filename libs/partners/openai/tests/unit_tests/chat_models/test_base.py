@@ -35,6 +35,13 @@ def test_openai_model_param() -> None:
     assert llm.model_name == "foo"
 
 
+def test_openai_o1_temperature() -> None:
+    llm = ChatOpenAI(model="o1-preview")
+    assert llm.temperature == 1
+    llm = ChatOpenAI(model_name="o1-mini")  # type: ignore[call-arg]
+    assert llm.temperature == 1
+
+
 def test_function_message_dict_to_function_message() -> None:
     content = json.dumps({"result": "Example #1"})
     name = "test_function"
