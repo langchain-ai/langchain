@@ -240,7 +240,6 @@ class SQLDatabase:
         cls,
         user: str,
         account: str,
-        auth_type: Optional[str],
         database: Optional[str],
         schema: Optional[str],
         warehouse: Optional[str],
@@ -278,8 +277,31 @@ class SQLDatabase:
                 "snowflake-sqlalchemy package not found, please install with"
                 " `pip install snowflake-sqlalchemy`"
             )
-        context = None
-        uri = ()
+
+        if password != None:
+            uri = URL(
+                account = account,
+                user = user,
+                password=password,
+                database = database,
+                schema = schema,
+                warehouse = warehouse,
+                role=role,
+            )
+        else:
+            uri = URL(
+                    account = account,
+                    user = user,
+                    database = database,
+                    schema = schema,
+                    warehouse = warehouse,
+                    role=role,
+                )
+        if private_key_bytes != None:
+            engine_args = {
+                'connect_args': {'private_key': private_key_bytes}
+            }
+
         return cls.from_uri(database_uri=uri, engine_args=engine_args, **kwargs)
 
     @classmethod
