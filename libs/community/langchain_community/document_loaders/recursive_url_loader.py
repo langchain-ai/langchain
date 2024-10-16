@@ -319,7 +319,7 @@ class RecursiveUrlLoader(BaseLoader):
                 If None, no proxies will be used and requests will go directly to the target URL.
                 Example usage:
                 ..code-block:: python
-                
+
                     proxies = {
                         "http": "http://10.10.1.10:3128",
                         "https": "https://10.10.1.10:1080",
@@ -373,10 +373,7 @@ class RecursiveUrlLoader(BaseLoader):
         visited.add(url)
         try:
             response = requests.get(
-                url, 
-                timeout=self.timeout, 
-                headers=self.headers, 
-                proxies=self.proxies
+                url, timeout=self.timeout, headers=self.headers, proxies=self.proxies
             )
 
             if self.encoding is not None:
