@@ -1,58 +1,88 @@
 # Retrieval
 
-## Conceptual Prerequisites
+:::info[Prerequisites]
 
 * [Retrievers](/docs/concepts/retrievers/)
 * [Vectorstores](/docs/concepts/vectorstores/)
 * [Embeddings](/docs/concepts/embedding_models/)
 * [Text splitters](/docs/concepts/text_splitters/)
 
+:::
+
 ## Overview 
 
 ![Retrieval](/img/retrieval_high_level.png)
 
-Search engines are one of the most widely-used applications of machine learning and AI, enabling search over large collections of documents.  
-Retrieval is a core component of search engines.
-From a large set of documents, a retrieval system indentifies a much smaller set of documents are that are most *relevant* to the search query.
-Retrieval systems are very useful for AI applications, such as [Retrieval Augmented Generation](/docs/concepts/rag/), because they can extend the model's internal knowledge.
+Retrieval systems are fundamental to many AI applications, efficiently identifying relevant information from large datasets. These systems bridge the gap between natural language queries and various data storage formats:
+
+- For unstructured data (e.g., documents, articles), vector stores and lexical search indexes are common.
+- For structured data, specialized query languages (DSLs) access information in relational or graph databases.
+
+Query analysis is crucial in this retrieval process, using models to translate natural language queries into formats compatible with the underlying search index or database.
 
 ## Key concepts 
 
 ![Retrieval](/img/retrieval_concept.png)
 
-(1) Search index: A search index enables efficient retrieval of documents based upon the search query.
-(2) Query analysis: A model can be used to transform or construct the search query. 
+(1) **Search index**: An efficient data structure that enables quick retrieval of information based on a query.
+
+(2) **Query analysis**: A process where models transform or construct search queries to optimize retrieval.
 
 ## Search Index 
 
-An search index is a data structure that improves the speed and efficiency of retrieval. 
-
 ### Unstructured data 
 
-For indexing unstructured data, LangChain uses the `retriever` abstraction. 
-A `retriever` is an interface that returns documents given an unstructured text input (e.g., a natural language user query).
-Many retrievers use some kind of index (e.g., an **inverted index** for lexical search or a **vector index** for semantic search) to find documents that are most relevant to the search query.
-See our conceptual overview of [retrievers](/docs/concepts/retrievers/) for more details.
+For retrieving unstructured data, LangChain uses the `retriever` interface: given a query as a string, it returns a list of the most relevant documents. 
+`Retrievers` can use many different types of indexes, including vector indexes and / or lexical search indexes.
+The central point is that a retriever offers a uniform way to retrieve unstructured data and as standardized `Document` objects, regardless of the underlying implementation. 
+This abstraction allows for easy swapping and experimentation with different retrieval methods.
+Here's a basic example of using a retriever with a query:
+
+```python
+docs = retriever.invoke(query)
+```
+
+See our conceptual guide on [retrievers](/docs/concepts/retrievers/) for more details.
 
 ### Structured data 
 
 For indexing structured data, many kinds of relational or graph databases can be used.
 In relational databases, for example, indexes are typically created on specific columns to speed up query performance. 
 They work like a book's table of contents, allowing the database to quickly locate the data without scanning the entire table.
+As an example, this creates an index on the `last_name` column of the `employees` table, which can dramatically speed up queries that filter or sort by last name.
+
+```SQL
+CREATE INDEX idx_last_name ON employees(last_name);
+```
+
+In graph databases, indexing often focuses on node properties or relationship types to speed up traversal and pattern matching queries.
+When working with structured data, the choice of index type and the columns to index significantly impacts query performance. 
+To learn more, see our integration guide and tutorial on working with various [Graph databases](https://python.langchain.com/docs/integrations/graphs/) and [SQL databases](/docs/tutorials/sql_qa/), respectively.
 
 ## Query Analysis 
 
-Users typically interact with a retrieval system using natural language.
-However, search indexes often require a specific query syntax (e.g., SQL or metadata filters) or can benefit from use of specific keywords (e.g., for semantic or lexical search).
-Query analysis is a powerful concept to help bridge the gap between raw, natural language queries and queries optimized for search indexes.
-The concept is simply to use a model to transform or construct the search query from a raw user input query.
+While users typically prefer to interact with retrieval systems using natural language, search indexes often require specific query syntax or benefit from particular keywords. 
+Query analysis serves as a crucial bridge between raw user input and optimized search queries. Here's why it's important:
+
+1. **Syntax Translation**: Search indexes may require structured queries (e.g., SQL for databases).
+2. **Keyword Optimization**: Certain keywords can significantly improve results in semantic or lexical searches.
+3. **Query Expansion**: Complex user queries might benefit from being broken down or expanded into multiple related queries.
+
+Query analysis employs models to transform or construct optimized search queries from raw user input. 
 
 ### Unstructured data
 
-Ideally a retrieval system that indexes unstructured data can handle a wide range of (user) inputs, from poorly worded to complex multi-part queries.
-To enable this, a popular approch is to use an LLM to translate a raw user query into a query that is better optimized for the retrieval system. 
-For example, this can be as simple as extracting keywords or as complex as generating multiple sub-questions for a complex query.
-There are various approaches for achieving this, including:
+Retrieval systems for unstructured data should ideally handle a wide spectrum of user inputs, from simple and poorly worded queries to complex, multi-faceted questions. 
+To achieve this versatility, a popular approach is to use models to transform raw user queries into more effective search queries. 
+This transformation can range from simple keyword extraction to sophisticated query expansion and reformulation.
+Here are some key benefits of using models for query analysis in unstructured data retrieval:
+
+1. **Query Clarification**: LLMs can rephrase ambiguous or poorly worded queries for clarity.
+2. **Semantic Understanding**: They can capture the intent behind a query, going beyond literal keyword matching.
+3. **Query Expansion**: LLMs can generate related terms or concepts to broaden the search scope.
+4. **Complex Query Handling**: They can break down multi-part questions into simpler sub-queries.
+
+Various techniques have been developed to leverage LLMs for query analysis in unstructured data retrieval. Some popular approaches include:
 
 | Name          | When to use | Description                                                                                                                                                                                                                                                                            |
 |---------------|-------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -60,6 +90,33 @@ There are various approaches for achieving this, including:
 | [Decomposition](https://github.com/langchain-ai/rag-from-scratch/blob/main/rag_from_scratch_5_to_9.ipynb) | When a question can be broken down into smaller subproblems. | Decompose a question into a set of subproblems / questions, which can either be solved sequentially (use the answer from first + retrieval to answer the second) or in parallel (consolidate each answer into final answer).                                                           |
 | [Step-back](https://github.com/langchain-ai/rag-from-scratch/blob/main/rag_from_scratch_5_to_9.ipynb)     | When a higher-level conceptual understanding is required. | First prompt the LLM to ask a generic step-back question about higher-level concepts or principles, and retrieve relevant facts about them. Use this grounding to help answer the user question. [Paper](https://arxiv.org/pdf/2310.06117).                                            |
 | [HyDE](https://github.com/langchain-ai/rag-from-scratch/blob/main/rag_from_scratch_5_to_9.ipynb)          | If you have challenges retrieving relevant documents using the raw user inputs. | Use an LLM to convert questions into hypothetical documents that answer the question. Use the embedded hypothetical documents to retrieve real documents with the premise that doc-doc similarity search can produce more relevant matches. [Paper](https://arxiv.org/abs/2212.10496). |
+
+As an example, decomposition can simply be accomplished using prompting and a structured output that enforces a list of sub-questions.
+These can then be run sequentially or in parallel on a downstream retriever.
+
+```python
+from pydantic import BaseModel, Field
+from langchain_openai import ChatOpenAI
+from langchain_core.messages import SystemMessage, HumanMessage
+
+# Define a Pydantic model to enforce the output structure
+class Questions(BaseModel):
+    questions: List[str] = Field(
+        description="A list of sub-questions related to the input query."
+    )
+
+# Create an instance of the model and enforce the output structure
+model = ChatOpenAI(model="gpt-4o", temperature=0) 
+structured_model = model.with_structured_output(Questions)
+
+# Define the system prompt
+system = """You are a helpful assistant that generates multiple sub-questions related to an input question. \n
+The goal is to break down the input into a set of sub-problems / sub-questions that can be answers in isolation. \n"""
+
+# Pass the question to the model
+question = """What are the main components of an LLM-powered autonomous agent system?"""
+questions = structured_model.invoke([SystemMessage(content=system)]+[HumanMessage(content=question)])
+```
 
 :::tip
 
@@ -73,16 +130,37 @@ See our RAG from Scratch videos for a few different specific approaches:
 
 ### Semi-structured and structred data
 
-Various DSLs (Domain Specific Languages) have been developed to interact with retrieval systems including SQL, Cypher, and PQL.
-A popular approach to interacting with structured data is to use a model to convert natural language queries into a DSL for the relevant retrieval systems.  
-For structured data, [text-to-SQL](/docs/tutorials/sql_qa/) and [text-to-Cypher](/docs/tutorials/graph/) are particularly popular. 
-For semi-structured data, such as vector stores that utilize metadata, a popular approach is to use an LLM to convert a natural language query into a metadata filter.
+When dealing with structured or semi-structured data, query analysis often involves translating natural language queries into specialized query languages or filters. 
+This translation is crucial for effectively interacting with various types of databases and retrieval systems.
+
+1. **Structured Data**: For relational and graph databases, Domain-Specific Languages (DSLs) are used to query data.
+   - **Text-to-SQL**: Converts natural language to SQL for relational databases.
+   - **Text-to-Cypher**: Transforms user queries into Cypher for graph databases.
+
+2. **Semi-structured Data**: For vectorstores, queries can combine semantic search with metadata filtering.
+   - **Natural Language to Metadata Filters**: Converts user queries into appropriate metadata constraints.
+
+These approaches leverage models to bridge the gap between user intent and the specific query requirements of different data storage systems. Here are some popular techniques:
 
 | Name                                        | When to Use                                                                                                                                   | Description                                                                                                                                                                                                                                                                                      |
 |---------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | [Self Query](/docs/how_to/self_query/)      | If users are asking questions that are better answered by fetching documents based on metadata rather than similarity with the text.          | This uses an LLM to transform user input into two things: (1) a string to look up semantically, (2) a metadata filter to go along with it. This is useful because oftentimes questions are about the METADATA of documents (not the content itself).                                              |
 | [Text to SQL](/docs/tutorials/sql_qa/)      | If users are asking questions that require information housed in a relational database, accessible via SQL.                                   | This uses an LLM to transform user input into a SQL query.                                             |
 | [Text-to-Cypher](/docs/tutorials/graph/)    | If users are asking questions that require information housed in a graph database, accessible via Cypher.                                     | This uses an LLM to transform user input into a Cypher query.                                              |
+
+As an example, here is how to use the `SelfQueryRetriever` to convert natural language queries into metadata filters.  
+
+```python
+metadata_field_info = schema_for_metadata 
+document_content_description = "Brief summary of a movie"
+llm = ChatOpenAI(temperature=0)
+retriever = SelfQueryRetriever.from_llm(
+    llm,
+    vectorstore,
+    document_content_description,
+    metadata_field_info,
+)
+```
 
 See our tutorials on [text-to-SQL](/docs/tutorials/sql_qa/), [text-to-Cypher](/docs/tutorials/graph/), and [query analysis for metadata filters](/docs/tutorials/query_analysis/#query-analysis)for more details.
 

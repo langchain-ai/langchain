@@ -1,34 +1,98 @@
 # Retrieval Augmented Generation (RAG)
 
-## Conceptual Prerequisites
+:::info[Prerequisites]
 
-* [Retrievers](/docs/concepts/retrievers/)
+* [Retrieval](/docs/concepts/retrieval/)
+
+:::
 
 ## Overview
 
-Language models (LLMs) are trained on vast but fixed datasets, which limits their ability to access up-to-date or domain-specific information. 
+Retrieval Augmented Generation (RAG) is a powerful technique that enhances [language models](/docs/concepts/chat_models/) by combining them with external knowledge bases. 
+RAG addresses [a key limitation of models](https://www.glean.com/blog/how-to-build-an-ai-assistant-for-the-enterprise): models rely on fixed training datasets, which can lead to outdated or incomplete information.
+When given a query, RAG systems first search a knowledge base for relevant information.
+The system then incorporates this retrieved information into the model's prompt.
+The model uses the provided context to generate a response to the query.
+By bridging the gap between vast language models and dynamic, targeted information retrieval, RAG is a powerful technique for building more capable and reliable AI systems.
 
-To enhance their performance on specific tasks, we can augment their knowledge using retrieval systems.
+## Key Concepts
 
-Retrieval systems fetch relevant information from external sources, which can then be included in the prompt given to the model. 
+![Conceptual Overview](/img/rag_concepts.png)
 
-Key benefits of using retrieval systems include:
+(1) **Retrieval system**: Retrieve relevant information from a knowledge base.
 
-1. Access to recent or private information
-2. Improved accuracy on domain-specific tasks
-3. Reduced hallucination by grounding responses in retrieved facts
-4. Cost-effective alternative to fine-tuning for factual recall
+(2) **Adding external knowledge**: Pass retrieved information to a model.
 
+## Retrieval system
 
-Given an input query, we normally respond to this query with an LLM by simply ingesting the query (possibly as part of a prompt template) and generating a response with the LLM. RAG modifies this approach by combining the LLM with a searchable knowledge base. In other words, we first use the input query to search for relevant information within an external dataset. Then, we add the info that we find to the model’s prompt when generating output, allowing the LLM to use this context (via its in context learning abilities) to generate a better and more factual response; see below. By combining the LLM with a non-parametric data source, we can feed the model correct, specific, and up-to-date information.
+Model's have internal knowledge that is often fixed, or at least not updated frequently due to the high cost of training.
+This limits their ability to answer questions about current events, or to provide specific domain knowledge.
+To address this, there are various knowledge injection techniques like [fine-tuning](https://hamel.dev/blog/posts/fine_tuning_valuable.html) or continued pre-training.
+Both are [costly](https://www.glean.com/blog/how-to-build-an-ai-assistant-for-the-enterprise) and often [poorly suited](https://www.anyscale.com/blog/fine-tuning-is-for-form-not-facts) for factual retrieval.
+Using a retrieval system offers several advantages:
 
-https://cameronrwolfe.substack.com/p/a-practitioners-guide-to-retrieval?utm_source=profile&utm_medium=reader2
+- **Up-to-date information**: RAG can access and utilize the latest data, keeping responses current.
+- **Domain-specific expertise**: With domain-specific knowledge bases, RAG can provide answers in specific domains.
+- **Reduced hallucination**: Grounding responses in retrieved facts helps minimize false or invented information.
+- **Cost-effective knowledge integration**: RAG offers a more efficient alternative to expensive model fine-tuning.
 
-## Cost
+:::info[Further reading]
 
-Implementing RAG allows us to specialize an LLM over a knowledge base of our choosing. Compared to other knowledge injection techniques—finetuning (or continued pretraining) is the primary alternative—RAG is both simpler to implement and computationally cheaper. As we will see, RAG also produces much better results compared to continued pretraining! However, implementing RAG still requires extra effort compared to just prompting a pretrained LLM, so we will briefly cover here the core benefits of RAG that make it worthwhile.
+See our conceptual guide on [retrieval](/docs/concepts/retrieval/).
 
-## Hallucination
+:::
 
-Reducing hallucinations. The primary reason that RAG is so commonly-used in practice is its ability to reduce hallucinations (i.e., generation of false information by the LLM). While LLMs tend to produce incorrect information when relying upon their parametric knowledge, the incorporation of RAG can drastically reduce the frequency of hallucinations, thus improving the overall quality of any LLM application and building more trust among users. Plus, RAG provides us with direct references to data that is used to generate information within the model’s output. We can easily provide the user with references to this information so that the LLM’s output can be verified against the actual data; see below.
+## Adding external knowledge
 
+With a retrieval system in place, we need to pass knowledge from this system to the model. 
+A RAG pipeline typically achieves this following these steps:
+
+- Receive an input query.
+- Use the retrieval system to search for relevant information based on the query.
+- Incorporate the retrieved information into the prompt sent to the LLM.
+- Generate a response that leverages the retrieved context.
+
+As an example, here's a simple RAG workflow that passes information from a [retriever](/docs/concepts/retrievers/) to a [chat model](/docs/concepts/chat_models/):
+
+```python
+from langchain_openai import ChatOpenAI
+from langchain_core.messages import SystemMessage, HumanMessage
+
+# Define a system prompt that tells the model how to use the retrieved context
+system_prompt = """You are an assistant for question-answering tasks. 
+Use the following pieces of retrieved context to answer the question. 
+If you don't know the answer, just say that you don't know. 
+Use three sentences maximum and keep the answer concise.
+Context: {context}:"""
+    
+# Define a question
+question = """What are the main components of an LLM-powered autonomous agent system?"""
+
+# Retrieve relevant documents
+docs = retriever.invoke(question)
+
+# Combine the documents into a single string
+docs_text = "".join(d.page_content for d in docs)
+
+# Populate the system prompt with the retrieved context
+system_prompt_fmt = system_prompt.format(context=docs_text)
+
+# Create a model
+model = ChatOpenAI(model="gpt-4o", temperature=0) 
+
+# Generate a response
+questions = model.invoke([SystemMessage(content=system_prompt_fmt),
+                          HumanMessage(content=question)])
+```
+
+:::info[Further reading]
+
+RAG a deep area with many possible optimization and design choices:
+
+* See [this excellent blog](https://cameronrwolfe.substack.com/p/a-practitioners-guide-to-retrieval?utm_source=profile&utm_medium=reader2) from Cameron Wolfe for a comprehensive overview and history of RAG.
+* See our [RAG how-to guides](/docs/how_to/#qa-with-rag).
+* See our RAG [tutorials](/docs/tutorials/#working-with-external-knowledge).
+* See our RAG from Scratch course, with [code](https://github.com/langchain-ai/rag-from-scratch) and [video playlist](https://www.youtube.com/playlist?list=PLfaIDFEXuae2LXbO1_PKyVJiQ23ZztA0x).
+* Also, see our RAG from Scratch course [on Freecodecamp](https://youtu.be/sVcwVQRHIc8?feature=shared).
+
+:::

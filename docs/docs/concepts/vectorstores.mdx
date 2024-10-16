@@ -2,66 +2,136 @@
 
 <span data-heading-keywords="vector,vectorstore,vectorstores,vector store,vector stores"></span>
 
+:::info[Prerequisites]
+
+* [Embeddings](/docs/concepts/embedding_models/)
+* [Text splitters](/docs/concepts/text_splitters/)
+
+:::
+
 ## Overview
 
-Vectorstores are one of the most common ways to index unstructured data.
-The utilize a vector index, which is a data structure that allows for efficient similarity search .
+Vector stores are a powerful and efficient way to index and retrieve unstructured data, particularly in the context of AI applications. 
+They leverage vector embeddings, which are numerical representations of text that capture semantic meaning, to enable fast and accurate similarity searches.
+At their core, vector stores utilize specialized data structures called vector indices. These indices are designed to perform efficient similarity searches over high-dimensional embedding vectors, allowing for rapid retrieval of relevant information based on semantic similarity rather than exact keyword matches.
 
- are one of the most common ways to store and search over unstructured data is to embed it and store the resulting embedding vectors,
-and then at query time to embed the unstructured query and retrieve the embedding vectors that are 'most similar' to the embedded query.
-A vector store takes care of storing embedded data and performing vector search for you.
+LangChain provides a universal interface for working with various vector store implementations, offering a consistent set of methods for common operations such as:
 
+- Adding documents to the store
+- Removing documents from the store
+- Performing similarity searches
+- Updating existing documents
+
+This abstraction allows developers to easily switch between different vector store backends or experiment with various implementations without changing their application code.
+As an example, adding documents to a vector store and performing a similarity search looks like this regardless of the underlying vector store implementation:
+
+```python
+# Given a list of documents and a vector store
+vector_store.add_documents(documents=documents)
+
+# Given a query, search over the documents
+docs = vector_store.similarity_search(query)
+```
 
 ## Key concepts
 
 ![Vectorstores](/img/vectorstores.png)
  
- (1) Generate retrieval units
- (2) Create an easily searchable representation for retrieval units
- (3) Index them for efficient search retrieval
+ (1) **Generate retrieval units**: Unstructured data is often transformed into smaller pieces of text for embedding and retrieval.
 
+ (2) **Create an easily searchable representation for retrieval units**: Embeddings are used to make the text searchable.
 
-Most vector stores can also store metadata about embedded vectors and support filtering on that metadata before
-similarity search, allowing you more control over returned documents.
-
-Vector stores can be converted to the retriever interface by doing:
-
-```python
-vectorstore = MyVectorStore()
-retriever = vectorstore.as_retriever()
-```
-
-For specifics on how to use vector stores, see the [relevant how-to guides here](/docs/how_to/#vector-stores).
-
-
-
+ (3) **Index them for efficient search retrieval**: Embeddings are stored in a vector store for efficient search retrieval.
 
 ## Retrieval Units
 
-From raw data, generate units of retrieval.
+### Text splitting
 
-Text splitting. 
+Unstructured data sources that we want to store many contain data in a variety of different formats (e.g., pdf, markdown, and more) and lengths.
+Text splitting is often a crucial preprocessing step in retrieval systems.
+It involves breaking down large texts into smaller, manageable chunks. 
+This has benefits, including ensuring consistent processing of varying document lengths, overcoming input size limitations of models, and improving quality of the embedded text representations.
+See our conceptual guide on [text splitters](/docs/concepts/text_splitters/) for a detailed overview on this.
 
-However, the external data sources that we use for RAG might contain data in a variety of different formats (e.g., pdf, markdown, and more). As such, we must first clean the data and extract the raw textual information from these heterogenous data sources. Once this is done, we can “chunk” the data, or split it into sets of shorter sequences that typically contain around 100-500 tokens; see below.
+### Model-generated representations
 
-The goal of chunking is to split the data into units of retrieval (i.e., pieces of text that we can retrieve as search results). An entire document could be too large to serve as a unit of retrieval, so we must split this document into smaller chunks. The most common chunking strategy is a fixed-size approach, which breaks longer texts into shorter sequences that each contain a fixed number of tokens. However, this is not the only approach! Our data may be naturally divided into chunks (e.g., social media posts or product descriptions on an e-commerce store) or contain separators that allow us to use a variable-size chunking strategy.
+In addition to text splitting, it is also possible to use a model to *generate* representations for embedding and retrieval.
+For example, you can you a model to summarize the text in a document.
+This may be particularly useful if the text is either too long to embed directly or if the text is excessively verbose and contains information that is not relevant to the likely search queries.
+The [Multi-Vector](/docs/how_to/multi_vector/) retriever allows the user to use any document transformation (e.g., use a model to write a summary) and index the transformed text in a vectorstore while retaining linkage to the original document. 
 
+| Name                      | Index Type                   | Uses an LLM               | When to Use                                                                                                                                   | Description                                                                                                                                                                                                                                                                                      |
+|---------------------------|------------------------------|---------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [Multi Vector](/docs/how_to/multi_vector/)              | Vector store + Document Store | Sometimes during indexing | If you are able to extract information from documents that you think is more relevant to index than the text itself.                          | This involves creating multiple vectors for each document. Each vector could be created in a myriad of ways - examples include summaries of the text and hypothetical questions.                                                                                                                 |
 
+## Make them searchable 
 
-To add -- 
+Whatever transformation is done, the resulting retrieval units are still just pieces of text. We need to transform them into a format that allows for search over this text. 
+[Embedding models](/docs/concepts/embedding_models/) are a useful way to do this.
+See our [full conceptual overview](/docs/concepts/embedding_models/) for more details, but - in short - embeddings take each retrieval unit and turn into a fixed-length array of floating point numbers.
+This array is basically [a set of coordinates in a weird multi-dimensional space](https://simonwillison.net/2023/Oct/23/embeddings/).
+This array captures the semantic meaning of the text, and - as a result - text with similar meanings will have similar embeddings in this space.
+As a result, simple distance metrics like cosine similarity can be used to identify similar text based on their sematic meaning.
 
-In the case of vectorstores, it is common to have unstructured data (e.g., raw text documents) and structured data (e.g., metadata associated with the documents). 
+## Indexing
 
-First, we will want to build a dense retrieval system by i) using an embedding model2 to produce a corresponding vector representation for each of our chunks and ii) indexing all of these vector representations within a vector database. Then, we can embed the input query using the same embedding model and perform an efficient vector search to retrieve semantically-related chunks; see above.
+Vectorstores house the embedded documents, providing an interface for storing and retrieving them.
+If we pass in a query, the vectorstore will return the most similar embedded documents.
+Specifically, the vectorstore will embed the query and perform a similarity search over the embedded retrieval units and return the most similar ones.
 
-## Relevance 
+### Similarity metrics
 
-This allows for querying in two different ways:
+A critical advange of embeddings vectors is they can be compared using many mathematical operations:
 
-1. **Semantic search**: Query the unstructured data directly, often using via embedding or keyword similarity.
-2. **Metadata search**: Apply structured query to the metadata, filering specific documents.
+- **Cosine Similarity**: Measures the cosine of the angle between two vectors.
+- **Euclidean Distance**: Measures the straight-line distance between two points.
+- **Dot Product**: Measures the projection of one vector onto another.
+
+### Indexing algorithms
+
+Given a similarity metric to measure the distance between embedded query and retrieval units, we need an algorithm to efficiently find nearest neighbors in high-dimensional spaces.
+Many vectorstores implement [HNSW (Hierarchical Navigable Small World)](https://www.pinecone.io/learn/series/faiss/hnsw/), a graph-based index structure that allows for efficient similarity search.
+
+All LangChain vectorstores expose `from_documents` and `from_texts` methods, which will index a list of LangChain `Document` objects or strings into a vectorstore.
+Specifically, indexing will use the provided embedding model to create an embedding of each retrieval document, which will then be stored in the vectorstore and made searchable with whatever algorithm the vectorstore implements.
+
+```python
+from langchain_chroma import Chroma
+db = Chroma.from_documents(documents, OpenAIEmbeddings())
+```
+
+See this [how-to guide](/docs/how_to/vectorstores/) for more details on how to add documents to a vector store.
+
+### Search and retreival techniques
+
+All LangChain vectorstores expose a `similarity_search` method. This will take the income search query, create an embedding, and then find all documents with the most similar embedding.
+See the [how-to guide](/docs/how_to/vectorstores/) for more details on how to use the `similarity_search` method.
+
+```python
+query = "my query"
+docs = vectorstore.similarity_search(query)
+print(docs[0].page_content)
+```
+
+While indexing algorithms like HNSW provide the foundation for efficient similarity search in many cases, additional techniques can be employed to improve search quality and diversity.
+For example, [maximal marginal relevance](https://python.langchain.com/v0.1/docs/modules/model_io/prompts/example_selectors/mmr/) is a re-ranking algorithm used to diversify search results, which is applied after the initial similarity search to ensure a more diverse set of results.
+As a second example, some [vector stores](/docs/integrations/retrievers/pinecone_hybrid_search/) offer built-in [hybrid-search](https://docs.pinecone.io/guides/data/understanding-hybrid-search) to combine keyword and semantic similarity search, which marries the benefits of both approaches. 
+At the moment, there is no unified way to perform hybrid search using LangChain vectorstores, but it is generally exposed as a keyword argument that is passed in with `similarity_search`.
+See this [how-to guide](/docs/how_to/hybrid/) for more details.
 
 | Name              | When to use                                              | Description                                                                                                                                                                            |
 |-------------------|----------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | [Hybrid search](/docs/integrations/retrievers/pinecone_hybrid_search/)     | When combining keyword-based and semantic similarity.    | Hybrid search combines keyword and semantic similarity, marrying the benefits of both approaches. [Paper](https://arxiv.org/abs/2210.11934).                                                                               |
 | [Maximal Marginal Relevance (MMR)](/docs/integrations/vectorstores/pinecone/#maximal-marginal-relevance-searches) | When needing to diversify search results. | MMR attempts to diversify the results of a search to avoid returning similar and redundant documents.                                                                                  |
+
+### Metadata 
+
+Most vector stores can also store metadata about embedded vectors and support filtering on that metadata before
+similarity search, allowing you more control over returned documents. This allows for querying in two different ways:
+
+1. **Semantic search**: Query the unstructured data directly, often using via embedding or keyword similarity.
+2. **Metadata search**: Apply structured query to the metadata, filering specific documents.
+
+Vectorstore support for metadata is highly dependent on the underlying vector store implementation.
+Many vectorstores support LangChain [Self Query](/docs/how_to/self_query/) retriever interface to perform metadata search using natural language.
+

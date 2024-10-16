@@ -3,58 +3,91 @@
 
 ## Overview
 
-Embedding models create a vector representation of a piece of text. You can think of a vector as an array of numbers that captures the semantic meaning of the text.
-By representing the text in this way, you can perform mathematical operations that allow you to do things like search for other pieces of text that are most similar in meaning.
-These natural language search capabilities underpin many types of [context retrieval](/docs/concepts/#retrieval),
-where we provide an LLM with the relevant data it needs to effectively respond to a query.
+Imagine being able to capture the essence of any text - a tweet, a document, or even an entire book - in a single, compact representation. 
+This is the power of embedding models, which lie at the heart of many retrieval systems.
+Embedding models transform human language into a format that machines can understand and compare with speed and accuracy. 
+These models take text as input and produce a fixed-length array of numbers, a numerical fingerprint of the text's semantic meaning:
 
-![](/img/embeddings.png)
+- **Semantic Capture**: Each embedding is essentially a set of coordinates in a vast, abstract space. In this space, the position of each point (embedding) reflects the meaning of its corresponding text.
+- **Similarity as Proximity**: Just as similar words might be close to each other in a thesaurus, similar concepts end up close to each other in this embedding space. This allows for intuitive comparisons between different pieces of text.
+- **Efficient Comparison**: By reducing text to these numerical representations, we can use simple mathematical operations like cosine similarity to quickly measure how alike two pieces of text are, regardless of their original length or structure.
 
-## Encoder 
+Embeddings allow search system to find relevant documents not just based on keyword matches, but on semantic understanding. 
 
-### Bi-Encoder
+## Key concepts
 
-The short answer is that we can use deep learning to improve both the retrieval and ranking process. There are two types of models in particular that we use for this purpose—bi-encoders and cross-encoders—both of which are typically implemented using encoder-only (BERT) [1] models.
+![Conceptual Overview](/img/embeddings_concept.png)
 
-Bi-encoders form the basis of dense retrieval1 algorithms. At the simplest level, bi-encoders take a sequence of text as input and produce a dense vector as output. However, the vectors produced by bi-encoders are semantically meaningful—similar sequences of text produce vectors that are nearby in the vector space when processed by the bi-encoder. As a result, we can match queries to documents by embedding both with a bi-encoder and performing a vector search to find documents with the highest cosine similarity2 relative to the query; see below
+ (1) **Embed text as a vector**: Embedding models transform text into a fixed-length array of floating point numbers.
 
-Using algorithms like hierarchical navigable small word (HNSW) [6], we can perform approximate nearest neighbor vector searches efficiently. Similar to performing lexical search, we can store document vectors within a database like Elastic or RediSearch and build an HNSW search index. Then, vector search can be performed by i) using the bi-encoder to produce a vector for the user’s query and ii) performing vector search to find the most similar documents; see below.
+ (2) **Measure the similarity between vectors**: Embeddings can then be compared using simple mathematical operations.
 
-https://cameronrwolfe.substack.com/p/the-basics-of-ai-powered-vector-search?utm_source=profile&utm_medium=reader2
+## Embedding  
 
-Creating vector embeddings. Before moving on, we need to discuss how BERT can be used to create a vector embedding for a sequence of text. Such an approach is leveraged by bi-encoders to craft vectors that can be used for vector search. Each layer of a BERT model takes a sequence of token vectors as input and produces an equal-size sequence of token vectors as output. As such, the output of BERT is a sequence of token vectors, and every intermediate layer within the model produces a sequence of vectors with the same size; see below.
+The landscape of embedding models has evolved significantly over the years. 
+A pivotal moment came in 2018 when Google introduced [BERT (Bidirectional Encoder Representations from Transformers)](https://www.nvidia.com/en-us/glossary/bert/). 
+BERT applied transformer models to embed text as a simple vector representation, which lead to unprecedented performance across various NLP tasks.
+However, BERT wasn't optimized for generating sentence embeddings efficiently. 
+This limitation spurred the creation of [SBERT (Sentence-BERT)](https://www.sbert.net/examples/training/sts/README.html), which adapted the BERT architecture to generate semantically rich sentence embeddings, easily comparable via similarity metrics like cosine similarity, dramatically reduced the computational overhead for tasks like finding similar sentences.
 
-Main takeaway. BERT models are great for a variety of tasks, but BERT’s textual embeddings are not semantically meaningful by default. The finetuning procedure proposed in [2] improves the semantic meaningfulness of BERT embeddings. As such, sBERT is appropriate for a broader range of tasks, including semantic similarity tasks like clustering and semantic (vector) search. Using optimized index structures, we can find similar documents with sBERT in milliseconds, whereas performing a similarity search with vanilla BERT (using a cross-encoder setup) could take tens or hundreds of hours10!
+Today, the embedding model ecosystem is diverse, with numerous providers offering their own implementations. 
+To navigate this variety, researchers and practitioners often turn to benchmarks like the Massive Text Embedding Benchmark (MTEB) [here](https://huggingface.co/blog/mteb) for objective comparisons.
+Recognizing the need for a unified approach to working with these diverse models, LangChain introduced the `Embeddings` class.
+ This common interface simplifies interaction with various embedding providers through two key methods:
 
+- `embed_documents`: For embedding multiple texts (documents)
+- `embed_query`: For embedding a single text (query)
 
+This distinction is crucial, as some providers employ different embedding strategies for documents (which are to be searched) versus queries (the search input itself).
+To illustrate, here's a practical example using LangChain's `.embed_documents` method to embed a list of strings:
 
-### Cross-Encoder
+```python
+from langchain_openai import OpenAIEmbeddings
+embeddings_model = OpenAIEmbeddings()
+embeddings = embeddings_model.embed_documents(
+    [
+        "Hi there!",
+        "Oh, hello!",
+        "What's your name?",
+        "My friends call me World",
+        "Hello World!"
+    ]
+)
+len(embeddings), len(embeddings[0])
+(5, 1536)
+```
 
-Cross-encoders are similar to bi-encoders in that they allow us to score the similarity between two sequences of text. Instead of separately creating a vector for each textual sequence, however, cross-encoders ingest both textual sequences using the same model; see below. The model is trained to predict an accurate similarity score for these textual sequences. Cross-encoders can more accurately predict textual similarity relative to bi-encoders. However, searching for similar documents with a cross-encoder is much more computationally expensive
+For convenience, you can also use the `embed_query` method to embed a single text:
 
+```python
+query_embedding = embeddings_model.embed_query("What is the meaning of life?")
+```
 
+For specifics on how to use embedding models, see the [relevant how-to guides here](/docs/how_to/embed_text).
 
+### Embedding with higher granularity  
 
+![](/img/embeddings_colbert.png)
 
-The `Embeddings` class is a class designed for interfacing with text embedding models. There are many different embedding model providers (OpenAI, Cohere, Hugging Face, etc) and local models, and this class is designed to provide a standard interface for all of them.
-
-The base Embeddings class in LangChain provides two methods: one for embedding documents and one for embedding a query. The former takes as input multiple texts, while the latter takes a single text. The reason for having these as two separate methods is that some embedding providers have different embedding methods for documents (to be searched over) vs queries (the search query itself).
-
-For specifics on how to use embedding models, see the [relevant how-to guides here](/docs/how_to/#embedding-models).
-
-There are a few ways to improve the quality of similarity search. 
-
-Embedding models compress text into fixed-length (vector) representations that capture the semantic content of the document. 
-
-This compression is useful for search / retrieval, but puts a heavy burden on that single vector representation to capture the semantic nuance / detail of the document. 
-
+Embedding models compress text into fixed-length (vector) representations, which can put a heavy burden on that single vector to capture the semantic nuance and detail of the document. 
 In some cases, irrelevant or redundant content can dilute the semantic usefulness of the embedding.
+[ColBERT](https://arxiv.org/abs/2004.12832) (Contextualized Late Interaction over BERT) is an innovative approach to address this limitation by using higher granularity embeddings. 
+Here's how ColBERT works:
 
-[ColBERT](https://docs.google.com/presentation/d/1IRhAdGjIevrrotdplHNcc4aXgIYyKamUKTWtB3m3aMU/edit?usp=sharing) is an interesting approach to address this with a higher granularity embeddings: (1) produce a contextually influenced embedding for each token in the document and query, (2) score similarity between each query token and all document tokens, (3) take the max, (4) do this for all query tokens, and (5) take the sum of the max scores (in step 3) for all query tokens to get a query-document similarity score; this token-wise scoring can yield strong results. 
+- **Token-level embeddings**: Produce contextually influenced embeddings for each token in the document and the query.
+- **MaxSim operation**: For each query token, compute its maximum similarity with all document tokens.
+- **Aggregation**: The final relevance score is obtained by summing these maximum similarities across all query tokens.
 
-![](/img/colbert.png)
+This token-wise scoring can yield strong results, especially for tasks requiring precise matching or handling longer documents.
+Key advantages of ColBERT:
 
-There are some additional tricks to improve the quality of your retrieval. Embeddings excel at capturing semantic information, but may struggle with keyword-based queries. Many [vector stores](/docs/integrations/retrievers/pinecone_hybrid_search/) offer built-in [hybrid-search](https://docs.pinecone.io/guides/data/understanding-hybrid-search) to combine keyword and semantic similarity, which marries the benefits of both approaches. Furthermore, many vector stores have [maximal marginal relevance](https://python.langchain.com/v0.1/docs/modules/model_io/prompts/example_selectors/mmr/), which attempts to diversify the results of a search to avoid returning similar and redundant documents. 
+- **Improved accuracy**: Token-level interactions can capture more nuanced relationships between query and document.
+- **Interpretability**: The token-level matching allows for easier interpretation of why a document was considered relevant.
+
+However, ColBERT does come with some trade-offs:
+
+- **Increased computational cost**: Processing and storing token-level embeddings requires more resources.
+- **Complexity**: Implementing and optimizing ColBERT can be more challenging than simpler embedding models.
 
 | Name              | When to use                                              | Description                                                                                                                                                                            |
 |-------------------|----------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -65,3 +98,27 @@ There are some additional tricks to improve the quality of your retrieval. Embed
 See our RAG from Scratch video on [ColBERT](https://youtu.be/cN6S0Ehm7_8?feature=shared>).
 
 :::
+
+## Similarity 
+
+With text compressed into a vector representation, the next question is how to measure the similarity between text chunks. 
+Fortunately, we can use simple mathematical operations to measure the similarity between vectors. 
+For example, OpenAI recommends [cosine similarity](https://platform.openai.com/docs/guides/embeddings/faq) as a similarity metric. 
+OpenAI embeddings are normalized to length 1, which means that Cosine similarity can be computed slightly faster using just a dot product
+and Cosine similarity and Euclidean distance will result in the identical rankings. Any two embedded texts can be compared using this function:
+
+```python
+import numpy as np
+
+def cosine_similarity(vec1, vec2):
+    dot_product = np.dot(vec1, vec2)
+    norm_vec1 = np.linalg.norm(vec1)
+    norm_vec2 = np.linalg.norm(vec2)
+    return dot_product / (norm_vec1 * norm_vec2)
+
+similarity = cosine_similarity(query_result, document_result)
+print("Cosine Similarity:", similarity)
+```  
+
+However, the choice of similarity metric should be informed by the specific use case and embedding model.
+The central concept is the once embedding model is used to convert texts into vectors, it is fairly straightforward to compute the similarity between texts. 
