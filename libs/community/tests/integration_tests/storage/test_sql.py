@@ -45,7 +45,6 @@ def test_mget(sql_engine: Engine) -> None:
     assert result == [b"value1", b"value2"]
 
 
-@pytest.mark.asyncio
 async def test_amget(sql_aengine: AsyncEngine) -> None:
     """Test mget method."""
     store = SQLStore(engine=sql_aengine, namespace="test")
@@ -85,7 +84,6 @@ def test_mset(sql_engine: Engine) -> None:
         session.commit()
 
 
-@pytest.mark.asyncio
 async def test_amset(sql_aengine: AsyncEngine) -> None:
     """Test that multiple keys can be set."""
     store = SQLStore(engine=sql_aengine, namespace="test")
@@ -131,7 +129,6 @@ def test_mdelete(sql_engine: Engine) -> None:
         session.commit()
 
 
-@pytest.mark.asyncio
 async def test_amdelete(sql_aengine: AsyncEngine) -> None:
     """Test that deletion works as expected."""
     store = SQLStore(engine=sql_aengine, namespace="test")
@@ -172,7 +169,6 @@ def test_yield_keys(sql_engine: Engine) -> None:
     assert sorted(store.yield_keys(prefix="lang")) == []
 
 
-@pytest.mark.asyncio
 async def test_ayield_keys(sql_aengine: AsyncEngine) -> None:
     store = SQLStore(engine=sql_aengine, namespace="test")
     await store.acreate_schema()
