@@ -30,7 +30,7 @@ from langchain_mongodb import MongoDBAtlasVectorSearch
 > Lucene’s standard (`BM25`) analyzer.
 
 ```python
-from langchain_mongodb.retrievers.full_text_search import MongoDBAtlasFullTextSearchRetriever
+from langchain_mongodb.retrievers import MongoDBAtlasFullTextSearchRetriever
 ```
 
 ### Hybrid Search Retriever
@@ -39,7 +39,7 @@ from langchain_mongodb.retrievers.full_text_search import MongoDBAtlasFullTextSe
 > them the via `Reciprocal Rank Fusion` (`RRF`) algorithm.
  
 ```python
-from langchain_mongodb.retrievers.hybrid_search import MongoDBAtlasHybridSearchRetriever
+from langchain_mongodb.retrievers import MongoDBAtlasHybridSearchRetriever
 ```
 
 ## Model Caches
