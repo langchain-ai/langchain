@@ -12,7 +12,12 @@ from typing import (
     Any,
     AsyncIterable,
     Iterable,
+    List,
+    Optional,
     Sequence,
+    Tuple,
+    Type,
+    TypeVar,
     cast,
 )
 
@@ -25,6 +30,8 @@ from langchain_community.graph_vectorstores.links import METADATA_LINKS_KEY, Lin
 from langchain_community.graph_vectorstores.mmr_helper import MmrHelper
 from langchain_community.utilities.cassandra import SetupMode
 from langchain_community.vectorstores.cassandra import Cassandra as CassandraVectorStore
+
+CGVST = TypeVar("CGVST", bound="CassandraGraphVectorStore")
 
 if TYPE_CHECKING:
     from cassandra.cluster import Session
@@ -278,35 +285,6 @@ class CassandraGraphVectorStore(GraphVectorStore):
         (docs, ids) = self._get_docs_for_insertion(nodes=nodes)
         for inserted_id in await self.vector_store.aadd_documents(docs, ids=ids):
             yield inserted_id
-
-    @classmethod
-    @override
-    def from_texts(
-        cls: type["CassandraGraphVectorStore"],
-        texts: Iterable[str],
-        embedding: Embeddings,
-        metadatas: list[dict] | None = None,
-        ids: Iterable[str] | None = None,
-        **kwargs: Any,
-    ) -> "CassandraGraphVectorStore":
-        """Return CassandraGraphVectorStore initialized from texts and embeddings."""
-        store = cls(embedding=embedding, **kwargs)
-        store.add_texts(texts, metadatas, ids=ids)
-        return store
-
-    @classmethod
-    @override
-    def from_documents(
-        cls: type["CassandraGraphVectorStore"],
-        documents: Iterable[Document],
-        embedding: Embeddings,
-        ids: Iterable[str] | None = None,
-        **kwargs: Any,
-    ) -> "CassandraGraphVectorStore":
-        """Return CassandraGraphVectorStore initialized from docs and embeddings."""
-        store = cls(embedding=embedding, **kwargs)
-        store.add_documents(documents, ids=ids)
-        return store
 
     @override
     def similarity_search(
@@ -1022,3 +1000,253 @@ class CassandraGraphVectorStore(GraphVectorStore):
         # TODO: Consider a combined limit based on the similarity and/or
         # predicated MMR score?
         return targets.values()
+
+    @staticmethod
+    def _build_docs_from_texts(
+        texts: List[str],
+        metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
+    ) -> List[Document]:
+        docs: List[Document] = []
+        for i, text in enumerate(texts):
+            doc = Document(
+                page_content=text,
+            )
+            if metadatas is not None:
+                doc.metadata = metadatas[i]
+            if ids is not None:
+                doc.id = ids[i]
+            docs.append(doc)
+        return docs
+
+    @classmethod
+    def from_texts(
+        cls: Type[CGVST],
+        texts: List[str],
+        embedding: Embeddings,
+        metadatas: Optional[List[dict]] = None,
+        *,
+        session: Optional[Session] = None,
+        keyspace: Optional[str] = None,
+        table_name: str = "",
+        ids: Optional[List[str]] = None,
+        ttl_seconds: Optional[int] = None,
+        body_index_options: Optional[List[Tuple[str, Any]]] = None,
+        metadata_deny_list: Iterable[str] = [],
+        **kwargs: Any,
+    ) -> CGVST:
+        """Create a CassandraGraphVectorStore from raw texts.
+
+        Args:
+            texts: Texts to add to the vectorstore.
+            embedding: Embedding function to use.
+            metadatas: Optional list of metadatas associated with the texts.
+            session: Cassandra driver session.
+                If not provided, it is resolved from cassio.
+            keyspace: Cassandra key space.
+                If not provided, it is resolved from cassio.
+            table_name: Cassandra table (required).
+            ids: Optional list of IDs associated with the texts.
+            ttl_seconds: Optional time-to-live for the added texts.
+            body_index_options: Optional options used to create the body index.
+                Eg. body_index_options = [cassio.table.cql.STANDARD_ANALYZER]
+            metadata_deny_list: Optional list of metadata keys to not index.
+                i.e. to fine-tune which of the metadata fields are indexed.
+                Note: if you plan to have massive unique text metadata entries,
+                consider not indexing them for performance
+                (and to overcome max-length limitations).
+                Note: the `metadata_indexing` parameter from
+                langchain_community.utilities.cassandra.Cassandra is not
+                exposed since CassandraGraphVectorStore only supports the
+                deny_list option.
+
+        Returns:
+            a CassandraGraphVectorStore.
+        """
+        docs = cls._build_docs_from_texts(
+            texts=texts,
+            metadatas=metadatas,
+            ids=ids,
+        )
+
+        return cls.from_documents(
+            documents=docs,
+            embedding=embedding,
+            session=session,
+            keyspace=keyspace,
+            table_name=table_name,
+            ttl_seconds=ttl_seconds,
+            body_index_options=body_index_options,
+            metadata_deny_list=metadata_deny_list,
+            **kwargs,
+        )
+
+    @classmethod
+    async def afrom_texts(
+        cls: Type[CGVST],
+        texts: List[str],
+        embedding: Embeddings,
+        metadatas: Optional[List[dict]] = None,
+        *,
+        session: Optional[Session] = None,
+        keyspace: Optional[str] = None,
+        table_name: str = "",
+        ids: Optional[List[str]] = None,
+        ttl_seconds: Optional[int] = None,
+        body_index_options: Optional[List[Tuple[str, Any]]] = None,
+        metadata_deny_list: Iterable[str] = [],
+        **kwargs: Any,
+    ) -> CGVST:
+        """Create a CassandraGraphVectorStore from raw texts.
+
+        Args:
+            texts: Texts to add to the vectorstore.
+            embedding: Embedding function to use.
+            metadatas: Optional list of metadatas associated with the texts.
+            session: Cassandra driver session.
+                If not provided, it is resolved from cassio.
+            keyspace: Cassandra key space.
+                If not provided, it is resolved from cassio.
+            table_name: Cassandra table (required).
+            ids: Optional list of IDs associated with the texts.
+            ttl_seconds: Optional time-to-live for the added texts.
+            body_index_options: Optional options used to create the body index.
+                Eg. body_index_options = [cassio.table.cql.STANDARD_ANALYZER]
+            metadata_deny_list: Optional list of metadata keys to not index.
+                i.e. to fine-tune which of the metadata fields are indexed.
+                Note: if you plan to have massive unique text metadata entries,
+                consider not indexing them for performance
+                (and to overcome max-length limitations).
+                Note: the `metadata_indexing` parameter from
+                langchain_community.utilities.cassandra.Cassandra is not
+                exposed since CassandraGraphVectorStore only supports the
+                deny_list option.
+
+        Returns:
+            a CassandraGraphVectorStore.
+        """
+        docs = cls._build_docs_from_texts(
+            texts=texts,
+            metadatas=metadatas,
+            ids=ids,
+        )
+
+        return await cls.afrom_documents(
+            documents=docs,
+            embedding=embedding,
+            session=session,
+            keyspace=keyspace,
+            table_name=table_name,
+            ttl_seconds=ttl_seconds,
+            body_index_options=body_index_options,
+            metadata_deny_list=metadata_deny_list,
+            **kwargs,
+        )
+
+    @classmethod
+    def from_documents(
+        cls: Type[CGVST],
+        documents: List[Document],
+        embedding: Embeddings,
+        *,
+        session: Optional[Session] = None,
+        keyspace: Optional[str] = None,
+        table_name: str = "",
+        ttl_seconds: Optional[int] = None,
+        body_index_options: Optional[List[Tuple[str, Any]]] = None,
+        metadata_deny_list: Iterable[str] = [],
+        **kwargs: Any,
+    ) -> CGVST:
+        """Create a CassandraGraphVectorStore from a document list.
+
+        Args:
+            documents: Documents to add to the vectorstore.
+            embedding: Embedding function to use.
+            session: Cassandra driver session.
+                If not provided, it is resolved from cassio.
+            keyspace: Cassandra key space.
+                If not provided, it is resolved from cassio.
+            table_name: Cassandra table (required).
+            ttl_seconds: Optional time-to-live for the added documents.
+            body_index_options: Optional options used to create the body index.
+                Eg. body_index_options = [cassio.table.cql.STANDARD_ANALYZER]
+            metadata_deny_list: Optional list of metadata keys to not index.
+                i.e. to fine-tune which of the metadata fields are indexed.
+                Note: if you plan to have massive unique text metadata entries,
+                consider not indexing them for performance
+                (and to overcome max-length limitations).
+                Note: the `metadata_indexing` parameter from
+                langchain_community.utilities.cassandra.Cassandra is not
+                exposed since CassandraGraphVectorStore only supports the
+                deny_list option.
+
+        Returns:
+            a CassandraGraphVectorStore.
+        """
+        store = cls(
+            embedding=embedding,
+            session=session,
+            keyspace=keyspace,
+            table_name=table_name,
+            ttl_seconds=ttl_seconds,
+            body_index_options=body_index_options,
+            metadata_deny_list=metadata_deny_list,
+            **kwargs,
+        )
+        store.add_documents(documents=documents)
+        return store
+
+    @classmethod
+    async def afrom_documents(
+        cls: Type[CGVST],
+        documents: List[Document],
+        embedding: Embeddings,
+        *,
+        session: Optional[Session] = None,
+        keyspace: Optional[str] = None,
+        table_name: str = "",
+        ttl_seconds: Optional[int] = None,
+        body_index_options: Optional[List[Tuple[str, Any]]] = None,
+        metadata_deny_list: Iterable[str] = [],
+        **kwargs: Any,
+    ) -> CGVST:
+        """Create a CassandraGraphVectorStore from a document list.
+
+        Args:
+            documents: Documents to add to the vectorstore.
+            embedding: Embedding function to use.
+            session: Cassandra driver session.
+                If not provided, it is resolved from cassio.
+            keyspace: Cassandra key space.
+                If not provided, it is resolved from cassio.
+            table_name: Cassandra table (required).
+            ttl_seconds: Optional time-to-live for the added documents.
+            body_index_options: Optional options used to create the body index.
+                Eg. body_index_options = [cassio.table.cql.STANDARD_ANALYZER]
+            metadata_deny_list: Optional list of metadata keys to not index.
+                i.e. to fine-tune which of the metadata fields are indexed.
+                Note: if you plan to have massive unique text metadata entries,
+                consider not indexing them for performance
+                (and to overcome max-length limitations).
+                Note: the `metadata_indexing` parameter from
+                langchain_community.utilities.cassandra.Cassandra is not
+                exposed since CassandraGraphVectorStore only supports the
+                deny_list option.
+
+
+        Returns:
+            a CassandraGraphVectorStore.
+        """
+        store = cls(
+            embedding=embedding,
+            session=session,
+            keyspace=keyspace,
+            table_name=table_name,
+            ttl_seconds=ttl_seconds,
+            setup_mode=SetupMode.ASYNC,
+            body_index_options=body_index_options,
+            metadata_deny_list=metadata_deny_list,
+            **kwargs,
+        )
+        await store.aadd_documents(documents=documents)
+        return store

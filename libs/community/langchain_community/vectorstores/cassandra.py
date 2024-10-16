@@ -1168,6 +1168,17 @@ class Cassandra(VectorStore):
             ttl_seconds: Optional time-to-live for the added texts.
             body_index_options: Optional options used to create the body index.
                 Eg. body_index_options = [cassio.table.cql.STANDARD_ANALYZER]
+            metadata_indexing: Optional specification of a metadata indexing policy,
+                i.e. to fine-tune which of the metadata fields are indexed.
+                It can be a string ("all" or "none"), or a 2-tuple. The following
+                means that all fields except 'f1', 'f2' ... are NOT indexed:
+                    metadata_indexing=("allowlist", ["f1", "f2", ...])
+                The following means all fields EXCEPT 'g1', 'g2', ... are indexed:
+                    metadata_indexing("denylist", ["g1", "g2", ...])
+                The default is to index every metadata field.
+                Note: if you plan to have massive unique text metadata entries,
+                consider not indexing them for performance
+                (and to overcome max-length limitations).
 
         Returns:
             a Cassandra vectorstore.
@@ -1180,6 +1191,7 @@ class Cassandra(VectorStore):
             ttl_seconds=ttl_seconds,
             body_index_options=body_index_options,
             metadata_indexing=metadata_indexing,
+            **kwargs,
         )
         store.add_texts(
             texts=texts, metadatas=metadatas, ids=ids, batch_size=batch_size
@@ -1220,6 +1232,17 @@ class Cassandra(VectorStore):
             ttl_seconds: Optional time-to-live for the added texts.
             body_index_options: Optional options used to create the body index.
                 Eg. body_index_options = [cassio.table.cql.STANDARD_ANALYZER]
+            metadata_indexing: Optional specification of a metadata indexing policy,
+                i.e. to fine-tune which of the metadata fields are indexed.
+                It can be a string ("all" or "none"), or a 2-tuple. The following
+                means that all fields except 'f1', 'f2' ... are NOT indexed:
+                    metadata_indexing=("allowlist", ["f1", "f2", ...])
+                The following means all fields EXCEPT 'g1', 'g2', ... are indexed:
+                    metadata_indexing("denylist", ["g1", "g2", ...])
+                The default is to index every metadata field.
+                Note: if you plan to have massive unique text metadata entries,
+                consider not indexing them for performance
+                (and to overcome max-length limitations).
 
         Returns:
             a Cassandra vectorstore.
@@ -1233,6 +1256,7 @@ class Cassandra(VectorStore):
             setup_mode=SetupMode.ASYNC,
             body_index_options=body_index_options,
             metadata_indexing=metadata_indexing,
+            **kwargs,
         )
         await store.aadd_texts(
             texts=texts, metadatas=metadatas, ids=ids, concurrency=concurrency
@@ -1271,6 +1295,17 @@ class Cassandra(VectorStore):
             ttl_seconds: Optional time-to-live for the added documents.
             body_index_options: Optional options used to create the body index.
                 Eg. body_index_options = [cassio.table.cql.STANDARD_ANALYZER]
+            metadata_indexing: Optional specification of a metadata indexing policy,
+                i.e. to fine-tune which of the metadata fields are indexed.
+                It can be a string ("all" or "none"), or a 2-tuple. The following
+                means that all fields except 'f1', 'f2' ... are NOT indexed:
+                    metadata_indexing=("allowlist", ["f1", "f2", ...])
+                The following means all fields EXCEPT 'g1', 'g2', ... are indexed:
+                    metadata_indexing("denylist", ["g1", "g2", ...])
+                The default is to index every metadata field.
+                Note: if you plan to have massive unique text metadata entries,
+                consider not indexing them for performance
+                (and to overcome max-length limitations).
 
         Returns:
             a Cassandra vectorstore.
@@ -1324,6 +1359,17 @@ class Cassandra(VectorStore):
             ttl_seconds: Optional time-to-live for the added documents.
             body_index_options: Optional options used to create the body index.
                 Eg. body_index_options = [cassio.table.cql.STANDARD_ANALYZER]
+            metadata_indexing: Optional specification of a metadata indexing policy,
+                i.e. to fine-tune which of the metadata fields are indexed.
+                It can be a string ("all" or "none"), or a 2-tuple. The following
+                means that all fields except 'f1', 'f2' ... are NOT indexed:
+                    metadata_indexing=("allowlist", ["f1", "f2", ...])
+                The following means all fields EXCEPT 'g1', 'g2', ... are indexed:
+                    metadata_indexing("denylist", ["g1", "g2", ...])
+                The default is to index every metadata field.
+                Note: if you plan to have massive unique text metadata entries,
+                consider not indexing them for performance
+                (and to overcome max-length limitations).
 
         Returns:
             a Cassandra vectorstore.
