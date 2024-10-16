@@ -35,23 +35,15 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -e libs/core
-          pip install -e libs/langchain
-          pip install -e libs/community
-          pip install --upgrade langchain-experimental
-          pip install -e libs//partners/anthropic
-          pip install -e libs//partners/chroma
-          pip install -e libs//partners/openai
-          pip install -e libs//partners/mistralai
-          pip install jupyter langgraph click pypdf vcrpy
+          poetry install --with dev,test
 
       - name: Pre-download tiktoken files
         run: |
-          python docs/scripts/download_tiktoken.py
+          poetry run python docs/scripts/download_tiktoken.py
 
       - name: Prepare notebooks
         run: |
-          python docs/scripts/prepare_notebooks_for_ci.py --comment-install-cells
+          poetry run python docs/scripts/prepare_notebooks_for_ci.py --comment-install-cells --working-directory ${{ github.event.inputs.working-directory || 'all' }}
 
       - name: Run notebooks
         env:
