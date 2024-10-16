@@ -101,6 +101,196 @@ class AngularTwoDimensionalEmbeddings(Embeddings):
 def _result_ids(docs: Iterable[Document]) -> List[Optional[str]]:
     return [doc.id for doc in docs]
 
+def _graph_vector_store_docs() -> list[Document]:
+    """
+    This is a set of Documents to pre-populate a graph vector g_store,
+    with entries placed in a certain way.
+
+    Space of the entries (under Euclidean similarity):
+
+                      A0    (*)
+        ....        AL   AR       <....
+        :              |              :
+        :              |  ^           :
+        v              |  .           v
+                       |   :
+       TR              |   :          BL
+    T0   --------------x--------------   B0
+       TL              |   :          BR
+                       |   :
+                       |  .
+                       | .
+                       |
+                    FL   FR
+                      F0
+
+    the query point is meant to be at (*).
+    the A are bidirectionally with B
+    the A are outgoing to T
+    the A are incoming from F
+    The links are like: L with L, 0 with 0 and R with R.
+    """
+
+    docs_a = [
+        Document(id="AL", page_content="[-1, 9]", metadata={"label": "AL"}),
+        Document(id="A0", page_content="[0, 10]", metadata={"label": "A0"}),
+        Document(id="AR", page_content="[1, 9]", metadata={"label": "AR"}),
+    ]
+    docs_b = [
+        Document(id="BL", page_content="[9, 1]", metadata={"label": "BL"}),
+        Document(id="B0", page_content="[10, 0]", metadata={"label": "B0"}),
+        Document(id="BL", page_content="[9, -1]", metadata={"label": "BR"}),
+    ]
+    docs_f = [
+        Document(id="FL", page_content="[1, -9]", metadata={"label": "FL"}),
+        Document(id="F0", page_content="[0, -10]", metadata={"label": "F0"}),
+        Document(id="FR", page_content="[-1, -9]", metadata={"label": "FR"}),
+    ]
+    docs_t = [
+        Document(id="TL", page_content="[-9, -1]", metadata={"label": "TL"}),
+        Document(id="T0", page_content="[-10, 0]", metadata={"label": "T0"}),
+        Document(id="TR", page_content="[-9, 1]", metadata={"label": "TR"}),
+    ]
+    for doc_a, suffix in zip(docs_a, ["l", "0", "r"]):
+        add_links(doc_a, Link.bidir(kind="ab_example", tag=f"tag_{suffix}"))
+        add_links(doc_a, Link.outgoing(kind="at_example", tag=f"tag_{suffix}"))
+        add_links(doc_a, Link.incoming(kind="af_example", tag=f"tag_{suffix}"))
+    for doc_b, suffix in zip(docs_b, ["l", "0", "r"]):
+        add_links(doc_b, Link.bidir(kind="ab_example", tag=f"tag_{suffix}"))
+    for doc_t, suffix in zip(docs_t, ["l", "0", "r"]):
+        add_links(doc_t, Link.incoming(kind="at_example", tag=f"tag_{suffix}"))
+    for doc_f, suffix in zip(docs_f, ["l", "0", "r"]):
+        add_links(doc_f, Link.outgoing(kind="af_example", tag=f"tag_{suffix}"))
+    return docs_a + docs_b + docs_f + docs_t
+
+
+def _get_cassandra_session(table_name: str, drop: bool = True) -> Any:
+    from cassandra.cluster import Cluster
+
+    # get db connection
+    if "CASSANDRA_CONTACT_POINTS" in os.environ:
+        contact_points = [
+            cp.strip()
+            for cp in os.environ["CASSANDRA_CONTACT_POINTS"].split(",")
+            if cp.strip()
+        ]
+    else:
+        contact_points = None
+    cluster = Cluster(contact_points)
+    session = cluster.connect()
+    # ensure keyspace exists
+    session.execute(
+        (
+            f"CREATE KEYSPACE IF NOT EXISTS {TEST_KEYSPACE} "
+            f"WITH replication = {{'class': 'SimpleStrategy', 'replication_factor': 1}}"
+        )
+    )
+    # drop table if required
+    if drop:
+        session.execute(f"DROP TABLE IF EXISTS {TEST_KEYSPACE}.{table_name}")
+
+    return session
+
+
+def _graphvectorstore_from_texts(
+    texts: List[str],
+    embedding: Embeddings,
+    metadatas: Optional[List[dict]] = None,
+    ids: Optional[List[str]] = None,
+    drop: bool = True,
+    metadata_indexing: Union[Tuple[str, Iterable[str]], str] = "all",
+    table_name: str = "graph_test_table",
+) -> CassandraGraphVectorStore:
+    session = _get_cassandra_session(table_name=table_name, drop=drop)
+    return CassandraGraphVectorStore.from_texts(
+        texts=texts,
+        embedding=embedding,
+        metadatas=metadatas,
+        ids=ids,
+        session=session,
+        keyspace=TEST_KEYSPACE,
+        table_name=table_name,
+        metadata_indexing=metadata_indexing,
+    )
+
+async def _graphvectorstore_from_texts_async(
+    texts: List[str],
+    embedding: Embeddings,
+    metadatas: Optional[List[dict]] = None,
+    ids: Optional[List[str]] = None,
+    drop: bool = True,
+    metadata_indexing: Union[Tuple[str, Iterable[str]], str] = "all",
+    table_name: str = "graph_test_table",
+) -> CassandraGraphVectorStore:
+    session = _get_cassandra_session(table_name=table_name, drop=drop)
+    return await CassandraGraphVectorStore.afrom_texts(
+        texts=texts,
+        embedding=embedding,
+        metadatas=metadatas,
+        ids=ids,
+        session=session,
+        keyspace=TEST_KEYSPACE,
+        table_name=table_name,
+        metadata_indexing=metadata_indexing,
+    )
+
+
+def _graphvectorstore_from_documents(
+    docs: List[Document],
+    embedding: Embeddings,
+    ids: Optional[List[str]] = None,
+    drop: bool = True,
+    metadata_indexing: Union[Tuple[str, Iterable[str]], str] = "all",
+    table_name: str = "graph_test_table",
+) -> CassandraGraphVectorStore:
+    session = _get_cassandra_session(table_name=table_name, drop=drop)
+    return CassandraGraphVectorStore.from_documents(
+        documents=docs,
+        ids=ids,
+        embedding=embedding,
+        session=session,
+        keyspace=TEST_KEYSPACE,
+        table_name=table_name,
+        metadata_indexing=metadata_indexing,
+    )
+
+async def _graphvectorstore_from_documents_async(
+    docs: List[Document],
+    embedding: Embeddings,
+    ids: Optional[List[str]] = None,
+    drop: bool = True,
+    metadata_indexing: Union[Tuple[str, Iterable[str]], str] = "all",
+    table_name: str = "graph_test_table",
+) -> CassandraGraphVectorStore:
+    session = _get_cassandra_session(table_name=table_name, drop=drop)
+    return await CassandraGraphVectorStore.afrom_documents(
+        documents=docs,
+        ids=ids,
+        embedding=embedding,
+        session=session,
+        keyspace=TEST_KEYSPACE,
+        table_name=table_name,
+        metadata_indexing=metadata_indexing,
+    )
+
+
+def _graph_vector_store_d2(
+    table_name: str = "graph_test_table",
+) -> CassandraGraphVectorStore:
+    session = _get_cassandra_session(table_name=table_name)
+    return CassandraGraphVectorStore(
+        embedding=_embedding_d2(),
+        session=session,
+        keyspace=TEST_KEYSPACE,
+        table_name=table_name,
+    )
+
+
+def _populated_graph_vector_store_d2() -> CassandraGraphVectorStore:
+    g_store = _graph_vector_store_d2()
+    g_store.add_documents(_graph_vector_store_docs())
+    return g_store
+
 
 def test_mmr_traversal() -> None:
     """
@@ -263,200 +453,6 @@ def test_metadata() -> None:
     }
 
 
-### NEW STUFF
-
-
-def _graph_vector_store_docs() -> list[Document]:
-    """
-    This is a set of Documents to pre-populate a graph vector g_store,
-    with entries placed in a certain way.
-
-    Space of the entries (under Euclidean similarity):
-
-                      A0    (*)
-        ....        AL   AR       <....
-        :              |              :
-        :              |  ^           :
-        v              |  .           v
-                       |   :
-       TR              |   :          BL
-    T0   --------------x--------------   B0
-       TL              |   :          BR
-                       |   :
-                       |  .
-                       | .
-                       |
-                    FL   FR
-                      F0
-
-    the query point is meant to be at (*).
-    the A are bidirectionally with B
-    the A are outgoing to T
-    the A are incoming from F
-    The links are like: L with L, 0 with 0 and R with R.
-    """
-
-    docs_a = [
-        Document(id="AL", page_content="[-1, 9]", metadata={"label": "AL"}),
-        Document(id="A0", page_content="[0, 10]", metadata={"label": "A0"}),
-        Document(id="AR", page_content="[1, 9]", metadata={"label": "AR"}),
-    ]
-    docs_b = [
-        Document(id="BL", page_content="[9, 1]", metadata={"label": "BL"}),
-        Document(id="B0", page_content="[10, 0]", metadata={"label": "B0"}),
-        Document(id="BL", page_content="[9, -1]", metadata={"label": "BR"}),
-    ]
-    docs_f = [
-        Document(id="FL", page_content="[1, -9]", metadata={"label": "FL"}),
-        Document(id="F0", page_content="[0, -10]", metadata={"label": "F0"}),
-        Document(id="FR", page_content="[-1, -9]", metadata={"label": "FR"}),
-    ]
-    docs_t = [
-        Document(id="TL", page_content="[-9, -1]", metadata={"label": "TL"}),
-        Document(id="T0", page_content="[-10, 0]", metadata={"label": "T0"}),
-        Document(id="TR", page_content="[-9, 1]", metadata={"label": "TR"}),
-    ]
-    for doc_a, suffix in zip(docs_a, ["l", "0", "r"]):
-        add_links(doc_a, Link.bidir(kind="ab_example", tag=f"tag_{suffix}"))
-        add_links(doc_a, Link.outgoing(kind="at_example", tag=f"tag_{suffix}"))
-        add_links(doc_a, Link.incoming(kind="af_example", tag=f"tag_{suffix}"))
-    for doc_b, suffix in zip(docs_b, ["l", "0", "r"]):
-        add_links(doc_b, Link.bidir(kind="ab_example", tag=f"tag_{suffix}"))
-    for doc_t, suffix in zip(docs_t, ["l", "0", "r"]):
-        add_links(doc_t, Link.incoming(kind="at_example", tag=f"tag_{suffix}"))
-    for doc_f, suffix in zip(docs_f, ["l", "0", "r"]):
-        add_links(doc_f, Link.outgoing(kind="af_example", tag=f"tag_{suffix}"))
-    return docs_a + docs_b + docs_f + docs_t
-
-
-def _get_cassandra_session(table_name: str, drop: bool = True) -> Any:
-    from cassandra.cluster import Cluster
-
-    # get db connection
-    if "CASSANDRA_CONTACT_POINTS" in os.environ:
-        contact_points = [
-            cp.strip()
-            for cp in os.environ["CASSANDRA_CONTACT_POINTS"].split(",")
-            if cp.strip()
-        ]
-    else:
-        contact_points = None
-    cluster = Cluster(contact_points)
-    session = cluster.connect()
-    # ensure keyspace exists
-    session.execute(
-        (
-            f"CREATE KEYSPACE IF NOT EXISTS {TEST_KEYSPACE} "
-            f"WITH replication = {{'class': 'SimpleStrategy', 'replication_factor': 1}}"
-        )
-    )
-    # drop table if required
-    if drop:
-        session.execute(f"DROP TABLE IF EXISTS {TEST_KEYSPACE}.{table_name}")
-
-    return session
-
-
-def _graphvectorstore_from_texts(
-    texts: List[str],
-    embedding: Embeddings,
-    metadatas: Optional[List[dict]] = None,
-    ids: Optional[List[str]] = None,
-    drop: bool = True,
-    metadata_indexing: Union[Tuple[str, Iterable[str]], str] = "all",
-    table_name: str = "graph_test_table",
-) -> CassandraGraphVectorStore:
-    session = _get_cassandra_session(table_name=table_name, drop=drop)
-    return CassandraGraphVectorStore.from_texts(
-        texts=texts,
-        embedding=embedding,
-        metadatas=metadatas,
-        ids=ids,
-        session=session,
-        keyspace=TEST_KEYSPACE,
-        table_name=table_name,
-        metadata_indexing=metadata_indexing,
-    )
-
-
-async def _graphvectorstore_from_texts_async(
-    texts: List[str],
-    embedding: Embeddings,
-    metadatas: Optional[List[dict]] = None,
-    ids: Optional[List[str]] = None,
-    drop: bool = True,
-    metadata_indexing: Union[Tuple[str, Iterable[str]], str] = "all",
-    table_name: str = "graph_test_table",
-) -> CassandraGraphVectorStore:
-    session = _get_cassandra_session(table_name=table_name, drop=drop)
-    return await CassandraGraphVectorStore.afrom_texts(
-        texts=texts,
-        embedding=embedding,
-        metadatas=metadatas,
-        ids=ids,
-        session=session,
-        keyspace=TEST_KEYSPACE,
-        table_name=table_name,
-        metadata_indexing=metadata_indexing,
-    )
-
-
-def _graphvectorstore_from_documents(
-    docs: List[Document],
-    embedding: Embeddings,
-    ids: Optional[List[str]] = None,
-    drop: bool = True,
-    metadata_indexing: Union[Tuple[str, Iterable[str]], str] = "all",
-    table_name: str = "graph_test_table",
-) -> CassandraGraphVectorStore:
-    session = _get_cassandra_session(table_name=table_name, drop=drop)
-    return CassandraGraphVectorStore.from_documents(
-        documents=docs,
-        ids=ids,
-        embedding=embedding,
-        session=session,
-        keyspace=TEST_KEYSPACE,
-        table_name=table_name,
-        metadata_indexing=metadata_indexing,
-    )
-
-
-async def _graphvectorstore_from_documents_async(
-    docs: List[Document],
-    embedding: Embeddings,
-    ids: Optional[List[str]] = None,
-    drop: bool = True,
-    metadata_indexing: Union[Tuple[str, Iterable[str]], str] = "all",
-    table_name: str = "graph_test_table",
-) -> CassandraGraphVectorStore:
-    session = _get_cassandra_session(table_name=table_name, drop=drop)
-    return await CassandraGraphVectorStore.afrom_documents(
-        documents=docs,
-        ids=ids,
-        embedding=embedding,
-        session=session,
-        keyspace=TEST_KEYSPACE,
-        table_name=table_name,
-        metadata_indexing=metadata_indexing,
-    )
-
-
-def _graph_vector_store_d2(
-    table_name: str = "graph_test_table",
-) -> CassandraGraphVectorStore:
-    session = _get_cassandra_session(table_name=table_name)
-    return CassandraGraphVectorStore(
-        embedding=_embedding_d2(),
-        session=session,
-        keyspace=TEST_KEYSPACE,
-        table_name=table_name,
-    )
-
-
-def _populated_graph_vector_store_d2() -> CassandraGraphVectorStore:
-    g_store = _graph_vector_store_d2()
-    g_store.add_documents(_graph_vector_store_docs())
-    return g_store
 
 
 def test_gvs_similarity_search_sync() -> None:
