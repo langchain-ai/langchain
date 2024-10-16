@@ -134,7 +134,9 @@ def process_notebooks(
 
                 notebook_path = os.path.join(root, file)
                 # Filter notebooks based on the working_directory input
-                if working_directory != "all" and not notebook_path.startswith(working_directory):
+                if working_directory != "all" and not notebook_path.startswith(
+                    working_directory
+                ):
                     continue
 
                 try:
