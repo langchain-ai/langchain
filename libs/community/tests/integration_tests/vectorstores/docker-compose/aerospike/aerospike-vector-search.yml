@@ -3,15 +3,14 @@ cluster:
   # Unique identifier for this cluster.
   cluster-name: aerospike-vector
 
-# The Proximus service listening ports, TLS and network interface.
+# The AVS service listening ports, TLS and network interface.
 service:
   ports:
-    5002: {}
-  # Uncomment for local debugging
-  advertised-listeners:
-    default:
-      address: 127.0.0.1
-      port: 5002
+    5002:
+      advertised-listeners:
+        default:
+          address: 127.0.0.1
+          port: 5002
 
 # Management API listening ports, TLS and network interface.
 manage:
@@ -24,7 +23,7 @@ interconnect:
     5001: {}
 
 # Target Aerospike cluster
-aerospike:
+storage:
   seeds:
     - aerospike:
         port: 3000
@@ -32,5 +31,6 @@ aerospike:
 # The logging properties.
 logging:
   enable-console-logging: true
+  file: "/etc/aerospike-vector-search/avs.log"
   levels:
-    metrics-ticker: off
+    metrics-ticker: info
