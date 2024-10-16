@@ -260,9 +260,8 @@ class ChatOutlines(BaseChatModel):
             self.json_schema,
             self.grammar,
         ]
-        print("constraints", constraints)
+
         num_constraints = sum(constraint is not None for constraint in constraints)
-        print("num_constraints", num_constraints)
         if num_constraints != 1 and num_constraints != 0:
             raise ValueError(
                 "Either none or exactly one of regex, type_constraints, "
