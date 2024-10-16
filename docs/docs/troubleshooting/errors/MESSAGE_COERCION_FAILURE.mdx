@@ -1,0 +1,33 @@
+# MESSAGE_COERCION_FAILURE
+
+Several modules in LangChain take [`MessageLike`](https://api.js.langchain.com/types/_langchain_core.messages.BaseMessageLike.html)
+objects in place of formal [`BaseMessage`](/docs/concepts#message-types) classes. These include OpenAI style message objects (`{ role: "user", content: "Hello world!" }`),
+tuples, and plain strings (which are converted to [`HumanMessages`](/docs/concepts#humanmessage)).
+
+If one of these modules receives a value outside of one of these formats, you will receive an error like the following:
+
+```ts
+const badlyFormattedMessageObject = {
+  role: "foo",
+  randomNonContentValue: "bar",
+};
+
+await model.invoke([badlyFormattedMessageObject]);
+```
+
+```
+Error: Unable to coerce message from array: only human, AI, system, or tool message coercion is currently supported.
+
+Received: {
+  "role": "foo",
+  "randomNonContentValue": "bar",
+}
+```
+
+## Troubleshooting
+
+The following may help resolve this error:
+
+- Ensure that all inputs to chat models are an array of LangChain message classes or a supported message-like.
+  - Check that there is no stringification or other unexpected transformation occuring.
+- Check the error's stack trace and add log or debugger statements.
