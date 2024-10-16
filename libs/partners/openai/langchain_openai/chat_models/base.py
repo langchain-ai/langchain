@@ -106,11 +106,9 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     Returns:
         The LangChain message.
     """
-    role = _dict.get("role")
+    role = _dict.get("role", "assistant") # default role is assistant, if not provided
     name = _dict.get("name")
     id_ = _dict.get("id")
-    if not role:
-        raise ValueError("Got a message which has a `null` as role")
     if role == "user":
         return HumanMessage(content=_dict.get("content", ""), id=id_, name=name)
     elif role == "assistant":
