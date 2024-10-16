@@ -236,6 +236,53 @@ class SQLDatabase:
         return cls.from_uri(database_uri=uri, engine_args=engine_args, **kwargs)
 
     @classmethod
+    def from_snowflake(
+        cls,
+        user: str,
+        account: str,
+        auth_type: Optional[str],
+        database: Optional[str],
+        schema: Optional[str],
+        warehouse: Optional[str],
+        role: Optional[str],
+        password: Optional[str] = None,
+        private_key_bytes: Optional[str] = None,
+        engine_args: Optional[dict] = None,
+        **kwargs: Any,
+    ) -> SQLDatabase:
+        """
+        Class method to create an SQLDatabase instance from a Snowflake connection.
+        This method requires the 'snowflake-sqlalchemy' package. If not installed,
+        it can be added using `pip install snowflake-sqlalchemy`.
+
+        Args:
+            user (str): The username for connecting to the Snowflake database.
+            schema (Optional[str]): The schema name in the catalog.
+            warehouse (Optional[str]): The warehouse in the Snowflake SQL. If
+                provided, the method configures the connection to use this warehouse.
+            engine_args (Optional[dict]): The arguments to be used when connecting
+                Snowflake. Defaults to None.
+            **kwargs (Any): Additional keyword arguments for the `from_uri` method.
+
+        Returns:
+            SQLDatabase: An instance of SQLDatabase configured with the provided
+                Snowflake connection details.
+
+        Raises:
+            ValueError: If 'snowflake-sqlalchemy' is not found
+        """
+        try:
+            from snowflake.sqlalchemy import URL  # noqa: F401
+        except ImportError:
+            raise ImportError(
+                "snowflake-sqlalchemy package not found, please install with"
+                " `pip install snowflake-sqlalchemy`"
+            )
+        context = None
+        uri = ()
+        return cls.from_uri(database_uri=uri, engine_args=engine_args, **kwargs)
+
+    @classmethod
     def from_cnosdb(
         cls,
         url: str = "127.0.0.1:8902",
