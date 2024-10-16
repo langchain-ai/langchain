@@ -21,6 +21,7 @@ import yaml
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from typing_extensions import Self, override
 
+from langchain_core.errors import InvalidPromptInputError
 from langchain_core.load import dumpd
 from langchain_core.output_parsers.base import BaseOutputParser
 from langchain_core.prompt_values import (
@@ -51,7 +52,9 @@ class BasePromptTemplate(
     """optional_variables: A list of the names of the variables for placeholder
        or MessagePlaceholder that are optional. These variables are auto inferred
        from the prompt and user need not provide them."""
-    input_types: typing.Dict[str, Any] = Field(default_factory=dict, exclude=True)  # noqa: UP006
+    input_types: typing.Dict[str, Any] = Field(
+        default_factory=dict, exclude=True
+    )  # noqa: UP006
     """A dictionary of the types of the variables the prompt template expects.
     If not provided, all variables are assumed to be strings."""
     output_parser: Optional[BaseOutputParser] = None
@@ -162,7 +165,7 @@ class BasePromptTemplate(
                 " and not a variable, please escape it with double curly braces like: "
                 f"'{{{{{example_key}}}}}'."
             )
-            raise KeyError(msg)
+            raise InvalidPromptInputError(msg)
         return inner_input
 
     def _format_prompt_with_error_handling(self, inner_input: dict) -> PromptValue:
