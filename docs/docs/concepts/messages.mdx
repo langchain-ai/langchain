@@ -1,16 +1,144 @@
 # Messages
 
 :::info Pre-requisites
-
 - [Chat Models](/docs/concepts/chat_models)
 :::
 
-Modern LLMs and use a message-based system to communicate with the outside world. This system allows for more flexibility and extensibility than the older callback-based system. Messages are objects that contain information about the input and output of a model, and can be passed between components in a LangChain pipeline.
+Modern LLMs are typically exposed to users via a [Chat Model interface](/docs/concepts/chat_models). These models process sequences of [messages](/docs/concepts/messages) as input and output messages.
+
+## Overview
+
+While the exact message format varies between different chat model providers, generally messages have the following properties ()
+
+| **Field**    | **Description**                                                                                                                                   |
+|--------------|---------------------------------------------------------------------------------------------------------------------------------------------------|
+| **ID**       | An optional unique identifier for the message.                                                                                                    |
+| **Role**     | This is a message type (e.g., "system", "human", "assistant", "tool") and can be thought of as identifying the entity that generated the message. |
+| **Content**  | The content of the message, which can be text or multimodal data (e.g., images, audio, video).                                                    |
+| **Metadata** | Additional information about the message, such as timestamps, message type, token usage, etc.                                                     |
+| **Name**     | An optional `name` property which allows differentiate between different entities with the same role. Not all models support this!                |
+
+
+LangChain provides a unified message format that can be used across all chat models, allowing users
+to work with different chat models without having to worry about the specific message format used by each model provider.
 
 ## LangChain Message Format
 
+In LangChain messages are represented as Python objects that subclass from a [BaseMessage](https://python.langchain.com/api_reference/core/messages/langchain_core.messages.base.BaseMessage.html).
+
+Each **role** is associated with a specific message type. The **assistant** role has an additional
+message type called `AIMessageChunk` which is used for [streaming](/docs/concepts/streaming) responses from the model.
+
+| **Message Type**                                    | **Corresponding Role** | **Description**                                                                                                                 |
+|-----------------------------------------------------|------------------------|---------------------------------------------------------------------------------------------------------------------------------|
+| [SystemMessage](#systemmessage)                     | **system**             | Used to prime the behavior of the AI model, typically passed as the first message in a sequence to set instructions or context. |
+| [HumanMessage](#humanmessage)                       | **human**              | Represents input from a user interacting with the model, usually in the form of text or other interactive input.                |
+| [AIMessage](#aimessage)                             | **assistant**          | Represents a response from the model, which can include text or a request to invoke external tools or functions.                |
+| [AIMessageChunk](#aimessagechunk)                   | **assistant**          | A variant of the `AIMessage` type, used specifically for streaming responses from the model.                                    |
+| [ToolMessage](#toolmessage)                         | **tool**               | A message used to pass the results of a tool invocation back to the model after external data or processing has been retrieved. |
+| [FunctionMessage](#legacy-functionmessage) (legacy) | **function**           | Previously used to match OpenAI's API for tool invocation, now deprecated.                                                      |
+
+#### HumanMessage
+
+This represents a message with role "user".
+
+#### AIMessage
+
+This represents a message with role "assistant". In addition to the `content` property, these messages also have:
+
+**`response_metadata`**
+
+The `response_metadata` property contains additional metadata about the response. The data here is often specific to each model provider.
+This is where information like log-probs and token usage may be stored.
+
+**`tool_calls`**
+
+These represent a decision from a language model to call a tool. They are included as part of an `AIMessage` output.
+They can be accessed from there with the `.tool_calls` property.
+
+This property returns a list of `ToolCall`s. A `ToolCall` is a dictionary with the following arguments:
+
+- `name`: The name of the tool that should be called.
+- `args`: The arguments to that tool.
+- `id`: The id of that tool call.
+
+#### SystemMessage
+
+This represents a message with role "system", which tells the model how to behave. Not every model provider supports this.
+
+#### ToolMessage
+
+This represents a message with role "tool", which contains the result of calling a tool. In addition to `role` and `content`, this message has:
+
+- a `tool_call_id` field which conveys the id of the call to the tool that was called to produce this result.
+- an `artifact` field which can be used to pass along arbitrary artifacts of the tool execution which are useful to track but which should not be sent to the model.
+
+With most chat models, a `ToolMessage` can only appear in the chat history after an `AIMessage` that has a populated `tool_calls` field.
+
+#### (Legacy) FunctionMessage
+
+This is a legacy message type, corresponding to OpenAI's legacy function-calling API. `ToolMessage` should be used instead to correspond to the updated tool-calling API.
+
+This represents the result of a function call. In addition to `role` and `content`, this message has a `name` parameter which conveys the name of the function that was called to produce this result.
+                                                                                                               |
 
 
+Optionally, messages can have a `name` property which allows for differentiating between multiple speakers with the same role.
+For example, if there are two users in the chat history it can be useful to differentiate between them. Not all models support this.
+
+#### HumanMessage
+
+This represents a message with role "user".
+
+#### AIMessage
+
+This represents a message with role "assistant". In addition to the `content` property, these messages also have:
+
+**`response_metadata`**
+
+The `response_metadata` property contains additional metadata about the response. The data here is often specific to each model provider.
+This is where information like log-probs and token usage may be stored.
+
+**`tool_calls`**
+
+These represent a decision from a language model to call a tool. They are included as part of an `AIMessage` output.
+They can be accessed from there with the `.tool_calls` property.
+
+This property returns a list of `ToolCall`s. A `ToolCall` is a dictionary with the following arguments:
+
+- `name`: The name of the tool that should be called.
+- `args`: The arguments to that tool.
+- `id`: The id of that tool call.
+
+#### SystemMessage
+
+This represents a message with role "system", which tells the model how to behave. Not every model provider supports this.
+
+#### ToolMessage
+
+This represents a message with role "tool", which contains the result of calling a tool. In addition to `role` and `content`, this message has:
+
+- a `tool_call_id` field which conveys the id of the call to the tool that was called to produce this result.
+- an `artifact` field which can be used to pass along arbitrary artifacts of the tool execution which are useful to track but which should not be sent to the model.
+
+With most chat models, a `ToolMessage` can only appear in the chat history after an `AIMessage` that has a populated `tool_calls` field.
+
+#### (Legacy) FunctionMessage
+
+This is a legacy message type, corresponding to OpenAI's legacy function-calling API. `ToolMessage` should be used instead to correspond to the updated tool-calling API.
+
+This represents the result of a function call. In addition to `role` and `content`, this message has a `name` parameter which conveys the name of the function that was called to produce this result.
+
+
+
+## LangChain Messages
+
+LangChain provides a unified message format that can be used across all chat models. The message format in LangChain is designed to be flexible and extensible, allowing users to work with different chat models without having to worry about the specific message format used by each model provider.
+
+Different chat model providers have different conventions for how messages are formatted. LangChain provides a unified message format that can be used across all chat models.
+
+
+## LangChain Message Format
 
 
 ## HumanMessage
