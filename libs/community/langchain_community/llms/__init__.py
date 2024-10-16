@@ -476,6 +476,12 @@ def _import_pipelineai() -> Type[BaseLLM]:
     return PipelineAI
 
 
+def _import_pipeshift() -> Type[BaseLLM]:
+    from langchain_community.llms.pipeshift import Pipeshift
+
+    return Pipeshift
+
+
 def _import_predibase() -> Type[BaseLLM]:
     from langchain_community.llms.predibase import Predibase
 
@@ -807,6 +813,8 @@ def __getattr__(name: str) -> Any:
         return _import_petals()
     elif name == "PipelineAI":
         return _import_pipelineai()
+    elif name == "Pipeshift":
+        return _import_pipeshift()
     elif name == "Predibase":
         return _import_predibase()
     elif name == "PredictionGuard":
@@ -949,6 +957,7 @@ __all__ = [
     "PaiEasEndpoint",
     "Petals",
     "PipelineAI",
+    "Pipeshift",
     "Predibase",
     "PredictionGuard",
     "PromptLayerOpenAI",
@@ -1049,6 +1058,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "pai_eas_endpoint": _import_pai_eas_endpoint,
         "petals": _import_petals,
         "pipelineai": _import_pipelineai,
+        "pipeshift": _import_pipeshift,
         "predibase": _import_predibase,
         "opaqueprompts": _import_opaqueprompts,
         "replicate": _import_replicate,
