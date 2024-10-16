@@ -65,6 +65,18 @@ jobs:
         with:
           repository: langchain-ai/langchain-experimental
           path: langchain-experimental
+      - uses: actions/checkout@v4
+        with:
+          repository: langchain-ai/langchain-milvus
+          path: langchain-milvus
+      - uses: actions/checkout@v4
+        with:
+          repository: langchain-ai/langchain-unstructured
+          path: langchain-unstructured
+      - uses: actions/checkout@v4
+        with:
+          repository: langchain-ai/langchain-databricks
+          path: langchain-databricks
 
 
       - name: Set Git config
@@ -73,7 +85,7 @@ jobs:
           git config --local user.email "actions@github.com"
           git config --local user.name "Github Actions"
           
-      - name: Move google libs
+      - name: Move libs
         run: |
           rm -rf \
             langchain/libs/partners/google-genai \
@@ -87,12 +99,15 @@ jobs:
             langchain/libs/partners/ai21 \
             langchain/libs/partners/together \
             langchain/libs/standard-tests \
-            langchain/libs/experimental
+            langchain/libs/experimental \
+            langchain/libs/partners/milvus \
+            langchain/libs/partners/unstructured \
+            langchain/libs/databricks
           mv langchain-google/libs/genai langchain/libs/partners/google-genai
           mv langchain-google/libs/vertexai langchain/libs/partners/google-vertexai
           mv langchain-google/libs/community langchain/libs/partners/google-community
-          # mv langchain-datastax/libs/astradb langchain/libs/partners/astradb
-          # mv langchain-nvidia/libs/ai-endpoints langchain/libs/partners/nvidia-ai-endpoints
+          mv langchain-datastax/libs/astradb langchain/libs/partners/astradb
+          mv langchain-nvidia/libs/ai-endpoints langchain/libs/partners/nvidia-ai-endpoints
           mv langchain-cohere/libs/cohere langchain/libs/partners/cohere
           mv langchain-elastic/libs/elasticsearch langchain/libs/partners/elasticsearch
           mv langchain-postgres langchain/libs/partners/postgres
@@ -101,6 +116,9 @@ jobs:
           mv langchain-ai21/libs/ai21 langchain/libs/partners/ai21
           mv langchain-together/libs/together langchain/libs/partners/together
           mv langchain-experimental/libs/experimental langchain/libs/experimental
+          mv langchain-milvus/libs/milvus langchain/libs/partners/milvus
+          mv langchain-unstructured/libs/unstructured langchain/libs/partners/unstructured
+          mv langchain-databricks/libs/databricks langchain/libs/partners/databricks
 
       - name: Rm old html
         run:
