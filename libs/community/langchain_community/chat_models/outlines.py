@@ -59,7 +59,7 @@ class ChatOutlines(BaseChatModel):
     max_tokens: int = 256
     """The maximum number of tokens to generate."""
 
-    stop: Optional[List[str]] = Field(None, alias="stop_at")
+    stop: Optional[List[str]] = None
     """A list of strings to stop generation when encountered."""
 
     streaming: bool = True
@@ -146,7 +146,7 @@ class ChatOutlines(BaseChatModel):
         model_kwargs = {"temperature": 0.8, "seed": 42}
     """
 
-    @pre_init()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that outlines is installed and create a model instance."""
         try:
@@ -283,7 +283,7 @@ class ChatOutlines(BaseChatModel):
         """Convert a list of messages to a single prompt."""
         if hasattr(self.tokenizer, "apply_chat_template"):
             return self.tokenizer.apply_chat_template(
-                messages, self.tools, self.documents
+                messages, tokenize=False, add_generation_prompt=True
             )
         if self.backend == "llamacpp":  # get base_model_name from gguf repo_id
             from huggingface_hub import ModelCard
@@ -303,8 +303,8 @@ class ChatOutlines(BaseChatModel):
 
         return AutoTokenizer.from_pretrained(model_name).apply_chat_template(
             self._convert_messages_to_openai_format(messages),
-            self.tools,
-            self.documents,
+            tokenize=False,
+            add_generation_prompt=True,
         )
 
     def bind_tools(
@@ -374,6 +374,7 @@ class ChatOutlines(BaseChatModel):
             params["stop_at"] = stop
 
         prompt = self._convert_messages_to_prompt(messages)
+        # todo maybe stop = return assistant token mask
 
         response = ""
         if self.streaming:
