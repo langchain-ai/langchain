@@ -350,7 +350,8 @@ class ChatSparkLLM(BaseChatModel):
         )
         return values
 
-    # When using Pydantic V2, the execution order of multiple @model_validator decorators is opposite to
+    # When using Pydantic V2
+    # The execution order of multiple @model_validator decorators is opposite to
     # their declaration order. https://github.com/pydantic/pydantic/discussions/7434
 
     @model_validator(mode="before")
