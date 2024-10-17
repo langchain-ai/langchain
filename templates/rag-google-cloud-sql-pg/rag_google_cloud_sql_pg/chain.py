@@ -22,7 +22,7 @@ from pydantic import RootModel
 
 # This sample requires a vector store table
 # Create this table using `PostgresEngine` method `init_vectorstore_table()`
-# Learn more about setting up an `PostgresVectorStorec` at
+# Learn more about setting up an `PostgresVectorStore` at
 # https://github.com/googleapis/langchain-google-cloud-sql-pg-python/blob/main/docs/vector_store.ipynb
 
 
@@ -31,6 +31,7 @@ def get_env_var(key: str, desc: str) -> str:
     if v is None:
         raise ValueError(f"Must set env var {key} to: {desc}")
     return v
+
 
 PROJECT_ID = get_env_var("PROJECT_ID", "project id for google cloud")
 REGION = get_env_var("REGION", "region for Cloud SQL instance")

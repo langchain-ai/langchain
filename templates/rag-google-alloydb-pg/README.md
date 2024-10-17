@@ -1,29 +1,29 @@
 # RAG - Google AlloyDB for PostgreSQL
 
 This template performs RAG using `AlloyDB for PostgreSQL` and `VertexAI`.
-Learn more about the methods used in this template from [AlloyDB for PostgreSQL for LangChain](https://github.com/googleapis/langchain-google-alloydb-pg-python/blob/main/README.rst)
+Learn more about the methods used in this template from [AlloyDB for PostgreSQL for LangChain](https://github.com/googleapis/langchain-google-alloydb-pg-python).
 
 ## Environment Setup
 
-To run this template, you will need to setup an AlloyDB instance and store vectors into a database. Learn more about initializing an `AlloyDBVectorStore` from the [Google AlloyDB Vector Store Getting Started](https://github.com/googleapis/langchain-google-alloydb-pg-python/blob/main/docs/vector_store.ipynb)
+To run this template, you will need to setup an AlloyDB instance and store vectors into the database. Learn more about initializing an `AlloyDBVectorStore` from the [Google AlloyDB Vector Store Getting Started](https://github.com/googleapis/langchain-google-alloydb-pg-python/blob/main/docs/vector_store.ipynb).
 
-Set these environments to run the template
-  * `PROJECT_ID`
-  * `REGION`
-  * `CLUSTER_ID`
-  * `INSTANCE_ID`
-  * `DATABASE_ID`
-  * `TABLE_NAME`
-  * `DB_USER`
-  * `DB_PASSWORD`
+* Set these environments to run the template:
+    * `PROJECT_ID`
+    * `REGION`
+    * `CLUSTER_ID`
+    * `INSTANCE_ID`
+    * `DATABASE_ID`
+    * `TABLE_NAME`
+    * `DB_USER`
+    * `DB_PASSWORD`
 
-This uses public IP is required for local testing but not required when deployed to Google Cloud VPC network.
+* This template uses public IP address to connect to the AlloyDB database. A public IP address is required for local testing, but not required when deployed into a Google Cloud VPC network. Learn how to customize the IP address type for the [`AlloyDBEngine`](https://cloud.google.com/python/docs/reference/langchain-google-alloydb-pg/latest/langchain_google_alloydb_pg.engine.AlloyDBEngine).
 
-This template needs a user and password to access Postgres. Use these to create a new user and grant DB priviledges.
-[Add an IAM user or service account to a database instance](https://cloud.google.com/alloydb/docs/manage-iam-authn#create-user) and
-[grant database privileges to the IAM user](https://cloud.google.com/alloydb/docs/manage-iam-authn#grant-privileges).
+* This template uses [built-in database authentication](https://cloud.google.com/alloydb/docs/database-users/about) via a username and a password to quickly authenticate local database users. It is recommend to use IAM database authentication via local user or service account credentials. Learn how to customize the service account for the [`AlloyDBEngine`](https://cloud.google.com/python/docs/reference/langchain-google-alloydb-pg/latest/langchain_google_alloydb_pg.engine.AlloyDBEngine). Next, add this account as a new database user and grant privileges:
+  * [Add an IAM user or service account to a cluster](https://cloud.google.com/alloydb/docs/manage-iam-authn#create-user).
+  * [Grant appropriate database permissions to IAM users](https://cloud.google.com/alloydb/docs/manage-iam-authn#grant-privileges).
 
-Make sure you have authorized access for Google Cloud with your credentials. For more information on this, take a look at [Gcloud Auth Login](https://cloud.google.com/sdk/gcloud/reference/auth/login)
+* To run this template locally, make sure you have set up [Application Default Credentials](https://cloud.google.com/docs/authentication/provide-credentials-adc) in your environment.
 
 ## Usage
 

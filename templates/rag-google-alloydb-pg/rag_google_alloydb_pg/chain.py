@@ -32,6 +32,7 @@ def get_env_var(key: str, desc: str) -> str:
         raise ValueError(f"Must set env var {key} to: {desc}")
     return v
 
+
 PROJECT_ID = get_env_var("PROJECT_ID", "project id for google cloud")
 REGION = get_env_var("REGION", "region for AlloyDB instance")
 CLUSTER = get_env_var("CLUSTER_ID", "cluster for AlloyDB")
