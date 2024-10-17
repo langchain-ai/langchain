@@ -949,3 +949,21 @@ async def test_json_mode_async() -> None:
     assert isinstance(full, AIMessageChunk)
     assert isinstance(full.content, str)
     assert json.loads(full.content) == {"a": 1}
+
+
+def test_audio_output_modality() -> None:
+    llm = ChatOpenAI(
+        model="gpt-4o-audio-preview",
+        temperature=0,
+        modalities=["text", "audio"],
+        audio={
+            "voice": "alloy",
+            "format": "wav",
+        },
+    )
+
+    output = llm.invoke("Make me an audio clip of you yelling")
+
+    assert isinstance(output, AIMessage)
+    assert isinstance(output.content, list)
+    assert len(output.content) > 0
