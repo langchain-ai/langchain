@@ -28,6 +28,7 @@ from langchain_community.tools.ddg_search.tool import DuckDuckGoSearchRun
 from langchain_community.tools.eleven_labs.text2speech import ElevenLabsText2SpeechTool
 from langchain_community.tools.file_management import ReadFileTool
 from langchain_community.tools.golden_query.tool import GoldenQueryRun
+from langchain_community.tools.google_books.tool import GoogleBooksQueryRun
 from langchain_community.tools.google_cloud.texttospeech import (
     GoogleCloudTextToSpeechTool,
 )
@@ -77,6 +78,7 @@ from langchain_community.utilities.dalle_image_generator import DallEAPIWrapper
 from langchain_community.utilities.dataforseo_api_search import DataForSeoAPIWrapper
 from langchain_community.utilities.duckduckgo_search import DuckDuckGoSearchAPIWrapper
 from langchain_community.utilities.golden_query import GoldenQueryAPIWrapper
+from langchain_community.utilities.google_books import GoogleBooksAPIWrapper
 from langchain_community.utilities.google_finance import GoogleFinanceAPIWrapper
 from langchain_community.utilities.google_jobs import GoogleJobsAPIWrapper
 from langchain_community.utilities.google_lens import GoogleLensAPIWrapper
@@ -333,6 +335,10 @@ def _get_pubmed(**kwargs: Any) -> BaseTool:
     return PubmedQueryRun(api_wrapper=PubMedAPIWrapper(**kwargs))
 
 
+def _get_google_books(**kwargs: Any) -> BaseTool:
+    return GoogleBooksQueryRun(api_wrapper=GoogleBooksAPIWrapper(**kwargs))
+
+
 def _get_google_jobs(**kwargs: Any) -> BaseTool:
     return GoogleJobsQueryRun(api_wrapper=GoogleJobsAPIWrapper(**kwargs))
 
@@ -490,6 +496,7 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
     "bing-search": (_get_bing_search, ["bing_subscription_key", "bing_search_url"]),
     "metaphor-search": (_get_metaphor_search, ["metaphor_api_key"]),
     "ddg-search": (_get_ddg_search, []),
+    "google-books": (_get_google_books, ["google_books_api_key"]),
     "google-lens": (_get_google_lens, ["serp_api_key"]),
     "google-serper": (_get_google_serper, ["serper_api_key", "aiosession"]),
     "google-scholar": (
