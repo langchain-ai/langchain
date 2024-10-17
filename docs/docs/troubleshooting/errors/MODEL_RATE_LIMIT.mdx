@@ -10,5 +10,4 @@ The following may help resolve this error:
 - Contact your model provider and ask for a rate limit increase.
 - If many of your incoming requests are the same, utilize [model response caching](/docs/how_to/chat_model_caching/).
 - Spread requests across different providers if your application allows it.
-- Set a higher number of [max retries](https://api.js.langchain.com/interfaces/_langchain_core.language_models_base.BaseLanguageModelParams.html#maxRetries) when initializing your model.
-  LangChain will use an exponential backoff strategy for requests that fail in this way, so the retry may occur when your limits have reset.
+- Use a [`rate_limiter`](/docs/how_to/chat_model_rate_limiting/) to control the rate of requests to the model.
