@@ -811,6 +811,10 @@ class OpenSearchVectorSearch(VectorStore):
         Raises:
             Exception: If an error occurs
         """
+
+        if not pipeline_name.isidentifier():
+            raise ValueError(f"Invalid pipeline name: {pipeline_name}")
+        
         path = f"/_search/pipeline/{pipeline_name}"
 
         payload = {
@@ -853,6 +857,8 @@ class OpenSearchVectorSearch(VectorStore):
             >>> search_pipeline_exists("my_pipeline_2")
             False
         """
+        if not pipeline_name.isidentifier():
+            raise ValueError(f"Invalid pipeline name: {pipeline_name}")
         
         existed_pipelines = self.client.transport.perform_request(
             method="GET", url=f"/_search/pipeline/"
@@ -894,6 +900,9 @@ class OpenSearchVectorSearch(VectorStore):
             >>> get_search_pipeline_info("my_pipeline_2")
             None
         """
+        if not pipeline_name.isidentifier():
+            raise ValueError(f"Invalid pipeline name: {pipeline_name}")
+        
         response = None
         
         response = self.client.transport.perform_request(
