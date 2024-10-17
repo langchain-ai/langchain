@@ -30,7 +30,7 @@ from langchain_core.language_models.chat_models import (
     generate_from_stream,
 )
 from langchain_core.messages import AnyMessage, BaseMessage
-from langchain_core.runnables import Runnable, RunnableConfig
+from langchain_core.runnables import Runnable, RunnableConfig, ensure_config
 from langchain_core.runnables.schema import StreamEvent
 from langchain_core.tools import BaseTool
 from langchain_core.tracers import RunLog, RunLogPatch
@@ -530,7 +530,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         return model
 
     def _model_params(self, config: Optional[RunnableConfig]) -> dict:
-        config = config or {}
+        config = ensure_config(config)
         model_params = {
             _remove_prefix(k, self._config_prefix): v
             for k, v in config.get("configurable", {}).items()
