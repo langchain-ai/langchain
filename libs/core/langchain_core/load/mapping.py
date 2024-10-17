@@ -9,7 +9,8 @@ across different LangChain versions.
 
 For example,
 
-The code for AIMessage class is located in langchain_core.messages.ai.AIMessage,
+The code for AIMessage class is located in
+langchain_core.messages.ai.AIMessage,
 This message is associated with the lc_namespace
 ["langchain", "schema", "messages", "AIMessage"],
 because this code was originally in langchain.schema.messages.AIMessage.
@@ -245,6 +246,12 @@ SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "output_parsers",
         "list",
         "CommaSeparatedListOutputParser",
+    ),
+    ("langchain", "output_parsers", "list", "CommaSeparatedNumericListOutputParser"): (
+        "langchain_core",
+        "output_parsers",
+        "list",
+        "CommaSeparatedNumericListOutputParser",
     ),
     ("langchain", "schema", "runnable", "RunnableParallel"): (
         "langchain_core",
@@ -757,6 +764,17 @@ OLD_CORE_NAMESPACES_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "output_parsers",
         "list",
         "CommaSeparatedListOutputParser",
+    ),
+    (
+        "langchain_core",
+        "output_parsers",
+        "list",
+        "CommaSeparatedNumericListOutputParser",
+    ): (
+        "langchain_core",
+        "output_parsers",
+        "list",
+        "CommaSeparatedNumericListOutputParser",
     ),
     ("langchain_core", "runnables", "base", "RunnableParallel"): (
         "langchain_core",
