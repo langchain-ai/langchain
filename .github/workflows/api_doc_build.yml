@@ -10,7 +10,6 @@ env:
 
 jobs:
   build:
-    # if trigger is schedule and repo is langchain
     if: github.repository == 'langchain-ai/langchain' || github.event_name != 'schedule'
     runs-on: ubuntu-latest
     permissions: write-all
