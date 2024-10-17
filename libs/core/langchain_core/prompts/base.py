@@ -21,7 +21,7 @@ import yaml
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from typing_extensions import Self, override
 
-from langchain_core.errors import ErrorCode, create_message
+from langchain_core.exceptions import ErrorCode, create_message
 from langchain_core.load import dumpd
 from langchain_core.output_parsers.base import BaseOutputParser
 from langchain_core.prompt_values import (
