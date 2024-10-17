@@ -1143,6 +1143,16 @@ class CassandraGraphVectorStore(GraphVectorStore):
             **kwargs,
         )
 
+    @staticmethod
+    def _add_ids_to_docs(
+        docs: List[Document],
+        ids: Optional[List[str]] = None,
+    ) -> List[Document]:
+        if ids is not None:
+            for doc, doc_id in zip(docs, ids):
+                doc.id = doc_id
+        return docs
+
     @classmethod
     def from_documents(
         cls: Type[CGVST],
@@ -1152,6 +1162,7 @@ class CassandraGraphVectorStore(GraphVectorStore):
         session: Optional[Session] = None,
         keyspace: Optional[str] = None,
         table_name: str = "",
+        ids: Optional[List[str]] = None,
         ttl_seconds: Optional[int] = None,
         body_index_options: Optional[List[Tuple[str, Any]]] = None,
         metadata_deny_list: Iterable[str] = [],
@@ -1167,6 +1178,7 @@ class CassandraGraphVectorStore(GraphVectorStore):
             keyspace: Cassandra key space.
                 If not provided, it is resolved from cassio.
             table_name: Cassandra table (required).
+            ids: Optional list of IDs associated with the documents.
             ttl_seconds: Optional time-to-live for the added documents.
             body_index_options: Optional options used to create the body index.
                 Eg. body_index_options = [cassio.table.cql.STANDARD_ANALYZER]
@@ -1193,7 +1205,7 @@ class CassandraGraphVectorStore(GraphVectorStore):
             metadata_deny_list=metadata_deny_list,
             **kwargs,
         )
-        store.add_documents(documents=documents)
+        store.add_documents(documents=cls._add_ids_to_docs(docs=documents, ids=ids))
         return store
 
     @classmethod
@@ -1205,6 +1217,7 @@ class CassandraGraphVectorStore(GraphVectorStore):
         session: Optional[Session] = None,
         keyspace: Optional[str] = None,
         table_name: str = "",
+        ids: Optional[List[str]] = None,
         ttl_seconds: Optional[int] = None,
         body_index_options: Optional[List[Tuple[str, Any]]] = None,
         metadata_deny_list: Iterable[str] = [],
@@ -1220,6 +1233,7 @@ class CassandraGraphVectorStore(GraphVectorStore):
             keyspace: Cassandra key space.
                 If not provided, it is resolved from cassio.
             table_name: Cassandra table (required).
+            ids: Optional list of IDs associated with the documents.
             ttl_seconds: Optional time-to-live for the added documents.
             body_index_options: Optional options used to create the body index.
                 Eg. body_index_options = [cassio.table.cql.STANDARD_ANALYZER]
@@ -1248,5 +1262,5 @@ class CassandraGraphVectorStore(GraphVectorStore):
             metadata_deny_list=metadata_deny_list,
             **kwargs,
         )
-        await store.aadd_documents(documents=documents)
+        await store.aadd_documents(documents=cls._add_ids_to_docs(docs=documents, ids=ids))
         return store

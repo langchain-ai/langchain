@@ -1134,6 +1134,24 @@ class Cassandra(VectorStore):
             body_search=body_search,
         )
 
+    @staticmethod
+    def _build_docs_from_texts(
+        texts: List[str],
+        metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
+    ) -> List[Document]:
+        docs: List[Document] = []
+        for i, text in enumerate(texts):
+            doc = Document(
+                page_content=text,
+            )
+            if metadatas is not None:
+                doc.metadata = metadatas[i]
+            if ids is not None:
+                doc.id = ids[i]
+            docs.append(doc)
+        return docs
+
     @classmethod
     def from_texts(
         cls: Type[CVST],
@@ -1145,13 +1163,12 @@ class Cassandra(VectorStore):
         keyspace: Optional[str] = None,
         table_name: str = "",
         ids: Optional[List[str]] = None,
-        batch_size: int = 16,
         ttl_seconds: Optional[int] = None,
         body_index_options: Optional[List[Tuple[str, Any]]] = None,
-        metadata_indexing: Union[Tuple[str, Iterable[str]], str] = "all",
+        metadata_indexing: Iterable[str] = [],
         **kwargs: Any,
     ) -> CVST:
-        """Create a Cassandra vectorstore from raw texts.
+        """Create a Cassandra vector store from raw texts.
 
         Args:
             texts: Texts to add to the vectorstore.
@@ -1163,8 +1180,6 @@ class Cassandra(VectorStore):
                 If not provided, it is resolved from cassio.
             table_name: Cassandra table (required).
             ids: Optional list of IDs associated with the texts.
-            batch_size: Number of concurrent requests to send to the server.
-                Defaults to 16.
             ttl_seconds: Optional time-to-live for the added texts.
             body_index_options: Optional options used to create the body index.
                 Eg. body_index_options = [cassio.table.cql.STANDARD_ANALYZER]
@@ -1181,9 +1196,16 @@ class Cassandra(VectorStore):
                 (and to overcome max-length limitations).
 
         Returns:
-            a Cassandra vectorstore.
+            a Cassandra vector store.
         """
-        store = cls(
+        docs = cls._build_docs_from_texts(
+            texts=texts,
+            metadatas=metadatas,
+            ids=ids,
+        )
+
+        return cls.from_documents(
+            documents=docs,
             embedding=embedding,
             session=session,
             keyspace=keyspace,
@@ -1193,10 +1215,6 @@ class Cassandra(VectorStore):
             metadata_indexing=metadata_indexing,
             **kwargs,
         )
-        store.add_texts(
-            texts=texts, metadatas=metadatas, ids=ids, batch_size=batch_size
-        )
-        return store
 
     @classmethod
     async def afrom_texts(
@@ -1209,13 +1227,12 @@ class Cassandra(VectorStore):
         keyspace: Optional[str] = None,
         table_name: str = "",
         ids: Optional[List[str]] = None,
-        concurrency: int = 16,
         ttl_seconds: Optional[int] = None,
         body_index_options: Optional[List[Tuple[str, Any]]] = None,
-        metadata_indexing: Union[Tuple[str, Iterable[str]], str] = "all",
+        metadata_indexing: Iterable[str] = [],
         **kwargs: Any,
     ) -> CVST:
-        """Create a Cassandra vectorstore from raw texts.
+        """Create a Cassandra vector store from raw texts.
 
         Args:
             texts: Texts to add to the vectorstore.
@@ -1227,8 +1244,6 @@ class Cassandra(VectorStore):
                 If not provided, it is resolved from cassio.
             table_name: Cassandra table (required).
             ids: Optional list of IDs associated with the texts.
-            concurrency: Number of concurrent queries to send to the database.
-                Defaults to 16.
             ttl_seconds: Optional time-to-live for the added texts.
             body_index_options: Optional options used to create the body index.
                 Eg. body_index_options = [cassio.table.cql.STANDARD_ANALYZER]
@@ -1245,7 +1260,136 @@ class Cassandra(VectorStore):
                 (and to overcome max-length limitations).
 
         Returns:
-            a Cassandra vectorstore.
+            a Cassandra vector store.
+        """
+        docs = cls._build_docs_from_texts(
+            texts=texts,
+            metadatas=metadatas,
+            ids=ids,
+        )
+
+        return await cls.afrom_documents(
+            documents=docs,
+            embedding=embedding,
+            session=session,
+            keyspace=keyspace,
+            table_name=table_name,
+            ttl_seconds=ttl_seconds,
+            body_index_options=body_index_options,
+            metadata_indexing=metadata_indexing,
+            **kwargs,
+        )
+
+    @staticmethod
+    def _add_ids_to_docs(
+        docs: List[Document],
+        ids: Optional[List[str]] = None,
+    ) -> List[Document]:
+        if ids is not None:
+            for doc, doc_id in zip(docs, ids):
+                doc.id = doc_id
+        return docs
+
+    @classmethod
+    def from_documents(
+        cls: Type[CVST],
+        documents: List[Document],
+        embedding: Embeddings,
+        *,
+        session: Optional[Session] = None,
+        keyspace: Optional[str] = None,
+        table_name: str = "",
+        ids: Optional[List[str]] = None,
+        ttl_seconds: Optional[int] = None,
+        body_index_options: Optional[List[Tuple[str, Any]]] = None,
+        metadata_indexing: Iterable[str] = [],
+        **kwargs: Any,
+    ) -> CVST:
+        """Create a Cassandra vector store from a document list.
+
+        Args:
+            documents: Documents to add to the vectorstore.
+            embedding: Embedding function to use.
+            session: Cassandra driver session.
+                If not provided, it is resolved from cassio.
+            keyspace: Cassandra key space.
+                If not provided, it is resolved from cassio.
+            table_name: Cassandra table (required).
+            ids: Optional list of IDs associated with the documents.
+            ttl_seconds: Optional time-to-live for the added documents.
+            body_index_options: Optional options used to create the body index.
+                Eg. body_index_options = [cassio.table.cql.STANDARD_ANALYZER]
+            metadata_indexing: Optional specification of a metadata indexing policy,
+                i.e. to fine-tune which of the metadata fields are indexed.
+                It can be a string ("all" or "none"), or a 2-tuple. The following
+                means that all fields except 'f1', 'f2' ... are NOT indexed:
+                    metadata_indexing=("allowlist", ["f1", "f2", ...])
+                The following means all fields EXCEPT 'g1', 'g2', ... are indexed:
+                    metadata_indexing("denylist", ["g1", "g2", ...])
+                The default is to index every metadata field.
+                Note: if you plan to have massive unique text metadata entries,
+                consider not indexing them for performance
+                (and to overcome max-length limitations).
+
+        Returns:
+            a Cassandra vector store.
+        """
+        store = cls(
+            embedding=embedding,
+            session=session,
+            keyspace=keyspace,
+            table_name=table_name,
+            ttl_seconds=ttl_seconds,
+            body_index_options=body_index_options,
+            metadata_indexing=metadata_indexing,
+            **kwargs,
+        )
+        store.add_documents(documents=cls._add_ids_to_docs(docs=documents, ids=ids))
+        return store
+
+    @classmethod
+    async def afrom_documents(
+        cls: Type[CVST],
+        documents: List[Document],
+        embedding: Embeddings,
+        *,
+        session: Optional[Session] = None,
+        keyspace: Optional[str] = None,
+        table_name: str = "",
+        ids: Optional[List[str]] = None,
+        ttl_seconds: Optional[int] = None,
+        body_index_options: Optional[List[Tuple[str, Any]]] = None,
+        metadata_indexing: Iterable[str] = [],
+        **kwargs: Any,
+    ) -> CVST:
+        """Create a Cassandra vector store from a document list.
+
+        Args:
+            documents: Documents to add to the vectorstore.
+            embedding: Embedding function to use.
+            session: Cassandra driver session.
+                If not provided, it is resolved from cassio.
+            keyspace: Cassandra key space.
+                If not provided, it is resolved from cassio.
+            table_name: Cassandra table (required).
+            ids: Optional list of IDs associated with the documents.
+            ttl_seconds: Optional time-to-live for the added documents.
+            body_index_options: Optional options used to create the body index.
+                Eg. body_index_options = [cassio.table.cql.STANDARD_ANALYZER]
+            metadata_indexing: Optional specification of a metadata indexing policy,
+                i.e. to fine-tune which of the metadata fields are indexed.
+                It can be a string ("all" or "none"), or a 2-tuple. The following
+                means that all fields except 'f1', 'f2' ... are NOT indexed:
+                    metadata_indexing=("allowlist", ["f1", "f2", ...])
+                The following means all fields EXCEPT 'g1', 'g2', ... are indexed:
+                    metadata_indexing("denylist", ["g1", "g2", ...])
+                The default is to index every metadata field.
+                Note: if you plan to have massive unique text metadata entries,
+                consider not indexing them for performance
+                (and to overcome max-length limitations).
+
+        Returns:
+            a Cassandra vector store.
         """
         store = cls(
             embedding=embedding,
@@ -1258,138 +1402,8 @@ class Cassandra(VectorStore):
             metadata_indexing=metadata_indexing,
             **kwargs,
         )
-        await store.aadd_texts(
-            texts=texts, metadatas=metadatas, ids=ids, concurrency=concurrency
-        )
+        await store.aadd_documents(documents=cls._add_ids_to_docs(docs=documents, ids=ids))
         return store
-
-    @classmethod
-    def from_documents(
-        cls: Type[CVST],
-        documents: List[Document],
-        embedding: Embeddings,
-        *,
-        session: Optional[Session] = None,
-        keyspace: Optional[str] = None,
-        table_name: str = "",
-        ids: Optional[List[str]] = None,
-        batch_size: int = 16,
-        ttl_seconds: Optional[int] = None,
-        body_index_options: Optional[List[Tuple[str, Any]]] = None,
-        metadata_indexing: Union[Tuple[str, Iterable[str]], str] = "all",
-        **kwargs: Any,
-    ) -> CVST:
-        """Create a Cassandra vectorstore from a document list.
-
-        Args:
-            documents: Documents to add to the vectorstore.
-            embedding: Embedding function to use.
-            session: Cassandra driver session.
-                If not provided, it is resolved from cassio.
-            keyspace: Cassandra key space.
-                If not provided, it is resolved from cassio.
-            table_name: Cassandra table (required).
-            ids: Optional list of IDs associated with the documents.
-            batch_size: Number of concurrent requests to send to the server.
-                Defaults to 16.
-            ttl_seconds: Optional time-to-live for the added documents.
-            body_index_options: Optional options used to create the body index.
-                Eg. body_index_options = [cassio.table.cql.STANDARD_ANALYZER]
-            metadata_indexing: Optional specification of a metadata indexing policy,
-                i.e. to fine-tune which of the metadata fields are indexed.
-                It can be a string ("all" or "none"), or a 2-tuple. The following
-                means that all fields except 'f1', 'f2' ... are NOT indexed:
-                    metadata_indexing=("allowlist", ["f1", "f2", ...])
-                The following means all fields EXCEPT 'g1', 'g2', ... are indexed:
-                    metadata_indexing("denylist", ["g1", "g2", ...])
-                The default is to index every metadata field.
-                Note: if you plan to have massive unique text metadata entries,
-                consider not indexing them for performance
-                (and to overcome max-length limitations).
-
-        Returns:
-            a Cassandra vectorstore.
-        """
-        texts = [doc.page_content for doc in documents]
-        metadatas = [doc.metadata for doc in documents]
-        return cls.from_texts(
-            texts=texts,
-            embedding=embedding,
-            metadatas=metadatas,
-            session=session,
-            keyspace=keyspace,
-            table_name=table_name,
-            ids=ids,
-            batch_size=batch_size,
-            ttl_seconds=ttl_seconds,
-            body_index_options=body_index_options,
-            metadata_indexing=metadata_indexing,
-            **kwargs,
-        )
-
-    @classmethod
-    async def afrom_documents(
-        cls: Type[CVST],
-        documents: List[Document],
-        embedding: Embeddings,
-        *,
-        session: Optional[Session] = None,
-        keyspace: Optional[str] = None,
-        table_name: str = "",
-        ids: Optional[List[str]] = None,
-        concurrency: int = 16,
-        ttl_seconds: Optional[int] = None,
-        body_index_options: Optional[List[Tuple[str, Any]]] = None,
-        metadata_indexing: Union[Tuple[str, Iterable[str]], str] = "all",
-        **kwargs: Any,
-    ) -> CVST:
-        """Create a Cassandra vectorstore from a document list.
-
-        Args:
-            documents: Documents to add to the vectorstore.
-            embedding: Embedding function to use.
-            session: Cassandra driver session.
-                If not provided, it is resolved from cassio.
-            keyspace: Cassandra key space.
-                If not provided, it is resolved from cassio.
-            table_name: Cassandra table (required).
-            ids: Optional list of IDs associated with the documents.
-            concurrency: Number of concurrent queries to send to the database.
-                Defaults to 16.
-            ttl_seconds: Optional time-to-live for the added documents.
-            body_index_options: Optional options used to create the body index.
-                Eg. body_index_options = [cassio.table.cql.STANDARD_ANALYZER]
-            metadata_indexing: Optional specification of a metadata indexing policy,
-                i.e. to fine-tune which of the metadata fields are indexed.
-                It can be a string ("all" or "none"), or a 2-tuple. The following
-                means that all fields except 'f1', 'f2' ... are NOT indexed:
-                    metadata_indexing=("allowlist", ["f1", "f2", ...])
-                The following means all fields EXCEPT 'g1', 'g2', ... are indexed:
-                    metadata_indexing("denylist", ["g1", "g2", ...])
-                The default is to index every metadata field.
-                Note: if you plan to have massive unique text metadata entries,
-                consider not indexing them for performance
-                (and to overcome max-length limitations).
-
-        Returns:
-            a Cassandra vectorstore.
-        """
-        texts = [doc.page_content for doc in documents]
-        metadatas = [doc.metadata for doc in documents]
-        return await cls.afrom_texts(
-            texts=texts,
-            embedding=embedding,
-            metadatas=metadatas,
-            session=session,
-            keyspace=keyspace,
-            table_name=table_name,
-            ids=ids,
-            concurrency=concurrency,
-            ttl_seconds=ttl_seconds,
-            body_index_options=body_index_options,
-            metadata_indexing=metadata_indexing,
-            **kwargs,
-        )
 
     def as_retriever(
         self,

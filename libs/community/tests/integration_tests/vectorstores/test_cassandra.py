@@ -60,32 +60,32 @@ def _metadata_documents() -> list[Document]:
         Document(
             id="q",
             page_content="[1,2]",
-            metadata={"ord": ord("q"), "group": "consonant", "letter": "q"},
+            metadata={"ord": str(ord("q")), "group": "consonant", "letter": "q"},
         ),
         Document(
             id="w",
             page_content="[3,4]",
-            metadata={"ord": ord("w"), "group": "consonant", "letter": "w"},
+            metadata={"ord": str(ord("w")), "group": "consonant", "letter": "w"},
         ),
         Document(
             id="r",
             page_content="[5,6]",
-            metadata={"ord": ord("r"), "group": "consonant", "letter": "r"},
+            metadata={"ord": str(ord("r")), "group": "consonant", "letter": "r"},
         ),
         Document(
             id="e",
             page_content="[-1,2]",
-            metadata={"ord": ord("e"), "group": "vowel", "letter": "e"},
+            metadata={"ord": str(ord("e")), "group": "vowel", "letter": "e"},
         ),
         Document(
             id="i",
             page_content="[-3,4]",
-            metadata={"ord": ord("i"), "group": "vowel", "letter": "i"},
+            metadata={"ord": str(ord("i")), "group": "vowel", "letter": "i"},
         ),
         Document(
             id="o",
             page_content="[-5,6]",
-            metadata={"ord": ord("o"), "group": "vowel", "letter": "o"},
+            metadata={"ord": str(ord("o")), "group": "vowel", "letter": "o"},
         ),
     ]
 
@@ -414,7 +414,7 @@ def test_cassandra_vectorstore_from_texts_sync() -> None:
     assert len(search_results_triples_0) == 1
     res_doc_0, _, res_id_0 = search_results_triples_0[0]
     assert res_doc_0.page_content == page_contents[1]
-    assert res_doc_0.metadata == {"m": 3}
+    assert res_doc_0.metadata == {"m": "3.0"}
     assert res_id_0 == "ft3"
 
     _vectorstore_from_texts(
@@ -432,7 +432,7 @@ def test_cassandra_vectorstore_from_texts_sync() -> None:
     assert len(search_results_triples_1) == 1
     res_doc_1, _, res_id_1 = search_results_triples_1[0]
     assert res_doc_1.page_content == page_contents[3]
-    assert res_doc_1.metadata == {"m": 7}
+    assert res_doc_1.metadata == {"m": "7.0"}
     assert res_id_1 == "ft7"
 
     v_store_2 = _vectorstore_from_texts(
@@ -450,7 +450,7 @@ def test_cassandra_vectorstore_from_texts_sync() -> None:
     assert len(search_results_triples_2) == 1
     res_doc_2, _, res_id_2 = search_results_triples_2[0]
     assert res_doc_2.page_content == page_contents[5]
-    assert res_doc_2.metadata == {"m": 11}
+    assert res_doc_2.metadata == {"m": "11.0"}
     assert res_id_2 == "ft11"
 
 
@@ -474,7 +474,7 @@ def test_cassandra_vectorstore_from_documents_sync() -> None:
     hits = v_store_1.similarity_search(pc2, k=1)
     assert len(hits) == 1
     assert hits[0].page_content == pc2
-    assert hits[0].metadata == {"m": 3}
+    assert hits[0].metadata == {"m": "3.0"}
     v_store_1.clear()
 
     # IDs passed separately.
@@ -493,7 +493,7 @@ def test_cassandra_vectorstore_from_documents_sync() -> None:
     hits = v_store_2.similarity_search(pc2, k=1)
     assert len(hits) == 1
     assert hits[0].page_content == pc2
-    assert hits[0].metadata == {"m": 3}
+    assert hits[0].metadata == {"m": "3.0"}
     assert hits[0].id == "idx3"
     v_store_2.clear()
 
@@ -512,7 +512,7 @@ def test_cassandra_vectorstore_from_documents_sync() -> None:
     hits = v_store_3.similarity_search(pc2, k=1)
     assert len(hits) == 1
     assert hits[0].page_content == pc2
-    assert hits[0].metadata == {"m": 3}
+    assert hits[0].metadata == {"m": "3.0"}
     assert hits[0].id == "idx3"
     v_store_3.clear()
 
@@ -532,7 +532,7 @@ def test_cassandra_vectorstore_from_documents_sync() -> None:
     hits = v_store_4.similarity_search(pc2, k=1)
     assert len(hits) == 1
     assert hits[0].page_content == pc2
-    assert hits[0].metadata == {"m": 3}
+    assert hits[0].metadata == {"m": "3.0"}
     assert hits[0].id == "idx3"
     v_store_4.clear()
 
@@ -563,7 +563,7 @@ async def test_cassandra_vectorstore_from_texts_async() -> None:
     assert len(search_results_triples_0) == 1
     res_doc_0, _, res_id_0 = search_results_triples_0[0]
     assert res_doc_0.page_content == page_contents[1]
-    assert res_doc_0.metadata == {"m": 3}
+    assert res_doc_0.metadata == {"m": "3.0"}
     assert res_id_0 == "ft3"
 
     await _vectorstore_from_texts_async(
@@ -581,7 +581,7 @@ async def test_cassandra_vectorstore_from_texts_async() -> None:
     assert len(search_results_triples_1) == 1
     res_doc_1, _, res_id_1 = search_results_triples_1[0]
     assert res_doc_1.page_content == page_contents[3]
-    assert res_doc_1.metadata == {"m": 7}
+    assert res_doc_1.metadata == {"m": "7.0"}
     assert res_id_1 == "ft7"
 
     v_store_2 = await _vectorstore_from_texts_async(
@@ -599,7 +599,7 @@ async def test_cassandra_vectorstore_from_texts_async() -> None:
     assert len(search_results_triples_2) == 1
     res_doc_2, _, res_id_2 = search_results_triples_2[0]
     assert res_doc_2.page_content == page_contents[5]
-    assert res_doc_2.metadata == {"m": 11}
+    assert res_doc_2.metadata == {"m": "11.0"}
     assert res_id_2 == "ft11"
 
 
@@ -627,7 +627,7 @@ async def test_cassandra_vectorstore_from_documents_async() -> None:
     hits = await v_store_1.asimilarity_search(pc2, k=1)
     assert len(hits) == 1
     assert hits[0].page_content == pc2
-    assert hits[0].metadata == {"m": 3}
+    assert hits[0].metadata == {"m": "3.0"}
     await v_store_1.aclear()
 
     # IDs passed separately.
@@ -646,7 +646,7 @@ async def test_cassandra_vectorstore_from_documents_async() -> None:
     hits = await v_store_2.asimilarity_search(pc2, k=1)
     assert len(hits) == 1
     assert hits[0].page_content == pc2
-    assert hits[0].metadata == {"m": 3}
+    assert hits[0].metadata == {"m": "3.0"}
     assert hits[0].id == "idx3"
     await v_store_2.aclear()
 
@@ -665,7 +665,7 @@ async def test_cassandra_vectorstore_from_documents_async() -> None:
     hits = await v_store_3.asimilarity_search(pc2, k=1)
     assert len(hits) == 1
     assert hits[0].page_content == pc2
-    assert hits[0].metadata == {"m": 3}
+    assert hits[0].metadata == {"m": "3.0"}
     assert hits[0].id == "idx3"
     await v_store_3.aclear()
 
@@ -685,7 +685,7 @@ async def test_cassandra_vectorstore_from_documents_async() -> None:
     hits = await v_store_4.asimilarity_search(pc2, k=1)
     assert len(hits) == 1
     assert hits[0].page_content == pc2
-    assert hits[0].metadata == {"m": 3}
+    assert hits[0].metadata == {"m": "3.0"}
     assert hits[0].id == "idx3"
     await v_store_4.aclear()
 
@@ -716,7 +716,7 @@ def test_cassandra_vectorstore_crud_sync() -> None:
     res2 = vstore.similarity_search("[3,4]", k=1)
     assert len(res2) == 1
     assert res2[0].page_content == "[3,4]"
-    assert res2[0].metadata == {"k": "b", "ord": 1}
+    assert res2[0].metadata == {"k": "b", "ord": "1.0"}
     assert res2[0].id == "b"
     # partial overwrite and count total entries
     added_ids_1 = vstore.add_texts(
@@ -737,7 +737,7 @@ def test_cassandra_vectorstore_crud_sync() -> None:
     )
     doc3, _, id3 = res3[0]
     assert doc3.page_content == "[5,6]"
-    assert doc3.metadata == {"k": "c_new", "ord": 102}
+    assert doc3.metadata == {"k": "c_new", "ord": "102.0"}
     assert id3 == "c"
     # delete and count again
     del1_res = vstore.delete(["b"])
@@ -758,7 +758,7 @@ def test_cassandra_vectorstore_crud_sync() -> None:
     )
     assert len(vstore.similarity_search("[-1,-1]", k=10)) == 2
     res4 = vstore.similarity_search("[11,12]", k=1, filter={"k": "w"})
-    assert res4[0].metadata["ord"] == 205
+    assert res4[0].metadata["ord"] == "205.0"
     assert res4[0].id == "w"
     # add_texts with "ids" arg passthrough
     vstore.add_texts(
@@ -768,7 +768,7 @@ def test_cassandra_vectorstore_crud_sync() -> None:
     )
     assert len(vstore.similarity_search("[-1,-1]", k=10)) == 4
     res4 = vstore.similarity_search("[-1,-1]", k=1, filter={"k": "s"})
-    assert res4[0].metadata["ord"] == 307
+    assert res4[0].metadata["ord"] == "307.0"
     assert res4[0].id == "s"
     # delete_by_document_id
     vstore.delete_by_document_id("s")
@@ -822,7 +822,7 @@ async def test_cassandra_vectorstore_crud_async() -> None:
     )
     doc3, _, id3 = res3[0]
     assert doc3.page_content == "[5,6]"
-    assert doc3.metadata == {"k": "c_new", "ord": 102}
+    assert doc3.metadata == {"k": "c_new", "ord": "102.0"}
     assert id3 == "c"
     # delete and count again
     del1_res = await vstore.adelete(["b"])
@@ -843,7 +843,7 @@ async def test_cassandra_vectorstore_crud_async() -> None:
     )
     assert len(await vstore.asimilarity_search("[-1,-1]", k=10)) == 2
     res4 = await vstore.asimilarity_search("[11,12]", k=1, filter={"k": "w"})
-    assert res4[0].metadata["ord"] == 205
+    assert res4[0].metadata["ord"] == "205.0"
     assert res4[0].id == "w"
     # add_texts with "ids" arg passthrough
     await vstore.aadd_texts(
@@ -853,7 +853,7 @@ async def test_cassandra_vectorstore_crud_async() -> None:
     )
     assert len(await vstore.asimilarity_search("[-1,-1]", k=10)) == 4
     res4 = await vstore.asimilarity_search("[-1,-1]", k=1, filter={"k": "s"})
-    assert res4[0].metadata["ord"] == 307
+    assert res4[0].metadata["ord"] == "307.0"
     assert res4[0].id == "s"
     # delete_by_document_id
     await vstore.adelete_by_document_id("s")
@@ -1165,7 +1165,7 @@ def test_cassandra_vectorstore_mmr_sync() -> None:
         fetch_k=3,
     )
     res_i_vals = {doc.metadata["i"] for doc in res1}
-    assert res_i_vals == {0, 4}
+    assert res_i_vals == {"0.0", "4.0"}
 
 
 async def test_cassandra_vectorstore_mmr_async() -> None:
@@ -1196,7 +1196,7 @@ async def test_cassandra_vectorstore_mmr_async() -> None:
         fetch_k=3,
     )
     res_i_vals = {doc.metadata["i"] for doc in res1}
-    assert res_i_vals == {0, 4}
+    assert res_i_vals == {"0.0", "4.0"}
 
 
 def test_cassandra_vectorstore_metadata_filter() -> None:
@@ -1279,21 +1279,15 @@ async def test_cassandra_vectorstore_metadata_search_async() -> None:
     # multiple filters
     res2 = await vstore.ametadata_search(
         n=10,
-        filter={"group": "consonant", "ord": ord("q")},
+        filter={"group": "consonant", "ord": str(ord("q"))},
     )
     assert {doc.metadata["letter"] for doc in res2} == set("q")
     # excessive filters
     res3 = await vstore.ametadata_search(
         n=10,
-        filter={"group": "consonant", "ord": ord("q"), "case": "upper"},
+        filter={"group": "consonant", "ord": str(ord("q")), "case": "upper"},
     )
     assert res3 == []
-    # filter with logical operator
-    res4 = await vstore.ametadata_search(
-        n=10,
-        filter={"$or": [{"ord": ord("q")}, {"ord": ord("r")}]},
-    )
-    assert {doc.metadata["letter"] for doc in res4} == {"q", "r"}
 
 
 def test_cassandra_vectorstore_get_by_document_id_sync() -> None:

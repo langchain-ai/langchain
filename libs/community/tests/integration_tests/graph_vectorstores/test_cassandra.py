@@ -1,7 +1,7 @@
 """Test of Apache Cassandra graph vector g_store class `CassandraGraphVectorStore`"""
 
 import json
-import math
+import random
 import os
 from typing import Any, Iterable, List, Optional, Tuple, Union
 
@@ -14,6 +14,10 @@ from langchain_community.graph_vectorstores.links import (
     METADATA_LINKS_KEY,
     Link,
     add_links,
+)
+
+from tests.integration_tests.cache.fake_embeddings import (
+    FakeEmbeddings, AngularTwoDimensionalEmbeddings,
 )
 
 TEST_KEYSPACE = "graph_test_keyspace"
@@ -50,56 +54,34 @@ def _embedding_d2() -> Embeddings:
     return ParserEmbeddings(dimension=2)
 
 
-class FakeEmbeddings(Embeddings):
-    """Fake embeddings functionality for testing."""
+class EarthEmbeddings(Embeddings):
+    def get_vector_near(self, value: float) -> List[float]:
+        return [value + (random.random() / 100.0), value - (random.random() / 100.0)]
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        """Return simple embeddings.
-        Embeddings encode each text as its index."""
-        return [[float(1.0)] * 9 + [float(i)] for i in range(len(texts))]
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        return [self.embed_query(txt) for txt in texts]
 
-    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
+    async def aembed_documents(self, texts: list[str]) -> list[list[float]]:
         return self.embed_documents(texts)
 
-    def embed_query(self, text: str) -> List[float]:
-        """Return constant query embeddings.
-        Embeddings are identical to embed_documents(texts)[0].
-        Distance to each text will be that text's index,
-        as it was passed to embed_documents."""
-        return [float(1.0)] * 9 + [float(0.0)]
+    def embed_query(self, text: str) -> list[float]:
+        words = set(text.lower().split())
+        if "earth" in words:
+            vector = self.get_vector_near(0.9)
+        elif {"planet", "world", "globe", "sphere"}.intersection(words):
+            vector = self.get_vector_near(0.8)
+        else:
+            vector = self.get_vector_near(0.1)
+        print(f"Embedded {text} as {vector}")
+        return vector
 
-    async def aembed_query(self, text: str) -> List[float]:
+    async def aembed_query(self, text: str) -> list[float]:
         return self.embed_query(text)
-
-
-class AngularTwoDimensionalEmbeddings(Embeddings):
-    """
-    From angles (as strings in units of pi) to unit embedding vectors on a circle.
-    """
-
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        """
-        Make a list of texts into a list of embedding vectors.
-        """
-        return [self.embed_query(text) for text in texts]
-
-    def embed_query(self, text: str) -> List[float]:
-        """
-        Convert input text to a 'vector' (list of floats).
-        If the text is a number, use it as the angle for the
-        unit vector in units of pi.
-        Any other input text becomes the singular result [0, 0] !
-        """
-        try:
-            angle = float(text)
-            return [math.cos(angle * math.pi), math.sin(angle * math.pi)]
-        except ValueError:
-            # Assume: just test string, no attention is paid to values.
-            return [0.0, 0.0]
 
 
 def _result_ids(docs: Iterable[Document]) -> List[Optional[str]]:
     return [doc.id for doc in docs]
+
 
 def _graph_vector_store_docs() -> list[Document]:
     """
@@ -198,7 +180,7 @@ def _graphvectorstore_from_texts(
     metadatas: Optional[List[dict]] = None,
     ids: Optional[List[str]] = None,
     drop: bool = True,
-    metadata_indexing: Union[Tuple[str, Iterable[str]], str] = "all",
+    metadata_deny_list: Iterable[str] = [],
     table_name: str = "graph_test_table",
 ) -> CassandraGraphVectorStore:
     session = _get_cassandra_session(table_name=table_name, drop=drop)
@@ -210,8 +192,9 @@ def _graphvectorstore_from_texts(
         session=session,
         keyspace=TEST_KEYSPACE,
         table_name=table_name,
-        metadata_indexing=metadata_indexing,
+        metadata_deny_list=metadata_deny_list,
     )
+
 
 async def _graphvectorstore_from_texts_async(
     texts: List[str],
@@ -219,7 +202,7 @@ async def _graphvectorstore_from_texts_async(
     metadatas: Optional[List[dict]] = None,
     ids: Optional[List[str]] = None,
     drop: bool = True,
-    metadata_indexing: Union[Tuple[str, Iterable[str]], str] = "all",
+    metadata_deny_list: Iterable[str] = [],
     table_name: str = "graph_test_table",
 ) -> CassandraGraphVectorStore:
     session = _get_cassandra_session(table_name=table_name, drop=drop)
@@ -231,7 +214,7 @@ async def _graphvectorstore_from_texts_async(
         session=session,
         keyspace=TEST_KEYSPACE,
         table_name=table_name,
-        metadata_indexing=metadata_indexing,
+        metadata_deny_list=metadata_deny_list,
     )
 
 
@@ -240,7 +223,7 @@ def _graphvectorstore_from_documents(
     embedding: Embeddings,
     ids: Optional[List[str]] = None,
     drop: bool = True,
-    metadata_indexing: Union[Tuple[str, Iterable[str]], str] = "all",
+    metadata_deny_list: Iterable[str] = [],
     table_name: str = "graph_test_table",
 ) -> CassandraGraphVectorStore:
     session = _get_cassandra_session(table_name=table_name, drop=drop)
@@ -251,15 +234,16 @@ def _graphvectorstore_from_documents(
         session=session,
         keyspace=TEST_KEYSPACE,
         table_name=table_name,
-        metadata_indexing=metadata_indexing,
+        metadata_deny_list=metadata_deny_list,
     )
+
 
 async def _graphvectorstore_from_documents_async(
     docs: List[Document],
     embedding: Embeddings,
     ids: Optional[List[str]] = None,
     drop: bool = True,
-    metadata_indexing: Union[Tuple[str, Iterable[str]], str] = "all",
+    metadata_deny_list: Iterable[str] = [],
     table_name: str = "graph_test_table",
 ) -> CassandraGraphVectorStore:
     session = _get_cassandra_session(table_name=table_name, drop=drop)
@@ -270,7 +254,7 @@ async def _graphvectorstore_from_documents_async(
         session=session,
         keyspace=TEST_KEYSPACE,
         table_name=table_name,
-        metadata_indexing=metadata_indexing,
+        metadata_deny_list=metadata_deny_list,
     )
 
 
@@ -396,7 +380,7 @@ def test_write_retrieve_keywords() -> None:
 
     g_store = _graphvectorstore_from_documents(
         docs=[],
-        embedding=FakeEmbeddings(),
+        embedding=EarthEmbeddings(),
     )
 
     g_store.add_nodes(nodes=[greetings, node1, node2])
@@ -451,8 +435,6 @@ def test_metadata() -> None:
         Link.incoming(kind="hyperlink", tag="http://a"),
         Link.bidir(kind="other", tag="foo"),
     }
-
-
 
 
 def test_gvs_similarity_search_sync() -> None:
@@ -618,7 +600,7 @@ def test_gvs_from_texts() -> None:
     assert hits[0].page_content == "[1, 2]"
     assert hits[0].id == "x_id"
     # there may be more re:graph structure.
-    assert hits[0].metadata["md"] == 1
+    assert hits[0].metadata["md"] == "1.0"
 
 
 def test_gvs_from_documents_containing_ids() -> None:
@@ -636,7 +618,7 @@ def test_gvs_from_documents_containing_ids() -> None:
     assert hits[0].page_content == "[1, 2]"
     assert hits[0].id == "x_id"
     # there may be more re:graph structure.
-    assert hits[0].metadata["md"] == 1
+    assert hits[0].metadata["md"] == "1.0"
 
 
 def test_gvs_add_nodes_sync() -> None:
@@ -658,12 +640,12 @@ def test_gvs_add_nodes_sync() -> None:
     assert hits[0].id == "id0"
     assert hits[0].page_content == "[0, 2]"
     md0 = hits[0].metadata
-    assert md0["m"] == 0
+    assert md0["m"] == "0.0"
     assert any(isinstance(v, set) for k, v in md0.items() if k != "m")
     assert hits[1].id != "id0"
     assert hits[1].page_content == "[0, 1]"
     md1 = hits[1].metadata
-    assert md1["m"] == 1
+    assert md1["m"] == "1.0"
     assert any(isinstance(v, set) for k, v in md1.items() if k != "m")
 
 
@@ -688,10 +670,10 @@ async def test_gvs_add_nodes_async() -> None:
     assert hits[0].id == "id0"
     assert hits[0].page_content == "[0, 2]"
     md0 = hits[0].metadata
-    assert md0["m"] == 0
+    assert md0["m"] == "0.0"
     assert any(isinstance(v, set) for k, v in md0.items() if k != "m")
     assert hits[1].id != "id0"
     assert hits[1].page_content == "[0, 1]"
     md1 = hits[1].metadata
-    assert md1["m"] == 1
+    assert md1["m"] == "1.0"
     assert any(isinstance(v, set) for k, v in md1.items() if k != "m")

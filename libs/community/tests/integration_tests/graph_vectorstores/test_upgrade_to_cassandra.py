@@ -5,17 +5,16 @@ by the Cassandra vector store class: `Cassandra`
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Iterable, Tuple, Union
-
 import json
 import os
+from typing import TYPE_CHECKING, Any, Iterable, Tuple, Union
+
 import pytest
 from langchain_core.documents import Document
 
 from langchain_community.graph_vectorstores import CassandraGraphVectorStore
 from langchain_community.utilities.cassandra import SetupMode
 from langchain_community.vectorstores import Cassandra
-
 
 if TYPE_CHECKING:
     from langchain_core.embeddings import Embeddings
@@ -25,6 +24,7 @@ TEST_KEYSPACE = "graph_test_keyspace"
 TABLE_NAME_ALLOW_INDEXING = "allow_graph_table"
 TABLE_NAME_DEFAULT = "default_graph_table"
 TABLE_NAME_DENY_INDEXING = "deny_graph_table"
+
 
 class ParserEmbeddings(Embeddings):
     """Parse input texts: if they are json for a List[float], fine.
@@ -56,6 +56,7 @@ class ParserEmbeddings(Embeddings):
 def _embedding_d2() -> Embeddings:
     return ParserEmbeddings(dimension=2)
 
+
 def _get_cassandra_session(table_name: str, drop: bool = True) -> Any:
     from cassandra.cluster import Cluster
 
@@ -83,6 +84,7 @@ def _get_cassandra_session(table_name: str, drop: bool = True) -> Any:
 
     return session
 
+
 def _get_vector_store(
     table_name: str,
     setup_mode: SetupMode,
@@ -99,12 +101,13 @@ def _get_vector_store(
         metadata_indexing=metadata_indexing,
     )
 
+
 def _get_graph_vector_store(
     table_name: str,
     setup_mode: SetupMode,
     metadata_deny_list: Iterable[str],
     drop: bool = True,
-) -> Cassandra:
+) -> CassandraGraphVectorStore:
     session = _get_cassandra_session(table_name=table_name, drop=drop)
     return CassandraGraphVectorStore(
         table_name=table_name,
@@ -116,18 +119,19 @@ def _get_graph_vector_store(
     )
 
 
-def _vs_indexing_policy(table_name: str) -> dict[str, Any] | None:
+def _vs_indexing_policy(table_name: str) -> Union[Tuple[str, Iterable[str]], str]:
     if table_name == TABLE_NAME_ALLOW_INDEXING:
-        return {"allow": ["test"]}
+        return {"allowlist": ["test"]}
     if table_name == TABLE_NAME_DEFAULT:
-        return None
+        return "all"
     if table_name == TABLE_NAME_DENY_INDEXING:
-        return {"deny": ["test"]}
+        return {"denylist": ["test"]}
     msg = f"Unknown table_name: {table_name} in _vs_indexing_policy()"
     raise ValueError(msg)
 
+
 @pytest.mark.parametrize(
-    ("table_name", "gvs_setup_mode", "gvs_indexing_policy"),
+    ("table_name", "gvs_setup_mode", "gvs_metadata_deny_list"),
     [
         (TABLE_NAME_DEFAULT, SetupMode.SYNC, None),
         (TABLE_NAME_DENY_INDEXING, SetupMode.SYNC, {"deny": ["test"]}),
@@ -148,9 +152,9 @@ def _vs_indexing_policy(table_name: str) -> dict[str, Any] | None:
     ],
 )
 def test_upgrade_to_gvs_success_sync(
-    gvs_setup_mode: SetupMode,
     table_name: str,
-    gvs_indexing_policy: dict[str, Any] | None,
+    gvs_setup_mode: SetupMode,
+    gvs_metadata_deny_list: Iterable[str],
 ) -> None:
     # Create vector store using SetupMode.SYNC
     v_store = _get_vector_store(
@@ -175,7 +179,7 @@ def test_upgrade_to_gvs_success_sync(
     gv_store = _get_graph_vector_store(
         table_name=table_name,
         setup_mode=gvs_setup_mode,
-        metadata_deny_list=gvs_indexing_policy,
+        metadata_deny_list=gvs_metadata_deny_list,
         drop=False,
     )
 
@@ -186,7 +190,7 @@ def test_upgrade_to_gvs_success_sync(
 
 
 @pytest.mark.parametrize(
-    ("table_name", "gvs_setup_mode", "gvs_indexing_policy"),
+    ("table_name", "gvs_setup_mode", "gvs_metadata_deny_list"),
     [
         (TABLE_NAME_DEFAULT, SetupMode.ASYNC, None),
         (TABLE_NAME_DENY_INDEXING, SetupMode.ASYNC, {"deny": ["test"]}),
@@ -199,7 +203,7 @@ def test_upgrade_to_gvs_success_sync(
 async def test_upgrade_to_gvs_success_async(
     gvs_setup_mode: SetupMode,
     table_name: str,
-    gvs_indexing_policy: dict[str, Any] | None,
+    gvs_metadata_deny_list: Iterable[str],
 ) -> None:
     # Create vector store using SetupMode.ASYNC
     v_store = _get_vector_store(
@@ -224,7 +228,7 @@ async def test_upgrade_to_gvs_success_async(
     gv_store = _get_graph_vector_store(
         table_name=table_name,
         setup_mode=gvs_setup_mode,
-        metadata_deny_list=gvs_indexing_policy,
+        metadata_deny_list=gvs_metadata_deny_list,
         drop=False,
     )
 
@@ -233,8 +237,9 @@ async def test_upgrade_to_gvs_success_async(
     assert gv_doc is not None
     assert gv_doc.page_content == doc_al.page_content
 
+
 @pytest.mark.parametrize(
-    ("table_name", "gvs_setup_mode", "gvs_indexing_policy"),
+    ("table_name", "gvs_setup_mode", "gvs_metadata_deny_list"),
     [
         (TABLE_NAME_ALLOW_INDEXING, SetupMode.SYNC, {"allow": ["test"]}),
         (TABLE_NAME_ALLOW_INDEXING, SetupMode.SYNC, None),
@@ -253,7 +258,7 @@ async def test_upgrade_to_gvs_success_async(
 def test_upgrade_to_gvs_failure_sync(
     gvs_setup_mode: SetupMode,
     table_name: str,
-    gvs_indexing_policy: dict[str, Any] | None,
+    gvs_metadata_deny_list: Iterable[str],
 ) -> None:
     # Create vector store using SetupMode.SYNC
     v_store = _get_vector_store(
@@ -284,12 +289,13 @@ def test_upgrade_to_gvs_failure_sync(
         _ = _get_graph_vector_store(
             table_name=table_name,
             setup_mode=gvs_setup_mode,
-            metadata_deny_list=gvs_indexing_policy,
+            metadata_deny_list=gvs_metadata_deny_list,
             drop=False,
         )
 
+
 @pytest.mark.parametrize(
-    ("table_name", "gvs_setup_mode", "gvs_indexing_policy"),
+    ("table_name", "gvs_setup_mode", "gvs_metadata_deny_list"),
     [
         (TABLE_NAME_ALLOW_INDEXING, SetupMode.ASYNC, {"allow": ["test"]}),
         (TABLE_NAME_ALLOW_INDEXING, SetupMode.ASYNC, None),
@@ -304,7 +310,7 @@ def test_upgrade_to_gvs_failure_sync(
 async def test_upgrade_to_gvs_failure_async(
     gvs_setup_mode: SetupMode,
     table_name: str,
-    gvs_indexing_policy: dict[str, Any] | None,
+    gvs_metadata_deny_list: Iterable[str],
 ) -> None:
     # Create vector store using SetupMode.ASYNC
     v_store = _get_vector_store(
@@ -335,6 +341,6 @@ async def test_upgrade_to_gvs_failure_async(
         _ = _get_graph_vector_store(
             table_name=table_name,
             setup_mode=gvs_setup_mode,
-            metadata_deny_list=gvs_indexing_policy,
+            metadata_deny_list=gvs_metadata_deny_list,
             drop=False,
         )
