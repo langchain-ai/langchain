@@ -1432,3 +1432,193 @@ def test_preexisting_specific_columns_for_returned_metadata_completeness(
     assert docs[0].metadata["quality"] == "good"
     assert docs[0].metadata["ready"]
     assert "NonExisting" not in docs[0].metadata.keys()
+
+
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_create_hnsw_index_with_default_values(texts: List[str]) -> None:
+    table_name = "TEST_TABLE_HNSW_INDEX_DEFAULT"
+
+    # Delete table if it exists (cleanup from previous tests)
+    drop_table(test_setup.conn, table_name)
+
+    # Create table and insert data
+    vectorDB = HanaDB.from_texts(
+        connection=test_setup.conn,
+        texts=texts,
+        embedding=embedding,
+        table_name=table_name,
+    )
+
+    # Test the creation of HNSW index
+    try:
+        vectorDB.create_hnsw_index()
+    except Exception as e:
+        pytest.fail(f"Failed to create HNSW index: {e}")
+
+    # Perform a search using the index to confirm its correctness
+    search_result = vectorDB.max_marginal_relevance_search(texts[0], k=2, fetch_k=20)
+
+    assert len(search_result) == 2
+    assert search_result[0].page_content == texts[0]
+    assert search_result[1].page_content != texts[0]
+
+
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_create_hnsw_index_with_defined_values(texts: List[str]) -> None:
+    table_name = "TEST_TABLE_HNSW_INDEX_DEFINED"
+
+    # Delete table if it exists (cleanup from previous tests)
+    drop_table(test_setup.conn, table_name)
+
+    # Create table and insert data
+    vectorDB = HanaDB.from_texts(
+        connection=test_setup.conn,
+        texts=texts,
+        embedding=embedding,
+        table_name=table_name,
+        distance_strategy=DistanceStrategy.EUCLIDEAN_DISTANCE,
+    )
+
+    # Test the creation of HNSW index with specific values
+    try:
+        vectorDB.create_hnsw_index(
+            index_name="my_L2_index", ef_search=500, m=100, ef_construction=200
+        )
+    except Exception as e:
+        pytest.fail(f"Failed to create HNSW index with defined values: {e}")
+
+    # Perform a search using the index to confirm its correctness
+    search_result = vectorDB.max_marginal_relevance_search(texts[0], k=2, fetch_k=20)
+
+    assert len(search_result) == 2
+    assert search_result[0].page_content == texts[0]
+    assert search_result[1].page_content != texts[0]
+
+
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_create_hnsw_index_after_initialization(texts: List[str]) -> None:
+    table_name = "TEST_TABLE_HNSW_INDEX_AFTER_INIT"
+
+    drop_table(test_setup.conn, table_name)
+
+    # Initialize HanaDB without adding documents yet
+    vectorDB = HanaDB(
+        connection=test_setup.conn,
+        embedding=embedding,
+        table_name=table_name,
+    )
+
+    # Create HNSW index before adding documents
+    vectorDB.create_hnsw_index(
+        index_name="index_pre_add", ef_search=400, m=50, ef_construction=150
+    )
+
+    # Add texts after index creation
+    vectorDB.add_texts(texts=texts)
+
+    # Perform similarity search using the index
+    search_result = vectorDB.similarity_search(texts[0], k=3)
+
+    # Assert that search result is valid and has expected length
+    assert len(search_result) == 3
+    assert search_result[0].page_content == texts[0]
+    assert search_result[1].page_content != texts[0]
+
+
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_duplicate_hnsw_index_creation(texts: List[str]) -> None:
+    table_name = "TEST_TABLE_HNSW_DUPLICATE_INDEX"
+
+    # Delete table if it exists (cleanup from previous tests)
+    drop_table(test_setup.conn, table_name)
+
+    # Create table and insert data
+    vectorDB = HanaDB.from_texts(
+        connection=test_setup.conn,
+        texts=texts,
+        embedding=embedding,
+        table_name=table_name,
+    )
+
+    # Create HNSW index for the first time
+    vectorDB.create_hnsw_index(
+        index_name="index_cosine",
+        ef_search=300,
+        m=80,
+        ef_construction=100,
+    )
+
+    with pytest.raises(Exception):
+        vectorDB.create_hnsw_index(ef_search=300, m=80, ef_construction=100)
+
+
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_create_hnsw_index_invalid_m_value(texts: List[str]) -> None:
+    table_name = "TEST_TABLE_HNSW_INVALID_M"
+
+    # Cleanup: drop the table if it exists
+    drop_table(test_setup.conn, table_name)
+
+    # Create table and insert data
+    vectorDB = HanaDB.from_texts(
+        connection=test_setup.conn,
+        texts=texts,
+        embedding=embedding,
+        table_name=table_name,
+    )
+
+    # Test invalid `m` value (too low)
+    with pytest.raises(ValueError):
+        vectorDB.create_hnsw_index(m=3)
+
+    # Test invalid `m` value (too high)
+    with pytest.raises(ValueError):
+        vectorDB.create_hnsw_index(m=1001)
+
+
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_create_hnsw_index_invalid_ef_construction(texts: List[str]) -> None:
+    table_name = "TEST_TABLE_HNSW_INVALID_EF_CONSTRUCTION"
+
+    # Cleanup: drop the table if it exists
+    drop_table(test_setup.conn, table_name)
+
+    # Create table and insert data
+    vectorDB = HanaDB.from_texts(
+        connection=test_setup.conn,
+        texts=texts,
+        embedding=embedding,
+        table_name=table_name,
+    )
+
+    # Test invalid `ef_construction` value (too low)
+    with pytest.raises(ValueError):
+        vectorDB.create_hnsw_index(ef_construction=0)
+
+    # Test invalid `ef_construction` value (too high)
+    with pytest.raises(ValueError):
+        vectorDB.create_hnsw_index(ef_construction=100001)
+
+
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_create_hnsw_index_invalid_ef_search(texts: List[str]) -> None:
+    table_name = "TEST_TABLE_HNSW_INVALID_EF_SEARCH"
+
+    # Cleanup: drop the table if it exists
+    drop_table(test_setup.conn, table_name)
+
+    # Create table and insert data
+    vectorDB = HanaDB.from_texts(
+        connection=test_setup.conn,
+        texts=texts,
+        embedding=embedding,
+        table_name=table_name,
+    )
+
+    # Test invalid `ef_search` value (too low)
+    with pytest.raises(ValueError):
+        vectorDB.create_hnsw_index(ef_search=0)
+
+    # Test invalid `ef_search` value (too high)
+    with pytest.raises(ValueError):
+        vectorDB.create_hnsw_index(ef_search=100001)
