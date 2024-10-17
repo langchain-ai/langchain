@@ -8,10 +8,10 @@ from typing import Any
 import pytest
 from langchain_core.documents import Document
 
-from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.vectorstores.azure_cosmos_db_no_sql import (
     AzureCosmosDBNoSqlVectorSearch,
 )
+from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -40,14 +40,6 @@ def partition_key() -> Any:
     from azure.cosmos import PartitionKey
 
     return PartitionKey(path="/id")
-
-
-@pytest.fixture()
-def azure_openai_embeddings() -> Any:
-    openai_embeddings: OpenAIEmbeddings = OpenAIEmbeddings(
-        deployment=model_deployment, model=model_name, chunk_size=1
-    )
-    return openai_embeddings
 
 
 def safe_delete_database(cosmos_client: Any) -> None:
@@ -83,19 +75,17 @@ class TestAzureCosmosDBNoSqlVectorSearch:
         self,
         cosmos_client: Any,
         partition_key: Any,
-        azure_openai_embeddings: OpenAIEmbeddings,
     ) -> None:
         """Test end to end construction and search."""
         documents = [
-            Document(page_content="Dogs are tough.", metadata={"a": 1}),
-            Document(page_content="Cats have fluff.", metadata={"b": 1}),
-            Document(page_content="What is a sandwich?", metadata={"c": 1}),
-            Document(page_content="That fence is purple.", metadata={"d": 1, "e": 2}),
+            Document(page_content="foo", metadata={"a": 1}),
+            Document(page_content="bar", metadata={"b": 1}),
+            Document(page_content="baz", metadata={"c": 1}),
         ]
 
         store = AzureCosmosDBNoSqlVectorSearch.from_documents(
             documents,
-            azure_openai_embeddings,
+            FakeEmbeddings(),
             cosmos_client=cosmos_client,
             database_name=database_name,
             container_name=container_name,
@@ -108,29 +98,27 @@ class TestAzureCosmosDBNoSqlVectorSearch:
         )
         sleep(1)  # waits for Cosmos DB to save contents to the collection
 
-        output = store.similarity_search("Dogs", k=2)
+        output = store.similarity_search("foo", k=2)
 
         assert output
-        assert output[0].page_content == "Dogs are tough."
+        assert output[0].page_content == "foo"
         safe_delete_database(cosmos_client)
 
     def test_from_texts_cosine_distance_delete_one(
         self,
         cosmos_client: Any,
         partition_key: Any,
-        azure_openai_embeddings: OpenAIEmbeddings,
     ) -> None:
         texts = [
-            "Dogs are tough.",
-            "Cats have fluff.",
-            "What is a sandwich?",
-            "That fence is purple.",
+            "foo",
+            "bar",
+            "baz",
         ]
-        metadatas = [{"a": 1}, {"b": 1}, {"c": 1}, {"d": 1, "e": 2}]
+        metadatas = [{"a": 1}, {"b": 1}, {"d": 1, "e": 2}]
 
         store = AzureCosmosDBNoSqlVectorSearch.from_texts(
             texts,
-            azure_openai_embeddings,
+            FakeEmbeddings(),
             metadatas,
             cosmos_client=cosmos_client,
             database_name=database_name,
@@ -144,36 +132,34 @@ class TestAzureCosmosDBNoSqlVectorSearch:
         )
         sleep(1)  # waits for Cosmos DB to save contents to the collection
 
-        output = store.similarity_search("Dogs", k=1)
+        output = store.similarity_search("foo", k=1)
         assert output
-        assert output[0].page_content == "Dogs are tough."
+        assert output[0].page_content == "foo"
 
         # delete one document
         store.delete_document_by_id(str(output[0].metadata["id"]))
         sleep(2)
 
-        output2 = store.similarity_search("Dogs", k=1)
+        output2 = store.similarity_search("foo", k=1)
         assert output2
-        assert output2[0].page_content != "Dogs are tough."
+        assert output2[0].page_content != "foo"
         safe_delete_database(cosmos_client)
 
     def test_from_documents_cosine_distance_with_filtering(
         self,
         cosmos_client: Any,
         partition_key: Any,
-        azure_openai_embeddings: OpenAIEmbeddings,
     ) -> None:
         """Test end to end construction and search."""
         documents = [
-            Document(page_content="Dogs are tough.", metadata={"a": 1}),
-            Document(page_content="Cats have fluff.", metadata={"a": 1}),
-            Document(page_content="What is a sandwich?", metadata={"c": 1}),
-            Document(page_content="That fence is purple.", metadata={"d": 1, "e": 2}),
+            Document(page_content="foo", metadata={"a": 1}),
+            Document(page_content="bar", metadata={"a": 1}),
+            Document(page_content="baz", metadata={"d": 1, "e": 2}),
         ]
 
         store = AzureCosmosDBNoSqlVectorSearch.from_documents(
             documents,
-            azure_openai_embeddings,
+            FakeEmbeddings(),
             cosmos_client=cosmos_client,
             database_name=database_name,
             container_name=container_name,
@@ -186,20 +172,20 @@ class TestAzureCosmosDBNoSqlVectorSearch:
         )
         sleep(1)  # waits for Cosmos DB to save contents to the collection
 
-        output = store.similarity_search("Dogs", k=4)
-        assert len(output) == 4
-        assert output[0].page_content == "Dogs are tough."
+        output = store.similarity_search("foo", k=3)
+        assert len(output) == 3
+        assert output[0].page_content == "foo"
         assert output[0].metadata["a"] == 1
 
         pre_filter = {
             "where_clause": "WHERE c.metadata.a=1",
         }
         output = store.similarity_search(
-            "Dogs", k=4, pre_filter=pre_filter, with_embedding=True
+            "foo", k=3, pre_filter=pre_filter, with_embedding=True
         )
 
         assert len(output) == 2
-        assert output[0].page_content == "Dogs are tough."
+        assert output[0].page_content == "foo"
         assert output[0].metadata["a"] == 1
 
         pre_filter = {
@@ -207,9 +193,9 @@ class TestAzureCosmosDBNoSqlVectorSearch:
             "limit_offset_clause": "OFFSET 0 LIMIT 1",
         }
 
-        output = store.similarity_search("Dogs", k=4, pre_filter=pre_filter)
+        output = store.similarity_search("foo", k=3, pre_filter=pre_filter)
 
         assert len(output) == 1
-        assert output[0].page_content == "Dogs are tough."
+        assert output[0].page_content == "foo"
         assert output[0].metadata["a"] == 1
         safe_delete_database(cosmos_client)
