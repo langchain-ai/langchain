@@ -269,6 +269,9 @@ class SQLDatabase:
 
         Raises:
             ValueError: If 'snowflake-sqlalchemy' is not found
+                if 'password' and 'private_key_bytes' are not provided
+                or if both 'password' and 'private_key_bytes' are provided. This is to avoid 
+                making any assumptions about the connection method.
         """
         try:
             from snowflake.sqlalchemy import URL  # noqa: F401
@@ -276,6 +279,16 @@ class SQLDatabase:
             raise ImportError(
                 "snowflake-sqlalchemy package not found, please install with"
                 " `pip install snowflake-sqlalchemy`"
+            )
+
+        if password is None and private_key_bytes is None:
+            raise ValueError(
+                "Need to provide either 'password' or 'private_key_bytes' to connect to snowflake."
+            )
+
+        if password != None and private_key_bytes != None:
+            raise ValueError(
+                "Both 'password' and 'private_key_bytes' are provided to connect to snowflake. Please provide only one"
             )
 
         if password != None:
@@ -288,16 +301,15 @@ class SQLDatabase:
                 warehouse = warehouse,
                 role=role,
             )
-        else:
+        elif private_key_bytes != None:
             uri = URL(
-                    account = account,
-                    user = user,
-                    database = database,
-                    schema = schema,
-                    warehouse = warehouse,
-                    role=role,
-                )
-        if private_key_bytes != None:
+                account = account,
+                user = user,
+                database = database,
+                schema = schema,
+                warehouse = warehouse,
+                role=role,
+            )
             engine_args = {
                 'connect_args': {'private_key': private_key_bytes}
             }
