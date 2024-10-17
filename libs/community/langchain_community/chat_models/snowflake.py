@@ -19,6 +19,7 @@ from langchain_core.utils import (
 )
 from langchain_core.utils.utils import _build_model_kwargs
 from pydantic import Field, SecretStr, model_validator
+from typing_extensions import Self
 
 SUPPORTED_ROLES: List[str] = [
     "system",
@@ -136,14 +137,6 @@ class ChatSnowflakeCortex(BaseChatModel):
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
-        try:
-            from snowflake.snowpark import Session
-        except ImportError:
-            raise ImportError(
-                "`snowflake-snowpark-python` package not found, please install it with "
-                "`pip install snowflake-snowpark-python`"
-            )
-
         values["snowflake_username"] = get_from_dict_or_env(
             values, "snowflake_username", "SNOWFLAKE_USERNAME"
         )
@@ -165,23 +158,33 @@ class ChatSnowflakeCortex(BaseChatModel):
         values["snowflake_role"] = get_from_dict_or_env(
             values, "snowflake_role", "SNOWFLAKE_ROLE"
         )
+        return values
 
-        connection_params = {
-            "account": values["snowflake_account"],
-            "user": values["snowflake_username"],
-            "password": values["snowflake_password"].get_secret_value(),
-            "database": values["snowflake_database"],
-            "schema": values["snowflake_schema"],
-            "warehouse": values["snowflake_warehouse"],
-            "role": values["snowflake_role"],
-        }
+    @model_validator(mode="after")
+    def post_init(self) -> Self:
+        """Post initialization."""
+        try:
+            from snowflake.snowpark import Session
+        except ImportError:
+            raise ImportError(
+                "`snowflake-snowpark-python` package not found, please install it with "
+                "`pip install snowflake-snowpark-python`"
+            )
 
         try:
-            values["_sp_session"] = Session.builder.configs(connection_params).create()
+            connection_params = {
+                "account": self.snowflake_account,
+                "user": self.snowflake_username,
+                "password": self.snowflake_password.get_secret_value(),
+                "database": self.snowflake_database,
+                "schema": self.snowflake_schema,
+                "warehouse": self.snowflake_warehouse,
+                "role": self.snowflake_role,
+            }
+            self._sp_session = Session.builder.configs(connection_params).create()
         except Exception as e:
             raise ChatSnowflakeCortexError(f"Failed to create session: {e}")
-
-        return values
+        return self
 
     def __del__(self) -> None:
         if getattr(self, "_sp_session", None) is not None:
