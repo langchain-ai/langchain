@@ -962,8 +962,19 @@ def test_audio_output_modality() -> None:
         },
     )
 
-    output = llm.invoke("Make me an audio clip of you yelling")
+    history: List[BaseMessage] = [
+        HumanMessage("Make me a short audio clip of you yelling"),
+    ]
+
+    output = llm.invoke("Make me a short audio clip of you yelling")
 
     assert isinstance(output, AIMessage)
-    assert isinstance(output.content, list)
-    assert len(output.content) > 0
+    assert "audio" in output.additional_kwargs
+
+    history.append(output)
+    history.append(HumanMessage("Make me a short audio clip of you whispering"))
+
+    output = llm.invoke(history)
+
+    assert isinstance(output, AIMessage)
+    assert "audio" in output.additional_kwargs

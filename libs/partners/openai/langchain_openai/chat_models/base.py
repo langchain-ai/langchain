@@ -129,6 +129,8 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
                     invalid_tool_calls.append(
                         make_invalid_tool_call(raw_tool_call, str(e))
                     )
+        if audio := _dict.get("audio"):
+            additional_kwargs["audio"] = audio
         return AIMessage(
             content=content,
             additional_kwargs=additional_kwargs,
