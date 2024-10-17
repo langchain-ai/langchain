@@ -1333,7 +1333,7 @@ def _msg_to_chunk(message: BaseMessage) -> BaseMessageChunk:
         f"Unrecognized message class {message.__class__}. Supported classes are "
         f"{list(_MSG_CHUNK_MAP.keys())}"
     )
-    msg = create_message(msg, error_code=ErrorCode.MESSAGE_COERCION_FAILURE)
+    msg = create_message(message=msg, error_code=ErrorCode.MESSAGE_COERCION_FAILURE)
     raise ValueError(msg)
 
 
@@ -1350,7 +1350,7 @@ def _chunk_to_msg(chunk: BaseMessageChunk) -> BaseMessage:
         f"Unrecognized message chunk class {chunk.__class__}. Supported classes are "
         f"{list(_CHUNK_MSG_MAP.keys())}"
     )
-    msg = create_message(msg, error_code=ErrorCode.MESSAGE_COERCION_FAILURE)
+    msg = create_message(message=msg, error_code=ErrorCode.MESSAGE_COERCION_FAILURE)
     raise ValueError(msg)
 
 
