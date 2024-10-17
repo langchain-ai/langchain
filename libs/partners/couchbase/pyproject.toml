@@ -21,8 +21,8 @@ ignore_missing_imports = "True"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-langchain-core = "^0.3.0.dev"
-couchbase = "^4.2.1"
+langchain-core = "^0.3.10"
+couchbase = "^4.3.2"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "T201"]
