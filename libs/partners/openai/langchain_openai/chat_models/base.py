@@ -106,21 +106,26 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     Returns:
         The LangChain message.
     """
-    role = _dict.get("role")
-    name = _dict.get("name")
-    id_ = _dict.get("id")
+    # create a shallow copy of _dict
+    dictt = dict(_dict)
+
+    role = dictt.pop("role", None)
+    name = dictt.pop("name", None)
+    id_ = dictt.pop("id", None)
     if role == "user":
-        return HumanMessage(content=_dict.get("content", ""), id=id_, name=name)
+        return HumanMessage(
+            content=dictt.pop("content", ""), id=id_, name=name, **dictt
+        )
     elif role == "assistant":
         # Fix for azure
         # Also OpenAI returns None for tool invocations
-        content = _dict.get("content", "") or ""
+        content = dictt.pop("content", "") or ""
         additional_kwargs: Dict = {}
-        if function_call := _dict.get("function_call"):
+        if function_call := dictt.pop("function_call", None):
             additional_kwargs["function_call"] = dict(function_call)
         tool_calls = []
         invalid_tool_calls = []
-        if raw_tool_calls := _dict.get("tool_calls"):
+        if raw_tool_calls := dictt.pop("tool_calls", None):
             additional_kwargs["tool_calls"] = raw_tool_calls
             for raw_tool_call in raw_tool_calls:
                 try:
@@ -136,26 +141,30 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
             id=id_,
             tool_calls=tool_calls,
             invalid_tool_calls=invalid_tool_calls,
+            **dictt,
         )
     elif role == "system":
-        return SystemMessage(content=_dict.get("content", ""), name=name, id=id_)
+        return SystemMessage(
+            content=dictt.pop("content", ""), name=name, id=id_, **dictt
+        )
     elif role == "function":
         return FunctionMessage(
-            content=_dict.get("content", ""), name=cast(str, _dict.get("name")), id=id_
+            content=dictt.pop("content", ""), name=cast(str, name), id=id_, **dictt
         )
     elif role == "tool":
         additional_kwargs = {}
         if "name" in _dict:
-            additional_kwargs["name"] = _dict["name"]
+            additional_kwargs["name"] = name
         return ToolMessage(
-            content=_dict.get("content", ""),
-            tool_call_id=cast(str, _dict.get("tool_call_id")),
+            content=dictt.pop("content", ""),
+            tool_call_id=cast(str, dictt.pop("tool_call_id", None)),
             additional_kwargs=additional_kwargs,
             name=name,
             id=id_,
+            **dictt,
         )
     else:
-        return ChatMessage(content=_dict.get("content", ""), role=role, id=id_)  # type: ignore[arg-type]
+        return ChatMessage(content=dictt.pop("content", ""), role=role, id=id_, **dictt)  # type: ignore[arg-type]
 
 
 def _format_message_content(content: Any) -> Any:
@@ -231,6 +240,12 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         message_dict = {k: v for k, v in message_dict.items() if k in supported_props}
     else:
         raise TypeError(f"Got unknown type {message}")
+
+    # If message has any additional fields, add them to message_dict
+    for field in message:
+        if field[0] not in message.model_fields.keys():
+            message_dict[field[0]] = field[1]
+
     return message_dict
 
 
