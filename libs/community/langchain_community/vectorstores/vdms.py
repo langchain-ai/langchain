@@ -138,7 +138,7 @@ class VDMS(VectorStore):
         embedding_dimensions: Optional[int] = None,
         collection_name: str = DEFAULT_COLLECTION_NAME,
         engine: ENGINES = "FaissFlat",
-        metric: DISTANCE_METRICS = "L2",
+        distance_strategy: DISTANCE_METRICS = "L2",
         log_level: int = logging.WARNING,
         **kwargs: Any,
     ) -> None:
@@ -150,7 +150,7 @@ class VDMS(VectorStore):
         # Check required parameters
         self._client = client
         self.similarity_search_engine = engine
-        self.distance_strategy = metric
+        self.distance_strategy = distance_strategy
         self.embedding = embedding
         self.utils = VDMS_Utils(client, logger=self.logger)
         self._check_required_inputs(collection_name, embedding_dimensions)
