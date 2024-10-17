@@ -306,11 +306,9 @@ class TinyAsyncOpenAIInfinityEmbeddingClient:  #: :meta private:
         perm_texts_batched = self._batch(perm_texts)
 
         # Request
-        if self.aiosession is None:
-            self.aiosession = aiohttp.ClientSession(
-                trust_env=True, connector=aiohttp.TCPConnector(limit=32)
-            )
-        async with self.aiosession as session:
+        async with aiohttp.ClientSession(
+            trust_env=True, connector=aiohttp.TCPConnector(limit=32)
+        ) as session:
             embeddings_batch_perm = await asyncio.gather(
                 *[
                     self._async_request(
