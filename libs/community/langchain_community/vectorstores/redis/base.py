@@ -31,6 +31,7 @@ from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils import get_from_dict_or_env
 from langchain_core.vectorstores import VectorStore, VectorStoreRetriever
+from pydantic import ConfigDict
 
 from langchain_community.utilities.redis import (
     _array_to_buffer,
@@ -1452,8 +1453,9 @@ class RedisVectorStoreRetriever(VectorStoreRetriever):
     ]
     """Allowed search types."""
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun

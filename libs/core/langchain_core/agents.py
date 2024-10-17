@@ -8,7 +8,7 @@
 
     Please see the migration guide for information on how to migrate existing
     agents to modern langgraph agents:
-    https://python.langchain.com/v0.2/docs/how_to/migrate_agent/
+    https://python.langchain.com/docs/how_to/migrate_agent/
 
 Agents use language models to choose a sequence of actions to take.
 
@@ -25,7 +25,8 @@ The schemas for the agents themselves are defined in langchain.agents.agent.
 from __future__ import annotations
 
 import json
-from typing import Any, List, Literal, Sequence, Union
+from collections.abc import Sequence
+from typing import Any, Literal, Union
 
 from langchain_core.load.serializable import Serializable
 from langchain_core.messages import (
@@ -71,7 +72,7 @@ class AgentAction(Serializable):
         return True
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
         Default is ["langchain", "schema", "agent"]."""
         return ["langchain", "schema", "agent"]
@@ -145,7 +146,7 @@ class AgentFinish(Serializable):
         return True
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "schema", "agent"]
 
@@ -188,10 +189,17 @@ def _convert_agent_observation_to_messages(
     Returns:
         AIMessage that corresponds to the original tool invocation.
     """
+
     if isinstance(agent_action, AgentActionMessageLog):
         return [_create_function_message(agent_action, observation)]
     else:
-        return [HumanMessage(content=observation)]
+        content = observation
+        if not isinstance(observation, str):
+            try:
+                content = json.dumps(observation, ensure_ascii=False)
+            except Exception:
+                content = str(observation)
+        return [HumanMessage(content=content)]
 
 
 def _create_function_message(

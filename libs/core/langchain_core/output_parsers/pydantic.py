@@ -1,7 +1,9 @@
 import json
-from typing import Generic, List, Optional, Type
+from typing import Annotated, Generic, Optional
 
-import pydantic  # pydantic: ignore
+import pydantic
+from pydantic import SkipValidation
+from typing_extensions import override
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import JsonOutputParser
@@ -16,7 +18,7 @@ from langchain_core.utils.pydantic import (
 class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
     """Parse an output using a pydantic model."""
 
-    pydantic_object: Type[TBaseModel]  # type: ignore
+    pydantic_object: Annotated[type[TBaseModel], SkipValidation()]  # type: ignore
     """The pydantic model to parse."""
 
     def _parse_obj(self, obj: dict) -> TBaseModel:
@@ -27,10 +29,9 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
                 elif issubclass(self.pydantic_object, pydantic.v1.BaseModel):
                     return self.pydantic_object.parse_obj(obj)
                 else:
-                    raise OutputParserException(
-                        f"Unsupported model version for PydanticOutputParser: \
+                    msg = f"Unsupported model version for PydanticOutputParser: \
                             {self.pydantic_object.__class__}"
-                    )
+                    raise OutputParserException(msg)
             except (pydantic.ValidationError, pydantic.v1.ValidationError) as e:
                 raise self._parser_exception(e, obj) from e
         else:  # pydantic v1
@@ -48,7 +49,7 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
         return OutputParserException(msg, llm_output=json_string)
 
     def parse_result(
-        self, result: List[Generation], *, partial: bool = False
+        self, result: list[Generation], *, partial: bool = False
     ) -> Optional[TBaseModel]:
         """Parse the result of an LLM call to a pydantic object.
 
@@ -88,7 +89,7 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
             The format instructions for the JSON output.
         """
         # Copy schema to avoid altering original Pydantic schema.
-        schema = {k: v for k, v in self.pydantic_object.schema().items()}
+        schema = dict(self.pydantic_object.model_json_schema().items())
 
         # Remove extraneous fields.
         reduced_schema = schema
@@ -106,9 +107,13 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
         return "pydantic"
 
     @property
-    def OutputType(self) -> Type[TBaseModel]:
+    @override
+    def OutputType(self) -> type[TBaseModel]:
         """Return the pydantic model."""
         return self.pydantic_object
+
+
+PydanticOutputParser.model_rebuild()
 
 
 _PYDANTIC_FORMAT_INSTRUCTIONS = """The output should be formatted as a JSON instance that conforms to the JSON schema below.
