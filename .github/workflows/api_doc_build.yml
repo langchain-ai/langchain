@@ -10,6 +10,7 @@ env:
 
 jobs:
   build:
+    if: github.repository_owner == 'langchain-ai'
     runs-on: ubuntu-latest
     permissions: write-all
     steps:

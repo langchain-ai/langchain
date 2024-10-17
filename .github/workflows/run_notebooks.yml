@@ -19,8 +19,8 @@ env:
 
 jobs:
   build:
+    if: github.repository_owner == 'langchain-ai'
     runs-on: ubuntu-latest
-
     name: "Test docs"
     steps:
       - uses: actions/checkout@v4
