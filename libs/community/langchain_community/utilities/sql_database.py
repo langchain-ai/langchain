@@ -268,10 +268,10 @@ class SQLDatabase:
                 Snowflake connection details.
 
         Raises:
-            ValueError: If 'snowflake-sqlalchemy' is not found
-                if 'password' and 'private_key_bytes' are not provided
-                or if both 'password' and 'private_key_bytes' are provided. This is to avoid 
-                making any assumptions about the connection method.
+            ImportError: If 'snowflake-sqlalchemy' is not found
+            ValueError: if 'password' and 'private_key_bytes' are not provided
+                        if both 'password' and 'private_key_bytes' are provided.
+                        This is to avoid making any assumptions about the connection method.
         """
         try:
             from snowflake.sqlalchemy import URL  # noqa: F401
