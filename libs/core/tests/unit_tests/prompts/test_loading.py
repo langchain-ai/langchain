@@ -99,6 +99,28 @@ def test_loading_with_template_as_file() -> None:
         assert prompt == expected_prompt
 
 
+def test_loading_from_json_utf8() -> None:
+    """Test loading when the template is a file."""
+    with change_directory(EXAMPLE_DIR):
+        prompt = load_prompt("simple_prompt_with_template_file_utf8.json")
+        expected_prompt = PromptTemplate(
+            input_variables=["adjective", "content"],
+            template="Tell me a {adjective} joke about {content}. AÁĂȀ🐌😁",
+        )
+        assert prompt == expected_prompt
+
+
+def test_loading_from_json_cp932() -> None:
+    """Test loading when the template is a file."""
+    with change_directory(EXAMPLE_DIR):
+        prompt = load_prompt("simple_prompt_with_template_file_cp932.json")
+        expected_prompt = PromptTemplate(
+            input_variables=["adjective", "content"],
+            template="Tell me a {adjective} joke about {content}. SJIS日本語テスト",
+        )
+        assert prompt == expected_prompt
+
+
 def test_loading_few_shot_prompt_from_yaml() -> None:
     """Test loading few shot prompt from yaml."""
     with change_directory(EXAMPLE_DIR):
