@@ -1,10 +1,12 @@
 """Test of Apache Cassandra graph vector g_store class `CassandraGraphVectorStore`"""
 
 import json
-import random
 import os
-from typing import Any, Iterable, List, Optional, Tuple, Union
+import random
+from contextlib import contextmanager
+from typing import Any, Generator, Iterable, List, Optional
 
+import pytest
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 
@@ -15,9 +17,9 @@ from langchain_community.graph_vectorstores.links import (
     Link,
     add_links,
 )
-
 from tests.integration_tests.cache.fake_embeddings import (
-    FakeEmbeddings, AngularTwoDimensionalEmbeddings,
+    AngularTwoDimensionalEmbeddings,
+    FakeEmbeddings,
 )
 
 TEST_KEYSPACE = "graph_test_keyspace"
@@ -50,7 +52,8 @@ class ParserEmbeddings(Embeddings):
         return self.embed_query(text)
 
 
-def _embedding_d2() -> Embeddings:
+@pytest.fixture
+def embedding_d2() -> Embeddings:
     return ParserEmbeddings(dimension=2)
 
 
@@ -72,7 +75,6 @@ class EarthEmbeddings(Embeddings):
             vector = self.get_vector_near(0.8)
         else:
             vector = self.get_vector_near(0.1)
-        print(f"Embedded {text} as {vector}")
         return vector
 
     async def aembed_query(self, text: str) -> list[float]:
@@ -83,9 +85,10 @@ def _result_ids(docs: Iterable[Document]) -> List[Optional[str]]:
     return [doc.id for doc in docs]
 
 
-def _graph_vector_store_docs() -> list[Document]:
+@pytest.fixture
+def graph_vector_store_docs() -> list[Document]:
     """
-    This is a set of Documents to pre-populate a graph vector g_store,
+    This is a set of Documents to pre-populate a graph vector store,
     with entries placed in a certain way.
 
     Space of the entries (under Euclidean similarity):
@@ -146,10 +149,11 @@ def _graph_vector_store_docs() -> list[Document]:
     return docs_a + docs_b + docs_f + docs_t
 
 
-def _get_cassandra_session(table_name: str, drop: bool = True) -> Any:
+@contextmanager
+def cassandra_session(table_name: str, drop: bool = True) -> Generator[Any, None, None]:
+    # Initialize the Cassandra cluster and session
     from cassandra.cluster import Cluster
 
-    # get db connection
     if "CASSANDRA_CONTACT_POINTS" in os.environ:
         contact_points = [
             cp.strip()
@@ -158,127 +162,95 @@ def _get_cassandra_session(table_name: str, drop: bool = True) -> Any:
         ]
     else:
         contact_points = None
+
     cluster = Cluster(contact_points)
     session = cluster.connect()
-    # ensure keyspace exists
-    session.execute(
-        (
-            f"CREATE KEYSPACE IF NOT EXISTS {TEST_KEYSPACE} "
-            f"WITH replication = {{'class': 'SimpleStrategy', 'replication_factor': 1}}"
+
+    try:
+        # Ensure keyspace exists
+        session.execute(
+            (
+                f"CREATE KEYSPACE IF NOT EXISTS {TEST_KEYSPACE}"
+                " WITH replication = "
+                "{'class': 'SimpleStrategy', 'replication_factor': 1}"
+            )
         )
-    )
-    # drop table if required
-    if drop:
-        session.execute(f"DROP TABLE IF EXISTS {TEST_KEYSPACE}.{table_name}")
+        # Drop table if required
+        if drop:
+            session.execute(f"DROP TABLE IF EXISTS {TEST_KEYSPACE}.{table_name}")
 
-    return session
+        # Yield the session for usage
+        yield session
+    finally:
+        # Ensure proper shutdown/cleanup of resources
+        session.shutdown()
+        cluster.shutdown()
 
 
-def _graphvectorstore_from_texts(
-    texts: List[str],
-    embedding: Embeddings,
-    metadatas: Optional[List[dict]] = None,
-    ids: Optional[List[str]] = None,
-    drop: bool = True,
-    metadata_deny_list: Iterable[str] = [],
+@pytest.fixture(scope="function")
+def graph_vector_store_angular(
     table_name: str = "graph_test_table",
-) -> CassandraGraphVectorStore:
-    session = _get_cassandra_session(table_name=table_name, drop=drop)
-    return CassandraGraphVectorStore.from_texts(
-        texts=texts,
-        embedding=embedding,
-        metadatas=metadatas,
-        ids=ids,
-        session=session,
-        keyspace=TEST_KEYSPACE,
-        table_name=table_name,
-        metadata_deny_list=metadata_deny_list,
-    )
+) -> Generator[CassandraGraphVectorStore, None, None]:
+    with cassandra_session(table_name=table_name) as session:
+        yield CassandraGraphVectorStore(
+            embedding=AngularTwoDimensionalEmbeddings(),
+            session=session,
+            keyspace=TEST_KEYSPACE,
+            table_name=table_name,
+        )
 
 
-async def _graphvectorstore_from_texts_async(
-    texts: List[str],
-    embedding: Embeddings,
-    metadatas: Optional[List[dict]] = None,
-    ids: Optional[List[str]] = None,
-    drop: bool = True,
-    metadata_deny_list: Iterable[str] = [],
+@pytest.fixture(scope="function")
+def graph_vector_store_earth(
     table_name: str = "graph_test_table",
-) -> CassandraGraphVectorStore:
-    session = _get_cassandra_session(table_name=table_name, drop=drop)
-    return await CassandraGraphVectorStore.afrom_texts(
-        texts=texts,
-        embedding=embedding,
-        metadatas=metadatas,
-        ids=ids,
-        session=session,
-        keyspace=TEST_KEYSPACE,
-        table_name=table_name,
-        metadata_deny_list=metadata_deny_list,
-    )
+) -> Generator[CassandraGraphVectorStore, None, None]:
+    with cassandra_session(table_name=table_name) as session:
+        yield CassandraGraphVectorStore(
+            embedding=EarthEmbeddings(),
+            session=session,
+            keyspace=TEST_KEYSPACE,
+            table_name=table_name,
+        )
 
 
-def _graphvectorstore_from_documents(
-    docs: List[Document],
-    embedding: Embeddings,
-    ids: Optional[List[str]] = None,
-    drop: bool = True,
-    metadata_deny_list: Iterable[str] = [],
+@pytest.fixture(scope="function")
+def graph_vector_store_fake(
     table_name: str = "graph_test_table",
-) -> CassandraGraphVectorStore:
-    session = _get_cassandra_session(table_name=table_name, drop=drop)
-    return CassandraGraphVectorStore.from_documents(
-        documents=docs,
-        ids=ids,
-        embedding=embedding,
-        session=session,
-        keyspace=TEST_KEYSPACE,
-        table_name=table_name,
-        metadata_deny_list=metadata_deny_list,
-    )
+) -> Generator[CassandraGraphVectorStore, None, None]:
+    with cassandra_session(table_name=table_name) as session:
+        yield CassandraGraphVectorStore(
+            embedding=FakeEmbeddings(),
+            session=session,
+            keyspace=TEST_KEYSPACE,
+            table_name=table_name,
+        )
 
 
-async def _graphvectorstore_from_documents_async(
-    docs: List[Document],
-    embedding: Embeddings,
-    ids: Optional[List[str]] = None,
-    drop: bool = True,
-    metadata_deny_list: Iterable[str] = [],
+@pytest.fixture(scope="function")
+def graph_vector_store_d2(
+    embedding_d2: Embeddings,
     table_name: str = "graph_test_table",
-) -> CassandraGraphVectorStore:
-    session = _get_cassandra_session(table_name=table_name, drop=drop)
-    return await CassandraGraphVectorStore.afrom_documents(
-        documents=docs,
-        ids=ids,
-        embedding=embedding,
-        session=session,
-        keyspace=TEST_KEYSPACE,
-        table_name=table_name,
-        metadata_deny_list=metadata_deny_list,
-    )
+) -> Generator[CassandraGraphVectorStore, None, None]:
+    with cassandra_session(table_name=table_name) as session:
+        yield CassandraGraphVectorStore(
+            embedding=embedding_d2,
+            session=session,
+            keyspace=TEST_KEYSPACE,
+            table_name=table_name,
+        )
 
 
-def _graph_vector_store_d2(
-    table_name: str = "graph_test_table",
-) -> CassandraGraphVectorStore:
-    session = _get_cassandra_session(table_name=table_name)
-    return CassandraGraphVectorStore(
-        embedding=_embedding_d2(),
-        session=session,
-        keyspace=TEST_KEYSPACE,
-        table_name=table_name,
-    )
+@pytest.fixture(scope="function")
+def populated_graph_vector_store_d2(
+    graph_vector_store_d2: CassandraGraphVectorStore,
+    graph_vector_store_docs: list[Document],
+) -> Generator[CassandraGraphVectorStore, None, None]:
+    graph_vector_store_d2.add_documents(graph_vector_store_docs)
+    yield graph_vector_store_d2
 
 
-def _populated_graph_vector_store_d2() -> CassandraGraphVectorStore:
-    g_store = _graph_vector_store_d2()
-    g_store.add_documents(_graph_vector_store_docs())
-    return g_store
-
-
-def test_mmr_traversal() -> None:
-    """
-    Test end to end construction and MMR search.
+def test_mmr_traversal(graph_vector_store_angular: CassandraGraphVectorStore) -> None:
+    """ Test end to end construction and MMR search.
     The embedding function used here ensures `texts` become
     the following vectors on a circle (numbered v0 through v3):
 
@@ -296,11 +268,6 @@ def test_mmr_traversal() -> None:
     Both v2 and v3 are reachable via edges from v0, so once it is
     selected, those are both considered.
     """
-    g_store = _graphvectorstore_from_documents(
-        docs=[],
-        embedding=AngularTwoDimensionalEmbeddings(),
-    )
-
     v0 = Node(
         id="v0",
         text="-0.124",
@@ -326,6 +293,8 @@ def test_mmr_traversal() -> None:
             Link.incoming(kind="explicit", tag="link"),
         ],
     )
+
+    g_store = graph_vector_store_angular
     g_store.add_nodes([v0, v1, v2, v3])
 
     results = g_store.mmr_traversal_search("0.0", k=2, fetch_k=2)
@@ -349,7 +318,9 @@ def test_mmr_traversal() -> None:
     assert _result_ids(results) == ["v0", "v2", "v1", "v3"]
 
 
-def test_write_retrieve_keywords() -> None:
+def test_write_retrieve_keywords(
+    graph_vector_store_earth: CassandraGraphVectorStore,
+) -> None:
     greetings = Node(
         id="greetings",
         text="Typical Greetings",
@@ -378,11 +349,7 @@ def test_write_retrieve_keywords() -> None:
         ],
     )
 
-    g_store = _graphvectorstore_from_documents(
-        docs=[],
-        embedding=EarthEmbeddings(),
-    )
-
+    g_store = graph_vector_store_earth
     g_store.add_nodes(nodes=[greetings, node1, node2])
 
     # Doc2 is more similar, but World and Earth are similar enough that doc1 also
@@ -409,12 +376,7 @@ def test_write_retrieve_keywords() -> None:
     assert set(_result_ids(results)) == {"doc2", "doc1", "greetings"}
 
 
-def test_metadata() -> None:
-    g_store = _graphvectorstore_from_documents(
-        docs=[],
-        embedding=FakeEmbeddings(),
-    )
-
+def test_metadata(graph_vector_store_fake: CassandraGraphVectorStore) -> None:
     doc_a = Node(
         id="a",
         text="A",
@@ -425,6 +387,7 @@ def test_metadata() -> None:
         ],
     )
 
+    g_store = graph_vector_store_fake
     g_store.add_nodes([doc_a])
     results = g_store.similarity_search("A")
     assert len(results) == 1
@@ -437,243 +400,272 @@ def test_metadata() -> None:
     }
 
 
-def test_gvs_similarity_search_sync() -> None:
-    """Simple (non-graph) similarity search on a graph vector g_store."""
-    g_store = _populated_graph_vector_store_d2()
-    ss_response = g_store.similarity_search(query="[2, 10]", k=2)
-    ss_labels = [doc.metadata["label"] for doc in ss_response]
-    assert ss_labels == ["AR", "A0"]
-    ss_by_v_response = g_store.similarity_search_by_vector(embedding=[2, 10], k=2)
-    ss_by_v_labels = [doc.metadata["label"] for doc in ss_by_v_response]
-    assert ss_by_v_labels == ["AR", "A0"]
+class TestCassandraGraphVectorStore:
+    def test_gvs_similarity_search_sync(
+        self,
+        populated_graph_vector_store_d2: CassandraGraphVectorStore,
+    ) -> None:
+        """Simple (non-graph) similarity search on a graph vector g_store."""
+        g_store = populated_graph_vector_store_d2
+        ss_response = g_store.similarity_search(query="[2, 10]", k=2)
+        ss_labels = [doc.metadata["label"] for doc in ss_response]
+        assert ss_labels == ["AR", "A0"]
+        ss_by_v_response = g_store.similarity_search_by_vector(embedding=[2, 10], k=2)
+        ss_by_v_labels = [doc.metadata["label"] for doc in ss_by_v_response]
+        assert ss_by_v_labels == ["AR", "A0"]
 
+    async def test_gvs_similarity_search_async(
+        self,
+        populated_graph_vector_store_d2: CassandraGraphVectorStore,
+    ) -> None:
+        """Simple (non-graph) similarity search on a graph vector store."""
+        g_store = populated_graph_vector_store_d2
+        ss_response = await g_store.asimilarity_search(query="[2, 10]", k=2)
+        ss_labels = [doc.metadata["label"] for doc in ss_response]
+        assert ss_labels == ["AR", "A0"]
+        ss_by_v_response = await g_store.asimilarity_search_by_vector(
+            embedding=[2, 10], k=2
+        )
+        ss_by_v_labels = [doc.metadata["label"] for doc in ss_by_v_response]
+        assert ss_by_v_labels == ["AR", "A0"]
 
-async def test_gvs_similarity_search_async() -> None:
-    """Simple (non-graph) similarity search on a graph vector g_store."""
-    g_store = _populated_graph_vector_store_d2()
-    ss_response = await g_store.asimilarity_search(query="[2, 10]", k=2)
-    ss_labels = [doc.metadata["label"] for doc in ss_response]
-    assert ss_labels == ["AR", "A0"]
-    ss_by_v_response = await g_store.asimilarity_search_by_vector(
-        embedding=[2, 10], k=2
-    )
-    ss_by_v_labels = [doc.metadata["label"] for doc in ss_by_v_response]
-    assert ss_by_v_labels == ["AR", "A0"]
+    def test_gvs_traversal_search_sync(
+        self,
+        populated_graph_vector_store_d2: CassandraGraphVectorStore,
+    ) -> None:
+        """Graph traversal search on a graph vector store."""
+        g_store = populated_graph_vector_store_d2
+        ts_response = g_store.traversal_search(query="[2, 10]", k=2, depth=2)
+        # this is a set, as some of the internals of trav.search are set-driven
+        # so ordering is not deterministic:
+        ts_labels = {doc.metadata["label"] for doc in ts_response}
+        assert ts_labels == {"AR", "A0", "BR", "B0", "TR", "T0"}
 
+    async def test_gvs_traversal_search_async(
+        self,
+        populated_graph_vector_store_d2: CassandraGraphVectorStore,
+    ) -> None:
+        """Graph traversal search on a graph vector store."""
+        g_store = populated_graph_vector_store_d2
+        ts_labels = set()
+        async for doc in g_store.atraversal_search(query="[2, 10]", k=2, depth=2):
+            ts_labels.add(doc.metadata["label"])
+        # this is a set, as some of the internals of trav.search are set-driven
+        # so ordering is not deterministic:
+        assert ts_labels == {"AR", "A0", "BR", "B0", "TR", "T0"}
 
-def test_gvs_traversal_search_sync() -> None:
-    """Graph traversal search on a graph vector g_store."""
-    g_store = _populated_graph_vector_store_d2()
-    ts_response = g_store.traversal_search(query="[2, 10]", k=2, depth=2)
-    # this is a set, as some of the internals of trav.search are set-driven
-    # so ordering is not deterministic:
-    ts_labels = {doc.metadata["label"] for doc in ts_response}
-    assert ts_labels == {"AR", "A0", "BR", "B0", "TR", "T0"}
+    def test_gvs_mmr_traversal_search_sync(
+        self,
+        populated_graph_vector_store_d2: CassandraGraphVectorStore,
+    ) -> None:
+        """MMR Graph traversal search on a graph vector store."""
+        g_store = populated_graph_vector_store_d2
+        mt_response = g_store.mmr_traversal_search(
+            query="[2, 10]",
+            k=2,
+            depth=2,
+            fetch_k=1,
+            adjacent_k=2,
+            lambda_mult=0.1,
+        )
+        # TODO: can this rightfully be a list (or must it be a set)?
+        mt_labels = {doc.metadata["label"] for doc in mt_response}
+        assert mt_labels == {"AR", "BR"}
 
+    async def test_gvs_mmr_traversal_search_async(
+        self,
+        populated_graph_vector_store_d2: CassandraGraphVectorStore,
+    ) -> None:
+        """MMR Graph traversal search on a graph vector store."""
+        g_store = populated_graph_vector_store_d2
+        mt_labels = set()
+        async for doc in g_store.ammr_traversal_search(
+            query="[2, 10]",
+            k=2,
+            depth=2,
+            fetch_k=1,
+            adjacent_k=2,
+            lambda_mult=0.1,
+        ):
+            mt_labels.add(doc.metadata["label"])
+        # TODO: can this rightfully be a list (or must it be a set)?
+        assert mt_labels == {"AR", "BR"}
 
-async def test_gvs_traversal_search_async() -> None:
-    """Graph traversal search on a graph vector g_store."""
-    g_store = _populated_graph_vector_store_d2()
-    ts_labels = set()
-    async for doc in g_store.atraversal_search(query="[2, 10]", k=2, depth=2):
-        ts_labels.add(doc.metadata["label"])
-    # this is a set, as some of the internals of trav.search are set-driven
-    # so ordering is not deterministic:
-    assert ts_labels == {"AR", "A0", "BR", "B0", "TR", "T0"}
+    def test_gvs_metadata_search_sync(
+        self,
+        populated_graph_vector_store_d2: CassandraGraphVectorStore,
+    ) -> None:
+        """Metadata search on a graph vector store."""
+        g_store = populated_graph_vector_store_d2
+        mt_response = g_store.metadata_search(
+            filter={"label": "T0"},
+            n=2,
+        )
+        doc: Document = next(iter(mt_response))
+        assert doc.page_content == "[-10, 0]"
+        links = doc.metadata["links"]
+        assert len(links) == 1
+        link: Link = links.pop()
+        assert isinstance(link, Link)
+        assert link.direction == "in"
+        assert link.kind == "at_example"
+        assert link.tag == "tag_0"
 
+    async def test_gvs_metadata_search_async(
+        self,
+        populated_graph_vector_store_d2: CassandraGraphVectorStore,
+    ) -> None:
+        """Metadata search on a graph vector store."""
+        g_store = populated_graph_vector_store_d2
+        mt_response = await g_store.ametadata_search(
+            filter={"label": "T0"},
+            n=2,
+        )
+        doc: Document = next(iter(mt_response))
+        assert doc.page_content == "[-10, 0]"
+        links: set[Link] = doc.metadata["links"]
+        assert len(links) == 1
+        link: Link = links.pop()
+        assert isinstance(link, Link)
+        assert link.direction == "in"
+        assert link.kind == "at_example"
+        assert link.tag == "tag_0"
 
-def test_gvs_mmr_traversal_search_sync() -> None:
-    """MMR Graph traversal search on a graph vector g_store."""
-    g_store = _populated_graph_vector_store_d2()
-    mt_response = g_store.mmr_traversal_search(
-        query="[2, 10]",
-        k=2,
-        depth=2,
-        fetch_k=1,
-        adjacent_k=2,
-        lambda_mult=0.1,
-    )
-    # TODO: can this rightfully be a list (or must it be a set)?
-    mt_labels = {doc.metadata["label"] for doc in mt_response}
-    assert mt_labels == {"AR", "BR"}
+    def test_gvs_get_by_document_id_sync(
+        self,
+        populated_graph_vector_store_d2: CassandraGraphVectorStore,
+    ) -> None:
+        """Get by document_id on a graph vector store."""
+        g_store = populated_graph_vector_store_d2
+        doc = g_store.get_by_document_id(document_id="FL")
+        assert doc is not None
+        assert doc.page_content == "[1, -9]"
+        links = doc.metadata["links"]
+        assert len(links) == 1
+        link: Link = links.pop()
+        assert isinstance(link, Link)
+        assert link.direction == "out"
+        assert link.kind == "af_example"
+        assert link.tag == "tag_l"
 
+        invalid_doc = g_store.get_by_document_id(document_id="invalid")
+        assert invalid_doc is None
 
-async def test_gvs_mmr_traversal_search_async() -> None:
-    """MMR Graph traversal search on a graph vector g_store."""
-    g_store = _populated_graph_vector_store_d2()
-    mt_labels = set()
-    async for doc in g_store.ammr_traversal_search(
-        query="[2, 10]",
-        k=2,
-        depth=2,
-        fetch_k=1,
-        adjacent_k=2,
-        lambda_mult=0.1,
-    ):
-        mt_labels.add(doc.metadata["label"])
-    # TODO: can this rightfully be a list (or must it be a set)?
-    assert mt_labels == {"AR", "BR"}
+    async def test_gvs_get_by_document_id_async(
+        self,
+        populated_graph_vector_store_d2: CassandraGraphVectorStore,
+    ) -> None:
+        """Get by document_id on a graph vector store."""
+        g_store = populated_graph_vector_store_d2
+        doc = await g_store.aget_by_document_id(document_id="FL")
+        assert doc is not None
+        assert doc.page_content == "[1, -9]"
+        links = doc.metadata["links"]
+        assert len(links) == 1
+        link: Link = links.pop()
+        assert isinstance(link, Link)
+        assert link.direction == "out"
+        assert link.kind == "af_example"
+        assert link.tag == "tag_l"
 
+        invalid_doc = await g_store.aget_by_document_id(document_id="invalid")
+        assert invalid_doc is None
 
-def test_gvs_metadata_search_sync() -> None:
-    """Metadata search on a graph vector g_store."""
-    g_store = _populated_graph_vector_store_d2()
-    mt_response = g_store.metadata_search(
-        filter={"label": "T0"},
-        n=2,
-    )
-    doc: Document = next(iter(mt_response))
-    assert doc.page_content == "[-10, 0]"
-    links = doc.metadata["links"]
-    assert len(links) == 1
-    link: Link = links.pop()
-    assert isinstance(link, Link)
-    assert link.direction == "in"
-    assert link.kind == "at_example"
-    assert link.tag == "tag_0"
+    def test_gvs_from_texts(
+        self,
+        graph_vector_store_d2: CassandraGraphVectorStore,
+    ) -> None:
+        g_store = graph_vector_store_d2
+        g_store.add_texts(
+            texts=["[1, 2]"],
+            metadatas=[{"md": 1}],
+            ids=["x_id"],
+        )
 
+        hits = g_store.similarity_search("[2, 1]", k=2)
+        assert len(hits) == 1
+        assert hits[0].page_content == "[1, 2]"
+        assert hits[0].id == "x_id"
+        # there may be more re:graph structure.
+        assert hits[0].metadata["md"] == "1.0"
 
-async def test_gvs_metadata_search_async() -> None:
-    """Metadata search on a graph vector g_store."""
-    g_store = _populated_graph_vector_store_d2()
-    mt_response = await g_store.ametadata_search(
-        filter={"label": "T0"},
-        n=2,
-    )
-    doc: Document = next(iter(mt_response))
-    assert doc.page_content == "[-10, 0]"
-    links: set[Link] = doc.metadata["links"]
-    assert len(links) == 1
-    link: Link = links.pop()
-    assert isinstance(link, Link)
-    assert link.direction == "in"
-    assert link.kind == "at_example"
-    assert link.tag == "tag_0"
+    def test_gvs_from_documents_containing_ids(
+        self,
+        graph_vector_store_d2: CassandraGraphVectorStore,
+    ) -> None:
+        the_document = Document(
+            page_content="[1, 2]",
+            metadata={"md": 1},
+            id="x_id",
+        )
+        g_store = graph_vector_store_d2
+        g_store.add_documents([the_document])
+        hits = g_store.similarity_search("[2, 1]", k=2)
+        assert len(hits) == 1
+        assert hits[0].page_content == "[1, 2]"
+        assert hits[0].id == "x_id"
+        # there may be more re:graph structure.
+        assert hits[0].metadata["md"] == "1.0"
 
+    def test_gvs_add_nodes_sync(
+        self,
+        *,
+        graph_vector_store_d2: CassandraGraphVectorStore,
+    ) -> None:
+        links0 = [
+            Link(kind="kA", direction="out", tag="tA"),
+            Link(kind="kB", direction="bidir", tag="tB"),
+        ]
+        links1 = [
+            Link(kind="kC", direction="in", tag="tC"),
+        ]
+        nodes = [
+            Node(id="id0", text="[0, 2]", metadata={"m": 0}, links=links0),
+            Node(text="[0, 1]", metadata={"m": 1}, links=links1),
+        ]
+        graph_vector_store_d2.add_nodes(nodes)
+        hits = graph_vector_store_d2.similarity_search_by_vector([0, 3])
+        assert len(hits) == 2
+        assert hits[0].id == "id0"
+        assert hits[0].page_content == "[0, 2]"
+        md0 = hits[0].metadata
+        assert md0["m"] == "0.0"
+        assert any(isinstance(v, set) for k, v in md0.items() if k != "m")
 
-def test_gvs_get_by_document_id_sync() -> None:
-    """Get by document_id on a graph vector g_store."""
-    g_store = _populated_graph_vector_store_d2()
-    doc = g_store.get_by_document_id(document_id="FL")
-    assert doc is not None
-    assert doc.page_content == "[1, -9]"
-    links = doc.metadata["links"]
-    assert len(links) == 1
-    link: Link = links.pop()
-    assert isinstance(link, Link)
-    assert link.direction == "out"
-    assert link.kind == "af_example"
-    assert link.tag == "tag_l"
+        assert hits[1].id != "id0"
+        assert hits[1].page_content == "[0, 1]"
+        md1 = hits[1].metadata
+        assert md1["m"] == "1.0"
+        assert any(isinstance(v, set) for k, v in md1.items() if k != "m")
 
-    invalid_doc = g_store.get_by_document_id(document_id="invalid")
-    assert invalid_doc is None
+    async def test_gvs_add_nodes_async(
+        self,
+        *,
+        graph_vector_store_d2: CassandraGraphVectorStore,
+    ) -> None:
+        links0 = [
+            Link(kind="kA", direction="out", tag="tA"),
+            Link(kind="kB", direction="bidir", tag="tB"),
+        ]
+        links1 = [
+            Link(kind="kC", direction="in", tag="tC"),
+        ]
+        nodes = [
+            Node(id="id0", text="[0, 2]", metadata={"m": 0}, links=links0),
+            Node(text="[0, 1]", metadata={"m": 1}, links=links1),
+        ]
+        async for _ in graph_vector_store_d2.aadd_nodes(nodes):
+            pass
 
-
-async def test_gvs_get_by_document_id_async() -> None:
-    """Get by document_id on a graph vector g_store."""
-    g_store = _populated_graph_vector_store_d2()
-    doc = await g_store.aget_by_document_id(document_id="FL")
-    assert doc is not None
-    assert doc.page_content == "[1, -9]"
-    links = doc.metadata["links"]
-    assert len(links) == 1
-    link: Link = links.pop()
-    assert isinstance(link, Link)
-    assert link.direction == "out"
-    assert link.kind == "af_example"
-    assert link.tag == "tag_l"
-
-    invalid_doc = await g_store.aget_by_document_id(document_id="invalid")
-    assert invalid_doc is None
-
-
-def test_gvs_from_texts() -> None:
-    g_store = _graphvectorstore_from_texts(
-        texts=["[1, 2]"],
-        embedding=_embedding_d2(),
-        metadatas=[{"md": 1}],
-        ids=["x_id"],
-    )
-
-    hits = g_store.similarity_search("[2, 1]", k=2)
-    assert len(hits) == 1
-    assert hits[0].page_content == "[1, 2]"
-    assert hits[0].id == "x_id"
-    # there may be more re:graph structure.
-    assert hits[0].metadata["md"] == "1.0"
-
-
-def test_gvs_from_documents_containing_ids() -> None:
-    the_document = Document(
-        page_content="[1, 2]",
-        metadata={"md": 1},
-        id="x_id",
-    )
-    g_store = _graphvectorstore_from_documents(
-        docs=[the_document],
-        embedding=_embedding_d2(),
-    )
-    hits = g_store.similarity_search("[2, 1]", k=2)
-    assert len(hits) == 1
-    assert hits[0].page_content == "[1, 2]"
-    assert hits[0].id == "x_id"
-    # there may be more re:graph structure.
-    assert hits[0].metadata["md"] == "1.0"
-
-
-def test_gvs_add_nodes_sync() -> None:
-    g_store = _graph_vector_store_d2()
-    links0 = [
-        Link(kind="kA", direction="out", tag="tA"),
-        Link(kind="kB", direction="bidir", tag="tB"),
-    ]
-    links1 = [
-        Link(kind="kC", direction="in", tag="tC"),
-    ]
-    nodes = [
-        Node(id="id0", text="[0, 2]", metadata={"m": 0}, links=links0),
-        Node(text="[0, 1]", metadata={"m": 1}, links=links1),
-    ]
-    g_store.add_nodes(nodes)
-    hits = g_store.similarity_search_by_vector([0, 3])
-    assert len(hits) == 2
-    assert hits[0].id == "id0"
-    assert hits[0].page_content == "[0, 2]"
-    md0 = hits[0].metadata
-    assert md0["m"] == "0.0"
-    assert any(isinstance(v, set) for k, v in md0.items() if k != "m")
-    assert hits[1].id != "id0"
-    assert hits[1].page_content == "[0, 1]"
-    md1 = hits[1].metadata
-    assert md1["m"] == "1.0"
-    assert any(isinstance(v, set) for k, v in md1.items() if k != "m")
-
-
-async def test_gvs_add_nodes_async() -> None:
-    g_store = _graph_vector_store_d2()
-    links0 = [
-        Link(kind="kA", direction="out", tag="tA"),
-        Link(kind="kB", direction="bidir", tag="tB"),
-    ]
-    links1 = [
-        Link(kind="kC", direction="in", tag="tC"),
-    ]
-    nodes = [
-        Node(id="id0", text="[0, 2]", metadata={"m": 0}, links=links0),
-        Node(text="[0, 1]", metadata={"m": 1}, links=links1),
-    ]
-    async for _ in g_store.aadd_nodes(nodes):
-        pass
-
-    hits = await g_store.asimilarity_search_by_vector([0, 3])
-    assert len(hits) == 2
-    assert hits[0].id == "id0"
-    assert hits[0].page_content == "[0, 2]"
-    md0 = hits[0].metadata
-    assert md0["m"] == "0.0"
-    assert any(isinstance(v, set) for k, v in md0.items() if k != "m")
-    assert hits[1].id != "id0"
-    assert hits[1].page_content == "[0, 1]"
-    md1 = hits[1].metadata
-    assert md1["m"] == "1.0"
-    assert any(isinstance(v, set) for k, v in md1.items() if k != "m")
+        hits = await graph_vector_store_d2.asimilarity_search_by_vector([0, 3])
+        assert len(hits) == 2
+        assert hits[0].id == "id0"
+        assert hits[0].page_content == "[0, 2]"
+        md0 = hits[0].metadata
+        assert md0["m"] == "0.0"
+        assert any(isinstance(v, set) for k, v in md0.items() if k != "m")
+        assert hits[1].id != "id0"
+        assert hits[1].page_content == "[0, 1]"
+        md1 = hits[1].metadata
+        assert md1["m"] == "1.0"
+        assert any(isinstance(v, set) for k, v in md1.items() if k != "m")

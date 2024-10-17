@@ -4,6 +4,7 @@ import asyncio
 import importlib.metadata
 import typing
 import uuid
+import warnings
 from typing import (
     Any,
     Awaitable,
@@ -1165,7 +1166,7 @@ class Cassandra(VectorStore):
         ids: Optional[List[str]] = None,
         ttl_seconds: Optional[int] = None,
         body_index_options: Optional[List[Tuple[str, Any]]] = None,
-        metadata_indexing: Iterable[str] = [],
+        metadata_indexing: Union[Tuple[str, Iterable[str]], str] = "all",
         **kwargs: Any,
     ) -> CVST:
         """Create a Cassandra vector store from raw texts.
@@ -1229,7 +1230,7 @@ class Cassandra(VectorStore):
         ids: Optional[List[str]] = None,
         ttl_seconds: Optional[int] = None,
         body_index_options: Optional[List[Tuple[str, Any]]] = None,
-        metadata_indexing: Iterable[str] = [],
+        metadata_indexing: Union[Tuple[str, Iterable[str]], str] = "all",
         **kwargs: Any,
     ) -> CVST:
         """Create a Cassandra vector store from raw texts.
@@ -1302,7 +1303,7 @@ class Cassandra(VectorStore):
         ids: Optional[List[str]] = None,
         ttl_seconds: Optional[int] = None,
         body_index_options: Optional[List[Tuple[str, Any]]] = None,
-        metadata_indexing: Iterable[str] = [],
+        metadata_indexing: Union[Tuple[str, Iterable[str]], str] = "all",
         **kwargs: Any,
     ) -> CVST:
         """Create a Cassandra vector store from a document list.
@@ -1334,6 +1335,18 @@ class Cassandra(VectorStore):
         Returns:
             a Cassandra vector store.
         """
+        if ids is not None:
+            warnings.warn(
+                (
+                    "Parameter `ids` to Cassandra's `from_documents` "
+                    "method is deprecated. Please set the supplied documents' "
+                    "`.id` attribute instead. The id attribute of Document "
+                    "is ignored as long as the `ids` parameter is passed."
+                ),
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
         store = cls(
             embedding=embedding,
             session=session,
@@ -1359,7 +1372,7 @@ class Cassandra(VectorStore):
         ids: Optional[List[str]] = None,
         ttl_seconds: Optional[int] = None,
         body_index_options: Optional[List[Tuple[str, Any]]] = None,
-        metadata_indexing: Iterable[str] = [],
+        metadata_indexing: Union[Tuple[str, Iterable[str]], str] = "all",
         **kwargs: Any,
     ) -> CVST:
         """Create a Cassandra vector store from a document list.
@@ -1391,6 +1404,18 @@ class Cassandra(VectorStore):
         Returns:
             a Cassandra vector store.
         """
+        if ids is not None:
+            warnings.warn(
+                (
+                    "Parameter `ids` to Cassandra's `afrom_documents` "
+                    "method is deprecated. Please set the supplied documents' "
+                    "`.id` attribute instead. The id attribute of Document "
+                    "is ignored as long as the `ids` parameter is passed."
+                ),
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
         store = cls(
             embedding=embedding,
             session=session,
@@ -1402,7 +1427,9 @@ class Cassandra(VectorStore):
             metadata_indexing=metadata_indexing,
             **kwargs,
         )
-        await store.aadd_documents(documents=cls._add_ids_to_docs(docs=documents, ids=ids))
+        await store.aadd_documents(
+            documents=cls._add_ids_to_docs(docs=documents, ids=ids)
+        )
         return store
 
     def as_retriever(

@@ -116,7 +116,7 @@ class CassandraGraphVectorStore(GraphVectorStore):
         *,
         body_index_options: list[tuple[str, Any]] | None = None,
         setup_mode: SetupMode = SetupMode.SYNC,
-        metadata_deny_list: Iterable[str] = [],
+        metadata_deny_list: Optional[list[str]] = None,
     ) -> None:
         """Apache Cassandra(R) for graph-vector-store workloads.
 
@@ -164,9 +164,9 @@ class CassandraGraphVectorStore(GraphVectorStore):
         """
         self.embedding = embedding
 
-        deny_list = set(metadata_deny_list)
-        deny_list.add(METADATA_LINKS_KEY)
-        self._metadata_deny_list = deny_list
+        if metadata_deny_list is None:
+            metadata_deny_list = []
+        metadata_deny_list.append(METADATA_LINKS_KEY)
 
         self.vector_store = CassandraVectorStore(
             embedding=embedding,
@@ -176,7 +176,7 @@ class CassandraGraphVectorStore(GraphVectorStore):
             ttl_seconds=ttl_seconds,
             body_index_options=body_index_options,
             setup_mode=setup_mode,
-            metadata_indexing=("deny_list", deny_list),
+            metadata_indexing=("deny_list", metadata_deny_list),
         )
 
         store_session: Session = self.vector_store.session
@@ -1032,7 +1032,7 @@ class CassandraGraphVectorStore(GraphVectorStore):
         ids: Optional[List[str]] = None,
         ttl_seconds: Optional[int] = None,
         body_index_options: Optional[List[Tuple[str, Any]]] = None,
-        metadata_deny_list: Iterable[str] = [],
+        metadata_deny_list: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> CGVST:
         """Create a CassandraGraphVectorStore from raw texts.
@@ -1094,7 +1094,7 @@ class CassandraGraphVectorStore(GraphVectorStore):
         ids: Optional[List[str]] = None,
         ttl_seconds: Optional[int] = None,
         body_index_options: Optional[List[Tuple[str, Any]]] = None,
-        metadata_deny_list: Iterable[str] = [],
+        metadata_deny_list: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> CGVST:
         """Create a CassandraGraphVectorStore from raw texts.
@@ -1165,7 +1165,7 @@ class CassandraGraphVectorStore(GraphVectorStore):
         ids: Optional[List[str]] = None,
         ttl_seconds: Optional[int] = None,
         body_index_options: Optional[List[Tuple[str, Any]]] = None,
-        metadata_deny_list: Iterable[str] = [],
+        metadata_deny_list: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> CGVST:
         """Create a CassandraGraphVectorStore from a document list.
@@ -1220,7 +1220,7 @@ class CassandraGraphVectorStore(GraphVectorStore):
         ids: Optional[List[str]] = None,
         ttl_seconds: Optional[int] = None,
         body_index_options: Optional[List[Tuple[str, Any]]] = None,
-        metadata_deny_list: Iterable[str] = [],
+        metadata_deny_list: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> CGVST:
         """Create a CassandraGraphVectorStore from a document list.
@@ -1262,5 +1262,7 @@ class CassandraGraphVectorStore(GraphVectorStore):
             metadata_deny_list=metadata_deny_list,
             **kwargs,
         )
-        await store.aadd_documents(documents=cls._add_ids_to_docs(docs=documents, ids=ids))
+        await store.aadd_documents(
+            documents=cls._add_ids_to_docs(docs=documents, ids=ids)
+        )
         return store
