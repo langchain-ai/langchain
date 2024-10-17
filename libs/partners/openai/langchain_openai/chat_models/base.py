@@ -198,6 +198,8 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         message_dict["role"] = message.role
     elif isinstance(message, HumanMessage):
         message_dict["role"] = "user"
+        if "audio" in message.additional_kwargs:
+            message_dict["audio"] = message.additional_kwargs["audio"]
     elif isinstance(message, AIMessage):
         message_dict["role"] = "assistant"
         if "function_call" in message.additional_kwargs:
@@ -221,6 +223,9 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         # If tool calls present, content null value should be None not empty string.
         if "function_call" in message_dict or "tool_calls" in message_dict:
             message_dict["content"] = message_dict["content"] or None
+
+        if "audio" in message.additional_kwargs:
+            message_dict["audio"] = message.additional_kwargs["audio"]
     elif isinstance(message, SystemMessage):
         message_dict["role"] = "system"
     elif isinstance(message, FunctionMessage):

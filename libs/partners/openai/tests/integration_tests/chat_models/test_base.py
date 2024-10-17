@@ -955,15 +955,14 @@ def test_audio_output_modality() -> None:
     llm = ChatOpenAI(
         model="gpt-4o-audio-preview",
         temperature=0,
-        modalities=["text", "audio"],
-        audio={
-            "voice": "alloy",
-            "format": "wav",
+        model_kwargs={
+            "modalities": ["text", "audio"],
+            "audio": {"voice": "alloy", "format": "wav"},
         },
     )
 
     history: List[BaseMessage] = [
-        HumanMessage("Make me a short audio clip of you yelling"),
+        HumanMessage("Make me a short audio clip of you yelling")
     ]
 
     output = llm.invoke("Make me a short audio clip of you yelling")
