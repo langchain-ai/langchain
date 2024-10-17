@@ -107,8 +107,8 @@ jobs:
             langchain/libs/experimental \
             langchain/libs/partners/milvus \
             langchain/libs/partners/unstructured \
-            langchain/libs/databricks \
-            langchain/libs/ibm
+            langchain/libs/partners/databricks \
+            langchain/libs/partners/ibm
           mv langchain-google/libs/genai langchain/libs/partners/google-genai
           mv langchain-google/libs/vertexai langchain/libs/partners/google-vertexai
           mv langchain-google/libs/community langchain/libs/partners/google-community
