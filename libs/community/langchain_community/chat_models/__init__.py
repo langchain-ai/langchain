@@ -146,6 +146,9 @@ if TYPE_CHECKING:
     from langchain_community.chat_models.perplexity import (
         ChatPerplexity,
     )
+    from langchain_community.chat_models.pipeshift import (
+        ChatPipeshift,
+    )
     from langchain_community.chat_models.premai import (
         ChatPremAI,
     )
@@ -222,6 +225,7 @@ __all__ = [
     "ChatOllama",
     "ChatOpenAI",
     "ChatPerplexity",
+    "ChatPipeshift",
     "ChatPremAI",
     "ChatSambaNovaCloud",
     "ChatSambaStudio",
@@ -286,6 +290,7 @@ _module_lookup = {
     "ChatOllama": "langchain_community.chat_models.ollama",
     "ChatOpenAI": "langchain_community.chat_models.openai",
     "ChatPerplexity": "langchain_community.chat_models.perplexity",
+    "ChatPipeshift": "langchain_community.chat_models.pipeshift",
     "ChatSambaNovaCloud": "langchain_community.chat_models.sambanova",
     "ChatSambaStudio": "langchain_community.chat_models.sambanova",
     "ChatSnowflakeCortex": "langchain_community.chat_models.snowflake",
