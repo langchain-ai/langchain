@@ -69,6 +69,14 @@ def test__convert_dict_to_message_human_with_name() -> None:
     assert _convert_message_to_dict(expected_output) == message
 
 
+def test__convert_dict_to_message_human_with_extra_field() -> None:
+    message = {"role": "user", "content": "foo", "extra_field": "extra"}
+    result = _convert_dict_to_message(message)
+    expected_output = HumanMessage(content="foo", extra_field="extra")
+    assert result == expected_output
+    assert _convert_message_to_dict(expected_output) == message
+
+
 def test__convert_dict_to_message_ai() -> None:
     message = {"role": "assistant", "content": "foo"}
     result = _convert_dict_to_message(message)
@@ -81,6 +89,14 @@ def test__convert_dict_to_message_ai_with_name() -> None:
     message = {"role": "assistant", "content": "foo", "name": "test"}
     result = _convert_dict_to_message(message)
     expected_output = AIMessage(content="foo", name="test")
+    assert result == expected_output
+    assert _convert_message_to_dict(expected_output) == message
+
+
+def test__convert_dict_to_message_ai_with_extra_field() -> None:
+    message = {"role": "assistant", "content": "foo", "extra_field": "extra"}
+    result = _convert_dict_to_message(message)
+    expected_output = AIMessage(content="foo", extra_field="extra")
     assert result == expected_output
     assert _convert_message_to_dict(expected_output) == message
 
@@ -101,10 +117,33 @@ def test__convert_dict_to_message_system_with_name() -> None:
     assert _convert_message_to_dict(expected_output) == message
 
 
+def test__convert_dict_to_message_system_with_extra_field() -> None:
+    message = {"role": "system", "content": "foo", "extra_field": "extra"}
+    result = _convert_dict_to_message(message)
+    expected_output = SystemMessage(content="foo", extra_field="extra")
+    assert result == expected_output
+    assert _convert_message_to_dict(expected_output) == message
+
+
 def test__convert_dict_to_message_tool() -> None:
     message = {"role": "tool", "content": "foo", "tool_call_id": "bar"}
     result = _convert_dict_to_message(message)
     expected_output = ToolMessage(content="foo", tool_call_id="bar")
+    assert result == expected_output
+    assert _convert_message_to_dict(expected_output) == message
+
+
+def test__convert_dict_to_message_tool_with_extra_field() -> None:
+    message = {
+        "role": "tool",
+        "content": "foo",
+        "tool_call_id": "bar",
+        "extra_field": "extra",
+    }
+    result = _convert_dict_to_message(message)
+    expected_output = ToolMessage(
+        content="foo", tool_call_id="bar", extra_field="extra"
+    )
     assert result == expected_output
     assert _convert_message_to_dict(expected_output) == message
 
