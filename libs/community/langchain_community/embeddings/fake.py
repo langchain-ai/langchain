@@ -13,7 +13,7 @@ class FakeEmbeddings(Embeddings, BaseModel):
     """The size of the embedding vector."""
 
     def _get_embedding(self) -> List[float]:
-        return list(np.random.normal(size=self.size))
+        return list(abs(np.random.normal(size=self.size)))
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         return [self._get_embedding() for _ in texts]
