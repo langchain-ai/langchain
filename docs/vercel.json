@@ -81,6 +81,10 @@
     {
       "source": "/docs/integrations/providers/mlflow_ai_gateway(/?)",
       "destination": "/docs/integrations/providers/mlflow/"
+    },
+    {
+      "source": "/docs/integrations/platforms/:path((?:anthropic|aws|google|huggingface|microsoft|openai)?/?)*",
+      "destination": "/docs/integrations/providers/:path*"
     }
   ]
 }
