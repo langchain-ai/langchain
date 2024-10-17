@@ -14,6 +14,7 @@ from langchain_core.documents import Document
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
 from langchain_text_splitters import TextSplitter
+from pydantic import ConfigDict
 
 from langchain.chains import ReduceDocumentsChain
 from langchain.chains.base import Chain
@@ -30,7 +31,7 @@ from langchain.chains.llm import LLMChain
         "Refer here for a recommended map-reduce implementation using langgraph: "
         "https://langchain-ai.github.io/langgraph/how-tos/map-reduce/. See also "
         "migration guide: "
-        "https://python.langchain.com/v0.2/docs/versions/migrating_chains/map_reduce_chain/"  # noqa: E501
+        "https://python.langchain.com/docs/versions/migrating_chains/map_reduce_chain/"  # noqa: E501
     ),
 )
 class MapReduceChain(Chain):
@@ -77,9 +78,10 @@ class MapReduceChain(Chain):
             **kwargs,
         )
 
-    class Config:
-        arbitrary_types_allowed = True
-        extra = "forbid"
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
     @property
     def input_keys(self) -> List[str]:

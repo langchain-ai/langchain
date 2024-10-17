@@ -6,7 +6,7 @@ from uuid import UUID
 
 from langchain_core.callbacks import AsyncCallbackHandler, BaseCallbackHandler
 from langchain_core.messages import BaseMessage
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel
 
 
 class BaseFakeCallbackHandler(BaseModel):
@@ -259,7 +259,8 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
     ) -> Any:
         self.on_retriever_error_common()
 
-    def __deepcopy__(self, memo: dict) -> "FakeCallbackHandler":
+    # Overriding since BaseModel has __deepcopy__ method as well
+    def __deepcopy__(self, memo: dict) -> "FakeCallbackHandler":  # type: ignore
         return self
 
 
@@ -391,5 +392,6 @@ class FakeAsyncCallbackHandler(AsyncCallbackHandler, BaseFakeCallbackHandlerMixi
     ) -> None:
         self.on_text_common()
 
-    def __deepcopy__(self, memo: dict) -> "FakeAsyncCallbackHandler":
+    # Overriding since BaseModel has __deepcopy__ method as well
+    def __deepcopy__(self, memo: dict) -> "FakeAsyncCallbackHandler":  # type: ignore
         return self

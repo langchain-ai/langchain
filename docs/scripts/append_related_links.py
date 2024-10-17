@@ -48,10 +48,8 @@ def _generate_related_links_section(integration_type: str, notebook_name: str):
 
 def _process_path(doc_path: Path):
     content = doc_path.read_text()
-    print(doc_path)
     pattern = r"/docs/integrations/([^/]+)/([^/]+).mdx?"
     match = re.search(pattern, str(doc_path))
-    print(bool(match))
     if match and match.group(2) != "index":
         integration_type = match.group(1)
         notebook_name = match.group(2)

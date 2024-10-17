@@ -1,8 +1,8 @@
 from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, Field, model_validator
 
 
 class ZhipuAIEmbeddings(BaseModel, Embeddings):
@@ -76,8 +76,9 @@ class ZhipuAIEmbeddings(BaseModel, Embeddings):
     Only supported in `embedding-3` and later models.
     """
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that auth token exists in environment."""
         values["api_key"] = get_from_dict_or_env(values, "api_key", "ZHIPUAI_API_KEY")
         try:

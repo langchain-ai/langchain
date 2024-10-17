@@ -11,7 +11,7 @@ if __name__ == "__main__":
 
     # see if we're releasing an rc
     version = toml_data["tool"]["poetry"]["version"]
-    releasing_rc = "rc" in version
+    releasing_rc = "rc" in version or "dev" in version
 
     # if not, iterate through dependencies and make sure none allow prereleases
     if not releasing_rc:

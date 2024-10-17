@@ -1,18 +1,14 @@
-from typing import (  # type: ignore[import-not-found, import-not-found]
-    Any,
-    Dict,
-    List,
-    Literal,
-    Optional,
-    Union,
-)
+from typing import Any, Dict, List, Literal, Optional, Union
 
-from exa_py import Exa  # type: ignore
-from exa_py.api import HighlightsContentsOptions, TextContentsOptions  # type: ignore
+from exa_py import Exa  # type: ignore[untyped-import]
+from exa_py.api import (
+    HighlightsContentsOptions,  # type: ignore[untyped-import]
+    TextContentsOptions,  # type: ignore[untyped-import]
+)
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.retrievers import BaseRetriever
+from pydantic import Field, SecretStr, model_validator
 
 from langchain_exa._utilities import initialize_client
 
@@ -64,8 +60,9 @@ class ExaSearchRetriever(BaseRetriever):
     exa_api_key: SecretStr = Field(default=None)
     exa_base_url: Optional[str] = None
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate the environment."""
         values = initialize_client(values)
         return values

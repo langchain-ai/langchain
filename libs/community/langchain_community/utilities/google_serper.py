@@ -4,8 +4,8 @@ from typing import Any, Dict, List, Optional
 
 import aiohttp
 import requests
-from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, ConfigDict, model_validator
 from typing_extensions import Literal
 
 
@@ -31,7 +31,7 @@ class GoogleSerperAPIWrapper(BaseModel):
     # "places" and "images" is available from Serper but not implemented in the
     # parser of run(). They can be used in results()
     type: Literal["news", "search", "places", "images"] = "search"
-    result_key_for_type = {
+    result_key_for_type: dict = {
         "news": "news",
         "places": "places",
         "images": "images",
@@ -42,11 +42,13 @@ class GoogleSerperAPIWrapper(BaseModel):
     serper_api_key: Optional[str] = None
     aiosession: Optional[aiohttp.ClientSession] = None
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that api key exists in environment."""
         serper_api_key = get_from_dict_or_env(
             values, "serper_api_key", "SERPER_API_KEY"
