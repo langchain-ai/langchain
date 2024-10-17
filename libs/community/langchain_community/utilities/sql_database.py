@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from logging import getLogger
 from typing import Any, Dict, Iterable, List, Literal, Optional, Sequence, Union
 
 import sqlalchemy
@@ -20,6 +21,35 @@ from sqlalchemy.exc import ProgrammingError, SQLAlchemyError
 from sqlalchemy.schema import CreateTable
 from sqlalchemy.sql.expression import Executable
 from sqlalchemy.types import NullType
+
+
+logger = getLogger(__name__)
+
+
+def _purge_backticks(command: str) -> str:
+    """
+    Some models have a very hard time returning code without markdown-style backticks (e.g. ```sql <query here>```
+    You can try to prompt this away, but it is trivial to fix, and it can save a huge amount of tokens
+    """
+
+    fixed_command = command
+    fixed_backticks = False
+
+    if fixed_command[:len("```sql")] == "```sql":
+        fixed_command = fixed_command[len("```sql"):]
+        fixed_backticks = True
+    elif fixed_command[len("```")] == "```":
+        fixed_command = fixed_command[len("```"):]
+        fixed_backticks = True
+
+    if fixed_command[-len("```"):] == "```":
+        fixed_command = fixed_command[:-len("```")]
+        fixed_backticks = True
+
+    if fixed_backticks:
+        logger.info("The LLM-generated SQL content contained markdown-style code block formatting and has been "
+                     "removed automatically.")
+    return fixed_command
 
 
 def _format_index(index: sqlalchemy.engine.interfaces.ReflectedIndex) -> str:
@@ -409,6 +439,9 @@ class SQLDatabase:
 
         If the statement returns no rows, an empty list is returned.
         """
+
+        command = _purge_backticks(command)
+        
         parameters = parameters or {}
         execution_options = execution_options or {}
         with self._engine.begin() as connection:  # type: Connection  # type: ignore[name-defined]
