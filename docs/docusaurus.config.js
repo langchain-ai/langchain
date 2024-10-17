@@ -183,7 +183,7 @@ const config = {
               },
               {
                 type: "doc",
-                docId: "troubleshooting/errors",
+                docId: "troubleshooting/errors/index",
                 label: "Error reference",
               },
               {
