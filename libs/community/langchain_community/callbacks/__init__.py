@@ -60,6 +60,9 @@ if TYPE_CHECKING:
     from langchain_community.callbacks.openai_info import (
         OpenAICallbackHandler,
     )
+    from langchain_community.callbacks.panel import (
+        PanelCallbackHandler,
+    )
     from langchain_community.callbacks.promptlayer_callback import (
         PromptLayerCallbackHandler,
     )
@@ -105,6 +108,7 @@ _module_lookup = {
     "LabelStudioCallbackHandler": "langchain_community.callbacks.labelstudio_callback",
     "MlflowCallbackHandler": "langchain_community.callbacks.mlflow_callback",
     "OpenAICallbackHandler": "langchain_community.callbacks.openai_info",
+    "PanelCallbackHandler": "langchain_community.callbacks.panel_callback",
     "PromptLayerCallbackHandler": "langchain_community.callbacks.promptlayer_callback",
     "SageMakerCallbackHandler": "langchain_community.callbacks.sagemaker_callback",
     "StreamlitCallbackHandler": "langchain_community.callbacks.streamlit",
@@ -143,6 +147,7 @@ __all__ = [
     "LabelStudioCallbackHandler",
     "MlflowCallbackHandler",
     "OpenAICallbackHandler",
+    "PanelCallbackHandler",
     "PromptLayerCallbackHandler",
     "SageMakerCallbackHandler",
     "StreamlitCallbackHandler",

@@ -50,6 +50,7 @@ if TYPE_CHECKING:
     )
     from langchain_community.callbacks.mlflow_callback import MlflowCallbackHandler
     from langchain_community.callbacks.openai_info import OpenAICallbackHandler
+    from langchain_community.callbacks.panel_callback import PanelCallbackHandler
     from langchain_community.callbacks.promptlayer_callback import (
         PromptLayerCallbackHandler,
     )
@@ -124,6 +125,7 @@ __all__ = [
     "FinalStreamingStdOutCallbackHandler",
     "LLMThoughtLabeler",
     "LangChainTracer",
+    "PanelCallbackHandler",
     "StreamlitCallbackHandler",
     "WandbCallbackHandler",
     "WhyLabsCallbackHandler",
