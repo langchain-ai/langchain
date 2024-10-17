@@ -25,7 +25,7 @@ class AzureAiServicesImageAnalysisTool(BaseTool):
     azure_ai_services_key (Optional[str]): The API key for Azure AI Services.
     azure_ai_services_endpoint (Optional[str]): The endpoint URL for Azure AI Services.
     visual_features Any: The visual features to analyze in the image, can be set as
-        either strings or VisualFeatures.
+        either strings or azure.ai.vision.imageanalysis.models.VisualFeatures.
         (e.g. 'TAGS', VisualFeatures.CAPTION).
     image_analysis_client (Any): The client for interacting
         with Azure AI Services Image Analysis.
