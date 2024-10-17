@@ -1,0 +1,22 @@
+## Tokens
+
+The unit that most model providers use to measure input and output is via a unit called a **token**.
+Tokens are the basic units that language models read and generate when processing or producing text.
+The exact definition of a token can vary depending on the specific way the model was trained -
+for instance, in English, a token could be a single word like "apple", or a part of a word like "app".
+
+When you send a model a prompt, the words and characters in the prompt are encoded into tokens using a **tokenizer**.
+The model then streams back generated output tokens, which the tokenizer decodes into human-readable text.
+The below example shows how OpenAI models tokenize `LangChain is cool!`:
+
+![](/img/tokenization.png)
+
+You can see that it gets split into 5 different tokens, and that the boundaries between tokens are not exactly the same as word boundaries.
+
+The reason language models use tokens rather than something more immediately intuitive like "characters"
+has to do with how they process and understand text. At a high-level, language models iteratively predict their next generated output based on
+the initial input and their previous generations. Training the model using tokens language models to handle linguistic
+units (like words or subwords) that carry meaning, rather than individual characters, which makes it easier for the model
+to learn and understand the structure of the language, including grammar and context.
+Furthermore, using tokens can also improve efficiency, since the model processes fewer units of text compared to character-level processing.
+
