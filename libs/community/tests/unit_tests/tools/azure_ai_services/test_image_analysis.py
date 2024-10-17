@@ -61,7 +61,7 @@ def test_local_image_analysis(mocker: Any) -> None:
 
     tool.image_analysis_client = mock_content_client
 
-    input = building_path
+    input = str(building_path)
     output = "Caption: A building corner."
 
     result = tool._run(input)
@@ -114,7 +114,7 @@ def test_local_image_different_features(mocker: Any) -> None:
 
     tool.image_analysis_client = mock_content_client
 
-    input = building_path
+    input = str(building_path)
     output = (
         "Caption: A building corner.\n"
         "Smart Crops: {'aspectRatio': 1.97,"
