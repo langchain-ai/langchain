@@ -1,44 +1,64 @@
 # Embedding models
 <span data-heading-keywords="embedding,embeddings"></span>
 
+:::info[Prerequisites]
+
+* [Documents](/docs/concepts/retrievers/#interface)
+
+:::
+:::info[Note]
+
+This conceptual overview focuses on text-based embedding models. 
+Embedding models can also be [multi-modal](https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-multimodal-embeddings), allowing for the embedding of a wide variety of data types.
+ 
+:::
+
 ## Overview
 
-Imagine being able to capture the essence of any text - a tweet, a document, or even an entire book - in a single, compact representation. 
+Imagine being able to capture the essence of any text - a tweet, document, or book - in a single, compact representation. 
 This is the power of embedding models, which lie at the heart of many retrieval systems.
 Embedding models transform human language into a format that machines can understand and compare with speed and accuracy. 
-These models take text as input and produce a fixed-length array of numbers, a numerical fingerprint of the text's semantic meaning:
-
-- **Semantic Capture**: Each embedding is essentially a set of coordinates in a vast, abstract space. In this space, the position of each point (embedding) reflects the meaning of its corresponding text.
-- **Similarity as Proximity**: Just as similar words might be close to each other in a thesaurus, similar concepts end up close to each other in this embedding space. This allows for intuitive comparisons between different pieces of text.
-- **Efficient Comparison**: By reducing text to these numerical representations, we can use simple mathematical operations like cosine similarity to quickly measure how alike two pieces of text are, regardless of their original length or structure.
-
+These models take text as input and produce a fixed-length array of numbers, a numerical fingerprint of the text's semantic meaning.
 Embeddings allow search system to find relevant documents not just based on keyword matches, but on semantic understanding. 
 
 ## Key concepts
 
 ![Conceptual Overview](/img/embeddings_concept.png)
 
- (1) **Embed text as a vector**: Embedding models transform text into a fixed-length array of floating point numbers.
+(1) **Embed text as a vector**: Embeddings transform text into a numerical vector representation.
 
- (2) **Measure the similarity between vectors**: Embeddings can then be compared using simple mathematical operations.
+(2) **Measure similarity**: Embedding vectors can be comparing using simple mathematical operations.
 
-## Embedding  
+## Embedding data 
+
+### Historical context 
 
 The landscape of embedding models has evolved significantly over the years. 
 A pivotal moment came in 2018 when Google introduced [BERT (Bidirectional Encoder Representations from Transformers)](https://www.nvidia.com/en-us/glossary/bert/). 
 BERT applied transformer models to embed text as a simple vector representation, which lead to unprecedented performance across various NLP tasks.
 However, BERT wasn't optimized for generating sentence embeddings efficiently. 
 This limitation spurred the creation of [SBERT (Sentence-BERT)](https://www.sbert.net/examples/training/sts/README.html), which adapted the BERT architecture to generate semantically rich sentence embeddings, easily comparable via similarity metrics like cosine similarity, dramatically reduced the computational overhead for tasks like finding similar sentences.
-
 Today, the embedding model ecosystem is diverse, with numerous providers offering their own implementations. 
 To navigate this variety, researchers and practitioners often turn to benchmarks like the Massive Text Embedding Benchmark (MTEB) [here](https://huggingface.co/blog/mteb) for objective comparisons.
-Recognizing the need for a unified approach to working with these diverse models, LangChain introduced the `Embeddings` class.
- This common interface simplifies interaction with various embedding providers through two key methods:
+
+:::info[Further reading]
+
+* See the [seminal BERT paper](https://arxiv.org/abs/1810.04805).
+* See Cameron Wolfe's [excellent review](https://cameronrwolfe.substack.com/p/the-basics-of-ai-powered-vector-search?utm_source=profile&utm_medium=reader2) of embedding models.
+* See the [Massive Text Embedding Benchmark (MTEB)](https://huggingface.co/blog/mteb) leaderboard for a comprehensive overview of embedding models.
+
+:::
+
+### LangChain Interface  
+
+Today, there are [many different embedding models](/docs/integrations/text_embedding/).
+LangChain provides a universal interface for working with them, providing standard methods for common operations.
+This common interface simplifies interaction with various embedding providers through two central methods:
 
 - `embed_documents`: For embedding multiple texts (documents)
 - `embed_query`: For embedding a single text (query)
 
-This distinction is crucial, as some providers employ different embedding strategies for documents (which are to be searched) versus queries (the search input itself).
+This distinction is important, as some providers employ different embedding strategies for documents (which are to be searched) versus queries (the search input itself).
 To illustrate, here's a practical example using LangChain's `.embed_documents` method to embed a list of strings:
 
 ```python
@@ -63,7 +83,50 @@ For convenience, you can also use the `embed_query` method to embed a single tex
 query_embedding = embeddings_model.embed_query("What is the meaning of life?")
 ```
 
-For specifics on how to use embedding models, see the [relevant how-to guides here](/docs/how_to/embed_text).
+:::info[Further reading]
+
+* See the full list of [LangChain embedding model integrations](/docs/integrations/text_embedding/).
+* See these [how-to guides](/docs/how_to/embed_text) for working with embedding models.
+
+:::
+
+## Measure similarity
+
+Each embedding is essentially a set of coordinates in a vast, abstract space. 
+In this space, the position of each point (embedding) reflects the meaning of its corresponding text.
+Just as similar words might be close to each other in a thesaurus, similar concepts end up close to each other in this embedding space. 
+This allows for intuitive comparisons between different pieces of text.
+By reducing text to these numerical representations, we can use simple mathematical operations to quickly measure how alike two pieces of text are, regardless of their original length or structure.
+Some common similarity metrics include:
+
+- **Cosine Similarity**: Measures the cosine of the angle between two vectors.
+- **Euclidean Distance**: Measures the straight-line distance between two points.
+- **Dot Product**: Measures the projection of one vector onto another.
+
+As an example, any two embedded texts can be compared with cosine_similarity:
+
+```python
+import numpy as np
+
+def cosine_similarity(vec1, vec2):
+    dot_product = np.dot(vec1, vec2)
+    norm_vec1 = np.linalg.norm(vec1)
+    norm_vec2 = np.linalg.norm(vec2)
+    return dot_product / (norm_vec1 * norm_vec2)
+
+similarity = cosine_similarity(query_result, document_result)
+print("Cosine Similarity:", similarity)
+```  
+
+:::info[Further reading]
+
+* See Simon Willison’s [nice blog post and video](https://simonwillison.net/2023/Oct/23/embeddings/) on embeddings and similarity metrics.
+* See [this documentation](https://developers.google.com/machine-learning/clustering/dnn-clustering/supervised-similarity) from Google on similarity metrics to consider with embeddings.
+* See Pinecone's [blog post](https://www.pinecone.io/learn/vector-similarity/) on similarity metrics.
+* See OpenAI's [FAQ](https://platform.openai.com/docs/guides/embeddings/faq) on what similarity metric to use with OpenAI embeddings.
+
+::: 
+
 
 ### Embedding with higher granularity  
 
@@ -99,26 +162,5 @@ See our RAG from Scratch video on [ColBERT](https://youtu.be/cN6S0Ehm7_8?feature
 
 :::
 
-## Similarity 
 
-With text compressed into a vector representation, the next question is how to measure the similarity between text chunks. 
-Fortunately, we can use simple mathematical operations to measure the similarity between vectors. 
-For example, OpenAI recommends [cosine similarity](https://platform.openai.com/docs/guides/embeddings/faq) as a similarity metric. 
-OpenAI embeddings are normalized to length 1, which means that Cosine similarity can be computed slightly faster using just a dot product
-and Cosine similarity and Euclidean distance will result in the identical rankings. Any two embedded texts can be compared using this function:
 
-```python
-import numpy as np
-
-def cosine_similarity(vec1, vec2):
-    dot_product = np.dot(vec1, vec2)
-    norm_vec1 = np.linalg.norm(vec1)
-    norm_vec2 = np.linalg.norm(vec2)
-    return dot_product / (norm_vec1 * norm_vec2)
-
-similarity = cosine_similarity(query_result, document_result)
-print("Cosine Similarity:", similarity)
-```  
-
-However, the choice of similarity metric should be informed by the specific use case and embedding model.
-The central concept is the once embedding model is used to convert texts into vectors, it is fairly straightforward to compute the similarity between texts. 

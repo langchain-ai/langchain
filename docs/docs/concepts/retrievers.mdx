@@ -12,66 +12,98 @@
 
 ## Overview
 
-Unstructured data is often a goldmine of information. From PDFs to HTML pages to markdown files, this diverse array of data can be used to [augment](/docs/concepts/rag/)  AI models' internal knowledge. 
-However, harnessing this potential comes with a significant challenge: how do we efficiently access, process, and utilize this wealth of information across its many formats and sources?
-The retriever is LangChain's interface designed to bridge the gap between unstructured data from a multitude of sources and a *standard interface and output format*.
-A retriever is simple: given a query as a string, and it returns a list of the most relevant `Document` objects. 
-The underlying logic used to produce this list is up to the retriever, which can use a host of different types of indexes. 
+Many different types of retrieval systems exist, including vectorstores, graph databases, and relational databases.
+With the rise on popuarity of large language models, retrieval systems have become an important component in AI application (e.g., [RAG](/docs/concepts/rag/)).
+Because of their importance and variability, LangChain provides a uniform interface for interacting with different types of retrieval systems.
+The LangChain [retriever](/docs/concepts/retrievers/) interface is straightforward:
 
-## Key concepts
+1. Input: A query (string)
+2. Output: A list of documents (standardized LangChain [Document](https://api.python.langchain.com/en/latest/documents/langchain_core.documents.base.Document.html) objects)
+
+## Key concept
 
 ![Retriever](/img/retriever_concept.png)
  
-(1) **Document indexing**: Retrievers often use an index to find documents that are most relevant to the search query.
+All retrievers implement a simple interface for retrieving documents using natural language queries.
 
-(2) **Documents**: A retriever returns `Documents`, a LangChain object with standard attributes for unstructured data. 
+## Interface 
 
-## Index unstructured documents 
+The only requirement for a retriever is the ability to accepts a query and return documents. 
+In particular, LangChain's retriever class only requires that the `_get_relevant_documents` method is implemented, which takes a `query: str` and returns a list of [Document](https://api.python.langchain.com/en/latest/documents/langchain_core.documents.base.Document.html) objects that are most relevant to the query.
+The underlying logic used to get relevant documents is specified by the retriever and can be whatever is most useful for the application.
 
-The only requirement for a retriever is the ability to *return* `Document` objects. 
-Importantly, this means that retrievers don't need to actually *store* documents. 
-For example, we can be built retrievers on top of APIs that return search results such as [Amazon Kendra](https://python.langchain.com/docs/integrations/retrievers/amazon_kendra_retriever/) or [Wikipedia Search](https://python.langchain.com/docs/integrations/retrievers/wikipedia/). 
-LangChain's retriever class only requires that the `_get_relevant_documents` method is implemented.
-Given a `query: str`, the method returns a list of `Document` objects that are most relevant to the query.
-Documents can be retrieved using the `invoke` method:
+A LangChain retriever is a [runnable](/docs/how_to/lcel_cheatsheet/), which is a standard interface is for LangChain components. 
+This means that it has a few common methods, including `invoke`, that are used to interact with it. A retriever can be invoked with a query:
 
 ```python
 docs = retriever.invoke(query)
 ```
 
-The underlying logic used to get relevant documents is specified by the retriever and can be whatever is most useful for the application. 
-See [this](/docs/how_to/custom_retriever/) how-to guide for building your own custom retriever.
-Though flexible, there are a few common types of search indexes that may retrievers are built on top of.
+Retrievers return a list of [Document](https://api.python.langchain.com/en/latest/documents/langchain_core.documents.base.Document.html) objects, which have two attributes:
 
-### Lexical search index
+* `page_content`: The content of this document. Currently is a string.
+* `metadata`: Arbitrary metadata associated with this document (e.g., document id, file name, source, etc). 
 
-Many search engines are based upon matching words in a query to the words in each document. 
-This approach is called lexical retrieval, using search algorithms that are typically based upon word frequencies. 
-The intution is simple: a word appears frequently both in the user’s query and a particular document, then this document might be a good match.
+:::info[Further reading]
 
-The particular data structure used to implement this is often an [*inverted index*](https://www.geeksforgeeks.org/inverted-index/), which contains a list of words and a mapping of each word to a list of locations at which it occurs in various documents. 
-Using this data structure, it is possible to efficiently match the words in search queries to the documents in which they appear.
-BM25 and TF-IDF are [two popular lexical search algorithms](https://cameronrwolfe.substack.com/p/the-basics-of-ai-powered-vector-search?utm_source=profile&utm_medium=reader2).
+* See our [how-to guide](/docs/how_to/custom_retriever/) on building your own custom retriever.
 
-For specific examples that use lexical search, see the [BM25](/docs/integrations/retrievers/bm25/) and [Elasticsearch](/docs/integrations/retrievers/elasticsearch_retriever/) retriever integrations.
+:::
+ 
+## Common types
 
-### Vector index
+Despite the flexibility of the retriever interface, a few common types of retrieval systems are frequently used.
 
-Vector indexes are an alternative way to index unstructured data.
-See our conceptual guide on [vectorstores](/docs/concepts/vectorstores/) for a detailed overview, but in short: rather than using word frequencies, they use an [embedding model](/docs/concepts/embedding_models/) to compress documents into high-dimensional vector representation. 
-This allows for efficient similarity search over embedding vectors using simple mathematical operations like cosine similarity.
-See this [how-to guide](/docs/how_to/vectorstore_retriever/) for more details. Any LangChain vectorstore can be used as a retriever: 
+### Search APIs
+
+It's important to note that retrievers don't need to actually *store* documents. 
+For example, we can be built retrievers on top of search APIs that simply return search results! 
+See our retriever integrations with [Amazon Kendra](https://python.langchain.com/docs/integrations/retrievers/amazon_kendra_retriever/) or [Wikipedia Search](https://python.langchain.com/docs/integrations/retrievers/wikipedia/). 
+
+### Relational or Graph Database
+
+Retrievers can be built on top of relational or graph databases.
+In these cases, [query analysis](/docs/concepts/retrieval/) techniques to construct a structured query from natural language is critical.
+For example, you can build a retriever for a SQL database using text-to-SQL conversion. This allows a natural language query (string) retriever to be transformed into a SQL query behind the scenes.
+
+:::info[Further reading]
+
+* See our [tutorial](/docs/tutorials/sql_qa/) for context on how to build a retreiver using a SQL database and text-to-SQL.
+* See our [tutorial](/docs/tutorials/graph/) for context on how to build a retreiver using a graph database and text-to-Cypher.
+
+:::
+
+### Lexical Search
+
+As discussed in our conceptual review of [retrieval](/docs/concepts/retrieval/), many search engines are based upon matching words in a query to the words in each document. 
+[BM25](https://en.wikipedia.org/wiki/Okapi_BM25#:~:text=BM25%20is%20a%20bag%2Dof,slightly%20different%20components%20and%20parameters.) and [TF-IDF](https://en.wikipedia.org/wiki/Tf%E2%80%93idf) are [two popular lexical search algorithms](https://cameronrwolfe.substack.com/p/the-basics-of-ai-powered-vector-search?utm_source=profile&utm_medium=reader2).
+LangChain has retreivers for many popular lexical search algorithms / engines. 
+
+:::info[Further reading]
+
+* See the [BM25](/docs/integrations/retrievers/bm25/) retriever integration.
+* See the [TF-IDF](/docs/integrations/retrievers/tf_idf/) retriever integration.
+* See the [Elasticsearch](/docs/integrations/retrievers/elasticsearch_retriever/) retriever integration.
+
+::: 
+
+### Vectorstore 
+
+[Vectorstores](/docs/concepts/vectorstores/) are a powerful and efficient way to index and retrieve unstructured data. 
+An vectorstore can be used as a retriever by calling the `as_retriever()` method.
 
 ```python
 vectorstore = MyVectorStore()
 retriever = vectorstore.as_retriever()
 ```
 
-### Ensembling and re-ranking
+## Advanced retrieval patterns
+
+### Ensemble 
 
 Because the retriever interface is so simple, returning a list of `Document` objects given a search query, it is possible to combine multiple retrievers using ensembling.
 This is particularly useful when you have multiple retrievers that are good at finding different types of relevant documents.
-It is easy to create an ensemble retriever that combines multiple retrievers with linear weighted scores, as shown below. See this [how-to guide](/docs/how_to/ensemble_retriever/) for more details.
+It is easy to create an [ensemble retriever](/docs/how_to/ensemble_retriever/) that combines multiple retrievers with linear weighted scores:
 
 ```python
 # initialize the ensemble retriever
@@ -80,27 +112,13 @@ ensemble_retriever = EnsembleRetriever(
 )
 ```
 
-When ensembling, how do we combine search results from many retrievers? This motivates the concept of re-ranking, which takes the output of multiple retrievers and combines them using a more sophisticated algorithm.
-A common algorithm is [Reciprocal Rank Fusion (RRF)](https://plg.uwaterloo.ca/~gvcormac/cormacksigir09-rrf.pdf), a simple yet effective method for combining multiple ranked lists of search results. Here's how it works:
+When ensembling, how do we combine search results from many retrievers? 
+This motivates the concept of re-ranking, which takes the output of multiple retrievers and combines them using a more sophisticated algorithm such as [Reciprocal Rank Fusion (RRF)](https://plg.uwaterloo.ca/~gvcormac/cormacksigir09-rrf.pdf).
 
-- For each document in the combined results, RRF calculates a score based on its rank in each individual result list.
-- The RRF score for a document is the sum of the reciprocal of its rank in each list. 
-- Documents are then re-ranked based on their RRF scores, with higher scores indicating higher relevance.
+### Source Document Retention 
 
-By using RRF, you can effectively combine results from multiple retrievers, leveraging the strengths of each while mitigating their individual weaknesses. RRF is particularly useful because it:
-- Doesn't require training or parameter tuning
-- Performs well even when some retrievers produce poor results
-- Balances the influence of high and low rankings across different lists
-
-## Documents 
-
-Retrievers return a list of `Document` objects, which have two attributes for unstructured data:
-
-* `page_content`: The content of this document. Currently is only a string.
-* `metadata`: Arbitrary metadata associated with this document, which can be used to track the document id, file name, etc.
-
-As discussed above, many retriers utilize some kind of index to make documents easily searchable.
-The process of indexing can include a transformation step (e.g., document splitting). 
+Many retriers utilize some kind of index to make documents easily searchable.
+The process of indexing can include a transformation step (e.g., vectorstores often use document splitting). 
 Whatever transformation is used, can be very useful to retain a link between the *transformed document* and the original, giving the retriever the ability to return the *original* document.
 
 ![Retrieval with full docs](/img/retriever_full_docs.png)
@@ -118,8 +136,10 @@ The [ParentDocument](/docs/how_to/parent_document_retriever/) retriever links do
 | [ParentDocument](/docs/how_to/parent_document_retriever/)            | Vector store + Document Store | No                        | If your pages have lots of smaller pieces of distinct information that are best indexed by themselves, but best retrieved all together.       | This involves indexing multiple chunks for each document. Then you find the chunks that are most similar in embedding space, but you retrieve the whole parent document and return that (rather than individual chunks).                                                                         |
 | [Multi Vector](/docs/how_to/multi_vector/)              | Vector store + Document Store | Sometimes during indexing | If you are able to extract information from documents that you think is more relevant to index than the text itself.                          | This involves creating multiple vectors for each document. Each vector could be created in a myriad of ways - examples include summaries of the text and hypothetical questions.                                                                                                                 |
 
-:::tip
+:::info[Further reading]
 
-See our RAG from Scratch video on [multi vector retriever](https://youtu.be/gTCU9I6QqCE?feature=shared)
+* See our [how-to guide](/docs/how_to/parent_document_retriever/) on using the ParentDocument retriever.
+* See our [how-to guide](/docs/how_to/multi_vector/) on using the MultiVector retriever.
+* See our RAG from Scratch video on the [multi vector retriever](https://youtu.be/gTCU9I6QqCE?feature=shared).
 
 :::
