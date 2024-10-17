@@ -154,7 +154,7 @@ class VDMS(VectorStore):
         self.embedding = embedding
         self.utils = VDMS_Utils(client, logger=self.logger)
         self._check_required_inputs(collection_name, embedding_dimensions)
-        self.updated_properties = False
+        self.updated_properties_flag = False
         self._add_set()
 
     @property
@@ -334,7 +334,7 @@ class VDMS(VectorStore):
                     all_properties=current_collection_properties,
                 )
                 response, _ = self.utils.run_vdms_query(all_queries, [blob_arr])
-                self.updated_properties = True
+                self.updated_properties_flag = True
 
     def add_batch(
         self,
@@ -628,11 +628,11 @@ class VDMS(VectorStore):
         return inserted_ids
 
     def check_and_update_properties(self) -> None:
-        if self.updated_properties:
+        if self.updated_properties_flag:
             updated_props = self.utils.get_properties(self.collection_name)
             if self.collection_properties != updated_props:
                 self.collection_properties = updated_props
-            self.updated_properties = False
+            self.updated_properties_flag = False
 
     def count(self, collection_name: str) -> int:
         all_queries: List[Any] = []
