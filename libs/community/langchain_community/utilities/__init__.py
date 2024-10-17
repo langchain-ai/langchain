@@ -101,6 +101,9 @@ if TYPE_CHECKING:
         RivaASR,
         RivaTTS,
     )
+    from langchain_community.utilities.OpenSky import (
+        OpenSkyAPIWrapper,
+    )
     from langchain_community.utilities.openweathermap import (
         OpenWeatherMapAPIWrapper,
     )
@@ -206,6 +209,7 @@ __all__ = [
     "NVIDIARivaTTS",
     "NasaAPIWrapper",
     "NutritionAIAPI",
+    "OpenSkyAPIWrapper",
     "OpenWeatherMapAPIWrapper",
     "OracleSummary",
     "OutlineAPIWrapper",
@@ -269,6 +273,7 @@ _module_lookup = {
     "NVIDIARivaTTS": "langchain_community.utilities.nvidia_riva",
     "NasaAPIWrapper": "langchain_community.utilities.nasa",
     "NutritionAIAPI": "langchain_community.utilities.passio_nutrition_ai",
+    "OpenSkyAPIWrapper": "langchain_community.utilities.openSky",
     "OpenWeatherMapAPIWrapper": "langchain_community.utilities.openweathermap",
     "OracleSummary": "langchain_community.utilities.oracleai",
     "OutlineAPIWrapper": "langchain_community.utilities.outline",
