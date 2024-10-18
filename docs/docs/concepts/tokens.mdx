@@ -26,14 +26,14 @@ Using tokens instead of raw characters allows the model to focus on linguistical
 
 ## Tokens don’t have to be text
 
-Although tokens are most commonly used to represent text, they don’t have to be limited to textual data. Tokens can also serve as abstract representations of **multi-modal input**, such as:
+Although tokens are most commonly used to represent text, they don’t have to be limited to textual data. Tokens can also serve as abstract representations of **multi-modal data**, such as:
 
 - **Images**,
 - **Audio**,
 - **Video**,
 - And other types of data.
 
-At the time of writing, virtually no models support **multi-modal output**, and only a few models can handle **multi-modal inputs** (e.g., text combined with images or audio). However, as advancements in AI continue, we expect **multi-modality** to become much more common in the near future. This would allow models to process and generate a broader range of media, significantly expanding the scope of what tokens can represent and how models can interact with diverse types of data.
+At the time of writing, virtually no models support **multi-modal output**, and only a few models can handle **multi-modal inputs** (e.g., text combined with images or audio). However, as advancements in AI continue, we expect **multi-modality** to become much more common. This would allow models to process and generate a broader range of media, significantly expanding the scope of what tokens can represent and how models can interact with diverse types of data.
 
 :::note
 In principle, **anything that can be represented as a sequence of tokens** could be modeled in a similar way. For example, **DNA sequences**—which are composed of a series of nucleotides (A, T, C, G)—can be tokenized and modeled to capture patterns, make predictions, or generate sequences. This flexibility allows transformer-based models to handle diverse types of sequential data, further broadening their potential applications across various domains, including bioinformatics, signal processing, and other fields that involve structured or unstructured sequences.
@@ -53,6 +53,6 @@ Please see this post from [OpenAI](https://help.openai.com/en/articles/4936856-w
 
 According to the OpenAI post, the approximate token counts for English text are as follows:
 
-> 1 token ~= 4 chars in English
-> 1 token ~= ¾ words
-> 100 tokens ~= 75 words
+* 1 token ~= 4 chars in English
+* 1 token ~= ¾ words
+* 100 tokens ~= 75 words
