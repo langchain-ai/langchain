@@ -140,7 +140,7 @@ class Outlines(LLM):
     """
 
     @model_validator(mode="after")
-    def validate_environment(self):
+    def validate_environment(self) -> "Outlines":
         """Validate that outlines is installed and create a model instance."""
         try:
             import outlines.models as models
@@ -167,7 +167,9 @@ class Outlines(LLM):
                 "json_schema, or grammar can be provided."
             )
 
-        def check_packages_installed(packages: List[Union[str, Tuple[str, str]]]):
+        def check_packages_installed(
+            packages: List[Union[str, Tuple[str, str]]],
+        ) -> None:
             missing_packages = [
                 pkg if isinstance(pkg, str) else pkg[0]
                 for pkg in packages
@@ -188,17 +190,22 @@ class Outlines(LLM):
             else:  # todo add auto-file-selection if no file is given
                 raise ValueError("GGUF file_name must be provided for llama.cpp.")
             check_packages_installed([("llama-cpp-python", "llama_cpp")])
-            model = models.llamacpp(repo_id, file_name, **self.model_kwargs)
+            self.client = models.llamacpp(repo_id, file_name, **self.model_kwargs)
         elif backend == "transformers":
             check_packages_installed(["transformers", "torch", "datasets"])
-            model = models.transformers(model, **self.model_kwargs)
+            self.client = models.transformers(model, **self.model_kwargs)
         elif backend == "transformers_vision":
             check_packages_installed(
                 ["transformers", "datasets", "torchvision", "PIL", "flash_attn"]
             )
             from transformers import LlavaNextForConditionalGeneration
 
-            model = models.transformers_vision(
+            if not hasattr(models, "transformers_vision"):
+                raise ValueError(
+                    "transformers_vision backend is not supported, "
+                    "please install the correct outlines version."
+                )
+            self.client = models.transformers_vision(
                 model,
                 model_class=LlavaNextForConditionalGeneration,
                 **self.model_kwargs,
@@ -207,13 +214,12 @@ class Outlines(LLM):
             if platform.system() == "Darwin":
                 raise ValueError("vLLM backend is not supported on macOS.")
             check_packages_installed(["vllm"])
-            model = models.vllm(model, **self.model_kwargs)
+            self.client = models.vllm(model, **self.model_kwargs)
         elif backend == "mlxlm":
             check_packages_installed(["mlx"])
-            model = models.mlxlm(model, **self.model_kwargs)
+            self.client = models.mlxlm(model, **self.model_kwargs)
         else:
             raise ValueError(f"Unsupported backend: {backend}")
-        self.client = model
 
         return self
 
