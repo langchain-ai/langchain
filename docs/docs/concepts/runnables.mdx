@@ -1,7 +1,7 @@
 # Runnable Interface
 
 The Runnable interface is foundational for working with LangChain components, and it's implemented across many of them, such as [language models](/docs/concepts/chat_models), [output parsers](/docs/concepts/output_parsers), [retrievers](/docs/concepts/retrievers), [compiled LangGraph graphs](
-https://langchain-ai.github.io/langgraph/concepts/low_level/#compiling-your-graph) and more. Components that implement the Runnable interface can be combined using the [LangChain Expression Language (LCEL)](/docs/concepts/lcel) resulting a new Runnable that can be invoked, batched, streamed, and composed in a standard way.
+https://langchain-ai.github.io/langgraph/concepts/low_level/#compiling-your-graph) and more.
 
 This guide covers the main concepts and methods of the Runnable interface, which allows developers to interact with various LangChain components in a consistent and predictable manner.
 
@@ -19,10 +19,9 @@ The Runnable way defines a standard interface that allows a Runnable component t
 * [Batched](/docs/how_to/lcel_cheatsheet/#batch-a-runnable/): Multiple inputs are efficiently transformed into outputs.
 * [Streamed](/docs/how_to/lcel_cheatsheet/#stream-a-runnable): Outputs are streamed as they are produced.
 * Inspected: Schematic information about Runnable's input, output, and configuration can be accessed.
-* Composed: Multiple Runnables can be composed to work together using [the LangChain Expression Language (LCEL)](/docs/concepts/lcel).
+* Composed: Multiple Runnables can be composed to work together using [the LangChain Expression Language (LCEL)](/docs/concepts/lcel) to create complex pipelines.
 
 Please review the [LCEL Cheatsheet](/docs/how_to/lcel_cheatsheet) for some common patterns that involve the Runnable interface and LCEL expressions.
-
 
 <a id="batch"></a>
 ### Optimized Parallel Execution (Batch)
