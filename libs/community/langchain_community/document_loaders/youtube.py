@@ -10,7 +10,6 @@ from urllib.parse import parse_qs, urlparse
 from xml.etree.ElementTree import ParseError  # OK: trusted-source
 
 from langchain_core.documents import Document
-from pydantic import BaseModel, model_validator
 
 from langchain_community.document_loaders.base import BaseLoader
 
