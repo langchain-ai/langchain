@@ -26,16 +26,47 @@ from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import BaseTool
-from langchain_core.utils import pre_init
 from langchain_core.utils.function_calling import convert_to_openai_tool
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from typing_extensions import Literal
 
 from langchain_community.adapters.openai import convert_message_to_dict
 
 
 class ChatOutlines(BaseChatModel):
-    """Chat model wrapper for the Outlines library."""
+    """Outlines chat model integration.
+
+    Setup:
+      pip install outlines
+
+    Key init args — client params:
+      backend: Literal["llamacpp", "transformers", "transformers_vision", "vllm", "mlxlm"] = "transformers"
+        Specifies the backend to use for the model.
+
+    Key init args — completion params:
+      model: str
+        Identifier for the model to use with Outlines.
+      max_tokens: int = 256
+        The maximum number of tokens to generate.
+      stop: Optional[List[str]] = None
+        A list of strings to stop generation when encountered.
+      streaming: bool = True
+        Whether to stream the results, token by token.
+
+    See full list of supported init args and their descriptions in the params section.
+
+    Instantiate:
+      from langchain_community.chat_models import ChatOutlines
+      chat = ChatOutlines(model="meta-llama/Llama-2-7b-chat-hf")
+
+    Invoke:
+      chat.invoke([HumanMessage(content="Say foo:")])
+
+    Stream:
+      for chunk in chat.stream([HumanMessage(content="Count to 10:")]):
+          print(chunk.content, end="", flush=True)
+
+    """  # noqa: E501
 
     client: Any  # :meta private:
 
@@ -160,8 +191,8 @@ class ChatOutlines(BaseChatModel):
         model_kwargs = {"temperature": 0.8, "seed": 42}
     """
 
-    @pre_init
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="after")
+    def validate_environment(self):
         """Validate that outlines is installed and create a model instance."""
         try:
             import outlines.models as models
@@ -171,15 +202,15 @@ class ChatOutlines(BaseChatModel):
                 "Please install it with `pip install outlines`."
             )
 
-        model: str = values["model"]
-        backend: str = values["backend"]
+        model: str = self.model
+        backend: str = self.backend
 
         num_constraints = sum(
             [
-                bool(values["regex"]),
-                bool(values["type_constraints"]),
-                bool(values["json_schema"]),
-                bool(values["grammar"]),
+                bool(self.regex),
+                bool(self.type_constraints),
+                bool(self.json_schema),
+                bool(self.grammar),
             ]
         )
         if num_constraints > 1:
@@ -209,10 +240,10 @@ class ChatOutlines(BaseChatModel):
                 repo_id = f"{creator}/{repo_name}"
             else:  # todo add auto-file-selection if no file is given
                 raise ValueError("GGUF file_name must be provided for llama.cpp.")
-            model = models.llamacpp(repo_id, file_name, **values["model_kwargs"])
+            model = models.llamacpp(repo_id, file_name, **self.model_kwargs)
         elif backend == "transformers":
             check_packages_installed(["transformers", "torch", "datasets"])
-            model = models.transformers(model_name=model, **values["model_kwargs"])
+            model = models.transformers(model_name=model, **self.model_kwargs)
         elif backend == "transformers_vision":
             check_packages_installed(
                 ["transformers", "datasets", "torchvision", "PIL", "flash_attn"]
@@ -222,20 +253,20 @@ class ChatOutlines(BaseChatModel):
             model = models.transformers_vision(
                 model,
                 model_class=LlavaNextForConditionalGeneration,
-                **values["model_kwargs"],
+                **self.model_kwargs,
             )
         elif backend == "vllm":
             if platform.system() == "Darwin":
                 raise ValueError("vLLM backend is not supported on macOS.")
             check_packages_installed(["vllm"])
-            model = models.vllm(model, **values["model_kwargs"])
+            model = models.vllm(model, **self.model_kwargs)
         elif backend == "mlxlm":
             check_packages_installed(["mlx"])
-            model = models.mlxlm(model, **values["model_kwargs"])
+            model = models.mlxlm(model, **self.model_kwargs)
         else:
             raise ValueError(f"Unsupported backend: {backend}")
-        values["client"] = model
-        return values
+        self.client = model
+        return self
 
     @property
     def _llm_type(self) -> str:
