@@ -52,13 +52,25 @@ class ParserEmbeddings(Embeddings):
         return self.embed_query(text)
 
 
-def _embedding_d2() -> Embeddings:
+@pytest.fixture
+def embedding_d2() -> Embeddings:
     return ParserEmbeddings(dimension=2)
 
 
+class CassandraSession:
+    table_name: str
+    session: Any
+
+    def __init__(self, table_name: str, session: Any):
+        self.table_name = table_name
+        self.session = session
+
+
 @contextmanager
-def cassandra_session(table_name: str, drop: bool = True) -> Generator[Any, None, None]:
-    # Initialize the Cassandra cluster and session
+def get_cassandra_session(
+    table_name: str, drop: bool = True
+) -> Generator[CassandraSession, None, None]:
+    """Initialize the Cassandra cluster and session"""
     from cassandra.cluster import Cluster
 
     if "CASSANDRA_CONTACT_POINTS" in os.environ:
@@ -74,7 +86,6 @@ def cassandra_session(table_name: str, drop: bool = True) -> Generator[Any, None
     session = cluster.connect()
 
     try:
-        # Ensure keyspace exists
         session.execute(
             (
                 f"CREATE KEYSPACE IF NOT EXISTS {TEST_KEYSPACE}"
@@ -82,12 +93,11 @@ def cassandra_session(table_name: str, drop: bool = True) -> Generator[Any, None
                 "{'class': 'SimpleStrategy', 'replication_factor': 1}"
             )
         )
-        # Drop table if required
         if drop:
             session.execute(f"DROP TABLE IF EXISTS {TEST_KEYSPACE}.{table_name}")
 
         # Yield the session for usage
-        yield session
+        yield CassandraSession(table_name=table_name, session=session)
     finally:
         # Ensure proper shutdown/cleanup of resources
         session.shutdown()
@@ -96,49 +106,40 @@ def cassandra_session(table_name: str, drop: bool = True) -> Generator[Any, None
 
 @contextmanager
 def vector_store(
+    embedding: Embeddings,
     table_name: str,
     setup_mode: SetupMode,
     metadata_indexing: Union[Tuple[str, Iterable[str]], str] = "all",
     drop: bool = True,
 ) -> Generator[Cassandra, None, None]:
-    # Open a session with the context manager
-    with cassandra_session(table_name=table_name, drop=drop) as session:
-        try:
-            # Yield the Cassandra instance with the open session
-            yield Cassandra(
-                table_name=table_name,
-                keyspace=TEST_KEYSPACE,
-                session=session,  # Pass the session to Cassandra
-                embedding=_embedding_d2(),
-                setup_mode=setup_mode,
-                metadata_indexing=metadata_indexing,
-            )
-        finally:
-            # Cleanup happens in cassandra_session context manager automatically
-            pass
+    with get_cassandra_session(table_name=table_name, drop=drop) as session:
+        yield Cassandra(
+            table_name=session.table_name,
+            keyspace=TEST_KEYSPACE,
+            session=session.session,
+            embedding=embedding,
+            setup_mode=setup_mode,
+            metadata_indexing=metadata_indexing,
+        )
 
 
 @contextmanager
 def graph_vector_store(
+    embedding: Embeddings,
     table_name: str,
     setup_mode: SetupMode,
     metadata_deny_list: Optional[list[str]] = None,
     drop: bool = True,
 ) -> Generator[CassandraGraphVectorStore, None, None]:
-    # Open a session with the context manager
-    with cassandra_session(table_name=table_name, drop=drop) as session:
-        try:
-            yield CassandraGraphVectorStore(
-                table_name=table_name,
-                keyspace=TEST_KEYSPACE,
-                session=session,
-                embedding=_embedding_d2(),
-                setup_mode=setup_mode,
-                metadata_deny_list=metadata_deny_list,
-            )
-        finally:
-            # Cleanup happens in cassandra_session context manager automatically
-            pass
+    with get_cassandra_session(table_name=table_name, drop=drop) as session:
+        yield CassandraGraphVectorStore(
+            table_name=session.table_name,
+            keyspace=TEST_KEYSPACE,
+            session=session.session,
+            embedding=embedding,
+            setup_mode=setup_mode,
+            metadata_deny_list=metadata_deny_list,
+        )
 
 
 def _vs_indexing_policy(table_name: str) -> Union[Tuple[str, Iterable[str]], str]:
@@ -177,6 +178,7 @@ class TestUpgradeToGraphVectorStore:
     def test_upgrade_to_gvs_success_sync(
         self,
         *,
+        embedding_d2: Embeddings,
         gvs_setup_mode: SetupMode,
         table_name: str,
         gvs_metadata_deny_list: list[str],
@@ -186,6 +188,7 @@ class TestUpgradeToGraphVectorStore:
 
         # Create vector store using SetupMode.SYNC
         with vector_store(
+            embedding=embedding_d2,
             table_name=table_name,
             setup_mode=SetupMode.SYNC,
             metadata_indexing=_vs_indexing_policy(table_name=table_name),
@@ -202,6 +205,7 @@ class TestUpgradeToGraphVectorStore:
         # Create a GRAPH Vector Store using the existing collection from above
         # with setup_mode=gvs_setup_mode and indexing_policy=gvs_indexing_policy
         with graph_vector_store(
+            embedding=embedding_d2,
             table_name=table_name,
             setup_mode=gvs_setup_mode,
             metadata_deny_list=gvs_metadata_deny_list,
@@ -226,6 +230,7 @@ class TestUpgradeToGraphVectorStore:
     async def test_upgrade_to_gvs_success_async(
         self,
         *,
+        embedding_d2: Embeddings,
         gvs_setup_mode: SetupMode,
         table_name: str,
         gvs_metadata_deny_list: list[str],
@@ -235,6 +240,7 @@ class TestUpgradeToGraphVectorStore:
 
         # Create vector store using SetupMode.ASYNC
         with vector_store(
+            embedding=embedding_d2,
             table_name=table_name,
             setup_mode=SetupMode.ASYNC,
             metadata_indexing=_vs_indexing_policy(table_name=table_name),
@@ -251,6 +257,7 @@ class TestUpgradeToGraphVectorStore:
         # Create a GRAPH Vector Store using the existing collection from above
         # with setup_mode=gvs_setup_mode and indexing_policy=gvs_indexing_policy
         with graph_vector_store(
+            embedding=embedding_d2,
             table_name=table_name,
             setup_mode=gvs_setup_mode,
             metadata_deny_list=gvs_metadata_deny_list,

@@ -5,13 +5,24 @@ import json
 import math
 import os
 import time
-from typing import Any, Iterable, List, Optional, Tuple, Union
+from contextlib import asynccontextmanager, contextmanager
+from typing import (
+    Any,
+    AsyncGenerator,
+    Generator,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Union,
+)
 
 import pytest
 from langchain_core.documents import Document
 
 from langchain_community.vectorstores import Cassandra
 from tests.integration_tests.vectorstores.fake_embeddings import (
+    AngularTwoDimensionalEmbeddings,
     ConsistentFakeEmbeddings,
     Embeddings,
 )
@@ -21,6 +32,17 @@ TEST_KEYSPACE = "vector_test_keyspace"
 # similarity threshold definitions
 EUCLIDEAN_MIN_SIM_UNIT_VECTORS = 0.2
 MATCH_EPSILON = 0.0001
+
+
+def _strip_docs(documents: List[Document]) -> List[Document]:
+    return [_strip_doc(doc) for doc in documents]
+
+
+def _strip_doc(document: Document) -> Document:
+    return Document(
+        page_content=document.page_content,
+        metadata=document.metadata,
+    )
 
 
 class ParserEmbeddings(Embeddings):
@@ -34,9 +56,6 @@ class ParserEmbeddings(Embeddings):
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
         return [self.embed_query(txt) for txt in texts]
 
-    async def aembed_documents(self, texts: list[str]) -> list[list[float]]:
-        return self.embed_documents(texts)
-
     def embed_query(self, text: str) -> list[float]:
         try:
             vals = json.loads(text)
@@ -45,9 +64,6 @@ class ParserEmbeddings(Embeddings):
         else:
             assert len(vals) == self.dimension
             return vals
-
-    async def aembed_query(self, text: str) -> list[float]:
-        return self.embed_query(text)
 
 
 @pytest.fixture
@@ -92,10 +108,22 @@ def metadata_documents() -> list[Document]:
     ]
 
 
-def _get_cassandra_session(table_name: str, drop: bool) -> Any:
+class CassandraSession:
+    table_name: str
+    session: Any
+
+    def __init__(self, table_name: str, session: Any):
+        self.table_name = table_name
+        self.session = session
+
+
+@contextmanager
+def get_cassandra_session(
+    table_name: str, drop: bool = True
+) -> Generator[CassandraSession, None, None]:
+    """Initialize the Cassandra cluster and session"""
     from cassandra.cluster import Cluster
 
-    # get db connection
     if "CASSANDRA_CONTACT_POINTS" in os.environ:
         contact_points = [
             cp.strip()
@@ -104,287 +132,332 @@ def _get_cassandra_session(table_name: str, drop: bool) -> Any:
         ]
     else:
         contact_points = None
+
     cluster = Cluster(contact_points)
     session = cluster.connect()
-    # ensure keyspace exists
-    session.execute(
-        (
-            f"CREATE KEYSPACE IF NOT EXISTS {TEST_KEYSPACE} "
-            f"WITH replication = {{'class': 'SimpleStrategy', 'replication_factor': 1}}"
+
+    try:
+        session.execute(
+            (
+                f"CREATE KEYSPACE IF NOT EXISTS {TEST_KEYSPACE}"
+                " WITH replication = "
+                "{'class': 'SimpleStrategy', 'replication_factor': 1}"
+            )
         )
-    )
-    # drop table if required
-    if drop:
-        session.execute(f"DROP TABLE IF EXISTS {TEST_KEYSPACE}.{table_name}")
+        if drop:
+            session.execute(f"DROP TABLE IF EXISTS {TEST_KEYSPACE}.{table_name}")
 
-    return session
-
-
-def _vectorstore_from_texts(
-    texts: List[str],
-    embedding: Embeddings,
-    metadatas: Optional[List[dict]] = None,
-    ids: Optional[List[str]] = None,
-    drop: bool = True,
-    metadata_indexing: Union[Tuple[str, Iterable[str]], str] = "all",
-    table_name: str = "vector_test_table",
-) -> Cassandra:
-    session = _get_cassandra_session(table_name=table_name, drop=drop)
-    return Cassandra.from_texts(
-        texts=texts,
-        embedding=embedding,
-        metadatas=metadatas,
-        ids=ids,
-        session=session,
-        keyspace=TEST_KEYSPACE,
-        table_name=table_name,
-        metadata_indexing=metadata_indexing,
-    )
-
-
-async def _vectorstore_from_texts_async(
-    texts: List[str],
-    embedding: Embeddings,
-    metadatas: Optional[List[dict]] = None,
-    ids: Optional[List[str]] = None,
-    drop: bool = True,
-    metadata_indexing: Union[Tuple[str, Iterable[str]], str] = "all",
-    table_name: str = "vector_test_table",
-) -> Cassandra:
-    session = _get_cassandra_session(table_name=table_name, drop=drop)
-    return await Cassandra.afrom_texts(
-        texts=texts,
-        embedding=embedding,
-        metadatas=metadatas,
-        ids=ids,
-        session=session,
-        keyspace=TEST_KEYSPACE,
-        table_name=table_name,
-        metadata_indexing=metadata_indexing,
-    )
-
-
-def _vectorstore_from_documents(
-    docs: List[Document],
-    embedding: Embeddings,
-    ids: Optional[List[str]] = None,
-    drop: bool = True,
-    metadata_indexing: Union[Tuple[str, Iterable[str]], str] = "all",
-    table_name: str = "vector_test_table",
-) -> Cassandra:
-    session = _get_cassandra_session(table_name=table_name, drop=drop)
-    return Cassandra.from_documents(
-        documents=docs,
-        ids=ids,
-        embedding=embedding,
-        session=session,
-        keyspace=TEST_KEYSPACE,
-        table_name=table_name,
-        metadata_indexing=metadata_indexing,
-    )
-
-
-async def _vectorstore_from_documents_async(
-    docs: List[Document],
-    embedding: Embeddings,
-    ids: Optional[List[str]] = None,
-    drop: bool = True,
-    metadata_indexing: Union[Tuple[str, Iterable[str]], str] = "all",
-    table_name: str = "vector_test_table",
-) -> Cassandra:
-    session = _get_cassandra_session(table_name=table_name, drop=drop)
-    return await Cassandra.afrom_documents(
-        documents=docs,
-        ids=ids,
-        embedding=embedding,
-        session=session,
-        keyspace=TEST_KEYSPACE,
-        table_name=table_name,
-        metadata_indexing=metadata_indexing,
-    )
+        # Yield the session for usage
+        yield CassandraSession(table_name=table_name, session=session)
+    finally:
+        # Ensure proper shutdown/cleanup of resources
+        session.shutdown()
+        cluster.shutdown()
 
 
 @pytest.fixture
-def vector_store_d2(embedding_d2: Embeddings) -> Cassandra:
-    return _vectorstore_from_documents(
-        docs=[],
-        embedding=embedding_d2,
-    )
+def cassandra_session(
+    request: pytest.FixtureRequest,
+) -> Generator[CassandraSession, None, None]:
+    request_param = getattr(request, "param", {})
+    table_name = request_param.get("table_name", "vector_test_table")
+    drop = request_param.get("drop", True)
+
+    with get_cassandra_session(table_name, drop) as session:
+        yield session
+
+
+@contextmanager
+def vector_store_from_texts(
+    texts: List[str],
+    metadatas: Optional[List[dict]] = None,
+    embedding: Optional[Embeddings] = None,
+    drop: bool = True,
+    metadata_indexing: Union[Tuple[str, Iterable[str]], str] = "all",
+    table_name: str = "vector_test_table",
+) -> Generator[Cassandra, None, None]:
+    if embedding is None:
+        embedding = ConsistentFakeEmbeddings()
+    with get_cassandra_session(table_name=table_name, drop=drop) as session:
+        yield Cassandra.from_texts(
+            texts,
+            embedding=embedding,
+            metadatas=metadatas,
+            session=session.session,
+            keyspace=TEST_KEYSPACE,
+            table_name=session.table_name,
+            metadata_indexing=metadata_indexing,
+        )
+
+
+@asynccontextmanager
+async def vector_store_from_texts_async(
+    texts: List[str],
+    metadatas: Optional[List[dict]] = None,
+    embedding: Optional[Embeddings] = None,
+    drop: bool = True,
+    metadata_indexing: Union[Tuple[str, Iterable[str]], str] = "all",
+    table_name: str = "vector_test_table",
+) -> AsyncGenerator[Cassandra, None]:
+    if embedding is None:
+        embedding = ConsistentFakeEmbeddings()
+    with get_cassandra_session(table_name=table_name, drop=drop) as session:
+        yield await Cassandra.afrom_texts(
+            texts,
+            embedding=embedding,
+            metadatas=metadatas,
+            session=session.session,
+            keyspace=TEST_KEYSPACE,
+            table_name=session.table_name,
+            metadata_indexing=metadata_indexing,
+        )
+
+
+@pytest.fixture(scope="function")
+def vector_store_d2(
+    embedding_d2: Embeddings,
+    table_name: str = "vector_test_table_d2",
+) -> Generator[Cassandra, None, None]:
+    with get_cassandra_session(table_name=table_name) as session:
+        yield Cassandra(
+            embedding=embedding_d2,
+            session=session.session,
+            keyspace=TEST_KEYSPACE,
+            table_name=session.table_name,
+        )
+
+
+async def test_cassandra() -> None:
+    """Test end to end construction and search."""
+    texts = ["foo", "bar", "baz"]
+    with vector_store_from_texts(texts) as vstore:
+        output = vstore.similarity_search("foo", k=1)
+        assert _strip_docs(output) == _strip_docs([Document(page_content="foo")])
+        output = await vstore.asimilarity_search("foo", k=1)
+        assert _strip_docs(output) == _strip_docs([Document(page_content="foo")])
+
+
+async def test_cassandra_with_score() -> None:
+    """Test end to end construction and search with scores and IDs."""
+    texts = ["foo", "bar", "baz"]
+    metadatas = [{"page": i} for i in range(len(texts))]
+    with vector_store_from_texts(texts, metadatas=metadatas) as vstore:
+        expected_docs = [
+            Document(page_content="foo", metadata={"page": "0.0"}),
+            Document(page_content="bar", metadata={"page": "1.0"}),
+            Document(page_content="baz", metadata={"page": "2.0"}),
+        ]
+
+        output = vstore.similarity_search_with_score("foo", k=3)
+        docs = [o[0] for o in output]
+        scores = [o[1] for o in output]
+        assert _strip_docs(docs) == _strip_docs(expected_docs)
+        assert scores[0] > scores[1] > scores[2]
+
+        output = await vstore.asimilarity_search_with_score("foo", k=3)
+        docs = [o[0] for o in output]
+        scores = [o[1] for o in output]
+        assert _strip_docs(docs) == _strip_docs(expected_docs)
+        assert scores[0] > scores[1] > scores[2]
+
+
+async def test_cassandra_max_marginal_relevance_search() -> None:
+    """
+    Test end to end construction and MMR search.
+    The embedding function used here ensures `texts` become
+    the following vectors on a circle (numbered v0 through v3):
+
+           ______ v2
+          /      \
+         /        |  v1
+    v3  |     .    | query
+         |        /  v0
+          |______/                 (N.B. very crude drawing)
+
+    With fetch_k==3 and k==2, when query is at (1, ),
+    one expects that v2 and v0 are returned (in some order).
+    """
+    texts = ["-0.124", "+0.127", "+0.25", "+1.0"]
+    metadatas = [{"page": i} for i in range(len(texts))]
+    with vector_store_from_texts(
+        texts,
+        metadatas=metadatas,
+        embedding=AngularTwoDimensionalEmbeddings(),
+    ) as vstore:
+        expected_set = {
+            ("+0.25", "2.0"),
+            ("-0.124", "0.0"),
+        }
+
+        output = vstore.max_marginal_relevance_search("0.0", k=2, fetch_k=3)
+        output_set = {
+            (mmr_doc.page_content, mmr_doc.metadata["page"]) for mmr_doc in output
+        }
+        assert output_set == expected_set
+
+        output = await vstore.amax_marginal_relevance_search("0.0", k=2, fetch_k=3)
+        output_set = {
+            (mmr_doc.page_content, mmr_doc.metadata["page"]) for mmr_doc in output
+        }
+        assert output_set == expected_set
 
 
 def test_cassandra_add_texts() -> None:
     """Test end to end construction with further insertions."""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": i} for i in range(len(texts))]
-    vstore = _vectorstore_from_texts(
-        texts, metadatas=metadatas, embedding=ConsistentFakeEmbeddings()
-    )
+    with vector_store_from_texts(texts, metadatas=metadatas) as vstore:
+        texts2 = ["foo2", "bar2", "baz2"]
+        metadatas2 = [{"page": i + 3} for i in range(len(texts))]
+        vstore.add_texts(texts2, metadatas2)
 
-    texts2 = ["foo2", "bar2", "baz2"]
-    metadatas2 = [{"page": i + 3} for i in range(len(texts))]
-    vstore.add_texts(texts2, metadatas2)
-
-    output = vstore.similarity_search("foo", k=10)
-    assert len(output) == 6
+        output = vstore.similarity_search("foo", k=10)
+        assert len(output) == 6
 
 
 async def test_cassandra_add_texts_async() -> None:
     """Test end to end construction with further insertions."""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": i} for i in range(len(texts))]
-    vstore = await _vectorstore_from_texts_async(
-        texts, metadatas=metadatas, embedding=ConsistentFakeEmbeddings()
-    )
+    async with vector_store_from_texts_async(texts, metadatas=metadatas) as vstore:
+        texts2 = ["foo2", "bar2", "baz2"]
+        metadatas2 = [{"page": i + 3} for i in range(len(texts))]
+        await vstore.aadd_texts(texts2, metadatas2)
 
-    texts2 = ["foo2", "bar2", "baz2"]
-    metadatas2 = [{"page": i + 3} for i in range(len(texts))]
-    await vstore.aadd_texts(texts2, metadatas2)
-
-    output = await vstore.asimilarity_search("foo", k=10)
-    assert len(output) == 6
+        output = await vstore.asimilarity_search("foo", k=10)
+        assert len(output) == 6
 
 
 def test_cassandra_no_drop() -> None:
     """Test end to end construction and re-opening the same index."""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": i} for i in range(len(texts))]
-    _vectorstore_from_texts(
-        texts, metadatas=metadatas, embedding=ConsistentFakeEmbeddings()
-    )
+    with vector_store_from_texts(texts, metadatas=metadatas) as vstore:
+        output = vstore.similarity_search("foo", k=10)
+        assert len(output) == 3
 
     texts2 = ["foo2", "bar2", "baz2"]
-    vstore = _vectorstore_from_texts(
-        texts2, metadatas=metadatas, drop=False, embedding=ConsistentFakeEmbeddings()
-    )
-
-    output = vstore.similarity_search("foo", k=10)
-    assert len(output) == 6
+    with vector_store_from_texts(texts2, metadatas=metadatas, drop=False) as vstore:
+        output = vstore.similarity_search("foo", k=10)
+        assert len(output) == 6
 
 
 async def test_cassandra_no_drop_async() -> None:
     """Test end to end construction and re-opening the same index."""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": i} for i in range(len(texts))]
-    await _vectorstore_from_texts_async(
-        texts, metadatas=metadatas, embedding=ConsistentFakeEmbeddings()
-    )
+    async with vector_store_from_texts_async(texts, metadatas=metadatas) as vstore:
+        output = await vstore.asimilarity_search("foo", k=10)
+        assert len(output) == 3
 
     texts2 = ["foo2", "bar2", "baz2"]
-    vstore = await _vectorstore_from_texts_async(
-        texts2, metadatas=metadatas, drop=False, embedding=ConsistentFakeEmbeddings()
-    )
-
-    output = await vstore.asimilarity_search("foo", k=10)
-    assert len(output) == 6
+    async with vector_store_from_texts_async(
+        texts2, metadatas=metadatas, drop=False
+    ) as vstore:
+        output = await vstore.asimilarity_search("foo", k=10)
+        assert len(output) == 6
 
 
 def test_cassandra_delete() -> None:
     """Test delete methods from vector store."""
     texts = ["foo", "bar", "baz", "gni"]
     metadatas = [{"page": i, "mod2": i % 2} for i in range(len(texts))]
-    vstore = _vectorstore_from_texts(
-        [], metadatas=metadatas, embedding=ConsistentFakeEmbeddings()
-    )
+    with vector_store_from_texts([], metadatas=metadatas) as vstore:
+        ids = vstore.add_texts(texts, metadatas)
+        output = vstore.similarity_search("foo", k=10)
+        assert len(output) == 4
 
-    ids = vstore.add_texts(texts, metadatas)
-    output = vstore.similarity_search("foo", k=10)
-    assert len(output) == 4
+        vstore.delete_by_document_id(ids[0])
+        output = vstore.similarity_search("foo", k=10)
+        assert len(output) == 3
 
-    vstore.delete_by_document_id(ids[0])
-    output = vstore.similarity_search("foo", k=10)
-    assert len(output) == 3
+        vstore.delete(ids[1:3])
+        output = vstore.similarity_search("foo", k=10)
+        assert len(output) == 1
 
-    vstore.delete(ids[1:3])
-    output = vstore.similarity_search("foo", k=10)
-    assert len(output) == 1
+        vstore.delete(["not-existing"])
+        output = vstore.similarity_search("foo", k=10)
+        assert len(output) == 1
 
-    vstore.delete(["not-existing"])
-    output = vstore.similarity_search("foo", k=10)
-    assert len(output) == 1
+        vstore.clear()
+        time.sleep(0.3)
+        output = vstore.similarity_search("foo", k=10)
+        assert len(output) == 0
 
-    vstore.clear()
-    time.sleep(0.3)
-    output = vstore.similarity_search("foo", k=10)
-    assert len(output) == 0
+        vstore.add_texts(texts, metadatas)
+        num_deleted = vstore.delete_by_metadata_filter({"mod2": 0}, batch_size=1)
+        assert num_deleted == 2
+        output = vstore.similarity_search("foo", k=10)
+        assert len(output) == 2
+        vstore.clear()
 
-    vstore.add_texts(texts, metadatas)
-    num_deleted = vstore.delete_by_metadata_filter({"mod2": 0}, batch_size=1)
-    assert num_deleted == 2
-    output = vstore.similarity_search("foo", k=10)
-    assert len(output) == 2
-    vstore.clear()
-
-    with pytest.raises(ValueError):
-        vstore.delete_by_metadata_filter({})
+        with pytest.raises(ValueError):
+            vstore.delete_by_metadata_filter({})
 
 
 async def test_cassandra_delete_async() -> None:
     """Test delete methods from vector store."""
     texts = ["foo", "bar", "baz", "gni"]
     metadatas = [{"page": i, "mod2": i % 2} for i in range(len(texts))]
-    vstore = await _vectorstore_from_texts_async(
-        [], metadatas=metadatas, embedding=ConsistentFakeEmbeddings()
-    )
+    async with vector_store_from_texts_async([], metadatas=metadatas) as vstore:
+        ids = await vstore.aadd_texts(texts, metadatas)
+        output = await vstore.asimilarity_search("foo", k=10)
+        assert len(output) == 4
 
-    ids = await vstore.aadd_texts(texts, metadatas)
-    output = await vstore.asimilarity_search("foo", k=10)
-    assert len(output) == 4
+        await vstore.adelete_by_document_id(ids[0])
+        output = await vstore.asimilarity_search("foo", k=10)
+        assert len(output) == 3
 
-    await vstore.adelete_by_document_id(ids[0])
-    output = await vstore.asimilarity_search("foo", k=10)
-    assert len(output) == 3
+        await vstore.adelete(ids[1:3])
+        output = await vstore.asimilarity_search("foo", k=10)
+        assert len(output) == 1
 
-    await vstore.adelete(ids[1:3])
-    output = await vstore.asimilarity_search("foo", k=10)
-    assert len(output) == 1
+        await vstore.adelete(["not-existing"])
+        output = await vstore.asimilarity_search("foo", k=10)
+        assert len(output) == 1
 
-    await vstore.adelete(["not-existing"])
-    output = await vstore.asimilarity_search("foo", k=10)
-    assert len(output) == 1
+        await vstore.aclear()
+        await asyncio.sleep(0.3)
+        output = vstore.similarity_search("foo", k=10)
+        assert len(output) == 0
 
-    await vstore.aclear()
-    await asyncio.sleep(0.3)
-    output = vstore.similarity_search("foo", k=10)
-    assert len(output) == 0
+        await vstore.aadd_texts(texts, metadatas)
+        num_deleted = await vstore.adelete_by_metadata_filter({"mod2": 0}, batch_size=1)
+        assert num_deleted == 2
+        output = await vstore.asimilarity_search("foo", k=10)
+        assert len(output) == 2
+        await vstore.aclear()
 
-    await vstore.aadd_texts(texts, metadatas)
-    num_deleted = await vstore.adelete_by_metadata_filter({"mod2": 0}, batch_size=1)
-    assert num_deleted == 2
-    output = await vstore.asimilarity_search("foo", k=10)
-    assert len(output) == 2
-    await vstore.aclear()
-
-    with pytest.raises(ValueError):
-        await vstore.adelete_by_metadata_filter({})
+        with pytest.raises(ValueError):
+            await vstore.adelete_by_metadata_filter({})
 
 
 def test_cassandra_metadata_indexing() -> None:
     """Test comparing metadata indexing policies."""
     texts = ["foo"]
     metadatas = [{"field1": "a", "field2": "b"}]
-    vstore_all = _vectorstore_from_texts(
-        texts, metadatas=metadatas, embedding=ConsistentFakeEmbeddings()
-    )
-    vstore_f1 = _vectorstore_from_texts(
-        texts,
-        metadatas=metadatas,
-        metadata_indexing=("allowlist", ["field1"]),
-        table_name="vector_test_table_indexing",
-        embedding=ConsistentFakeEmbeddings(),
-    )
+    with vector_store_from_texts(texts, metadatas=metadatas) as vstore_all:
+        with vector_store_from_texts(
+            texts,
+            metadatas=metadatas,
+            metadata_indexing=("allowlist", ["field1"]),
+            table_name="vector_test_table_indexing",
+            embedding=ConsistentFakeEmbeddings(),
+        ) as vstore_f1:
+            output_all = vstore_all.similarity_search("bar", k=2)
+            output_f1 = vstore_f1.similarity_search("bar", filter={"field1": "a"}, k=2)
+            output_f1_no = vstore_f1.similarity_search(
+                "bar", filter={"field1": "Z"}, k=2
+            )
+            assert len(output_all) == 1
+            assert output_all[0].metadata == metadatas[0]
+            assert len(output_f1) == 1
+            assert output_f1[0].metadata == metadatas[0]
+            assert len(output_f1_no) == 0
 
-    output_all = vstore_all.similarity_search("bar", k=2)
-    output_f1 = vstore_f1.similarity_search("bar", filter={"field1": "a"}, k=2)
-    output_f1_no = vstore_f1.similarity_search("bar", filter={"field1": "Z"}, k=2)
-    assert len(output_all) == 1
-    assert output_all[0].metadata == metadatas[0]
-    assert len(output_f1) == 1
-    assert output_f1[0].metadata == metadatas[0]
-    assert len(output_f1_no) == 0
-
-    with pytest.raises(ValueError):
-        # "Non-indexed metadata fields cannot be used in queries."
-        vstore_f1.similarity_search("bar", filter={"field2": "b"}, k=2)
+            with pytest.raises(ValueError):
+                # "Non-indexed metadata fields cannot be used in queries."
+                vstore_f1.similarity_search("bar", filter={"field2": "b"}, k=2)
 
 
 class TestCassandraVectorStore:
@@ -404,15 +477,19 @@ class TestCassandraVectorStore:
     def test_cassandra_vectorstore_from_texts_sync(
         self,
         *,
+        cassandra_session: CassandraSession,
         embedding_d2: Embeddings,
         page_contents: list[str],
     ) -> None:
         """from_texts methods and the associated warnings."""
-        v_store = _vectorstore_from_texts(
+        v_store = Cassandra.from_texts(
             texts=page_contents[0:2],
             metadatas=[{"m": 1}, {"m": 3}],
-            embedding=embedding_d2,
             ids=["ft1", "ft3"],
+            table_name=cassandra_session.table_name,
+            session=cassandra_session.session,
+            keyspace=TEST_KEYSPACE,
+            embedding=embedding_d2,
         )
         search_results_triples_0 = v_store.similarity_search_with_score_id(
             page_contents[1],
@@ -424,12 +501,14 @@ class TestCassandraVectorStore:
         assert res_doc_0.metadata == {"m": "3.0"}
         assert res_id_0 == "ft3"
 
-        _vectorstore_from_texts(
+        Cassandra.from_texts(
             texts=page_contents[2:4],
             metadatas=[{"m": 5}, {"m": 7}],
-            embedding=embedding_d2,
             ids=["ft5", "ft7"],
-            drop=False,
+            table_name=cassandra_session.table_name,
+            session=cassandra_session.session,
+            keyspace=TEST_KEYSPACE,
+            embedding=embedding_d2,
         )
 
         search_results_triples_1 = v_store.similarity_search_with_score_id(
@@ -441,12 +520,14 @@ class TestCassandraVectorStore:
         assert res_doc_1.page_content == page_contents[3]
         assert res_doc_1.metadata == {"m": "7.0"}
         assert res_id_1 == "ft7"
-        v_store_2 = _vectorstore_from_texts(
+        v_store_2 = Cassandra.from_texts(
             texts=page_contents[4:6],
             metadatas=[{"m": 9}, {"m": 11}],
-            embedding=embedding_d2,
             ids=["ft9", "ft11"],
-            drop=False,
+            table_name=cassandra_session.table_name,
+            session=cassandra_session.session,
+            keyspace=TEST_KEYSPACE,
+            embedding=embedding_d2,
         )
         search_results_triples_2 = v_store_2.similarity_search_with_score_id(
             page_contents[5],
@@ -457,6 +538,7 @@ class TestCassandraVectorStore:
         assert res_doc_2.page_content == page_contents[5]
         assert res_doc_2.metadata == {"m": "11.0"}
         assert res_id_2 == "ft11"
+        v_store_2.clear()
 
     @pytest.mark.parametrize(
         "page_contents",
@@ -467,17 +549,21 @@ class TestCassandraVectorStore:
     def test_cassandra_vectorstore_from_documents_sync(
         self,
         *,
+        cassandra_session: CassandraSession,
         embedding_d2: Embeddings,
         page_contents: list[str],
     ) -> None:
         """from_documents, esp. the various handling of ID-in-doc vs external."""
         pc1, pc2 = page_contents
         # no IDs.
-        v_store = _vectorstore_from_documents(
+        v_store = Cassandra.from_documents(
             [
                 Document(page_content=pc1, metadata={"m": 1}),
                 Document(page_content=pc2, metadata={"m": 3}),
             ],
+            table_name=cassandra_session.table_name,
+            session=cassandra_session.session,
+            keyspace=TEST_KEYSPACE,
             embedding=embedding_d2,
         )
         hits = v_store.similarity_search(pc2, k=1)
@@ -488,14 +574,16 @@ class TestCassandraVectorStore:
 
         # IDs passed separately.
         with pytest.warns(DeprecationWarning) as rec_warnings:
-            v_store_2 = _vectorstore_from_documents(
+            v_store_2 = Cassandra.from_documents(
                 [
                     Document(page_content=pc1, metadata={"m": 1}),
                     Document(page_content=pc2, metadata={"m": 3}),
                 ],
                 ids=["idx1", "idx3"],
+                table_name=cassandra_session.table_name,
+                session=cassandra_session.session,
+                keyspace=TEST_KEYSPACE,
                 embedding=embedding_d2,
-                drop=False,
             )
         f_rec_warnings = [
             wrn for wrn in rec_warnings if issubclass(wrn.category, DeprecationWarning)
@@ -509,13 +597,15 @@ class TestCassandraVectorStore:
         v_store_2.clear()
 
         # IDs in documents.
-        v_store_3 = _vectorstore_from_documents(
+        v_store_3 = Cassandra.from_documents(
             [
                 Document(page_content=pc1, metadata={"m": 1}, id="idx1"),
                 Document(page_content=pc2, metadata={"m": 3}, id="idx3"),
             ],
+            table_name=cassandra_session.table_name,
+            session=cassandra_session.session,
+            keyspace=TEST_KEYSPACE,
             embedding=embedding_d2,
-            drop=False,
         )
         hits = v_store_3.similarity_search(pc2, k=1)
         assert len(hits) == 1
@@ -526,14 +616,16 @@ class TestCassandraVectorStore:
 
         # IDs both in documents and aside.
         with pytest.warns(DeprecationWarning) as rec_warnings:
-            v_store_4 = _vectorstore_from_documents(
+            v_store_4 = Cassandra.from_documents(
                 [
                     Document(page_content=pc1, metadata={"m": 1}),
                     Document(page_content=pc2, metadata={"m": 3}, id="idy3"),
                 ],
-                embedding=embedding_d2,
                 ids=["idx1", "idx3"],
-                drop=False,
+                table_name=cassandra_session.table_name,
+                session=cassandra_session.session,
+                keyspace=TEST_KEYSPACE,
+                embedding=embedding_d2,
             )
         f_rec_warnings = [
             wrn for wrn in rec_warnings if issubclass(wrn.category, DeprecationWarning)
@@ -561,14 +653,18 @@ class TestCassandraVectorStore:
     async def test_cassandra_vectorstore_from_texts_async(
         self,
         *,
+        cassandra_session: CassandraSession,
         embedding_d2: Embeddings,
         page_contents: list[str],
     ) -> None:
         """from_texts methods and the associated warnings, async version."""
-        v_store = await _vectorstore_from_texts_async(
+        v_store = await Cassandra.afrom_texts(
             texts=page_contents[0:2],
             metadatas=[{"m": 1}, {"m": 3}],
             ids=["ft1", "ft3"],
+            table_name=cassandra_session.table_name,
+            session=cassandra_session.session,
+            keyspace=TEST_KEYSPACE,
             embedding=embedding_d2,
         )
         search_results_triples_0 = await v_store.asimilarity_search_with_score_id(
@@ -581,12 +677,14 @@ class TestCassandraVectorStore:
         assert res_doc_0.metadata == {"m": "3.0"}
         assert res_id_0 == "ft3"
 
-        await _vectorstore_from_texts_async(
+        await Cassandra.afrom_texts(
             texts=page_contents[2:4],
             metadatas=[{"m": 5}, {"m": 7}],
             ids=["ft5", "ft7"],
+            table_name=cassandra_session.table_name,
+            session=cassandra_session.session,
+            keyspace=TEST_KEYSPACE,
             embedding=embedding_d2,
-            drop=False,
         )
         search_results_triples_1 = await v_store.asimilarity_search_with_score_id(
             page_contents[3],
@@ -598,12 +696,14 @@ class TestCassandraVectorStore:
         assert res_doc_1.metadata == {"m": "7.0"}
         assert res_id_1 == "ft7"
 
-        v_store_2 = await _vectorstore_from_texts_async(
+        v_store_2 = await Cassandra.afrom_texts(
             texts=page_contents[4:6],
             metadatas=[{"m": 9}, {"m": 11}],
             ids=["ft9", "ft11"],
+            table_name=cassandra_session.table_name,
+            session=cassandra_session.session,
+            keyspace=TEST_KEYSPACE,
             embedding=embedding_d2,
-            drop=False,
         )
         search_results_triples_2 = await v_store_2.asimilarity_search_with_score_id(
             page_contents[5],
@@ -614,6 +714,7 @@ class TestCassandraVectorStore:
         assert res_doc_2.page_content == page_contents[5]
         assert res_doc_2.metadata == {"m": "11.0"}
         assert res_id_2 == "ft11"
+        await v_store_2.aclear()
 
     @pytest.mark.parametrize(
         "page_contents",
@@ -624,6 +725,7 @@ class TestCassandraVectorStore:
     async def test_cassandra_vectorstore_from_documents_async(
         self,
         *,
+        cassandra_session: CassandraSession,
         embedding_d2: Embeddings,
         page_contents: list[str],
     ) -> None:
@@ -634,29 +736,34 @@ class TestCassandraVectorStore:
         pc1, pc2 = page_contents
 
         # no IDs.
-        v_store_1 = await _vectorstore_from_documents_async(
+        v_store = await Cassandra.afrom_documents(
             [
                 Document(page_content=pc1, metadata={"m": 1}),
                 Document(page_content=pc2, metadata={"m": 3}),
             ],
+            table_name=cassandra_session.table_name,
+            session=cassandra_session.session,
+            keyspace=TEST_KEYSPACE,
             embedding=embedding_d2,
         )
-        hits = await v_store_1.asimilarity_search(pc2, k=1)
+        hits = await v_store.asimilarity_search(pc2, k=1)
         assert len(hits) == 1
         assert hits[0].page_content == pc2
         assert hits[0].metadata == {"m": "3.0"}
-        await v_store_1.aclear()
+        await v_store.aclear()
 
         # IDs passed separately.
         with pytest.warns(DeprecationWarning) as rec_warnings:
-            v_store_2 = await _vectorstore_from_documents_async(
+            v_store_2 = await Cassandra.afrom_documents(
                 [
                     Document(page_content=pc1, metadata={"m": 1}),
                     Document(page_content=pc2, metadata={"m": 3}),
                 ],
-                embedding=embedding_d2,
-                drop=False,
                 ids=["idx1", "idx3"],
+                table_name=cassandra_session.table_name,
+                session=cassandra_session.session,
+                keyspace=TEST_KEYSPACE,
+                embedding=embedding_d2,
             )
         f_rec_warnings = [
             wrn for wrn in rec_warnings if issubclass(wrn.category, DeprecationWarning)
@@ -671,13 +778,15 @@ class TestCassandraVectorStore:
 
         # IDs in documents.
 
-        v_store_3 = await _vectorstore_from_documents_async(
+        v_store_3 = await Cassandra.afrom_documents(
             [
                 Document(page_content=pc1, metadata={"m": 1}, id="idx1"),
                 Document(page_content=pc2, metadata={"m": 3}, id="idx3"),
             ],
+            table_name=cassandra_session.table_name,
+            session=cassandra_session.session,
+            keyspace=TEST_KEYSPACE,
             embedding=embedding_d2,
-            drop=False,
         )
         hits = await v_store_3.asimilarity_search(pc2, k=1)
         assert len(hits) == 1
@@ -688,14 +797,16 @@ class TestCassandraVectorStore:
 
         # IDs both in documents and aside.
         with pytest.warns(DeprecationWarning) as rec_warnings:
-            v_store_4 = await _vectorstore_from_documents_async(
+            v_store_4 = await Cassandra.afrom_documents(
                 [
                     Document(page_content=pc1, metadata={"m": 1}),
                     Document(page_content=pc2, metadata={"m": 3}, id="idy3"),
                 ],
-                embedding=embedding_d2,
                 ids=["idx1", "idx3"],
-                drop=False,
+                table_name=cassandra_session.table_name,
+                session=cassandra_session.session,
+                keyspace=TEST_KEYSPACE,
+                embedding=embedding_d2,
             )
         f_rec_warnings = [
             wrn for wrn in rec_warnings if issubclass(wrn.category, DeprecationWarning)
@@ -1052,51 +1163,55 @@ class TestCassandraVectorStore:
         REPLACE_RATIO = 2  # one in ... will have replaced metadata
         BATCH_SIZE = 3
 
-        vstore_f1 = _vectorstore_from_texts(
+        with vector_store_from_texts(
             texts=[],
             metadata_indexing=("allowlist", ["field1", "field2"]),
             table_name="vector_test_table_indexing",
-            embedding=ConsistentFakeEmbeddings(),
-        )
-        orig_documents = [
-            Document(
-                page_content=f"doc_{doc_i}",
-                id=f"doc_id_{doc_i}",
-                metadata={"field1": f"f1_{doc_i}", "otherf": "pre"},
-            )
-            for doc_i in range(N_DOCS)
-        ]
-        vstore_f1.add_documents(orig_documents)
+        ) as vstore_f1:
+            orig_documents = [
+                Document(
+                    page_content=f"doc_{doc_i}",
+                    id=f"doc_id_{doc_i}",
+                    metadata={"field1": f"f1_{doc_i}", "otherf": "pre"},
+                )
+                for doc_i in range(N_DOCS)
+            ]
+            vstore_f1.add_documents(orig_documents)
 
-        ids_to_replace = [
-            f"doc_id_{doc_i}" for doc_i in range(N_DOCS) if doc_i % REPLACE_RATIO == 0
-        ]
+            ids_to_replace = [
+                f"doc_id_{doc_i}"
+                for doc_i in range(N_DOCS)
+                if doc_i % REPLACE_RATIO == 0
+            ]
 
-        # various kinds of replacement at play here:
-        def _make_new_md(mode: int, doc_id: str) -> dict[str, str]:
-            if mode == 0:
-                return {}
-            elif mode == 1:
-                return {"field2": f"NEW_{doc_id}"}
-            elif mode == 2:
-                return {"field2": f"NEW_{doc_id}", "ofherf2": "post"}
-            else:
-                return {"ofherf2": "post"}
+            # various kinds of replacement at play here:
+            def _make_new_md(mode: int, doc_id: str) -> dict[str, str]:
+                if mode == 0:
+                    return {}
+                elif mode == 1:
+                    return {"field2": f"NEW_{doc_id}"}
+                elif mode == 2:
+                    return {"field2": f"NEW_{doc_id}", "ofherf2": "post"}
+                else:
+                    return {"ofherf2": "post"}
 
-        ids_to_new_md = {
-            doc_id: _make_new_md(rep_i % 4, doc_id)
-            for rep_i, doc_id in enumerate(ids_to_replace)
-        }
+            ids_to_new_md = {
+                doc_id: _make_new_md(rep_i % 4, doc_id)
+                for rep_i, doc_id in enumerate(ids_to_replace)
+            }
 
-        vstore_f1.replace_metadata(ids_to_new_md, batch_size=BATCH_SIZE)
-        # thorough check
-        expected_id_to_metadata: dict[str, dict] = {
-            **{(document.id or ""): document.metadata for document in orig_documents},
-            **ids_to_new_md,
-        }
-        for hit in vstore_f1.similarity_search("doc", k=N_DOCS + 1):
-            assert hit.id is not None
-            assert hit.metadata == expected_id_to_metadata[hit.id]
+            vstore_f1.replace_metadata(ids_to_new_md, batch_size=BATCH_SIZE)
+            # thorough check
+            expected_id_to_metadata: dict[str, dict] = {
+                **{
+                    (document.id or ""): document.metadata
+                    for document in orig_documents
+                },
+                **ids_to_new_md,
+            }
+            for hit in vstore_f1.similarity_search("doc", k=N_DOCS + 1):
+                assert hit.id is not None
+                assert hit.metadata == expected_id_to_metadata[hit.id]
 
     async def test_cassandra_replace_metadata_async(self) -> None:
         """Test of replacing metadata."""
@@ -1104,51 +1219,56 @@ class TestCassandraVectorStore:
         REPLACE_RATIO = 2  # one in ... will have replaced metadata
         BATCH_SIZE = 3
 
-        vstore_f1 = _vectorstore_from_texts(
+        async with vector_store_from_texts_async(
             texts=[],
             metadata_indexing=("allowlist", ["field1", "field2"]),
             table_name="vector_test_table_indexing",
             embedding=ConsistentFakeEmbeddings(),
-        )
-        orig_documents = [
-            Document(
-                page_content=f"doc_{doc_i}",
-                id=f"doc_id_{doc_i}",
-                metadata={"field1": f"f1_{doc_i}", "otherf": "pre"},
-            )
-            for doc_i in range(N_DOCS)
-        ]
-        await vstore_f1.aadd_documents(orig_documents)
+        ) as vstore_f1:
+            orig_documents = [
+                Document(
+                    page_content=f"doc_{doc_i}",
+                    id=f"doc_id_{doc_i}",
+                    metadata={"field1": f"f1_{doc_i}", "otherf": "pre"},
+                )
+                for doc_i in range(N_DOCS)
+            ]
+            await vstore_f1.aadd_documents(orig_documents)
 
-        ids_to_replace = [
-            f"doc_id_{doc_i}" for doc_i in range(N_DOCS) if doc_i % REPLACE_RATIO == 0
-        ]
+            ids_to_replace = [
+                f"doc_id_{doc_i}"
+                for doc_i in range(N_DOCS)
+                if doc_i % REPLACE_RATIO == 0
+            ]
 
-        # various kinds of replacement at play here:
-        def _make_new_md(mode: int, doc_id: str) -> dict[str, str]:
-            if mode == 0:
-                return {}
-            elif mode == 1:
-                return {"field2": f"NEW_{doc_id}"}
-            elif mode == 2:
-                return {"field2": f"NEW_{doc_id}", "ofherf2": "post"}
-            else:
-                return {"ofherf2": "post"}
+            # various kinds of replacement at play here:
+            def _make_new_md(mode: int, doc_id: str) -> dict[str, str]:
+                if mode == 0:
+                    return {}
+                elif mode == 1:
+                    return {"field2": f"NEW_{doc_id}"}
+                elif mode == 2:
+                    return {"field2": f"NEW_{doc_id}", "ofherf2": "post"}
+                else:
+                    return {"ofherf2": "post"}
 
-        ids_to_new_md = {
-            doc_id: _make_new_md(rep_i % 4, doc_id)
-            for rep_i, doc_id in enumerate(ids_to_replace)
-        }
+            ids_to_new_md = {
+                doc_id: _make_new_md(rep_i % 4, doc_id)
+                for rep_i, doc_id in enumerate(ids_to_replace)
+            }
 
-        await vstore_f1.areplace_metadata(ids_to_new_md, concurrency=BATCH_SIZE)
-        # thorough check
-        expected_id_to_metadata: dict[str, dict] = {
-            **{(document.id or ""): document.metadata for document in orig_documents},
-            **ids_to_new_md,
-        }
-        for hit in await vstore_f1.asimilarity_search("doc", k=N_DOCS + 1):
-            assert hit.id is not None
-            assert hit.metadata == expected_id_to_metadata[hit.id]
+            await vstore_f1.areplace_metadata(ids_to_new_md, concurrency=BATCH_SIZE)
+            # thorough check
+            expected_id_to_metadata: dict[str, dict] = {
+                **{
+                    (document.id or ""): document.metadata
+                    for document in orig_documents
+                },
+                **ids_to_new_md,
+            }
+            for hit in await vstore_f1.asimilarity_search("doc", k=N_DOCS + 1):
+                assert hit.id is not None
+                assert hit.metadata == expected_id_to_metadata[hit.id]
 
     def test_cassandra_vectorstore_mmr_sync(
         self,

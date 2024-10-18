@@ -36,9 +36,6 @@ class ParserEmbeddings(Embeddings):
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
         return [self.embed_query(txt) for txt in texts]
 
-    async def aembed_documents(self, texts: list[str]) -> list[list[float]]:
-        return self.embed_documents(texts)
-
     def embed_query(self, text: str) -> list[float]:
         try:
             vals = json.loads(text)
@@ -48,9 +45,6 @@ class ParserEmbeddings(Embeddings):
             assert len(vals) == self.dimension
             return vals
 
-    async def aembed_query(self, text: str) -> list[float]:
-        return self.embed_query(text)
-
 
 @pytest.fixture
 def embedding_d2() -> Embeddings:
@@ -59,13 +53,12 @@ def embedding_d2() -> Embeddings:
 
 class EarthEmbeddings(Embeddings):
     def get_vector_near(self, value: float) -> List[float]:
-        return [value + (random.random() / 100.0), value - (random.random() / 100.0)]
+        base_point = [value, (1 - value**2) ** 0.5]
+        fluctuation = random.random() / 100.0
+        return [base_point[0] + fluctuation, base_point[1] - fluctuation]
 
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
         return [self.embed_query(txt) for txt in texts]
-
-    async def aembed_documents(self, texts: list[str]) -> list[list[float]]:
-        return self.embed_documents(texts)
 
     def embed_query(self, text: str) -> list[float]:
         words = set(text.lower().split())
@@ -76,9 +69,6 @@ class EarthEmbeddings(Embeddings):
         else:
             vector = self.get_vector_near(0.1)
         return vector
-
-    async def aembed_query(self, text: str) -> list[float]:
-        return self.embed_query(text)
 
 
 def _result_ids(docs: Iterable[Document]) -> List[Optional[str]]:
@@ -149,9 +139,20 @@ def graph_vector_store_docs() -> list[Document]:
     return docs_a + docs_b + docs_f + docs_t
 
 
+class CassandraSession:
+    table_name: str
+    session: Any
+
+    def __init__(self, table_name: str, session: Any):
+        self.table_name = table_name
+        self.session = session
+
+
 @contextmanager
-def cassandra_session(table_name: str, drop: bool = True) -> Generator[Any, None, None]:
-    # Initialize the Cassandra cluster and session
+def get_cassandra_session(
+    table_name: str, drop: bool = True
+) -> Generator[CassandraSession, None, None]:
+    """Initialize the Cassandra cluster and session"""
     from cassandra.cluster import Cluster
 
     if "CASSANDRA_CONTACT_POINTS" in os.environ:
@@ -167,7 +168,6 @@ def cassandra_session(table_name: str, drop: bool = True) -> Generator[Any, None
     session = cluster.connect()
 
     try:
-        # Ensure keyspace exists
         session.execute(
             (
                 f"CREATE KEYSPACE IF NOT EXISTS {TEST_KEYSPACE}"
@@ -175,12 +175,11 @@ def cassandra_session(table_name: str, drop: bool = True) -> Generator[Any, None
                 "{'class': 'SimpleStrategy', 'replication_factor': 1}"
             )
         )
-        # Drop table if required
         if drop:
             session.execute(f"DROP TABLE IF EXISTS {TEST_KEYSPACE}.{table_name}")
 
         # Yield the session for usage
-        yield session
+        yield CassandraSession(table_name=table_name, session=session)
     finally:
         # Ensure proper shutdown/cleanup of resources
         session.shutdown()
@@ -191,12 +190,12 @@ def cassandra_session(table_name: str, drop: bool = True) -> Generator[Any, None
 def graph_vector_store_angular(
     table_name: str = "graph_test_table",
 ) -> Generator[CassandraGraphVectorStore, None, None]:
-    with cassandra_session(table_name=table_name) as session:
+    with get_cassandra_session(table_name=table_name) as session:
         yield CassandraGraphVectorStore(
             embedding=AngularTwoDimensionalEmbeddings(),
-            session=session,
+            session=session.session,
             keyspace=TEST_KEYSPACE,
-            table_name=table_name,
+            table_name=session.table_name,
         )
 
 
@@ -204,12 +203,12 @@ def graph_vector_store_angular(
 def graph_vector_store_earth(
     table_name: str = "graph_test_table",
 ) -> Generator[CassandraGraphVectorStore, None, None]:
-    with cassandra_session(table_name=table_name) as session:
+    with get_cassandra_session(table_name=table_name) as session:
         yield CassandraGraphVectorStore(
             embedding=EarthEmbeddings(),
-            session=session,
+            session=session.session,
             keyspace=TEST_KEYSPACE,
-            table_name=table_name,
+            table_name=session.table_name,
         )
 
 
@@ -217,12 +216,12 @@ def graph_vector_store_earth(
 def graph_vector_store_fake(
     table_name: str = "graph_test_table",
 ) -> Generator[CassandraGraphVectorStore, None, None]:
-    with cassandra_session(table_name=table_name) as session:
+    with get_cassandra_session(table_name=table_name) as session:
         yield CassandraGraphVectorStore(
             embedding=FakeEmbeddings(),
-            session=session,
+            session=session.session,
             keyspace=TEST_KEYSPACE,
-            table_name=table_name,
+            table_name=session.table_name,
         )
 
 
@@ -231,12 +230,12 @@ def graph_vector_store_d2(
     embedding_d2: Embeddings,
     table_name: str = "graph_test_table",
 ) -> Generator[CassandraGraphVectorStore, None, None]:
-    with cassandra_session(table_name=table_name) as session:
+    with get_cassandra_session(table_name=table_name) as session:
         yield CassandraGraphVectorStore(
             embedding=embedding_d2,
-            session=session,
+            session=session.session,
             keyspace=TEST_KEYSPACE,
-            table_name=table_name,
+            table_name=session.table_name,
         )
 
 
@@ -620,20 +619,20 @@ class TestCassandraGraphVectorStore:
             Link(kind="kC", direction="in", tag="tC"),
         ]
         nodes = [
-            Node(id="id0", text="[0, 2]", metadata={"m": 0}, links=links0),
-            Node(text="[0, 1]", metadata={"m": 1}, links=links1),
+            Node(id="id0", text="[1, 0]", metadata={"m": 0}, links=links0),
+            Node(text="[-1, 0]", metadata={"m": 1}, links=links1),
         ]
         graph_vector_store_d2.add_nodes(nodes)
-        hits = graph_vector_store_d2.similarity_search_by_vector([0, 3])
+        hits = graph_vector_store_d2.similarity_search_by_vector([0.9, 0.1])
         assert len(hits) == 2
         assert hits[0].id == "id0"
-        assert hits[0].page_content == "[0, 2]"
+        assert hits[0].page_content == "[1, 0]"
         md0 = hits[0].metadata
         assert md0["m"] == "0.0"
         assert any(isinstance(v, set) for k, v in md0.items() if k != "m")
 
         assert hits[1].id != "id0"
-        assert hits[1].page_content == "[0, 1]"
+        assert hits[1].page_content == "[-1, 0]"
         md1 = hits[1].metadata
         assert md1["m"] == "1.0"
         assert any(isinstance(v, set) for k, v in md1.items() if k != "m")
@@ -651,21 +650,21 @@ class TestCassandraGraphVectorStore:
             Link(kind="kC", direction="in", tag="tC"),
         ]
         nodes = [
-            Node(id="id0", text="[0, 2]", metadata={"m": 0}, links=links0),
-            Node(text="[0, 1]", metadata={"m": 1}, links=links1),
+            Node(id="id0", text="[1, 0]", metadata={"m": 0}, links=links0),
+            Node(text="[-1, 0]", metadata={"m": 1}, links=links1),
         ]
         async for _ in graph_vector_store_d2.aadd_nodes(nodes):
             pass
 
-        hits = await graph_vector_store_d2.asimilarity_search_by_vector([0, 3])
+        hits = await graph_vector_store_d2.asimilarity_search_by_vector([0.9, 0.1])
         assert len(hits) == 2
         assert hits[0].id == "id0"
-        assert hits[0].page_content == "[0, 2]"
+        assert hits[0].page_content == "[1, 0]"
         md0 = hits[0].metadata
         assert md0["m"] == "0.0"
         assert any(isinstance(v, set) for k, v in md0.items() if k != "m")
         assert hits[1].id != "id0"
-        assert hits[1].page_content == "[0, 1]"
+        assert hits[1].page_content == "[-1, 0]"
         md1 = hits[1].metadata
         assert md1["m"] == "1.0"
         assert any(isinstance(v, set) for k, v in md1.items() if k != "m")
