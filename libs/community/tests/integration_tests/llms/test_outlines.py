@@ -39,7 +39,7 @@ def test_outlines_inference(llm: Outlines) -> None:
 
 def test_outlines_streaming(llm: Outlines) -> None:
     """Test streaming tokens from Outlines."""
-    generator = llm.stream("Q: How do you say 'hello' in Spanish? A:'", stop=["'"])
+    generator = llm.stream("Q: How do you say 'hello' in Spanish?\n\nA:")
     stream_results_string = ""
     assert isinstance(generator, Generator)
 
@@ -68,7 +68,7 @@ def test_outlines_regex(llm: Outlines) -> None:
     llm.regex = ip_regex
     assert llm.regex == ip_regex
 
-    output = llm.invoke("Q: What is the IP address of googles dns server? A: ")
+    output = llm.invoke("Q: What is the IP address of googles dns server?\n\nA: ")
 
     assert isinstance(output, str)
 
@@ -81,7 +81,7 @@ def test_outlines_type_constraints(llm: Outlines) -> None:
     """Test type constraints for generating an integer"""
     llm.type_constraints = int
     output = llm.invoke(
-        "Q: What is the answer to life, the universe, and everything? A: "
+        "Q: What is the answer to life, the universe, and everything?\n\nA: "
     )
     assert int(output)
 
@@ -93,7 +93,7 @@ def test_outlines_json(llm: Outlines) -> None:
         name: str
 
     llm.json_schema = Person
-    output = llm.invoke("Q: Who is the author of LangChain?  A: ")
+    output = llm.invoke("Q: Who is the author of LangChain?\n\nA: ")
     person = Person.model_validate_json(output)
     assert isinstance(person, Person)
 
