@@ -198,13 +198,20 @@ class OntotextGraphDBGraph:
         return self.schema
 
     def query(
-        self,
-        query: str,
-    ) -> List[rdflib.query.ResultRow]:
+        self, query: str
+    ) -> Union[
+        bool, List[ResultRow], List[Tuple[URIRef, URIRef, Union[URIRef, Literal]]]
+    ]:
         """
-        Query the graph.
+        Query the graph and return appropriate results based on the query type.
         """
         from rdflib.query import ResultRow
 
         res = self.graph.query(query)
-        return [r for r in res if isinstance(r, ResultRow)]
+
+        if res.type == "ASK":
+            return bool(res.askAnswer)
+        elif res.type == "SELECT":
+            return [r for r in res if isinstance(r, ResultRow)]
+        elif res.type in ["CONSTRUCT", "DESCRIBE"]:
+            return [r for r in res]

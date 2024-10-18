@@ -10,7 +10,7 @@ cd libs/community/tests/integration_tests/graphs/docker-compose-ontotext-graphdb
 """
 
 
-def test_query_method_with_valid_query() -> None:
+def test_query_method_with_valid_select_query() -> None:
     graph = OntotextGraphDBGraph(
         query_endpoint="http://localhost:7200/repositories/langchain",
         query_ontology="CONSTRUCT {?s ?p ?o}"
@@ -29,6 +29,49 @@ def test_query_method_with_valid_query() -> None:
     assert len(query_results) == 1
     assert len(query_results[0]) == 1
     assert str(query_results[0][0]) == "yellow"
+
+
+def test_query_method_with_valid_ask_query() -> None:
+    graph = OntotextGraphDBGraph(
+        query_endpoint="http://localhost:7200/repositories/langchain",
+        query_ontology="CONSTRUCT {?s ?p ?o}"
+        "FROM <https://swapi.co/ontology/> WHERE {?s ?p ?o}",
+    )
+
+    query_result = graph.query(
+        "PREFIX : <https://swapi.co/vocabulary/>"
+        "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>"
+        "ASK {"
+        "  ?species a :Species ;"
+        '    rdfs:label "Besalisk" ;'
+        "    :averageHeight 178.0 ;"
+        '    :averageLifespan "75" ;'
+        '    :eyeColor "yellow" .'
+        "}"
+    )
+
+    assert query_result == True
+
+
+def test_query_method_with_valid_describe_or_structure_query() -> None:
+    graph = OntotextGraphDBGraph(
+        query_endpoint="http://localhost:7200/repositories/langchain",
+        query_ontology="CONSTRUCT {?s ?p ?o}"
+        "FROM <https://swapi.co/ontology/> WHERE {?s ?p ?o}",
+    )
+
+    query_result = graph.query(
+        "PREFIX : <https://swapi.co/vocabulary/>"
+        "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>"
+        "DESCRIBE ?species "
+        "WHERE {"
+        "  ?species a :Species ;"
+        '    rdfs:label "Besalisk" .'
+        "}"
+    )
+
+    assert len(query_result) == 9
+    assert all(len(triplet) == 3 for triplet in query_result)
 
 
 def test_query_method_with_invalid_query() -> None:
