@@ -8,8 +8,7 @@ from typing import Any, Callable, Dict, Iterator, List, Literal, Optional, Tuple
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
-from langchain_core.utils import pre_init
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 logger = logging.getLogger(__name__)
 
@@ -140,8 +139,8 @@ class Outlines(LLM):
         model_kwargs = {"temperature": 0.8, "seed": 42}
     """
 
-    @pre_init
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="after")
+    def validate_environment(self):
         """Validate that outlines is installed and create a model instance."""
         try:
             import outlines.models as models
@@ -151,15 +150,15 @@ class Outlines(LLM):
                 "Please install it with `pip install outlines`."
             )
 
-        model: str = values["model"]
-        backend: str = values["backend"]
+        model: str = self.model
+        backend: str = self.backend
 
         num_constraints = sum(
             [
-                bool(values["regex"]),
-                bool(values["type_constraints"]),
-                bool(values["json_schema"]),
-                bool(values["grammar"]),
+                bool(self.regex),
+                bool(self.type_constraints),
+                bool(self.json_schema),
+                bool(self.grammar),
             ]
         )
         if num_constraints > 1:
@@ -189,10 +188,10 @@ class Outlines(LLM):
             else:  # todo add auto-file-selection if no file is given
                 raise ValueError("GGUF file_name must be provided for llama.cpp.")
             check_packages_installed([("llama-cpp-python", "llama_cpp")])
-            model = models.llamacpp(repo_id, file_name, **values["model_kwargs"])
+            model = models.llamacpp(repo_id, file_name, **self.model_kwargs)
         elif backend == "transformers":
             check_packages_installed(["transformers", "torch", "datasets"])
-            model = models.transformers(model, **values["model_kwargs"])
+            model = models.transformers(model, **self.model_kwargs)
         elif backend == "transformers_vision":
             check_packages_installed(
                 ["transformers", "datasets", "torchvision", "PIL", "flash_attn"]
@@ -202,21 +201,21 @@ class Outlines(LLM):
             model = models.transformers_vision(
                 model,
                 model_class=LlavaNextForConditionalGeneration,
-                **values["model_kwargs"],
+                **self.model_kwargs,
             )
         elif backend == "vllm":
             if platform.system() == "Darwin":
                 raise ValueError("vLLM backend is not supported on macOS.")
             check_packages_installed(["vllm"])
-            model = models.vllm(model, **values["model_kwargs"])
+            model = models.vllm(model, **self.model_kwargs)
         elif backend == "mlxlm":
             check_packages_installed(["mlx"])
-            model = models.mlxlm(model, **values["model_kwargs"])
+            model = models.mlxlm(model, **self.model_kwargs)
         else:
             raise ValueError(f"Unsupported backend: {backend}")
-        values["client"] = model
+        self.client = model
 
-        return values
+        return self
 
     @property
     def _llm_type(self) -> str:
