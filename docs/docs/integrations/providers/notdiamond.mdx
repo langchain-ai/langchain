@@ -1,0 +1,95 @@
+# Not Diamond
+
+[Not Diamond](https://notdiamond.ai) offers an AI model router that automatically determines which LLM is best suited to respond to any query,
+improving LLM output quality by combining multiple LLMs into a **meta-model** that learns when to call each LLM.
+
+Not Diamond supports cost and latency tradeoffs, customized router training, and real-time router personalization.
+Not Diamond also supports many - but not all - models supported by Langchain. See [here][supported] for details.
+
+Learn more via [the documentation][docs].
+
+## Installation
+
+```shell
+pip install langchain notdiamond
+```
+
+## Configuration
+
+- API keys: You need an API key from [Not Diamond][api-keys] as well as any LLM you want to use.
+
+## Quick Start
+
+Set up your Python environment with a client and prompt:
+
+```python
+from langchain_community.utilities.notdiamond import NotDiamondRunnable, NotDiamondRoutedRunnable
+
+prompt = "Try to convert Ozymandias by Percy Bysshe Shelley to a haiku."
+```
+
+### Router recommendations with `NotDiamondRunnable`
+
+First, Not Diamond offers `NotDiamondRunnable`, which recommends a model for the given prompt or chain.
+
+```python
+nd_runnable = NotDiamondRunnable(
+    nd_api_key="sk-...", nd_llm_configs=["openai/gpt-4o", "openai/gpt-4o-mini"]
+)
+print(nd_runnable.model_select(prompt))
+```
+
+The recommendation is returned as a string, allowing you to apply business logic as needed:
+
+```python
+"openai/gpt-4o"
+```
+
+### Auto-routing with `NotDiamondRoutedRunnable`
+
+Not Diamond also offers `NotDiamondRoutedRunnable` which instead dynamically routes the input as part of a chain.
+
+```python
+nd_routed_runnable = NotDiamondRoutedRunnable(
+    nd_api_key="sk-...", nd_llm_configs=["openai/gpt-4o", "openai/gpt-4o-mini"]
+)
+print(nd_runnable.invoke(prompt))
+
+# or: chain = nd_routed_runnable | other_runnable | third_runnable
+#     chain.invoke(prompt)
+```
+
+This will directly invoke the model recommended by Not Diamond:
+
+```
+# ND selected gpt-4o for this prompt
+content="Ancient king's great fall, Desert sands reclaim his pride, Time erases all." additional_kwargs=....
+```
+
+### Configuring a `NotDiamond` client
+
+Both of these runnables also accept a configured `NotDiamond` client:
+
+```python
+nd_client = NotDiamond(
+    llm_configs=[LLMConfig("openai", "gpt-4o"), LLMConfig("openai", "gpt-4o-mini")],
+    api_key=os.getenv("NOTDIAMOND_API_KEY"),
+    default=LLMConfig("openai", "gpt-4o"),
+    tradeoff="cost",
+    ...
+)
+nd_routed_runnable = NotDiamondRoutedRunnable(nd_client=nd_client)
+print(nd_routed_runnable.invoke("What is 2+2?"))
+```
+
+The router identifies the simplicity of this query and trades off cost for accuracy by selecting
+a cheaper model:
+
+```
+# ND routed to gpt-4o-mini
+content="2 + 2 equals 4." additional_kwargs=...
+```
+
+[docs]: https://notdiamond.readme.io/
+[api-keys]: https://app.notdiamond.ai/keys
+[supported]: https://notdiamond.readme.io/docs/llm-models
