@@ -5,6 +5,7 @@ import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
+from functools import partial
 from typing import (
     AbstractSet,
     Any,
@@ -23,8 +24,27 @@ from typing import (
 from langchain_core.documents import BaseDocumentTransformer, Document
 
 logger = logging.getLogger(__name__)
-
 TS = TypeVar("TS", bound="TextSplitter")
+TTS = TypeVar("TTS", bound="TokenTextSplitter")
+
+
+def _tiktoken_encoder(
+    text: str,
+    enc: Any,
+    disallowed_special: Union[Literal["all"], Collection[str]],
+    allowed_special: Union[Literal["all"], AbstractSet[str]] = set(),
+) -> int:
+    return len(
+        enc.encode(
+            text,
+            allowed_special=allowed_special,
+            disallowed_special=disallowed_special,
+        )
+    )
+
+
+def _huggingface_tokenizer_length(text: str, tokenizer: Any) -> int:
+    return len(tokenizer.encode(text))
 
 
 class TextSplitter(BaseDocumentTransformer, ABC):
@@ -146,26 +166,32 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             docs.append(doc)
         return docs
 
+    def transform_documents(
+        self, documents: Sequence[Document], **kwargs: Any
+    ) -> Sequence[Document]:
+        """Transform sequence of documents by splitting them."""
+        return self.split_documents(list(documents))
+
     @classmethod
     def from_huggingface_tokenizer(cls, tokenizer: Any, **kwargs: Any) -> TextSplitter:
         """Text splitter that uses HuggingFace tokenizer to count length."""
         try:
             from transformers import PreTrainedTokenizerBase
-
-            if not isinstance(tokenizer, PreTrainedTokenizerBase):
-                raise ValueError(
-                    "Tokenizer received was not an instance of PreTrainedTokenizerBase"
-                )
-
-            def _huggingface_tokenizer_length(text: str) -> int:
-                return len(tokenizer.encode(text))
-
         except ImportError:
             raise ValueError(
                 "Could not import transformers python package. "
                 "Please install it with `pip install transformers`."
             )
-        return cls(length_function=_huggingface_tokenizer_length, **kwargs)
+
+        if not isinstance(tokenizer, PreTrainedTokenizerBase):
+            raise ValueError(
+                "Tokenizer received was not an instance of PreTrainedTokenizerBase"
+            )
+
+        return cls(
+            length_function=partial(_huggingface_tokenizer_length, tokenizer=tokenizer),
+            **kwargs,
+        )
 
     @classmethod
     def from_tiktoken_encoder(
@@ -191,35 +217,38 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         else:
             enc = tiktoken.get_encoding(encoding_name)
 
-        def _tiktoken_encoder(text: str) -> int:
-            return len(
-                enc.encode(
-                    text,
-                    allowed_special=allowed_special,
-                    disallowed_special=disallowed_special,
-                )
-            )
-
-        if issubclass(cls, TokenTextSplitter):
-            extra_kwargs = {
-                "encoding_name": encoding_name,
-                "model_name": model_name,
-                "allowed_special": allowed_special,
-                "disallowed_special": disallowed_special,
-            }
-            kwargs = {**kwargs, **extra_kwargs}
-
-        return cls(length_function=_tiktoken_encoder, **kwargs)
-
-    def transform_documents(
-        self, documents: Sequence[Document], **kwargs: Any
-    ) -> Sequence[Document]:
-        """Transform sequence of documents by splitting them."""
-        return self.split_documents(list(documents))
+        return cls(
+            length_function=partial(
+                _tiktoken_encoder,
+                enc=enc,
+                disallowed_special=disallowed_special,
+                allowed_special=allowed_special,
+            ),
+            **kwargs,
+        )
 
 
 class TokenTextSplitter(TextSplitter):
-    """Splitting text to tokens using model tokenizer."""
+    """A text splitter that uses tokenization to split text into smaller chunks,
+    leveraging model-specific tokenizers such as those from OpenAI's `tiktoken`
+    or HuggingFace's `transformers` libraries.
+
+    Args:
+        encoding_name (str): The name of the encoding to use for tokenization.
+            Defaults to 'gpt2'.
+        model_name (Optional[str]): The model name whose tokenizer encoding should
+            be used. If provided, this takes precedence over `encoding_name`.
+            Defaults to `None`.
+        allowed_special (Union[Literal["all"], AbstractSet[str]]): Set of special
+            tokens that are allowed during tokenization. Defaults to an empty set.
+        disallowed_special (Union[Literal["all"], Collection[str]]): Set of special
+            tokens that are disallowed during tokenization. Defaults to 'all'.
+        tokenizer (Optional[Any]): Optional tokenizer object to use directly. If
+            provided, it bypasses both `encoding_name` and `model_name`. Defaults
+            to `None`.
+        **kwargs (Any): Additional arguments passed to the parent `TextSplitter`.
+
+    """
 
     def __init__(
         self,
@@ -227,6 +256,7 @@ class TokenTextSplitter(TextSplitter):
         model_name: Optional[str] = None,
         allowed_special: Union[Literal["all"], AbstractSet[str]] = set(),
         disallowed_special: Union[Literal["all"], Collection[str]] = "all",
+        tokenizer: Optional[Any] = None,
         **kwargs: Any,
     ) -> None:
         """Create a new TextSplitter."""
@@ -242,6 +272,8 @@ class TokenTextSplitter(TextSplitter):
 
         if model_name is not None:
             enc = tiktoken.encoding_for_model(model_name)
+        elif tokenizer is not None:
+            enc = tokenizer
         else:
             enc = tiktoken.get_encoding(encoding_name)
         self._tokenizer = enc
@@ -250,11 +282,16 @@ class TokenTextSplitter(TextSplitter):
 
     def split_text(self, text: str) -> List[str]:
         def _encode(_text: str) -> List[int]:
-            return self._tokenizer.encode(
-                _text,
-                allowed_special=self._allowed_special,
-                disallowed_special=self._disallowed_special,
-            )
+            if hasattr(self._tokenizer, "allowed_special") and hasattr(
+                self._tokenizer, "disallowed_special"
+            ):
+                return self._tokenizer.encode(
+                    _text,
+                    allowed_special=self._allowed_special,
+                    disallowed_special=self._disallowed_special,
+                )
+            else:
+                return self._tokenizer.encode(_text)
 
         tokenizer = Tokenizer(
             chunk_overlap=self._chunk_overlap,
@@ -264,6 +301,73 @@ class TokenTextSplitter(TextSplitter):
         )
 
         return split_text_on_tokens(text=text, tokenizer=tokenizer)
+
+    @classmethod
+    def from_huggingface_tokenizer(
+        cls, tokenizer: Any, **kwargs: Any
+    ) -> TokenTextSplitter:
+        """Token Text splitter that uses HuggingFace tokenizer"""
+        try:
+            from transformers import PreTrainedTokenizerBase
+        except ImportError:
+            raise ValueError(
+                "Could not import transformers python package. "
+                "Please install it with `pip install transformers`."
+            )
+
+        if not isinstance(tokenizer, PreTrainedTokenizerBase):
+            raise ValueError(
+                "Tokenizer received was not an instance of PreTrainedTokenizerBase"
+            )
+
+        return cls(
+            length_function=partial(_huggingface_tokenizer_length, tokenizer=tokenizer),
+            tokenizer=tokenizer,
+            **kwargs,
+        )
+
+    @classmethod
+    def from_tiktoken_encoder(
+        cls: Type[TTS],
+        encoding_name: str = "gpt2",
+        model_name: Optional[str] = None,
+        allowed_special: Union[Literal["all"], AbstractSet[str]] = set(),
+        disallowed_special: Union[Literal["all"], Collection[str]] = "all",
+        **kwargs: Any,
+    ) -> TTS:
+        """Token Text splitter that uses tiktoken encoder."""
+        try:
+            import tiktoken
+        except ImportError:
+            raise ImportError(
+                "Could not import tiktoken python package. "
+                "This is needed in order to calculate max_tokens_for_prompt. "
+                "Please install it with `pip install tiktoken`."
+            )
+
+        if model_name is not None:
+            enc = tiktoken.encoding_for_model(model_name)
+        else:
+            enc = tiktoken.get_encoding(encoding_name)
+
+        return cls(
+            length_function=partial(
+                _tiktoken_encoder,
+                enc=enc,
+                disallowed_special=disallowed_special,
+                allowed_special=allowed_special,
+            ),
+            tokenizer=enc,
+            **{
+                **kwargs,
+                **{
+                    "encoding_name": encoding_name,
+                    "model_name": model_name,
+                    "allowed_special": allowed_special,
+                    "disallowed_special": disallowed_special,
+                },
+            },
+        )
 
 
 class Language(str, Enum):
