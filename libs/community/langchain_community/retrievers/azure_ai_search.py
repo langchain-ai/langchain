@@ -15,8 +15,6 @@ from langchain_core.utils import get_from_dict_or_env, get_from_env
 from pydantic import ConfigDict, model_validator
 
 DEFAULT_URL_SUFFIX = "search.windows.net"
-"""Default URL Suffix for endpoint connection - commercial cloud"""
-
 
 class AzureAISearchRetriever(BaseRetriever):
     """`Azure AI Search` service retriever.
@@ -82,9 +80,7 @@ class AzureAISearchRetriever(BaseRetriever):
             )
 
             chain.invoke("...")
-
-    """  # noqa: E501
-
+            """
     service_name: str = ""
     """Name of Azure AI Search service"""
     index_name: str = ""
@@ -112,6 +108,7 @@ class AzureAISearchRetriever(BaseRetriever):
     @classmethod
     def validate_environment(cls, values: Dict) -> Any:
         """Validate that service name, index name and api key exists in environment."""
+
         values["service_name"] = get_from_dict_or_env(
             values, "service_name", "AZURE_AI_SEARCH_SERVICE_NAME"
         )
@@ -123,7 +120,7 @@ class AzureAISearchRetriever(BaseRetriever):
         )
         return values
 
-    def _build_search_url(self, query: str) -> str:
+    def _build_search_url(self, query: str, skip: int) -> str:
         url_suffix = get_from_env("", "AZURE_AI_SEARCH_URL_SUFFIX", DEFAULT_URL_SUFFIX)
         if url_suffix in self.service_name and "https://" in self.service_name:
             base_url = f"{self.service_name}/"
@@ -136,12 +133,13 @@ class AzureAISearchRetriever(BaseRetriever):
         ):
             base_url = f"https://{self.service_name}.{url_suffix}/"
         else:
-            # pass to Azure to throw a specific error
             base_url = self.service_name
         endpoint_path = f"indexes/{self.index_name}/docs?api-version={self.api_version}"
-        top_param = f"&$top={self.top_k}" if self.top_k else ""
+        top_param = f"&$top=1000"  # Using maximum allowed by Azure AI Search
+        skip_param = f"&$skip={skip}"
         filter_param = f"&$filter={self.filter}" if self.filter else ""
-        return base_url + endpoint_path + f"&search={query}" + top_param + filter_param
+        count_param = "&$count=true"
+        return base_url + endpoint_path + f"&search={query}" + top_param + skip_param + filter_param + count_param
 
     @property
     def _headers(self) -> Dict[str, str]:
@@ -151,26 +149,57 @@ class AzureAISearchRetriever(BaseRetriever):
         }
 
     def _search(self, query: str) -> List[dict]:
-        search_url = self._build_search_url(query)
-        response = requests.get(search_url, headers=self._headers)
-        if response.status_code != 200:
-            raise Exception(f"Error in search request: {response}")
+        all_results = []
+        skip = 0
 
-        return json.loads(response.text)["value"]
+        while True:
+            search_url = self._build_search_url(query, skip)
+            response = requests.get(search_url, headers=self._headers)
+            if response.status_code != 200:
+                raise Exception(f"Error in search request: {response}")
+
+            data = json.loads(response.text)
+            results = data["value"]
+            all_results.extend(results)
+
+            if len(results) < 1000:  # Less than max results, we've got all
+                break
+
+            if self.top_k and len(all_results) >= self.top_k:
+                all_results = all_results[:self.top_k]
+                break
+
+            skip += 1000
+
+        return all_results
 
     async def _asearch(self, query: str) -> List[dict]:
-        search_url = self._build_search_url(query)
-        if not self.aiosession:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(search_url, headers=self._headers) as response:
-                    response_json = await response.json()
-        else:
-            async with self.aiosession.get(
-                search_url, headers=self._headers
-            ) as response:
-                response_json = await response.json()
+        all_results = []
+        skip = 0
 
-        return response_json["value"]
+        while True:
+            search_url = self._build_search_url(query, skip)
+            if not self.aiosession:
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(search_url, headers=self._headers) as response:
+                        data = await response.json()
+            else:
+                async with self.aiosession.get(search_url, headers=self._headers) as response:
+                    data = await response.json()
+
+            results = data["value"]
+            all_results.extend(results)
+
+            if len(results) < 1000:  # Less than max results, we've got all
+                break
+
+            if self.top_k and len(all_results) >= self.top_k:
+                all_results = all_results[:self.top_k]
+                break
+
+            skip += 1000
+
+        return all_results
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
@@ -191,7 +220,6 @@ class AzureAISearchRetriever(BaseRetriever):
             Document(page_content=result.pop(self.content_key), metadata=result)
             for result in search_results
         ]
-
 
 # For backwards compatibility
 class AzureCognitiveSearchRetriever(AzureAISearchRetriever):
