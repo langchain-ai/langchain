@@ -370,6 +370,12 @@ const FEATURE_TABLES = {
                 package: "langchain-voyageai",
                 apiLink: "https://python.langchain.com/api_reference/voyageai/embeddings/langchain_voyageai.embeddings.VoyageAIEmbeddings.html"
             },
+            {
+                name: "IBM",
+                link: "ibm_watsonx",
+                package: "langchain-ibm",
+                apiLink: "https://python.langchain.com/api_reference/ibm/embeddings/langchain_ibm.embeddings.WatsonxEmbeddings.html"
+            },
         ]
     },
     document_retrievers: {
