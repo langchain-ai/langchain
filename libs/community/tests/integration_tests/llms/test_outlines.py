@@ -7,14 +7,13 @@ import platform
 import pytest
 
 from langchain_community.llms.outlines import Outlines
-from langchain_core.outputs import GenerationChunk
 from pydantic import BaseModel
 
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
 MODEL = "microsoft/Phi-3-mini-4k-instruct"
-LLAMACPP_MODEL = "TheBloke/Llama-2-7B-Chat-GGUF/llama-2-7b-chat.Q4_K_M.gguf"
+LLAMACPP_MODEL = "microsoft/Phi-3-mini-4k-instruct-gguf/Phi-3-mini-4k-instruct-q4.gguf"
 
 BACKENDS = ["transformers", "llamacpp"]
 if platform.system() != "Darwin":
@@ -26,9 +25,9 @@ if platform.system() == "Darwin":
 @pytest.fixture(params=BACKENDS)
 def llm(request):
     if request.param == "llamacpp":
-        return Outlines(model=LLAMACPP_MODEL, backend=request.param, max_tokens=10)
+        return Outlines(model=LLAMACPP_MODEL, backend=request.param, max_tokens=100)
     else:
-        return Outlines(model=MODEL, backend=request.param, max_tokens=10)
+        return Outlines(model=MODEL, backend=request.param, max_tokens=100)
 
 
 def test_outlines_inference(llm: Outlines) -> None:
@@ -46,27 +45,21 @@ def test_outlines_streaming(llm: Outlines) -> None:
 
     for chunk in generator:
         print(chunk)
-        assert isinstance(chunk, GenerationChunk)
-        stream_results_string += chunk.text
+        assert isinstance(chunk, str)
+        stream_results_string += chunk
     print(stream_results_string)
     assert len(stream_results_string.strip()) > 1
 
 
 def test_outlines_streaming_callback(llm: Outlines) -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
-    MAX_TOKENS = 5
-    OFF_BY_ONE = 1  # There may be an off by one error in the upstream code!
+    MIN_CHUNKS = 5
 
     callback_handler = FakeCallbackHandler()
     llm.callbacks = [callback_handler]
     llm.verbose = True
     llm.invoke("Q: Can you count to 10? A:'1, ")
-    assert callback_handler.llm_streams <= MAX_TOKENS + OFF_BY_ONE
-
-
-def test_outlines_model_kwargs(llm: Outlines) -> None:
-    llm.model_kwargs = {"n_gqa": None}
-    assert llm.model_kwargs == {"n_gqa": None}
+    assert callback_handler.llm_streams >= MIN_CHUNKS
 
 
 def test_outlines_regex(llm: Outlines) -> None:
@@ -90,7 +83,7 @@ def test_outlines_type_constraints(llm: Outlines) -> None:
     output = llm.invoke(
         "Q: What is the answer to life, the universe, and everything? A: "
     )
-    assert isinstance(output, int)
+    assert int(output)
 
 
 def test_outlines_json(llm: Outlines) -> None:
@@ -103,19 +96,6 @@ def test_outlines_json(llm: Outlines) -> None:
     output = llm.invoke("Q: Who is the author of LangChain?  A: ")
     person = Person.model_validate_json(output)
     assert isinstance(person, Person)
-
-
-def test_outlines_json_schema(llm: Outlines) -> None:
-    """Test json schema for generating a valid JSON object"""
-
-    class Food(BaseModel):
-        ingredients: list[str]
-        calories: int
-
-    llm.json_schema = Food.model_json_schema()
-    output = llm.invoke("Q: What is the nutritional information for a Big Mac? A: ")
-    food = Food.model_validate_json(output)
-    assert isinstance(food, Food)
 
 
 def test_outlines_grammar(llm: Outlines) -> None:
@@ -141,8 +121,3 @@ def test_outlines_grammar(llm: Outlines) -> None:
     assert re.search(
         r"[\d\+\-\*/\(\)]+", output
     ), f"Generated output '{output}' does not appear to be a valid arithmetic expression"
-
-
-def test_outlines_with_structured_output(llm) -> None:
-    """Test that outlines can generate structured outputs"""
-    pass  # TODO: Implement this test

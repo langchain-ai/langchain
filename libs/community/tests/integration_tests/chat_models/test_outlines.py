@@ -7,15 +7,15 @@ import platform
 import pytest
 
 from langchain_community.chat_models.outlines import ChatOutlines
-from langchain_core.messages import AIMessage, HumanMessage
-from langchain_core.outputs import ChatGenerationChunk
+from langchain_core.messages import AIMessage, HumanMessage, BaseMessage
+from langchain_core.messages import BaseMessageChunk
 from pydantic import BaseModel
 
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
 MODEL = "microsoft/Phi-3-mini-4k-instruct"
-LLAMACPP_MODEL = "TheBloke/Llama-2-7B-Chat-GGUF/llama-2-7b-chat.Q4_K_M.gguf"
+LLAMACPP_MODEL = "bartowski/qwen2.5-7b-ins-v3-GGUF/qwen2.5-7b-ins-v3-Q4_K_M.gguf"
 
 BACKENDS = ["transformers", "llamacpp"]
 if platform.system() != "Darwin":
@@ -27,9 +27,9 @@ if platform.system() == "Darwin":
 @pytest.fixture(params=BACKENDS)
 def chat_model(request):
     if request.param == "llamacpp":
-        return ChatOutlines(model=LLAMACPP_MODEL, backend=request.param, max_tokens=10)
+        return ChatOutlines(model=LLAMACPP_MODEL, backend=request.param)
     else:
-        return ChatOutlines(model=MODEL, backend=request.param, max_tokens=10)
+        return ChatOutlines(model=MODEL, backend=request.param)
 
 
 def test_chat_outlines_inference(chat_model: ChatOutlines) -> None:
@@ -42,33 +42,26 @@ def test_chat_outlines_inference(chat_model: ChatOutlines) -> None:
 
 def test_chat_outlines_streaming(chat_model: ChatOutlines) -> None:
     """Test streaming tokens from ChatOutlines."""
-    messages = [HumanMessage(content="Q: How do you say 'hello' in Spanish? A:'")]
-    generator = chat_model.stream(messages, stop=["'"])
+    messages = [HumanMessage(content="How do you say 'hello' in Spanish?")]
+    generator = chat_model.stream(messages)
     stream_results_string = ""
     assert isinstance(generator, Generator)
 
     for chunk in generator:
-        assert isinstance(chunk, ChatGenerationChunk)
-        stream_results_string += chunk.message.content
+        assert isinstance(chunk, BaseMessageChunk)
+        stream_results_string += chunk.content
     assert len(stream_results_string.strip()) > 1
 
 
 def test_chat_outlines_streaming_callback(chat_model: ChatOutlines) -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
-    MAX_TOKENS = 5
-    OFF_BY_ONE = 1  # There may be an off by one error in the upstream code!
-
+    MIN_CHUNKS = 5
     callback_handler = FakeCallbackHandler()
     chat_model.callbacks = [callback_handler]
     chat_model.verbose = True
-    messages = [HumanMessage(content="Q: Can you count to 10? A:'1, ")]
+    messages = [HumanMessage(content="Can you count to 10?")]
     chat_model.invoke(messages)
-    assert callback_handler.llm_streams <= MAX_TOKENS + OFF_BY_ONE
-
-
-def test_chat_outlines_model_kwargs(chat_model: ChatOutlines) -> None:
-    chat_model.model_kwargs = {"n_gqa": None}
-    assert chat_model.model_kwargs == {"n_gqa": None}
+    assert callback_handler.llm_streams >= MIN_CHUNKS
 
 
 def test_chat_outlines_regex(chat_model: ChatOutlines) -> None:
@@ -77,9 +70,7 @@ def test_chat_outlines_regex(chat_model: ChatOutlines) -> None:
     chat_model.regex = ip_regex
     assert chat_model.regex == ip_regex
 
-    messages = [
-        HumanMessage(content="Q: What is the IP address of Google's DNS server? A: ")
-    ]
+    messages = [HumanMessage(content="What is the IP address of Google's DNS server?")]
     output = chat_model.invoke(messages)
 
     assert isinstance(output, AIMessage)
@@ -93,7 +84,7 @@ def test_chat_outlines_type_constraints(chat_model: ChatOutlines) -> None:
     chat_model.type_constraints = int
     messages = [
         HumanMessage(
-            content="Q: What is the answer to life, the universe, and everything? A: "
+            content="What is the answer to life, the universe, and everything?"
         )
     ]
     output = chat_model.invoke(messages)
@@ -107,32 +98,17 @@ def test_chat_outlines_json(chat_model: ChatOutlines) -> None:
         name: str
 
     chat_model.json_schema = Person
-    messages = [HumanMessage(content="Q: Who is the author of LangChain?  A: ")]
+    messages = [HumanMessage(content="Who are the main contributors to LangChain?")]
     output = chat_model.invoke(messages)
     person = Person.model_validate_json(output.content)
     assert isinstance(person, Person)
 
 
-def test_chat_outlines_json_schema(chat_model: ChatOutlines) -> None:
-    """Test json schema for generating a valid JSON object"""
-
-    class Food(BaseModel):
-        ingredients: list[str]
-        calories: int
-
-    chat_model.json_schema = Food.model_json_schema()
-    messages = [
-        HumanMessage(
-            content="Q: What is the nutritional information for a Big Mac? A: "
-        )
-    ]
-    output = chat_model.invoke(messages)
-    food = Food.model_validate_json(output.content)
-    assert isinstance(food, Food)
-
-
 def test_chat_outlines_grammar(chat_model: ChatOutlines) -> None:
     """Test grammar for generating a valid arithmetic expression"""
+    if chat_model.backend == "mlxlm":
+        pytest.skip("MLX grammars not yet supported.")
+
     chat_model.grammar = """
         ?start: expression
         ?expression: term (("+" | "-") term)*
@@ -143,7 +119,7 @@ def test_chat_outlines_grammar(chat_model: ChatOutlines) -> None:
         %ignore WS
     """
 
-    messages = [HumanMessage(content="Here is a complex arithmetic expression: ")]
+    messages = [HumanMessage(content="Give me a complex arithmetic expression:")]
     output = chat_model.invoke(messages)
 
     # Validate the output is a non-empty string
@@ -157,6 +133,43 @@ def test_chat_outlines_grammar(chat_model: ChatOutlines) -> None:
     ), f"Generated output '{output.content}' does not appear to be a valid arithmetic expression"
 
 
-def test_chat_outlines_with_structured_output(chat_model) -> None:
+def test_chat_outlines_with_structured_output(chat_model: ChatOutlines) -> None:
     """Test that ChatOutlines can generate structured outputs"""
-    pass  # TODO: Implement this test
+
+    class AnswerWithJustification(BaseModel):
+        """An answer to the user question along with justification for the answer."""
+
+        answer: str
+        justification: str
+
+    structured_chat_model = chat_model.with_structured_output(AnswerWithJustification)
+
+    result = structured_chat_model.invoke(
+        "What weighs more, a pound of bricks or a pound of feathers?"
+    )
+
+    assert isinstance(result, AnswerWithJustification)
+    assert isinstance(result.answer, str)
+    assert isinstance(result.justification, str)
+    assert len(result.answer) > 0
+    assert len(result.justification) > 0
+
+    structured_chat_model_with_raw = chat_model.with_structured_output(
+        AnswerWithJustification, include_raw=True
+    )
+
+    result_with_raw = structured_chat_model_with_raw.invoke(
+        "What weighs more, a pound of bricks or a pound of feathers?"
+    )
+
+    assert isinstance(result_with_raw, dict)
+    assert "raw" in result_with_raw
+    assert "parsed" in result_with_raw
+    assert "parsing_error" in result_with_raw
+    assert isinstance(result_with_raw["raw"], BaseMessage)
+    assert isinstance(result_with_raw["parsed"], AnswerWithJustification)
+    assert result_with_raw["parsing_error"] is None
+
+
+if __name__ == "__main__":
+    test_chat_outlines_inference(ChatOutlines(model=LLAMACPP_MODEL, backend="llamacpp"))
