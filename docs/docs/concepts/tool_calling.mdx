@@ -1,3 +1,120 @@
 # Tool Calling
 
-Place holder
+## Overview 
+
+Many AI applications interact directly with humans. In these cases, it is approrpiate for models to respond in natural langague. 
+But what about cases where we want a model to also interact *directly* with systems, such as databases or an API?
+These systems often have a particular input schema; for example, APIs frequently have a required payload structure.
+This need motivates the concept of *tool calling*. You can use [tool calling](https://platform.openai.com/docs/guides/function-calling/example-use-cases) to request model responses that match a particular schema.
+
+:::info
+You will sometimes hear the term `function calling`. We use this term interchangeably with `tool calling`. 
+:::
+
+![Conceptual overview of tool calling](/img/tool_calling_concept.png)
+
+## Key Concepts 
+
+**(1) Tool Creation:** The tool needs to be described to the model so that the model knows what arguments to provide when it decides to call the tool.
+TODO: @eyurtsev to elaborate. **(2) Tool Binding:** The tool needs to be connected to a model that supports tool calling. 
+This gives the model awarenes of the tool and the associated input schema required by the tool.
+**(3) Tool Calling:** When appropriate, the model can decide to call a tool and ensure its response conforms to the tool's input schema.
+**(4) Tool Execution:** The tool can be executed using the arguments provided by the model.
+
+![Conceptual parts of tool calling](/img/tool_calling_components.png)
+
+## Recommended usage
+
+This psuedo-code illustrates the recommended workflow for using tool calling. 
+Created tools are passed to `.bind_tools()` method as a list.
+This model can be called, as usual. If a tool call is made, model's response will contain the tool call arguments.
+The tool call arguemtns can be passed directly to the tool.
+
+```python
+# Tool creation
+tools = [my_tool]
+# Tool binding
+modelwtools = model.bind_tools(tools)
+# Tool calling 
+response = modelwtools.invoke(user_input)
+# Tool execution
+tool_output = my_tool(response.tool_calls)
+```
+
+## Tool Creation 
+
+TODO: @eyurtsev to add links and summary of the conceptual guide. 
+
+## Tool Binding 
+
+[Many](https://platform.openai.com/docs/guides/function-calling) [model providers](https://platform.openai.com/docs/guides/function-calling) support tool calling. 
+
+:::tip
+See our [model integration page](/docs/integrations/chat/) for a list of providers that support tool calling.
+:::
+
+The central concept to understand is that LangChain provides a standardized interface for connecting tools to models. 
+The `.bind_tools()` method can be used to specify which tools are available for a model to call. 
+
+```python
+model_with_tools = model.bind_tools([tools_list])
+```
+
+As a specific example, let's take a function `multiply` and bind it as a tool to a model that supports tool calling.
+
+```python
+def multiply(a: int, b: int) -> int:
+    """Multiply a and b.
+
+    Args:
+        a: first int
+        b: second int
+    """
+    return a * b
+
+llm_with_tools = tool_calling_model.bind_tools([multiply])
+```
+
+## Tool Calling
+
+![Diagram of a tool call by a model](/img/tool_call_example.png)
+
+A key principle of tool calling is that the model decides when to use a tool based on the input's relevance. The model doesn't always need to call a tool.
+For example, given an unrelated input, the model would not call the tool:
+
+```python
+result = llm_with_tools.invoke("Hello world!")
+```
+
+The result would be an `AIMessage` containing the model's response in natural language (e.g., "Hello!").
+However, if we pass an input *relevant to the tool*, the model should choose to call it:
+
+```python
+result = llm_with_tools.invoke("What is 2 multiplied by 3?")
+```
+
+As before, the output `result` will be an `AIMessage`. 
+But, if the tool was called, `result` will have a `tool_calls` attribute.
+This attribute includes everything needed to execute the tool, including the tool name and input arguments:
+
+```
+result.tool_calls
+{'name': 'multiply', 'args': {'a': 2, 'b': 3}, 'id': 'xxx', 'type': 'tool_call'}
+```
+
+For more details on usage, see our [how-to guides](/docs/how_to/#tools)!
+
+## Tool execution
+
+TODO: @eyurtsev @vbarda let's discuss this. This should also link to tool execution in LangGraph. 
+
+## Best practices
+
+When designing tools to be used by a model, it is important to keep in mind that:
+
+* Models that have explicit [tool-calling APIs](/docs/concepts/#functiontool-calling) will be better at tool calling than non-fine-tuned models.
+* Models will perform better if the tools have well-chosen names and descriptions.
+* Simple, narrowly scoped tools are easier for models to use than complex tools.
+* Asking the model to select from a large list of tools poses challenges for the model.
+
+
