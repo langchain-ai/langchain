@@ -126,8 +126,14 @@ class RecursiveCharacterTextSplitter(TextSplitter):
 
     @staticmethod
     def get_separators_for_language(language: Language) -> List[str]:
-        if language == Language.C or language == Language.CPP:
-            return [
+        """
+        Returns the appropriate list of separators for a given programming language.
+        :param language: The programming language enum value.
+        :return: List of separators specific to the language.
+        """
+
+        SEPARATOR_MAP = {
+            Language.C: [
                 # Split along class definitions
                 "\nclass ",
                 # Split along function definitions
@@ -146,9 +152,28 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "\n",
                 " ",
                 "",
-            ]
-        elif language == Language.GO:
-            return [
+            ],
+            Language.CPP: [
+                # Split along class definitions
+                "\nclass ",
+                # Split along function definitions
+                "\nvoid ",
+                "\nint ",
+                "\nfloat ",
+                "\ndouble ",
+                # Split along control flow statements
+                "\nif ",
+                "\nfor ",
+                "\nwhile ",
+                "\nswitch ",
+                "\ncase ",
+                # Split by the normal type of lines
+                "\n\n",
+                "\n",
+                " ",
+                "",
+            ],
+            Language.GO: [
                 # Split along function definitions
                 "\nfunc ",
                 "\nvar ",
@@ -164,9 +189,8 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "\n",
                 " ",
                 "",
-            ]
-        elif language == Language.JAVA:
-            return [
+            ],
+            Language.JAVA: [
                 # Split along class definitions
                 "\nclass ",
                 # Split along method definitions
@@ -185,9 +209,8 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "\n",
                 " ",
                 "",
-            ]
-        elif language == Language.KOTLIN:
-            return [
+            ],
+            Language.KOTLIN: [
                 # Split along class definitions
                 "\nclass ",
                 # Split along method definitions
@@ -211,9 +234,8 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "\n",
                 " ",
                 "",
-            ]
-        elif language == Language.JS:
-            return [
+            ],
+            Language.JS: [
                 # Split along function definitions
                 "\nfunction ",
                 "\nconst ",
@@ -232,9 +254,8 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "\n",
                 " ",
                 "",
-            ]
-        elif language == Language.TS:
-            return [
+            ],
+            Language.TS: [
                 "\nenum ",
                 "\ninterface ",
                 "\nnamespace ",
@@ -258,9 +279,8 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "\n",
                 " ",
                 "",
-            ]
-        elif language == Language.PHP:
-            return [
+            ],
+            Language.PHP: [
                 # Split along function definitions
                 "\nfunction ",
                 # Split along class definitions
@@ -277,9 +297,8 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "\n",
                 " ",
                 "",
-            ]
-        elif language == Language.PROTO:
-            return [
+            ],
+            Language.PROTO: [
                 # Split along message definitions
                 "\nmessage ",
                 # Split along service definitions
@@ -297,21 +316,20 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "\n",
                 " ",
                 "",
-            ]
-        elif language == Language.PYTHON:
-            return [
-                # First, try to split along class definitions
+            ],
+            Language.PYTHON: [
+                # Split along class definitions
                 "\nclass ",
+                # Split along function definitions
                 "\ndef ",
                 "\n\tdef ",
-                # Now split by the normal type of lines
+                # Split by the normal type of lines
                 "\n\n",
                 "\n",
                 " ",
                 "",
-            ]
-        elif language == Language.RST:
-            return [
+            ],
+            Language.RST: [
                 # Split along section titles
                 "\n=+\n",
                 "\n-+\n",
@@ -323,9 +341,8 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "\n",
                 " ",
                 "",
-            ]
-        elif language == Language.RUBY:
-            return [
+            ],
+            Language.RUBY: [
                 # Split along method definitions
                 "\ndef ",
                 "\nclass ",
@@ -342,9 +359,8 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "\n",
                 " ",
                 "",
-            ]
-        elif language == Language.ELIXIR:
-            return [
+            ],
+            Language.ELIXIR: [
                 # Split along method function and module definition
                 "\ndef ",
                 "\ndefp ",
@@ -366,9 +382,8 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "\n",
                 " ",
                 "",
-            ]
-        elif language == Language.RUST:
-            return [
+            ],
+            Language.RUST: [
                 # Split along function definitions
                 "\nfn ",
                 "\nconst ",
@@ -385,9 +400,8 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "\n",
                 " ",
                 "",
-            ]
-        elif language == Language.SCALA:
-            return [
+            ],
+            Language.SCALA: [
                 # Split along class definitions
                 "\nclass ",
                 "\nobject ",
@@ -406,9 +420,8 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "\n",
                 " ",
                 "",
-            ]
-        elif language == Language.SWIFT:
-            return [
+            ],
+            Language.SWIFT: [
                 # Split along function definitions
                 "\nfunc ",
                 # Split along class definitions
@@ -427,9 +440,8 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "\n",
                 " ",
                 "",
-            ]
-        elif language == Language.MARKDOWN:
-            return [
+            ],
+            Language.MARKDOWN: [
                 # First, try to split along Markdown headings (starting with level 2)
                 "\n#{1,6} ",
                 # Note the alternative syntax for headings (below) is not handled here
@@ -447,9 +459,8 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "\n",
                 " ",
                 "",
-            ]
-        elif language == Language.LATEX:
-            return [
+            ],
+            Language.LATEX: [
                 # First, try to split along Latex sections
                 "\n\\\\chapter{",
                 "\n\\\\section{",
@@ -471,9 +482,8 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 # Now split by the normal type of lines
                 " ",
                 "",
-            ]
-        elif language == Language.HTML:
-            return [
+            ],
+            Language.HTML: [
                 # First, try to split along HTML tags
                 "<body",
                 "<div",
@@ -503,9 +513,8 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "<meta",
                 "<title",
                 "",
-            ]
-        elif language == Language.CSHARP:
-            return [
+            ],
+            Language.CSHARP: [
                 "\ninterface ",
                 "\nenum ",
                 "\nimplements ",
@@ -540,9 +549,8 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "\n",
                 " ",
                 "",
-            ]
-        elif language == Language.SOL:
-            return [
+            ],
+            Language.SOL: [
                 # Split along compiler information definitions
                 "\npragma ",
                 "\nusing ",
@@ -570,9 +578,8 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "\n",
                 " ",
                 "",
-            ]
-        elif language == Language.COBOL:
-            return [
+            ],
+            Language.COBOL: [
                 # Split along divisions
                 "\nIDENTIFICATION DIVISION.",
                 "\nENVIRONMENT DIVISION.",
@@ -602,9 +609,8 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "\n",
                 " ",
                 "",
-            ]
-        elif language == Language.LUA:
-            return [
+            ],
+            Language.LUA: [
                 # Split along variable and table definitions
                 "\nlocal ",
                 # Split along function definitions
@@ -619,9 +625,8 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "\n",
                 " ",
                 "",
-            ]
-        elif language == Language.HASKELL:
-            return [
+            ],
+            Language.HASKELL: [
                 # Split along function definitions
                 "\nmain :: ",
                 "\nmain = ",
@@ -658,9 +663,8 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "\n",
                 " ",
                 "",
-            ]
-        elif language == Language.POWERSHELL:
-            return [
+            ],
+            Language.POWERSHELL: [
                 # Split along function definitions
                 "\nfunction ",
                 # Split along parameter declarations (escape parentheses)
@@ -682,7 +686,11 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "\n",
                 " ",
                 "",
-            ]
+            ],
+        }
+
+        if language in SEPARATOR_MAP:
+            return SEPARATOR_MAP.get(language, ["\n", " ", ""])
         elif language in Language._value2member_map_:
             raise ValueError(f"Language {language} is not implemented yet!")
         else:
