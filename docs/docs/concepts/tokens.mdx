@@ -39,6 +39,8 @@ At the time of writing, virtually no models support **multi-modal output**, and 
 In principle, **anything that can be represented as a sequence of tokens** could be modeled in a similar way. For example, **DNA sequences**—which are composed of a series of nucleotides (A, T, C, G)—can be tokenized and modeled to capture patterns, make predictions, or generate sequences. This flexibility allows transformer-based models to handle diverse types of sequential data, further broadening their potential applications across various domains, including bioinformatics, signal processing, and other fields that involve structured or unstructured sequences.
 :::
 
+Please see the [multimodality](/docs/concepts/multimodality) section for more information on multi-modal inputs and outputs.
+
 ## Why not use characters?
 
 Using tokens instead of individual characters makes models both more efficient and better at understanding context and grammar. Tokens represent meaningful units, like whole words or parts of words, allowing models to capture language structure more effectively than by processing raw characters. Token-level processing also reduces the number of units the model has to handle, leading to faster computation.
