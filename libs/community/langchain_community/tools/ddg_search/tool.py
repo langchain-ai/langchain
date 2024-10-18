@@ -74,13 +74,13 @@ class DuckDuckGoSearchRun(BaseTool):
 
 
 class DuckDuckGoSearchResults(BaseTool):
-    """Tool that queries the DuckDuckGo search API and gets back json string."""
+    """Tool that queries the DuckDuckGo search API and gets back List of Dictionary."""
 
     name: str = "duckduckgo_results_json"
     description: str = (
         "A wrapper around Duck Duck Go Search. "
         "Useful for when you need to answer questions about current events. "
-        "Input should be a search query. Output is a JSON string array of the "
+        "Input should be a search query. Output is a List of Dictionaries of the "
         "query results"
     )
     max_results: int = Field(alias="num_results", default=4)
@@ -98,20 +98,20 @@ class DuckDuckGoSearchResults(BaseTool):
         self,
         query: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> str:
+    ) -> dict:
         """Use the tool."""
         res = self.api_wrapper.results(query, self.max_results, source=self.backend)
-        res_strs = [
-            ", ".join(
-                [
-                    f"{k}: {v}"
-                    for k, v in d.items()
-                    if not self.keys_to_include or k in self.keys_to_include
-                ]
-            )
+
+        results = [
+            {
+                k: v
+                for k, v in d.items()
+                if not self.keys_to_include or k in self.keys_to_include
+            }
             for d in res
         ]
-        return self.results_separator.join(res_strs)
+
+        return results
 
 
 def DuckDuckGoSearchTool(*args: Any, **kwargs: Any) -> DuckDuckGoSearchRun:
