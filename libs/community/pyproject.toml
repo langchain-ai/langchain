@@ -130,7 +130,7 @@ jupyter = "^1.0.0"
 setuptools = "^67.6.1"
 
 [tool.poetry.group.typing.dependencies]
-mypy = "^1.10"
+mypy = "^1.12"
 types-pyyaml = "^6.0.12.2"
 types-requests = "^2.28.11.5"
 types-toml = "^0.10.8.1"
