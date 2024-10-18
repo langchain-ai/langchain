@@ -115,7 +115,7 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
             if "type" in reduced_schema:
                 del reduced_schema["type"]
             # Ensure json in context is well-formed with double quotes.
-            schema_str = json.dumps(reduced_schema)
+            schema_str = json.dumps(reduced_schema, ensure_ascii=False)
             return JSON_FORMAT_INSTRUCTIONS.format(schema=schema_str)
 
     @property
