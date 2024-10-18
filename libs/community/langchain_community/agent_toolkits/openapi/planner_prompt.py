@@ -84,7 +84,7 @@ Starting below, you should follow this format:
 
 Plan: the plan of API calls to execute
 Thought: you should always think about what to do
-Action: the action to take, should be one of the tools [{tool_names}]
+Action: the action to take, 'must be' one of the tools [{tool_names}] without additional words
 Action Input: the input to the action
 Observation: the output of the action
 ... (this Thought/Action/Action Input/Observation can repeat N times)
