@@ -91,6 +91,7 @@ logger = logging.getLogger(__file__)
 
 if TYPE_CHECKING:
     import momento
+    import pymemcache
     from astrapy.db import AstraDB, AsyncAstraDB
     from cassandra.cluster import Session as CassandraSession
 
@@ -2599,3 +2600,96 @@ class SingleStoreDBSemanticCache(BaseCache):
         if index_name in self._cache_dict:
             self._cache_dict[index_name].drop()
             del self._cache_dict[index_name]
+
+
+class MemcachedCache(BaseCache):
+    """Cache that uses Memcached backend through pymemcache client lib"""
+
+    def __init__(self, client_: Any):
+        """
+        Initialize an instance of MemcachedCache.
+
+        Args:
+            client_ (str): An instance of any of pymemcache's Clients
+                (Client, PooledClient, HashClient)
+        Example:
+        .. code-block:: python
+            ifrom langchain.globals import set_llm_cache
+            from langchain_openai import OpenAI
+
+            from langchain_community.cache import MemcachedCache
+            from pymemcache.client.base import Client
+
+            llm = OpenAI(model="gpt-3.5-turbo-instruct", n=2, best_of=2)
+            set_llm_cache(MemcachedCache(Client('localhost')))
+
+            # The first time, it is not yet in cache, so it should take longer
+            llm.invoke("Which city is the most crowded city in the USA?")
+
+            # The second time it is, so it goes faster
+            llm.invoke("Which city is the most crowded city in the USA?")
+        """
+
+        try:
+            from pymemcache.client import (
+                Client,
+                HashClient,
+                PooledClient,
+                RetryingClient,
+            )
+        except (ImportError, ModuleNotFoundError):
+            raise ImportError(
+                "Could not import pymemcache python package. "
+                "Please install it with `pip install -U pymemcache`."
+            )
+
+        if not (
+            isinstance(client_, Client)
+            or isinstance(client_, PooledClient)
+            or isinstance(client_, HashClient)
+            or isinstance(client_, RetryingClient)
+        ):
+            raise ValueError("Please pass a valid pymemcached client")
+
+        self.client = client_
+
+    def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
+        """Look up based on prompt and llm_string."""
+        key = _hash(prompt + llm_string)
+        try:
+            result = self.client.get(key)
+        except pymemcache.MemcacheError:
+            return None
+
+        return _loads_generations(result) if result is not None else None
+
+    def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
+        """Update cache based on prompt and llm_string."""
+        key = _hash(prompt + llm_string)
+
+        # Validate input is made of standard LLM generations
+        for gen in return_val:
+            if not isinstance(gen, Generation):
+                raise ValueError(
+                    "Memcached only supports caching of normal LLM generations, "
+                    + f"got {type(gen)}"
+                )
+
+        # Deserialize return_val into string and update cache
+        value = _dumps_generations(return_val)
+        self.client.set(key, value)
+
+    def clear(self, **kwargs: Any) -> None:
+        """
+        Clear the entire cache. Takes optional kwargs:
+
+        delay: optional int, the number of seconds to wait before flushing,
+                or zero to flush immediately (the default). NON-BLOCKING, returns
+                immediately.
+        noreply: optional bool, True to not wait for the reply (defaults to
+                client.default_noreply).
+        """
+        delay = kwargs.get("delay", 0)
+        noreply = kwargs.get("noreply", None)
+
+        self.client.flush_all(delay, noreply)
