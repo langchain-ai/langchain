@@ -997,10 +997,7 @@ def test_audio_input_modality() -> None:
     history: list[BaseMessage] = [
         HumanMessage(
             [
-                {
-                    "type": "text",
-                    "text": "What is happening in this audio clip",
-                },
+                {"type": "text", "text": "What is happening in this audio clip"},
                 {
                     "type": "input_audio",
                     "input_audio": {"data": b64_audio_data, "format": "wav"},
