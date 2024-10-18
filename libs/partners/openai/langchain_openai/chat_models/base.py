@@ -227,9 +227,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
             # https://platform.openai.com/docs/guides/audio/multi-turn-conversations
             raw_audio = message.additional_kwargs["audio"]
             audio = (
-                {
-                    "id": message.additional_kwargs["audio"]["id"],
-                }
+                {"id": message.additional_kwargs["audio"]["id"]}
                 if "id" in raw_audio
                 else raw_audio
             )

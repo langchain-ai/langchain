@@ -965,13 +965,51 @@ def test_audio_output_modality() -> None:
         HumanMessage("Make me a short audio clip of you yelling")
     ]
 
-    output = llm.invoke("Make me a short audio clip of you yelling")
+    output = llm.invoke(history)
 
     assert isinstance(output, AIMessage)
     assert "audio" in output.additional_kwargs
 
     history.append(output)
     history.append(HumanMessage("Make me a short audio clip of you whispering"))
+
+    output = llm.invoke(history)
+
+    assert isinstance(output, AIMessage)
+    assert "audio" in output.additional_kwargs
+
+
+def test_audio_input_modality() -> None:
+    llm = ChatOpenAI(
+        model="gpt-4o-audio-preview",
+        temperature=0,
+        model_kwargs={
+            "modalities": ["text", "audio"],
+            "audio": {"voice": "alloy", "format": "wav"},
+        },
+    )
+    with open("audio_input.wav", "rb") as f:
+        audio_data = f.read()
+
+    b64_audio_data = base64.b64encode(audio_data).decode("utf-8")
+    history: list[BaseMessage] = [
+        HumanMessage(
+            [
+                {
+                    "type": "audio_input",
+                    "audio_input": {"data": b64_audio_data, "format": "wav"},
+                }
+            ]
+        )
+    ]
+
+    output = llm.invoke(history)
+
+    assert isinstance(output, AIMessage)
+    assert "audio" in output.additional_kwargs
+
+    history.append(output)
+    history.append(HumanMessage("Why?"))
 
     output = llm.invoke(history)
 
