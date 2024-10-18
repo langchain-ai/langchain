@@ -3,15 +3,28 @@ from __future__ import annotations
 import importlib.util
 import platform
 from collections.abc import AsyncIterator
-from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence, Tuple, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    TypedDict,
+    Union,
+    get_origin,
+)
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.callbacks.manager import AsyncCallbackManagerForLLMRun
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
+from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.runnables import Runnable
+from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import pre_init
 from langchain_core.utils.function_calling import convert_to_openai_tool
@@ -268,7 +281,7 @@ class ChatOutlines(BaseChatModel):
                 "json_schema, or grammar can be provided."
             )
         if self.regex:
-            return generate.regex(self.client, regex=self.regex)
+            return generate.regex(self.client, regex_str=self.regex)
         if self.type_constraints:
             return generate.format(self.client, python_type=self.type_constraints)
         if self.json_schema:
@@ -295,10 +308,10 @@ class ChatOutlines(BaseChatModel):
 
     def _convert_messages_to_prompt(self, messages: list[BaseMessage]) -> str:
         """Convert a list of messages to a single prompt."""
-        if hasattr(self.tokenizer, "apply_chat_template"):
-            return self.tokenizer.apply_chat_template(
-                messages, tokenize=False, add_generation_prompt=True
-            )
+        # if hasattr(self.tokenizer, "apply_chat_template"):
+        #     return self.tokenizer.apply_chat_template(
+        #         messages, tokenize=False, add_generation_prompt=True
+        #     )
         if self.backend == "llamacpp":  # get base_model_name from gguf repo_id
             from huggingface_hub import ModelCard
 
@@ -373,8 +386,24 @@ class ChatOutlines(BaseChatModel):
         include_raw: bool = False,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
-        return super().with_structured_output(schema, include_raw=include_raw, **kwargs)
-        # todo implement
+        if get_origin(schema) is TypedDict:
+            raise NotImplementedError("TypedDict is not supported yet by Outlines")
+
+        self.json_schema = schema
+
+        if issubclass(schema, BaseModel):
+            parser = PydanticOutputParser(pydantic_object=schema)
+        else:
+            parser = JsonOutputParser()
+
+        if include_raw:
+            return self | {
+                "raw": RunnablePassthrough(),
+                "parsed": parser,
+                "parsing_error": lambda _: None,  # todo add errors somehow
+            }
+
+        return self | parser
 
     def _generate(
         self,
