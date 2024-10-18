@@ -10,7 +10,9 @@ integration_test integration_tests: TEST_FILE=tests/integration_tests/
 
 # unit tests are run with the --disable-socket flag to prevent network calls
 test tests:
-	poetry run pytest --disable-socket --allow-unix-socket $(TEST_FILE)
+	mkdir -p tiktoken_cache
+	curl -o tiktoken_cache/9b5ad71b2ce5302211f9c61530b329a4922fc6a4 https://openaipublic.blob.core.windows.net/encodings/cl100k_base.tiktoken
+	TIKTOKEN_CACHE_DIR=tiktoken_cache poetry run pytest --disable-socket --allow-unix-socket $(TEST_FILE)
 
 integration_test integration_tests:
 	poetry run pytest $(TEST_FILE)
