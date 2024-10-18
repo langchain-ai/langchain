@@ -1,20 +1,53 @@
 # Streaming
 
-<span data-heading-keywords="stream,streaming"></span>
+:::info Prerequisites
+* [Runnable Interface](/docs/concepts/runnables)
+* [Chat Models](/docs/concepts/chat_models)
+:::
 
-Individual LLM calls often run for much longer than traditional resource requests.
-This compounds when you build more complex chains or agents that require multiple reasoning steps.
+:::info Related Resources
 
-Fortunately, LLMs generate output iteratively, which means it's possible to show sensible intermediate results
-before the final response is ready. Consuming output as soon as it becomes available has therefore become a vital part of the UX
-around building apps with LLMs to help alleviate latency issues, and LangChain aims to have first-class support for streaming.
+Please see the following how-to guides for specific examples of streaming in LangChain:
+* [How to stream chat models](/docs/how_to/chat_streaming/)
+* [How to stream tool calls](/docs/how_to/tool_streaming/)
+* [How to stream Runnables](/docs/how_to/streaming/)
+:::
 
-Below, we'll discuss some concepts and considerations around streaming in LangChain.
+Streaming is critical in making applications based on [LLMs](/docs/concepts/chat_models) feel responsive to end-users.
 
-## `.stream()` and `.astream()`
+## Why Streaming?
 
-Most modules in LangChain include the `.stream()` method (and the equivalent `.astream()` method for [async](https://docs.python.org/3/library/asyncio.html) environments) as an ergonomic streaming interface.
-`.stream()` returns an iterator, which you can consume with a simple `for` loop. Here's an example with a chat model:
+[LLMs](/docs/concepts/chat_models) have noticeable latency on the order of seconds. This is much longer than the typical response time for most APIs, which are usually sub-second. The latency issue compounds quickly
+as you build more complex applications that involve multiple calls to a model.
+
+Fortunately, LLMs generate output iteratively, which means it's possible to show sensible intermediate results before the final response is ready. Consuming output as soon as it becomes available has therefore become a vital part of the UX around building apps with LLMs to help alleviate latency issues, and LangChain aims to have first-class support for streaming.
+
+## Streaming APIs
+
+Every LangChain component that implements the [Runnable Interface](/docs/concepts/runnables) supports streaming.
+
+There are three main APIs for streaming in LangChain:
+
+1. sync [stream](https://python.langchain.com/api_reference/core/runnables/langchain_core.runnables.base.Runnable.html#langchain_core.runnables.base.Runnable.stream) and async [astream](https://python.langchain.com/api_reference/core/runnables/langchain_core.runnables.base.Runnable.html#langchain_core.runnables.base.Runnable.astream): yields the output a Runnable as it is generated.
+2. The async [astream_events](https://python.langchain.com/api_reference/core/runnables/langchain_core.runnables.base.Runnable.html#langchain_core.runnables.base.Runnable.astream_events): a streaming API that allows streaming intermediate steps from a Runnable. This API returns a stream of events.
+3. The **legacy** async [astream_log](https://python.langchain.com/api_reference/core/runnables/langchain_core.runnables.base.Runnable.html#langchain_core.runnables.base.Runnable.astream_log): This is an advanced streaming API that allows streaming intermediate steps from a Runnable. Users should **not** use this API when writing new code.
+
+### Streaming with LangGraph
+
+[LangGraph](/docs/concepts/langgraph) compiled graphs are [Runnables](/docs/concepts/runnables) and support the same streaming APIs.
+
+In LangGraph the `stream` and `astream` methods are phrased in terms of changes to the [graph state](https://langchain-ai.github.io/langgraph/concepts/low_level/#state), and as a result are much more helpful for getting intermediate states of the graph as they are generated.
+
+Please review the [LangGraph streaming guide](https://langchain-ai.github.io/langgraph/concepts/streaming/) for more information on how to stream when working with LangGraph.
+
+### `.stream()` and `.astream()`
+<span data-heading-keywords="stream"></span>
+
+:::info Related Resources
+* [How to use streaming](/docs/how_to/streaming/#using-stream)
+:::
+
+The `.stream()` returns an iterator, which you can consume with a simple `for` loop. Here's an example with a chat model:
 
 ```python
 from langchain_anthropic import ChatAnthropic
@@ -34,41 +67,24 @@ Because this method is part of [LangChain Expression Language](/docs/concepts/#l
 you can handle formatting differences from different outputs using an [output parser](/docs/concepts/#output-parsers) to transform
 each yielded chunk.
 
-You can check out [this guide](/docs/how_to/streaming/#using-stream) for more detail on how to use `.stream()`.
+## Dispatching Custom Events
 
-## `.astream_events()`
-<span data-heading-keywords="astream_events,stream_events,stream events"></span>
+You can dispatch custom [callback events](/docs/concepts#callbacks) if you want to add custom data to the event stream of [astream events](https://python.langchain.com/api_reference/core/runnables/langchain_core.runnables.base.Runnable.html#langchain_core.runnables.base.Runnable.astream_events).
 
-While the `.stream()` method is intuitive, it can only return the final generated value of your chain. This is fine for single LLM calls,
-but as you build more complex chains of several LLM calls together, you may want to use the intermediate values of
-the chain alongside the final output - for example, returning sources alongside the final generation when building a chat
-over documents app.
+You can use custom events to provide additional information about the progress of a long-running task.
 
-There are ways to do this [using callbacks](/docs/concepts/#callbacks-1), or by constructing your chain in such a way that it passes intermediate
-values to the end with something like chained [`.assign()`](/docs/how_to/passthrough/) calls, but LangChain also includes an
-`.astream_events()` method that combines the flexibility of callbacks with the ergonomics of `.stream()`. When called, it returns an iterator
-which yields [various types of events](/docs/how_to/streaming/#event-reference) that you can filter and process according
-to the needs of your project.
+For example, if you have a long-running [tool](/docs/concepts/tools) that involves multiple steps (e.g., multiple API calls) with multiple steps, you can dispatch custom events between the steps and use these custom events to monitor progress. You could also surface these custom events to an end user of your application to show them how the current task is progressing.
 
-Here's one small example that prints just events containing streamed chat model output:
+:::info Related Resources
+* [How to dispatch custom callback events](https://python.langchain.com/docs/how_to/callbacks_custom_events/#astream-events-api)
+:::
 
-```python
-from langchain_core.output_parsers import StrOutputParser
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_anthropic import ChatAnthropic
+## Chat Models
 
-model = ChatAnthropic(model="claude-3-sonnet-20240229")
+### "Auto-Streaming" Chat Models
 
-prompt = ChatPromptTemplate.from_template("tell me a joke about {topic}")
-parser = StrOutputParser()
-chain = prompt | model | parser
+## Using Astream Events API
 
-async for event in chain.astream_events({"topic": "parrot"}, version="v2"):
-    kind = event["event"]
-    if kind == "on_chat_model_stream":
-        print(event, end="|", flush=True)
-```
+### Async throughout
 
-You can roughly think of it as an iterator over callback events (though the format differs) - and you can use it on almost all LangChain components!
-
-See [this guide](/docs/how_to/streaming/#using-stream-events) for more detailed information on how to use `.astream_events()`, including a table listing available events.
+Important LangChain primitives like chat models, output parsers, prompts, retrievers, and agents implement the LangChain Runnable Interface.
