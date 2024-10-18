@@ -396,6 +396,14 @@ def _import_oci_md_vllm() -> Type[BaseLLM]:
     return OCIModelDeploymentVLLM
 
 
+def _import_oci_md() -> Type[BaseLLM]:
+    from langchain_community.llms.oci_data_science_model_deployment_endpoint import (
+        OCIModelDeploymentLLM,
+    )
+
+    return OCIModelDeploymentLLM
+
+
 def _import_oci_gen_ai() -> Type[BaseLLM]:
     from langchain_community.llms.oci_generative_ai import OCIGenAI
 
@@ -779,6 +787,8 @@ def __getattr__(name: str) -> Any:
         return _import_oci_md_tgi()
     elif name == "OCIModelDeploymentVLLM":
         return _import_oci_md_vllm()
+    elif name == "OCIModelDeploymentLLM":
+        return _import_oci_md()
     elif name == "OCIGenAI":
         return _import_oci_gen_ai()
     elif name == "OctoAIEndpoint":
@@ -936,6 +946,7 @@ __all__ = [
     "OCIGenAI",
     "OCIModelDeploymentTGI",
     "OCIModelDeploymentVLLM",
+    "OCIModelDeploymentLLM",
     "OctoAIEndpoint",
     "Ollama",
     "OpaquePrompts",
@@ -1038,6 +1049,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "nlpcloud": _import_nlpcloud,
         "oci_model_deployment_tgi_endpoint": _import_oci_md_tgi,
         "oci_model_deployment_vllm_endpoint": _import_oci_md_vllm,
+        "oci_model_deployment_endpoint": _import_oci_md,
         "oci_generative_ai": _import_oci_gen_ai,
         "octoai_endpoint": _import_octoai_endpoint,
         "ollama": _import_ollama,
