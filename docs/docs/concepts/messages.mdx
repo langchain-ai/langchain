@@ -1,6 +1,6 @@
 # Messages
 
-:::info Pre-requisites
+:::info Prerequisites
 - [Chat Models](/docs/concepts/chat_models)
 :::
 
@@ -12,7 +12,7 @@ Each message has a **role** (e.g., "user", "assistant"), **content** (e.g., text
 
 LangChain provides a unified message format that can be used across chat models, allowing users to work with different chat models without worrying about the specific details of the message format used by each model provider.
 
-## What is a message?
+## What inside a message?
 
 A message typically consists of the following pieces of information:
 
@@ -24,14 +24,13 @@ A message typically consists of the following pieces of information:
 
 Roles are used to distinguish between different types of messages in a conversation and help the chat model understand how to respond to a given sequence of messages.
 
-
 | **Role**              | **Description**                                                                                                                                                                                                 |
 |-----------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **system**            | Used to tell the chat model how to behave and provide additional context. Not supported by all chat model providers.                                                                                            |
 | **user**              | Represents input from a user interacting with the model, usually in the form of text or other interactive input.                                                                                                |
 | **assistant**         | Represents a response from the model, which can include text or a request to invoke tools.                                                                                                                      |
 | **tool**              | A message used to pass the results of a tool invocation back to the model after external data or processing has been retrieved. Used with chat models that support [tool calling](/docs/concepts/tool_calling). |
-| **function (legacy)** | This is a legacy role, corresponding to OpenAI's legacy function-calling API. **tool** role should be used instead.                                <br/>                                                        |
+| **function (legacy)** | This is a legacy role, corresponding to OpenAI's legacy function-calling API. **tool** role should be used instead.                                                                                             |
 
 ### Content
 
@@ -48,6 +47,7 @@ Depending on the chat model provider, messages can include other data such as:
 - **ID**: An optional unique identifier for the message.
 - **Name**: An optional `name` property which allows differentiate between different entities/speakers with the same role. Not all models support this!
 - **Metadata**: Additional information about the message, such as timestamps, token usage, etc.
+- **Tool Calls**: A request made by the model to call one or more tools> See [tool calling](/docs/concepts/tool_calling) for more information.
 
 ## Conversation Structure
 
@@ -86,7 +86,7 @@ Different chat providers may support system message in one of the following ways
 * **Through a separate API parameter for system instructions**: Instead of being included as a message, system instructions are passed via a dedicated API parameter.
 * **No support for system messages**: Some models do not support system messages at all.
 
-Most major chat model providers support system instructions via either a chat message or a separate API parameter. LangChain will automatically adapt based on the provider’s capabilities. If the provider supports a separate API parameter for system instructions, LangChain will extract the content of a system message and pass it through that parameter. 
+Most major chat model providers support system instructions via either a chat message or a separate API parameter. LangChain will automatically adapt based on the provider’s capabilities. If the provider supports a separate API parameter for system instructions, LangChain will extract the content of a system message and pass it through that parameter.
 
 If no system message is supported by the provider, in most cases LangChain will attempt to incorporate the system message's content into a HumanMessage or raise an exception if that is not possible. However, this behavior is not yet consistently enforced across all implementations, and if using a less popular implementation of a chat model (e.g., an implementation from the `langchain-community` package) it is recommended to check the specific documentation for that model.
 
@@ -180,7 +180,7 @@ to be able to stream tool calling in a standardized manner.
 ai_message = chunk1 + chunk2 + chunk3 + ...
 ```
 
-#### ToolMessage
+### ToolMessage
 
 This represents a message with role "tool", which contains the result of [calling a tool](/docs/concepts/tool_calling). In addition to `role` and `content`, this message has:
 
@@ -199,7 +199,7 @@ Please see the following for more information on how to use the `RemoveMessage`:
 * [Memory conceptual guide](https://langchain-ai.github.io/langgraph/concepts/memory/)
 * [How to delete messages](https://langchain-ai.github.io/langgraph/how-tos/memory/delete-messages/)
 
-#### (Legacy) FunctionMessage
+### (Legacy) FunctionMessage
 
 This is a legacy message type, corresponding to OpenAI's legacy function-calling API. `ToolMessage` should be used instead to correspond to the updated tool-calling API.
 
