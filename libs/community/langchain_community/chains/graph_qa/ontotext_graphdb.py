@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
 if TYPE_CHECKING:
     import rdflib
+    from rdflib.term import Node
 
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
@@ -215,7 +216,13 @@ class OntotextGraphDBQAChain(Chain):
             error_message, color="red", end="\n\n", verbose=self.verbose
         )
 
-    def _execute_query(self, query: str) -> List[rdflib.query.ResultRow]:
+    def _execute_query(
+        self, query: str
+    ) -> Union[
+        bool,
+        List[rdflib.query.ResultRow],
+        List[Tuple[Node, Node, Node]],
+    ]:
         try:
             return self.graph.query(query)
         except Exception:

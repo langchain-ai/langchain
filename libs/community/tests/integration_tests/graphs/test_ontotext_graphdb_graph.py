@@ -1,4 +1,8 @@
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import rdflib
 
 import pytest
 
@@ -26,6 +30,7 @@ def test_query_method_with_valid_select_query() -> None:
         "    voc:eyeColor ?eyeColor ."
         "}"
     )
+    assert isinstance(query_results, rdflib.query.ResultRow)
     assert len(query_results) == 1
     assert len(query_results[0]) == 1
     assert str(query_results[0][0]) == "yellow"
@@ -49,8 +54,8 @@ def test_query_method_with_valid_ask_query() -> None:
         '    :eyeColor "yellow" .'
         "}"
     )
-
-    assert query_result == True
+    assert isinstance(query_result, bool)
+    assert query_result
 
 
 def test_query_method_with_valid_describe_or_structure_query() -> None:
@@ -69,8 +74,9 @@ def test_query_method_with_valid_describe_or_structure_query() -> None:
         '    rdfs:label "Besalisk" .'
         "}"
     )
-
+    assert isinstance(query_result, list)
     assert len(query_result) == 9
+    assert all(isinstance(triplet, tuple) for triplet in query_result)
     assert all(len(triplet) == 3 for triplet in query_result)
 
 
