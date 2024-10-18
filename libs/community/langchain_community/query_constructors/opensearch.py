@@ -36,7 +36,7 @@ class OpenSearchTranslator(Visitor):
             Comparator.LTE: "lte",
             Comparator.GT: "gt",
             Comparator.GTE: "gte",
-            Comparator.CONTAIN: "match",
+            Comparator.CONTAIN: "wildcard",
             Comparator.LIKE: "fuzzy",
             Operator.AND: "must",
             Operator.OR: "should",
