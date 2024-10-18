@@ -198,6 +198,7 @@ EXPECTED_ALL = [
     "YoutubeAudioLoader",
     "YoutubeLoader",
     "YuqueLoader",
+    "ZyteURLLoader",
 ]
 
 
