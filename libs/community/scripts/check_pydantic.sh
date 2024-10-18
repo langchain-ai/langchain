@@ -50,6 +50,6 @@ if [ "$count" -gt "$current_count" ]; then
   echo "Please update the code to use Field(default_factory=from_env(..)) or Field(default_factory=secret_from_env(..))"
   exit 1
 elif [ "$count" -lt "$current_count" ]; then
-    echo "Please update the $current_count variable in ./scripts/check_pydantic.sh to $count"
-    exit 1
+  echo "Please update the $current_count variable in ./scripts/check_pydantic.sh to $count"
+  exit 1
 fi
