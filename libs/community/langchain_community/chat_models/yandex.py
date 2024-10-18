@@ -10,12 +10,7 @@ from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import (
-    AIMessage,
-    BaseMessage,
-    HumanMessage,
-    SystemMessage,
-)
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 from tenacity import (
     before_sleep_log,
@@ -92,8 +87,14 @@ class ChatYandexGPT(_BaseYandexGPT, BaseChatModel):
         """
         text = completion_with_retry(self, messages=messages)
         text = text if stop is None else enforce_stop_tokens(text, stop)
-        message = AIMessage(content=text)
-        return ChatResult(generations=[ChatGeneration(message=message)])
+        message = AIMessage(
+            content=text,
+            response_metadata=self.metadata["llm_output"] if self.metadata else None,
+        )
+        return ChatResult(
+            generations=[ChatGeneration(message=message)],
+            llm_output=self.metadata["llm_output"] if self.metadata else None,
+        )
 
     async def _agenerate(
         self,
@@ -117,8 +118,14 @@ class ChatYandexGPT(_BaseYandexGPT, BaseChatModel):
         """
         text = await acompletion_with_retry(self, messages=messages)
         text = text if stop is None else enforce_stop_tokens(text, stop)
-        message = AIMessage(content=text)
-        return ChatResult(generations=[ChatGeneration(message=message)])
+        message = AIMessage(
+            content=text,
+            response_metadata=self.metadata["llm_output"] if self.metadata else None,
+        )
+        return ChatResult(
+            generations=[ChatGeneration(message=message)],
+            llm_output=self.metadata["llm_output"] if self.metadata else None,
+        )
 
 
 def _make_request(
@@ -130,7 +137,7 @@ def _make_request(
         from google.protobuf.wrappers_pb2 import DoubleValue, Int64Value
 
         try:
-            from yandex.cloud.ai.foundation_models.v1.text_common_pb2 import (
+            from yandex.cloud.ai.foundation_models.v1.text_common_pb2 import (  # noqa: E501
                 CompletionOptions,
                 Message,
             )
@@ -158,6 +165,8 @@ def _make_request(
         ) from e
     if not messages:
         raise ValueError("You should provide at least one message to start the chat!")
+    if self.metadata is None:
+        self.metadata = {}
     message_history = _parse_chat_history(messages)
     channel_credentials = grpc.ssl_channel_credentials()
     channel = grpc.secure_channel(self.url, channel_credentials)
@@ -171,7 +180,12 @@ def _make_request(
     )
     stub = TextGenerationServiceStub(channel)
     res = stub.Completion(request, metadata=self.grpc_metadata)
-    return list(res)[0].alternatives[0].message.text
+    list_res = list(res)
+    self.metadata["llm_output"] = {
+        "token_usage": list_res[0].usage,
+        "model_name": self.model_name,
+    }
+    return list_res[0].alternatives[0].message.text
 
 
 async def _amake_request(self: ChatYandexGPT, messages: List[BaseMessage]) -> str:
@@ -182,7 +196,7 @@ async def _amake_request(self: ChatYandexGPT, messages: List[BaseMessage]) -> st
         from google.protobuf.wrappers_pb2 import DoubleValue, Int64Value
 
         try:
-            from yandex.cloud.ai.foundation_models.v1.text_common_pb2 import (
+            from yandex.cloud.ai.foundation_models.v1.text_common_pb2 import (  # noqa: E501
                 CompletionOptions,
                 Message,
             )
@@ -219,6 +233,8 @@ async def _amake_request(self: ChatYandexGPT, messages: List[BaseMessage]) -> st
     message_history = _parse_chat_history(messages)
     operation_api_url = "operation.api.cloud.yandex.net:443"
     channel_credentials = grpc.ssl_channel_credentials()
+    if self.metadata is None:
+        self.metadata = {}
     async with grpc.aio.secure_channel(self.url, channel_credentials) as channel:
         request = CompletionRequest(
             model_uri=self.model_uri,
@@ -244,6 +260,10 @@ async def _amake_request(self: ChatYandexGPT, messages: List[BaseMessage]) -> st
 
         completion_response = CompletionResponse()
         operation.response.Unpack(completion_response)
+        self.metadata["llm_output"] = {
+            "token_usage": completion_response.usage,
+            "model_name": self.model_name,
+        }
         return completion_response.alternatives[0].message.text
 
 
