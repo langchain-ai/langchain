@@ -60,7 +60,7 @@ class AzureAIContentSafetyChain(Chain):
             export AZURE_CONTENT_SAFETY_ENDPOINT="https://your-endpoint.azure.com/"
 
 
-    Example Usage:
+    Example Usage (with safe content):
         .. code-block:: python
 
             from langchain_community.chains import AzureAIContentSafetyChain
@@ -74,10 +74,29 @@ class AzureAIContentSafetyChain(Chain):
             moderated_chain = moderate | prompt | model
 
             moderated_chain.invoke({"input": "Hey, How are you?"})
+
+    Example Usage (with harmful content):
+        .. code-block:: python
+
+            from langchain_community.chains import AzureAIContentSafetyChain
+            from langchain_openai import AzureChatOpenAI
+
+            moderate = AzureAIContentSafetyChain()
+            prompt = ChatPromptTemplate.from_messages([("system",
+                    "repeat after me: {input}")])
+            model = AzureChatOpenAI()
+
+            moderated_chain = moderate | prompt | model
+
+            try:
+                response = moderated_chain.invoke({"input": "I hate you!"})
+            except AzureHarmfulContentError as e:
+                print(f'Harmful content: {e.input}')
+                raise
     """
 
     client: Any = None  #: :meta private:
-    error: bool = False
+    error: bool = True
     """Whether or not to error if bad content was found."""
     input_key: str = "input"  #: :meta private:
     output_key: str = "output"  #: :meta private:
