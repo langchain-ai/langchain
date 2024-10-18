@@ -34,11 +34,14 @@ Roles are used to distinguish between different types of messages in a conversat
 
 ### Content
 
-The content of a message can be text or [multimodal data](/docs/concepts/multimodality) (e.g., images, audio, video). The exact format of the content can vary between different chat model providers.
+The content of a message text or a list of dictionaries representing [multimodal data](/docs/concepts/multimodality) (e.g., images, audio, video). The exact format of the content can vary between different chat model providers.
 
 Currently, most chat models support text as the primary content type, with some models also supporting multimodal data. However, support for multimodal data is still limited across most chat model providers.
 
-See the [multimodality](/docs/concepts/multimodality) guide for more information on multimodal content.
+For more information see:
+* [HumanMessage](#humanmessage) -- for content in the input from the user.
+* [AIMessage](#aimessage) -- for content in the response from the model.
+* [Multimodality](/docs/concepts/multimodality) -- for more information on multimodal content.
 
 ### Other Message Data
 
@@ -52,6 +55,13 @@ Depending on the chat model provider, messages can include other data such as:
 ## Conversation Structure
 
 The sequence of messages into a chat model should follow a specific structure to ensure that the chat model can generate a valid response.
+
+For example, a typical conversation structure might look like this:
+
+1. **User Message**: "Hello, how are you?"
+2. **Assistant Message**: "I'm doing well, thank you for asking."
+3. **User Message**: "Can you tell me a joke?"
+4. **Assistant Message**: "Sure! Why did the scarecrow win an award? Because he was outstanding in his field!"
 
 Please read the [chat history](/docs/concepts/chat_history) guide for more information on managing chat history and ensuring that the conversation structure is correct.
 
@@ -105,7 +115,7 @@ model.invoke([HumanMessage(content="Hello, how are you?")])
 ```
 
 :::tip
-When invoking a chat model with a string as input, LangChain will automatically convert the string into a `HumanMessage` object. This is mostly useful for quick testing and prototyping.
+When invoking a chat model with a string as input, LangChain will automatically convert the string into a `HumanMessage` object. This is mostly useful for quick testing.
 
 ```python
 model.invoke("Hello, how are you?")
@@ -151,7 +161,7 @@ The content is either:
     * Used by OpenAI for audio outputs. Please see [multi-modal content](/docs/concepts/multimodality) for more information.
 
 :::important
-This field is **not** standardized across different chat model providers, mostly because there are
+The **content** property is **not** standardized across different chat model providers, mostly because there are
 still few examples to generalize from.
 :::
 
