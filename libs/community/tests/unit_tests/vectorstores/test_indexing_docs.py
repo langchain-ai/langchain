@@ -75,6 +75,7 @@ def test_compatible_vectorstore_documentation() -> None:
         "Milvus",
         "MomentoVectorIndex",
         "MyScale",
+        "OceanBase",
         "OpenSearchVectorSearch",
         "OracleVS",
         "PGVector",
