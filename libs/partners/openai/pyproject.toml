@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-openai"
-version = "0.2.2"
+version = "0.2.3"
 description = "An integration package connecting OpenAI and LangChain"
 authors = []
 readme = "README.md"
@@ -23,8 +23,8 @@ ignore_missing_imports = true
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-langchain-core = "^0.3.9"
-openai = "^1.40.0"
+langchain-core = "^0.3.12"
+openai = "^1.52.0"
 tiktoken = ">=0.7,<1"
 
 [tool.ruff.lint]
@@ -72,6 +72,7 @@ syrupy = "^4.0.2"
 pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
 pytest-cov = "^4.1.0"
+pytest-socket = "^0.6.0"
 [[tool.poetry.group.test.dependencies.numpy]]
 version = "^1"
 python = "<3.12"
