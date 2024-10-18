@@ -51,7 +51,7 @@ newspaper3k>=0.2.8,<0.3
 numexpr>=2.8.6,<3
 nvidia-riva-client>=2.14.0,<3
 oci>=2.128.0,<3
-openai<2
+openai>=1.30.0,<2
 openapi-pydantic>=0.3.2,<0.4
 oracle-ads>=2.9.1,<3
 oracledb>=2.2.0,<3
