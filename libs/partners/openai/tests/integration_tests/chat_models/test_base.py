@@ -2,6 +2,7 @@
 
 import base64
 import json
+from pathlib import Path
 from typing import Any, AsyncIterator, List, Literal, Optional, cast
 
 import httpx
@@ -988,17 +989,22 @@ def test_audio_input_modality() -> None:
             "audio": {"voice": "alloy", "format": "wav"},
         },
     )
-    with open("audio_input.wav", "rb") as f:
-        audio_data = f.read()
+    filepath = Path(__file__).parent / "audio_input.wav"
 
+    audio_data = filepath.read_bytes()
     b64_audio_data = base64.b64encode(audio_data).decode("utf-8")
+
     history: list[BaseMessage] = [
         HumanMessage(
             [
                 {
-                    "type": "audio_input",
-                    "audio_input": {"data": b64_audio_data, "format": "wav"},
-                }
+                    "type": "text",
+                    "text": "What is happening in this audio clip",
+                },
+                {
+                    "type": "input_audio",
+                    "input_audio": {"data": b64_audio_data, "format": "wav"},
+                },
             ]
         )
     ]
