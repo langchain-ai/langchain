@@ -9,6 +9,7 @@ TEST_FILE ?= tests/unit_tests/
 integration_test integration_tests: TEST_FILE=tests/integration_tests/
 
 # unit tests are run with the --disable-socket flag to prevent network calls
+# use tiktoken cache to enable token counting without socket (internet) access
 test tests:
 	mkdir -p tiktoken_cache
 	curl -o tiktoken_cache/9b5ad71b2ce5302211f9c61530b329a4922fc6a4 https://openaipublic.blob.core.windows.net/encodings/cl100k_base.tiktoken
