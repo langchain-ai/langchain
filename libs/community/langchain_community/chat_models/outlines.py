@@ -19,12 +19,12 @@ from typing import (
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.callbacks.manager import AsyncCallbackManagerForLLMRun
-from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
 from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.runnables import Runnable, RunnablePassthrough
+from langchain_core.prompt_values import PromptValue
+from langchain_core.runnables import Runnable, RunnableLambda, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_tool
 from pydantic import BaseModel, Field, model_validator
@@ -68,7 +68,7 @@ class ChatOutlines(BaseChatModel):
 
     """  # noqa: E501
 
-    client: Any  # :meta private:
+    client: Any = None  # :meta private:
 
     model: str
     """Identifier for the model to use with Outlines.
@@ -192,7 +192,7 @@ class ChatOutlines(BaseChatModel):
     """
 
     @model_validator(mode="after")
-    def validate_environment(self):
+    def validate_environment(self) -> "ChatOutlines":
         """Validate that outlines is installed and create a model instance."""
         try:
             import outlines.models as models
@@ -219,7 +219,9 @@ class ChatOutlines(BaseChatModel):
                 "json_schema, or grammar can be provided."
             )
 
-        def check_packages_installed(packages: List[Union[str, Tuple[str, str]]]):
+        def check_packages_installed(
+            packages: List[Union[str, Tuple[str, str]]],
+        ) -> None:
             missing_packages = [
                 pkg if isinstance(pkg, str) else pkg[0]
                 for pkg in packages
@@ -238,34 +240,33 @@ class ChatOutlines(BaseChatModel):
             if ".gguf" in model:
                 creator, repo_name, file_name = model.split("/", 2)
                 repo_id = f"{creator}/{repo_name}"
-            else:  # todo add auto-file-selection if no file is given
+            else:
                 raise ValueError("GGUF file_name must be provided for llama.cpp.")
-            model = models.llamacpp(repo_id, file_name, **self.model_kwargs)
+            self.client = models.llamacpp(repo_id, file_name, **self.model_kwargs)
         elif backend == "transformers":
             check_packages_installed(["transformers", "torch", "datasets"])
-            model = models.transformers(model_name=model, **self.model_kwargs)
+            self.client = models.transformers(model_name=model, **self.model_kwargs)
         elif backend == "transformers_vision":
-            check_packages_installed(
-                ["transformers", "datasets", "torchvision", "PIL", "flash_attn"]
-            )
             from transformers import LlavaNextForConditionalGeneration
 
-            model = models.transformers_vision(
-                model,
-                model_class=LlavaNextForConditionalGeneration,
-                **self.model_kwargs,
-            )
+            if hasattr(models, "transformers_vision"):
+                self.client = models.transformers_vision(
+                    model,
+                    model_class=LlavaNextForConditionalGeneration,
+                    **self.model_kwargs,
+                )
+            else:
+                raise ValueError("transformers_vision backend is not supported")
         elif backend == "vllm":
             if platform.system() == "Darwin":
                 raise ValueError("vLLM backend is not supported on macOS.")
             check_packages_installed(["vllm"])
-            model = models.vllm(model, **self.model_kwargs)
+            self.client = models.vllm(model, **self.model_kwargs)
         elif backend == "mlxlm":
             check_packages_installed(["mlx"])
-            model = models.mlxlm(model, **self.model_kwargs)
+            self.client = models.mlxlm(model, **self.model_kwargs)
         else:
             raise ValueError(f"Unsupported backend: {backend}")
-        self.client = model
         return self
 
     @property
@@ -371,7 +372,12 @@ class ChatOutlines(BaseChatModel):
         *,
         tool_choice: Optional[Union[Dict, bool, str]] = None,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
+    ) -> Runnable[
+        PromptValue
+        | str
+        | Sequence[Union[BaseMessage, list[str], tuple[str, str], str, dict[str, Any]]],
+        BaseMessage,
+    ]:
         """Bind tool-like objects to this chat model
 
         tool_choice: does not currently support "any", "auto" choices like OpenAI
@@ -408,7 +414,7 @@ class ChatOutlines(BaseChatModel):
 
         kwargs["tool_choice"] = tool_choice
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
-        return super().bind(tools=formatted_tools, **kwargs)
+        return super().bind_tools(tools=formatted_tools, **kwargs)
 
     def with_structured_output(
         self,
@@ -416,14 +422,25 @@ class ChatOutlines(BaseChatModel):
         *,
         include_raw: bool = False,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
+    ) -> Runnable[
+        Union[
+            PromptValue,
+            str,
+            Sequence[
+                Union[BaseMessage, list[str], tuple[str, str], str, dict[str, Any]]
+            ],
+        ],
+        Union[dict, BaseModel],
+    ]:
         if get_origin(schema) is TypedDict:
             raise NotImplementedError("TypedDict is not supported yet by Outlines")
 
         self.json_schema = schema
 
-        if issubclass(schema, BaseModel):
-            parser = PydanticOutputParser(pydantic_object=schema)
+        if isinstance(schema, type) and issubclass(schema, BaseModel):
+            parser: Union[PydanticOutputParser, JsonOutputParser] = (
+                PydanticOutputParser(pydantic_object=schema)
+            )
         else:
             parser = JsonOutputParser()
 
@@ -431,7 +448,9 @@ class ChatOutlines(BaseChatModel):
             return self | {
                 "raw": RunnablePassthrough(),
                 "parsed": parser,
-                "parsing_error": lambda _: None,  # todo add errors somehow
+                "parsing_error": RunnableLambda(
+                    lambda x: None,  # todo add errors
+                ),
             }
 
         return self | parser
@@ -458,7 +477,13 @@ class ChatOutlines(BaseChatModel):
                 run_manager=run_manager,
                 **kwargs,
             ):
-                response += chunk.message.content
+                if isinstance(chunk.message.content, str):
+                    response += chunk.message.content
+                else:
+                    raise ValueError(
+                        "Invalid content type, only str is supported, "
+                        f"got {type(chunk.message.content)}"
+                    )
         else:
             response = self._generator(prompt, **params)
 
@@ -507,7 +532,7 @@ class ChatOutlines(BaseChatModel):
         elif self.streaming:
             response = ""
             async for chunk in self._astream(messages, stop, run_manager, **kwargs):
-                response += chunk.message.content
+                response += chunk.message.content or ""
             message = AIMessage(content=response)
             generation = ChatGeneration(message=message)
             return ChatResult(generations=[generation])
