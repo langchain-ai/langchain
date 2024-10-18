@@ -11,7 +11,6 @@
       'max_retries': 2,
       'max_tokens': 100,
       'model_name': 'gpt-3.5-turbo',
-      'n': 1,
       'openai_api_key': dict({
         'id': list([
           'OPENAI_API_KEY',
