@@ -217,7 +217,8 @@ os.environ["${tabItem.apiKeyName}"] = getpass.getpass()`;
               </CodeBlock>
             </TabItem>
           );
-        })}
+        })
+      }
     </Tabs>
   );
 }
