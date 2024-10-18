@@ -5,11 +5,13 @@ from typing import (
     TYPE_CHECKING,
     List,
     Optional,
+    Tuple,
     Union,
 )
 
 if TYPE_CHECKING:
     import rdflib
+    from rdflib.term import Node
 
 
 class OntotextGraphDBGraph:
@@ -198,13 +200,24 @@ class OntotextGraphDBGraph:
         return self.schema
 
     def query(
-        self,
-        query: str,
-    ) -> List[rdflib.query.ResultRow]:
+        self, query: str
+    ) -> Union[
+        bool,
+        List[rdflib.query.ResultRow],
+        List[Tuple[Node, Node, Node]],
+    ]:
         """
-        Query the graph.
+        Query the graph and return appropriate results based on the query type.
         """
         from rdflib.query import ResultRow
 
         res = self.graph.query(query)
+
+        if res.type == "ASK":
+            return bool(res.askAnswer)
+        elif res.type in ["CONSTRUCT", "DESCRIBE"]:
+            return [
+                (r[0], r[1], r[2]) for r in res if isinstance(r, tuple) and len(r) == 3
+            ]
+
         return [r for r in res if isinstance(r, ResultRow)]
