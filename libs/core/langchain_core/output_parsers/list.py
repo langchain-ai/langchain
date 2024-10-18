@@ -4,7 +4,7 @@ import re
 from abc import abstractmethod
 from collections import deque
 from collections.abc import AsyncIterator, Iterator
-from typing import Optional as Optional
+from decimal import Decimal
 from typing import TypeVar, Union
 
 from langchain_core.messages import BaseMessage
@@ -147,7 +147,9 @@ class CommaSeparatedListOutputParser(ListOutputParser):
         return ["langchain", "output_parsers", "list"]
 
     def get_format_instructions(self) -> str:
-        """Return the format instructions for the comma-separated list output."""
+        """Return the format instructions for the comma-separated list
+        output."""
+
         return (
             "Your response should be a list of comma separated values, "
             "eg: `foo, bar, baz` or `foo,bar,baz`"
@@ -169,6 +171,79 @@ class CommaSeparatedListOutputParser(ListOutputParser):
         return "comma-separated-list"
 
 
+class CommaSeparatedNumericListOutputParser(
+    BaseTransformOutputParser[list[Union[int, Decimal]]]
+):
+    """Parse the output of an LLM call to a comma-separated numeric list."""
+
+    def parse(self, text: str) -> list[Union[int, Decimal]]:
+        import re
+
+        """Parse the output of an LLM call.
+
+        Args:
+            text: The output of an LLM call.
+
+        Returns:
+            A list of numbers.
+        """
+
+        parts = text.split(",")
+
+        numbers: list[Union[int, Decimal]] = []
+
+        for part in parts:
+            part = part.strip()
+            if not part:
+                continue
+            cleaned_part = part.rstrip("?!.;:").strip()
+            cleaned_part = re.sub(r"[^\d\.\-eE]+", "", cleaned_part).replace(",", "")  # noqa E501
+            number: Union[int, Decimal]
+            try:
+                number = int(cleaned_part)
+            except ValueError:
+                try:
+                    number = Decimal(cleaned_part)
+                except ValueError:
+                    continue
+            numbers.append(number)
+
+        return numbers
+
+    def get_format_instructions(self) -> str:
+        """Return the format instructions for the numeric comma-separated list
+        output."""
+
+        return (
+            "Your response should be a list of comma separated digits. "
+            "Ensure that decimal numbers use a dot (.) as the decimal "
+            "separator (e.g., 3.14 instead of 3,14)."
+        )
+
+    def _transform(
+        self, input: Iterator[Union[str, BaseMessage]]
+    ) -> Iterator[list[Union[int, Decimal]]]:
+        buffer = ""
+
+        for chunk in input:
+            if isinstance(chunk, BaseMessage):
+                # extract text
+                chunk_content = chunk.content
+                if not isinstance(chunk_content, str):
+                    continue
+                chunk = chunk_content
+            # add current chunk to buffer
+            buffer += chunk
+
+        # yield the last part
+        for part in self.parse(buffer):
+            yield [part]
+
+    @property
+    def _type(self) -> str:
+        return "comma-separated-list-number"
+
+
 class NumberedListOutputParser(ListOutputParser):
     """Parse a numbered list."""
 
@@ -177,8 +252,8 @@ class NumberedListOutputParser(ListOutputParser):
 
     def get_format_instructions(self) -> str:
         return (
-            "Your response should be a numbered list with each item on a new line. "
-            "For example: \n\n1. foo\n\n2. bar\n\n3. baz"
+            "Your response should be a numbered list with each item on a new "
+            "line. For example: \n\n1. foo\n\n2. bar\n\n3. baz"
         )
 
     def parse(self, text: str) -> list[str]:
@@ -216,7 +291,7 @@ class MarkdownListOutputParser(ListOutputParser):
 
     def get_format_instructions(self) -> str:
         """Return the format instructions for the Markdown list output."""
-        return "Your response should be a markdown list, " "eg: `- foo\n- bar\n- baz`"
+        return "Your response should be a markdown list, " "eg: `- foo\n- bar\n- baz`"  # noqa E501
 
     def parse(self, text: str) -> list[str]:
         """Parse the output of an LLM call.
