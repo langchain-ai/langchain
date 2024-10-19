@@ -17,6 +17,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+
 def convert_messages(item):
     if isinstance(item, list):
         return [convert_messages(i) for i in item]
@@ -25,6 +26,7 @@ def convert_messages(item):
     elif isinstance(item, float):
         return Decimal(str(item))
     return item
+
 
 class DynamoDBChatMessageHistory(BaseChatMessageHistory):
     """Chat message history that stores history in AWS DynamoDB.
