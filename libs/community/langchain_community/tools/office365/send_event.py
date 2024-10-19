@@ -4,6 +4,7 @@ Free, but setup is required. See link below.
 https://learn.microsoft.com/en-us/graph/auth/
 """
 
+import logging
 from datetime import datetime as dt
 from typing import List, Optional, Type
 
@@ -12,6 +13,8 @@ from pydantic import BaseModel, Field
 
 from langchain_community.tools.office365.base import O365BaseTool
 from langchain_community.tools.office365.utils import UTC_FORMAT
+
+logger = logging.getLogger(__name__)
 
 
 class SendEventSchema(BaseModel):
@@ -45,6 +48,13 @@ class SendEventSchema(BaseModel):
         " 2023, at 10:30 AM in a time zone with a positive offset of 3 "
         " hours from Coordinated Universal Time (UTC).",
     )
+    timezone: Optional[str] = Field(
+        default=None,
+        description="The timezone for the event should be provided in the following "
+        "format: 'America/New_York'. "
+        "For example, the zoneinfo for a +05:30 timezone offset is "
+        "'Asia/Kolkata'.",
+    )
 
 
 class O365SendEvent(O365BaseTool):
@@ -63,8 +73,21 @@ class O365SendEvent(O365BaseTool):
         subject: str,
         start_datetime: str,
         end_datetime: str,
+        timezone: Optional[str] = None,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
+        if not timezone:
+            try:
+                import tzlocal
+            except ImportError:
+                logger.debug(
+                    "'timezone' not set and 'tzlocal' is not installed so local "
+                    "timezone cannot be inferred."
+                )
+                pass
+            else:
+                timezone = timezone or tzlocal.get_localzone()
+
         # Get calendar object
         schedule = self.account.schedule()
         calendar = schedule.get_default_calendar()
@@ -75,6 +98,17 @@ class O365SendEvent(O365BaseTool):
         event.subject = subject
         event.start = dt.strptime(start_datetime, UTC_FORMAT)
         event.end = dt.strptime(end_datetime, UTC_FORMAT)
+
+        if timezone:
+            try:
+                from zoneinfo import ZoneInfo
+            except ImportError:
+                logger.debug("Cannot set timezone because 'zoneinfo' isn't installed.")
+                pass
+            else:
+                event.start = event.start.replace(tzinfo=ZoneInfo(timezone))
+                event.end = event.end.replace(tzinfo=ZoneInfo(timezone))
+
         for attendee in attendees:
             event.attendees.add(attendee)
 
