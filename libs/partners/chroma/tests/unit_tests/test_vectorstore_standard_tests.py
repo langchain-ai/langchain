@@ -1,9 +1,11 @@
 import pytest
-from langchain_chroma.vectorstores import Chroma
 from langchain_standard_tests.integration_tests.vectorstores import (
     AsyncReadWriteTestSuite,
     ReadWriteTestSuite,
 )
+
+from langchain_chroma.vectorstores import Chroma
+
 
 class TestChromaReadWriteTestSuite(ReadWriteTestSuite):
     @pytest.fixture
@@ -13,7 +15,7 @@ class TestChromaReadWriteTestSuite(ReadWriteTestSuite):
         yield store
         
 
-class TestSync(ReadWriteTestSuite):
+class TestChromaAsyncReadWriteTestSuite(AsyncReadWriteTestSuite):
     @pytest.fixture()
     def vectorstore(self) -> Chroma:
         store = Chroma(embedding_function=self.get_embeddings())
