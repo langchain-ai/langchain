@@ -296,7 +296,7 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
     def from_template(
         cls: type[MessagePromptTemplateT],
         template: str,
-        template_format: str = "f-string",
+        template_format: Literal["f-string", "mustache", "jinja2"] = "f-string",
         partial_variables: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> MessagePromptTemplateT:
@@ -486,7 +486,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
     def from_template(
         cls: type[_StringImageMessagePromptTemplateT],
         template: Union[str, list[Union[str, _TextTemplateParam, _ImageTemplateParam]]],
-        template_format: str = "f-string",
+        template_format: Literal["f-string", "mustache", "jinja2"] = "f-string",
         *,
         partial_variables: Optional[dict[str, Any]] = None,
         **kwargs: Any,
@@ -495,7 +495,8 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
 
         Args:
             template: a template.
-            template_format: format of the template. Defaults to "f-string".
+            template_format: format of the template.
+                Options are: 'f-string', 'mustache', 'jinja2'. Defaults to "f-string".
             partial_variables: A dictionary of variables that can be used too partially.
                 Defaults to None.
             **kwargs: keyword arguments to pass to the constructor.

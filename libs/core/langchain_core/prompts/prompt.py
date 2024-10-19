@@ -24,7 +24,8 @@ class PromptTemplate(StringPromptTemplate):
     A prompt template consists of a string template. It accepts a set of parameters
     from the user that can be used to generate a prompt for a language model.
 
-    The template can be formatted using either f-strings (default) or jinja2 syntax.
+    The template can be formatted using either f-strings (default), jinja2,
+    or mustache syntax.
 
     *Security warning*:
         Prefer using `template_format="f-string"` instead of
@@ -248,7 +249,7 @@ class PromptTemplate(StringPromptTemplate):
         cls,
         template: str,
         *,
-        template_format: str = "f-string",
+        template_format: Literal["f-string", "mustache", "jinja2"] = "f-string",
         partial_variables: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> PromptTemplate:
@@ -270,7 +271,7 @@ class PromptTemplate(StringPromptTemplate):
         Args:
             template: The template to load.
             template_format: The format of the template. Use `jinja2` for jinja2,
-                             and `f-string` or None for f-strings.
+                             `mustache` for mustache, and `f-string` for f-strings.
                              Defaults to `f-string`.
             partial_variables: A dictionary of variables that can be used to partially
                                fill in the template. For example, if the template is

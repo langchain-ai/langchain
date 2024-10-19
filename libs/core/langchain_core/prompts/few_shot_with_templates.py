@@ -1,7 +1,7 @@
 """Prompt template that contains few shot examples."""
 
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Literal, Optional, Union
 
 from pydantic import ConfigDict, model_validator
 from typing_extensions import Self
@@ -36,8 +36,9 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
     prefix: Optional[StringPromptTemplate] = None
     """A PromptTemplate to put before the examples."""
 
-    template_format: str = "f-string"
-    """The format of the prompt template. Options are: 'f-string', 'jinja2'."""
+    template_format: Literal["f-string", "mustache", "jinja2"] = "f-string"
+    """The format of the prompt template.
+    Options are: 'f-string', 'jinja2', 'mustache'."""
 
     validate_template: bool = False
     """Whether or not to try validating the template."""
