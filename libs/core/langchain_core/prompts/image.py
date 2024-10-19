@@ -1,9 +1,10 @@
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import Field
 
 from langchain_core.prompt_values import ImagePromptValue, ImageURL, PromptValue
 from langchain_core.prompts.base import BasePromptTemplate
+from langchain_core.prompts.string import DEFAULT_FORMATTER_MAPPING
 from langchain_core.runnables import run_in_executor
 from langchain_core.utils import image as image_utils
 
@@ -13,6 +14,9 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
 
     template: dict = Field(default_factory=dict)
     """Template for the prompt."""
+    template_format: Literal["f-string", "mustache", "jinja2"] = "f-string"
+    """The format of the prompt template.
+    Options are: 'f-string', 'mustache', 'jinja2'."""
 
     def __init__(self, **kwargs: Any) -> None:
         if "input_variables" not in kwargs:
@@ -85,7 +89,9 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
         formatted = {}
         for k, v in self.template.items():
             if isinstance(v, str):
-                formatted[k] = v.format(**kwargs)
+                formatted[k] = DEFAULT_FORMATTER_MAPPING[self.template_format](
+                    v, **kwargs
+                )
             else:
                 formatted[k] = v
         url = kwargs.get("url") or formatted.get("url")

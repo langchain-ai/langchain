@@ -533,7 +533,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                     img_template = cast(_ImageTemplateParam, tmpl)["image_url"]
                     input_variables = []
                     if isinstance(img_template, str):
-                        vars = get_template_variables(img_template, "f-string")
+                        vars = get_template_variables(img_template, template_format)
                         if vars:
                             if len(vars) > 1:
                                 msg = (
@@ -545,7 +545,9 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                             input_variables = [vars[0]]
                         img_template = {"url": img_template}
                         img_template_obj = ImagePromptTemplate(
-                            input_variables=input_variables, template=img_template
+                            input_variables=input_variables,
+                            template=img_template,
+                            template_format=template_format,
                         )
                     elif isinstance(img_template, dict):
                         img_template = dict(img_template)
@@ -553,11 +555,13 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                             if key in img_template:
                                 input_variables.extend(
                                     get_template_variables(
-                                        img_template[key], "f-string"
+                                        img_template[key], template_format
                                     )
                                 )
                         img_template_obj = ImagePromptTemplate(
-                            input_variables=input_variables, template=img_template
+                            input_variables=input_variables,
+                            template=img_template,
+                            template_format=template_format,
                         )
                     else:
                         msg = f"Invalid image template: {tmpl}"
