@@ -25,7 +25,7 @@ if platform.system() == "Darwin":
 
 
 @pytest.fixture(params=BACKENDS)
-def chat_model(request):
+def chat_model(request: pytest.FixtureRequest) -> ChatOutlines:
     if request.param == "llamacpp":
         return ChatOutlines(model=LLAMACPP_MODEL, backend=request.param)
     else:
@@ -49,7 +49,13 @@ def test_chat_outlines_streaming(chat_model: ChatOutlines) -> None:
 
     for chunk in generator:
         assert isinstance(chunk, BaseMessageChunk)
-        stream_results_string += chunk.content
+        if isinstance(chunk.content, str):
+            stream_results_string += chunk.content
+        else:
+            raise ValueError(
+                f"Invalid content type, only str is supported, "
+                f"got {type(chunk.content)}"
+            )
     assert len(stream_results_string.strip()) > 1
 
 
@@ -75,7 +81,7 @@ def test_chat_outlines_regex(chat_model: ChatOutlines) -> None:
 
     assert isinstance(output, AIMessage)
     assert re.match(
-        ip_regex, output.content
+        ip_regex, str(output.content)
     ), f"Generated output '{output.content}' is not a valid IP address"
 
 
@@ -88,7 +94,7 @@ def test_chat_outlines_type_constraints(chat_model: ChatOutlines) -> None:
         )
     ]
     output = chat_model.invoke(messages)
-    assert isinstance(int(output.content), int)
+    assert isinstance(int(str(output.content)), int)
 
 
 def test_chat_outlines_json(chat_model: ChatOutlines) -> None:
@@ -100,7 +106,7 @@ def test_chat_outlines_json(chat_model: ChatOutlines) -> None:
     chat_model.json_schema = Person
     messages = [HumanMessage(content="Who are the main contributors to LangChain?")]
     output = chat_model.invoke(messages)
-    person = Person.model_validate_json(output.content)
+    person = Person.model_validate_json(str(output.content))
     assert isinstance(person, Person)
 
 
@@ -169,7 +175,3 @@ def test_chat_outlines_with_structured_output(chat_model: ChatOutlines) -> None:
     assert isinstance(result_with_raw["raw"], BaseMessage)
     assert isinstance(result_with_raw["parsed"], AnswerWithJustification)
     assert result_with_raw["parsing_error"] is None
-
-
-if __name__ == "__main__":
-    test_chat_outlines_inference(ChatOutlines(model=LLAMACPP_MODEL, backend="llamacpp"))

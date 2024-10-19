@@ -23,7 +23,7 @@ if platform.system() == "Darwin":
 
 
 @pytest.fixture(params=BACKENDS)
-def llm(request):
+def llm(request: pytest.FixtureRequest) -> Outlines:
     if request.param == "llamacpp":
         return Outlines(model=LLAMACPP_MODEL, backend=request.param, max_tokens=100)
     else:
