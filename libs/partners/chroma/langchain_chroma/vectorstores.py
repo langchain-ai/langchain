@@ -503,6 +503,9 @@ class Chroma(VectorStore):
         """
         if ids is None:
             ids = [str(uuid.uuid4()) for _ in texts]
+        else:
+            ids = [id if id is not None else str(uuid.uuid4()) for id in ids]
+
         embeddings = None
         texts = list(texts)
         if self._embedding_function is not None:
@@ -1147,3 +1150,28 @@ class Chroma(VectorStore):
             kwargs: Additional keyword arguments.
         """
         self._collection.delete(ids=ids, **kwargs)
+
+    def get_by_ids(self, ids: List[str]) -> List[Document]:
+        """Retrieve documents by their IDs.
+
+        Args:
+            ids: List of document IDs to retrieve.
+
+        Returns:
+            List of Documents corresponding to the provided IDs.
+        """
+        # Fetch results from the Chroma collection based on the provided IDs
+        results: Dict[str, Any] = self.get(ids=ids)
+
+        # Ensure that none of the elements are None
+        if results["ids"] is None or results["documents"] is None or results["metadatas"] is None:
+            raise ValueError("One of the elements in the results dictionary is None")
+
+        return [
+            Document(id=result[0], page_content=result[1], metadata=result[2] or {})
+            for result in zip(
+                results["ids"],
+                results["documents"],
+                results["metadatas"],
+            )
+        ]
