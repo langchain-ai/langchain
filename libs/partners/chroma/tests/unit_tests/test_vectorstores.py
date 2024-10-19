@@ -1,7 +1,8 @@
 import pytest
 from langchain_core.documents import Document
+from langchain_core.embeddings.fake import FakeEmbeddings
+
 from langchain_chroma.vectorstores import Chroma
-from langchain_core.embeddings.fake import (FakeEmbeddings)
 
 
 # Write our own test for the Chroma vectorstore
@@ -23,10 +24,10 @@ class TestChromaSearch:
 
         results = vectorstore.similarity_search("What is a sandwich?")
         id = results[0].id
-        assert vectorstore.get(id)['documents'][0] == results[0].page_content, "The first result is not the same as the result from get"
+        assert vectorstore.get(id)['documents'][0] == results[0].page_content
         newDoc = Document(page_content="This is a new document.", metadata={"x": 1})
         vectorstore.update_document(id, newDoc)
-        assert vectorstore.get(id)['documents'][0] == newDoc.page_content, "The first result is not the same as the updated document"
+        assert vectorstore.get(id)['documents'][0] == newDoc.page_content
 
     def test_from_texts(self) -> None:
         """Test end to end construction and search."""
@@ -47,5 +48,3 @@ class TestChromaSearch:
         assert len(results) > 0, "The similarity_search method returned an empty list"
         assert results[0] is not None, "The first result is None"
         assert results[0].id is not None, "The id of the first result is None"
-
-        print("Results: ", results)
