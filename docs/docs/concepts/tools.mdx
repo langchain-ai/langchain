@@ -51,7 +51,8 @@ def multiply(a: int, b: int) -> int:
 For more details on how to create tools, see the [how to create custom tools](/docs/how_to/custom_tools/) guide.
 
 :::note
-LangChain has a few other ways to create tools; e.g., by sub-classing the [BaseTool](https://python.langchain.com/api_reference/core/tools/langchain_core.tools.base.BaseTool.html#langchain_core.tools.base.BaseTool) class or by using `StructuralTool` directly. These methods are shown in the [how to create custom tools guide](/docs/how_to/custom_tools/).  
+LangChain has a few other ways to create tools; e.g., by sub-classing the [BaseTool](https://python.langchain.com/api_reference/core/tools/langchain_core.tools.base.BaseTool.html#langchain_core.tools.base.BaseTool) class or by using `StructuredTool`. These methods are shown in the [how to create custom tools guide](/docs/how_to/custom_tools/), but
+we generally recommend using the `@tool` decorator for most cases.
 :::
 
 ## Use the tool directly
