@@ -936,10 +936,6 @@ async def test_chat_tmpl_serdes(snapshot: SnapshotAssertion) -> None:
             MessagesPlaceholder("more_history", optional=False),
         ]
     )
-    from pprint import pprint
-    pprint(dumpd(template))
-    print("\n")
-    pprint(snapshot())
     assert dumpd(template) == snapshot()
     assert load(dumpd(template)) == template
 
