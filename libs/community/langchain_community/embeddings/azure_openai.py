@@ -49,8 +49,8 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
     azure_ad_token_provider: Union[Callable[[], str], None] = None
     """A function that returns an Azure Active Directory token.
 
-        Will be invoked on every sync request.
-        For async requests, will be invoked if `azure_ad_async_token_provider` is not provided. 
+        Will be invoked on every sync request. For async requests,
+        will be invoked if `azure_ad_async_token_provider` is not provided.
     """
     azure_ad_async_token_provider: Union[Callable[[], Awaitable[str]], None] = None
     """A function that returns an Azure Active Directory token.
