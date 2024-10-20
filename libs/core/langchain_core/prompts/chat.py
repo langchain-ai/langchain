@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import (
     Annotated,
     Any,
-    Literal,
     Optional,
     TypedDict,
     TypeVar,
@@ -40,7 +39,11 @@ from langchain_core.prompt_values import ChatPromptValue, ImageURL, PromptValue
 from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.prompts.image import ImagePromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
-from langchain_core.prompts.string import StringPromptTemplate, get_template_variables
+from langchain_core.prompts.string import (
+    PromptTemplateFormat,
+    StringPromptTemplate,
+    get_template_variables,
+)
 from langchain_core.utils import get_colored_text
 from langchain_core.utils.interactive_env import is_interactive_env
 
@@ -296,7 +299,7 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
     def from_template(
         cls: type[MessagePromptTemplateT],
         template: str,
-        template_format: Literal["f-string", "mustache", "jinja2"] = "f-string",
+        template_format: PromptTemplateFormat = "f-string",
         partial_variables: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> MessagePromptTemplateT:
@@ -486,7 +489,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
     def from_template(
         cls: type[_StringImageMessagePromptTemplateT],
         template: Union[str, list[Union[str, _TextTemplateParam, _ImageTemplateParam]]],
-        template_format: Literal["f-string", "mustache", "jinja2"] = "f-string",
+        template_format: PromptTemplateFormat = "f-string",
         *,
         partial_variables: Optional[dict[str, Any]] = None,
         **kwargs: Any,
@@ -948,7 +951,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         self,
         messages: Sequence[MessageLikeRepresentation],
         *,
-        template_format: Literal["f-string", "mustache", "jinja2"] = "f-string",
+        template_format: PromptTemplateFormat = "f-string",
         **kwargs: Any,
     ) -> None:
         """Create a chat prompt template from a variety of message formats.
@@ -1165,7 +1168,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
     def from_messages(
         cls,
         messages: Sequence[MessageLikeRepresentation],
-        template_format: Literal["f-string", "mustache", "jinja2"] = "f-string",
+        template_format: PromptTemplateFormat = "f-string",
     ) -> ChatPromptTemplate:
         """Create a chat prompt template from a variety of message formats.
 
@@ -1359,7 +1362,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
 def _create_template_from_message_type(
     message_type: str,
     template: Union[str, list],
-    template_format: Literal["f-string", "mustache", "jinja2"] = "f-string",
+    template_format: PromptTemplateFormat = "f-string",
 ) -> BaseMessagePromptTemplate:
     """Create a message prompt template from a message type and template string.
 
@@ -1431,7 +1434,7 @@ def _create_template_from_message_type(
 
 def _convert_to_message(
     message: MessageLikeRepresentation,
-    template_format: Literal["f-string", "mustache", "jinja2"] = "f-string",
+    template_format: PromptTemplateFormat = "f-string",
 ) -> Union[BaseMessage, BaseMessagePromptTemplate, BaseChatPromptTemplate]:
     """Instantiate a message from a variety of message formats.
 

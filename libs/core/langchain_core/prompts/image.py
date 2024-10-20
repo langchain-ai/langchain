@@ -1,10 +1,13 @@
-from typing import Any, Literal
+from typing import Any
 
 from pydantic import Field
 
 from langchain_core.prompt_values import ImagePromptValue, ImageURL, PromptValue
 from langchain_core.prompts.base import BasePromptTemplate
-from langchain_core.prompts.string import DEFAULT_FORMATTER_MAPPING
+from langchain_core.prompts.string import (
+    DEFAULT_FORMATTER_MAPPING,
+    PromptTemplateFormat,
+)
 from langchain_core.runnables import run_in_executor
 from langchain_core.utils import image as image_utils
 
@@ -14,7 +17,7 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
 
     template: dict = Field(default_factory=dict)
     """Template for the prompt."""
-    template_format: Literal["f-string", "mustache", "jinja2"] = "f-string"
+    template_format: PromptTemplateFormat = "f-string"
     """The format of the prompt template.
     Options are: 'f-string', 'mustache', 'jinja2'."""
 

@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import warnings
 from pathlib import Path
-from typing import Any, Literal, Optional, Union
+from typing import Any, Optional, Union
 
 from pydantic import BaseModel, model_validator
 
 from langchain_core.prompts.string import (
     DEFAULT_FORMATTER_MAPPING,
+    PromptTemplateFormat,
     StringPromptTemplate,
     check_valid_template,
     get_template_variables,
@@ -68,7 +69,7 @@ class PromptTemplate(StringPromptTemplate):
     template: str
     """The prompt template."""
 
-    template_format: Literal["f-string", "mustache", "jinja2"] = "f-string"
+    template_format: PromptTemplateFormat = "f-string"
     """The format of the prompt template.
     Options are: 'f-string', 'mustache', 'jinja2'."""
 
@@ -249,7 +250,7 @@ class PromptTemplate(StringPromptTemplate):
         cls,
         template: str,
         *,
-        template_format: Literal["f-string", "mustache", "jinja2"] = "f-string",
+        template_format: PromptTemplateFormat = "f-string",
         partial_variables: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> PromptTemplate:
