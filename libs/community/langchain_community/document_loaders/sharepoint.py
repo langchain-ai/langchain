@@ -42,7 +42,7 @@ class SharePointLoader(O365BaseLoader, BaseLoader):
         Returns:
             A sequence of supported file types.
         """
-        return _FileType.DOC, _FileType.DOCX, _FileType.PDF
+        return _FileType.DOC, _FileType.DOCX, _FileType.PDF, _FileType.XLSX
 
     @property
     def _scopes(self) -> List[str]:
