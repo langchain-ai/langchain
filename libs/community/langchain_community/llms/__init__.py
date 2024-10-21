@@ -965,7 +965,7 @@ __all__ = [
     "RWKV",
     "Replicate",
     "SagemakerEndpoint",
-    "SambaStudio",
+    "SambaNovaCloud" "SambaStudio",
     "SelfHostedHuggingFaceLLM",
     "SelfHostedPipeline",
     "SparkLLM",
