@@ -3,7 +3,8 @@ Adapted from https://github.com/iterative/dvc/blob/main/dvc/dagascii.py"""
 
 import math
 import os
-from typing import Any, Mapping, Sequence
+from collections.abc import Mapping, Sequence
+from typing import Any
 
 from langchain_core.runnables.graph import Edge as LangEdge
 
@@ -98,24 +99,15 @@ class AsciiCanvas:
             self.point(x0, y0, char)
         elif abs(dx) >= abs(dy):
             for x in range(x0, x1 + 1):
-                if dx == 0:
-                    y = y0
-                else:
-                    y = y0 + int(round((x - x0) * dy / float(dx)))
+                y = y0 if dx == 0 else y0 + int(round((x - x0) * dy / float(dx)))
                 self.point(x, y, char)
         elif y0 < y1:
             for y in range(y0, y1 + 1):
-                if dy == 0:
-                    x = x0
-                else:
-                    x = x0 + int(round((y - y0) * dx / float(dy)))
+                x = x0 if dy == 0 else x0 + int(round((y - y0) * dx / float(dy)))
                 self.point(x, y, char)
         else:
             for y in range(y1, y0 + 1):
-                if dy == 0:
-                    x = x0
-                else:
-                    x = x1 + int(round((y - y1) * dx / float(dy)))
+                x = x0 if dy == 0 else x1 + int(round((y - y1) * dx / float(dy)))
                 self.point(x, y, char)
 
     def text(self, x: int, y: int, text: str) -> None:
@@ -169,9 +161,8 @@ def _build_sugiyama_layout(
             route_with_lines,
         )
     except ImportError as exc:
-        raise ImportError(
-            "Install grandalf to draw graphs: `pip install grandalf`."
-        ) from exc
+        msg = "Install grandalf to draw graphs: `pip install grandalf`."
+        raise ImportError(msg) from exc
 
     #
     # Just a reminder about naming conventions:
@@ -245,27 +236,27 @@ def draw_ascii(vertices: Mapping[str, str], edges: Sequence[LangEdge]) -> str:
 
     # NOTE: coordinates might me negative, so we need to shift
     # everything to the positive plane before we actually draw it.
-    Xs = []
-    Ys = []
+    xlist = []
+    ylist = []
 
     sug = _build_sugiyama_layout(vertices, edges)
 
     for vertex in sug.g.sV:
         # NOTE: moving boxes w/2 to the left
-        Xs.append(vertex.view.xy[0] - vertex.view.w / 2.0)
-        Xs.append(vertex.view.xy[0] + vertex.view.w / 2.0)
-        Ys.append(vertex.view.xy[1])
-        Ys.append(vertex.view.xy[1] + vertex.view.h)
+        xlist.append(vertex.view.xy[0] - vertex.view.w / 2.0)
+        xlist.append(vertex.view.xy[0] + vertex.view.w / 2.0)
+        ylist.append(vertex.view.xy[1])
+        ylist.append(vertex.view.xy[1] + vertex.view.h)
 
     for edge in sug.g.sE:
         for x, y in edge.view._pts:
-            Xs.append(x)
-            Ys.append(y)
+            xlist.append(x)
+            ylist.append(y)
 
-    minx = min(Xs)
-    miny = min(Ys)
-    maxx = max(Xs)
-    maxy = max(Ys)
+    minx = min(xlist)
+    miny = min(ylist)
+    maxx = max(xlist)
+    maxy = max(ylist)
 
     canvas_cols = int(math.ceil(math.ceil(maxx) - math.floor(minx))) + 1
     canvas_lines = int(round(maxy - miny))
