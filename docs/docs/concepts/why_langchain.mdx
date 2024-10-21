@@ -1,10 +1,10 @@
-# Why does LangChain exist?
+# Why Use LangChain?
 
 ## Beliefs
 
 There are two core beliefs that underpin the existence of LangChain:
 
-1. **Proliferation of LLMs and associated components:** With the [rapid progress](https://ai.meta.com/blog/llama-3-2-connect-2024-vision-edge-mobile-devices/) in the AI ecosystem, we expect developers to have an increasing set of choices for [models](/docs/concepts/chat_models/) and [related components](https://medium.com/@bijit211987/power-of-vector-databases-for-gen-ai-applications-a63d4cf7e352) for AI applications. 
+1. **Proliferation of [models](/docs/concepts/chat_models/) and associated components:** With the [rapid progress](https://ai.meta.com/blog/llama-3-2-connect-2024-vision-edge-mobile-devices/) in the AI ecosystem, we expect developers to have an increasing set of choices for [models](/docs/concepts/chat_models/) and [related components](https://medium.com/@bijit211987/power-of-vector-databases-for-gen-ai-applications-a63d4cf7e352) for AI applications. 
 Applications will combine these components in various ways. For example, [RAG](/docs/concepts/rag/) combines [models](/docs/concepts/chat_models/) with [retrieval systems](/docs/concepts/retrieval/)
 and [agents](https://langchain-ai.github.io/langgraph/concepts/agentic_concepts/) combine [models](/docs/concepts/chat_models/) with external [tools](/docs/concepts/tool_calling/).
 
@@ -25,7 +25,7 @@ This diversity can make it challenging for developers to switch between provider
 
 ## Standard Interfaces
 
-Some [criticisms of LangChain](https://www.reddit.com/r/LangChain/comments/1c6zktz/llms_frameworks_langchain_llamaindex_griptape/) have asked why use a framework like LangChain when we can just call a particular LLM API directly? 
+Why use a framework like LangChain when we can just call a particular LLM API directly? 
 This links back to the beliefs above: if you believe that you will only ever want to use a single LLM provider, then it is reasonable to just call their API directly and avoid the overhead of a framework like LangChain. 
 However, if you believe that you will want the flexibility to try out different LLM and / or component providers, then a framework like LangChain can make sense.
 
