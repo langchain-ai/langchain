@@ -6,7 +6,7 @@ DEFAULT_MODEL_ID = "gpt2"
 
 
 def test_initialization_default() -> None:
-    """Test initialization with a pipeline object"""
+    """Test default initialization"""
 
     llm = HuggingFacePipeline()
 

@@ -56,7 +56,9 @@ class HuggingFacePipeline(BaseLLM):
 
     pipeline: Any = None  #: :meta private:
     model_id: Optional[str] = None
-    """Model name to use."""
+    """The model name. If not set explicitly by the user,
+    it will be inferred from the provided pipeline (if available).
+    If neither is provided, the DEFAULT_MODEL_ID will be used."""
     model_kwargs: Optional[dict] = None
     """Keyword arguments passed to the model."""
     pipeline_kwargs: Optional[dict] = None
