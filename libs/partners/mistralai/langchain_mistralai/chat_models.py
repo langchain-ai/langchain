@@ -95,8 +95,11 @@ def _create_retry_decorator(
     """Returns a tenacity retry decorator, preconfigured to handle exceptions"""
 
     errors = [httpx.RequestError, httpx.StreamError]
-    return create_base_retry_decorator(
+    kwargs: dict = dict(
         error_types=errors, max_retries=llm.max_retries, run_manager=run_manager
+    )
+    return create_base_retry_decorator(
+        **{k: v for k, v in kwargs.items() if v is not None}
     )
 
 
@@ -370,17 +373,17 @@ class ChatMistralAI(BaseChatModel):
         default_factory=secret_from_env("MISTRAL_API_KEY", default=None),
     )
     endpoint: Optional[str] = Field(default=None, alias="base_url")
-    max_retries: int = 5
-    timeout: int = 120
-    max_concurrent_requests: int = 64
+    max_retries: Optional[int] = None
+    timeout: Optional[int] = None
+    max_concurrent_requests: Optional[int] = None
     model: str = Field(default="mistral-small", alias="model_name")
-    temperature: float = 0.7
+    temperature: Optional[float] = None
     max_tokens: Optional[int] = None
-    top_p: float = 1
+    top_p: Optional[float] = None
     """Decode using nucleus sampling: consider the smallest set of tokens whose
        probability sum is at least top_p. Must be in the closed interval [0.0, 1.0]."""
     random_seed: Optional[int] = None
-    safe_mode: bool = False
+    safe_mode: Optional[bool] = None
     streaming: bool = False
 
     model_config = ConfigDict(

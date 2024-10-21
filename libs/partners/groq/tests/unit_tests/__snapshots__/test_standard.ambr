@@ -17,7 +17,6 @@
       'max_retries': 2,
       'max_tokens': 100,
       'model_name': 'mixtral-8x7b-32768',
-      'n': 1,
       'request_timeout': 60.0,
       'stop': list([
       ]),
