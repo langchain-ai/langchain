@@ -325,6 +325,7 @@ def test_chat_prompt_template_from_messages_jinja2() -> None:
         HumanMessage(content="What is your name?", additional_kwargs={}, example=False),
     ]
 
+
 @pytest.mark.requires("jinja2")
 @pytest.mark.requires("mustache")
 @pytest.mark.parametrize(
