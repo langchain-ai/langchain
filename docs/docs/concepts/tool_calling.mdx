@@ -1,9 +1,15 @@
 # Tool Calling
 
+:::info[Prerequisites]
+* [Tools](/docs/concepts/tools)
+* [Chat Models](/docs/concepts/chat_models)
+:::
+
+
 ## Overview 
 
-Many AI applications interact directly with humans. In these cases, it is approrpiate for models to respond in natural langague. 
-But what about cases where we want a model to also interact with systems, such as databases or an API?
+Many AI applications interact directly with humans. In these cases, it is appropriate for models to respond in natural language.
+But what about cases where we want a model to also interact *directly* with systems, such as databases or an API?
 These systems often have a particular input schema; for example, APIs frequently have a required payload structure.
 This need motivates the concept of *tool calling*. You can use [tool calling](https://platform.openai.com/docs/guides/function-calling/example-use-cases) to request model responses that match a particular schema.
 
@@ -15,9 +21,8 @@ You will sometimes hear the term `function calling`. We use this term interchang
 
 ## Key Concepts 
 
-**(1) Tool Creation:** The [tool](/docs/concepts/tools/) needs to be described to the model so that the model knows what arguments to provide when it decides to call the tool.
-**(2) Tool Binding:** The tool needs to be connected to a model that supports tool calling. 
-This gives the model awareness of the tool and the associated input schema required by the tool.
+**(1) Tool Creation:** Use the [@tool](https://python.langchain.com/api_reference/core/tools/langchain_core.tools.convert.tool.html) decorator to create a [tool](/docs/concepts/tools). A tool is an association between a function and its schema.
+**(2) Tool Binding:** The tool needs to be connected to a model that supports tool calling. This gives the model awareness of the tool and the associated input schema required by the tool.
 **(3) Tool Calling:** When appropriate, the model can decide to call a tool and ensure its response conforms to the tool's input schema.
 **(4) Tool Execution:** The tool can be executed using the arguments provided by the model.
 
@@ -39,9 +44,18 @@ model_with_tools = model.bind_tools(tools)
 response = model_with_tools.invoke(user_input)
 ```
 
-## Tool Creation 
- 
-There are various ways to create [tools](/docs/concepts/tools/) for use with [models](/docs/concepts/chat_models/) that support tool calling.
+## Tool Creation
+
+The recommended way to create a tool is using the `@tool` decorator.
+
+```python
+from langchain_core.tools import tool
+
+@tool
+def multiply(a: int, b: int) -> int:
+    """Multiply a and b."""
+    return a * b
+```
 
 :::info[Further reading]
 
@@ -112,7 +126,7 @@ For more details on usage, see our [how-to guides](/docs/how_to/#tools)!
 
 ## Tool execution
 
-[tools](/docs/concepts/tools/) implement the [Runnable](/docs/concepts/runnables/) interface, which means that they can be invoked (e.g., `tool.invoke(args)`) directly.
+[Tools](/docs/concepts/tools/) implement the [Runnable](/docs/concepts/runnables/) interface, which means that they can be invoked (e.g., `tool.invoke(args)`) directly.
 
 [LangGraph](https://langchain-ai.github.io/langgraph/) offers pre-built components (e.g., [`ToolNode`](https://langchain-ai.github.io/langgraph/reference/prebuilt/#toolnode)) that will often invoke the tool in behalf of the user.
 
