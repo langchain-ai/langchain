@@ -16,6 +16,8 @@ Learn more about the methods used in this template from [Cloud SQL for PostgreSQ
     * `DB_USER`
     * `DB_PASSWORD`
 
+* Enable the [Vertex AI API](https://console.cloud.google.com/flows/enableapi?apiid=aiplatform.googleapis.com).
+
 * This template uses public IP address to connect to the Postgres database. A public IP address is required for local testing, but not required when deployed into a Google Cloud VPC network. Learn how to customize the IP address type for the [`PostgresEngine`](https://cloud.google.com/python/docs/reference/langchain-google-cloud-sql-pg/latest/langchain_google_cloud_sql_pg.engine.PostgresEngine).
 
 * This template uses [built-in database authentication](https://cloud.google.com/sql/docs/mysql/users) via a username and a password to quickly authenticate local database users. It is recommend to use IAM database authentication via local user or service account credentials. Learn how to customize the service account for the [`PostgresEngine`](https://cloud.google.com/python/docs/reference/langchain-google-cloud-sql-pg/latest/langchain_google_cloud_sql_pg.engine.PostgresEngine). Next, add this account as a new database user and grant privileges:

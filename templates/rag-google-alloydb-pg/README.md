@@ -17,6 +17,8 @@ To run this template, you will need to setup an AlloyDB instance and store vecto
     * `DB_USER`
     * `DB_PASSWORD`
 
+* Enable the [Vertex AI API](https://console.cloud.google.com/flows/enableapi?apiid=aiplatform.googleapis.com).
+
 * This template uses public IP address to connect to the AlloyDB database. A public IP address is required for local testing, but not required when deployed into a Google Cloud VPC network. Learn how to customize the IP address type for the [`AlloyDBEngine`](https://cloud.google.com/python/docs/reference/langchain-google-alloydb-pg/latest/langchain_google_alloydb_pg.engine.AlloyDBEngine).
 
 * This template uses [built-in database authentication](https://cloud.google.com/alloydb/docs/database-users/about) via a username and a password to quickly authenticate local database users. It is recommend to use IAM database authentication via local user or service account credentials. Learn how to customize the service account for the [`AlloyDBEngine`](https://cloud.google.com/python/docs/reference/langchain-google-alloydb-pg/latest/langchain_google_alloydb_pg.engine.AlloyDBEngine). Next, add this account as a new database user and grant privileges:
