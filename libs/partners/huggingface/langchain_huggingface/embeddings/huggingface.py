@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional  # type: ignore[import-not-found]
+from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
 from pydantic import BaseModel, ConfigDict, Field
@@ -83,7 +83,15 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
             sentence_transformers.SentenceTransformer.stop_multi_process_pool(pool)
         else:
             embeddings = self._client.encode(
-                texts, show_progress_bar=self.show_progress, **self.encode_kwargs
+                texts,
+                show_progress_bar=self.show_progress,
+                **self.encode_kwargs,  # type: ignore
+            )
+
+        if isinstance(embeddings, list):
+            raise TypeError(
+                "Expected embeddings to be a Tensor or a numpy array, "
+                "got a list instead."
             )
 
         return embeddings.tolist()
