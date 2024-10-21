@@ -53,11 +53,12 @@ class BaseLoader(ABC):  # noqa: B024
             try:
                 from langchain_text_splitters import RecursiveCharacterTextSplitter
             except ImportError as e:
-                raise ImportError(
+                msg = (
                     "Unable to import from langchain_text_splitters. Please specify "
                     "text_splitter or install langchain_text_splitters with "
                     "`pip install -U langchain-text-splitters`."
-                ) from e
+                )
+                raise ImportError(msg) from e
 
             _text_splitter: TextSplitter = RecursiveCharacterTextSplitter()
         else:
@@ -71,9 +72,8 @@ class BaseLoader(ABC):  # noqa: B024
         """A lazy loader for Documents."""
         if type(self).load != BaseLoader.load:
             return iter(self.load())
-        raise NotImplementedError(
-            f"{self.__class__.__name__} does not implement lazy_load()"
-        )
+        msg = f"{self.__class__.__name__} does not implement lazy_load()"
+        raise NotImplementedError(msg)
 
     async def alazy_load(self) -> AsyncIterator[Document]:
         """A lazy loader for Documents."""

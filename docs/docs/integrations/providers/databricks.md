@@ -113,7 +113,7 @@ See [Databricks SQL Agent](https://docs.databricks.com/en/large-language-models/
 Open Models
 -----------
 
-To directly integrate Databricks's open models hosted on HuggingFace, you can use the [HuggingFace Integration](/docs/integrations/platforms/huggingface) of LangChain.
+To directly integrate Databricks's open models hosted on HuggingFace, you can use the [HuggingFace Integration](/docs/integrations/providers/huggingface) of LangChain.
 
 ```
 from langchain_huggingface import HuggingFaceEndpoint
