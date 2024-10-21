@@ -1,21 +1,8 @@
-# Why Use LangChain?
+# Why LangChain?
 
-## Beliefs
+## Features
 
-There are two core beliefs that underpin the existence of LangChain:
-
-1. **Proliferation of [models](/docs/concepts/chat_models/) and associated components:** With the [rapid progress](https://ai.meta.com/blog/llama-3-2-connect-2024-vision-edge-mobile-devices/) in the AI ecosystem, we expect developers to have an increasing set of choices for [models](/docs/concepts/chat_models/) and [related components](https://medium.com/@bijit211987/power-of-vector-databases-for-gen-ai-applications-a63d4cf7e352) for AI applications. 
-Applications will combine these components in various ways. For example, [RAG](/docs/concepts/rag/) combines [models](/docs/concepts/chat_models/) with [retrieval systems](/docs/concepts/retrieval/)
-and [agents](https://langchain-ai.github.io/langgraph/concepts/agentic_concepts/) combine [models](/docs/concepts/chat_models/) with external [tools](/docs/concepts/tool_calling/).
-
-![Why](/img/why_langchain.png)
-
-2. **Developer demand for low-level control and customization:** While some model providers [will offer higher-level abstractions and no/low-code interfaces](https://openai.com/index/introducing-gpts/) for working with [models](/docs/concepts/chat_models/), we believe developers still will want to experiment with different provider and component combinations. 
-They will want the flexibility to build custom applications from lower-level components, tailored to specific needs.
-
-## Challenges and Needs
-
-These beliefs directly lead to two primary needs that LangChain aims to address:
+There are several primary needs that LangChain aims to address:
 
 1. **Standardized interfaces:** The growing number of [models](/docs/integrations/chat/) and [related components](/docs/integrations/vectorstores/) for AI applications has resulted in a wide variety of different APIs that developers need to learn and use. 
 This diversity can make it challenging for developers to switch between providers or combine components when building applications.
@@ -23,13 +10,16 @@ This diversity can make it challenging for developers to switch between provider
 2. **Orchestration:** As applications become more complex, combining multiple components and models, there's [a growing need to efficiently connect these elements into control flows](https://lilianweng.github.io/posts/2023-06-23-agent/) that can [accomplish diverse tasks](https://www.sequoiacap.com/article/generative-ais-act-o1/). 
 [Orchestration](https://en.wikipedia.org/wiki/Orchestration_(computing)) is crucial for building such applications.
 
+3. **Observability and evaluation:** As applications become more complex, it becomes increasingly difficult to understand what is happening within them. 
+Furthermore, the pace of development can become rate-limited by the [paradox of choice](https://en.wikipedia.org/wiki/Paradox_of_choice):
+for example, developers often wonder how to engineer their prompt or which LLM best balances accuracy, latency, and cost. 
+[Observability](https://en.wikipedia.org/wiki/Observability) and evaluations can help developers monitor their applications and rapidly answer these types of questions with confidence.
+
+4. **Deployment:** There's a growing need for seamless transition from prototype to production-ready applications.
+
 ## Standard Interfaces
 
-Why use a framework like LangChain when we can just call a particular LLM API directly? 
-This links back to the beliefs above: if you believe that you will only ever want to use a single LLM provider, then it is reasonable to just call their API directly and avoid the overhead of a framework like LangChain. 
-However, if you believe that you will want the flexibility to try out different LLM and / or component providers, then a framework like LangChain can make sense.
-
-This is because LangChain provides common interfaces for components that are central to many AI applications.
+LangChain provides common interfaces for components that are central to many AI applications.
 As an example, all [chat models](/docs/concepts/chat_models/) implement the [BaseChatModel](https://python.langchain.com/api_reference/core/language_models/langchain_core.language_models.chat_models.BaseChatModel.html) interface.
 This provides a standard way to interact with chat models, supporting important but often provider-specific features like [tool calling](/docs/concepts/tool_calling/) and [structured outputs](/docs/concepts/structured_outputs/).
 
@@ -126,6 +116,26 @@ Have a look at our free course, [Introduction to LangGraph](https://academy.lang
 
 :::
 
+## Observability and evaluation
+
+TODO
+
+## Deployment
+
+TODO
+
+## When To Use LangChain?
+
+1. **Flexibility to use different [models](/docs/concepts/chat_models/) and / or associated components:** With the [rapid progress](https://ai.meta.com/blog/llama-3-2-connect-2024-vision-edge-mobile-devices/) in the AI ecosystem, developers have an increasing set of choices in [models](/docs/concepts/chat_models/) and [related components](https://medium.com/@bijit211987/power-of-vector-databases-for-gen-ai-applications-a63d4cf7e352) for AI applications. 
+Applications can combine these components in various ways. For example, [RAG](/docs/concepts/rag/) combines [models](/docs/concepts/chat_models/) with [retrieval systems](/docs/concepts/retrieval/)
+and [agents](https://langchain-ai.github.io/langgraph/concepts/agentic_concepts/) combine [models](/docs/concepts/chat_models/) with external [tools](/docs/concepts/tool_calling/).
+Why use a framework like LangChain when we can just call a particular LLM API directly? 
+If you believe that you will only ever want to use a single LLM provider, then it is reasonable to just call their API directly. 
+However, if you believe that you will want the flexibility to try out different LLM and / or component providers, then a framework like LangChain can make sense for your application.
+
+2. **Need for low-level control and customization:** Some model providers [offer higher-level abstractions and no/low-code interfaces](https://openai.com/index/introducing-gpts/) for working with [models](/docs/concepts/chat_models/).
+These have many benefit. However, if you want to flexibility to experiment with different providers and build custom applications from lower-level components, tailored to specific needs, then a framework like LangChain can make sense for your application.
+
 ## Concluding Remarks
 
 LangChain offers standard interfaces for components that are central to many AI applications, which offers a few specific advantages:
@@ -135,3 +145,5 @@ LangChain offers standard interfaces for components that are central to many AI 
 LangChain and LangGraph support orchestration of components into more complex applications:
 - **LCEL:** Provides a standard way to chain components together for simpler applications.
 - **LangGraph:** Supports applications (e.g., [agents](/docs/concepts/agents/)) more complex needs including [advanced controllability](https://langchain-ai.github.io/langgraph/concepts/persistence/), [human-in-the-loop](https://langchain-ai.github.io/langgraph/concepts/human_in_the_loop/), or [memory](https://langchain-ai.github.io/langgraph/concepts/memory/).
+
+TODO: Add observability and evaluation.
