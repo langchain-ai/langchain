@@ -40,6 +40,7 @@ Please review the [chat model integrations](/docs/integrations/chat/) for a list
 Models that do **not** include the prefix "Chat" in their name or include "LLM" as a suffix in their name typically refer to older models that do not follow the chat model interface and instead use an interface that takes a string as input and returns a string as output.
 :::
 
+
 ## Interface
 
 LangChain chat models implement the [BaseChatModel](https://python.langchain.com/api_reference/core/language_models/langchain_core.language_models.chat_models.BaseChatModel.html) interface. Because [BaseChatModel] also implements the [Runnable Interface](/docs/concepts/runnables), chat models support a [standard streaming interface](/docs/concepts/streaming), [async programming](/docs/concepts/async), optimized [batching](/docs/concepts/runnables#batch), and more. Please see the [Runnable Interface](/docs/concepts/runnables) for more details.
@@ -47,6 +48,13 @@ LangChain chat models implement the [BaseChatModel](https://python.langchain.com
 Many of the key methods of chat models operate on [messages](/docs/concepts/messages) as input and return messages as output.
 
 Chat models offer a standard set of parameters that can be used to configure the model. These parameters are typically used to control the behavior of the model, such as the temperature of the output, the maximum number of tokens in the response, and the maximum time to wait for a response. Please see the [standard parameters](#standard-parameters) section for more details.
+
+:::note
+In documentation, we will often use the terms "LLM" and "Chat Model" interchangeably. This is because most modern LLMs are exposed to users via a chat model interface.
+
+However, LangChain also has implementations of older LLMs that do not follow the chat model interface and instead use an interface that takes a string as input and returns a string as output. These models are typically named without the "Chat" prefix (e.g., `Ollama`, `Anthropic`, `OpenAI`, etc.).
+These models implement the [BaseLLM](https://python.langchain.com/api_reference/core/language_models/langchain_core.language_models.llms.BaseLLM.html#langchain_core.language_models.llms.BaseLLM) interface and may be named with the "LLM" suffix (e.g., `OllamaLLM`, `AnthropicLLM`, `OpenAILLM`, etc.). Generally, users should not use these models.
+:::
 
 ### Key Methods
 
@@ -157,6 +165,3 @@ Please see the [how to cache chat model responses](/docs/how_to/#chat-model-cach
 * [Multimodality](/docs/concepts/multimodality)
 * [Structured outputs](/docs/concepts#structured_output)
 * [Tokens](/docs/concepts/tokens)
-
-
-
