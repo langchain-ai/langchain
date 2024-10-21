@@ -10,28 +10,33 @@ from urllib.parse import parse_qs, urlparse
 from xml.etree.ElementTree import ParseError  # OK: trusted-source
 
 from langchain_core.documents import Document
-from pydantic import model_validator
-from pydantic.dataclasses import dataclass
 
 from langchain_community.document_loaders.base import BaseLoader
 
 logger = logging.getLogger(__name__)
 
 SCOPES = ["https://www.googleapis.com/auth/youtube.readonly"]
+ALLOWED_SCHEMES = {"http", "https"}
+ALLOWED_NETLOCS = {
+    "youtu.be",
+    "m.youtube.com",
+    "youtube.com",
+    "www.youtube.com",
+    "www.youtube-nocookie.com",
+    "vid.plus",
+}
 
 
-@dataclass
 class GoogleApiClient:
     """Generic Google API Client.
 
     To use, you should have the ``google_auth_oauthlib,youtube_transcript_api,google``
     python package installed.
-    As the google api expects credentials you need to set up a google account and
+    As the google api expects credentials, you need to set up a google account and
     register your Service. "https://developers.google.com/docs/api/quickstart/python"
 
     *Security Note*: Note that parsing of the transcripts relies on the standard
         xml library but the input is viewed as trusted in this case.
-
 
     Example:
         .. code-block:: python
@@ -40,30 +45,27 @@ class GoogleApiClient:
             google_api_client = GoogleApiClient(
                 service_account_path=Path("path_to_your_sec_file.json")
             )
-
     """
 
-    credentials_path: Path = Path.home() / ".credentials" / "credentials.json"
-    service_account_path: Path = Path.home() / ".credentials" / "credentials.json"
-    token_path: Path = Path.home() / ".credentials" / "token.json"
+    def __init__(
+        self,
+        credentials_path: Path = Path.home() / ".credentials" / "credentials.json",
+        service_account_path: Path = Path.home() / ".credentials" / "credentials.json",
+        token_path: Path = Path.home() / ".credentials" / "token.json",
+    ):
+        # Validate paths
+        if not credentials_path.exists() and not service_account_path.exists():
+            raise ValueError(
+                "Must specify correct credentials_path or service_account_path"
+            )
 
-    def __post_init__(self) -> None:
+        self.credentials_path = credentials_path
+        self.service_account_path = service_account_path
+        self.token_path = token_path
         self.creds = self._load_credentials()
-
-    @model_validator(mode="before")
-    @classmethod
-    def validate_channel_or_videoIds_is_set(cls, values: Dict[str, Any]) -> Any:
-        """Validate that either folder_id or document_ids is set, but not both."""
-
-        if not values.get("credentials_path") and not values.get(
-            "service_account_path"
-        ):
-            raise ValueError("Must specify either channel_name or video_ids")
-        return values
 
     def _load_credentials(self) -> Any:
         """Load credentials."""
-        # Adapted from https://developers.google.com/drive/api/v3/quickstart/python
         try:
             from google.auth.transport.requests import Request
             from google.oauth2 import service_account
@@ -100,17 +102,6 @@ class GoogleApiClient:
                 token.write(creds.to_json())
 
         return creds
-
-
-ALLOWED_SCHEMES = {"http", "https"}
-ALLOWED_NETLOCS = {
-    "youtu.be",
-    "m.youtube.com",
-    "youtube.com",
-    "www.youtube.com",
-    "www.youtube-nocookie.com",
-    "vid.plus",
-}
 
 
 def _parse_video_id(url: str) -> Optional[str]:
@@ -334,7 +325,6 @@ class YoutubeLoader(BaseLoader):
         return video_info
 
 
-@dataclass
 class GoogleApiYoutubeLoader(BaseLoader):
     """Load all Videos from a `YouTube` Channel.
 
@@ -364,14 +354,23 @@ class GoogleApiYoutubeLoader(BaseLoader):
 
     """
 
-    google_api_client: GoogleApiClient
-    channel_name: Optional[str] = None
-    video_ids: Optional[List[str]] = None
-    add_video_info: bool = True
-    captions_language: str = "en"
-    continue_on_failure: bool = False
-
-    def __post_init__(self) -> None:
+    def __init__(
+        self,
+        google_api_client: GoogleApiClient,
+        channel_name: Optional[str] = None,
+        video_ids: Optional[List[str]] = None,
+        add_video_info: bool = True,
+        captions_language: str = "en",
+        continue_on_failure: bool = False,
+    ):
+        if not channel_name and not video_ids:
+            raise ValueError("Must specify either channel_name or video_ids")
+        self.google_api_client = google_api_client
+        self.channel_name = channel_name
+        self.video_ids = video_ids
+        self.add_video_info = add_video_info
+        self.captions_language = captions_language
+        self.continue_on_failure = continue_on_failure
         self.youtube_client = self._build_youtube_client(self.google_api_client.creds)
 
     def _build_youtube_client(self, creds: Any) -> Any:
@@ -389,14 +388,6 @@ class GoogleApiYoutubeLoader(BaseLoader):
             )
 
         return build("youtube", "v3", credentials=creds)
-
-    @model_validator(mode="before")
-    @classmethod
-    def validate_channel_or_videoIds_is_set(cls, values: Dict[str, Any]) -> Any:
-        """Validate that either folder_id or document_ids is set, but not both."""
-        if not values.get("channel_name") and not values.get("video_ids"):
-            raise ValueError("Must specify either channel_name or video_ids")
-        return values
 
     def _get_transcripe_for_video_id(self, video_id: str) -> str:
         from youtube_transcript_api import NoTranscriptFound, YouTubeTranscriptApi
