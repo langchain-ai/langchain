@@ -29,7 +29,7 @@ All retrievers implement a simple interface for retrieving documents using natur
 ## Interface 
 
 The only requirement for a retriever is the ability to accepts a query and return documents. 
-In particular, LangChain's retriever class only requires that the `_get_relevant_documents` method is implemented, which takes a `query: str` and returns a list of [Document](https://api.python.langchain.com/en/latest/documents/langchain_core.documents.base.Document.html) objects that are most relevant to the query.
+In particular, [LangChain's retriever class](https://api.python.langchain.com/en/latest/retrievers/langchain_core.retrievers.BaseRetriever.html) only requires that the `_get_relevant_documents` method is implemented, which takes a `query: str` and returns a list of [Document](https://api.python.langchain.com/en/latest/documents/langchain_core.documents.base.Document.html) objects that are most relevant to the query.
 The underlying logic used to get relevant documents is specified by the retriever and can be whatever is most useful for the application.
 
 A LangChain retriever is a [runnable](/docs/how_to/lcel_cheatsheet/), which is a standard interface is for LangChain components. 

@@ -3,7 +3,7 @@
 ## Overview 
 
 Many AI applications interact directly with humans. In these cases, it is approrpiate for models to respond in natural langague. 
-But what about cases where we want a model to also interact *directly* with systems, such as databases or an API?
+But what about cases where we want a model to also interact with systems, such as databases or an API?
 These systems often have a particular input schema; for example, APIs frequently have a required payload structure.
 This need motivates the concept of *tool calling*. You can use [tool calling](https://platform.openai.com/docs/guides/function-calling/example-use-cases) to request model responses that match a particular schema.
 
@@ -15,9 +15,9 @@ You will sometimes hear the term `function calling`. We use this term interchang
 
 ## Key Concepts 
 
-**(1) Tool Creation:** The tool needs to be described to the model so that the model knows what arguments to provide when it decides to call the tool.
-TODO: @eyurtsev to elaborate. **(2) Tool Binding:** The tool needs to be connected to a model that supports tool calling. 
-This gives the model awarenes of the tool and the associated input schema required by the tool.
+**(1) Tool Creation:** The [tool](/docs/concepts/tools/) needs to be described to the model so that the model knows what arguments to provide when it decides to call the tool.
+**(2) Tool Binding:** The tool needs to be connected to a model that supports tool calling. 
+This gives the model awareness of the tool and the associated input schema required by the tool.
 **(3) Tool Calling:** When appropriate, the model can decide to call a tool and ensure its response conforms to the tool's input schema.
 **(4) Tool Execution:** The tool can be executed using the arguments provided by the model.
 
@@ -25,25 +25,31 @@ This gives the model awarenes of the tool and the associated input schema requir
 
 ## Recommended usage
 
-This psuedo-code illustrates the recommended workflow for using tool calling. 
+This pseudo-code illustrates the recommended workflow for using tool calling. 
 Created tools are passed to `.bind_tools()` method as a list.
 This model can be called, as usual. If a tool call is made, model's response will contain the tool call arguments.
-The tool call arguemtns can be passed directly to the tool.
+The tool call arguments can be passed directly to the tool.
 
 ```python
 # Tool creation
 tools = [my_tool]
 # Tool binding
-modelwtools = model.bind_tools(tools)
+model_with_tools = model.bind_tools(tools)
 # Tool calling 
-response = modelwtools.invoke(user_input)
-# Tool execution
-tool_output = my_tool(response.tool_calls)
+response = model_with_tools.invoke(user_input)
 ```
 
 ## Tool Creation 
+ 
+There are various ways to create [tools](/docs/concepts/tools/) for use with [models](/docs/concepts/chat_models/) that support tool calling.
 
-TODO: @eyurtsev to add links and summary of the conceptual guide. 
+:::info[Further reading]
+
+* See our conceptual guide on [tools](/docs/concepts/tools/) for more details.
+* See our [model integrations](/docs/integrations/chat/) that support tool calling.
+* See our [how-to guide](/docs/how_to/tool_calling/) on tool calling.
+
+:::
 
 ## Tool Binding 
 
@@ -106,11 +112,20 @@ For more details on usage, see our [how-to guides](/docs/how_to/#tools)!
 
 ## Tool execution
 
-TODO: @eyurtsev @vbarda let's discuss this. This should also link to tool execution in LangGraph. 
+[tools](/docs/concepts/tools/) implement the [Runnable](/docs/concepts/runnables/) interface, which means that they can be invoked (e.g., `tool.invoke(args)`) directly.
+
+[LangGraph](https://langchain-ai.github.io/langgraph/) offers pre-built components (e.g., [`ToolNode`](https://langchain-ai.github.io/langgraph/reference/prebuilt/#toolnode)) that will often invoke the tool in behalf of the user.
+
+:::info[Further reading]
+
+* See our [how-to guide](/docs/how_to/tool_calling/) on tool calling.
+* See the [LangGraph documentation on using ToolNode](https://langchain-ai.github.io/langgraph/how-tos/tool-calling/).
+
+:::
 
 ## Best practices
 
-When designing tools to be used by a model, it is important to keep in mind that:
+When designing [tools](/docs/concepts/tools/) to be used by a model, it is important to keep in mind that:
 
 * Models that have explicit [tool-calling APIs](/docs/concepts/#functiontool-calling) will be better at tool calling than non-fine-tuned models.
 * Models will perform better if the tools have well-chosen names and descriptions.
