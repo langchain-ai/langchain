@@ -1,4 +1,29 @@
 # LangGraph
 
-PLACEHOLDER TO BE REPLACED BY ACTUAL DOCUMENTATION
-USED TO MAKE SURE THAT WE DO NOT FORGET TO ADD LINKS LATER
+## Overview
+
+[LangGraph](https://langchain-ai.github.io/langgraph/) is a library for building stateful, multi-actor applications with LLMs, used to create agent and multi-agent workflows. Compared to other LLM frameworks, it offers these core benefits: cycles, controllability, and persistence. LangGraph allows you to define flows that involve cycles, essential for most agentic architectures, differentiating it from DAG-based solutions. As a very low-level framework, it provides fine-grained control over both the flow and state of your application, crucial for creating reliable agents. Additionally, LangGraph includes built-in persistence, enabling advanced human-in-the-loop and memory features.
+
+LangGraph is inspired by [Pregel](https://research.google/pubs/pub37252/) and [Apache Beam](https://beam.apache.org/). The public interface draws inspiration from [NetworkX](https://networkx.org/documentation/latest/). LangGraph is built by LangChain Inc, the creators of LangChain, but can be used without LangChain.
+
+To learn more about LangGraph, check out our first LangChain Academy course, *Introduction to LangGraph*, available for free [here](https://academy.langchain.com/courses/intro-to-langgraph).
+
+### Key Features
+
+- **Cycles and Branching**: Implement loops and conditionals in your apps.
+- **Persistence**: Automatically save state after each step in the graph. Pause and resume the graph execution at any point to support error recovery, human-in-the-loop workflows, time travel and more.
+- **Human-in-the-Loop**: Interrupt graph execution to approve or edit next action planned by the agent.
+- **Streaming Support**: Stream outputs as they are produced by each node (including token streaming).
+- **Integration with LangChain**: LangGraph integrates seamlessly with [LangChain](https://github.com/langchain-ai/langchain/) and [LangSmith](https://docs.smith.langchain.com/) (but does not require them).
+
+## How does it compare to LCEL?
+
+The [**L**ang**C**hain **E**xpression **L**anguage (LCEL)](/docs/concepts/lcel) is an orchestration layer that allows LangChain to handle the run-time execution of chains in an optimized way.
+
+While we have seen users run chains with hundreds of steps in production, we generally recommend using LCEL for simpler orchestration tasks. When the application requires complex state management, branching, cycles or multiple agents, we recommend that users take advantage of [LangGraph](/docs/concepts/langgraph).
+
+If you are build complex LLM applications that may require multiple agents, branching, cycles, or advanced state management, LangGraph is the right tool for you, and remember that you can still use LCEL within individual nodes in LangGraph.
+
+## Documentation
+
+For additional information on LangGraph, please visit the [LangGraph documentation](https://langchain-ai.github.io/langgraph/) page.
