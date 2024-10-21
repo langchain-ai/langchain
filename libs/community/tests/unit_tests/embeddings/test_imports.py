@@ -7,6 +7,7 @@ EXPECTED_ALL = [
     "AzureOpenAIEmbeddings",
     "BaichuanTextEmbeddings",
     "ClarifaiEmbeddings",
+    "ClovaXEmbeddings",
     "CohereEmbeddings",
     "DatabricksEmbeddings",
     "ElasticsearchEmbeddings",
