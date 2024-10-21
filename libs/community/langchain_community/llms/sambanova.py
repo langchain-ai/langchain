@@ -561,20 +561,65 @@ class SambaNovaCloud(LLM):
     """
     SambaNova Cloud large language models.
 
-    To use, you should have the environment variables
-    ``SAMBANOVA_URL`` set with your SambaNova Cloud URL. default is http://cloud.sambanova.ai/
-    ``SAMBANOVA_API_KEY`` set with your SambaNova Cloud API Key.
+    Setup:
+        To use, you should have the environment variables:
+        ``SAMBANOVA_URL`` set with SambaNova Cloud URL.
+        defaults to http://cloud.sambanova.ai/
+        ``SAMBANOVA_API_KEY`` set with your SambaNova Cloud API Key.
+        Example:
+        .. code-block:: python
+            from langchain_community.llms.sambanova  import SambaNovaCloud
+            SambaNovaCloud(
+                sambanova_api_key="your-SambaNovaCloud-API-key,
+                model = model name,
+                max_tokens = max number of tokens to generate,
+                temperature = model temperature,
+                top_p = model top p,
+                top_k = model top k
+            )
+    Key init args — completion params:
+        model: str
+            The name of the model to use, e.g., Meta-Llama-3-70B-Instruct-4096
+            (set for CoE endpoints).
+        streaming: bool
+            Whether to use streaming handler when using non streaming methods
+        max_tokens: int
+            max tokens to generate
+        temperature: float
+            model temperature
+        top_p: float
+            model top p
+        top_k: int
+            model top k
 
-    Example:
-    .. code-block:: python
-
-        SambaNovaCloud(
-            sambanova_url = SambaNova cloud endpoint URL,
-            sambanova_api_key = set with your SambaNova cloud API key,
-            max_tokens = mas number of tokens to generate
-            stop_tokens = list of stop tokens
-            model = model name
-        )
+    Key init args — client params:
+        sambanova_url: str
+            SambaNovaCloud Url defaults to http://cloud.sambanova.ai/
+        sambanova_api_key: str
+            SambaNovaCloud api key
+    Instantiate:
+        .. code-block:: python
+            from langchain_community.llms.sambanova  import SambaNovaCloud
+            SambaNovaCloud(
+                sambanova_api_key="your-SambaNovaCloud-API-key,
+                model = model name,
+                max_tokens = max number of tokens to generate,
+                temperature = model temperature,
+                top_p = model top p,
+                top_k = model top k
+            )
+    Invoke:
+        .. code-block:: python
+            prompt = "tell me a joke"
+            response = llm.invoke(prompt)
+    Stream:
+        .. code-block:: python
+        for chunk in llm.stream(prompt):
+            print(chunk, end="", flush=True)
+    Async:
+        .. code-block:: python
+        response = llm.ainvoke(prompt)
+        await response
     """
 
     sambanova_url: str = Field(default="")
