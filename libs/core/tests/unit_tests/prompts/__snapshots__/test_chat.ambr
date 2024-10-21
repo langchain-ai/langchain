@@ -3119,6 +3119,7 @@
                   'template': dict({
                     'url': 'data:image/jpeg;base64,{my_image}',
                   }),
+                  'template_format': 'f-string',
                 }),
                 'lc': 1,
                 'name': 'ImagePromptTemplate',
@@ -3138,6 +3139,7 @@
                   'template': dict({
                     'url': 'data:image/jpeg;base64,{my_image}',
                   }),
+                  'template_format': 'f-string',
                 }),
                 'lc': 1,
                 'name': 'ImagePromptTemplate',
@@ -3157,6 +3159,7 @@
                   'template': dict({
                     'url': '{my_other_image}',
                   }),
+                  'template_format': 'f-string',
                 }),
                 'lc': 1,
                 'name': 'ImagePromptTemplate',
@@ -3177,6 +3180,7 @@
                     'detail': 'medium',
                     'url': '{my_other_image}',
                   }),
+                  'template_format': 'f-string',
                 }),
                 'lc': 1,
                 'name': 'ImagePromptTemplate',
@@ -3195,6 +3199,7 @@
                   'template': dict({
                     'url': 'https://www.langchain.com/image.png',
                   }),
+                  'template_format': 'f-string',
                 }),
                 'lc': 1,
                 'name': 'ImagePromptTemplate',
@@ -3213,6 +3218,7 @@
                   'template': dict({
                     'url': 'data:image/jpeg;base64,foobar',
                   }),
+                  'template_format': 'f-string',
                 }),
                 'lc': 1,
                 'name': 'ImagePromptTemplate',
@@ -3231,6 +3237,7 @@
                   'template': dict({
                     'url': 'data:image/jpeg;base64,foobar',
                   }),
+                  'template_format': 'f-string',
                 }),
                 'lc': 1,
                 'name': 'ImagePromptTemplate',
