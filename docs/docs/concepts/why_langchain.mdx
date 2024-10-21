@@ -4,18 +4,20 @@
 
 There are several primary needs that LangChain aims to address:
 
-1. **Standardized interfaces:** The growing number of [models](/docs/integrations/chat/) and [related components](/docs/integrations/vectorstores/) for AI applications has resulted in a wide variety of different APIs that developers need to learn and use. 
+1. **Standard component interface:** The growing number of [models](/docs/integrations/chat/) and [related components](/docs/integrations/vectorstores/) for AI applications has resulted in a wide variety of different APIs that developers need to learn and use. 
 This diversity can make it challenging for developers to switch between providers or combine components when building applications.
 
-2. **Orchestration:** As applications become more complex, combining multiple components and models, there's [a growing need to efficiently connect these elements into control flows](https://lilianweng.github.io/posts/2023-06-23-agent/) that can [accomplish diverse tasks](https://www.sequoiacap.com/article/generative-ais-act-o1/). 
+2. **Enhanced component capabilities:** Many components in LangChain support additional features that are particularly useful in AI applications, such as features that mitigate latency and rate limits with many [models](/docs/integrations/chat/)].
+
+3. **Orchestration:** As applications become more complex, combining multiple components and models, there's [a growing need to efficiently connect these elements into control flows](https://lilianweng.github.io/posts/2023-06-23-agent/) that can [accomplish diverse tasks](https://www.sequoiacap.com/article/generative-ais-act-o1/). 
 [Orchestration](https://en.wikipedia.org/wiki/Orchestration_(computing)) is crucial for building such applications.
 
-3. **Observability and evaluation:** As applications become more complex, it becomes increasingly difficult to understand what is happening within them. 
+4. **Observability and evaluation:** As applications become more complex, it becomes increasingly difficult to understand what is happening within them. 
 Furthermore, the pace of development can become rate-limited by the [paradox of choice](https://en.wikipedia.org/wiki/Paradox_of_choice):
 for example, developers often wonder how to engineer their prompt or which LLM best balances accuracy, latency, and cost. 
 [Observability](https://en.wikipedia.org/wiki/Observability) and evaluations can help developers monitor their applications and rapidly answer these types of questions with confidence.
 
-4. **Deployment:** There's a growing need for seamless transition from prototype to production-ready applications.
+5. **Deployment:** There's a growing need for seamless transition from prototype to production-ready applications.
 
 ## Standard Interfaces
 
@@ -73,6 +75,16 @@ In the case of [retrievers](/docs/concepts/retrievers/), the `invoke` method tak
 documents = my_retriever.invoke("What is the meaning of life?")
 ```
 
+## Enhanced component capabilities
+
+In addition, to standardizing interfaces, LangChain's component implementations often provide additional features that are particularly useful in AI applications.
+As an example, [chat models](/docs/concepts/chat_models/) often suffer from high latency and / or rate limits, which can make them unsuitable for production applications.
+LangChain's [chat model](/docs/concepts/chat_models/) implementation has various features that help mitigate these issues:
+
+* **Async:** Many [chat models](/docs/concepts/chat_models/) support [asynchronous execution](/docs/concepts/async), which can help reduce latency by parallelizing requests.
+* **Re-tries:** Many [chat models](/docs/concepts/chat_models/) have built-in re-tries, which can help mitigate rate limits.
+* **Streaming and batching:** [Chat models](/docs/concepts/chat_models/) support [efficient batching](/docs/concepts/runnables#batch) and [a rich streaming API](/docs/concepts/streaming).
+
 ## Orchestration 
 
 While standardization for individual components is useful, we've increasingly seen that developers want to *combine* components into more complex applications. 
@@ -118,11 +130,26 @@ Have a look at our free course, [Introduction to LangGraph](https://academy.lang
 
 ## Observability and evaluation
 
-TODO
+The pace of AI application development is often rate-limited by high-quality evaluations because there is a paradox of choice. 
+Developers often wonder how to engineer their prompt or which LLM best balances accuracy, latency, and cost. 
+High quality tracing and evaluations can help you rapidly answer these types of questions with confidence.
+LangSmith is our platform that supports observability and evaluation for AI applications. 
+See our conceptual guides on [evaluations](https://docs.smith.langchain.com/concepts/evaluation) and [tracing](https://docs.smith.langchain.com/concepts/tracing) for more details.
+
+:::info[Further reading]
+
+See our video playlist on [LangSmith tracing and evaluations](https://youtube.com/playlist?list=PLfaIDFEXuae0um8Fj0V4dHG37fGFU8Q5S&feature=shared) for more details.
+
+:::
 
 ## Deployment
 
-TODO
+LangChain and LangGraph are both effective ways to build AI applications. 
+But a major pain point for developers is the transition from prototype to production-ready applications.
+With this in mind, LangChain offers [LangGraph Cloud](https://langchain-ai.github.io/langgraph/cloud/), a managed service for deploying and hosting LangGraph applications. 
+With one click, deploy a production-ready API with built-in persistence for your LangGraph application. 
+ LangGraph Cloud APIs are horizontally scalable and deployed with durable storage.
+LangGraph Cloud is seamlessly integrated with LangSmith and is accessible from within the LangSmith UI.
 
 ## When To Use LangChain?
 
@@ -136,7 +163,7 @@ However, if you believe that you will want the flexibility to try out different 
 2. **Need for low-level control and customization:** Some model providers [offer higher-level abstractions and no/low-code interfaces](https://openai.com/index/introducing-gpts/) for working with [models](/docs/concepts/chat_models/).
 These have many benefit. However, if you want to flexibility to experiment with different providers and build custom applications from lower-level components, tailored to specific needs, then a framework like LangChain can make sense for your application.
 
-## Concluding Remarks
+## Conclusion
 
 LangChain offers standard interfaces for components that are central to many AI applications, which offers a few specific advantages:
 - **Ease of swapping providers:** It allows you to swap out different component providers without having to change the underlying code.
@@ -146,4 +173,4 @@ LangChain and LangGraph support orchestration of components into more complex ap
 - **LCEL:** Provides a standard way to chain components together for simpler applications.
 - **LangGraph:** Supports applications (e.g., [agents](/docs/concepts/agents/)) more complex needs including [advanced controllability](https://langchain-ai.github.io/langgraph/concepts/persistence/), [human-in-the-loop](https://langchain-ai.github.io/langgraph/concepts/human_in_the_loop/), or [memory](https://langchain-ai.github.io/langgraph/concepts/memory/).
 
-TODO: Add observability and evaluation.
+Once you have an application, LangSmith and LangGraph Cloud work seamlessly together to provide observability, evaluation, and deployment for AI applications.
