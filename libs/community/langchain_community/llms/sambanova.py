@@ -264,7 +264,7 @@ class SambaStudio(LLM):
         Performs a post request to the LLM API.
 
         Args:
-        messages_dicts: List of role / content dicts to use as input.
+        prompt: The prompt to pass into the model
         stop: list of stop tokens
         streaming: wether to do a streaming call
 
