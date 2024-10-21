@@ -39,7 +39,8 @@ def parse_tool_call(
     """
     if "function" not in raw_tool_call:
         return None
-    if isinstance(raw_tool_call["function"]["arguments"], str):  # OpenAI returns arguments as str
+    if isinstance(raw_tool_call["function"]["arguments"], str):
+        # OpenAI returns arguments as str
         if partial:
             try:
                 function_args = parse_partial_json(
@@ -59,12 +60,14 @@ def parse_tool_call(
                     f"Received JSONDecodeError {e}"
                 )
                 raise OutputParserException(msg) from e
-    elif isinstance(raw_tool_call["function"]["arguments"], dict): # TGI returns arguments as dict
+    elif isinstance(raw_tool_call["function"]["arguments"], dict):
+        # TGI returns arguments as dict
         function_args = raw_tool_call["function"]["arguments"]
     else:
         msg = (
             f"Function {raw_tool_call['function']['name']} arguments:\n\n",
-            f"Arguments passed as {type(raw_tool_call['function']['name'])}. Must be str or dict."
+            f"Arguments passed as {type(raw_tool_call['function']['name'])}. "
+            "Must be str or dict."
             )
         raise OutputParserException(msg)
 
