@@ -46,6 +46,17 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
     show_progress: bool = False
     """Whether to show a progress bar."""
 
+    @validator('client')
+    def validate_client(cls, v):
+        if v is not None:
+            if not isinstance(v, SentenceTransformer):
+                raise ValueError("The provided client must be an instance of SentenceTransformer")
+            
+            # Check if it's an embedding model
+            if not hasattr(v, 'encode') or not callable(getattr(v, 'encode')):
+                raise ValueError("The provided model does not have an 'encode' method.")
+        return v
+
     def __init__(self, **kwargs: Any):
         """Initialize the sentence_transformer."""
         super().__init__(**kwargs)
@@ -56,10 +67,10 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
                 "Could not import sentence_transformers python package. "
                 "Please install it with `pip install sentence-transformers`."
             ) from exc
-
-        self.client = sentence_transformers.SentenceTransformer(
-            self.model_name, cache_folder=self.cache_folder, **self.model_kwargs
-        )
+        if not self.client:
+            self.client = sentence_transformers.SentenceTransformer(
+                self.model_name, cache_folder=self.cache_folder, **self.model_kwargs
+            )
 
     model_config = ConfigDict(
         extra="forbid",
