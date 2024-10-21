@@ -6,11 +6,11 @@
 * [Documents](/docs/concepts/retrievers/#interface)
 
 :::
-:::info[Note]
 
-This conceptual overview focuses on text-based embedding models. 
-Embedding models can also be [multi-modal](https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-multimodal-embeddings), allowing for the embedding of a wide variety of data types.
- 
+:::info[Note]
+This conceptual overview focuses on text-based embedding models.
+
+Embedding models can also be [multimodal](/docs/concepts/multimodality) though such models are not currently supported by LangChain.
 :::
 
 ## Overview
@@ -154,9 +154,9 @@ However, ColBERT does come with some trade-offs:
 - **Increased computational cost**: Processing and storing token-level embeddings requires more resources.
 - **Complexity**: Implementing and optimizing ColBERT can be more challenging than simpler embedding models.
 
-| Name              | When to use                                              | Description                                                                                                                                                                            |
-|-------------------|----------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [ColBERT](/docs/integrations/providers/ragatouille/#using-colbert-as-a-reranker)           | When higher granularity embeddings are needed.           | ColBERT uses contextually influenced embeddings for each token in the document and query to get a granular query-document similarity score. [Paper](https://arxiv.org/abs/2112.01488). |
+| Name                                                                             | When to use                                    | Description                                                                                                                                                                            |
+|----------------------------------------------------------------------------------|------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [ColBERT](/docs/integrations/providers/ragatouille/#using-colbert-as-a-reranker) | When higher granularity embeddings are needed. | ColBERT uses contextually influenced embeddings for each token in the document and query to get a granular query-document similarity score. [Paper](https://arxiv.org/abs/2112.01488). |
 
 :::tip
 

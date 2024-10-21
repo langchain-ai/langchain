@@ -13,7 +13,7 @@
 ## Overview
 
 Many different types of retrieval systems exist, including vectorstores, graph databases, and relational databases.
-With the rise on popuarity of large language models, retrieval systems have become an important component in AI application (e.g., [RAG](/docs/concepts/rag/)).
+With the rise on popularity of large language models, retrieval systems have become an important component in AI application (e.g., [RAG](/docs/concepts/rag/)).
 Because of their importance and variability, LangChain provides a uniform interface for interacting with different types of retrieval systems.
 The LangChain [retriever](/docs/concepts/retrievers/) interface is straightforward:
 
@@ -77,7 +77,7 @@ For example, you can build a retriever for a SQL database using text-to-SQL conv
 
 As discussed in our conceptual review of [retrieval](/docs/concepts/retrieval/), many search engines are based upon matching words in a query to the words in each document. 
 [BM25](https://en.wikipedia.org/wiki/Okapi_BM25#:~:text=BM25%20is%20a%20bag%2Dof,slightly%20different%20components%20and%20parameters.) and [TF-IDF](https://en.wikipedia.org/wiki/Tf%E2%80%93idf) are [two popular lexical search algorithms](https://cameronrwolfe.substack.com/p/the-basics-of-ai-powered-vector-search?utm_source=profile&utm_medium=reader2).
-LangChain has retreivers for many popular lexical search algorithms / engines. 
+LangChain has retrievers for many popular lexical search algorithms / engines.
 
 :::info[Further reading]
 
@@ -117,7 +117,7 @@ This motivates the concept of re-ranking, which takes the output of multiple ret
 
 ### Source Document Retention 
 
-Many retriers utilize some kind of index to make documents easily searchable.
+Many retrievers utilize some kind of index to make documents easily searchable.
 The process of indexing can include a transformation step (e.g., vectorstores often use document splitting). 
 Whatever transformation is used, can be very useful to retain a link between the *transformed document* and the original, giving the retriever the ability to return the *original* document.
 
@@ -131,10 +131,10 @@ LangChain has two different retrievers that can be used to address this challeng
 The [Multi-Vector](/docs/how_to/multi_vector/) retriever allows the user to use any document transformation (e.g., use an LLM to write a summary of the document) for indexing while retaining linkage to the source document. 
 The [ParentDocument](/docs/how_to/parent_document_retriever/) retriever links document chunks from a text-splitter transformation for indexing while retaining linkage to the source document. 
 
-| Name                      | Index Type                   | Uses an LLM               | When to Use                                                                                                                                   | Description                                                                                                                                                                                                                                                                                      |
-|---------------------------|------------------------------|---------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [ParentDocument](/docs/how_to/parent_document_retriever/)            | Vector store + Document Store | No                        | If your pages have lots of smaller pieces of distinct information that are best indexed by themselves, but best retrieved all together.       | This involves indexing multiple chunks for each document. Then you find the chunks that are most similar in embedding space, but you retrieve the whole parent document and return that (rather than individual chunks).                                                                         |
-| [Multi Vector](/docs/how_to/multi_vector/)              | Vector store + Document Store | Sometimes during indexing | If you are able to extract information from documents that you think is more relevant to index than the text itself.                          | This involves creating multiple vectors for each document. Each vector could be created in a myriad of ways - examples include summaries of the text and hypothetical questions.                                                                                                                 |
+| Name                                                      | Index Type                    | Uses an LLM               | When to Use                                                                                                                             | Description                                                                                                                                                                                                              |
+|-----------------------------------------------------------|-------------------------------|---------------------------|-----------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [ParentDocument](/docs/how_to/parent_document_retriever/) | Vector store + Document Store | No                        | If your pages have lots of smaller pieces of distinct information that are best indexed by themselves, but best retrieved all together. | This involves indexing multiple chunks for each document. Then you find the chunks that are most similar in embedding space, but you retrieve the whole parent document and return that (rather than individual chunks). |
+| [Multi Vector](/docs/how_to/multi_vector/)                | Vector store + Document Store | Sometimes during indexing | If you are able to extract information from documents that you think is more relevant to index than the text itself.                    | This involves creating multiple vectors for each document. Each vector could be created in a myriad of ways - examples include summaries of the text and hypothetical questions.                                         |
 
 :::info[Further reading]
 

@@ -62,13 +62,13 @@ TODO: There are many other ways to define schemas (Dataclasses, TypedDicts, Cust
 
 With a schema defined, we need a way to instruct the model to use it.
 While one approach is to include this schema in the prompt and *ask nicely* for the model to use it, this is not recommended. 
-Several more powerful methods that utilites native features in the model provider's API are available.
+Several more powerful methods that utilities native features in the model provider's API are available.
 
 ### Using Tool Calling
 
 Many [model providers support](/docs/integrations/chat/) tool calling, a concept discussed in more detail in our [tool calling guide](/docs/concepts/tool_calling/).
 In short, tool calling involves binding a tool to a model and, when appropriate, the model can *decide* to call this tool and ensure its response conforms to the tool's schema.
-With this in mind, the central concept is strightforward: *simply bind our schema to a model as a tool!*
+With this in mind, the central concept is straightforward: *simply bind our schema to a model as a tool!*
 Here is an example using the `ResponseFormatter` schema defined above:
 
 ```python
@@ -108,7 +108,7 @@ ai_msg.content
 ```
 
 One important point to flag: the model *still* returns a string, which needs to be parsed into a JSON object.
-This can, of course, simply use the `json` library or a JSON output parser if you need more adavanced functionality.
+This can, of course, simply use the `json` library or a JSON output parser if you need more advanced functionality.
 See this [how-to guide on the JSON output parser](/docs/how_to/output_parser_json) for more details.
 
 ```python
@@ -137,5 +137,7 @@ structured_output
 ResponseFormatter(answer="The powerhouse of the cell is the mitochondrion. Mitochondria are organelles that generate most of the cell's supply of adenosine triphosphate (ATP), which is used as a source of chemical energy.", followup_question='What is the function of ATP in the cell?')
 ```
 
-TODO: We need to explain the choice of implementation under the hood. Seems to be set with the `method` argument. How is default choosen? What if provider only has JSON mode? What inputs schemas are supported?
+TODO: We need to explain the choice of implementation under the hood. Seems to be set with the `method` argument. How is default chosen? What if provider only has JSON mode? What inputs schemas are supported?
+
+
 For more details on usage, see our [how-to guide](/docs/how_to/structured_output/#the-with_structured_output-method).

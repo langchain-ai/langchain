@@ -1,5 +1,4 @@
 # Vector stores
-
 <span data-heading-keywords="vector,vectorstore,vectorstores,vector store,vector stores"></span>
 
 :::info[Prerequisites]
@@ -13,7 +12,6 @@
 This conceptual overview focuses on text-based indexing and retrieval for simplicity. 
 However, embedding models can be [multi-modal](https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-multimodal-embeddings)
 and vectorstores can be used to store and retrieve a variety of data types beyond text.
- 
 :::
 
 ## Overview
@@ -94,7 +92,7 @@ Second, there needs to be an algorithm to efficiently perform this similarity se
 
 ### Similarity metrics
 
-A critical advange of embeddings vectors is they can be compared using many simple mathematical operations:
+A critical advantage of embeddings vectors is they can be compared using many simple mathematical operations:
 
 - **Cosine Similarity**: Measures the cosine of the angle between two vectors.
 - **Euclidean Distance**: Measures the straight-line distance between two points.
@@ -105,10 +103,10 @@ As an example, Pinecone allows the user to select the [similarity metric on inde
 
 ```python
 pc.create_index(
-        name=index_name,
-        dimension=3072,
-        metric="cosine",
-    )
+    name=index_name,
+    dimension=3072,
+    metric="cosine",
+)
 ```
 
 :::info[Further reading]
@@ -158,7 +156,7 @@ Vectorstore support for metadata filtering is typically dependent on the underly
 Here is example usage with [Pinecone](/docs/integrations/vectorstores/pinecone/#query-directly), showing that we filter for all documents that have the metadata key `source` with value `tweet`.
 
 ```python
-results = vector_store.similarity_search(
+results = vectorstore.similarity_search(
     "LangChain provides abstractions to make working with LLMs easy",
     k=2,
     filter={"source": "tweet"},
@@ -172,7 +170,7 @@ results = vector_store.similarity_search(
 
 :::
 
-## Advanced search and retreival techniques
+## Advanced search and retrieval techniques
 
 While algorithms like HNSW provide the foundation for efficient similarity search in many cases, additional techniques can be employed to improve search quality and diversity.
 For example, [maximal marginal relevance](https://python.langchain.com/v0.1/docs/modules/model_io/prompts/example_selectors/mmr/) is a re-ranking algorithm used to diversify search results, which is applied after the initial similarity search to ensure a more diverse set of results.
@@ -180,9 +178,9 @@ As a second example, some [vector stores](/docs/integrations/retrievers/pinecone
 At the moment, there is no unified way to perform hybrid search using LangChain vectorstores, but it is generally exposed as a keyword argument that is passed in with `similarity_search`.
 See this [how-to guide on hybrid search](/docs/how_to/hybrid/) for more details.
 
-| Name              | When to use                                              | Description                                                                                                                                                                            |
-|-------------------|----------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [Hybrid search](/docs/integrations/retrievers/pinecone_hybrid_search/)     | When combining keyword-based and semantic similarity.    | Hybrid search combines keyword and semantic similarity, marrying the benefits of both approaches. [Paper](https://arxiv.org/abs/2210.11934).                                                                               |
-| [Maximal Marginal Relevance (MMR)](/docs/integrations/vectorstores/pinecone/#maximal-marginal-relevance-searches) | When needing to diversify search results. | MMR attempts to diversify the results of a search to avoid returning similar and redundant documents.                                                                                  |
+| Name                                                                                                              | When to use                                           | Description                                                                                                                                  |
+|-------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
+| [Hybrid search](/docs/integrations/retrievers/pinecone_hybrid_search/)                                            | When combining keyword-based and semantic similarity. | Hybrid search combines keyword and semantic similarity, marrying the benefits of both approaches. [Paper](https://arxiv.org/abs/2210.11934). |
+| [Maximal Marginal Relevance (MMR)](/docs/integrations/vectorstores/pinecone/#maximal-marginal-relevance-searches) | When needing to diversify search results.             | MMR attempts to diversify the results of a search to avoid returning similar and redundant documents.                                        |
 
  
