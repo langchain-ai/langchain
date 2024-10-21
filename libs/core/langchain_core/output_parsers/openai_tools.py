@@ -65,7 +65,7 @@ def parse_tool_call(
         function_args = raw_tool_call["function"]["arguments"]
     else:
         msg = (
-            f"Function {raw_tool_call['function']['name']} arguments:\n\n",
+            f"Function {raw_tool_call['function']['name']} arguments:\n\n"
             f"Arguments passed as {type(raw_tool_call['function']['name'])}. "
             "Must be str or dict."
             )
