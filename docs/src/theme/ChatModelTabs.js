@@ -16,7 +16,6 @@ import CodeBlock from "@theme-original/CodeBlock";
  * @property {string} [togetherParams] - Parameters for Together chat model. Defaults to `model="mistralai/Mixtral-8x7B-Instruct-v0.1"`
  * @property {string} [nvidiaParams] - Parameters for Nvidia NIM model. Defaults to `model="meta/llama3-70b-instruct"`
  * @property {string} [awsBedrockParams] - Parameters for AWS Bedrock chat model.
- * @property {string} [awsSagemakerParams] - Parameters for AWS SageMaker chat model.
  * @property {boolean} [hideOpenai] - Whether or not to hide OpenAI chat model.
  * @property {boolean} [hideAnthropic] - Whether or not to hide Anthropic chat model.
  * @property {boolean} [hideCohere] - Whether or not to hide Cohere chat model.
@@ -47,7 +46,6 @@ export default function ChatModelTabs(props) {
     azureParams,
     nvidiaParams,
     awsBedrockParams,
-    awsSagemakerParams,
     hideOpenai,
     hideAnthropic,
     hideCohere,
@@ -81,7 +79,6 @@ export default function ChatModelTabs(props) {
     `\n    azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],\n    azure_deployment=os.environ["AZURE_OPENAI_DEPLOYMENT_NAME"],\n    openai_api_version=os.environ["AZURE_OPENAI_API_VERSION"],\n`;
   const nvidiaParamsOrDefault = nvidiaParams ?? `model="meta/llama3-70b-instruct"`
   const awsBedrockParamsOrDefault = awsBedrockParams ?? `model_id="anthropic.claude-3-5-sonnet-20240620-v1:0"`;
-  const awsSagemakerParamsOrDefault = awsSagemakerParams ?? `endpoint_name="your-endpoint-name"`;
 
   const llmVarName = customVarName ?? "model";
 
@@ -179,7 +176,7 @@ export default function ChatModelTabs(props) {
     {
       value: "AWS",
       label: "AWS",
-      text: `# For Bedrock:\nfrom langchain_aws import ChatBedrock\n\n${llmVarName} = ChatBedrock(${awsBedrockParamsOrDefault}) \n \n# For SageMaker Endpoints:\nfrom langchain_aws.sagemaker_endpoint import SagemakerEndpoint\n\n${llmVarName} = SagemakerEndpoint(${awsSagemakerParamsOrDefault})`,
+      text: `from langchain_aws import ChatBedrock\n\n${llmVarName} = ChatBedrock(${awsBedrockParamsOrDefault})`,
       apiKeyText: "# Ensure your AWS credentials are configured",
       packageName: "langchain-aws",
       default: false,
