@@ -15,6 +15,7 @@ import CodeBlock from "@theme-original/CodeBlock";
  * @property {string} [googleParams] - Parameters for Google chat model. Defaults to `model="gemini-pro"`
  * @property {string} [togetherParams] - Parameters for Together chat model. Defaults to `model="mistralai/Mixtral-8x7B-Instruct-v0.1"`
  * @property {string} [nvidiaParams] - Parameters for Nvidia NIM model. Defaults to `model="meta/llama3-70b-instruct"`
+ * @property {string} [awsBedrockParams] - Parameters for AWS Bedrock chat model.
  * @property {boolean} [hideOpenai] - Whether or not to hide OpenAI chat model.
  * @property {boolean} [hideAnthropic] - Whether or not to hide Anthropic chat model.
  * @property {boolean} [hideCohere] - Whether or not to hide Cohere chat model.
@@ -25,6 +26,7 @@ import CodeBlock from "@theme-original/CodeBlock";
  * @property {boolean} [hideTogether] - Whether or not to hide Together chat model.
  * @property {boolean} [hideAzure] - Whether or not to hide Microsoft Azure OpenAI chat model.
  * @property {boolean} [hideNvidia] - Whether or not to hide NVIDIA NIM model.
+ * @property {boolean} [hideAWS] - Whether or not to hide AWS models.
  * @property {string} [customVarName] - Custom variable name for the model. Defaults to `model`.
  */
 
@@ -43,6 +45,7 @@ export default function ChatModelTabs(props) {
     togetherParams,
     azureParams,
     nvidiaParams,
+    awsBedrockParams,
     hideOpenai,
     hideAnthropic,
     hideCohere,
@@ -53,6 +56,7 @@ export default function ChatModelTabs(props) {
     hideTogether,
     hideAzure,
     hideNvidia,
+    hideAWS,
     customVarName,
   } = props;
 
@@ -74,6 +78,7 @@ export default function ChatModelTabs(props) {
     azureParams ??
     `\n    azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],\n    azure_deployment=os.environ["AZURE_OPENAI_DEPLOYMENT_NAME"],\n    openai_api_version=os.environ["AZURE_OPENAI_API_VERSION"],\n`;
   const nvidiaParamsOrDefault = nvidiaParams ?? `model="meta/llama3-70b-instruct"`
+  const awsBedrockParamsOrDefault = awsBedrockParams ?? `model_id="anthropic.claude-3-5-sonnet-20240620-v1:0"`;
 
   const llmVarName = customVarName ?? "model";
 
@@ -168,6 +173,15 @@ export default function ChatModelTabs(props) {
       default: false,
       shouldHide: hideTogether,
     },
+    {
+      value: "AWS",
+      label: "AWS",
+      text: `from langchain_aws import ChatBedrock\n\n${llmVarName} = ChatBedrock(${awsBedrockParamsOrDefault})`,
+      apiKeyText: "# Ensure your AWS credentials are configured",
+      packageName: "langchain-aws",
+      default: false,
+      shouldHide: hideAWS,
+    },
   ];
 
   return (
@@ -175,10 +189,16 @@ export default function ChatModelTabs(props) {
       {tabItems
         .filter((tabItem) => !tabItem.shouldHide)
         .map((tabItem) => {
-          const apiKeyText = `import getpass
+          let apiKeyText = "";
+          if (tabItem.apiKeyName) {
+            apiKeyText = `import getpass
 import os
 
 os.environ["${tabItem.apiKeyName}"] = getpass.getpass()`;
+          } else if (tabItem.apiKeyText) {
+            apiKeyText = tabItem.apiKeyText;
+          }
+
           return (
             <TabItem
               key={tabItem.value}
@@ -186,8 +206,12 @@ os.environ["${tabItem.apiKeyName}"] = getpass.getpass()`;
               label={tabItem.label}
               default={tabItem.default}
             >
-              <CodeBlock language="bash">{`pip install -qU ${tabItem.packageName}`}</CodeBlock>              
-              <CodeBlock language="python">{apiKeyText + "\n\n" + tabItem.text}</CodeBlock>
+              <CodeBlock language="bash">
+                {`pip install -qU ${tabItem.packageName}`}
+              </CodeBlock>
+              <CodeBlock language="python">
+                {apiKeyText ? apiKeyText + "\n\n" + tabItem.text : tabItem.text}
+              </CodeBlock>
             </TabItem>
           );
         })
