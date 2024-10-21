@@ -1,0 +1,138 @@
+# Why does LangChain exist?
+
+## Beliefs
+
+There are two core beliefs that underpin the existence of LangChain:
+
+1. **Proliferation of LLMs and associated components:** [With the rapid progress in open source models](https://ai.meta.com/blog/llama-3-2-connect-2024-vision-edge-mobile-devices/), we expect developers to have an increasing number of choices for [language models](/docs/concepts/chat_models/) and related components. 
+Many applications will combine these models with various tools and systems. For example:
+   - [RAG](/docs/concepts/rag/) combines [language models](/docs/concepts/chat_models/) with [retrieval systems](/docs/concepts/retrieval/).
+   - [Agents](https://langchain-ai.github.io/langgraph/concepts/agentic_concepts/) typically integrate [language models](/docs/concepts/chat_models/) with external tools.
+
+![Why](/img/why_langchain.png)
+
+2. **Developer demand for low-level control and customization:** While model providers [offer higher-level abstractions and no/low-code interfaces](https://openai.com/index/introducing-gpts/) for working with [language models](/docs/concepts/chat_models/), we believe developers still will want to experiment with different provider and component combinations. 
+This flexibility allows for building custom applications from lower-level components, tailored to specific needs.
+
+## Challenges and Needs
+
+These beliefs directly lead to two primary needs that LangChain aims to address:
+
+1. **Lack of standardized component interfaces:** The growing number of [model](/docs/integrations/chat/) and [component](/docs/integrations/vectorstores/) providers for AI applications has resulted in a variety of different APIs and interfaces. 
+This diversity makes it challenging for developers to switch between providers or combine components when building applications.
+
+2. **Need for effective orchestration:** As applications become more complex, combining multiple components and models, there's [a growing need to efficiently connect these elements into control flows](https://lilianweng.github.io/posts/2023-06-23-agent/) that can [accomplish diverse tasks](https://www.sequoiacap.com/article/generative-ais-act-o1/). 
+Orchestration is crucial for building such applications.
+
+## Standard Interfaces
+
+Some [criticisms of LangChain](https://www.reddit.com/r/LangChain/comments/1c6zktz/llms_frameworks_langchain_llamaindex_griptape/) have asked why use a framework like LangChain when we can just call a particular LLM API directly? 
+This links back to the beliefs above: if you believe that you will only ever want to use a single LLM provider, then it is reasonable to just call their API directly and avoid the overhead of a framework like LangChain. 
+However, if you believe that you will want the flexibility to try out different LLM and / or component providers, then a framework like LangChain can make sense.
+
+This is because LangChain provides common interfaces for components that are central to many AI applications.
+As an example, all [chat models](/docs/concepts/chat_models/) implement the [BaseChatModel](https://python.langchain.com/api_reference/core/language_models/langchain_core.language_models.chat_models.BaseChatModel.html) interface.
+This provides a standard way to interact with chat models, supporting important but often provider-specific features like [tool calling](/docs/concepts/tool_calling/) and [structured outputs](/docs/concepts/structured_output/).
+
+LangChain also provides a common [runnable interface](/docs/concepts/runnables/) that works across *many* components that are common in AI applications.
+The [runnable interface](/docs/concepts/runnables/) has a few standard methods to interact with components:
+
+* `invoke`: Accepts an input and returns an output.
+* `batch`: Accepts a list of inputs and returns a list of outputs.
+* `stream`: Accepts an input and returns a generator that yields outputs.
+
+### Example: Chat models 
+
+Many [model providers](/docs/concepts/chat_models/) support [tool calling](/docs/concepts/tool_calling/), a critical features for many applications (e.g.,[agents](https://langchain-ai.github.io/langgraph/concepts/agentic_concepts/)), that allows a developer to request model responses that match a particular schema.
+The APIs for each provider differ. 
+LangChain's [chat model](/docs/concepts/chat_models/) interface provides a common way to bind tools to a model in order to support [tool calling](/docs/concepts/tool_calling/): 
+
+```python
+# Tool creation
+tools = [my_tool]
+# Tool binding
+model_with_tools = model.bind_tools(tools)
+```
+
+Similarly, getting models to produce [structured outputs](/docs/concepts/structured_output/) is an extremely common use case. 
+Providers support different approaches for this, including [JSON mode or tool calling](https://platform.openai.com/docs/guides/structured-outputs), with different APIs.
+LangChain's [chat model](/docs/concepts/chat_models/) interface provides a common way to produce structured outputs using the `with_structured_output()` method:
+
+```python
+# Define schema
+schema = {"foo": "bar"}
+# Bind schema to model
+model_with_structure = model.with_structured_output(schema)
+```
+
+Because all chat models implement the [runnable interface](/docs/concepts/runnables/), they all - for example - be `invoked`. 
+In the case of chat models, the `invoke` method takes a string, list of chat a list of [messages](/docs/concepts/messages), or a [PromptValue](https://api.python.langchain.com/en/latest/prompt_values/langchain_core.prompt_values.PromptValue.html) and returns a list of [messages](/docs/concepts/messages) as output.
+
+```python
+# Invoke the model to produce structured output that matches the schema
+messages = model_with_structure.invoke(user_input)
+```
+
+### Example: Retrievers
+
+In the context of [RAG](/docs/concepts/rag/) and LLM application components, LangChain's [retriever](/docs/concepts/retriever/) interface provides a standard way to connect to many different types of data services or databases (e.g., vector stores or databases).
+The underlying implementation of the retriever depends on the type of data store or database you are connecting to, but all retrievers implement the [runnable interface](/docs/concepts/runnables/). 
+Just as with the chat model example above, they can all be `invoked`. 
+In the case of [retrievers](/docs/concepts/retriever/), the `invoke` method takes a string and returns a list of [Documents](https://api.python.langchain.com/en/latest/documents/langchain_core.documents.base.Document.html) as output.
+
+```python
+documents = my_retriever.invoke("What is the meaning of life?")
+```
+
+## Orchestration 
+
+While standardization for individual components is useful, we've increasingly seen that developers want to *combine* components into more complex applications. 
+This motivates the need for [orchestration](https://en.wikipedia.org/wiki/Orchestration_(computing)).
+LangChain has a few different ways to achieve orchestration, allowing developers to build custom applications from lower-level components.
+
+### LCEL 
+
+As discussed, many individual components in LangChain implement the standard [runnable interface](/docs/concepts/runnables/). Not only does this provides common methods to interact with components, it also serves as a lego connector: it provides a uniform way to connect components together.
+The **L**ang**C**hain **E**xpression **L**anguage ([LCEL](/docs/concepts/lcel/)) is a general way to do this by connecting existing `Runnables` together.
+LCEL allows you to [chain](/docs/concepts/lcel/#runnablesequence) or [parallelize](/docs/concepts/lcel/#runnableparallel) components together using a common [composition syntax](/docs/concepts/lcel/#composition-syntax).
+
+:::info[Further reading]
+
+* The [LCEL cheatsheet](https://python.langchain.com/docs/how_to/lcel_cheatsheet/) shows common patterns that involve the Runnable interface and LCEL expressions.
+* Please see the following list of [how-to guides](/docs/how_to/#langchain-expression-language-lcel) that cover common tasks with LCEL.
+* A list of built-in `Runnables` can be found in the [LangChain Core API Reference](https://python.langchain.com/api_reference/core/runnables.html). Many of these Runnables are useful when composing custom "chains" in LangChain using LCEL.
+
+:::
+
+### LangGraph 
+
+While LCEL is useful for *chaining* together components, some applications (e.g., [agents](/docs/concepts/agents/)) demand higher complexity that is outside the scope of LCEL.
+There can be various reasons for this:
+
+* **Control flow:** The application requires complex patterns such as cycles (e.g., a loop that reiterates until a condition is met).
+* **Persistence:** The application needs to maintain short-term and / or long-term memory.
+* **Human-in-the-loop:** The application needs human interaction, e.g., pausing, reviewing, editing, approving certain steps.
+
+These needs motivate [LangGraph](https://langchain-ai.github.io/langgraph/concepts/high_level/), a library that gives the developer a high degree of control by expressing the flow of the application as a set of nodes and edges with built-in support for [persistence](https://langchain-ai.github.io/langgraph/concepts/persistence/), [human-in-the-loop](https://langchain-ai.github.io/langgraph/concepts/human_in_the_loop/), [memory](https://langchain-ai.github.io/langgraph/concepts/memory/), and other features.
+It's particularly  well suited for building [agents](https://langchain-ai.github.io/langgraph/concepts/agentic_concepts/) or [multi-agent](https://langchain-ai.github.io/langgraph/concepts/multi_agent/) applications. 
+Importantly, individual LangChain components or composed chains via LCEL can be used within LangGraph nodes.
+But, it is entirely optional to use LangChain components within LangGraph.
+And, finally, all compiled LangGraphs implement the [runnable interface](/docs/concepts/runnables/), which allows a standard way interact with, and connect to, them.
+
+![LangGraph and LangChain](/img/why_langchain_langgraph.png)
+
+:::info[Further reading]
+
+Have a look at our free course, [Introduction to LangGraph](https://academy.langchain.com/courses/intro-to-langgraph), to learn more about how to use LangGraph to build complex applications.
+
+:::
+
+## Concluding Remarks
+
+LangChain offers standard interfaces for components that are central to many AI applications, which offers a few specific advantages:
+- **Ease of swapping providers:** It allows you to swap out different component providers without having to change the underlying code.
+- **Advanced features:** It provides common methods for more advanced features, such as [streaming](/docs/concepts/runnables/#streaming), [tool calling](/docs/concepts/tool_calling/), or [supplying configuration](/docs/concepts/runnables/).
+
+LangChain and LangGraph support orchestration of components into more complex applications:
+- **LCEL:** Provides a standard way to chain components together for simpler applications.
+- **LangGraph:** Supports applications (e.g., [agents](/docs/concepts/agents/)) more complex needs including [advanced controllability](https://langchain-ai.github.io/langgraph/concepts/persistence/), [human-in-the-loop](https://langchain-ai.github.io/langgraph/concepts/human_in_the_loop/), or [memory](https://langchain-ai.github.io/langgraph/concepts/memory/).
