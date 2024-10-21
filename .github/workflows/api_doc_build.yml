@@ -82,6 +82,14 @@ jobs:
         with:
           repository: langchain-ai/langchain-ibm
           path: langchain-ibm
+      - uses: actions/checkout@v4
+        with:
+          repository: langchain-ai/langchain-azure
+          path: langchain-azure
+      - uses: actions/checkout@v4
+        with:
+          repository: langchain-ai/langchain-mongodb
+          path: langchain-mongodb
 
 
 
@@ -109,7 +117,9 @@ jobs:
             langchain/libs/partners/milvus \
             langchain/libs/partners/unstructured \
             langchain/libs/partners/databricks \
-            langchain/libs/partners/ibm
+            langchain/libs/partners/ibm \
+            langchain/libs/partners/azure-dynamic-sessions \
+            langchain/libs/partners/mongodb
           mv langchain-google/libs/genai langchain/libs/partners/google-genai
           mv langchain-google/libs/vertexai langchain/libs/partners/google-vertexai
           mv langchain-google/libs/community langchain/libs/partners/google-community
@@ -127,6 +137,8 @@ jobs:
           mv langchain-unstructured/libs/unstructured langchain/libs/partners/unstructured
           mv langchain-databricks/libs/databricks langchain/libs/partners/databricks
           mv langchain-ibm/libs/ibm langchain/libs/partners/ibm
+          mv langchain-azure/libs/azure-dynamic-sessions langchain/libs/partners/azure-dynamic-sessions
+          mv langchain-mongodb/libs/mongodb langchain/libs/partners/mongodb
 
       - name: Rm old html
         run:
