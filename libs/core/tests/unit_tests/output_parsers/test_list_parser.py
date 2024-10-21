@@ -3,6 +3,7 @@ from typing import TypeVar, cast
 
 from langchain_core.output_parsers.list import (
     CommaSeparatedListOutputParser,
+    CommaSeparatedNumericListOutputParser,
     MarkdownListOutputParser,
     NumberedListOutputParser,
 )
@@ -51,6 +52,65 @@ def test_multiple_items() -> None:
     parser = CommaSeparatedListOutputParser()
     text = "foo,bar,baz"
     expected = ["foo", "bar", "baz"]
+
+    assert parser.parse(text) == expected
+    assert add(parser.transform(t for t in text)) == expected
+    assert list(parser.transform(t for t in text)) == [[a] for a in expected]
+    assert list(parser.transform(t for t in text.splitlines(keepends=True))) == [
+        [a] for a in expected
+    ]
+    assert list(
+        parser.transform(" " + t if i > 0 else t for i, t in enumerate(text.split(" ")))
+    ) == [[a] for a in expected]
+    assert list(parser.transform(iter([text]))) == [[a] for a in expected]
+
+
+def test_single_numeric_list_item() -> None:
+    """Test that a string with a single item is parsed to a numeric list with
+    that item."""
+
+    parser = CommaSeparatedNumericListOutputParser()
+    text = "1"
+    expected = [1]
+
+    assert parser.parse(text) == expected
+    assert add(parser.transform(t for t in text)) == expected
+    assert list(parser.transform(t for t in text)) == [[a] for a in expected]
+    assert list(parser.transform(t for t in text.splitlines(keepends=True))) == [  # noqa E501
+        [a] for a in expected
+    ]
+    assert list(
+        parser.transform(" " + t if i > 0 else t for i, t in enumerate(text.split(" ")))  # noqa E501
+    ) == [[a] for a in expected]
+    assert list(parser.transform(iter([text]))) == [[a] for a in expected]
+
+
+def test_multiple_numeric_list_item_with_spaces() -> None:
+    """Test that a string with multiple comma-separated items
+    with spaces is parsed to a numeric list."""
+    parser = CommaSeparatedNumericListOutputParser()
+    text = "1, 2, 3"
+    expected = [1, 2, 3]
+
+    assert parser.parse(text) == expected
+    assert add(parser.transform(t for t in text)) == expected
+    assert list(parser.transform(t for t in text)) == [[a] for a in expected]
+    assert list(parser.transform(t for t in text.splitlines(keepends=True))) == [
+        [a] for a in expected
+    ]
+    assert list(
+        parser.transform(" " + t if i > 0 else t for i, t in enumerate(text.split(" ")))
+    ) == [[a] for a in expected]
+    assert list(parser.transform(iter([text]))) == [[a] for a in expected]
+
+
+def test_multiple_numeric_list_items() -> None:
+    """Test that a string with multiple comma-separated items is parsed to a
+    numeric list."""
+
+    parser = CommaSeparatedNumericListOutputParser()
+    text = "1,2,3"
+    expected = [1, 2, 3]
 
     assert parser.parse(text) == expected
     assert add(parser.transform(t for t in text)) == expected

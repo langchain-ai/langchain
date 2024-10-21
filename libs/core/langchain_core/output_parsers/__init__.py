@@ -21,6 +21,7 @@ from langchain_core.output_parsers.base import (
 from langchain_core.output_parsers.json import JsonOutputParser, SimpleJsonOutputParser
 from langchain_core.output_parsers.list import (
     CommaSeparatedListOutputParser,
+    CommaSeparatedNumericListOutputParser,
     ListOutputParser,
     MarkdownListOutputParser,
     NumberedListOutputParser,
@@ -44,6 +45,7 @@ __all__ = [
     "BaseOutputParser",
     "ListOutputParser",
     "CommaSeparatedListOutputParser",
+    "CommaSeparatedNumericListOutputParser",
     "NumberedListOutputParser",
     "MarkdownListOutputParser",
     "StrOutputParser",

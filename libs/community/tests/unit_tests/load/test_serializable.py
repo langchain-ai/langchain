@@ -126,6 +126,17 @@ def test_serializable_mapping() -> None:
             "chat_models",
             "ChatGoogleGenerativeAI",
         ),
+        (
+            "langchain",
+            "output_parsers",
+            "list",
+            "CommaSeparatedNumericListOutputParser",
+        ): (
+            "langchain_core",
+            "output_parsers",
+            "list",
+            "CommaSeparatedNumericListOutputParser",
+        ),
     }
     serializable_modules = import_all_modules("langchain")
 
