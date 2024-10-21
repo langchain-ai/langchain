@@ -68,7 +68,7 @@ def parse_tool_call(
             f"Function {raw_tool_call['function']['name']} arguments:\n\n"
             f"Arguments passed as {type(raw_tool_call['function']['name'])}. "
             "Must be str or dict."
-            )
+        )
         raise OutputParserException(msg)
 
     parsed = {
