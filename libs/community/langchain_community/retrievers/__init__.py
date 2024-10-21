@@ -105,6 +105,9 @@ if TYPE_CHECKING:
     from langchain_community.retrievers.qdrant_sparse_vector_retriever import (
         QdrantSparseVectorRetriever,
     )
+    from langchain_community.retrievers.rag_pro import (
+        RAGProRetriever,
+    )
     from langchain_community.retrievers.rememberizer import (
         RememberizerRetriever,
     )
@@ -191,6 +194,7 @@ _module_lookup = {
     "ZepCloudRetriever": "langchain_community.retrievers.zep_cloud",
     "ZillizRetriever": "langchain_community.retrievers.zilliz",
     "NeuralDBRetriever": "langchain_community.retrievers.thirdai_neuraldb",
+    "RAGProRetriever": "langchain_community.retrievers.rag_pro",
 }
 
 
@@ -247,4 +251,5 @@ __all__ = [
     "ZepRetriever",
     "ZepCloudRetriever",
     "ZillizRetriever",
+    "RAGProRetriever",
 ]
