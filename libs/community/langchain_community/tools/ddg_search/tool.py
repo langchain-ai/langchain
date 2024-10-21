@@ -98,7 +98,7 @@ class DuckDuckGoSearchResults(BaseTool):
         self,
         query: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> dict:
+    ) -> list[dict]:
         """Use the tool."""
         res = self.api_wrapper.results(query, self.max_results, source=self.backend)
 
