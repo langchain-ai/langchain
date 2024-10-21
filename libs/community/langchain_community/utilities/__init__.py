@@ -170,6 +170,9 @@ if TYPE_CHECKING:
     from langchain_community.utilities.zapier import (
         ZapierNLAWrapper,
     )
+    from langchain_community.utilities.oxylabs_search import (
+        OxylabsSearchAPIWrapper,
+    )
 
 __all__ = [
     "AlphaVantageAPIWrapper",
@@ -232,6 +235,7 @@ __all__ = [
     "WolframAlphaAPIWrapper",
     "YouSearchAPIWrapper",
     "ZapierNLAWrapper",
+    "OxylabsSearchAPIWrapper"
 ]
 
 _module_lookup = {
@@ -295,6 +299,7 @@ _module_lookup = {
     "WolframAlphaAPIWrapper": "langchain_community.utilities.wolfram_alpha",
     "YouSearchAPIWrapper": "langchain_community.utilities.you",
     "ZapierNLAWrapper": "langchain_community.utilities.zapier",
+    "OxylabsSearchAPIWrapper": "langchain_community.utilities.oxylabs_search",
 }
 
 REMOVED = {
