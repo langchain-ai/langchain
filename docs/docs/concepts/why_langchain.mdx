@@ -4,25 +4,24 @@
 
 There are two core beliefs that underpin the existence of LangChain:
 
-1. **Proliferation of LLMs and associated components:** [With the rapid progress in open source models](https://ai.meta.com/blog/llama-3-2-connect-2024-vision-edge-mobile-devices/), we expect developers to have an increasing number of choices for [language models](/docs/concepts/chat_models/) and related components. 
-Many applications will combine these models with various tools and systems. For example:
-   - [RAG](/docs/concepts/rag/) combines [language models](/docs/concepts/chat_models/) with [retrieval systems](/docs/concepts/retrieval/).
-   - [Agents](https://langchain-ai.github.io/langgraph/concepts/agentic_concepts/) typically integrate [language models](/docs/concepts/chat_models/) with external tools.
+1. **Proliferation of LLMs and associated components:** With the [rapid progress](https://ai.meta.com/blog/llama-3-2-connect-2024-vision-edge-mobile-devices/) in the AI ecosystem, we expect developers to have an increasing set of choices for [models](/docs/concepts/chat_models/) and [related components](https://medium.com/@bijit211987/power-of-vector-databases-for-gen-ai-applications-a63d4cf7e352) for AI applications. 
+Applications will combine these components in various ways. For example, [RAG](/docs/concepts/rag/) combines [models](/docs/concepts/chat_models/) with [retrieval systems](/docs/concepts/retrieval/)
+and [agents](https://langchain-ai.github.io/langgraph/concepts/agentic_concepts/) combine [models](/docs/concepts/chat_models/) with external [tools](/docs/concepts/tool_calling/).
 
 ![Why](/img/why_langchain.png)
 
-2. **Developer demand for low-level control and customization:** While model providers [offer higher-level abstractions and no/low-code interfaces](https://openai.com/index/introducing-gpts/) for working with [language models](/docs/concepts/chat_models/), we believe developers still will want to experiment with different provider and component combinations. 
-This flexibility allows for building custom applications from lower-level components, tailored to specific needs.
+2. **Developer demand for low-level control and customization:** While some model providers [will offer higher-level abstractions and no/low-code interfaces](https://openai.com/index/introducing-gpts/) for working with [models](/docs/concepts/chat_models/), we believe developers still will want to experiment with different provider and component combinations. 
+They will want the flexibility to build custom applications from lower-level components, tailored to specific needs.
 
 ## Challenges and Needs
 
 These beliefs directly lead to two primary needs that LangChain aims to address:
 
-1. **Lack of standardized component interfaces:** The growing number of [model](/docs/integrations/chat/) and [component](/docs/integrations/vectorstores/) providers for AI applications has resulted in a variety of different APIs and interfaces. 
-This diversity makes it challenging for developers to switch between providers or combine components when building applications.
+1. **Standardized interfaces:** The growing number of [models](/docs/integrations/chat/) and [related components](/docs/integrations/vectorstores/) for AI applications has resulted in a wide variety of different APIs that developers need to learn and use. 
+This diversity can make it challenging for developers to switch between providers or combine components when building applications.
 
-2. **Need for effective orchestration:** As applications become more complex, combining multiple components and models, there's [a growing need to efficiently connect these elements into control flows](https://lilianweng.github.io/posts/2023-06-23-agent/) that can [accomplish diverse tasks](https://www.sequoiacap.com/article/generative-ais-act-o1/). 
-Orchestration is crucial for building such applications.
+2. **Orchestration:** As applications become more complex, combining multiple components and models, there's [a growing need to efficiently connect these elements into control flows](https://lilianweng.github.io/posts/2023-06-23-agent/) that can [accomplish diverse tasks](https://www.sequoiacap.com/article/generative-ais-act-o1/). 
+[Orchestration](https://en.wikipedia.org/wiki/Orchestration_(computing)) is crucial for building such applications.
 
 ## Standard Interfaces
 
@@ -92,7 +91,7 @@ LangChain has a few different ways to achieve orchestration, allowing developers
 
 ### LCEL 
 
-As discussed, many individual components in LangChain implement the standard [runnable interface](/docs/concepts/runnables/). Not only does this provides common methods to interact with components, it also serves as a lego connector: it provides a uniform way to connect components together.
+As discussed, many individual components in LangChain implement the standard [runnable interface](/docs/concepts/runnables/). Not only does this provides common methods to interact with components, it also serves as a kind of "lego connector": it provides a uniform way to connect components together.
 The **L**ang**C**hain **E**xpression **L**anguage ([LCEL](/docs/concepts/lcel/)) is a general way to do this by connecting existing `Runnables` together.
 LCEL allows you to [chain](/docs/concepts/lcel/#runnablesequence) or [parallelize](/docs/concepts/lcel/#runnableparallel) components together using a common [composition syntax](/docs/concepts/lcel/#composition-syntax).
 
