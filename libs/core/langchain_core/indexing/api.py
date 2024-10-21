@@ -5,30 +5,24 @@ from __future__ import annotations
 import hashlib
 import json
 import uuid
+from collections.abc import AsyncIterable, AsyncIterator, Iterable, Iterator, Sequence
 from itertools import islice
 from typing import (
     Any,
-    AsyncIterable,
-    AsyncIterator,
     Callable,
-    Dict,
-    Iterable,
-    Iterator,
-    List,
     Literal,
     Optional,
-    Sequence,
-    Set,
     TypedDict,
     TypeVar,
     Union,
     cast,
 )
 
+from pydantic import model_validator
+
 from langchain_core.document_loaders.base import BaseLoader
 from langchain_core.documents import Document
 from langchain_core.indexing.base import DocumentIndex, RecordManager
-from langchain_core.pydantic_v1 import root_validator
 from langchain_core.vectorstores import VectorStore
 
 # Magic UUID to use as a namespace for hashing.
@@ -68,8 +62,9 @@ class _HashedDocument(Document):
     def is_lc_serializable(cls) -> bool:
         return False
 
-    @root_validator(pre=True)
-    def calculate_hashes(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def calculate_hashes(cls, values: dict[str, Any]) -> Any:
         """Root validator to calculate content and metadata hash."""
         content = values.get("page_content", "")
         metadata = values.get("metadata", {})
@@ -78,26 +73,28 @@ class _HashedDocument(Document):
 
         for key in forbidden_keys:
             if key in metadata:
-                raise ValueError(
+                msg = (
                     f"Metadata cannot contain key {key} as it "
                     f"is reserved for internal use."
                 )
+                raise ValueError(msg)
 
         content_hash = str(_hash_string_to_uuid(content))
 
         try:
             metadata_hash = str(_hash_nested_dict_to_uuid(metadata))
         except Exception as e:
-            raise ValueError(
+            msg = (
                 f"Failed to hash metadata: {e}. "
                 f"Please use a dict that can be serialized using json."
-            ) from e
+            )
+            raise ValueError(msg) from e
 
         values["content_hash"] = content_hash
         values["metadata_hash"] = metadata_hash
         values["hash_"] = str(_hash_string_to_uuid(content_hash + metadata_hash))
 
-        _uid = values.get("uid", None)
+        _uid = values.get("uid")
 
         if _uid is None:
             values["uid"] = values["hash_"]
@@ -123,7 +120,7 @@ class _HashedDocument(Document):
         )
 
 
-def _batch(size: int, iterable: Iterable[T]) -> Iterator[List[T]]:
+def _batch(size: int, iterable: Iterable[T]) -> Iterator[list[T]]:
     """Utility batching function."""
     it = iter(iterable)
     while True:
@@ -133,9 +130,9 @@ def _batch(size: int, iterable: Iterable[T]) -> Iterator[List[T]]:
         yield chunk
 
 
-async def _abatch(size: int, iterable: AsyncIterable[T]) -> AsyncIterator[List[T]]:
+async def _abatch(size: int, iterable: AsyncIterable[T]) -> AsyncIterator[list[T]]:
     """Utility batching function."""
-    batch: List[T] = []
+    batch: list[T] = []
     async for element in iterable:
         if len(batch) < size:
             batch.append(element)
@@ -159,17 +156,18 @@ def _get_source_id_assigner(
     elif callable(source_id_key):
         return source_id_key
     else:
-        raise ValueError(
+        msg = (
             f"source_id_key should be either None, a string or a callable. "
             f"Got {source_id_key} of type {type(source_id_key)}."
         )
+        raise ValueError(msg)
 
 
 def _deduplicate_in_order(
     hashed_documents: Iterable[_HashedDocument],
 ) -> Iterator[_HashedDocument]:
     """Deduplicate a list of hashed documents while preserving order."""
-    seen: Set[str] = set()
+    seen: set[str] = set()
 
     for hashed_doc in hashed_documents:
         if hashed_doc.hash_ not in seen:
@@ -203,6 +201,7 @@ def index(
     source_id_key: Union[str, Callable[[Document], str], None] = None,
     cleanup_batch_size: int = 1_000,
     force_update: bool = False,
+    upsert_kwargs: Optional[dict[str, Any]] = None,
 ) -> IndexingResult:
     """Index data from the loader into the vector store.
 
@@ -254,6 +253,12 @@ def index(
         force_update: Force update documents even if they are present in the
             record manager. Useful if you are re-indexing with updated embeddings.
             Default is False.
+        upsert_kwargs: Additional keyword arguments to pass to the add_documents
+                       method of the VectorStore or the upsert method of the
+                       DocumentIndex. For example, you can use this to
+                       specify a custom vector_field:
+                       upsert_kwargs={"vector_field": "embedding"}
+            .. versionadded:: 0.3.10
 
     Returns:
         Indexing result which contains information about how many documents
@@ -267,13 +272,15 @@ def index(
         ValueError: If source_id_key is not None, but is not a string or callable.
     """
     if cleanup not in {"incremental", "full", None}:
-        raise ValueError(
+        msg = (
             f"cleanup should be one of 'incremental', 'full' or None. "
             f"Got {cleanup}."
         )
+        raise ValueError(msg)
 
     if cleanup == "incremental" and source_id_key is None:
-        raise ValueError("Source id key is required when cleanup mode is incremental.")
+        msg = "Source id key is required when cleanup mode is incremental."
+        raise ValueError(msg)
 
     destination = vector_store  # Renaming internally for clarity
 
@@ -284,21 +291,24 @@ def index(
 
         for method in methods:
             if not hasattr(destination, method):
-                raise ValueError(
+                msg = (
                     f"Vectorstore {destination} does not have required method {method}"
                 )
+                raise ValueError(msg)
 
         if type(destination).delete == VectorStore.delete:
             # Checking if the vectorstore has overridden the default delete method
             # implementation which just raises a NotImplementedError
-            raise ValueError("Vectorstore has not implemented the delete method")
+            msg = "Vectorstore has not implemented the delete method"
+            raise ValueError(msg)
     elif isinstance(destination, DocumentIndex):
         pass
     else:
-        raise TypeError(
+        msg = (
             f"Vectorstore should be either a VectorStore or a DocumentIndex. "
             f"Got {type(destination)}."
         )
+        raise TypeError(msg)
 
     if isinstance(docs_source, BaseLoader):
         try:
@@ -332,12 +342,13 @@ def index(
             # If the cleanup mode is incremental, source ids are required.
             for source_id, hashed_doc in zip(source_ids, hashed_docs):
                 if source_id is None:
-                    raise ValueError(
+                    msg = (
                         "Source ids are required when cleanup mode is incremental. "
                         f"Document that starts with "
                         f"content: {hashed_doc.page_content[:100]} was not assigned "
                         f"as source id."
                     )
+                    raise ValueError(msg)
             # source ids cannot be None after for loop above.
             source_ids = cast(Sequence[str], source_ids)  # type: ignore[assignment]
 
@@ -347,7 +358,7 @@ def index(
         uids = []
         docs_to_index = []
         uids_to_refresh = []
-        seen_docs: Set[str] = set()
+        seen_docs: set[str] = set()
         for hashed_doc, doc_exists in zip(hashed_docs, exists_batch):
             if doc_exists:
                 if force_update:
@@ -368,10 +379,16 @@ def index(
         if docs_to_index:
             if isinstance(destination, VectorStore):
                 destination.add_documents(
-                    docs_to_index, ids=uids, batch_size=batch_size
+                    docs_to_index,
+                    ids=uids,
+                    batch_size=batch_size,
+                    **(upsert_kwargs or {}),
                 )
             elif isinstance(destination, DocumentIndex):
-                destination.upsert(docs_to_index)
+                destination.upsert(
+                    docs_to_index,
+                    **(upsert_kwargs or {}),
+                )
 
             num_added += len(docs_to_index) - len(seen_docs)
             num_updated += len(seen_docs)
@@ -391,16 +408,18 @@ def index(
 
             # mypy isn't good enough to determine that source ids cannot be None
             # here due to a check that's happening above, so we check again.
-            for source_id in source_ids:
-                if source_id is None:
-                    raise AssertionError("Source ids cannot be None here.")
+            if any(source_id is None for source_id in source_ids):
+                msg = "Source ids cannot be if cleanup=='incremental'."
+                raise AssertionError(msg)
 
-            _source_ids = cast(Sequence[str], source_ids)
+            indexed_source_ids = cast(
+                Sequence[str], [source_id_assigner(doc) for doc in docs_to_index]
+            )
 
             uids_to_delete = record_manager.list_keys(
-                group_ids=_source_ids, before=index_start_dt
+                group_ids=indexed_source_ids, before=index_start_dt
             )
-            if uids_to_delete:
+            if indexed_source_ids and uids_to_delete:
                 # Then delete from vector store.
                 destination.delete(uids_to_delete)
                 # First delete from record store.
@@ -442,6 +461,7 @@ async def aindex(
     source_id_key: Union[str, Callable[[Document], str], None] = None,
     cleanup_batch_size: int = 1_000,
     force_update: bool = False,
+    upsert_kwargs: Optional[dict[str, Any]] = None,
 ) -> IndexingResult:
     """Async index data from the loader into the vector store.
 
@@ -484,6 +504,12 @@ async def aindex(
         force_update: Force update documents even if they are present in the
             record manager. Useful if you are re-indexing with updated embeddings.
             Default is False.
+        upsert_kwargs: Additional keyword arguments to pass to the aadd_documents
+                       method of the VectorStore or the aupsert method of the
+                       DocumentIndex. For example, you can use this to
+                       specify a custom vector_field:
+                       upsert_kwargs={"vector_field": "embedding"}
+            .. versionadded:: 0.3.10
 
     Returns:
         Indexing result which contains information about how many documents
@@ -498,13 +524,15 @@ async def aindex(
     """
 
     if cleanup not in {"incremental", "full", None}:
-        raise ValueError(
+        msg = (
             f"cleanup should be one of 'incremental', 'full' or None. "
             f"Got {cleanup}."
         )
+        raise ValueError(msg)
 
     if cleanup == "incremental" and source_id_key is None:
-        raise ValueError("Source id key is required when cleanup mode is incremental.")
+        msg = "Source id key is required when cleanup mode is incremental."
+        raise ValueError(msg)
 
     destination = vector_store  # Renaming internally for clarity
 
@@ -516,21 +544,24 @@ async def aindex(
 
         for method in methods:
             if not hasattr(destination, method):
-                raise ValueError(
+                msg = (
                     f"Vectorstore {destination} does not have required method {method}"
                 )
+                raise ValueError(msg)
 
         if type(destination).adelete == VectorStore.adelete:
             # Checking if the vectorstore has overridden the default delete method
             # implementation which just raises a NotImplementedError
-            raise ValueError("Vectorstore has not implemented the delete method")
+            msg = "Vectorstore has not implemented the delete method"
+            raise ValueError(msg)
     elif isinstance(destination, DocumentIndex):
         pass
     else:
-        raise TypeError(
+        msg = (
             f"Vectorstore should be either a VectorStore or a DocumentIndex. "
             f"Got {type(destination)}."
         )
+        raise TypeError(msg)
     async_doc_iterator: AsyncIterator[Document]
     if isinstance(docs_source, BaseLoader):
         try:
@@ -572,12 +603,13 @@ async def aindex(
             # If the cleanup mode is incremental, source ids are required.
             for source_id, hashed_doc in zip(source_ids, hashed_docs):
                 if source_id is None:
-                    raise ValueError(
+                    msg = (
                         "Source ids are required when cleanup mode is incremental. "
                         f"Document that starts with "
                         f"content: {hashed_doc.page_content[:100]} was not assigned "
                         f"as source id."
                     )
+                    raise ValueError(msg)
             # source ids cannot be None after for loop above.
             source_ids = cast(Sequence[str], source_ids)
 
@@ -587,7 +619,7 @@ async def aindex(
         uids: list[str] = []
         docs_to_index: list[Document] = []
         uids_to_refresh = []
-        seen_docs: Set[str] = set()
+        seen_docs: set[str] = set()
         for hashed_doc, doc_exists in zip(hashed_docs, exists_batch):
             if doc_exists:
                 if force_update:
@@ -608,10 +640,16 @@ async def aindex(
         if docs_to_index:
             if isinstance(destination, VectorStore):
                 await destination.aadd_documents(
-                    docs_to_index, ids=uids, batch_size=batch_size
+                    docs_to_index,
+                    ids=uids,
+                    batch_size=batch_size,
+                    **(upsert_kwargs or {}),
                 )
             elif isinstance(destination, DocumentIndex):
-                await destination.aupsert(docs_to_index)
+                await destination.aupsert(
+                    docs_to_index,
+                    **(upsert_kwargs or {}),
+                )
             num_added += len(docs_to_index) - len(seen_docs)
             num_updated += len(seen_docs)
 
@@ -631,16 +669,18 @@ async def aindex(
 
             # mypy isn't good enough to determine that source ids cannot be None
             # here due to a check that's happening above, so we check again.
-            for source_id in source_ids:
-                if source_id is None:
-                    raise AssertionError("Source ids cannot be None here.")
+            if any(source_id is None for source_id in source_ids):
+                msg = "Source ids cannot be if cleanup=='incremental'."
+                raise AssertionError(msg)
 
-            _source_ids = cast(Sequence[str], source_ids)
+            indexed_source_ids = cast(
+                Sequence[str], [source_id_assigner(doc) for doc in docs_to_index]
+            )
 
             uids_to_delete = await record_manager.alist_keys(
-                group_ids=_source_ids, before=index_start_dt
+                group_ids=indexed_source_ids, before=index_start_dt
             )
-            if uids_to_delete:
+            if indexed_source_ids and uids_to_delete:
                 # Then delete from vector store.
                 await destination.adelete(uids_to_delete)
                 # First delete from record store.

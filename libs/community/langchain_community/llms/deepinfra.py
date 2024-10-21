@@ -9,6 +9,7 @@ from langchain_core.callbacks import (
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
 from langchain_core.utils import get_from_dict_or_env, pre_init
+from pydantic import ConfigDict
 
 from langchain_community.utilities.requests import Requests
 
@@ -37,8 +38,9 @@ class DeepInfra(LLM):
 
     deepinfra_api_token: Optional[str] = None
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:

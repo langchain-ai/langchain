@@ -19,8 +19,8 @@ from langchain_core.messages import (
     ToolMessageChunk,
 )
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.pydantic_v1 import _PYDANTIC_MAJOR_VERSION, BaseModel
 from langchain_core.tools import StructuredTool
+from pydantic import BaseModel
 
 from langchain_community.chat_models.mlflow import ChatMlflow
 
@@ -199,10 +199,6 @@ def test_chat_mlflow_stream(
 
 
 @pytest.mark.requires("mlflow")
-@pytest.mark.skipif(
-    _PYDANTIC_MAJOR_VERSION < 2,
-    reason="The tool mock is not compatible with pydantic 1.x",
-)
 def test_chat_mlflow_bind_tools(
     llm: ChatMlflow, mock_predict_stream_result: List[dict]
 ) -> None:
@@ -226,14 +222,18 @@ def test_chat_mlflow_bind_tools(
         ]
     )
 
-    def mock_func(*args: Any, **kwargs: Any) -> str:
+    def mock_func(x: int, y: int) -> str:
         return "36939 x 8922.4 = 329,511,111.6"
+
+    class ArgsSchema(BaseModel):
+        x: int
+        y: int
 
     tools = [
         StructuredTool(
             name="name",
             description="description",
-            args_schema=BaseModel,
+            args_schema=ArgsSchema,
             func=mock_func,
         )
     ]

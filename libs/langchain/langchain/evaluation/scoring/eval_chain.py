@@ -10,7 +10,7 @@ from langchain_core.callbacks.manager import Callbacks
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts.prompt import PromptTemplate
-from langchain_core.pydantic_v1 import Field
+from pydantic import ConfigDict, Field
 
 from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
 from langchain.chains.llm import LLMChain
@@ -179,8 +179,9 @@ class ScoreStringEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
     criterion_name: str
     """The name of the criterion being evaluated."""
 
-    class Config:
-        extra = "ignore"
+    model_config = ConfigDict(
+        extra="ignore",
+    )
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
