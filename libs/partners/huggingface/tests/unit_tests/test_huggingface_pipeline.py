@@ -5,8 +5,7 @@ from langchain_huggingface import HuggingFacePipeline
 DEFAULT_MODEL_ID = "gpt2"
 
 
-@patch("transformers.pipeline")
-def test_initialization_default(mock_pipeline):
+def test_initialization_default() -> None:
     """Test initialization with a pipeline object"""
 
     llm = HuggingFacePipeline()
@@ -15,7 +14,7 @@ def test_initialization_default(mock_pipeline):
 
 
 @patch("transformers.pipeline")
-def test_initialization_with_pipeline(mock_pipeline):
+def test_initialization_with_pipeline(mock_pipeline: MagicMock) -> None:
     """Test initialization with a pipeline object"""
 
     mock_pipe = MagicMock()
@@ -30,7 +29,9 @@ def test_initialization_with_pipeline(mock_pipeline):
 @patch("transformers.AutoTokenizer.from_pretrained")
 @patch("transformers.AutoModelForCausalLM.from_pretrained")
 @patch("transformers.pipeline")
-def test_initialization_with_from_model_id(mock_pipeline, mock_model, mock_tokenizer):
+def test_initialization_with_from_model_id(
+    mock_pipeline: MagicMock, mock_model: MagicMock, mock_tokenizer: MagicMock
+) -> None:
     """Test initialization with the from_model_id method"""
 
     mock_tokenizer.return_value = MagicMock(pad_token_id=0)
