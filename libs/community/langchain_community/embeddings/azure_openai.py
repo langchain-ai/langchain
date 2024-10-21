@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 import warnings
-from typing import Any, Callable, Dict, Optional, Union
+from typing import Any, Awaitable, Callable, Dict, Optional, Union
 
 from langchain_core._api.deprecation import deprecated
 from langchain_core.utils import get_from_dict_or_env
@@ -49,7 +49,13 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
     azure_ad_token_provider: Union[Callable[[], str], None] = None
     """A function that returns an Azure Active Directory token.
 
-        Will be invoked on every request.
+        Will be invoked on every sync request. For async requests,
+        will be invoked if `azure_ad_async_token_provider` is not provided.
+    """
+    azure_ad_async_token_provider: Union[Callable[[], Awaitable[str]], None] = None
+    """A function that returns an Azure Active Directory token.
+
+        Will be invoked on every async request.
     """
     openai_api_version: Optional[str] = Field(default=None, alias="api_version")
     """Automatically inferred from env var `OPENAI_API_VERSION` if not provided."""
@@ -162,6 +168,12 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
                 "http_client": self.http_client,
             }
             self.client = openai.AzureOpenAI(**client_params).embeddings
+
+            if self.azure_ad_async_token_provider:
+                client_params["azure_ad_token_provider"] = (
+                    self.azure_ad_async_token_provider
+                )
+
             self.async_client = openai.AsyncAzureOpenAI(**client_params).embeddings
         else:
             self.client = openai.Embedding
