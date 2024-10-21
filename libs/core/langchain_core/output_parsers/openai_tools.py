@@ -39,25 +39,35 @@ def parse_tool_call(
     """
     if "function" not in raw_tool_call:
         return None
-    if partial:
-        try:
-            function_args = parse_partial_json(
-                raw_tool_call["function"]["arguments"], strict=strict
-            )
-        except (JSONDecodeError, TypeError):  # None args raise TypeError
-            return None
+    if isinstance(raw_tool_call["function"]["arguments"], str):  # OpenAI returns arguments as str
+        if partial:
+            try:
+                function_args = parse_partial_json(
+                    raw_tool_call["function"]["arguments"], strict=strict
+                )
+            except (JSONDecodeError, TypeError):  # None args raise TypeError
+                return None
+        else:
+            try:
+                function_args = json.loads(
+                    raw_tool_call["function"]["arguments"], strict=strict
+                )
+            except JSONDecodeError as e:
+                msg = (
+                    f"Function {raw_tool_call['function']['name']} arguments:\n\n"
+                    f"{raw_tool_call['function']['arguments']}\n\nare not valid JSON. "
+                    f"Received JSONDecodeError {e}"
+                )
+                raise OutputParserException(msg) from e
+    elif isinstance(raw_tool_call["function"]["arguments"], dict): # TGI returns arguments as dict
+        function_args = raw_tool_call["function"]["arguments"]
     else:
-        try:
-            function_args = json.loads(
-                raw_tool_call["function"]["arguments"], strict=strict
+        msg = (
+            f"Function {raw_tool_call['function']['name']} arguments:\n\n",
+            f"Arguments passed as {type(raw_tool_call['function']['name'])}. Must be str or dict."
             )
-        except JSONDecodeError as e:
-            msg = (
-                f"Function {raw_tool_call['function']['name']} arguments:\n\n"
-                f"{raw_tool_call['function']['arguments']}\n\nare not valid JSON. "
-                f"Received JSONDecodeError {e}"
-            )
-            raise OutputParserException(msg) from e
+        raise OutputParserException(msg)
+
     parsed = {
         "name": raw_tool_call["function"]["name"] or "",
         "args": function_args or {},
