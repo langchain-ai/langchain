@@ -124,9 +124,6 @@ class OxylabsSearchAPIWrapper(BaseModel):
 
         if current_params["engine"] not in [
             "google",
-            # "bing",
-            # "amazon",
-            # "universal"
         ]:
             raise NotImplementedError(
                 f"The search engine {current_params['engine']} is not supported at the moment."
