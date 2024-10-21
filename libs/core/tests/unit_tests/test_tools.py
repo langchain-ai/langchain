@@ -483,6 +483,26 @@ def test_structured_tool_lambda_multi_args_schema() -> None:
     assert tool.args == expected_args
 
 
+def test_structured_tool_from_function_partial() -> None:
+    """Test that structured tools can be created from a partial function."""
+
+    def func(bar: str, baz: str = "") -> str:
+        """Docstring
+
+        Args:
+            bar: str
+            baz: str
+        """
+        return bar + baz
+
+    structured_tool = StructuredTool.from_function(
+        name="tool",
+        description="A tool",
+        func=partial(func, baz="foo"),
+    )
+    assert structured_tool.invoke({"bar": "bar"}) == "barfoo"
+
+
 def test_tool_partial_function_args_schema() -> None:
     """Test args schema inference when the tool argument is a partial function."""
 
