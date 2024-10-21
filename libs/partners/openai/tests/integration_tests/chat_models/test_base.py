@@ -2,6 +2,7 @@
 
 import base64
 import json
+from pathlib import Path
 from typing import Any, AsyncIterator, List, Literal, Optional, cast
 
 import httpx
@@ -949,3 +950,71 @@ async def test_json_mode_async() -> None:
     assert isinstance(full, AIMessageChunk)
     assert isinstance(full.content, str)
     assert json.loads(full.content) == {"a": 1}
+
+
+def test_audio_output_modality() -> None:
+    llm = ChatOpenAI(
+        model="gpt-4o-audio-preview",
+        temperature=0,
+        model_kwargs={
+            "modalities": ["text", "audio"],
+            "audio": {"voice": "alloy", "format": "wav"},
+        },
+    )
+
+    history: List[BaseMessage] = [
+        HumanMessage("Make me a short audio clip of you yelling")
+    ]
+
+    output = llm.invoke(history)
+
+    assert isinstance(output, AIMessage)
+    assert "audio" in output.additional_kwargs
+
+    history.append(output)
+    history.append(HumanMessage("Make me a short audio clip of you whispering"))
+
+    output = llm.invoke(history)
+
+    assert isinstance(output, AIMessage)
+    assert "audio" in output.additional_kwargs
+
+
+def test_audio_input_modality() -> None:
+    llm = ChatOpenAI(
+        model="gpt-4o-audio-preview",
+        temperature=0,
+        model_kwargs={
+            "modalities": ["text", "audio"],
+            "audio": {"voice": "alloy", "format": "wav"},
+        },
+    )
+    filepath = Path(__file__).parent / "audio_input.wav"
+
+    audio_data = filepath.read_bytes()
+    b64_audio_data = base64.b64encode(audio_data).decode("utf-8")
+
+    history: list[BaseMessage] = [
+        HumanMessage(
+            [
+                {"type": "text", "text": "What is happening in this audio clip"},
+                {
+                    "type": "input_audio",
+                    "input_audio": {"data": b64_audio_data, "format": "wav"},
+                },
+            ]
+        )
+    ]
+
+    output = llm.invoke(history)
+
+    assert isinstance(output, AIMessage)
+    assert "audio" in output.additional_kwargs
+
+    history.append(output)
+    history.append(HumanMessage("Why?"))
+
+    output = llm.invoke(history)
+
+    assert isinstance(output, AIMessage)
+    assert "audio" in output.additional_kwargs
