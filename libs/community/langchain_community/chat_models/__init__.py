@@ -128,6 +128,11 @@ if TYPE_CHECKING:
     from langchain_community.chat_models.naver import (
         ChatClovaX,
     )
+    from langchain_community.chat_models.oci_data_science import (
+        ChatOCIModelDeployment,
+        ChatOCIModelDeploymentTGI,
+        ChatOCIModelDeploymentVLLM,
+    )
     from langchain_community.chat_models.oci_generative_ai import (
         ChatOCIGenAI,  # noqa: F401
     )
@@ -215,6 +220,9 @@ __all__ = [
     "ChatMlflow",
     "ChatNebula",
     "ChatOCIGenAI",
+    "ChatOCIModelDeployment",
+    "ChatOCIModelDeploymentVLLM",
+    "ChatOCIModelDeploymentTGI",
     "ChatOllama",
     "ChatOpenAI",
     "ChatPerplexity",
@@ -277,6 +285,9 @@ _module_lookup = {
     "ChatNebula": "langchain_community.chat_models.symblai_nebula",
     "ChatOctoAI": "langchain_community.chat_models.octoai",
     "ChatOCIGenAI": "langchain_community.chat_models.oci_generative_ai",
+    "ChatOCIModelDeployment": "langchain_community.chat_models.oci_data_science",
+    "ChatOCIModelDeploymentVLLM": "langchain_community.chat_models.oci_data_science",
+    "ChatOCIModelDeploymentTGI": "langchain_community.chat_models.oci_data_science",
     "ChatOllama": "langchain_community.chat_models.ollama",
     "ChatOpenAI": "langchain_community.chat_models.openai",
     "ChatPerplexity": "langchain_community.chat_models.perplexity",
