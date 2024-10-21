@@ -299,6 +299,7 @@ def test_chat_prompt_template_from_messages_mustache() -> None:
     ]
 
 
+@pytest.mark.requires("jinja2")
 def test_chat_prompt_template_from_messages_jinja2() -> None:
     template = ChatPromptTemplate.from_messages(
         [
