@@ -100,7 +100,7 @@ The conceptual guide will not cover step-by-step instructions or specific implem
 - **[VectorStores](/docs/concepts/vectorstores)**: A datastore that can store embeddings and associated data and supports efficient vector search.
 - **[Retriever](/docs/concepts/retrievers)**: A retriever is a component that retrieves relevant documents from a knowledge base in response to a query.
   - **Terms**:
-    - [LangChain's Retriever Interface](/docs/concepts/retriever#interface)
+    - [LangChain's Retriever Interface](/docs/concepts/retrievers#interface)
 - **[Retrieval Augmented Generation (RAG)](/docs/concepts/rag)**: A powerful technique that enhances language models by combining them with external knowledge bases.
 - **[Agents](/docs/concepts/agents)**
   Retrieval Augmented Generation (RAG) is a powerful technique that enhances [language models](/docs/concepts/chat_models/) by combining them with external knowledge bases.
