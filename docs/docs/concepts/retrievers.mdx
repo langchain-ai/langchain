@@ -54,13 +54,13 @@ Retrievers return a list of [Document](https://api.python.langchain.com/en/lates
 
 Despite the flexibility of the retriever interface, a few common types of retrieval systems are frequently used.
 
-### Search APIs
+### Search apis
 
 It's important to note that retrievers don't need to actually *store* documents. 
 For example, we can be built retrievers on top of search APIs that simply return search results! 
 See our retriever integrations with [Amazon Kendra](https://python.langchain.com/docs/integrations/retrievers/amazon_kendra_retriever/) or [Wikipedia Search](https://python.langchain.com/docs/integrations/retrievers/wikipedia/). 
 
-### Relational or Graph Database
+### Relational or graph database
 
 Retrievers can be built on top of relational or graph databases.
 In these cases, [query analysis](/docs/concepts/retrieval/) techniques to construct a structured query from natural language is critical.
@@ -73,7 +73,7 @@ For example, you can build a retriever for a SQL database using text-to-SQL conv
 
 :::
 
-### Lexical Search
+### Lexical search
 
 As discussed in our conceptual review of [retrieval](/docs/concepts/retrieval/), many search engines are based upon matching words in a query to the words in each document. 
 [BM25](https://en.wikipedia.org/wiki/Okapi_BM25#:~:text=BM25%20is%20a%20bag%2Dof,slightly%20different%20components%20and%20parameters.) and [TF-IDF](https://en.wikipedia.org/wiki/Tf%E2%80%93idf) are [two popular lexical search algorithms](https://cameronrwolfe.substack.com/p/the-basics-of-ai-powered-vector-search?utm_source=profile&utm_medium=reader2).
@@ -106,7 +106,7 @@ This is particularly useful when you have multiple retrievers that are good at f
 It is easy to create an [ensemble retriever](/docs/how_to/ensemble_retriever/) that combines multiple retrievers with linear weighted scores:
 
 ```python
-# initialize the ensemble retriever
+# Initialize the ensemble retriever
 ensemble_retriever = EnsembleRetriever(
     retrievers=[bm25_retriever, vector_store_retriever], weights=[0.5, 0.5]
 )
@@ -115,7 +115,7 @@ ensemble_retriever = EnsembleRetriever(
 When ensembling, how do we combine search results from many retrievers? 
 This motivates the concept of re-ranking, which takes the output of multiple retrievers and combines them using a more sophisticated algorithm such as [Reciprocal Rank Fusion (RRF)](https://plg.uwaterloo.ca/~gvcormac/cormacksigir09-rrf.pdf).
 
-### Source Document Retention 
+### Source document retention 
 
 Many retrievers utilize some kind of index to make documents easily searchable.
 The process of indexing can include a transformation step (e.g., vectorstores often use document splitting). 

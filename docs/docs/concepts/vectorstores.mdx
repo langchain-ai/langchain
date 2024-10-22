@@ -37,7 +37,7 @@ from pinecone import Pinecone
 from langchain_openai import OpenAIEmbeddings
 from langchain_pinecone import PineconeVectorStore
 
-# Initialize Pinecone
+# Initialize pinecone
 pc = Pinecone(api_key=os.environ["PINECONE_API_KEY"])
 
 # Initialize with an embedding model
@@ -117,7 +117,7 @@ pc.create_index(
 
 :::
 
-### Similarity Search
+### Similarity search
 
 Given a similarity metric to measure the distance between the embedded query and any embedded document, we need an algorithm to efficiently search over *all* the embedded documents to find the most similar ones.
 There are various ways to do this. As an example, many vectorstores implement [HNSW (Hierarchical Navigable Small World)](https://www.pinecone.io/learn/series/faiss/hnsw/), a graph-based index structure that allows for efficient similarity search.

@@ -1,4 +1,4 @@
-# Why LangChain?
+# Why langchain?
 
 The goal of `langchain` the Python package and LangChain the company is to make it as easy possible for developers to build applications that reason.
 While LangChain originally started as a single open source package, it has evolved into a company and a whole ecosystem.
@@ -29,7 +29,7 @@ As an example, all [chat models](/docs/concepts/chat_models/) implement the [Bas
 This provides a standard way to interact with chat models, supporting important but often provider-specific features like [tool calling](/docs/concepts/tool_calling/) and [structured outputs](/docs/concepts/structured_outputs/).
 
 
-### Example: Chat models 
+### Example: chat models 
 
 Many [model providers](/docs/concepts/chat_models/) support [tool calling](/docs/concepts/tool_calling/), a critical features for many applications (e.g., [agents](https://langchain-ai.github.io/langgraph/concepts/agentic_concepts/)), that allows a developer to request model responses that match a particular schema.
 The APIs for each provider differ. 
@@ -53,7 +53,7 @@ schema = ...
 model_with_structure = model.with_structured_output(schema)
 ```
 
-### Example: Retrievers
+### Example: retrievers
 
 In the context of [RAG](/docs/concepts/rag/) and LLM application components, LangChain's [retriever](/docs/concepts/retrievers/) interface provides a standard way to connect to many different types of data services or databases (e.g., [vector stores](/docs/concepts/vectorstores) or databases).
 The underlying implementation of the retriever depends on the type of data store or database you are connecting to, but all retrievers implement the [runnable interface](/docs/concepts/runnables/), meaning they can be invoked in a common manner.

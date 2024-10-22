@@ -39,7 +39,7 @@ This translation enables more intuitive and flexible interactions with complex d
 
 (2) **Information retrieval**: Search queries are used to fetch information from various retrieval systems.
 
-## Query Analysis 
+## Query analysis 
 
 While users typically prefer to interact with retrieval systems using natural language, retrieval systems can specific query syntax or benefit from particular keywords. 
 Query analysis serves as a bridge between raw user input and optimized search queries. Some common applications of query analysis include:
@@ -49,7 +49,7 @@ Query analysis serves as a bridge between raw user input and optimized search qu
 
 Query analysis employs models to transform or construct optimized search queries from raw user input. 
 
-### Query Re-writing
+### Query re-writing
 
 Retrieval systems should ideally handle a wide spectrum of user inputs, from simple and poorly worded queries to complex, multi-faceted questions. 
 To achieve this versatility, a popular approach is to use models to transform raw user queries into more effective search queries. 
@@ -78,7 +78,7 @@ from pydantic import BaseModel, Field
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage, HumanMessage
 
-# Define a Pydantic model to enforce the output structure
+# Define a pydantic model to enforce the output structure
 class Questions(BaseModel):
     questions: List[str] = Field(
         description="A list of sub-questions related to the input query."
@@ -107,7 +107,7 @@ See our RAG from Scratch videos for a few different specific approaches:
 
 :::
 
-### Query Construction
+### Query construction
 
 Query analysis also can focus on translating natural language queries into specialized query languages or filters. 
 This translation is crucial for effectively interacting with various types of databases that house structured or semi-structured data.
@@ -149,7 +149,7 @@ retriever = SelfQueryRetriever.from_llm(
 
 ::: 
 
-## Information Retrieval 
+## Information retrieval 
 
 ### Common retrieval systems
 

@@ -1,4 +1,4 @@
-# Structured Outputs
+# Structured outputs
 
 ## Overview 
 
@@ -9,7 +9,7 @@ This need motivates the concept of structured output, where models can be instru
 
 ![Structured output](/img/structured_output.png)
 
-## Key Concepts 
+## Key concepts 
 
 **(1) Schema definition:** The output structure is represented as a schema, which can be defined in several ways. 
 **(2) Returning structured output:** The model is given this schema, and is instructed to return output that conforms to it.
@@ -62,7 +62,7 @@ With a schema defined, we need a way to instruct the model to use it.
 While one approach is to include this schema in the prompt and *ask nicely* for the model to use it, this is not recommended. 
 Several more powerful methods that utilizes native features in the model provider's API are available.
 
-### Using Tool Calling
+### Using tool calling
 
 Many [model providers support](/docs/integrations/chat/) tool calling, a concept discussed in more detail in our [tool calling guide](/docs/concepts/tool_calling/).
 In short, tool calling involves binding a tool to a model and, when appropriate, the model can *decide* to call this tool and ensure its response conforms to the tool's schema.
@@ -72,7 +72,7 @@ Here is an example using the `ResponseFormatter` schema defined above:
 ```python
 from langchain_openai import ChatOpenAI
 model = ChatOpenAI(model="gpt-4o", temperature=0)
-# Bind ResponseFormatter schema as a tool to the model
+# Bind responseformatter schema as a tool to the model
 model_with_tools = model.bind_tools([ResponseFormatter])
 # Invoke the model
 ai_msg = model_with_tools.invoke("What is the powerhouse of the cell?")
@@ -86,11 +86,11 @@ This dictionary can be optionally parsed into a Pydantic object, matching our or
 ai_msg.tool_calls[0]["args"]
 {'answer': "The powerhouse of the cell is the mitochondrion. Mitochondria are organelles that generate most of the cell's supply of adenosine triphosphate (ATP), which is used as a source of chemical energy.",
  'followup_question': 'What is the function of ATP in the cell?'}
-# Parse the dictionary into a Pydantic object
+# Parse the dictionary into a pydantic object
 pydantic_object = ResponseFormatter.model_validate(ai_msg.tool_calls[0]["args"])
 ```
 
-### JSON mode
+### Json mode
 
 In addition to tool calling, some model providers support a feature called `JSON mode`. 
 This supports JSON schema definition as input and enforces the model to produce a conforming JSON output.
@@ -136,7 +136,7 @@ This both binds the schema to the model as a tool and parses the output to the s
 model_with_structure = model.with_structured_output(ResponseFormatter)
 # Invoke the model
 structured_output = model_with_structure.invoke("What is the powerhouse of the cell?")
-# Get back the Pydantic object
+# Get back the pydantic object
 structured_output
 ResponseFormatter(answer="The powerhouse of the cell is the mitochondrion. Mitochondria are organelles that generate most of the cell's supply of adenosine triphosphate (ATP), which is used as a source of chemical energy.", followup_question='What is the function of ATP in the cell?')
 ```

@@ -1,11 +1,9 @@
-# Async Programming with LangChain
+# Async programming with langchain
 
 :::info Prerequisites
-* [Runnable Interface](/docs/concepts/runnables)
-* [asyncio documentation](https://docs.python.org/3/library/asyncio.html)
+* [Runnable interface](/docs/concepts/runnables)
+* [asyncio](https://docs.python.org/3/library/asyncio.html)
 :::
-
-## Overview
 
 LLM based applications often involve a lot of I/O-bound operations, such as making API calls to language models, databases, or other services. Asynchronous programming (or async programming) is a paradigm that allows a program to perform multiple tasks concurrently without blocking the execution of other tasks, improving efficiency and responsiveness, particularly in I/O-bound operations.
 
@@ -14,7 +12,7 @@ You are expected to be familiar with asynchronous programming in Python before r
 This guide specifically focuses on what you need to know to work with LangChain in an asynchronous context, assuming that you are already familiar with asynch
 :::
 
-## LangChain Asynchronous APIs
+## Langchain asynchronous apis
 
 Many LangChain APIs are designed to be asynchronous, allowing you to build efficient and responsive applications.
 
@@ -41,7 +39,7 @@ the full [Runnable Interface](/docs/concepts/runnables).
 
 Fore more information, please review the [API reference](https://python.langchain.com/api_reference/) for the specific component you are using.
 
-## Delegation to Sync Methods
+## Delegation to sync methods
 
 Most popular LangChain integrations implement asynchronous support of their APIs. For example, the `ainvoke` method of many ChatModel implementations uses the `httpx.AsyncClient` to make asynchronous HTTP requests to the model provider's API.
 
@@ -77,7 +75,7 @@ If you are experiencing issues with streaming, callbacks or tracing in async cod
 
 Please read [Propagation RunnableConfig](/docs/concepts/runnables#propagation-runnableconfig) for more details to learn how to propagate the `RunnableConfig` down the call chain manually (or upgrade to Python 3.11 where this is no longer an issue).
 
-## How to use in IPython and Jupyter Notebooks
+## How to use in ipython and jupyter notebooks
 
 As of IPython 7.0, IPython supports asynchronous REPLs. This means that you can use the `await` keyword in the IPython REPL and Jupyter Notebooks without any additional setup. For more information, see the [IPython blog post](https://blog.jupyter.org/ipython-7-0-async-repl-a35ce050f7f7).
 

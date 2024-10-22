@@ -13,9 +13,7 @@ This conceptual overview focuses on text-based embedding models.
 Embedding models can also be [multimodal](/docs/concepts/multimodality) though such models are not currently supported by LangChain.
 :::
 
-## Overview
-
-Imagine being able to capture the essence of any text - a tweet, document, or book - in a single, compact representation. 
+Imagine being able to capture the essence of any text - a tweet, document, or book - in a single, compact representation.
 This is the power of embedding models, which lie at the heart of many retrieval systems.
 Embedding models transform human language into a format that machines can understand and compare with speed and accuracy. 
 These models take text as input and produce a fixed-length array of numbers, a numerical fingerprint of the text's semantic meaning.
@@ -49,7 +47,7 @@ To navigate this variety, researchers and practitioners often turn to benchmarks
 
 :::
 
-### LangChain Interface  
+### Interface
 
 LangChain provides a universal interface for working with them, providing standard methods for common operations.
 This common interface simplifies interaction with various embedding providers through two central methods:
@@ -89,7 +87,7 @@ query_embedding = embeddings_model.embed_query("What is the meaning of life?")
 
 :::
 
-### Available integrations
+### Integrations
 
 LangChain offers many embedding model integrations which you can find [on the embedding models](/docs/integrations/text_embedding/) integrations page.
 
