@@ -105,7 +105,7 @@ In some advanced uses, you may want to programmatically **inspect** the Runnable
 
 The Runnable interface provides methods to get the [JSON Schema](https://json-schema.org/) of the input and output types of a Runnable, as well as [Pydantic schemas](https://docs.pydantic.dev/latest/) for the input and output types.
 
-These APIs are mostly used internally for unit-testing and by [LangServe](/docs/concepts/langserve) which uses the APIs for input validation and generation of [OpenAPI documentation](https://www.openapis.org/).
+These APIs are mostly used internally for unit-testing and by [LangServe](/docs/concepts/architecture#langserve) which uses the APIs for input validation and generation of [OpenAPI documentation](https://www.openapis.org/).
 
 In addition, to the input and output types, some Runnables have been set up with additional run time configuration options. 
 There are corresponding APIs to get the Pydantic Schema and JSON Schema of the configuration options for the Runnable.
@@ -281,7 +281,7 @@ See the [How to handle rate limits](https://python.langchain.com/docs/how_to/cha
 
 The `configurable` field is used to pass runtime values for configurable attributes of the Runnable.
 
-It is used frequently in [LangGraph](/docs/concepts/langgraph) with
+It is used frequently in [LangGraph](/docs/concepts/architecture#langgraph) with
 [LangGraph Persistence](https://langchain-ai.github.io/langgraph/concepts/persistence/)
 and [memory](https://langchain-ai.github.io/langgraph/concepts/memory/).
 
@@ -339,7 +339,7 @@ much more complex and error-prone than simply using `RunnableLambda` or `Runnabl
 This is an advanced feature that is unnecessary for most users.
 
 It helps with configuration of large "chains" created using the [LangChain Expression Language (LCEL)](/docs/concepts/lcel)
-and is leveraged by [LangServe](/docs/concepts/langserve) for deployed Runnables.
+and is leveraged by [LangServe](/docs/concepts/architecture#langserve) for deployed Runnables.
 :::
 
 Sometimes you may want to experiment with, or even expose to the end user, multiple different ways of doing things with your Runnable. This could involve adjusting parameters like the temperature in a chat model or even switching between different chat models.

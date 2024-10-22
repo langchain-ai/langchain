@@ -81,7 +81,7 @@ The five main message types are:
 
 Other important messages include:
 
-- [RemoveMessage](#removemessage) -- does not correspond to any role. This is an abstraction, mostly used in [LangGraph](/docs/concepts/langgraph) to manage chat history.
+- [RemoveMessage](#removemessage) -- does not correspond to any role. This is an abstraction, mostly used in [LangGraph](/docs/concepts/architecture#langgraph) to manage chat history.
 - **Legacy** [FunctionMessage](#legacy-functionmessage): corresponds to the **function** role in OpenAI's **legacy** function-calling API.
 
 You can find more information about **messages** in the [API Reference](https://python.langchain.com/api_reference/core/messages.html).
@@ -202,7 +202,7 @@ Please see [tool calling](/docs/concepts/tool_calling) for more information.
 ### RemoveMessage
 
 This is a special message type that does not correspond to any roles. It is used
-for managing chat history in [LangGraph](/docs/concepts/langgraph).
+for managing chat history in [LangGraph](/docs/concepts/architecture#langgraph).
 
 Please see the following for more information on how to use the `RemoveMessage`:
 

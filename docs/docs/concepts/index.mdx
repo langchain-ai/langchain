@@ -39,7 +39,9 @@ The conceptual guide will not cover step-by-step instructions or specific implem
 - **[Async Programming with LangChain](/docs/concepts/async)**: This guide covers some basic things that one should know to work with LangChain in an asynchronous context.
 - **[Callbacks](/docs/concepts/callbacks)**: Learn about the callback system in LangChain. It is composed of CallbackManagers (which dispatch events to the registered handlers) and CallbackHandlers (which handle the events). Callbacks are used to stream outputs from LLMs in LangChain, observe the progress of an LLM application, and more.
 - **[Output Parsers](/docs/concepts/output_parsers)**: Output parsers are responsible for taking the output of a model and transforming it into a more suitable format for downstream tasks. Output parsers were primarily useful prior to the general availability of [chat models](/docs/concepts/chat_models) that natively support [tool calling](/docs/concepts/tool_calling) and [structured outputs](/docs/concepts/structured_outputs).
- 
+- **[Few shot prompting](/docs/concepts/few_shot_prompting)**: Few-shot prompting is a technique used improve the performance of language models by providing them with a few examples of the task they are expected to perform.
+- **[Example Selectors](/docs/concepts/example_selectors)**: Example selectors are used to select examples from a dataset based on a given input. They can be used to select examples randomly, by semantic similarity, or based on some other constraints. Example selectors are used in few-shot prompting to select examples for a prompt.
+
 ## Glossary
 
 - **[AIMessageChunk](/docs/concepts/messages#aimessagechunk)**: A partial response from an AI message. Used when streaming responses from a chat model.
@@ -82,6 +84,7 @@ The conceptual guide will not cover step-by-step instructions or specific implem
 - **[Tool artifacts](/docs/concepts/tools#tool-artifacts)**: Add artifacts to the output of a tool that will not be sent to the model, but will be available for downstream processing.
 - **[Tool binding](/docs/concepts/tool_calling#tool-binding)**: Binding tools to models.
 - **[@tool](/docs/concepts/tools#@tool)**: Decorator for creating tools in LangChain.
+- **[Toolkits](/docs/concepts/tools#toolkits)**: A collection of tools that can be used together.
 - **[ToolMessage](/docs/concepts/messages#toolmessage)**: Represents a message that contains the results of a tool execution.
 - **[Vectorstores](/docs/concepts/vectorstores)**: Datastores specialized for storing and efficiently searching vector embeddings.
 - **[with_structured_output](/docs/concepts/chat_models#with-structured-output)**: A helper method for chat models that natively support [tool calling](/docs/concepts/tool_calling) to get structured output matching a given schema specified via Pydantic, JSON schema or a function.
