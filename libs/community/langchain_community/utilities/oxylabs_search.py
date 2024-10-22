@@ -29,7 +29,6 @@ def _get_default_params() -> dict:
             - parse (bool): Whether to enable result parsing into an object.
             - locale (str): Locale or location for the search.
             - geo_location (str): Geographic location for the search.
-            - callback_url (str): URL for callbacks (if applicable).
             - parsing_instructions (dict): Additional instructions for parsing the search results.
             - context (list): Search context information.
             - request_timeout (int): Timeout for the Oxylabs service, in seconds.
@@ -49,7 +48,6 @@ def _get_default_params() -> dict:
         "parse": True,
         "locale": "",
         "geo_location": "",
-        "callback_url": "",
         "parsing_instructions": {},
         "context": [],
         "request_timeout": 165,
@@ -78,7 +76,6 @@ class OxylabsSearchAPIWrapper(BaseModel):
                 "parse": True,
                 "locale": "",
                 "geo_location": "",
-                "callback_url": "",
                 "parsing_instructions": {},
                 "context": [],
                 "request_timeout": 165,
