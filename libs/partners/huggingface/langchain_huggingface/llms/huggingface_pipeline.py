@@ -95,6 +95,8 @@ class HuggingFacePipeline(BaseLLM):
                 "Could not import transformers python package. "
                 "Please install it with `pip install transformers`."
             )
+
+        _model_kwargs = model_kwargs.copy() if model_kwargs else {}
         if device_map is not None:
             if device is not None:
                 raise ValueError(
@@ -104,10 +106,11 @@ class HuggingFacePipeline(BaseLLM):
                     "Please remove `device` and keep "
                     "`device_map`."
                 )
-            if model_kwargs is None:
-                model_kwargs = {}
-            model_kwargs["device_map"] = device_map
-        _model_kwargs = model_kwargs or {}
+
+            if "device_map" in _model_kwargs:
+                raise ValueError("`device_map` is already specified in `model_kwargs`.")
+
+            _model_kwargs["device_map"] = device_map
         tokenizer = AutoTokenizer.from_pretrained(model_id, **_model_kwargs)
 
         try:
