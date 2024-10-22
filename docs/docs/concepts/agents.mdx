@@ -1,32 +1,11 @@
 # Agents
 
-## What is an agent?
+We recommend that you use [LangGraph](/docs/concepts/architecture#langgraph) for building agents.
 
-Many LLM applications implement a particular control flow of steps before and / or after LLM calls. 
-As an example, [RAG](/docs/concepts/rag/) performs [retrieval](/docs/concepts/retrieval/) of relevant documents to a question, and passes those documents to an LLM in order to ground the [model](/docs/concepts/chat_models/)'s response.
-Instead of hard-coding a fixed control flow, we sometimes want LLM systems that can pick its own control flow to solve more complex problems! 
+Please see the following resources for more information:
 
-This is one definition of an agent: an agent is a system that uses an LLM to decide the control flow of an application. 
-There are many ways that an LLM can control application:
-
-- An LLM can route between two potential paths
-- An LLM can decide which of many tools to call
-- An LLM can decide whether the generated answer is sufficient or more work is needed
-
-![Agent types](/img/agent_types.png)
-
-## LangGraph 
-
-As a result, there are many different types of [agent architectures](https://blog.langchain.dev/what-is-a-cognitive-architecture/), which give an LLM varying levels of control.
-[LangGraph](https://github.com/langchain-ai/langgraph) is an extension of LangChain specifically aimed at creating highly controllable and customizable agents.
-The motivation of LangGraph is to help preserve high reliability as we give the agent more control over the application.
-
-:::info[Further reading]
-
-* See our LangGraph overview [here](https://langchain-ai.github.io/langgraph/concepts/high_level/#core-principles).
-* See our LangGraph Academy Course [here](https://academy.langchain.com/courses/intro-to-langgraph).
-
-:::
+* LangGraph docs for conceptual architecture about [Agents](https://langchain-ai.github.io/langgraph/concepts/agentic_concepts/)
+* [Pre-built agent in LangGraph](https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent)
 
 ## Legacy Agent Concept: AgentExecutor
 
