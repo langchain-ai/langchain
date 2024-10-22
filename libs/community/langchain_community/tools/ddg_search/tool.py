@@ -75,7 +75,8 @@ class DuckDuckGoSearchRun(BaseTool):
 
 
 class DuckDuckGoSearchResults(BaseTool):
-    """Tool that queries the DuckDuckGo search API and returns the results in `output_format`."""
+    """Tool that queries the DuckDuckGo search API and
+    returns the results in `output_format`."""
 
     name: str = "duckduckgo_results_json"
     description: str = (
@@ -129,7 +130,8 @@ class DuckDuckGoSearchResults(BaseTool):
             return self.results_separator.join(res_strs), raw_results
         else:
             raise ValueError(
-                f"Invalid output_format: {self.output_format}. Needs to be one of 'string', 'json', 'list'."
+                f"Invalid output_format: {self.output_format}. "
+                "Needs to be one of 'string', 'json', 'list'."
             )
 
 
