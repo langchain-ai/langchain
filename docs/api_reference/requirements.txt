@@ -1,5 +1,5 @@
-autodoc_pydantic>=1,<2
-sphinx<=7
+autodoc_pydantic>=2,<3
+sphinx>=8,<9
 myst-parser>=3
 sphinx-autobuild>=2024
 pydata-sphinx-theme>=0.15
