@@ -31,7 +31,7 @@ For example, a common way to construct and use a ChatPromptTemplate is as follow
 ```python
 from langchain_core.prompts import ChatPromptTemplate
 
-prompt_template = ChatPromptTemplate.from_messages([
+prompt_template = ChatPromptTemplate([
     ("system", "You are a helpful assistant"),
     ("user", "Tell me a joke about {topic}")
 ])
@@ -55,7 +55,7 @@ This is how you use MessagesPlaceholder.
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.messages import HumanMessage
 
-prompt_template = ChatPromptTemplate.from_messages([
+prompt_template = ChatPromptTemplate([
     ("system", "You are a helpful assistant"),
     MessagesPlaceholder("msgs")
 ])
@@ -70,7 +70,7 @@ This is useful for letting a list of messages be slotted into a particular spot.
 An alternative way to accomplish the same thing without using the `MessagesPlaceholder` class explicitly is:
 
 ```python
-prompt_template = ChatPromptTemplate.from_messages([
+prompt_template = ChatPromptTemplate([
     ("system", "You are a helpful assistant"),
     ("placeholder", "{msgs}") # <-- This is the changed part
 ])
