@@ -63,7 +63,7 @@ class CustomAddTextsVectorstore(VectorStore):
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> list[Document]:
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class CustomAddDocumentsVectorstore(VectorStore):
@@ -107,7 +107,7 @@ class CustomAddDocumentsVectorstore(VectorStore):
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> list[Document]:
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 @pytest.mark.parametrize(
