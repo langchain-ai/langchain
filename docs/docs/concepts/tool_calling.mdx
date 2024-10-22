@@ -30,7 +30,7 @@ You will sometimes hear the term `function calling`. We use this term interchang
 
 ## Recommended usage
 
-This psuedo-code illustrates the recommended workflow for using tool calling. 
+This pseudo-code illustrates the recommended workflow for using tool calling. 
 Created tools are passed to `.bind_tools()` method as a list.
 This model can be called, as usual. If a tool call is made, model's response will contain the tool call arguments.
 The tool call arguments can be passed directly to the tool.
@@ -39,11 +39,9 @@ The tool call arguments can be passed directly to the tool.
 # Tool creation
 tools = [my_tool]
 # Tool binding
-modelwtools = model.bind_tools(tools)
+model_with_tools = model.bind_tools(tools)
 # Tool calling 
-response = modelwtools.invoke(user_input)
-# Tool execution
-tool_output = my_tool(response.tool_calls)
+response = model_with_tools.invoke(user_input)
 ```
 
 ## Tool Creation
@@ -59,10 +57,13 @@ def multiply(a: int, b: int) -> int:
     return a * b
 ```
 
-For more information about tool creation, please see:
+:::info[Further reading]
 
-* [Conceptual guide on tools](/docs/concepts/tools/)
-* [How to create custom tools](https://python.langchain.com/docs/how_to/custom_tools/)
+* See our conceptual guide on [tools](/docs/concepts/tools/) for more details.
+* See our [model integrations](/docs/integrations/chat/) that support tool calling.
+* See our [how-to guide](/docs/how_to/tool_calling/) on tool calling.
+
+:::
 
 ## Tool Binding 
 
@@ -125,9 +126,20 @@ For more details on usage, see our [how-to guides](/docs/how_to/#tools)!
 
 ## Tool execution
 
+[Tools](/docs/concepts/tools/) implement the [Runnable](/docs/concepts/runnables/) interface, which means that they can be invoked (e.g., `tool.invoke(args)`) directly.
+
+[LangGraph](https://langchain-ai.github.io/langgraph/) offers pre-built components (e.g., [`ToolNode`](https://langchain-ai.github.io/langgraph/reference/prebuilt/#toolnode)) that will often invoke the tool in behalf of the user.
+
+:::info[Further reading]
+
+* See our [how-to guide](/docs/how_to/tool_calling/) on tool calling.
+* See the [LangGraph documentation on using ToolNode](https://langchain-ai.github.io/langgraph/how-tos/tool-calling/).
+
+:::
+
 ## Best practices
 
-When designing tools to be used by a model, it is important to keep in mind that:
+When designing [tools](/docs/concepts/tools/) to be used by a model, it is important to keep in mind that:
 
 * Models that have explicit [tool-calling APIs](/docs/concepts/#functiontool-calling) will be better at tool calling than non-fine-tuned models.
 * Models will perform better if the tools have well-chosen names and descriptions.
