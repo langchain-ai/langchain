@@ -100,7 +100,13 @@ class OracleAutonomousDatabaseLoader(BaseLoader):
             cursor.execute(self.query)
             columns = [col[0] for col in cursor.description]
             data = cursor.fetchall()
-            data = [dict(zip(columns, row)) for row in data]
+            data = [
+                {
+                    i: (j if not isinstance(j, oracledb.LOB) else j.read())
+                    for i, j in zip(columns, row)
+                }
+                for row in data
+            ]
         except oracledb.DatabaseError as e:
             print("Got error while connecting: " + str(e))  # noqa: T201
             data = []

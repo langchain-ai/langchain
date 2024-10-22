@@ -20,11 +20,12 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
 
         overlap = set(kwargs["input_variables"]) & {"url", "path", "detail"}
         if overlap:
-            raise ValueError(
+            msg = (
                 "input_variables for the image template cannot contain"
                 " any of 'url', 'path', or 'detail'."
                 f" Found: {overlap}"
             )
+            raise ValueError(msg)
         super().__init__(**kwargs)
 
     @property
@@ -91,13 +92,16 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
         path = kwargs.get("path") or formatted.get("path")
         detail = kwargs.get("detail") or formatted.get("detail")
         if not url and not path:
-            raise ValueError("Must provide either url or path.")
+            msg = "Must provide either url or path."
+            raise ValueError(msg)
         if not url:
             if not isinstance(path, str):
-                raise ValueError("path must be a string.")
+                msg = "path must be a string."
+                raise ValueError(msg)
             url = image_utils.image_to_data_url(path)
         if not isinstance(url, str):
-            raise ValueError("url must be a string.")
+            msg = "url must be a string."
+            raise ValueError(msg)
         output: ImageURL = {"url": url}
         if detail:
             # Don't check literal values here: let the API check them
@@ -128,4 +132,4 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
         Returns:
             A pretty representation of the prompt.
         """
-        raise NotImplementedError()
+        raise NotImplementedError

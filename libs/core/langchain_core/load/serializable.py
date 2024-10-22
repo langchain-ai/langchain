@@ -1,3 +1,4 @@
+import contextlib
 from abc import ABC
 from typing import (
     Any,
@@ -214,11 +215,12 @@ class Serializable(BaseModel, ABC):
 
                 for attr in deprecated_attributes:
                     if hasattr(cls, attr):
-                        raise ValueError(
+                        msg = (
                             f"Class {self.__class__} has a deprecated "
                             f"attribute {attr}. Please use the corresponding "
                             f"classmethod instead."
                         )
+                        raise ValueError(msg)
 
             # Get a reference to self bound to each class in the MRO
             this = cast(Serializable, self if cls is None else super(cls, self))
@@ -238,7 +240,7 @@ class Serializable(BaseModel, ABC):
 
         # include all secrets, even if not specified in kwargs
         # as these secrets may be passed as an environment variable instead
-        for key in secrets.keys():
+        for key in secrets:
             secret_value = getattr(self, key, None) or lc_kwargs.get(key)
             if secret_value is not None:
                 lc_kwargs.update({key: secret_value})
@@ -357,8 +359,6 @@ def to_json_not_implemented(obj: object) -> SerializedNotImplemented:
         "id": _id,
         "repr": None,
     }
-    try:
+    with contextlib.suppress(Exception):
         result["repr"] = repr(obj)
-    except Exception:
-        pass
     return result

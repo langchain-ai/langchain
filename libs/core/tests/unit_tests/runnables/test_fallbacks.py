@@ -61,13 +61,13 @@ def chain() -> Runnable:
 
 
 def _raise_error(inputs: dict) -> str:
-    raise ValueError()
+    raise ValueError
 
 
 def _dont_raise_error(inputs: dict) -> str:
     if "exception" in inputs:
         return "bar"
-    raise ValueError()
+    raise ValueError
 
 
 @pytest.fixture()
@@ -99,11 +99,11 @@ def _runnable(inputs: dict) -> str:
     if inputs["text"] == "foo":
         return "first"
     if "exception" not in inputs:
-        raise ValueError()
+        raise ValueError
     if inputs["text"] == "bar":
         return "second"
     if isinstance(inputs["exception"], ValueError):
-        raise RuntimeError()
+        raise RuntimeError
     return "third"
 
 
@@ -251,13 +251,13 @@ def _generate(input: Iterator) -> Iterator[str]:
 
 
 def _generate_immediate_error(input: Iterator) -> Iterator[str]:
-    raise ValueError()
+    raise ValueError
     yield ""
 
 
 def _generate_delayed_error(input: Iterator) -> Iterator[str]:
     yield ""
-    raise ValueError()
+    raise ValueError
 
 
 def test_fallbacks_stream() -> None:
@@ -279,13 +279,13 @@ async def _agenerate(input: AsyncIterator) -> AsyncIterator[str]:
 
 
 async def _agenerate_immediate_error(input: AsyncIterator) -> AsyncIterator[str]:
-    raise ValueError()
+    raise ValueError
     yield ""
 
 
 async def _agenerate_delayed_error(input: AsyncIterator) -> AsyncIterator[str]:
     yield ""
-    raise ValueError()
+    raise ValueError
 
 
 async def test_fallbacks_astream() -> None:

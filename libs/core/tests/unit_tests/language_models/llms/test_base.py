@@ -105,7 +105,7 @@ async def test_stream_error_callback() -> None:
         else:
             assert llm_result.generations[0][0].text == message[:i]
 
-    for i in range(0, 2):
+    for i in range(2):
         llm = FakeStreamingListLLM(
             responses=[message],
             error_on_chunk_number=i,
@@ -161,7 +161,7 @@ async def test_astream_implementation_fallback_to_stream() -> None:
             **kwargs: Any,
         ) -> LLMResult:
             """Top Level call"""
-            raise NotImplementedError()
+            raise NotImplementedError
 
         def _stream(
             self,
@@ -198,7 +198,7 @@ async def test_astream_implementation_uses_astream() -> None:
             **kwargs: Any,
         ) -> LLMResult:
             """Top Level call"""
-            raise NotImplementedError()
+            raise NotImplementedError
 
         async def _astream(
             self,

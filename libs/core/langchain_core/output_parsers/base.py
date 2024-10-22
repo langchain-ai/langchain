@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 from abc import ABC, abstractmethod
 from typing import (
     TYPE_CHECKING,
@@ -79,7 +80,10 @@ class BaseGenerationOutputParser(
         return T  # type: ignore[misc]
 
     def invoke(
-        self, input: Union[str, BaseMessage], config: Optional[RunnableConfig] = None
+        self,
+        input: Union[str, BaseMessage],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
     ) -> T:
         if isinstance(input, BaseMessage):
             return self._call_with_config(
@@ -173,13 +177,17 @@ class BaseOutputParser(
                 if "args" in metadata and len(metadata["args"]) > 0:
                     return metadata["args"][0]
 
-        raise TypeError(
+        msg = (
             f"Runnable {self.__class__.__name__} doesn't have an inferable OutputType. "
             "Override the OutputType property to specify the output type."
         )
+        raise TypeError(msg)
 
     def invoke(
-        self, input: Union[str, BaseMessage], config: Optional[RunnableConfig] = None
+        self,
+        input: Union[str, BaseMessage],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
     ) -> T:
         if isinstance(input, BaseMessage):
             return self._call_with_config(
@@ -303,16 +311,15 @@ class BaseOutputParser(
     @property
     def _type(self) -> str:
         """Return the output parser type for serialization."""
-        raise NotImplementedError(
+        msg = (
             f"_type property is not implemented in class {self.__class__.__name__}."
             " This is required for serialization."
         )
+        raise NotImplementedError(msg)
 
     def dict(self, **kwargs: Any) -> dict:
         """Return dictionary representation of output parser."""
         output_parser_dict = super().dict(**kwargs)
-        try:
+        with contextlib.suppress(NotImplementedError):
             output_parser_dict["_type"] = self._type
-        except NotImplementedError:
-            pass
         return output_parser_dict
