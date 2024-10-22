@@ -16,6 +16,7 @@ from typing import (
     Iterable,
     List,
     Optional,
+    Sequence,
     Tuple,
     Type,
     Union,
@@ -421,6 +422,8 @@ class Chroma(VectorStore):
         # Populate IDs
         if ids is None:
             ids = [str(uuid.uuid4()) for _ in uris]
+        else:
+            ids = [id if id is not None else str(uuid.uuid4()) for id in ids]
         embeddings = None
         # Set embeddings
         if self._embedding_function is not None and hasattr(
@@ -1076,6 +1079,8 @@ class Chroma(VectorStore):
         )
         if ids is None:
             ids = [str(uuid.uuid4()) for _ in texts]
+        else:
+            ids = [id if id is not None else str(uuid.uuid4()) for id in ids]
         if hasattr(
             chroma_collection._client, "max_batch_size"
         ):  # for Chroma 0.4.10 and above
@@ -1154,7 +1159,7 @@ class Chroma(VectorStore):
         """
         self._collection.delete(ids=ids, **kwargs)
 
-    def get_by_ids(self, ids: List[str]) -> List[Document]:
+    def get_by_ids(self, ids: Sequence[str]) -> List[Document]:
         """Retrieve documents by their IDs.
 
         Args:
@@ -1164,10 +1169,14 @@ class Chroma(VectorStore):
             List of Documents corresponding to the provided IDs.
         """
         # Fetch results from the Chroma collection based on the provided IDs
-        results: Dict[str, Any] = self.get(ids=ids)
+        results: Dict[str, Any] = self.get(ids=list(ids))
 
         # Ensure that none of the elements are None
-        if results["ids"] is None or results["documents"] is None or results["metadatas"] is None:
+        if (
+            results["ids"] is None
+            or results["documents"] is None
+            or results["metadatas"] is None
+        ):
             raise ValueError("One of the elements in the results dictionary is None")
 
         return [

@@ -24,10 +24,11 @@ class TestChromaSearch:
 
         results = vectorstore.similarity_search("What is a sandwich?")
         id = results[0].id
-        assert vectorstore.get(id)['documents'][0] == results[0].page_content
+        assert id is not None
+        assert vectorstore.get(id)["documents"][0] == results[0].page_content
         newDoc = Document(page_content="This is a new document.", metadata={"x": 1})
         vectorstore.update_document(id, newDoc)
-        assert vectorstore.get(id)['documents'][0] == newDoc.page_content
+        assert vectorstore.get(id)["documents"][0] == newDoc.page_content
 
     def test_from_texts(self) -> None:
         """Test end to end construction and search."""
