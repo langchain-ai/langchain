@@ -1,6 +1,7 @@
 """Hugging Face Chat Wrapper."""
 
 from dataclasses import dataclass
+import json
 from typing import (
     Any,
     Callable,
@@ -106,7 +107,6 @@ def _convert_TGI_message_to_LC_message(
     additional_kwargs: Dict = {}
     if tool_calls := _message.tool_calls:
         if "arguments" in tool_calls[0]["function"]:
-            import json
 
             functions = tool_calls[0]["function"].pop("arguments")
             tool_calls[0]["function"]["arguments"] = json.dumps(

@@ -66,7 +66,7 @@ def test_convert_message_to_chat_message(
             TGI_MESSAGE(
                 role="assistant",
                 content="",
-                tool_calls=[{"function": {"arguments": 'function string'}}],
+                tool_calls=[{"function": {"arguments": "function string"}}],
             ),
             AIMessage(
                 content="",
@@ -79,12 +79,16 @@ def test_convert_message_to_chat_message(
             TGI_MESSAGE(
                 role="assistant",
                 content="",
-                tool_calls=[{"function": {"arguments": {'answer': 'function\'s string'}}}],
+                tool_calls=[
+                    {"function": {"arguments": {"answer": "function's string"}}}
+                ],
             ),
             AIMessage(
                 content="",
                 additional_kwargs={
-                    "tool_calls": [{"function": {"arguments": '{"answer": "function\'s string"}'}}]
+                    "tool_calls": [
+                        {"function": {"arguments": '{"answer": "function\'s string"}'}}
+                    ]
                 },
             ),
         ),
