@@ -24,3 +24,16 @@ table.longtable code {
 table.longtable td {
   max-width: 600px;
 }
+
+.banner {
+   background-color: #f0f0f0;
+   color: #333;
+   padding: 10px;
+   text-align: center;
+   font-weight: bold;
+   position: fixed;
+   top: 0;
+   left: 0;
+   right: 0;
+   z-index: 1000;
+}
