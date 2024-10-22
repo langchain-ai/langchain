@@ -326,25 +326,44 @@ class InMemoryVectorStore(VectorStore):
         self,
         embedding: list[float],
         k: int = 4,
+        prefilter_k_multiplier: Optional[int] = 10,
         filter: Optional[Callable[[Document], bool]] = None,
         **kwargs: Any,
     ) -> list[tuple[Document, float, list[float]]]:
-        result = []
-        for doc in self.store.values():
-            vector = doc["vector"]
-            similarity = float(cosine_similarity([embedding], [vector]).item(0))
-            result.append(
-                (
-                    Document(
-                        id=doc["id"], page_content=doc["text"], metadata=doc["metadata"]
-                    ),
-                    similarity,
-                    vector,
-                )
-            )
-        result.sort(key=lambda x: x[1], reverse=True)
+        # get all docs with fixed order in list
+        docs = list(self.store.values())
+        if not docs:
+            return []
+
+        similarity = cosine_similarity([embedding], [doc["vector"] for doc in docs])[0]
+
+        # get the indices ordered by similarity score
+        top_k_idx = similarity.argsort()[::-1]
+
+        # prefilter to speed up for list comprehension below
         if filter is not None:
-            result = [r for r in result if filter(r[0])]
+            # we can safely filter to top k if no filter is set
+            top_k_idx = top_k_idx[:k]
+        elif prefilter_k_multiplier is not None:
+            # Filter to top k * prefilter_k_multiplier
+            # We keep more than k to avoid returning less than k after filtering
+            prefilter_k = k * prefilter_k_multiplier
+            top_k_idx = top_k_idx[:prefilter_k]
+
+        result = [
+            (doc, similarity[idx], doc_dict["vector"])
+            for idx in top_k_idx
+            for doc_dict in [docs[idx]]
+            for doc in [
+                Document(
+                    id=doc_dict["id"],
+                    page_content=doc_dict["text"],
+                    metadata=doc_dict["metadata"],
+                )
+            ]
+            if filter is None or filter(doc)
+        ]
+
         return result[:k]
 
     def similarity_search_with_score_by_vector(
