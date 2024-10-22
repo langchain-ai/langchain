@@ -1,7 +1,7 @@
 import base64
 import tempfile
 from pathlib import Path
-from typing import Any, List, Tuple, Union, cast
+from typing import Any, Union, cast
 
 import pytest
 from pydantic import ValidationError
@@ -31,11 +31,12 @@ from langchain_core.prompts.chat import (
     SystemMessagePromptTemplate,
     _convert_to_message,
 )
+from langchain_core.prompts.string import PromptTemplateFormat
 from tests.unit_tests.pydantic_utils import _normalize_schema
 
 
 @pytest.fixture
-def messages() -> List[BaseMessagePromptTemplate]:
+def messages() -> list[BaseMessagePromptTemplate]:
     """Create messages."""
     system_message_prompt = SystemMessagePromptTemplate(
         prompt=PromptTemplate(
@@ -72,7 +73,7 @@ def messages() -> List[BaseMessagePromptTemplate]:
 
 @pytest.fixture
 def chat_prompt_template(
-    messages: List[BaseMessagePromptTemplate],
+    messages: list[BaseMessagePromptTemplate],
 ) -> ChatPromptTemplate:
     """Create a chat prompt template."""
     return ChatPromptTemplate(
@@ -227,7 +228,7 @@ async def test_chat_prompt_template(chat_prompt_template: ChatPromptTemplate) ->
 
 
 def test_chat_prompt_template_from_messages(
-    messages: List[BaseMessagePromptTemplate],
+    messages: list[BaseMessagePromptTemplate],
 ) -> None:
     """Test creating a chat prompt template from messages."""
     chat_prompt_template = ChatPromptTemplate.from_messages(messages)
@@ -298,8 +299,79 @@ def test_chat_prompt_template_from_messages_mustache() -> None:
     ]
 
 
+@pytest.mark.requires("jinja2")
+def test_chat_prompt_template_from_messages_jinja2() -> None:
+    template = ChatPromptTemplate.from_messages(
+        [
+            ("system", "You are a helpful AI bot. Your name is {{ name }}."),
+            ("human", "Hello, how are you doing?"),
+            ("ai", "I'm doing well, thanks!"),
+            ("human", "{{ user_input }}"),
+        ],
+        "jinja2",
+    )
+
+    messages = template.format_messages(name="Bob", user_input="What is your name?")
+
+    assert messages == [
+        SystemMessage(
+            content="You are a helpful AI bot. Your name is Bob.", additional_kwargs={}
+        ),
+        HumanMessage(
+            content="Hello, how are you doing?", additional_kwargs={}, example=False
+        ),
+        AIMessage(
+            content="I'm doing well, thanks!", additional_kwargs={}, example=False
+        ),
+        HumanMessage(content="What is your name?", additional_kwargs={}, example=False),
+    ]
+
+
+@pytest.mark.requires("jinja2")
+@pytest.mark.requires("mustache")
+@pytest.mark.parametrize(
+    "template_format,image_type_placeholder,image_data_placeholder",
+    [
+        ("f-string", "{image_type}", "{image_data}"),
+        ("mustache", "{{image_type}}", "{{image_data}}"),
+        ("jinja2", "{{ image_type }}", "{{ image_data }}"),
+    ],
+)
+def test_chat_prompt_template_image_prompt_from_message(
+    template_format: PromptTemplateFormat,
+    image_type_placeholder: str,
+    image_data_placeholder: str,
+) -> None:
+    prompt = {
+        "type": "image_url",
+        "image_url": {
+            "url": f"data:{image_type_placeholder};base64, {image_data_placeholder}",
+            "detail": "low",
+        },
+    }
+
+    template = ChatPromptTemplate.from_messages(
+        [("human", [prompt])], template_format=template_format
+    )
+    assert template.format_messages(
+        image_type="image/png", image_data="base64data"
+    ) == [
+        HumanMessage(
+            content=[
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": "data:image/png;base64, base64data",
+                        "detail": "low",
+                    },
+                }
+            ]
+        )
+    ]
+
+
 def test_chat_prompt_template_with_messages(
-    messages: List[BaseMessagePromptTemplate],
+    messages: list[BaseMessagePromptTemplate],
 ) -> None:
     chat_prompt_template = ChatPromptTemplate.from_messages(
         messages + [HumanMessage(content="foo")]
@@ -828,7 +900,7 @@ async def test_chat_tmpl_serdes(snapshot: SnapshotAssertion) -> None:
             ("system", [{"text": "You are an AI assistant named {name}."}]),
             SystemMessagePromptTemplate.from_template("you are {foo}"),
             cast(
-                Tuple,
+                tuple,
                 (
                     "human",
                     [

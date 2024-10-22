@@ -1,7 +1,7 @@
 """A fake callback handler for testing purposes."""
 
 from itertools import chain
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -16,7 +16,7 @@ class BaseFakeCallbackHandler(BaseModel):
     starts: int = 0
     ends: int = 0
     errors: int = 0
-    errors_args: List[Any] = []
+    errors_args: list[Any] = []
     text: int = 0
     ignore_llm_: bool = False
     ignore_chain_: bool = False
@@ -265,8 +265,8 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
 class FakeCallbackHandlerWithChatStart(FakeCallbackHandler):
     def on_chat_model_start(
         self,
-        serialized: Dict[str, Any],
-        messages: List[List[BaseMessage]],
+        serialized: dict[str, Any],
+        messages: list[list[BaseMessage]],
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
