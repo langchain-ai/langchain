@@ -4,7 +4,7 @@ from typing import Any, Optional, Dict, List
 
 import requests
 from langchain.chains.router.llm_router import RouterChain
-from langchain_core.callbacks import CallbackManagerForChainRun
+from langchain_core.callbacks import CallbackManagerForChainRun, AsyncCallbackManagerForChainRun
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from pydantic import SecretStr, model_validator
 
@@ -51,7 +51,7 @@ class JinaClassifierRouterChain(RouterChain):
         values["session"] = session
         return values
 
-    def _classify(self, inputs: List[str], labels: List[str]) -> List[str]:
+    def _classify(self, inputs: List[Dict[str, str]], labels: List[str]) -> List[str]:
         resp = self.session.post(  # type: ignore
             JINA_API_URL,
             json={"input": inputs, "labels": labels, "model": self.model_name},
@@ -76,7 +76,9 @@ class JinaClassifierRouterChain(RouterChain):
         _labels = inputs.get("labels", self.labels)
         results = self._classify(
             [
-                _input,
+                {
+                    "text": _input,
+                },
             ],
             _labels,
         )
