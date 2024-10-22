@@ -351,7 +351,7 @@ class InMemoryVectorStore(VectorStore):
             top_k_idx = top_k_idx[:prefilter_k]
 
         result = [
-            (doc, similarity[idx], doc_dict["vector"])
+            (doc, float(similarity[idx].item()), doc_dict["vector"])
             for idx in top_k_idx
             for doc_dict in [docs[idx]]
             for doc in [
