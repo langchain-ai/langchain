@@ -179,6 +179,25 @@ When designing tools to be used by models, keep the following in mind:
 - Design simple and narrowly scoped tools, as they are easier for models to use correctly.
 - Use chat models that support [tool-calling](/docs/concepts/tool_calling) APIs to take advantage of tools.
 
+
+## Toolkits
+<span data-heading-keywords="toolkit,toolkits"></span>
+
+LangChain has a concept of **toolkits**. This a very thin abstraction that groups tools together that
+are designed to be used together for specific tasks.
+
+### Interface
+
+All Toolkits expose a `get_tools` method which returns a list of tools. You can therefore do:
+
+```python
+# Initialize a toolkit
+toolkit = ExampleTookit(...)
+
+# Get list of tools
+tools = toolkit.get_tools()
+```
+
 ## Related Resources
 
 See the following resources for more information:
