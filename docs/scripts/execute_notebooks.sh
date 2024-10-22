@@ -11,7 +11,7 @@ execute_notebook() {
     file="$1"
     echo "Starting execution of $file"
     start_time=$(date +%s)
-    if ! output=$(time poetry run jupyter nbconvert --to notebook --execute $file 2>&1); then
+    if ! output=$(time poetry run jupyter nbconvert --to notebook --execute --ExecutePreprocessor.kernel_name=python3 $file 2>&1); then
         end_time=$(date +%s)
         execution_time=$((end_time - start_time))
         echo "Error in $file. Execution time: $execution_time seconds"
@@ -27,7 +27,7 @@ export -f execute_notebook
 
 # Determine the list of notebooks to execute
 if [ "$WORKING_DIRECTORY" == "all" ]; then
-    notebooks=$(find docs/docs/tutorials -name "*.ipynb" | grep -v ".ipynb_checkpoints" | grep -vFf <(echo "$SKIP_NOTEBOOKS"))
+    notebooks=$(find docs/docs/tutorials docs/docs/how_to -name "*.ipynb" | grep -v ".ipynb_checkpoints" | grep -vFf <(echo "$SKIP_NOTEBOOKS"))
 else
     notebooks=$(find "$WORKING_DIRECTORY" -name "*.ipynb" | grep -v ".ipynb_checkpoints" | grep -vFf <(echo "$SKIP_NOTEBOOKS"))
 fi
