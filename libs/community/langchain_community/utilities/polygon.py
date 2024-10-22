@@ -45,7 +45,7 @@ class PolygonAPIWrapper(BaseModel):
         data = response.json()
 
         status = data.get("status", None)
-        if status not in ("OK", "STOCKBUSINESS"):
+        if status not in ("OK", "STOCKBUSINESS", "STOCKSBUSINESS"):
             raise ValueError(f"API Error: {data}")
 
         return data.get("results", None)
