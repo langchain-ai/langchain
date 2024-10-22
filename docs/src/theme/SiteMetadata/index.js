@@ -62,6 +62,9 @@ function useDefaultCanonicalUrl() {
   const canonicalPathnameNoVersion = canonicalPathname.startsWith('/v0.') ? "/"+canonicalPathname.split('/').slice(2).join('/') : canonicalPathname;
   const suggestedLookup = suggestedLinks[canonicalPathnameNoVersion];
   const finalPathname = suggestedLookup?.canonical || canonicalPathname;
+  if (finalPathname.startsWith("https://")) {
+    return finalPathname;
+  }
   return siteUrl + finalPathname;
 }
 
