@@ -1,36 +1,34 @@
 # Why LangChain?
 
+The goal of `langchain` the Python package and LangChain the company is to make it as easy possible for developers to build applications that reason.
+While LangChain originally started as a single open source package, it has evolved into a company and a whole ecosystem.
+This page will talk about the LangChain ecosystem as a whole.
+Most of the components within in the LangChain ecosystem can be used by themselves - so if you feel particularly drawn to certain components but not others, that is totally fine! Pick and choose whichever components you like best.
+
 ## Features
 
 There are several primary needs that LangChain aims to address:
 
-1. **Standard component interface:** The growing number of [models](/docs/integrations/chat/) and [related components](/docs/integrations/vectorstores/) for AI applications has resulted in a wide variety of different APIs that developers need to learn and use. 
+1. **Standardized and enhanced component interfaces:** The growing number of [models](/docs/integrations/chat/) and [related components](/docs/integrations/vectorstores/) for AI applications has resulted in a wide variety of different APIs that developers need to learn and use.
 This diversity can make it challenging for developers to switch between providers or combine components when building applications.
+LangChain exposes a standard interface for key components, making it easy to switch between providers.
+LangChain also enhances the base components with capabilities that make them more practical for building LLM applications (like streaming, async, and batch support)
 
-2. **Enhanced component capabilities:** Many components in LangChain support additional features that are particularly useful in AI applications, such as features that mitigate latency and rate limits with many [models](/docs/integrations/chat/)].
-
-3. **Orchestration:** As applications become more complex, combining multiple components and models, there's [a growing need to efficiently connect these elements into control flows](https://lilianweng.github.io/posts/2023-06-23-agent/) that can [accomplish diverse tasks](https://www.sequoiacap.com/article/generative-ais-act-o1/). 
+2. **Orchestration:** As applications become more complex, combining multiple components and models, there's [a growing need to efficiently connect these elements into control flows](https://lilianweng.github.io/posts/2023-06-23-agent/) that can [accomplish diverse tasks](https://www.sequoiacap.com/article/generative-ais-act-o1/).
 [Orchestration](https://en.wikipedia.org/wiki/Orchestration_(computing)) is crucial for building such applications.
 
-4. **Observability and evaluation:** As applications become more complex, it becomes increasingly difficult to understand what is happening within them. 
+3. **Observability and evaluation:** As applications become more complex, it becomes increasingly difficult to understand what is happening within them.
 Furthermore, the pace of development can become rate-limited by the [paradox of choice](https://en.wikipedia.org/wiki/Paradox_of_choice):
 for example, developers often wonder how to engineer their prompt or which LLM best balances accuracy, latency, and cost. 
 [Observability](https://en.wikipedia.org/wiki/Observability) and evaluations can help developers monitor their applications and rapidly answer these types of questions with confidence.
 
-5. **Deployment:** There's a growing need for seamless transition from prototype to production-ready applications.
 
-## Standard Interfaces
+## Standardized and enhanced component interfaces
 
 LangChain provides common interfaces for components that are central to many AI applications.
 As an example, all [chat models](/docs/concepts/chat_models/) implement the [BaseChatModel](https://python.langchain.com/api_reference/core/language_models/langchain_core.language_models.chat_models.BaseChatModel.html) interface.
 This provides a standard way to interact with chat models, supporting important but often provider-specific features like [tool calling](/docs/concepts/tool_calling/) and [structured outputs](/docs/concepts/structured_outputs/).
 
-LangChain also provides a common [runnable interface](/docs/concepts/runnables/) that works across *many* components that are common in AI applications.
-The [runnable interface](/docs/concepts/runnables/) has a few standard methods to interact with components:
-
-* `invoke`: Accepts an input and returns an output.
-* `batch`: Accepts a list of inputs and returns a list of outputs.
-* `stream`: Accepts an input and returns a generator that yields outputs.
 
 ### Example: Chat models 
 
@@ -56,26 +54,16 @@ schema = {"foo": "bar"}
 model_with_structure = model.with_structured_output(schema)
 ```
 
-Because all chat models implement the [runnable interface](/docs/concepts/runnables/), they all - for example - be `invoked`. 
-In the case of chat models, the `invoke` method takes a string, list of chat a list of [messages](/docs/concepts/messages), or a [PromptValue](https://api.python.langchain.com/en/latest/prompt_values/langchain_core.prompt_values.PromptValue.html) and returns a list of [messages](/docs/concepts/messages) as output.
-
-```python
-# Invoke the model to produce structured output that matches the schema
-messages = model_with_structure.invoke(user_input)
-```
-
 ### Example: Retrievers
 
 In the context of [RAG](/docs/concepts/rag/) and LLM application components, LangChain's [retriever](/docs/concepts/retrievers/) interface provides a standard way to connect to many different types of data services or databases (e.g., vector stores or databases).
-The underlying implementation of the retriever depends on the type of data store or database you are connecting to, but all retrievers implement the [runnable interface](/docs/concepts/runnables/). 
-Just as with the chat model example above, they can all be `invoked`. 
-In the case of [retrievers](/docs/concepts/retrievers/), the `invoke` method takes a string and returns a list of [Documents](https://api.python.langchain.com/en/latest/documents/langchain_core.documents.base.Document.html) as output.
+The underlying implementation of the retriever depends on the type of data store or database you are connecting to, but all retrievers implement the [runnable interface](/docs/concepts/runnables/), meaning they can be invoked in a common manner.
 
 ```python
 documents = my_retriever.invoke("What is the meaning of life?")
 ```
 
-## Enhanced component capabilities
+### Enhanced component capabilities
 
 In addition, to standardizing interfaces, LangChain's component implementations often provide additional features that are particularly useful in AI applications.
 As an example, [chat models](/docs/concepts/chat_models/) often suffer from high latency and / or rate limits, which can make them unsuitable for production applications.
@@ -89,38 +77,17 @@ LangChain's [chat model](/docs/concepts/chat_models/) implementation has various
 
 While standardization for individual components is useful, we've increasingly seen that developers want to *combine* components into more complex applications. 
 This motivates the need for [orchestration](https://en.wikipedia.org/wiki/Orchestration_(computing)).
-LangChain has a few different ways to achieve orchestration, allowing developers to build custom applications from lower-level components.
+There are several common characteristics of LLM applications that this orchestration layer should support:
 
-### LCEL 
-
-As discussed, many individual components in LangChain implement the standard [runnable interface](/docs/concepts/runnables/). Not only does this provides common methods to interact with components, it also serves as a kind of "lego connector": it provides a uniform way to connect components together.
-The **L**ang**C**hain **E**xpression **L**anguage ([LCEL](/docs/concepts/lcel/)) is a general way to do this by connecting existing `Runnables` together.
-LCEL allows you to [chain](/docs/concepts/lcel/#runnablesequence) or [parallelize](/docs/concepts/lcel/#runnableparallel) components together using a common [composition syntax](/docs/concepts/lcel/#composition-syntax).
-
-:::info[Further reading]
-
-* The [LCEL cheatsheet](https://python.langchain.com/docs/how_to/lcel_cheatsheet/) shows common patterns that involve the Runnable interface and LCEL expressions.
-* Please see the following list of [how-to guides](/docs/how_to/#langchain-expression-language-lcel) that cover common tasks with LCEL.
-* A list of built-in `Runnables` can be found in the [LangChain Core API Reference](https://python.langchain.com/api_reference/core/runnables.html). Many of these Runnables are useful when composing custom "chains" in LangChain using LCEL.
-
-:::
-
-### LangGraph 
-
-While LCEL is useful for *chaining* together components, some applications (e.g., [agents](/docs/concepts/agents/)) demand higher complexity that is outside the scope of LCEL.
-There can be various reasons for this:
-
-* **Control flow:** The application requires complex patterns such as cycles (e.g., a loop that reiterates until a condition is met).
+* **Complex control flow:** The application requires complex patterns such as cycles (e.g., a loop that reiterates until a condition is met).
 * **Persistence:** The application needs to maintain short-term and / or long-term memory.
 * **Human-in-the-loop:** The application needs human interaction, e.g., pausing, reviewing, editing, approving certain steps.
 
-These needs motivate [LangGraph](https://langchain-ai.github.io/langgraph/concepts/high_level/), a library that gives the developer a high degree of control by expressing the flow of the application as a set of nodes and edges with built-in support for [persistence](https://langchain-ai.github.io/langgraph/concepts/persistence/), [human-in-the-loop](https://langchain-ai.github.io/langgraph/concepts/human_in_the_loop/), [memory](https://langchain-ai.github.io/langgraph/concepts/memory/), and other features.
+The recommended way to do orchestration for these complex applications is [LangGraph](https://langchain-ai.github.io/langgraph/concepts/high_level/).
+LangGraph is a library that gives developers a high degree of control by expressing the flow of the application as a set of nodes and edges.
+LangGraph comes with built-in support for [persistence](https://langchain-ai.github.io/langgraph/concepts/persistence/), [human-in-the-loop](https://langchain-ai.github.io/langgraph/concepts/human_in_the_loop/), [memory](https://langchain-ai.github.io/langgraph/concepts/memory/), and other features.
 It's particularly  well suited for building [agents](https://langchain-ai.github.io/langgraph/concepts/agentic_concepts/) or [multi-agent](https://langchain-ai.github.io/langgraph/concepts/multi_agent/) applications. 
-Importantly, individual LangChain components or composed chains via LCEL can be used within LangGraph nodes.
-But, it is entirely optional to use LangChain components within LangGraph.
-And, finally, all compiled LangGraphs implement the [runnable interface](/docs/concepts/runnables/), which allows a standard way interact with, and connect to, them.
-
-![LangGraph and LangChain](/img/why_langchain_langgraph.png)
+Importantly, individual LangChain components can be used within LangGraph nodes, but you can also use LangGraph WITHOUT using LangChain components.
 
 :::info[Further reading]
 
@@ -142,35 +109,12 @@ See our video playlist on [LangSmith tracing and evaluations](https://youtube.co
 
 :::
 
-## Deployment
-
-LangChain and LangGraph are both effective ways to build AI applications. 
-But a major pain point for developers is the transition from prototype to production-ready applications.
-With this in mind, LangChain offers [LangGraph Cloud](https://langchain-ai.github.io/langgraph/cloud/), a managed service for deploying and hosting LangGraph applications. 
-With one click, deploy a production-ready API with built-in persistence for your LangGraph application. 
- LangGraph Cloud APIs are horizontally scalable and deployed with durable storage.
-LangGraph Cloud is seamlessly integrated with LangSmith and is accessible from within the LangSmith UI.
-
-## When To Use LangChain?
-
-1. **Flexibility to use different [models](/docs/concepts/chat_models/) and / or associated components:** With the [rapid progress](https://ai.meta.com/blog/llama-3-2-connect-2024-vision-edge-mobile-devices/) in the AI ecosystem, developers have an increasing set of choices in [models](/docs/concepts/chat_models/) and [related components](https://medium.com/@bijit211987/power-of-vector-databases-for-gen-ai-applications-a63d4cf7e352) for AI applications. 
-Applications can combine these components in various ways. For example, [RAG](/docs/concepts/rag/) combines [models](/docs/concepts/chat_models/) with [retrieval systems](/docs/concepts/retrieval/)
-and [agents](https://langchain-ai.github.io/langgraph/concepts/agentic_concepts/) combine [models](/docs/concepts/chat_models/) with external [tools](/docs/concepts/tool_calling/).
-Why use a framework like LangChain when we can just call a particular LLM API directly? 
-If you believe that you will only ever want to use a single LLM provider, then it is reasonable to just call their API directly. 
-However, if you believe that you will want the flexibility to try out different LLM and / or component providers, then a framework like LangChain can make sense for your application.
-
-2. **Need for low-level control and customization:** Some model providers [offer higher-level abstractions and no/low-code interfaces](https://openai.com/index/introducing-gpts/) for working with [models](/docs/concepts/chat_models/).
-These have many benefit. However, if you want to flexibility to experiment with different providers and build custom applications from lower-level components, tailored to specific needs, then a framework like LangChain can make sense for your application.
-
 ## Conclusion
 
 LangChain offers standard interfaces for components that are central to many AI applications, which offers a few specific advantages:
 - **Ease of swapping providers:** It allows you to swap out different component providers without having to change the underlying code.
 - **Advanced features:** It provides common methods for more advanced features, such as [streaming](/docs/concepts/runnables/#streaming), [tool calling](/docs/concepts/tool_calling/), or [supplying configuration](/docs/concepts/runnables/).
 
-LangChain and LangGraph support orchestration of components into more complex applications:
-- **LCEL:** Provides a standard way to chain components together for simpler applications.
-- **LangGraph:** Supports applications (e.g., [agents](/docs/concepts/agents/)) more complex needs including [advanced controllability](https://langchain-ai.github.io/langgraph/concepts/persistence/), [human-in-the-loop](https://langchain-ai.github.io/langgraph/concepts/human_in_the_loop/), or [memory](https://langchain-ai.github.io/langgraph/concepts/memory/).
+LangGraph makes it possible to orchestrate complex applications (e.g., [agents](/docs/concepts/agents/)) and provide features like including [persistence](https://langchain-ai.github.io/langgraph/concepts/persistence/), [human-in-the-loop](https://langchain-ai.github.io/langgraph/concepts/human_in_the_loop/), or [memory](https://langchain-ai.github.io/langgraph/concepts/memory/).
 
-Once you have an application, LangSmith and LangGraph Cloud work seamlessly together to provide observability, evaluation, and deployment for AI applications.
+LangSmith makes it possible to iterate with confidence on your applications, by providing LLM-specific observability and framework for testing and evaluating your application.
