@@ -8,6 +8,7 @@ import pytest
 from syrupy import SnapshotAssertion
 
 from langchain_core.prompts.prompt import PromptTemplate
+from langchain_core.prompts.string import PromptTemplateFormat
 from langchain_core.tracers.run_collector import RunCollectorCallbackHandler
 from tests.unit_tests.pydantic_utils import _normalize_schema
 
@@ -610,7 +611,9 @@ async def test_prompt_ainvoke_with_metadata() -> None:
 )
 @pytest.mark.parametrize("template_format", ["f-string", "mustache"])
 def test_prompt_falsy_vars(
-    template_format: str, value: Any, expected: Union[str, dict[str, str]]
+    template_format: PromptTemplateFormat,
+    value: Any,
+    expected: Union[str, dict[str, str]],
 ) -> None:
     # each line is value, f-string, mustache
     if template_format == "f-string":
