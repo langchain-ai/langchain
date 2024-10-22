@@ -1,40 +1,44 @@
 # Agents
 
-By themselves, language models can't take actions - they just output text.
-A big use case for LangChain is creating **agents**.
-Agents are systems that use an LLM as a reasoning engine to determine which actions to take and what the inputs to those actions should be.
-The results of those actions can then be fed back into the agent and it determine whether more actions are needed, or whether it is okay to finish.
+## What is an agent?
 
+Many LLM applications implement a particular control flow of steps before and / or after LLM calls. 
+As an example, [RAG](/docs/concepts/rag/) performs [retrieval](/docs/concepts/retrieval/) of relevant documents to a question, and passes those documents to an LLM in order to ground the [model](/docs/concepts/chat_models/)'s response.
+Instead of hard-coding a fixed control flow, we sometimes want LLM systems that can pick its own control flow to solve more complex problems! 
+
+This is one definition of an agent: an agent is a system that uses an LLM to decide the control flow of an application. 
+There are many ways that an LLM can control application:
+
+- An LLM can route between two potential paths
+- An LLM can decide which of many tools to call
+- An LLM can decide whether the generated answer is sufficient or more work is needed
+
+![Agent types](/img/agent_types.png)
+
+## LangGraph 
+
+As a result, there are many different types of [agent architectures](https://blog.langchain.dev/what-is-a-cognitive-architecture/), which give an LLM varying levels of control.
 [LangGraph](https://github.com/langchain-ai/langgraph) is an extension of LangChain specifically aimed at creating highly controllable and customizable agents.
-Please check out that documentation for a more in depth overview of agent concepts.
+The motivation of LangGraph is to help preserve high reliability as we give the agent more control over the application.
 
-There is a legacy `agent` concept in LangChain that we are moving towards deprecating: `AgentExecutor`.
-AgentExecutor was essentially a runtime for agents.
-It was a great place to get started, however, it was not flexible enough as you started to have more customized agents.
-In order to solve that we built LangGraph to be this flexible, highly-controllable runtime.
+:::info[Further reading]
 
-If you are still using AgentExecutor, do not fear: we still have a guide on [how to use AgentExecutor](/docs/how_to/agent_executor).
-It is recommended, however, that you start to transition to LangGraph.
-In order to assist in this, we have put together a [transition guide on how to do so](/docs/how_to/migrate_agent).
+* See our LangGraph overview [here](https://langchain-ai.github.io/langgraph/concepts/high_level/#core-principles).
+* See our LangGraph Academy Course [here](https://academy.langchain.com/courses/intro-to-langgraph).
 
-## ReAct agents
-<span data-heading-keywords="react,react agent"></span>
+:::
 
-One popular architecture for building agents is [**ReAct**](https://arxiv.org/abs/2210.03629).
-ReAct combines reasoning and acting in an iterative process - in fact the name "ReAct" stands for "Reason" and "Act".
+## Legacy Agent Concept: AgentExecutor
 
-The general flow looks like this:
+LangChain previously introduced the `AgentExecutor` as a runtime for agents. 
+While it served as an excellent starting point, its limitations became apparent when dealing with more sophisticated and customized agents. 
+As a result, we're gradually phasing out `AgentExecutor` in favor of more flexible solutions in LangGraph.
 
-- The model will "think" about what step to take in response to an input and any previous observations.
-- The model will then choose an action from available tools (or choose to respond to the user).
-- The model will generate arguments to that tool.
-- The agent runtime (executor) will parse out the chosen tool and call it with the generated arguments.
-- The executor will return the results of the tool call back to the model as an observation.
-- This process repeats until the agent chooses to respond.
+### Transitioning from AgentExecutor to LangGraph
 
-There are general prompting based implementations that do not require any model-specific features, but the most
-reliable implementations use features like [tool calling](/docs/how_to/tool_calling/) to reliably format outputs
-and reduce variance.
+If you're currently using `AgentExecutor`, don't worry! We've prepared resources to help you:
 
-Please see the [LangGraph documentation](https://langchain-ai.github.io/langgraph/) for more information,
-or [this how-to guide](/docs/how_to/migrate_agent/) for specific information on migrating to LangGraph.
+1. For those who still need to use `AgentExecutor`, we offer a comprehensive guide on [how to use AgentExecutor](/docs/how_to/agent_executor).
+
+2. However, we strongly recommend transitioning to LangGraph for improved flexibility and control. To facilitate this transition, we've created a detailed [migration guide](/docs/how_to/migrate_agent) to help you move from `AgentExecutor` to LangGraph seamlessly.
+
