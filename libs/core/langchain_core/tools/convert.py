@@ -18,6 +18,7 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
+    **kwargs: Any,
 ) -> Callable:
     """Make tools out of functions, can be used with or without arguments.
 
@@ -42,6 +43,7 @@ def tool(
         error_on_invalid_docstring: if ``parse_docstring`` is provided, configure
             whether to raise ValueError on invalid Google Style docstrings.
             Defaults to True.
+        kwargs: Additional keyword arguments to pass to BaseTool constructor.
 
     Returns:
         The tool.
@@ -186,6 +188,7 @@ def tool(
                     response_format=response_format,
                     parse_docstring=parse_docstring,
                     error_on_invalid_docstring=error_on_invalid_docstring,
+                    **kwargs,
                 )
             # If someone doesn't want a schema applied, we must treat it as
             # a simple string->string function
@@ -202,6 +205,7 @@ def tool(
                 return_direct=return_direct,
                 coroutine=coroutine,
                 response_format=response_format,
+                **kwargs,
             )
 
         return _make_tool

@@ -48,6 +48,7 @@ from langchain_core.tools.base import (
     InjectedToolArg,
     SchemaAnnotationError,
     _get_all_basemodel_annotations,
+    _infer_handled_types,
     _is_message_content_block,
     _is_message_content_type,
 )
@@ -763,6 +764,97 @@ async def test_async_exception_handling_callable() -> None:
 
     _tool = _FakeExceptionTool(handle_tool_error=handling)
     actual = await _tool.arun({})
+    assert expected == actual
+
+
+def test_exception_handling_tuple() -> None:
+    @tool(handle_tool_error=(ValueError,))
+    def foo(x: int) -> int:
+        """X"""
+        msg = "bar"
+        raise ValueError(msg)
+
+    actual = foo.invoke({"x": 0})
+    expected = "bar"
+    assert actual == expected
+
+    @tool(handle_tool_error=True)
+    def foo2(x: int) -> int:
+        """X"""
+        msg = "bar"
+        raise ToolException(msg)
+
+    actual = foo2.invoke({"x": 0})
+    expected = "bar"
+    assert actual == expected
+
+    @tool(handle_tool_error=True)
+    def foo3(x: int) -> int:
+        """X"""
+        msg = "bar"
+        raise ValueError(msg)
+
+    with pytest.raises(ValueError):
+        foo3.invoke({"x": 0})
+
+
+def test_exception_handling_callable_type_hints() -> None:
+    def handle(e: ValueError) -> str:
+        return e.args[0]
+
+    @tool(handle_tool_error=handle)
+    def foo(x: int) -> int:
+        """X"""
+        msg = "bar"
+        raise ValueError(msg)
+
+    actual = foo.invoke({"x": 0})
+    expected = "bar"
+    assert actual == expected
+
+    def handle2(e: Union[ToolException, KeyError]) -> str:
+        return e.args[0]
+
+    @tool(handle_tool_error=handle2)
+    def foo2(x: int) -> int:
+        """X"""
+        msg = "bar"
+        raise ValueError(msg)
+
+    with pytest.raises(ValueError):
+        foo2.invoke({"x": 0})
+
+
+def test__infer_handled_types() -> None:
+    def handle(e):  # type: ignore
+        return ""
+
+    def handle2(e: Exception) -> str:
+        return ""
+
+    def handle3(e: Union[ValueError, ToolException]) -> str:
+        return ""
+
+    class Handler:
+        def handle(self, e: ValueError) -> str:
+            return ""
+
+    handle4 = Handler().handle
+
+    expected: tuple = (ToolException,)
+    actual = _infer_handled_types(handle)
+    assert expected == actual
+
+    expected = (Exception,)
+    actual = _infer_handled_types(handle2)
+    assert expected == actual
+
+    expected = (ValueError, ToolException)
+    actual = _infer_handled_types(handle3)
+    assert expected == actual
+
+    expected = (ValueError,)
+    actual = _infer_handled_types(handle4)
     assert expected == actual
 
 
