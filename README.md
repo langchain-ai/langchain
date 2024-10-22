@@ -38,7 +38,7 @@ conda install langchain -c conda-forge
 
 For these applications, LangChain simplifies the entire application lifecycle:
 
-- **Open-source libraries**: Build your applications using LangChain's open-source [building blocks](https://python.langchain.com/docs/concepts/#langchain-expression-language-lcel), [components](https://python.langchain.com/docs/concepts/), and [third-party integrations](https://python.langchain.com/docs/integrations/platforms/).
+- **Open-source libraries**: Build your applications using LangChain's open-source [building blocks](https://python.langchain.com/docs/concepts/#langchain-expression-language-lcel), [components](https://python.langchain.com/docs/concepts/), and [third-party integrations](https://python.langchain.com/docs/integrations/providers/).
   Use [LangGraph](https://langchain-ai.github.io/langgraph/) to build stateful agents with first-class streaming and human-in-the-loop support.
 - **Productionization**: Inspect, monitor, and evaluate your apps with [LangSmith](https://docs.smith.langchain.com/) so that you can constantly optimize and deploy with confidence.
 - **Deployment**: Turn your LangGraph applications into production-ready APIs and Assistants with [LangGraph Cloud](https://langchain-ai.github.io/langgraph/cloud/).
@@ -119,7 +119,7 @@ Agents allow an LLM autonomy over how a task is accomplished. Agents make decisi
 Please see [here](https://python.langchain.com) for full documentation, which includes:
 
 - [Introduction](https://python.langchain.com/docs/introduction/): Overview of the framework and the structure of the docs.
-- [Tutorials](https://python.langchain.com/docs/use_cases/): If you're looking to build something specific or are more of a hands-on learner, check out our tutorials. This is the best place to get started.
+- [Tutorials](https://python.langchain.com/docs/tutorials/): If you're looking to build something specific or are more of a hands-on learner, check out our tutorials. This is the best place to get started.
 - [How-to guides](https://python.langchain.com/docs/how_to/): Answers to “How do I….?” type questions. These guides are goal-oriented and concrete; they're meant to help you complete a specific task.
 - [Conceptual guide](https://python.langchain.com/docs/concepts/): Conceptual explanations of the key parts of the framework.
 - [API Reference](https://api.python.langchain.com): Thorough documentation of every class and method.

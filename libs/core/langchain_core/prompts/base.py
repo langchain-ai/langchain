@@ -21,6 +21,7 @@ import yaml
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from typing_extensions import Self, override
 
+from langchain_core.exceptions import ErrorCode, create_message
 from langchain_core.load import dumpd
 from langchain_core.output_parsers.base import BaseOutputParser
 from langchain_core.prompt_values import (
@@ -70,20 +71,27 @@ class BasePromptTemplate(
     def validate_variable_names(self) -> Self:
         """Validate variable names do not include restricted names."""
         if "stop" in self.input_variables:
-            raise ValueError(
+            msg = (
                 "Cannot have an input variable named 'stop', as it is used internally,"
                 " please rename."
             )
-        if "stop" in self.partial_variables:
             raise ValueError(
+                create_message(message=msg, error_code=ErrorCode.INVALID_PROMPT_INPUT)
+            )
+        if "stop" in self.partial_variables:
+            msg = (
                 "Cannot have an partial variable named 'stop', as it is used "
                 "internally, please rename."
+            )
+            raise ValueError(
+                create_message(message=msg, error_code=ErrorCode.INVALID_PROMPT_INPUT)
             )
 
         overall = set(self.input_variables).intersection(self.partial_variables)
         if overall:
+            msg = f"Found overlapping input and partial variables: {overall}"
             raise ValueError(
-                f"Found overlapping input and partial variables: {overall}"
+                create_message(message=msg, error_code=ErrorCode.INVALID_PROMPT_INPUT)
             )
         return self
 
@@ -143,9 +151,14 @@ class BasePromptTemplate(
                 inner_input = {var_name: inner_input}
 
             else:
-                raise TypeError(
+                msg = (
                     f"Expected mapping type as input to {self.__class__.__name__}. "
                     f"Received {type(inner_input)}."
+                )
+                raise TypeError(
+                    create_message(
+                        message=msg, error_code=ErrorCode.INVALID_PROMPT_INPUT
+                    )
                 )
         missing = set(self.input_variables).difference(inner_input)
         if missing:
@@ -160,7 +173,9 @@ class BasePromptTemplate(
                 " and not a variable, please escape it with double curly braces like: "
                 f"'{{{{{example_key}}}}}'."
             )
-            raise KeyError(msg)
+            raise KeyError(
+                create_message(message=msg, error_code=ErrorCode.INVALID_PROMPT_INPUT)
+            )
         return inner_input
 
     def _format_prompt_with_error_handling(self, inner_input: dict) -> PromptValue:
@@ -341,12 +356,14 @@ class BasePromptTemplate(
             prompt.save(file_path="path/prompt.yaml")
         """
         if self.partial_variables:
-            raise ValueError("Cannot save prompt with partial variables.")
+            msg = "Cannot save prompt with partial variables."
+            raise ValueError(msg)
 
         # Fetch dictionary to save
         prompt_dict = self.dict()
         if "_type" not in prompt_dict:
-            raise NotImplementedError(f"Prompt {self} does not support saving.")
+            msg = f"Prompt {self} does not support saving."
+            raise NotImplementedError(msg)
 
         # Convert file to Path object.
         save_path = Path(file_path) if isinstance(file_path, str) else file_path
@@ -361,7 +378,8 @@ class BasePromptTemplate(
             with open(file_path, "w") as f:
                 yaml.dump(prompt_dict, f, default_flow_style=False)
         else:
-            raise ValueError(f"{save_path} must be json or yaml")
+            msg = f"{save_path} must be json or yaml"
+            raise ValueError(msg)
 
 
 def _get_document_info(doc: Document, prompt: BasePromptTemplate[str]) -> dict:
@@ -371,10 +389,13 @@ def _get_document_info(doc: Document, prompt: BasePromptTemplate[str]) -> dict:
         required_metadata = [
             iv for iv in prompt.input_variables if iv != "page_content"
         ]
-        raise ValueError(
+        msg = (
             f"Document prompt requires documents to have metadata variables: "
             f"{required_metadata}. Received document with missing metadata: "
             f"{list(missing_metadata)}."
+        )
+        raise ValueError(
+            create_message(message=msg, error_code=ErrorCode.INVALID_PROMPT_INPUT)
         )
     return {k: base_info[k] for k in prompt.input_variables}
 

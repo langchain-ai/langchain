@@ -22,6 +22,7 @@ from typing import (
 import pytest
 from pydantic import BaseModel, Field, ValidationError
 from pydantic.v1 import BaseModel as BaseModelV1
+from pydantic.v1 import ValidationError as ValidationErrorV1
 from typing_extensions import TypedDict
 
 from langchain_core import tools
@@ -401,7 +402,7 @@ def test_structured_tool_from_function_docstring() -> None:
             bar: the bar value
             baz: the baz value
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     structured_tool = StructuredTool.from_function(foo)
     assert structured_tool.name == "foo"
@@ -435,7 +436,7 @@ def test_structured_tool_from_function_docstring_complex_args() -> None:
             bar: int
             baz: List[str]
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     structured_tool = StructuredTool.from_function(foo)
     assert structured_tool.name == "foo"
@@ -781,7 +782,7 @@ def test_structured_tool_from_function() -> None:
             bar: the bar value
             baz: the baz value
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     structured_tool = StructuredTool.from_function(foo)
     assert structured_tool.name == "foo"
@@ -825,7 +826,7 @@ def test_validation_error_handling_callable() -> None:
     """Test that validation errors are handled correctly."""
     expected = "foo bar"
 
-    def handling(e: ValidationError) -> str:
+    def handling(e: Union[ValidationError, ValidationErrorV1]) -> str:
         return expected
 
     _tool = _MockStructuredTool(handle_validation_error=handling)
@@ -842,7 +843,9 @@ def test_validation_error_handling_callable() -> None:
     ],
 )
 def test_validation_error_handling_non_validation_error(
-    handler: Union[bool, str, Callable[[ValidationError], str]],
+    handler: Union[
+        bool, str, Callable[[Union[ValidationError, ValidationErrorV1]], str]
+    ],
 ) -> None:
     """Test that validation errors are handled correctly."""
 
@@ -854,7 +857,7 @@ def test_validation_error_handling_non_validation_error(
             self,
             tool_input: Union[str, dict],
         ) -> Union[str, dict[str, Any]]:
-            raise NotImplementedError()
+            raise NotImplementedError
 
         def _run(self) -> str:
             return "dummy"
@@ -887,7 +890,7 @@ async def test_async_validation_error_handling_callable() -> None:
     """Test that validation errors are handled correctly."""
     expected = "foo bar"
 
-    def handling(e: ValidationError) -> str:
+    def handling(e: Union[ValidationError, ValidationErrorV1]) -> str:
         return expected
 
     _tool = _MockStructuredTool(handle_validation_error=handling)
@@ -904,7 +907,9 @@ async def test_async_validation_error_handling_callable() -> None:
     ],
 )
 async def test_async_validation_error_handling_non_validation_error(
-    handler: Union[bool, str, Callable[[ValidationError], str]],
+    handler: Union[
+        bool, str, Callable[[Union[ValidationError, ValidationErrorV1]], str]
+    ],
 ) -> None:
     """Test that validation errors are handled correctly."""
 
@@ -916,7 +921,7 @@ async def test_async_validation_error_handling_non_validation_error(
             self,
             tool_input: Union[str, dict],
         ) -> Union[str, dict[str, Any]]:
-            raise NotImplementedError()
+            raise NotImplementedError
 
         def _run(self) -> str:
             return "dummy"
@@ -2090,3 +2095,18 @@ def test_structured_tool_direct_init() -> None:
 
     with pytest.raises(NotImplementedError):
         assert tool.invoke("hello") == "hello"
+
+
+def test_injected_arg_with_complex_type() -> None:
+    """Test that an injected tool arg can be a complex type."""
+
+    class Foo:
+        def __init__(self) -> None:
+            self.value = "bar"
+
+    @tool
+    def injected_tool(x: int, foo: Annotated[Foo, InjectedToolArg]) -> str:
+        """Tool that has an injected tool arg."""
+        return foo.value
+
+    assert injected_tool.invoke({"x": 5, "foo": Foo()}) == "bar"  # type: ignore
