@@ -25,15 +25,27 @@ table.longtable td {
   max-width: 600px;
 }
 
+/* Banner Styles */
 .banner {
-   background-color: #f0f0f0;
-   color: #333;
-   padding: 10px;
-   text-align: center;
-   font-weight: bold;
-   position: fixed;
-   top: 0;
-   left: 0;
-   right: 0;
-   z-index: 1000;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background-color: #ffcc00;
+    color: #000;
+    text-align: center;
+    padding: 5px 0;
+    z-index: 1003; /* Highest z-index to sit above everything */
+    height: 30px; /* Fixed height */
+    line-height: 20px; /* Vertically center the text */
+}
+
+/* Navbar Styles */
+#navbar {
+    position: fixed;
+    top: 30px; /* Positioned right below the banner */
+    left: 0;
+    right: 0;
+    z-index: 1002; /* Below the banner */
+    height: 50px; /* Fixed height */
 }

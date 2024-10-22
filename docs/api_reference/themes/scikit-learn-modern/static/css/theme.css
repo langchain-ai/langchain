@@ -452,11 +452,11 @@ a.sk-footer-funding-link:hover {
 
 /* Enables section links to be visible when anchor-linked */
 section[id]::before {
-  display: block;
-  height: 52px;
-  margin-top: -52px;
-  visibility: hidden;
-  content: "";
+    display: block;
+    height: 85px;  /* Adjusted from 52px to 80px */
+    margin-top: -85px; /* Negative margin to offset the anchor position */
+    visibility: hidden;
+    content: "";
 }
 
 div.sk-page-content {
@@ -488,8 +488,9 @@ div.section h6 {
   cursor: pointer;
 }
 
+/* Adjusted Page Content Styles */
 div.sk-page-content {
-  margin-top: 52px;
+    margin-top: 80px; /* Adjusted for the new top offset */
 }
 
 @media screen and (min-width: 1400px) {
@@ -1418,6 +1419,8 @@ table.sk-sponsor-table td {
 div.sk-sidebar-toc-wrapper {
   width: unset;
   overflow-x: auto;
+  padding-top: 85px; /* Adjusted for the new top offset */
+  height: calc(100vh - 85px); /* Adjusted height */
 }
 
 div.sk-sidebar-toc-wrapper > [aria-label="rellinks"] {
