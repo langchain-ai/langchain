@@ -34,6 +34,7 @@ class AzureChatOpenAI(ChatOpenAI):
     following environment variables set or passed in constructor in lower case:
     - ``AZURE_OPENAI_API_KEY``
     - ``AZURE_OPENAI_ENDPOINT``
+    - ``AZURE_OPENAI_DEPLOYMENT``
     - ``AZURE_OPENAI_AD_TOKEN``
     - ``OPENAI_API_VERSION``
     - ``OPENAI_PROXY``
@@ -69,9 +70,10 @@ class AzureChatOpenAI(ChatOpenAI):
     
         Example: `https://example-resource.azure.openai.com/`
     """
-    deployment_name: Union[str, None] = Field(default=None, alias="azure_deployment")
+    deployment_name: Union[str, None] = Field(alias="azure_deployment")
     """A model deployment. 
-    
+        Automatically inferred from env var `AZURE_OPENAI_DEPLOYMENT` if not provided.
+
         If given sets the base client URL to include `/deployments/{azure_deployment}`.
         Note: this means you won't be able to use non-deployment endpoints.
     """
@@ -136,6 +138,9 @@ class AzureChatOpenAI(ChatOpenAI):
         )
         values["azure_endpoint"] = values["azure_endpoint"] or os.getenv(
             "AZURE_OPENAI_ENDPOINT"
+        )
+        values["deployment_name"] = values["azure_deployment"] or os.getenv(
+            "AZURE_OPENAI_DEPLOYMENT"
         )
         values["azure_ad_token"] = values["azure_ad_token"] or os.getenv(
             "AZURE_OPENAI_AD_TOKEN"
