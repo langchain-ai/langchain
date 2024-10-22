@@ -533,6 +533,7 @@ def _build_index(dirs: List[str]) -> None:
         "airbyte": "Airbyte",
         "aws": "AWS",
         "ai21": "AI21",
+        "ibm": "IBM",
     }
     ordered = ["core", "langchain", "text-splitters", "community", "experimental"]
     main_ = [dir_ for dir_ in ordered if dir_ in dirs]
