@@ -343,7 +343,7 @@ class HuggingFacePipeline(BaseLLM):
             skip_special_tokens=True,
         )
         generation_kwargs = dict(
-            text_inputs= prompt,
+            text_inputs=prompt,
             streamer=streamer,
             stopping_criteria=stopping_criteria,
             **pipeline_kwargs,
