@@ -27,7 +27,7 @@ The conceptual guide will not cover step-by-step instructions or specific implem
 - **[Tokens](/docs/concepts/tokens)**: Modern large language models (LLMs) are typically based on a transformer architecture that processes a sequence of units known as tokens.
 - **[Runnable Interface](/docs/concepts/runnables)**: Description of the standard Runnable interface which is implemented by many components in LangChain.
 - **[LangChain Expression Language (LCEL)](/docs/concepts/lcel)**: A declarative approach to building new Runnables from existing Runnables.
-- **[Document Loading](/docs/concepts/document_loading)**: Abstraction for loading documents.
+- **[Document Loaders](/docs/concepts/document_loaders)**: Abstraction for loading documents.
 - **[Retrieval](/docs/concepts/retrieval)**: Information retrieval systems can retrieve structured or unstructured data from a datasource in response to a query.
 - **[Text Splitters](/docs/concepts/text_splitters)**: Use to split long content into smaller more manageable chunks.
 - **[Embedding Models](/docs/concepts/embedding_models)**: Embedding models are models that can represent data in a vector space.
@@ -36,7 +36,7 @@ The conceptual guide will not cover step-by-step instructions or specific implem
 - **[Retrieval Augmented Generation (RAG)](/docs/concepts/rag)**: A powerful technique that enhances language models by combining them with external knowledge bases.
 - **[Agents](/docs/concepts/agents)**: Use a [language model](/docs/concepts/chat_models) to choose a sequence of actions to take. Agents can interact with external resources via [tool calling](/docs/concepts/tool_calling).
 - **[Prompt Templates](/docs/concepts/prompt_templates)**: Use to define prompt **templates** that can be lazily evaluated to generate prompts for [language models](/docs/concepts/chat_models). Primarily used with [LCEL](/docs/concepts/lcel) or prompts need to be serialized and stored for later use (e.g., in a database).
-- **[Async Programming with LangChain](/docs/concepts/async_programming)**: This guide covers some basic things that one should know to work with LangChain in an asynchronous context.
+- **[Async Programming with LangChain](/docs/concepts/async)**: This guide covers some basic things that one should know to work with LangChain in an asynchronous context.
 - **[Callbacks](/docs/concepts/callbacks)**: Learn about the callback system in LangChain. It is composed of CallbackManagers (which dispatch events to the registered handlers) and CallbackHandlers (which handle the events). Callbacks are used to stream outputs from LLMs in LangChain, observe the progress of an LLM application, and more.
 - **[Output Parsers](/docs/concepts/output_parsers)**: Output parsers are responsible for taking the output of a model and transforming it into a more suitable format for downstream tasks. Output parsers were primarily useful prior to the general availability of [chat models](/docs/concepts/chat_models) that natively support [tool calling](/docs/concepts/tool_calling) and [structured outputs](/docs/concepts/structured_outputs).
  
