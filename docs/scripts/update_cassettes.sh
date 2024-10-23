@@ -21,8 +21,8 @@ delete_cassettes() {
 delete_cassettes "$WORKING_DIRECTORY"
 
 # Pre-download tiktoken files
-echo "Pre-downloading tiktoken files..."
-poetry run python docs/scripts/download_tiktoken.py
+echo "Pre-downloading nltk and tiktoken files..."
+poetry run python docs/scripts/cache_data.py
 
 # Prepare notebooks
 echo "Preparing notebooks for CI..."

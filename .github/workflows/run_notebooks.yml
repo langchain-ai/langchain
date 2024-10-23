@@ -52,7 +52,7 @@ jobs:
 
       - name: Pre-download files
         run: |
-          poetry run python docs/scripts/download_tiktoken.py
+          poetry run python docs/scripts/cache_data.py
           curl -s https://raw.githubusercontent.com/lerocha/chinook-database/master/ChinookDatabase/DataSources/Chinook_Sqlite.sql | sqlite3 docs/docs/how_to/Chinook.db
           cp docs/docs/how_to/Chinook.db docs/docs/tutorials/Chinook.db
 
