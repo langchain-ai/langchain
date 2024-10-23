@@ -12,9 +12,9 @@ NOTEBOOK_DIRS = ("docs/docs/how_to", "docs/docs/tutorials")
 DOCS_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CASSETTES_PATH = os.path.join(DOCS_PATH, "cassettes")
 
-# TODO: populate if needed
 NOTEBOOKS_NO_CASSETTES = [
     "docs/docs/tutorials/retrievers.ipynb",  # TODO: fix non-determinism
+    "docs/docs/how_to/multi_vector.ipynb",  # Non-determinism due to batch
 ]
 
 NOTEBOOKS_NO_EXECUTION = [
