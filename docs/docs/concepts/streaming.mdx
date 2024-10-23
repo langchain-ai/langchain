@@ -106,7 +106,7 @@ While this API is available for use with [LangGraph](/docs/concepts/architecture
 
 For chains constructed using **LCEL**, the `.stream()` method only streams the output of the final step from te chain. This might be sufficient for some applications, but as you build more complex chains of several LLM calls together, you may want to use the intermediate values of the chain alongside the final output. For example, you may want to return sources alongside the final generation when building a chat-over-documents app.
 
-There are ways to do this [using callbacks](/docs/concepts/#callbacks-1), or by constructing your chain in such a way that it passes intermediate
+There are ways to do this [using callbacks](/docs/concepts/callbacks-1), or by constructing your chain in such a way that it passes intermediate
 values to the end with something like chained [`.assign()`](/docs/how_to/passthrough/) calls, but LangChain also includes an
 `.astream_events()` method that combines the flexibility of callbacks with the ergonomics of `.stream()`. When called, it returns an iterator
 which yields [various types of events](/docs/how_to/streaming/#event-reference) that you can filter and process according
