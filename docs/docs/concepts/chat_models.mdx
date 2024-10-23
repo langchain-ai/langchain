@@ -1,21 +1,22 @@
-# Chat Models
+# Chat models
 
 ## Overview
 
 Large Language Models (LLMs) are advanced machine learning models that excel in a wide range of language-related tasks such as text generation, translation, summarization, question answering, and more, without needing task-specific tuning for every scenario.
 
-Modern LLMs are typically accessed through a chat model interface that takes [messages](/docs/concepts/messages) as input and returns [messages](/docs/concepts/messages) as output.
+Modern LLMs are typically accessed through a chat model interface that takes a list of [messages](/docs/concepts/messages) as input and returns a [message](/docs/concepts/messages) as output.
 
 The newest generation of chat models offer additional capabilities:
 
-* [Tool Calling](/docs/concepts#tool-calling): Many popular chat models offer a native [tool calling](/docs/concepts#tool-calling) API. This API allows developers to build rich applications that enable AI to interact with external services, APIs, and databases. Tool calling can also be used to extract structured information from unstructured data and perform various other tasks.
+* [Tool calling](/docs/concepts#tool-calling): Many popular chat models offer a native [tool calling](/docs/concepts#tool-calling) API. This API allows developers to build rich applications that enable AI to interact with external services, APIs, and databases. Tool calling can also be used to extract structured information from unstructured data and perform various other tasks.
+* [Structured output](/docs/concepts/structured_outputs): A technique to make a chat model respond in a structured format, such as JSON that matches a given schema.
 * [Multimodality](/docs/concepts/multimodality): The ability to work with data other than text; for example, images, audio, and video.
 
 ## Features
 
 LangChain provides a consistent interface for working with chat models from different providers while offering additional features for monitoring, debugging, and optimizing the performance of applications that use LLMs.
 
-* Integrations with many chat model providers (e.g., Anthropic, OpenAI, Ollama, Cohere, Hugging Face, Groq, Microsoft Azure, Google Vertex, Amazon Bedrock). Please see [chat model integrations](/docs/integrations/chat/) for an up-to-date list of supported models.
+* Integrations with many chat model providers (e.g., Anthropic, OpenAI, Ollama, Microsoft Azure, Google Vertex, Amazon Bedrock, Hugging Face, Cohere, Groq). Please see [chat model integrations](/docs/integrations/chat/) for an up-to-date list of supported models.
 * Use either LangChain's [messages](/docs/concepts/messages) format or OpenAI format.
 * Standard [tool calling API](/docs/concepts#tool-calling): standard interface for binding tools to models, accessing tool call requests made by models, and sending tool results back to the model.
 * Standard API for structuring outputs (/docs/concepts/structured_outputs) via the `with_structured_output` method.
@@ -23,14 +24,14 @@ LangChain provides a consistent interface for working with chat models from diff
 * Integration with [LangSmith](https://docs.smith.langchain.com) for monitoring and debugging production-grade applications based on LLMs.
 * Additional features like standardized [token usage](/docs/concepts/messages#token_usage), [rate limiting](#rate-limiting), [caching](#cache) and more.
 
-##  Available Integrations
+## Integrations
 
 LangChain has many chat model integrations that allow you to use a wide variety of models from different providers.
 
 These integrations are one of two types:
 
-1. **Official Models**: These are models that are officially supported by LangChain and/or model provider. You can find these models in the `langchain-<provider>` packages.
-2. **Community Models**: There are models that are mostly contributed and supported by the community. You can find these models in the `langchain-community` package.
+1. **Official models**: These are models that are officially supported by LangChain and/or model provider. You can find these models in the `langchain-<provider>` packages.
+2. **Community models**: There are models that are mostly contributed and supported by the community. You can find these models in the `langchain-community` package.
 
 LangChain chat models are named with a convention that prefixes "Chat" to their class names (e.g., `ChatOllama`, `ChatAnthropic`, `ChatOpenAI`, etc.).
 
@@ -56,7 +57,7 @@ However, LangChain also has implementations of older LLMs that do not follow the
 These models implement the [BaseLLM](https://python.langchain.com/api_reference/core/language_models/langchain_core.language_models.llms.BaseLLM.html#langchain_core.language_models.llms.BaseLLM) interface and may be named with the "LLM" suffix (e.g., `OllamaLLM`, `AnthropicLLM`, `OpenAILLM`, etc.). Generally, users should not use these models.
 :::
 
-### Key Methods
+### Key methods
 
 The key methods of a chat model are:
 
@@ -68,7 +69,7 @@ The key methods of a chat model are:
 
 Other important methods can be found in the [BaseChatModel API Reference](https://python.langchain.com/api_reference/core/language_models/langchain_core.language_models.chat_models.BaseChatModel.html).
 
-### Inputs and Outputs 
+### Inputs and outputs
 
 Modern LLMs are typically accessed through a chat model interface that takes [messages](/docs/concepts/messages) as input and returns [messages](/docs/concepts/messages) as output. Messages are typically associated with a role (e.g., "system", "human", "assistant") and one or more content blocks that contain text or potentially multimodal data (e.g., images, audio, video).
 
@@ -77,7 +78,7 @@ LangChain supports two message formats to interact with chat models:
 1. **LangChain Message Format**: LangChain's own message format, which is used by default and is used internally by LangChain.
 2. **OpenAI's Message Format**: OpenAI's message format.
 
-### Standard Parameters
+### Standard parameters
 
 Many chat models have standardized parameters that can be used to configure the model:
 
@@ -100,12 +101,12 @@ Some important things to note:
 
 ChatModels also accept other parameters that are specific to that integration. To find all the parameters supported by a ChatModel head to the [API reference](https://python.langchain.com/api_reference/) for that model.
 
-## Tool Calling
+## Tool calling
 
 Chat models can call [tools](/docs/concepts/tools) to perform tasks such as fetching data from a database, making API requests, or running custom code. Please
 see the [tool calling](/docs/concepts#tool-calling) guide for more information.
 
-## Structured Outputs
+## Structured outputs
 
 Chat models can be requested to respond in a particular format (e.g., JSON or matching a particular schema). This feature is extremely
 useful for information extraction tasks. Please read more about
@@ -117,7 +118,7 @@ Large Language Models (LLMs) are not limited to processing text. They can also b
 
 Currently, only some LLMs support multimodal inputs, and almost none support multimodal outputs. Please consult the specific model documentation for details.
 
-## Context Window
+## Context window
 
 A chat model's context window refers to the maximum size of the input sequence the model can process at one time. While the context windows of modern LLMs are quite large, they still present a limitation that developers must keep in mind when working with chat models.
 
@@ -125,7 +126,7 @@ If the input exceeds the context window, the model may not be able to process th
 
 The size of the input is measured in [tokens](/docs/concepts/tokens) which are the unit of processing that the model uses.
 
-## Advanced Topics 
+## Advanced topics
  
 ### Rate-limiting
 
@@ -153,7 +154,7 @@ However, there might be situations where caching chat model responses is benefic
 
 Please see the [how to cache chat model responses](/docs/how_to/#chat-model-caching) guide for more details.
 
-## Related Resources
+## Related resources
 
 * How-to guides on using chat models: [how-to guides](/docs/how_to/#chat-models).
 * List of supported chat models: [chat model integrations](/docs/integrations/chat/).

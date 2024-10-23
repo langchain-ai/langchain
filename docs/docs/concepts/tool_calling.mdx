@@ -1,4 +1,4 @@
-# Tool Calling
+# Tool calling
 
 :::info[Prerequisites]
 * [Tools](/docs/concepts/tools)
@@ -19,7 +19,7 @@ You will sometimes hear the term `function calling`. We use this term interchang
 
 ![Conceptual overview of tool calling](/img/tool_calling_concept.png)
 
-## Key Concepts 
+## Key concepts 
 
 **(1) Tool Creation:** Use the [@tool](https://python.langchain.com/api_reference/core/tools/langchain_core.tools.convert.tool.html) decorator to create a [tool](/docs/concepts/tools). A tool is an association between a function and its schema.
 **(2) Tool Binding:** The tool needs to be connected to a model that supports tool calling. This gives the model awareness of the tool and the associated input schema required by the tool.
@@ -44,7 +44,7 @@ model_with_tools = model.bind_tools(tools)
 response = model_with_tools.invoke(user_input)
 ```
 
-## Tool Creation
+## Tool creation
 
 The recommended way to create a tool is using the `@tool` decorator.
 
@@ -65,7 +65,7 @@ def multiply(a: int, b: int) -> int:
 
 :::
 
-## Tool Binding 
+## Tool binding 
 
 [Many](https://platform.openai.com/docs/guides/function-calling) [model providers](https://platform.openai.com/docs/guides/function-calling) support tool calling. 
 
@@ -95,7 +95,7 @@ def multiply(a: int, b: int) -> int:
 llm_with_tools = tool_calling_model.bind_tools([multiply])
 ```
 
-## Tool Calling
+## Tool calling
 
 ![Diagram of a tool call by a model](/img/tool_call_example.png)
 
