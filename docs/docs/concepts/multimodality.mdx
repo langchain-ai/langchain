@@ -26,7 +26,7 @@ Multimodal support is still relatively new and less common, model providers have
 
 #### Inputs
 
-Some models can accept multimodal inputs, such as images, audio, video, or files. The types of multimodal inputs supported depend on the model provider. For instance, [Google's Gemini](https://python.langchain.com/docs/integrations/chat/google_generative_ai/) supports documents like PDFs as inputs.
+Some models can accept multimodal inputs, such as images, audio, video, or files. The types of multimodal inputs supported depend on the model provider. For instance, [Google's Gemini](/docs/integrations/chat/google_generative_ai/) supports documents like PDFs as inputs.
 
 Most chat models that support **multimodal inputs** also accept those values in OpenAI's content blocks format. So far this is restricted to image inputs. For models like Gemini which support video and other bytes input, the APIs also support the native, model-specific representations.
 
@@ -53,7 +53,7 @@ integration documentation for the correct format. Find the integration in the [c
 
 Virtually no popular chat models support multimodal outputs at the time of writing (October 2024). 
 
-The only exception is OpenAI's chat model ([gpt-4o-audio-preview](https://python.langchain.com/docs/integrations/chat/openai/)), which can generate audio outputs.
+The only exception is OpenAI's chat model ([gpt-4o-audio-preview](/docs/integrations/chat/openai/)), which can generate audio outputs.
 
 Multimodal outputs will appear as part of the [AIMessage](/docs/concepts/messages/#aimessage) response object.
 
@@ -80,7 +80,7 @@ As use cases involving multimodal search and retrieval tasks become more common,
 ## Multimodality in vector stores
 
 :::info Prerequisites
-* [Vectorstores](/docs/concepts/vectorstores)
+* [Vector stores](/docs/concepts/vectorstores)
 :::
 
 Vector stores are databases for storing and retrieving embeddings, which are typically used in search and retrieval tasks. Similar to embeddings, vector stores are currently optimized for text-based data.
