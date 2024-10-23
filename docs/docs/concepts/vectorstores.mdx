@@ -42,6 +42,7 @@ The key methods are:
 - `delete_documents`: Delete a list of documents from the vector store.
 - `similarity_search`: Search for similar documents to a given query.
 
+
 ## Initialization
 
 Most vectors in LangChain accept an embedding model as an argument when initializing the vector store.
@@ -50,7 +51,6 @@ We will use LangChain's [InMemoryVectorStore](https://python.langchain.com/api_r
 
 ```python
 from langchain_core.vectorstores import InMemoryVectorStore
-
 # Initialize with an embedding model
 vector_store = InMemoryVectorStore(embedding=SomeEmbeddingModel())
 ```
@@ -121,7 +121,7 @@ to the documentation of the specific vectorstore you are using to see what simil
 
 :::
 
-### Similarity Search
+### Similarity search
 
 Given a similarity metric to measure the distance between the embedded query and any embedded document, we need an algorithm to efficiently search over *all* the embedded documents to find the most similar ones.
 There are various ways to do this. As an example, many vectorstores implement [HNSW (Hierarchical Navigable Small World)](https://www.pinecone.io/learn/series/faiss/hnsw/), a graph-based index structure that allows for efficient similarity search.
