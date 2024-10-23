@@ -1,4 +1,4 @@
-# Langchain expression language (lcel)
+# LangChain Expression Language (LCEL)
 
 :::info Prerequisites
 * [Runnable Interface](/docs/concepts/runnables)
@@ -16,7 +16,7 @@ We often refer to a `Runnable` created using LCEL as a "chain". It's important t
 * A list of built-in `Runnables` can be found in the [LangChain Core API Reference](https://python.langchain.com/api_reference/core/runnables.html). Many of these Runnables are useful when composing custom "chains" in LangChain using LCEL.
 :::
 
-## Benefits of lcel
+## Benefits of LCEL
 
 LangChain optimizes the run-time execution of chains built with LCEL in a number of ways:
 
@@ -32,7 +32,7 @@ With LCEL, **all** steps are automatically logged to [LangSmith](https://docs.sm
 - **Standard API**: Because all chains are built using the Runnable interface, they can be used in the same way as any other Runnable.
 - [**Deployable with LangServe**](/docs/concepts/architecture#langserve): Chains built with LCEL can be deployed using for production use.
 
-## Should i use lcel?
+## Should I use LCEL?
 
 LCEL is an [orchestration solution](https://en.wikipedia.org/wiki/Orchestration_(computing)) -- it allows LangChain to handle run-time execution of chains in an optimized way.
 
@@ -46,7 +46,7 @@ Here are some guidelines:
 * If you have a simple chain (e.g., prompt + llm + parser, simple retrieval set up etc.), LCEL is a reasonable fit, if you're taking advantage of the LCEL benefits.
 * If you're building a complex chain (e.g., with branching, cycles, multiple agents, etc.) use [LangGraph](/docs/concepts/architecture#langgraph) instead. Remember that you can always use LCEL within individual nodes in LangGraph.
 
-## Composition primitives
+## Composition Primitives
 
 `LCEL` chains are built by composing existing `Runnables` together. The two main composition primitives are [RunnableSequence](https://python.langchain.com/api_reference/core/runnables/langchain_core.runnables.base.RunnableSequence.html#langchain_core.runnables.base.RunnableSequence) and [RunnableParallel](https://python.langchain.com/api_reference/core/runnables/langchain_core.runnables.base.RunnableParallel.html#langchain_core.runnables.base.RunnableParallel).
 
@@ -58,7 +58,7 @@ https://python.langchain.com/api_reference/core/runnables/langchain_core.runnabl
 You can find a list of all composition primitives in the [LangChain Core API Reference](https://python.langchain.com/api_reference/core/runnables.html).
 :::
 
-### Runnablesequence
+### RunnableSequence
 
 `RunnableSequence` is a composition primitive that allows you "chain" multiple runnables sequentially, with the output of one runnable serving as the input to the next.
 
@@ -84,7 +84,7 @@ final_output = runnable2.invoke(output1)
 `runnable1` and `runnable2` are placeholders for any `Runnable` that you want to chain together.
 :::
 
-### Runnableparallel
+### RunnableParallel
 
 `RunnableParallel` is a composition primitive that allows you to run multiple runnables concurrently, with the same input provided to each.
 
@@ -121,7 +121,7 @@ dictionary comprehension shown above, the execution time is much faster.
 * For asynchronous execution, `RunnableParallel` uses [asyncio.gather](https://docs.python.org/3/library/asyncio.html#asyncio.gather) to run the runnables concurrently.
 :::
 
-## Composition syntax
+## Composition Syntax
 
 The usage of `RunnableSequence` and `RunnableParallel` is so common that we created a shorthand syntax for using them. This helps
 to make the code more readable and concise.
@@ -156,7 +156,7 @@ If you do not understand the type coercion, you can always use the `RunnableSequ
 
 This will make the code more verbose, but it will also make it more explicit.
 
-#### Dictionary to runnableparallel
+#### Dictionary to RunnableParallel
 
 Inside an LCEL expression, a dictionary is automatically converted to a `RunnableParallel`.
 
@@ -185,7 +185,7 @@ mapping.invoke(some_input)
 ```
 :::
 
-#### Function to runnablelambda
+#### Function to RunnableLambda
 
 Inside an LCEL expression, a function is automatically converted to a `RunnableLambda`.
 
@@ -210,7 +210,7 @@ lambda x: x + 1.invoke(some_input)
 ```
 :::
 
-## Legacy chains
+## Legacy Chains
 
 LCEL aims to provide consistency around behavior and customization over legacy subclassed chains such as `LLMChain` and
 `ConversationalRetrievalChain`. Many of these legacy chains hide important details like prompts, and as a wider variety

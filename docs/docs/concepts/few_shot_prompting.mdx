@@ -20,7 +20,7 @@ There are a few things to think about when doing few-shot prompting:
 
 Here are the considerations for each.
 
-## 1. generating examples
+## 1. Generating examples
 
 The first and most important step of few-shot prompting is coming up with a good dataset of examples. Good examples should be relevant at runtime, clear, informative, and provide information that was not already known to the model.
 
@@ -42,7 +42,7 @@ The simplest types of examples just have a user input and an expected model outp
 One more complex type if example is where the example is an entire conversation, usually in which a model initially responds incorrectly and a user then tells the model how to correct its answer.
 This is called a multi-turn example. Multi-turn examples can be useful for more nuanced tasks where its useful to show common errors and spell out exactly why they're wrong and what should be done instead.
 
-## 2. number of examples
+## 2. Number of examples
 
 Once we have a dataset of examples, we need to think about how many examples should be in each prompt.
 The key tradeoff is that more examples generally improve performance, but larger prompts increase costs and latency.
@@ -51,7 +51,7 @@ Finding the right number of examples is highly dependent on the model, the task,
 Anecdotally, the better the model is the fewer examples it needs to perform well and the more quickly you hit steeply diminishing returns on adding more examples.
 But, the best/only way to reliably answer this question is to run some experiments with different numbers of examples.
 
-## 3. selecting examples
+## 3. Selecting examples
 
 Assuming we are not adding our entire example dataset into each prompt, we need to have a way of selecting examples from our dataset based on a given input. We can do this:
 - Randomly
@@ -62,7 +62,7 @@ LangChain has a number of [`ExampleSelectors`](/docs/concepts/example_selectors)
 
 Generally, selecting by semantic similarity leads to the best model performance. But how important this is is again model and task specific, and is something worth experimenting with.
 
-## 4. formatting examples
+## 4. Formatting examples
 
 Most state-of-the-art models these days are chat models, so we'll focus on formatting examples for those. Our basic options are to insert the examples:
 - In the system prompt as a string
