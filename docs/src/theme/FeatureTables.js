@@ -215,7 +215,18 @@ const FEATURE_TABLES = {
                 "multimodal": false,
                 "local": false,
                 "apiLink": "https://python.langchain.com/api_reference/upstage/chat_models/langchain_databricks.chat_models.ChatDatabricks.html"
-            }
+            },
+            {
+                "name": "ChatWatsonx",
+                "package": "langchain-ibm",
+                "link": "ibm_watsonx",
+                "structured_output": true,
+                "tool_calling": true,
+                "json_mode": true, 
+                "multimodal": false,
+                "local": false,
+                "apiLink": "https://python.langchain.com/api_reference/ibm/chat_models/langchain_ibm.chat_models.ChatWatsonx.html"
+            },
         ],
     },
     llms: {
