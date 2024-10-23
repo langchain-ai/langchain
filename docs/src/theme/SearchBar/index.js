@@ -24,6 +24,7 @@ function Hit({hit, children}) {
       }>
         {children}
       </a>
+    )
   }
   return <Link to={hit.url}>{children}</Link>;
 }
