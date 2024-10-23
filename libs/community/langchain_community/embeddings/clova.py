@@ -10,7 +10,7 @@ from pydantic import BaseModel, ConfigDict, SecretStr, model_validator
 
 
 @deprecated(
-    since="0.3.1",
+    since="0.3.4",
     removal="1.0.0",
     alternative_import="langchain_community.ClovaXEmbeddings",
 )

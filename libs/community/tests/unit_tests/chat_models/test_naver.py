@@ -12,7 +12,7 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain_core.pydantic_v1 import SecretStr
+from pydantic import SecretStr
 
 from langchain_community.chat_models import ChatClovaX
 from langchain_community.chat_models.naver import (
