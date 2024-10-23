@@ -34,6 +34,7 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
             # Set up your environment variables (or pass them directly to the model)
             export AZURE_OPENAI_API_KEY="your-api-key"
             export AZURE_OPENAI_ENDPOINT="https://<your-endpoint>.openai.azure.com/"
+            export AZURE_OPENAI_DEPLOYMENT="text-embedding-ada-002"
             export AZURE_OPENAI_API_VERSION="2024-02-01"
 
     Key init args — completion params:
