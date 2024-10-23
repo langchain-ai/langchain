@@ -1,5 +1,7 @@
 """Test ChatNaver chat model."""
 
+from langchain_core.messages import BaseMessage, BaseMessageChunk
+
 from langchain_community.chat_models import ChatClovaX
 
 
@@ -8,6 +10,7 @@ def test_stream() -> None:
     llm = ChatClovaX()
 
     for token in llm.stream("I'm Clova"):
+        assert isinstance(token, BaseMessageChunk)
         assert isinstance(token.content, str)
 
 
@@ -16,6 +19,7 @@ async def test_astream() -> None:
     llm = ChatClovaX()
 
     async for token in llm.astream("I'm Clova"):
+        assert isinstance(token, BaseMessageChunk)
         assert isinstance(token.content, str)
 
 
@@ -25,6 +29,7 @@ async def test_abatch() -> None:
 
     result = await llm.abatch(["I'm Clova", "I'm not Clova"])
     for token in result:
+        assert isinstance(token, BaseMessage)
         assert isinstance(token.content, str)
 
 
@@ -34,6 +39,7 @@ async def test_abatch_tags() -> None:
 
     result = await llm.abatch(["I'm Clova", "I'm not Clova"], config={"tags": ["foo"]})
     for token in result:
+        assert isinstance(token, BaseMessage)
         assert isinstance(token.content, str)
 
 
@@ -43,6 +49,7 @@ def test_batch() -> None:
 
     result = llm.batch(["I'm Clova", "I'm not Clova"])
     for token in result:
+        assert isinstance(token, BaseMessage)
         assert isinstance(token.content, str)
 
 
@@ -51,6 +58,7 @@ async def test_ainvoke() -> None:
     llm = ChatClovaX()
 
     result = await llm.ainvoke("I'm Clova", config={"tags": ["foo"]})
+    assert isinstance(result, BaseMessage)
     assert isinstance(result.content, str)
 
 
@@ -59,4 +67,5 @@ def test_invoke() -> None:
     llm = ChatClovaX()
 
     result = llm.invoke("I'm Clova", config=dict(tags=["foo"]))
+    assert isinstance(result, BaseMessage)
     assert isinstance(result.content, str)
