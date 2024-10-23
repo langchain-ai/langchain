@@ -97,14 +97,14 @@ class Meilisearch(VectorStore):
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
-        embedder: str = "default",
+        embedder: str,
         **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embedding and add them to the vector store.
 
         Args:
             texts (Iterable[str]): Iterable of strings/text to add to the vectorstore.
-            embedder: Name of the embedder. Defaults to "default".
+            embedder: Name of the embedder.
             metadatas (Optional[List[dict]]): Optional list of metadata.
                 Defaults to None.
             ids Optional[List[str]]: Optional list of IDs.
@@ -145,14 +145,14 @@ class Meilisearch(VectorStore):
         query: str,
         k: int = 4,
         filter: Optional[Dict[str, str]] = None,
-        embedder: str = "default",
+        embedder: str,
         **kwargs: Any,
     ) -> List[Document]:
         """Return meilisearch documents most similar to the query.
 
         Args:
             query (str): Query text for which to find similar documents.
-            embedder: Name of the embedder to be used. Defaults to "default".
+            embedder: Name of the embedder to be used.
             k (int): Number of documents to return. Defaults to 4.
             filter (Optional[Dict[str, str]]): Filter by metadata.
                 Defaults to None.
@@ -175,14 +175,14 @@ class Meilisearch(VectorStore):
         query: str,
         k: int = 4,
         filter: Optional[Dict[str, str]] = None,
-        embedder: str = "default",
+        embedder: str,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return meilisearch documents most similar to the query, along with scores.
 
         Args:
             query (str): Query text for which to find similar documents.
-            embedder: Name of the embedder to be used. Defaults to "default".
+            embedder: Name of the embedder to be used.
             k (int): Number of documents to return. Defaults to 4.
             filter (Optional[Dict[str, str]]): Filter by metadata.
                 Defaults to None.
@@ -205,7 +205,7 @@ class Meilisearch(VectorStore):
     def similarity_search_by_vector_with_scores(
         self,
         embedding: List[float],
-        embedder: str = "default",
+        embedder: str,
         k: int = 4,
         filter: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
@@ -214,7 +214,7 @@ class Meilisearch(VectorStore):
 
         Args:
             embedding (List[float]): Embedding to look up similar documents.
-            embedder: Name of the embedder to be used. Defaults to "default".
+            embedder: Name of the embedder to be used.
             k (int): Number of documents to return. Defaults to 4.
             filter (Optional[Dict[str, str]]): Filter by metadata.
                 Defaults to None.
@@ -251,14 +251,14 @@ class Meilisearch(VectorStore):
         embedding: List[float],
         k: int = 4,
         filter: Optional[Dict[str, str]] = None,
-        embedder: str = "default",
+        embedder: str,
         **kwargs: Any,
     ) -> List[Document]:
         """Return meilisearch documents most similar to embedding vector.
 
         Args:
             embedding (List[float]): Embedding to look up similar documents.
-            embedder: Name of the embedder to be used. Defaults to "default".
+            embedder: Name of the embedder to be used.
             k (int): Number of documents to return. Defaults to 4.
             filter (Optional[Dict[str, str]]): Filter by metadata.
                 Defaults to None.
@@ -289,7 +289,7 @@ class Meilisearch(VectorStore):
         ids: Optional[List[str]] = None,
         text_key: Optional[str] = "text",
         metadata_key: Optional[str] = "metadata",
-        embedder: str = "default",
+        embedder: str,
         **kwargs: Any,
     ) -> Meilisearch:
         """Construct Meilisearch wrapper from raw documents.
@@ -311,7 +311,7 @@ class Meilisearch(VectorStore):
                 # in your Meilisearch console
                 client = meilisearch.Client(url='http://127.0.0.1:7700', api_key='***')
                 embedding = OpenAIEmbeddings()
-                embedder: Name of the embedder. Defaults to "default".
+                embedder: Name of the embedder.
                 docsearch = Meilisearch.from_texts(
                     client=client,
                     embedding=embedding,
