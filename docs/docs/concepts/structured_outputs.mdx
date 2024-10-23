@@ -90,7 +90,7 @@ ai_msg.tool_calls[0]["args"]
 pydantic_object = ResponseFormatter.model_validate(ai_msg.tool_calls[0]["args"])
 ```
 
-### Json mode
+### JSON mode
 
 In addition to tool calling, some model providers support a feature called `JSON mode`. 
 This supports JSON schema definition as input and enforces the model to produce a conforming JSON output.
