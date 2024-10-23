@@ -167,7 +167,7 @@ ChatModels also accept other parameters that are specific to that integration. T
 :::important
 Some chat models have been fine-tuned for **tool calling** and provide a dedicated API for it.
 Generally, such models are better at tool calling than non-fine-tuned models, and are recommended for use cases that require tool calling.
-Please see the [tool calling section](/docs/concepts/#functiontool-calling) for more information.
+Please see the [tool calling section](/docs/concepts/tool_calling) for more information.
 :::
 
 For specifics on how to use chat models, see the [relevant how-to guides here](/docs/how_to/#chat-models).
@@ -186,17 +186,17 @@ For a full list of LangChain model providers with multimodal models, [check out 
 <span data-heading-keywords="llm,llms"></span>
 
 :::caution
-Pure text-in/text-out LLMs tend to be older or lower-level. Many new popular models are best used as [chat completion models](/docs/concepts/#chat-models),
+Pure text-in/text-out LLMs tend to be older or lower-level. Many new popular models are best used as [chat completion models](/docs/concepts/chat_models),
 even for non-chat use cases.
 
-You are probably looking for [the section above instead](/docs/concepts/#chat-models).
+You are probably looking for [the section above instead](/docs/concepts/chat_models).
 :::
 
 Language models that takes a string as input and returns a string.
-These are traditionally older models (newer models generally are [Chat Models](/docs/concepts/#chat-models), see above).
+These are traditionally older models (newer models generally are [Chat Models](/docs/concepts/chat_models), see above).
 
 Although the underlying models are string in, string out, the LangChain wrappers also allow these models to take messages as input.
-This gives them the same interface as [Chat Models](/docs/concepts/#chat-models).
+This gives them the same interface as [Chat Models](/docs/concepts/chat_models).
 When messages are passed in as input, they will be formatted into a string under the hood before being passed to the underlying model.
 
 LangChain does not host any LLMs, rather we rely on third party integrations.
@@ -348,7 +348,7 @@ For specifics on how to use prompt templates, see the [relevant how-to guides he
 
 ### Example selectors
 One common prompting technique for achieving better performance is to include examples as part of the prompt.
-This is known as [few-shot prompting](/docs/concepts/#few-shot-prompting).
+This is known as [few-shot prompting](/docs/concepts/few-shot-prompting).
 This gives the language model concrete examples of how it should behave.
 Sometimes these examples are hardcoded into the prompt, but for more advanced situations it may be nice to dynamically select them.
 Example Selectors are classes responsible for selecting and then formatting examples into prompts.
@@ -363,7 +363,7 @@ For specifics on how to use example selectors, see the [relevant how-to guides h
 The information here refers to parsers that take a text output from a model try to parse it into a more structured representation.
 More and more models are supporting function (or tool) calling, which handles this automatically.
 It is recommended to use function/tool calling rather than output parsing.
-See documentation for that [here](/docs/concepts/#function-tool-calling).
+See documentation for that [here](/docs/concepts/tool_calling).
 
 :::
 
@@ -456,7 +456,7 @@ For specifics on how to use text splitters, see the [relevant how-to guides here
 
 Embedding models create a vector representation of a piece of text. You can think of a vector as an array of numbers that captures the semantic meaning of the text.
 By representing the text in this way, you can perform mathematical operations that allow you to do things like search for other pieces of text that are most similar in meaning.
-These natural language search capabilities underpin many types of [context retrieval](/docs/concepts/#retrieval),
+These natural language search capabilities underpin many types of [context retrieval](/docs/concepts/retrieval),
 where we provide an LLM with the relevant data it needs to effectively respond to a query.
 
 ![](/img/embeddings.png)
@@ -572,7 +572,7 @@ tool_message = ToolMessage(
 
 Note that the `content` field will generally be passed back to the model.
 If you do not want the raw tool response to be passed to the model, but you still want to keep it around,
-you can transform the tool output but also pass it as an artifact (read more about [`ToolMessage.artifact` here](/docs/concepts/#toolmessage))
+you can transform the tool output but also pass it as an artifact (read more about [`ToolMessage.artifact` here](/docs/concepts/messages/#toolmessage))
 
 ```python
 ... # Same code as above
@@ -603,14 +603,14 @@ tool_message = tool.invoke(tool_call)
 #    )
 ```
 
-If you are invoking the tool this way and want to include an [artifact](/docs/concepts/#toolmessage) for the ToolMessage, you will need to have the tool return two things.
+If you are invoking the tool this way and want to include an [artifact](/docs/concepts/messages/#toolmessage) for the ToolMessage, you will need to have the tool return two things.
 Read more about [defining tools that return artifacts here](/docs/how_to/tool_artifacts/).
 
 #### Best practices
 
 When designing tools to be used by a model, it is important to keep in mind that:
 
-- Chat models that have explicit [tool-calling APIs](/docs/concepts/#functiontool-calling) will be better at tool calling than non-fine-tuned models.
+- Chat models that have explicit [tool-calling APIs](/docs/concepts/tool_calling) will be better at tool calling than non-fine-tuned models.
 - Models will perform better if the tools have well-chosen names, descriptions, and JSON schemas. This is another form of prompt engineering.
 - Simple, narrowly scoped tools are easier for models to use than complex tools.
 
@@ -780,8 +780,8 @@ you could still use the same general pattern when calling them. Using `.stream()
 without the need to provide additional config.
 
 The type of each outputted chunk depends on the type of component - for example, chat models yield [`AIMessageChunks`](https://python.langchain.com/api_reference/core/messages/langchain_core.messages.ai.AIMessageChunk.html).
-Because this method is part of [LangChain Expression Language](/docs/concepts/#langchain-expression-language-lcel),
-you can handle formatting differences from different outputs using an [output parser](/docs/concepts/#output-parsers) to transform
+Because this method is part of [LangChain Expression Language](/docs/concepts/lcel),
+you can handle formatting differences from different outputs using an [output parser](/docs/concepts/output_parsers) to transform
 each yielded chunk.
 
 You can check out [this guide](/docs/how_to/streaming/#using-stream) for more detail on how to use `.stream()`.
@@ -794,7 +794,7 @@ but as you build more complex chains of several LLM calls together, you may want
 the chain alongside the final output - for example, returning sources alongside the final generation when building a chat
 over documents app.
 
-There are ways to do this [using callbacks](/docs/concepts/#callbacks-1), or by constructing your chain in such a way that it passes intermediate
+There are ways to do this [using callbacks](/docs/concepts/callbacks-1), or by constructing your chain in such a way that it passes intermediate
 values to the end with something like chained [`.assign()`](/docs/how_to/passthrough/) calls, but LangChain also includes an
 `.astream_events()` method that combines the flexibility of callbacks with the ergonomics of `.stream()`. When called, it returns an iterator
 which yields [various types of events](/docs/how_to/streaming/#event-reference) that you can filter and process according
@@ -826,9 +826,9 @@ including a table listing available events.
 
 #### Callbacks
 
-The lowest level way to stream outputs from LLMs in LangChain is via the [callbacks](/docs/concepts/#callbacks) system. You can pass a
+The lowest level way to stream outputs from LLMs in LangChain is via the [callbacks](/docs/concepts/callbacks) system. You can pass a
 callback handler that handles the [`on_llm_new_token`](https://python.langchain.com/api_reference/langchain/callbacks/langchain.callbacks.streaming_aiter.AsyncIteratorCallbackHandler.html#langchain.callbacks.streaming_aiter.AsyncIteratorCallbackHandler.on_llm_new_token) event into LangChain components. When that component is invoked, any
-[LLM](/docs/concepts/#llms) or [chat model](/docs/concepts/#chat-models) contained in the component calls
+[LLM](/docs/concepts/chat_models) or [chat model](/docs/concepts/chat_models) contained in the component calls
 the callback with the generated token. Within the callback, you could pipe the tokens into some other destination, e.g. a HTTP response.
 You can also handle the [`on_llm_end`](https://python.langchain.com/api_reference/langchain/callbacks/langchain.callbacks.streaming_aiter.AsyncIteratorCallbackHandler.html#langchain.callbacks.streaming_aiter.AsyncIteratorCallbackHandler.on_llm_end) event to perform any necessary cleanup.
 
@@ -873,7 +873,7 @@ we treat all models as though they can return multiple tool or function calls in
 each message.
 :::
 
-Tool calling allows a [chat model](/docs/concepts/#chat-models) to respond to a given prompt by generating output that
+Tool calling allows a [chat model](/docs/concepts/chat_models) to respond to a given prompt by generating output that
 matches a user-defined schema.
 
 While the name implies that the model is performing
@@ -894,24 +894,24 @@ LangChain provides a standardized interface for tool calling that is consistent 
 
 The standard interface consists of:
 
-* `ChatModel.bind_tools()`: a method for specifying which tools are available for a model to call. This method accepts [LangChain tools](/docs/concepts/#tools) as well as [Pydantic](https://pydantic.dev/) objects.
+* `ChatModel.bind_tools()`: a method for specifying which tools are available for a model to call. This method accepts [LangChain tools](/docs/concepts/tools) as well as [Pydantic](https://pydantic.dev/) objects.
 * `AIMessage.tool_calls`: an attribute on the `AIMessage` returned from the model for accessing the tool calls requested by the model.
 
 #### Tool usage
 
 After the model calls tools, you can use the tool by invoking it, then passing the arguments back to the model.
-LangChain provides the [`Tool`](/docs/concepts/#tools) abstraction to help you handle this.
+LangChain provides the [`Tool`](/docs/concepts/tools) abstraction to help you handle this.
 
 The general flow is this:
 
 1. Generate tool calls with a chat model in response to a query.
 2. Invoke the appropriate tools using the generated tool call as arguments.
-3. Format the result of the tool invocations as [`ToolMessages`](/docs/concepts/#toolmessage).
+3. Format the result of the tool invocations as [`ToolMessages`](/docs/concepts/messages/#toolmessage).
 4. Pass the entire list of messages back to the model so that it can generate a final answer (or call more tools).
 
 ![Diagram of a complete tool calling flow](/img/tool_calling_flow.png)
 
-This is how tool calling [agents](/docs/concepts/#agents) perform tasks and answer queries.
+This is how tool calling [agents](/docs/concepts/agents) perform tasks and answer queries.
 
 Check out some more focused guides below:
 
@@ -985,7 +985,7 @@ You can also check out [this table](/docs/integrations/chat/#advanced-features) 
 
 The most intuitive way to get a model to structure output is to ask nicely.
 In addition to your query, you can give instructions describing what kind of output you'd like, then
-parse the output using an [output parser](/docs/concepts/#output-parsers) to convert the raw
+parse the output using an [output parser](/docs/concepts/output_parsers) to convert the raw
 model message or string output into something more easily manipulated.
 
 The biggest benefit to raw prompting is its flexibility:
@@ -1052,11 +1052,11 @@ For a full list of model providers that support JSON mode, see [this table](/doc
 
 #### Tool calling {#structured-output-tool-calling}
 
-For models that support it, [tool calling](/docs/concepts/#functiontool-calling) can be very convenient for structured output. It removes the
+For models that support it, [tool calling](/docs/concepts/tool_calling) can be very convenient for structured output. It removes the
 guesswork around how best to prompt schemas in favor of a built-in model feature.
 
-It works by first binding the desired schema either directly or via a [LangChain tool](/docs/concepts/#tools) to a
-[chat model](/docs/concepts/#chat-models) using the `.bind_tools()` method. The model will then generate an `AIMessage` containing
+It works by first binding the desired schema either directly or via a [LangChain tool](/docs/concepts/tools) to a
+[chat model](/docs/concepts/chat_models) using the `.bind_tools()` method. The model will then generate an `AIMessage` containing
 a `tool_calls` field containing `args` that match the desired shape.
 
 There are several acceptable formats you can use to bind tools to a model in LangChain. Here's one example:
@@ -1151,7 +1151,7 @@ Assuming we are not adding our entire example dataset into each prompt, we need 
 - By (semantic or keyword-based) similarity of the inputs
 - Based on some other constraints, like token size
 
-LangChain has a number of [`ExampleSelectors`](/docs/concepts/#example-selectors) which make it easy to use any of these techniques.
+LangChain has a number of [`ExampleSelectors`](/docs/concepts/example_selectors) which make it easy to use any of these techniques.
 
 Generally, selecting by semantic similarity leads to the best model performance. But how important this is is again model and task specific, and is something worth experimenting with.
 
@@ -1163,7 +1163,7 @@ Most state-of-the-art models these days are chat models, so we'll focus on forma
 
 If we insert our examples into the system prompt as a string, we'll need to make sure it's clear to the model where each example begins and which parts are the input versus output. Different models respond better to different syntaxes, like [ChatML](https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/chat-markup-language), XML, TypeScript, etc.
 
-If we insert our examples as messages, where each example is represented as a sequence of Human, AI messages, we might want to also assign [names](/docs/concepts/#messages) to our messages like `"example_user"` and `"example_assistant"` to make it clear that these messages correspond to different actors than the latest input message.
+If we insert our examples as messages, where each example is represented as a sequence of Human, AI messages, we might want to also assign [names](/docs/concepts/messages) to our messages like `"example_user"` and `"example_assistant"` to make it clear that these messages correspond to different actors than the latest input message.
 
 **Formatting tool call examples**
 
@@ -1253,7 +1253,7 @@ See our [blog post overview](https://blog.langchain.dev/query-construction/) and
 
 #### Indexing
 
-Fourth, consider the design of your document index. A simple and powerful idea is to **decouple the documents that you index for retrieval from the documents that you pass to the LLM for generation.** Indexing frequently uses embedding models with vector stores, which [compress the semantic information in documents to fixed-size vectors](/docs/concepts/#embedding-models).
+Fourth, consider the design of your document index. A simple and powerful idea is to **decouple the documents that you index for retrieval from the documents that you pass to the LLM for generation.** Indexing frequently uses embedding models with vector stores, which [compress the semantic information in documents to fixed-size vectors](/docs/concepts/embedding_models).
 
 Many RAG approaches focus on splitting documents into chunks and retrieving some number based on similarity to an input question for the LLM. But chunk size and chunk number can be difficult to set and affect results if they do not provide full context for the LLM to answer a question. Furthermore, LLMs are increasingly capable of processing millions of tokens. 
 
