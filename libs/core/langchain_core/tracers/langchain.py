@@ -5,9 +5,10 @@ from __future__ import annotations
 import copy
 import logging
 import warnings
+from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Any, Optional, Union, Sequence
+from typing import TYPE_CHECKING, Any, Optional, Union
 from uuid import UUID
 
 from langsmith import Client

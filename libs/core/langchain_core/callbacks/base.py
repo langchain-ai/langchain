@@ -1075,6 +1075,7 @@ Callbacks = Optional[Union[list[BaseCallbackHandler], BaseCallbackManager]]
 
 from typing_extensions import TypedDict
 
+
 class _ToolSchema(TypedDict):
     name: str
     description: str

@@ -272,7 +272,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             )
             raise ValueError(msg)
 
-    def _standardize_tools(self, tools: Optional[Sequence]) -> Optional[List[_ToolSchema]]:
+    def _standardize_tools(
+        self, tools: Optional[Sequence]
+    ) -> Optional[List[_ToolSchema]]:
         """Convert tools to standard format for tracing."""
         if not tools:
             return tools
