@@ -131,7 +131,7 @@ class Meilisearch(VectorStore):
             docs.append(
                 {
                     "id": id,
-                    "_vectors": {f"{embedder}": embedding},
+                    "_vectors": {embedder: embedding},
                     f"{self._metadata_key}": metadata,
                 }
             )
