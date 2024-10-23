@@ -1,5 +1,5 @@
-import nltk
 import tiktoken
+from unstructured.nlp.tokenize import download_nltk_packages
 
 
 def download_tiktoken_data():
@@ -7,10 +7,6 @@ def download_tiktoken_data():
     _ = tiktoken.encoding_for_model("gpt-3.5-turbo")
 
 
-def download_nltk_data():
-    nltk.download("punkt")
-
-
 if __name__ == "__main__":
     download_tiktoken_data()
-    download_nltk_data()
+    download_nltk_packages()
