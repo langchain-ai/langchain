@@ -108,7 +108,7 @@ function DocSearch({contextualSearch, externalUrlRegex, ...props}) {
     navigate({itemUrl}) {
       // Algolia results could contain URL's from other domains which cannot
       // be served through history and should navigate with window.location
-      if (isRegexpStringMatch(externalUrlRegex, itemUrl) || itemUrl.contains('/api_reference/')) {
+      if (isRegexpStringMatch(externalUrlRegex, itemUrl) || itemUrl.includes('/api_reference/')) {
         window.location.href = itemUrl;
       } else {
         history.push(itemUrl);
