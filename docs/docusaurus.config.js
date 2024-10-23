@@ -305,7 +305,7 @@ const config = {
         transformItems(items) {
           return items.map((item) => ({
             ...item,
-            url: item.url.startsWith("/api_reference/") ? `pathname://${item.url}` : item.url,
+            url: item.url.includes("/api_reference/") ? `pathname://${item.url}` : item.url,
           }));
         },
       },
