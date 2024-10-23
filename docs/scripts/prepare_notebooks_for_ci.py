@@ -34,6 +34,9 @@ NOTEBOOKS_NO_EXECUTION = [
     "docs/docs/how_to/qa_per_user.ipynb",  # Requires Pinecone instance
     "docs/docs/how_to/query_high_cardinality.ipynb",  # Heavy
     "docs/docs/how_to/split_by_token.ipynb",  # TODO: requires Korean document, also heavy deps
+    "docs/docs/how_to/tools_error.ipynb",  # Deliberately raises error
+    "docs/docs/how_to/tools_human.ipynb",  # Requires human input()
+    "docs/docs/how_to/tools_prompting.ipynb",  # Local LLMs
     "docs/docs/tutorials/graph.ipynb",  # Requires local graph db running
     "docs/docs/tutorials/local_rag.ipynb",  # Local LLMs
     "docs/docs/tutorials/query_analysis.ipynb",  # Requires youtube_transcript_api
