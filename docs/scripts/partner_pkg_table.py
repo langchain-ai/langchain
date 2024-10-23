@@ -57,7 +57,7 @@ JS_PACKAGES = {
     "nomic",
     "google-common",
     "ollama",
-    "ibm"
+    "ibm",
 }
 
 
