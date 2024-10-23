@@ -122,7 +122,10 @@ def add_vcr_to_notebook(
     return notebook
 
 
-def process_notebooks(should_comment_install_cells: bool) -> None:
+def process_notebooks(
+    should_comment_install_cells: bool,
+    working_directory: str,
+) -> None:
     for directory in NOTEBOOK_DIRS:
         for root, _, files in os.walk(directory):
             for file in files:
@@ -130,6 +133,12 @@ def process_notebooks(should_comment_install_cells: bool) -> None:
                     continue
 
                 notebook_path = os.path.join(root, file)
+                # Filter notebooks based on the working_directory input
+                if working_directory != "all" and not notebook_path.startswith(
+                    working_directory
+                ):
+                    continue
+
                 try:
                     notebook = nbformat.read(notebook_path, as_version=4)
 
@@ -172,8 +181,16 @@ def process_notebooks(should_comment_install_cells: bool) -> None:
     default=False,
     help="Whether to comment out install cells",
 )
-def main(comment_install_cells):
-    process_notebooks(should_comment_install_cells=comment_install_cells)
+@click.option(
+    "--working-directory",
+    default="all",
+    help="Working directory or specific notebook to process",
+)
+def main(comment_install_cells, working_directory):
+    process_notebooks(
+        should_comment_install_cells=comment_install_cells,
+        working_directory=working_directory,
+    )
     logger.info("All notebooks processed successfully.")
 
 
