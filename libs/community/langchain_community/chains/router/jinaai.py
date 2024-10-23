@@ -1,10 +1,8 @@
-# A demo of using the classify API from Jina AI for semantic routing
-import time
-from typing import Any, Optional, Dict, List
+from typing import Any, Dict, List, Optional
 
 import requests
 from langchain.chains.router.llm_router import RouterChain
-from langchain_core.callbacks import CallbackManagerForChainRun, AsyncCallbackManagerForChainRun
+from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from pydantic import SecretStr, model_validator
 
