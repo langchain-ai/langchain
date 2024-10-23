@@ -9,7 +9,9 @@ WORKING_DIRECTORY=$1
 # Function to execute a single notebook
 execute_notebook() {
     file="$1"
-    echo "Starting execution of $file"
+    index="$2"
+    total="$3"
+    echo "Starting execution of $file ($index/$total)"
     start_time=$(date +%s)
     if ! output=$(time poetry run jupyter nbconvert --to notebook --execute --ExecutePreprocessor.kernel_name=python3 $file 2>&1); then
         end_time=$(date +%s)
@@ -32,7 +34,13 @@ else
     notebooks=$(find "$WORKING_DIRECTORY" -name "*.ipynb" | grep -v ".ipynb_checkpoints" | grep -vFf <(echo "$SKIP_NOTEBOOKS"))
 fi
 
-# Execute notebooks sequentially
-for file in $notebooks; do
-    execute_notebook "$file"
+# Convert the list of notebooks to an array
+notebooks_array=($notebooks)
+total_notebooks=${#notebooks_array[@]}
+
+# Execute notebooks sequentially with progress indication
+for i in "${!notebooks_array[@]}"; do
+    file="${notebooks_array[$i]}"
+    index=$((i + 1))
+    execute_notebook "$file" "$index" "$total_notebooks"
 done
