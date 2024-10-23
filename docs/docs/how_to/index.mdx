@@ -27,7 +27,7 @@ This highlights functionality that is core to using LangChain.
 
 ## LangChain Expression Language (LCEL)
 
-[LangChain Expression Language](/docs/concepts/#langchain-expression-language-lcel) is a way to create arbitrary custom chains. It is built on the [Runnable](https://python.langchain.com/api_reference/core/runnables/langchain_core.runnables.base.Runnable.html) protocol.
+[LangChain Expression Language](/docs/concepts/lcel) is a way to create arbitrary custom chains. It is built on the [Runnable](https://python.langchain.com/api_reference/core/runnables/langchain_core.runnables.base.Runnable.html) protocol.
 
 [**LCEL cheatsheet**](/docs/how_to/lcel_cheatsheet/): For a quick overview of how to use the main LCEL primitives.
 
@@ -53,7 +53,7 @@ These are the core building blocks you can use when building applications.
 
 ### Prompt templates
 
-[Prompt Templates](/docs/concepts/#prompt-templates) are responsible for formatting user input into a format that can be passed to a language model.
+[Prompt Templates](/docs/concepts/prompt_templates) are responsible for formatting user input into a format that can be passed to a language model.
 
 - [How to: use few shot examples](/docs/how_to/few_shot_examples)
 - [How to: use few shot examples in chat models](/docs/how_to/few_shot_examples_chat/)
@@ -62,7 +62,7 @@ These are the core building blocks you can use when building applications.
 
 ### Example selectors
 
-[Example Selectors](/docs/concepts/#example-selectors) are responsible for selecting the correct few shot examples to pass to the prompt.
+[Example Selectors](/docs/concepts/example_selectors) are responsible for selecting the correct few shot examples to pass to the prompt.
 
 - [How to: use example selectors](/docs/how_to/example_selectors)
 - [How to: select examples by length](/docs/how_to/example_selectors_length_based)
@@ -73,7 +73,7 @@ These are the core building blocks you can use when building applications.
 
 ### Chat models
 
-[Chat Models](/docs/concepts/#chat-models) are newer forms of language models that take messages in and output a message.
+[Chat Models](/docs/concepts/chat_models) are newer forms of language models that take messages in and output a message.
 
 - [How to: do function/tool calling](/docs/how_to/tool_calling)
 - [How to: get models to return structured output](/docs/how_to/structured_output)
@@ -94,7 +94,7 @@ These are the core building blocks you can use when building applications.
 
 ### Messages
 
-[Messages](/docs/concepts/#messages) are the input and output of chat models. They have some `content` and a `role`, which describes the source of the message.
+[Messages](/docs/concepts/messages) are the input and output of chat models. They have some `content` and a `role`, which describes the source of the message.
 
 - [How to: trim messages](/docs/how_to/trim_messages/)
 - [How to: filter messages](/docs/how_to/filter_messages/)
@@ -102,7 +102,7 @@ These are the core building blocks you can use when building applications.
 
 ### LLMs
 
-What LangChain calls [LLMs](/docs/concepts/#llms) are older forms of language models that take a string in and output a string.
+What LangChain calls [LLMs](/docs/concepts/text_llms) are older forms of language models that take a string in and output a string.
 
 - [How to: cache model responses](/docs/how_to/llm_caching)
 - [How to: create a custom LLM class](/docs/how_to/custom_llm)
@@ -112,7 +112,7 @@ What LangChain calls [LLMs](/docs/concepts/#llms) are older forms of language mo
 
 ### Output parsers
 
-[Output Parsers](/docs/concepts/#output-parsers) are responsible for taking the output of an LLM and parsing into more structured format.
+[Output Parsers](/docs/concepts/output_parsers) are responsible for taking the output of an LLM and parsing into more structured format.
 
 - [How to: use output parsers to parse an LLM response into structured format](/docs/how_to/output_parser_structured)
 - [How to: parse JSON output](/docs/how_to/output_parser_json)
@@ -124,7 +124,7 @@ What LangChain calls [LLMs](/docs/concepts/#llms) are older forms of language mo
 
 ### Document loaders
 
-[Document Loaders](/docs/concepts/#document-loaders) are responsible for loading documents from a variety of sources.
+[Document Loaders](/docs/concepts/document_loaders) are responsible for loading documents from a variety of sources.
 
 - [How to: load PDF files](/docs/how_to/document_loader_pdf)
 - [How to: load web pages](/docs/how_to/document_loader_web)
@@ -138,7 +138,7 @@ What LangChain calls [LLMs](/docs/concepts/#llms) are older forms of language mo
 
 ### Text splitters
 
-[Text Splitters](/docs/concepts/#text-splitters) take a document and split into chunks that can be used for retrieval.
+[Text Splitters](/docs/concepts/text_splitters) take a document and split into chunks that can be used for retrieval.
 
 - [How to: recursively split text](/docs/how_to/recursive_text_splitter)
 - [How to: split by HTML headers](/docs/how_to/HTML_header_metadata_splitter)
@@ -152,7 +152,7 @@ What LangChain calls [LLMs](/docs/concepts/#llms) are older forms of language mo
 
 ### Embedding models
 
-[Embedding Models](/docs/concepts/#embedding-models) take a piece of text and create a numerical representation of it.
+[Embedding Models](/docs/concepts/embedding_models) take a piece of text and create a numerical representation of it.
 
 - [How to: embed text data](/docs/how_to/embed_text)
 - [How to: cache embedding results](/docs/how_to/caching_embeddings)
@@ -165,7 +165,7 @@ What LangChain calls [LLMs](/docs/concepts/#llms) are older forms of language mo
 
 ### Retrievers
 
-[Retrievers](/docs/concepts/#retrievers) are responsible for taking a query and returning relevant documents.
+[Retrievers](/docs/concepts/retrievers) are responsible for taking a query and returning relevant documents.
 
 - [How to: use a vector store to retrieve data](/docs/how_to/vectorstore_retriever)
 - [How to: generate multiple queries to retrieve data for](/docs/how_to/MultiQueryRetriever)
@@ -188,7 +188,7 @@ Indexing is the process of keeping your vectorstore in-sync with the underlying 
 
 ### Tools
 
-LangChain [Tools](/docs/concepts/#tools) contain a description of the tool (to pass to the language model) as well as the implementation of the function to call. Refer [here](/docs/integrations/tools/) for a list of pre-buit tools. 
+LangChain [Tools](/docs/concepts/tools) contain a description of the tool (to pass to the language model) as well as the implementation of the function to call. Refer [here](/docs/integrations/tools/) for a list of pre-buit tools. 
 
 - [How to: create tools](/docs/how_to/custom_tools)
 - [How to: use built-in tools and toolkits](/docs/how_to/tools_builtin)
@@ -225,7 +225,7 @@ For in depth how-to guides for agents, please check out [LangGraph](https://lang
 
 ### Callbacks
 
-[Callbacks](/docs/concepts/#callbacks) allow you to hook into the various stages of your LLM application's execution.
+[Callbacks](/docs/concepts/callbacks) allow you to hook into the various stages of your LLM application's execution.
 
 - [How to: pass in callbacks at runtime](/docs/how_to/callbacks_runtime)
 - [How to: attach callbacks to a module](/docs/how_to/callbacks_attach)
