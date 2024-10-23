@@ -336,23 +336,17 @@ def convert_to_openai_function(
     strict: Optional[bool] = None,
 ) -> dict[str, Any]:
     """Convert a raw function/class to an OpenAI function.
-
-    .. versionchanged:: 0.2.29
-
-        ``strict`` arg added.
-
     Args:
         function:
             A dictionary, Pydantic BaseModel class, TypedDict class, a LangChain
             Tool object, or a Python function. If a dictionary is passed in, it is
-            assumed to already be a valid OpenAI function or a JSON schema with
-            top-level 'title' and 'description' keys specified.
+            assumed to already be a valid OpenAI function, a JSON schema with
+            top-level 'title' and 'description' keys specified, or an Anthropic format
+            tool.
         strict:
             If True, model output is guaranteed to exactly match the JSON Schema
             provided in the function definition. If None, ``strict`` argument will not
             be included in function definition.
-
-            .. versionadded:: 0.2.29
 
     Returns:
         A dict version of the passed in function which is compatible with the OpenAI
@@ -360,6 +354,14 @@ def convert_to_openai_function(
 
     Raises:
         ValueError: If function is not in a supported format.
+
+    .. versionchanged:: 0.2.29
+
+        ``strict`` arg added.
+
+    .. versionchanged:: 0.3.13
+
+        Support for Anthropic format tools added.
     """
     from langchain_core.tools import BaseTool
 
@@ -377,6 +379,15 @@ def convert_to_openai_function(
             "name": function.pop("title"),
             "description": function.pop("description"),
             "parameters": function,
+        }
+    # an Anthropic format tool
+    elif isinstance(function, dict) and all(
+        k in function for k in ("name", "description", "input_schema")
+    ):
+        oai_function = {
+            "name": function["name"],
+            "description": function["description"],
+            "parameters": function["input_schema"],
         }
     elif isinstance(function, type) and is_basemodel_subclass(function):
         oai_function = cast(dict, convert_pydantic_to_openai_function(function))
@@ -414,34 +425,35 @@ def convert_to_openai_tool(
     *,
     strict: Optional[bool] = None,
 ) -> dict[str, Any]:
-    """Convert a raw function/class to an OpenAI tool.
-
-    .. versionchanged:: 0.2.29
-
-        ``strict`` arg added.
+    """Convert a tool-like object to an OpenAI tool schema.
 
     Args:
         tool:
             Either a dictionary, a pydantic.BaseModel class, Python function, or
             BaseTool. If a dictionary is passed in, it is assumed to already be a valid
-            OpenAI tool, OpenAI function, or a JSON schema with top-level 'title' and
-            'description' keys specified.
+            OpenAI tool, OpenAI function, a JSON schema with top-level 'title' and
+            'description' keys specified, or an Anthropic format tool.
         strict:
             If True, model output is guaranteed to exactly match the JSON Schema
             provided in the function definition. If None, ``strict`` argument will not
             be included in tool definition.
 
-            .. versionadded:: 0.2.29
-
     Returns:
         A dict version of the passed in tool which is compatible with the
         OpenAI tool-calling API.
+
+    .. versionchanged:: 0.2.29
+
+        ``strict`` arg added.
+
+    .. versionchanged:: 0.3.13
+
+        Support for Anthropic format tools added.
     """
     if isinstance(tool, dict) and tool.get("type") == "function" and "function" in tool:
         return tool
     oai_function = convert_to_openai_function(tool, strict=strict)
-    oai_tool: dict[str, Any] = {"type": "function", "function": oai_function}
-    return oai_tool
+    return {"type": "function", "function": oai_function}
 
 
 def tool_example_to_messages(
