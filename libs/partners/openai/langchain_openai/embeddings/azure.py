@@ -109,12 +109,20 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
 
         Example: `https://example-resource.azure.openai.com/`
     """
-    deployment: Optional[str] = Field(default=None, alias="azure_deployment")
+    deployment: Optional[str] = Field(
+        alias="azure_deployment",
+        default_factory=from_env("AZURE_OPENAI_DEPLOYMENT", default=None),
+    )
     """A model deployment.
+
+        Automatically inferred from env var `AZURE_OPENAI_DEPLOYMENT` if not provided.
+
+        Example: `text-embedding-ada-002`
 
         If given sets the base client URL to include `/deployments/{azure_deployment}`.
         Note: this means you won't be able to use non-deployment endpoints.
     """
+
     # Check OPENAI_KEY for backwards compatibility.
     # TODO: Remove OPENAI_API_KEY support to avoid possible conflict when using
     # other forms of azure credentials.

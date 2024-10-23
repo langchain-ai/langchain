@@ -469,7 +469,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
         Automatically inferred from env var `AZURE_OPENAI_DEPLOYMENT` if not provided.
 
-        Example: `gpt-3.5`
+        Example: `gpt-35-turbo`
 
         If given sets the base client URL to include `/deployments/{azure_deployment}`.
         Note: this means you won't be able to use non-deployment endpoints.
