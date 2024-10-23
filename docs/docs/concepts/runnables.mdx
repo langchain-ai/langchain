@@ -46,7 +46,7 @@ The async versions of `abatch` and `abatch_as_completed` these rely on asyncio's
 :::
 
 :::tip
-When processing a large number of inputs using `batch` or `batch_as_completed`, users may want to control the maximum number of parallel calls. This can be done by setting the `max_concurrency` attribute in the `RunnableConfig` dictionary. See the [RunnableConfig](/docs/concepts/runnables#runnableconfig) for more information.
+When processing a large number of inputs using `batch` or `batch_as_completed`, users may want to control the maximum number of parallel calls. This can be done by setting the `max_concurrency` attribute in the `RunnableConfig` dictionary. See the [RunnableConfig](/docs/concepts/runnables#RunnableConfig) for more information.
 
 Chat Models also have a built-in [rate limiter](/docs/concepts/chat_models#rate-limiting) that can be used to control the rate at which requests are made.
 :::
@@ -128,10 +128,10 @@ LangChain will automatically try to infer the input and output types of a Runnab
 Currently, this inference does not work well for more complex Runnables that are built using [LCEL](/docs/concepts/lcel) composition, and the inferred input and / or output types may be incorrect. In these cases, we recommend that users override the inferred input and output types using the `with_types` method ([API Reference](https://api.python.langchain.com/en/latest/runnables/langchain_core.runnables.base.Runnable.html#langchain_core.runnables.base.Runnable.with_types
 ).
 
-## Runnableconfig
+## RunnableConfig
 
 Any of the methods that are used to execute the runnable (e.g., `invoke`, `batch`, `stream`, `astream_events`) accept a second argument called
-`RunnableConfig` ([API Reference](https://python.langchain.com/api_reference/core/runnables/langchain_core.runnables.config.RunnableConfig.html#runnableconfig)). This argument is a dictionary that contains configuration for the Runnable that will be used
+`RunnableConfig` ([API Reference](https://python.langchain.com/api_reference/core/runnables/langchain_core.runnables.config.RunnableConfig.html#RunnableConfig)). This argument is a dictionary that contains configuration for the Runnable that will be used
 at run time during the execution of the runnable.
 
 A `RunnableConfig` can have any of the following properties defined:
@@ -161,7 +161,7 @@ some_runnable.invoke(
 )
 ```
 
-### Propagation of runnableconfig
+### Propagation of RunnableConfig
 
 Many `Runnables` are composed of other Runnables, and it is important that the `RunnableConfig` is propagated to all sub-calls made by the Runnable. This allows providing run time configuration values to the parent Runnable that are inherited by all sub-calls.
 
@@ -312,7 +312,7 @@ Please read the [Callbacks Conceptual Guide](/docs/concepts/callbacks) for more 
 :::important
 If you're using Python 3.9 or 3.10 in an async environment, you must propagate
 the `RunnableConfig` manually to sub-calls in some cases. Please see the
-[Propagating RunnableConfig](#propagation-of-runnableconfig) section for more information.
+[Propagating RunnableConfig](#propagation-of-RunnableConfig) section for more information.
 :::
 
 ## Creating a runnable from a function
