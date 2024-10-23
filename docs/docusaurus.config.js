@@ -301,6 +301,13 @@ const config = {
         indexName: "python-langchain-latest",
 
         contextualSearch: false,
+
+        transformItems(items) {
+          return items.map((item) => ({
+            ...item,
+            url: item.url.startsWith("/api_reference/") ? `pathname://${item.url}` : item.url,
+          }));
+        },
       },
     }),
 
