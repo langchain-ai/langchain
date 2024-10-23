@@ -7,7 +7,7 @@ import logging
 import warnings
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union, Sequence
 from uuid import UUID
 
 from langsmith import Client
@@ -21,6 +21,7 @@ from tenacity import (
     wait_exponential_jitter,
 )
 
+from langchain_core.callbacks.base import _ToolSchema
 from langchain_core.env import get_runtime_environment
 from langchain_core.load import dumpd
 from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
@@ -135,6 +136,7 @@ class LangChainTracer(BaseTracer):
         parent_run_id: Optional[UUID] = None,
         metadata: Optional[dict[str, Any]] = None,
         name: Optional[str] = None,
+        tools: Optional[Sequence[_ToolSchema]] = None,
         **kwargs: Any,
     ) -> Run:
         """Start a trace for an LLM run.
@@ -147,6 +149,7 @@ class LangChainTracer(BaseTracer):
             parent_run_id: The parent run ID. Defaults to None.
             metadata: The metadata. Defaults to None.
             name: The name. Defaults to None.
+            tools: The tools.
             kwargs: Additional keyword arguments.
 
         Returns:
@@ -155,11 +158,14 @@ class LangChainTracer(BaseTracer):
         start_time = datetime.now(timezone.utc)
         if metadata:
             kwargs.update({"metadata": metadata})
+        inputs = {"messages": [[dumpd(msg) for msg in batch] for batch in messages]}
+        if tools:
+            inputs["tools"] = tools
         chat_model_run = Run(
             id=run_id,
             parent_run_id=parent_run_id,
             serialized=serialized,
-            inputs={"messages": [[dumpd(msg) for msg in batch] for batch in messages]},
+            inputs=inputs,
             extra=kwargs,
             events=[{"name": "start", "time": start_time}],
             start_time=start_time,
