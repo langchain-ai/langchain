@@ -5,6 +5,7 @@ import httpx
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils import convert_to_secret_str, get_from_env
 from pydantic import (
+    AliasChoices,
     BaseModel,
     Field,
     SecretStr,
@@ -79,7 +80,7 @@ class ClovaXEmbeddings(BaseModel, Embeddings):
     )
     model_name: str = Field(
         default="clir-emb-dolphin",
-        alias="model",
+        validation_alias=AliasChoices("model_name", "model"),
         description="NCP ClovaStudio embedding model name",
     )
 
