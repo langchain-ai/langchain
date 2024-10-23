@@ -25,6 +25,7 @@ EXTERNAL_PACKAGES = {
     "redis",
     "weaviate",
     "upstage",
+    "ibm",
 }
 
 JS_PACKAGES = {
