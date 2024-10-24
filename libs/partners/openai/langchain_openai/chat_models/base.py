@@ -1458,7 +1458,7 @@ class BaseChatOpenAI(BaseChatModel):
                     "schema must be specified when method is not 'json_mode'. "
                     "Received None."
                 )
-            strict = strict if strict is not None else True
+            # strict = strict if strict is not None else True
             response_format = _convert_to_openai_response_format(schema, strict=strict)
             llm = self.bind(response_format=response_format)
             if is_pydantic_schema:
@@ -2139,11 +2139,16 @@ def _resize(width: int, height: int) -> Tuple[int, int]:
 
 
 def _convert_to_openai_response_format(
-    schema: Union[Dict[str, Any], Type], strict: bool
+    schema: Union[Dict[str, Any], Type], *, strict: Optional[bool] = None
 ) -> Union[Dict, TypeBaseModel]:
     if isinstance(schema, type) and is_basemodel_subclass(schema):
         return schema
+    elif "json_schema" in schema and schema.get("type") == "json_schema":
+        return schema
+    elif "name" in schema and "schema" in schema:
+        return {"type": "json_schema", "json_schema": schema}
     else:
+        strict = strict if strict is not None else True
         function = convert_to_openai_function(schema, strict=strict)
         function["schema"] = function.pop("parameters")
         return {"type": "json_schema", "json_schema": function}
