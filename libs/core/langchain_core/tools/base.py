@@ -571,6 +571,9 @@ class ChildTool(BaseTool):
         return await run_in_executor(None, self._run, *args, **kwargs)
 
     def _to_args_and_kwargs(self, tool_input: Union[str, dict]) -> tuple[tuple, dict]:
+        # if the tool is a parameterless function, just return empty arguments
+        if self.args_schema is None or not self.args_schema.__fields__:
+            return (), {}
         tool_input = self._parse_input(tool_input)
         # For backwards compatibility, if run_input is a string,
         # pass as a positional argument.
