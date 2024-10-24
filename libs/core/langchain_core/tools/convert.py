@@ -11,14 +11,14 @@ from langchain_core.tools.structured import StructuredTool
 
 
 def tool(
-    *args: Union[str, Callable, Runnable],
+    *args: Union[str, Callable[..., Any], Runnable],
     return_direct: bool = False,
-    args_schema: Optional[type] = None,
+    args_schema: Optional[type[BaseModel]] = None,
     infer_schema: bool = True,
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
-) -> Callable:
+) -> StructuredTool:
     """Make tools out of functions, can be used with or without arguments.
 
     Args:
@@ -140,8 +140,10 @@ def tool(
                 return bar
     """
 
-    def _make_with_name(tool_name: str) -> Callable:
-        def _make_tool(dec_func: Union[Callable, Runnable]) -> BaseTool:
+    def _make_with_name(
+        tool_name: str,
+    ) -> Callable[[Callable[..., Any]], StructuredTool]:
+        def _make_tool(dec_func: Callable[..., Any]) -> StructuredTool:
             if isinstance(dec_func, Runnable):
                 runnable = dec_func
 
@@ -150,12 +152,12 @@ def tool(
                     raise ValueError(msg)
 
                 async def ainvoke_wrapper(
-                    callbacks: Optional[Callbacks] = None, **kwargs: Any
+                    callbacks: Optional[Any] = None, **kwargs: Any
                 ) -> Any:
                     return await runnable.ainvoke(kwargs, {"callbacks": callbacks})
 
                 def invoke_wrapper(
-                    callbacks: Optional[Callbacks] = None, **kwargs: Any
+                    callbacks: Optional[Any] = None, **kwargs: Any
                 ) -> Any:
                     return runnable.invoke(kwargs, {"callbacks": callbacks})
 
@@ -173,22 +175,19 @@ def tool(
                 func = dec_func
                 schema = args_schema
                 description = None
-
             if infer_schema or args_schema is not None:
                 return StructuredTool.from_function(
-                    func,
-                    coroutine,
-                    name=tool_name,
-                    description=description,
-                    return_direct=return_direct,
-                    args_schema=schema,
-                    infer_schema=infer_schema,
-                    response_format=response_format,
-                    parse_docstring=parse_docstring,
-                    error_on_invalid_docstring=error_on_invalid_docstring,
+                        func,
+                        coroutine,
+                        name=tool_name,
+                        description=description,
+                        return_direct=return_direct,
+                        args_schema=schema,
+                        infer_schema=infer_schema,
+                        response_format=response_format,
+                        parse_docstring=parse_docstring,
+                        error_on_invalid_docstring=error_on_invalid_docstring,
                 )
-            # If someone doesn't want a schema applied, we must treat it as
-            # a simple string->string function
             if dec_func.__doc__ is None:
                 msg = (
                     "Function must have a docstring if "
@@ -203,7 +202,7 @@ def tool(
                 coroutine=coroutine,
                 response_format=response_format,
             )
-
+            
         return _make_tool
 
     if len(args) == 2 and isinstance(args[0], str) and isinstance(args[1], Runnable):
@@ -219,7 +218,7 @@ def tool(
     elif len(args) == 0:
         # if there are no arguments, then we use the function name as the tool name
         # Example usage: @tool(return_direct=True)
-        def _partial(func: Callable[[str], str]) -> BaseTool:
+        def _partial(func: Callable[..., Any]) -> StructuredTool:
             return _make_with_name(func.__name__)(func)
 
         return _partial
