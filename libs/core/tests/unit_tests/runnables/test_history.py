@@ -422,27 +422,22 @@ async def test_output_dict_async() -> None:
 
 
 def test_get_input_schema_input_dict() -> None:
-    class RunnableWithChatHistoryInput(BaseModel):
-        input: Union[str, BaseMessage, Sequence[BaseMessage]]
-
-    runnable = RunnableLambda(
-        lambda input: {
-            "output": [
-                AIMessage(
-                    content="you said: "
-                    + "\n".join(
-                        [
-                            str(m.content)
-                            for m in input["history"]
-                            if isinstance(m, HumanMessage)
-                        ]
-                        + [input["input"]]
-                    )
-                )
-            ]
-        }
+    from langchain_core.prompts import (
+        ChatPromptTemplate,
+        HumanMessagePromptTemplate,
     )
+
+    runnable = ChatPromptTemplate.from_messages(
+        messages=[
+            SystemMessage(content="You are a nice assistant."),
+            HumanMessagePromptTemplate.from_template(
+                "ability: {ability}, input:{input}, history:{history}"
+            ),
+        ]
+    )
+
     get_session_history = _get_get_session_history()
+
     with_history = RunnableWithMessageHistory(
         runnable,
         get_session_history,
@@ -450,9 +445,68 @@ def test_get_input_schema_input_dict() -> None:
         history_messages_key="history",
         output_messages_key="output",
     )
-    assert _schema(with_history.get_input_schema()) == _schema(
-        RunnableWithChatHistoryInput
-    )
+
+    assert _schema(with_history.get_input_schema()) == {
+        "properties": {
+            "input": {
+                "anyOf": [
+                    {"type": "string"},
+                    {"$ref": "#/definitions/BaseMessage"},
+                    {"items": {"$ref": "#/definitions/BaseMessage"}, "type": "array"},
+                ],
+                "title": "Input",
+            },
+            "ability": {"title": "Ability", "type": "string"},
+        },
+        "required": ["input", "ability"],
+        "title": "RunnableWithChatHistoryInput",
+        "type": "object",
+        "definitions": {
+            "BaseMessage": {
+                "additionalProperties": True,
+                "description": (
+                    "Base abstract message class."
+                    "\n\nMessages are the inputs and outputs of ChatModels."
+                ),
+                "properties": {
+                    "content": {
+                        "anyOf": [
+                            {"type": "string"},
+                            {
+                                "items": {
+                                    "anyOf": [{"type": "string"}, {"type": "object"}]
+                                },
+                                "type": "array",
+                            },
+                        ],
+                        "title": "Content",
+                    },
+                    "additional_kwargs": {
+                        "title": "Additional Kwargs",
+                        "type": "object",
+                    },
+                    "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object",
+                    },
+                    "type": {"title": "Type", "type": "string"},
+                    "name": {
+                        "anyOf": [{"type": "string"}, {"type": "null"}],
+                        "default": None,
+                        "title": "Name",
+                    },
+                    "id": {
+                        "anyOf": [{"type": "string"}, {"type": "null"}],
+                        "default": None,
+                        "title": "Id",
+                    },
+                },
+                "required": ["content", "type"],
+                "title": "BaseMessage",
+                "type": "object",
+            }
+        },
+    }
 
 
 def test_get_output_schema() -> None:
