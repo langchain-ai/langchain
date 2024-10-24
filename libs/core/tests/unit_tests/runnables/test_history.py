@@ -2,7 +2,6 @@ from collections.abc import Sequence
 from typing import Any, Callable, Optional, Union
 
 import pytest
-from pydantic import BaseModel
 
 from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
@@ -12,7 +11,11 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.runnables import Runnable
-from langchain_core.runnables.base import RunnableBinding, RunnableLambda
+from langchain_core.runnables.base import (
+    RunnableBinding,
+    RunnableLambda,
+    RunnableParallel,
+)
 from langchain_core.runnables.config import RunnableConfig
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.runnables.utils import ConfigurableFieldSpec, Input, Output
@@ -422,22 +425,17 @@ async def test_output_dict_async() -> None:
 
 
 def test_get_input_schema_input_dict() -> None:
-    from langchain_core.prompts import (
-        ChatPromptTemplate,
-        HumanMessagePromptTemplate,
-    )
+    from operator import itemgetter
 
-    runnable = ChatPromptTemplate.from_messages(
-        messages=[
-            SystemMessage(content="You are a nice assistant."),
-            HumanMessagePromptTemplate.from_template(
-                "ability: {ability}, input:{input}, history:{history}"
-            ),
-        ]
+    runnable = RunnableParallel(
+        {
+            "input": itemgetter("input"),
+            "ability": itemgetter("ability"),
+            "history": itemgetter("history"),
+        }
     )
 
     get_session_history = _get_get_session_history()
-
     with_history = RunnableWithMessageHistory(
         runnable,
         get_session_history,
@@ -456,7 +454,7 @@ def test_get_input_schema_input_dict() -> None:
                 ],
                 "title": "Input",
             },
-            "ability": {"title": "Ability", "type": "string"},
+            "ability": {"title": "Ability"},
         },
         "required": ["input", "ability"],
         "title": "RunnableWithChatHistoryInput",
