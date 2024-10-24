@@ -581,17 +581,6 @@ files = [
 python-dateutil = ">=2.7"
 
 [[package]]
-name = "gprof2dot"
-version = "2024.6.6"
-description = "Generate a dot graph from the output of several profilers."
-optional = false
-python-versions = ">=3.8"
-files = [
-    {file = "gprof2dot-2024.6.6-py2.py3-none-any.whl", hash = "sha256:45b14ad7ce64e299c8f526881007b9eb2c6b75505d5613e96e66ee4d5ab33696"},
-    {file = "gprof2dot-2024.6.6.tar.gz", hash = "sha256:fa1420c60025a9eb7734f65225b4da02a10fc6dd741b37fa129bc6b41951e5ab"},
-]
-
-[[package]]
 name = "grandalf"
 version = "0.8"
 description = "Graph and drawing algorithms framework"
@@ -2047,25 +2036,6 @@ pytest = ">=6.2.5"
 dev = ["pre-commit", "pytest-asyncio", "tox"]
 
 [[package]]
-name = "pytest-profiling"
-version = "1.7.0"
-description = "Profiling plugin for py.test"
-optional = false
-python-versions = "*"
-files = [
-    {file = "pytest-profiling-1.7.0.tar.gz", hash = "sha256:93938f147662225d2b8bd5af89587b979652426a8a6ffd7e73ec4a23e24b7f29"},
-    {file = "pytest_profiling-1.7.0-py2.py3-none-any.whl", hash = "sha256:999cc9ac94f2e528e3f5d43465da277429984a1c237ae9818f8cfd0b06acb019"},
-]
-
-[package.dependencies]
-gprof2dot = "*"
-pytest = "*"
-six = "*"
-
-[package.extras]
-tests = ["pytest-virtualenv"]
-
-[[package]]
 name = "pytest-watcher"
 version = "0.3.5"
 description = "Automatically rerun your tests on file modifications"
@@ -2992,4 +2962,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0"
-content-hash = "81db0a479fd4d04288338acd504eac713923f8717c1ff132a69bf516534a239c"
+content-hash = "06bd735e73dd0eff94b3fbf2c429280a5908e01c9b7f0273865be39c02458874"
