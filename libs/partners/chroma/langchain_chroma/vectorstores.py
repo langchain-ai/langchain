@@ -16,6 +16,7 @@ from typing import (
     Iterable,
     List,
     Optional,
+    Sequence,
     Tuple,
     Type,
     Union,
@@ -44,8 +45,12 @@ def _results_to_docs_and_scores(results: Any) -> List[Tuple[Document, float]]:
     return [
         # TODO: Chroma can do batch querying,
         # we shouldn't hard code to the 1st result
-        (Document(page_content=result[0], metadata=result[1] or {}), result[2])
+        (
+            Document(id=result[0], page_content=result[1], metadata=result[2] or {}),
+            result[3],
+        )
         for result in zip(
+            results["ids"][0],
             results["documents"][0],
             results["metadatas"][0],
             results["distances"][0],
@@ -417,6 +422,8 @@ class Chroma(VectorStore):
         # Populate IDs
         if ids is None:
             ids = [str(uuid.uuid4()) for _ in uris]
+        else:
+            ids = [id if id is not None else str(uuid.uuid4()) for id in ids]
         embeddings = None
         # Set embeddings
         if self._embedding_function is not None and hasattr(
@@ -502,6 +509,9 @@ class Chroma(VectorStore):
         """
         if ids is None:
             ids = [str(uuid.uuid4()) for _ in texts]
+        else:
+            ids = [id if id is not None else str(uuid.uuid4()) for id in ids]
+
         embeddings = None
         texts = list(texts)
         if self._embedding_function is not None:
@@ -1069,6 +1079,8 @@ class Chroma(VectorStore):
         )
         if ids is None:
             ids = [str(uuid.uuid4()) for _ in texts]
+        else:
+            ids = [id if id is not None else str(uuid.uuid4()) for id in ids]
         if hasattr(
             chroma_collection._client, "max_batch_size"
         ):  # for Chroma 0.4.10 and above
@@ -1146,3 +1158,32 @@ class Chroma(VectorStore):
             kwargs: Additional keyword arguments.
         """
         self._collection.delete(ids=ids, **kwargs)
+
+    def get_by_ids(self, ids: Sequence[str]) -> List[Document]:
+        """Retrieve documents by their IDs.
+
+        Args:
+            ids: List of document IDs to retrieve.
+
+        Returns:
+            List of Documents corresponding to the provided IDs.
+        """
+        # Fetch results from the Chroma collection based on the provided IDs
+        results: Dict[str, Any] = self.get(ids=list(ids))
+
+        # Ensure that none of the elements are None
+        if (
+            results["ids"] is None
+            or results["documents"] is None
+            or results["metadatas"] is None
+        ):
+            raise ValueError("One of the elements in the results dictionary is None")
+
+        return [
+            Document(id=result[0], page_content=result[1], metadata=result[2] or {})
+            for result in zip(
+                results["ids"],
+                results["documents"],
+                results["metadatas"],
+            )
+        ]
