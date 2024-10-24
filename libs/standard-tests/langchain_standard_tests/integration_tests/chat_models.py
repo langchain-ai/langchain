@@ -1,6 +1,6 @@
 import base64
 import json
-from typing import List, Optional
+from typing import List, Optional, cast
 
 import httpx
 import pytest
@@ -16,10 +16,10 @@ from langchain_core.messages import (
 )
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import tool
-from pydantic import BaseModel as RawBaseModel
-from pydantic import Field as RawField
+from pydantic import BaseModel, Field
+from pydantic.v1 import BaseModel as BaseModelV1
+from pydantic.v1 import Field as FieldV1
 
 from langchain_standard_tests.unit_tests.chat_models import (
     ChatModelTests,
@@ -28,8 +28,8 @@ from langchain_standard_tests.unit_tests.chat_models import (
 from langchain_standard_tests.utils.pydantic import PYDANTIC_MAJOR_VERSION
 
 
-class MagicFunctionSchema(RawBaseModel):
-    input: int = RawField(..., gt=-1000, lt=1000)
+class MagicFunctionSchema(BaseModel):
+    input: int = Field(..., gt=-1000, lt=1000)
 
 
 @tool(args_schema=MagicFunctionSchema)
@@ -42,6 +42,13 @@ def magic_function(input: int) -> int:
 def magic_function_no_args() -> int:
     """Calculates a magic function."""
     return 5
+
+
+class Joke(BaseModel):
+    """Joke to tell user."""
+
+    setup: str = Field(description="question to set up a joke")
+    punchline: str = Field(description="answer to resolve the joke")
 
 
 def _validate_tool_call_message(message: BaseMessage) -> None:
@@ -144,18 +151,109 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(result.usage_metadata["output_tokens"], int)
         assert isinstance(result.usage_metadata["total_tokens"], int)
 
+        if "audio_input" in self.supported_usage_metadata_details["invoke"]:
+            msg = self.invoke_with_audio_input()
+            assert msg.usage_metadata is not None
+            assert msg.usage_metadata["input_token_details"] is not None
+            assert isinstance(msg.usage_metadata["input_token_details"]["audio"], int)
+            assert msg.usage_metadata["input_tokens"] >= sum(
+                (v or 0)  # type: ignore[misc]
+                for v in msg.usage_metadata["input_token_details"].values()
+            )
+        if "audio_output" in self.supported_usage_metadata_details["invoke"]:
+            msg = self.invoke_with_audio_output()
+            assert msg.usage_metadata is not None
+            assert msg.usage_metadata["output_token_details"] is not None
+            assert isinstance(msg.usage_metadata["output_token_details"]["audio"], int)
+            assert int(msg.usage_metadata["output_tokens"]) >= sum(
+                (v or 0)  # type: ignore[misc]
+                for v in msg.usage_metadata["output_token_details"].values()
+            )
+        if "reasoning_output" in self.supported_usage_metadata_details["invoke"]:
+            msg = self.invoke_with_reasoning_output()
+            assert msg.usage_metadata is not None
+            assert msg.usage_metadata["output_token_details"] is not None
+            assert isinstance(
+                msg.usage_metadata["output_token_details"]["reasoning"],
+                int,
+            )
+            assert msg.usage_metadata["output_tokens"] >= sum(
+                (v or 0)  # type: ignore[misc]
+                for v in msg.usage_metadata["output_token_details"].values()
+            )
+        if "cache_read_input" in self.supported_usage_metadata_details["invoke"]:
+            msg = self.invoke_with_cache_read_input()
+            assert msg.usage_metadata is not None
+            assert msg.usage_metadata["input_token_details"] is not None
+            assert isinstance(
+                msg.usage_metadata["input_token_details"]["cache_read"],
+                int,
+            )
+            assert msg.usage_metadata["input_tokens"] >= sum(
+                (v or 0)  # type: ignore[misc]
+                for v in msg.usage_metadata["input_token_details"].values()
+            )
+        if "cache_creation_input" in self.supported_usage_metadata_details["invoke"]:
+            msg = self.invoke_with_cache_creation_input()
+            assert msg.usage_metadata is not None
+            assert msg.usage_metadata["input_token_details"] is not None
+            assert isinstance(
+                msg.usage_metadata["input_token_details"]["cache_creation"],
+                int,
+            )
+            assert msg.usage_metadata["input_tokens"] >= sum(
+                (v or 0)  # type: ignore[misc]
+                for v in msg.usage_metadata["input_token_details"].values()
+            )
+
     def test_usage_metadata_streaming(self, model: BaseChatModel) -> None:
         if not self.returns_usage_metadata:
             pytest.skip("Not implemented.")
-        full: Optional[BaseMessageChunk] = None
-        for chunk in model.stream("Hello"):
+        full: Optional[AIMessageChunk] = None
+        for chunk in model.stream("Write me 2 haikus. Only include the haikus."):
             assert isinstance(chunk, AIMessageChunk)
-            full = chunk if full is None else full + chunk
+            # only one chunk is allowed to set usage_metadata.input_tokens
+            # if multiple do, it's likely a bug that will result in overcounting
+            # input tokens
+            if full and full.usage_metadata and full.usage_metadata["input_tokens"]:
+                assert (
+                    not chunk.usage_metadata or not chunk.usage_metadata["input_tokens"]
+                ), (
+                    "Only one chunk should set input_tokens,"
+                    " the rest should be 0 or None"
+                )
+            full = chunk if full is None else cast(AIMessageChunk, full + chunk)
+
         assert isinstance(full, AIMessageChunk)
         assert full.usage_metadata is not None
         assert isinstance(full.usage_metadata["input_tokens"], int)
         assert isinstance(full.usage_metadata["output_tokens"], int)
         assert isinstance(full.usage_metadata["total_tokens"], int)
+
+        if "audio_input" in self.supported_usage_metadata_details["stream"]:
+            msg = self.invoke_with_audio_input(stream=True)
+            assert isinstance(msg.usage_metadata["input_token_details"]["audio"], int)  # type: ignore[index]
+        if "audio_output" in self.supported_usage_metadata_details["stream"]:
+            msg = self.invoke_with_audio_output(stream=True)
+            assert isinstance(msg.usage_metadata["output_token_details"]["audio"], int)  # type: ignore[index]
+        if "reasoning_output" in self.supported_usage_metadata_details["stream"]:
+            msg = self.invoke_with_reasoning_output(stream=True)
+            assert isinstance(
+                msg.usage_metadata["output_token_details"]["reasoning"],  # type: ignore[index]
+                int,
+            )
+        if "cache_read_input" in self.supported_usage_metadata_details["stream"]:
+            msg = self.invoke_with_cache_read_input(stream=True)
+            assert isinstance(
+                msg.usage_metadata["input_token_details"]["cache_read"],  # type: ignore[index]
+                int,
+            )
+        if "cache_creation_input" in self.supported_usage_metadata_details["stream"]:
+            msg = self.invoke_with_cache_creation_input(stream=True)
+            assert isinstance(
+                msg.usage_metadata["input_token_details"]["cache_creation"],  # type: ignore[index]
+                int,
+            )
 
     def test_stop_sequence(self, model: BaseChatModel) -> None:
         result = model.invoke("hi", stop=["you"])
@@ -240,15 +338,6 @@ class ChatModelIntegrationTests(ChatModelTests):
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
 
-        from pydantic import BaseModel as BaseModelProper
-        from pydantic import Field as FieldProper
-
-        class Joke(BaseModelProper):
-            """Joke to tell user."""
-
-            setup: str = FieldProper(description="question to set up a joke")
-            punchline: str = FieldProper(description="answer to resolve the joke")
-
         # Pydantic class
         # Type ignoring since the interface only officially supports pydantic 1
         # or pydantic.v1.BaseModel but not pydantic.BaseModel from pydantic 2.
@@ -271,6 +360,33 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(chunk, dict)  # for mypy
         assert set(chunk.keys()) == {"setup", "punchline"}
 
+    async def test_structured_output_async(self, model: BaseChatModel) -> None:
+        """Test to verify structured output with a Pydantic model."""
+        if not self.has_tool_calling:
+            pytest.skip("Test requires tool calling.")
+
+        # Pydantic class
+        # Type ignoring since the interface only officially supports pydantic 1
+        # or pydantic.v1.BaseModel but not pydantic.BaseModel from pydantic 2.
+        # We'll need to do a pass updating the type signatures.
+        chat = model.with_structured_output(Joke)  # type: ignore[arg-type]
+        result = await chat.ainvoke("Tell me a joke about cats.")
+        assert isinstance(result, Joke)
+
+        async for chunk in chat.astream("Tell me a joke about cats."):
+            assert isinstance(chunk, Joke)
+
+        # Schema
+        chat = model.with_structured_output(Joke.model_json_schema())
+        result = await chat.ainvoke("Tell me a joke about cats.")
+        assert isinstance(result, dict)
+        assert set(result.keys()) == {"setup", "punchline"}
+
+        async for chunk in chat.astream("Tell me a joke about cats."):
+            assert isinstance(chunk, dict)
+        assert isinstance(chunk, dict)  # for mypy
+        assert set(chunk.keys()) == {"setup", "punchline"}
+
     @pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Test requires pydantic 2.")
     def test_structured_output_pydantic_2_v1(self, model: BaseChatModel) -> None:
         """Test to verify compatibility with pydantic.v1.BaseModel.
@@ -280,11 +396,11 @@ class ChatModelIntegrationTests(ChatModelTests):
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
 
-        class Joke(BaseModel):  # Uses langchain_core.pydantic_v1.BaseModel
+        class Joke(BaseModelV1):  # Uses langchain_core.pydantic_v1.BaseModel
             """Joke to tell user."""
 
-            setup: str = Field(description="question to set up a joke")
-            punchline: str = Field(description="answer to resolve the joke")
+            setup: str = FieldV1(description="question to set up a joke")
+            punchline: str = FieldV1(description="answer to resolve the joke")
 
         # Pydantic class
         chat = model.with_structured_output(Joke)
@@ -304,6 +420,28 @@ class ChatModelIntegrationTests(ChatModelTests):
             assert isinstance(chunk, dict)
         assert isinstance(chunk, dict)  # for mypy
         assert set(chunk.keys()) == {"setup", "punchline"}
+
+    def test_structured_output_optional_param(self, model: BaseChatModel) -> None:
+        """Test to verify structured output with an optional param."""
+        if not self.has_tool_calling:
+            pytest.skip("Test requires tool calling.")
+
+        class Joke(BaseModel):
+            """Joke to tell user."""
+
+            setup: str = Field(description="question to set up a joke")
+            punchline: Optional[str] = Field(
+                default=None, description="answer to resolve the joke"
+            )
+
+        chat = model.with_structured_output(Joke)  # type: ignore[arg-type]
+        setup_result = chat.invoke(
+            "Give me the setup to a joke about cats, no punchline."
+        )
+        assert isinstance(setup_result, Joke)
+
+        joke_result = chat.invoke("Give me a joke about cats, include the punchline.")
+        assert isinstance(joke_result, Joke)
 
     def test_tool_message_histories_string_content(self, model: BaseChatModel) -> None:
         """
@@ -435,11 +573,42 @@ class ChatModelIntegrationTests(ChatModelTests):
         )
         model.invoke([message])
 
+    def test_image_tool_message(self, model: BaseChatModel) -> None:
+        if not self.supports_image_tool_message:
+            return
+        image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
+        image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
+        messages = [
+            HumanMessage("get a random image using the tool and describe the weather"),
+            AIMessage(
+                [],
+                tool_calls=[
+                    {"type": "tool_call", "id": "1", "name": "random_image", "args": {}}
+                ],
+            ),
+            ToolMessage(
+                content=[
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
+                    },
+                ],
+                tool_call_id="1",
+                name="random_image",
+            ),
+        ]
+
+        def random_image() -> str:
+            """Return a random image."""
+            return ""
+
+        model.bind_tools([random_image]).invoke(messages)
+
     def test_anthropic_inputs(self, model: BaseChatModel) -> None:
         if not self.supports_anthropic_inputs:
             return
 
-        class color_picker(BaseModel):
+        class color_picker(BaseModelV1):
             """Input your fav color and get a random fact about it."""
 
             fav_color: str
@@ -530,3 +699,18 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(result, AIMessage)
         assert isinstance(result.content, str)
         assert len(result.content) > 0
+
+    def invoke_with_audio_input(self, *, stream: bool = False) -> AIMessage:
+        raise NotImplementedError()
+
+    def invoke_with_audio_output(self, *, stream: bool = False) -> AIMessage:
+        raise NotImplementedError()
+
+    def invoke_with_reasoning_output(self, *, stream: bool = False) -> AIMessage:
+        raise NotImplementedError()
+
+    def invoke_with_cache_read_input(self, *, stream: bool = False) -> AIMessage:
+        raise NotImplementedError()
+
+    def invoke_with_cache_creation_input(self, *, stream: bool = False) -> AIMessage:
+        raise NotImplementedError()
