@@ -11,7 +11,7 @@ This means that you describe what you want to happen, rather than how you want i
 We often refer to a `Runnable` created using LCEL as a "chain". It's important to remember that a "chain" is `Runnable` and it implements the full [Runnable Interface](/docs/concepts/runnables).
 
 :::note
-* The [LCEL cheatsheet](https://python.langchain.com/docs/how_to/lcel_cheatsheet/) shows common patterns that involve the Runnable interface and LCEL expressions.
+* The [LCEL cheatsheet](/docs/how_to/lcel_cheatsheet/) shows common patterns that involve the Runnable interface and LCEL expressions.
 * Please see the following list of [how-to guides](/docs/how_to/#langchain-expression-language-lcel) that cover common tasks with LCEL.
 * A list of built-in `Runnables` can be found in the [LangChain Core API Reference](https://python.langchain.com/api_reference/core/runnables.html). Many of these Runnables are useful when composing custom "chains" in LangChain using LCEL.
 :::
@@ -22,7 +22,7 @@ LangChain optimizes the run-time execution of chains built with LCEL in a number
 
 - **Optimize parallel execution**: Run Runnables in parallel using [RunnableParallel](#RunnableParallel) or run multiple inputs through a given chain in parallel using the [Runnable Batch API](/docs/concepts/runnables#batch). Parallel execution can significantly reduce the latency as processing can be done in parallel instead of sequentially.
 - **Guarantee Async support**: Any chain built with LCEL can be run asynchronously using the [Runnable Async API](/docs/concepts/runnables#async-api). This can be useful when running chains in a server environment where you want to handle large number of requests concurrently.
-- **Simplify streaming**: LCEL chains can be streamed, allowing for incremental output as the chain is executed. LangChain can optimize the streaming of the output to minimize the time-to-first-token(time elapsed until the first chunk of output from a [chat model](/docs/concepts/chat_models) or [llm](/docs/concepts/llms) comes out).
+- **Simplify streaming**: LCEL chains can be streamed, allowing for incremental output as the chain is executed. LangChain can optimize the streaming of the output to minimize the time-to-first-token(time elapsed until the first chunk of output from a [chat model](/docs/concepts/chat_models) or [llm](/docs/concepts/text_llms) comes out).
 
 Other benefits include:
 
@@ -210,7 +210,7 @@ lambda x: x + 1.invoke(some_input)
 ```
 :::
 
-## Legacy Chains
+## Legacy chains
 
 LCEL aims to provide consistency around behavior and customization over legacy subclassed chains such as `LLMChain` and
 `ConversationalRetrievalChain`. Many of these legacy chains hide important details like prompts, and as a wider variety
