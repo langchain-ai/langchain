@@ -1,6 +1,8 @@
 """Integration tests for Writer Chat API wrapper."""
+import os
 
 import pytest
+from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 
 from langchain_core.messages import (
@@ -12,6 +14,9 @@ from langchain_core.callbacks import CallbackManager
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 from langchain_community.chat_models.writer import ChatWriter
+from writerai import Writer, AsyncWriter
+
+load_dotenv()
 
 requires_api_key = pytest.mark.skipif(
     "os.environ.get('WRITER_API_KEY') is None",
@@ -21,7 +26,9 @@ requires_api_key = pytest.mark.skipif(
 @pytest.fixture
 def chat() -> ChatWriter:
     """Get a ChatWriter instance for testing."""
-    return ChatWriter(temperature=0)
+    client = Writer(api_key=os.environ.get("WRITER_API_KEY"))
+    async_client = AsyncWriter(api_key=os.environ.get("WRITER_API_KEY"))
+    return ChatWriter(client=client, async_client=async_client, temperature=0)
 
 # Basic completion tests
 

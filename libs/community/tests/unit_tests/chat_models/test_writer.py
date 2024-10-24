@@ -74,7 +74,7 @@ def test_convert_dict_to_message_with_tool_calls() -> None:
     """Test converting an AI message with tool calls."""
     message = {
         "role": "assistant",
-        "content": None,
+        "content": "",
         "tool_calls": [
             {
                 "id": "call_abc123",
@@ -90,8 +90,8 @@ def test_convert_dict_to_message_with_tool_calls() -> None:
     assert isinstance(result, AIMessage)
     assert result.tool_calls
     assert len(result.tool_calls) == 1
-    assert result.tool_calls[0].name == "get_weather"
-    assert json.loads(result.tool_calls[0].args)["location"] == "London"
+    assert result.tool_calls[0]["name"] == "get_weather"
+    assert result.tool_calls[0]["args"]["location"] == "London"
 
 # Mock API Tests
 
@@ -269,7 +269,7 @@ def test_sync_tool_calling() -> None:
     
     mock_client.chat.chat.return_value = mock_response
     
-    with patch.object(chat_with_tools, "client", mock_client):
+    with patch.object(chat_with_tools.bound, "client", mock_client):
         response = chat_with_tools.invoke("What's the weather in London?")
         assert isinstance(response, AIMessage)
         assert response.tool_calls

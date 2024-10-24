@@ -26,6 +26,7 @@ from langchain_core.callbacks import (
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.messages import (
     AIMessage,
+    AIMessageChunk,
     BaseMessage,
     ChatMessage,
     HumanMessage,
@@ -35,7 +36,7 @@ from langchain_core.messages import (
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from pydantic import BaseModel, ConfigDict, Field, SecretStr
 from langchain_core.utils.function_calling import convert_to_openai_tool
-from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.language_models.chat_models import BaseChatModel, generate_from_stream, agenerate_from_stream
 from langchain_core.runnables import Runnable
 
 logger = logging.getLogger(__name__)
@@ -86,7 +87,7 @@ def _convert_dict_to_message(response_dict: Dict[str, Any]) -> BaseMessage:
         additional_kwargs = {}
         if tool_calls := response_dict.get("tool_calls"):
             additional_kwargs["tool_calls"] = tool_calls
-        return AIMessage(content=content, additional_kwargs=additional_kwargs)
+        return AIMessageChunk(content=content, additional_kwargs=additional_kwargs)
     elif role == "system":
         return SystemMessage(content=content)
     elif role == "tool":
@@ -199,14 +200,16 @@ class ChatWriter(BaseChatModel):
         )
 
         for chunk in response:
-            delta = chunk.choices[0].delta
-            if not delta or not delta.content:
+            delta = chunk["choices"][0].get("delta")
+            if not delta or not delta.get("content"):
                 continue
-            chunk = _convert_dict_to_message({"role": "assistant", "content": delta.content})
+            chunk = _convert_dict_to_message({"role": "assistant", "content": delta["content"]})
             chunk = ChatGenerationChunk(message=chunk)
-            yield chunk
+
             if run_manager:
                 run_manager.on_llm_new_token(chunk.text)
+
+            yield chunk
 
     async def _astream(
         self,
@@ -229,9 +232,11 @@ class ChatWriter(BaseChatModel):
                 continue
             chunk = _convert_dict_to_message({"role": "assistant", "content": delta.content})
             chunk = ChatGenerationChunk(message=chunk)
-            yield chunk
+
             if run_manager:
                 await run_manager.on_llm_new_token(chunk.text)
+
+            yield chunk
 
     def _generate(
         self,
@@ -241,9 +246,8 @@ class ChatWriter(BaseChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         if self.streaming:
-            generation_chunks = list(self._stream(messages, stop, run_manager, **kwargs))
-            return ChatResult(generations=[ChatGeneration(message=chunk.message) for chunk in generation_chunks])
-            
+            return generate_from_stream(self._stream(messages, stop, run_manager, **kwargs))
+
         message_dicts, params = self._convert_messages_to_dicts(messages, stop)
         params = {**params, **kwargs}
         response = self.client.chat.chat(
@@ -260,10 +264,7 @@ class ChatWriter(BaseChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         if self.streaming:
-            chunks = []
-            async for chunk in self._astream(messages, stop, run_manager, **kwargs):
-                chunks.append(chunk)
-            return ChatResult(generations=[ChatGeneration(message=chunk.message) for chunk in chunks])
+            return await agenerate_from_stream(self._astream(messages, stop, run_manager, **kwargs))
 
         message_dicts, params = self._convert_messages_to_dicts(messages, stop)
         params = {**params, **kwargs}
