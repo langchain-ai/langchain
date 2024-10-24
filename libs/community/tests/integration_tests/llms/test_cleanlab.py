@@ -4,8 +4,9 @@ In order to run this test, you need to have a Cleanlab Studio API key.
 You can get it by registering for free at https://app.cleanlab.ai
 Set the ``CLEANLAB_API_KEY`` environment variable with the above API key."""
 
-from langchain_community.llms.cleanlab import TrustworthyLanguageModel
 from langchain_core.outputs import LLMResult
+
+from langchain_community.llms.cleanlab import TrustworthyLanguageModel
 
 
 def test_cleanlab_call() -> None:
