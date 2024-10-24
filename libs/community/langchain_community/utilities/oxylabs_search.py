@@ -9,6 +9,17 @@ from typing import Any, Dict, Optional, Tuple, List
 import asyncio
 from langchain_core.utils import get_from_dict_or_env
 from pydantic import BaseModel, ConfigDict, Field, model_validator
+from dataclasses import dataclass
+from typing import Optional
+
+
+@dataclass
+class ResponseElement:
+    tag: str
+    display_tag: str
+    path_: str
+    python_type: str
+    parent: Optional["ResponseElement"]
 
 
 def _get_default_params() -> dict:
@@ -18,7 +29,6 @@ def _get_default_params() -> dict:
         dict: Default parameters, including the following keys:
             - oxylabs_username (str): Oxylabs username, either provided directly or via the environment variable `OXYLABS_USERNAME`.
             - oxylabs_password (str): Oxylabs password, either provided directly or via the environment variable `OXYLABS_PASSWORD`.
-            - engine (str): Search engine to be used, e.g., "google".
             - source (str): Source of the search engine, e.g., "google_search".
             - user_agent_type (str): User agent type, e.g., "desktop". Can be set using values from `oxylabs.utils.types`.
             - render (str): Render type for the search results, e.g., "html". Can be set using values from `oxylabs.utils.types`.
@@ -65,7 +75,6 @@ class OxylabsSearchAPIWrapper(BaseModel):
             params={
                 "oxylabs_username": <OXYLABS_USERNAME>,
                 "oxylabs_password": <OXYLABS_PASSWORD>,
-                "engine": "google",
                 "source": "google_search",
                 "user_agent_type": "desktop",
                 "render": "html",
@@ -119,13 +128,6 @@ class OxylabsSearchAPIWrapper(BaseModel):
         formed_values["oxylabs_password"] = oxylabs_password
         formed_values["params"] = dict(current_params)
 
-        if current_params["engine"] not in [
-            "google",
-        ]:
-            raise NotImplementedError(
-                f"The search engine {current_params['engine']} is not supported at the moment."
-            )
-
         try:
             from oxylabs import RealtimeClient
 
@@ -169,6 +171,7 @@ class OxylabsSearchAPIWrapper(BaseModel):
         params_ = self.get_params()
 
         search_client = self.search_engine
+        # TODO check async implementation (self.aiohttpsession in other wrappers)
         search_result = await asyncio.to_thread(
             search_client.scrape_search,
             query,
@@ -192,25 +195,32 @@ class OxylabsSearchAPIWrapper(BaseModel):
 
         return _params
 
-    def _validate_response(self, response: Any) -> dict:
+    def _validate_response(self, response: Any) -> List[Dict[Any, Any]]:
         """Validate Oxylabs SERPResponse format and unpack data."""
+        validated_results = list()
         try:
             result_list = response.raw["results"]
             if not isinstance(result_list, list) or not result_list:
                 raise ValueError("No results returned!")
 
-            results = dict(result_list[0])
-            content = results["content"]
-            if not isinstance(content, dict):
-                raise ValueError(
-                    "Result `content` format error, try setting parameter `parse` to True"
-                )
+            # TODO make sure this works for multi page responses <- pagination
+            for result_item in result_list:
+                result_item = dict(result_item)
+                content = result_item["content"]
+                if not isinstance(content, dict):
+                    raise ValueError(
+                        "Result `content` format error, try setting parameter `parse` to True"
+                    )
 
-            unpacked_results = content["results"]
-            if not isinstance(unpacked_results, dict):
-                raise ValueError("Response format Error!")
+                unpacked_results = content["results"]
 
-            return unpacked_results
+                if not isinstance(unpacked_results, dict):
+                    raise ValueError("Response format Error!")
+
+                if content["results"]:
+                    validated_results.append(unpacked_results)
+
+            return validated_results
 
         except (KeyError, IndexError, TypeError, ValueError) as exc:
             raise RuntimeError(f"Response Validation Error: {str(exc)}")
@@ -221,21 +231,28 @@ class OxylabsSearchAPIWrapper(BaseModel):
         result_ = "No good search result found"
 
         try:
-            validated_response = self._validate_response(res)
+            validated_responses = self._validate_response(res)
 
         except RuntimeError as exc:
             return f"{result_}, Response Validation Failed: {str(exc)}"
 
         snippets = list()
+        # TODO update here fter pagination questions are answered
+        for validated_response in validated_responses[:1]:
+            # Knowledge Graph Snippets
+            self._create_knowledge_graph_snippets(validated_response, snippets)
 
-        # Knowledge Graph Snippets
-        self._create_knowledge_graph_snippets(validated_response, snippets)
+            # Combined Search Result Snippets [Organic Results, Paid Results]
+            self._create_combined_search_result_snippets(validated_response, snippets)
 
-        # Combined Search Result Snippets [Organic Results, Paid Results, Popular Products, Related Searches]
-        self._create_combined_search_result_snippets(validated_response, snippets)
+            # Product information Snippets
+            self._create_product_information_snippets(validated_response, snippets)
 
-        # Search Information Snippets
-        self._create_search_information_snippets(validated_response, snippets)
+            # Local Group Information Snippets
+            self._create_local_information_snippets(validated_response, snippets)
+
+            # Search Information Snippets
+            self._create_search_information_snippets(validated_response, snippets)
 
         # Combine all snippets
         if snippets:
@@ -243,240 +260,235 @@ class OxylabsSearchAPIWrapper(BaseModel):
 
         return result_
 
+    def recursive_snippet_collector(
+        self,
+        target_structure: Any,
+        max_depth: int,
+        current_depth: int,
+        parent_: Optional[ResponseElement] = None,
+    ) -> str:
+        target_snippets = list()
+
+        recursion_padding = "  " * (current_depth + 1)
+
+        base64_image_attributes = ["image_data".upper(), "data".upper()]
+        base64_images_attribute = "images".upper()
+
+        if current_depth >= max_depth:
+            return "\n".join(target_snippets)
+
+        if isinstance(target_structure, (str, float, int)):
+            if target_structure:
+                if parent_.python_type == str(type(list())):
+                    if (
+                        base64_images_attribute in parent_.path_.split("-")[-3:]
+                        or parent_.tag in base64_image_attributes
+                    ):
+                        target_structure = "Redacted base64 image string..."
+
+                    target_snippets.append(
+                        f"{recursion_padding}{parent_.display_tag}: {str(target_structure)}"
+                    )
+
+                elif parent_.python_type == str(type(dict())):
+                    if parent_.tag in base64_image_attributes:
+                        target_structure = "Redacted base64 image string..."
+
+                    target_snippets.append(
+                        f"{recursion_padding}{parent_.display_tag}: {str(target_structure)}"
+                    )
+
+        elif isinstance(target_structure, dict):
+            if target_structure:
+                target_snippets.append(
+                    f"{recursion_padding}{parent_.display_tag.upper()}: "
+                )
+                for key_, value_ in target_structure.items():
+                    if isinstance(value_, dict):
+                        if value_:
+                            target_snippets.append(
+                                f"{recursion_padding}{key_.upper()}: "
+                            )
+                            target_snippets.append(
+                                self.recursive_snippet_collector(
+                                    value_,
+                                    max_depth=max_depth,
+                                    current_depth=current_depth + 1,
+                                    parent_=ResponseElement(
+                                        path_=f"{parent_.path_.upper()}-{key_.upper()}",
+                                        tag=key_.upper(),
+                                        display_tag=key_.upper(),
+                                        python_type=str(type(value_)),
+                                        parent=parent_,
+                                    ),
+                                )
+                            )
+
+                    elif isinstance(value_, (list, tuple)):
+                        if value_:
+                            target_snippets.append(
+                                f"{recursion_padding}{key_.upper()} ITEMS: "
+                            )
+                            for nr_, _element in enumerate(value_):
+                                target_snippets.append(
+                                    self.recursive_snippet_collector(
+                                        _element,
+                                        max_depth=max_depth,
+                                        current_depth=current_depth + 1,
+                                        parent_=ResponseElement(
+                                            path_=f"{parent_.path_.upper()}-{key_.upper()}-ITEM-{nr_ + 1}",
+                                            tag=key_.upper(),
+                                            display_tag=f"{key_.upper()}-ITEM-{nr_ + 1}",
+                                            python_type=str(type(value_)),
+                                            parent=parent_,
+                                        ),
+                                    )
+                                )
+
+                    elif isinstance(value_, (str, float, int)):
+                        if value_:
+                            if key_.upper() in base64_image_attributes:
+                                value_ = "Redacted base64 image string..."
+
+                            target_snippets.append(
+                                f"{recursion_padding}{key_.upper()}: {str(value_)}"
+                            )
+
+        elif isinstance(target_structure, (list, tuple)):
+            if target_structure:
+                target_snippets.append(
+                    f"{recursion_padding}{parent_.display_tag.upper()} ITEMS: "
+                )
+            for nr_, element_ in enumerate(target_structure):
+                target_snippets.append(
+                    self.recursive_snippet_collector(
+                        element_,
+                        max_depth=max_depth,
+                        current_depth=current_depth + 1,
+                        parent_=ResponseElement(
+                            path_=f"{parent_.path_.upper()}-ITEM-{nr_ + 1}",
+                            tag=parent_.tag.upper(),
+                            display_tag=f"{parent_.tag.upper()}-ITEM-{nr_ + 1}",
+                            python_type=str(type(target_structure)),
+                            parent=parent_,
+                        ),
+                    )
+                )
+
+        return "\n".join(target_snippets)
+
+    def process_tags(self, snippets_, tags_, results, group_name: str = ""):
+        check_tags = [tag_[0] in results for tag_ in tags_]
+        if any(check_tags):
+            for tag in tags_:
+                tag_content = results.get(tag[0], {}) or {}
+                if tag_content:
+                    collected_snippets = self.recursive_snippet_collector(
+                        tag_content,
+                        max_depth=5,
+                        current_depth=0,
+                        parent_=ResponseElement(
+                            path_=f"{group_name}-{tag[0]}",
+                            tag=tag[0],
+                            display_tag=tag[1],
+                            python_type=str((type(tag_content))),
+                            parent=None,
+                        ),
+                    )
+                    if collected_snippets:
+                        snippets_.append(collected_snippets)
+
+    def _create_knowledge_graph_snippets(
+        self, results: dict, knowledge_graph_snippets: list
+    ) -> None:
+        """Create knowledge graph snippets from Oxylabs SERPResponse data search_information tag."""
+
+        knowledge_graph_tags = [
+            ("knowledge", "Knowledge Graph"),
+            ("recipes", "Recipes"),
+            ("item_carousel", "Item Carousel"),
+            ("apps", "Apps"),
+        ]
+        self.process_tags(
+            knowledge_graph_snippets, knowledge_graph_tags, results, "Knowledge"
+        )
+
+    def _create_combined_search_result_snippets(
+        self, results: dict, combined_search_result_snippets: list
+    ) -> None:
+        """Create combined search result snippets from Oxylabs SERPResponse data search_information tag."""
+
+        combined_search_result_tags = [
+            ("organic", "Organic Results"),
+            ("organic_videos", "Organic Videos"),
+            ("paid", "Paid Results"),
+            ("featured_snipped", "Feature Snipped"),
+            ("top_stories", "Top Stories"),
+            ("finance", "Finance"),
+            ("sports_games", "Sports Games"),
+            ("twitter", "Twitter"),
+            ("discussions_and_forums", "Discussions and Forums"),
+            ("images", "Images"),
+            ("videos", "Videos"),
+            ("video_box", "Video box"),
+        ]
+        self.process_tags(
+            combined_search_result_snippets,
+            combined_search_result_tags,
+            results,
+            "Combined Search Results",
+        )
+
+    def _create_product_information_snippets(
+        self, results: dict, product_information_snippets: list
+    ) -> None:
+        """Create product information snippets from Oxylabs SERPResponse data search_information tag."""
+
+        product_information_tags = [
+            ("popular_products", "Popular Products"),
+            ("pla", "Product Listing Ads (PLA)"),
+        ]
+        self.process_tags(
+            product_information_snippets,
+            product_information_tags,
+            results,
+            "Product Information",
+        )
+
+    def _create_local_information_snippets(
+        self, results: dict, local_information_snippets: list
+    ) -> None:
+        """Create local group information snippets from Oxylabs SERPResponse data search_information tag."""
+
+        local_information_tags = [
+            ("top_sights", "Top Sights"),
+            ("flights", "Flights"),
+            ("hotels", "Hotels"),
+            ("local_pack", "Local Pack"),
+            ("local_service_ads", "Local Service Ads"),
+            ("jobs", "Jobs"),
+        ]
+        self.process_tags(
+            local_information_snippets,
+            local_information_tags,
+            results,
+            "Local Information",
+        )
+
     def _create_search_information_snippets(
         self, results: dict, search_information_snippets: list
     ) -> None:
         """Create search information snippets from Oxylabs SERPResponse data search_information tag."""
 
-        if (
-            "search_information" in results
-            and isinstance(results["search_information"], dict)
-            and results["search_information"]
-        ):
-            search_information_snippets.append(f"Search Information: ")
-            search_info = results["search_information"]
-            query = search_info.get("query", "")
-            total_results_count = search_info.get("total_results_count", "")
-            if query:
-                search_information_snippets.append(f"Search Query: {query}")
-            if total_results_count:
-                search_information_snippets.append(
-                    f"Total Results: {total_results_count}"
-                )
-
-    def _create_knowledge_graph_snippets(
-        self, results: dict, knowledge_graph_snippets: list
-    ) -> None:
-        """Create knowledge graph snippets from Oxylabs SERPResponse data knowledge tag."""
-
-        if (
-            "knowledge" in results
-            and isinstance(results["knowledge"], dict)
-            and results["knowledge"]
-        ):
-            knowledge = results["knowledge"]
-            self.process_knowlege_metadata(knowledge, knowledge_graph_snippets)
-            self.process_knowledge_factoids(knowledge, knowledge_graph_snippets)
-            self.process_knowledge_profiles(knowledge, knowledge_graph_snippets)
-
-    def process_knowledge_profiles(
-        self, knowledge: dict, knowledge_graph_snippets: list
-    ) -> None:
-        """Process profiles from Oxylabs SERPResponse data knowledge tag."""
-        if (
-            "profiles" in knowledge
-            and isinstance(knowledge["profiles"], list)
-            and knowledge["profiles"]
-        ):
-            knowledge_graph_snippets.append(f"Profiles: ")
-            profiles = knowledge["profiles"]
-            for profile in profiles:
-                profile_title = profile.get("title", "")
-                profile_url = profile.get("url", "")
-                if profile_title and profile_url:
-                    knowledge_graph_snippets.append(
-                        f"(Knowledge Profile) - {profile_title}: {profile_url}"
-                    )
-
-    def process_knowledge_factoids(
-        self, knowledge: dict, knowledge_graph_snippets: list
-    ) -> None:
-        """Process factoids from Oxylabs SERPResponse data knowledge tag."""
-
-        if (
-            "factoids" in knowledge
-            and isinstance(knowledge["factoids"], list)
-            and knowledge["factoids"]
-        ):
-            knowledge_graph_snippets.append(f"Facts: ")
-            factoids = knowledge["factoids"]
-            for factoid in factoids:
-                factoid_title = factoid.get("title", "")
-                factoid_content = factoid.get("content", "")
-                if factoid_title and factoid_content:
-                    knowledge_graph_snippets.append(
-                        f"(Fact) - {factoid_title}: {factoid_content}"
-                    )
-                if "links" in factoid:
-                    links = factoid["links"]
-                    for link in links:
-                        link_title = link.get("title", "")
-                        link_href = link.get("href", "")
-                        if link_title and link_href:
-                            knowledge_graph_snippets.append(
-                                f"(Fact Link) - {factoid_title}: {link_title} ({link_href})"
-                            )
-
-    def process_knowlege_metadata(
-        self, knowledge: dict, knowledge_graph_snippets: list
-    ) -> None:
-        """Process metadata from Oxylabs SERPResponse data knowledge tag."""
-
-        title = knowledge.get("title", "")
-        subtitle = knowledge.get("subtitle", "")
-        knowledge_graph_snippets.append(f"Knowledge graph: {title}")
-        knowledge_graph_snippets.append(f"Subtitle: {subtitle}")
-        if (
-            "description" in knowledge
-            and isinstance(knowledge["description"], str)
-            and knowledge["description"]
-        ):
-            if str(knowledge["description"]).startswith("Description"):
-                knowledge_description = "".join(
-                    str(knowledge["description"]).split("Description")[1:]
-                )
-            else:
-                knowledge_description = str(knowledge["description"])
-
-            knowledge_graph_snippets.append(f"Description: {knowledge_description}")
-
-    def _create_combined_search_result_snippets(
-        self, results: dict, search_result_snippets: list
-    ) -> None:
-        """Create combined search result snippets from Oxylabs SERPResponse data."""
-
-        if (
-            (
-                "organic" in results
-                and results["organic"]
-                and isinstance(results["organic"], list)
-            )
-            or (
-                "paid" in results
-                and results["paid"]
-                and isinstance(results["paid"], list)
-            )
-            or (
-                "popular_products" in results
-                and results["popular_products"]
-                and isinstance(results["popular_products"], list)
-            )
-            or (
-                "related_searches" in results
-                and results["related_searches"]
-                and isinstance(results["related_searches"], list)
-            )
-        ):
-            search_result_snippets.append(f"Combined search results: ")
-
-            self.process_organic_results(results, search_result_snippets)
-
-            self.process_paid_results(results, search_result_snippets)
-
-            self.process_popular_poducts(results, search_result_snippets)
-
-            self.process_related_searches(results, search_result_snippets)
-
-    def process_related_searches(
-        self, results: dict, search_result_snippets: list
-    ) -> None:
-        """Process related searches from Oxylabs SERPResponse data related_searches tag."""
-        if (
-            "related_searches" in results
-            and isinstance(results["related_searches"], list)
-            and results["related_searches"]
-        ):
-            search_result_snippets.append(f"Related Searches: ")
-            related_searches_data = results["related_searches"]
-            related_searches_list = related_searches_data.get("related_searches", [])
-            for search in related_searches_list:
-                search_result_snippets.append(f"Related Search: {search}")
-
-    def process_popular_poducts(
-        self, results: dict, search_result_snippets: list
-    ) -> None:
-        """Process popular products from Oxylabs SERPResponse data popular_products tag."""
-        if (
-            "popular_products" in results
-            and isinstance(results["popular_products"], list)
-            and results["popular_products"]
-        ):
-            search_result_snippets.append(f"Popular Products: ")
-            popular_products = results["popular_products"]
-            for product in popular_products:
-                items = product.get("items", [])
-                for item in items:
-                    snippet_parts = list()
-                    title = item.get("title", "")
-                    price = item.get("price", "")
-                    rating = item.get("rating", "")
-                    seller = item.get("seller", "")
-                    if title:
-                        snippet_parts.append(f"Product: {title}")
-                    if price:
-                        snippet_parts.append(f"Price: {price}")
-                    if rating:
-                        snippet_parts.append(f"Rating: {rating}")
-                    if seller:
-                        snippet_parts.append(f"Seller: {seller}")
-                    snippet = "\n".join(snippet_parts)
-                    search_result_snippets.append(snippet)
-
-    def process_paid_results(self, results: dict, search_result_snippets: list) -> None:
-        """Process paid results from Oxylabs SERPResponse data paid tag."""
-
-        if "paid" in results and isinstance(results["paid"], list) and results["paid"]:
-            search_result_snippets.append(f"Paid Results: ")
-            paid_results = results["paid"]
-            for paid_result in paid_results:
-                snippet_parts = list()
-                title = paid_result.get("title", "")
-                desc = paid_result.get("desc", "")
-                url = paid_result.get("url", "")
-                if title:
-                    snippet_parts.append(f"Paid Ad - Title: {title}")
-                if desc:
-                    snippet_parts.append(f"Description: {desc}")
-                if url:
-                    snippet_parts.append(f"URL: {url}")
-                snippet = "\n".join(snippet_parts)
-                search_result_snippets.append(snippet)
-
-    def process_organic_results(
-        self, results: dict, search_result_snippets: list
-    ) -> None:
-        """Process organic results from Oxylabs SERPResponse data organic tag."""
-
-        if (
-            "organic" in results
-            and isinstance(results["organic"], list)
-            and results["organic"]
-        ):
-            search_result_snippets.append(f"Organic Results: ")
-            organic_results = results["organic"]
-            for organic_result in organic_results:
-                snippet_parts = list()
-                pos = organic_result.get("pos", "")
-                title = organic_result.get("title", "")
-                desc = organic_result.get("desc", "")
-                url = organic_result.get("url", "")
-                if pos:
-                    snippet_parts.append(f"Position: {pos}")
-                if title:
-                    snippet_parts.append(f"Title: {title}")
-                if desc:
-                    snippet_parts.append(f"Description: {desc}")
-                if url:
-                    snippet_parts.append(f"URL: {url}")
-                snippet = "\n".join(snippet_parts)
-                search_result_snippets.append(snippet)
+        search_information_tags = [
+            ("search_information", "Search Information"),
+            ("related_searches", "Related Searches"),
+            ("related_searches_categorized", "Related Searches Categorized"),
+            ("related_questions", "Related Questions"),
+        ]
+        self.process_tags(
+            search_information_snippets,
+            search_information_tags,
+            results,
+            "Search Information",
+        )
