@@ -1,0 +1,10 @@
+_type: chat
+input_variables:
+    ["adjective"]
+partial_variables:
+    content: dogs
+template:
+    -   role: system
+        content: "You are a comedian"
+    -   role: human
+        content: "Tell me a {adjective} joke about {content}."
