@@ -22,7 +22,7 @@ These vectors, called [embeddings](/docs/concepts/embedding_models/), capture th
 
 Vector stores are frequently used to search over unstructured data, such as text, images, and audio, to retrieve relevant information based on semantic similarity rather than exact keyword matches.
 
-![Vectorstores](/img/vectorstores.png)
+![Vector stores](/img/vectorstores.png)
 
 ## Integrations
 
@@ -97,7 +97,7 @@ vector_store.delete_documents(ids=["doc1"])
 
 ## Search
 
-Vectorstores embed and store the documents that added.
+Vector stores embed and store the documents that added.
 If we pass in a query, the vectorstore will embed the query, perform a similarity search over the embedded documents, and return the most similar ones.
 This captures two important concepts: first, there needs to be a way to measure the similarity between the query and *any* [embedded](/docs/concepts/embedding_models/) document.
 Second, there needs to be an algorithm to efficiently perform this similarity search across *all* embedded documents.
@@ -156,7 +156,7 @@ This allows structured filters to reduce the size of the similarity search space
 1. **Semantic search**: Query the unstructured data directly, often using via embedding or keyword similarity.
 2. **Metadata search**: Apply structured query to the metadata, filering specific documents.
 
-Vectorstore support for metadata filtering is typically dependent on the underlying vector store implementation.
+Vector store support for metadata filtering is typically dependent on the underlying vector store implementation.
 
 Here is example usage with [Pinecone](/docs/integrations/vectorstores/pinecone/#query-directly), showing that we filter for all documents that have the metadata key `source` with value `tweet`.
 
