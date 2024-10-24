@@ -1,5 +1,24 @@
 #!/bin/bash
 
+# Use this script to update cassettes for a notebook. The script does the following:
+#
+# 1. Delete existing cassettes for the specified notebook
+# 2. Pre-download and cache nltk and tiktoken files
+# 3. Modify the notebook to generate cassettes for each cell.
+# 4. Execute the notebook.
+#
+# Important: make sure the notebook is in a clean state, with any desired changes
+# staged or committed. The script will modify the notebook in place, and these
+# modifications should be discarded after the cassettes are generated.
+#
+# Usage:
+# In monorepo env, `poetry install --with dev,test`
+# `./docs/scripts/update_cassettes.sh path/to/notebook`
+# e.g., `./docs/scripts/update_cassettes.sh docs/docs/how_to/tool_choice.ipynb`
+#
+# Make sure to set any env vars required by the notebook.
+
+
 # Get the working directory from the input argument, default to 'all' if not provided
 WORKING_DIRECTORY=${1:-all}
 
