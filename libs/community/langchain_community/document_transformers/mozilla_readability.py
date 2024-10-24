@@ -1,3 +1,4 @@
+from dataclasses import asdict
 from typing import Any, Literal, Sequence
 
 from langchain_core.documents import BaseDocumentTransformer, Document
@@ -41,7 +42,9 @@ class ReadabilityTransformer(BaseDocumentTransformer):
 
         result = article.text_content if target == "html" else article.content
 
-        return Document(page_content=result or "", **document.metadata)
+        metadata = {**document.metadata, **asdict(article)}
+
+        return Document(page_content=result or "", **metadata)
 
     def transform_documents(
         self, documents: Sequence[Document], **kwargs: Any
