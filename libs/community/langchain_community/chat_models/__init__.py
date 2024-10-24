@@ -143,6 +143,7 @@ if TYPE_CHECKING:
     from langchain_community.chat_models.openai import (
         ChatOpenAI,
     )
+    from langchain_community.chat_models.outlines import ChatOutlines
     from langchain_community.chat_models.pai_eas_endpoint import (
         PaiEasChatEndpoint,
     )
@@ -225,6 +226,7 @@ __all__ = [
     "ChatOCIModelDeploymentTGI",
     "ChatOllama",
     "ChatOpenAI",
+    "ChatOutlines",
     "ChatPerplexity",
     "ChatPremAI",
     "ChatSambaNovaCloud",
@@ -290,6 +292,7 @@ _module_lookup = {
     "ChatOCIModelDeploymentTGI": "langchain_community.chat_models.oci_data_science",
     "ChatOllama": "langchain_community.chat_models.ollama",
     "ChatOpenAI": "langchain_community.chat_models.openai",
+    "ChatOutlines": "langchain_community.chat_models.outlines",
     "ChatPerplexity": "langchain_community.chat_models.perplexity",
     "ChatSambaNovaCloud": "langchain_community.chat_models.sambanova",
     "ChatSambaStudio": "langchain_community.chat_models.sambanova",
