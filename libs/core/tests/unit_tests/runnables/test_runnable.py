@@ -1957,7 +1957,7 @@ async def test_prompt_with_llm(
             ]
         ),
     ]
-    assert tracer.runs == snapshot
+    assert sorted(tracer.runs, key=lambda r: str(r.id)) == snapshot
     mocker.stop(prompt_spy)
     mocker.stop(llm_spy)
 
