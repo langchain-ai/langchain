@@ -54,7 +54,7 @@ def test_loading_chat_from_yaml() -> None:
 def test_loading_from_json() -> None:
     """Test loading from json file."""
     prompt = load_prompt(EXAMPLE_DIR / "simple_prompt.json")
-    expected_prompt = PromptTemplate(
+    expected_prompt = ChatPromptTemplate(
         input_variables=["adjective", "content"],
         template="Tell me a {adjective} joke about {content}.",
     )
