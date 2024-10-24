@@ -64,7 +64,7 @@ class GoogleTrendsAPIWrapper(BaseModel):
             "q": query,
         }
 
-        total_results = []
+        total_results: Any = []
         client = self.serp_search_engine(params)
         client_dict = client.get_dict()
         total_results = (
