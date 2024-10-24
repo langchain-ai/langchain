@@ -73,6 +73,7 @@ rapidfuzz>=3.1.1,<4
 rapidocr-onnxruntime>=1.3.2,<2
 rdflib==7.0.0
 requests-toolbelt>=1.0.0,<2
+reka-api>=3.2.0,<4
 rspace_client>=2.5.0,<3
 scikit-learn>=1.2.2,<2
 simsimd>=5.0.0,<6
