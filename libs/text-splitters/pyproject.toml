@@ -72,7 +72,7 @@ spacy = "^3.7.4"
 jupyter = "^1.0.0"
 
 [tool.poetry.group.test.dependencies]
-pytest = "^7.3.0"
+pytest = "^8"
 freezegun = "^1.2.2"
 pytest-mock = "^3.10.0"
 pytest-watcher = "^0.3.4"
