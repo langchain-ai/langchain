@@ -31,6 +31,7 @@ from langchain_core.prompts.chat import (
     SystemMessagePromptTemplate,
     _convert_to_message,
 )
+from langchain_core.prompts.string import PromptTemplateFormat
 from tests.unit_tests.pydantic_utils import _normalize_schema
 
 
@@ -295,6 +296,77 @@ def test_chat_prompt_template_from_messages_mustache() -> None:
             content="I'm doing well, thanks!", additional_kwargs={}, example=False
         ),
         HumanMessage(content="What is your name?", additional_kwargs={}, example=False),
+    ]
+
+
+@pytest.mark.requires("jinja2")
+def test_chat_prompt_template_from_messages_jinja2() -> None:
+    template = ChatPromptTemplate.from_messages(
+        [
+            ("system", "You are a helpful AI bot. Your name is {{ name }}."),
+            ("human", "Hello, how are you doing?"),
+            ("ai", "I'm doing well, thanks!"),
+            ("human", "{{ user_input }}"),
+        ],
+        "jinja2",
+    )
+
+    messages = template.format_messages(name="Bob", user_input="What is your name?")
+
+    assert messages == [
+        SystemMessage(
+            content="You are a helpful AI bot. Your name is Bob.", additional_kwargs={}
+        ),
+        HumanMessage(
+            content="Hello, how are you doing?", additional_kwargs={}, example=False
+        ),
+        AIMessage(
+            content="I'm doing well, thanks!", additional_kwargs={}, example=False
+        ),
+        HumanMessage(content="What is your name?", additional_kwargs={}, example=False),
+    ]
+
+
+@pytest.mark.requires("jinja2")
+@pytest.mark.requires("mustache")
+@pytest.mark.parametrize(
+    "template_format,image_type_placeholder,image_data_placeholder",
+    [
+        ("f-string", "{image_type}", "{image_data}"),
+        ("mustache", "{{image_type}}", "{{image_data}}"),
+        ("jinja2", "{{ image_type }}", "{{ image_data }}"),
+    ],
+)
+def test_chat_prompt_template_image_prompt_from_message(
+    template_format: PromptTemplateFormat,
+    image_type_placeholder: str,
+    image_data_placeholder: str,
+) -> None:
+    prompt = {
+        "type": "image_url",
+        "image_url": {
+            "url": f"data:{image_type_placeholder};base64, {image_data_placeholder}",
+            "detail": "low",
+        },
+    }
+
+    template = ChatPromptTemplate.from_messages(
+        [("human", [prompt])], template_format=template_format
+    )
+    assert template.format_messages(
+        image_type="image/png", image_data="base64data"
+    ) == [
+        HumanMessage(
+            content=[
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": "data:image/png;base64, base64data",
+                        "detail": "low",
+                    },
+                }
+            ]
+        )
     ]
 
 
