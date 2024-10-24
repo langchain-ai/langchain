@@ -22,6 +22,8 @@ module = [
     "bs4",
     "pytest",
     "spacy",
+    "spacy.lang.en",
+    "numpy",
 ]
 ignore_missing_imports = "True"
 
