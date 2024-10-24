@@ -22,7 +22,7 @@ disallow_untyped_defs = true
 python = ">=3.9,<4"
 langchain-standard-tests = {git = "https://github.com/langchain-ai/langchain.git", subdirectory = "libs/standard-tests"}
 [[tool.poetry.dependencies.langchain-core]]
-version = ">=0.1.40,<0.4"
+version = ">=0.2.11,<0.4"
 python = ">=3.9"
 
 [[tool.poetry.dependencies.langchain-core]]
