@@ -20,6 +20,8 @@ codespell = "^2.2.0"
 
 [tool.poetry.group.typing.dependencies]
 
+[tool.poetry.group.test.dependencies]
+
 [tool.codespell]
 skip = '.git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples,templates,*.trig'
 # Ignore latin etc
