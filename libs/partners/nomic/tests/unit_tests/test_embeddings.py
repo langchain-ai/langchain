@@ -1,6 +1,5 @@
 """Test embedding model integration."""
 
-
 from langchain_nomic.embeddings import NomicEmbeddings
 
 
