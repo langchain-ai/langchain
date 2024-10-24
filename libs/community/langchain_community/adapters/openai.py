@@ -180,6 +180,12 @@ def _convert_message_chunk(chunk: BaseMessageChunk, i: int) -> dict:
             # not missing, but None.
             if i == 0:
                 _dict["content"] = None
+        if "tool_calls" in chunk.additional_kwargs:
+            _dict["tool_calls"] = chunk.additional_kwargs["tool_calls"]
+            # If the first chunk is tool calls, the content is not empty string,
+            # not missing, but None.
+            if i == 0:
+                _dict["content"] = None
         else:
             _dict["content"] = chunk.content
     else:
