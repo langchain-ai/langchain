@@ -1,3 +1,4 @@
+import pytest
 from langchain_core.messages import (
     AIMessage,
     HumanMessage,
@@ -86,6 +87,7 @@ def test__convert_message_to_dict_system() -> None:
     assert result == expected_output
 
 
+@pytest.mark.requires("websocket")
 def test__chat_spark_llm_initialization() -> None:
     chat = ChatSparkLLM(
         app_id="IFLYTEK_SPARK_APP_ID",
