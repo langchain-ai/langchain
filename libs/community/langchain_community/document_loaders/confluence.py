@@ -688,7 +688,7 @@ class ConfluenceLoader(BaseLoader):
                 image_text = pytesseract.image_to_string(image, lang=ocr_languages)
                 text += f"Page {i + 1}:\n{image_text}\n\n"
             except TesseractError as ex:
-                print(f"TesseractError: {ex}")  # noqa: T201
+                logger.warning(f"TesseractError: {ex}")
 
         return text
 
