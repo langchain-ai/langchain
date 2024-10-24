@@ -7,9 +7,8 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, LLMResult
-from langchain_core.pydantic_v1 import Field, PrivateAttr, SecretStr
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
-from pydantic import Field, SecretStr
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from pydantic import Field, PrivateAttr, SecretStr, model_validator
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
@@ -29,7 +28,7 @@ class TrustworthyLanguageModel(BaseLLM):
 
             from langchain_community.llms import TrustworthyLanguageModel
             tlm = TrustworthyLanguageModel(
-                cleanlab_api_key="my_api_key",  # Not required if `CLEANLAB_API_KEY` env variable is set
+                cleanlab_api_key="my_api_key",  # Optional if `CLEANLAB_API_KEY` is set
                 quality_preset="best"
             )
     """
@@ -53,7 +52,7 @@ class TrustworthyLanguageModel(BaseLLM):
     class Config:
         extra = "forbid"
 
-    @pre_init
+    @model_validator(mode="before")
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         cleanlab_api_key = convert_to_secret_str(
@@ -109,7 +108,7 @@ class TrustworthyLanguageModel(BaseLLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> LLMResult:
-        """Call out to Cleanlab endpoint via client library and return response containing additional info."""
+        """Call Cleanlab endpoint and return response with additional info."""
 
         responses: List[Dict[str, str]] = self._client.prompt(prompts)
 
