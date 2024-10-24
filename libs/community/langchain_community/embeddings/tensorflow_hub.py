@@ -45,6 +45,7 @@ class TensorflowHubEmbeddings(BaseModel, Embeddings):
 
     model_config = ConfigDict(
         extra="forbid",
+        protected_namespaces=(),
     )
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:

@@ -102,6 +102,7 @@ For more information, please visit:
 
     model_config = ConfigDict(
         extra="allow",
+        protected_namespaces=(),
     )
 
     def _embed(self, inputs: Any) -> Any:
