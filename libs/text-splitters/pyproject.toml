@@ -21,6 +21,7 @@ module = [
     "konlpy.tag",
     "bs4",
     "pytest",
+    "spacy",
 ]
 ignore_missing_imports = "True"
 
