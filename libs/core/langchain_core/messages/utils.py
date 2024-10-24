@@ -883,8 +883,6 @@ def convert_to_openai_messages(
 ) -> Union[dict, list[dict]]:
     """Convert LangChain messages into OpenAI message dicts.
 
-    .. versionadded:: 0.3.11
-
     Args:
         messages: Message-like object or iterable of objects whose contents are
             in OpenAI, Anthropic, Bedrock Converse, or VertexAI formats.
@@ -936,6 +934,8 @@ def convert_to_openai_messages(
             #   {'role': 'tool', 'name': 'bar', 'content': 'foobar'},
             #   {'role': 'assistant', 'content': 'thats nice'}
             # ]
+
+    .. versionadded:: 0.3.11
 
     """  # noqa: E501
     if text_format not in ("string", "block"):
