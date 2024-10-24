@@ -10,8 +10,8 @@ from langchain_core.prompts.chat import (
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
-from langchain_core.pydantic_v1 import Field
 from langchain_core.tools import BaseTool
+from pydantic import Field
 
 from langchain.agents.agent import Agent, AgentOutputParser
 from langchain.agents.chat.output_parser import ChatOutputParser

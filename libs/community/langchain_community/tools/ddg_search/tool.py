@@ -1,11 +1,12 @@
 """Tool for the DuckDuckGo search API."""
 
+import json
 import warnings
-from typing import Any, List, Optional, Type
+from typing import Any, List, Literal, Optional, Type, Union
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel, Field
 
 from langchain_community.utilities.duckduckgo_search import DuckDuckGoSearchAPIWrapper
 
@@ -74,14 +75,14 @@ class DuckDuckGoSearchRun(BaseTool):
 
 
 class DuckDuckGoSearchResults(BaseTool):
-    """Tool that queries the DuckDuckGo search API and gets back json string."""
+    """Tool that queries the DuckDuckGo search API and
+    returns the results in `output_format`."""
 
     name: str = "duckduckgo_results_json"
     description: str = (
         "A wrapper around Duck Duck Go Search. "
         "Useful for when you need to answer questions about current events. "
-        "Input should be a search query. Output is a JSON string array of the "
-        "query results"
+        "Input should be a search query."
     )
     max_results: int = Field(alias="num_results", default=4)
     api_wrapper: DuckDuckGoSearchAPIWrapper = Field(
@@ -93,25 +94,45 @@ class DuckDuckGoSearchResults(BaseTool):
     """Which keys from each result to include. If None all keys are included."""
     results_separator: str = ", "
     """Character for separating results."""
+    output_format: Literal["string", "json", "list"] = "string"
+    """Output format of the search results.
+
+    - 'string': Return a concatenated string of the search results.
+    - 'json': Return a JSON string of the search results.
+    - 'list': Return a list of dictionaries of the search results.
+    """
+    response_format: Literal["content_and_artifact"] = "content_and_artifact"
 
     def _run(
         self,
         query: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> str:
+    ) -> tuple[Union[List[dict], str], List[dict]]:
         """Use the tool."""
-        res = self.api_wrapper.results(query, self.max_results, source=self.backend)
-        res_strs = [
-            ", ".join(
-                [
-                    f"{k}: {v}"
-                    for k, v in d.items()
-                    if not self.keys_to_include or k in self.keys_to_include
-                ]
-            )
-            for d in res
+        raw_results = self.api_wrapper.results(
+            query, self.max_results, source=self.backend
+        )
+        results = [
+            {
+                k: v
+                for k, v in d.items()
+                if not self.keys_to_include or k in self.keys_to_include
+            }
+            for d in raw_results
         ]
-        return self.results_separator.join(res_strs)
+
+        if self.output_format == "list":
+            return results, raw_results
+        elif self.output_format == "json":
+            return json.dumps(results), raw_results
+        elif self.output_format == "string":
+            res_strs = [", ".join([f"{k}: {v}" for k, v in d.items()]) for d in results]
+            return self.results_separator.join(res_strs), raw_results
+        else:
+            raise ValueError(
+                f"Invalid output_format: {self.output_format}. "
+                "Needs to be one of 'string', 'json', 'list'."
+            )
 
 
 def DuckDuckGoSearchTool(*args: Any, **kwargs: Any) -> DuckDuckGoSearchRun:

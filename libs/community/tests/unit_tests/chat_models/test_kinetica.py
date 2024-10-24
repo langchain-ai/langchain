@@ -14,6 +14,7 @@ class TestChatKinetica:
     test_ctx_json: str = """
     {
         "payload":{
+            "question": "foo",
             "context":[
                 {
                     "table":"demo.test_profiles",

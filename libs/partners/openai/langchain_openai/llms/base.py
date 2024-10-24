@@ -26,9 +26,10 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import get_pydantic_field_names
-from langchain_core.utils.utils import build_extra_kwargs, from_env, secret_from_env
+from langchain_core.utils.utils import _build_model_kwargs, from_env, secret_from_env
+from pydantic import ConfigDict, Field, SecretStr, model_validator
+from typing_extensions import Self
 
 logger = logging.getLogger(__name__)
 
@@ -152,56 +153,48 @@ class BaseOpenAI(BaseLLM):
     """Optional additional JSON properties to include in the request parameters when
     making requests to OpenAI compatible APIs, such as vLLM."""
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(populate_by_name=True)
 
-        allow_population_by_field_name = True
-
-    @root_validator(pre=True)
-    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
-        extra = values.get("model_kwargs", {})
-        values["model_kwargs"] = build_extra_kwargs(
-            extra, values, all_required_field_names
-        )
+        values = _build_model_kwargs(values, all_required_field_names)
         return values
 
-    @root_validator(pre=False, skip_on_failure=True, allow_reuse=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="after")
+    def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
-        if values["n"] < 1:
+        if self.n < 1:
             raise ValueError("n must be at least 1.")
-        if values["streaming"] and values["n"] > 1:
+        if self.streaming and self.n > 1:
             raise ValueError("Cannot stream results when n > 1.")
-        if values["streaming"] and values["best_of"] > 1:
+        if self.streaming and self.best_of > 1:
             raise ValueError("Cannot stream results when best_of > 1.")
 
-        client_params = {
+        client_params: dict = {
             "api_key": (
-                values["openai_api_key"].get_secret_value()
-                if values["openai_api_key"]
-                else None
+                self.openai_api_key.get_secret_value() if self.openai_api_key else None
             ),
-            "organization": values["openai_organization"],
-            "base_url": values["openai_api_base"],
-            "timeout": values["request_timeout"],
-            "max_retries": values["max_retries"],
-            "default_headers": values["default_headers"],
-            "default_query": values["default_query"],
+            "organization": self.openai_organization,
+            "base_url": self.openai_api_base,
+            "timeout": self.request_timeout,
+            "max_retries": self.max_retries,
+            "default_headers": self.default_headers,
+            "default_query": self.default_query,
         }
-        if not values.get("client"):
-            sync_specific = {"http_client": values["http_client"]}
-            values["client"] = openai.OpenAI(
-                **client_params, **sync_specific
-            ).completions
-        if not values.get("async_client"):
-            async_specific = {"http_client": values["http_async_client"]}
-            values["async_client"] = openai.AsyncOpenAI(
-                **client_params, **async_specific
+        if not self.client:
+            sync_specific = {"http_client": self.http_client}
+            self.client = openai.OpenAI(**client_params, **sync_specific).completions  # type: ignore[arg-type]
+        if not self.async_client:
+            async_specific = {"http_client": self.http_async_client}
+            self.async_client = openai.AsyncOpenAI(
+                **client_params,
+                **async_specific,  # type: ignore[arg-type]
             ).completions
 
-        return values
+        return self
 
     @property
     def _default_params(self) -> Dict[str, Any]:
