@@ -1924,7 +1924,7 @@ async def test_prompt_with_llm(
             HumanMessage(content="What is your name?"),
         ]
     )
-    assert tracer.runs == snapshot
+    assert sorted(tracer.runs, key=lambda r: str(r.id)) == snapshot
     mocker.stop(prompt_spy)
     mocker.stop(llm_spy)
 
@@ -2122,7 +2122,7 @@ async def test_prompt_with_llm_parser(
         ]
     )
     assert parser_spy.call_args.args[1] == "bear, dog, cat"
-    assert tracer.runs == snapshot
+    assert sorted(tracer.runs, key=lambda r: str(r.id)) == snapshot
     mocker.stop(prompt_spy)
     mocker.stop(llm_spy)
     mocker.stop(parser_spy)
@@ -2161,7 +2161,7 @@ async def test_prompt_with_llm_parser(
         "tomato, lettuce, onion",
         "bear, dog, cat",
     ]
-    assert tracer.runs == snapshot
+    assert sorted(tracer.runs, key=lambda r: str(r.id)) == snapshot
     mocker.stop(prompt_spy)
     mocker.stop(llm_spy)
     mocker.stop(parser_spy)
@@ -2507,7 +2507,7 @@ async def test_prompt_with_llm_and_async_lambda(
             HumanMessage(content="What is your name?"),
         ]
     )
-    assert tracer.runs == snapshot
+    assert sorted(tracer.runs, key=lambda r: str(r.id)) == snapshot
     mocker.stop(prompt_spy)
     mocker.stop(llm_spy)
 
@@ -2550,7 +2550,7 @@ def test_prompt_with_chat_model_and_parser(
     )
     assert parser_spy.call_args.args[1] == _any_id_ai_message(content="foo, bar")
 
-    assert tracer.runs == snapshot
+    assert sorted(tracer.runs, key=lambda r: str(r.id)) == snapshot
 
 
 @freeze_time("2023-01-01")
@@ -2611,7 +2611,7 @@ def test_combining_sequences(
         {"question": "What is your name?"}, {"callbacks": [tracer]}
     ) == ["baz", "qux"]
 
-    assert tracer.runs == snapshot
+    assert sorted(tracer.runs, key=lambda r: str(r.id)) == snapshot
 
 
 @freeze_time("2023-01-01")
