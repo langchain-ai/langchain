@@ -799,3 +799,9 @@ def test__convert_to_openai_response_format() -> None:
 
     actual = _convert_to_openai_response_format(response_format["json_schema"])
     assert actual == response_format
+
+    actual = _convert_to_openai_response_format(response_format, strict=True)
+    assert actual == response_format
+
+    with pytest.raises(ValueError):
+        actual = _convert_to_openai_response_format(response_format, strict=False)
