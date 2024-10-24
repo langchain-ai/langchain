@@ -1,3 +1,4 @@
+import pytest
 from langchain_core.messages import (
     AIMessage,
     HumanMessage,
@@ -8,6 +9,7 @@ from langchain_core.output_parsers.openai_tools import (
 )
 
 from langchain_community.chat_models.sparkllm import (
+    ChatSparkLLM,
     convert_dict_to_message,
     convert_message_to_dict,
 )
@@ -83,3 +85,25 @@ def test__convert_message_to_dict_system() -> None:
     result = convert_message_to_dict(message)
     expected_output = {"role": "system", "content": "foo"}
     assert result == expected_output
+
+
+@pytest.mark.requires("websocket")
+def test__chat_spark_llm_initialization() -> None:
+    chat = ChatSparkLLM(
+        app_id="IFLYTEK_SPARK_APP_ID",
+        api_key="IFLYTEK_SPARK_API_KEY",
+        api_secret="IFLYTEK_SPARK_API_SECRET",
+        api_url="IFLYTEK_SPARK_API_URL",
+        model="IFLYTEK_SPARK_LLM_DOMAIN",
+        timeout=40,
+        temperature=0.1,
+        top_k=3,
+    )
+    assert chat.spark_app_id == "IFLYTEK_SPARK_APP_ID"
+    assert chat.spark_api_key == "IFLYTEK_SPARK_API_KEY"
+    assert chat.spark_api_secret == "IFLYTEK_SPARK_API_SECRET"
+    assert chat.spark_api_url == "IFLYTEK_SPARK_API_URL"
+    assert chat.spark_llm_domain == "IFLYTEK_SPARK_LLM_DOMAIN"
+    assert chat.request_timeout == 40
+    assert chat.temperature == 0.1
+    assert chat.top_k == 3
