@@ -62,6 +62,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
             export AZURE_OPENAI_API_KEY="your-api-key"
             export AZURE_OPENAI_ENDPOINT="https://your-endpoint.openai.azure.com/"
+            export AZURE_OPENAI_DEPLOYMENT="gpt-35-turbo"
 
     Key init args — completion params:
         azure_deployment: str
@@ -471,9 +472,16 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
         Example: `https://example-resource.azure.openai.com/`
     """
-    deployment_name: Union[str, None] = Field(default=None, alias="azure_deployment")
+    deployment_name: Optional[str] = Field(
+        alias="azure_deployment",
+        default_factory=from_env("AZURE_OPENAI_DEPLOYMENT", default=None),
+    )
     """A model deployment. 
-    
+
+        Automatically inferred from env var `AZURE_OPENAI_DEPLOYMENT` if not provided.
+
+        Example: `gpt-35-turbo`
+
         If given sets the base client URL to include `/deployments/{azure_deployment}`.
         Note: this means you won't be able to use non-deployment endpoints.
     """
