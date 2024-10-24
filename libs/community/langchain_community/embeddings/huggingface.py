@@ -90,7 +90,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
             ) from exc
 
         self.client = sentence_transformers.SentenceTransformer(
-            self.model_name, cache_folder=self.cache_folder, **self.model_kwargs
+            self.model_name, trust_remote_code=True, cache_folder=self.cache_folder, **self.model_kwargs
         )
 
     model_config = ConfigDict(extra="forbid", protected_namespaces=())
