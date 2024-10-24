@@ -1891,6 +1891,7 @@ async def test_prompt_with_chat_model_async(
     )
 
 
+@freeze_time("2023-01-01")
 async def test_prompt_with_llm_ainvoke(
     mocker: MockerFixture, snapshot: SnapshotAssertion
 ) -> None:
@@ -1928,6 +1929,7 @@ async def test_prompt_with_llm_ainvoke(
     mocker.stop(llm_spy)
 
 
+@freeze_time("2023-01-01")
 async def test_prompt_with_llm_abatch(
     mocker: MockerFixture, snapshot: SnapshotAssertion
 ) -> None:
@@ -1973,6 +1975,7 @@ async def test_prompt_with_llm_abatch(
     mocker.stop(llm_spy)
 
 
+@freeze_time("2023-01-01")
 async def test_prompt_with_llm_astream(
     mocker: MockerFixture, snapshot: SnapshotAssertion
 ) -> None:
@@ -2110,6 +2113,7 @@ async def test_prompt_with_llm_astream(
     assert stream_log == expected
 
 
+@freeze_time("2023-01-01")
 async def test_prompt_with_llm_parser_ainvoke(
     mocker: MockerFixture, snapshot: SnapshotAssertion
 ) -> None:
@@ -2150,6 +2154,7 @@ async def test_prompt_with_llm_parser_ainvoke(
     mocker.stop(parser_spy)
 
 
+@freeze_time("2023-01-01")
 async def test_prompt_with_llm_parser_abatch(
     mocker: MockerFixture, snapshot: SnapshotAssertion
 ) -> None:
@@ -2202,6 +2207,7 @@ async def test_prompt_with_llm_parser_abatch(
     mocker.stop(parser_spy)
 
 
+@freeze_time("2023-01-01")
 async def test_prompt_with_llm_parser_astream(
     mocker: MockerFixture, snapshot: SnapshotAssertion
 ) -> None:
@@ -2519,6 +2525,7 @@ async def test_stream_log_lists() -> None:
     }
 
 
+@freeze_time("2023-01-01")
 async def test_prompt_with_llm_and_async_lambda(
     mocker: MockerFixture, snapshot: SnapshotAssertion
 ) -> None:
