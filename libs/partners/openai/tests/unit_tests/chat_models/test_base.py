@@ -804,4 +804,4 @@ def test__convert_to_openai_response_format() -> None:
     assert actual == response_format
 
     with pytest.raises(ValueError):
-        actual = _convert_to_openai_response_format(response_format, strict=False)
+        _convert_to_openai_response_format(response_format, strict=False)
