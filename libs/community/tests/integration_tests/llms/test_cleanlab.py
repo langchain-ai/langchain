@@ -34,6 +34,7 @@ def test_cleanlab_generate() -> None:
     assert tlm._llm_type == "trustworthy_language_model"
     assert isinstance(output, LLMResult)
     assert isinstance(output.generations[0][0].text, str)
-    assert isinstance(
-        output.generations[0][0].generation_info["trustworthiness_score"], float
-    )
+
+    generation_info = output.generations[0][0].generation_info
+    assert generation_info is not None
+    assert isinstance(generation_info.get("trustworthiness_score"), float)
