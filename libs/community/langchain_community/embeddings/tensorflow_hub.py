@@ -1,7 +1,7 @@
 from typing import Any, List
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 DEFAULT_MODEL_URL = "https://tfhub.dev/google/universal-sentence-encoder-multilingual/3"
 
@@ -19,7 +19,7 @@ class TensorflowHubEmbeddings(BaseModel, Embeddings):
             tf = TensorflowHubEmbeddings(model_url=url)
     """
 
-    embed: Any  #: :meta private:
+    embed: Any = None  #: :meta private:
     model_url: str = DEFAULT_MODEL_URL
     """Model name to use."""
 
@@ -43,8 +43,9 @@ class TensorflowHubEmbeddings(BaseModel, Embeddings):
 
         self.embed = tensorflow_hub.load(self.model_url)
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Compute doc embeddings using a TensorflowHub embedding model.

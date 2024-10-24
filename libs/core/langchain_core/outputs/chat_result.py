@@ -1,7 +1,8 @@
-from typing import List, Optional
+from typing import Optional
+
+from pydantic import BaseModel
 
 from langchain_core.outputs.chat_generation import ChatGeneration
-from langchain_core.pydantic_v1 import BaseModel
 
 
 class ChatResult(BaseModel):
@@ -17,18 +18,18 @@ class ChatResult(BaseModel):
     for more information.
     """
 
-    generations: List[ChatGeneration]
+    generations: list[ChatGeneration]
     """List of the chat generations.
-    
+
     Generations is a list to allow for multiple candidate generations for a single
     input prompt.
     """
     llm_output: Optional[dict] = None
     """For arbitrary LLM provider specific output.
-    
+
     This dictionary is a free-form dictionary that can contain any information that the
     provider wants to return. It is not standardized and is provider-specific.
-    
+
     Users should generally avoid relying on this field and instead rely on
     accessing relevant information from standardized fields present in
     AIMessage.
