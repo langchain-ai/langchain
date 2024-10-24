@@ -30,7 +30,7 @@ Roles are used to distinguish between different types of messages in a conversat
 | **user**              | Represents input from a user interacting with the model, usually in the form of text or other interactive input.                                                                                                |
 | **assistant**         | Represents a response from the model, which can include text or a request to invoke tools.                                                                                                                      |
 | **tool**              | A message used to pass the results of a tool invocation back to the model after external data or processing has been retrieved. Used with chat models that support [tool calling](/docs/concepts/tool_calling). |
-| **function (legacy)** | This is a legacy role, corresponding to OpenAI's legacy function-calling API. **tool** role should be used instead.                                                                                             |
+| **function** (legacy) | This is a legacy role, corresponding to OpenAI's legacy function-calling API. **tool** role should be used instead.                                                                                             |
 
 ### Content
 
@@ -145,7 +145,7 @@ An `AIMessage` has the following attributes. The attributes which are **standard
 | `content`            | Raw              | Usually a string, but can be a list of content blocks. See [content](#content) for details.                                                                                                                             |
 | `tool_calls`         | Standardized     | Tool calls associated with the message. See [tool calling](/docs/concepts/tool_calling) for details.                                                                                                                    |
 | `invalid_tool_calls` | Standardized     | Tool calls with parsing errors associated with the message. See [tool calling](/docs/concepts/tool_calling) for details.                                                                                                |
-| `usage_metadata`     | Standardized     | Usage metadata for a message, such as [token counts](/docs/concepts/tokens). See [Usage Metadata API Reference](https://python.langchain.com/api_reference/core/messages/langchain_core.messages.ai.UsageMetadata.html) |
+| `usage_metadata`     | Standardized     | Usage metadata for a message, such as [token counts](/docs/concepts/tokens). See [Usage Metadata API Reference](https://python.langchain.com/api_reference/core/messages/langchain_core.messages.ai.UsageMetadata.html). |
 | `id`                 | Standardized     | An optional unique identifier for the message, ideally provided by the provider/model that created the message.                                                                                                         |
 | `response_metadata`  | Raw              | Response metadata, e.g., response headers, logprobs, token counts.                                                                                                                                                      |
 

@@ -140,7 +140,7 @@ See [this guide](/docs/how_to/streaming/#using-stream-events) for more detailed 
 To write custom data to the stream, you will need to choose one of the following methods based on the component you are working with:
 
 1. LangGraph's [StreamWriter](https://langchain-ai.github.io/langgraph/reference/types/#langgraph.types.StreamWriter) can be used to write custom data that will surface through **stream** and **astream** APIs when working with LangGraph. **Important** this is a LangGraph feature, so it is not available when working with pure LCEL. See [how to streaming custom data](https://langchain-ai.github.io/langgraph/how-tos/streaming-content/) for more information.
-2. [dispatch_events](https://python.langchain.com/api_reference/core/callbacks/langchain_core.callbacks.manager.dispatch_custom_event.html#) / [adispatch_events](https://python.langchain.com/api_reference/core/callbacks/langchain_core.callbacks.manager.adispatch_custom_event.html) can be used to write custom data that will be surfaced through the **astream_events** API. See [how to dispatch custom callback events](https://python.langchain.com/docs/how_to/callbacks_custom_events/#astream-events-api) for more information.
+2. [dispatch_events](https://python.langchain.com/api_reference/core/callbacks/langchain_core.callbacks.manager.dispatch_custom_event.html#) / [adispatch_events](https://python.langchain.com/api_reference/core/callbacks/langchain_core.callbacks.manager.adispatch_custom_event.html) can be used to write custom data that will be surfaced through the **astream_events** API. See [how to dispatch custom callback events](/docs/how_to/callbacks_custom_events/#astream-events-api) for more information.
 
 ## "Auto-Streaming" Chat Models
 
@@ -188,4 +188,4 @@ Please see the following how-to guides for specific examples of streaming in Lan
 For writing custom data to the stream, please see the following resources:
 
 * If using LangGraph, see [how to stream custom data](https://langchain-ai.github.io/langgraph/how-tos/streaming-content/).
-* If using LCEL, see [how to dispatch custom callback events](https://python.langchain.com/docs/how_to/callbacks_custom_events/#astream-events-api).
+* If using LCEL, see [how to dispatch custom callback events](/docs/how_to/callbacks_custom_events/#astream-events-api).
