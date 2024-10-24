@@ -1891,7 +1891,6 @@ async def test_prompt_with_chat_model_async(
     )
 
 
-@freeze_time("2023-01-01")
 async def test_prompt_with_llm_ainvoke(
     mocker: MockerFixture, snapshot: SnapshotAssertion
 ) -> None:
@@ -1928,12 +1927,13 @@ async def test_prompt_with_llm_ainvoke(
     mocker.stop(prompt_spy)
     mocker.stop(llm_spy)
 
+
 async def test_prompt_with_llm_abatch(
-        mocker: MockerFixture, snapshot: SnapshotAssertion
+    mocker: MockerFixture, snapshot: SnapshotAssertion
 ) -> None:
     prompt = (
-            SystemMessagePromptTemplate.from_template("You are a nice assistant.")
-            + "{question}"
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + "{question}"
     )
     llm = FakeListLLM(responses=["foo", "bar"])
 
@@ -1972,12 +1972,13 @@ async def test_prompt_with_llm_abatch(
     mocker.stop(prompt_spy)
     mocker.stop(llm_spy)
 
+
 async def test_prompt_with_llm_astream(
-        mocker: MockerFixture, snapshot: SnapshotAssertion
+    mocker: MockerFixture, snapshot: SnapshotAssertion
 ) -> None:
     prompt = (
-            SystemMessagePromptTemplate.from_template("You are a nice assistant.")
-            + "{question}"
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + "{question}"
     )
     llm = FakeListLLM(responses=["foo", "bar"])
 
@@ -2109,7 +2110,6 @@ async def test_prompt_with_llm_astream(
     assert stream_log == expected
 
 
-@freeze_time("2023-01-01")
 async def test_prompt_with_llm_parser_ainvoke(
     mocker: MockerFixture, snapshot: SnapshotAssertion
 ) -> None:
@@ -2149,15 +2149,15 @@ async def test_prompt_with_llm_parser_ainvoke(
     mocker.stop(llm_spy)
     mocker.stop(parser_spy)
 
+
 async def test_prompt_with_llm_parser_abatch(
-        mocker: MockerFixture, snapshot: SnapshotAssertion
+    mocker: MockerFixture, snapshot: SnapshotAssertion
 ) -> None:
     prompt = (
-            SystemMessagePromptTemplate.from_template("You are a nice assistant.")
-            + "{question}"
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + "{question}"
     )
-    llm = FakeStreamingListLLM(
-        responses=["bear, dog, cat", "tomato, lettuce, onion"])
+    llm = FakeStreamingListLLM(responses=["bear, dog, cat", "tomato, lettuce, onion"])
     parser = CommaSeparatedListOutputParser()
 
     chain: Runnable = prompt | llm | parser
@@ -2201,15 +2201,15 @@ async def test_prompt_with_llm_parser_abatch(
     mocker.stop(llm_spy)
     mocker.stop(parser_spy)
 
+
 async def test_prompt_with_llm_parser_astream(
-        mocker: MockerFixture, snapshot: SnapshotAssertion
+    mocker: MockerFixture, snapshot: SnapshotAssertion
 ) -> None:
     prompt = (
-            SystemMessagePromptTemplate.from_template("You are a nice assistant.")
-            + "{question}"
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + "{question}"
     )
-    llm = FakeStreamingListLLM(
-        responses=["bear, dog, cat", "tomato, lettuce, onion"])
+    llm = FakeStreamingListLLM(responses=["bear, dog, cat", "tomato, lettuce, onion"])
     parser = CommaSeparatedListOutputParser()
 
     chain: Runnable = prompt | llm | parser
@@ -2519,7 +2519,6 @@ async def test_stream_log_lists() -> None:
     }
 
 
-@freeze_time("2023-01-01")
 async def test_prompt_with_llm_and_async_lambda(
     mocker: MockerFixture, snapshot: SnapshotAssertion
 ) -> None:
