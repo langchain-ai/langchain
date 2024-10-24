@@ -72,7 +72,7 @@ select = [
     "PIE",
     "Q",
     "RSE",
-    "S",
+    "S", # https://docs.astral.sh/ruff/rules/#flake8-bandit-s
     "SIM",
     "SLOT",
     "T10",
