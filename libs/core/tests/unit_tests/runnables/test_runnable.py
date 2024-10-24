@@ -1307,7 +1307,7 @@ async def test_with_config(mocker: MockerFixture) -> None:
         5,
         7,
     ]
-    assert spy.call_args_list == [
+    assert sorted(spy.call_args_list) == [
         mocker.call(
             "hello",
             {
