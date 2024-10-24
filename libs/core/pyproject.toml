@@ -86,6 +86,9 @@ ignore = [
     "COM812", # Messes with the formatter
     "UP007",  # Incompatible with pydantic + Python 3.9
     "W293",   # 
+    "S101",   # allow assert
+    "S110",   # allow try/except/pass
+    "S112",   # allow try/except/continue
 ]
 
 [tool.coverage.run]
@@ -130,6 +133,7 @@ classmethod-decorators = [
 "tests/unit_tests/runnables/test_runnable.py" = ["E501"]
 "tests/unit_tests/runnables/test_graph.py" = ["E501"]
 "tests/**" = ["S"]                                       # Ignore flake8-bandit rules in tests
+"scripts/**" = ["S"]                                     # Ignore flake8-bandit rules in scripts
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.5"
