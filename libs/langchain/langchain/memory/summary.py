@@ -7,8 +7,8 @@ from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import BaseMessage, SystemMessage, get_buffer_string
 from langchain_core.prompts import BasePromptTemplate
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.utils import pre_init
+from pydantic import BaseModel
 
 from langchain.chains.llm import LLMChain
 from langchain.memory.chat_memory import BaseChatMemory
@@ -57,8 +57,21 @@ class SummarizerMixin(BaseModel):
         return await chain.apredict(summary=existing_summary, new_lines=new_lines)
 
 
+@deprecated(
+    since="0.3.1",
+    removal="1.0.0",
+    message=(
+        "Please see the migration guide at: "
+        "https://python.langchain.com/docs/versions/migrating_memory/"
+    ),
+)
 class ConversationSummaryMemory(BaseChatMemory, SummarizerMixin):
-    """Conversation summarizer to chat memory."""
+    """Continually summarizes the conversation history.
+
+    The summary is updated after each conversation turn.
+    The implementations returns a summary of the conversation history which
+    can be used to provide context to the model.
+    """
 
     buffer: str = ""
     memory_key: str = "history"  #: :meta private:

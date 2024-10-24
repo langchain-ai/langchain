@@ -7,6 +7,7 @@ from typing import Any, Iterator, List, Mapping, Optional
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
+from pydantic import ConfigDict
 
 DEFAULT_MODEL_ID = "gpt2"
 DEFAULT_TASK = "text-generation"
@@ -53,7 +54,7 @@ class HuggingFacePipeline(BaseLLM):
             hf = HuggingFacePipeline(pipeline=pipe)
     """
 
-    pipeline: Any  #: :meta private:
+    pipeline: Any = None  #: :meta private:
     model_id: str = DEFAULT_MODEL_ID
     """Model name to use."""
     model_kwargs: Optional[dict] = None
@@ -63,10 +64,9 @@ class HuggingFacePipeline(BaseLLM):
     batch_size: int = DEFAULT_BATCH_SIZE
     """Batch size to use when passing multiple documents to generate."""
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = "forbid"
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @classmethod
     def from_model_id(
@@ -74,7 +74,7 @@ class HuggingFacePipeline(BaseLLM):
         model_id: str,
         task: str,
         backend: str = "default",
-        device: Optional[int] = -1,
+        device: Optional[int] = None,
         device_map: Optional[str] = None,
         model_kwargs: Optional[dict] = None,
         pipeline_kwargs: Optional[dict] = None,
@@ -96,7 +96,21 @@ class HuggingFacePipeline(BaseLLM):
                 "Please install it with `pip install transformers`."
             )
 
-        _model_kwargs = model_kwargs or {}
+        _model_kwargs = model_kwargs.copy() if model_kwargs else {}
+        if device_map is not None:
+            if device is not None:
+                raise ValueError(
+                    "Both `device` and `device_map` are specified. "
+                    "`device` will override `device_map`. "
+                    "You will most likely encounter unexpected behavior."
+                    "Please remove `device` and keep "
+                    "`device_map`."
+                )
+
+            if "device_map" in _model_kwargs:
+                raise ValueError("`device_map` is already specified in `model_kwargs`.")
+
+            _model_kwargs["device_map"] = device_map
         tokenizer = AutoTokenizer.from_pretrained(model_id, **_model_kwargs)
 
         try:
@@ -218,7 +232,6 @@ class HuggingFacePipeline(BaseLLM):
             model=model,
             tokenizer=tokenizer,
             device=device,
-            device_map=device_map,
             batch_size=batch_size,
             model_kwargs=_model_kwargs,
             **_pipeline_kwargs,

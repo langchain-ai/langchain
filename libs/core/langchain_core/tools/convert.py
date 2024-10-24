@@ -1,8 +1,9 @@
 import inspect
-from typing import Any, Callable, Dict, Literal, Optional, Type, Union, get_type_hints
+from typing import Any, Callable, Literal, Optional, Union, get_type_hints
+
+from pydantic import BaseModel, Field, create_model
 
 from langchain_core.callbacks import Callbacks
-from langchain_core.pydantic_v1 import BaseModel, Field, create_model
 from langchain_core.runnables import Runnable
 from langchain_core.tools.base import BaseTool
 from langchain_core.tools.simple import Tool
@@ -12,7 +13,7 @@ from langchain_core.tools.structured import StructuredTool
 def tool(
     *args: Union[str, Callable[..., Any], Runnable],
     return_direct: bool = False,
-    args_schema: Optional[Type[BaseModel]] = None,
+    args_schema: Optional[type[BaseModel]] = None,
     infer_schema: bool = True,
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
@@ -81,12 +82,12 @@ def tool(
                 \"\"\"
                 return bar
 
-            foo.args_schema.schema()
+            foo.args_schema.model_json_schema()
 
         .. code-block:: python
 
             {
-                "title": "fooSchema",
+                "title": "foo",
                 "description": "The foo.",
                 "type": "object",
                 "properties": {
@@ -146,8 +147,9 @@ def tool(
             if isinstance(dec_func, Runnable):
                 runnable = dec_func
 
-                if runnable.input_schema.schema().get("type") != "object":
-                    raise ValueError("Runnable must have an object schema.")
+                if runnable.input_schema.model_json_schema().get("type") != "object":
+                    msg = "Runnable must have an object schema."
+                    raise ValueError(msg)
 
                 async def ainvoke_wrapper(
                     callbacks: Optional[Any] = None, **kwargs: Any
@@ -161,7 +163,7 @@ def tool(
 
                 coroutine = ainvoke_wrapper
                 func = invoke_wrapper
-                schema: Optional[Type[BaseModel]] = runnable.input_schema
+                schema: Optional[type[BaseModel]] = runnable.input_schema
                 description = repr(runnable)
             elif inspect.iscoroutinefunction(dec_func):
                 coroutine = dec_func
@@ -187,10 +189,11 @@ def tool(
                         error_on_invalid_docstring=error_on_invalid_docstring,
                 )
             if dec_func.__doc__ is None:
-                raise ValueError(
+                msg = (
                     "Function must have a docstring if "
                     "description not provided and infer_schema is False."
                 )
+                raise ValueError(msg)
             return Tool(
                 name=tool_name,
                 func=func,
@@ -220,41 +223,43 @@ def tool(
 
         return _partial
     else:
-        raise ValueError("Too many arguments for tool decorator")
+        msg = "Too many arguments for tool decorator"
+        raise ValueError(msg)
 
 
 def _get_description_from_runnable(runnable: Runnable) -> str:
     """Generate a placeholder description of a runnable."""
-    input_schema = runnable.input_schema.schema()
+    input_schema = runnable.input_schema.model_json_schema()
     return f"Takes {input_schema}."
 
 
 def _get_schema_from_runnable_and_arg_types(
     runnable: Runnable,
     name: str,
-    arg_types: Optional[Dict[str, Type]] = None,
-) -> Type[BaseModel]:
+    arg_types: Optional[dict[str, type]] = None,
+) -> type[BaseModel]:
     """Infer args_schema for tool."""
     if arg_types is None:
         try:
             arg_types = get_type_hints(runnable.InputType)
         except TypeError as e:
-            raise TypeError(
+            msg = (
                 "Tool input must be str or dict. If dict, dict arguments must be "
                 "typed. Either annotate types (e.g., with TypedDict) or pass "
                 f"arg_types into `.as_tool` to specify. {str(e)}"
-            ) from e
+            )
+            raise TypeError(msg) from e
     fields = {key: (key_type, Field(...)) for key, key_type in arg_types.items()}
     return create_model(name, **fields)  # type: ignore
 
 
 def convert_runnable_to_tool(
     runnable: Runnable,
-    args_schema: Optional[Type[BaseModel]] = None,
+    args_schema: Optional[type[BaseModel]] = None,
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
-    arg_types: Optional[Dict[str, Type]] = None,
+    arg_types: Optional[dict[str, type]] = None,
 ) -> BaseTool:
     """Convert a Runnable into a BaseTool.
 
@@ -273,7 +278,7 @@ def convert_runnable_to_tool(
     description = description or _get_description_from_runnable(runnable)
     name = name or runnable.get_name()
 
-    schema = runnable.input_schema.schema()
+    schema = runnable.input_schema.model_json_schema()
     if schema.get("type") == "string":
         return Tool(
             name=name,
