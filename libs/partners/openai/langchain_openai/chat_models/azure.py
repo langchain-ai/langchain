@@ -51,7 +51,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
             export AZURE_OPENAI_API_KEY="your-api-key"
             export AZURE_OPENAI_ENDPOINT="https://your-endpoint.openai.azure.com/"
-            export AZURE_OPENAI_DEPLOYMENT="gpt-3.5"
+            export AZURE_OPENAI_DEPLOYMENT="gpt-35-turbo"
 
     Key init args — completion params:
         azure_deployment: str
