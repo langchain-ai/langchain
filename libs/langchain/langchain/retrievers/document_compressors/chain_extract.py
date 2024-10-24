@@ -92,12 +92,8 @@ class LLMChainExtractor(BaseDocumentCompressor):
         callbacks: Optional[Callbacks] = None,
     ) -> Sequence[Document]:
         """Compress page content of raw documents asynchronously."""
-        outputs = await asyncio.gather(
-            *[
-                self.llm_chain.ainvoke(self.get_input(query, doc), callbacks=callbacks)
-                for doc in documents
-            ]
-        )
+        inputs = [self.get_input(query, doc) for doc in documents]
+        outputs = await self.llm_chain.abatch(inputs, {"callbacks": callbacks})
         compressed_docs = []
         for i, doc in enumerate(documents):
             if len(outputs[i]) == 0:
