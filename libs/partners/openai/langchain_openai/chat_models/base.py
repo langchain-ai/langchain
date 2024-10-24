@@ -1458,7 +1458,6 @@ class BaseChatOpenAI(BaseChatModel):
                     "schema must be specified when method is not 'json_mode'. "
                     "Received None."
                 )
-            # strict = strict if strict is not None else True
             response_format = _convert_to_openai_response_format(schema, strict=strict)
             llm = self.bind(response_format=response_format)
             if is_pydantic_schema:
