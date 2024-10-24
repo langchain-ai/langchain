@@ -2,8 +2,8 @@ import asyncio
 import logging
 import os
 from typing import List, Optional, Type
-from firecrawl import FirecrawlApp
 
+from firecrawl import FirecrawlApp
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
