@@ -8,6 +8,7 @@ from typing import (
     AbstractSet,
     Any,
     AsyncIterator,
+    Awaitable,
     Callable,
     Collection,
     Dict,
@@ -28,14 +29,14 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import BaseLLM, create_base_retry_decorator
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
-from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.utils import (
     get_from_dict_or_env,
     get_pydantic_field_names,
     pre_init,
 )
 from langchain_core.utils.pydantic import get_fields
-from langchain_core.utils.utils import build_extra_kwargs
+from langchain_core.utils.utils import _build_model_kwargs
+from pydantic import ConfigDict, Field, model_validator
 
 from langchain_community.utils.openai import is_openai_v1
 
@@ -259,17 +260,16 @@ class BaseOpenAI(BaseLLM):
             return OpenAIChat(**data)
         return super().__new__(cls)
 
-    class Config:
-        allow_population_by_field_name = True
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
-    @root_validator(pre=True)
-    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
-        extra = values.get("model_kwargs", {})
-        values["model_kwargs"] = build_extra_kwargs(
-            extra, values, all_required_field_names
-        )
+        values = _build_model_kwargs(values, all_required_field_names)
         return values
 
     @pre_init
@@ -805,7 +805,13 @@ class AzureOpenAI(BaseOpenAI):
     azure_ad_token_provider: Union[Callable[[], str], None] = None
     """A function that returns an Azure Active Directory token.
 
-        Will be invoked on every request.
+        Will be invoked on every sync request. For async requests,
+        will be invoked if `azure_ad_async_token_provider` is not provided.
+    """
+    azure_ad_async_token_provider: Union[Callable[[], Awaitable[str]], None] = None
+    """A function that returns an Azure Active Directory token.
+
+        Will be invoked on every async request.
     """
     openai_api_type: str = ""
     """Legacy, for openai<1.0.0 support."""
@@ -923,6 +929,12 @@ class AzureOpenAI(BaseOpenAI):
                 "http_client": values["http_client"],
             }
             values["client"] = openai.AzureOpenAI(**client_params).completions
+
+            azure_ad_async_token_provider = values["azure_ad_async_token_provider"]
+
+            if azure_ad_async_token_provider:
+                client_params["azure_ad_token_provider"] = azure_ad_async_token_provider
+
             values["async_client"] = openai.AsyncAzureOpenAI(
                 **client_params
             ).completions
@@ -1012,8 +1024,9 @@ class OpenAIChat(BaseLLM):
     disallowed_special: Union[Literal["all"], Collection[str]] = "all"
     """Set of special tokens that are not allowed。"""
 
-    @root_validator(pre=True)
-    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = {field.alias for field in get_fields(cls).values()}
 

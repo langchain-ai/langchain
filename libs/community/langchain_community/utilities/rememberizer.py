@@ -1,11 +1,11 @@
 """Wrapper for Rememberizer APIs."""
 
-from typing import Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional, cast
 
 import requests
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, model_validator
 
 
 class RememberizerAPIWrapper(BaseModel):
@@ -14,8 +14,9 @@ class RememberizerAPIWrapper(BaseModel):
     top_k_results: int = 10
     rememberizer_api_key: Optional[str] = None
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that api key in environment."""
         rememberizer_api_key = get_from_dict_or_env(
             values, "rememberizer_api_key", "REMEMBERIZER_API_KEY"

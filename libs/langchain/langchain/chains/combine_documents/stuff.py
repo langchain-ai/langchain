@@ -8,8 +8,8 @@ from langchain_core.documents import Document
 from langchain_core.language_models import LanguageModelLike
 from langchain_core.output_parsers import BaseOutputParser, StrOutputParser
 from langchain_core.prompts import BasePromptTemplate, format_document
-from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.runnables import Runnable, RunnablePassthrough
+from pydantic import ConfigDict, Field, model_validator
 
 from langchain.chains.combine_documents.base import (
     DEFAULT_DOCUMENT_PROMPT,
@@ -102,7 +102,7 @@ def create_stuff_documents_chain(
     message=(
         "This class is deprecated. Use the `create_stuff_documents_chain` constructor "
         "instead. See migration guide here: "
-        "https://python.langchain.com/v0.2/docs/versions/migrating_chains/stuff_docs_chain/"  # noqa: E501
+        "https://python.langchain.com/docs/versions/migrating_chains/stuff_docs_chain/"  # noqa: E501
     ),
 )
 class StuffDocumentsChain(BaseCombineDocumentsChain):
@@ -156,12 +156,14 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
     document_separator: str = "\n\n"
     """The string with which to join the formatted documents"""
 
-    class Config:
-        arbitrary_types_allowed = True
-        extra = "forbid"
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
-    @root_validator(pre=True)
-    def get_default_document_variable_name(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def get_default_document_variable_name(cls, values: Dict) -> Any:
         """Get default document variable name, if not provided.
 
         If only one variable is present in the llm_chain.prompt,

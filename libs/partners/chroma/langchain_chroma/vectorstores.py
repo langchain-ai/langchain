@@ -941,7 +941,7 @@ class Chroma(VectorStore):
         Args:
             ids: The ids of the embeddings to get. Optional.
             where: A Where type dict used to filter results by.
-                   E.g. `{"color" : "red", "price": 4.20}`. Optional.
+                   E.g. `{"$and": [{"color": "red"}, {"price": 4.20}]}` Optional.
             limit: The number of documents to return. Optional.
             offset: The offset to start returning results from.
                     Useful for paging results with limit. Optional.
@@ -1145,4 +1145,4 @@ class Chroma(VectorStore):
             ids: List of ids to delete.
             kwargs: Additional keyword arguments.
         """
-        self._collection.delete(ids=ids)
+        self._collection.delete(ids=ids, **kwargs)

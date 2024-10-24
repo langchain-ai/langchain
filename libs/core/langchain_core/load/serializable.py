@@ -1,8 +1,7 @@
+import contextlib
 from abc import ABC
 from typing import (
     Any,
-    Dict,
-    List,
     Literal,
     Optional,
     TypedDict,
@@ -10,9 +9,8 @@ from typing import (
     cast,
 )
 
+from pydantic import BaseModel, ConfigDict
 from typing_extensions import NotRequired
-
-from langchain_core.pydantic_v1 import BaseModel
 
 
 class BaseSerialized(TypedDict):
@@ -26,9 +24,9 @@ class BaseSerialized(TypedDict):
     """
 
     lc: int
-    id: List[str]
+    id: list[str]
     name: NotRequired[str]
-    graph: NotRequired[Dict[str, Any]]
+    graph: NotRequired[dict[str, Any]]
 
 
 class SerializedConstructor(BaseSerialized):
@@ -40,7 +38,7 @@ class SerializedConstructor(BaseSerialized):
     """
 
     type: Literal["constructor"]
-    kwargs: Dict[str, Any]
+    kwargs: dict[str, Any]
 
 
 class SerializedSecret(BaseSerialized):
@@ -80,7 +78,7 @@ def try_neq_default(value: Any, key: str, model: BaseModel) -> bool:
         Exception: If the key is not in the model.
     """
     try:
-        return model.__fields__[key].get_default() != value
+        return model.model_fields[key].get_default() != value
     except Exception:
         return True
 
@@ -126,7 +124,7 @@ class Serializable(BaseModel, ABC):
         return False
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
 
         For example, if the class is `langchain.llms.openai.OpenAI`, then the
@@ -135,16 +133,16 @@ class Serializable(BaseModel, ABC):
         return cls.__module__.split(".")
 
     @property
-    def lc_secrets(self) -> Dict[str, str]:
+    def lc_secrets(self) -> dict[str, str]:
         """A map of constructor argument names to secret ids.
 
         For example,
             {"openai_api_key": "OPENAI_API_KEY"}
         """
-        return dict()
+        return {}
 
     @property
-    def lc_attributes(self) -> Dict:
+    def lc_attributes(self) -> dict:
         """List of attribute names that should be included in the serialized kwargs.
 
         These attributes must be accepted by the constructor.
@@ -153,7 +151,7 @@ class Serializable(BaseModel, ABC):
         return {}
 
     @classmethod
-    def lc_id(cls) -> List[str]:
+    def lc_id(cls) -> list[str]:
         """A unique identifier for this class for serialization purposes.
 
         The unique identifier is a list of strings that describes the path
@@ -161,16 +159,25 @@ class Serializable(BaseModel, ABC):
         For example, for the class `langchain.llms.openai.OpenAI`, the id is
         ["langchain", "llms", "openai", "OpenAI"].
         """
-        return [*cls.get_lc_namespace(), cls.__name__]
+        # Pydantic generics change the class name. So we need to do the following
+        if (
+            "origin" in cls.__pydantic_generic_metadata__
+            and cls.__pydantic_generic_metadata__["origin"] is not None
+        ):
+            original_name = cls.__pydantic_generic_metadata__["origin"].__name__
+        else:
+            original_name = cls.__name__
+        return [*cls.get_lc_namespace(), original_name]
 
-    class Config:
-        extra = "ignore"
+    model_config = ConfigDict(
+        extra="ignore",
+    )
 
     def __repr_args__(self) -> Any:
         return [
             (k, v)
             for k, v in super().__repr_args__()
-            if (k not in self.__fields__ or try_neq_default(v, k, self))
+            if (k not in self.model_fields or try_neq_default(v, k, self))
         ]
 
     def to_json(self) -> Union[SerializedConstructor, SerializedNotImplemented]:
@@ -182,14 +189,17 @@ class Serializable(BaseModel, ABC):
         if not self.is_lc_serializable():
             return self.to_json_not_implemented()
 
-        secrets = dict()
+        secrets = {}
         # Get latest values for kwargs if there is an attribute with same name
-        lc_kwargs = {
-            k: getattr(self, k, v)
-            for k, v in self
-            if not (self.__exclude_fields__ or {}).get(k, False)  # type: ignore
-            and _is_field_useful(self, k, v)
-        }
+        lc_kwargs = {}
+        for k, v in self:
+            if not _is_field_useful(self, k, v):
+                continue
+            # Do nothing if the field is excluded
+            if k in self.model_fields and self.model_fields[k].exclude:
+                continue
+
+            lc_kwargs[k] = getattr(self, k, v)
 
         # Merge the lc_secrets and lc_attributes from every class in the MRO
         for cls in [None, *self.__class__.mro()]:
@@ -205,11 +215,12 @@ class Serializable(BaseModel, ABC):
 
                 for attr in deprecated_attributes:
                     if hasattr(cls, attr):
-                        raise ValueError(
+                        msg = (
                             f"Class {self.__class__} has a deprecated "
                             f"attribute {attr}. Please use the corresponding "
                             f"classmethod instead."
                         )
+                        raise ValueError(msg)
 
             # Get a reference to self bound to each class in the MRO
             this = cast(Serializable, self if cls is None else super(cls, self))
@@ -221,13 +232,15 @@ class Serializable(BaseModel, ABC):
             # that are not present in the fields.
             for key in list(secrets):
                 value = secrets[key]
-                if key in this.__fields__:
-                    secrets[this.__fields__[key].alias] = value
+                if key in this.model_fields:
+                    alias = this.model_fields[key].alias
+                    if alias is not None:
+                        secrets[alias] = value
             lc_kwargs.update(this.lc_attributes)
 
         # include all secrets, even if not specified in kwargs
         # as these secrets may be passed as an environment variable instead
-        for key in secrets.keys():
+        for key in secrets:
             secret_value = getattr(self, key, None) or lc_kwargs.get(key)
             if secret_value is not None:
                 lc_kwargs.update({key: secret_value})
@@ -259,15 +272,30 @@ def _is_field_useful(inst: Serializable, key: str, value: Any) -> bool:
         If the field is not required and the value is None, it is useful if the
         default value is different from the value.
     """
-    field = inst.__fields__.get(key)
+    field = inst.model_fields.get(key)
     if not field:
         return False
+
+    if field.is_required():
+        return True
+
     # Handle edge case: a value cannot be converted to a boolean (e.g. a
     # Pandas DataFrame).
     try:
         value_is_truthy = bool(value)
     except Exception as _:
         value_is_truthy = False
+
+    if value_is_truthy:
+        return True
+
+    # Value is still falsy here!
+    if field.default_factory is dict and isinstance(value, dict):
+        return False
+
+    # Value is still falsy here!
+    if field.default_factory is list and isinstance(value, list):
+        return False
 
     # Handle edge case: inequality of two objects does not evaluate to a bool (e.g. two
     # Pandas DataFrames).
@@ -282,12 +310,13 @@ def _is_field_useful(inst: Serializable, key: str, value: Any) -> bool:
             except Exception as _:
                 value_neq_default = False
 
-    return field.required is True or value_is_truthy or value_neq_default
+    # If value is falsy and does not match the default
+    return value_is_truthy or value_neq_default
 
 
 def _replace_secrets(
-    root: Dict[Any, Any], secrets_map: Dict[str, str]
-) -> Dict[Any, Any]:
+    root: dict[Any, Any], secrets_map: dict[str, str]
+) -> dict[Any, Any]:
     result = root.copy()
     for path, secret_id in secrets_map.items():
         [*parts, last] = path.split(".")
@@ -315,7 +344,7 @@ def to_json_not_implemented(obj: object) -> SerializedNotImplemented:
     Returns:
         SerializedNotImplemented
     """
-    _id: List[str] = []
+    _id: list[str] = []
     try:
         if hasattr(obj, "__name__"):
             _id = [*obj.__module__.split("."), obj.__name__]
@@ -330,8 +359,6 @@ def to_json_not_implemented(obj: object) -> SerializedNotImplemented:
         "id": _id,
         "repr": None,
     }
-    try:
+    with contextlib.suppress(Exception):
         result["repr"] = repr(obj)
-    except Exception:
-        pass
     return result

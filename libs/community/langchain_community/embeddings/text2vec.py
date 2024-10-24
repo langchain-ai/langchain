@@ -3,14 +3,14 @@
 from typing import Any, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel
 
 
 class Text2vecEmbeddings(Embeddings, BaseModel):
     """text2vec embedding models.
 
     Install text2vec first, run 'pip install -U text2vec'.
-    The gitbub repository for text2vec is : https://github.com/shibing624/text2vec
+    The github repository for text2vec is : https://github.com/shibing624/text2vec
 
     Example:
         .. code-block:: python
