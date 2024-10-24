@@ -86,9 +86,9 @@ ignore = [
     "COM812", # Messes with the formatter
     "UP007",  # Incompatible with pydantic + Python 3.9
     "W293",   # 
-    "S101",   # allow assert
-    "S110",   # allow try/except/pass
-    "S112",   # allow try/except/continue
+    "S101",   # allow assert - TODO remove
+    "S110",   # allow try/except/pass - TODO remove
+    "S112",   # allow try/except/continue - TODO remove
 ]
 
 [tool.coverage.run]
