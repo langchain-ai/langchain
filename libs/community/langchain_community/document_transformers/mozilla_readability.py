@@ -40,7 +40,7 @@ class ReadabilityTransformer(BaseDocumentTransformer):
 
         article = parse(document.page_content, **{**self.options, **kwargs})
 
-        result = article.text_content if target == "html" else article.content
+        result = article.content if target == "html" else article.text_content
 
         metadata = {**document.metadata, **asdict(article)}
 
