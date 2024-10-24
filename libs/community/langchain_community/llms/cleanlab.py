@@ -43,7 +43,7 @@ class TrustworthyLanguageModel(BaseLLM):
         https://help.cleanlab.ai/reference/python/trustworthy_language_model/#class-tlmoptions
     """
 
-    options: Optional[Dict[str, str]] = Field(default=None)
+    options: Optional[Dict[str, Any]] = Field(default=None)
     """Holds configurations for trustworthy language model. 
        Available options (model, max_tokens, etc.) with their definitions listed here: 
        https://help.cleanlab.ai/reference/python/trustworthy_language_model/#class-tlmoptions
@@ -116,6 +116,7 @@ class TrustworthyLanguageModel(BaseLLM):
         for resp in responses:
             text = resp["response"]
             trustworthiness_score = resp["trustworthiness_score"]
+
             if stop is not None:
                 text = enforce_stop_tokens(text, stop)
             generations.append(
@@ -123,7 +124,12 @@ class TrustworthyLanguageModel(BaseLLM):
                     Generation(
                         text=text,
                         generation_info={
-                            "trustworthiness_score": trustworthiness_score
+                            "trustworthiness_score": trustworthiness_score,
+                            **(
+                                {"explanation": resp["log"]["explanation"]}
+                                if "explanation" in self.options.get("log", [])
+                                else {}
+                            ),
                         },
                     )
                 ]
@@ -153,7 +159,12 @@ class TrustworthyLanguageModel(BaseLLM):
                     Generation(
                         text=text,
                         generation_info={
-                            "trustworthiness_score": trustworthiness_score
+                            "trustworthiness_score": trustworthiness_score,
+                            **(
+                                {"explanation": resp["log"]["explanation"]}
+                                if "explanation" in self.options.get("log", [])
+                                else {}
+                            ),
                         },
                     )
                 ]
