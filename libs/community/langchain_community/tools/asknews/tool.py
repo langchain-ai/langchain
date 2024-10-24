@@ -34,7 +34,7 @@ class SearchInput(BaseModel):
     )
 
 
-class AskNewsSearch(BaseTool):
+class AskNewsSearch(BaseTool):  # type: ignore[override]
     """Tool that searches the AskNews API."""
 
     name: str = "asknews_search"

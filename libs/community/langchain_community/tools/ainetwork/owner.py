@@ -30,7 +30,7 @@ class RuleSchema(BaseModel):
     )
 
 
-class AINOwnerOps(AINBaseTool):
+class AINOwnerOps(AINBaseTool):  # type: ignore[override, override]
     """Tool for owner operations."""
 
     name: str = "AINownerOps"
