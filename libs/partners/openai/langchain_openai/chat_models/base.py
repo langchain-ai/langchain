@@ -129,6 +129,8 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
                     invalid_tool_calls.append(
                         make_invalid_tool_call(raw_tool_call, str(e))
                     )
+        if audio := _dict.get("audio"):
+            additional_kwargs["audio"] = audio
         return AIMessage(
             content=content,
             additional_kwargs=additional_kwargs,
@@ -219,6 +221,17 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         # If tool calls present, content null value should be None not empty string.
         if "function_call" in message_dict or "tool_calls" in message_dict:
             message_dict["content"] = message_dict["content"] or None
+
+        if "audio" in message.additional_kwargs:
+            # openai doesn't support passing the data back - only the id
+            # https://platform.openai.com/docs/guides/audio/multi-turn-conversations
+            raw_audio = message.additional_kwargs["audio"]
+            audio = (
+                {"id": message.additional_kwargs["audio"]["id"]}
+                if "id" in raw_audio
+                else raw_audio
+            )
+            message_dict["audio"] = audio
     elif isinstance(message, SystemMessage):
         message_dict["role"] = "system"
     elif isinstance(message, FunctionMessage):
@@ -1445,7 +1458,6 @@ class BaseChatOpenAI(BaseChatModel):
                     "schema must be specified when method is not 'json_mode'. "
                     "Received None."
                 )
-            strict = strict if strict is not None else True
             response_format = _convert_to_openai_response_format(schema, strict=strict)
             llm = self.bind(response_format=response_format)
             if is_pydantic_schema:
@@ -2126,14 +2138,32 @@ def _resize(width: int, height: int) -> Tuple[int, int]:
 
 
 def _convert_to_openai_response_format(
-    schema: Union[Dict[str, Any], Type], strict: bool
+    schema: Union[Dict[str, Any], Type], *, strict: Optional[bool] = None
 ) -> Union[Dict, TypeBaseModel]:
     if isinstance(schema, type) and is_basemodel_subclass(schema):
         return schema
+
+    if "json_schema" in schema and schema.get("type") == "json_schema":
+        response_format = schema
+    elif "name" in schema and "schema" in schema:
+        response_format = {"type": "json_schema", "json_schema": schema}
     else:
+        strict = strict if strict is not None else True
         function = convert_to_openai_function(schema, strict=strict)
         function["schema"] = function.pop("parameters")
-        return {"type": "json_schema", "json_schema": function}
+        response_format = {"type": "json_schema", "json_schema": function}
+
+    if strict is not None and strict is not response_format["json_schema"].get(
+        "strict"
+    ):
+        msg = (
+            f"Output schema already has 'strict' value set to "
+            f"{schema['json_schema']['strict']} but 'strict' also passed in to "
+            f"with_structured_output as {strict}. Please make sure that "
+            f"'strict' is only specified in one place."
+        )
+        raise ValueError(msg)
+    return response_format
 
 
 @chain
