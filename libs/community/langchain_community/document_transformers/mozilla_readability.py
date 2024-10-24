@@ -26,9 +26,7 @@ class ReadabilityTransformer(BaseDocumentTransformer):
         self.target = target
         self.options = readability_options
 
-    def transform_document(
-        self, document: Document, **override_options: Any
-    ) -> Document:
+    def transform_document(self, document: Document, **kwargs: Any) -> Document:
         try:
             from readability import parse
         except ImportError:
@@ -37,9 +35,11 @@ class ReadabilityTransformer(BaseDocumentTransformer):
                 "please install it with `pip install python-readability`"
             )
 
-        article = parse(document.page_content, **{**self.options, **override_options})
+        target: Literal["text", "html"] = kwargs.pop("target", self.target)
 
-        result = article.text_content if self.target == "html" else article.content
+        article = parse(document.page_content, **{**self.options, **kwargs})
+
+        result = article.text_content if target == "html" else article.content
 
         return Document(page_content=result or "", **document.metadata)
 
