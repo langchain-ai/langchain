@@ -83,7 +83,7 @@ sseclient-py>=1.8.0,<2
 streamlit>=1.18.0,<2
 sympy>=1.12,<2
 telethon>=1.28.5,<2
-tidb-vector>=0.0.3,<1.0.0   
+tidb-vector>=0.0.3,<1.0.0
 timescale-vector==0.0.1
 tqdm>=4.48.0
 tree-sitter>=0.20.2,<0.21
