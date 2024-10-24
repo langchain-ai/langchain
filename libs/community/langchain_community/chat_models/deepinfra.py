@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+from json import JSONDecodeError
 from typing import (
     Any,
     AsyncIterator,
@@ -96,7 +97,10 @@ def _parse_tool_calling(tool_call: dict) -> ToolCall:
 
     """
     name = tool_call["function"].get("name", "")
-    args = json.loads(tool_call["function"]["arguments"])
+    try:
+        args = json.loads(tool_call["function"]["arguments"])
+    except (JSONDecodeError, TypeError):
+        args = {}
     id = tool_call.get("id")
     return create_tool_call(name=name, args=args, id=id)
 
