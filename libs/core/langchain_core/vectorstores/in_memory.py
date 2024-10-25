@@ -358,7 +358,8 @@ class InMemoryVectorStore(VectorStore):
                 doc_dict["vector"],
             )
             for idx in top_k_idx
-            for doc_dict in [docs[idx]]
+            # Assign using walrus operator to avoid multiple lookups
+            if (doc_dict := docs[idx])
         ]
 
     def similarity_search_with_score_by_vector(
