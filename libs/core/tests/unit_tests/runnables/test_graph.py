@@ -356,7 +356,7 @@ def test_runnable_get_graph_with_invalid_input_type() -> None:
         @property
         @override
         def InputType(self) -> type:
-            raise TypeError()
+            raise TypeError
 
         @override
         def invoke(
@@ -381,7 +381,7 @@ def test_runnable_get_graph_with_invalid_output_type() -> None:
         @property
         @override
         def OutputType(self) -> type:
-            raise TypeError()
+            raise TypeError
 
         @override
         def invoke(
