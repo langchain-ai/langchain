@@ -30,4 +30,4 @@ class UnstructuredImageLoader(UnstructuredFileLoader):
     def _get_elements(self) -> List:
         from unstructured.partition.image import partition_image
 
-        return partition_image(filename=self.file_path, **self.unstructured_kwargs)
+        return partition_image(filename=self.file_path, **self.unstructured_kwargs)  # type: ignore[arg-type]

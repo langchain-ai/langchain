@@ -15,7 +15,7 @@ from langchain_community.tools.playwright.utils import (
 )
 
 
-class NavigateBackTool(BaseBrowserTool):
+class NavigateBackTool(BaseBrowserTool):  # type: ignore[override, override]
     """Navigate back to the previous page in the browser history."""
 
     name: str = "previous_webpage"
