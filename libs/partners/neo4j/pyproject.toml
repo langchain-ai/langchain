@@ -15,6 +15,7 @@ license = "MIT"
 python = ">=3.9,<4.0"
 langchain-core = "^0.3.0"
 neo4j = "^5.25.0"
+langchain-community = "^0.3.3"
 
 [tool.poetry.group.test]
 optional = true
