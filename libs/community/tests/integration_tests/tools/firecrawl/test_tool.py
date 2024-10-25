@@ -62,3 +62,41 @@ async def test_integration_error_handling_in_async_scrape_url() -> None:
             RuntimeError, match="Failed to scrape URL: https://example.com/page1"
         ):
             await tool.async_scrape_url(mock_app, "https://example.com/page1")
+
+
+@pytest.mark.asyncio
+async def test_invoke_with_invalid_url(mock_firecrawl_app: Generator) -> None:
+    tool = FirecrawlScrapeWebsiteTool(api_key="fake_api_key")
+    with patch.object(tool, 'invoke', side_effect=ValueError("Invalid URL")):
+        with pytest.raises(ValueError, match="Invalid URL"):
+            await tool.invoke("invalid-url")
+
+
+@pytest.mark.asyncio
+async def test_invoke_with_empty_url(mock_firecrawl_app: Generator) -> None:
+    tool = FirecrawlScrapeWebsiteTool(api_key="fake_api_key")
+    with patch.object(tool, 'invoke', return_value={"links": [], "content": ""}):
+        result = await tool.invoke("")
+        assert result["links"] == []
+        assert result["content"] == ""
+
+
+@pytest.mark.asyncio
+async def test_invoke_exception_handling(mock_firecrawl_app: Generator) -> None:
+    tool = FirecrawlScrapeWebsiteTool(api_key="fake_api_key")
+    with patch.object(tool, 'invoke', side_effect=RuntimeError("Unexpected error")):
+        with pytest.raises(RuntimeError, match="Unexpected error"):
+            await tool.invoke("https://example.com")
+
+
+@pytest.mark.asyncio
+async def test_invoke_with_different_url_patterns(mock_firecrawl_app: Generator) -> None:
+    tool = FirecrawlScrapeWebsiteTool(api_key="fake_api_key")
+    with patch.object(tool, 'invoke', return_value={
+        "links": ["https://example.com/page1"],
+        "content": "Sample content"
+    }) as mock_invoke:
+        result = await tool.invoke("https://example.com/page1")
+        mock_invoke.assert_called_once_with("https://example.com/page1")
+        assert "https://example.com/page1" in result["links"]
+        assert "Sample content" in result["content"]
