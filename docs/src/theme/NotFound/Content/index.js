@@ -67,7 +67,7 @@ const suggestedLinks = {
     ]
   },
   "/docs/contributing/documentation/technical_logistics/": {
-    "canonical": "/docs/contributing/documentation/",
+    "canonical": "/docs/contributing/how_to/documentation/",
     "alternative": [
       "/v0.1/docs/contributing/documentation/technical_logistics/"
     ]
@@ -2894,7 +2894,7 @@ const suggestedLinks = {
   "/docs/expression_language/how_to/binding/": {"canonical": "/docs/how_to/binding/", "alternative": ["/v0.1/docs/expression_language/primitives/binding/"]},
   "/docs/expression_language/how_to/configure/": {"canonical": "/docs/how_to/configure/", "alternative": ["/v0.1/docs/expression_language/primitives/configure/"]},
   "/docs/expression_language/cookbook/prompt_llm_parser/": {"canonical": "/docs/how_to/sequence/", "alternative": ["/v0.1/docs/expression_language/get_started/"]},
-  "/docs/contributing/documentation/": {"canonical": "/docs/contributing/documentation/", "alternative": ["/v0.1/docs/contributing/documentation/technical_logistics/"]},
+  "/docs/contributing/documentation/": {"canonical": "/docs/contributing/how_to/documentation/", "alternative": ["/v0.1/docs/contributing/documentation/technical_logistics/"]},
   "/docs/expression_language/cookbook/": {"canonical": "/docs/how_to/#langchain-expression-language-lcel", "alternative": ["/v0.1/docs/expression_language/"]},
   "/docs/integrations/text_embedding/solar/": {"canonical": "/docs/integrations/text_embedding/upstage/"},
   "/docs/integrations/chat/solar/": {"canonical": "/docs/integrations/chat/upstage/"},
