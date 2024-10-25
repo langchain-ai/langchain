@@ -1413,10 +1413,13 @@ class VDMS_Utils:
         if ref is not None:
             entity["_ref"] = ref
 
-        # if all(k not in INVALID_METADATA_VALUE for k in [props, batch_properties]):
+        use_batch = isinstance(props, list) and len(props) > 1
+        convert_batch = isinstance(props, list) and len(props) == 1
 
-        if isinstance(props, list):
+        if use_batch:
             entity["batch_properties"] = props
+        elif convert_batch and props[0] not in INVALID_METADATA_VALUE:
+            entity["properties"] = props[0]
         elif isinstance(props, dict) and props not in INVALID_METADATA_VALUE:
             entity["properties"] = props
 
