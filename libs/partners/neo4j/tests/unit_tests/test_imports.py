@@ -1,7 +1,6 @@
 from langchain_neo4j import __all__
 
 EXPECTED_ALL = [
-    "Neo4jLLM",
     "Neo4jVectorStore",
     "Neo4jEmbeddings",
     "Neo4jGraph",

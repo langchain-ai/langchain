@@ -22,13 +22,3 @@ from langchain_neo4j import Neo4jEmbeddings
 embeddings = Neo4jEmbeddings()
 embeddings.embed_query("What is the meaning of life?")
 ```
-
-## LLMs
-`Neo4jLLM` class exposes LLMs from Neo4j.
-
-```python
-from langchain_neo4j import Neo4jLLM
-
-llm = Neo4jLLM()
-llm.invoke("The meaning of life is")
-```
