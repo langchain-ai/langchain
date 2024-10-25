@@ -11,14 +11,3 @@ pip install -U langchain-neo4j
 And you should configure credentials by setting the following environment variables:
 
 * TODO: fill this out
-
-## Embeddings
-
-`Neo4jEmbeddings` class exposes embeddings from Neo4j.
-
-```python
-from langchain_neo4j import Neo4jEmbeddings
-
-embeddings = Neo4jEmbeddings()
-embeddings.embed_query("What is the meaning of life?")
-```
