@@ -28,7 +28,7 @@ class FirecrawlScrapeWebsiteTool(BaseTool):
         "Provide the URL of the website to scrape and indicate if the scraping rate "
         "should be limited. The parameters required are:\n"
         "- 'base_url': The base URL of the website to scrape.\n"
-        "- 'limit_rate_enabled': A boolean specifying whether to limit the scraping rate."
+        "- 'rate_limit_enabled': A boolean specifying whether to limit the scraping rate."
     )
     args_schema: Type[BaseModel] = ScrapeWebsiteInput
     return_direct: bool = True
@@ -37,7 +37,7 @@ class FirecrawlScrapeWebsiteTool(BaseTool):
         default = os.getenv("FIRECRAWL_API_KEY", ""),
         description="API key for Firecrawl",
     )
-    limit_rate_enabled: bool = Field(
+    rate_limit_enabled: bool = Field(
         default=os.getenv("FIRECRAWL_RATE_LIMIT_ENABLED", "true")
         .strip()
         .lower()
@@ -48,11 +48,11 @@ class FirecrawlScrapeWebsiteTool(BaseTool):
     app: Optional[FirecrawlApp] = None
 
     def __init__(
-        self, api_key: Optional[str] = None, limit_rate_enabled: Optional[bool] = None
+        self, api_key: Optional[str] = None, rate_limit_enabled: Optional[bool] = None
     ):
         super().__init__()
         self.api_key = api_key or self.api_key
-        self.limit_rate_enabled = limit_rate_enabled if limit_rate_enabled is not None else self.limit_rate_enabled
+        self.rate_limit_enabled = rate_limit_enabled if rate_limit_enabled is not None else self.rate_limit_enabled
         if not self.api_key:
             raise ValueError(
                 "API key for Firecrawl is required. Please set the "
@@ -100,7 +100,7 @@ class FirecrawlScrapeWebsiteTool(BaseTool):
             markdown_content += f"# {url}\n\n{content}\n\n---\n\n"
 
             # Flexible rate limiting
-            if self.limit_rate_enabled and (i + 1) % 10 == 0:
+            if self.rate_limit_enabled and (i + 1) % 10 == 0:
                 logging.info("Rate limiting: Sleeping for 60 seconds")
                 await asyncio.sleep(60)
 
