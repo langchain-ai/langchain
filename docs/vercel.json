@@ -91,11 +91,11 @@
       "destination": "https://langchain-ai.github.io/langgraph/troubleshooting/errors/:path*"
     },
     {
-      "source": "/docs/contributing/:path((code|documentation|integrations|testing)(/|/.*/?)?)",
+      "source": "/docs/contributing/:path((?:code|documentation|integrations|testing)(?:/|/.*/?)?)",
       "destination": "/docs/contributing/how_to/:path"
     },
     {
-      "source": "/docs/contributing/:path((faq|repo_structure|review_process)/?)",
+      "source": "/docs/contributing/:path((?:faq|repo_structure|review_process)/?)",
       "destination": "/docs/contributing/reference/:path"
     }
   ]
