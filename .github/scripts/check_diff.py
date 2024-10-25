@@ -308,7 +308,7 @@ if __name__ == "__main__":
         ]
     }
     map_job_to_configs["test-doc-imports"] = (
-        [{"python-version": "3.13"}] if docs_edited else []
+        [{"python-version": "3.12"}] if docs_edited else []
     )
 
     for key, value in map_job_to_configs.items():
