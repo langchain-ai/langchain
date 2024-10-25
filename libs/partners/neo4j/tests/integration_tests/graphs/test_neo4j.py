@@ -2,9 +2,9 @@ import os
 
 from langchain_core.documents import Document
 
-from langchain_community.graphs import Neo4jGraph
+from langchain_neo4j import Neo4jGraph
 from langchain_community.graphs.graph_document import GraphDocument, Node, Relationship
-from langchain_community.graphs.neo4j_graph import (
+from langchain_neo4j.graphs.neo4j_graph import (
     BASE_ENTITY_LABEL,
     node_properties_query,
     rel_properties_query,
@@ -42,9 +42,9 @@ test_data_backticks = [
 
 def test_cypher_return_correct_schema() -> None:
     """Test that chain returns direct results."""
-    url = os.environ.get("NEO4J_URI")
-    username = os.environ.get("NEO4J_USERNAME")
-    password = os.environ.get("NEO4J_PASSWORD")
+    url = os.environ.get("NEO4J_URI", "bolt://localhost:7687")
+    username = os.environ.get("NEO4J_USERNAME", "neo4j")
+    password = os.environ.get("NEO4J_PASSWORD", "pleaseletmein")
     assert url is not None
     assert username is not None
     assert password is not None
@@ -111,9 +111,9 @@ def test_cypher_return_correct_schema() -> None:
 
 def test_neo4j_timeout() -> None:
     """Test that neo4j uses the timeout correctly."""
-    url = os.environ.get("NEO4J_URI")
-    username = os.environ.get("NEO4J_USERNAME")
-    password = os.environ.get("NEO4J_PASSWORD")
+    url = os.environ.get("NEO4J_URI", "bolt://localhost:7687")
+    username = os.environ.get("NEO4J_USERNAME", "neo4j")
+    password = os.environ.get("NEO4J_PASSWORD", "pleaseletmein")
     assert url is not None
     assert username is not None
     assert password is not None
@@ -130,9 +130,9 @@ def test_neo4j_timeout() -> None:
 
 def test_neo4j_sanitize_values() -> None:
     """Test that neo4j uses the timeout correctly."""
-    url = os.environ.get("NEO4J_URI")
-    username = os.environ.get("NEO4J_USERNAME")
-    password = os.environ.get("NEO4J_PASSWORD")
+    url = os.environ.get("NEO4J_URI", "bolt://localhost:7687")
+    username = os.environ.get("NEO4J_USERNAME", "neo4j")
+    password = os.environ.get("NEO4J_PASSWORD", "pleaseletmein")
     assert url is not None
     assert username is not None
     assert password is not None
@@ -158,9 +158,9 @@ def test_neo4j_sanitize_values() -> None:
 
 def test_neo4j_add_data() -> None:
     """Test that neo4j correctly import graph document."""
-    url = os.environ.get("NEO4J_URI")
-    username = os.environ.get("NEO4J_USERNAME")
-    password = os.environ.get("NEO4J_PASSWORD")
+    url = os.environ.get("NEO4J_URI", "bolt://localhost:7687")
+    username = os.environ.get("NEO4J_USERNAME", "neo4j")
+    password = os.environ.get("NEO4J_PASSWORD", "pleaseletmein")
     assert url is not None
     assert username is not None
     assert password is not None
@@ -182,9 +182,9 @@ def test_neo4j_add_data() -> None:
 
 def test_neo4j_add_data_source() -> None:
     """Test that neo4j correctly import graph document with source."""
-    url = os.environ.get("NEO4J_URI")
-    username = os.environ.get("NEO4J_USERNAME")
-    password = os.environ.get("NEO4J_PASSWORD")
+    url = os.environ.get("NEO4J_URI", "bolt://localhost:7687")
+    username = os.environ.get("NEO4J_USERNAME", "neo4j")
+    password = os.environ.get("NEO4J_PASSWORD", "pleaseletmein")
     assert url is not None
     assert username is not None
     assert password is not None
@@ -210,9 +210,9 @@ def test_neo4j_add_data_source() -> None:
 
 def test_neo4j_add_data_base() -> None:
     """Test that neo4j correctly import graph document with base_entity."""
-    url = os.environ.get("NEO4J_URI")
-    username = os.environ.get("NEO4J_USERNAME")
-    password = os.environ.get("NEO4J_PASSWORD")
+    url = os.environ.get("NEO4J_URI", "bolt://localhost:7687")
+    username = os.environ.get("NEO4J_USERNAME", "neo4j")
+    password = os.environ.get("NEO4J_PASSWORD", "pleaseletmein")
     assert url is not None
     assert username is not None
     assert password is not None
@@ -238,9 +238,9 @@ def test_neo4j_add_data_base() -> None:
 
 def test_neo4j_add_data_base_source() -> None:
     """Test that neo4j correctly import graph document with base_entity and source."""
-    url = os.environ.get("NEO4J_URI")
-    username = os.environ.get("NEO4J_USERNAME")
-    password = os.environ.get("NEO4J_PASSWORD")
+    url = os.environ.get("NEO4J_URI", "bolt://localhost:7687")
+    username = os.environ.get("NEO4J_USERNAME", "neo4j")
+    password = os.environ.get("NEO4J_PASSWORD", "pleaseletmein")
     assert url is not None
     assert username is not None
     assert password is not None
@@ -267,9 +267,9 @@ def test_neo4j_add_data_base_source() -> None:
 
 def test_neo4j_filtering_labels() -> None:
     """Test that neo4j correctly filters excluded labels."""
-    url = os.environ.get("NEO4J_URI")
-    username = os.environ.get("NEO4J_USERNAME")
-    password = os.environ.get("NEO4J_PASSWORD")
+    url = os.environ.get("NEO4J_URI", "bolt://localhost:7687")
+    username = os.environ.get("NEO4J_USERNAME", "neo4j")
+    password = os.environ.get("NEO4J_PASSWORD", "pleaseletmein")
     assert url is not None
     assert username is not None
     assert password is not None
@@ -296,9 +296,9 @@ def test_neo4j_filtering_labels() -> None:
 
 def test_driver_config() -> None:
     """Test that neo4j works with driver config."""
-    url = os.environ.get("NEO4J_URI")
-    username = os.environ.get("NEO4J_USERNAME")
-    password = os.environ.get("NEO4J_PASSWORD")
+    url = os.environ.get("NEO4J_URI", "bolt://localhost:7687")
+    username = os.environ.get("NEO4J_USERNAME", "neo4j")
+    password = os.environ.get("NEO4J_PASSWORD", "pleaseletmein")
     assert url is not None
     assert username is not None
     assert password is not None
@@ -314,9 +314,9 @@ def test_driver_config() -> None:
 
 def test_enhanced_schema() -> None:
     """Test that neo4j works with driver config."""
-    url = os.environ.get("NEO4J_URI")
-    username = os.environ.get("NEO4J_USERNAME")
-    password = os.environ.get("NEO4J_PASSWORD")
+    url = os.environ.get("NEO4J_URI", "bolt://localhost:7687")
+    username = os.environ.get("NEO4J_USERNAME", "neo4j")
+    password = os.environ.get("NEO4J_PASSWORD", "pleaseletmein")
     assert url is not None
     assert username is not None
     assert password is not None
@@ -356,9 +356,9 @@ def test_enhanced_schema() -> None:
 
 def test_enhanced_schema_exception() -> None:
     """Test no error with weird schema."""
-    url = os.environ.get("NEO4J_URI")
-    username = os.environ.get("NEO4J_USERNAME")
-    password = os.environ.get("NEO4J_PASSWORD")
+    url = os.environ.get("NEO4J_URI", "bolt://localhost:7687")
+    username = os.environ.get("NEO4J_USERNAME", "neo4j")
+    password = os.environ.get("NEO4J_PASSWORD", "pleaseletmein")
     assert url is not None
     assert username is not None
     assert password is not None
@@ -381,9 +381,9 @@ def test_enhanced_schema_exception() -> None:
 
 def test_backticks() -> None:
     """Test that backticks are correctly removed."""
-    url = os.environ.get("NEO4J_URI")
-    username = os.environ.get("NEO4J_USERNAME")
-    password = os.environ.get("NEO4J_PASSWORD")
+    url = os.environ.get("NEO4J_URI", "bolt://localhost:7687")
+    username = os.environ.get("NEO4J_USERNAME", "neo4j")
+    password = os.environ.get("NEO4J_PASSWORD", "pleaseletmein")
     assert url is not None
     assert username is not None
     assert password is not None
