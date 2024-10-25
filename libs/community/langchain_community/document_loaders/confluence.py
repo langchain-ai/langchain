@@ -5,7 +5,6 @@ from typing import Any, Callable, Dict, Iterator, List, Optional, Union
 
 import requests
 from langchain_core.documents import Document
-from pytesseract import TesseractError
 from tenacity import (
     before_sleep_log,
     retry,
@@ -687,7 +686,7 @@ class ConfluenceLoader(BaseLoader):
             try:
                 image_text = pytesseract.image_to_string(image, lang=ocr_languages)
                 text += f"Page {i + 1}:\n{image_text}\n\n"
-            except TesseractError as ex:
+            except pytesseract.TesseractError as ex:
                 logger.warning(f"TesseractError: {ex}")
 
         return text
