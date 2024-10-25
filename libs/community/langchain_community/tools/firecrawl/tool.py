@@ -109,7 +109,7 @@ class FirecrawlScrapeWebsiteTool(BaseTool):
     def get_firecrawl_app(self) -> FirecrawlApp:
         return self.app
 
-    def map_website(self, url: str) -> List[str]:
+    def map_website(self, app: FirecrawlApp, url: str) -> List[str]:
         try:
             map_status = self.app.map_url(url)
             logging.info(f"Map status: {map_status}")
@@ -126,9 +126,9 @@ class FirecrawlScrapeWebsiteTool(BaseTool):
             raise RuntimeError(f"Failed to map website: {url}") from e
 
 
-    async def async_scrape_url(self, url: str) -> str:
+    async def async_scrape_url(self, app: FirecrawlApp, url: str) -> str:
         try:
-            scrape_status = self.app.scrape_url(url)
+            scrape_status = app.scrape_url(url)
             if "markdown" in scrape_status:
                 return scrape_status["markdown"]
             else:
@@ -137,4 +137,3 @@ class FirecrawlScrapeWebsiteTool(BaseTool):
         except Exception as e:
             logging.error(f"Error scraping URL {url}: {e}")
             raise RuntimeError(f"Failed to scrape URL: {url}") from e
-
