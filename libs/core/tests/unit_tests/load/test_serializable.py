@@ -4,6 +4,22 @@ from langchain_core.load import Serializable, dumpd, load
 from langchain_core.load.serializable import _is_field_useful
 
 
+class NonBoolObj:
+    def __bool__(self) -> bool:
+        msg = "Truthiness can't be determined"
+        raise ValueError(msg)
+
+    def __eq__(self, other: object) -> bool:
+        msg = "Equality can't be determined"
+        raise ValueError(msg)
+
+    def __str__(self) -> str:
+        return self.__class__.__name__
+
+    def __repr__(self) -> str:
+        return self.__class__.__name__
+
+
 def test_simple_serialization() -> None:
     class Foo(Serializable):
         bar: int
@@ -81,15 +97,6 @@ def test__is_field_useful() -> None:
 
         def __eq__(self, other: object) -> bool:
             return self  # type: ignore[return-value]
-
-    class NonBoolObj:
-        def __bool__(self) -> bool:
-            msg = "Truthiness can't be determined"
-            raise ValueError(msg)
-
-        def __eq__(self, other: object) -> bool:
-            msg = "Equality can't be determined"
-            raise ValueError(msg)
 
     default_x = ArrayObj()
     default_y = NonBoolObj()
@@ -169,3 +176,30 @@ def test_simple_deserialization_with_additional_imports() -> None:
         },
     )
     assert isinstance(new_foo, Foo2)
+
+
+class Foo3(Serializable):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    content: str
+    non_bool: NonBoolObj
+
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        return True
+
+
+def test_repr() -> None:
+    foo = Foo3(
+        content="repr",
+        non_bool=NonBoolObj(),
+    )
+    assert repr(foo) == "Foo3(content='repr', non_bool=NonBoolObj)"
+
+
+def test_str() -> None:
+    foo = Foo3(
+        content="str",
+        non_bool=NonBoolObj(),
+    )
+    assert str(foo) == "content='str' non_bool=NonBoolObj"
