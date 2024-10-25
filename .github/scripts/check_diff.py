@@ -125,6 +125,9 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
     elif dir_ == "libs/community" and job == "compile-integration-tests":
         # community integration deps are slow in 3.12
         py_versions = ["3.9", "3.11"]
+    elif dir_ == ".":
+        # unable to install with 3.13 because tokenizers doesn't support 3.13 yet
+        py_versions = ["3.9", "3.12"]
     else:
         py_versions = ["3.9", "3.13"]
 
