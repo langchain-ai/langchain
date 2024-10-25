@@ -103,7 +103,7 @@ class FakeTracer(BaseTracer):
         self.runs: list[Run] = []
         self.uuids_map: dict[UUID, UUID] = {}
         self.uuids_generator = (
-            UUID(f"00000000-0000-4000-8000-{i:012}", version=4) for i in range(10000)
+            UUID(f"00000000-0000-4000-8000-{0:012}", version=4) for _ in range(10000)
         )
 
     def _replace_uuid(self, uuid: UUID) -> UUID:
