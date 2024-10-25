@@ -8,14 +8,13 @@ import pytest
 
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage, ToolMessage
 from langchain_core.language_models import BaseChatModel
-from langchain_standard_tests.unit_tests.chat_models import ChatModelTests
+from langchain_standard_tests.unit_tests.chat_models import ChatModelTests, ChatModelUnitTests
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 from langchain_core.callbacks.manager import CallbackManager
 
 from langchain_community.chat_models.writer import ChatWriter, _convert_dict_to_message
 
-@pytest.mark.requires("writer-sdk")
-class TestChatWriter(ChatModelTests):
+class TestChatWriter(ChatModelUnitTests):
     """Test case for ChatWriter that inherits from standard LangChain tests."""
     
     @property
@@ -85,8 +84,15 @@ class TestChatWriter(ChatModelTests):
         """Setup test environment variables if needed."""
         monkeypatch.setenv("WRITER_API_KEY", "fake-api-key")
 
-    @pytest.fixture(autouse=True)
+    def test_import_writer(self) -> None:
+        from writerai import Writer
+
+        client = Writer()
+
+        assert type(client) == Writer
+
     def test_writer_model_param(self) -> None:
+
         """Test different ways to initialize the chat model."""
         test_cases: List[dict] = [
             {"model_name": "palmyra-x-004", "writer_api_key": "test-key"},
@@ -101,7 +107,7 @@ class TestChatWriter(ChatModelTests):
             assert chat.writer_api_key.get_secret_value() == "test-key"
             assert chat.temperature == (0.5 if "temperature" in case else 0.7)
 
-    @pytest.fixture(autouse=True)
+
     def test_convert_dict_to_message_human(self) -> None:
         """Test converting a human message dict to a LangChain message."""
         message = {"role": "user", "content": "Hello"}
@@ -109,7 +115,7 @@ class TestChatWriter(ChatModelTests):
         assert isinstance(result, HumanMessage)
         assert result.content == "Hello"
 
-    @pytest.fixture(autouse=True)
+
     def test_convert_dict_to_message_ai(self) -> None:
         """Test converting an AI message dict to a LangChain message."""
         message = {"role": "assistant", "content": "Hello"}
@@ -117,7 +123,7 @@ class TestChatWriter(ChatModelTests):
         assert isinstance(result, AIMessage)
         assert result.content == "Hello"
 
-    @pytest.fixture(autouse=True)
+
     def test_convert_dict_to_message_system(self) -> None:
         """Test converting a system message dict to a LangChain message."""
         message = {"role": "system", "content": "You are a helpful assistant"}
@@ -125,7 +131,7 @@ class TestChatWriter(ChatModelTests):
         assert isinstance(result, SystemMessage)
         assert result.content == "You are a helpful assistant"
 
-    @pytest.fixture(autouse=True)
+
     def test_convert_dict_to_message_tool_call(self) -> None:
         """Test converting a tool call message dict to a LangChain message."""
         content = json.dumps({"result": 42})
@@ -140,7 +146,7 @@ class TestChatWriter(ChatModelTests):
         assert result.name == "get_number"
         assert result.content == content
 
-    @pytest.fixture(autouse=True)
+
     def test_convert_dict_to_message_with_tool_calls(self) -> None:
         """Test converting an AIMessage with tool calls."""
         message = {
@@ -164,7 +170,7 @@ class TestChatWriter(ChatModelTests):
         assert result.tool_calls[0]["name"] == "get_weather"
         assert result.tool_calls[0]["args"]["location"] == "London"
 
-    @pytest.fixture
+    @pytest.fixture(autouse=True)
     def mock_completion(self) -> Dict[str, Any]:
         """Fixture providing a mock API response."""
         return {
@@ -189,7 +195,29 @@ class TestChatWriter(ChatModelTests):
             }
         }
 
-    @pytest.fixture
+    @pytest.fixture(autouse=True)
+    def mock_response(self) -> Dict[str, Any]:
+        response = {
+            "id": "chat-12345",
+            "choices": [{
+                "message": {
+                    "role": "assistant",
+                    "content": "",
+                    "tool_calls": [{
+                        "id": "call_abc123",
+                        "type": "function",
+                        "function": {
+                            "name": "GetWeather",
+                            "arguments": '{"location": "London"}'
+                        }
+                    }]
+                },
+                "finish_reason": "tool_calls"
+            }]
+        }
+        return response
+
+    @pytest.fixture(autouse=True)
     def mock_streaming_chunks(self) -> List[Dict[str, Any]]:
         """Fixture providing mock streaming response chunks."""
         return [
@@ -226,168 +254,130 @@ class TestChatWriter(ChatModelTests):
             }
         ]
 
-    @pytest.fixture(autouse=True)
+
     def test_sync_completion(self, mock_completion: Dict[str, Any]) -> None:
         """Test basic chat completion with mocked response."""
         chat = ChatWriter(writer_api_key="test-key")
         mock_client = MagicMock()
         mock_client.chat.chat.return_value = mock_completion
-        
+
         with patch.object(chat, "client", mock_client):
             message = HumanMessage(content="Hi there!")
             response = chat.invoke([message])
             assert isinstance(response, AIMessage)
             assert response.content == "Hello! How can I help you?"
 
-    @pytest.fixture(autouse=True)
+
     async def test_async_completion(self, mock_completion: Dict[str, Any]) -> None:
         """Test async chat completion with mocked response."""
         chat = ChatWriter(writer_api_key="test-key")
         mock_client = AsyncMock()
         mock_client.chat.chat.return_value = mock_completion
-        
+
         with patch.object(chat, "async_client", mock_client):
             message = HumanMessage(content="Hi there!")
             response = await chat.ainvoke([message])
             assert isinstance(response, AIMessage)
             assert response.content == "Hello! How can I help you?"
 
-    @pytest.fixture(autouse=True)
+
     def test_sync_streaming(self, mock_streaming_chunks: List[Dict[str, Any]]) -> None:
         """Test sync streaming with callback handler."""
         callback_handler = FakeCallbackHandler()
         callback_manager = CallbackManager([callback_handler])
-        
+
         chat = ChatWriter(
             streaming=True,
             callback_manager=callback_manager,
             max_tokens=10,
             writer_api_key="test-key",
         )
-        
+
         mock_client = MagicMock()
         mock_response = MagicMock()
         mock_response.__iter__.return_value = mock_streaming_chunks
         mock_client.chat.chat.return_value = mock_response
-        
+
         with patch.object(chat, "client", mock_client):
             message = HumanMessage(content="Hi")
             response = chat.invoke([message])
-            
+
             assert isinstance(response, AIMessage)
             assert callback_handler.llm_streams > 0
             assert response.content == "Hello!"
 
-    @pytest.fixture(autouse=True)
+
     async def test_async_streaming(self, mock_streaming_chunks: List[Dict[str, Any]]) -> None:
         """Test async streaming with callback handler."""
         callback_handler = FakeCallbackHandler()
         callback_manager = CallbackManager([callback_handler])
-        
+
         chat = ChatWriter(
             streaming=True,
             callback_manager=callback_manager,
             max_tokens=10,
             writer_api_key="test-key",
         )
-        
+
         mock_client = AsyncMock()
         mock_response = AsyncMock()
-        mock_response.__aiter__.return_value.__anext__.side_effect = mock_streaming_chunks
+        mock_response.__aiter__.return_value = mock_streaming_chunks
         mock_client.chat.chat.return_value = mock_response
-        
+
         with patch.object(chat, "async_client", mock_client):
             message = HumanMessage(content="Hi")
             response = await chat.ainvoke([message])
-            
+
             assert isinstance(response, AIMessage)
             assert callback_handler.llm_streams > 0
             assert response.content == "Hello!"
 
-    @pytest.fixture(autouse=True)
-    def test_sync_tool_calling(self) -> None:
+
+    def test_sync_tool_calling(self, mock_response: Dict[str, Any]) -> None:
         """Test synchronous tool calling functionality."""
         from pydantic import BaseModel, Field
-        
+
         class GetWeather(BaseModel):
             """Get the weather in a location."""
             location: str = Field(..., description="The location to get weather for")
-        
+
         chat = ChatWriter(writer_api_key="test-key")
         chat_with_tools = chat.bind_tools(
             tools=[GetWeather],
             tool_choice="auto"
         )
-        
+
         mock_client = MagicMock()
-        mock_response = {
-            "id": "chat-12345",
-            "choices": [{
-                "message": {
-                    "role": "assistant",
-                    "content": None,
-                    "tool_calls": [{
-                        "id": "call_abc123",
-                        "type": "function",
-                        "function": {
-                            "name": "GetWeather",
-                            "arguments": '{"location": "London"}'
-                        }
-                    }]
-                },
-                "finish_reason": "tool_calls"
-            }]
-        }
-        
         mock_client.chat.chat.return_value = mock_response
-        
+
         with patch.object(chat_with_tools.bound, "client", mock_client):
             response = chat_with_tools.invoke("What's the weather in London?")
             assert isinstance(response, AIMessage)
             assert response.tool_calls
-            assert response.tool_calls[0].name == "GetWeather"
-            assert json.loads(response.tool_calls[0].args)["location"] == "London"
+            assert response.tool_calls[0]["name"] == "GetWeather"
+            assert response.tool_calls[0]["args"]["location"] == "London"
 
-    @pytest.fixture(autouse=True)
-    async def test_async_tool_calling(self) -> None:
+
+    async def test_async_tool_calling(self, mock_response: Dict[str, Any]) -> None:
         """Test asynchronous tool calling functionality."""
         from pydantic import BaseModel, Field
-        
+
         class GetWeather(BaseModel):
             """Get the weather in a location."""
             location: str = Field(..., description="The location to get weather for")
-        
+
         chat = ChatWriter(writer_api_key="test-key")
         chat_with_tools = chat.bind_tools(
             tools=[GetWeather],
             tool_choice={"type": "function", "function": {"name": "GetWeather"}}
         )
-        
-        mock_client = MagicMock()
-        mock_response = {
-            "id": "chat-12345",
-            "choices": [{
-                "message": {
-                    "role": "assistant",
-                    "content": None,
-                    "tool_calls": [{
-                        "id": "call_abc123",
-                        "type": "function",
-                        "function": {
-                            "name": "GetWeather",
-                            "arguments": '{"location": "London"}'
-                        }
-                    }]
-                },
-                "finish_reason": "tool_calls"
-            }]
-        }
-        
+
+        mock_client = AsyncMock()
         mock_client.chat.chat.return_value = mock_response
-        
-        with patch.object(chat_with_tools, "async_client", mock_client):
+
+        with patch.object(chat_with_tools.bound, "async_client", mock_client):
             response = await chat_with_tools.ainvoke("What's the weather in London?")
             assert isinstance(response, AIMessage)
             assert response.tool_calls
-            assert response.tool_calls[0].name == "GetWeather"
-            assert json.loads(response.tool_calls[0].args)["location"] == "London"
+            assert response.tool_calls[0]["name"] == "GetWeather"
+            assert response.tool_calls[0]["args"]["location"] == "London"

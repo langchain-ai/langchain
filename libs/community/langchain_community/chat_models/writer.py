@@ -227,10 +227,10 @@ class ChatWriter(BaseChatModel):
         )
 
         async for chunk in response:
-            delta = chunk.choices[0].delta
-            if not delta or not delta.content:
+            delta = chunk["choices"][0].get("delta")
+            if not delta or not delta.get("content"):
                 continue
-            chunk = _convert_dict_to_message({"role": "assistant", "content": delta.content})
+            chunk = _convert_dict_to_message({"role": "assistant", "content": delta["content"]})
             chunk = ChatGenerationChunk(message=chunk)
 
             if run_manager:
