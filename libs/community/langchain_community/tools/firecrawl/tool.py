@@ -28,35 +28,38 @@ class FirecrawlScrapeWebsiteTool(BaseTool):
         "Provide the URL of the website to scrape and indicate if the scraping rate "
         "should be limited. The parameters required are:\n"
         "- 'base_url': The base URL of the website to scrape.\n"
-        "- 'limit_rate': A boolean specifying whether to limit the scraping rate."
+        "- 'limit_rate_enabled': A boolean specifying whether to limit the scraping rate."
     )
     args_schema: Type[BaseModel] = ScrapeWebsiteInput
     return_direct: bool = True
 
     api_key: str = Field(
-        default_factory=lambda: os.getenv("FIRECRAWL_API_KEY", ""),
+        default = os.getenv("FIRECRAWL_API_KEY", ""),
         description="API key for Firecrawl",
     )
-    limit_rate: bool = Field(
-        default_factory=lambda: os.getenv("FIRECRAWL_LIMIT_RATE", "True")
+    limit_rate_enabled: bool = Field(
+        default=os.getenv("FIRECRAWL_RATE_LIMIT_ENABLED", "true")
         .strip()
         .lower()
         == "true",
         description="Limit scraping rate",
     )
 
+    app: Optional[FirecrawlApp] = None
+
     def __init__(
-        self, api_key: Optional[str] = None, limit_rate: Optional[bool] = None
+        self, api_key: Optional[str] = None, limit_rate_enabled: Optional[bool] = None
     ):
         super().__init__()
         self.api_key = api_key or self.api_key
-        self.limit_rate = limit_rate if limit_rate is not None else self.limit_rate
+        self.limit_rate_enabled = limit_rate_enabled if limit_rate_enabled is not None else self.limit_rate_enabled
         if not self.api_key:
             raise ValueError(
                 "API key for Firecrawl is required. Please set the "
                 "FIRECRAWL_API_KEY environment variable or pass it to the "
                 "constructor."
             )
+        self.app = FirecrawlApp(api_key=self.api_key)
 
     def _run(
         self,
@@ -64,7 +67,12 @@ class FirecrawlScrapeWebsiteTool(BaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool synchronously."""
-        return asyncio.run(self.scrape_all_urls(base_url))
+        if run_manager:
+            run_manager.on_text("Starting web crawl...")
+        result = asyncio.run(self.scrape_all_urls(base_url))
+        if run_manager:
+            run_manager.on_text(f"Completed web crawl. Found {len(result)} URLs.")
+        return result
 
     async def _arun(
         self,
@@ -72,7 +80,12 @@ class FirecrawlScrapeWebsiteTool(BaseTool):
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool asynchronously."""
-        return await self.scrape_all_urls(base_url)
+        if run_manager:
+            await run_manager.on_text("Starting asynchronous web crawl...")
+        result = await self.scrape_all_urls(base_url)
+        if run_manager:
+            await run_manager.on_text(f"Completed asynchronous web crawl. Found {len(result)} URLs.")
+        return result
 
     async def scrape_all_urls(self, base_url: str) -> str:
         app = self.get_firecrawl_app()
@@ -87,18 +100,18 @@ class FirecrawlScrapeWebsiteTool(BaseTool):
             markdown_content += f"# {url}\n\n{content}\n\n---\n\n"
 
             # Flexible rate limiting
-            if self.limit_rate and (i + 1) % 10 == 0:
+            if self.limit_rate_enabled and (i + 1) % 10 == 0:
                 logging.info("Rate limiting: Sleeping for 60 seconds")
                 await asyncio.sleep(60)
 
         return markdown_content
 
     def get_firecrawl_app(self) -> FirecrawlApp:
-        return FirecrawlApp(api_key=self.api_key)
+        return self.app
 
-    def map_website(self, app: FirecrawlApp, url: str) -> List[str]:
+    def map_website(self, url: str) -> List[str]:
         try:
-            map_status = app.map_url(url)
+            map_status = self.app.map_url(url)
             logging.info(f"Map status: {map_status}")
             if isinstance(map_status, dict) and "links" in map_status:
                 return map_status["links"]
@@ -111,11 +124,11 @@ class FirecrawlScrapeWebsiteTool(BaseTool):
         except Exception as e:
             logging.error(f"Error mapping website {url}: {e}")
             raise RuntimeError(f"Failed to map website: {url}") from e
-            return []
 
-    async def async_scrape_url(self, app: FirecrawlApp, url: str) -> str:
+
+    async def async_scrape_url(self, url: str) -> str:
         try:
-            scrape_status = app.scrape_url(url)
+            scrape_status = self.app.scrape_url(url)
             if "markdown" in scrape_status:
                 return scrape_status["markdown"]
             else:
@@ -124,4 +137,4 @@ class FirecrawlScrapeWebsiteTool(BaseTool):
         except Exception as e:
             logging.error(f"Error scraping URL {url}: {e}")
             raise RuntimeError(f"Failed to scrape URL: {url}") from e
-            return ""
+
