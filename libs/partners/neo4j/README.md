@@ -12,17 +12,6 @@ And you should configure credentials by setting the following environment variab
 
 * TODO: fill this out
 
-## Chat Models
-
-`ChatNeo4j` class exposes chat models from Neo4j.
-
-```python
-from langchain_neo4j import ChatNeo4j
-
-llm = ChatNeo4j()
-llm.invoke("Sing a ballad of LangChain.")
-```
-
 ## Embeddings
 
 `Neo4jEmbeddings` class exposes embeddings from Neo4j.
