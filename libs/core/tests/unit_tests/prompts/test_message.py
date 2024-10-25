@@ -47,13 +47,11 @@ def test__dict_message_prompt_template_fstring() -> None:
         ],
     )
     actual = prompt.format_messages(
-        **{
-            "local_image_path": image_path,
-            "text1": "important message",
-            "name1": "foo",
-            "tool_arg1": "important arg1",
-            "tool_name1": "do_stuff",
-        }
+        local_image_path=image_path,
+        text1="important message",
+        name1="foo",
+        tool_arg1="important arg1",
+        tool_name1="do_stuff",
     )[0]
     assert actual == expected
 
@@ -65,5 +63,5 @@ def test__dict_message_prompt_template_fstring() -> None:
     }
     prompt = _DictMessagePromptTemplate(template=template, template_format="f-string")
     expected = ToolMessage("foo", name="bar", tool_call_id="1")
-    actual = prompt.format_messages(**{"content1": "foo", "name1": "bar"})[0]
+    actual = prompt.format_messages(content1="foo", name1="bar")[0]
     assert actual == expected

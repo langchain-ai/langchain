@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import List, Optional
+from typing import Literal, Optional, Union
 
-from langchain_core.outputs.generation import Generation
+from pydantic import BaseModel
+
+from langchain_core.outputs.chat_generation import ChatGeneration, ChatGenerationChunk
+from langchain_core.outputs.generation import Generation, GenerationChunk
 from langchain_core.outputs.run_info import RunInfo
-from langchain_core.pydantic_v1 import BaseModel
 
 
 class LLMResult(BaseModel):
@@ -16,35 +18,40 @@ class LLMResult(BaseModel):
     wants to return.
     """
 
-    generations: List[List[Generation]]
+    generations: list[
+        list[Union[Generation, ChatGeneration, GenerationChunk, ChatGenerationChunk]]
+    ]
     """Generated outputs.
-    
+
     The first dimension of the list represents completions for different input
     prompts.
-    
+
     The second dimension of the list represents different candidate generations
     for a given prompt.
-    
+
     When returned from an LLM the type is List[List[Generation]].
     When returned from a chat model the type is List[List[ChatGeneration]].
-    
+
     ChatGeneration is a subclass of Generation that has a field for a structured
     chat message.
     """
     llm_output: Optional[dict] = None
     """For arbitrary LLM provider specific output.
-    
+
     This dictionary is a free-form dictionary that can contain any information that the
     provider wants to return. It is not standardized and is provider-specific.
-    
+
     Users should generally avoid relying on this field and instead rely on
     accessing relevant information from standardized fields present in
     AIMessage.
     """
-    run: Optional[List[RunInfo]] = None
+    run: Optional[list[RunInfo]] = None
     """List of metadata info for model call for each input."""
 
-    def flatten(self) -> List[LLMResult]:
+    type: Literal["LLMResult"] = "LLMResult"  # type: ignore[assignment]
+    """Type is used exclusively for serialization purposes."""
+
+    def flatten(self) -> list[LLMResult]:
         """Flatten generations into a single list.
 
         Unpack List[List[Generation]] -> List[LLMResult] where each returned LLMResult
@@ -69,7 +76,7 @@ class LLMResult(BaseModel):
             else:
                 if self.llm_output is not None:
                     llm_output = deepcopy(self.llm_output)
-                    llm_output["token_usage"] = dict()
+                    llm_output["token_usage"] = {}
                 else:
                     llm_output = None
                 llm_results.append(

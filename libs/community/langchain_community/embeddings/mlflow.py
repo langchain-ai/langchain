@@ -4,7 +4,7 @@ from typing import Any, Dict, Iterator, List
 from urllib.parse import urlparse
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, PrivateAttr
+from pydantic import BaseModel, PrivateAttr
 
 
 def _chunk(texts: List[str], size: int) -> Iterator[List[str]]:

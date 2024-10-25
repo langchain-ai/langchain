@@ -6,14 +6,14 @@ To use this tool, you must first set your credentials as environment variables:
     ASKNEWS_CLIENT_SECRET
 """
 
-from typing import Optional, Type
+from typing import Any, Optional, Type
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel, Field
 
 from langchain_community.utilities.asknews import AskNewsAPIWrapper
 
@@ -34,7 +34,7 @@ class SearchInput(BaseModel):
     )
 
 
-class AskNewsSearch(BaseTool):
+class AskNewsSearch(BaseTool):  # type: ignore[override]
     """Tool that searches the AskNews API."""
 
     name: str = "asknews_search"
@@ -45,13 +45,14 @@ class AskNewsSearch(BaseTool):
     )
     api_wrapper: AskNewsAPIWrapper = Field(default_factory=AskNewsAPIWrapper)  # type: ignore[arg-type]
     max_results: int = 10
-    args_schema: Type[BaseModel] = SearchInput
+    args_schema: Optional[Type[BaseModel]] = SearchInput
 
     def _run(
         self,
         query: str,
         hours_back: int = 0,
         run_manager: Optional[CallbackManagerForToolRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Use the tool."""
         try:
@@ -68,6 +69,7 @@ class AskNewsSearch(BaseTool):
         query: str,
         hours_back: int = 0,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Use the tool asynchronously."""
         try:

@@ -21,7 +21,9 @@ def try_load_from_hub(
 ) -> Any:
     warnings.warn(
         "Loading from the deprecated github-based Hub is no longer supported. "
-        "Please use the new LangChain Hub at https://smith.langchain.com/hub instead."
+        "Please use the new LangChain Hub at https://smith.langchain.com/hub instead.",
+        DeprecationWarning,
+        stacklevel=2,
     )
     # return None, which indicates that we shouldn't load from old hub
     # and might just be a filepath for e.g. load_chain

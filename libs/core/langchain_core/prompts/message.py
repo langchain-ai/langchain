@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Dict, List, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from langchain_core.load import Serializable
 from langchain_core.messages import BaseMessage, convert_to_messages
@@ -23,30 +23,29 @@ class BaseMessagePromptTemplate(Serializable, ABC):
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Return True if the class is serializable, else False.
+        """Whether the class is serializable.
 
-        Returns:
-            True
+        Returns: True
         """
         return True
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "prompts", "chat"]
 
     @abstractmethod
-    def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
+    def format_messages(self, **kwargs: Any) -> list[BaseMessage]:
         """Format messages from kwargs. Should return a list of BaseMessages.
 
         Args:
             **kwargs: Keyword arguments to use for formatting.
 
         Returns:
-            List of BaseMessages.
+            list of BaseMessages.
         """
 
-    async def aformat_messages(self, **kwargs: Any) -> List[BaseMessage]:
+    async def aformat_messages(self, **kwargs: Any) -> list[BaseMessage]:
         """Async format messages from kwargs.
         Should return a list of BaseMessages.
 
@@ -54,17 +53,17 @@ class BaseMessagePromptTemplate(Serializable, ABC):
             **kwargs: Keyword arguments to use for formatting.
 
         Returns:
-            List of BaseMessages.
+            list of BaseMessages.
         """
         return self.format_messages(**kwargs)
 
     @property
     @abstractmethod
-    def input_variables(self) -> List[str]:
+    def input_variables(self) -> list[str]:
         """Input variables for this prompt template.
 
         Returns:
-            List of input variables.
+            list of input variables.
         """
 
     def pretty_repr(self, html: bool = False) -> str:
@@ -91,8 +90,6 @@ class BaseMessagePromptTemplate(Serializable, ABC):
         Returns:
             Combined prompt template.
         """
-        from langchain_core.prompts.chat import ChatPromptTemplate
-
         prompt = ChatPromptTemplate(messages=[self])  # type: ignore[call-arg]
         return prompt + other
 
@@ -104,15 +101,15 @@ class _DictMessagePromptTemplate(BaseMessagePromptTemplate):
     ``{"type": "image_url", "image_url": {"path": "..."}}``
     """
 
-    template: Dict[str, Any]
+    template: dict[str, Any]
     template_format: Literal["f-string", "mustache"]
 
-    def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
+    def format_messages(self, **kwargs: Any) -> list[BaseMessage]:
         msg_dict = _insert_input_variables(self.template, kwargs, self.template_format)
         return convert_to_messages([msg_dict])
 
     @property
-    def input_variables(self) -> List[str]:
+    def input_variables(self) -> list[str]:
         return _get_input_variables(self.template, self.template_format)
 
     @property
@@ -122,9 +119,9 @@ class _DictMessagePromptTemplate(BaseMessagePromptTemplate):
 
 def _get_input_variables(
     template: dict, template_format: Literal["f-string", "mustache"]
-) -> List[str]:
+) -> list[str]:
     input_variables = []
-    for k, v in template.items():
+    for v in template.values():
         if isinstance(v, str):
             input_variables += get_template_variables(v, template_format)
         elif isinstance(v, dict):
@@ -139,10 +136,10 @@ def _get_input_variables(
 
 
 def _insert_input_variables(
-    template: Dict[str, Any],
-    inputs: Dict[str, Any],
+    template: dict[str, Any],
+    inputs: dict[str, Any],
     template_format: Literal["f-string", "mustache"],
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     formatted = {}
     formatter = DEFAULT_FORMATTER_MAPPING[template_format]
     for k, v in template.items():

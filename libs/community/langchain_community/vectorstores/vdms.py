@@ -108,7 +108,7 @@ def _results_to_docs_and_scores(results: Any) -> List[Tuple[Document, float]]:
                     (Document(page_content=txt_contents, metadata=props), distance)
                 )
     except Exception as e:
-        logger.warn(f"No results returned. Error while parsing results: {e}")
+        logger.warning(f"No results returned. Error while parsing results: {e}")
     return final_res
 
 
@@ -161,9 +161,10 @@ class VDMS(VectorStore):
             from langchain_huggingface import HuggingFaceEmbeddings
             from langchain_community.vectorstores.vdms import VDMS, VDMS_Client
 
+            model_name = "sentence-transformers/all-mpnet-base-v2"
             vectorstore = VDMS(
                 client=VDMS_Client("localhost", 55555),
-                embedding=HuggingFaceEmbeddings(),
+                embedding=HuggingFaceEmbeddings(model_name=model_name),
                 collection_name="langchain-demo",
                 distance_strategy="L2",
                 engine="FaissFlat",

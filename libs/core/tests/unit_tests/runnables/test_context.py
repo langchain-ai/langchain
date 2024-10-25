@@ -1,4 +1,4 @@
-from typing import Any, Callable, List, NamedTuple, Union
+from typing import Any, Callable, NamedTuple, Union
 
 import pytest
 
@@ -331,7 +331,7 @@ test_cases = [
 
 @pytest.mark.parametrize("runnable, cases", test_cases)
 async def test_context_runnables(
-    runnable: Union[Runnable, Callable[[], Runnable]], cases: List[_TestCase]
+    runnable: Union[Runnable, Callable[[], Runnable]], cases: list[_TestCase]
 ) -> None:
     runnable = runnable if isinstance(runnable, Runnable) else runnable()
     assert runnable.invoke(cases[0].input) == cases[0].output
@@ -391,7 +391,7 @@ async def test_runnable_seq_streaming_chunks() -> None:
         }
     )
 
-    chunks = [c for c in chain.stream({"foo": "foo", "bar": "bar"})]
+    chunks = list(chain.stream({"foo": "foo", "bar": "bar"}))
     achunks = [c async for c in chain.astream({"foo": "foo", "bar": "bar"})]
     for c in chunks:
         assert c in achunks

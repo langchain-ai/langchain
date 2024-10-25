@@ -31,6 +31,7 @@ from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils import get_from_dict_or_env
 from langchain_core.vectorstores import VectorStore, VectorStoreRetriever
+from pydantic import ConfigDict
 
 from langchain_community.utilities.redis import (
     _array_to_buffer,
@@ -1424,7 +1425,7 @@ def _prepare_metadata(metadata: Dict[str, Any]) -> Dict[str, Any]:
     return clean_meta
 
 
-class RedisVectorStoreRetriever(VectorStoreRetriever):
+class RedisVectorStoreRetriever(VectorStoreRetriever):  # type: ignore[override]
     """Retriever for Redis VectorStore."""
 
     vectorstore: Redis
@@ -1452,8 +1453,9 @@ class RedisVectorStoreRetriever(VectorStoreRetriever):
     ]
     """Allowed search types."""
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun

@@ -1,4 +1,8 @@
+import inspect
 import json
+import logging
+import os
+import time
 from dataclasses import dataclass
 from io import StringIO
 from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional
@@ -6,7 +10,17 @@ from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional
 if TYPE_CHECKING:
     from databricks.sdk import WorkspaceClient
     from databricks.sdk.service.catalog import FunctionInfo
-    from databricks.sdk.service.sql import StatementParameterListItem
+    from databricks.sdk.service.sql import StatementParameterListItem, StatementState
+
+EXECUTE_FUNCTION_ARG_NAME = "__execution_args__"
+DEFAULT_EXECUTE_FUNCTION_ARGS = {
+    "wait_timeout": "30s",
+    "row_limit": 100,
+    "byte_limit": 4096,
+}
+UC_TOOL_CLIENT_EXECUTION_TIMEOUT = "UC_TOOL_CLIENT_EXECUTION_TIMEOUT"
+DEFAULT_UC_TOOL_CLIENT_EXECUTION_TIMEOUT = "120"
+_logger = logging.getLogger(__name__)
 
 
 def is_scalar(function: "FunctionInfo") -> bool:
@@ -122,24 +136,86 @@ def execute_function(
         ) from e
     from databricks.sdk.service.sql import StatementState
 
+    if (
+        function.input_params
+        and function.input_params.parameters
+        and any(
+            p.name == EXECUTE_FUNCTION_ARG_NAME
+            for p in function.input_params.parameters
+        )
+    ):
+        raise ValueError(
+            "Parameter name conflicts with the reserved argument name for executing "
+            f"functions: {EXECUTE_FUNCTION_ARG_NAME}. "
+            f"Please rename the parameter {EXECUTE_FUNCTION_ARG_NAME}."
+        )
+
+    # avoid modifying the original dict
+    execute_statement_args = {**DEFAULT_EXECUTE_FUNCTION_ARGS}
+    allowed_execute_statement_args = inspect.signature(
+        ws.statement_execution.execute_statement
+    ).parameters
+    if not any(
+        p.kind in (p.VAR_POSITIONAL, p.VAR_KEYWORD)
+        for p in allowed_execute_statement_args.values()
+    ):
+        invalid_params = set()
+        passed_execute_statement_args = parameters.pop(EXECUTE_FUNCTION_ARG_NAME, {})
+        for k, v in passed_execute_statement_args.items():
+            if k in allowed_execute_statement_args:
+                execute_statement_args[k] = v
+            else:
+                invalid_params.add(k)
+        if invalid_params:
+            raise ValueError(
+                f"Invalid parameters for executing functions: {invalid_params}. "
+                f"Allowed parameters are: {allowed_execute_statement_args.keys()}."
+            )
+
     # TODO: async so we can run functions in parallel
     parametrized_statement = get_execute_function_sql_stmt(function, parameters)
-    # TODO: configurable limits
     response = ws.statement_execution.execute_statement(
         statement=parametrized_statement.statement,
         warehouse_id=warehouse_id,
         parameters=parametrized_statement.parameters,
-        wait_timeout="30s",
-        row_limit=100,
-        byte_limit=4096,
+        **execute_statement_args,  # type: ignore
     )
-    status = response.status
-    assert status is not None, f"Statement execution failed: {response}"
-    if status.state != StatementState.SUCCEEDED:
-        error = status.error
+    if response.status and job_pending(response.status.state) and response.statement_id:
+        statement_id = response.statement_id
+        wait_time = 0
+        retry_cnt = 0
+        client_execution_timeout = int(
+            os.environ.get(
+                UC_TOOL_CLIENT_EXECUTION_TIMEOUT,
+                DEFAULT_UC_TOOL_CLIENT_EXECUTION_TIMEOUT,
+            )
+        )
+        while wait_time < client_execution_timeout:
+            wait = min(2**retry_cnt, client_execution_timeout - wait_time)
+            _logger.debug(
+                f"Retrying {retry_cnt} time to get statement execution "
+                f"status after {wait} seconds."
+            )
+            time.sleep(wait)
+            response = ws.statement_execution.get_statement(statement_id)  # type: ignore
+            if response.status is None or not job_pending(response.status.state):
+                break
+            wait_time += wait
+            retry_cnt += 1
+        if response.status and job_pending(response.status.state):
+            return FunctionExecutionResult(
+                error=f"Statement execution is still pending after {wait_time} "
+                "seconds. Please increase the wait_timeout argument for executing "
+                f"the function or increase {UC_TOOL_CLIENT_EXECUTION_TIMEOUT} "
+                "environment variable for increasing retrying time, default is "
+                f"{DEFAULT_UC_TOOL_CLIENT_EXECUTION_TIMEOUT} seconds."
+            )
+    assert response.status is not None, f"Statement execution failed: {response}"
+    if response.status.state != StatementState.SUCCEEDED:
+        error = response.status.error
         assert (
             error is not None
-        ), "Statement execution failed but no error message was provided."
+        ), f"Statement execution failed but no error message was provided: {response}"
         return FunctionExecutionResult(error=f"{error.error_code}: {error.message}")
     manifest = response.manifest
     assert manifest is not None
@@ -170,3 +246,9 @@ def execute_function(
         return FunctionExecutionResult(
             format="CSV", value=csv_buffer.getvalue(), truncated=truncated
         )
+
+
+def job_pending(state: Optional["StatementState"]) -> bool:
+    from databricks.sdk.service.sql import StatementState
+
+    return state in (StatementState.PENDING, StatementState.RUNNING)

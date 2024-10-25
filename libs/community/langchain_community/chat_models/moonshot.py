@@ -12,7 +12,7 @@ from langchain_community.chat_models import ChatOpenAI
 from langchain_community.llms.moonshot import MOONSHOT_SERVICE_URL_BASE, MoonshotCommon
 
 
-class MoonshotChat(MoonshotCommon, ChatOpenAI):  # type: ignore[misc]
+class MoonshotChat(MoonshotCommon, ChatOpenAI):  # type: ignore[misc, override, override]
     """Moonshot large language models.
 
     To use, you should have the ``openai`` python package installed, and the
@@ -33,7 +33,11 @@ class MoonshotChat(MoonshotCommon, ChatOpenAI):  # type: ignore[misc]
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the environment is set up correctly."""
         values["moonshot_api_key"] = convert_to_secret_str(
-            get_from_dict_or_env(values, "moonshot_api_key", "MOONSHOT_API_KEY")
+            get_from_dict_or_env(
+                values,
+                ["moonshot_api_key", "api_key", "openai_api_key"],
+                "MOONSHOT_API_KEY",
+            )
         )
 
         try:

@@ -3,8 +3,8 @@
 from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel, Field
 
 from langchain_community.utilities.reddit_search import RedditSearchAPIWrapper
 
@@ -34,7 +34,7 @@ class RedditSearchSchema(BaseModel):
     )
 
 
-class RedditSearchRun(BaseTool):
+class RedditSearchRun(BaseTool):  # type: ignore[override, override]
     """Tool that queries for posts on a subreddit."""
 
     name: str = "reddit_search"

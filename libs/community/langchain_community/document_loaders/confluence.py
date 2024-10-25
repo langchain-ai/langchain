@@ -390,6 +390,7 @@ class ConfluenceLoader(BaseLoader):
                 content_format,
                 ocr_languages,
                 keep_markdown_format,
+                keep_newlines=keep_newlines,
             )
 
         if page_ids:

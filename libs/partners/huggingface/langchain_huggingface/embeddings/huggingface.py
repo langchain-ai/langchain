@@ -1,7 +1,7 @@
-from typing import Any, Dict, List, Optional  # type: ignore[import-not-found]
+from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 DEFAULT_MODEL_NAME = "sentence-transformers/all-mpnet-base-v2"
 
@@ -26,7 +26,6 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
             )
     """
 
-    client: Any  #: :meta private:
     model_name: str = DEFAULT_MODEL_NAME
     """Model name to use."""
     cache_folder: Optional[str] = None
@@ -51,21 +50,20 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
         super().__init__(**kwargs)
         try:
             import sentence_transformers  # type: ignore[import]
-
         except ImportError as exc:
             raise ImportError(
                 "Could not import sentence_transformers python package. "
                 "Please install it with `pip install sentence-transformers`."
             ) from exc
 
-        self.client = sentence_transformers.SentenceTransformer(
+        self._client = sentence_transformers.SentenceTransformer(
             self.model_name, cache_folder=self.cache_folder, **self.model_kwargs
         )
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = "forbid"
+    model_config = ConfigDict(
+        extra="forbid",
+        protected_namespaces=(),
+    )
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Compute doc embeddings using a HuggingFace transformer model.
@@ -80,12 +78,20 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
 
         texts = list(map(lambda x: x.replace("\n", " "), texts))
         if self.multi_process:
-            pool = self.client.start_multi_process_pool()
-            embeddings = self.client.encode_multi_process(texts, pool)
+            pool = self._client.start_multi_process_pool()
+            embeddings = self._client.encode_multi_process(texts, pool)
             sentence_transformers.SentenceTransformer.stop_multi_process_pool(pool)
         else:
-            embeddings = self.client.encode(
-                texts, show_progress_bar=self.show_progress, **self.encode_kwargs
+            embeddings = self._client.encode(
+                texts,
+                show_progress_bar=self.show_progress,
+                **self.encode_kwargs,  # type: ignore
+            )
+
+        if isinstance(embeddings, list):
+            raise TypeError(
+                "Expected embeddings to be a Tensor or a numpy array, "
+                "got a list instead."
             )
 
         return embeddings.tolist()

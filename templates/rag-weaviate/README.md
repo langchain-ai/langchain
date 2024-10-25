@@ -1,7 +1,6 @@
+# RAG - Weaviate
 
-# rag-weaviate
-
-This template performs RAG with Weaviate.
+This template performs RAG with `Weaviate` vectorstore.
 
 ## Environment Setup
 

@@ -2,6 +2,7 @@
 
 import base64
 import json
+from pathlib import Path
 from typing import Any, AsyncIterator, List, Literal, Optional, cast
 
 import httpx
@@ -20,13 +21,13 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatResult, LLMResult
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_standard_tests.integration_tests.chat_models import (
     _validate_tool_call_message,
 )
 from langchain_standard_tests.integration_tests.chat_models import (
     magic_function as invalid_magic_function,
 )
+from pydantic import BaseModel, Field
 
 from langchain_openai import ChatOpenAI
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
@@ -236,30 +237,6 @@ async def test_async_chat_openai_bind_functions() -> None:
     assert len(response) == 1
     for generation in response:
         assert isinstance(generation, AIMessage)
-
-
-def test_chat_openai_extra_kwargs() -> None:
-    """Test extra kwargs to chat openai."""
-    # Check that foo is saved in extra_kwargs.
-    llm = ChatOpenAI(foo=3, max_tokens=10)  # type: ignore[call-arg]
-    assert llm.max_tokens == 10
-    assert llm.model_kwargs == {"foo": 3}
-
-    # Test that if extra_kwargs are provided, they are added to it.
-    llm = ChatOpenAI(foo=3, model_kwargs={"bar": 2})  # type: ignore[call-arg]
-    assert llm.model_kwargs == {"foo": 3, "bar": 2}
-
-    # Test that if provided twice it errors
-    with pytest.raises(ValueError):
-        ChatOpenAI(foo=3, model_kwargs={"foo": 2})  # type: ignore[call-arg]
-
-    # Test that if explicit param is specified in kwargs it errors
-    with pytest.raises(ValueError):
-        ChatOpenAI(model_kwargs={"temperature": 0.2})
-
-    # Test that "model" cannot be specified in kwargs
-    with pytest.raises(ValueError):
-        ChatOpenAI(model_kwargs={"model": "gpt-3.5-turbo-instruct"})
 
 
 @pytest.mark.scheduled
@@ -686,11 +663,43 @@ def test_openai_proxy() -> None:
         assert proxy.port == 8080
 
 
-def test_openai_response_headers_invoke() -> None:
+def test_openai_response_headers() -> None:
     """Test ChatOpenAI response headers."""
     chat_openai = ChatOpenAI(include_response_headers=True)
-    result = chat_openai.invoke("I'm Pickle Rick")
+    query = "I'm Pickle Rick"
+    result = chat_openai.invoke(query, max_tokens=10)
     headers = result.response_metadata["headers"]
+    assert headers
+    assert isinstance(headers, dict)
+    assert "content-type" in headers
+
+    # Stream
+    full: Optional[BaseMessageChunk] = None
+    for chunk in chat_openai.stream(query, max_tokens=10):
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessage)
+    headers = full.response_metadata["headers"]
+    assert headers
+    assert isinstance(headers, dict)
+    assert "content-type" in headers
+
+
+async def test_openai_response_headers_async() -> None:
+    """Test ChatOpenAI response headers."""
+    chat_openai = ChatOpenAI(include_response_headers=True)
+    query = "I'm Pickle Rick"
+    result = await chat_openai.ainvoke(query, max_tokens=10)
+    headers = result.response_metadata["headers"]
+    assert headers
+    assert isinstance(headers, dict)
+    assert "content-type" in headers
+
+    # Stream
+    full: Optional[BaseMessageChunk] = None
+    async for chunk in chat_openai.astream(query, max_tokens=10):
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessage)
+    headers = full.response_metadata["headers"]
     assert headers
     assert isinstance(headers, dict)
     assert "content-type" in headers
@@ -868,6 +877,43 @@ def test_structured_output_strict(
         next(chat.stream("Tell me a joke about cats."))
 
 
+@pytest.mark.parametrize(
+    ("model", "method", "strict"), [("gpt-4o-2024-08-06", "json_schema", None)]
+)
+def test_nested_structured_output_strict(
+    model: str, method: Literal["json_schema"], strict: Optional[bool]
+) -> None:
+    """Test to verify structured output with strict=True for nested object."""
+
+    from typing import TypedDict
+
+    llm = ChatOpenAI(model=model, temperature=0)
+
+    class SelfEvaluation(TypedDict):
+        score: int
+        text: str
+
+    class JokeWithEvaluation(TypedDict):
+        """Joke to tell user."""
+
+        setup: str
+        punchline: str
+        self_evaluation: SelfEvaluation
+
+    # Schema
+    chat = llm.with_structured_output(JokeWithEvaluation, method=method, strict=strict)
+    result = chat.invoke("Tell me a joke about cats.")
+    assert isinstance(result, dict)
+    assert set(result.keys()) == {"setup", "punchline", "self_evaluation"}
+    assert set(result["self_evaluation"].keys()) == {"score", "text"}
+
+    for chunk in chat.stream("Tell me a joke about cats."):
+        assert isinstance(chunk, dict)
+    assert isinstance(chunk, dict)  # for mypy
+    assert set(chunk.keys()) == {"setup", "punchline", "self_evaluation"}
+    assert set(chunk["self_evaluation"].keys()) == {"score", "text"}
+
+
 def test_json_mode() -> None:
     llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
     response = llm.invoke(
@@ -904,3 +950,71 @@ async def test_json_mode_async() -> None:
     assert isinstance(full, AIMessageChunk)
     assert isinstance(full.content, str)
     assert json.loads(full.content) == {"a": 1}
+
+
+def test_audio_output_modality() -> None:
+    llm = ChatOpenAI(
+        model="gpt-4o-audio-preview",
+        temperature=0,
+        model_kwargs={
+            "modalities": ["text", "audio"],
+            "audio": {"voice": "alloy", "format": "wav"},
+        },
+    )
+
+    history: List[BaseMessage] = [
+        HumanMessage("Make me a short audio clip of you yelling")
+    ]
+
+    output = llm.invoke(history)
+
+    assert isinstance(output, AIMessage)
+    assert "audio" in output.additional_kwargs
+
+    history.append(output)
+    history.append(HumanMessage("Make me a short audio clip of you whispering"))
+
+    output = llm.invoke(history)
+
+    assert isinstance(output, AIMessage)
+    assert "audio" in output.additional_kwargs
+
+
+def test_audio_input_modality() -> None:
+    llm = ChatOpenAI(
+        model="gpt-4o-audio-preview",
+        temperature=0,
+        model_kwargs={
+            "modalities": ["text", "audio"],
+            "audio": {"voice": "alloy", "format": "wav"},
+        },
+    )
+    filepath = Path(__file__).parent / "audio_input.wav"
+
+    audio_data = filepath.read_bytes()
+    b64_audio_data = base64.b64encode(audio_data).decode("utf-8")
+
+    history: list[BaseMessage] = [
+        HumanMessage(
+            [
+                {"type": "text", "text": "What is happening in this audio clip"},
+                {
+                    "type": "input_audio",
+                    "input_audio": {"data": b64_audio_data, "format": "wav"},
+                },
+            ]
+        )
+    ]
+
+    output = llm.invoke(history)
+
+    assert isinstance(output, AIMessage)
+    assert "audio" in output.additional_kwargs
+
+    history.append(output)
+    history.append(HumanMessage("Why?"))
+
+    output = llm.invoke(history)
+
+    assert isinstance(output, AIMessage)
+    assert "audio" in output.additional_kwargs

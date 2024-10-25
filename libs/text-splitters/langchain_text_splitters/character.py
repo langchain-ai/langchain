@@ -65,7 +65,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
     def __init__(
         self,
         separators: Optional[List[str]] = None,
-        keep_separator: bool = True,
+        keep_separator: Union[bool, Literal["start", "end"]] = True,
         is_separator_regex: bool = False,
         **kwargs: Any,
     ) -> None:
@@ -465,7 +465,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "\n\\\\begin{verse}",
                 "\n\\\\begin{verbatim}",
                 # Now split by math environments
-                "\n\\\begin{align}",
+                "\n\\\\begin{align}",
                 "$$",
                 "$",
                 # Now split by the normal type of lines

@@ -8,8 +8,23 @@ TEST_FILE ?= tests/unit_tests/
 
 integration_test integration_tests: TEST_FILE=tests/integration_tests/
 
-test tests integration_test integration_tests:
+# unit tests are run with the --disable-socket flag to prevent network calls
+# use tiktoken cache to enable token counting without socket (internet) access
+test tests:
+	mkdir -p tiktoken_cache
+	@if [ ! -f tiktoken_cache/9b5ad71b2ce5302211f9c61530b329a4922fc6a4 ]; then \
+		curl -o tiktoken_cache/9b5ad71b2ce5302211f9c61530b329a4922fc6a4 https://openaipublic.blob.core.windows.net/encodings/cl100k_base.tiktoken; \
+	fi
+	@if [ ! -f tiktoken_cache/fb374d419588a4632f3f557e76b4b70aebbca790 ]; then \
+		curl -o tiktoken_cache/fb374d419588a4632f3f557e76b4b70aebbca790 https://openaipublic.blob.core.windows.net/encodings/o200k_base.tiktoken; \
+	fi
+	TIKTOKEN_CACHE_DIR=tiktoken_cache poetry run pytest --disable-socket --allow-unix-socket $(TEST_FILE)
+
+integration_test integration_tests:
 	poetry run pytest $(TEST_FILE)
+
+test_watch:
+	poetry run ptw --snapshot-update --now . -- -vv $(TEST_FILE)
 
 
 ######################
@@ -26,14 +41,13 @@ lint_tests: PYTHON_FILES=tests
 lint_tests: MYPY_CACHE=.mypy_cache_test
 
 lint lint_diff lint_package lint_tests:
-	poetry run ruff check .
-	poetry run ruff format $(PYTHON_FILES) --diff
-	poetry run ruff check --select I $(PYTHON_FILES)
-	mkdir $(MYPY_CACHE); poetry run mypy $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
+	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff check $(PYTHON_FILES)
+	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff format $(PYTHON_FILES) --diff
+	[ "$(PYTHON_FILES)" = "" ] || mkdir -p $(MYPY_CACHE) && poetry run mypy $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
 
 format format_diff:
-	poetry run ruff format $(PYTHON_FILES)
-	poetry run ruff check --select I --fix $(PYTHON_FILES)
+	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff format $(PYTHON_FILES)
+	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff check --select I --fix $(PYTHON_FILES)
 
 spell_check:
 	poetry run codespell --toml pyproject.toml

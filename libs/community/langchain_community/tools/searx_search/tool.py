@@ -6,8 +6,8 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel, ConfigDict, Field
 
 from langchain_community.utilities.searx_search import SearxSearchWrapper
 
@@ -18,7 +18,7 @@ class SearxSearchQueryInput(BaseModel):
     query: str = Field(description="query to look up on searx")
 
 
-class SearxSearchRun(BaseTool):
+class SearxSearchRun(BaseTool):  # type: ignore[override, override]
     """Tool that queries a Searx instance."""
 
     name: str = "searx_search"
@@ -48,7 +48,7 @@ class SearxSearchRun(BaseTool):
         return await self.wrapper.arun(query, **self.kwargs)
 
 
-class SearxSearchResults(BaseTool):
+class SearxSearchResults(BaseTool):  # type: ignore[override, override]
     """Tool that queries a Searx instance and gets back json."""
 
     name: str = "searx_search_results"
@@ -62,8 +62,9 @@ class SearxSearchResults(BaseTool):
     kwargs: dict = Field(default_factory=dict)
     args_schema: Type[BaseModel] = SearxSearchQueryInput
 
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(
+        extra="allow",
+    )
 
     def _run(
         self,

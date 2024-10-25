@@ -1,4 +1,4 @@
-# RAG with Multiple Indexes (Routing)
+# RAG - multiple indexes (Routing)
 
 A QA application that routes between different domain-specific retrievers given a user question.
 

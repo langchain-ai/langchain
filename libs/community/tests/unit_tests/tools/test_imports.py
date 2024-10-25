@@ -74,6 +74,7 @@ EXPECTED_ALL = [
     "InfoPowerBITool",
     "InfoSQLDatabaseTool",
     "InfoSparkSQLTool",
+    "JinaSearch",
     "JiraAction",
     "JsonGetValueTool",
     "JsonListKeysTool",

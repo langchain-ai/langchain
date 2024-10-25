@@ -44,11 +44,12 @@ from langchain_community.vectorstores.vdms import VDMS_Client
 from langchain_huggingface import HuggingFaceEmbeddings
 
 client = VDMS_Client("localhost", 55555)
+model_name = "sentence-transformers/all-mpnet-base-v2"
 vectorstore = VDMS.from_documents(
     docs,
     client=client,
     collection_name="langchain-demo",
-    embedding_function=HuggingFaceEmbeddings(),
+    embedding_function=HuggingFaceEmbeddings(model_name=model_name),
     engine="FaissFlat"
     distance_strategy="L2",
 )
@@ -58,5 +59,3 @@ results = vectorstore.similarity_search(query)
 ```
 
 For a more detailed walkthrough of the VDMS wrapper, see [this notebook](/docs/integrations/vectorstores/vdms)
-
-
