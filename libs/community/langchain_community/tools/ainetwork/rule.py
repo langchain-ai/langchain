@@ -16,7 +16,7 @@ class RuleSchema(BaseModel):
     eval: Optional[str] = Field(None, description="eval string to determine permission")
 
 
-class AINRuleOps(AINBaseTool):
+class AINRuleOps(AINBaseTool):  # type: ignore[override, override]
     """Tool for owner operations."""
 
     name: str = "AINruleOps"

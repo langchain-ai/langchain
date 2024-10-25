@@ -64,7 +64,7 @@ def _get_default_llm_chain_factory(
     return partial(_get_default_llm_chain, prompt)
 
 
-class RequestsGetToolWithParsing(BaseRequestsTool, BaseTool):
+class RequestsGetToolWithParsing(BaseRequestsTool, BaseTool):  # type: ignore[override]
     """Requests GET tool with LLM-instructed extraction of truncated responses."""
 
     name: str = "requests_get"
@@ -98,7 +98,7 @@ class RequestsGetToolWithParsing(BaseRequestsTool, BaseTool):
         raise NotImplementedError()
 
 
-class RequestsPostToolWithParsing(BaseRequestsTool, BaseTool):
+class RequestsPostToolWithParsing(BaseRequestsTool, BaseTool):  # type: ignore[override]
     """Requests POST tool with LLM-instructed extraction of truncated responses."""
 
     name: str = "requests_post"
@@ -129,7 +129,7 @@ class RequestsPostToolWithParsing(BaseRequestsTool, BaseTool):
         raise NotImplementedError()
 
 
-class RequestsPatchToolWithParsing(BaseRequestsTool, BaseTool):
+class RequestsPatchToolWithParsing(BaseRequestsTool, BaseTool):  # type: ignore[override]
     """Requests PATCH tool with LLM-instructed extraction of truncated responses."""
 
     name: str = "requests_patch"
@@ -162,7 +162,7 @@ class RequestsPatchToolWithParsing(BaseRequestsTool, BaseTool):
         raise NotImplementedError()
 
 
-class RequestsPutToolWithParsing(BaseRequestsTool, BaseTool):
+class RequestsPutToolWithParsing(BaseRequestsTool, BaseTool):  # type: ignore[override]
     """Requests PUT tool with LLM-instructed extraction of truncated responses."""
 
     name: str = "requests_put"
@@ -193,7 +193,7 @@ class RequestsPutToolWithParsing(BaseRequestsTool, BaseTool):
         raise NotImplementedError()
 
 
-class RequestsDeleteToolWithParsing(BaseRequestsTool, BaseTool):
+class RequestsDeleteToolWithParsing(BaseRequestsTool, BaseTool):  # type: ignore[override]
     """Tool that sends a DELETE request and parses the response."""
 
     name: str = "requests_delete"

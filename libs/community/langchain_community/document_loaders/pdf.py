@@ -71,7 +71,7 @@ class UnstructuredPDFLoader(UnstructuredFileLoader):
     def _get_elements(self) -> List:
         from unstructured.partition.pdf import partition_pdf
 
-        return partition_pdf(filename=self.file_path, **self.unstructured_kwargs)
+        return partition_pdf(filename=self.file_path, **self.unstructured_kwargs)  # type: ignore[arg-type]
 
 
 class BasePDFLoader(BaseLoader, ABC):

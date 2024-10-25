@@ -226,7 +226,7 @@ class LLMRails(VectorStore):
         return LLMRailsRetriever(vectorstore=self, **kwargs)
 
 
-class LLMRailsRetriever(VectorStoreRetriever):
+class LLMRailsRetriever(VectorStoreRetriever):  # type: ignore[override]
     """Retriever for LLMRails."""
 
     vectorstore: LLMRails

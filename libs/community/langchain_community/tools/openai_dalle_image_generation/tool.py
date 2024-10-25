@@ -8,7 +8,7 @@ from langchain_core.tools import BaseTool
 from langchain_community.utilities.dalle_image_generator import DallEAPIWrapper
 
 
-class OpenAIDALLEImageGenerationTool(BaseTool):
+class OpenAIDALLEImageGenerationTool(BaseTool):  # type: ignore[override]
     """Tool that generates an image using OpenAI DALLE."""
 
     name: str = "openai_dalle"

@@ -12,7 +12,7 @@ from langchain_community.chat_models import ChatOpenAI
 from langchain_community.llms.moonshot import MOONSHOT_SERVICE_URL_BASE, MoonshotCommon
 
 
-class MoonshotChat(MoonshotCommon, ChatOpenAI):  # type: ignore[misc]
+class MoonshotChat(MoonshotCommon, ChatOpenAI):  # type: ignore[misc, override, override]
     """Moonshot large language models.
 
     To use, you should have the ``openai`` python package installed, and the

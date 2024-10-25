@@ -15,7 +15,7 @@ class SemantscholarInput(BaseModel):
     query: str = Field(description="search query to look up")
 
 
-class SemanticScholarQueryRun(BaseTool):
+class SemanticScholarQueryRun(BaseTool):  # type: ignore[override, override]
     """Tool that searches the semanticscholar API."""
 
     name: str = "semanticscholar"

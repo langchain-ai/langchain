@@ -22,7 +22,7 @@ from langchain_community.utilities.powerbi import PowerBIDataset, json_to_md
 logger = logging.getLogger(__name__)
 
 
-class QueryPowerBITool(BaseTool):
+class QueryPowerBITool(BaseTool):  # type: ignore[override]
     """Tool for querying a Power BI Dataset."""
 
     name: str = "query_powerbi"
@@ -216,7 +216,7 @@ class QueryPowerBITool(BaseTool):
         return False, 0
 
 
-class InfoPowerBITool(BaseTool):
+class InfoPowerBITool(BaseTool):  # type: ignore[override]
     """Tool for getting metadata about a PowerBI Dataset."""
 
     name: str = "schema_powerbi"
@@ -248,7 +248,7 @@ class InfoPowerBITool(BaseTool):
         return await self.powerbi.aget_table_info(tool_input.split(", "))
 
 
-class ListPowerBITool(BaseTool):
+class ListPowerBITool(BaseTool):  # type: ignore[override]
     """Tool for getting tables names."""
 
     name: str = "list_tables_powerbi"

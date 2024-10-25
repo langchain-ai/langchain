@@ -8,7 +8,7 @@ from langchain_core.tools import BaseTool
 from langchain_community.utilities.merriam_webster import MerriamWebsterAPIWrapper
 
 
-class MerriamWebsterQueryRun(BaseTool):
+class MerriamWebsterQueryRun(BaseTool):  # type: ignore[override]
     """Tool that searches the Merriam-Webster API."""
 
     name: str = "merriam_webster"

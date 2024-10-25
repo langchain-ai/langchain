@@ -1022,7 +1022,7 @@ class Agent(BaseSingleActionAgent):
         }
 
 
-class ExceptionTool(BaseTool):
+class ExceptionTool(BaseTool):  # type: ignore[override]
     """Tool that just returns the query."""
 
     name: str = "_Exception"

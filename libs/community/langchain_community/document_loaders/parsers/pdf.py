@@ -115,7 +115,8 @@ class PyPDFParser(BaseBlobParser):
                 return page.extract_text()
             else:
                 return page.extract_text(
-                    extraction_mode=self.extraction_mode, **self.extraction_kwargs
+                    extraction_mode=self.extraction_mode,  # type: ignore[arg-type]
+                    **self.extraction_kwargs,  # type: ignore[arg-type]
                 )
 
         with blob.as_bytes_io() as pdf_file_obj:  # type: ignore[attr-defined]
@@ -132,7 +133,7 @@ class PyPDFParser(BaseBlobParser):
 
     def _extract_images_from_page(self, page: pypdf._page.PageObject) -> str:
         """Extract images from page and get the text with RapidOCR."""
-        if not self.extract_images or "/XObject" not in page["/Resources"].keys():
+        if not self.extract_images or "/XObject" not in page["/Resources"].keys():  # type: ignore[attr-defined]
             return ""
 
         xObject = page["/Resources"]["/XObject"].get_object()  # type: ignore

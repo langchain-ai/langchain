@@ -17,7 +17,7 @@ class DDGInput(BaseModel):
     query: str = Field(description="search query to look up")
 
 
-class DuckDuckGoSearchRun(BaseTool):
+class DuckDuckGoSearchRun(BaseTool):  # type: ignore[override, override]
     """DuckDuckGo tool.
 
     Setup:
@@ -74,7 +74,7 @@ class DuckDuckGoSearchRun(BaseTool):
         return self.api_wrapper.run(query)
 
 
-class DuckDuckGoSearchResults(BaseTool):
+class DuckDuckGoSearchResults(BaseTool):  # type: ignore[override, override]
     """Tool that queries the DuckDuckGo search API and
     returns the results in `output_format`."""
 

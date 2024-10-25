@@ -40,7 +40,7 @@ from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool
 
 
-class IFTTTWebhook(BaseTool):
+class IFTTTWebhook(BaseTool):  # type: ignore[override]
     """IFTTT Webhook.
 
     Args:

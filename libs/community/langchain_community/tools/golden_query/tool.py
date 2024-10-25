@@ -8,7 +8,7 @@ from langchain_core.tools import BaseTool
 from langchain_community.utilities.golden_query import GoldenQueryAPIWrapper
 
 
-class GoldenQueryRun(BaseTool):
+class GoldenQueryRun(BaseTool):  # type: ignore[override]
     """Tool that adds the capability to query using the Golden API and get back JSON."""
 
     name: str = "golden_query"

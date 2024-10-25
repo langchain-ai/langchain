@@ -33,7 +33,7 @@ class ScheduleMessageSchema(BaseModel):
     )
 
 
-class SlackScheduleMessage(SlackBaseTool):
+class SlackScheduleMessage(SlackBaseTool):  # type: ignore[override, override]
     """Tool for scheduling a message in Slack."""
 
     name: str = "schedule_message"

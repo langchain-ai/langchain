@@ -63,7 +63,7 @@ class AIPluginToolSchema(BaseModel):
     tool_input: Optional[str] = ""
 
 
-class AIPluginTool(BaseTool):
+class AIPluginTool(BaseTool):  # type: ignore[override, override]
     """Tool for getting the OpenAPI spec for an AI Plugin."""
 
     plugin: AIPlugin

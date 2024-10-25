@@ -38,4 +38,4 @@ class UnstructuredTSVLoader(UnstructuredFileLoader):
     def _get_elements(self) -> List:
         from unstructured.partition.tsv import partition_tsv
 
-        return partition_tsv(filename=self.file_path, **self.unstructured_kwargs)
+        return partition_tsv(filename=self.file_path, **self.unstructured_kwargs)  # type: ignore[arg-type]

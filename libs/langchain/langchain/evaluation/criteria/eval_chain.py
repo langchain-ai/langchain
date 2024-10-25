@@ -164,7 +164,7 @@ def resolve_criteria(
     return criteria_
 
 
-class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
+class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):  # type: ignore[override]
     """LLM Chain for evaluating runs against criteria.
 
     Parameters
@@ -508,7 +508,7 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
         return self._prepare_output(result)
 
 
-class LabeledCriteriaEvalChain(CriteriaEvalChain):
+class LabeledCriteriaEvalChain(CriteriaEvalChain):  # type: ignore[override]
     """Criteria evaluation chain that requires references."""
 
     @classmethod

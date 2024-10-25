@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from slack_sdk import WebClient
 
 
-class SlackBaseTool(BaseTool):
+class SlackBaseTool(BaseTool):  # type: ignore[override]
     """Base class for Slack tools."""
 
     client: WebClient = Field(default_factory=login)

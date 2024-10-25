@@ -15,7 +15,7 @@ from langchain_community.tools.playwright.utils import (
 )
 
 
-class ExtractTextTool(BaseBrowserTool):
+class ExtractTextTool(BaseBrowserTool):  # type: ignore[override, override]
     """Tool for extracting all the text on the current webpage."""
 
     name: str = "extract_text"

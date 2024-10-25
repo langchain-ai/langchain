@@ -17,7 +17,7 @@ class YouInput(BaseModel):
     query: str = Field(description="should be a search query")
 
 
-class YouSearchTool(BaseTool):
+class YouSearchTool(BaseTool):  # type: ignore[override, override]
     """Tool that searches the you.com API."""
 
     name: str = "you_search"

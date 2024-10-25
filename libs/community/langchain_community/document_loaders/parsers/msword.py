@@ -39,7 +39,7 @@ class MsWordParser(BaseBlobParser):
         ):
             raise ValueError("This blob type is not supported for this parser.")
         with blob.as_bytes_io() as word_document:  # type: ignore[attr-defined]
-            elements = mime_type_parser[blob.mimetype](file=word_document)  # type: ignore[attr-defined]
+            elements = mime_type_parser[blob.mimetype](file=word_document)  # type: ignore[attr-defined]  # type: ignore[operator]  # type: ignore[operator]  # type: ignore[operator]  # type: ignore[operator]  # type: ignore[operator]  # type: ignore[operator]
             text = "\n\n".join([str(el) for el in elements])
             metadata = {"source": blob.source}  # type: ignore[attr-defined]
             yield Document(page_content=text, metadata=metadata)

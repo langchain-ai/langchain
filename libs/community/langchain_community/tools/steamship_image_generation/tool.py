@@ -41,7 +41,7 @@ SUPPORTED_IMAGE_SIZES = {
 }
 
 
-class SteamshipImageGenerationTool(BaseTool):
+class SteamshipImageGenerationTool(BaseTool):  # type: ignore[override]
     """Tool used to generate images from a text-prompt."""
 
     model_name: ModelName

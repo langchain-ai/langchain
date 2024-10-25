@@ -12,7 +12,7 @@ from pydantic import SecretStr
 logger = logging.getLogger(__name__)
 
 
-class HuggingFaceTextToSpeechModelInference(BaseTool):
+class HuggingFaceTextToSpeechModelInference(BaseTool):  # type: ignore[override]
     """HuggingFace Text-to-Speech Model Inference.
 
     Requirements:

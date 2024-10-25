@@ -144,7 +144,6 @@ mypy = ">=1.10,<1.11"
 types-pyyaml = "^6.0.12.2"
 types-requests = "^2.28.11.5"
 types-jinja2 = "^2.11.9"
-simsimd = "^5.0.0"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -154,14 +153,13 @@ grandalf = "^0.8"
 
 
 [tool.poetry.group.test.dependencies]
-pytest = "^7.3.0"
+pytest = "^8"
 freezegun = "^1.2.2"
 pytest-mock = "^3.10.0"
 syrupy = "^4.0.2"
 pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
 grandalf = "^0.8"
-pytest-profiling = "^1.7.0"
 responses = "^0.25.0"
 [[tool.poetry.group.test.dependencies.numpy]]
 version = "^1.24.0"

@@ -22,7 +22,7 @@ class OperationType(str, Enum):
     GET = "GET"
 
 
-class AINBaseTool(BaseTool):
+class AINBaseTool(BaseTool):  # type: ignore[override]
     """Base class for the AINetwork tools."""
 
     interface: Ain = Field(default_factory=authenticate)

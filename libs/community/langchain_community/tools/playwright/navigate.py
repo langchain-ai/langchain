@@ -32,7 +32,7 @@ class NavigateToolInput(BaseModel):
         return values
 
 
-class NavigateTool(BaseBrowserTool):
+class NavigateTool(BaseBrowserTool):  # type: ignore[override, override]
     """Tool for navigating a browser to a URL.
 
     **Security Note**: This tool provides code to control web-browser navigation.

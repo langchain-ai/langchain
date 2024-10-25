@@ -21,6 +21,9 @@ module = [
     "konlpy.tag",
     "bs4",
     "pytest",
+    "spacy",
+    "spacy.lang.en",
+    "numpy",
 ]
 ignore_missing_imports = "True"
 
@@ -65,19 +68,17 @@ ruff = "^0.5"
 mypy = "^1.10"
 lxml-stubs = "^0.5.1"
 types-requests = "^2.31.0.20240218"
-tiktoken = "^0.6.0"
-spacy = "^3.7.4"
+tiktoken = "^0.8.0"
 
 [tool.poetry.group.dev.dependencies]
 jupyter = "^1.0.0"
 
 [tool.poetry.group.test.dependencies]
-pytest = "^7.3.0"
+pytest = "^8"
 freezegun = "^1.2.2"
 pytest-mock = "^3.10.0"
 pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
-pytest-profiling = "^1.7.0"
 
 [tool.poetry.group.test_integration.dependencies]
 

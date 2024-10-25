@@ -8,7 +8,7 @@ from pydantic import ConfigDict
 from langchain_community.utilities.graphql import GraphQLAPIWrapper
 
 
-class BaseGraphQLTool(BaseTool):
+class BaseGraphQLTool(BaseTool):  # type: ignore[override]
     """Base tool for querying a GraphQL API."""
 
     graphql_wrapper: GraphQLAPIWrapper

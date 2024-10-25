@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from amadeus import Client
 
 
-class AmadeusBaseTool(BaseTool):
+class AmadeusBaseTool(BaseTool):  # type: ignore[override]
     """Base Tool for Amadeus."""
 
     client: Client = Field(default_factory=authenticate)

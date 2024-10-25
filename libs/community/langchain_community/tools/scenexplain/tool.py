@@ -15,7 +15,7 @@ class SceneXplainInput(BaseModel):
     query: str = Field(..., description="The link to the image to explain")
 
 
-class SceneXplainTool(BaseTool):
+class SceneXplainTool(BaseTool):  # type: ignore[override]
     """Tool that explains images."""
 
     name: str = "image_explainer"

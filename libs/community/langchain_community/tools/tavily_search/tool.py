@@ -18,7 +18,7 @@ class TavilyInput(BaseModel):
     query: str = Field(description="search query to look up")
 
 
-class TavilySearchResults(BaseTool):
+class TavilySearchResults(BaseTool):  # type: ignore[override, override]
     """Tool that queries the Tavily Search API and gets back json.
 
     Setup:
@@ -190,7 +190,7 @@ class TavilySearchResults(BaseTool):
         return self.api_wrapper.clean_results(raw_results["results"]), raw_results
 
 
-class TavilyAnswer(BaseTool):
+class TavilyAnswer(BaseTool):  # type: ignore[override, override]
     """Tool that queries the Tavily Search API and gets back an answer."""
 
     name: str = "tavily_answer"

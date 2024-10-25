@@ -104,7 +104,7 @@ class UnstructuredWordDocumentLoader(UnstructuredFileLoader):
         try:
             import magic  # noqa: F401
 
-            is_doc = detect_filetype(self.file_path) == FileType.DOC
+            is_doc = detect_filetype(self.file_path) == FileType.DOC  # type: ignore[arg-type]
         except ImportError:
             _, extension = os.path.splitext(str(self.file_path))
             is_doc = extension == ".doc"
@@ -119,8 +119,8 @@ class UnstructuredWordDocumentLoader(UnstructuredFileLoader):
         if is_doc:
             from unstructured.partition.doc import partition_doc
 
-            return partition_doc(filename=self.file_path, **self.unstructured_kwargs)
+            return partition_doc(filename=self.file_path, **self.unstructured_kwargs)  # type: ignore[arg-type]
         else:
             from unstructured.partition.docx import partition_docx
 
-            return partition_docx(filename=self.file_path, **self.unstructured_kwargs)
+            return partition_docx(filename=self.file_path, **self.unstructured_kwargs)  # type: ignore[arg-type]
