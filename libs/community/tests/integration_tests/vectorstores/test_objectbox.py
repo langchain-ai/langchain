@@ -84,7 +84,7 @@ def test_similarity_search() -> None:
             "genre": ["Crime", "Drama"],
         },
     ]
-    texts = [obj["title"] for obj in objects]  # text is the title
+    texts = [str(obj["title"]) for obj in objects]  # text is the title
     metadatas = [
         obj for obj in objects
     ]  # Use all object attributes as its metadata (including the text)
@@ -117,7 +117,7 @@ def test_similarity_search() -> None:
 
 def test_similarity_search_distance_types() -> None:
     """
-    Test similarity search with different distance 
+    Test similarity search with different distance
     types (euclidean, cosine, dot product, ...).
     """
 
@@ -193,41 +193,41 @@ def test_similarity_search_distance_types() -> None:
     assert results[2].page_content == "Mango"
 
     # This uses ObjectBox distance
-    results = ob.similarity_search_with_score("Banana", k=3)
-    assert results[0][0].page_content == "Banana"
-    assert results[1][0].page_content == "Carrot"
-    assert results[2][0].page_content == "Mango"
-    assert results[0][1] < results[1][1]
-    assert results[1][1] < results[2][1]
-    assert results[0][1] < 1.0
-    assert results[0][1] == 0.0  # perfect match
-    assert results[1][1] > 0.0
-    assert results[1][1] < 1.0
-    assert results[2][1] > 0.0
-    assert results[2][1] < 1.0
+    results1 = ob.similarity_search_with_score("Banana", k=3)
+    assert results1[0][0].page_content == "Banana"
+    assert results1[1][0].page_content == "Carrot"
+    assert results1[2][0].page_content == "Mango"
+    assert results1[0][1] < results1[1][1]
+    assert results1[1][1] < results1[2][1]
+    assert results1[0][1] < 1.0
+    assert results1[0][1] == 0.0  # perfect match
+    assert results1[1][1] > 0.0
+    assert results1[1][1] < 1.0
+    assert results1[2][1] > 0.0
+    assert results1[2][1] < 1.0
     # TODO create vectors that result in a distance > 1.0
 
-    # With LangChain relevance scores, higher scores indicate a higher 
+    # With LangChain relevance scores, higher scores indicate a higher
     # similarity (0 is dissimilar, 1 is most similar)
-    results = ob.similarity_search_with_relevance_scores("Banana", k=3)
-    assert results[0][0].page_content == "Banana"
-    assert results[1][0].page_content == "Carrot"
-    assert results[2][0].page_content == "Mango"
-    assert results[0][1] > results[1][1]
-    assert results[1][1] > results[2][1]
-    assert results[0][1] > 0.0
-    assert results[0][1] == 1.0  # perfect match
-    assert results[1][1] > 0.0
-    assert results[1][1] < 1.0
-    assert results[2][1] > 0.0
-    assert results[2][1] < 1.0
+    results2 = ob.similarity_search_with_relevance_scores("Banana", k=3)
+    assert results2[0][0].page_content == "Banana"
+    assert results2[1][0].page_content == "Carrot"
+    assert results2[2][0].page_content == "Mango"
+    assert results2[0][1] > results2[1][1]
+    assert results2[1][1] > results2[2][1]
+    assert results2[0][1] > 0.0
+    assert results2[0][1] == 1.0  # perfect match
+    assert results2[1][1] > 0.0
+    assert results2[1][1] < 1.0
+    assert results2[2][1] > 0.0
+    assert results2[2][1] < 1.0
 
     del ob
 
 
 def test_similarity_search_with_relevance_scores() -> None:
     """
-    Tests that similarity_search_with_relevance_scores returns 
+    Tests that similarity_search_with_relevance_scores returns
     values in range [0, 1] regardless the distance type.
     """
 
@@ -371,12 +371,7 @@ def test_multi_vector_retriever() -> None:
     # The storage layer for the parent documents
     store = InMemoryByteStore()
     id_key = "id"
-    # The retriever (empty to start)
-    retriever = MultiVectorRetriever(
-        vectorstore=vectorstore,
-        byte_store=store,
-        id_key=id_key,
-    )
+
     import uuid
 
     doc_ids = [str(uuid.uuid4()) for _ in docs]
@@ -390,8 +385,13 @@ def test_multi_vector_retriever() -> None:
             _doc.metadata[id_key] = _id
         sub_docs.extend(_sub_docs)
 
+    # The retriever (empty to start)
+    docstore = InMemoryStore()
+    docstore.mset(list(zip(doc_ids, docs)))
+    retriever = MultiVectorRetriever(
+        vectorstore=vectorstore, byte_store=store, id_key=id_key, docstore=docstore
+    )
     retriever.vectorstore.add_documents(sub_docs)
-    retriever.docstore.mset(list(zip(doc_ids, docs)))
 
     # Vectorstore alone retrieves the small chunks
     _ = retriever.vectorstore.similarity_search("justice breyer")[0]
