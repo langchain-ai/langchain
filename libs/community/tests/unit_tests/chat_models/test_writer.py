@@ -78,7 +78,7 @@ class TestChatWriter(ChatModelUnitTests):
         return {"invoke": ["cache_creation_input"], "stream": ["reasoning_output"]}
 
     @pytest.fixture(autouse=True)
-    def setup_environment(self, monkeypatch):
+    def setup_environment(self, monkeypatch) -> None:
         """Setup test environment variables if needed."""
         monkeypatch.setenv("WRITER_API_KEY", "fake-api-key")
 
@@ -248,7 +248,7 @@ class TestChatWriter(ChatModelUnitTests):
 
     def test_sync_completion(self, mock_completion: Dict[str, Any]) -> None:
         """Test basic chat completion with mocked response."""
-        chat = ChatWriter(writer_api_key="test-key")
+        chat = ChatWriter(api_key="test-key")
         mock_client = MagicMock()
         mock_client.chat.chat.return_value = mock_completion
 
@@ -260,7 +260,7 @@ class TestChatWriter(ChatModelUnitTests):
 
     async def test_async_completion(self, mock_completion: Dict[str, Any]) -> None:
         """Test async chat completion with mocked response."""
-        chat = ChatWriter(writer_api_key="test-key")
+        chat = ChatWriter(api_key="test-key")
         mock_client = AsyncMock()
         mock_client.chat.chat.return_value = mock_completion
 
@@ -279,7 +279,7 @@ class TestChatWriter(ChatModelUnitTests):
             streaming=True,
             callback_manager=callback_manager,
             max_tokens=10,
-            writer_api_key="test-key",
+            api_key="test-key",
         )
 
         mock_client = MagicMock()
@@ -353,7 +353,7 @@ class TestChatWriter(ChatModelUnitTests):
 
             location: str = Field(..., description="The location to get weather for")
 
-        chat = ChatWriter(writer_api_key="test-key")
+        chat = ChatWriter(api_key="test-key")
         chat_with_tools = chat.bind_tools(
             tools=[GetWeather],
             tool_choice={"type": "function", "function": {"name": "GetWeather"}},
