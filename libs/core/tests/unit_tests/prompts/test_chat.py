@@ -328,7 +328,6 @@ def test_chat_prompt_template_from_messages_jinja2() -> None:
 
 
 @pytest.mark.requires("jinja2")
-@pytest.mark.requires("mustache")
 @pytest.mark.parametrize(
     "template_format,image_type_placeholder,image_data_placeholder",
     [

@@ -72,6 +72,7 @@ select = [
     "PIE",
     "Q",
     "RSE",
+    "S", # https://docs.astral.sh/ruff/rules/#flake8-bandit-s
     "SIM",
     "SLOT",
     "T10",
@@ -85,6 +86,9 @@ ignore = [
     "COM812", # Messes with the formatter
     "UP007",  # Incompatible with pydantic + Python 3.9
     "W293",   # 
+    "S101",   # allow assert - TODO remove
+    "S110",   # allow try/except/pass - TODO remove
+    "S112",   # allow try/except/continue - TODO remove
 ]
 
 [tool.coverage.run]
@@ -128,10 +132,11 @@ classmethod-decorators = [
 "tests/unit_tests/prompts/test_chat.py" = ["E501"]
 "tests/unit_tests/runnables/test_runnable.py" = ["E501"]
 "tests/unit_tests/runnables/test_graph.py" = ["E501"]
+"tests/**" = ["S"]                                       # Ignore flake8-bandit rules in tests
+"scripts/**" = ["S"]                                     # Ignore flake8-bandit rules in scripts
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.5"
-
 
 
 [tool.poetry.group.typing.dependencies]
@@ -142,12 +147,10 @@ types-jinja2 = "^2.11.9"
 simsimd = "^5.0.0"
 
 
-
 [tool.poetry.group.dev.dependencies]
 jupyter = "^1.0.0"
 setuptools = "^67.6.1"
 grandalf = "^0.8"
-
 
 
 [tool.poetry.group.test.dependencies]
@@ -169,15 +172,12 @@ version = "^1.26.0"
 python = ">=3.12"
 
 
-
 [tool.poetry.group.test_integration.dependencies]
-
 
 
 [tool.poetry.group.typing.dependencies.langchain-text-splitters]
 path = "../text-splitters"
 develop = true
-
 
 
 [tool.poetry.group.test.dependencies.langchain-standard-tests]
