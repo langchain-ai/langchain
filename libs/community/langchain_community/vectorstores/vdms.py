@@ -1038,7 +1038,8 @@ class VDMS(VectorStore):
         start_time = time.time()
         results = self.query_by_embeddings(
             query_embeddings=[embedding],
-            n_results=fetch_k,
+            k=k,
+            fetch_k=fetch_k,
             filter=filter,
             include=["metadatas", "documents", "distances", "embeddings"],
         )
@@ -1094,7 +1095,8 @@ class VDMS(VectorStore):
         start_time = time.time()
         results = self.query_by_embeddings(
             query_embeddings=[embedding],
-            n_results=fetch_k,
+            k=k,
+            fetch_k=fetch_k,
             filter=filter,
             include=["metadatas", "documents", "distances", "embeddings"],
         )
