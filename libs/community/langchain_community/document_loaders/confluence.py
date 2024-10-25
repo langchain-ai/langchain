@@ -5,13 +5,13 @@ from typing import Any, Callable, Dict, Iterator, List, Optional, Union
 
 import requests
 from langchain_core.documents import Document
+from pytesseract import TesseractError
 from tenacity import (
     before_sleep_log,
     retry,
     stop_after_attempt,
     wait_exponential,
 )
-from pytesseract import TesseractError
 
 from langchain_community.document_loaders.base import BaseLoader
 
