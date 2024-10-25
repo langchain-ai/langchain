@@ -1,6 +1,7 @@
 import os
 import shutil
-from typing import *
+from typing import Any, Callable, Iterable, List, Optional, Tuple
+
 import numpy as np
 import objectbox
 from langchain_core.documents import Document
@@ -76,9 +77,7 @@ class ObjectBox(VectorStore):
             for text, metadata, embedding in zip(texts, metadatas, embeddings):
                 object_id = self._vector_box.put(
                     self._entity_model(
-                        text=text,
-                        metadata=metadata,
-                        embeddings=embedding
+                        text=text, metadata=metadata, embeddings=embedding
                     )
                 )
                 ids.append(object_id)
@@ -103,23 +102,29 @@ class ObjectBox(VectorStore):
 
     @staticmethod
     def _convert_score(type: HnswDistanceType, score: float) -> float:
-        # Map ObjectBox distance to LangChain range, in which 0 is dissimilar, 1 is most similar.
+        # Map ObjectBox distance to LangChain range, 
+        # in which 0 is dissimilar, 1 is most similar.
         if type == HnswDistanceType.EUCLIDEAN:
             # Not required: score = sqrt(score)  # ObjectBox returns squared Euclidean
-            if score > 1.0:  # For now, we assume normalized vectors, which result in scores in the range 0..1
+            if (
+                score > 1.0
+            ):  # For now, we assume normalized vectors, 
+                # which result in scores in the range 0..1
                 return 0.0
             return 1.0 - score
         elif type == HnswDistanceType.COSINE:
             return 1.0 - score / 2.0
         elif type == HnswDistanceType.DOT_PRODUCT:
-            if score > 2.0:  # For now, we assume normalized vectors, which result in scores in the range 0..2
+            if (
+                score > 2.0
+            ):  # For now, we assume normalized vectors, 
+                # which result in scores in the range 0..2
                 return 0.0
             return 1.0 - score / 2.0
         elif type == HnswDistanceType.DOT_PRODUCT_NON_NORMALIZED:
             return 1.0 - score / 2.0
         else:
             raise Exception(f"Unknown distance type: {type.name}")
-
 
     def similarity_search_with_score(
         self, query: str, k: int = 4, **kwargs: Any
@@ -162,8 +167,7 @@ class ObjectBox(VectorStore):
         query = qb.build()
         results = query.find_with_scores()
         return [
-            Document(page_content=obj.text, metadata=obj.metadata)
-            for obj, _ in results
+            Document(page_content=obj.text, metadata=obj.metadata) for obj, _ in results
         ]
 
     @classmethod

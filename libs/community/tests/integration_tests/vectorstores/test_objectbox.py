@@ -1,20 +1,23 @@
 import os
-import shutil
 from typing import Generator
 
 import pytest
-
-from langchain_community.vectorstores.objectbox import ObjectBox
 from langchain.retrievers import ParentDocumentRetriever
 from langchain.retrievers.multi_vector import MultiVectorRetriever
-from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings, ConsistentFakeEmbeddings
-from langchain.storage import InMemoryStore, InMemoryByteStore
-from langchain_community.document_loaders import TextLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter, CharacterTextSplitter
-from langchain_community.embeddings import HuggingFaceEmbeddings
-
-from objectbox.c import obx_remove_db_files, c_str
+from langchain.storage import InMemoryByteStore, InMemoryStore
+from langchain_text_splitters import (
+    RecursiveCharacterTextSplitter,
+)
+from objectbox.c import c_str, obx_remove_db_files
 from objectbox.model.properties import HnswDistanceType
+
+from langchain_community.document_loaders import TextLoader
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_community.vectorstores.objectbox import ObjectBox
+from tests.integration_tests.vectorstores.fake_embeddings import (
+    ConsistentFakeEmbeddings,
+    FakeEmbeddings,
+)
 
 
 def remove_test_dir(test_dir: str) -> None:
@@ -46,52 +49,77 @@ def test_similarity_search() -> None:
     ob = ObjectBox(
         embedding=ConsistentFakeEmbeddings(dimensionality=10),
         embedding_dimensions=10,
-        distance_type=HnswDistanceType.EUCLIDEAN
+        distance_type=HnswDistanceType.EUCLIDEAN,
     )
 
     objects = [
-        {"title": "Inception",
-         "year": 2010, "director": "Christopher Nolan", "genre": ["Science Fiction", "Action", "Thriller"]},
-        {"title": "Spirited Away",
-         "year": 2001, "director": "Hayao Miyazaki", "genre": ["Animation", "Fantasy", "Adventure"]},
-        {"title": "The Shawshank Redemption",
-         "year": 1994, "director": "Frank Darabont", "genre": ["Drama", "Crime"]},
-        {"title": "Pan's Labyrinth",
-         "year": 2006, "director": "Guillermo del Toro", "genre": ["Fantasy", "Drama", "War"]},
-        {"title": "Pulp Fiction",
-         "year": 1994, "director": "Quentin Tarantino", "genre": ["Crime", "Drama"]}
+        {
+            "title": "Inception",
+            "year": 2010,
+            "director": "Christopher Nolan",
+            "genre": ["Science Fiction", "Action", "Thriller"],
+        },
+        {
+            "title": "Spirited Away",
+            "year": 2001,
+            "director": "Hayao Miyazaki",
+            "genre": ["Animation", "Fantasy", "Adventure"],
+        },
+        {
+            "title": "The Shawshank Redemption",
+            "year": 1994,
+            "director": "Frank Darabont",
+            "genre": ["Drama", "Crime"],
+        },
+        {
+            "title": "Pan's Labyrinth",
+            "year": 2006,
+            "director": "Guillermo del Toro",
+            "genre": ["Fantasy", "Drama", "War"],
+        },
+        {
+            "title": "Pulp Fiction",
+            "year": 1994,
+            "director": "Quentin Tarantino",
+            "genre": ["Crime", "Drama"],
+        },
     ]
     texts = [obj["title"] for obj in objects]  # text is the title
-    metadatas = [obj for obj in objects]  # Use all object attributes as its metadata (including the text)
+    metadatas = [
+        obj for obj in objects
+    ]  # Use all object attributes as its metadata (including the text)
 
     ob.add_texts(texts=texts, metadatas=metadatas)
 
     results = ob.similarity_search("Inception", k=1)
     assert len(results) == 1
     assert results[0].page_content == "Inception"
-    assert results[0].metadata['year'] == 2010
-    assert results[0].metadata['director'] == 'Christopher Nolan'
-    assert results[0].metadata['genre'] == ['Science Fiction', 'Action', 'Thriller']
+    assert results[0].metadata["year"] == 2010
+    assert results[0].metadata["director"] == "Christopher Nolan"
+    assert results[0].metadata["genre"] == ["Science Fiction", "Action", "Thriller"]
 
     results = ob.similarity_search("Spirited Away", k=2)
     assert len(results) == 2
     assert results[0].page_content == "Spirited Away"
-    assert results[0].metadata['year'] == 2001
+    assert results[0].metadata["year"] == 2001
     assert results[1].page_content == "The Shawshank Redemption"
-    assert results[1].metadata['year'] == 1994
+    assert results[1].metadata["year"] == 1994
 
     results = ob.similarity_search("The Shawshank Redemption", k=3)
     assert len(results) == 3
     assert results[0].page_content == "The Shawshank Redemption"
-    assert results[0].metadata['year'] == 1994
+    assert results[0].metadata["year"] == 1994
     assert results[1].page_content == "Pan's Labyrinth"
-    assert results[1].metadata['year'] == 2006
+    assert results[1].metadata["year"] == 2006
     assert results[2].page_content == "Spirited Away"
-    assert results[2].metadata['year'] == 2001
+    assert results[2].metadata["year"] == 2001
 
 
 def test_similarity_search_distance_types() -> None:
-    """ Test similarity search with different distance types (euclidean, cosine, dot product, ...). """
+    """
+    Test similarity search with different distance 
+    types (euclidean, cosine, dot product, ...).
+    """
 
     texts = ["Apple", "Banana", "Carrot", "Mango", "Onion"]
 
@@ -108,8 +136,12 @@ def test_similarity_search_distance_types() -> None:
 
     # Test EUCLIDEAN
     embedder.known_texts = []  # To produce same embeddings
-    ob = ObjectBox(embedding=embedder, embedding_dimensions=2, distance_type=HnswDistanceType.EUCLIDEAN,
-                   clear_db=True)
+    ob = ObjectBox(
+        embedding=embedder,
+        embedding_dimensions=2,
+        distance_type=HnswDistanceType.EUCLIDEAN,
+        clear_db=True,
+    )
     ob.add_texts(texts)
 
     results = ob.similarity_search_by_vector([1.0, 2.7], k=3)
@@ -121,8 +153,12 @@ def test_similarity_search_distance_types() -> None:
 
     # Test COSINE
     embedder.known_texts = []  # To produce same embeddings
-    ob = ObjectBox(embedding=embedder, embedding_dimensions=2, distance_type=HnswDistanceType.COSINE,
-                   clear_db=True)
+    ob = ObjectBox(
+        embedding=embedder,
+        embedding_dimensions=2,
+        distance_type=HnswDistanceType.COSINE,
+        clear_db=True,
+    )
     ob.add_texts(texts)
 
     results = ob.similarity_search_by_vector([3.0, -2.7], k=5)
@@ -140,12 +176,18 @@ def test_similarity_search_distance_types() -> None:
     # Test DOT_PRODUCT_NON_NORMALIZED
     # TODO Core error: Argument condition "value <= OBXHnswDistanceType_Hamming" not met
     # embedder.known_texts = []  # To produce same embeddings
-    ob = ObjectBox(embedding=embedder, embedding_dimensions=2, distance_type=HnswDistanceType.COSINE,
-                   clear_db=True)
+    ob = ObjectBox(
+        embedding=embedder,
+        embedding_dimensions=2,
+        distance_type=HnswDistanceType.COSINE,
+        clear_db=True,
+    )
     ob.add_texts(texts)
 
-    results = ob.similarity_search_by_vector([2.0, 2.0], k=3)  # Same direction as Banana
-    print(results)
+    results = ob.similarity_search_by_vector(
+        [2.0, 2.0], k=3
+    )  # Same direction as Banana
+
     assert results[0].page_content == "Banana"
     assert results[1].page_content == "Carrot"
     assert results[2].page_content == "Mango"
@@ -165,7 +207,8 @@ def test_similarity_search_distance_types() -> None:
     assert results[2][1] < 1.0
     # TODO create vectors that result in a distance > 1.0
 
-    # With LangChain relevance scores, higher scores indicate a higher similarity (0 is dissimilar, 1 is most similar)
+    # With LangChain relevance scores, higher scores indicate a higher 
+    # similarity (0 is dissimilar, 1 is most similar)
     results = ob.similarity_search_with_relevance_scores("Banana", k=3)
     assert results[0][0].page_content == "Banana"
     assert results[1][0].page_content == "Carrot"
@@ -183,7 +226,9 @@ def test_similarity_search_distance_types() -> None:
 
 
 def test_similarity_search_with_relevance_scores() -> None:
-    """ Tests that similarity_search_with_relevance_scores returns values in range [0, 1] regardless the distance type.
+    """
+    Tests that similarity_search_with_relevance_scores returns 
+    values in range [0, 1] regardless the distance type.
     """
 
     texts = ["Apple", "Banana", "Carrot", "Mango", "Onion"]
@@ -210,7 +255,7 @@ def test_similarity_search_with_relevance_scores() -> None:
         embedding=ConsistentFakeEmbeddings(dimensionality=2),
         embedding_dimensions=2,
         distance_type=HnswDistanceType.COSINE,
-        clear_db=True
+        clear_db=True,
     )
     ob.add_texts(texts)
 
@@ -289,7 +334,8 @@ def test_parent_document_retriever() -> None:
     child_splitter = RecursiveCharacterTextSplitter(chunk_size=400)
     # The vectorstore to use to index the child chunks
     vectorstore = ObjectBox(
-        embedding=HuggingFaceEmbeddings(), embedding_dimensions=768,
+        embedding=HuggingFaceEmbeddings(),
+        embedding_dimensions=768,
     )
     # The storage layer for the parent documents
     store = InMemoryStore()
@@ -304,7 +350,7 @@ def test_parent_document_retriever() -> None:
 
     assert len(list(store.yield_keys())) == 2
 
-    sub_docs = vectorstore.similarity_search("justice breyer")
+    _ = vectorstore.similarity_search("justice breyer")
 
     retrieved_docs = retriever.invoke("justice breyer")
     assert len(retrieved_docs[0].page_content) == 38540
@@ -321,9 +367,7 @@ def test_multi_vector_retriever() -> None:
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=10000)
     docs = text_splitter.split_documents(docs)
     # The vectorstore to use to index the child chunks
-    vectorstore = ObjectBox(
-        embedding=HuggingFaceEmbeddings(), embedding_dimensions=768
-    )
+    vectorstore = ObjectBox(embedding=HuggingFaceEmbeddings(), embedding_dimensions=768)
     # The storage layer for the parent documents
     store = InMemoryByteStore()
     id_key = "id"
@@ -350,7 +394,7 @@ def test_multi_vector_retriever() -> None:
     retriever.docstore.mset(list(zip(doc_ids, docs)))
 
     # Vectorstore alone retrieves the small chunks
-    res = retriever.vectorstore.similarity_search("justice breyer")[0]
+    _ = retriever.vectorstore.similarity_search("justice breyer")[0]
 
     # Retriever returns larger chunks
     assert len(retriever.invoke("justice breyer")[0].page_content) == 9875
