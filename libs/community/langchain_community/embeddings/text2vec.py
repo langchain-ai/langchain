@@ -3,7 +3,7 @@
 from typing import Any, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class Text2vecEmbeddings(Embeddings, BaseModel):
@@ -32,6 +32,8 @@ class Text2vecEmbeddings(Embeddings, BaseModel):
     max_seq_length: int = 256
     device: Optional[str] = None
     model: Any = None
+
+    model_config = ConfigDict(protected_namespaces=())
 
     def __init__(
         self,
