@@ -39,12 +39,6 @@ from langchain_core.utils import get_from_dict_or_env
 from langchain_core.utils.function_calling import convert_to_openai_tool
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-REKA_MODELS = [
-    "reka-edge",
-    "reka-flash",
-    "reka-core",
-]
-
 DEFAULT_REKA_MODEL = "reka-flash"
 
 ContentType = Union[str, List[Union[str, Dict[str, Any]]]]
