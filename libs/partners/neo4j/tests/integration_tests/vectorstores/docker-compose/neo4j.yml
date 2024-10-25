@@ -1,7 +1,7 @@
 version: "3.8"
 services:
   neo4j:
-    image: neo4j:5.11.0
+    image: neo4j:5.24.2
     restart: on-failure:0
     hostname: neo4j-test
     container_name: neo4j-test
