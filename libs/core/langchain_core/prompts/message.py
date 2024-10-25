@@ -90,14 +90,16 @@ class BaseMessagePromptTemplate(Serializable, ABC):
         Returns:
             Combined prompt template.
         """
+        from langchain_core.prompts.chat import ChatPromptTemplate
+
         prompt = ChatPromptTemplate(messages=[self])  # type: ignore[call-arg]
         return prompt + other
 
 
 class _DictMessagePromptTemplate(BaseMessagePromptTemplate):
-    """Template represented by a dict that looks for input vars in all leaf vals.
+    """Template represented by a dict that recursively fills input vars in string vals.
 
-    Special handling of any dict value that contains
+    Special handling of image_url dicts to load local paths. These look like:
     ``{"type": "image_url", "image_url": {"path": "..."}}``
     """
 
