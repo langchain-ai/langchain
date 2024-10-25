@@ -5,6 +5,8 @@ EXPECTED_ALL = [
     "ChatNeo4j",
     "Neo4jVectorStore",
     "Neo4jEmbeddings",
+    "Neo4jGraph",
+    "__version__",
 ]
 
 

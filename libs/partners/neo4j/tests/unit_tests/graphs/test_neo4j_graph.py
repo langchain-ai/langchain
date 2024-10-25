@@ -1,4 +1,4 @@
-from langchain_community.graphs.neo4j_graph import value_sanitize
+from langchain_neo4j.graphs.neo4j_graph import value_sanitize
 
 
 def test_value_sanitize_with_small_list():  # type: ignore[no-untyped-def]
