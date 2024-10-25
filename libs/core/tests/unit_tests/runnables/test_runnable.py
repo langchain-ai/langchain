@@ -1951,7 +1951,7 @@ async def test_prompt_with_llm_abatch(
             {"question": "What is your favorite color?"},
         ],
         {"callbacks": [tracer]},
-    ) == ["bar", "foo"]
+    ) == ["foo", "bar"]
     assert prompt_spy.call_args.args[1] == [
         {"question": "What is your name?"},
         {"question": "What is your favorite color?"},
@@ -1996,7 +1996,7 @@ async def test_prompt_with_llm_astream(
         async for token in chain.astream(
             {"question": "What is your name?"}, {"callbacks": [tracer]}
         )
-    ] == ["bar"]
+    ] == ["foo"]
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert llm_spy.call_args.args[1] == ChatPromptValue(
         messages=[
@@ -2005,8 +2005,8 @@ async def test_prompt_with_llm_astream(
         ]
     )
 
-    prompt_spy.reset_mock()
-    llm_spy.reset_mock()
+    llm = FakeListLLM(responses=["foo", "bar"])
+    chain = prompt | llm
     stream_log = [
         part async for part in chain.astream_log({"question": "What is your name?"})
     ]
@@ -2027,10 +2027,10 @@ async def test_prompt_with_llm_astream(
                 "op": "replace",
                 "path": "",
                 "value": {
-                    "logs": {},
                     "final_output": None,
-                    "streamed_output": [],
+                    "logs": {},
                     "name": "RunnableSequence",
+                    "streamed_output": [],
                     "type": "chain",
                 },
             }
@@ -2058,50 +2058,22 @@ async def test_prompt_with_llm_astream(
                 "path": "/logs/ChatPromptTemplate/final_output",
                 "value": ChatPromptValue(
                     messages=[
-                        SystemMessage(content="You are a nice assistant."),
-                        HumanMessage(content="What is your name?"),
+                        SystemMessage(
+                            content="You are a nice assistant.",
+                            additional_kwargs={},
+                            response_metadata={},
+                        ),
+                        HumanMessage(
+                            content="What is your name?",
+                            additional_kwargs={},
+                            response_metadata={},
+                        ),
                     ]
                 ),
             },
             {
                 "op": "add",
                 "path": "/logs/ChatPromptTemplate/end_time",
-                "value": "2023-01-01T00:00:00.000+00:00",
-            },
-        ),
-        RunLogPatch(
-            {
-                "op": "add",
-                "path": "/logs/FakeListLLM",
-                "value": {
-                    "end_time": None,
-                    "final_output": None,
-                    "metadata": {"ls_model_type": "llm", "ls_provider": "fakelist"},
-                    "name": "FakeListLLM",
-                    "start_time": "2023-01-01T00:00:00.000+00:00",
-                    "streamed_output": [],
-                    "streamed_output_str": [],
-                    "tags": ["seq:step:2"],
-                    "type": "llm",
-                },
-            }
-        ),
-        RunLogPatch(
-            {
-                "op": "add",
-                "path": "/logs/FakeListLLM/final_output",
-                "value": {
-                    "generations": [
-                        [{"generation_info": None, "text": "foo", "type": "Generation"}]
-                    ],
-                    "llm_output": None,
-                    "run": None,
-                    "type": "LLMResult",
-                },
-            },
-            {
-                "op": "add",
-                "path": "/logs/FakeListLLM/end_time",
                 "value": "2023-01-01T00:00:00.000+00:00",
             },
         ),
@@ -2178,7 +2150,7 @@ async def test_prompt_with_llm_parser_abatch(
             {"question": "What is your favorite color?"},
         ],
         {"callbacks": [tracer]},
-    ) == [["tomato", "lettuce", "onion"], ["bear", "dog", "cat"]]
+    ) == [["bear", "dog", "cat"], ["tomato", "lettuce", "onion"]]
     assert prompt_spy.call_args.args[1] == [
         {"question": "What is your name?"},
         {"question": "What is your favorite color?"},
@@ -2198,8 +2170,8 @@ async def test_prompt_with_llm_parser_abatch(
         ),
     ]
     assert parser_spy.call_args.args[1] == [
-        "tomato, lettuce, onion",
         "bear, dog, cat",
+        "tomato, lettuce, onion",
     ]
     assert sorted(tracer.runs, key=lambda r: str(r.id)) == snapshot
     mocker.stop(prompt_spy)
@@ -2229,7 +2201,7 @@ async def test_prompt_with_llm_parser_astream(
         async for token in chain.astream(
             {"question": "What is your name?"}, {"callbacks": [tracer]}
         )
-    ] == [["tomato"], ["lettuce"], ["onion"]]
+    ] == [["bear"], ["dog"], ["cat"]]
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert llm_spy.call_args.args[1] == ChatPromptValue(
         messages=[
@@ -2238,8 +2210,8 @@ async def test_prompt_with_llm_parser_astream(
         ]
     )
 
-    prompt_spy.reset_mock()
-    llm_spy.reset_mock()
+    llm = FakeStreamingListLLM(responses=["bear, dog, cat", "tomato, lettuce, onion"])
+    chain = prompt | llm | parser
     stream_log = [
         part async for part in chain.astream_log({"question": "What is your name?"})
     ]
