@@ -3,8 +3,10 @@
 from langchain_community.llms.replicate import Replicate
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
-TEST_MODEL_HELLO = "replicate/hello-world:5c7d5dc6dd8bf75c1acaa8565735e7986bc5b66206b55cca93cb72c9bf15ccaa"
+TEST_MODEL_HELLO = "replicate/hello-world:" + \
+    "5c7d5dc6dd8bf75c1acaa8565735e7986bc5b66206b55cca93cb72c9bf15ccaa"
 TEST_MODEL_LANG = "meta/meta-llama-3-8b-instruct"
+
 
 def test_replicate_call() -> None:
     """Test simple non-streaming call to Replicate."""
@@ -18,7 +20,9 @@ def test_replicate_streaming_call() -> None:
     """Test streaming call to Replicate."""
     callback_handler = FakeCallbackHandler()
 
-    llm = Replicate(streaming=True, callbacks=[callback_handler], model=TEST_MODEL_HELLO)
+    llm = Replicate(
+        streaming=True, callbacks=[callback_handler], model=TEST_MODEL_HELLO
+    )
     output = llm.invoke("What is LangChain")
     assert output
     assert isinstance(output, str)
