@@ -17,7 +17,7 @@ from pydantic import BaseModel, Field
 from langchain_community.utilities.github import GitHubAPIWrapper
 
 
-class GitHubAction(BaseTool):
+class GitHubAction(BaseTool):  # type: ignore[override]
     """Tool for interacting with the GitHub API."""
 
     api_wrapper: GitHubAPIWrapper = Field(default_factory=GitHubAPIWrapper)  # type: ignore[arg-type]
