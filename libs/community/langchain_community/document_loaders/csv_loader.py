@@ -219,4 +219,4 @@ class UnstructuredCSVLoader(UnstructuredFileLoader):
     def _get_elements(self) -> List:
         from unstructured.partition.csv import partition_csv
 
-        return partition_csv(filename=self.file_path, **self.unstructured_kwargs)
+        return partition_csv(filename=self.file_path, **self.unstructured_kwargs)  # type: ignore[arg-type]
