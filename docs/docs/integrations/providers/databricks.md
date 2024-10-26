@@ -39,7 +39,7 @@ LLM
 `Databricks` is an LLM class to access completion endpoints hosted on Databricks.
 
 :::caution
-Text completion models have been deprecated and the latest and most popular models are [chat completion models](/docs/concepts/#chat-models). Use `ChatDatabricks` chat model instead to use those models and advanced features such as tool calling.
+Text completion models have been deprecated and the latest and most popular models are [chat completion models](/docs/concepts/chat_models). Use `ChatDatabricks` chat model instead to use those models and advanced features such as tool calling.
 :::
 
 ```
@@ -113,7 +113,7 @@ See [Databricks SQL Agent](https://docs.databricks.com/en/large-language-models/
 Open Models
 -----------
 
-To directly integrate Databricks's open models hosted on HuggingFace, you can use the [HuggingFace Integration](/docs/integrations/platforms/huggingface) of LangChain.
+To directly integrate Databricks's open models hosted on HuggingFace, you can use the [HuggingFace Integration](/docs/integrations/providers/huggingface) of LangChain.
 
 ```
 from langchain_huggingface import HuggingFaceEndpoint
