@@ -89,7 +89,7 @@ optional = true
 optional = true
 
 [tool.poetry.group.test.dependencies]
-pytest = "^7.3.0"
+pytest = "^7.4.4"
 pytest-cov = "^4.1.0"
 pytest-dotenv = "^0.5.2"
 duckdb-engine = "^0.11.0"

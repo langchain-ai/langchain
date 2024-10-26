@@ -21,7 +21,7 @@ class GooglePlacesSchema(BaseModel):
     removal="1.0",
     alternative_import="langchain_google_community.GooglePlacesTool",
 )
-class GooglePlacesTool(BaseTool):
+class GooglePlacesTool(BaseTool):  # type: ignore[override, override]
     """Tool that queries the Google places API."""
 
     name: str = "google_places"
