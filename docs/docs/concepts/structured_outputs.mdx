@@ -66,7 +66,7 @@ Several more powerful methods that utilizes native features in the model provide
 
 Many [model providers support](/docs/integrations/chat/) tool calling, a concept discussed in more detail in our [tool calling guide](/docs/concepts/tool_calling/).
 In short, tool calling involves binding a tool to a model and, when appropriate, the model can *decide* to call this tool and ensure its response conforms to the tool's schema.
-With this in mind, the central concept is strightforward: *simply bind our schema to a model as a tool!*
+With this in mind, the central concept is straightforward: *simply bind our schema to a model as a tool!*
 Here is an example using the `ResponseFormatter` schema defined above:
 
 ```python
@@ -106,7 +106,7 @@ ai_msg.content
 ```
 
 One important point to flag: the model *still* returns a string, which needs to be parsed into a JSON object.
-This can, of course, simply use the `json` library or a JSON output parser if you need more adavanced functionality.
+This can, of course, simply use the `json` library or a JSON output parser if you need more advanced functionality.
 See this [how-to guide on the JSON output parser](/docs/how_to/output_parser_json) for more details.
 
 ```python
@@ -117,7 +117,7 @@ json_object = json.loads(ai_msg.content)
 
 ## Structured output method 
 
-There a few challenges when producing structured output with the above methods: 
+There are a few challenges when producing structured output with the above methods: 
 
 (1) If using tool calling, tool call arguments needs to be parsed from a dictionary back to the original schema.  
 
