@@ -12,8 +12,10 @@ from langchain_core.prompts.chat import (
     MessagePromptTemplateT,
     MessagesPlaceholder,
     SystemMessagePromptTemplate,
-    _convert_to_message_template,
     _create_template_from_message_type,
+)
+from langchain_core.prompts.chat import (
+    _convert_to_message_template as _convert_to_message,
 )
 
 __all__ = [
@@ -28,7 +30,7 @@ __all__ = [
     "ChatPromptTemplate",
     "ChatPromptValue",
     "ChatPromptValueConcrete",
-    "_convert_to_message_template",
+    "_convert_to_message",
     "_create_template_from_message_type",
     "MessagePromptTemplateT",
     "MessageLike",
