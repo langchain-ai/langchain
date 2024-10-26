@@ -156,8 +156,8 @@ const FEATURE_TABLES = {
                 "link": "nvidia_ai_endpoints/",
                 "structured_output": true,
                 "tool_calling": true,
-                "json_mode": false,
-                "multimodal": false,
+                "json_mode": true,
+                "multimodal": true,
                 "local": true,
                 "apiLink": "https://python.langchain.com/api_reference/nvidia_ai_endpoints/chat_models/langchain_nvidia_ai_endpoints.chat_models.ChatNVIDIA.html"
             },

@@ -43,6 +43,7 @@ tenacity = ">=8.1.0,!=8.4.0,<10"
 dataclasses-json = ">= 0.5.7, < 0.7"
 pydantic-settings = "^2.4.0"
 langsmith = "^0.1.125"
+httpx-sse = "^0.4.0"
 
 [[tool.poetry.dependencies.numpy]]
 version = "^1"
@@ -88,7 +89,7 @@ optional = true
 optional = true
 
 [tool.poetry.group.test.dependencies]
-pytest = "^7.3.0"
+pytest = "^7.4.4"
 pytest-cov = "^4.1.0"
 pytest-dotenv = "^0.5.2"
 duckdb-engine = "^0.11.0"

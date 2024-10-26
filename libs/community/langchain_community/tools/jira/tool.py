@@ -29,7 +29,7 @@ from pydantic import Field
 from langchain_community.utilities.jira import JiraAPIWrapper
 
 
-class JiraAction(BaseTool):
+class JiraAction(BaseTool):  # type: ignore[override]
     """Tool that queries the Atlassian Jira API."""
 
     api_wrapper: JiraAPIWrapper = Field(default_factory=JiraAPIWrapper)  # type: ignore[arg-type]
