@@ -559,12 +559,13 @@ class CouchbaseVectorStore(VectorStore):
             # Parse the results
             for row in search_iter.rows():
                 text = row.fields.pop(self._text_key, "")
+                id = row.id
 
                 # Format the metadata from Couchbase
                 metadata = self._format_metadata(row.fields)
 
                 score = row.score
-                doc = Document(page_content=text, metadata=metadata)
+                doc = Document(id=id, page_content=text, metadata=metadata)
                 docs_with_score.append((doc, score))
 
         except Exception as e:
