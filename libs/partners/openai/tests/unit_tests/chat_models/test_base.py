@@ -23,6 +23,7 @@ from langchain_openai import ChatOpenAI
 from langchain_openai.chat_models.base import (
     _convert_dict_to_message,
     _convert_message_to_dict,
+    _convert_to_openai_response_format,
     _create_usage_metadata,
     _format_message_content,
 )
@@ -162,7 +163,12 @@ def test__convert_dict_to_message_tool_call() -> None:
                 name="GenerateUsername",
                 args="oops",
                 id="call_wm0JY6CdwOMZ4eTxHWUThDNz",
-                error="Function GenerateUsername arguments:\n\noops\n\nare not valid JSON. Received JSONDecodeError Expecting value: line 1 column 1 (char 0)",  # noqa: E501
+                error=(
+                    "Function GenerateUsername arguments:\n\noops\n\nare not "
+                    "valid JSON. Received JSONDecodeError Expecting value: line 1 "
+                    "column 1 (char 0)\nFor troubleshooting, visit: https://python"
+                    ".langchain.com/docs/troubleshooting/errors/OUTPUT_PARSING_FAILURE"
+                ),
                 type="invalid_tool_call",
             )
         ],
@@ -756,3 +762,46 @@ def test__create_usage_metadata() -> None:
         input_token_details={},
         output_token_details={},
     )
+
+
+def test__convert_to_openai_response_format() -> None:
+    # Test response formats that aren't tool-like.
+    response_format: dict = {
+        "type": "json_schema",
+        "json_schema": {
+            "name": "math_reasoning",
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "steps": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "explanation": {"type": "string"},
+                                "output": {"type": "string"},
+                            },
+                            "required": ["explanation", "output"],
+                            "additionalProperties": False,
+                        },
+                    },
+                    "final_answer": {"type": "string"},
+                },
+                "required": ["steps", "final_answer"],
+                "additionalProperties": False,
+            },
+            "strict": True,
+        },
+    }
+
+    actual = _convert_to_openai_response_format(response_format)
+    assert actual == response_format
+
+    actual = _convert_to_openai_response_format(response_format["json_schema"])
+    assert actual == response_format
+
+    actual = _convert_to_openai_response_format(response_format, strict=True)
+    assert actual == response_format
+
+    with pytest.raises(ValueError):
+        _convert_to_openai_response_format(response_format, strict=False)
