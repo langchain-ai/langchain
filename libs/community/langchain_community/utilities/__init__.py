@@ -42,6 +42,9 @@ if TYPE_CHECKING:
     from langchain_community.utilities.duckduckgo_search import (
         DuckDuckGoSearchAPIWrapper,
     )
+    from langchain_community.utilities.finance_polygon import (
+        FinancePolygonAPIWrapper,
+    )
     from langchain_community.utilities.golden_query import (
         GoldenQueryAPIWrapper,
     )

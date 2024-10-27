@@ -133,6 +133,9 @@ if TYPE_CHECKING:
     from langchain_community.tools.financial_datasets.income_statements import (
         IncomeStatements,
     )
+    from langchain_community.tools.finance_polygon.crypto_aggregates import (
+        PolygonCryptoAggregates,
+    )
     from langchain_community.tools.gmail import (
         GmailCreateDraft,
         GmailGetMessage,
