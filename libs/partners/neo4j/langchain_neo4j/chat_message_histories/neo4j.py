@@ -4,7 +4,7 @@ from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.messages import BaseMessage, messages_from_dict
 from langchain_core.utils import get_from_dict_or_env
 
-from langchain_community.graphs import Neo4jGraph
+from langchain_neo4j.graphs.neo4j_graph import Neo4jGraph
 
 
 class Neo4jChatMessageHistory(BaseChatMessageHistory):

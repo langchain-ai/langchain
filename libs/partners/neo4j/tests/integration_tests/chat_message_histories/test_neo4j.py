@@ -2,12 +2,19 @@ import os
 
 from langchain_core.messages import AIMessage, HumanMessage
 
-from langchain_community.chat_message_histories import Neo4jChatMessageHistory
-from langchain_community.graphs import Neo4jGraph
+from langchain_neo4j.chat_message_histories.neo4j import Neo4jChatMessageHistory
+from langchain_neo4j.graphs.neo4j_graph import Neo4jGraph
+
+url = os.environ.get("NEO4J_URI", "bolt://localhost:7687")
+username = os.environ.get("NEO4J_USERNAME", "neo4j")
+password = os.environ.get("NEO4J_PASSWORD", "pleaseletmein")
 
 
 def test_add_messages() -> None:
     """Basic testing: adding messages to the Neo4jChatMessageHistory."""
+    os.environ["NEO4J_URI"] = url
+    os.environ["NEO4J_USERNAME"] = username
+    os.environ["NEO4J_PASSWORD"] = password
     assert os.environ.get("NEO4J_URI") is not None
     assert os.environ.get("NEO4J_USERNAME") is not None
     assert os.environ.get("NEO4J_PASSWORD") is not None
@@ -48,9 +55,16 @@ def test_add_messages() -> None:
     assert len(message_store.messages) == 0
     assert len(message_store_another.messages) == 0
 
+    del os.environ["NEO4J_URI"]
+    del os.environ["NEO4J_USERNAME"]
+    del os.environ["NEO4J_PASSWORD"]
+
 
 def test_add_messages_graph_object() -> None:
     """Basic testing: Passing driver through graph object."""
+    os.environ["NEO4J_URI"] = url
+    os.environ["NEO4J_USERNAME"] = username
+    os.environ["NEO4J_PASSWORD"] = password
     assert os.environ.get("NEO4J_URI") is not None
     assert os.environ.get("NEO4J_USERNAME") is not None
     assert os.environ.get("NEO4J_PASSWORD") is not None
@@ -64,3 +78,7 @@ def test_add_messages_graph_object() -> None:
     message_store.add_ai_message("Hi Guys!")
     # Now check if the messages are stored in the database correctly
     assert len(message_store.messages) == 2
+
+    del os.environ["NEO4J_URI"]
+    del os.environ["NEO4J_USERNAME"]
+    del os.environ["NEO4J_PASSWORD"]
