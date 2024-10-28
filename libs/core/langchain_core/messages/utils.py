@@ -880,6 +880,7 @@ def convert_to_openai_messages(
     messages: Union[MessageLikeRepresentation, Sequence[MessageLikeRepresentation]],
     *,
     text_format: Literal["string", "block"] = "string",
+    coerce: bool = False,
 ) -> Union[dict, list[dict]]:
     """Convert LangChain messages into OpenAI message dicts.
 
@@ -992,8 +993,14 @@ def convert_to_openai_messages(
                                 f"but is missing expected key(s) "
                                 f"{missing}. Full content block:\n\n{block}"
                             )
-                            raise ValueError(err)
-                        content.append({"type": block["type"], "text": block["text"]})
+                            if not coerce:
+                                raise ValueError(err)
+                            else:
+                                logger.warning(err)
+                                text = str({k: v for k, v in block.items() if k != "type"}) if len(block) > 1 else ""
+                        else:
+                            text = block["text"]
+                        content.append({"type": block["type"], "text": text})
                     elif block.get("type") == "image_url":
                         if missing := [k for k in ("image_url",) if k not in block]:
                             err = (
@@ -1002,7 +1009,10 @@ def convert_to_openai_messages(
                                 f"but is missing expected key(s) "
                                 f"{missing}. Full content block:\n\n{block}"
                             )
-                            raise ValueError(err)
+                            if not coerce:
+                                raise ValueError(err)
+                            else:
+                                continue
                         content.append(
                             {"type": "image_url", "image_url": block["image_url"]}
                         )
@@ -1021,7 +1031,10 @@ def convert_to_openai_messages(
                                     f"but 'source' is missing expected key(s) "
                                     f"{missing}. Full content block:\n\n{block}"
                                 )
-                                raise ValueError(err)
+                                if not coerce:
+                                    raise ValueError(err)
+                                else:
+                                    continue
                             content.append(
                                 {
                                     "type": "image_url",
@@ -1044,7 +1057,10 @@ def convert_to_openai_messages(
                                     f"but 'image' is missing expected key(s) "
                                     f"{missing}. Full content block:\n\n{block}"
                                 )
-                                raise ValueError(err)
+                                if not coerce:
+                                    raise ValueError(err)
+                                else:
+                                    continue
                             b64_image = _bytes_to_b64_str(image["source"]["bytes"])
                             content.append(
                                 {
@@ -1064,7 +1080,10 @@ def convert_to_openai_messages(
                                 f"but does not have a 'source' or 'image' key. Full "
                                 f"content block:\n\n{block}"
                             )
-                            raise ValueError(err)
+                            if not coerce:
+                                raise ValueError(err)
+                            else:
+                                continue
                     elif block.get("type") == "tool_use":
                         if missing := [
                             k for k in ("id", "name", "input") if k not in block
@@ -1075,7 +1094,10 @@ def convert_to_openai_messages(
                                 f"'tool_use', but is missing expected key(s) "
                                 f"{missing}. Full content block:\n\n{block}"
                             )
-                            raise ValueError(err)
+                            if not coerce:
+                                raise ValueError(err)
+                            else:
+                                continue
                         if not any(
                             tool_call["id"] == block["id"]
                             for tool_call in cast(AIMessage, message).tool_calls
@@ -1101,7 +1123,10 @@ def convert_to_openai_messages(
                                 f"'tool_result', but is missing expected key(s) "
                                 f"{missing}. Full content block:\n\n{block}"
                             )
-                            raise ValueError(msg)
+                            if not coerce:
+                                raise ValueError(msg)
+                            else:
+                                continue
                         tool_message = ToolMessage(
                             block["content"],
                             tool_call_id=block["tool_use_id"],
@@ -1121,7 +1146,10 @@ def convert_to_openai_messages(
                                 f"but does not have a 'json' key. Full "
                                 f"content block:\n\n{block}"
                             )
-                            raise ValueError(msg)
+                            if not coerce:
+                                raise ValueError(msg)
+                            else:
+                                continue
                         content.append(
                             {"type": "text", "text": json.dumps(block["json"])}
                         )

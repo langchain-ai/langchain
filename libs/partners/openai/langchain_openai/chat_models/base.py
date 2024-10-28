@@ -61,7 +61,7 @@ from langchain_core.messages import (
     SystemMessageChunk,
     ToolCall,
     ToolMessage,
-    ToolMessageChunk,
+    ToolMessageChunk, convert_to_openai_messages, convert_to_messages,
 )
 from langchain_core.messages.ai import (
     InputTokenDetails,
@@ -859,6 +859,9 @@ class BaseChatOpenAI(BaseChatModel):
         return await run_in_executor(
             None, self._create_chat_result, response, generation_info
         )
+
+    def _coerce_messages(self, messages: list[BaseMessage]) -> list[BaseMessage]:
+        return convert_to_messages(convert_to_openai_messages(messages))
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:
