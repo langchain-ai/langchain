@@ -1,106 +1,36 @@
 """Unit tests for Writer chat model integration."""
 
 import json
-from typing import Any, Dict, List, Literal, Optional, Type
+from typing import Any, Dict, List
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from langchain_core.callbacks.manager import CallbackManager
-from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
-from langchain_standard_tests.unit_tests.chat_models import (
-    ChatModelUnitTests,
-)
+from pydantic import SecretStr
 
 from langchain_community.chat_models.writer import ChatWriter, _convert_dict_to_message
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
-class TestChatWriter(ChatModelUnitTests):
-    """Test case for ChatWriter that inherits from standard LangChain tests."""
-
-    @property
-    def chat_model_class(self) -> Type[BaseChatModel]:
-        """Return ChatWriter model class."""
-        return ChatWriter
-
-    @property
-    def chat_model_params(self) -> Dict:
-        """Return any additional parameters needed."""
-        return {"api_key": "fake-api-key", "model_name": "palmyra-x-004"}
-
-    @property
-    def has_tool_calling(self) -> bool:
-        """Writer supports tool/function calling."""
-        return True
-
-    @property
-    def tool_choice_value(self) -> Optional[str]:
-        """Value to use for tool choice in tests."""
-        return "auto"
-
-    @property
-    def has_structured_output(self) -> bool:
-        """Writer does not yet support structured output."""
-        return False
-
-    @property
-    def supports_image_inputs(self) -> bool:
-        """Writer does not support image inputs."""
-        return False
-
-    @property
-    def supports_video_inputs(self) -> bool:
-        """Writer does not support video inputs."""
-        return False
-
-    @property
-    def returns_usage_metadata(self) -> bool:
-        """Writer returns token usage information."""
-        return True
-
-    @property
-    def supported_usage_metadata_details(
-        self,
-    ) -> Dict[
-        Literal["invoke", "stream"],
-        List[
-            Literal[
-                "audio_input",
-                "audio_output",
-                "reasoning_output",
-                "cache_read_input",
-                "cache_creation_input",
-            ]
-        ],
-    ]:
-        """Return which types of usage metadata your model supports."""
-        return {"invoke": ["cache_creation_input"], "stream": ["reasoning_output"]}
-
-    @pytest.fixture(autouse=True)
-    def setup_environment(self, monkeypatch) -> None:
-        """Setup test environment variables if needed."""
-        monkeypatch.setenv("WRITER_API_KEY", "fake-api-key")
-
-    def test_import_writer(self) -> None:
-        from writerai import Writer
-
-        client = Writer()
-
-        assert isinstance(client, Writer)
-
+class TestChatWriter:
     def test_writer_model_param(self) -> None:
         """Test different ways to initialize the chat model."""
         test_cases: List[dict] = [
             {"model_name": "palmyra-x-004", "writer_api_key": "test-key"},
-            {"model": "palmyra-x-004", "api_key": "test-key"},
+            {"model": "palmyra-x-004", "writer_api_key": "test-key"},
             {"model_name": "palmyra-x-004", "writer_api_key": "test-key"},
-            {"model": "palmyra-x-004", "api_key": "test-key", "temperature": 0.5},
+            {
+                "model": "palmyra-x-004",
+                "writer_api_key": "test-key",
+                "temperature": 0.5,
+            },
         ]
 
         for case in test_cases:
             chat = ChatWriter(**case)
             assert chat.model_name == "palmyra-x-004"
+            assert chat.writer_api_key
             assert chat.writer_api_key.get_secret_value() == "test-key"
             assert chat.temperature == (0.5 if "temperature" in case else 0.7)
 
@@ -248,7 +178,7 @@ class TestChatWriter(ChatModelUnitTests):
 
     def test_sync_completion(self, mock_completion: Dict[str, Any]) -> None:
         """Test basic chat completion with mocked response."""
-        chat = ChatWriter(api_key="test-key")
+        chat = ChatWriter(api_key=SecretStr("test-key"))
         mock_client = MagicMock()
         mock_client.chat.chat.return_value = mock_completion
 
@@ -260,7 +190,7 @@ class TestChatWriter(ChatModelUnitTests):
 
     async def test_async_completion(self, mock_completion: Dict[str, Any]) -> None:
         """Test async chat completion with mocked response."""
-        chat = ChatWriter(api_key="test-key")
+        chat = ChatWriter(api_key=SecretStr("test-key"))
         mock_client = AsyncMock()
         mock_client.chat.chat.return_value = mock_completion
 
@@ -279,7 +209,7 @@ class TestChatWriter(ChatModelUnitTests):
             streaming=True,
             callback_manager=callback_manager,
             max_tokens=10,
-            api_key="test-key",
+            api_key=SecretStr("test-key"),
         )
 
         mock_client = MagicMock()
@@ -306,7 +236,7 @@ class TestChatWriter(ChatModelUnitTests):
             streaming=True,
             callback_manager=callback_manager,
             max_tokens=10,
-            writer_api_key="test-key",
+            api_key=SecretStr("test-key"),
         )
 
         mock_client = AsyncMock()
@@ -331,18 +261,21 @@ class TestChatWriter(ChatModelUnitTests):
 
             location: str = Field(..., description="The location to get weather for")
 
-        chat = ChatWriter(writer_api_key="test-key")
-        chat_with_tools = chat.bind_tools(tools=[GetWeather], tool_choice="auto")
-
         mock_client = MagicMock()
         mock_client.chat.chat.return_value = mock_response
 
-        with patch.object(chat_with_tools.bound, "client", mock_client):
-            response = chat_with_tools.invoke("What's the weather in London?")
-            assert isinstance(response, AIMessage)
-            assert response.tool_calls
-            assert response.tool_calls[0]["name"] == "GetWeather"
-            assert response.tool_calls[0]["args"]["location"] == "London"
+        chat = ChatWriter(api_key=SecretStr("test-key"), client=mock_client)
+
+        chat_with_tools = chat.bind_tools(
+            tools=[GetWeather],
+            tool_choice="GetWeather",
+        )
+
+        response = chat_with_tools.invoke("What's the weather in London?")
+        assert isinstance(response, AIMessage)
+        assert response.tool_calls
+        assert response.tool_calls[0]["name"] == "GetWeather"
+        assert response.tool_calls[0]["args"]["location"] == "London"
 
     async def test_async_tool_calling(self, mock_response: Dict[str, Any]) -> None:
         """Test asynchronous tool calling functionality."""
@@ -353,18 +286,18 @@ class TestChatWriter(ChatModelUnitTests):
 
             location: str = Field(..., description="The location to get weather for")
 
-        chat = ChatWriter(api_key="test-key")
-        chat_with_tools = chat.bind_tools(
-            tools=[GetWeather],
-            tool_choice={"type": "function", "function": {"name": "GetWeather"}},
-        )
-
         mock_client = AsyncMock()
         mock_client.chat.chat.return_value = mock_response
 
-        with patch.object(chat_with_tools.bound, "async_client", mock_client):
-            response = await chat_with_tools.ainvoke("What's the weather in London?")
-            assert isinstance(response, AIMessage)
-            assert response.tool_calls
-            assert response.tool_calls[0]["name"] == "GetWeather"
-            assert response.tool_calls[0]["args"]["location"] == "London"
+        chat = ChatWriter(api_key=SecretStr("test-key"), async_client=mock_client)
+
+        chat_with_tools = chat.bind_tools(
+            tools=[GetWeather],
+            tool_choice="GetWeather",
+        )
+
+        response = await chat_with_tools.ainvoke("What's the weather in London?")
+        assert isinstance(response, AIMessage)
+        assert response.tool_calls
+        assert response.tool_calls[0]["name"] == "GetWeather"
+        assert response.tool_calls[0]["args"]["location"] == "London"

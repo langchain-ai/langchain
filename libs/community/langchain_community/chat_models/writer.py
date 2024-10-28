@@ -308,8 +308,10 @@ class ChatWriter(BaseChatModel):
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
 
         if tool_choice:
-            if tool_choice not in ("auto", "none"):
-                tool_choice = {"type": "function", "function": {"name": tool_choice}}
-            kwargs["tool_choice"] = tool_choice
+            kwargs["tool_choice"] = (
+                (tool_choice)
+                if tool_choice in ("auto", "none")
+                else {"type": "function", "function": {"name": tool_choice}}
+            )
 
         return super().bind(tools=formatted_tools, **kwargs)
