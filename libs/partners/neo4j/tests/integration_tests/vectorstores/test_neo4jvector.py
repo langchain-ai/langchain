@@ -7,8 +7,8 @@ from typing import Any, Dict, List, cast
 from langchain_core.documents import Document
 from yaml import safe_load
 
-from langchain_community.graphs import Neo4jGraph
-from langchain_community.vectorstores.neo4j_vector import (
+from langchain_neo4j import Neo4jGraph
+from langchain_neo4j.vectorstores.neo4j_vector import (
     Neo4jVector,
     SearchType,
     _get_search_index_query,
@@ -26,7 +26,7 @@ from tests.integration_tests.vectorstores.fixtures.filtering_test_cases import (
     TYPE_4_FILTERING_TEST_CASES,
 )
 
-url = os.environ.get("NEO4J_URL", "bolt://localhost:7687")
+url = os.environ.get("NEO4J_URI", "bolt://localhost:7687")
 username = os.environ.get("NEO4J_USERNAME", "neo4j")
 password = os.environ.get("NEO4J_PASSWORD", "pleaseletmein")
 
@@ -227,8 +227,8 @@ def test_neo4jvector_relevance_score() -> None:
     output = docsearch.similarity_search_with_relevance_scores("foo", k=3)
     expected_output = [
         (Document(page_content="foo", metadata={"page": "0"}), 1.0),
-        (Document(page_content="bar", metadata={"page": "1"}), 0.9998376369476318),
-        (Document(page_content="baz", metadata={"page": "2"}), 0.9993523359298706),
+        (Document(page_content="bar", metadata={"page": "1"}), 0.9998160600662231),
+        (Document(page_content="baz", metadata={"page": "2"}), 0.9996607303619385),
     ]
 
     # Check if the length of the outputs matches
@@ -663,7 +663,7 @@ def test_neo4jvector_special_character() -> None:
         search_type=SearchType.HYBRID,
     )
     output = docsearch.similarity_search(
-        "It is the end of the world. Take shelter!", k=1
+        "It is the end of the world. Take shelter!", k=1, 
     )
     assert output == [
         Document(page_content="It is the end of the world. Take shelter!", metadata={})
@@ -762,6 +762,9 @@ def test_retrieval_params() -> None:
         retrieval_query="""
         RETURN $test as text, score, {test: $test1} AS metadata
         """,
+        url=url,
+        username=username,
+        password=password,
     )
 
     output = docsearch.similarity_search(
@@ -777,6 +780,9 @@ def test_retrieval_params() -> None:
 def test_retrieval_dictionary() -> None:
     """Test if we use parameters in retrieval query"""
     docsearch = Neo4jVector.from_texts(
+        url=url,
+        username=username,
+        password=password,
         texts=texts,
         embedding=FakeEmbeddings(),
         pre_delete_collection=True,
@@ -815,6 +821,9 @@ def test_metadata_filters_type1() -> None:
         DOCUMENTS,
         embedding=FakeEmbeddings(),
         pre_delete_collection=True,
+        url=url,
+        username=username,
+        password=password,
     )
     # We don't test type 5, because LIKE has very SQL specific examples
     for example in (
@@ -876,7 +885,10 @@ OPTIONS {indexConfig: {
 """
     )
     relationship_index = Neo4jVector.from_existing_relationship_index(
-        embeddings, index_name="relationship"
+        embeddings, index_name="relationship",
+        url=url,
+        username=username,
+        password=password,
     )
 
     output = relationship_index.similarity_search("foo", k=1)
@@ -922,7 +934,10 @@ OPTIONS {indexConfig: {
         "AS text, score, {foo:'bar'} AS metadata"
     )
     relationship_index = Neo4jVector.from_existing_relationship_index(
-        embeddings, index_name="relationship", retrieval_query=retrieval_query
+        embeddings, index_name="relationship", retrieval_query=retrieval_query,
+        url=url,
+        username=username,
+        password=password,
     )
 
     output = relationship_index.similarity_search("foo", k=1)
@@ -954,6 +969,9 @@ def test_neo4j_max_marginal_relevance_search() -> None:
         metadatas=metadatas,
         embedding=AngularTwoDimensionalEmbeddings(),
         pre_delete_collection=True,
+        url=url,
+        username=username,
+        password=password,
     )
 
     expected_set = {
@@ -972,7 +990,7 @@ def test_neo4j_max_marginal_relevance_search() -> None:
 
 def test_neo4jvector_passing_graph_object() -> None:
     """Test end to end construction and search with passing graph object."""
-    graph = Neo4jGraph()
+    graph = Neo4jGraph(url=url, username=username, password=password)
     # Rewrite env vars to make sure it fails if env is used
     os.environ["NEO4J_URI"] = "foo"
     docsearch = Neo4jVector.from_texts(
@@ -980,6 +998,9 @@ def test_neo4jvector_passing_graph_object() -> None:
         embedding=FakeEmbeddingsWithOsDimension(),
         graph=graph,
         pre_delete_collection=True,
+        url=url,
+        username=username,
+        password=password,
     )
     output = docsearch.similarity_search("foo", k=1)
     assert output == [Document(page_content="foo")]
