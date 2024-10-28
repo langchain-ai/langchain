@@ -163,11 +163,7 @@ class OxylabsSearchAPIWrapper(BaseModel):
         params_ = self.get_params()
         search_client = self.search_engine
         search_result = search_client.scrape_search(query, **params_)
-        try:
-            validated_responses = self._validate_response(search_result)
-
-        except RuntimeError as exc:
-            validated_responses = [str(exc)]
+        validated_responses = self._validate_response(search_result)
 
         return validated_responses
 
@@ -183,11 +179,7 @@ class OxylabsSearchAPIWrapper(BaseModel):
             **params_,
         )
 
-        try:
-            validated_responses = self._validate_response(search_result)
-
-        except RuntimeError as exc:
-            validated_responses = [str(exc)]
+        validated_responses = self._validate_response(search_result)
 
         return validated_responses
 
