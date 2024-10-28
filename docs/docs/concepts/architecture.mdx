@@ -3,7 +3,7 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 
 # Architecture
 
-LangChain as a framework consists of a number of packages.
+LangChain is a framework that consists of a number of packages.
 
 <ThemedImage
     alt="Diagram outlining the hierarchical organization of the LangChain framework, displaying the interconnected parts across multiple layers."
@@ -18,34 +18,34 @@ LangChain as a framework consists of a number of packages.
 
 ## langchain-core
 
-This package contains base abstractions of different components and ways to compose them together.
-The interfaces for core components like LLMs, vector stores, retrievers and more are defined here.
-No third party integrations are defined here.
-The dependencies are kept purposefully very lightweight.
+This package contains base abstractions for different components and ways to compose them together.
+The interfaces for core components like chat models, vector stores, tools and more are defined here.
+No third-party integrations are defined here.
+The dependencies are very lightweight.
 
 ## langchain
 
-The main `langchain` package contains chains, agents, and retrieval strategies that make up an application's cognitive architecture.
-These are NOT third party integrations.
+The main `langchain` package contains chains and retrieval strategies that make up an application's cognitive architecture.
+These are NOT third-party integrations.
 All chains, agents, and retrieval strategies here are NOT specific to any one integration, but rather generic across all integrations.
 
-## langchain-community
+## Integration packages
 
-This package contains third party integrations that are maintained by the LangChain community.
-Key partner packages are separated out (see below).
-This contains all integrations for various components (LLMs, vector stores, retrievers).
-All dependencies in this package are optional to keep the package as lightweight as possible.
-
-## Partner packages
-
-While the long tail of integrations is in `langchain-community`, we split popular integrations into their own packages (e.g. `langchain-openai`, `langchain-anthropic`, etc). This was done in order to improve support for these important integrations.
+Popular integrations have their own packages (e.g. `langchain-openai`, `langchain-anthropic`, etc) so that they can be properly versioned and appropriately lightweight.
 
 For more information see:
 
-* A list [LangChain integrations](/docs/integrations/providers/)
-* The [LangChain API Reference](https://python.langchain.com/api_reference/) where you can find detailed information about the API reference of each partner package.
+* A list [integrations packages](/docs/integrations/providers/)
+* The [API Reference](https://python.langchain.com/api_reference/) where you can find detailed information about each of the integration package.
 
-## LangGraph
+## langchain-community
+
+This package contains third-party integrations that are maintained by the LangChain community.
+Key integration packages are separated out (see above).
+This contains integrations for various components (chat models, vector stores, tools, etc).
+All dependencies in this package are optional to keep the package as lightweight as possible.
+
+## langgraph
 
 `langgraph` is an extension of `langchain` aimed at building robust and stateful multi-actor applications with LLMs by modeling steps as edges and nodes in a graph.
 
@@ -58,7 +58,7 @@ LangGraph exposes high level interfaces for creating common types of agents, as 
 
 :::
 
-## LangServe
+## langserve
 
 A package to deploy LangChain chains as REST APIs. Makes it easy to get a production ready API up and running.
 

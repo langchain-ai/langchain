@@ -14,7 +14,7 @@ from langchain_core.outputs import ChatGeneration, Generation
 from langchain.agents.agent import MultiActionAgentOutputParser
 
 
-class ToolAgentAction(AgentActionMessageLog):
+class ToolAgentAction(AgentActionMessageLog):  # type: ignore[override]
     tool_call_id: str
     """Tool call that this message is responding to."""
 
