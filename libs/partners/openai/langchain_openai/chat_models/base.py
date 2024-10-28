@@ -861,7 +861,7 @@ class BaseChatOpenAI(BaseChatModel):
         )
 
     def _coerce_messages(self, messages: list[BaseMessage]) -> list[BaseMessage]:
-        return convert_to_messages(convert_to_openai_messages(messages))
+        return convert_to_messages(convert_to_openai_messages(messages, coerce=True))
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:
