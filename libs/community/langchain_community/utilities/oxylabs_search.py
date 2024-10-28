@@ -163,8 +163,13 @@ class OxylabsSearchAPIWrapper(BaseModel):
         params_ = self.get_params()
         search_client = self.search_engine
         search_result = search_client.scrape_search(query, **params_)
+        try:
+            validated_responses = self._validate_response(search_result)
 
-        return search_result
+        except RuntimeError as exc:
+            validated_responses = [str(exc)]
+
+        return validated_responses
 
     async def aresults(self, query: str) -> List[Dict[str, Any]]:
         """Run query through Oxylabs Web Scrapper API and return SERPResponse object async."""
@@ -178,7 +183,13 @@ class OxylabsSearchAPIWrapper(BaseModel):
             **params_,
         )
 
-        return search_result
+        try:
+            validated_responses = self._validate_response(search_result)
+
+        except RuntimeError as exc:
+            validated_responses = [str(exc)]
+
+        return validated_responses
 
     def get_params(self) -> Dict[str, Any]:
         """Get default configuration parameters for OxylabsSearchAPI for scrape_search()."""
@@ -230,15 +241,9 @@ class OxylabsSearchAPIWrapper(BaseModel):
 
         result_ = "No good search result found"
 
-        try:
-            validated_responses = self._validate_response(res)
-
-        except RuntimeError as exc:
-            return f"{result_}, Response Validation Failed: {str(exc)}"
-
         snippets = list()
         # TODO update here fter pagination questions are answered
-        for validated_response in validated_responses[:1]:
+        for validated_response in res[:1]:
             # Knowledge Graph Snippets
             self._create_knowledge_graph_snippets(validated_response, snippets)
 
