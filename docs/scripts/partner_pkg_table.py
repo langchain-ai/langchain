@@ -25,6 +25,13 @@ EXTERNAL_PACKAGES = {
     "redis",
     "weaviate",
     "upstage",
+    "mongodb",
+    "azure-dynamic-sessions",
+    "ibm",
+    "unstructured",
+    "milvus",
+    "together",
+    "ai21",
 }
 
 JS_PACKAGES = {
