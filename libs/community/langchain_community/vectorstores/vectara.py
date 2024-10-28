@@ -723,7 +723,7 @@ class Vectara(VectorStore):
         )
 
 
-class VectaraRetriever(VectorStoreRetriever):
+class VectaraRetriever(VectorStoreRetriever):  # type: ignore[override]
     """Vectara Retriever class."""
 
     vectorstore: Vectara
