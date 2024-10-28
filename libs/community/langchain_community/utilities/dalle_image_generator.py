@@ -129,11 +129,11 @@ class DallEAPIWrapper(BaseModel):
             }
 
             if not self.client:
-                self.client = openai.OpenAI(**client_params).images
+                self.client = openai.OpenAI(**client_params).images  # type: ignore[arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type]
             if not self.async_client:
-                self.async_client = openai.AsyncOpenAI(**client_params).images
+                self.async_client = openai.AsyncOpenAI(**client_params).images  # type: ignore[arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type]
         elif not self.client:
-            self.client = openai.Image
+            self.client = openai.Image  # type: ignore[attr-defined]
         else:
             pass
         return self
