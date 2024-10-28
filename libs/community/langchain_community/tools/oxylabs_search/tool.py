@@ -1,4 +1,4 @@
-"""Tool for the Serper.dev Google Search API."""
+"""Tool for the Oxylabs Search API."""
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
