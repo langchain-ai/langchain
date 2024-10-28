@@ -18,7 +18,7 @@ hide_table_of_contents: true
 
 :::info
 
-If you'd like to contribute an integration, see [Contributing integrations](/docs/contributing/integrations/).
+If you'd like to contribute an integration, see [Contributing integrations](/docs/contributing/how_to/integrations/).
 
 :::
 
