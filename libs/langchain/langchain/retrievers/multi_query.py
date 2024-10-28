@@ -57,6 +57,8 @@ class MultiQueryRetriever(BaseRetriever):
     """DEPRECATED. parser_key is no longer used and should not be specified."""
     include_original: bool = False
     """Whether to include the original query in the list of generated queries."""
+    selection: str = "union"
+    """selection takes 2 values 'union' and 'intersection'. It describes how the retrieval is performed"""
 
     @classmethod
     def from_llm(
@@ -66,6 +68,7 @@ class MultiQueryRetriever(BaseRetriever):
         prompt: BasePromptTemplate = DEFAULT_QUERY_PROMPT,
         parser_key: Optional[str] = None,
         include_original: bool = False,
+        selection: str = "union",
     ) -> "MultiQueryRetriever":
         """Initialize from llm using default template.
 
@@ -80,12 +83,17 @@ class MultiQueryRetriever(BaseRetriever):
         Returns:
             MultiQueryRetriever
         """
+
+        if selection not in ["union", "intersection"]:
+            raise Exception("""selection must be one of ['union', 'intersection']!""")
+        
         output_parser = LineListOutputParser()
         llm_chain = prompt | llm | output_parser
         return cls(
             retriever=retriever,
             llm_chain=llm_chain,
             include_original=include_original,
+            selection=selection,
         )
 
     async def _aget_relevant_documents(
@@ -106,7 +114,7 @@ class MultiQueryRetriever(BaseRetriever):
         if self.include_original:
             queries.append(query)
         documents = await self.aretrieve_documents(queries, run_manager)
-        return self.unique_union(documents)
+        return self.unique_selection(documents, queries)
 
     async def agenerate_queries(
         self, question: str, run_manager: AsyncCallbackManagerForRetrieverRun
@@ -169,7 +177,7 @@ class MultiQueryRetriever(BaseRetriever):
         if self.include_original:
             queries.append(query)
         documents = self.retrieve_documents(queries, run_manager)
-        return self.unique_union(documents)
+        return self.unique_selection(documents, queries)
 
     def generate_queries(
         self, question: str, run_manager: CallbackManagerForRetrieverRun
@@ -222,3 +230,36 @@ class MultiQueryRetriever(BaseRetriever):
             List of unique retrieved Documents
         """
         return _unique_documents(documents)
+
+    def unique_intersection(self, documents: List[Document], num_queries: int) -> List[Document]:
+        """Get unique intersection of Documents.
+
+        Args:
+            documents: List of retrieved Documents
+            num_queries: Number of queries generated
+
+        Returns:
+            List of unique intersection of retrieved Documents
+        """
+        intersection_documents = [doc for doc in documents if documents.count(doc) >= num_queries]
+        return _unique_documents(intersection_documents)
+
+    def unique_selection(self, documents: List[Document], queries: List[str]) -> List[Document]:
+        """Get unique Documents.
+
+        Args:
+            documents: List of retrieved Documents
+            queries: List of queries
+
+        Returns:
+            List of unique retrieved Documents
+        """
+        if self.selection == "union":
+            return self.unique_union(documents)
+
+        elif self.selection == "intersection":
+            return self.unique_intersection(documents, len(queries))
+
+        # Shouldn't ever come here since we throw in from_llm
+        else:
+            return documents
