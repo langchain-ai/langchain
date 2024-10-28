@@ -401,8 +401,7 @@ class ChatOllama(BaseChatModel):
                 role = "tool"
                 tool_call_id = message.tool_call_id
             else:
-                raise ValueError(
-                    "Received unsupported message type for Ollama.")
+                raise ValueError("Received unsupported message type for Ollama.")
 
             content = ""
             images = []
@@ -559,8 +558,7 @@ class ChatOllama(BaseChatModel):
                         tool_calls=_get_tool_calls_from_response(stream_resp),
                     ),
                     generation_info=(
-                        dict(stream_resp) if stream_resp.get(
-                            "done") is True else None
+                        dict(stream_resp) if stream_resp.get("done") is True else None
                     ),
                 )
                 if final_chunk is None:
@@ -603,8 +601,7 @@ class ChatOllama(BaseChatModel):
                         tool_calls=_get_tool_calls_from_response(stream_resp),
                     ),
                     generation_info=(
-                        dict(stream_resp) if stream_resp.get(
-                            "done") is True else None
+                        dict(stream_resp) if stream_resp.get("done") is True else None
                     ),
                 )
                 if final_chunk is None:
@@ -651,10 +648,8 @@ class ChatOllama(BaseChatModel):
         chat_generation = ChatGeneration(
             message=AIMessage(
                 content=final_chunk.text,
-                usage_metadata=cast(
-                    AIMessageChunk, final_chunk.message).usage_metadata,
-                tool_calls=cast(
-                    AIMessageChunk, final_chunk.message).tool_calls,
+                usage_metadata=cast(AIMessageChunk, final_chunk.message).usage_metadata,
+                tool_calls=cast(AIMessageChunk, final_chunk.message).tool_calls,
             ),
             generation_info=generation_info,
         )
@@ -683,8 +678,7 @@ class ChatOllama(BaseChatModel):
                         tool_calls=_get_tool_calls_from_response(stream_resp),
                     ),
                     generation_info=(
-                        dict(stream_resp) if stream_resp.get(
-                            "done") is True else None
+                        dict(stream_resp) if stream_resp.get("done") is True else None
                     ),
                 )
                 if run_manager:
@@ -717,8 +711,7 @@ class ChatOllama(BaseChatModel):
                         tool_calls=_get_tool_calls_from_response(stream_resp),
                     ),
                     generation_info=(
-                        dict(stream_resp) if stream_resp.get(
-                            "done") is True else None
+                        dict(stream_resp) if stream_resp.get("done") is True else None
                     ),
                 )
                 if run_manager:
@@ -742,10 +735,8 @@ class ChatOllama(BaseChatModel):
         chat_generation = ChatGeneration(
             message=AIMessage(
                 content=final_chunk.text,
-                usage_metadata=cast(
-                    AIMessageChunk, final_chunk.message).usage_metadata,
-                tool_calls=cast(
-                    AIMessageChunk, final_chunk.message).tool_calls,
+                usage_metadata=cast(AIMessageChunk, final_chunk.message).usage_metadata,
+                tool_calls=cast(AIMessageChunk, final_chunk.message).tool_calls,
             ),
             generation_info=generation_info,
         )
