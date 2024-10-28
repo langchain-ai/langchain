@@ -222,9 +222,7 @@ html_theme_options = {
         },
     ],
     "icon_links_label": "Quick Links",
-    "external_links": [
-        {"name": "Legacy reference", "url": "https://api.python.langchain.com/"},
-    ],
+    "external_links": [],
 }
 
 
