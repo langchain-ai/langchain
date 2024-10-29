@@ -129,6 +129,9 @@ if TYPE_CHECKING:
     from langchain_community.document_loaders.couchbase import (
         CouchbaseLoader,
     )
+    from langchain_community.document_loaders.cratedb import (
+        CrateDBLoader,
+    )
     from langchain_community.document_loaders.csv_loader import (
         CSVLoader,
         UnstructuredCSVLoader,
@@ -576,6 +579,7 @@ _module_lookup = {
     "ConcurrentLoader": "langchain_community.document_loaders.concurrent",
     "ConfluenceLoader": "langchain_community.document_loaders.confluence",
     "CouchbaseLoader": "langchain_community.document_loaders.couchbase",
+    "CrateDBLoader": "langchain_community.document_loaders.cratedb",
     "CubeSemanticLoader": "langchain_community.document_loaders.cube_semantic",
     "DataFrameLoader": "langchain_community.document_loaders.dataframe",
     "DatadogLogsLoader": "langchain_community.document_loaders.datadog_logs",
@@ -782,6 +786,7 @@ __all__ = [
     "ConcurrentLoader",
     "ConfluenceLoader",
     "CouchbaseLoader",
+    "CrateDBLoader",
     "CubeSemanticLoader",
     "DataFrameLoader",
     "DatadogLogsLoader",

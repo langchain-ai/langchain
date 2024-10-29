@@ -48,6 +48,7 @@ EXPECTED_ALL = [
     "ConcurrentLoader",
     "ConfluenceLoader",
     "CouchbaseLoader",
+    "CrateDBLoader",
     "CubeSemanticLoader",
     "DataFrameLoader",
     "DatadogLogsLoader",
