@@ -14,6 +14,7 @@ chardet>=5.1.0,<6
 cloudpathlib>=0.18,<0.19
 cloudpickle>=2.0.0
 cohere>=4,<6
+crate==1.0.0.dev1
 databricks-vectorsearch>=0.21,<0.22
 datasets>=2.15.0,<3
 dgml-utils>=0.3.0,<0.4
@@ -77,6 +78,7 @@ requests-toolbelt>=1.0.0,<2
 rspace_client>=2.5.0,<3
 scikit-learn>=1.2.2,<2
 simsimd>=5.0.0,<6
+sqlalchemy-cratedb>=0.40.0,<1
 sqlite-vss>=0.1.2,<0.2
 sqlite-vec>=0.1.0,<0.2
 sseclient-py>=1.8.0,<2

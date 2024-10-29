@@ -27,6 +27,7 @@ EXPECTED_ALL = [
     "Clickhouse",
     "ClickhouseSettings",
     "CouchbaseVectorStore",
+    "CrateDBVectorSearch",
     "DashVector",
     "DatabricksVectorSearch",
     "DeepLake",
