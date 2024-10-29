@@ -1,6 +1,8 @@
 import json
-from typing import Any, Dict, List, Literal, Optional, Tuple, Union
+from typing import Any, Literal, Optional, Union
+from uuid import UUID
 
+from pydantic import Field, model_validator
 from typing_extensions import NotRequired, TypedDict
 
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk, merge_content
@@ -56,11 +58,11 @@ class ToolMessage(BaseMessage):
 
     artifact: Any = None
     """Artifact of the Tool execution which is not meant to be sent to the model.
-    
-    Should only be specified if it is different from the message content, e.g. if only 
+
+    Should only be specified if it is different from the message content, e.g. if only
     a subset of the full tool output is being passed as message content but the full
     output is needed in other parts of the code.
-    
+
     .. versionadded:: 0.2.17
     """
 
@@ -70,25 +72,65 @@ class ToolMessage(BaseMessage):
     .. versionadded:: 0.2.24
     """
 
+    additional_kwargs: dict = Field(default_factory=dict, repr=False)
+    """Currently inherited from BaseMessage, but not used."""
+    response_metadata: dict = Field(default_factory=dict, repr=False)
+    """Currently inherited from BaseMessage, but not used."""
+
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
         Default is ["langchain", "schema", "messages"]."""
         return ["langchain", "schema", "messages"]
 
-    def __init__(
-        self, content: Union[str, List[Union[str, Dict]]], **kwargs: Any
-    ) -> None:
-        """Pass in content as positional arg.
+    @model_validator(mode="before")
+    @classmethod
+    def coerce_args(cls, values: dict) -> dict:
+        content = values["content"]
+        if isinstance(content, tuple):
+            content = list(content)
 
-        Args:
-            content: The string contents of the message.
-            kwargs: Additional fields to pass to the message
-        """
+        if not isinstance(content, (str, list)):
+            try:
+                values["content"] = str(content)
+            except ValueError as e:
+                msg = (
+                    "ToolMessage content should be a string or a list of string/dicts. "
+                    f"Received:\n\n{content=}\n\n which could not be coerced into a "
+                    "string."
+                )
+                raise ValueError(msg) from e
+        elif isinstance(content, list):
+            values["content"] = []
+            for i, x in enumerate(content):
+                if not isinstance(x, (str, dict)):
+                    try:
+                        values["content"].append(str(x))
+                    except ValueError as e:
+                        msg = (
+                            "ToolMessage content should be a string or a list of "
+                            "string/dicts. Received a list but "
+                            f"element ToolMessage.content[{i}] is not a dict and could "
+                            f"not be coerced to a string.:\n\n{x}"
+                        )
+                        raise ValueError(msg) from e
+                else:
+                    values["content"].append(x)
+        else:
+            pass
+
+        tool_call_id = values["tool_call_id"]
+        if isinstance(tool_call_id, (UUID, int, float)):
+            values["tool_call_id"] = str(tool_call_id)
+        return values
+
+    def __init__(
+        self, content: Union[str, list[Union[str, dict]]], **kwargs: Any
+    ) -> None:
         super().__init__(content=content, **kwargs)
 
 
-ToolMessage.update_forward_refs()
+ToolMessage.model_rebuild()
 
 
 class ToolMessageChunk(ToolMessage, BaseMessageChunk):
@@ -100,16 +142,15 @@ class ToolMessageChunk(ToolMessage, BaseMessageChunk):
     type: Literal["ToolMessageChunk"] = "ToolMessageChunk"  # type: ignore[assignment]
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "schema", "messages"]
 
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
         if isinstance(other, ToolMessageChunk):
             if self.tool_call_id != other.tool_call_id:
-                raise ValueError(
-                    "Cannot concatenate ToolMessageChunks with different names."
-                )
+                msg = "Cannot concatenate ToolMessageChunks with different names."
+                raise ValueError(msg)
 
             return self.__class__(
                 tool_call_id=self.tool_call_id,
@@ -147,18 +188,18 @@ class ToolCall(TypedDict):
 
     name: str
     """The name of the tool to be called."""
-    args: Dict[str, Any]
+    args: dict[str, Any]
     """The arguments to the tool call."""
     id: Optional[str]
     """An identifier associated with the tool call.
-    
+
     An identifier is needed to associate a tool call request with a tool
     call result in events when multiple concurrent tool calls are made.
     """
     type: NotRequired[Literal["tool_call"]]
 
 
-def tool_call(*, name: str, args: Dict[str, Any], id: Optional[str]) -> ToolCall:
+def tool_call(*, name: str, args: dict[str, Any], id: Optional[str]) -> ToolCall:
     return ToolCall(name=name, args=args, id=id, type="tool_call")
 
 
@@ -236,8 +277,8 @@ def invalid_tool_call(
 
 
 def default_tool_parser(
-    raw_tool_calls: List[dict],
-) -> Tuple[List[ToolCall], List[InvalidToolCall]]:
+    raw_tool_calls: list[dict],
+) -> tuple[list[ToolCall], list[InvalidToolCall]]:
     """Best-effort parsing of tools."""
     tool_calls = []
     invalid_tool_calls = []
@@ -266,7 +307,7 @@ def default_tool_parser(
     return tool_calls, invalid_tool_calls
 
 
-def default_tool_chunk_parser(raw_tool_calls: List[dict]) -> List[ToolCallChunk]:
+def default_tool_chunk_parser(raw_tool_calls: list[dict]) -> list[ToolCallChunk]:
     """Best-effort parsing of tool chunks."""
     tool_call_chunks = []
     for tool_call in raw_tool_calls:

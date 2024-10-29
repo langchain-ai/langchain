@@ -2,8 +2,8 @@ import os
 from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel, Field
 
 from langchain_community.tools.file_management.utils import (
     INVALID_PATH_TEMPLATE,
@@ -18,7 +18,7 @@ class FileDeleteInput(BaseModel):
     file_path: str = Field(..., description="Path of the file to delete")
 
 
-class DeleteFileTool(BaseFileToolMixin, BaseTool):
+class DeleteFileTool(BaseFileToolMixin, BaseTool):  # type: ignore[override, override]
     """Tool that deletes a file."""
 
     name: str = "file_delete"

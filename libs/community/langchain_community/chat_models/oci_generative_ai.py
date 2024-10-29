@@ -38,10 +38,10 @@ from langchain_core.output_parsers.openai_tools import (
     PydanticToolsParser,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_function
+from pydantic import BaseModel, ConfigDict
 
 from langchain_community.llms.oci_generative_ai import OCIGenAIBase
 from langchain_community.llms.utils import enforce_stop_tokens
@@ -499,8 +499,10 @@ class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
 
     """  # noqa: E501
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(
+        extra="forbid",
+        arbitrary_types_allowed=True,
+    )
 
     @property
     def _llm_type(self) -> str:
@@ -545,6 +547,9 @@ class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
             _model_kwargs[self._provider.stop_sequence_key] = stop
 
         chat_params = {**_model_kwargs, **kwargs, **oci_params}
+
+        if not self.model_id:
+            raise ValueError("Model ID is required to chat")
 
         if self.model_id.startswith(CUSTOM_ENDPOINT_PREFIX):
             serving_mode = models.DedicatedServingMode(endpoint_id=self.model_id)

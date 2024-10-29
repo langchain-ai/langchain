@@ -26,7 +26,6 @@ from sphinx.util.docutils import SphinxDirective
 _DIR = Path(__file__).parent.absolute()
 sys.path.insert(0, os.path.abspath("."))
 sys.path.insert(0, os.path.abspath("../../libs/langchain"))
-sys.path.insert(0, os.path.abspath("../../libs/experimental"))
 
 with (_DIR.parents[1] / "libs" / "langchain" / "pyproject.toml").open("r") as f:
     data = toml.load(f)
@@ -223,9 +222,7 @@ html_theme_options = {
         },
     ],
     "icon_links_label": "Quick Links",
-    "external_links": [
-        {"name": "Legacy reference", "url": "https://api.python.langchain.com/"},
-    ],
+    "external_links": [],
 }
 
 

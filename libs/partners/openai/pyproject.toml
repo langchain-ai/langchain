@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-openai"
-version = "0.1.23"
+version = "0.2.4"
 description = "An integration package connecting OpenAI and LangChain"
 authors = []
 readme = "README.md"
@@ -22,9 +22,9 @@ ignore_missing_imports = true
 "Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-openai%3D%3D0%22&expanded=true"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
-langchain-core = "^0.2.35"
-openai = "^1.40.0"
+python = ">=3.9,<4.0"
+langchain-core = "^0.3.13"
+openai = "^1.52.0"
 tiktoken = ">=0.7,<1"
 
 [tool.ruff.lint]
@@ -39,8 +39,9 @@ omit = [ "tests/*",]
 
 [tool.pytest.ini_options]
 addopts = "--snapshot-warn-unused --strict-markers --strict-config --durations=5 --cov=langchain_openai"
-markers = [ "requires: mark tests as requiring a specific library", "asyncio: mark tests as requiring asyncio", "compile: mark placeholder test used to compile integration tests without running them", "scheduled: mark tests to run in scheduled testing",]
+markers = [ "requires: mark tests as requiring a specific library", "compile: mark placeholder test used to compile integration tests without running them", "scheduled: mark tests to run in scheduled testing",]
 asyncio_mode = "auto"
+filterwarnings = [ "ignore::langchain_core._api.beta_decorator.LangChainBetaWarning",]
 
 [tool.poetry.group.test]
 optional = true
@@ -65,6 +66,7 @@ syrupy = "^4.0.2"
 pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
 pytest-cov = "^4.1.0"
+pytest-socket = "^0.6.0"
 [[tool.poetry.group.test.dependencies.numpy]]
 version = "^1"
 python = "<3.12"
