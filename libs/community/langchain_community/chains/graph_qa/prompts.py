@@ -198,6 +198,7 @@ Information:
 {context}
 
 Question: {prompt}
+IMPORTANT: Please only use information available in "Information" tag, if it is empty, reply I donot have sufficent information to answer the question.
 Helpful Answer:"""
 SPARQL_QA_PROMPT = PromptTemplate(
     input_variables=["context", "prompt"], template=SPARQL_QA_TEMPLATE
