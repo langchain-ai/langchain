@@ -6,14 +6,15 @@ import logging
 import os
 import tempfile
 from abc import abstractmethod
-from enum import Enum
+import mimetypes
 from pathlib import Path, PurePath
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Sequence, Union
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Sequence, Union
 
 from pydantic import (
     BaseModel,
     Field,
     FilePath,
+    PrivateAttr,
     SecretStr,
 )
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -23,6 +24,7 @@ from langchain_community.document_loaders.blob_loaders.file_system import (
     FileSystemBlobLoader,
 )
 from langchain_community.document_loaders.blob_loaders.schema import Blob
+from langchain_community.document_loaders.parsers.generic import MimeTypeBasedParser
 
 if TYPE_CHECKING:
     from O365 import Account
@@ -45,27 +47,24 @@ class _O365Settings(BaseSettings):
 class _O365TokenStorage(BaseSettings):
     token_path: FilePath = Path.home() / ".credentials" / "o365_token.txt"
 
-
-class _FileType(str, Enum):
-    DOC = "doc"
-    DOCX = "docx"
-    PDF = "pdf"
-
-
-def fetch_mime_types(file_types: Sequence[_FileType]) -> Dict[str, str]:
+def fetch_mime_types(file_types: Sequence[str]) -> Dict[str, str]:
     """Fetch the mime types for the specified file types."""
     mime_types_mapping = {}
-    for file_type in file_types:
-        if file_type.value == "doc":
-            mime_types_mapping[file_type.value] = "application/msword"
-        elif file_type.value == "docx":
-            mime_types_mapping[file_type.value] = (
-                "application/vnd.openxmlformats-officedocument.wordprocessingml.document"  # noqa: E501
-            )
-        elif file_type.value == "pdf":
-            mime_types_mapping[file_type.value] = "application/pdf"
+    for ext in file_types:
+        mime_type, _ = mimetypes.guess_type(f"file.{ext}")
+        if mime_type:
+            mime_types_mapping[ext] = mime_type
+        else:
+            raise ValueError(f"Unknown mimetype of extention {ext}")
     return mime_types_mapping
 
+def fetch_extensions(mime_types: Sequence[str]) -> Dict[str, str]:
+    """Fetch the mime types for the specified file types."""
+    mime_types_mapping = {}
+    for mime_type in mime_types:
+        ext = mimetypes.guess_extension(mime_type)[1:] # ignore leading `.`
+        mime_types_mapping[ext] = mime_type
+    return mime_types_mapping
 
 class O365BaseLoader(BaseLoader, BaseModel):
     """Base class for all loaders that uses O365 Package"""
@@ -78,16 +77,33 @@ class O365BaseLoader(BaseLoader, BaseModel):
     """Number of bytes to retrieve from each api call to the server. int or 'auto'."""
     recursive: bool = False
     """Should the loader recursively load subfolders?"""
+    handlers: Optional[Dict[str, Any]] = {}
+    """ Provide custom handlers for MimeTypeBasedParser"""
+    
+    _blob_parser:MimeTypeBasedParser = PrivateAttr()
+    _file_types: Sequence[str] = PrivateAttr()
+    _mime_types: Dict[str, str] = PrivateAttr()
 
-    @property
-    @abstractmethod
-    def _file_types(self) -> Sequence[_FileType]:
-        """Return supported file types."""
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        if self.handlers:
+            self._file_types = list(self.handlers.keys())
+            self._mime_types = fetch_mime_types(self._file_types)
+            mime_handlers = {
+                self._mime_types[extension] : handler
+                for extension, handler in self.handlers.items()
+            }
+            self._blob_parser = MimeTypeBasedParser(handlers=mime_handlers, fallback_parser=None)
+        else:
+            from langchain_community.document_loaders.parsers.registry import get_parser
+            self._blob_parser = get_parser("default")
+            self._mime_types = fetch_extensions(self._blob_parser.handlers.keys())
 
+    
     @property
     def _fetch_mime_types(self) -> Dict[str, str]:
         """Return a dict of supported file types to corresponding mime types."""
-        return fetch_mime_types(self._file_types)
+        return self._mime_types
 
     @property
     @abstractmethod
