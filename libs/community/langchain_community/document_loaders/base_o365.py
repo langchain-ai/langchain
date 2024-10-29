@@ -19,7 +19,7 @@ from pydantic import (
 )
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from langchain_community.document_loaders.base import BaseLoader
+from langchain_community.document_loaders.base import BaseBlobParser, BaseLoader
 from langchain_community.document_loaders.blob_loaders.file_system import (
     FileSystemBlobLoader,
 )
@@ -64,8 +64,11 @@ def fetch_extensions(mime_types: Sequence[str]) -> Dict[str, str]:
     """Fetch the mime types for the specified file types."""
     mime_types_mapping = {}
     for mime_type in mime_types:
-        ext = mimetypes.guess_extension(mime_type)[1:]  # ignore leading `.`
-        mime_types_mapping[ext] = mime_type
+        ext = mimetypes.guess_extension(mime_type)
+        if ext:
+            mime_types_mapping[ext[1:]] = mime_type  # ignore leading `.`
+        else:
+            raise ValueError(f"Unknown mimetype {mime_type}")
     return mime_types_mapping
 
 
@@ -83,11 +86,11 @@ class O365BaseLoader(BaseLoader, BaseModel):
     handlers: Optional[Dict[str, Any]] = {}
     """ Provide custom handlers for MimeTypeBasedParser"""
 
-    _blob_parser: MimeTypeBasedParser = PrivateAttr()
+    _blob_parser: BaseBlobParser = PrivateAttr()
     _file_types: Sequence[str] = PrivateAttr()
     _mime_types: Dict[str, str] = PrivateAttr()
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         if self.handlers:
             self._file_types = list(self.handlers.keys())
@@ -103,7 +106,12 @@ class O365BaseLoader(BaseLoader, BaseModel):
             from langchain_community.document_loaders.parsers.registry import get_parser
 
             self._blob_parser = get_parser("default")
-            self._mime_types = fetch_extensions(self._blob_parser.handlers.keys())
+            if not isinstance(self._blob_parser, MimeTypeBasedParser):
+                raise TypeError(
+                    'get_parser("default) was supposed to return MimeTypeBasedParser.'
+                    f"It returned {type(self._blob_parser)}"
+                )
+            self._mime_types = fetch_extensions(list(self._blob_parser.handlers.keys()))
 
     @property
     def _fetch_mime_types(self) -> Dict[str, str]:
