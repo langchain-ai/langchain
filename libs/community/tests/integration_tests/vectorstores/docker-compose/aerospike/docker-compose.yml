@@ -11,7 +11,7 @@ services:
       - "--config-file"
       - "/opt/aerospike/etc/aerospike/aerospike.conf"
   avs:
-    image: aerospike/aerospike-vector-search:0.10.0
+    image: aerospike/aerospike-vector-search:0.11.1
     ports:
       - "5002:5002"
     networks:
