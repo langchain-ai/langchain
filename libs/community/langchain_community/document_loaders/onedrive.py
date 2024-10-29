@@ -2,6 +2,7 @@ from pydantic import Field
 
 from langchain_community.document_loaders import SharePointLoader
 
+
 class OneDriveLoader(SharePointLoader):
     """Load documents from OneDrive. Uses `SharePointLoader` under the hood."""
 

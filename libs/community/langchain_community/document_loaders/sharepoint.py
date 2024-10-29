@@ -34,7 +34,6 @@ class SharePointLoader(O365BaseLoader, BaseLoader):
     load_extended_metadata: Optional[bool] = False
     """ Whether to load extended metadata. Size, Owner and full_path."""
 
-
     @property
     def _scopes(self) -> List[str]:
         """Return required scopes.

@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import logging
+import mimetypes
 import os
 import tempfile
 from abc import abstractmethod
-import mimetypes
 from pathlib import Path, PurePath
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Sequence, Union
 
@@ -47,6 +47,7 @@ class _O365Settings(BaseSettings):
 class _O365TokenStorage(BaseSettings):
     token_path: FilePath = Path.home() / ".credentials" / "o365_token.txt"
 
+
 def fetch_mime_types(file_types: Sequence[str]) -> Dict[str, str]:
     """Fetch the mime types for the specified file types."""
     mime_types_mapping = {}
@@ -58,13 +59,15 @@ def fetch_mime_types(file_types: Sequence[str]) -> Dict[str, str]:
             raise ValueError(f"Unknown mimetype of extention {ext}")
     return mime_types_mapping
 
+
 def fetch_extensions(mime_types: Sequence[str]) -> Dict[str, str]:
     """Fetch the mime types for the specified file types."""
     mime_types_mapping = {}
     for mime_type in mime_types:
-        ext = mimetypes.guess_extension(mime_type)[1:] # ignore leading `.`
+        ext = mimetypes.guess_extension(mime_type)[1:]  # ignore leading `.`
         mime_types_mapping[ext] = mime_type
     return mime_types_mapping
+
 
 class O365BaseLoader(BaseLoader, BaseModel):
     """Base class for all loaders that uses O365 Package"""
@@ -79,8 +82,8 @@ class O365BaseLoader(BaseLoader, BaseModel):
     """Should the loader recursively load subfolders?"""
     handlers: Optional[Dict[str, Any]] = {}
     """ Provide custom handlers for MimeTypeBasedParser"""
-    
-    _blob_parser:MimeTypeBasedParser = PrivateAttr()
+
+    _blob_parser: MimeTypeBasedParser = PrivateAttr()
     _file_types: Sequence[str] = PrivateAttr()
     _mime_types: Dict[str, str] = PrivateAttr()
 
@@ -90,16 +93,18 @@ class O365BaseLoader(BaseLoader, BaseModel):
             self._file_types = list(self.handlers.keys())
             self._mime_types = fetch_mime_types(self._file_types)
             mime_handlers = {
-                self._mime_types[extension] : handler
+                self._mime_types[extension]: handler
                 for extension, handler in self.handlers.items()
             }
-            self._blob_parser = MimeTypeBasedParser(handlers=mime_handlers, fallback_parser=None)
+            self._blob_parser = MimeTypeBasedParser(
+                handlers=mime_handlers, fallback_parser=None
+            )
         else:
             from langchain_community.document_loaders.parsers.registry import get_parser
+
             self._blob_parser = get_parser("default")
             self._mime_types = fetch_extensions(self._blob_parser.handlers.keys())
 
-    
     @property
     def _fetch_mime_types(self) -> Dict[str, str]:
         """Return a dict of supported file types to corresponding mime types."""
