@@ -12,7 +12,7 @@ from pydantic import Field
 from langchain_community.utilities.nasa import NasaAPIWrapper
 
 
-class NasaAction(BaseTool):
+class NasaAction(BaseTool):  # type: ignore[override]
     """Tool that queries the Atlassian Jira API."""
 
     api_wrapper: NasaAPIWrapper = Field(default_factory=NasaAPIWrapper)
