@@ -37,7 +37,7 @@ if TYPE_CHECKING:
 TEXT_PROPERTY = "content"  # Property name for the text
 DEFAULT_COLLECTION_NAME = "langchain"
 LANGCHAIN_ID_PROPERTY = "langchain_id"  # Property name for the unique id
-DEFAULT_INSERT_BATCH_SIZE = 1000  # 32
+DEFAULT_INSERT_BATCH_SIZE = 500
 DEFAULT_K = 3  # Number of Documents to return.
 DEFAULT_FETCH_K = (
     DEFAULT_K * 5
@@ -140,10 +140,11 @@ class VDMS(VectorStore):
         engine: ENGINES = "FaissFlat",
         distance_strategy: DISTANCE_METRICS = "L2",
         log_level: int = logging.WARNING,
+        logger: logging.Logger = logging.getLogger(__name__),
         **kwargs: Any,
     ) -> None:
         # super().__init__(**kwargs)
-        self.logger = logging.getLogger(__name__)
+        self.logger = logger
         self.logger.setLevel(log_level)
         self.collection_name = collection_name
 
@@ -153,7 +154,7 @@ class VDMS(VectorStore):
         self.distance_strategy = distance_strategy
         self.embedding = embedding
         self.utils = VDMS_Utils(client, logger=self.logger)
-        self._check_required_inputs(collection_name, embedding_dimensions)
+        self._check_required_inputs(collection_name, embedding_dimensions, **kwargs)
         self.updated_properties_flag = False
         self._add_set()
 
@@ -183,7 +184,10 @@ class VDMS(VectorStore):
         self.logger.info(f"Descriptor set {collection_name} created")
 
     def _check_required_inputs(
-        self, collection_name: str, embedding_dimensions: Union[int, None]
+        self,
+        collection_name: str,
+        embedding_dimensions: Union[int, None],
+        **kwargs: Any,
     ) -> None:
         # Check Distance Metric
         if self.distance_strategy not in AVAILABLE_DISTANCE_METRICS:
@@ -231,6 +235,10 @@ class VDMS(VectorStore):
             self.collection_properties.extend(current_props)
         else:
             self.collection_properties: List[str] = current_props
+
+        # Set default batch_size if provided
+        if "batch_size" in kwargs:
+            self.batch_size = kwargs["batch_size"]
 
     def _embed_documents(self, texts: List[str]) -> List[List[float]]:
         if isinstance(self.embedding, Embeddings):
@@ -289,7 +297,6 @@ class VDMS(VectorStore):
         texts: List[str],
         embeddings: List[List[float]],
         metadatas: Optional[Sequence[Union[dict, None]]] = None,
-        batch_size: int = DEFAULT_INSERT_BATCH_SIZE,
         **kwargs: Any,
     ) -> None:
         """
@@ -303,7 +310,7 @@ class VDMS(VectorStore):
         self._len_check_if_sized(ids, metadatas, "ids", "metadatas")
 
         # Find and delete by ID
-        _ = self.delete(ids, collection_name=collection_name)
+        _ = self.delete(ids, collection_name=collection_name, **kwargs)
 
         # Add as batch
         _ = self.add_from(
@@ -311,7 +318,6 @@ class VDMS(VectorStore):
             embeddings=embeddings,
             ids=ids,
             metadatas=metadatas,
-            batch_size=batch_size,
             **kwargs,
         )
 
@@ -435,12 +441,12 @@ class VDMS(VectorStore):
         embeddings: List[List[float]],
         ids: List[str],
         metadatas: Optional[Sequence[Union[dict, None]]] = None,
-        batch_size: int = DEFAULT_INSERT_BATCH_SIZE,
         **kwargs: Any,
     ) -> List[str]:
         # Get initial properties
         orig_props = self.utils.get_properties(self.collection_name)
         inserted_ids: List[str] = []
+        batch_size = kwargs.pop("batch_size", DEFAULT_INSERT_BATCH_SIZE)
         for start_idx in range(0, len(texts), batch_size):
             end_idx = min(start_idx + batch_size, len(texts))
 
@@ -1414,11 +1420,14 @@ class VDMS_Utils:
             entity["_ref"] = ref
 
         use_batch = isinstance(props, list) and len(props) > 1
-        convert_batch = isinstance(props, list) and len(props) == 1
 
         if use_batch:
             entity["batch_properties"] = props
-        elif convert_batch and props[0] not in INVALID_METADATA_VALUE:
+        elif (
+            isinstance(props, list)
+            and len(props) == 1
+            and props[0] not in INVALID_METADATA_VALUE
+        ):
             entity["properties"] = props[0]
         elif isinstance(props, dict) and props not in INVALID_METADATA_VALUE:
             entity["properties"] = props
