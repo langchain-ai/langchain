@@ -1,0 +1,203 @@
+# CrateDB
+
+This documentation section shows how to use the CrateDB vector store
+functionality around [`FLOAT_VECTOR`] and [`KNN_MATCH`]. You will learn
+how to use it for similarity search and other purposes.
+
+
+## What is CrateDB?
+
+[CrateDB] is an open-source, distributed, and scalable SQL analytics database
+for storing and analyzing massive amounts of data in near real-time, even with
+complex queries. It is PostgreSQL-compatible, based on [Lucene], and inherits
+the shared-nothing distribution layer of [Elasticsearch].
+
+It provides a distributed, multi-tenant-capable relational database and search
+engine with HTTP and PostgreSQL interfaces, and schema-free objects. It supports
+sharding, partitioning, and replication out of the box.
+
+CrateDB enables you to efficiently store billions of records, and terabytes of
+data, and query it using SQL.
+
+- Provides a standards-based SQL interface for querying relational data, nested
+  documents, geospatial constraints, and vector embeddings at the same time.
+- Improves your operations by storing time-series data, relational metadata,
+  and vector embeddings within a single database.
+- Builds upon approved technologies from Lucene and Elasticsearch.
+
+
+## CrateDB Cloud
+
+- Offers on-demand CrateDB clusters without operational overhead, 
+  with enterprise-grade features and [ISO 27001] certification.
+- The entrypoint to [CrateDB Cloud] is the [CrateDB Cloud Console].
+- Crate.io offers a free tier via [CrateDB Cloud CRFREE].
+- To get started, [sign up] to CrateDB Cloud, deploy a database cluster,
+  and follow the upcoming instructions.
+
+
+## Features
+
+The CrateDB adapter supports the _Vector Store_, _Document Loader_,
+and _Conversational Memory_ subsystems of LangChain.
+
+### Vector Store
+
+`CrateDBVectorSearch` is an API wrapper around CrateDB's `FLOAT_VECTOR` type
+and the corresponding `KNN_MATCH` function, based on SQLAlchemy and CrateDB's
+SQLAlchemy dialect. It provides an interface to store and retrieve floating
+point vectors, and to conduct similarity searches.
+
+Supports:
+- Approximate nearest neighbor search.
+- Euclidean distance.
+
+### Document Loader
+
+`CrateDBLoader` provides loading documents from a database table by an SQL
+query expression or an SQLAlchemy selectable instance.
+
+### Conversational Memory
+
+`CrateDBChatMessageHistory` uses CrateDB to manage conversation history.
+
+
+## Installation and Setup
+
+There are multiple ways to get started with CrateDB.
+
+### Install CrateDB on your local machine
+
+You can [download CrateDB], or use the [OCI image] to run CrateDB on Docker or Podman.
+Note that this is not recommended for production use.
+
+```shell
+docker run --rm -it --name=cratedb --publish=4200:4200 --publish=5432:5432 \
+    --env=CRATE_HEAP_SIZE=4g crate/crate:nightly \
+    -Cdiscovery.type=single-node
+```
+
+### Deploy a cluster on CrateDB Cloud
+
+[CrateDB Cloud] is a managed CrateDB service. Sign up for a [free trial].
+
+### Install Client
+
+```bash
+pip install crash langchain langchain-openai sqlalchemy-cratedb
+```
+
+
+## Usage » Vector Store
+
+For a more detailed walkthrough of the `CrateDBVectorSearch` wrapper, there is also
+a corresponding [Jupyter notebook](/docs/extras/integrations/vectorstores/cratedb.html).
+
+### Provide input data
+The example uses the canonical `state_of_the_union.txt`.
+```shell
+wget https://github.com/langchain-ai/langchain/raw/v0.0.325/docs/docs/modules/state_of_the_union.txt
+```
+
+### Set environment variables
+Use a valid OpenAI API key and SQL connection string. This one fits a local instance of CrateDB.
+```shell
+export OPENAI_API_KEY=foobar
+export CRATEDB_CONNECTION_STRING=crate://crate@localhost
+```
+
+### Example
+
+Load and index documents, and invoke query.
+```python
+from langchain.document_loaders import UnstructuredURLLoader
+from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain.text_splitter import CharacterTextSplitter
+from langchain.vectorstores import CrateDBVectorSearch
+
+
+def main():
+  # Load the document, split it into chunks, embed each chunk and load it into the vector store.
+  raw_documents = UnstructuredURLLoader("https://github.com/langchain-ai/langchain/raw/v0.0.325/docs/docs/modules/state_of_the_union.txt").load()
+  text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
+  documents = text_splitter.split_documents(raw_documents)
+  db = CrateDBVectorSearch.from_documents(documents, OpenAIEmbeddings())
+
+  query = "What did the president say about Ketanji Brown Jackson"
+  docs = db.similarity_search(query)
+  print(docs[0].page_content)
+
+
+if __name__ == "__main__":
+  main()
+```
+
+
+## Usage » Document Loader
+
+For a more detailed walkthrough of the `CrateDBLoader`, there is also a corresponding
+[Jupyter notebook](/docs/extras/integrations/document_loaders/cratedb.html).
+
+
+### Provide input data
+```shell
+wget https://github.com/crate-workbench/langchain/raw/cratedb/docs/docs/integrations/document_loaders/example_data/mlb_teams_2012.sql
+crash < ./example_data/mlb_teams_2012.sql
+crash --command "REFRESH TABLE mlb_teams_2012;"
+```
+
+### Load documents by SQL query
+```python
+from langchain.document_loaders import CrateDBLoader
+from pprint import pprint
+
+def main():
+  loader = CrateDBLoader(
+      'SELECT * FROM mlb_teams_2012 ORDER BY "Team" LIMIT 5;',
+      url="crate://crate@localhost/",
+  )
+  documents = loader.load()
+  pprint(documents)
+
+if __name__ == "__main__":
+  main()
+```
+
+
+## Usage » Conversational Memory
+
+For a more detailed walkthrough of the `CrateDBChatMessageHistory`, there is also a corresponding
+[Jupyter notebook](/docs/extras/integrations/memory/cratedb_chat_message_history.html).
+
+```python
+from langchain.memory.chat_message_histories import CrateDBChatMessageHistory
+from pprint import pprint
+
+def main():
+  chat_message_history = CrateDBChatMessageHistory(
+      session_id="test_session",
+      connection_string="crate://crate@localhost/",
+  )
+  chat_message_history.add_user_message("Hello")
+  chat_message_history.add_ai_message("Hi")
+  pprint(chat_message_history)
+
+if __name__ == "__main__":
+  main()
+```
+
+
+[CrateDB]: https://github.com/crate/crate
+[CrateDB Cloud]: https://cratedb.com/product
+[CrateDB Cloud Console]: https://console.cratedb.cloud/
+[CrateDB Cloud CRFREE]: https://community.crate.io/t/new-cratedb-cloud-edge-feature-cratedb-cloud-free-tier/1402
+[CrateDB SQLAlchemy dialect]: https://cratedb.com/docs/sqlalchemy-cratedb/
+[download CrateDB]: https://cratedb.com/download
+[Elastisearch]: https://github.com/elastic/elasticsearch
+[`FLOAT_VECTOR`]: https://cratedb.com/docs/crate/reference/en/master/general/ddl/data-types.html#float-vector
+[free trial]: https://cratedb.com/lp-crfree?utm_source=langchain
+[ISO 27001]: https://cratedb.com/blog/cratedb-elevates-its-security-standards-and-achieves-iso-27001-certification
+[`KNN_MATCH`]: https://cratedb.com/docs/crate/reference/en/master/general/builtins/scalar-functions.html#scalar-knn-match
+[Lucene]: https://github.com/apache/lucene
+[OCI image]: https://hub.docker.com/_/crate
+[sign up]: https://console.cratedb.cloud/
