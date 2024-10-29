@@ -11,24 +11,8 @@ repository = "https://www.github.com/langchain-ai/langchain"
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
 
-[tool.poetry.group.docs.dependencies]
-autodoc_pydantic = "^2"
-sphinx = ">=7"
-sphinx-autobuild = ">=2024"
-pydata-sphinx-theme = ">=0.15"
-toml = "^0.10.2"
-
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.5.0"
-langchain-core = { path = "libs/core/", develop = true }
-langchain-text-splitters = { path = "libs/text-splitters", develop = true }
-langchain-community = { path = "libs/community/", develop = true }
-langchain = { path = "libs/langchain/", develop = true }
-langchain-openai = { path = "libs/partners/openai", develop = true }
-
-[tool.poetry.group.codespell.dependencies]
-codespell = "^2.2.0"
-
 
 [tool.poetry.group.dev.dependencies]
 langchain-core = { path = "libs/core/", develop = true }
@@ -38,12 +22,10 @@ langchain = { path = "libs/langchain/", develop = true }
 langchain-openai = { path = "libs/partners/openai", develop = true }
 ipykernel = "^6.29.2"
 
-# Support Python 3.8 and 3.12+.
-# Can be removed once the numpy version is fixed in langchain-community.
-numpy = [
-    { version = "^1.24.0", python = "<3.12" },
-    { version = "^1.26.0", python = ">=3.12" },
-]
+[tool.poetry.group.codespell.dependencies]
+codespell = "^2.2.0"
+
+[tool.poetry.group.typing.dependencies]
 
 [tool.poetry.group.test.dependencies]
 langchain-experimental = { git = "https://github.com/langchain-ai/langchain-experimental.git", subdirectory = "libs/experimental" }
@@ -56,10 +38,6 @@ click = "^8.1.7"
 faiss-cpu = "^1.7.4"
 pypdf = "^5.0.0"
 vcrpy = "^6.0.1"
-
-[tool.poetry.group.test_integration.dependencies]
-
-[tool.poetry.group.typing.dependencies]
 
 [tool.codespell]
 skip = '.git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples,templates,*.trig'
