@@ -1,2 +1,0 @@
-gigachain==0.0.299
-streamlit==1.26.0

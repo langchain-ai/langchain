@@ -1,1 +1,0 @@
-"""CogniSwitch Toolkit"""

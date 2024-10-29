@@ -1,7 +1,0 @@
-services:
-  aperturedb:
-    image: aperturedata/aperturedb-standalone:latest
-    restart: on-failure:0
-    container_name: aperturedb
-    ports:
-      - 55555:55555
