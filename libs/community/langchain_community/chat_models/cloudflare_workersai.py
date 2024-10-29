@@ -86,18 +86,18 @@ class CloudflareWorkersAIChatModel(BaseChatModel):
     account_id: str = Field(...)
     api_token: str = Field(...)
     model: str = Field(...)
+    ai_gateway: str = ""
+    url: str = ""
+    base_url: str = "https://api.cloudflare.com/client/v4/accounts"
+    gateway_url: str = "https://gateway.ai.cloudflare.com/v1"
 
     def __init__(self, **kwargs):
         """Initialize with necessary credentials."""
         super().__init__(**kwargs)
-
-    def _process_response(self, response: requests.Response, tools=False) -> str:
-        """Process API response"""
-        if response.ok:
-            data = response.json()
-            return data
+        if self.ai_gateway:
+            self.url = f"{self.gateway_url}/{self.account_id}/{self.ai_gateway}/workers-ai/run/{self.model}"
         else:
-            raise ValueError(f"Request failed with status {response.status_code}, {response.text}")
+            self.url = f"{self.base_url}/{self.account_id}/ai/run/{self.model}"
 
     def _generate(self, messages: List[BaseMessage],  **kwargs: Any) -> ChatResult:
         """Generate a response based on the messages provided."""
@@ -117,9 +117,7 @@ class CloudflareWorkersAIChatModel(BaseChatModel):
 
         _logger.info(f"Sending prompt to Cloudflare Workers AI: {data}")
 
-        url = f"https://api.cloudflare.com/client/v4/accounts/{self.account_id}/ai/run/{self.model}"
-
-        response = requests.post(url, headers=headers, json=data)
+        response = requests.post(self.url, headers=headers, json=data)
         tool_calls = _get_tool_calls_from_response(response)
         ai_message = AIMessage(content=response, tool_calls=cast(AIMessageChunk, tool_calls))
         chat_generation = ChatGeneration(message=ai_message)
