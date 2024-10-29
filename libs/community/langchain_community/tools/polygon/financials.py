@@ -13,7 +13,7 @@ class Inputs(BaseModel):
     query: str
 
 
-class PolygonFinancials(BaseTool):
+class PolygonFinancials(BaseTool):  # type: ignore[override, override]
     """Tool that gets the financials of a ticker from Polygon"""
 
     mode: str = "get_financials"

@@ -465,7 +465,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "\n\\\\begin{verse}",
                 "\n\\\\begin{verbatim}",
                 # Now split by math environments
-                "\n\\\begin{align}",
+                "\n\\\\begin{align}",
                 "$$",
                 "$",
                 # Now split by the normal type of lines
