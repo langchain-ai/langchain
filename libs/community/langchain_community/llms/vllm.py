@@ -124,6 +124,12 @@ class VLLM(BaseLLM):
     ) -> LLMResult:
         """Run the LLM on the given prompt and input."""
         from vllm import SamplingParams
+        from vllm.lora.request import LoRARequest
+
+        lora_request = kwargs.pop("lora_request", None)
+        
+        if lora_request is not None and not isinstance(lora_request, LoRARequest):
+            raise TypeError("lora_request must be an instance of LoRARequest")
 
         # build sampling parameters
         params = {**self._default_params, **kwargs, "stop": stop}
@@ -133,9 +139,13 @@ class VLLM(BaseLLM):
         sample_params = SamplingParams(
             **{k: v for k, v in params.items() if k in known_keys}
         )
-
+        
+        # 모델 호출 시 lora_request 추가
         # call the model
-        outputs = self.client.generate(prompts, sample_params)
+        if lora_request:
+            outputs = self.client.generate(prompts, sample_params, lora_request=lora_request)
+        else:
+            outputs = self.client.generate(prompts, sample_params)
 
         generations = []
         for output in outputs:
