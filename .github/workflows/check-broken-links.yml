@@ -7,7 +7,7 @@ on:
 
 jobs:
   check-links:
-    if: github.repository_owner == 'langchain-ai'
+    if: github.repository_owner == 'langchain-ai' || github.event_name != 'schedule'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
