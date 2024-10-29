@@ -2,6 +2,8 @@ import json
 import logging
 import os
 import platform
+import threading
+import time
 from enum import Enum
 from http import HTTPStatus
 from typing import Any, Dict, List, Optional, Tuple
@@ -21,9 +23,11 @@ from langchain_community.chains.pebblo_retrieval.models import (
     AuthContext,
     Context,
     Framework,
+    IdentityPolicy,
     Prompt,
     Qa,
     Runtime,
+    SemanticContext,
 )
 
 logger = logging.getLogger(__name__)
@@ -32,6 +36,7 @@ PLUGIN_VERSION = "0.1.1"
 
 _DEFAULT_CLASSIFIER_URL = "http://localhost:8000"
 _DEFAULT_PEBBLO_CLOUD_URL = "https://api.daxa.ai"
+_POLICY_REFRESH_INTERVAL_SEC = 300  # 5 minutes
 
 
 class Routes(str, Enum):
@@ -40,6 +45,14 @@ class Routes(str, Enum):
     retrieval_app_discover = "/v1/app/discover"
     prompt = "/v1/prompt"
     prompt_governance = "/v1/prompt/governance"
+    policy = "/v1/app/policy"
+
+
+class PolicyType(str, Enum):
+    """Policy type enumerator."""
+
+    IDENTITY = "identity"
+    APPLICATION = "application"
 
 
 def get_runtime() -> Tuple[Framework, Runtime]:
@@ -100,6 +113,10 @@ class PebbloRetrievalAPIWrapper(BaseModel):
     """URL of the Pebblo Classifier"""
     cloud_url: Optional[str]
     """URL of the Pebblo Cloud"""
+    app_name: str
+    """Name of the app"""
+    policy_cache: Optional[IdentityPolicy] = None
+    """Local cache for the policy"""
 
     def __init__(self, **kwargs: Any):
         """Validate that api key in environment."""
@@ -113,6 +130,9 @@ class PebbloRetrievalAPIWrapper(BaseModel):
             kwargs, "cloud_url", "PEBBLO_CLOUD_URL", _DEFAULT_PEBBLO_CLOUD_URL
         )
         super().__init__(**kwargs)
+        if self.api_key:
+            # Start a thread to fetch policy from the Pebblo cloud
+            self._start_policy_refresh_thread()
 
     def send_app_discover(self, app: App) -> None:
         """
@@ -122,7 +142,7 @@ class PebbloRetrievalAPIWrapper(BaseModel):
             app (App): App instance to be discovered.
         """
         pebblo_resp = None
-        payload = app.dict(exclude_unset=True)
+        payload = app.model_dump(exclude_unset=True)
 
         if self.classifier_location == "local":
             # Send app details to local classifier
@@ -334,6 +354,150 @@ class PebbloRetrievalAPIWrapper(BaseModel):
                 prompt_entities["entityCount"] = pebblo_resp.get("entityCount", 0)
         return is_valid_prompt, prompt_entities
 
+    def is_privileged_user(self, auth_context: Optional[AuthContext]) -> bool:
+        """
+        Check if the user is a privileged user.
+
+        Args:
+            auth_context (Optional[AuthContext]): Authentication context.
+
+        Returns:
+            bool: True if the user is a privileged user, False otherwise.
+        """
+        if not auth_context or not self.policy_cache:
+            return False
+
+        # Get privileged_identities from the policy
+        privileged_identities = self.policy_cache.privileged_identities
+        if not privileged_identities:
+            logger.debug("Privileged identities not found in the policy.")
+            return False
+
+        # Check if user is a privileged user
+        user_auth = auth_context.user_auth if auth_context.user_auth else []
+        is_privileged_user = any(
+            _identity in privileged_identities for _identity in user_auth
+        )
+        if is_privileged_user:
+            logger.debug(f"User {auth_context.user_id} is a privileged user.")
+        else:
+            logger.debug(f"User {auth_context.user_id} is not a privileged user.")
+        return is_privileged_user
+
+    def get_semantic_context(
+        self, auth_context: Optional[AuthContext]
+    ) -> Optional[SemanticContext]:
+        """
+        Generate semantic context based on the given auth context.
+
+        Args:
+            auth_context (Optional[AuthContext]): Authentication context.
+
+        Returns:
+            Optional[SemanticContext]: Semantic context.
+        """
+        semantic_context = None
+        if not auth_context or not self.policy_cache:
+            return semantic_context
+
+        user_semantic_guardrail = self.policy_cache.user_semantic_guardrail
+        if not user_semantic_guardrail:
+            return semantic_context
+
+        _all_guardrails = []
+        user_auth = auth_context.user_auth if auth_context.user_auth else []
+        for identity in user_auth:
+            if guardrail := self.policy_cache.user_semantic_guardrail.get(identity):
+                _all_guardrails.append(guardrail)
+
+        semantic_context = self._combine_all_semantic_filters(_all_guardrails)
+        return semantic_context
+
+    def _start_policy_refresh_thread(self) -> None:
+        """Start a thread to fetch policy from the Pebblo cloud."""
+        logger.info("Starting policy refresh thread.")
+        policy_thread = threading.Thread(target=self._fetch_policy, daemon=True)
+        policy_thread.start()
+
+    def _fetch_policy(self) -> None:
+        """Fetch policy from the Pebblo cloud at regular intervals."""
+        while True:
+            try:
+                # Fetch identity policy from the Pebblo cloud
+                resp_json = self._get_policy_from_cloud(
+                    self.app_name, PolicyType.IDENTITY
+                )
+                # Update the local cache with the fetched policy
+                if resp_json:
+                    policy_type = resp_json.get("type")
+                    if not policy_type:
+                        logger.debug(f"Message: {resp_json.get('message')}")
+                        self.policy_cache = None
+                    elif policy_type == PolicyType.IDENTITY.value:
+                        self.policy_cache = IdentityPolicy(**resp_json)
+                        logger.debug(f"Policy cache updated: {self.policy_cache}")
+                    else:
+                        logger.warning(f"Policy type {policy_type} not supported.")
+            except Exception as e:
+                logger.warning(f"Failed to fetch policy: {e}")
+            # Sleep for the refresh interval
+            time.sleep(_POLICY_REFRESH_INTERVAL_SEC)
+
+    def _get_policy_from_cloud(self, app_name: str, policy_type: PolicyType) -> Any:
+        """
+        Get the policy for an app from the Pebblo Cloud.
+
+        Args:
+            app_name (str): Name of the app.
+            policy_type (PolicyType): Type of policy to fetch.
+
+        Returns:
+            Any: Json response from the Pebblo Cloud.
+
+        """
+        resp_json = None
+        policy_url = f"{self.cloud_url}{Routes.policy.value}"
+        headers = self._make_headers(cloud_request=True)
+        payload = {"app_name": app_name, "policy_type": policy_type.value}
+        response = self.make_request("POST", policy_url, headers, payload)
+        if response and response.status_code == HTTPStatus.OK:
+            resp_json = response.json()
+        else:
+            logger.warning(f"Failed to fetch policy for {app_name}")
+        return resp_json
+
+    @staticmethod
+    def _combine_all_semantic_filters(
+        all_guardrails: Optional[list] = None,
+    ) -> Optional[SemanticContext]:
+        """
+        Combine all provided guardrails to create a semantic context by finding the
+        intersection of all guardrails.
+
+        Args:
+            all_guardrails (Optional[list]): List of guardrails.
+
+        Returns:
+            Optional[SemanticContext]: The generated semantic context.
+        """
+        if not all_guardrails:
+            return None
+
+        # Find the intersection of all guardrails
+        entities_to_deny = set.intersection(
+            *[_guardrail.entities for _guardrail in all_guardrails]
+        )
+        topics_to_deny = set.intersection(
+            *[_guardrail.topics for _guardrail in all_guardrails]
+        )
+
+        # Generate semantic context from the deny entities and topics
+        _semantic_context = dict()
+        _semantic_context["pebblo_semantic_entities"] = {"deny": entities_to_deny}
+        _semantic_context["pebblo_semantic_topics"] = {"deny": topics_to_deny}
+        semantic_context = SemanticContext(**_semantic_context)
+        return semantic_context
+
     def _make_headers(self, cloud_request: bool = False) -> dict:
         """
         Generate headers for the request.
@@ -441,7 +605,7 @@ class PebbloRetrievalAPIWrapper(BaseModel):
         timeout: int = 20,
     ) -> Any:
         """
-        Make a async request to the Pebblo server/cloud API.
+        Make an async request to the Pebblo server/cloud API.
 
         Args:
             method (str): HTTP method (GET, POST, PUT, DELETE, etc.).
@@ -539,4 +703,4 @@ class PebbloRetrievalAPIWrapper(BaseModel):
             else [],
             classifier_location=self.classifier_location,
         )
-        return qa.dict(exclude_unset=True)
+        return qa.model_dump(exclude_unset=True)

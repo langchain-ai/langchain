@@ -50,20 +50,23 @@ def clear_enforcement_filters(retriever: VectorStoreRetriever) -> None:
             )
 
 
-def set_enforcement_filters(
+def update_enforcement_filters(
     retriever: VectorStoreRetriever,
     auth_context: Optional[AuthContext],
     semantic_context: Optional[SemanticContext],
+    is_privileged_user: bool = False,
 ) -> None:
     """
-    Set identity and semantic enforcement filters in the retriever.
+    Update identity and semantic enforcement filters in the retriever.
     """
     # Clear existing enforcement filters
     clear_enforcement_filters(retriever)
-    if auth_context is not None:
-        _set_identity_enforcement_filter(retriever, auth_context)
-    if semantic_context is not None:
-        _set_semantic_enforcement_filter(retriever, semantic_context)
+    # Set new enforcement filters if not a privileged user
+    if not is_privileged_user:
+        if auth_context is not None:
+            _set_identity_enforcement_filter(retriever, auth_context)
+        if semantic_context is not None:
+            _set_semantic_enforcement_filter(retriever, semantic_context)
 
 
 def _apply_qdrant_semantic_filter(

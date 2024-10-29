@@ -22,7 +22,7 @@ from pydantic import ConfigDict, Field, validator
 
 from langchain_community.chains.pebblo_retrieval.enforcement_filters import (
     SUPPORTED_VECTORSTORES,
-    set_enforcement_filters,
+    update_enforcement_filters,
 )
 from langchain_community.chains.pebblo_retrieval.models import (
     App,
@@ -102,7 +102,10 @@ class PebbloRetrievalQA(Chain):
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         question = inputs[self.input_key]
         auth_context = inputs.get(self.auth_context_key)
-        semantic_context = inputs.get(self.semantic_context_key)
+        is_privileged_user = self.pb_client.is_privileged_user(auth_context)
+        semantic_context = self.determine_semantic_context(
+            is_privileged_user, auth_context, inputs
+        )
         _, prompt_entities = self.pb_client.check_prompt_validity(question)
 
         accepts_run_manager = (
@@ -110,10 +113,16 @@ class PebbloRetrievalQA(Chain):
         )
         if accepts_run_manager:
             docs = self._get_docs(
-                question, auth_context, semantic_context, run_manager=_run_manager
+                question,
+                auth_context,
+                semantic_context,
+                is_privileged_user,
+                run_manager=_run_manager,
             )
         else:
-            docs = self._get_docs(question, auth_context, semantic_context)  # type: ignore[call-arg]
+            docs = self._get_docs(
+                question, auth_context, semantic_context, is_privileged_user
+            )  # type: ignore[call-arg]
         answer = self.combine_documents_chain.run(
             input_documents=docs, question=question, callbacks=_run_manager.get_child()
         )
@@ -155,7 +164,10 @@ class PebbloRetrievalQA(Chain):
         _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
         question = inputs[self.input_key]
         auth_context = inputs.get(self.auth_context_key)
-        semantic_context = inputs.get(self.semantic_context_key)
+        is_privileged_user = self.pb_client.is_privileged_user(auth_context)
+        semantic_context = self.determine_semantic_context(
+            is_privileged_user, auth_context, inputs
+        )
         accepts_run_manager = (
             "run_manager" in inspect.signature(self._aget_docs).parameters
         )
@@ -164,10 +176,16 @@ class PebbloRetrievalQA(Chain):
 
         if accepts_run_manager:
             docs = await self._aget_docs(
-                question, auth_context, semantic_context, run_manager=_run_manager
+                question,
+                auth_context,
+                semantic_context,
+                is_privileged_user,
+                run_manager=_run_manager,
             )
         else:
-            docs = await self._aget_docs(question, auth_context, semantic_context)  # type: ignore[call-arg]
+            docs = await self._aget_docs(
+                question, auth_context, semantic_context, is_privileged_user
+            )  # type: ignore[call-arg]
         answer = await self.combine_documents_chain.arun(
             input_documents=docs, question=question, callbacks=_run_manager.get_child()
         )
@@ -254,6 +272,7 @@ class PebbloRetrievalQA(Chain):
             api_key=api_key,
             classifier_location=classifier_location,
             classifier_url=classifier_url,
+            app_name=app_name,
         )
         # send app discovery request
         pb_client.send_app_discover(app)
@@ -289,11 +308,14 @@ class PebbloRetrievalQA(Chain):
         question: str,
         auth_context: Optional[AuthContext],
         semantic_context: Optional[SemanticContext],
+        is_privileged_user: bool = False,
         *,
         run_manager: CallbackManagerForChainRun,
     ) -> List[Document]:
         """Get docs."""
-        set_enforcement_filters(self.retriever, auth_context, semantic_context)
+        update_enforcement_filters(
+            self.retriever, auth_context, semantic_context, is_privileged_user
+        )
         return self.retriever.get_relevant_documents(
             question, callbacks=run_manager.get_child()
         )
@@ -303,14 +325,42 @@ class PebbloRetrievalQA(Chain):
         question: str,
         auth_context: Optional[AuthContext],
         semantic_context: Optional[SemanticContext],
+        is_privileged_user: bool = False,
         *,
         run_manager: AsyncCallbackManagerForChainRun,
     ) -> List[Document]:
         """Get docs."""
-        set_enforcement_filters(self.retriever, auth_context, semantic_context)
+        update_enforcement_filters(
+            self.retriever, auth_context, semantic_context, is_privileged_user
+        )
         return await self.retriever.aget_relevant_documents(
             question, callbacks=run_manager.get_child()
         )
+
+    def determine_semantic_context(
+        self,
+        is_privileged_user: bool,
+        auth_context: Optional[AuthContext],
+        inputs: Dict[str, Any],
+    ) -> Optional[SemanticContext]:
+        """
+        Determine semantic context based on the auth_context or inputs.
+
+        Args:
+            is_privileged_user (bool): If the user is a privileged user.
+            auth_context (Optional[AuthContext]): Authentication context.
+            inputs (Dict[str, Any]): Input dictionary containing various parameters.
+
+        Returns:
+            Optional[SemanticContext]: Resolved semantic context.
+        """
+        semantic_context = None
+        if not is_privileged_user:
+            # Get semantic context from policy if present otherwise from inputs
+            semantic_context = self.pb_client.get_semantic_context(
+                auth_context
+            ) or inputs.get(self.semantic_context_key)
+        return semantic_context
 
     @staticmethod
     def _get_app_details(  # type: ignore
