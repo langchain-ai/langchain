@@ -25,6 +25,13 @@ EXTERNAL_PACKAGES = {
     "redis",
     "weaviate",
     "upstage",
+    "mongodb",
+    "azure-dynamic-sessions",
+    "ibm",
+    "unstructured",
+    "milvus",
+    "together",
+    "ai21",
 }
 
 JS_PACKAGES = {
@@ -122,7 +129,7 @@ sidebar_class_name: hidden
 :::info
 
 If you'd like to write your own integration, see [Extending LangChain](/docs/how_to/#custom).
-If you'd like to contribute an integration, see [Contributing integrations](/docs/contributing/integrations/).
+If you'd like to contribute an integration, see [Contributing integrations](/docs/contributing/how_to/integrations/).
 
 :::
 

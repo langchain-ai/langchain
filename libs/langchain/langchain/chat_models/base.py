@@ -19,7 +19,6 @@ from typing import (
     overload,
 )
 
-from langchain_core._api import beta
 from langchain_core.language_models import (
     BaseChatModel,
     LanguageModelInput,
@@ -83,7 +82,6 @@ def init_chat_model(
 # FOR CONTRIBUTORS: If adding support for a new provider, please append the provider
 # name to the supported list in the docstring below. Do *not* change the order of the
 # existing providers.
-@beta()
 def init_chat_model(
     model: Optional[str] = None,
     *,
@@ -96,38 +94,39 @@ def init_chat_model(
 ) -> Union[BaseChatModel, _ConfigurableModel]:
     """Initialize a ChatModel from the model name and provider.
 
-    Must have the integration package corresponding to the model provider installed.
+    **Note:** Must have the integration package corresponding to the model provider
+    installed.
 
     Args:
         model: The name of the model, e.g. "gpt-4o", "claude-3-opus-20240229".
         model_provider: The model provider. Supported model_provider values and the
-            corresponding integration package:
+            corresponding integration package are:
 
-            - openai (langchain-openai)
-            - anthropic (langchain-anthropic)
-            - azure_openai (langchain-openai)
-            - google_vertexai (langchain-google-vertexai)
-            - google_genai (langchain-google-genai)
-            - bedrock (langchain-aws)
-            - bedrock_converse (langchain-aws)
-            - cohere (langchain-cohere)
-            - fireworks (langchain-fireworks)
-            - together (langchain-together)
-            - mistralai (langchain-mistralai)
-            - huggingface (langchain-huggingface)
-            - groq (langchain-groq)
-            - ollama (langchain-ollama)  [support added in langchain==0.2.12]
+            - 'openai'              -> langchain-openai
+            - 'anthropic'           -> langchain-anthropic
+            - 'azure_openai'        -> langchain-openai
+            - 'google_vertexai'     -> langchain-google-vertexai
+            - 'google_genai'        -> langchain-google-genai
+            - 'bedrock'             -> langchain-aws
+            - 'bedrock_converse'    -> langchain-aws
+            - 'cohere'              -> langchain-cohere
+            - 'fireworks'           -> langchain-fireworks
+            - 'together'            -> langchain-together
+            - 'mistralai'           -> langchain-mistralai
+            - 'huggingface'         -> langchain-huggingface
+            - 'groq'                -> langchain-groq
+            - 'ollama'              -> langchain-ollama
 
             Will attempt to infer model_provider from model if not specified. The
             following providers will be inferred based on these model prefixes:
 
-            - gpt-3..., gpt-4..., or o1... -> openai
-            - claude... -> anthropic
-            - amazon.... -> bedrock
-            - gemini... -> google_vertexai
-            - command... -> cohere
-            - accounts/fireworks... -> fireworks
-            - mistral... -> mistralai
+            - 'gpt-3...' | 'gpt-4...' | 'o1...' -> 'openai'
+            - 'claude...'                       -> 'anthropic'
+            - 'amazon....'                      -> 'bedrock'
+            - 'gemini...'                       -> 'google_vertexai'
+            - 'command...'                      -> 'cohere'
+            - 'accounts/fireworks...'           -> 'fireworks'
+            - 'mistral...'                      -> 'mistralai'
         configurable_fields: Which model parameters are
             configurable:
 
@@ -285,6 +284,10 @@ def init_chat_model(
 
         Support for langchain_aws.ChatBedrockConverse added
         (model_provider="bedrock_converse").
+
+    .. versionchanged:: 0.3.5
+
+        Out of beta.
 
     """  # noqa: E501
     if not model and not configurable_fields:
