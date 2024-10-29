@@ -77,6 +77,7 @@ requests-toolbelt>=1.0.0,<2
 rspace_client>=2.5.0,<3
 scikit-learn>=1.2.2,<2
 simsimd>=5.0.0,<6
+sqlalchemy-cratedb>=0.40.1,<1
 sqlite-vss>=0.1.2,<0.2
 sqlite-vec>=0.1.0,<0.2
 sseclient-py>=1.8.0,<2

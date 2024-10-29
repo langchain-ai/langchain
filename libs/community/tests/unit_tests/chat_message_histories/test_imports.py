@@ -5,6 +5,7 @@ EXPECTED_ALL = [
     "CassandraChatMessageHistory",
     "ChatMessageHistory",
     "CosmosDBChatMessageHistory",
+    "CrateDBChatMessageHistory",
     "DynamoDBChatMessageHistory",
     "ElasticsearchChatMessageHistory",
     "FileChatMessageHistory",
