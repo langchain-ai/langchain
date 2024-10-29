@@ -13,7 +13,7 @@ export default function PaginatorWrapper(props) {
         category="Docs Discussions"
         categoryId="DIC_kwDOIPDwls4CjJYb"
         mapping="pathname"
-        strict="0"
+        strict="1"
         reactionsEnabled="0"
         emitMetadata="0"
         inputPosition="bottom"
