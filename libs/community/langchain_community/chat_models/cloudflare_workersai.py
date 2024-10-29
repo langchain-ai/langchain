@@ -1,35 +1,31 @@
-import logging
-from typing import Any, List, Mapping, cast, Dict
-from uuid import uuid4
-
+from langchain_core.runnables.base import RunnableMap
 import requests
-from langchain.schema import AIMessage, ChatGeneration, ChatResult, HumanMessage
-from langchain_core.language_models import LanguageModelInput
-from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import AIMessageChunk, BaseMessage, ToolCall, SystemMessage, ToolMessage
-from langchain_core.messages.tool import tool_call
-from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
+from langchain_core.runnables import Runnable
+from langchain_core.language_models import LanguageModelInput
 from langchain_core.utils.function_calling import convert_to_openai_tool
-from pydantic import Field
+from langchain_core.messages import BaseMessage, AIMessageChunk, ToolCall, SystemMessage, ToolMessage
+from langchain_core.messages.tool import tool_call
+from uuid import uuid4
+from langchain_core.utils.pydantic import is_basemodel_subclass
+from langchain_core.output_parsers import (
+    JsonOutputParser,
+    PydanticOutputParser,
+)
+from langchain_core.output_parsers.openai_tools import (
+    JsonOutputKeyToolsParser,
+    PydanticToolsParser,
+    make_invalid_tool_call,
+    parse_tool_call,
+)
 
 # Initialize logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 _logger = logging.getLogger(__name__)
 
 
-def _get_tool_calls_from_response(response: Mapping[str, Any]) -> List[ToolCall]:
-    """Get tool calls from ollama response."""
-    tool_calls = []
-    if "tool_calls" in response.json()["result"]:
-        for tc in response.json()["result"]["tool_calls"]:
-            tool_calls.append(
-                tool_call(
-                    id=str(uuid4()),
-                    name=tc["name"],
-                    args=tc["arguments"],
-                )
-            )
-    return tool_calls
+def _is_pydantic_class(obj: Any) -> bool:
+    return isinstance(obj, type) and is_basemodel_subclass(obj)
 
 
 def _convert_messages_to_cloudflare_messages(messages: List[BaseMessage]) -> List[Dict[str, Any]]:
@@ -61,12 +57,28 @@ def _convert_messages_to_cloudflare_messages(messages: List[BaseMessage]) -> Lis
             msg["role"] = "system"
         elif isinstance(message, ToolMessage):
             msg["role"] = "tool"
-            msg["tool_call_id"] = message.tool_call_id
+            msg["tool_call_id"] = message.tool_call_id  # Use tool_call_id if it's a ToolMessage
 
         # Add the formatted message to the list
         cloudflare_messages.append(msg)
 
     return cloudflare_messages
+
+
+def _get_tool_calls_from_response(response: Mapping[str, Any]) -> List[ToolCall]:
+    """Get tool calls from ollama response."""
+    tool_calls = []
+    if "tool_calls" in response.json()["result"]:
+        for tc in response.json()["result"]["tool_calls"]:
+            tool_calls.append(
+                    tool_call(
+                        id=str(uuid4()),
+                        name=tc["name"],
+                        args=tc["arguments"],
+                    )
+                )
+    return tool_calls
+
 
 class CloudflareWorkersAIChatModel(BaseChatModel):
     """Custom chat model for Cloudflare Workers AI"""
@@ -79,12 +91,19 @@ class CloudflareWorkersAIChatModel(BaseChatModel):
         """Initialize with necessary credentials."""
         super().__init__(**kwargs)
 
-    def _generate(
-        self, messages: List[BaseMessage], stop: List[str] = None, **kwargs: Any
-    ) -> ChatResult:
+    def _process_response(self, response: requests.Response, tools=False) -> str:
+        """Process API response"""
+        if response.ok:
+            data = response.json()
+            return data
+        else:
+            raise ValueError(f"Request failed with status {response.status_code}, {response.text}")
+
+    def _generate(self, messages: List[BaseMessage],  **kwargs: Any) -> ChatResult:
         """Generate a response based on the messages provided."""
         formatted_messages = _convert_messages_to_cloudflare_messages(messages)
 
+        headers = {"Authorization": f"Bearer {self.api_token}"}
         prompt = "\n".join(
             f"role: {msg['role']}, content: {msg['content']}" +
             (f", tools: {msg['tool_calls']}" if "tool_calls" in msg else "") +
@@ -95,35 +114,75 @@ class CloudflareWorkersAIChatModel(BaseChatModel):
         if "tools" in kwargs:
             tool = kwargs["tools"]
             data["tools"] = [tool]
-        _logger.info(f"Sending prompt to Cloudflare Workers AI: {prompt}")
 
-        headers = {"Authorization": f"Bearer {self.api_token}"}
+        _logger.info(f"Sending prompt to Cloudflare Workers AI: {data}")
+
         url = f"https://api.cloudflare.com/client/v4/accounts/{self.account_id}/ai/run/{self.model}"
 
         response = requests.post(url, headers=headers, json=data)
         tool_calls = _get_tool_calls_from_response(response)
-        ai_message = AIMessage(
-            content=response, tool_calls=cast(AIMessageChunk, tool_calls)
-        )
+        ai_message = AIMessage(content=response, tool_calls=cast(AIMessageChunk, tool_calls))
         chat_generation = ChatGeneration(message=ai_message)
         return ChatResult(generations=[chat_generation])
 
-    def _format_messages(self, messages: List[BaseMessage]) -> str:
-        """Helper function to format messages into a prompt."""
-        formatted_messages = []
-        for message in messages:
-            if isinstance(message, HumanMessage):
-                formatted_messages.append(f"Human: {message.content}")
-            elif isinstance(message, AIMessage):
-                formatted_messages.append(f"AI: {message.content}")
-        return "\n".join(formatted_messages)
-
-    def bind_tools(
-        self, tools: List[BaseTool], **kwargs: Any
-    ) -> Runnable[LanguageModelInput, BaseMessage]:
+    def bind_tools(self, tools: List[BaseTool], **kwargs: Any) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind tools for use in model generation."""
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
         return super().bind(tools=formatted_tools, **kwargs)
+
+    def with_structured_output(self,
+        schema: Union[Dict, Type[BaseModel]],
+        *,
+        include_raw: bool = False,
+        method: Optional[Literal["json_mode"]] = None,
+        **kwargs: Any,
+        ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
+        """Model wrapper that returns outputs formatted to match the given schema."""
+
+        if kwargs:
+            raise ValueError(f"Received unsupported arguments {kwargs}")
+        is_pydantic_schema = _is_pydantic_class(schema)
+        if method == "function_calling":
+            if schema is None:
+                raise ValueError(
+                    "schema must be specified when method is 'function_calling'. "
+                    "Received None."
+                )
+            tool_name = convert_to_openai_tool(schema)["function"]["name"]
+            llm = self.bind_tools([schema], tool_choice=tool_name)
+            if is_pydantic_schema:
+                output_parser: OutputParserLike = PydanticToolsParser(
+                    tools=[schema],  # type: ignore[list-item]
+                    first_tool_only=True,  # type: ignore[list-item]
+                )
+            else:
+                output_parser = JsonOutputKeyToolsParser(
+                    key_name=tool_name, first_tool_only=True
+                )
+        elif method == "json_mode":
+            llm = self.bind(response_format={"type": "json_object"})
+            output_parser = (
+                PydanticOutputParser(pydantic_object=schema)  # type: ignore[type-var, arg-type]
+                if is_pydantic_schema
+                else JsonOutputParser()
+            )
+        else:
+            raise ValueError(
+                f"Unrecognized method argument. Expected one of 'function_calling' or "
+                f"'json_mode'. Received: '{method}'"
+            )
+
+        if include_raw:
+            parser_assign = RunnablePassthrough.assign(
+                parsed=itemgetter("raw") | output_parser, parsing_error=lambda _: None
+            )
+            parser_none = RunnablePassthrough.assign(parsed=lambda _: None)
+            parser_with_fallback = parser_assign.with_fallbacks(
+                [parser_none], exception_key="parsing_error"
+            )
+            return RunnableMap(raw=llm) | parser_with_fallback
+        else:
+            return llm | output_parser
 
     @property
     def _llm_type(self) -> str:
