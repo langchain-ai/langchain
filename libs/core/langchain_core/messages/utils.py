@@ -547,7 +547,7 @@ def merge_message_runs(
     messages = convert_to_messages(messages)
     merged: list[BaseMessage] = []
     for msg in messages:
-        curr = msg.model_copy()
+        curr = msg.model_copy(deep=True)
         last = merged.pop() if merged else None
         if not last:
             merged.append(curr)
