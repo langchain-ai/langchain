@@ -11,7 +11,7 @@ from langchain_core.tools import BaseTool
 from langchain_community.utilities.mojeek_search import MojeekSearchAPIWrapper
 
 
-class MojeekSearch(BaseTool):
+class MojeekSearch(BaseTool):  # type: ignore[override]
     name: str = "mojeek_search"
     description: str = (
         "A wrapper around Mojeek Search. "
