@@ -11,6 +11,19 @@ from dataclasses import dataclass
 from typing import Optional
 
 
+RESULT_CATEGORIES = [
+    "knowledge_graph",
+    "combined_search_result",
+    "product_information",
+    "local_information",
+    "search_information"
+]
+
+EXCLUDED_RESULT_ATTRIBUTES = [
+    "pos_overall"
+]
+
+
 @dataclass
 class ResponseElement:
     tag: str
@@ -25,8 +38,6 @@ def _get_default_params() -> dict:
 
     Returns:
         dict: Default parameters, including the following keys:
-            - oxylabs_username (str): Oxylabs username, either provided directly or via the environment variable `OXYLABS_USERNAME`.
-            - oxylabs_password (str): Oxylabs password, either provided directly or via the environment variable `OXYLABS_PASSWORD`.
             - source (str): Source of the search engine, e.g., "google_search".
             - user_agent_type (str): User agent type, e.g., "desktop". Can be set using values from `oxylabs.utils.types`.
             - render (str): Render type for the search results, e.g., "html". Can be set using values from `oxylabs.utils.types`.
@@ -43,15 +54,12 @@ def _get_default_params() -> dict:
     """
 
     return {
-        "oxylabs_username": "",
-        "oxylabs_password": "",
-        "engine": "google",
         "source": "google_search",
         "user_agent_type": "desktop",
         "render": "html",
         "domain": "com",
         "start_page": 1,
-        "pages": 3,
+        "pages": 1,
         "limit": 5,
         "parse": True,
         "locale": "",
@@ -59,6 +67,8 @@ def _get_default_params() -> dict:
         "parsing_instructions": {},
         "context": [],
         "request_timeout": 165,
+        "include_binary_image_data": False,
+        "result_categories": []
     }
 
 
@@ -70,9 +80,9 @@ class OxylabsSearchAPIWrapper(BaseModel):
         from langchain_community.utilities import OxylabsSearchAPIWrapper
 
         oxylabs_api = OxylabsSearchAPIWrapper(
+            "oxylabs_username": <OXYLABS_USERNAME>,
+            "oxylabs_password": <OXYLABS_PASSWORD>,
             params={
-                "oxylabs_username": <OXYLABS_USERNAME>,
-                "oxylabs_password": <OXYLABS_PASSWORD>,
                 "source": "google_search",
                 "user_agent_type": "desktop",
                 "render": "html",
@@ -86,6 +96,8 @@ class OxylabsSearchAPIWrapper(BaseModel):
                 "parsing_instructions": {},
                 "context": [],
                 "request_timeout": 165,
+                "include_binary_image_data": False,
+                "result_categories": []
             }
         )
         search_query = "Oxylabs"
@@ -93,7 +105,8 @@ class OxylabsSearchAPIWrapper(BaseModel):
         print(result)
         ```
     """
-
+    include_binary_image_data: Optional[bool] = None
+    result_categories: Optional[list] = None
     search_engine: Any = None
     params: dict = Field(default=_get_default_params)
     oxylabs_username: Optional[str] = None
@@ -110,10 +123,10 @@ class OxylabsSearchAPIWrapper(BaseModel):
         default_params.update(**values.get("params", {}))
         current_params = default_params
         oxylabs_username = get_from_dict_or_env(
-            current_params, "oxylabs_username", "OXYLABS_USERNAME"
+            values, "oxylabs_username", "OXYLABS_USERNAME"
         )
         oxylabs_password = get_from_dict_or_env(
-            current_params, "oxylabs_password", "OXYLABS_PASSWORD"
+            values, "oxylabs_password", "OXYLABS_PASSWORD"
         )
         if not (oxylabs_username and oxylabs_password):
             raise RuntimeError(
@@ -125,6 +138,22 @@ class OxylabsSearchAPIWrapper(BaseModel):
         formed_values["oxylabs_username"] = oxylabs_username
         formed_values["oxylabs_password"] = oxylabs_password
         formed_values["params"] = dict(current_params)
+
+        if "include_binary_image_data" in formed_values["params"]:
+            formed_values["include_binary_image_data"] = formed_values["params"]["include_binary_image_data"]
+            del formed_values["params"]["include_binary_image_data"]
+
+        if "result_categories" in formed_values["params"]:
+            for result_category in formed_values["params"]["result_categories"]:
+                if result_category not in RESULT_CATEGORIES:
+                    raise NotImplementedError(
+                        f"Result category: `{result_category}` is not supported."
+                        f" Supported  categories: {', '.join(RESULT_CATEGORIES)}"
+                    )
+
+            formed_values["result_categories"] = formed_values["params"]["result_categories"]
+            del formed_values["params"]["result_categories"]
+
 
         try:
             from oxylabs import RealtimeClient
@@ -138,10 +167,30 @@ class OxylabsSearchAPIWrapper(BaseModel):
         try:
             oxylabs_realtime_client = RealtimeClient(oxylabs_username, oxylabs_password)
             # The process to set any available provider
-            oxylabs_realtime_client_by_provider = getattr(
-                oxylabs_realtime_client.serp, current_params["engine"]
-            )
-            formed_values["search_engine"] = oxylabs_realtime_client_by_provider
+            source_ = formed_values["params"]["source"]
+            source_provider_map = {
+                "google": ["google_search"],
+            }
+            engine_ = ""
+            for engine, sources_ in source_provider_map.items():
+                if source_ in sources_:
+                    engine_ = engine
+
+                    break
+
+            if engine_:
+                oxylabs_realtime_client_by_provider = getattr(
+                    oxylabs_realtime_client.serp, engine_
+                )
+                formed_values["search_engine"] = oxylabs_realtime_client_by_provider
+            else:
+                raise NotImplementedError(
+                    f"Source: `{source_}` is not supported."
+                    f" Supported  sources: {', '.join(sum(source_provider_map.values(), []))}"
+                )
+
+        except NotImplementedError as exc:
+            raise NotImplementedError(f"{exc}")
 
         except Exception as exc:
             raise RuntimeError(f"Unknown Oxylabs Python SDK integration error: {exc}")
@@ -150,49 +199,57 @@ class OxylabsSearchAPIWrapper(BaseModel):
 
     async def arun(self, query: str, **kwargs: Any) -> str:
         """Run query through OxylabsSearchAPI and parse result async."""
-        return self._process_response(await self.aresults(query))
+        return self._process_response(await self.aresults(query, **kwargs))
 
     def run(self, query: str, **kwargs: Any) -> str:
         """Run query through OxylabsSearchAPI and parse result."""
-        return self._process_response(self.results(query))
+        return self._process_response(self.results(query, **kwargs))
 
-    def results(self, query: str) -> List[Dict[str, Any]]:
+    def results(self, query: str, **kwargs: Any) -> List[Dict[str, Any]]:
         """Run query through Oxylabs Web Scrapper API and return SERPResponse object."""
-        params_ = self.get_params()
+        params_ = self.get_params(**kwargs)
         search_client = self.search_engine
         search_result = search_client.scrape_search(query, **params_)
-        validated_responses = self._validate_response(search_result)
+
+        try:
+            validated_responses = self._validate_response(search_result)
+
+        except RuntimeError:
+            return list()
 
         return validated_responses
 
-    async def aresults(self, query: str) -> List[Dict[str, Any]]:
+    async def aresults(self, query: str, **kwargs: Any) -> List[Dict[str, Any]]:
         """Run query through Oxylabs Web Scrapper API and return SERPResponse object async."""
-        params_ = self.get_params()
+        params_ = self.get_params(**kwargs)
 
         search_client = self.search_engine
-        # TODO check async implementation (self.aiohttpsession in other wrappers)
         search_result = await asyncio.to_thread(
             search_client.scrape_search,
             query,
             **params_,
         )
 
-        validated_responses = self._validate_response(search_result)
+        try:
+            validated_responses = self._validate_response(search_result)
+
+        except RuntimeError:
+            return list()
 
         return validated_responses
 
-    def get_params(self) -> Dict[str, Any]:
+    def get_params(self, **kwargs) -> Dict[str, Any]:
         """Get default configuration parameters for OxylabsSearchAPI for scrape_search()."""
-        _param_keys = list(self.params.keys())
-        setup_keys = ["oxylabs_username", "oxylabs_password", "engine"]
-        for setup_key in setup_keys:
-            _param_keys.remove(setup_key)
 
         _params = {
             f"{p_key}": self.params[p_key]
-            for p_key in _param_keys
+            for p_key in self.params
             if self.params[p_key]
         }
+
+        for key, value in kwargs.items():
+            if key in _params:
+                _params[key] = value
 
         return _params
 
@@ -204,10 +261,9 @@ class OxylabsSearchAPIWrapper(BaseModel):
             if not isinstance(result_list, list) or not result_list:
                 raise ValueError("No results returned!")
 
-            # TODO make sure this works for multi page responses <- pagination
-            for result_item in result_list:
-                result_item = dict(result_item)
-                content = result_item["content"]
+            for result_page in result_list:
+                result_page = dict(result_page)
+                content = result_page["content"]
                 if not isinstance(content, dict):
                     raise ValueError(
                         "Result `content` format error, try setting parameter `parse` to True"
@@ -231,23 +287,25 @@ class OxylabsSearchAPIWrapper(BaseModel):
 
         result_ = "No good search result found"
 
+        result_category_processing_map = {
+            "knowledge_graph": self._create_knowledge_graph_snippets,
+            "combined_search_result": self._create_combined_search_result_snippets,
+            "product_information": self._create_product_information_snippets,
+            "local_information": self._create_local_information_snippets,
+            "search_information": self._create_search_information_snippets
+        }
+
         snippets = list()
-        # TODO update here fter pagination questions are answered
-        for validated_response in res[:1]:
-            # Knowledge Graph Snippets
-            self._create_knowledge_graph_snippets(validated_response, snippets)
 
-            # Combined Search Result Snippets [Organic Results, Paid Results]
-            self._create_combined_search_result_snippets(validated_response, snippets)
+        for nr_, validated_response in enumerate(res):
+            if self.result_categories:
+                for result_category in self.result_categories:
+                    result_category_processing_map[result_category](validated_response, snippets)
+            else:
+                for result_category in result_category_processing_map:
+                    result_category_processing_map[result_category](validated_response, snippets)
 
-            # Product information Snippets
-            self._create_product_information_snippets(validated_response, snippets)
-
-            # Local Group Information Snippets
-            self._create_local_information_snippets(validated_response, snippets)
-
-            # Search Information Snippets
-            self._create_search_information_snippets(validated_response, snippets)
+            snippets.append(f"-------------- Page {str(nr_ + 1)} --------------")
 
         # Combine all snippets
         if snippets:
@@ -264,7 +322,8 @@ class OxylabsSearchAPIWrapper(BaseModel):
     ) -> str:
         target_snippets = list()
 
-        recursion_padding = "  " * (current_depth + 1)
+        padding_multiplier = current_depth + 1
+        recursion_padding = "  " * padding_multiplier
 
         base64_image_attributes = ["image_data".upper(), "data".upper()]
         base64_images_attribute = "images".upper()
@@ -278,7 +337,7 @@ class OxylabsSearchAPIWrapper(BaseModel):
                     if (
                         base64_images_attribute in parent_.path_.split("-")[-3:]
                         or parent_.tag in base64_image_attributes
-                    ):
+                    ) and not self.include_binary_image_data:
                         target_structure = "Redacted base64 image string..."
 
                     target_snippets.append(
@@ -286,12 +345,13 @@ class OxylabsSearchAPIWrapper(BaseModel):
                     )
 
                 elif parent_.python_type == str(type(dict())):
-                    if parent_.tag in base64_image_attributes:
+                    if parent_.tag in base64_image_attributes and not self.include_binary_image_data:
                         target_structure = "Redacted base64 image string..."
 
-                    target_snippets.append(
-                        f"{recursion_padding}{parent_.display_tag}: {str(target_structure)}"
-                    )
+                    if parent_.tag.lower() not in EXCLUDED_RESULT_ATTRIBUTES:
+                        target_snippets.append(
+                            f"{recursion_padding}{parent_.display_tag}: {str(target_structure)}"
+                        )
 
         elif isinstance(target_structure, dict):
             if target_structure:
@@ -342,7 +402,7 @@ class OxylabsSearchAPIWrapper(BaseModel):
 
                     elif isinstance(value_, (str, float, int)):
                         if value_:
-                            if key_.upper() in base64_image_attributes:
+                            if key_.upper() in base64_image_attributes  and not self.include_binary_image_data:
                                 value_ = "Redacted base64 image string..."
 
                             target_snippets.append(
