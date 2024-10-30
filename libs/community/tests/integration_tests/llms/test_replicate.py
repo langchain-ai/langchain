@@ -3,8 +3,10 @@
 from langchain_community.llms.replicate import Replicate
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
-TEST_MODEL_HELLO = "replicate/hello-world:" + \
-    "5c7d5dc6dd8bf75c1acaa8565735e7986bc5b66206b55cca93cb72c9bf15ccaa"
+TEST_MODEL_HELLO = (
+    "replicate/hello-world:"
+    + "5c7d5dc6dd8bf75c1acaa8565735e7986bc5b66206b55cca93cb72c9bf15ccaa"
+)
 TEST_MODEL_LANG = "meta/meta-llama-3-8b-instruct"
 
 
