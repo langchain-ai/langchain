@@ -1,6 +1,6 @@
 """Couchbase Chat Message History"""
 
-import logging  #
+import logging
 import time
 import uuid
 from datetime import timedelta
