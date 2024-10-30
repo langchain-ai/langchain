@@ -15,7 +15,3 @@ class TestGroqStandard(ChatModelUnitTests):
     @property
     def chat_model_class(self) -> Type[BaseChatModel]:
         return ChatGroq
-
-    @pytest.mark.xfail(reason="Groq does not support tool_choice='any'")
-    def test_bind_tool_pydantic(self, model: BaseChatModel) -> None:
-        super().test_bind_tool_pydantic(model)
