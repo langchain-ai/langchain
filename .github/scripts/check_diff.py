@@ -110,12 +110,17 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
         return _get_pydantic_test_configs(dir_)
 
     if dir_ == "libs/core":
-        py_versions = ["3.9", "3.10", "3.11", "3.12"]
+        py_versions = ["3.9", "3.10", "3.11", "3.12", "3.13"]
     # custom logic for specific directories
     elif dir_ == "libs/partners/milvus":
         # milvus poetry doesn't allow 3.12 because they
         # declare deps in funny way
         py_versions = ["3.9", "3.11"]
+
+    elif dir_ == "libs/partners/huggingface":
+        # huggingface tokenizers doesn't support 3.13 yet
+        # because of pep517 builds
+        py_versions = ["3.9", "3.12"]
 
     elif dir_ in ["libs/community", "libs/langchain"] and job == "extended-tests":
         # community extended test resolution in 3.12 is slow
@@ -125,8 +130,11 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
     elif dir_ == "libs/community" and job == "compile-integration-tests":
         # community integration deps are slow in 3.12
         py_versions = ["3.9", "3.11"]
-    else:
+    elif dir_ == ".":
+        # unable to install with 3.13 because tokenizers doesn't support 3.13 yet
         py_versions = ["3.9", "3.12"]
+    else:
+        py_versions = ["3.9", "3.13"]
 
     return [{"working-directory": dir_, "python-version": py_v} for py_v in py_versions]
 
