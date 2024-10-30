@@ -127,7 +127,7 @@ class VLLM(BaseLLM):
         from vllm.lora.request import LoRARequest
 
         lora_request = kwargs.pop("lora_request", None)
-        
+
         if lora_request is not None and not isinstance(lora_request, LoRARequest):
             raise TypeError("lora_request must be an instance of LoRARequest")
 
@@ -139,11 +139,12 @@ class VLLM(BaseLLM):
         sample_params = SamplingParams(
             **{k: v for k, v in params.items() if k in known_keys}
         )
-        
-        # 모델 호출 시 lora_request 추가
+
         # call the model
         if lora_request:
-            outputs = self.client.generate(prompts, sample_params, lora_request=lora_request)
+            outputs = self.client.generate(
+                prompts, sample_params, lora_request=lora_request
+            )
         else:
             outputs = self.client.generate(prompts, sample_params)
 
