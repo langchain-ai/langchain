@@ -67,7 +67,7 @@ def test_cypher_generating_run() -> None:
     graph.refresh_schema()
 
     chain = GraphCypherQAChain.from_llm(
-        ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0, seed=0),
+        ChatOpenAI(model="gpt-3.5-turbo", temperature=0, seed=0),
         graph=graph,
         allow_dangerous_requests=True,
     )
@@ -100,7 +100,7 @@ def test_cypher_top_k() -> None:
     graph.refresh_schema()
 
     chain = GraphCypherQAChain.from_llm(
-        ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0, seed=0),
+        ChatOpenAI(model="gpt-3.5-turbo", temperature=0, seed=0),
         graph=graph,
         return_direct=True,
         top_k=TOP_K,
@@ -132,7 +132,7 @@ def test_cypher_intermediate_steps() -> None:
     graph.refresh_schema()
 
     chain = GraphCypherQAChain.from_llm(
-        ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0, seed=0),
+        ChatOpenAI(model="gpt-3.5-turbo", temperature=0, seed=0),
         graph=graph,
         return_intermediate_steps=True,
         allow_dangerous_requests=True,
@@ -176,7 +176,7 @@ def test_cypher_return_direct() -> None:
     graph.refresh_schema()
 
     chain = GraphCypherQAChain.from_llm(
-        ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0, seed=0),
+        ChatOpenAI(model="gpt-3.5-turbo", temperature=0, seed=0),
         graph=graph,
         return_direct=True,
         allow_dangerous_requests=True,
@@ -208,7 +208,7 @@ def test_cypher_save_load() -> None:
         password=password,
     )
     chain = GraphCypherQAChain.from_llm(
-        ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0, seed=0),
+        ChatOpenAI(model="gpt-3.5-turbo", temperature=0, seed=0),
         graph=graph,
         return_direct=True,
     )
@@ -242,7 +242,7 @@ def test_exclude_types() -> None:
     graph.refresh_schema()
 
     chain = GraphCypherQAChain.from_llm(
-        ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0, seed=0),
+        ChatOpenAI(model="gpt-3.5-turbo", temperature=0, seed=0),
         graph=graph,
         exclude_types=["Person", "DIRECTED"],
         allow_dangerous_requests=True,
@@ -280,7 +280,7 @@ def test_include_types() -> None:
     graph.refresh_schema()
 
     chain = GraphCypherQAChain.from_llm(
-        ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0, seed=0),
+        ChatOpenAI(model="gpt-3.5-turbo", temperature=0, seed=0),
         graph=graph,
         include_types=["Movie", "Actor", "ACTED_IN"],
         allow_dangerous_requests=True,
@@ -319,7 +319,7 @@ def test_include_types2() -> None:
     graph.refresh_schema()
 
     chain = GraphCypherQAChain.from_llm(
-        ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0, seed=0),
+        ChatOpenAI(model="gpt-3.5-turbo", temperature=0, seed=0),
         graph=graph,
         include_types=["Movie", "ACTED_IN"],
         allow_dangerous_requests=True,

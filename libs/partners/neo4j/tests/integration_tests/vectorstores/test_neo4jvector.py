@@ -662,12 +662,14 @@ def test_neo4jvector_special_character() -> None:
         pre_delete_collection=True,
         search_type=SearchType.HYBRID,
     )
-    output = docsearch.similarity_search(
+    docsearch.similarity_search(
         "It is the end of the world. Take shelter!",
         k=1,
     )
     # assert output == [
-    #     Document(page_content="It is the end of the world. Take shelter!", metadata={})
+    #     Document(
+    #         page_content="It is the end of the world. Take shelter!", metadata={}
+    #     )
     # ]
 
     drop_vector_indexes(docsearch)
