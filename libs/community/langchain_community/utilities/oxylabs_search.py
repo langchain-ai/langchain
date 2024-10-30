@@ -405,9 +405,10 @@ class OxylabsSearchAPIWrapper(BaseModel):
                             if key_.upper() in base64_image_attributes  and not self.include_binary_image_data:
                                 value_ = "Redacted base64 image string..."
 
-                            target_snippets.append(
-                                f"{recursion_padding}{key_.upper()}: {str(value_)}"
-                            )
+                            if key_ not in EXCLUDED_RESULT_ATTRIBUTES:
+                                target_snippets.append(
+                                    f"{recursion_padding}{key_.upper()}: {str(value_)}"
+                                )
 
         elif isinstance(target_structure, (list, tuple)):
             if target_structure:
