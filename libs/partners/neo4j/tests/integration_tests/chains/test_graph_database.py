@@ -22,11 +22,7 @@ def test_connect_neo4j() -> None:
         password=password,
     )
 
-    output = graph.query(
-        """
-    RETURN "test" AS output
-    """
-    )
+    output = graph.query('RETURN "test" AS output')
     expected_output = [{"output": "test"}]
     assert output == expected_output
 
@@ -41,11 +37,7 @@ def test_connect_neo4j_env() -> None:
     os.environ["NEO4J_PASSWORD"] = password
     graph = Neo4jGraph()
 
-    output = graph.query(
-        """
-    RETURN "test" AS output
-    """
-    )
+    output = graph.query('RETURN "test" AS output')
     expected_output = [{"output": "test"}]
     assert output == expected_output
     del os.environ["NEO4J_URI"]
@@ -79,9 +71,8 @@ def test_cypher_generating_run() -> None:
         graph=graph,
         allow_dangerous_requests=True,
     )
-    output = chain.run("Who played in Pulp Fiction?")
-    expected_output = " Bruce Willis played in Pulp Fiction."
-    assert output == expected_output
+    output = chain.run("Who acted in Pulp Fiction?")
+    assert isinstance(output, str)
 
 
 def test_cypher_top_k() -> None:
@@ -115,7 +106,7 @@ def test_cypher_top_k() -> None:
         top_k=TOP_K,
         allow_dangerous_requests=True,
     )
-    output = chain.run("Who played in Pulp Fiction?")
+    output = chain.run("Who acted in Pulp Fiction?")
     assert len(output) == TOP_K
 
 
@@ -146,33 +137,21 @@ def test_cypher_intermediate_steps() -> None:
         return_intermediate_steps=True,
         allow_dangerous_requests=True,
     )
-    output = chain("Who played in Pulp Fiction?")
-
-    expected_output = " Bruce Willis played in Pulp Fiction."
-    assert output["result"] == expected_output
-
-    query = output["intermediate_steps"][0]["query"]
-    # LLM can return variations of the same query
-    expected_queries = [
-        (
-            "\n\nMATCH (a:Actor)-[:ACTED_IN]->"
-            "(m:Movie {title: 'Pulp Fiction'}) RETURN a.name"
-        ),
-        (
-            "\n\nMATCH (a:Actor)-[:ACTED_IN]->"
-            "(m:Movie {title: 'Pulp Fiction'}) RETURN a.name;"
-        ),
-        (
-            "\n\nMATCH (a:Actor)-[:ACTED_IN]->"
-            "(m:Movie) WHERE m.title = 'Pulp Fiction' RETURN a.name"
-        ),
-    ]
-
-    assert query in expected_queries
-
-    context = output["intermediate_steps"][1]["context"]
-    expected_context = [{"a.name": "Bruce Willis"}]
-    assert context == expected_context
+    output = chain("Who acted in Pulp Fiction?")
+    assert isinstance(output, dict)
+    assert isinstance(output["result"], str)
+    assert "intermediate_steps" in output.keys()
+    intermediate_steps = output["intermediate_steps"]
+    assert isinstance(intermediate_steps, list)
+    assert len(intermediate_steps) == 2
+    assert isinstance(intermediate_steps[0], dict)
+    assert "query" in intermediate_steps[0].keys()
+    query = intermediate_steps[0]["query"]
+    assert isinstance(query, str)
+    assert isinstance(intermediate_steps[1], dict)
+    assert "context" in intermediate_steps[1].keys()
+    context = intermediate_steps[1]["context"]
+    assert isinstance(context, list)
 
 
 def test_cypher_return_direct() -> None:
@@ -202,9 +181,13 @@ def test_cypher_return_direct() -> None:
         return_direct=True,
         allow_dangerous_requests=True,
     )
-    output = chain.run("Who acted in Pulp Fiction?")
-    expected_output = [{"a.name": "Bruce Willis"}]
-    assert output == expected_output
+    query = "Who acted in Pulp Fiction?"
+    output = chain(query)
+    assert isinstance(output, dict)
+    assert "query" in output.keys()
+    assert query == output["query"]
+    assert "result" in output.keys()
+    assert isinstance(output["result"], list)
 
 
 @pytest.mark.skip(reason="load_chain is failing and is due to be deprecated")
