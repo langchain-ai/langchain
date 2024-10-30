@@ -33,6 +33,6 @@ def test_excel_loader_as_parser() -> None:
     content = docs[0].page_content
 
     # Assert metadata and content are as expected
-    assert docs[0].metadata["source"] == file_path
+    assert metadata["source"] == file_path
     assert "Stanley Cups" in content
     assert "Maple Leafs" in content  # Check for expected data in the content
