@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 INDEX_NAME = "test-langchain-demo"
 TEST_MEILI_HTTP_ADDR = "http://localhost:7700"
 TEST_MEILI_MASTER_KEY = "masterKey"
+EMBEDDER = "default"
 
 
 class TestMeilisearchVectorSearch:
@@ -61,7 +62,7 @@ class TestMeilisearchVectorSearch:
     def setup_embedder(self) -> None:
         client = self.client()
         embedders = {
-            "default": {
+            EMBEDDER: {
                 "source": "userProvided",
                 "dimensions": 10,
             }
@@ -82,7 +83,7 @@ class TestMeilisearchVectorSearch:
         vectorstore = Meilisearch.from_texts(
             texts=texts,
             embedding=FakeEmbeddings(),
-            embedder="default",
+            embedder=EMBEDDER,
             url=TEST_MEILI_HTTP_ADDR,
             api_key=TEST_MEILI_MASTER_KEY,
             index_name=INDEX_NAME,
@@ -97,7 +98,7 @@ class TestMeilisearchVectorSearch:
         vectorstore = Meilisearch.from_texts(
             texts=texts,
             embedding=FakeEmbeddings(),
-            embedder="default",
+            embedder=EMBEDDER,
             client=self.client(),
             index_name=INDEX_NAME,
         )
@@ -112,7 +113,7 @@ class TestMeilisearchVectorSearch:
         docsearch = Meilisearch.from_texts(
             texts=texts,
             embedding=FakeEmbeddings(),
-            embedder="default",
+            embedder=EMBEDDER,
             url=TEST_MEILI_HTTP_ADDR,
             api_key=TEST_MEILI_MASTER_KEY,
             index_name=INDEX_NAME,
@@ -132,7 +133,7 @@ class TestMeilisearchVectorSearch:
         docsearch = Meilisearch.from_texts(
             texts=texts,
             embedding=FakeEmbeddings(),
-            embedder="default",
+            embedder=EMBEDDER,
             url=TEST_MEILI_HTTP_ADDR,
             api_key=TEST_MEILI_MASTER_KEY,
             index_name=INDEX_NAME,
@@ -151,7 +152,7 @@ class TestMeilisearchVectorSearch:
         docsearch = Meilisearch.from_texts(
             texts=texts,
             embedding=FakeEmbeddings(),
-            embedder="default",
+            embedder=EMBEDDER,
             url=TEST_MEILI_HTTP_ADDR,
             api_key=TEST_MEILI_MASTER_KEY,
             index_name=INDEX_NAME,
