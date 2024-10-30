@@ -117,6 +117,11 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
         # declare deps in funny way
         py_versions = ["3.9", "3.11"]
 
+    elif dir_ == "libs/partners/huggingface":
+        # huggingface tokenizers doesn't support 3.13 yet
+        # because of pep517 builds
+        py_versions = ["3.9", "3.12"]
+
     elif dir_ in ["libs/community", "libs/langchain"] and job == "extended-tests":
         # community extended test resolution in 3.12 is slow
         # even in uv
