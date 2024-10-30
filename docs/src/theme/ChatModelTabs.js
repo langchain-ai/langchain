@@ -180,15 +180,6 @@ export default function ChatModelTabs(props) {
       shouldHide: hideTogether,
     },
     {
-      value: "IBM",
-      label: "IBM",
-      text: `from langchain_ibm import ChatWatsonx\n\n${llmVarName} = ChatWatsonx(${ibmParamsOrDefault})`,
-      apiKeyText: "WATSONX_APIKEY",
-      packageName: "langchain-ibm",
-      default: false,
-      shouldHide: hideIBM,
-    },
-    {
       value: "AWS",
       label: "AWS",
       text: `from langchain_aws import ChatBedrock\n\n${llmVarName} = ChatBedrock(${awsBedrockParamsOrDefault})`,
@@ -196,6 +187,15 @@ export default function ChatModelTabs(props) {
       packageName: "langchain-aws",
       default: false,
       shouldHide: hideAWS,
+    },
+    {
+      value: "IBM",
+      label: "IBM",
+      text: `from langchain_ibm import ChatWatsonx\n\n${llmVarName} = ChatWatsonx(${ibmParamsOrDefault})`,
+      apiKeyText: "WATSONX_APIKEY",
+      packageName: "langchain-ibm",
+      default: false,
+      shouldHide: hideIBM,
     },
   ];
 
