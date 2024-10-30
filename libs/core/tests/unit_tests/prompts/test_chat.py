@@ -1,5 +1,6 @@
 import base64
 import tempfile
+import warnings
 from pathlib import Path
 from typing import Any, Union, cast
 
@@ -947,7 +948,8 @@ def test_chat_prompt_template_variable_names() -> None:
 
     Verify that no run time warnings are raised.
     """
-    with pytest.warns(None) as record:  # type: ignore
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")  # Cause all warnings to always be triggered
         prompt = ChatPromptTemplate([("system", "{schema}")])
         prompt.get_input_schema()
 
