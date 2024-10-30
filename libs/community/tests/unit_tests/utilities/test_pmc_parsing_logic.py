@@ -47,26 +47,46 @@ class TestPubMedCentralParser(unittest.TestCase):
         '''
         self.tree = etree.fromstring(self.xml_string.encode("utf-8"))
 
-    @pytest.mark.requires('indra', 'lxml', 'bs4', 'boto3', 'botocore' )
-    def test_id_lookup(self):
-        """test if id_lookup can convert pmid to correct pmcid"""
-        # below is a example of ids including paired pmid and pmcid
-        ids = {
-            "doi": "10.1038/s41586-022-05496-1",
-            "pmid": "36517593",
-            "pmcid": "PMC9771812"}
-        pmid = "36517593"
-        pmcid = self.parser.id_lookup(pmid).get("pmcid")
-        self.assertEqual(pmcid, "PMC9771812")
+    @patch('requests.get')
+    def test_get_xml(self, mock_get):
+        """Test get_xml method with both successful and error cases"""
+        # Setup mock response for successful case
+        mock_successful_response = MagicMock()
+        mock_successful_response.status_code = 200
+        mock_successful_response.content = self.xml_string.encode('utf-8')
+        
+        # Setup mock response for error case
+        mock_error_response = MagicMock()
+        mock_error_response.status_code = 404
+        
+        # Test successful case
+        mock_get.return_value = mock_successful_response
+        result = self.parser.get_xml('PMC9771812')
+        self.assertEqual(result, self.xml_string)
+        
+        # Verify PMC prefix handling
+        result_without_prefix = self.parser.get_xml('9771812')
+        self.assertEqual(result_without_prefix, self.xml_string)
+        
+        # Test error case
+        mock_get.return_value = mock_error_response
+        result = self.parser.get_xml('PMC9771812')
+        self.assertIsNone(result)
+        
+        # Verify the request parameters
+        expected_params = {
+            'verb': 'GetRecord',
+            'identifier': 'oai:pubmedcentral.nih.gov:9771812',
+            'metadataPrefix': 'pmc'
+        }
+        mock_get.assert_called_with(self.parser.pmc_url, params=expected_params)
 
-    @pytest.mark.requires('indra', 'lxml', 'bs4', 'boto3', 'botocore' )
     def test_extract_text(self):
         """test if article text can be extracted"""
         expected_output = 'Article Title\nAlternative Title\nAbstract paragraph 1.\nAbstract paragraph 2.\nBody paragraph 1.\nSubarticle body paragraph.'
         text = self.parser.extract_text(self.xml_string).rstrip()
         self.assertEqual(text, expected_output)
 
-    @pytest.mark.requires('indra', 'lxml', 'bs4', 'boto3', 'botocore' )
     def test_extract_paragraphs(self):
         """Verify that extract_paragraphs correctly parses and returns the expected list of paragraphs."""
         expected_output = [
@@ -81,7 +101,6 @@ class TestPubMedCentralParser(unittest.TestCase):
         output = self.parser.extract_paragraphs(self.xml_string)
         self.assertEqual(output, expected_output)
 
-    @pytest.mark.requires('indra', 'lxml', 'bs4', 'boto3', 'botocore' )
     def test_select_from_top_level(self):
         """Verify correctly retrieves elements from top"""
         front_elements = self.parser._select_from_top_level(self.tree, 'front')
@@ -95,8 +114,7 @@ class TestPubMedCentralParser(unittest.TestCase):
         sub_article_elements = self.parser._select_from_top_level(self.tree, 'sub-article')
         self.assertEqual(len(sub_article_elements), 1)
         self.assertEqual(sub_article_elements[0].xpath("./body/p")[0].text, 'Subarticle body paragraph.')
- 
-    @pytest.mark.requires('indra', 'lxml', 'bs4', 'boto3', 'botocore' )
+
     def test_extract_from_front(self):
         """Ensure correctly extracts the title and abstract paragraphs from the 'front' element."""
         front_element = self.tree.find(".//front")
@@ -109,7 +127,6 @@ class TestPubMedCentralParser(unittest.TestCase):
         result = self.parser._extract_from_front(front_element)
         self.assertEqual(result, expected_output)
 
-    @pytest.mark.requires('indra', 'lxml', 'bs4', 'boto3', 'botocore' )
     def test_extract_from_body(self):
         body_elements = self.tree.findall(".//body")
         expected_output = [
@@ -121,7 +138,6 @@ class TestPubMedCentralParser(unittest.TestCase):
             result.extend(self.parser._extract_from_body(body_element))
         self.assertEqual(result, expected_output)
 
-    @pytest.mark.requires('indra', 'lxml', 'bs4', 'boto3', 'botocore' )
     def test_extract_from_subarticle(self):
         """Extract sub-article elements"""
         subarticle_elements = self.tree.xpath(".//sub-article")
@@ -135,7 +151,6 @@ class TestPubMedCentralParser(unittest.TestCase):
         
         self.assertEqual(result, expected_output)
 
-    @pytest.mark.requires('indra', 'lxml', 'bs4', 'boto3', 'botocore' )
     def test_remove_elements_by_tag(self):
         """test if tag can be removed"""
         tags_to_remove = ['footer']
@@ -145,7 +160,7 @@ class TestPubMedCentralParser(unittest.TestCase):
             elements = self.tree.xpath(f".//{tag}")
             self.assertFalse(elements, f"Element with tag '{tag}' should be removed but still exists.")
 
-    @pytest.mark.requires('indra', 'lxml', 'bs4', 'boto3', 'botocore')
+
     def test_replace_unwanted_elements_with_their_captions(self):
         """test if unwanted elements with their captions are replaced"""
         self.parser._replace_unwanted_elements_with_their_captions(self.tree)
@@ -158,7 +173,6 @@ class TestPubMedCentralParser(unittest.TestCase):
         self.assertEqual(len(unwanted_elements), 0, "Unwanted elements are still present")
         self.assertGreater(len(captions_elements), 0, "Captions elements are missing")
 
-    @pytest.mark.requires('indra', 'lxml', 'bs4', 'boto3', 'botocore')
     def test_retain_only_pars(self):
         """test if the method can retain only 'p' tags and change 'title' tags to 'p'"""
         self.parser._retain_only_pars(self.tree)
@@ -167,7 +181,6 @@ class TestPubMedCentralParser(unittest.TestCase):
         title_group_elements = self.tree.xpath(".//title-group")
         self.assertEqual(len(title_group_elements), 0, "title-group element should be removed")
 
-    @pytest.mark.requires('indra', 'lxml', 'bs4', 'boto3', 'botocore')
     def test_pull_nested_paragraphs_to_top(self):
         """test if nested paragraphs be flatten"""
         xml_string = '''
@@ -198,7 +211,6 @@ class TestPubMedCentralParser(unittest.TestCase):
         nested_paragraphs = tree.xpath("./p/p")
         self.assertEqual(len(nested_paragraphs), 0, "There should be no nested paragraphs")
         
-    @pytest.mark.requires('indra', 'lxml', 'bs4', 'boto3', 'botocore')
     def test_extract_paragraphs_from_tree(self):
         """test if paragraphs in article can be all extracted"""
         # Create an XML tree for the test
@@ -221,7 +233,6 @@ class TestPubMedCentralParser(unittest.TestCase):
         ]
         self.assertEqual(paragraphs, expected_paragraphs)
 
-    @pytest.mark.requires('indra', 'lxml', 'bs4', 'boto3', 'botocore')
     def test_xpath_union(self):
         """test if xpath expressions can be unioned """
         self.assertEqual(self.parser._xpath_union("//p"), "//p")
@@ -229,14 +240,6 @@ class TestPubMedCentralParser(unittest.TestCase):
             self.parser._xpath_union("//p", "//div", "//span"),
             "//p | //div | //span"
         )
-
-    @pytest.mark.requires('indra', 'lxml', 'bs4', 'boto3', 'botocore')
-    def test_download_pmc_s3(self):
-        """test if pmc paper is downloaded successfully"""
-        path = 'pmc/PMC9771812.xml'
-        pmc_id = 'PMC9771812'
-        self.parser.download_pmc_s3(pmc_id)
-        self.assertTrue(os.path.exists(path))
 
 
 if __name__ == '__main__':

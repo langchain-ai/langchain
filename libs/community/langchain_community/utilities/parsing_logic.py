@@ -1,17 +1,9 @@
-from __future__ import absolute_import, print_function, unicode_literals
 import logging
-import os
-import os.path
-import shutil
 import xml.etree.ElementTree as ET
-import boto3
-from botocore import UNSIGNED
-from botocore.config import Config
 from lxml import etree
-from langchain_core.pydantic_v1 import BaseModel, root_validator
-from typing import Any, Dict
-# from indra.literature import pubmed_client
-# from indra.util import UnicodeXMLTreeBuilder as UTB
+from langchain_core.pydantic_v1 import BaseModel
+import requests
+
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -23,108 +15,45 @@ class PubMed_Central_Parser(BaseModel):
 
     This class provides functionality to interact with and extract information from PMC articles, 
     including retrieving the full-text XML, extracting plaintext from the XML, filtering articles 
-    based on their availability in different formats, and downloading PMC files from AWS S3. 
+    based on their availability in different formats, and extracting PMC XML from OAI-PMH Service (https://pmc.ncbi.nlm.nih.gov/tools/oai/). 
 
     The methods in this class are designed to support various use cases such as:
 
-    - **ID Lookup:** Convert between different article identifiers (PMID, PMCID, DOI) using the 
-      PubMed ID mapping service.
-    - **XML Retrieval:** Fetch and parse XML content for a given PMC ID, either directly from 
-      PMC or from a file.
+    -**RETRIEVE XML:** Get the XML string for a given PMC ID by OAI-PMH Service.
     - **Text Extraction:** Extract relevant paragraphs and titles from the article body, front 
       section, or subarticles, while excluding irrelevant content such as LaTeX formulas or certain 
       floating elements (e.g., tables and figures).
-    - **Filtering:** Filter lists of PubMed IDs (PMIDs) to identify those that have full-text 
-      availability in PMC, depending on the desired source type.
-    - **S3 Integration:** One of the official ways to download PMC XML or text files is directly from the PMC Open Access 
-      subset hosted on AWS S3. For more information, visit the https://www.ncbi.nlm.nih.gov/pmc/tools/pmcaws/
-
     """
-    # Default values for the parameters
-    # official ID Converter API for pmcid, can be found here: https://www.ncbi.nlm.nih.gov/pmc/tools/id-converter-api/
-    pmid_convert_url = "https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/"
+    pmc_url = 'https://www.ncbi.nlm.nih.gov/pmc/oai/oai.cgi'  # one of the official ways to get xml string from nih
+    xmlns = "http://www.openarchives.org/OAI/2.0/"  # namespace for OAI-PMH
 
-    # Paths to resource files
-    pmids_fulltext_path = os.path.join(os.path.dirname(__file__), "pmids_fulltext.txt")
-    pmids_oa_xml_path = os.path.join(os.path.dirname(__file__), "pmids_oa_xml.txt")
-    pmids_oa_txt_path = os.path.join(os.path.dirname(__file__), "pmids_oa_txt.txt")
-    pmids_auth_xml_path = os.path.join(os.path.dirname(__file__), "pmids_auth_xml.txt")
-    # Define global dict containing lists of PMIDs among mineable PMCs
-    # to be lazily initialized
-    pmids_fulltext_dict = {}
-
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that the python package exists in environment."""
-        try:
-            import xmltodict
-            import boto3
-            from indra.literature import pubmed_client
-            from indra.util import UnicodeXMLTreeBuilder as UTB
-            values["parse"] = xmltodict.parse
-            
-        except ImportError as e:
-            missing_package = str(e).split("No module named ")[-1]
-            raise ImportError(
-                f"Missing required package: '{missing_package}'. "
-                "Please install it with `pip install {missing_package}`."
-        )
-        return values
-
-    def id_lookup(self, paper_id, idtype=None):
-        """Return PMID, DOI and PMCID based on an input ID.
-
-        This function takes a Pubmed ID, Pubmed Central ID, or DOI
-        and use the Pubmed ID mapping service and looks up all other IDs from one
-        of these. The IDs are returned in a dictionary.
-
-        Parameters
-        ----------
-        paper_id : str
-            A PubMed ID, PubMed Central ID, or DOI.
-        idtype : Optional[str]
-            The type of the input ID. If not given, the function will try to
-            determine the type from the input ID. If given, it must be one of
-            'pmid', 'pmcid', or 'doi'.
-
-        Returns
-        -------
-        dict
-            A dictionary with keys 'pmid', 'pmcid', and 'doi' containing the
-            corresponding IDs, or an empty dict if lookup fails.
-        """
-        if idtype is not None and idtype not in ("pmid", "pmcid", "doi"):
-            raise ValueError(
-                "Invalid idtype %s; must be 'pmid', 'pmcid', " "or 'doi'." % idtype
-            )
-        if paper_id.upper().startswith("PMC"):
-            idtype = "pmcid"
-        # Strip off any prefix
-        if paper_id.upper().startswith("PMID"):
-            paper_id = paper_id[4:]
-        elif paper_id.upper().startswith("DOI"):
-            paper_id = paper_id[3:]
-        data = {"ids": paper_id}
-        if idtype is not None:
-            data["idtype"] = idtype
-        try:
-            tree = pubmed_client.send_request(self.pmid_convert_url, data)
-        except Exception as e:
-            logger.error("Error looking up PMID in PMC: %s" % e)
-            return {}
-        if tree is None:
-            return {}
-        record = tree.find("record")
-        if record is None:
-            return {}
-        doi = record.attrib.get("doi")
-        pmid = record.attrib.get("pmid")
-        pmcid = record.attrib.get("pmcid")
-        ids = {"doi": doi, "pmid": pmid, "pmcid": pmcid}
-        return ids
-
-    def get_ids(search_term, retmax=1000):
-        return pubmed_client.get_ids(search_term, retmax=retmax, db='pmc')
+    def get_xml(self, pmc_id):
+        """Returns XML for the article corresponding to a PMC ID."""
+        if pmc_id.upper().startswith('PMC'):
+            pmc_id = pmc_id[3:]
+        # Request params
+        params = {}
+        params['verb'] = 'GetRecord'
+        params['identifier'] = 'oai:pubmedcentral.nih.gov:%s' % pmc_id
+        params['metadataPrefix'] = 'pmc'
+        # Submit the request
+        res = requests.get(self.pmc_url, params)
+        if not res.status_code == 200:
+            logger.warning("Couldn't download %s" % pmc_id)
+            return None
+        # Read the bytestream
+        xml_bytes = res.content
+        tree = ET.XML(xml_bytes)
+        err_tag = tree.find('{%s}error' % self.xmlns)
+        if err_tag is not None:
+            err_code = err_tag.attrib['code']
+            err_text = err_tag.text
+            logger.warning('PMC client returned with error %s: %s'
+                        % (err_code, err_text))
+            return None
+        # If no error, return the XML as a unicode string
+        else:
+            return xml_bytes.decode('utf-8')
 
     def extract_text(self, xml_string):
         """Get plaintext from the body of the given NLM XML string.
@@ -448,59 +377,3 @@ class PubMed_Central_Parser(BaseModel):
         for front_element in front_elements:
             for element in front_element.xpath(title_xpath):
                 return " ".join(element.itertext())
-
-    def download_pmc_s3(
-        self,
-        pmc_id,
-        file_type="xml",
-        output_dir="pmc",
-        cache_dir="pmc",
-        bucket_name="pmc-oa-opendata",
-    ):
-        """
-        Download PMC files from AWS S3
-        :param str pmc_id: PMC ID
-        :param str file_type: File type (xml or txt). Default is 'xml'
-        :param str output_dir: Output directory. Default is 'pmc'
-        :param str cache_dir: Cache directory. Default is 'pmc'
-        :param str bucket_name: S3 bucket name. Default is 'pmc-oa-opendata'
-        :return: None
-        >>> download_pmc_s3('PMC3898398')
-        """
-
-        s3 = boto3.client("s3", config=Config(signature_version=UNSIGNED))
-
-        os.makedirs(output_dir, exist_ok=True)
-        os.makedirs(cache_dir, exist_ok=True)
-
-        output_path = os.path.join(output_dir, f"{pmc_id}.{file_type}")
-        cache_path = os.path.join(cache_dir, f"{pmc_id}.{file_type}")
-
-        if not os.path.exists(output_path):
-            if os.path.exists(cache_path):
-                shutil.copy(cache_path, output_path)
-            else:
-                logger.info(
-                    f"Attempting to download {pmc_id}.{file_type} to {output_path}"
-                )
-
-                try:
-                    file_key = f"oa_comm/{file_type}/all/{pmc_id}.{file_type}"
-                    s3.download_file(bucket_name, file_key, cache_path)
-                    shutil.copy(cache_path, output_path)
-                except Exception as e:
-                    try:
-                        file_key = f"oa_noncomm/{file_type}/all/{pmc_id}.{file_type}"
-                        s3.download_file(bucket_name, file_key, cache_path)
-                        shutil.copy(cache_path, output_path)
-                    except Exception as e:
-                        try:
-                            file_key = f"author_manuscript/{file_type}/all/{pmc_id}.{file_type}"
-                            s3.download_file(bucket_name, file_key, cache_path)
-                            shutil.copy(cache_path, output_path)
-                        except Exception as e:
-                            if not os.path.exists(cache_path):
-                                logger.error(e)
-
-        if os.path.exists(cache_path):
-            logger.info(f"DONE: File: {output_path}")
