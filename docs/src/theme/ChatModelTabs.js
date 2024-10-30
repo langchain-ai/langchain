@@ -192,7 +192,7 @@ export default function ChatModelTabs(props) {
       value: "IBM",
       label: "IBM",
       text: `from langchain_ibm import ChatWatsonx\n\n${llmVarName} = ChatWatsonx(${ibmParamsOrDefault})`,
-      apiKeyText: "WATSONX_APIKEY",
+      apiKeyName: "WATSONX_APIKEY",
       packageName: "langchain-ibm",
       default: false,
       shouldHide: hideIBM,
