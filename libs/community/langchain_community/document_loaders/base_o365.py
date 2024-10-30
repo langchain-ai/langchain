@@ -83,7 +83,7 @@ class O365BaseLoader(BaseLoader, BaseModel):
     """Number of bytes to retrieve from each api call to the server. int or 'auto'."""
     recursive: bool = False
     """Should the loader recursively load subfolders?"""
-    handlers: Optional[Dict[str, BaseBlobParser]] = {}
+    handlers: Optional[Dict[str, Any]] = {}
     """ Provide custom handlers for MimeTypeBasedParser
         Pass in dictionary mapping file types (extensions)
         onto parsers. Do not include the leading dot.
