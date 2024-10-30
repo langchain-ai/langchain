@@ -124,12 +124,8 @@ class VLLM(BaseLLM):
     ) -> LLMResult:
         """Run the LLM on the given prompt and input."""
         from vllm import SamplingParams
-        from vllm.lora.request import LoRARequest
 
         lora_request = kwargs.pop("lora_request", None)
-
-        if lora_request is not None and not isinstance(lora_request, LoRARequest):
-            raise TypeError("lora_request must be an instance of LoRARequest")
 
         # build sampling parameters
         params = {**self._default_params, **kwargs, "stop": stop}
