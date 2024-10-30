@@ -305,8 +305,6 @@ class OxylabsSearchAPIWrapper(BaseModel):
                 for result_category in result_category_processing_map:
                     result_category_processing_map[result_category](validated_response, snippets)
 
-            snippets.append(f"-------------- Page {str(nr_ + 1)} --------------")
-
         # Combine all snippets
         if snippets:
             result_ = "\n\n".join(snippets)
