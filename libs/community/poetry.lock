@@ -899,17 +899,6 @@ files = [
 ]
 
 [[package]]
-name = "distro"
-version = "1.9.0"
-description = "Distro - an OS platform information API"
-optional = false
-python-versions = ">=3.6"
-files = [
-    {file = "distro-1.9.0-py3-none-any.whl", hash = "sha256:7bffd925d65168f85027d8da9af6bddab658135b840670a223589bc0c8ef02b2"},
-    {file = "distro-1.9.0.tar.gz", hash = "sha256:2fa77c6fd8940f116ee1d6b94a2f90b13b5ea8d019b98bc8bafdcabcdd9bdbed"},
-]
-
-[[package]]
 name = "duckdb"
 version = "1.1.2"
 description = "DuckDB in-process database"
@@ -4472,25 +4461,6 @@ files = [
     {file = "wrapt-1.16.0-py3-none-any.whl", hash = "sha256:6906c4100a8fcbf2fa735f6059214bb13b97f75b1a61777fcf6432121ef12ef1"},
     {file = "wrapt-1.16.0.tar.gz", hash = "sha256:5f370f952971e7d17c7d1ead40e49f32345a7f7a5373571ef44d800d06b1899d"},
 ]
-
-[[package]]
-name = "writer-sdk"
-version = "1.2.0"
-description = "The official Python library for the writer API"
-optional = false
-python-versions = ">=3.7"
-files = [
-    {file = "writer_sdk-1.2.0-py3-none-any.whl", hash = "sha256:99c7716393137cd062ec8467ba1cad85f99271f182403b679ebe80743ae5c7a6"},
-    {file = "writer_sdk-1.2.0.tar.gz", hash = "sha256:42262a64cc7d3021616c7c2c7882badaca68ac6bfc448012ead6397a400de02a"},
-]
-
-[package.dependencies]
-anyio = ">=3.5.0,<5"
-distro = ">=1.7.0,<2"
-httpx = ">=0.23.0,<1"
-pydantic = ">=1.9.0,<3"
-sniffio = "*"
-typing-extensions = ">=4.7,<5"
 
 [[package]]
 name = "yarl"
