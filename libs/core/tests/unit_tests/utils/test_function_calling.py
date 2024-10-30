@@ -210,6 +210,26 @@ def json_schema() -> dict:
     }
 
 
+@pytest.fixture()
+def anthropic_tool() -> dict:
+    return {
+        "name": "dummy_function",
+        "description": "dummy function",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "arg1": {"description": "foo", "type": "integer"},
+                "arg2": {
+                    "description": "one of 'bar', 'baz'",
+                    "enum": ["bar", "baz"],
+                    "type": "string",
+                },
+            },
+            "required": ["arg1", "arg2"],
+        },
+    }
+
+
 class Dummy:
     def dummy_function(self, arg1: int, arg2: Literal["bar", "baz"]) -> None:
         """dummy function
@@ -237,6 +257,7 @@ def test_convert_to_openai_function(
     dummy_structured_tool: StructuredTool,
     dummy_tool: BaseTool,
     json_schema: dict,
+    anthropic_tool: dict,
     annotated_function: Callable,
     dummy_pydantic: type[BaseModel],
     runnable: Runnable,
@@ -268,6 +289,7 @@ def test_convert_to_openai_function(
         dummy_structured_tool,
         dummy_tool,
         json_schema,
+        anthropic_tool,
         expected,
         Dummy.dummy_function,
         DummyWithClassMethod.dummy_function,

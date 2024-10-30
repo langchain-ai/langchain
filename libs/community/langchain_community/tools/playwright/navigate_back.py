@@ -19,7 +19,7 @@ class NavigateBackToolInput(BaseModel):
     """Explicit no-args input for NavigateBackTool."""
 
 
-class NavigateBackTool(BaseBrowserTool):
+class NavigateBackTool(BaseBrowserTool):  # type: ignore[override, override]
     """Navigate back to the previous page in the browser history."""
 
     name: str = "previous_webpage"
