@@ -2,9 +2,7 @@
 
 """
 
-import os
-import sys
-from typing import Any, Dict, Optional, Tuple, List
+from typing import Any, Dict, List
 
 import asyncio
 from langchain_core.utils import get_from_dict_or_env
@@ -220,7 +218,7 @@ class OxylabsSearchAPIWrapper(BaseModel):
                 if not isinstance(unpacked_results, dict):
                     raise ValueError("Response format Error!")
 
-                if content["results"]:
+                if unpacked_results:
                     validated_results.append(unpacked_results)
 
             return validated_results

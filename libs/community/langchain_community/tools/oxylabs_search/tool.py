@@ -6,6 +6,7 @@ from langchain_core.callbacks import (
 )
 from langchain_core.tools import BaseTool
 
+import json
 from pydantic import BaseModel, ConfigDict, Field
 from typing import Type, Optional
 
@@ -72,7 +73,7 @@ class OxylabsSearchResults(BaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
-        return str(self.wrapper.results(query, **self.kwargs))
+        return json.dumps(self.wrapper.results(query, **self.kwargs))
 
     async def _arun(
         self,
@@ -80,6 +81,6 @@ class OxylabsSearchResults(BaseTool):
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool asynchronously."""
-        return (
+        return json.dumps(
             await self.wrapper.aresults(query, **self.kwargs)
-        ).__str__()
+        )
