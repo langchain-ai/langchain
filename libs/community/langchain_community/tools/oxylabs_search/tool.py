@@ -18,6 +18,9 @@ class OxylabsSearchQueryInput(BaseModel):
     """Input for the OxylabsSearch tool."""
 
     query: str = Field(description="query to retrieve on Oxylabs Search API")
+    geo_location: Optional[str] = Field(default="California,United States", description="Geographic location for the search, change if asked for location specific information.")
+    pages: Optional[int] = Field(default=1, description="Number of pages to retrieve (max: 20), increase only when doing detailed search.")
+    limit: Optional[int] = Field(default=5, description="Maximum number of results to return (max: 100), keep at default unless previous search didnt find relevant info.")
 
 
 class OxylabsSearchRun(BaseTool):
@@ -36,18 +39,40 @@ class OxylabsSearchRun(BaseTool):
     def _run(
         self,
         query: str,
+        geo_location: Optional[str] = "",
+        pages: Optional[int] = 1,
+        limit: Optional[int] = 5,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
-        return self.wrapper.run(query, **self.kwargs)
+
+        kwargs_ = dict(**self.kwargs)
+        kwargs_.update({
+            "geo_location": geo_location,
+            "pages": pages,
+            "limit": limit
+        })
+
+        return self.wrapper.run(query, **kwargs_)
 
     async def _arun(
         self,
         query: str,
+        geo_location: Optional[str] = "",
+        pages: Optional[int] = 1,
+        limit: Optional[int] = 5,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool asynchronously."""
-        return await self.wrapper.arun(query, **self.kwargs)
+
+        kwargs_ = dict(**self.kwargs)
+        kwargs_.update({
+            "geo_location": geo_location,
+            "pages": pages,
+            "limit": limit
+        })
+
+        return await self.wrapper.arun(query, **kwargs_)
 
 
 class OxylabsSearchResults(BaseTool):
@@ -70,17 +95,39 @@ class OxylabsSearchResults(BaseTool):
     def _run(
         self,
         query: str,
+        geo_location: Optional[str] = "",
+        pages: Optional[int] = 1,
+        limit: Optional[int] = 5,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
-        return json.dumps(self.wrapper.results(query, **self.kwargs))
+
+        kwargs_ = dict(**self.kwargs)
+        kwargs_.update({
+            "geo_location": geo_location,
+            "pages": pages,
+            "limit": limit
+        })
+
+        return json.dumps(self.wrapper.results(query, **kwargs_))
 
     async def _arun(
         self,
         query: str,
+        geo_location: Optional[str] = "",
+        pages: Optional[int] = 1,
+        limit: Optional[int] = 5,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool asynchronously."""
+
+        kwargs_ = dict(**self.kwargs)
+        kwargs_.update({
+            "geo_location": geo_location,
+            "pages": pages,
+            "limit": limit
+        })
+
         return json.dumps(
-            await self.wrapper.aresults(query, **self.kwargs)
+            await self.wrapper.aresults(query, **kwargs_)
         )
