@@ -236,10 +236,6 @@ class VDMS(VectorStore):
         else:
             self.collection_properties: List[str] = current_props
 
-        # Set default batch_size if provided
-        if "batch_size" in kwargs:
-            self.batch_size = kwargs["batch_size"]
-
     def _embed_documents(self, texts: List[str]) -> List[List[float]]:
         if isinstance(self.embedding, Embeddings):
             return self.embedding.embed_documents(texts)
@@ -313,6 +309,8 @@ class VDMS(VectorStore):
         _ = self.delete(ids, collection_name=collection_name, **kwargs)
 
         # Add as batch
+        if "batch_size" not in kwargs:
+            kwargs["batch_size"] = DEFAULT_INSERT_BATCH_SIZE
         _ = self.add_from(
             texts=texts,
             embeddings=embeddings,
@@ -385,6 +383,40 @@ class VDMS(VectorStore):
 
         return ids if response[0]["AddDescriptor"]["status"] == 0 else []
 
+    def add_data(
+        self,
+        texts: List[str],
+        embeddings: List[List[float]],
+        metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> List[str]:
+        if metadatas is None:
+            metadatas = [{} for _ in texts]
+        else:
+            metadatas = [self.utils.validate_vdms_properties(m) for m in metadatas]
+
+        # Populate IDs
+        if ids is None:
+            ids = []
+            for meta in metadatas:
+                if LANGCHAIN_ID_PROPERTY in meta:
+                    ids.append(meta[LANGCHAIN_ID_PROPERTY])
+                else:
+                    ids.append(str(uuid.uuid4()))
+
+        if "batch_size" not in kwargs:
+            kwargs["batch_size"] = DEFAULT_INSERT_BATCH_SIZE
+
+        inserted_ids = self.add_from(
+            texts=texts,
+            embeddings=embeddings,
+            ids=ids,
+            metadatas=metadatas,
+            **kwargs,
+        )
+        return inserted_ids
+
     def add_documents(self, documents: List[Document], **kwargs: Any) -> List[str]:
         """Add or update documents in the vectorstore.
 
@@ -446,7 +478,8 @@ class VDMS(VectorStore):
         # Get initial properties
         orig_props = self.utils.get_properties(self.collection_name)
         inserted_ids: List[str] = []
-        batch_size = kwargs.pop("batch_size", DEFAULT_INSERT_BATCH_SIZE)
+        batch_size = int(kwargs.get("batch_size", DEFAULT_INSERT_BATCH_SIZE))
+
         for start_idx in range(0, len(texts), batch_size):
             end_idx = min(start_idx + batch_size, len(texts))
 
@@ -477,7 +510,6 @@ class VDMS(VectorStore):
         uris: List[str],
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
-        batch_size: int = DEFAULT_INSERT_BATCH_SIZE,
         add_path: Optional[bool] = True,
         **kwargs: Any,
     ) -> List[str]:
@@ -507,23 +539,14 @@ class VDMS(VectorStore):
             for uri in uris:
                 metadatas.append({"image_path": uri})
 
-        # Populate IDs
-        ids = ids if ids is not None else [str(uuid.uuid4()) for _ in uris]
-
         # Set embeddings
         embeddings = self._embed_image(uris=uris)
 
-        if metadatas is None:
-            metadatas = [{} for _ in uris]
-        else:
-            metadatas = [self.utils.validate_vdms_properties(m) for m in metadatas]
-
-        inserted_ids = self.add_from(
+        inserted_ids = self.add_data(
             texts=b64_texts,
             embeddings=embeddings,
-            ids=ids,
             metadatas=metadatas,
-            batch_size=batch_size,
+            ids=ids,
             **kwargs,
         )
         return inserted_ids
@@ -533,7 +556,6 @@ class VDMS(VectorStore):
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
-        batch_size: int = DEFAULT_INSERT_BATCH_SIZE,
         **kwargs: Any,
     ) -> List[str]:
         """Run texts through the embeddings and add to the vectorstore.
@@ -542,7 +564,6 @@ class VDMS(VectorStore):
             texts: List of strings to add to the vectorstore.
             metadatas: Optional list of metadatas associated with the texts.
             ids: Optional list of unique IDs.
-            batch_size (int): Number of concurrent requests to send to the server.
 
         Returns:
             List of ids from adding the texts into the vectorstore.
@@ -552,25 +573,11 @@ class VDMS(VectorStore):
 
         embeddings = self._embed_documents(texts)
 
-        if metadatas is None:
-            metadatas = [{} for _ in texts]
-        else:
-            metadatas = [self.utils.validate_vdms_properties(m) for m in metadatas]
-
-        if ids is None:
-            ids = []
-            for meta in metadatas:
-                if LANGCHAIN_ID_PROPERTY in meta:
-                    ids.append(meta[LANGCHAIN_ID_PROPERTY])
-                else:
-                    ids.append(str(uuid.uuid4()))
-
-        inserted_ids = self.add_from(
+        inserted_ids = self.add_data(
             texts=texts,
             embeddings=embeddings,
-            ids=ids,
             metadatas=metadatas,
-            batch_size=batch_size,
+            ids=ids,
             **kwargs,
         )
         return inserted_ids
@@ -581,7 +588,6 @@ class VDMS(VectorStore):
         texts: Optional[List[str]] = None,
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
-        batch_size: int = 1,
         add_path: Optional[bool] = True,
         **kwargs: Any,
     ) -> List[str]:
@@ -595,7 +601,6 @@ class VDMS(VectorStore):
             text: Optional list of text associated with the videos.
             metadatas: Optional list of metadatas associated with the videos.
             ids: Optional list of unique IDs.
-            batch_size (int): Number of concurrent requests to send to the server.
             add_path: Bool to add video path as metadata
 
         Returns:
@@ -612,23 +617,14 @@ class VDMS(VectorStore):
             for path in paths:
                 metadatas.append({"video_path": path})
 
-        # Populate IDs
-        ids = ids if ids is not None else [str(uuid.uuid4()) for _ in paths]
-
         # Set embeddings
         embeddings = self._embed_video(paths=paths, **kwargs)
 
-        if metadatas is None:
-            metadatas = [{} for _ in paths]
-        else:
-            metadatas = [self.utils.validate_vdms_properties(m) for m in metadatas]
-
-        inserted_ids = self.add_from(
+        inserted_ids = self.add_data(
             texts=texts,
             embeddings=embeddings,
-            ids=ids,
             metadatas=metadatas,
-            batch_size=batch_size,
+            ids=ids,
             **kwargs,
         )
         return inserted_ids
@@ -756,7 +752,6 @@ class VDMS(VectorStore):
         documents: List[Document],
         embedding: Embeddings,
         ids: Optional[List[str]] = None,
-        batch_size: int = DEFAULT_INSERT_BATCH_SIZE,
         collection_name: str = DEFAULT_COLLECTION_NAME,  # Add this line
         **kwargs: Any,
     ) -> VDMS:
@@ -766,7 +761,6 @@ class VDMS(VectorStore):
             documents: List of documents
             embedding: Embedding function to use.
             ids: Optional list of IDs associated with the documents.
-            batch_size (int): Number of concurrent requests to send to the server.
             collection_name (str): Name of the collection to create.
             kwargs: Additional keyword arguments.
 
@@ -774,13 +768,17 @@ class VDMS(VectorStore):
             VectorStore: VectorStore initialized from documents and embeddings.
         """
         client: vdms.vdms = kwargs.pop("client")
+
+        if "batch_size" not in kwargs:
+            kwargs["batch_size"] = DEFAULT_INSERT_BATCH_SIZE
+
         vectorstore = cls(
             client=client,
             embedding=embedding,
             collection_name=collection_name,
             **kwargs,
         )
-        vectorstore.add_documents(documents, ids=ids, batch_size=batch_size, **kwargs)
+        vectorstore.add_documents(documents, ids=ids, **kwargs)
         return vectorstore
 
     @classmethod
@@ -791,7 +789,6 @@ class VDMS(VectorStore):
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
-        batch_size: int = DEFAULT_INSERT_BATCH_SIZE,
         collection_name: str = DEFAULT_COLLECTION_NAME,
         **kwargs: Any,
     ) -> VDMS:
@@ -803,7 +800,6 @@ class VDMS(VectorStore):
             metadatas: Optional list of metadatas associated with the texts.
                 Default is None.
             ids: Optional list of IDs associated with the texts.
-            batch_size (int): Number of concurrent requests to send to the server.
             collection_name (str): Name of the collection to create.
             kwargs: Additional keyword arguments.
 
@@ -811,6 +807,10 @@ class VDMS(VectorStore):
             VectorStore: VectorStore initialized from texts and embeddings.
         """
         client: vdms.vdms = kwargs.pop("client")
+
+        if "batch_size" not in kwargs:
+            kwargs["batch_size"] = DEFAULT_INSERT_BATCH_SIZE
+
         vdms_store = cls(
             client=client,
             embedding=embedding,
@@ -824,7 +824,6 @@ class VDMS(VectorStore):
             texts=texts,
             metadatas=metadatas,
             ids=ids,
-            batch_size=batch_size,
             **kwargs,
         )
         return vdms_store
@@ -1338,6 +1337,41 @@ class VDMS(VectorStore):
 
         return self.results2docs_and_scores(results)
 
+    def update_document(
+        self, collection_name: str, document_id: str, document: Document, **kwargs: Any
+    ) -> None:
+        """Update a document in the collection.
+
+        Args:
+            document_id (str): ID of the document to update.
+            document (Document): Document to update.
+        """
+        return self.update_documents(collection_name, [document_id], [document], **kwargs)
+
+    def update_documents(
+        self, collection_name: str, ids: List[str], documents: List[Document], **kwargs: Any
+    ) -> None:
+        """Update a document in the collection.
+
+        Args:
+            ids (List[str]): List of ids of the document to update.
+            documents (List[Document]): List of documents to update.
+        """
+        texts = [document.page_content for document in documents]
+        metadata = [
+            self.utils.validate_vdms_properties(document.metadata) for document in documents
+        ]
+        embeddings = self._embed_documents(texts)
+
+        self.__update(
+            collection_name,
+            ids,
+            texts=texts,
+            embeddings=embeddings,
+            metadatas=metadata,
+            **kwargs,
+        )
+
     def upsert(self, documents: Sequence[Document], /, **kwargs: Any) -> UpsertResponse:
         """Insert or update items
 
@@ -1419,9 +1453,7 @@ class VDMS_Utils:
         if ref is not None:
             entity["_ref"] = ref
 
-        use_batch = isinstance(props, list) and len(props) > 1
-
-        if use_batch:
+        if isinstance(props, list) and len(props) > 1:
             entity["batch_properties"] = props
         elif (
             isinstance(props, list)
