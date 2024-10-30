@@ -1346,10 +1346,16 @@ class VDMS(VectorStore):
             document_id (str): ID of the document to update.
             document (Document): Document to update.
         """
-        return self.update_documents(collection_name, [document_id], [document], **kwargs)
+        return self.update_documents(
+            collection_name, [document_id], [document], **kwargs
+        )
 
     def update_documents(
-        self, collection_name: str, ids: List[str], documents: List[Document], **kwargs: Any
+        self,
+        collection_name: str,
+        ids: List[str],
+        documents: List[Document],
+        **kwargs: Any,
     ) -> None:
         """Update a document in the collection.
 
@@ -1359,7 +1365,8 @@ class VDMS(VectorStore):
         """
         texts = [document.page_content for document in documents]
         metadata = [
-            self.utils.validate_vdms_properties(document.metadata) for document in documents
+            self.utils.validate_vdms_properties(document.metadata)
+            for document in documents
         ]
         embeddings = self._embed_documents(texts)
 
