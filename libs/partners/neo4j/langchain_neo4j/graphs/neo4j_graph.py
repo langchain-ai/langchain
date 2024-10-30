@@ -1,10 +1,9 @@
 from hashlib import md5
 from typing import Any, Dict, List, Optional
 
-from langchain_core.utils import get_from_dict_or_env
-
 from langchain_community.graphs.graph_document import GraphDocument
 from langchain_community.graphs.graph_store import GraphStore
+from langchain_core.utils import get_from_dict_or_env
 
 BASE_ENTITY_LABEL = "__Entity__"
 EXCLUDED_LABELS = ["_Bloom_Perspective_", "_Bloom_Scene_"]

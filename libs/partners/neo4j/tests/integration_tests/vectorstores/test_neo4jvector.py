@@ -4,6 +4,7 @@ import os
 from math import isclose
 from typing import Any, Dict, List, cast
 
+from langchain_community.vectorstores.utils import DistanceStrategy
 from langchain_core.documents import Document
 from yaml import safe_load
 
@@ -13,7 +14,6 @@ from langchain_neo4j.vectorstores.neo4j_vector import (
     SearchType,
     _get_search_index_query,
 )
-from langchain_community.vectorstores.utils import DistanceStrategy
 from tests.integration_tests.vectorstores.fake_embeddings import (
     AngularTwoDimensionalEmbeddings,
     FakeEmbeddings,
@@ -663,7 +663,8 @@ def test_neo4jvector_special_character() -> None:
         search_type=SearchType.HYBRID,
     )
     output = docsearch.similarity_search(
-        "It is the end of the world. Take shelter!", k=1, 
+        "It is the end of the world. Take shelter!",
+        k=1,
     )
     # assert output == [
     #     Document(page_content="It is the end of the world. Take shelter!", metadata={})
@@ -885,7 +886,8 @@ OPTIONS {indexConfig: {
 """
     )
     relationship_index = Neo4jVector.from_existing_relationship_index(
-        embeddings, index_name="relationship",
+        embeddings,
+        index_name="relationship",
         url=url,
         username=username,
         password=password,
@@ -934,7 +936,9 @@ OPTIONS {indexConfig: {
         "AS text, score, {foo:'bar'} AS metadata"
     )
     relationship_index = Neo4jVector.from_existing_relationship_index(
-        embeddings, index_name="relationship", retrieval_query=retrieval_query,
+        embeddings,
+        index_name="relationship",
+        retrieval_query=retrieval_query,
         url=url,
         username=username,
         password=password,

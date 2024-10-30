@@ -1,9 +1,9 @@
 import os
 
+from langchain_community.graphs.graph_document import GraphDocument, Node, Relationship
 from langchain_core.documents import Document
 
 from langchain_neo4j import Neo4jGraph
-from langchain_community.graphs.graph_document import GraphDocument, Node, Relationship
 from langchain_neo4j.graphs.neo4j_graph import (
     BASE_ENTITY_LABEL,
     node_properties_query,
