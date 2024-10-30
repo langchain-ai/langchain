@@ -139,7 +139,10 @@ def _merge_messages(
                     ]
                 )
         last = merged[-1] if merged else None
-        if isinstance(last, HumanMessage) and isinstance(curr, HumanMessage):
+        if any(
+            all(isinstance(m, c) for m in (curr, last))
+            for c in (SystemMessage, HumanMessage)
+        ):
             if isinstance(last.content, str):
                 new_content: List = [{"type": "text", "text": last.content}]
             else:
@@ -148,7 +151,7 @@ def _merge_messages(
                 new_content.append({"type": "text", "text": curr.content})
             else:
                 new_content.extend(curr.content)
-            merged[-1] = curr.model_copy(update={"content": new_content}, deep=False)
+            merged[-1] = curr.model_copy(update={"content": new_content})
         else:
             merged.append(curr)
     return merged
@@ -174,14 +177,14 @@ def _format_messages(
     merged_messages = _merge_messages(messages)
     for i, message in enumerate(merged_messages):
         if message.type == "system":
-            if i != 0:
-                raise ValueError("System message must be at beginning of message list.")
-            if isinstance(message.content, list):
+            if system is not None:
+                raise ValueError("Received multiple non-consecutive system messages.")
+            elif isinstance(message.content, list):
                 system = [
                     (
                         block
                         if isinstance(block, dict)
-                        else {"type": "text", "text": "block"}
+                        else {"type": "text", "text": block}
                     )
                     for block in message.content
                 ]
