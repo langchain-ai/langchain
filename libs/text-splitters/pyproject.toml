@@ -1,10 +1,10 @@
 [build-system]
-requires = ["poetry-core>=1.0.0"]
+requires = [ "poetry-core>=1.0.0",]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-text-splitters"
-version = "0.3.0"
+version = "0.3.1"
 description = "LangChain text splitting utilities"
 authors = []
 license = "MIT"
@@ -14,17 +14,7 @@ repository = "https://github.com/langchain-ai/langchain"
 [tool.mypy]
 disallow_untyped_defs = "True"
 [[tool.mypy.overrides]]
-module = [
-    "transformers",
-    "sentence_transformers",
-    "nltk.tokenize",
-    "konlpy.tag",
-    "bs4",
-    "pytest",
-    "spacy",
-    "spacy.lang.en",
-    "numpy",
-]
+module = [ "transformers", "sentence_transformers", "nltk.tokenize", "konlpy.tag", "bs4", "pytest", "spacy", "spacy.lang.en", "numpy",]
 ignore_missing_imports = "True"
 
 [tool.poetry.urls]
@@ -33,20 +23,17 @@ ignore_missing_imports = "True"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-langchain-core = "^0.3.0"
+langchain-core = "^0.3.13"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "T201"]
+select = [ "E", "F", "I", "T201",]
 
 [tool.coverage.run]
-omit = ["tests/*"]
+omit = [ "tests/*",]
 
 [tool.pytest.ini_options]
 addopts = "--strict-markers --strict-config --durations=5"
-markers = [
-    "requires: mark tests as requiring a specific library",
-    "compile: mark placeholder test used to compile integration tests without running them",
-]
+markers = [ "requires: mark tests as requiring a specific library", "compile: mark placeholder test used to compile integration tests without running them",]
 asyncio_mode = "auto"
 
 [tool.poetry.group.lint]
