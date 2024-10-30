@@ -117,7 +117,7 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
         # declare deps in funny way
         py_versions = ["3.9", "3.11"]
 
-    elif dir_ == "libs/partners/huggingface":
+    elif dir_ in ["libs/partners/huggingface", "libs/partners/anthropic"]:
         # huggingface tokenizers doesn't support 3.13 yet
         # because of pep517 builds
         py_versions = ["3.9", "3.12"]
