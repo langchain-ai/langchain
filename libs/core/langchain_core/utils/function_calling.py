@@ -445,6 +445,9 @@ def convert_to_openai_tool(
 ) -> dict[str, Any]:
     """Convert a tool-like object to an OpenAI tool schema.
 
+    OpenAI tool schema reference:
+    https://platform.openai.com/docs/api-reference/chat/create#chat-create-tools
+
     Args:
         tool:
             Either a dictionary, a pydantic.BaseModel class, Python function, or
@@ -472,8 +475,9 @@ def convert_to_openai_tool(
     .. versionchanged:: 0.3.14
 
         - Support for Amazon Bedrock Converse format tools added.
-        - 'description' and 'parameters' keys are now optional. Only 'name' is
-            required and guaranteed to be part of the 'function' dict.
+        -
+            'description' and 'parameters' keys are now optional.
+            Only 'name' is required and guaranteed to be part of the 'function' dict.
     """
     if isinstance(tool, dict) and tool.get("type") == "function" and "function" in tool:
         return tool
