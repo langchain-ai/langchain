@@ -2,8 +2,9 @@ from langchain_neo4j import __all__
 
 EXPECTED_ALL = [
     "Neo4jChatMessageHistory",
-    "Neo4jVector",
     "Neo4jGraph",
+    "Neo4jTranslator",
+    "Neo4jVector",
     "__version__",
 ]
 

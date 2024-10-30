@@ -8,7 +8,7 @@ from langchain_core.structured_query import (
     StructuredQuery,
 )
 
-from langchain_community.query_constructors.neo4j import Neo4jTranslator
+from langchain_neo4j.query_constructors.neo4j import Neo4jTranslator
 
 DEFAULT_TRANSLATOR = Neo4jTranslator()
 
