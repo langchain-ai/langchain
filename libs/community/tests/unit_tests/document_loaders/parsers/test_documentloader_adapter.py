@@ -12,7 +12,6 @@ HERE = Path(__file__).parent
 EXAMPLES = HERE.parent.parent.parent / "examples"
 
 
-@pytest.mark.requires("openpyxl")
 def test_excel_loader_as_parser() -> None:
     """Test DocumentLoaderAsParser with UnstructuredExcelLoader."""
     file_path = EXAMPLES / "stanley-cups.xlsx"
