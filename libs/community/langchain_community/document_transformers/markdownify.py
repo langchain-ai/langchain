@@ -1,3 +1,4 @@
+import asyncio
 import re
 from typing import Any, List, Optional, Sequence, Union
 
@@ -75,9 +76,48 @@ class MarkdownifyTransformer(BaseDocumentTransformer):
 
         return converted_documents
 
+    async def _atransform_document(self, document: Document, **kwargs: Any) -> Document:
+        """
+        Transform a single document asynchronously.
+        """
+        # This logic is copied from the `transform_documents` method.
+        try:
+            from markdownify import markdownify
+        except ImportError:
+            raise ImportError(
+                """markdownify package not found, please 
+                install it with `pip install markdownify`"""
+            )
+    
+        markdown_content = (
+            markdownify(
+                html=document.page_content,
+                strip=self.strip,
+                convert=self.convert,
+                autolinks=self.autolinks,
+                heading_style=self.heading_style,
+                **self.additional_options,
+            )
+            .replace("\xa0", " ")
+            .strip()
+        )
+        cleaned_markdown = re.sub(r"\n\s*\n", "\n\n", markdown_content)
+        return Document(cleaned_markdown, metadata=document.metadata)
+
     async def atransform_documents(
         self,
         documents: Sequence[Document],
         **kwargs: Any,
     ) -> Sequence[Document]:
-        raise NotImplementedError
+        """
+        Transform a list of documents asynchronously.
+        """
+        # This function converts the _atransform_document method into a coroutine
+        # that can be used with asyncio.gather. The _atransform_document
+        # method returns a LangChain Document object, which is not hashable,
+        # so we convert that result into a coroutine, and then gather all of the
+        # coroutines into a list.
+        async def transform_document(document: Document, **kwargs: Any) -> Document:
+            return await self._atransform_document(document, **kwargs)
+
+        return await asyncio.gather(*[transform_document(doc, **kwargs) for doc in documents])
