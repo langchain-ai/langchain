@@ -11,7 +11,7 @@ from typing import (
     Union,
 )
 
-from pydantic import BaseModel
+from pydantic import BaseModel, RootModel
 from pydantic_core import PydanticUndefined
 from typing_extensions import override
 
@@ -395,6 +395,13 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             )
 
         underlying_input_schema = self._underlying_runnable.get_input_schema()
+        if issubclass(underlying_input_schema, RootModel):
+            return create_model_v2(  # type: ignore[call-overload]
+                "RunnableWithChatHistoryInput",
+                field_definitions=fields,
+                module_name=self.__class__.__module__,
+            )
+
         for (
             field_name,
             field_info,
