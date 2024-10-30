@@ -254,8 +254,10 @@ class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
         tools: Sequence[Union[BaseTool, dict]],
         model: str,
         *,
+        model_kwargs: dict[str, float] = {},
         client: Optional[Union[openai.OpenAI, openai.AzureOpenAI]] = None,
         tool_resources: Optional[Union[AssistantToolResources, dict, NotGiven]] = None,
+        extra_body: Optional[object] = None,
         **kwargs: Any,
     ) -> OpenAIAssistantRunnable:
         """Create an OpenAI Assistant and instantiate the Runnable.
@@ -271,6 +273,9 @@ class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
             client (Optional[Union[openai.OpenAI, openai.AzureOpenAI]]): OpenAI or
                 AzureOpenAI client. Will create default OpenAI client (Assistant v2)
                 if not specified.
+            model_kwargs: Additional model arguments. Only available for temperature
+                and top_p parameters.
+            extra_body: Additional body parameters to be passed to the assistant.
 
         Returns:
             OpenAIAssistantRunnable: The configured assistant runnable.
@@ -284,8 +289,10 @@ class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
             name=name,
             instructions=instructions,
             tools=[_get_assistants_tool(tool) for tool in tools],  # type: ignore
-            tool_resources=tool_resources,
+            tool_resources=tool_resources,  # type: ignore[arg-type]
             model=model,
+            extra_body=extra_body,
+            **model_kwargs,
         )
         return cls(assistant_id=assistant.id, client=client, **kwargs)
 
@@ -424,7 +431,7 @@ class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
             name=name,
             instructions=instructions,
             tools=openai_tools,  # type: ignore
-            tool_resources=tool_resources,
+            tool_resources=tool_resources,  # type: ignore[arg-type]
             model=model,
         )
         return cls(assistant_id=assistant.id, async_client=async_client, **kwargs)
