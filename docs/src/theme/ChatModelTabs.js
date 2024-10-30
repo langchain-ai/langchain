@@ -16,6 +16,7 @@ import CodeBlock from "@theme-original/CodeBlock";
  * @property {string} [togetherParams] - Parameters for Together chat model. Defaults to `model="mistralai/Mixtral-8x7B-Instruct-v0.1"`
  * @property {string} [nvidiaParams] - Parameters for Nvidia NIM model. Defaults to `model="meta/llama3-70b-instruct"`
  * @property {string} [awsBedrockParams] - Parameters for AWS Bedrock chat model.
+ * @property {string} [ibmParams] - Parameters for IBM chat model.
  * @property {boolean} [hideOpenai] - Whether or not to hide OpenAI chat model.
  * @property {boolean} [hideAnthropic] - Whether or not to hide Anthropic chat model.
  * @property {boolean} [hideCohere] - Whether or not to hide Cohere chat model.
@@ -27,6 +28,7 @@ import CodeBlock from "@theme-original/CodeBlock";
  * @property {boolean} [hideAzure] - Whether or not to hide Microsoft Azure OpenAI chat model.
  * @property {boolean} [hideNvidia] - Whether or not to hide NVIDIA NIM model.
  * @property {boolean} [hideAWS] - Whether or not to hide AWS models.
+ * @property {boolean} [hideIBM] - Whether or not to hide IBM models.
  * @property {string} [customVarName] - Custom variable name for the model. Defaults to `model`.
  */
 
@@ -46,6 +48,7 @@ export default function ChatModelTabs(props) {
     azureParams,
     nvidiaParams,
     awsBedrockParams,
+    ibmParams,
     hideOpenai,
     hideAnthropic,
     hideCohere,
@@ -57,6 +60,7 @@ export default function ChatModelTabs(props) {
     hideAzure,
     hideNvidia,
     hideAWS,
+    hideIBM,
     customVarName,
   } = props;
 
@@ -79,6 +83,8 @@ export default function ChatModelTabs(props) {
     `\n    azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],\n    azure_deployment=os.environ["AZURE_OPENAI_DEPLOYMENT_NAME"],\n    openai_api_version=os.environ["AZURE_OPENAI_API_VERSION"],\n`;
   const nvidiaParamsOrDefault = nvidiaParams ?? `model="meta/llama3-70b-instruct"`
   const awsBedrockParamsOrDefault = awsBedrockParams ?? `model_id="anthropic.claude-3-5-sonnet-20240620-v1:0"`;
+  const ibmParamsOrDefault = ibmParams ?? 
+  `\n    model_id="ibm/granite-34b-code-instruct",\n    url="https://us-south.ml.cloud.ibm.com",\n    project_id="<WATSONX PROJECT_ID>",\n`;
 
   const llmVarName = customVarName ?? "model";
 
@@ -181,6 +187,15 @@ export default function ChatModelTabs(props) {
       packageName: "langchain-aws",
       default: false,
       shouldHide: hideAWS,
+    },
+    {
+      value: "IBM",
+      label: "IBM",
+      text: `from langchain_ibm import ChatWatsonx\n\n${llmVarName} = ChatWatsonx(${ibmParamsOrDefault})`,
+      apiKeyText: "WATSONX_APIKEY",
+      packageName: "langchain-ibm",
+      default: false,
+      shouldHide: hideIBM,
     },
   ];
 
