@@ -1,7 +1,9 @@
 from collections.abc import Sequence
+from operator import itemgetter
 from typing import Any, Callable, Optional, Union
 
 import pytest
+from pydantic import BaseModel
 
 from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
@@ -425,25 +427,53 @@ async def test_output_dict_async() -> None:
 
 
 def test_get_input_schema_input_dict() -> None:
-    from operator import itemgetter
+    class RunnableWithChatHistoryInput(BaseModel):
+        input: Union[str, BaseMessage, Sequence[BaseMessage]]
 
-    runnable = RunnableParallel(
+    runnable_unspecified_schema = RunnableLambda(
+        lambda input: {
+            "output": [
+                AIMessage(
+                    content="you said: "
+                    + "\n".join(
+                        [
+                            str(m.content)
+                            for m in input["history"]
+                            if isinstance(m, HumanMessage)
+                        ]
+                        + [input["input"]]
+                    )
+                )
+            ]
+        }
+    )
+    get_session_history = _get_get_session_history()
+    with_history = RunnableWithMessageHistory(
+        runnable_unspecified_schema,
+        get_session_history,
+        input_messages_key="input",
+        history_messages_key="history",
+        output_messages_key="output",
+    )
+    assert _schema(with_history.get_input_schema()) == _schema(
+        RunnableWithChatHistoryInput
+    )
+
+    runnable_specified_schema = RunnableParallel(
         {
             "input": itemgetter("input"),
             "ability": itemgetter("ability"),
             "history": itemgetter("history"),
         }
     )
-
     get_session_history = _get_get_session_history()
     with_history = RunnableWithMessageHistory(
-        runnable,
+        runnable_specified_schema,
         get_session_history,
         input_messages_key="input",
         history_messages_key="history",
         output_messages_key="output",
     )
-
     assert _schema(with_history.get_input_schema()) == {
         "properties": {
             "input": {
