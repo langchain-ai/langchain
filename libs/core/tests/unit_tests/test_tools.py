@@ -48,9 +48,9 @@ from langchain_core.tools import (
 from langchain_core.tools.base import (
     InjectedToolArg,
     SchemaAnnotationError,
-    _get_all_basemodel_annotations,
     _is_message_content_block,
     _is_message_content_type,
+    get_all_basemodel_annotations,
 )
 from langchain_core.utils.function_calling import convert_to_openai_function
 from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION, _create_subset_model
@@ -1773,19 +1773,19 @@ def test__get_all_basemodel_annotations_v2(use_v1_namespace: bool) -> None:
         c: dict
 
     expected = {"a": str, "b": Annotated[ModelA[Dict[str, Any]], "foo"], "c": dict}
-    actual = _get_all_basemodel_annotations(ModelC)
+    actual = get_all_basemodel_annotations(ModelC)
     assert actual == expected
 
     expected = {"a": str, "b": Annotated[ModelA[Dict[str, Any]], "foo"]}
-    actual = _get_all_basemodel_annotations(ModelB)
+    actual = get_all_basemodel_annotations(ModelB)
     assert actual == expected
 
     expected = {"a": Any}
-    actual = _get_all_basemodel_annotations(ModelA)
+    actual = get_all_basemodel_annotations(ModelA)
     assert actual == expected
 
     expected = {"a": int}
-    actual = _get_all_basemodel_annotations(ModelA[int])
+    actual = get_all_basemodel_annotations(ModelA[int])
     assert actual == expected
 
     D = TypeVar("D", bound=Union[str, int])
@@ -1799,7 +1799,7 @@ def test__get_all_basemodel_annotations_v2(use_v1_namespace: bool) -> None:
         "c": dict,
         "d": Union[str, int, None],
     }
-    actual = _get_all_basemodel_annotations(ModelD)
+    actual = get_all_basemodel_annotations(ModelD)
     assert actual == expected
 
     expected = {
@@ -1808,7 +1808,7 @@ def test__get_all_basemodel_annotations_v2(use_v1_namespace: bool) -> None:
         "c": dict,
         "d": Union[int, None],
     }
-    actual = _get_all_basemodel_annotations(ModelD[int])
+    actual = get_all_basemodel_annotations(ModelD[int])
     assert actual == expected
 
 
@@ -1830,19 +1830,19 @@ def test__get_all_basemodel_annotations_v1() -> None:
         c: dict
 
     expected = {"a": str, "b": Annotated[ModelA[Dict[str, Any]], "foo"], "c": dict}
-    actual = _get_all_basemodel_annotations(ModelC)
+    actual = get_all_basemodel_annotations(ModelC)
     assert actual == expected
 
     expected = {"a": str, "b": Annotated[ModelA[Dict[str, Any]], "foo"]}
-    actual = _get_all_basemodel_annotations(ModelB)
+    actual = get_all_basemodel_annotations(ModelB)
     assert actual == expected
 
     expected = {"a": Any}
-    actual = _get_all_basemodel_annotations(ModelA)
+    actual = get_all_basemodel_annotations(ModelA)
     assert actual == expected
 
     expected = {"a": int}
-    actual = _get_all_basemodel_annotations(ModelA[int])
+    actual = get_all_basemodel_annotations(ModelA[int])
     assert actual == expected
 
     D = TypeVar("D", bound=Union[str, int])
@@ -1856,7 +1856,7 @@ def test__get_all_basemodel_annotations_v1() -> None:
         "c": dict,
         "d": Union[str, int, None],
     }
-    actual = _get_all_basemodel_annotations(ModelD)
+    actual = get_all_basemodel_annotations(ModelD)
     assert actual == expected
 
     expected = {
@@ -1865,7 +1865,7 @@ def test__get_all_basemodel_annotations_v1() -> None:
         "c": dict,
         "d": Union[int, None],
     }
-    actual = _get_all_basemodel_annotations(ModelD[int])
+    actual = get_all_basemodel_annotations(ModelD[int])
     assert actual == expected
 
 
