@@ -365,30 +365,31 @@ def convert_to_openai_function(
     """
     from langchain_core.tools import BaseTool
 
-    # already in OpenAI function format
-    if isinstance(function, dict) and all(
-        k in function for k in ("name", "description", "parameters")
-    ):
-        oai_function = function
-    # a JSON schema with title and description
-    elif isinstance(function, dict) and all(
-        k in function for k in ("title", "description", "properties")
-    ):
-        function = function.copy()
-        oai_function = {
-            "name": function.pop("title"),
-            "description": function.pop("description"),
-            "parameters": function,
-        }
     # an Anthropic format tool
-    elif isinstance(function, dict) and all(
-        k in function for k in ("name", "description", "input_schema")
+    if isinstance(function, dict) and all(
+        k in function for k in ("name", "input_schema")
     ):
         oai_function = {
             "name": function["name"],
-            "description": function["description"],
             "parameters": function["input_schema"],
         }
+        if "description" in function:
+            oai_function["description"] = function["description"]
+    # already in OpenAI function format
+    elif isinstance(function, dict) and "name" in function:
+        oai_function = {
+            k: v
+            for k, v in function.items()
+            if k in ("name", "description", "parameters", "strict")
+        }
+    # a JSON schema with title and description
+    elif isinstance(function, dict) and "title" in function:
+        function_copy = function.copy()
+        oai_function = {"name": function_copy.pop("title")}
+        if "description" in function_copy:
+            oai_function["description"] = function_copy.pop("description")
+        if function_copy and "properties" in function_copy:
+            oai_function["parameters"] = function_copy
     elif isinstance(function, type) and is_basemodel_subclass(function):
         oai_function = cast(dict, convert_pydantic_to_openai_function(function))
     elif is_typeddict(function):
@@ -409,6 +410,9 @@ def convert_to_openai_function(
         raise ValueError(msg)
 
     if strict is not None:
+        if "strict" in oai_function and oai_function["strict"] != strict:
+            msg = ""
+            raise ValueError(msg)
         oai_function["strict"] = strict
         if strict:
             # As of 08/06/24, OpenAI requires that additionalProperties be supplied and
