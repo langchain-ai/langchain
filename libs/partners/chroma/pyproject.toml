@@ -20,7 +20,6 @@ disallow_untyped_defs = true
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4"
-langchain-standard-tests = {git = "https://github.com/langchain-ai/langchain.git", subdirectory = "libs/standard-tests"}
 [[tool.poetry.dependencies.langchain-core]]
 version = ">=0.2.11,<0.4"
 python = ">=3.9"
@@ -124,6 +123,10 @@ types-requests = "^2.31.0.20240406"
 path = "../../core"
 develop = true
 python = ">=3.9"
+
+[tool.poetry.group.test.dependencies.langchain-standard-tests]
+path="../../standard-tests"
+develop = true
 
 [[tool.poetry.group.typing.dependencies.langchain-core]]
 version = ">=0.1.40,<0.3"
