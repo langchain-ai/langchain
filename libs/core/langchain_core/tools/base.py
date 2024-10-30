@@ -362,7 +362,7 @@ class ChildTool(BaseTool):
     def tool_call_schema(self) -> Type[BaseModel]:
         full_schema = self.get_input_schema()
         fields = []
-        for name, type_ in _get_all_basemodel_annotations(full_schema).items():
+        for name, type_ in get_all_basemodel_annotations(full_schema).items():
             if not _is_injected_arg_type(type_):
                 fields.append(name)
         return _create_subset_model(
@@ -858,7 +858,7 @@ def _is_injected_arg_type(type_: Type) -> bool:
     )
 
 
-def _get_all_basemodel_annotations(
+def get_all_basemodel_annotations(
     cls: Union[TypeBaseModel, Any], *, default_to_bound: bool = True
 ) -> Dict[str, Type]:
     # cls has no subscript: cls = FooBar
@@ -876,7 +876,7 @@ def _get_all_basemodel_annotations(
         orig_bases: Tuple = getattr(cls, "__orig_bases__", tuple())
     # cls has subscript: cls = FooBar[int]
     else:
-        annotations = _get_all_basemodel_annotations(
+        annotations = get_all_basemodel_annotations(
             get_origin(cls), default_to_bound=False
         )
         orig_bases = (cls,)
@@ -890,7 +890,7 @@ def _get_all_basemodel_annotations(
             # if class = FooBar inherits from Baz, parent = Baz
             if isinstance(parent, type) and is_pydantic_v1_subclass(parent):
                 annotations.update(
-                    _get_all_basemodel_annotations(parent, default_to_bound=False)
+                    get_all_basemodel_annotations(parent, default_to_bound=False)
                 )
                 continue
 
