@@ -389,7 +389,7 @@ def __getattr__(name: str) -> Any:
         raise AttributeError(f"Could not find: {name}")
 
 
-_deprecated_all = [
+__all__ = [
     "LLMChain",
     "LLMCheckerChain",
     "LLMMathChain",
@@ -436,11 +436,4 @@ _deprecated_all = [
     "QAWithSourcesChain",
     "LlamaCpp",
     "HuggingFaceTextGenInference",
-]
-
-__all__ = [
-    "init_chat_model",
-    "tool",
-
-    *_deprecated_all
 ]
