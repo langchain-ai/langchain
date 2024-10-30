@@ -1489,7 +1489,7 @@ class BaseChatOpenAI(BaseChatModel):
                 llm = self.bind(response_format=response_format)
             else:
                 bind_kwargs = self._filter_disabled_params(
-                    strict=strict,
+                    strict=True,
                     tool_choice=tool_choice,
                     response_format=response_format,
                 )
