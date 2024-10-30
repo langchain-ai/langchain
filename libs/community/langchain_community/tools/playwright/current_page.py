@@ -15,7 +15,7 @@ from langchain_community.tools.playwright.utils import (
 )
 
 
-class CurrentWebPageTool(BaseBrowserTool):
+class CurrentWebPageTool(BaseBrowserTool):  # type: ignore[override, override]
     """Tool for getting the URL of the current webpage."""
 
     name: str = "current_webpage"
