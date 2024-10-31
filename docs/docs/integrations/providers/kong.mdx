@@ -1,0 +1,91 @@
+# Kong
+
+[Kong AI Gateway](https://konghq.com/products/kong-ai-gateway) delivers a LangChain
+ChatOpenAI-compatible AI Gateway platform, enabling you to:
+
+* Route a single LangChain codebase to multiple models, across many providers, using the
+  [ChatOpenAI](https://python.langchain.com/docs/integrations/chat/openai/) adapter
+* Load balance similar models based on cost, latency, and other metrics/algorithms
+* Deliver a rich analytics and auditing suite for your deployments
+
+## Get Started
+
+Kong AI Gateway exchanges inference requests in the ChatOpenAI formats - thus you can easily and quickly
+connect your existing LangChain OpenAI adaptor-based integrations directly through Kong with no code changes.
+
+You can target hundreds of models across the [supported providers](https://docs.konghq.com/hub/kong-inc/ai-proxy/),
+all from the same client-side codebase.
+
+### Create Gateway-Level Authentication
+
+Kong will arbitrate the chosen provider/LLM authentication for the caller, and offers per-consumer API keys
+that can be configured in the LangChain program code.
+
+We need to configure Kong to accept the client API keys in the same outbound format as will be emmitted from
+the ChatOpenAI adapter. They will emit from the SDK
+in the format `Authorization: Bearer {client.api_key}`
+
+To support this, add the following to your Kong LLM configuration to enable LangChain-compatible protection for your LLM API endpoints:
+
+```yaml
+...
+...
+
+# Instruct the key-auth plugin to look for the Authorization header:
+plugins:
+  - name: key-auth
+    config:
+      key_names:
+        - "Authorization"
+
+# and configure a consumer with its own API key:
+consumers:
+  - username: department-1
+    keyauth_credentials:
+      - key: "Bearer department-1-api-key"
+
+...
+...
+```
+
+#### Test it
+
+Check you are reaching GPT-4o on OpenAI correctly:
+
+```sh
+$ curl -H 'Content-Type: application/json' -d '{"messages":[{"role":"user","content":"What are you?"}]}' http://127.0.0.1:8000/gpt4o
+
+{
+  ...
+  ...
+        "content": "I am an AI language model developed by OpenAI, designed to assist with generating text-based responses and providing information on a wide range of topics. How can I assist you today?",
+  ...
+  ...
+}
+```
+
+### Execute Your LangChain Code
+
+Now your `ChatOpenAI` code should operate as normal:
+
+```python
+from langchain_openai import ChatOpenAI
+
+kong_url = "http://127.0.0.1:8000"
+kong_route = "gpt4o"
+
+llm = ChatOpenAI(
+    base_url=f'{kong_url}/{kong_route}',  # simply override the base URL from LangChain, to Kong
+    model="gpt-4o",
+    api_key="department-1-api-key" 
+)
+
+response = llm.invoke("What are you?")
+print(f"$ ChainAnswer:> {response.content}")
+```
+
+and run it!
+
+```sh
+$ python3 ./app.py
+```
