@@ -1,3 +1,4 @@
+"""Ollama embeddings models."""
 from typing import (
     List,
     Optional,
