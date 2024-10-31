@@ -23,7 +23,8 @@ from tenacity import (
 
 logger = logging.getLogger(__name__)
 
-BATCH_SIZE = {"text-embedding-v1": 25,"text-embedding-v2": 25, "text-embedding-v3": 6}
+BATCH_SIZE = {"text-embedding-v1": 25, "text-embedding-v2": 25, "text-embedding-v3": 6}
+
 
 def _create_retry_decorator(embeddings: DashScopeEmbeddings) -> Callable[[Any], Any]:
     multiplier = 1
@@ -53,7 +54,9 @@ def embed_with_retry(embeddings: DashScopeEmbeddings, **kwargs: Any) -> Any:
         batch_size = BATCH_SIZE.get(kwargs["model"], 25)
         while i < input_len:
             kwargs["input"] = (
-                input_data[i : i + batch_size] if isinstance(input_data, list) else input_data
+                input_data[i : i + batch_size]
+                if isinstance(input_data, list)
+                else input_data
             )
             resp = embeddings.client.call(**kwargs)
             if resp.status_code == 200:
