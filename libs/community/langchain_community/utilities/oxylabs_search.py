@@ -22,9 +22,7 @@ RESULT_CATEGORIES = [
     "search_information"
 ]
 
-EXCLUDED_RESULT_ATTRIBUTES = [
-    "pos_overall"
-]
+IMAGE_BINARY_CONTENT_ARRAY_ATTRIBUTE = "images"
 
 
 @dataclass
@@ -35,6 +33,16 @@ class ResponseElement:
     python_type: str
     parent: Optional["ResponseElement"]
 
+def _get_default_excluded_result_attributes() -> List[str]:
+    return [
+        "pos_overall"
+    ]
+
+def _get_default_image_content_attributes() -> List[str]:
+    return [
+        "image_data",
+        "data"
+    ]
 
 def _get_default_params() -> dict:
     """Provide default parameters for OxylabsSearchAPIWrapper.
@@ -111,7 +119,10 @@ class OxylabsSearchAPIWrapper(BaseModel):
     include_binary_image_data: Optional[bool] = None
     result_categories: Optional[list] = None
     search_engine: Any = None
-    params: dict = Field(default=_get_default_params)
+    params: dict = Field(default_factory=_get_default_params)
+    excluded_result_attributes: List[str] = Field(default_factory=_get_default_excluded_result_attributes)
+    image_binary_content_attributes: List[str] = Field(default_factory=_get_default_image_content_attributes)
+    image_binary_content_array_attribute: str = Field(default=IMAGE_BINARY_CONTENT_ARRAY_ATTRIBUTE)
     oxylabs_username: Optional[str] = None
     oxylabs_password: Optional[str] = None
     model_config = ConfigDict(arbitrary_types_allowed=True, extra="forbid")
@@ -332,106 +343,156 @@ class OxylabsSearchAPIWrapper(BaseModel):
             return "\n".join(target_snippets)
 
         if isinstance(target_structure, (str, float, int)):
-            if target_structure:
-                if parent_.python_type == str(type(list())):
-                    if (
-                        base64_images_attribute in parent_.path_.split("-")[-3:]
-                        or parent_.tag in base64_image_attributes
-                    ) and not self.include_binary_image_data:
-                        target_structure = "Redacted base64 image string..."
-
-                    target_snippets.append(
-                        f"{recursion_padding}{parent_.display_tag}: {str(target_structure)}"
-                    )
-
-                elif parent_.python_type == str(type(dict())):
-                    if parent_.tag in base64_image_attributes and not self.include_binary_image_data:
-                        target_structure = "Redacted base64 image string..."
-
-                    if parent_.tag.lower() not in EXCLUDED_RESULT_ATTRIBUTES:
-                        target_snippets.append(
-                            f"{recursion_padding}{parent_.display_tag}: {str(target_structure)}"
-                        )
+            self.recursion_process_simple_types(
+                parent_,
+                recursion_padding,
+                target_snippets,
+                target_structure
+            )
 
         elif isinstance(target_structure, dict):
-            if target_structure:
-                target_snippets.append(
-                    f"{recursion_padding}{parent_.display_tag.upper()}: "
+            self.recursion_process_dict(
+                current_depth,
+                max_depth,
+                parent_,
+                recursion_padding,
+                target_snippets,
+                target_structure
+            )
+
+        elif isinstance(target_structure, (list, tuple)):
+            self.recursion_process_array(
+                current_depth,
+                max_depth,
+                parent_,
+                recursion_padding,
+                target_snippets,
+                target_structure
+            )
+
+        return "\n".join(target_snippets)
+
+    def recursion_process_array(
+        self,
+        current_depth,
+        max_depth,
+        parent_,
+        recursion_padding,
+        target_snippets,
+        target_structure
+    ):
+        if target_structure:
+            target_snippets.append(
+                f"{recursion_padding}{parent_.display_tag.upper()} ITEMS: "
+            )
+        for nr_, element_ in enumerate(target_structure):
+            target_snippets.append(
+                self.recursive_snippet_collector(
+                    element_,
+                    max_depth=max_depth,
+                    current_depth=current_depth + 1,
+                    parent_=ResponseElement(
+                        path_=f"{parent_.path_.upper()}-ITEM-{nr_ + 1}",
+                        tag=parent_.tag.upper(),
+                        display_tag=f"{parent_.tag.upper()}-ITEM-{nr_ + 1}",
+                        python_type=str(type(target_structure)),
+                        parent=parent_,
+                    ),
                 )
-                for key_, value_ in target_structure.items():
-                    if isinstance(value_, dict):
-                        if value_:
-                            target_snippets.append(
-                                f"{recursion_padding}{key_.upper()}: "
+            )
+
+    def recursion_process_dict(
+        self,
+        current_depth,
+        max_depth,
+        parent_,
+        recursion_padding,
+        target_snippets,
+        target_structure
+    ):
+        if target_structure:
+            target_snippets.append(
+                f"{recursion_padding}{parent_.display_tag.upper()}: "
+            )
+            for key_, value_ in target_structure.items():
+                if isinstance(value_, dict):
+                    if value_:
+                        target_snippets.append(
+                            f"{recursion_padding}{key_.upper()}: "
+                        )
+                        target_snippets.append(
+                            self.recursive_snippet_collector(
+                                value_,
+                                max_depth=max_depth,
+                                current_depth=current_depth + 1,
+                                parent_=ResponseElement(
+                                    path_=f"{parent_.path_.upper()}-{key_.upper()}",
+                                    tag=key_.upper(),
+                                    display_tag=key_.upper(),
+                                    python_type=str(type(value_)),
+                                    parent=parent_,
+                                ),
                             )
+                        )
+
+                elif isinstance(value_, (list, tuple)):
+                    if value_:
+                        target_snippets.append(
+                            f"{recursion_padding}{key_.upper()} ITEMS: "
+                        )
+                        for nr_, _element in enumerate(value_):
                             target_snippets.append(
                                 self.recursive_snippet_collector(
-                                    value_,
+                                    _element,
                                     max_depth=max_depth,
                                     current_depth=current_depth + 1,
                                     parent_=ResponseElement(
-                                        path_=f"{parent_.path_.upper()}-{key_.upper()}",
+                                        path_=f"{parent_.path_.upper()}-{key_.upper()}-ITEM-{nr_ + 1}",
                                         tag=key_.upper(),
-                                        display_tag=key_.upper(),
+                                        display_tag=f"{key_.upper()}-ITEM-{nr_ + 1}",
                                         python_type=str(type(value_)),
                                         parent=parent_,
                                     ),
                                 )
                             )
 
-                    elif isinstance(value_, (list, tuple)):
-                        if value_:
+                elif isinstance(value_, (str, float, int)):
+                    if value_:
+                        if key_ in self.image_binary_content_attributes and not self.include_binary_image_data:
+                            value_ = "Redacted base64 image string..."
+
+                        if key_ not in self.excluded_result_attributes:
                             target_snippets.append(
-                                f"{recursion_padding}{key_.upper()} ITEMS: "
+                                f"{recursion_padding}{key_.upper()}: {str(value_)}"
                             )
-                            for nr_, _element in enumerate(value_):
-                                target_snippets.append(
-                                    self.recursive_snippet_collector(
-                                        _element,
-                                        max_depth=max_depth,
-                                        current_depth=current_depth + 1,
-                                        parent_=ResponseElement(
-                                            path_=f"{parent_.path_.upper()}-{key_.upper()}-ITEM-{nr_ + 1}",
-                                            tag=key_.upper(),
-                                            display_tag=f"{key_.upper()}-ITEM-{nr_ + 1}",
-                                            python_type=str(type(value_)),
-                                            parent=parent_,
-                                        ),
-                                    )
-                                )
 
-                    elif isinstance(value_, (str, float, int)):
-                        if value_:
-                            if key_.upper() in base64_image_attributes  and not self.include_binary_image_data:
-                                value_ = "Redacted base64 image string..."
+    def recursion_process_simple_types(
+            self,
+            parent_,
+            recursion_padding,
+            target_snippets,
+            target_structure
+    ):
+        if target_structure:
+            if parent_.python_type == str(type(list())):
+                if (
+                        self.image_binary_content_array_attribute in parent_.path_.split("-")[-3:]
+                        or parent_.tag.lower() in self.image_binary_content_attributes
+                ) and not self.include_binary_image_data:
+                    target_structure = "Redacted base64 image string..."
 
-                            if key_ not in EXCLUDED_RESULT_ATTRIBUTES:
-                                target_snippets.append(
-                                    f"{recursion_padding}{key_.upper()}: {str(value_)}"
-                                )
-
-        elif isinstance(target_structure, (list, tuple)):
-            if target_structure:
                 target_snippets.append(
-                    f"{recursion_padding}{parent_.display_tag.upper()} ITEMS: "
+                    f"{recursion_padding}{parent_.display_tag}: {str(target_structure)}"
                 )
-            for nr_, element_ in enumerate(target_structure):
-                target_snippets.append(
-                    self.recursive_snippet_collector(
-                        element_,
-                        max_depth=max_depth,
-                        current_depth=current_depth + 1,
-                        parent_=ResponseElement(
-                            path_=f"{parent_.path_.upper()}-ITEM-{nr_ + 1}",
-                            tag=parent_.tag.upper(),
-                            display_tag=f"{parent_.tag.upper()}-ITEM-{nr_ + 1}",
-                            python_type=str(type(target_structure)),
-                            parent=parent_,
-                        ),
+
+            elif parent_.python_type == str(type(dict())):
+                if parent_.tag.lower() in self.image_binary_content_attributes and not self.include_binary_image_data:
+                    target_structure = "Redacted base64 image string..."
+
+                if parent_.tag.lower() not in self.excluded_result_attributes:
+                    target_snippets.append(
+                        f"{recursion_padding}{parent_.display_tag}: {str(target_structure)}"
                     )
-                )
-
-        return "\n".join(target_snippets)
 
     def process_tags(self, snippets_, tags_, results, group_name: str = ""):
         check_tags = [tag_[0] in results for tag_ in tags_]
