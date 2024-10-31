@@ -1,3 +1,5 @@
+import base64
+import tempfile
 from pathlib import Path
 from typing import Any, List, Union
 
@@ -566,6 +568,49 @@ async def test_chat_tmpl_from_messages_multipart_image() -> None:
         name="R2D2", my_image=base64_image, my_other_image=other_base64_image
     )
     assert messages == expected
+
+
+async def test_chat_tmpl_from_messages_multipart_formatting_with_path() -> None:
+    """Verify that we cannot pass `path` for an image as a variable."""
+    in_mem = "base64mem"
+    in_file_data = "base64file01"
+
+    with tempfile.NamedTemporaryFile(delete=True, suffix=".jpg") as temp_file:
+        temp_file.write(base64.b64decode(in_file_data))
+        temp_file.flush()
+
+        template = ChatPromptTemplate.from_messages(
+            [
+                ("system", "You are an AI assistant named {name}."),
+                (
+                    "human",
+                    [
+                        {"type": "text", "text": "What's in this image?"},
+                        {
+                            "type": "image_url",
+                            "image_url": "data:image/jpeg;base64,{in_mem}",
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {"path": "{file_path}"},
+                        },
+                    ],
+                ),
+            ]
+        )
+        with pytest.raises(ValueError):
+            template.format_messages(
+                name="R2D2",
+                in_mem=in_mem,
+                file_path=temp_file.name,
+            )
+
+        with pytest.raises(ValueError):
+            await template.aformat_messages(
+                name="R2D2",
+                in_mem=in_mem,
+                file_path=temp_file.name,
+            )
 
 
 def test_messages_placeholder() -> None:
