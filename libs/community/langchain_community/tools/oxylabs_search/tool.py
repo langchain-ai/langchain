@@ -30,8 +30,10 @@ class OxylabsSearchRun(BaseTool):
     name: str = "oxylabs_search"
     description: str = (
         "A meta search engine."
-        "Useful for when you need to answer questions about current events."
-        "Input should be a search query. Output is a JSON array of the query results"
+        "Useful for when you need to answer questions about current events, facts,"
+        "products, recipes, local information and other topics that are explorable using web browsing."
+        "Input should be a search query and geo_location string if it can help with result preciseness."
+        "Output is a compiled formatted string of query results"
     )
     wrapper: OxylabsSearchAPIWrapper
     kwargs: dict = Field(default_factory=dict)
@@ -74,8 +76,10 @@ class OxylabsSearchResults(BaseTool):
     name: str = "oxylabs_search_results"
     description: str = (
         "A meta search engine."
-        "Useful for when you need to answer questions about current events."
-        "Input should be a search query. Output is a JSON array of the query results"
+        "Useful for when you need to answer questions about current events, facts,"
+        "products, recipes, local information and other topics that are explorable using web browsing."
+        "Input should be a search query and geo_location string if it can help with result preciseness."
+        "Output is a JSON array of response page objects."
     )
     wrapper: OxylabsSearchAPIWrapper
     kwargs: dict = Field(default_factory=dict)

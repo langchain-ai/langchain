@@ -5,6 +5,9 @@
 from typing import Any, Dict, List
 
 import asyncio
+
+from sqlalchemy.cyextension.util import Mapping
+
 from langchain_core.utils import get_from_dict_or_env
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from dataclasses import dataclass
@@ -111,7 +114,6 @@ class OxylabsSearchAPIWrapper(BaseModel):
     params: dict = Field(default=_get_default_params)
     oxylabs_username: Optional[str] = None
     oxylabs_password: Optional[str] = None
-
     model_config = ConfigDict(arbitrary_types_allowed=True, extra="forbid")
 
     @model_validator(mode="before")
@@ -153,7 +155,6 @@ class OxylabsSearchAPIWrapper(BaseModel):
 
             formed_values["result_categories"] = formed_values["params"]["result_categories"]
             del formed_values["params"]["result_categories"]
-
 
         try:
             from oxylabs import RealtimeClient
@@ -199,11 +200,11 @@ class OxylabsSearchAPIWrapper(BaseModel):
 
     async def arun(self, query: str, **kwargs: Any) -> str:
         """Run query through OxylabsSearchAPI and parse result async."""
-        return self._process_response(await self.aresults(query, **kwargs))
+        return self._process_response(await self.aresults(query, **kwargs), **kwargs)
 
     def run(self, query: str, **kwargs: Any) -> str:
         """Run query through OxylabsSearchAPI and parse result."""
-        return self._process_response(self.results(query, **kwargs))
+        return self._process_response(self.results(query, **kwargs), **kwargs)
 
     def results(self, query: str, **kwargs: Any) -> List[Dict[str, Any]]:
         """Run query through Oxylabs Web Scrapper API and return SERPResponse object."""
@@ -257,11 +258,11 @@ class OxylabsSearchAPIWrapper(BaseModel):
         """Validate Oxylabs SERPResponse format and unpack data."""
         validated_results = list()
         try:
-            result_list = response.raw["results"]
-            if not isinstance(result_list, list) or not result_list:
+            result_pages = response.raw["results"]
+            if not isinstance(result_pages, list) or not result_pages:
                 raise ValueError("No results returned!")
 
-            for result_page in result_list:
+            for result_page in result_pages:
                 result_page = dict(result_page)
                 content = result_page["content"]
                 if not isinstance(content, dict):
@@ -282,7 +283,7 @@ class OxylabsSearchAPIWrapper(BaseModel):
         except (KeyError, IndexError, TypeError, ValueError) as exc:
             raise RuntimeError(f"Response Validation Error: {str(exc)}")
 
-    def _process_response(self, res: Any) -> str:
+    def _process_response(self, res: Any, **kwargs) -> str:
         """Process Oxylabs SERPResponse and serialize search results to string."""
 
         result_ = "No good search result found"
@@ -298,8 +299,9 @@ class OxylabsSearchAPIWrapper(BaseModel):
         snippets = list()
 
         for nr_, validated_response in enumerate(res):
-            if self.result_categories:
-                for result_category in self.result_categories:
+            result_categories_ = kwargs.get("result_categories", []) or self.result_categories or []
+            if result_categories_:
+                for result_category in result_categories_:
                     result_category_processing_map[result_category](validated_response, snippets)
             else:
                 for result_category in result_category_processing_map:
