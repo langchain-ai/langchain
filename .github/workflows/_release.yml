@@ -294,7 +294,6 @@ jobs:
           VOYAGE_API_KEY: ${{ secrets.VOYAGE_API_KEY }}
           UPSTAGE_API_KEY: ${{ secrets.UPSTAGE_API_KEY }}
           FIREWORKS_API_KEY: ${{ secrets.FIREWORKS_API_KEY }}
-          UNSTRUCTURED_API_KEY: ${{ secrets.UNSTRUCTURED_API_KEY }}
         run: make integration_tests
         working-directory: ${{ inputs.working-directory }}
 
@@ -339,6 +338,8 @@ jobs:
           packages-dir: ${{ inputs.working-directory }}/dist/
           verbose: true
           print-hash: true
+          # Temp workaround since attestations are on by default as of gh-action-pypi-publish v1.11.0
+          attestations: false
 
   mark-release:
     needs:

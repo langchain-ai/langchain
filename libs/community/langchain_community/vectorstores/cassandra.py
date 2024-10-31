@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import asyncio
+import importlib.metadata
 import typing
 import uuid
+import warnings
 from typing import (
     Any,
     Awaitable,
@@ -18,6 +20,7 @@ from typing import (
 )
 
 import numpy as np
+from packaging.version import Version  # this is a lancghain-core dependency
 
 if typing.TYPE_CHECKING:
     from cassandra.cluster import Session
@@ -30,6 +33,7 @@ from langchain_community.utilities.cassandra import SetupMode
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
 CVST = TypeVar("CVST", bound="Cassandra")
+MIN_CASSIO_VERSION = Version("0.1.10")
 
 
 class Cassandra(VectorStore):
@@ -110,6 +114,15 @@ class Cassandra(VectorStore):
                 "Could not import cassio python package. "
                 "Please install it with `pip install cassio`."
             )
+        cassio_version = Version(importlib.metadata.version("cassio"))
+
+        if cassio_version is not None and cassio_version < MIN_CASSIO_VERSION:
+            msg = (
+                "Cassio version not supported. Please upgrade cassio "
+                f"to version {MIN_CASSIO_VERSION} or higher."
+            )
+            raise ImportError(msg)
+
         if not table_name:
             raise ValueError("Missing required parameter 'table_name'.")
         self.embedding = embedding
@@ -142,6 +155,9 @@ class Cassandra(VectorStore):
             skip_provisioning=setup_mode == SetupMode.OFF,
             **kwargs,
         )
+
+        if self.session is None:
+            self.session = self.table.session
 
     @property
     def embeddings(self) -> Embeddings:
@@ -230,6 +246,70 @@ class Cassandra(VectorStore):
         for document_id in ids:
             await self.adelete_by_document_id(document_id)
         return True
+
+    def delete_by_metadata_filter(
+        self,
+        filter: dict[str, Any],
+        *,
+        batch_size: int = 50,
+    ) -> int:
+        """Delete all documents matching a certain metadata filtering condition.
+
+        This operation does not use the vector embeddings in any way, it simply
+        removes all documents whose metadata match the provided condition.
+
+        Args:
+            filter: Filter on the metadata to apply. The filter cannot be empty.
+            batch_size: amount of deletions per each batch (until exhaustion of
+                the matching documents).
+
+        Returns:
+            A number expressing the amount of deleted documents.
+        """
+        if not filter:
+            msg = (
+                "Method `delete_by_metadata_filter` does not accept an empty "
+                "filter. Use the `clear()` method if you really want to empty "
+                "the vector store."
+            )
+            raise ValueError(msg)
+
+        return self.table.find_and_delete_entries(
+            metadata=filter,
+            batch_size=batch_size,
+        )
+
+    async def adelete_by_metadata_filter(
+        self,
+        filter: dict[str, Any],
+        *,
+        batch_size: int = 50,
+    ) -> int:
+        """Delete all documents matching a certain metadata filtering condition.
+
+        This operation does not use the vector embeddings in any way, it simply
+        removes all documents whose metadata match the provided condition.
+
+        Args:
+            filter: Filter on the metadata to apply. The filter cannot be empty.
+            batch_size: amount of deletions per each batch (until exhaustion of
+                the matching documents).
+
+        Returns:
+            A number expressing the amount of deleted documents.
+        """
+        if not filter:
+            msg = (
+                "Method `delete_by_metadata_filter` does not accept an empty "
+                "filter. Use the `clear()` method if you really want to empty "
+                "the vector store."
+            )
+            raise ValueError(msg)
+
+        return await self.table.afind_and_delete_entries(
+            metadata=filter,
+            batch_size=batch_size,
+        )
 
     def add_texts(
         self,
@@ -333,6 +413,188 @@ class Cassandra(VectorStore):
             await asyncio.gather(*tasks)
         return ids
 
+    def replace_metadata(
+        self,
+        id_to_metadata: dict[str, dict],
+        *,
+        batch_size: int = 50,
+    ) -> None:
+        """Replace the metadata of documents.
+
+        For each document to update, identified by its ID, the new metadata
+        dictionary completely replaces what is on the store. This includes
+        passing empty metadata `{}` to erase the currently-stored information.
+
+        Args:
+            id_to_metadata: map from the Document IDs to modify to the
+                new metadata for updating.
+                Keys in this dictionary that do not correspond to an existing
+                document will not cause an error, rather will result in new
+                rows being written into the Cassandra table but without an
+                associated vector: hence unreachable through vector search.
+            batch_size: Number of concurrent requests to send to the server.
+
+        Returns:
+            None if the writes succeed (otherwise an error is raised).
+        """
+        ids_and_metadatas = list(id_to_metadata.items())
+        for i in range(0, len(ids_and_metadatas), batch_size):
+            batch_i_m = ids_and_metadatas[i : i + batch_size]
+            futures = [
+                self.table.put_async(
+                    row_id=doc_id,
+                    metadata=doc_md,
+                )
+                for doc_id, doc_md in batch_i_m
+            ]
+            for future in futures:
+                future.result()
+        return
+
+    async def areplace_metadata(
+        self,
+        id_to_metadata: dict[str, dict],
+        *,
+        concurrency: int = 50,
+    ) -> None:
+        """Replace the metadata of documents.
+
+        For each document to update, identified by its ID, the new metadata
+        dictionary completely replaces what is on the store. This includes
+        passing empty metadata `{}` to erase the currently-stored information.
+
+        Args:
+            id_to_metadata: map from the Document IDs to modify to the
+                new metadata for updating.
+                Keys in this dictionary that do not correspond to an existing
+                document will not cause an error, rather will result in new
+                rows being written into the Cassandra table but without an
+                associated vector: hence unreachable through vector search.
+            concurrency: Number of concurrent queries to the database.
+                Defaults to 50.
+
+        Returns:
+            None if the writes succeed (otherwise an error is raised).
+        """
+        ids_and_metadatas = list(id_to_metadata.items())
+
+        sem = asyncio.Semaphore(concurrency)
+
+        async def send_concurrently(doc_id: str, doc_md: dict) -> None:
+            async with sem:
+                await self.table.aput(
+                    row_id=doc_id,
+                    metadata=doc_md,
+                )
+
+        for doc_id, doc_md in ids_and_metadatas:
+            tasks = [asyncio.create_task(send_concurrently(doc_id, doc_md))]
+            await asyncio.gather(*tasks)
+
+        return
+
+    @staticmethod
+    def _row_to_document(row: Dict[str, Any]) -> Document:
+        return Document(
+            id=row["row_id"],
+            page_content=row["body_blob"],
+            metadata=row["metadata"],
+        )
+
+    def get_by_document_id(self, document_id: str) -> Document | None:
+        """Retrieve a single document from the store, given its document ID.
+
+        Args:
+            document_id: The document ID
+
+        Returns:
+            The the document if it exists. Otherwise None.
+        """
+        row = self.table.get(row_id=document_id)
+        if row is None:
+            return None
+        return self._row_to_document(row=row)
+
+    async def aget_by_document_id(self, document_id: str) -> Document | None:
+        """Retrieve a single document from the store, given its document ID.
+
+        Args:
+            document_id: The document ID
+
+        Returns:
+            The the document if it exists. Otherwise None.
+        """
+        row = await self.table.aget(row_id=document_id)
+        if row is None:
+            return None
+        return self._row_to_document(row=row)
+
+    def metadata_search(
+        self,
+        filter: dict[str, Any] = {},  # noqa: B006
+        n: int = 5,
+    ) -> Iterable[Document]:
+        """Get documents via a metadata search.
+
+        Args:
+            filter: the metadata to query for.
+            n: the maximum number of documents to return.
+        """
+        rows = self.table.find_entries(metadata=filter, n=n)
+        return [self._row_to_document(row=row) for row in rows if row]
+
+    async def ametadata_search(
+        self,
+        filter: dict[str, Any] = {},  # noqa: B006
+        n: int = 5,
+    ) -> Iterable[Document]:
+        """Get documents via a metadata search.
+
+        Args:
+            filter: the metadata to query for.
+            n: the maximum number of documents to return.
+        """
+        rows = await self.table.afind_entries(metadata=filter, n=n)
+        return [self._row_to_document(row=row) for row in rows]
+
+    async def asimilarity_search_with_embedding_id_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        filter: Optional[Dict[str, str]] = None,
+        body_search: Optional[Union[str, List[str]]] = None,
+    ) -> List[Tuple[Document, List[float], str]]:
+        """Return docs most similar to embedding vector.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Filter on the metadata to apply.
+            body_search: Document textual search terms to apply.
+                Only supported by Astra DB at the moment.
+        Returns:
+            List of (Document, embedding, id), the most similar to the query vector.
+        """
+        kwargs: Dict[str, Any] = {}
+        if filter is not None:
+            kwargs["metadata"] = filter
+        if body_search is not None:
+            kwargs["body_search"] = body_search
+
+        hits = await self.table.aann_search(
+            vector=embedding,
+            n=k,
+            **kwargs,
+        )
+        return [
+            (
+                self._row_to_document(row=hit),
+                hit["vector"],
+                hit["row_id"],
+            )
+            for hit in hits
+        ]
+
     @staticmethod
     def _search_to_documents(
         hits: Iterable[Dict[str, Any]],
@@ -341,10 +603,7 @@ class Cassandra(VectorStore):
         # (1=most relevant), as required by this class' contract.
         return [
             (
-                Document(
-                    page_content=hit["body_blob"],
-                    metadata=hit["metadata"],
-                ),
+                Cassandra._row_to_document(row=hit),
                 0.5 + 0.5 * hit["distance"],
                 hit["row_id"],
             )
@@ -375,7 +634,6 @@ class Cassandra(VectorStore):
             kwargs["metadata"] = filter
         if body_search is not None:
             kwargs["body_search"] = body_search
-
         hits = self.table.metric_ann_search(
             vector=embedding,
             n=k,
@@ -712,13 +970,7 @@ class Cassandra(VectorStore):
             for pf_index, pf_hit in enumerate(prefetch_hits)
             if pf_index in mmr_chosen_indices
         ]
-        return [
-            Document(
-                page_content=hit["body_blob"],
-                metadata=hit["metadata"],
-            )
-            for hit in mmr_hits
-        ]
+        return [Cassandra._row_to_document(row=hit) for hit in mmr_hits]
 
     def max_marginal_relevance_search_by_vector(
         self,
@@ -883,6 +1135,24 @@ class Cassandra(VectorStore):
             body_search=body_search,
         )
 
+    @staticmethod
+    def _build_docs_from_texts(
+        texts: List[str],
+        metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
+    ) -> List[Document]:
+        docs: List[Document] = []
+        for i, text in enumerate(texts):
+            doc = Document(
+                page_content=text,
+            )
+            if metadatas is not None:
+                doc.metadata = metadatas[i]
+            if ids is not None:
+                doc.id = ids[i]
+            docs.append(doc)
+        return docs
+
     @classmethod
     def from_texts(
         cls: Type[CVST],
@@ -894,13 +1164,12 @@ class Cassandra(VectorStore):
         keyspace: Optional[str] = None,
         table_name: str = "",
         ids: Optional[List[str]] = None,
-        batch_size: int = 16,
         ttl_seconds: Optional[int] = None,
         body_index_options: Optional[List[Tuple[str, Any]]] = None,
         metadata_indexing: Union[Tuple[str, Iterable[str]], str] = "all",
         **kwargs: Any,
     ) -> CVST:
-        """Create a Cassandra vectorstore from raw texts.
+        """Create a Cassandra vector store from raw texts.
 
         Args:
             texts: Texts to add to the vectorstore.
@@ -912,16 +1181,32 @@ class Cassandra(VectorStore):
                 If not provided, it is resolved from cassio.
             table_name: Cassandra table (required).
             ids: Optional list of IDs associated with the texts.
-            batch_size: Number of concurrent requests to send to the server.
-                Defaults to 16.
             ttl_seconds: Optional time-to-live for the added texts.
             body_index_options: Optional options used to create the body index.
                 Eg. body_index_options = [cassio.table.cql.STANDARD_ANALYZER]
+            metadata_indexing: Optional specification of a metadata indexing policy,
+                i.e. to fine-tune which of the metadata fields are indexed.
+                It can be a string ("all" or "none"), or a 2-tuple. The following
+                means that all fields except 'f1', 'f2' ... are NOT indexed:
+                    metadata_indexing=("allowlist", ["f1", "f2", ...])
+                The following means all fields EXCEPT 'g1', 'g2', ... are indexed:
+                    metadata_indexing("denylist", ["g1", "g2", ...])
+                The default is to index every metadata field.
+                Note: if you plan to have massive unique text metadata entries,
+                consider not indexing them for performance
+                (and to overcome max-length limitations).
 
         Returns:
-            a Cassandra vectorstore.
+            a Cassandra vector store.
         """
-        store = cls(
+        docs = cls._build_docs_from_texts(
+            texts=texts,
+            metadatas=metadatas,
+            ids=ids,
+        )
+
+        return cls.from_documents(
+            documents=docs,
             embedding=embedding,
             session=session,
             keyspace=keyspace,
@@ -929,11 +1214,8 @@ class Cassandra(VectorStore):
             ttl_seconds=ttl_seconds,
             body_index_options=body_index_options,
             metadata_indexing=metadata_indexing,
+            **kwargs,
         )
-        store.add_texts(
-            texts=texts, metadatas=metadatas, ids=ids, batch_size=batch_size
-        )
-        return store
 
     @classmethod
     async def afrom_texts(
@@ -946,13 +1228,12 @@ class Cassandra(VectorStore):
         keyspace: Optional[str] = None,
         table_name: str = "",
         ids: Optional[List[str]] = None,
-        concurrency: int = 16,
         ttl_seconds: Optional[int] = None,
         body_index_options: Optional[List[Tuple[str, Any]]] = None,
         metadata_indexing: Union[Tuple[str, Iterable[str]], str] = "all",
         **kwargs: Any,
     ) -> CVST:
-        """Create a Cassandra vectorstore from raw texts.
+        """Create a Cassandra vector store from raw texts.
 
         Args:
             texts: Texts to add to the vectorstore.
@@ -964,29 +1245,51 @@ class Cassandra(VectorStore):
                 If not provided, it is resolved from cassio.
             table_name: Cassandra table (required).
             ids: Optional list of IDs associated with the texts.
-            concurrency: Number of concurrent queries to send to the database.
-                Defaults to 16.
             ttl_seconds: Optional time-to-live for the added texts.
             body_index_options: Optional options used to create the body index.
                 Eg. body_index_options = [cassio.table.cql.STANDARD_ANALYZER]
+            metadata_indexing: Optional specification of a metadata indexing policy,
+                i.e. to fine-tune which of the metadata fields are indexed.
+                It can be a string ("all" or "none"), or a 2-tuple. The following
+                means that all fields except 'f1', 'f2' ... are NOT indexed:
+                    metadata_indexing=("allowlist", ["f1", "f2", ...])
+                The following means all fields EXCEPT 'g1', 'g2', ... are indexed:
+                    metadata_indexing("denylist", ["g1", "g2", ...])
+                The default is to index every metadata field.
+                Note: if you plan to have massive unique text metadata entries,
+                consider not indexing them for performance
+                (and to overcome max-length limitations).
 
         Returns:
-            a Cassandra vectorstore.
+            a Cassandra vector store.
         """
-        store = cls(
+        docs = cls._build_docs_from_texts(
+            texts=texts,
+            metadatas=metadatas,
+            ids=ids,
+        )
+
+        return await cls.afrom_documents(
+            documents=docs,
             embedding=embedding,
             session=session,
             keyspace=keyspace,
             table_name=table_name,
             ttl_seconds=ttl_seconds,
-            setup_mode=SetupMode.ASYNC,
             body_index_options=body_index_options,
             metadata_indexing=metadata_indexing,
+            **kwargs,
         )
-        await store.aadd_texts(
-            texts=texts, metadatas=metadatas, ids=ids, concurrency=concurrency
-        )
-        return store
+
+    @staticmethod
+    def _add_ids_to_docs(
+        docs: List[Document],
+        ids: Optional[List[str]] = None,
+    ) -> List[Document]:
+        if ids is not None:
+            for doc, doc_id in zip(docs, ids):
+                doc.id = doc_id
+        return docs
 
     @classmethod
     def from_documents(
@@ -998,13 +1301,12 @@ class Cassandra(VectorStore):
         keyspace: Optional[str] = None,
         table_name: str = "",
         ids: Optional[List[str]] = None,
-        batch_size: int = 16,
         ttl_seconds: Optional[int] = None,
         body_index_options: Optional[List[Tuple[str, Any]]] = None,
         metadata_indexing: Union[Tuple[str, Iterable[str]], str] = "all",
         **kwargs: Any,
     ) -> CVST:
-        """Create a Cassandra vectorstore from a document list.
+        """Create a Cassandra vector store from a document list.
 
         Args:
             documents: Documents to add to the vectorstore.
@@ -1015,31 +1317,48 @@ class Cassandra(VectorStore):
                 If not provided, it is resolved from cassio.
             table_name: Cassandra table (required).
             ids: Optional list of IDs associated with the documents.
-            batch_size: Number of concurrent requests to send to the server.
-                Defaults to 16.
             ttl_seconds: Optional time-to-live for the added documents.
             body_index_options: Optional options used to create the body index.
                 Eg. body_index_options = [cassio.table.cql.STANDARD_ANALYZER]
+            metadata_indexing: Optional specification of a metadata indexing policy,
+                i.e. to fine-tune which of the metadata fields are indexed.
+                It can be a string ("all" or "none"), or a 2-tuple. The following
+                means that all fields except 'f1', 'f2' ... are NOT indexed:
+                    metadata_indexing=("allowlist", ["f1", "f2", ...])
+                The following means all fields EXCEPT 'g1', 'g2', ... are indexed:
+                    metadata_indexing("denylist", ["g1", "g2", ...])
+                The default is to index every metadata field.
+                Note: if you plan to have massive unique text metadata entries,
+                consider not indexing them for performance
+                (and to overcome max-length limitations).
 
         Returns:
-            a Cassandra vectorstore.
+            a Cassandra vector store.
         """
-        texts = [doc.page_content for doc in documents]
-        metadatas = [doc.metadata for doc in documents]
-        return cls.from_texts(
-            texts=texts,
+        if ids is not None:
+            warnings.warn(
+                (
+                    "Parameter `ids` to Cassandra's `from_documents` "
+                    "method is deprecated. Please set the supplied documents' "
+                    "`.id` attribute instead. The id attribute of Document "
+                    "is ignored as long as the `ids` parameter is passed."
+                ),
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
+        store = cls(
             embedding=embedding,
-            metadatas=metadatas,
             session=session,
             keyspace=keyspace,
             table_name=table_name,
-            ids=ids,
-            batch_size=batch_size,
             ttl_seconds=ttl_seconds,
             body_index_options=body_index_options,
             metadata_indexing=metadata_indexing,
             **kwargs,
         )
+        store.add_documents(documents=cls._add_ids_to_docs(docs=documents, ids=ids))
+        return store
 
     @classmethod
     async def afrom_documents(
@@ -1051,13 +1370,12 @@ class Cassandra(VectorStore):
         keyspace: Optional[str] = None,
         table_name: str = "",
         ids: Optional[List[str]] = None,
-        concurrency: int = 16,
         ttl_seconds: Optional[int] = None,
         body_index_options: Optional[List[Tuple[str, Any]]] = None,
         metadata_indexing: Union[Tuple[str, Iterable[str]], str] = "all",
         **kwargs: Any,
     ) -> CVST:
-        """Create a Cassandra vectorstore from a document list.
+        """Create a Cassandra vector store from a document list.
 
         Args:
             documents: Documents to add to the vectorstore.
@@ -1068,31 +1386,51 @@ class Cassandra(VectorStore):
                 If not provided, it is resolved from cassio.
             table_name: Cassandra table (required).
             ids: Optional list of IDs associated with the documents.
-            concurrency: Number of concurrent queries to send to the database.
-                Defaults to 16.
             ttl_seconds: Optional time-to-live for the added documents.
             body_index_options: Optional options used to create the body index.
                 Eg. body_index_options = [cassio.table.cql.STANDARD_ANALYZER]
+            metadata_indexing: Optional specification of a metadata indexing policy,
+                i.e. to fine-tune which of the metadata fields are indexed.
+                It can be a string ("all" or "none"), or a 2-tuple. The following
+                means that all fields except 'f1', 'f2' ... are NOT indexed:
+                    metadata_indexing=("allowlist", ["f1", "f2", ...])
+                The following means all fields EXCEPT 'g1', 'g2', ... are indexed:
+                    metadata_indexing("denylist", ["g1", "g2", ...])
+                The default is to index every metadata field.
+                Note: if you plan to have massive unique text metadata entries,
+                consider not indexing them for performance
+                (and to overcome max-length limitations).
 
         Returns:
-            a Cassandra vectorstore.
+            a Cassandra vector store.
         """
-        texts = [doc.page_content for doc in documents]
-        metadatas = [doc.metadata for doc in documents]
-        return await cls.afrom_texts(
-            texts=texts,
+        if ids is not None:
+            warnings.warn(
+                (
+                    "Parameter `ids` to Cassandra's `afrom_documents` "
+                    "method is deprecated. Please set the supplied documents' "
+                    "`.id` attribute instead. The id attribute of Document "
+                    "is ignored as long as the `ids` parameter is passed."
+                ),
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
+        store = cls(
             embedding=embedding,
-            metadatas=metadatas,
             session=session,
             keyspace=keyspace,
             table_name=table_name,
-            ids=ids,
-            concurrency=concurrency,
             ttl_seconds=ttl_seconds,
+            setup_mode=SetupMode.ASYNC,
             body_index_options=body_index_options,
             metadata_indexing=metadata_indexing,
             **kwargs,
         )
+        await store.aadd_documents(
+            documents=cls._add_ids_to_docs(docs=documents, ids=ids)
+        )
+        return store
 
     def as_retriever(
         self,

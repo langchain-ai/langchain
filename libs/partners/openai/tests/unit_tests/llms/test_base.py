@@ -30,9 +30,12 @@ def test_openai_model_kwargs() -> None:
     assert llm.model_kwargs == {"foo": "bar"}
 
 
-def test_openai_invalid_model_kwargs() -> None:
-    with pytest.raises(ValueError):
-        OpenAI(model_kwargs={"model_name": "foo"})
+def test_openai_fields_in_model_kwargs() -> None:
+    """Test that for backwards compatibility fields can be passed in as model_kwargs."""
+    llm = OpenAI(model_kwargs={"model_name": "foo"})
+    assert llm.model_name == "foo"
+    llm = OpenAI(model_kwargs={"model": "foo"})
+    assert llm.model_name == "foo"
 
 
 def test_openai_incorrect_field() -> None:
@@ -55,7 +58,7 @@ def mock_completion() -> dict:
     }
 
 
-@pytest.mark.parametrize("model", ["gpt-3.5-turbo-instruct", "text-davinci-003"])
+@pytest.mark.parametrize("model", ["gpt-3.5-turbo-instruct"])
 def test_get_token_ids(model: str) -> None:
     OpenAI(model=model).get_token_ids("foo")
     return

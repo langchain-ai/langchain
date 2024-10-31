@@ -14,6 +14,7 @@ from langchain_core.prompts.chat import (
     ChatPromptTemplate,
     MessageLikeRepresentation,
 )
+from langchain_core.prompts.string import PromptTemplateFormat
 from langchain_core.runnables.base import (
     Other,
     Runnable,
@@ -37,6 +38,7 @@ class StructuredPrompt(ChatPromptTemplate):
         schema_: Optional[Union[dict, type[BaseModel]]] = None,
         *,
         structured_output_kwargs: Optional[dict[str, Any]] = None,
+        template_format: PromptTemplateFormat = "f-string",
         **kwargs: Any,
     ) -> None:
         schema_ = schema_ or kwargs.pop("schema")
@@ -47,6 +49,7 @@ class StructuredPrompt(ChatPromptTemplate):
             messages=messages,
             schema_=schema_,
             structured_output_kwargs=structured_output_kwargs,
+            template_format=template_format,
             **kwargs,
         )
 
@@ -153,6 +156,5 @@ class StructuredPrompt(ChatPromptTemplate):
                 name=name,
             )
         else:
-            raise NotImplementedError(
-                "Structured prompts need to be piped to a language model."
-            )
+            msg = "Structured prompts need to be piped to a language model."
+            raise NotImplementedError(msg)

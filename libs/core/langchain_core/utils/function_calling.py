@@ -105,7 +105,8 @@ def convert_pydantic_to_openai_function(
     elif hasattr(model, "schema"):
         schema = model.schema()  # Pydantic 1
     else:
-        raise TypeError("Model must be a Pydantic model.")
+        msg = "Model must be a Pydantic model."
+        raise TypeError(msg)
     schema = dereference_refs(schema)
     if "definitions" in schema:  # pydantic 1
         schema.pop("definitions", None)
@@ -237,11 +238,12 @@ def _convert_any_typed_dicts_to_pydantic(
                 if (field_desc := field_kwargs.get("description")) and not isinstance(
                     field_desc, str
                 ):
-                    raise ValueError(
+                    msg = (
                         f"Invalid annotation for field {arg}. Third argument to "
                         f"Annotated must be a string description, received value of "
                         f"type {type(field_desc)}."
                     )
+                    raise ValueError(msg)
                 elif arg_desc := arg_descriptions.get(arg):
                     field_kwargs["description"] = arg_desc
                 else:
@@ -334,23 +336,17 @@ def convert_to_openai_function(
     strict: Optional[bool] = None,
 ) -> dict[str, Any]:
     """Convert a raw function/class to an OpenAI function.
-
-    .. versionchanged:: 0.2.29
-
-        ``strict`` arg added.
-
     Args:
         function:
             A dictionary, Pydantic BaseModel class, TypedDict class, a LangChain
             Tool object, or a Python function. If a dictionary is passed in, it is
-            assumed to already be a valid OpenAI function or a JSON schema with
-            top-level 'title' and 'description' keys specified.
+            assumed to already be a valid OpenAI function, a JSON schema with
+            top-level 'title' and 'description' keys specified, an Anthropic format
+            tool, or an Amazon Bedrock Converse format tool.
         strict:
             If True, model output is guaranteed to exactly match the JSON Schema
             provided in the function definition. If None, ``strict`` argument will not
             be included in function definition.
-
-            .. versionadded:: 0.2.29
 
     Returns:
         A dict version of the passed in function which is compatible with the OpenAI
@@ -358,6 +354,18 @@ def convert_to_openai_function(
 
     Raises:
         ValueError: If function is not in a supported format.
+
+    .. versionchanged:: 0.2.29
+
+        ``strict`` arg added.
+
+    .. versionchanged:: 0.3.13
+
+        Support for Anthropic format tools added.
+
+    .. versionchanged:: 0.3.14
+
+        Support for Amazon Bedrock Converse format tools added.
     """
     from langchain_core.tools import BaseTool
 
@@ -376,6 +384,22 @@ def convert_to_openai_function(
             "description": function.pop("description"),
             "parameters": function,
         }
+    # an Anthropic format tool
+    elif isinstance(function, dict) and all(
+        k in function for k in ("name", "description", "input_schema")
+    ):
+        oai_function = {
+            "name": function["name"],
+            "description": function["description"],
+            "parameters": function["input_schema"],
+        }
+    # an Amazon Bedrock Converse format tool
+    elif isinstance(function, dict) and "toolSpec" in function:
+        oai_function = {
+            "name": function["toolSpec"]["name"],
+            "description": function["toolSpec"]["description"],
+            "parameters": function["toolSpec"]["inputSchema"]["json"],
+        }
     elif isinstance(function, type) and is_basemodel_subclass(function):
         oai_function = cast(dict, convert_pydantic_to_openai_function(function))
     elif is_typeddict(function):
@@ -387,12 +411,13 @@ def convert_to_openai_function(
     elif callable(function):
         oai_function = cast(dict, convert_python_function_to_openai_function(function))
     else:
-        raise ValueError(
+        msg = (
             f"Unsupported function\n\n{function}\n\nFunctions must be passed in"
             " as Dict, pydantic.BaseModel, or Callable. If they're a dict they must"
             " either be in OpenAI function format or valid JSON schema with top-level"
             " 'title' and 'description' keys."
         )
+        raise ValueError(msg)
 
     if strict is not None:
         oai_function["strict"] = strict
@@ -411,34 +436,35 @@ def convert_to_openai_tool(
     *,
     strict: Optional[bool] = None,
 ) -> dict[str, Any]:
-    """Convert a raw function/class to an OpenAI tool.
-
-    .. versionchanged:: 0.2.29
-
-        ``strict`` arg added.
+    """Convert a tool-like object to an OpenAI tool schema.
 
     Args:
         tool:
             Either a dictionary, a pydantic.BaseModel class, Python function, or
             BaseTool. If a dictionary is passed in, it is assumed to already be a valid
-            OpenAI tool, OpenAI function, or a JSON schema with top-level 'title' and
-            'description' keys specified.
+            OpenAI tool, OpenAI function, a JSON schema with top-level 'title' and
+            'description' keys specified, or an Anthropic format tool.
         strict:
             If True, model output is guaranteed to exactly match the JSON Schema
             provided in the function definition. If None, ``strict`` argument will not
             be included in tool definition.
 
-            .. versionadded:: 0.2.29
-
     Returns:
         A dict version of the passed in tool which is compatible with the
         OpenAI tool-calling API.
+
+    .. versionchanged:: 0.2.29
+
+        ``strict`` arg added.
+
+    .. versionchanged:: 0.3.13
+
+        Support for Anthropic format tools added.
     """
     if isinstance(tool, dict) and tool.get("type") == "function" and "function" in tool:
         return tool
     oai_function = convert_to_openai_function(tool, strict=strict)
-    oai_tool: dict[str, Any] = {"type": "function", "function": oai_function}
-    return oai_tool
+    return {"type": "function", "function": oai_function}
 
 
 def tool_example_to_messages(
@@ -553,7 +579,8 @@ def _parse_google_docstring(
             if filtered_annotations and (
                 len(docstring_blocks) < 2 or not docstring_blocks[1].startswith("Args:")
             ):
-                raise ValueError("Found invalid Google-Style docstring.")
+                msg = "Found invalid Google-Style docstring."
+                raise ValueError(msg)
         descriptors = []
         args_block = None
         past_descriptors = False
@@ -571,7 +598,8 @@ def _parse_google_docstring(
         description = " ".join(descriptors)
     else:
         if error_on_invalid_docstring:
-            raise ValueError("Found invalid Google-Style docstring.")
+            msg = "Found invalid Google-Style docstring."
+            raise ValueError(msg)
         description = ""
         args_block = None
     arg_descriptions = {}

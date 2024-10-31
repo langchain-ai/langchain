@@ -76,13 +76,13 @@ class ImageCaptionLoader(BaseLoader):
 
         try:
             if isinstance(image, bytes):
-                image = Image.open(BytesIO(image)).convert("RGB")
+                image = Image.open(BytesIO(image)).convert("RGB")  # type: ignore[assignment]
             elif isinstance(image, str) and (
                 image.startswith("http://") or image.startswith("https://")
             ):
-                image = Image.open(requests.get(image, stream=True).raw).convert("RGB")
+                image = Image.open(requests.get(image, stream=True).raw).convert("RGB")  # type: ignore[assignment, arg-type]
             else:
-                image = Image.open(image).convert("RGB")
+                image = Image.open(image).convert("RGB")  # type: ignore[assignment]
         except Exception:
             if isinstance(image_source, bytes):
                 msg = "Could not get image data from bytes"
