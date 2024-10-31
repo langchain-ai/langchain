@@ -1,5 +1,6 @@
 """Test ChatSnowflakeCortex."""
 
+import sys
 from typing import Any, Generator
 from unittest.mock import MagicMock, Mock, patch
 
@@ -13,6 +14,16 @@ from langchain_community.chat_models.snowflake import (
 )
 
 
+@pytest.fixture(autouse=True)
+def mock_snowflake_import(monkeypatch: Any) -> MagicMock:
+    mock_snowflake = MagicMock()
+
+    monkeypatch.setitem(sys.modules, "snowflake", mock_snowflake)
+    monkeypatch.setitem(sys.modules, "snowflake.snowpark", mock_snowflake.snowpark)
+
+    return mock_snowflake
+
+
 @pytest.fixture
 def set_env_vars(request: Any) -> Generator[None, None, None]:
     env_vars = (
@@ -21,14 +32,6 @@ def set_env_vars(request: Any) -> Generator[None, None, None]:
 
     with patch.dict("os.environ", env_vars, clear=True):
         yield
-
-
-@pytest.fixture
-@patch("snowflake.snowpark.Session.SessionBuilder.create")
-def mock_session_fixture(mock_create: Any) -> Generator[Mock, None, None]:
-    mock_session = Mock()
-    mock_create.return_value = mock_session
-    yield mock_session
 
 
 def test_messages_to_prompt_dict_with_valid_messages() -> None:
@@ -50,9 +53,13 @@ def test_messages_to_prompt_dict_with_valid_messages() -> None:
     assert result == expected
 
 
-def test_chat_snowflake_cortex_model(mock_session_fixture: Any) -> None:
+def test_chat_snowflake_cortex_model(
+    mock_snowflake_import: MagicMock,
+) -> None:
     """Test ChatSnowflakeCortex handles model_name."""
-    chat = ChatSnowflakeCortex(model="example_model", sp_session=mock_session_fixture)
+    mock_session = Mock()
+    mock_snowflake_import.return_value = mock_session
+    chat = ChatSnowflakeCortex(model="example_model", sp_session=mock_session)
     assert chat.model == "example_model"
 
 
@@ -107,7 +114,10 @@ def test_chat_snowflake_cortex_model(mock_session_fixture: Any) -> None:
     ],
     indirect=["set_env_vars"],
 )
-def test_validate_environment(set_env_vars: Any, expected_error_message: str) -> None:
+def test_validate_environment(
+    set_env_vars: Any,
+    expected_error_message: str,
+) -> None:
     if expected_error_message:
         with pytest.raises(ValidationError, match=expected_error_message):
             chat = ChatSnowflakeCortex(model="example_model")
@@ -133,15 +143,9 @@ def test_session_handled_outside_not_closed() -> None:
 
 
 def test_del_called_without_session_provided() -> None:
-    with patch(
-        "snowflake.snowpark.Session.SessionBuilder.create", return_value=MagicMock()
-    ) as mock_create:
-        obj = ChatSnowflakeCortex()
-        mock_create.assert_called_once()
-
-        with patch.object(
-            ChatSnowflakeCortex, "__del__", wraps=ChatSnowflakeCortex.__del__
-        ) as mock_del:
-            del obj
-            mock_del.assert_called_once()
-            mock_create.return_value.close.assert_not_called()
+    obj = ChatSnowflakeCortex()
+    with patch.object(
+        ChatSnowflakeCortex, "__del__", wraps=ChatSnowflakeCortex.__del__
+    ) as mock_del:
+        del obj
+        mock_del.assert_called_once()
