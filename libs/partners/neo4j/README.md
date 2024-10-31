@@ -129,6 +129,12 @@ make tests
 
 ## 🧹 Code Formatting and Linting
 
+Install the codespell, lint, and typing dependencies to lint and format your code:
+
+```bash
+poetry install --with codespell,lint,typing
+```
+
 To format your code, run:
 
 ```bash
