@@ -24,7 +24,17 @@ from langchain_community.vectorstores.cratedb.model import ModelFactory
 
 
 class DistanceStrategy(str, enum.Enum):
-    """Enumerator of the Distance strategies."""
+    """
+    Enumerator of the Distance strategies.
+
+    Note that CrateDB and Lucene currently only implement
+    similarity based on the Euclidean distance.
+
+    > Today, when creating a FLOAT_VECTOR, it uses the default
+    > EUCLIDEAN_HNSW (L2) similarity.
+    >
+    > -- https://github.com/crate/crate/issues/15768
+    """
 
     EUCLIDEAN = "euclidean"
     COSINE = "cosine"
@@ -45,7 +55,9 @@ def _results_to_docs(docs_and_scores: Any) -> List[Document]:
 class CrateDBVectorStore(PGVector):
     """`CrateDB` vector store.
 
-    To use it, you should have the ``crate[sqlalchemy]`` python package installed.
+    To use it, please install the Python package `sqlalchemy-cratedb`.
+
+        uv pip install --upgrade sqlalchemy-cratedb
 
     Args:
         connection_string: Database connection string.
@@ -312,6 +324,9 @@ class CrateDBVectorStore(PGVector):
             results: List[Any] = (
                 session.query(  # type: ignore[attr-defined]
                     self.EmbeddingStore,
+                    # FIXME: Using `_score` is definitively the wrong choice.
+                    #        - https://github.com/crate-workbench/langchain/issues/19
+                    #        - https://github.com/crate/crate/issues/15835
                     # TODO: Original pgvector code uses `self.distance_strategy`.
                     #       CrateDB currently only supports EUCLIDEAN.
                     #       self.distance_strategy(embedding).label("distance")
