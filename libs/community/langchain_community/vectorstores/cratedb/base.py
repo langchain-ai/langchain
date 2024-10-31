@@ -42,7 +42,7 @@ def _results_to_docs(docs_and_scores: Any) -> List[Document]:
     return [doc for doc, _ in docs_and_scores]
 
 
-class CrateDBVectorSearch(PGVector):
+class CrateDBVectorStore(PGVector):
     """`CrateDB` vector store.
 
     To use it, you should have the ``crate[sqlalchemy]`` python package installed.
@@ -62,13 +62,13 @@ class CrateDBVectorSearch(PGVector):
     Example:
         .. code-block:: python
 
-            from langchain.vectorstores import CrateDBVectorSearch
+            from langchain.vectorstores import CrateDBVectorStore
             from langchain.embeddings.openai import OpenAIEmbeddings
 
             CONNECTION_STRING = "crate://crate@localhost:4200/test3"
             COLLECTION_NAME = "state_of_the_union_test"
             embeddings = OpenAIEmbeddings()
-            vectorestore = CrateDBVectorSearch.from_documents(
+            vectorestore = CrateDBVectorStore.from_documents(
                 embedding=embeddings,
                 documents=docs,
                 collection_name=COLLECTION_NAME,
@@ -337,7 +337,7 @@ class CrateDBVectorSearch(PGVector):
 
     @classmethod
     def from_texts(  # type: ignore[override]
-        cls: Type[CrateDBVectorSearch],
+        cls: Type[CrateDBVectorStore],
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
@@ -346,7 +346,7 @@ class CrateDBVectorSearch(PGVector):
         ids: Optional[List[str]] = None,
         pre_delete_collection: bool = False,
         **kwargs: Any,
-    ) -> CrateDBVectorSearch:
+    ) -> CrateDBVectorStore:
         """
         Return VectorStore initialized from texts and embeddings.
         Database connection string is required.
@@ -431,7 +431,7 @@ class CrateDBVectorSearch(PGVector):
             raise ValueError(
                 "No supported normalization function for distance_strategy of "
                 f"{self._distance_strategy}. Consider providing relevance_score_fn to "
-                "CrateDBVectorSearch constructor."
+                "CrateDBVectorStore constructor."
             )
 
     @staticmethod

@@ -12,13 +12,13 @@ from langchain.schema.embeddings import Embeddings
 
 from langchain_community.vectorstores.cratedb.base import (
     DEFAULT_DISTANCE_STRATEGY,
-    CrateDBVectorSearch,
+    CrateDBVectorStore,
     DistanceStrategy,
 )
 from langchain_community.vectorstores.pgvector import _LANGCHAIN_DEFAULT_COLLECTION_NAME
 
 
-class CrateDBVectorSearchMultiCollection(CrateDBVectorSearch):
+class CrateDBVectorStoreMultiCollection(CrateDBVectorStore):
     """
     Provide functionality for searching multiple collections.
     It can not be used for indexing documents.
@@ -27,15 +27,15 @@ class CrateDBVectorSearchMultiCollection(CrateDBVectorSearch):
 
     Synopsis::
 
-        from langchain.vectorstores.cratedb import CrateDBVectorSearchMultiCollection
+        from langchain_community.vectorstores.cratedb import CrateDBVectorStoreMultiCollection
 
-        multisearch = CrateDBVectorSearchMultiCollection(
+        multisearch = CrateDBVectorStoreMultiCollection(
             collection_names=["collection_foo", "collection_bar"],
             embedding_function=embeddings,
             connection_string=CONNECTION_STRING,
         )
         docs_with_score = multisearch.similarity_search_with_score(query)
-    """
+    """  # noqa: E501
 
     def __init__(
         self,

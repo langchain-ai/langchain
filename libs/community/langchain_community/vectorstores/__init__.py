@@ -93,7 +93,7 @@ if TYPE_CHECKING:
         CouchbaseVectorStore,
     )
     from langchain_community.vectorstores.cratedb import (
-        CrateDBVectorSearch,
+        CrateDBVectorStore,
     )
     from langchain_community.vectorstores.dashvector import (
         DashVector,
@@ -337,7 +337,7 @@ __all__ = [
     "Clickhouse",
     "ClickhouseSettings",
     "CouchbaseVectorStore",
-    "CrateDBVectorSearch",
+    "CrateDBVectorStore",
     "DashVector",
     "DatabricksVectorSearch",
     "DeepLake",
@@ -442,7 +442,7 @@ _module_lookup = {
     "Clickhouse": "langchain_community.vectorstores.clickhouse",
     "ClickhouseSettings": "langchain_community.vectorstores.clickhouse",
     "CouchbaseVectorStore": "langchain_community.vectorstores.couchbase",
-    "CrateDBVectorSearch": "langchain_community.vectorstores.cratedb",
+    "CrateDBVectorStore": "langchain_community.vectorstores.cratedb",
     "DashVector": "langchain_community.vectorstores.dashvector",
     "DatabricksVectorSearch": "langchain_community.vectorstores.databricks_vector_search",  # noqa: E501
     "DeepLake": "langchain_community.vectorstores.deeplake",

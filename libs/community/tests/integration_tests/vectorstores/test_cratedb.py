@@ -16,9 +16,9 @@ from langchain.docstore.document import Document
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.orm import Session
 
-from langchain_community.vectorstores.cratedb import CrateDBVectorSearch
+from langchain_community.vectorstores.cratedb import CrateDBVectorStore
 from langchain_community.vectorstores.cratedb.extended import (
-    CrateDBVectorSearchMultiCollection,
+    CrateDBVectorStoreMultiCollection,
 )
 from langchain_community.vectorstores.cratedb.model import ModelFactory
 from tests.integration_tests.vectorstores.fake_embeddings import (
@@ -28,7 +28,7 @@ from tests.integration_tests.vectorstores.fake_embeddings import (
 
 SCHEMA_NAME = os.environ.get("TEST_CRATEDB_DATABASE", "testdrive")
 
-CONNECTION_STRING = CrateDBVectorSearch.connection_string_from_db_params(
+CONNECTION_STRING = CrateDBVectorStore.connection_string_from_db_params(
     driver=os.environ.get("TEST_CRATEDB_DRIVER", "crate"),
     host=os.environ.get("TEST_CRATEDB_HOST", "localhost"),
     port=int(os.environ.get("TEST_CRATEDB_PORT", "4200")),
@@ -157,7 +157,7 @@ class ConsistentFakeEmbeddingsWithAdaDimension(ConsistentFakeEmbeddings):
 def test_cratedb_texts() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
-    docsearch = CrateDBVectorSearch.from_texts(
+    docsearch = CrateDBVectorStore.from_texts(
         texts=texts,
         collection_name="test_collection",
         embedding=FakeEmbeddingsWithAdaDimension(),
@@ -171,7 +171,7 @@ def test_cratedb_texts() -> None:
 def test_cratedb_embedding_dimension() -> None:
     """Verify the `embedding` column uses the correct vector dimensionality."""
     texts = ["foo", "bar", "baz"]
-    docsearch = CrateDBVectorSearch.from_texts(
+    docsearch = CrateDBVectorStore.from_texts(
         texts=texts,
         collection_name="test_collection",
         embedding=ConsistentFakeEmbeddingsWithAdaDimension(),
@@ -192,7 +192,7 @@ def test_cratedb_embeddings() -> None:
     texts = ["foo", "bar", "baz"]
     text_embeddings = FakeEmbeddingsWithAdaDimension().embed_documents(texts)
     text_embedding_pairs = list(zip(texts, text_embeddings))
-    docsearch = CrateDBVectorSearch.from_embeddings(
+    docsearch = CrateDBVectorStore.from_embeddings(
         text_embeddings=text_embedding_pairs,
         collection_name="test_collection",
         embedding=FakeEmbeddingsWithAdaDimension(),
@@ -207,7 +207,7 @@ def test_cratedb_with_metadatas() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
-    docsearch = CrateDBVectorSearch.from_texts(
+    docsearch = CrateDBVectorStore.from_texts(
         texts=texts,
         collection_name="test_collection",
         embedding=FakeEmbeddingsWithAdaDimension(),
@@ -223,7 +223,7 @@ def test_cratedb_with_metadatas_with_scores() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
-    docsearch = CrateDBVectorSearch.from_texts(
+    docsearch = CrateDBVectorStore.from_texts(
         texts=texts,
         collection_name="test_collection",
         embedding=FakeEmbeddingsWithAdaDimension(),
@@ -239,7 +239,7 @@ def test_cratedb_with_filter_match() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
-    docsearch = CrateDBVectorSearch.from_texts(
+    docsearch = CrateDBVectorStore.from_texts(
         texts=texts,
         collection_name="test_collection_filter",
         embedding=FakeEmbeddingsWithAdaDimension(),
@@ -259,7 +259,7 @@ def test_cratedb_with_filter_distant_match() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
-    docsearch = CrateDBVectorSearch.from_texts(
+    docsearch = CrateDBVectorStore.from_texts(
         texts=texts,
         collection_name="test_collection_filter",
         embedding=FakeEmbeddingsWithAdaDimension(),
@@ -278,7 +278,7 @@ def test_cratedb_with_filter_no_match() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
-    docsearch = CrateDBVectorSearch.from_texts(
+    docsearch = CrateDBVectorStore.from_texts(
         texts=texts,
         collection_name="test_collection_filter",
         embedding=FakeEmbeddingsWithAdaDimension(),
@@ -296,7 +296,7 @@ def test_cratedb_collection_delete() -> None:
     Uses two different collections of embeddings.
     """
 
-    store_foo = CrateDBVectorSearch.from_texts(
+    store_foo = CrateDBVectorStore.from_texts(
         texts=["foo"],
         collection_name="test_collection_foo",
         collection_metadata={"category": "foo"},
@@ -305,7 +305,7 @@ def test_cratedb_collection_delete() -> None:
         connection_string=CONNECTION_STRING,
         pre_delete_collection=True,
     )
-    store_bar = CrateDBVectorSearch.from_texts(
+    store_bar = CrateDBVectorStore.from_texts(
         texts=["bar"],
         collection_name="test_collection_bar",
         collection_metadata={"category": "bar"},
@@ -344,7 +344,7 @@ def test_cratedb_collection_with_metadata() -> None:
     """Test end to end collection construction"""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
-    cratedb_vector = CrateDBVectorSearch.from_texts(
+    cratedb_vector = CrateDBVectorStore.from_texts(
         texts=texts,
         collection_name="test_collection",
         collection_metadata={"foo": "bar"},
@@ -365,7 +365,7 @@ def test_cratedb_collection_no_embedding_dimension() -> None:
     """
     Verify that addressing collections fails when not specifying dimensions.
     """
-    cratedb_vector = CrateDBVectorSearch(
+    cratedb_vector = CrateDBVectorStore(
         embedding_function=None,  # type: ignore[arg-type]
         connection_string=CONNECTION_STRING,
     )
@@ -396,7 +396,7 @@ def test_cratedb_collection_read_only(session: Session) -> None:
     # out at runtime.
     embedding = ConsistentFakeEmbeddingsWithAdaDimension()
 
-    vectorstore = CrateDBVectorSearch(
+    vectorstore = CrateDBVectorStore(
         collection_name="baz2",
         connection_string=CONNECTION_STRING,
         embedding_function=embedding,
@@ -412,7 +412,7 @@ def test_cratedb_with_filter_in_set() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
-    docsearch = CrateDBVectorSearch.from_texts(
+    docsearch = CrateDBVectorStore.from_texts(
         texts=texts,
         collection_name="test_collection_filter",
         embedding=FakeEmbeddingsWithAdaDimension(),
@@ -434,7 +434,7 @@ def test_cratedb_delete_docs() -> None:
     """Add and delete documents."""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
-    docsearch = CrateDBVectorSearch.from_texts(
+    docsearch = CrateDBVectorStore.from_texts(
         texts=texts,
         collection_name="test_collection_filter",
         embedding=FakeEmbeddingsWithAdaDimension(),
@@ -462,7 +462,7 @@ def test_cratedb_relevance_score() -> None:
     """Test to make sure the relevance score is scaled to 0-1."""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
-    docsearch = CrateDBVectorSearch.from_texts(
+    docsearch = CrateDBVectorStore.from_texts(
         texts=texts,
         collection_name="test_collection",
         embedding=FakeEmbeddingsWithAdaDimension(),
@@ -484,7 +484,7 @@ def test_cratedb_retriever_search_threshold() -> None:
     """Test using retriever for searching with threshold."""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
-    docsearch = CrateDBVectorSearch.from_texts(
+    docsearch = CrateDBVectorStore.from_texts(
         texts=texts,
         collection_name="test_collection",
         embedding=FakeEmbeddingsWithAdaDimension(),
@@ -508,7 +508,7 @@ def test_cratedb_retriever_search_threshold_custom_normalization_fn() -> None:
     """Test searching with threshold and custom normalization function"""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
-    docsearch = CrateDBVectorSearch.from_texts(
+    docsearch = CrateDBVectorStore.from_texts(
         texts=texts,
         collection_name="test_collection",
         embedding=FakeEmbeddingsWithAdaDimension(),
@@ -529,7 +529,7 @@ def test_cratedb_retriever_search_threshold_custom_normalization_fn() -> None:
 def test_cratedb_max_marginal_relevance_search() -> None:
     """Test max marginal relevance search."""
     texts = ["foo", "bar", "baz"]
-    docsearch = CrateDBVectorSearch.from_texts(
+    docsearch = CrateDBVectorStore.from_texts(
         texts=texts,
         collection_name="test_collection",
         embedding=FakeEmbeddingsWithAdaDimension(),
@@ -543,7 +543,7 @@ def test_cratedb_max_marginal_relevance_search() -> None:
 def test_cratedb_max_marginal_relevance_search_with_score() -> None:
     """Test max marginal relevance search with relevance scores."""
     texts = ["foo", "bar", "baz"]
-    docsearch = CrateDBVectorSearch.from_texts(
+    docsearch = CrateDBVectorStore.from_texts(
         texts=texts,
         collection_name="test_collection",
         embedding=FakeEmbeddingsWithAdaDimension(),
@@ -556,18 +556,18 @@ def test_cratedb_max_marginal_relevance_search_with_score() -> None:
 
 def test_cratedb_multicollection_search_success() -> None:
     """
-    `CrateDBVectorSearchMultiCollection` provides functionality for
+    `CrateDBVectorStoreMultiCollection` provides functionality for
     searching multiple collections.
     """
 
-    store_1 = CrateDBVectorSearch.from_texts(
+    store_1 = CrateDBVectorStore.from_texts(
         texts=["Räuber", "Hotzenplotz"],
         collection_name="test_collection_1",
         embedding=ConsistentFakeEmbeddingsWithAdaDimension(),
         connection_string=CONNECTION_STRING,
         pre_delete_collection=True,
     )
-    _ = CrateDBVectorSearch.from_texts(
+    _ = CrateDBVectorStore.from_texts(
         texts=["John", "Doe"],
         collection_name="test_collection_2",
         embedding=ConsistentFakeEmbeddingsWithAdaDimension(),
@@ -584,7 +584,7 @@ def test_cratedb_multicollection_search_success() -> None:
     assert Document(page_content="Hotzenplotz") in output[:2]
 
     # Probe the multi-store.
-    multisearch = CrateDBVectorSearchMultiCollection(
+    multisearch = CrateDBVectorStoreMultiCollection(
         collection_names=["test_collection_1", "test_collection_2"],
         embedding_function=ConsistentFakeEmbeddingsWithAdaDimension(),
         connection_string=CONNECTION_STRING,
@@ -597,12 +597,12 @@ def test_cratedb_multicollection_search_success() -> None:
 
 def test_cratedb_multicollection_fail_indexing_not_permitted() -> None:
     """
-    `CrateDBVectorSearchMultiCollection` does not provide functionality for
+    `CrateDBVectorStoreMultiCollection` does not provide functionality for
     indexing documents.
     """
 
     with pytest.raises(NotImplementedError) as ex:
-        CrateDBVectorSearchMultiCollection.from_texts(
+        CrateDBVectorStoreMultiCollection.from_texts(
             texts=["foo"],
             collection_name="test_collection",
             embedding=FakeEmbeddingsWithAdaDimension(),
@@ -613,11 +613,11 @@ def test_cratedb_multicollection_fail_indexing_not_permitted() -> None:
 
 def test_cratedb_multicollection_search_table_does_not_exist() -> None:
     """
-    `CrateDBVectorSearchMultiCollection` will fail when the `collection`
+    `CrateDBVectorStoreMultiCollection` will fail when the `collection`
     table does not exist.
     """
 
-    store = CrateDBVectorSearchMultiCollection(
+    store = CrateDBVectorStoreMultiCollection(
         collection_names=["unknown"],
         embedding_function=ConsistentFakeEmbeddingsWithAdaDimension(),
         connection_string=CONNECTION_STRING,
@@ -629,11 +629,11 @@ def test_cratedb_multicollection_search_table_does_not_exist() -> None:
 
 def test_cratedb_multicollection_search_unknown_collection() -> None:
     """
-    `CrateDBVectorSearchMultiCollection` will fail when not able to identify
+    `CrateDBVectorStoreMultiCollection` will fail when not able to identify
     collections to search in.
     """
 
-    CrateDBVectorSearch.from_texts(
+    CrateDBVectorStore.from_texts(
         texts=["Räuber", "Hotzenplotz"],
         collection_name="test_collection",
         embedding=ConsistentFakeEmbeddingsWithAdaDimension(),
@@ -641,7 +641,7 @@ def test_cratedb_multicollection_search_unknown_collection() -> None:
         pre_delete_collection=True,
     )
 
-    store = CrateDBVectorSearchMultiCollection(
+    store = CrateDBVectorStoreMultiCollection(
         collection_names=["unknown"],
         embedding_function=ConsistentFakeEmbeddingsWithAdaDimension(),
         connection_string=CONNECTION_STRING,
@@ -655,7 +655,7 @@ def test_cratedb_multicollection_no_embedding_dimension() -> None:
     """
     Verify that addressing collections fails when not specifying dimensions.
     """
-    store = CrateDBVectorSearchMultiCollection(
+    store = CrateDBVectorStoreMultiCollection(
         embedding_function=None,  # type: ignore[arg-type]
         connection_string=CONNECTION_STRING,
     )

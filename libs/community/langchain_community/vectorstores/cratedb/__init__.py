@@ -1,7 +1,7 @@
-from .base import CrateDBVectorSearch
-from .extended import CrateDBVectorSearchMultiCollection
+from .base import CrateDBVectorStore
+from .extended import CrateDBVectorStoreMultiCollection
 
 __all__ = [
-    "CrateDBVectorSearch",
-    "CrateDBVectorSearchMultiCollection",
+    "CrateDBVectorStore",
+    "CrateDBVectorStoreMultiCollection",
 ]

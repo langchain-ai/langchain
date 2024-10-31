@@ -60,7 +60,7 @@ def test_compatible_vectorstore_documentation() -> None:
         "Cassandra",
         "Chroma",
         "CouchbaseVectorStore",
-        "CrateDBVectorSearch",
+        "CrateDBVectorStore",
         "DashVector",
         "DatabricksVectorSearch",
         "TiDBVectorStore",
