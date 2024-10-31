@@ -1,5 +1,4 @@
 """Chain that calls Oxylabs API for Google Search.
-
 """
 
 from typing import Any, Dict, List
@@ -33,16 +32,19 @@ class ResponseElement:
     python_type: str
     parent: Optional["ResponseElement"]
 
+
 def _get_default_excluded_result_attributes() -> List[str]:
     return [
         "pos_overall"
     ]
+
 
 def _get_default_image_content_attributes() -> List[str]:
     return [
         "image_data",
         "data"
     ]
+
 
 def _get_default_params() -> dict:
     """Provide default parameters for OxylabsSearchAPIWrapper.
@@ -62,6 +64,15 @@ def _get_default_params() -> dict:
             - parsing_instructions (dict): Additional instructions for parsing the search results.
             - context (list): Search context information.
             - request_timeout (int): Timeout for the Oxylabs service, in seconds.
+            - include_binary_image_data (bool): Determines whether binary image data should be included in the search results.
+                The default is False, meaning image data display is excluded by default.
+                Set to True to include binary image content display.
+            - result_categories (list): Specifies the desired categories for the results from the available:
+                `knowledge_graph`, `combined_search_result`, `product_information`, `local_information`, `search_information`.
+                The list preserves the order of the categories, allowing prioritized filtering.
+                If left empty (default), results are returned from all available categories without filtering.
+            - parsing_recursion_depth (int): Defines the level of depth for parsing nested objects in the response.
+                A higher value means deeper levels of the response are parsed and structured.
     """
 
     return {
@@ -79,7 +90,8 @@ def _get_default_params() -> dict:
         "context": [],
         "request_timeout": 165,
         "include_binary_image_data": False,
-        "result_categories": []
+        "result_categories": [],
+        "parsing_recursion_depth": 5
     }
 
 
@@ -108,7 +120,8 @@ class OxylabsSearchAPIWrapper(BaseModel):
                 "context": [],
                 "request_timeout": 165,
                 "include_binary_image_data": False,
-                "result_categories": []
+                "result_categories": [],
+                "parsing_recursion_depth": 5
             }
         )
         search_query = "Oxylabs"
@@ -123,6 +136,7 @@ class OxylabsSearchAPIWrapper(BaseModel):
     excluded_result_attributes: List[str] = Field(default_factory=_get_default_excluded_result_attributes)
     image_binary_content_attributes: List[str] = Field(default_factory=_get_default_image_content_attributes)
     image_binary_content_array_attribute: str = Field(default=IMAGE_BINARY_CONTENT_ARRAY_ATTRIBUTE)
+    parsing_recursion_depth: int = Field(default=5)
     oxylabs_username: Optional[str] = None
     oxylabs_password: Optional[str] = None
     model_config = ConfigDict(arbitrary_types_allowed=True, extra="forbid")
@@ -166,6 +180,10 @@ class OxylabsSearchAPIWrapper(BaseModel):
 
             formed_values["result_categories"] = formed_values["params"]["result_categories"]
             del formed_values["params"]["result_categories"]
+
+        if "parsing_recursion_depth" in formed_values["params"]:
+            formed_values["parsing_recursion_depth"] = formed_values["params"]["parsing_recursion_depth"]
+            del formed_values["params"]["parsing_recursion_depth"]
 
         try:
             from oxylabs import RealtimeClient
@@ -336,9 +354,6 @@ class OxylabsSearchAPIWrapper(BaseModel):
         padding_multiplier = current_depth + 1
         recursion_padding = "  " * padding_multiplier
 
-        base64_image_attributes = ["image_data".upper(), "data".upper()]
-        base64_images_attribute = "images".upper()
-
         if current_depth >= max_depth:
             return "\n".join(target_snippets)
 
@@ -374,13 +389,13 @@ class OxylabsSearchAPIWrapper(BaseModel):
 
     def recursion_process_array(
         self,
-        current_depth,
-        max_depth,
-        parent_,
-        recursion_padding,
-        target_snippets,
-        target_structure
-    ):
+        current_depth: int,
+        max_depth: int,
+        parent_: ResponseElement,
+        recursion_padding: str,
+        target_snippets: list,
+        target_structure: Any
+    ) -> None:
         if target_structure:
             target_snippets.append(
                 f"{recursion_padding}{parent_.display_tag.upper()} ITEMS: "
@@ -403,13 +418,13 @@ class OxylabsSearchAPIWrapper(BaseModel):
 
     def recursion_process_dict(
         self,
-        current_depth,
-        max_depth,
-        parent_,
-        recursion_padding,
-        target_snippets,
-        target_structure
-    ):
+        current_depth: int,
+        max_depth: int,
+        parent_: ResponseElement,
+        recursion_padding: str,
+        target_snippets: list,
+        target_structure: Any
+    ) -> None:
         if target_structure:
             target_snippets.append(
                 f"{recursion_padding}{parent_.display_tag.upper()}: "
@@ -468,11 +483,11 @@ class OxylabsSearchAPIWrapper(BaseModel):
 
     def recursion_process_simple_types(
             self,
-            parent_,
-            recursion_padding,
-            target_snippets,
-            target_structure
-    ):
+            parent_: ResponseElement,
+            recursion_padding: str,
+            target_snippets: list,
+            target_structure: Any
+    ) -> None:
         if target_structure:
             if parent_.python_type == str(type(list())):
                 if (
@@ -494,7 +509,13 @@ class OxylabsSearchAPIWrapper(BaseModel):
                         f"{recursion_padding}{parent_.display_tag}: {str(target_structure)}"
                     )
 
-    def process_tags(self, snippets_, tags_, results, group_name: str = ""):
+    def process_tags(
+        self,
+        snippets_: list,
+        tags_: list,
+        results: dict,
+        group_name: str = ""
+    ) -> None:
         check_tags = [tag_[0] in results for tag_ in tags_]
         if any(check_tags):
             for tag in tags_:
@@ -502,7 +523,7 @@ class OxylabsSearchAPIWrapper(BaseModel):
                 if tag_content:
                     collected_snippets = self.recursive_snippet_collector(
                         tag_content,
-                        max_depth=5,
+                        max_depth=self.parsing_recursion_depth,
                         current_depth=0,
                         parent_=ResponseElement(
                             path_=f"{group_name}-{tag[0]}",
