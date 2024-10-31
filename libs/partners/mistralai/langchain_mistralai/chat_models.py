@@ -660,11 +660,6 @@ class ChatMistralAI(BaseChatModel):
             tools: A list of tool definitions to bind to this chat model.
                 Supports any tool definition handled by
                 :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`.
-            tool_choice: Which tool to require the model to call.
-                Must be the name of the single provided function or
-                "auto" to automatically determine which function to call
-                (if any), or a dict of the form:
-                {"type": "function", "function": {"name": <<tool_name>>}}.
             kwargs: Any additional parameters are passed directly to
                 ``self.bind(**kwargs)``.
         """
