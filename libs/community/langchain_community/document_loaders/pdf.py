@@ -962,7 +962,12 @@ class ZeroxPDFLoader(BasePDFLoader):
     ```
     """
 
-    def __init__(self, file_path, model="gpt-4o-mini", **zerox_kwargs) -> None:
+    def __init__(
+        self,
+        file_path: Union[str, Path],
+        model: str = "gpt-4o-mini",
+        **zerox_kwargs: Any,
+    ) -> None:
         super().__init__(file_path=file_path)
         """
         Initialize the parser with arguments to be passed to the zerox function.
