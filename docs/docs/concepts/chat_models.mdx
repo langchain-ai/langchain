@@ -65,7 +65,7 @@ The key methods of a chat model are:
 2. **stream**: A method that allows you to stream the output of a chat model as it is generated.
 3. **batch**: A method that allows you to batch multiple requests to a chat model together for more efficient processing.
 4. **bind_tools**: A method that allows you to bind a tool to a chat model for use in the model's execution context.
-5. **with_structured_output**: A wrapper around the `invoke` method for models that natively support [structured output](/docs/concepts/structured_output).
+5. **with_structured_output**: A wrapper around the `invoke` method for models that natively support [structured output](/docs/concepts/structured_outputs).
 
 Other important methods can be found in the [BaseChatModel API Reference](https://python.langchain.com/api_reference/core/language_models/langchain_core.language_models.chat_models.BaseChatModel.html).
 
@@ -110,7 +110,7 @@ see the [tool calling](/docs/concepts/tool_calling) guide for more information.
 
 Chat models can be requested to respond in a particular format (e.g., JSON or matching a particular schema). This feature is extremely
 useful for information extraction tasks. Please read more about
-the technique in the [structured outputs](/docs/concepts/structured_output) guide.
+the technique in the [structured outputs](/docs/concepts/structured_outputs) guide.
 
 ## Multimodality
 
@@ -164,5 +164,5 @@ Please see the [how to cache chat model responses](/docs/how_to/chat_model_cachi
 * [Messages](/docs/concepts/messages)
 * [Tool calling](/docs/concepts/tool_calling)
 * [Multimodality](/docs/concepts/multimodality)
-* [Structured outputs](/docs/concepts/structured_output)
+* [Structured outputs](/docs/concepts/structured_outputs)
 * [Tokens](/docs/concepts/tokens)
