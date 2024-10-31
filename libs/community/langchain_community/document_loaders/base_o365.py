@@ -124,23 +124,25 @@ class O365BaseLoader(BaseLoader, BaseModel):
             try:
                 # assume handlers.keys() are file extensions
                 self._mime_types = fetch_mime_types(handler_keys)
-                self._file_types = set(handler_keys)
+                self._file_types = list(set(handler_keys))
                 mime_handlers = {
                     self._mime_types[extension]: handler
                     for extension, handler in self.handlers.items()
                 }
-            except:
+            except ValueError:
                 try:
                     # assume handlers.keys() are mime types
                     self._mime_types = fetch_extensions(handler_keys)
-                    self._file_types = set(self._mime_types.keys())
+                    self._file_types = list(set(self._mime_types.keys()))
                     mime_handlers = self.handlers
-                except:
-                    raise ValueError("`handlers` keys must be either file extensions or mimetypes.\n"
-                                    f"{handler_keys} could not be interpreted as either.\n"
-                                    "File extensions and mimetypes cannot mix. Use either one or the other"
-                                    )
-            
+                except ValueError:
+                    raise ValueError(
+                        "`handlers` keys must be either file extensions or mimetypes.\n"
+                        f"{handler_keys} could not be interpreted as either.\n"
+                        "File extensions and mimetypes cannot mix. "
+                        "Use either one or the other"
+                    )
+
             self._blob_parser = MimeTypeBasedParser(
                 handlers=mime_handlers, fallback_parser=None
             )
