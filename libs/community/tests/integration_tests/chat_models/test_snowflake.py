@@ -8,21 +8,17 @@ Note: This test must be run with the following environment variables set:
 """
 
 import os
-from typing import Any, Generator
+from typing import Generator
 
 import pytest
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langchain_core.outputs import ChatGeneration, LLMResult
-from snowflake.snowpark import Session
 
 from langchain_community.chat_models import ChatSnowflakeCortex
 
 
 @pytest.fixture
-def chat(request: Any) -> Generator[ChatSnowflakeCortex, None, None]:
-    use_session = (
-        request.param.get("use_session", False) if hasattr(request, "param") else False
-    )
+def chat() -> Generator[ChatSnowflakeCortex, None, None]:
     connection_params = {
         "account": os.environ["SNOWFLAKE_ACCOUNT"],
         "user": os.environ["SNOWFLAKE_USERNAME"],
@@ -35,21 +31,12 @@ def chat(request: Any) -> Generator[ChatSnowflakeCortex, None, None]:
         connection_params["private_key_file_pwd"] = os.environ[
             "SNOWFLAKE_KEY_FILE_PASSWORD"
         ]
-    sp_session = (
-        Session.builder.configs(connection_params).create() if use_session else None
-    )
 
-    chat_instance = ChatSnowflakeCortex(model="llama3.1-8b", sp_session=sp_session)
+    chat_instance = ChatSnowflakeCortex(model="llama3.1-8b")
 
     yield chat_instance
 
-    if sp_session:
-        sp_session.close()
 
-
-@pytest.mark.parametrize(
-    "chat", [{"use_session": True}, {"use_session": False}], indirect=True
-)
 def test_chat_snowflake_cortex(chat: ChatSnowflakeCortex) -> None:
     """Test ChatSnowflakeCortex."""
     message = HumanMessage(content="Hello")
@@ -58,9 +45,6 @@ def test_chat_snowflake_cortex(chat: ChatSnowflakeCortex) -> None:
     assert isinstance(response.content, str)
 
 
-@pytest.mark.parametrize(
-    "chat", [{"use_session": True}, {"use_session": False}], indirect=True
-)
 def test_chat_snowflake_cortex_system_message(chat: ChatSnowflakeCortex) -> None:
     """Test ChatSnowflakeCortex for system message"""
     system_message = SystemMessage(content="You are to chat with the user.")
@@ -70,9 +54,6 @@ def test_chat_snowflake_cortex_system_message(chat: ChatSnowflakeCortex) -> None
     assert isinstance(response.content, str)
 
 
-@pytest.mark.parametrize(
-    "chat", [{"use_session": True}, {"use_session": False}], indirect=True
-)
 def test_chat_snowflake_cortex_generate(chat: ChatSnowflakeCortex) -> None:
     """Test ChatSnowflakeCortex with generate."""
     message = HumanMessage(content="Hello")
