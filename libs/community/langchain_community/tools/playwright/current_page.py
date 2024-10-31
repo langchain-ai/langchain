@@ -6,7 +6,7 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel
 
 from langchain_community.tools.playwright.base import BaseBrowserTool
 from langchain_community.tools.playwright.utils import (
@@ -15,12 +15,16 @@ from langchain_community.tools.playwright.utils import (
 )
 
 
-class CurrentWebPageTool(BaseBrowserTool):
+class CurrentWebPageToolInput(BaseModel):
+    """Explicit no-args input for CurrentWebPageTool."""
+
+
+class CurrentWebPageTool(BaseBrowserTool):  # type: ignore[override, override]
     """Tool for getting the URL of the current webpage."""
 
     name: str = "current_webpage"
     description: str = "Returns the URL of the current page"
-    args_schema: Type[BaseModel] = BaseModel
+    args_schema: Type[BaseModel] = CurrentWebPageToolInput
 
     def _run(
         self,

@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import logging
 import sys
-from typing import TYPE_CHECKING, Dict, Optional, Set
+from typing import TYPE_CHECKING, Any, Dict, Optional, Set
 
 from langchain_core.messages import BaseMessage
-from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from pydantic import Field, model_validator
 
 from langchain_community.adapters.openai import convert_message_to_dict
 from langchain_community.chat_models.openai import (
@@ -76,8 +76,9 @@ class ChatEverlyAI(ChatOpenAI):
             ]
         )
 
-    @root_validator(pre=True)
-    def validate_environment_override(cls, values: dict) -> dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment_override(cls, values: dict) -> Any:
         """Validate that api key and python package exists in environment."""
         values["openai_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(
@@ -97,7 +98,7 @@ class ChatEverlyAI(ChatOpenAI):
                 "Please install it with `pip install openai`.",
             ) from e
         try:
-            values["client"] = openai.ChatCompletion
+            values["client"] = openai.ChatCompletion  # type: ignore[attr-defined]
         except AttributeError as exc:
             raise ValueError(
                 "`openai` has no `ChatCompletion` attribute, this is likely "

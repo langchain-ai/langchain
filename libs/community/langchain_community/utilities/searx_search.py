@@ -132,14 +132,14 @@ from typing import Any, Dict, List, Optional
 
 import aiohttp
 import requests
-from langchain_core.pydantic_v1 import (
+from langchain_core.utils import get_from_dict_or_env
+from pydantic import (
     BaseModel,
+    ConfigDict,
     Field,
     PrivateAttr,
-    root_validator,
-    validator,
+    model_validator,
 )
-from langchain_core.utils import get_from_dict_or_env
 
 
 def _get_default_params() -> dict:
@@ -214,22 +214,9 @@ class SearxSearchWrapper(BaseModel):
     k: int = 10
     aiosession: Optional[Any] = None
 
-    @validator("unsecure")
-    def disable_ssl_warnings(cls, v: bool) -> bool:
-        """Disable SSL warnings."""
-        if v:
-            # requests.urllib3.disable_warnings()
-            try:
-                import urllib3
-
-                urllib3.disable_warnings()
-            except ImportError as e:
-                print(e)  # noqa: T201
-
-        return v
-
-    @root_validator(pre=True)
-    def validate_params(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_params(cls, values: Dict) -> Any:
         """Validate that custom searx params are merged with default ones."""
         user_params = values.get("params", {})
         default = _get_default_params()
@@ -252,13 +239,13 @@ class SearxSearchWrapper(BaseModel):
             searx_host = "https://" + searx_host
         elif searx_host.startswith("http://"):
             values["unsecure"] = True
-            cls.disable_ssl_warnings(True)
         values["searx_host"] = searx_host
 
         return values
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     def _searx_api_query(self, params: dict) -> SearxResults:
         """Actual request to searx API."""

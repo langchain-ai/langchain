@@ -24,8 +24,9 @@ from __future__ import annotations
 import warnings
 from abc import ABC, abstractmethod
 from inspect import signature
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
+from pydantic import ConfigDict
 from typing_extensions import TypedDict
 
 from langchain_core._api import deprecated
@@ -46,7 +47,7 @@ if TYPE_CHECKING:
     )
 
 RetrieverInput = str
-RetrieverOutput = List[Document]
+RetrieverOutput = list[Document]
 RetrieverLike = Runnable[RetrieverInput, RetrieverOutput]
 RetrieverOutputLike = Runnable[Any, RetrieverOutput]
 
@@ -125,23 +126,24 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
                     return [self.docs[i] for i in results.argsort()[-self.k :][::-1]]
     """  # noqa: E501
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     _new_arg_supported: bool = False
     _expects_other_args: bool = False
-    tags: Optional[List[str]] = None
+    tags: Optional[list[str]] = None
     """Optional list of tags associated with the retriever. Defaults to None.
     These tags will be associated with each call to this retriever,
     and passed as arguments to the handlers defined in `callbacks`.
-    You can use these to eg identify a specific instance of a retriever with its 
+    You can use these to eg identify a specific instance of a retriever with its
     use case.
     """
-    metadata: Optional[Dict[str, Any]] = None
+    metadata: Optional[dict[str, Any]] = None
     """Optional metadata associated with the retriever. Defaults to None.
     This metadata will be associated with each call to this retriever,
     and passed as arguments to the handlers defined in `callbacks`.
-    You can use these to eg identify a specific instance of a retriever with its 
+    You can use these to eg identify a specific instance of a retriever with its
     use case.
     """
 
@@ -198,7 +200,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
 
     def invoke(
         self, input: str, config: Optional[RunnableConfig] = None, **kwargs: Any
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Invoke the retriever to get relevant documents.
 
         Main entry point for synchronous retriever invocations.
@@ -261,7 +263,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
         input: str,
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Asynchronously invoke the retriever to get relevant documents.
 
         Main entry point for asynchronous retriever invocations.
@@ -322,7 +324,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
     @abstractmethod
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Get documents relevant to a query.
 
         Args:
@@ -334,7 +336,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
 
     async def _aget_relevant_documents(
         self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Asynchronously get documents relevant to a query.
 
         Args:
@@ -356,11 +358,11 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
         query: str,
         *,
         callbacks: Callbacks = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         run_name: Optional[str] = None,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Retrieve documents relevant to a query.
 
         Users should favor using `.invoke` or `.batch` rather than
@@ -400,11 +402,11 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
         query: str,
         *,
         callbacks: Callbacks = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         run_name: Optional[str] = None,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Asynchronously get documents relevant to a query.
 
         Users should favor using `.ainvoke` or `.abatch` rather than

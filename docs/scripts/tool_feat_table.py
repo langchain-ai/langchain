@@ -81,7 +81,7 @@ CODE_INTERPRETER_TOOL_FEAT_TABLE = {
     "Riza Code Interpreter": {
         "langauges": "Python, JavaScript, PHP, Ruby",
         "sandbox_lifetime": "Resets on Execution",
-        "upload": False,
+        "upload": True,
         "return_results": "Text",
         "link": "/docs/integrations/tools/riza",
         "self_hosting": True,
@@ -189,7 +189,7 @@ A [toolkit](/docs/concepts#toolkits) is a collection of tools meant to be used t
 :::info
 
 If you'd like to write your own tool, see [this how-to](/docs/how_to/custom_tools/).
-If you'd like to contribute an integration, see [Contributing integrations](/docs/contributing/integrations/).
+If you'd like to contribute an integration, see [Contributing integrations](/docs/contributing/how_to/integrations/).
 
 :::
 

@@ -4,7 +4,7 @@ from enum import Enum
 from typing import List, Optional, Type, Union
 
 from langchain_core.callbacks import AsyncCallbackManagerForToolRun
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 
 from langchain_community.tools.ainetwork.base import AINBaseTool
 
@@ -30,7 +30,7 @@ class AppSchema(BaseModel):
     )
 
 
-class AINAppOps(AINBaseTool):
+class AINAppOps(AINBaseTool):  # type: ignore[override, override]
     """Tool for app operations."""
 
     name: str = "AINappOps"

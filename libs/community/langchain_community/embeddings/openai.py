@@ -21,12 +21,12 @@ from typing import (
 import numpy as np
 from langchain_core._api.deprecation import deprecated
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.utils import (
     get_from_dict_or_env,
     get_pydantic_field_names,
     pre_init,
 )
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from tenacity import (
     AsyncRetrying,
     before_sleep_log,
@@ -58,11 +58,11 @@ def _create_retry_decorator(embeddings: OpenAIEmbeddings) -> Callable[[Any], Any
             max=embeddings.retry_max_seconds,
         ),
         retry=(
-            retry_if_exception_type(openai.error.Timeout)
-            | retry_if_exception_type(openai.error.APIError)
-            | retry_if_exception_type(openai.error.APIConnectionError)
-            | retry_if_exception_type(openai.error.RateLimitError)
-            | retry_if_exception_type(openai.error.ServiceUnavailableError)
+            retry_if_exception_type(openai.error.Timeout)  # type: ignore[attr-defined]
+            | retry_if_exception_type(openai.error.APIError)  # type: ignore[attr-defined]
+            | retry_if_exception_type(openai.error.APIConnectionError)  # type: ignore[attr-defined]
+            | retry_if_exception_type(openai.error.RateLimitError)  # type: ignore[attr-defined]
+            | retry_if_exception_type(openai.error.ServiceUnavailableError)  # type: ignore[attr-defined]
         ),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
@@ -85,11 +85,11 @@ def _async_retry_decorator(embeddings: OpenAIEmbeddings) -> Any:
             max=embeddings.retry_max_seconds,
         ),
         retry=(
-            retry_if_exception_type(openai.error.Timeout)
-            | retry_if_exception_type(openai.error.APIError)
-            | retry_if_exception_type(openai.error.APIConnectionError)
-            | retry_if_exception_type(openai.error.RateLimitError)
-            | retry_if_exception_type(openai.error.ServiceUnavailableError)
+            retry_if_exception_type(openai.error.Timeout)  # type: ignore[attr-defined]
+            | retry_if_exception_type(openai.error.APIError)  # type: ignore[attr-defined]
+            | retry_if_exception_type(openai.error.APIConnectionError)  # type: ignore[attr-defined]
+            | retry_if_exception_type(openai.error.RateLimitError)  # type: ignore[attr-defined]
+            | retry_if_exception_type(openai.error.ServiceUnavailableError)  # type: ignore[attr-defined]
         ),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
@@ -110,7 +110,7 @@ def _check_response(response: dict, skip_empty: bool = False) -> dict:
     if any(len(d["embedding"]) == 1 for d in response["data"]) and not skip_empty:
         import openai
 
-        raise openai.error.APIError("OpenAI API returned an empty embedding")
+        raise openai.error.APIError("OpenAI API returned an empty embedding")  # type: ignore[attr-defined]
     return response
 
 
@@ -254,12 +254,13 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     http_client: Union[Any, None] = None
     """Optional httpx.Client."""
 
-    class Config:
-        allow_population_by_field_name = True
-        extra = "forbid"
+    model_config = ConfigDict(
+        populate_by_name=True, extra="forbid", protected_namespaces=()
+    )
 
-    @root_validator(pre=True)
-    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})
@@ -356,7 +357,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                         **client_params
                     ).embeddings
             elif not values.get("client"):
-                values["client"] = openai.Embedding
+                values["client"] = openai.Embedding  # type: ignore[attr-defined]
             else:
                 pass
         return values
@@ -389,7 +390,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                         "Please install it with `pip install openai`."
                     )
 
-                openai.proxy = {
+                openai.proxy = {  # type: ignore[attr-defined]
                     "http": self.openai_proxy,
                     "https": self.openai_proxy,
                 }  # type: ignore[assignment]

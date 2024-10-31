@@ -14,11 +14,10 @@ import contextlib
 import functools
 import inspect
 import warnings
+from collections.abc import Generator
 from typing import (
     Any,
     Callable,
-    Generator,
-    Type,
     TypeVar,
     Union,
     cast,
@@ -41,7 +40,7 @@ class LangChainPendingDeprecationWarning(PendingDeprecationWarning):
 
 
 # Last Any should be FieldInfoV1 but this leads to circular imports
-T = TypeVar("T", bound=Union[Type, Callable[..., Any], Any])
+T = TypeVar("T", bound=Union[type, Callable[..., Any], Any])
 
 
 def _validate_deprecation_params(
@@ -52,15 +51,18 @@ def _validate_deprecation_params(
 ) -> None:
     """Validate the deprecation parameters."""
     if pending and removal:
-        raise ValueError("A pending deprecation cannot have a scheduled removal")
+        msg = "A pending deprecation cannot have a scheduled removal"
+        raise ValueError(msg)
     if alternative and alternative_import:
-        raise ValueError("Cannot specify both alternative and alternative_import")
+        msg = "Cannot specify both alternative and alternative_import"
+        raise ValueError(msg)
 
     if alternative_import and "." not in alternative_import:
-        raise ValueError(
+        msg = (
             "alternative_import must be a fully qualified module path. Got "
             f" {alternative_import}"
         )
+        raise ValueError(msg)
 
 
 def deprecated(
@@ -144,7 +146,7 @@ def deprecated(
         _package: str = package,
     ) -> T:
         """Implementation of the decorator returned by `deprecated`."""
-        from langchain_core.utils.pydantic import FieldInfoV1
+        from langchain_core.utils.pydantic import FieldInfoV1, FieldInfoV2
 
         def emit_warning() -> None:
             """Emit the warning."""
@@ -199,10 +201,9 @@ def deprecated(
 
             def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:
                 """Finalize the deprecation of a class."""
-                try:
+                # Can't set new_doc on some extension objects.
+                with contextlib.suppress(AttributeError):
                     obj.__doc__ = new_doc
-                except AttributeError:  # Can't set on some extension objects.
-                    pass
 
                 def warn_if_direct_instance(
                     self: Any, *args: Any, **kwargs: Any
@@ -224,7 +225,8 @@ def deprecated(
             if not _obj_type:
                 _obj_type = "attribute"
             if not _name:
-                raise ValueError(f"Field {obj} must have a name to be deprecated.")
+                msg = f"Field {obj} must have a name to be deprecated."
+                raise ValueError(msg)
             old_doc = obj.description
 
             def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:
@@ -238,15 +240,35 @@ def deprecated(
                         exclude=obj.exclude,
                     ),
                 )
+        elif isinstance(obj, FieldInfoV2):
+            wrapped = None
+            if not _obj_type:
+                _obj_type = "attribute"
+            if not _name:
+                msg = f"Field {obj} must have a name to be deprecated."
+                raise ValueError(msg)
+            old_doc = obj.description
+
+            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:
+                return cast(
+                    T,
+                    FieldInfoV2(
+                        default=obj.default,
+                        default_factory=obj.default_factory,
+                        description=new_doc,
+                        alias=obj.alias,
+                        exclude=obj.exclude,
+                    ),
+                )
 
         elif isinstance(obj, property):
             if not _obj_type:
                 _obj_type = "attribute"
             wrapped = None
-            _name = _name or cast(Union[Type, Callable], obj.fget).__qualname__
+            _name = _name or cast(Union[type, Callable], obj.fget).__qualname__
             old_doc = obj.__doc__
 
-            class _deprecated_property(property):
+            class _DeprecatedProperty(property):
                 """A deprecated property."""
 
                 def __init__(self, fget=None, fset=None, fdel=None, doc=None):  # type: ignore[no-untyped-def]
@@ -279,13 +301,13 @@ def deprecated(
                 """Finalize the property."""
                 return cast(
                     T,
-                    _deprecated_property(
+                    _DeprecatedProperty(
                         fget=obj.fget, fset=obj.fset, fdel=obj.fdel, doc=new_doc
                     ),
                 )
 
         else:
-            _name = _name or cast(Union[Type, Callable], obj).__qualname__
+            _name = _name or cast(Union[type, Callable], obj).__qualname__
             if not _obj_type:
                 # edge case: when a function is within another function
                 # within a test, this will call it a "method" not a "function"
@@ -314,9 +336,26 @@ def deprecated(
             old_doc = ""
 
         # Modify the docstring to include a deprecation notice.
+        if (
+            _alternative
+            and _alternative.split(".")[-1].lower() == _alternative.split(".")[-1]
+        ):
+            _alternative = f":meth:`~{_alternative}`"
+        elif _alternative:
+            _alternative = f":class:`~{_alternative}`"
+
+        if (
+            _alternative_import
+            and _alternative_import.split(".")[-1].lower()
+            == _alternative_import.split(".")[-1]
+        ):
+            _alternative_import = f":meth:`~{_alternative_import}`"
+        elif _alternative_import:
+            _alternative_import = f":class:`~{_alternative_import}`"
+
         components = [
             _message,
-            f"Use ``{_alternative}`` instead." if _alternative else "",
+            f"Use {_alternative} instead." if _alternative else "",
             f"Use ``{_alternative_import}`` instead." if _alternative_import else "",
             _addendum,
         ]
@@ -394,10 +433,11 @@ def warn_deprecated(
     if not pending:
         if not removal:
             removal = f"in {removal}" if removal else "within ?? minor releases"
-            raise NotImplementedError(
+            msg = (
                 f"Need to determine which default deprecation schedule to use. "
                 f"{removal}"
             )
+            raise NotImplementedError(msg)
         else:
             removal = f"in {removal}"
 
@@ -489,9 +529,8 @@ def rename_parameter(
         @functools.wraps(f)
         def wrapper(*args: _P.args, **kwargs: _P.kwargs) -> _R:
             if new in kwargs and old in kwargs:
-                raise TypeError(
-                    f"{f.__name__}() got multiple values for argument {new!r}"
-                )
+                msg = f"{f.__name__}() got multiple values for argument {new!r}"
+                raise TypeError(msg)
             if old in kwargs:
                 warn_deprecated(
                     since,

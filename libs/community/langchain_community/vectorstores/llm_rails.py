@@ -11,8 +11,8 @@ from typing import Any, Iterable, List, Optional, Tuple
 import requests
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import Field
 from langchain_core.vectorstores import VectorStore, VectorStoreRetriever
+from pydantic import Field
 
 
 class LLMRails(VectorStore):
@@ -226,7 +226,7 @@ class LLMRails(VectorStore):
         return LLMRailsRetriever(vectorstore=self, **kwargs)
 
 
-class LLMRailsRetriever(VectorStoreRetriever):
+class LLMRailsRetriever(VectorStoreRetriever):  # type: ignore[override]
     """Retriever for LLMRails."""
 
     vectorstore: LLMRails

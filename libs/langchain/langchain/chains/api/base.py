@@ -12,7 +12,8 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
-from langchain_core.pydantic_v1 import Field, root_validator
+from pydantic import Field, model_validator
+from typing_extensions import Self
 
 from langchain.chains.api.prompt import API_RESPONSE_PROMPT, API_URL_PROMPT
 from langchain.chains.base import Chain
@@ -197,7 +198,7 @@ try:
         api_docs: str
         question_key: str = "question"  #: :meta private:
         output_key: str = "output"  #: :meta private:
-        limit_to_domains: Optional[Sequence[str]]
+        limit_to_domains: Optional[Sequence[str]] = Field(default_factory=list)
         """Use to limit the domains that can be accessed by the API chain.
         
         * For example, to limit to just the domain `https://www.example.com`, set
@@ -227,19 +228,20 @@ try:
             """
             return [self.output_key]
 
-        @root_validator(pre=False, skip_on_failure=True)
-        def validate_api_request_prompt(cls, values: Dict) -> Dict:
+        @model_validator(mode="after")
+        def validate_api_request_prompt(self) -> Self:
             """Check that api request prompt expects the right variables."""
-            input_vars = values["api_request_chain"].prompt.input_variables
+            input_vars = self.api_request_chain.prompt.input_variables
             expected_vars = {"question", "api_docs"}
             if set(input_vars) != expected_vars:
                 raise ValueError(
                     f"Input variables should be {expected_vars}, got {input_vars}"
                 )
-            return values
+            return self
 
-        @root_validator(pre=True)
-        def validate_limit_to_domains(cls, values: Dict) -> Dict:
+        @model_validator(mode="before")
+        @classmethod
+        def validate_limit_to_domains(cls, values: Dict) -> Any:
             """Check that allowed domains are valid."""
             # This check must be a pre=True check, so that a default of None
             # won't be set to limit_to_domains if it's not provided.
@@ -258,16 +260,16 @@ try:
                 )
             return values
 
-        @root_validator(pre=False, skip_on_failure=True)
-        def validate_api_answer_prompt(cls, values: Dict) -> Dict:
+        @model_validator(mode="after")
+        def validate_api_answer_prompt(self) -> Self:
             """Check that api answer prompt expects the right variables."""
-            input_vars = values["api_answer_chain"].prompt.input_variables
+            input_vars = self.api_answer_chain.prompt.input_variables
             expected_vars = {"question", "api_docs", "api_url", "api_response"}
             if set(input_vars) != expected_vars:
                 raise ValueError(
                     f"Input variables should be {expected_vars}, got {input_vars}"
                 )
-            return values
+            return self
 
         def _call(
             self,
