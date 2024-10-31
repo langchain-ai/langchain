@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-box"
-version = "0.2.1"
+version = "0.2.2"
 description = "An integration package connecting Box and LangChain"
 authors = []
 readme = "README.md"
@@ -13,7 +13,7 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = ">=3.9.0,<3.13"
-langchain-core = "^0.3.1"
+langchain-core = "^0.3.13"
 box-sdk-gen = { extras = ["jwt"], version = "^1.5.0" }
 pydantic = "^2"
 
