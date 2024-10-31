@@ -1,11 +1,6 @@
 # this file is used to define the packages that are used in the project
 # it is EXPERIMENTAL and may be removed in the future
 
-# ai21                  cohere                experimental          mongodb               redis                 unstructured
-# aws                   databricks            google                nvidia                sema4                 upstage
-# azure                 datastax              ibm                   partner-repo-template snowflake             weaviate
-# cerebras              elastic               milvus                postgres              together
-
 packages:
   - name: langchain-core
     repo: langchain-ai/langchain
