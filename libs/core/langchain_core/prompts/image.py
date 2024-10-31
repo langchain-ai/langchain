@@ -32,12 +32,6 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
                 f" Found: {overlap}"
             )
             raise ValueError(msg)
-        if "path" in kwargs["input_variables"]:
-            msg = (
-                "Loading images from 'path' has been removed as of 0.3.15 for security "
-                "reasons. Please specify images by 'url'."
-            )
-            raise ValueError(msg)
         super().__init__(**kwargs)
 
     @property
