@@ -20,7 +20,7 @@ class OxylabsSearchQueryInput(BaseModel):
     query: str = Field(description="query to retrieve on Oxylabs Search API")
     geo_location: Optional[str] = Field(
         default="California,United States",
-        description="Geographic location for the search, change if asked for location specific information."
+        description="Geographic location for the search; adjust if location-specific information is requested."
     )
 
 
@@ -30,10 +30,11 @@ class OxylabsSearchRun(BaseTool):
     name: str = "oxylabs_search"
     description: str = (
         "A meta search engine."
-        "Useful for when you need to answer questions about current events, facts,"
-        "products, recipes, local information and other topics that are explorable using web browsing."
-        "Input should be a search query and geo_location string if it can help with result preciseness."
-        "Output is a compiled formatted string of query results"
+        "Ideal for situations where you need to answer questions about current events,"
+        "facts, products, recipes, local information, and other topics "
+        "that can be explored via web browsing. "
+        "The input should be a search query and, if applicable, a geo_location string to enhance result accuracy. "
+        "The output is a compiled, formatted summary of query results. "
     )
     wrapper: OxylabsSearchAPIWrapper
     kwargs: dict = Field(default_factory=dict)
@@ -76,10 +77,11 @@ class OxylabsSearchResults(BaseTool):
     name: str = "oxylabs_search_results"
     description: str = (
         "A meta search engine."
-        "Useful for when you need to answer questions about current events, facts,"
-        "products, recipes, local information and other topics that are explorable using web browsing."
-        "Input should be a search query and geo_location string if it can help with result preciseness."
-        "Output is a JSON array of response page objects."
+        "Ideal for situations where you need to answer questions about current events,"
+        "facts, products, recipes, local information, and other topics "
+        "that can be explored via web browsing. "
+        "The input should be a search query and, if applicable, a geo_location string to enhance result accuracy. "
+        "The output is a JSON array of response page objects. "
     )
     wrapper: OxylabsSearchAPIWrapper
     kwargs: dict = Field(default_factory=dict)
