@@ -3,9 +3,70 @@
 
 import warnings
 from importlib import metadata
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from langchain_core._api.deprecation import surface_langchain_deprecation_warnings
+
+if TYPE_CHECKING:
+    from langchain_core.chat_history import (
+        BaseChatMessageHistory,
+        InMemoryChatMessageHistory,
+    )
+    from langchain_core.document_loaders import BaseBlobParser, BaseLoader
+    from langchain_core.documents import (
+        BaseDocumentCompressor,
+        BaseDocumentTransformer,
+        Document,
+    )
+    from langchain_core.documents.base import BaseMedia
+    from langchain_core.embeddings import Embeddings
+    from langchain_core.indexing.api import aindex, index
+    from langchain_core.language_models import BaseChatModel
+    from langchain_core.messages import (
+        AIMessage,
+        AIMessageChunk,
+        AnyMessage,
+        BaseMessage,
+        BaseMessageChunk,
+        HumanMessage,
+        HumanMessageChunk,
+        InvalidToolCall,
+        SystemMessage,
+        SystemMessageChunk,
+        ToolCall,
+        ToolCallChunk,
+        ToolMessage,
+        ToolMessageChunk,
+        convert_to_messages,
+        convert_to_openai_messages,
+        filter_messages,
+        merge_message_runs,
+        trim_messages,
+    )
+    from langchain_core.output_parsers import StrOutputParser
+    from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+    from langchain_core.runnables import (
+        RunnableConfig,
+        RunnableGenerator,
+        RunnableLambda,
+        RunnableParallel,
+        RunnablePassthrough,
+        chain,
+    )
+    from langchain_core.stores import InMemoryByteStore, InMemoryStore
+    from langchain_core.tools import BaseTool, BaseToolkit, StructuredTool, tool
+    from langchain_core.utils.function_calling import convert_to_openai_tool
+    from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+    from langchain.chat_models.base import init_chat_model
+    from langchain.embeddings.cache import CacheBackedEmbeddings
+    from langchain.indexes._sql_record_manager import SQLRecordManager
+    from langchain.retrievers.parent_document_retriever import ParentDocumentRetriever
+    from langchain.retrievers.self_query.base import SelfQueryRetriever
+    from langchain.storage._lc_store import create_kv_docstore, create_lc_store
+    from langchain.storage.encoder_backed import EncoderBackedStore
+    from langchain.storage.file_system import LocalFileStore
+
 
 try:
     __version__ = metadata.version(__package__)
@@ -385,11 +446,242 @@ def __getattr__(name: str) -> Any:
         )
 
         return _llm_cache
+    # non-deprecated imports
+    elif name == "init_chat_model":
+        from langchain.chat_models import init_chat_model
+
+        return init_chat_model
+    elif name == "tool":
+        from langchain_core.tools import tool
+
+        return tool
+    elif name == "ChatPromptTemplate":
+        from langchain_core.prompts import ChatPromptTemplate
+
+        return ChatPromptTemplate
+    elif name == "MessagesPlaceholder":
+        from langchain_core.prompts import MessagesPlaceholder
+
+        return MessagesPlaceholder
+    elif name == "Document":
+        from langchain_core.documents import Document
+
+        return Document
+    elif name == "RunnableLambda":
+        from langchain_core.runnables import RunnableLambda
+
+        return RunnableLambda
+    elif name == "chain":
+        from langchain_core.runnables import chain
+
+        return chain
+    elif name == "RunnableGenerator":
+        from langchain_core.runnables import RunnableGenerator
+
+        return RunnableGenerator
+    elif name == "RunnableConfig":
+        from langchain_core.runnables import RunnableConfig
+
+        return RunnableConfig
+    elif name == "RunnablePassthrough":
+        from langchain_core.runnables import RunnablePassthrough
+
+        return RunnablePassthrough
+    elif name == "RunnableParallel":
+        from langchain_core.runnables import RunnableParallel
+
+        return RunnableParallel
+    elif name == "RecursiveCharacterTextSplitter":
+        from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+        return RecursiveCharacterTextSplitter
+    elif name == "trim_messages":
+        from langchain_core.messages import trim_messages
+
+        return trim_messages
+    elif name == "filter_messages":
+        from langchain_core.messages import filter_messages
+
+        return filter_messages
+    elif name == "merge_message_runs":
+        from langchain_core.messages import merge_message_runs
+
+        return merge_message_runs
+    elif name == "convert_to_openai_messages":
+        from langchain_core.messages import convert_to_openai_messages
+
+        return convert_to_openai_messages
+    elif name == "convert_to_messages":
+        from langchain_core.messages import convert_to_messages
+
+        return convert_to_messages
+    elif name == "convert_to_openai_tool":
+        from langchain_core.utils.function_calling import convert_to_openai_tool
+
+        return convert_to_openai_tool
+    elif name == "StrOutputParser":
+        from langchain_core.output_parsers import StrOutputParser
+
+        return StrOutputParser
+    elif name == "CacheBackedEmbeddings":
+        from langchain.embeddings import CacheBackedEmbeddings
+
+        return CacheBackedEmbeddings
+    elif name == "InMemoryByteStore":
+        from langchain_core.stores import InMemoryByteStore
+
+        return InMemoryByteStore
+    elif name == "InMemoryStore":
+        from langchain_core.stores import InMemoryStore
+
+        return InMemoryStore
+    elif name == "create_lc_store":
+        from langchain.storage import create_lc_store
+
+        return create_lc_store
+    elif name == "create_kv_docstore":
+        from langchain.storage import create_kv_docstore
+
+        return create_kv_docstore
+    elif name == "EncoderBackedStore":
+        from langchain.storage.encoder_backed import EncoderBackedStore
+
+        return EncoderBackedStore
+    elif name == "LocalFileStore":
+        from langchain.storage.file_system import LocalFileStore
+
+        return LocalFileStore
+    elif name == "ParentDocumentRetriever":
+        from langchain.retrievers.parent_document_retriever import (
+            ParentDocumentRetriever,
+        )
+
+        return ParentDocumentRetriever
+    elif name == "SelfQueryRetriever":
+        from langchain.retrievers.self_query.base import SelfQueryRetriever
+
+        return SelfQueryRetriever
+    elif name == "BaseChatMessageHistory":
+        from langchain_core.chat_history import BaseChatMessageHistory
+
+        return BaseChatMessageHistory
+    elif name == "InMemoryChatMessageHistory":
+        from langchain_core.chat_history import InMemoryChatMessageHistory
+
+        return InMemoryChatMessageHistory
+    elif name == "BaseChatModel":
+        from langchain_core.language_models import BaseChatModel
+
+        return BaseChatModel
+    elif name == "aindex":
+        from langchain_core.indexing.api import aindex
+
+        return aindex
+    elif name == "index":
+        from langchain_core.indexing.api import index
+
+        return index
+    elif name == "Embeddings":
+        from langchain_core.embeddings import Embeddings
+
+        return Embeddings
+    elif name == "BaseDocumentTransformer":
+        from langchain_core.documents import BaseDocumentTransformer
+
+        return BaseDocumentTransformer
+    elif name == "BaseDocumentCompressor":
+        from langchain_core.documents import BaseDocumentCompressor
+
+        return BaseDocumentCompressor
+    elif name == "BaseLoader":
+        from langchain_core.document_loaders import BaseLoader
+
+        return BaseLoader
+    elif name == "BaseBlobParser":
+        from langchain_core.document_loaders import BaseBlobParser
+
+        return BaseBlobParser
+    elif name == "SQLRecordManager":
+        from langchain.indexes._sql_record_manager import SQLRecordManager
+
+        return SQLRecordManager
+    elif name == "BaseTool":
+        from langchain_core.tools import BaseTool
+
+        return BaseTool
+    elif name == "BaseToolkit":
+        from langchain_core.tools import BaseToolkit
+
+        return BaseToolkit
+    elif name == "StructuredTool":
+        from langchain_core.tools import StructuredTool
+
+        return StructuredTool
+    elif name == "HumanMessage":
+        from langchain_core.messages import HumanMessage
+
+        return HumanMessage
+    elif name == "SystemMessage":
+        from langchain_core.messages import SystemMessage
+
+        return SystemMessage
+    elif name == "SystemMessageChunk":
+        from langchain_core.messages import SystemMessageChunk
+
+        return SystemMessageChunk
+    elif name == "AnyMessage":
+        from langchain_core.messages import AnyMessage
+
+        return AnyMessage
+    elif name == "AIMessage":
+        from langchain_core.messages import AIMessage
+
+        return AIMessage
+    elif name == "AIMessageChunk":
+        from langchain_core.messages import AIMessageChunk
+
+        return AIMessageChunk
+    elif name == "BaseMessage":
+        from langchain_core.messages import BaseMessage
+
+        return BaseMessage
+    elif name == "BaseMessageChunk":
+        from langchain_core.messages import BaseMessageChunk
+
+        return BaseMessageChunk
+    elif name == "HumanMessageChunk":
+        from langchain_core.messages import HumanMessageChunk
+
+        return HumanMessageChunk
+    elif name == "ToolMessage":
+        from langchain_core.messages import ToolMessage
+
+        return ToolMessage
+    elif name == "ToolMessageChunk":
+        from langchain_core.messages import ToolMessageChunk
+
+        return ToolMessageChunk
+    elif name == "ToolCall":
+        from langchain_core.messages import ToolCall
+
+        return ToolCall
+    elif name == "ToolCallChunk":
+        from langchain_core.messages import ToolCallChunk
+
+        return ToolCallChunk
+    elif name == "InvalidToolCall":
+        from langchain_core.messages import InvalidToolCall
+
+        return InvalidToolCall
+    elif name == "BaseMedia":
+        from langchain_core.documents.base import BaseMedia
+
+        return BaseMedia
     else:
         raise AttributeError(f"Could not find: {name}")
 
 
-__all__ = [
+_deprecated_all = [
     "LLMChain",
     "LLMCheckerChain",
     "LLMMathChain",
@@ -436,4 +728,65 @@ __all__ = [
     "QAWithSourcesChain",
     "LlamaCpp",
     "HuggingFaceTextGenInference",
+]
+
+__all__ = [
+    "init_chat_model",
+    "tool",
+    "ChatPromptTemplate",
+    "MessagesPlaceholder",
+    "Document",
+    "RunnableLambda",
+    "chain",
+    "RunnableGenerator",
+    "RunnableConfig",
+    "RunnablePassthrough",
+    "RunnableParallel",
+    "RecursiveCharacterTextSplitter",
+    "trim_messages",
+    "filter_messages",
+    "merge_message_runs",
+    "convert_to_openai_messages",
+    "convert_to_messages",
+    "convert_to_openai_tool",
+    "StrOutputParser",
+    "CacheBackedEmbeddings",
+    "InMemoryByteStore",
+    "InMemoryStore",
+    "create_lc_store",
+    "create_kv_docstore",
+    "EncoderBackedStore",
+    "LocalFileStore",
+    "ParentDocumentRetriever",
+    "SelfQueryRetriever",
+    "BaseChatMessageHistory",
+    "InMemoryChatMessageHistory",
+    "BaseChatModel",
+    "aindex",
+    "index",
+    "Embeddings",
+    "BaseDocumentTransformer",
+    "BaseDocumentCompressor",
+    "BaseLoader",
+    "BaseBlobParser",
+    "SQLRecordManager",
+    "BaseTool",
+    "BaseToolkit",
+    "StructuredTool",
+    "HumanMessage",
+    "SystemMessage",
+    "SystemMessageChunk",
+    "AnyMessage",
+    "AIMessage",
+    "AIMessageChunk",
+    "BaseMessage",
+    "BaseMessageChunk",
+    "HumanMessageChunk",
+    "ToolMessage",
+    "ToolMessageChunk",
+    "ToolCall",
+    "ToolCallChunk",
+    "InvalidToolCall",
+    "BaseMedia",
+    *_deprecated_all,
 ]
