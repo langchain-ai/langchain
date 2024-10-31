@@ -35,4 +35,6 @@ pip install langchain_gigachat
 ```
 ⚠️ ВАЖНО: Устанавливайте пакет в __чистом__ окружении Python.
 
+После этого вы сможете пользоваться стандартным стеком LangChain с поддержкой GigaChat API.
+
 Прошлую версию GigaChain (v0.2.x) можно найти в бранче [v_2.x_legacy](https://github.com/ai-forever/gigachain/tree/v_2.x_legacy)
