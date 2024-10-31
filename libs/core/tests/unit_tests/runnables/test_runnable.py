@@ -1891,6 +1891,13 @@ async def test_prompt_with_chat_model_async(
     )
 
 
+@pytest.mark.skipif(
+    condition=sys.version_info[1] == 13,
+    reason=(
+        "temporary, py3.13 exposes some invalid assumptions about order of batch async "
+        "executions."
+    ),
+)
 @freeze_time("2023-01-01")
 async def test_prompt_with_llm(
     mocker: MockerFixture, snapshot: SnapshotAssertion
