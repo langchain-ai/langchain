@@ -2057,7 +2057,7 @@ $csvContent | ForEach-Object {
 @pytest.mark.requires("nltk")
 def test_nltk_text_splitter_args() -> None:
     """Test invalid arguments for NLTKTextSplitter."""
-    import nltk
+    import nltk  # type: ignore[import-not-found]
 
     nltk.download("punkt_tab")
     with pytest.raises(ValueError):
@@ -2071,7 +2071,7 @@ def test_nltk_text_splitter_args() -> None:
 
 @pytest.mark.requires("nltk")
 def test_nltk_text_splitter_with_add_start_index() -> None:
-    import nltk
+    import nltk  # type: ignore[import-not-found]
 
     nltk.download("punkt_tab")
     splitter = NLTKTextSplitter(
