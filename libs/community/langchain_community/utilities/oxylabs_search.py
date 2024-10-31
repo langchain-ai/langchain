@@ -491,7 +491,7 @@ class OxylabsSearchAPIWrapper(BaseModel):
         if target_structure:
             if parent_.python_type == str(type(list())):
                 if (
-                        self.image_binary_content_array_attribute in parent_.path_.split("-")[-3:]
+                        self.image_binary_content_array_attribute.upper() in parent_.path_.split("-")[-3:]
                         or parent_.tag.lower() in self.image_binary_content_attributes
                 ) and not self.include_binary_image_data:
                     target_structure = "Redacted base64 image string..."
