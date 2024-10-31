@@ -156,8 +156,8 @@ const FEATURE_TABLES = {
                 "link": "nvidia_ai_endpoints/",
                 "structured_output": true,
                 "tool_calling": true,
-                "json_mode": false,
-                "multimodal": false,
+                "json_mode": true,
+                "multimodal": true,
                 "local": true,
                 "apiLink": "https://python.langchain.com/api_reference/nvidia_ai_endpoints/chat_models/langchain_nvidia_ai_endpoints.chat_models.ChatNVIDIA.html"
             },
@@ -215,7 +215,18 @@ const FEATURE_TABLES = {
                 "multimodal": false,
                 "local": false,
                 "apiLink": "https://python.langchain.com/api_reference/upstage/chat_models/langchain_databricks.chat_models.ChatDatabricks.html"
-            }
+            },
+            {
+                "name": "ChatWatsonx",
+                "package": "langchain-ibm",
+                "link": "ibm_watsonx",
+                "structured_output": true,
+                "tool_calling": true,
+                "json_mode": true, 
+                "multimodal": false,
+                "local": false,
+                "apiLink": "https://python.langchain.com/api_reference/ibm/chat_models/langchain_ibm.chat_models.ChatWatsonx.html"
+            },
         ],
     },
     llms: {
@@ -363,6 +374,18 @@ const FEATURE_TABLES = {
                 link: "databricks",
                 package: "langchain-databricks",
                 apiLink: "https://python.langchain.com/api_reference/nomic/embeddings/langchain_databricks.embeddings.DatabricksEmbeddings.html"
+            },
+            {
+                name: "VoyageAI",
+                link: "voyageai",
+                package: "langchain-voyageai",
+                apiLink: "https://python.langchain.com/api_reference/voyageai/embeddings/langchain_voyageai.embeddings.VoyageAIEmbeddings.html"
+            },
+            {
+                name: "IBM",
+                link: "ibm_watsonx",
+                package: "langchain-ibm",
+                apiLink: "https://python.langchain.com/api_reference/ibm/embeddings/langchain_ibm.embeddings.WatsonxEmbeddings.html"
             },
         ]
     },
@@ -799,7 +822,7 @@ const FEATURE_TABLES = {
             {
                 name: "MathPix",
                 link: "mathpix",
-                source: "Uses MathPix to laod PDFs",
+                source: "Uses MathPix to load PDFs",
                 api: "Package",
                 apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.pdf.MathpixPDFLoader.html"
             },
@@ -1020,8 +1043,8 @@ const FEATURE_TABLES = {
                 link: "mongodb_atlas",
                 deleteById: true,
                 filtering: true,
-                searchByVector: false,
-                searchWithScore: false,
+                searchByVector: true,
+                searchWithScore: true,
                 async: true,
                 passesStandardTests: false,
                 multiTenancy: false,
@@ -1077,6 +1100,19 @@ const FEATURE_TABLES = {
                 async: true,
                 passesStandardTests: false,
                 multiTenancy: false,
+                local: true,
+                idsInAddDocuments: false,
+            },
+            {
+                name: "Weaviate",
+                link: "weaviate",
+                deleteById: true,
+                filtering: true,
+                searchByVector: true,
+                searchWithScore: true,
+                async: true,
+                passesStandardTests: false,
+                multiTenancy: true,
                 local: true,
                 idsInAddDocuments: false,
             }

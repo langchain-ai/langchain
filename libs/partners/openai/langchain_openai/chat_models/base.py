@@ -63,7 +63,11 @@ from langchain_core.messages import (
     ToolMessage,
     ToolMessageChunk,
 )
-from langchain_core.messages.ai import UsageMetadata
+from langchain_core.messages.ai import (
+    InputTokenDetails,
+    OutputTokenDetails,
+    UsageMetadata,
+)
 from langchain_core.messages.tool import tool_call_chunk
 from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
 from langchain_core.output_parsers.openai_tools import (
@@ -86,7 +90,7 @@ from langchain_core.utils.pydantic import (
     TypeBaseModel,
     is_basemodel_subclass,
 )
-from langchain_core.utils.utils import build_extra_kwargs, from_env, secret_from_env
+from langchain_core.utils.utils import _build_model_kwargs, from_env, secret_from_env
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
@@ -125,6 +129,8 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
                     invalid_tool_calls.append(
                         make_invalid_tool_call(raw_tool_call, str(e))
                     )
+        if audio := _dict.get("audio"):
+            additional_kwargs["audio"] = audio
         return AIMessage(
             content=content,
             additional_kwargs=additional_kwargs,
@@ -215,6 +221,17 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         # If tool calls present, content null value should be None not empty string.
         if "function_call" in message_dict or "tool_calls" in message_dict:
             message_dict["content"] = message_dict["content"] or None
+
+        if "audio" in message.additional_kwargs:
+            # openai doesn't support passing the data back - only the id
+            # https://platform.openai.com/docs/guides/audio/multi-turn-conversations
+            raw_audio = message.additional_kwargs["audio"]
+            audio = (
+                {"id": message.additional_kwargs["audio"]["id"]}
+                if "id" in raw_audio
+                else raw_audio
+            )
+            message_dict["audio"] = audio
     elif isinstance(message, SystemMessage):
         message_dict["role"] = "system"
     elif isinstance(message, FunctionMessage):
@@ -286,16 +303,10 @@ def _convert_chunk_to_generation_chunk(
 ) -> Optional[ChatGenerationChunk]:
     token_usage = chunk.get("usage")
     choices = chunk.get("choices", [])
-    usage_metadata: Optional[UsageMetadata] = (
-        UsageMetadata(
-            input_tokens=token_usage.get("prompt_tokens", 0),
-            output_tokens=token_usage.get("completion_tokens", 0),
-            total_tokens=token_usage.get("total_tokens", 0),
-        )
-        if token_usage
-        else None
-    )
 
+    usage_metadata: Optional[UsageMetadata] = (
+        _create_usage_metadata(token_usage) if token_usage else None
+    )
     if len(choices) == 0:
         # logprobs is implicitly None
         generation_chunk = ChatGenerationChunk(
@@ -440,11 +451,11 @@ class BaseChatOpenAI(BaseChatModel):
     default_query: Union[Mapping[str, object], None] = None
     # Configure a custom httpx client. See the
     # [httpx documentation](https://www.python-httpx.org/api/#client) for more details.
-    http_client: Union[Any, None] = None
+    http_client: Union[Any, None] = Field(default=None, exclude=True)
     """Optional httpx.Client. Only used for sync invocations. Must specify 
         http_async_client as well if you'd like a custom client for async invocations.
     """
-    http_async_client: Union[Any, None] = None
+    http_async_client: Union[Any, None] = Field(default=None, exclude=True)
     """Optional httpx.AsyncClient. Only used for async invocations. Must specify 
         http_client as well if you'd like a custom client for sync invocations."""
     stop: Optional[Union[List[str], str]] = Field(default=None, alias="stop_sequences")
@@ -479,10 +490,16 @@ class BaseChatOpenAI(BaseChatModel):
     def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
-        extra = values.get("model_kwargs", {})
-        values["model_kwargs"] = build_extra_kwargs(
-            extra, values, all_required_field_names
-        )
+        values = _build_model_kwargs(values, all_required_field_names)
+        return values
+
+    @model_validator(mode="before")
+    @classmethod
+    def validate_temperature(cls, values: Dict[str, Any]) -> Any:
+        """Currently o1 models only allow temperature=1."""
+        model = values.get("model_name") or values.get("model") or ""
+        if model.startswith("o1") and "temperature" not in values:
+            values["temperature"] = 1
         return values
 
     @model_validator(mode="after")
@@ -588,6 +605,8 @@ class BaseChatOpenAI(BaseChatModel):
             token_usage = output["token_usage"]
             if token_usage is not None:
                 for k, v in token_usage.items():
+                    if v is None:
+                        continue
                     if k in overall_token_usage:
                         overall_token_usage[k] = _update_token_usage(
                             overall_token_usage[k], v
@@ -721,15 +740,11 @@ class BaseChatOpenAI(BaseChatModel):
         if response_dict.get("error"):
             raise ValueError(response_dict.get("error"))
 
-        token_usage = response_dict.get("usage", {})
+        token_usage = response_dict.get("usage")
         for res in response_dict["choices"]:
             message = _convert_dict_to_message(res["message"])
             if token_usage and isinstance(message, AIMessage):
-                message.usage_metadata = {
-                    "input_tokens": token_usage.get("prompt_tokens", 0),
-                    "output_tokens": token_usage.get("completion_tokens", 0),
-                    "total_tokens": token_usage.get("total_tokens", 0),
-                }
+                message.usage_metadata = _create_usage_metadata(token_usage)
             generation_info = generation_info or {}
             generation_info["finish_reason"] = (
                 res.get("finish_reason")
@@ -1217,12 +1232,12 @@ class BaseChatOpenAI(BaseChatModel):
             Support for ``strict`` argument added.
             Support for ``method`` = "json_schema" added.
 
-        .. note:: Planned breaking changes in version `0.2.0`
+        .. note:: Planned breaking changes in version `0.3.0`
 
             - ``method`` default will be changed to "json_schema" from
                 "function_calling".
             - ``strict`` will default to True when ``method`` is
-                "function_calling" as of version `0.2.0`.
+                "function_calling" as of version `0.3.0`.
 
 
         .. dropdown:: Example: schema=Pydantic class, method="function_calling", include_raw=False, strict=True
@@ -1445,7 +1460,6 @@ class BaseChatOpenAI(BaseChatModel):
                     "schema must be specified when method is not 'json_mode'. "
                     "Received None."
                 )
-            strict = strict if strict is not None else True
             response_format = _convert_to_openai_response_format(schema, strict=strict)
             llm = self.bind(response_format=response_format)
             if is_pydantic_schema:
@@ -2126,14 +2140,36 @@ def _resize(width: int, height: int) -> Tuple[int, int]:
 
 
 def _convert_to_openai_response_format(
-    schema: Union[Dict[str, Any], Type], strict: bool
+    schema: Union[Dict[str, Any], Type], *, strict: Optional[bool] = None
 ) -> Union[Dict, TypeBaseModel]:
     if isinstance(schema, type) and is_basemodel_subclass(schema):
         return schema
+
+    if (
+        isinstance(schema, dict)
+        and "json_schema" in schema
+        and schema.get("type") == "json_schema"
+    ):
+        response_format = schema
+    elif isinstance(schema, dict) and "name" in schema and "schema" in schema:
+        response_format = {"type": "json_schema", "json_schema": schema}
     else:
+        strict = strict if strict is not None else True
         function = convert_to_openai_function(schema, strict=strict)
         function["schema"] = function.pop("parameters")
-        return {"type": "json_schema", "json_schema": function}
+        response_format = {"type": "json_schema", "json_schema": function}
+
+    if strict is not None and strict is not response_format["json_schema"].get(
+        "strict"
+    ):
+        msg = (
+            f"Output schema already has 'strict' value set to "
+            f"{schema['json_schema']['strict']} but 'strict' also passed in to "
+            f"with_structured_output as {strict}. Please make sure that "
+            f"'strict' is only specified in one place."
+        )
+        raise ValueError(msg)
+    return response_format
 
 
 @chain
@@ -2160,3 +2196,36 @@ class OpenAIRefusalError(Exception):
 
     .. versionadded:: 0.1.21
     """
+
+
+def _create_usage_metadata(oai_token_usage: dict) -> UsageMetadata:
+    input_tokens = oai_token_usage.get("prompt_tokens", 0)
+    output_tokens = oai_token_usage.get("completion_tokens", 0)
+    total_tokens = oai_token_usage.get("total_tokens", input_tokens + output_tokens)
+    input_token_details: dict = {
+        "audio": (oai_token_usage.get("prompt_tokens_details") or {}).get(
+            "audio_tokens"
+        ),
+        "cache_read": (oai_token_usage.get("prompt_tokens_details") or {}).get(
+            "cached_tokens"
+        ),
+    }
+    output_token_details: dict = {
+        "audio": (oai_token_usage.get("completion_tokens_details") or {}).get(
+            "audio_tokens"
+        ),
+        "reasoning": (oai_token_usage.get("completion_tokens_details") or {}).get(
+            "reasoning_tokens"
+        ),
+    }
+    return UsageMetadata(
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        total_tokens=total_tokens,
+        input_token_details=InputTokenDetails(
+            **{k: v for k, v in input_token_details.items() if v is not None}
+        ),
+        output_token_details=OutputTokenDetails(
+            **{k: v for k, v in output_token_details.items() if v is not None}
+        ),
+    )

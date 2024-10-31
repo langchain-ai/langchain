@@ -159,10 +159,11 @@ class EvaluatorCallbackHandler(BaseTracer):
         elif isinstance(results, dict) and "results" in results:
             results_ = cast(list[EvaluationResult], results["results"])
         else:
-            raise TypeError(
+            msg = (
                 f"Invalid evaluation result type {type(results)}."
                 " Expected EvaluationResult or EvaluationResults."
             )
+            raise TypeError(msg)
         return results_
 
     def _log_evaluation_feedback(

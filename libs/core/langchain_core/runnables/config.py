@@ -36,8 +36,6 @@ else:
 class EmptyDict(TypedDict, total=False):
     """Empty dict type."""
 
-    pass
-
 
 class RunnableConfig(TypedDict, total=False):
     """Configuration for a Runnable."""
@@ -67,7 +65,7 @@ class RunnableConfig(TypedDict, total=False):
 
     max_concurrency: Optional[int]
     """
-    Maximum number of parallel calls to make. If not provided, defaults to 
+    Maximum number of parallel calls to make. If not provided, defaults to
     ThreadPoolExecutor's default.
     """
 
@@ -80,7 +78,7 @@ class RunnableConfig(TypedDict, total=False):
     """
     Runtime values for attributes previously made configurable on this Runnable,
     or sub-Runnables, through .configurable_fields() or .configurable_alternatives().
-    Check .output_schema() for a description of the attributes that have been made 
+    Check .output_schema() for a description of the attributes that have been made
     configurable.
     """
 
@@ -141,11 +139,11 @@ def _set_config_context(config: RunnableConfig) -> None:
                 None,
             )
         )
+        and (run := tracer.run_map.get(str(parent_run_id)))
     ):
-        if run := tracer.run_map.get(str(parent_run_id)):
-            from langsmith.run_helpers import _set_tracing_context
+        from langsmith.run_helpers import _set_tracing_context
 
-            _set_tracing_context({"parent": run})
+        _set_tracing_context({"parent": run})
 
 
 def ensure_config(config: Optional[RunnableConfig] = None) -> RunnableConfig:
@@ -221,12 +219,14 @@ def get_config_list(
 
     """
     if length < 0:
-        raise ValueError(f"length must be >= 0, but got {length}")
+        msg = f"length must be >= 0, but got {length}"
+        raise ValueError(msg)
     if isinstance(config, Sequence) and len(config) != length:
-        raise ValueError(
+        msg = (
             f"config must be a list of the same length as inputs, "
             f"but got {len(config)} configs for {length} inputs"
         )
+        raise ValueError(msg)
 
     if isinstance(config, Sequence):
         return list(map(ensure_config, config))
