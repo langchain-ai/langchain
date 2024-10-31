@@ -505,7 +505,7 @@ class AzureCosmosDBVectorSearch(VectorStore):
                 continue
             document_object_field = res.pop("document")
             text = document_object_field.pop(self._text_key)
-            metadata = document_object_field.pop("metadata")
+            metadata = document_object_field.pop("metadata", {})
             metadata["_id"] = document_object_field.pop(
                 "_id"
             )  # '_id' is in new position

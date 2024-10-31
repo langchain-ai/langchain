@@ -90,7 +90,7 @@ def _lc_tool_call_to_openai_tool_call(tool_call: ToolCall) -> dict:
 
 
 class ChatOllama(BaseChatModel):
-    """Ollama chat model integration.
+    r"""Ollama chat model integration.
 
     .. dropdown:: Setup
         :open:
