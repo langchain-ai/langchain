@@ -1,10 +1,12 @@
 """Test Graph Database Chain."""
 
 import os
+from unittest.mock import MagicMock
 
 import pytest
 from langchain.chains.loading import load_chain
-from langchain_openai import ChatOpenAI
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.outputs import Generation, LLMResult
 
 from langchain_neo4j.chains.graph_qa.cypher import GraphCypherQAChain
 from langchain_neo4j.graphs.neo4j_graph import Neo4jGraph
@@ -66,13 +68,24 @@ def test_cypher_generating_run() -> None:
     # Refresh schema information
     graph.refresh_schema()
 
+    query = (
+        "MATCH (a:Actor)-[:ACTED_IN]->(m:Movie) "
+        "WHERE m.title = 'Pulp Fiction' "
+        "RETURN a.name"
+    )
+    llm = MagicMock(spec=BaseLanguageModel)
+    llm.generate_prompt.side_effect = [
+        LLMResult(generations=[[Generation(text=query)]]),
+        LLMResult(generations=[[Generation(text="Bruce Willis")]]),
+    ]
     chain = GraphCypherQAChain.from_llm(
-        ChatOpenAI(model="gpt-3.5-turbo", temperature=0, seed=0),
+        llm=llm,
         graph=graph,
         allow_dangerous_requests=True,
     )
-    output = chain.run("Who acted in Pulp Fiction?")
-    assert isinstance(output, str)
+    output = chain.run("Who starred in Pulp Fiction?")
+    expected_output = "Bruce Willis"
+    assert output == expected_output
 
 
 def test_cypher_top_k() -> None:
@@ -99,14 +112,23 @@ def test_cypher_top_k() -> None:
     # Refresh schema information
     graph.refresh_schema()
 
+    query = (
+        "MATCH (a:Actor)-[:ACTED_IN]->(m:Movie) "
+        "WHERE m.title = 'Pulp Fiction' "
+        "RETURN a.name"
+    )
+    llm = MagicMock(spec=BaseLanguageModel)
+    llm.generate_prompt.side_effect = [
+        LLMResult(generations=[[Generation(text=query)]])
+    ]
     chain = GraphCypherQAChain.from_llm(
-        ChatOpenAI(model="gpt-3.5-turbo", temperature=0, seed=0),
+        llm=llm,
         graph=graph,
         return_direct=True,
         top_k=TOP_K,
         allow_dangerous_requests=True,
     )
-    output = chain.run("Who acted in Pulp Fiction?")
+    output = chain.run("Who starred in Pulp Fiction?")
     assert len(output) == TOP_K
 
 
@@ -131,27 +153,32 @@ def test_cypher_intermediate_steps() -> None:
     # Refresh schema information
     graph.refresh_schema()
 
+    query = (
+        "MATCH (a:Actor)-[:ACTED_IN]->(m:Movie) "
+        "WHERE m.title = 'Pulp Fiction' "
+        "RETURN a.name"
+    )
+    llm = MagicMock(spec=BaseLanguageModel)
+    llm.generate_prompt.side_effect = [
+        LLMResult(generations=[[Generation(text=query)]]),
+        LLMResult(generations=[[Generation(text="Bruce Willis")]]),
+    ]
     chain = GraphCypherQAChain.from_llm(
-        ChatOpenAI(model="gpt-3.5-turbo", temperature=0, seed=0),
+        llm=llm,
         graph=graph,
         return_intermediate_steps=True,
         allow_dangerous_requests=True,
     )
-    output = chain("Who acted in Pulp Fiction?")
-    assert isinstance(output, dict)
-    assert isinstance(output["result"], str)
-    assert "intermediate_steps" in output.keys()
-    intermediate_steps = output["intermediate_steps"]
-    assert isinstance(intermediate_steps, list)
-    assert len(intermediate_steps) == 2
-    assert isinstance(intermediate_steps[0], dict)
-    assert "query" in intermediate_steps[0].keys()
-    query = intermediate_steps[0]["query"]
-    assert isinstance(query, str)
-    assert isinstance(intermediate_steps[1], dict)
-    assert "context" in intermediate_steps[1].keys()
-    context = intermediate_steps[1]["context"]
-    assert isinstance(context, list)
+    output = chain("Who starred in Pulp Fiction?")
+
+    expected_output = "Bruce Willis"
+    assert output["result"] == expected_output
+
+    assert output["intermediate_steps"][0]["query"] == query
+
+    context = output["intermediate_steps"][1]["context"]
+    expected_context = [{"a.name": "Bruce Willis"}]
+    assert context == expected_context
 
 
 def test_cypher_return_direct() -> None:
@@ -175,19 +202,24 @@ def test_cypher_return_direct() -> None:
     # Refresh schema information
     graph.refresh_schema()
 
+    query = (
+        "MATCH (a:Actor)-[:ACTED_IN]->(m:Movie) "
+        "WHERE m.title = 'Pulp Fiction' "
+        "RETURN a.name"
+    )
+    llm = MagicMock(spec=BaseLanguageModel)
+    llm.generate_prompt.side_effect = [
+        LLMResult(generations=[[Generation(text=query)]])
+    ]
     chain = GraphCypherQAChain.from_llm(
-        ChatOpenAI(model="gpt-3.5-turbo", temperature=0, seed=0),
+        llm=llm,
         graph=graph,
         return_direct=True,
         allow_dangerous_requests=True,
     )
-    query = "Who acted in Pulp Fiction?"
-    output = chain(query)
-    assert isinstance(output, dict)
-    assert "query" in output.keys()
-    assert query == output["query"]
-    assert "result" in output.keys()
-    assert isinstance(output["result"], list)
+    output = chain.run("Who starred in Pulp Fiction?")
+    expected_output = [{"a.name": "Bruce Willis"}]
+    assert output == expected_output
 
 
 @pytest.mark.skip(reason="load_chain is failing and is due to be deprecated")
@@ -207,10 +239,12 @@ def test_cypher_save_load() -> None:
         username=username,
         password=password,
     )
+    llm = MagicMock(spec=BaseLanguageModel)
     chain = GraphCypherQAChain.from_llm(
-        ChatOpenAI(model="gpt-3.5-turbo", temperature=0, seed=0),
+        llm=llm,
         graph=graph,
         return_direct=True,
+        allow_dangerous_requests=True,
     )
 
     chain.save(file_path=FILE_PATH)
@@ -241,8 +275,9 @@ def test_exclude_types() -> None:
     # Refresh schema information
     graph.refresh_schema()
 
+    llm = MagicMock(spec=BaseLanguageModel)
     chain = GraphCypherQAChain.from_llm(
-        ChatOpenAI(model="gpt-3.5-turbo", temperature=0, seed=0),
+        llm=llm,
         graph=graph,
         exclude_types=["Person", "DIRECTED"],
         allow_dangerous_requests=True,
@@ -279,8 +314,9 @@ def test_include_types() -> None:
     # Refresh schema information
     graph.refresh_schema()
 
+    llm = MagicMock(spec=BaseLanguageModel)
     chain = GraphCypherQAChain.from_llm(
-        ChatOpenAI(model="gpt-3.5-turbo", temperature=0, seed=0),
+        llm=llm,
         graph=graph,
         include_types=["Movie", "Actor", "ACTED_IN"],
         allow_dangerous_requests=True,
@@ -318,8 +354,9 @@ def test_include_types2() -> None:
     # Refresh schema information
     graph.refresh_schema()
 
+    llm = MagicMock(spec=BaseLanguageModel)
     chain = GraphCypherQAChain.from_llm(
-        ChatOpenAI(model="gpt-3.5-turbo", temperature=0, seed=0),
+        llm=llm,
         graph=graph,
         include_types=["Movie", "ACTED_IN"],
         allow_dangerous_requests=True,

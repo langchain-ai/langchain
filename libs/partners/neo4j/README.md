@@ -114,20 +114,14 @@ make tests
 
 ### Integration Tests
 
-1. Export your OpenAI API key:
-
-    ```bash
-    export OPENAI_API_KEY=sk-...
-    ```
-
-2. Start the Neo4j instance using Docker:
+1. Start the Neo4j instance using Docker:
 
     ```bash
     cd tests/integration_tests/docker-compose
     docker-compose -f neo4j.yml up
     ```
 
-3. Run the tests:
+2. Run the tests:
 
     ```bash
     make integration_tests
