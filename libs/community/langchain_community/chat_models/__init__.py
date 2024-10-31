@@ -128,6 +128,9 @@ if TYPE_CHECKING:
     from langchain_community.chat_models.naver import (
         ChatClovaX,
     )
+    from langchain_community.chat_models.nebius_ai_studio import (
+        ChatNebiusAIStudio,
+    )
     from langchain_community.chat_models.oci_data_science import (
         ChatOCIModelDeployment,
         ChatOCIModelDeploymentTGI,
@@ -218,6 +221,7 @@ __all__ = [
     "ChatMLflowAIGateway",
     "ChatMaritalk",
     "ChatMlflow",
+    "ChatNebiusAIStudio",
     "ChatNebula",
     "ChatOCIGenAI",
     "ChatOCIModelDeployment",
@@ -282,6 +286,7 @@ _module_lookup = {
     "ChatMLX": "langchain_community.chat_models.mlx",
     "ChatMaritalk": "langchain_community.chat_models.maritalk",
     "ChatMlflow": "langchain_community.chat_models.mlflow",
+    "ChatNebiusAIStudio": "langchain_community.chat_models.nebius_ai_studio",
     "ChatNebula": "langchain_community.chat_models.symblai_nebula",
     "ChatOctoAI": "langchain_community.chat_models.octoai",
     "ChatOCIGenAI": "langchain_community.chat_models.oci_generative_ai",
