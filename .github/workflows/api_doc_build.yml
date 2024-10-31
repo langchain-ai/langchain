@@ -82,18 +82,18 @@ jobs:
           git config --local user.email "actions@github.com"
           git config --local user.name "Github Actions"
 
-      # - name: Build docs
-      #   working-directory: langchain
-      #   run: |
-      #     python docs/api_reference/create_api_rst.py
-      #     python -m sphinx -T -E -b html -d ../langchain-api-docs-html/_build/doctrees -c docs/api_reference docs/api_reference ../langchain-api-docs-html/api_reference_build/html -j auto
-      #     python docs/api_reference/scripts/custom_formatter.py ../langchain-api-docs-html/api_reference_build/html
-      #     # Default index page is blank so we copy in the actual home page.
-      #     cp ../langchain-api-docs-html/api_reference_build/html/{reference,index}.html
-      #     rm -rf ../langchain-api-docs-html/_build/
+      - name: Build docs
+        working-directory: langchain
+        run: |
+          python docs/api_reference/create_api_rst.py
+          python -m sphinx -T -E -b html -d ../langchain-api-docs-html/_build/doctrees -c docs/api_reference docs/api_reference ../langchain-api-docs-html/api_reference_build/html -j auto
+          python docs/api_reference/scripts/custom_formatter.py ../langchain-api-docs-html/api_reference_build/html
+          # Default index page is blank so we copy in the actual home page.
+          cp ../langchain-api-docs-html/api_reference_build/html/{reference,index}.html
+          rm -rf ../langchain-api-docs-html/_build/
 
-      # # https://github.com/marketplace/actions/add-commit
-      # - uses: EndBug/add-and-commit@v9
-      #   with:
-      #     cwd: langchain-api-docs-html
-      #     message: 'Update API docs build'
+      # https://github.com/marketplace/actions/add-commit
+      - uses: EndBug/add-and-commit@v9
+        with:
+          cwd: langchain-api-docs-html
+          message: 'Update API docs build'
