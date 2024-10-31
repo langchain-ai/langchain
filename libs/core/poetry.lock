@@ -1207,7 +1207,7 @@ url = "../standard-tests"
 
 [[package]]
 name = "langchain-text-splitters"
-version = "0.3.0"
+version = "0.3.1"
 description = "LangChain text splitting utilities"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -1215,7 +1215,7 @@ files = []
 develop = true
 
 [package.dependencies]
-langchain-core = "^0.3.0"
+langchain-core = "^0.3.13"
 
 [package.source]
 type = "directory"
@@ -1223,13 +1223,13 @@ url = "../text-splitters"
 
 [[package]]
 name = "langsmith"
-version = "0.1.137"
+version = "0.1.139rc1"
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "langsmith-0.1.137-py3-none-any.whl", hash = "sha256:4256d5c61133749890f7b5c88321dbb133ce0f440c621ea28e76513285859b81"},
-    {file = "langsmith-0.1.137.tar.gz", hash = "sha256:56cdfcc6c74cb20a3f437d5bd144feb5bf93f54c5a2918d1e568cbd084a372d4"},
+    {file = "langsmith-0.1.139rc1-py3-none-any.whl", hash = "sha256:539144338fbe4a32d0cc11e69f967b53fe567cb698f7b9b66abb97048489e923"},
+    {file = "langsmith-0.1.139rc1.tar.gz", hash = "sha256:efada0a96f335446128606ecc4fa42bba8b15dfbd84f16d1ae00b95ba560d5d2"},
 ]
 
 [package.dependencies]
@@ -2976,4 +2976,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0"
-content-hash = "3c680384ebb62b873c70201979927665c8fcce32dbf1df7457d12e83fba15ac2"
+content-hash = "249cdc5215b1d6cb1337a6d91ae748a3321673a8fe4444ee19d667e9f058a12f"
