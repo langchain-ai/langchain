@@ -2059,7 +2059,7 @@ def test_nltk_text_splitter_args() -> None:
     """Test invalid arguments for NLTKTextSplitter."""
     import nltk
 
-    nltk.download('punkt_tab')
+    nltk.download("punkt_tab")
     with pytest.raises(ValueError):
         NLTKTextSplitter(
             chunk_size=80,
@@ -2073,7 +2073,7 @@ def test_nltk_text_splitter_args() -> None:
 def test_nltk_text_splitter_with_add_start_index() -> None:
     import nltk
 
-    nltk.download('punkt_tab')
+    nltk.download("punkt_tab")
     splitter = NLTKTextSplitter(
         chunk_size=80,
         chunk_overlap=0,
