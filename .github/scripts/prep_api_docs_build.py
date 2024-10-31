@@ -14,13 +14,20 @@ def load_packages_yaml() -> Dict[str, Any]:
         return yaml.safe_load(f)
 
 
+def get_target_dir(package_name: str) -> Path:
+    """Get the target directory for a given package."""
+    package_name_short = package_name.replace("langchain-", "")
+    base_path = Path("langchain/libs")
+    if package_name_short == "experimental":
+        return base_path / "experimental"
+    return base_path / "partners" / package_name_short
+
+
 def clean_target_directories(packages: Dict[str, Any]) -> None:
     """Remove old directories that will be replaced."""
-    base_path = Path("langchain/libs/partners")
     for package in packages["packages"]:
         if package["repo"] != "langchain-ai/langchain":
-            package_name = package["name"].replace("langchain-", "")
-            target_dir = base_path / package_name
+            target_dir = get_target_dir(package["name"])
             if target_dir.exists():
                 print(f"Removing {target_dir}")
                 shutil.rmtree(target_dir)
@@ -36,9 +43,8 @@ def move_libraries(packages: Dict[str, Any]) -> None:
             continue
 
         repo_name = package["repo"].split("/")[1]
-        package_name = package["name"].replace("langchain-", "")
         source_path = package["path"]
-        target_dir = f"langchain/libs/partners/{package_name}"
+        target_dir = get_target_dir(package["name"])
 
         # Handle root path case
         if source_path == ".":

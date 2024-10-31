@@ -601,9 +601,11 @@ For the legacy API reference hosted on ReadTheDocs see [https://api.python.langc
         ]
         for header_name, dir_ in sorted(
             zip(integration_headers, integrations),
-            key=lambda h_d: integrations_to_show.index(h_d[1])
-            if h_d[1] in integrations_to_show
-            else len(integrations_to_show),
+            key=lambda h_d: (
+                integrations_to_show.index(h_d[1])
+                if h_d[1] in integrations_to_show
+                else len(integrations_to_show)
+            ),
         )[: len(integrations_to_show)]:
             integration_grid += f'\n- header: "**{header_name}**"\n  content: {_package_namespace(dir_).replace("_", "-")} {_get_package_version(_package_dir(dir_))}\n  link: {dir_.replace("-", "_")}/index.html'
         doc += f"""## Integrations
@@ -648,7 +650,7 @@ def main(dirs: Optional[list] = None) -> None:
         dirs = [
             dir_
             for dir_ in os.listdir(ROOT_DIR / "libs")
-            if dir_ not in ("cli", "partners", "standard-tests")
+            if dir_ not in ("cli", "partners", "standard-tests", "packages.yml")
         ]
         dirs += [
             dir_
