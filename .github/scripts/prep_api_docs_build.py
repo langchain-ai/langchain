@@ -39,6 +39,9 @@ def move_libraries(packages: Dict[str, Any]) -> None:
         package_name = package["name"].replace("langchain-", "")
         source_path = package["path"]
         target_dir = f"langchain/libs/partners/{package_name}"
+        if package_name == "experimental":
+            # special case experimental
+            target_dir = "langchain/libs/experimental"
 
         # Handle root path case
         if source_path == ".":
