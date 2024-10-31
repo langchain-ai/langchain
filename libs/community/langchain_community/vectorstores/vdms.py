@@ -25,7 +25,7 @@ from typing import (
 import numpy as np
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.indexing.base import UpsertResponse
+# from langchain_core.indexing.base import UpsertResponse
 from langchain_core.vectorstores import VectorStore
 from typing_extensions import override
 
@@ -181,7 +181,12 @@ class VDMS(VectorStore):
         if "FailedCommand" in response[0]:
             raise ValueError(f"Failed to add collection {collection_name}")
 
-        self.logger.info(f"Descriptor set {collection_name} created")
+        if response[0]["AddDescriptorSet"]["status"] == 0:
+            status = "created"
+        else:
+            status = "exists"
+
+        self.logger.info(f"Descriptor set {collection_name} {status}")
 
     def _check_required_inputs(
         self,
@@ -700,7 +705,7 @@ class VDMS(VectorStore):
         all_blobs: List[Any] = []
 
         collection_properties = self.utils.get_properties(collection_name)
-        results = {"list": collection_properties}
+        results = kwargs.pop("results", {"list": collection_properties})
 
         for constraint in all_constraints:
             query = self.utils.add_descriptor(
@@ -1379,7 +1384,7 @@ class VDMS(VectorStore):
             **kwargs,
         )
 
-    def upsert(self, documents: Sequence[Document], /, **kwargs: Any) -> UpsertResponse:
+    def upsert(self, documents: Sequence[Document], /, **kwargs: Any) -> Dict:  #UpsertResponse:
         """Insert or update items
 
         Updating documents is dependent on the documents' `id` attribute.
@@ -1410,9 +1415,9 @@ class VDMS(VectorStore):
 
         text = [document.page_content for document in documents]
         metadatas = [
-            self.utils.validate_vdms_properties(document.metadata)
-            if getattr(document, "metadata", None) is not None
-            else {}
+                self.utils.validate_vdms_properties(document.metadata)
+                if getattr(document, "metadata", None) is not None
+                else {}
             for document in documents
         ]
         embeddings = self._embed_documents(text)
@@ -1425,7 +1430,9 @@ class VDMS(VectorStore):
             metadatas=metadatas,
             **kwargs,
         )
-        return UpsertResponse(succeeded=ids, failed=[])
+        # return UpsertResponse(succeeded=ids, failed=[])
+        return {"succeeded": ids,
+                "failed": []}
 
 
 class VDMS_Utils:
