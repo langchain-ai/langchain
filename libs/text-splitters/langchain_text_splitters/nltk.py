@@ -19,11 +19,11 @@ class NLTKTextSplitter(TextSplitter):
         super().__init__(**kwargs)
         self._separator = separator
         self._language = language
-        self.use_span_tokenize = use_span_tokenize
-        if self.use_span_tokenize and self._separator != "":
+        self._use_span_tokenize = use_span_tokenize
+        if self._use_span_tokenize and self._separator != "":
             raise ValueError("When use_span_tokenize is True, separator should be ''")
         try:
-            if self.use_span_tokenize:
+            if self._use_span_tokenize:
                 from nltk.tokenize import _get_punkt_tokenizer
 
                 self._tokenizer = _get_punkt_tokenizer(self._language)
@@ -39,7 +39,7 @@ class NLTKTextSplitter(TextSplitter):
     def split_text(self, text: str) -> List[str]:
         """Split incoming text and return chunks."""
         # First we naively split the large input into a bunch of smaller ones.
-        if self.use_span_tokenize:
+        if self._use_span_tokenize:
             spans = list(self._tokenizer.span_tokenize(text))
             splits = []
             for i, (start, end) in enumerate(spans):
