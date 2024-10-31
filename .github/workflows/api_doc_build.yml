@@ -23,15 +23,19 @@ jobs:
           path: langchain-api-docs-html
           token: ${{ secrets.TOKEN_GITHUB_API_DOCS_HTML }}
 
-      - name: Install yq
-        run: |
-          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
-          sudo chmod a+x /usr/local/bin/yq
+      - name: Get repos with yq
+        id: get-unsorted-repos
+        uses: mikefarah/yq@master
+        with:
+          cmd: yq '.packages[].repo' langchain/libs/packages.yml
 
       - name: Parse YAML and checkout repos
+        env:
+          REPOS_UNSORTED: ${{ steps.get-unsorted-repos.outputs.result }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Get unique repositories
-          REPOS=$(yq '.packages[].repo' langchain/libs/packages.yml | sort -u)
+          REPOS=$(echo "$REPOS_UNSORTED" | sort -u)
           
           # Checkout each unique repository
           for repo in $REPOS; do
@@ -41,8 +45,6 @@ jobs:
               git clone --depth 1 https://github.com/$repo.git $REPO_NAME
             fi
           done
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Python ${{ env.PYTHON_VERSION }} + Poetry ${{ env.POETRY_VERSION }}
         uses: "./langchain/.github/actions/poetry_setup"
