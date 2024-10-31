@@ -5,6 +5,8 @@ import mimetypes
 def encode_image(image_path: str) -> str:
     """Get base64 string from image URI.
 
+    **SECURITY**: Should only be used with trusted paths.
+
     Args:
         image_path: The path to the image.
 
@@ -17,6 +19,8 @@ def encode_image(image_path: str) -> str:
 
 def image_to_data_url(image_path: str) -> str:
     """Get data URL from image URI.
+
+    **SECURITY**: Should only be used with trusted paths.
 
     Args:
         image_path: The path to the image.
