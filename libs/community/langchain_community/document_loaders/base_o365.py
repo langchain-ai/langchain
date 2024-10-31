@@ -84,17 +84,33 @@ class O365BaseLoader(BaseLoader, BaseModel):
     recursive: bool = False
     """Should the loader recursively load subfolders?"""
     handlers: Optional[Dict[str, Any]] = {}
-    """ Provide custom handlers for MimeTypeBasedParser
-        Pass in dictionary mapping file types (extensions)
-        onto parsers. Do not include the leading dot.
-        Example:
-        ```python
-            handlers = {
-                "doc": MsWordParser()
-                "pdf": PDFMinerParser()
-                "txt": TextParser()
-            }
-        ```
+    """
+    Provide custom handlers for MimeTypeBasedParser.
+
+    Pass a dictionary mapping either file extensions (like "doc", "pdf", etc.) 
+    or MIME types (like "application/pdf", "text/plain", etc.) to parsers. 
+    Note that you must use either file extensions or MIME types exclusively and 
+    cannot mix them.
+
+    Do not include the leading dot for file extensions.
+    
+    Example using file extensions:
+    ```python
+        handlers = {
+            "doc": MsWordParser(),
+            "pdf": PDFMinerParser(),
+            "txt": TextParser()
+        }
+    ```
+    
+    Example using MIME types:
+    ```python
+        handlers = {
+            "application/msword": MsWordParser(),
+            "application/pdf": PDFMinerParser(),
+            "text/plain": TextParser()
+        }
+    ```
     """
 
     _blob_parser: BaseBlobParser = PrivateAttr()
@@ -104,12 +120,27 @@ class O365BaseLoader(BaseLoader, BaseModel):
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         if self.handlers:
-            self._file_types = list(self.handlers.keys())
-            self._mime_types = fetch_mime_types(self._file_types)
-            mime_handlers = {
-                self._mime_types[extension]: handler
-                for extension, handler in self.handlers.items()
-            }
+            handler_keys = list(self.handlers.keys())
+            try:
+                # assume handlers.keys() are file extensions
+                self._mime_types = fetch_mime_types(handler_keys)
+                self._file_types = set(handler_keys)
+                mime_handlers = {
+                    self._mime_types[extension]: handler
+                    for extension, handler in self.handlers.items()
+                }
+            except:
+                try:
+                    # assume handlers.keys() are mime types
+                    self._mime_types = fetch_extensions(handler_keys)
+                    self._file_types = set(self._mime_types.keys())
+                    mime_handlers = self.handlers
+                except:
+                    raise ValueError("`handlers` keys must be either file extensions or mimetypes.\n"
+                                    f"{handler_keys} could not be interpreted as either.\n"
+                                    "File extensions and mimetypes cannot mix. Use either one or the other"
+                                    )
+            
             self._blob_parser = MimeTypeBasedParser(
                 handlers=mime_handlers, fallback_parser=None
             )
