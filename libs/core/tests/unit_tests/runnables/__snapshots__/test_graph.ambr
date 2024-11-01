@@ -177,6 +177,7 @@
       dict({
         'data': 'PromptInput',
         'id': 0,
+        'name': 'PromptInput',
         'type': 'schema',
       }),
       dict({
@@ -190,6 +191,7 @@
           'name': 'PromptTemplate',
         }),
         'id': 1,
+        'name': 'PromptTemplate',
         'type': 'runnable',
       }),
       dict({
@@ -203,16 +205,19 @@
           'name': 'FakeListLLM',
         }),
         'id': 2,
+        'name': 'FakeListLLM',
         'type': 'runnable',
       }),
       dict({
         'data': 'Parallel<as_list,as_str>Input',
         'id': 3,
+        'name': 'Parallel<as_list,as_str>Input',
         'type': 'schema',
       }),
       dict({
         'data': 'Parallel<as_list,as_str>Output',
         'id': 4,
+        'name': 'Parallel<as_list,as_str>Output',
         'type': 'schema',
       }),
       dict({
@@ -226,16 +231,19 @@
           'name': 'CommaSeparatedListOutputParser',
         }),
         'id': 5,
+        'name': 'CommaSeparatedListOutputParser',
         'type': 'runnable',
       }),
       dict({
         'data': 'conditional_str_parser_input',
         'id': 6,
+        'name': 'conditional_str_parser_input',
         'type': 'schema',
       }),
       dict({
         'data': 'conditional_str_parser_output',
         'id': 7,
+        'name': 'conditional_str_parser_output',
         'type': 'schema',
       }),
       dict({
@@ -249,6 +257,7 @@
           'name': 'StrOutputParser',
         }),
         'id': 8,
+        'name': 'StrOutputParser',
         'type': 'runnable',
       }),
       dict({
@@ -262,6 +271,7 @@
           'name': 'XMLOutputParser',
         }),
         'id': 9,
+        'name': 'XMLOutputParser',
         'type': 'runnable',
       }),
     ]),
@@ -331,6 +341,7 @@
           'type': 'object',
         }),
         'id': 0,
+        'name': 'PromptInput',
         'type': 'schema',
       }),
       dict({
@@ -344,6 +355,7 @@
           'name': 'PromptTemplate',
         }),
         'id': 1,
+        'name': 'PromptTemplate',
         'type': 'runnable',
       }),
       dict({
@@ -357,6 +369,7 @@
           'name': 'FakeListLLM',
         }),
         'id': 2,
+        'name': 'FakeListLLM',
         'type': 'runnable',
       }),
       dict({
@@ -1765,6 +1778,7 @@
           'title': 'RunnableParallel<as_list,as_str>Input',
         }),
         'id': 3,
+        'name': 'Parallel<as_list,as_str>Input',
         'type': 'schema',
       }),
       dict({
@@ -1789,6 +1803,7 @@
           'type': 'object',
         }),
         'id': 4,
+        'name': 'Parallel<as_list,as_str>Output',
         'type': 'schema',
       }),
       dict({
@@ -1802,6 +1817,7 @@
           'name': 'CommaSeparatedListOutputParser',
         }),
         'id': 5,
+        'name': 'CommaSeparatedListOutputParser',
         'type': 'runnable',
       }),
       dict({
@@ -1810,6 +1826,7 @@
           'type': 'string',
         }),
         'id': 6,
+        'name': 'conditional_str_parser_input',
         'type': 'schema',
       }),
       dict({
@@ -1817,6 +1834,7 @@
           'title': 'conditional_str_parser_output',
         }),
         'id': 7,
+        'name': 'conditional_str_parser_output',
         'type': 'schema',
       }),
       dict({
@@ -1830,6 +1848,7 @@
           'name': 'StrOutputParser',
         }),
         'id': 8,
+        'name': 'StrOutputParser',
         'type': 'runnable',
       }),
       dict({
@@ -1843,6 +1862,7 @@
           'name': 'XMLOutputParser',
         }),
         'id': 9,
+        'name': 'XMLOutputParser',
         'type': 'runnable',
       }),
     ]),
@@ -1986,6 +2006,7 @@
       dict({
         'data': '__start__',
         'id': '__start__',
+        'name': '__start__',
         'type': 'schema',
       }),
       dict({
@@ -1999,6 +2020,7 @@
           'name': 'ask_question',
         }),
         'id': 'ask_question',
+        'name': 'ask_question',
         'type': 'runnable',
       }),
       dict({
@@ -2012,11 +2034,13 @@
           'name': 'answer_question',
         }),
         'id': 'answer_question',
+        'name': 'answer_question',
         'type': 'runnable',
       }),
       dict({
         'data': '__end__',
         'id': '__end__',
+        'name': '__end__',
         'type': 'schema',
       }),
     ]),

@@ -81,6 +81,7 @@ def test_graph_sequence(snapshot: SnapshotAssertion) -> None:
                 "id": 0,
                 "type": "schema",
                 "data": "PromptInput",
+                "name": "PromptInput"
             },
             {
                 "id": 1,
@@ -89,6 +90,7 @@ def test_graph_sequence(snapshot: SnapshotAssertion) -> None:
                     "id": ["langchain", "prompts", "prompt", "PromptTemplate"],
                     "name": "PromptTemplate",
                 },
+                "name": "PromptTemplate",
             },
             {
                 "id": 2,
@@ -97,6 +99,7 @@ def test_graph_sequence(snapshot: SnapshotAssertion) -> None:
                     "id": ["langchain_core", "language_models", "fake", "FakeListLLM"],
                     "name": "FakeListLLM",
                 },
+                "name": "FakeListLLM",
                 "metadata": {"key": 2},
             },
             {
@@ -111,11 +114,13 @@ def test_graph_sequence(snapshot: SnapshotAssertion) -> None:
                     ],
                     "name": "CommaSeparatedListOutputParser",
                 },
+                "name": "CommaSeparatedListOutputParser",
             },
             {
                 "id": 4,
                 "type": "schema",
                 "data": "CommaSeparatedListOutputParserOutput",
+                "name": "CommaSeparatedListOutputParserOutput",
             },
         ],
         "edges": [
@@ -136,6 +141,7 @@ def test_graph_sequence(snapshot: SnapshotAssertion) -> None:
                     "properties": {"name": {"title": "Name", "type": "string"}},
                     "required": ["name"],
                 },
+                "name": "PromptInput",
             },
             {
                 "id": 1,
@@ -144,6 +150,7 @@ def test_graph_sequence(snapshot: SnapshotAssertion) -> None:
                     "id": ["langchain", "prompts", "prompt", "PromptTemplate"],
                     "name": "PromptTemplate",
                 },
+                "name": "PromptTemplate",
             },
             {
                 "id": 2,
@@ -153,6 +160,7 @@ def test_graph_sequence(snapshot: SnapshotAssertion) -> None:
                     "name": "FakeListLLM",
                 },
                 "metadata": {"key": 2},
+                "name": "FakeListLLM",
             },
             {
                 "id": 3,
@@ -166,6 +174,7 @@ def test_graph_sequence(snapshot: SnapshotAssertion) -> None:
                     ],
                     "name": "CommaSeparatedListOutputParser",
                 },
+                "name": "CommaSeparatedListOutputParser",
             },
             {
                 "id": 4,
@@ -175,6 +184,7 @@ def test_graph_sequence(snapshot: SnapshotAssertion) -> None:
                     "title": "CommaSeparatedListOutputParserOutput",
                     "type": "array",
                 },
+                "name": "CommaSeparatedListOutputParserOutput",
             },
         ],
         "edges": [

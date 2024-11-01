@@ -294,6 +294,7 @@ class Graph:
             "nodes": [
                 {
                     "id": stable_node_ids[node.id],
+                    "name": node.name,
                     **node_data_json(node, with_schemas=with_schemas),
                 }
                 for node in self.nodes.values()
