@@ -3,13 +3,13 @@ from __future__ import annotations
 import os
 from typing import (
     TYPE_CHECKING,
-    List,
     Optional,
     Union,
 )
 
 if TYPE_CHECKING:
     import rdflib
+    import SPARQLWrapper
 
 
 class OntotextGraphDBGraph:
@@ -30,6 +30,7 @@ class OntotextGraphDBGraph:
     def __init__(
         self,
         query_endpoint: str,
+        custom_http_headers: Optional[dict[str, str]] = None,
         query_ontology: Optional[str] = None,
         local_file: Optional[str] = None,
         local_file_format: Optional[str] = None,
@@ -38,9 +39,11 @@ class OntotextGraphDBGraph:
         Set up the GraphDB wrapper
 
         :param query_endpoint: SPARQL endpoint for queries, read access
+        :param custom_http_headers: Custom HTTP headers to pass to GraphDB.
 
         If GraphDB is secured,
-        set the environment variables 'GRAPHDB_USERNAME' and 'GRAPHDB_PASSWORD'.
+        either set the environment variables 'GRAPHDB_USERNAME' and 'GRAPHDB_PASSWORD'
+        or set the appropriate custom_http_headers for authentication.
 
         :param query_ontology: a `CONSTRUCT` query that is executed
         on the SPARQL endpoint and returns the KG schema statements
@@ -78,19 +81,15 @@ class OntotextGraphDBGraph:
             raise ValueError("Neither file nor query provided. One is required.")
 
         try:
-            import rdflib
-            from rdflib.plugins.stores import sparqlstore
+            from SPARQLWrapper import SPARQLWrapper
         except ImportError:
             raise ImportError(
-                "Could not import rdflib python package. "
-                "Please install it with `pip install rdflib`."
+                "Could not import SPARQLWrapper python package. "
+                "Please install it with `pip install SPARQLWrapper`."
             )
 
-        auth = self._get_auth()
-        store = sparqlstore.SPARQLStore(auth=auth)
-        store.open(query_endpoint)
-
-        self.graph = rdflib.Graph(store, identifier=None, bind_namespaces="none")
+        self.__sparql_wrapper = SPARQLWrapper(query_endpoint)
+        self._config_sparql_wrapper(custom_http_headers)
         self._check_connectivity()
 
         if local_file:
@@ -105,42 +104,70 @@ class OntotextGraphDBGraph:
             )
         self.schema = ontology_schema_graph.serialize(format="turtle")
 
+    def _config_sparql_wrapper(
+        self,
+        custom_http_headers: Optional[dict[str, str]] = None,
+    ) -> None:
+        """
+        Configure authentication and add custom HTTP headers
+        """
+        from SPARQLWrapper import Wrapper
+
+        gdb_username, gdb_password = self._get_basic_auth()
+        if gdb_username:
+            self.__sparql_wrapper.setHTTPAuth(Wrapper.BASIC)
+            self.__sparql_wrapper.setCredentials(gdb_username, gdb_password)
+
+        if custom_http_headers:
+            for httpHeaderName, httpHeaderValue in custom_http_headers.items():
+                self.__sparql_wrapper.addCustomHttpHeader(
+                    httpHeaderName, httpHeaderValue
+                )
+
     @staticmethod
-    def _get_auth() -> Union[tuple, None]:
+    def _get_basic_auth() -> tuple:
         """
         Returns the basic authentication configuration
         """
         username = os.environ.get("GRAPHDB_USERNAME", None)
         password = os.environ.get("GRAPHDB_PASSWORD", None)
 
-        if username:
-            if not password:
-                raise ValueError(
-                    "Environment variable 'GRAPHDB_USERNAME' is set, "
-                    "but 'GRAPHDB_PASSWORD' is not set."
-                )
-            else:
-                return username, password
-        return None
+        if username and not password:
+            raise ValueError(
+                "Environment variable 'GRAPHDB_USERNAME' is set, "
+                "but 'GRAPHDB_PASSWORD' is not set."
+            )
+        return username, password
 
     def _check_connectivity(self) -> None:
         """
         Executes a simple `ASK` query to check connectivity
         """
+        from SPARQLWrapper import SPARQLExceptions
+
         try:
-            self.graph.query("ASK { ?s ?p ?o }")
-        except ValueError:
+            self.query("ASK { ?s ?p ?o }")
+        except SPARQLExceptions.Unauthorized:
+            raise ValueError(
+                "Unauthorized: Access to the provided endpoint "
+                "is denied due to invalid credentials (unauthorized). "
+                "Please, make sure that the environment variables "
+                "'GRAPHDB_USERNAME' and 'GRAPHDB_PASSWORD' are set, "
+                "or the correct authentication headers are set "
+                "in custom_http_headers."
+            )
+        except Exception:
             raise ValueError(
                 "Could not query the provided endpoint. "
                 "Please, check, if the value of the provided "
-                "query_endpoint points to the right repository. "
-                "If GraphDB is secured, please, "
-                "make sure that the environment variables "
-                "'GRAPHDB_USERNAME' and 'GRAPHDB_PASSWORD' are set."
+                "query_endpoint points to the right repository."
             )
 
     @staticmethod
-    def _load_ontology_schema_from_file(local_file: str, local_file_format: str = None):  # type: ignore[no-untyped-def, assignment]
+    def _load_ontology_schema_from_file(
+        local_file: str,
+        local_file_format: str = None,  # type: ignore[assignment]
+    ) -> rdflib.Graph:
         """
         Parse the ontology schema statements from the provided file
         """
@@ -177,18 +204,17 @@ class OntotextGraphDBGraph:
                 "Invalid query type. Only CONSTRUCT queries are supported."
             )
 
-    def _load_ontology_schema_with_query(self, query: str):  # type: ignore[no-untyped-def]
+    def _load_ontology_schema_with_query(self, query: str) -> rdflib.Graph:
         """
         Execute the query for collecting the ontology schema statements
         """
-        from rdflib.exceptions import ParserError
 
-        try:
-            results = self.graph.query(query)
-        except ParserError as e:
-            raise ValueError(f"Generated SPARQL statement is invalid\n{e}")
+        from rdflib import Graph
 
-        return results.graph
+        return Graph().parse(
+            data=self.query(query),
+            format="turtle",
+        )
 
     @property
     def get_schema(self) -> str:
@@ -200,11 +226,27 @@ class OntotextGraphDBGraph:
     def query(
         self,
         query: str,
-    ) -> List[rdflib.query.ResultRow]:
+    ) -> Union[str, SPARQLWrapper.SmartWrapper.Bindings]:
         """
         Query the graph.
         """
-        from rdflib.query import ResultRow
 
-        res = self.graph.query(query)
-        return [r for r in res if isinstance(r, ResultRow)]
+        from SPARQLWrapper.SmartWrapper import Bindings
+        from SPARQLWrapper.Wrapper import CONSTRUCT, DESCRIBE, JSON, TURTLE
+
+        self.__sparql_wrapper.setQuery(query)
+
+        if (
+            self.__sparql_wrapper.queryType == CONSTRUCT
+            or self.__sparql_wrapper.queryType == DESCRIBE
+        ):
+            result_format = TURTLE
+        else:
+            result_format = JSON
+        self.__sparql_wrapper.setReturnFormat(result_format)
+
+        results = self.__sparql_wrapper.query()
+
+        if result_format == JSON:
+            return Bindings(results)
+        return results.convert().decode("utf-8")
