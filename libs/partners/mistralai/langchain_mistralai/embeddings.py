@@ -4,6 +4,7 @@ import warnings
 from typing import Iterable, List
 
 import httpx
+from httpx import Response
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils import (
     secret_from_env,
@@ -15,6 +16,7 @@ from pydantic import (
     SecretStr,
     model_validator,
 )
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 from tokenizers import Tokenizer  # type: ignore
 from typing_extensions import Self
 
@@ -209,16 +211,27 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
             List of embeddings, one for each text.
         """
         try:
-            batch_responses = (
-                self.client.post(
+            batch_responses = []
+
+            @retry(
+                retry=retry_if_exception_type(Exception),
+                wait=wait_fixed(30),  # Wait 30 seconds between retries
+                stop=stop_after_attempt(5),  # Stop after 5 attempts
+            )
+            def _embed_batch(batch: List[str]) -> Response:
+                response = self.client.post(
                     url="/embeddings",
                     json=dict(
                         model=self.model,
                         input=batch,
                     ),
                 )
-                for batch in self._get_batches(texts)
-            )
+                if response.status_code == 429:
+                    raise Exception("Requests rate limit exceeded")
+                return response
+
+            for batch in self._get_batches(texts):
+                batch_responses.append(_embed_batch(batch))
             return [
                 list(map(float, embedding_obj["embedding"]))
                 for response in batch_responses
