@@ -18,7 +18,7 @@ class FileDeleteInput(BaseModel):
     file_path: str = Field(..., description="Path of the file to delete")
 
 
-class DeleteFileTool(BaseFileToolMixin, BaseTool):
+class DeleteFileTool(BaseFileToolMixin, BaseTool):  # type: ignore[override, override]
     """Tool that deletes a file."""
 
     name: str = "file_delete"

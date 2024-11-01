@@ -1,5 +1,6 @@
 import base64
 import tempfile
+import warnings
 from pathlib import Path
 from typing import Any, Union, cast
 
@@ -328,7 +329,6 @@ def test_chat_prompt_template_from_messages_jinja2() -> None:
 
 
 @pytest.mark.requires("jinja2")
-@pytest.mark.requires("mustache")
 @pytest.mark.parametrize(
     "template_format,image_type_placeholder,image_data_placeholder",
     [
@@ -719,7 +719,7 @@ async def test_chat_tmpl_from_messages_multipart_image() -> None:
 
 
 async def test_chat_tmpl_from_messages_multipart_formatting_with_path() -> None:
-    """Verify that we can pass `path` for an image as a variable."""
+    """Verify that we cannot pass `path` for an image as a variable."""
     in_mem = "base64mem"
     in_file_data = "base64file01"
 
@@ -746,35 +746,19 @@ async def test_chat_tmpl_from_messages_multipart_formatting_with_path() -> None:
                 ),
             ]
         )
-        expected = [
-            SystemMessage(content="You are an AI assistant named R2D2."),
-            HumanMessage(
-                content=[
-                    {"type": "text", "text": "What's in this image?"},
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/jpeg;base64,{in_mem}"},
-                    },
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/jpeg;base64,{in_file_data}"},
-                    },
-                ]
-            ),
-        ]
-        messages = template.format_messages(
-            name="R2D2",
-            in_mem=in_mem,
-            file_path=temp_file.name,
-        )
-        assert messages == expected
+        with pytest.raises(ValueError):
+            template.format_messages(
+                name="R2D2",
+                in_mem=in_mem,
+                file_path=temp_file.name,
+            )
 
-        messages = await template.aformat_messages(
-            name="R2D2",
-            in_mem=in_mem,
-            file_path=temp_file.name,
-        )
-        assert messages == expected
+        with pytest.raises(ValueError):
+            await template.aformat_messages(
+                name="R2D2",
+                in_mem=in_mem,
+                file_path=temp_file.name,
+            )
 
 
 def test_messages_placeholder() -> None:
@@ -948,7 +932,8 @@ def test_chat_prompt_template_variable_names() -> None:
 
     Verify that no run time warnings are raised.
     """
-    with pytest.warns(None) as record:  # type: ignore
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")  # Cause all warnings to always be triggered
         prompt = ChatPromptTemplate([("system", "{schema}")])
         prompt.get_input_schema()
 
