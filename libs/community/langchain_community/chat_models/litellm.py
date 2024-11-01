@@ -302,28 +302,28 @@ class ChatLiteLLM(BaseChatModel):
                 "Please install it with `pip install litellm`"
             )
 
-        values["openai_api_key"] = get_from_dict_or_env(
+        values["openai_api_key"] = values.get("openai_api_key") or get_from_dict_or_env(
             values, "openai_api_key", "OPENAI_API_KEY", default=""
         )
-        values["azure_api_key"] = get_from_dict_or_env(
+        values["azure_api_key"] = values.get("azure_api_key") or get_from_dict_or_env(
             values, "azure_api_key", "AZURE_API_KEY", default=""
         )
-        values["anthropic_api_key"] = get_from_dict_or_env(
+        values["anthropic_api_key"] = values.get("anthropic_api_key") or get_from_dict_or_env(
             values, "anthropic_api_key", "ANTHROPIC_API_KEY", default=""
         )
-        values["replicate_api_key"] = get_from_dict_or_env(
+        values["replicate_api_key"] = values.get("replicate_api_key") or get_from_dict_or_env(
             values, "replicate_api_key", "REPLICATE_API_KEY", default=""
         )
-        values["openrouter_api_key"] = get_from_dict_or_env(
+        values["openrouter_api_key"] = values.get("openrouter_api_key") or get_from_dict_or_env(
             values, "openrouter_api_key", "OPENROUTER_API_KEY", default=""
         )
-        values["cohere_api_key"] = get_from_dict_or_env(
+        values["cohere_api_key"] = values.get("cohere_api_key") or get_from_dict_or_env(
             values, "cohere_api_key", "COHERE_API_KEY", default=""
         )
-        values["huggingface_api_key"] = get_from_dict_or_env(
+        values["huggingface_api_key"] = values.get("huggingface_api_key") or get_from_dict_or_env(
             values, "huggingface_api_key", "HUGGINGFACE_API_KEY", default=""
         )
-        values["together_ai_api_key"] = get_from_dict_or_env(
+        values["together_ai_api_key"] = values.get("together_ai_api_key") or get_from_dict_or_env(
             values, "together_ai_api_key", "TOGETHERAI_API_KEY", default=""
         )
         values["client"] = litellm
