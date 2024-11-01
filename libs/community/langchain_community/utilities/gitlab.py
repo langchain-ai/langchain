@@ -207,6 +207,12 @@ class GitLabAPIWrapper(BaseModel):
         Returns:
             str: A success or failure message
         """
+        if self.gitlab_branch == self.gitlab_base_branch:
+            return (
+                "You're attempting to commit directly"
+                f"to the {self.gitlab_base_branch} branch, which is protected. "
+                "Please create a new branch and try again."
+            )
         file_path = file_query.split("\n")[0]
         file_contents = file_query[len(file_path) + 2 :]
         try:
@@ -253,6 +259,12 @@ class GitLabAPIWrapper(BaseModel):
         Returns:
             A success or failure message
         """
+        if self.gitlab_branch == self.gitlab_base_branch:
+            return (
+                "You're attempting to commit directly"
+                f"to the {self.gitlab_base_branch} branch, which is protected. "
+                "Please create a new branch and try again."
+            )
         try:
             file_path = file_query.split("\n")[0]
             old_file_contents = (
@@ -299,6 +311,12 @@ class GitLabAPIWrapper(BaseModel):
         Returns:
             str: Success or failure message
         """
+        if self.gitlab_branch == self.gitlab_base_branch:
+            return (
+                "You're attempting to commit directly"
+                f"to the {self.gitlab_base_branch} branch, which is protected. "
+                "Please create a new branch and try again."
+            )
         try:
             self.gitlab_repo_instance.files.delete(
                 file_path, self.gitlab_branch, "Delete " + file_path

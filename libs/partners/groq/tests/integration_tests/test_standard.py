@@ -49,3 +49,12 @@ class TestGroqLlama(BaseTestGroq):
     )
     def test_tool_message_histories_string_content(self, model: BaseChatModel) -> None:
         super().test_tool_message_histories_string_content(model)
+
+    @pytest.mark.xfail(
+        reason=(
+            "Sometimes fails with 'Failed to call a function. "
+            "Please adjust your prompt.'"
+        )
+    )
+    def test_bind_runnables_as_tools(self, model: BaseChatModel) -> None:
+        super().test_bind_runnables_as_tools(model)

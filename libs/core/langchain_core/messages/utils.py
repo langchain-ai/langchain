@@ -28,6 +28,7 @@ from typing import (
 
 from pydantic import Discriminator, Field, Tag
 
+from langchain_core.exceptions import ErrorCode, create_message
 from langchain_core.messages.ai import AIMessage, AIMessageChunk
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk
 from langchain_core.messages.chat import ChatMessage, ChatMessageChunk
@@ -274,6 +275,7 @@ def _create_message_from_message_type(
             f"Unexpected message type: '{message_type}'. Use one of 'human',"
             f" 'user', 'ai', 'assistant', 'function', 'tool', or 'system'."
         )
+        msg = create_message(message=msg, error_code=ErrorCode.MESSAGE_COERCION_FAILURE)
         raise ValueError(msg)
     return message
 
@@ -318,12 +320,16 @@ def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
             msg_content = msg_kwargs.pop("content") or ""
         except KeyError as e:
             msg = f"Message dict must contain 'role' and 'content' keys, got {message}"
+            msg = create_message(
+                message=msg, error_code=ErrorCode.MESSAGE_COERCION_FAILURE
+            )
             raise ValueError(msg) from e
         _message = _create_message_from_message_type(
             msg_type, msg_content, **msg_kwargs
         )
     else:
         msg = f"Unsupported message type: {type(message)}"
+        msg = create_message(message=msg, error_code=ErrorCode.MESSAGE_COERCION_FAILURE)
         raise NotImplementedError(msg)
 
     return _message
@@ -877,8 +883,6 @@ def convert_to_openai_messages(
 ) -> Union[dict, list[dict]]:
     """Convert LangChain messages into OpenAI message dicts.
 
-    .. versionadded:: 0.3.11
-
     Args:
         messages: Message-like object or iterable of objects whose contents are
             in OpenAI, Anthropic, Bedrock Converse, or VertexAI formats.
@@ -930,6 +934,8 @@ def convert_to_openai_messages(
             #   {'role': 'tool', 'name': 'bar', 'content': 'foobar'},
             #   {'role': 'assistant', 'content': 'thats nice'}
             # ]
+
+    .. versionadded:: 0.3.11
 
     """  # noqa: E501
     if text_format not in ("string", "block"):
@@ -1204,13 +1210,14 @@ def _first_max_tokens(
     ] = None,
 ) -> list[BaseMessage]:
     messages = list(messages)
+    if not messages:
+        return messages
     idx = 0
     for i in range(len(messages)):
         if token_counter(messages[:-i] if i else messages) <= max_tokens:
             idx = len(messages) - i
             break
-
-    if idx < len(messages) - 1 and partial_strategy:
+    if partial_strategy and (idx < len(messages) - 1 or idx == 0):
         included_partial = False
         if isinstance(messages[idx].content, list):
             excluded = messages[idx].model_copy(deep=True)
@@ -1327,6 +1334,7 @@ def _msg_to_chunk(message: BaseMessage) -> BaseMessageChunk:
         f"Unrecognized message class {message.__class__}. Supported classes are "
         f"{list(_MSG_CHUNK_MAP.keys())}"
     )
+    msg = create_message(message=msg, error_code=ErrorCode.MESSAGE_COERCION_FAILURE)
     raise ValueError(msg)
 
 
@@ -1343,6 +1351,7 @@ def _chunk_to_msg(chunk: BaseMessageChunk) -> BaseMessage:
         f"Unrecognized message chunk class {chunk.__class__}. Supported classes are "
         f"{list(_CHUNK_MSG_MAP.keys())}"
     )
+    msg = create_message(message=msg, error_code=ErrorCode.MESSAGE_COERCION_FAILURE)
     raise ValueError(msg)
 
 
