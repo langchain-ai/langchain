@@ -331,7 +331,7 @@ def _render_mermaid_using_api(
     image_url = (
         f"https://mermaid.ink/img/{mermaid_syntax_encoded}?bgColor={background_color}"
     )
-    response = requests.get(image_url)
+    response = requests.get(image_url, timeout=10)
     if response.status_code == 200:
         img_bytes = response.content
         if output_file_path is not None:

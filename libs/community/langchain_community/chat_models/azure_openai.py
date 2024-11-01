@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import os
 import warnings
-from typing import Any, Callable, Dict, List, Union
+from typing import Any, Awaitable, Callable, Dict, List, Union
 
 from langchain_core._api.deprecation import deprecated
 from langchain_core.outputs import ChatResult
@@ -90,7 +90,13 @@ class AzureChatOpenAI(ChatOpenAI):
     azure_ad_token_provider: Union[Callable[[], str], None] = None
     """A function that returns an Azure Active Directory token.
         
-        Will be invoked on every request.
+        Will be invoked on every sync request. For async requests,
+        will be invoked if `azure_ad_async_token_provider` is not provided.
+    """
+    azure_ad_async_token_provider: Union[Callable[[], Awaitable[str]], None] = None
+    """A function that returns an Azure Active Directory token.
+
+        Will be invoked on every async request.
     """
     model_version: str = ""
     """Legacy, for openai<1.0.0 support."""
@@ -208,11 +214,17 @@ class AzureChatOpenAI(ChatOpenAI):
                 "http_client": values["http_client"],
             }
             values["client"] = openai.AzureOpenAI(**client_params).chat.completions
+
+            azure_ad_async_token_provider = values["azure_ad_async_token_provider"]
+
+            if azure_ad_async_token_provider:
+                client_params["azure_ad_token_provider"] = azure_ad_async_token_provider
+
             values["async_client"] = openai.AsyncAzureOpenAI(
                 **client_params
             ).chat.completions
         else:
-            values["client"] = openai.ChatCompletion
+            values["client"] = openai.ChatCompletion  # type: ignore[attr-defined]
         return values
 
     @property
