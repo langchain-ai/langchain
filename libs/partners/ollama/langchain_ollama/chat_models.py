@@ -476,15 +476,16 @@ class ChatOllama(BaseChatModel):
 
         params["options"]["stop"] = stop
         if "tools" in kwargs:
-            yield await self._async_client.chat(
+            async for part in await self._async_client.chat(
                 model=params["model"],
                 messages=ollama_messages,
-                stream=False,
+                stream=True,
                 options=Options(**params["options"]),
                 keep_alive=params["keep_alive"],
                 format=params["format"],
                 tools=kwargs["tools"],
-            )  # type:ignore
+            ):  # type:ignore
+                yield part
         else:
             async for part in await self._async_client.chat(
                 model=params["model"],
@@ -514,15 +515,26 @@ class ChatOllama(BaseChatModel):
 
         params["options"]["stop"] = stop
         if "tools" in kwargs:
-            yield from self._client.chat(
-                model=params["model"],
-                messages=ollama_messages,
-                stream=True,
-                options=Options(**params["options"]),
-                keep_alive=params["keep_alive"],
-                format=params["format"],
-                tools=kwargs["tools"],
-            )
+            if len(kwargs["tools"]) == 0:
+                yield from self._client.chat(
+                    model=params["model"],
+                    messages=ollama_messages,
+                    stream=True,
+                    options=Options(**params["options"]),
+                    keep_alive=params["keep_alive"],
+                    format=params["format"],
+                    tools=kwargs["tools"],
+                )
+            else:
+                yield self._client.chat(
+                    model=params["model"],
+                    messages=ollama_messages,
+                    stream=False,
+                    options=Options(**params["options"]),
+                    keep_alive=params["keep_alive"],
+                    format=params["format"],
+                    tools=kwargs["tools"],
+                )
         else:
             yield from self._client.chat(
                 model=params["model"],
