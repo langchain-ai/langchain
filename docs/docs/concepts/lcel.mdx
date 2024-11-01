@@ -20,8 +20,8 @@ We often refer to a `Runnable` created using LCEL as a "chain". It's important t
 
 LangChain optimizes the run-time execution of chains built with LCEL in a number of ways:
 
-- **Optimize parallel execution**: Run Runnables in parallel using [RunnableParallel](#RunnableParallel) or run multiple inputs through a given chain in parallel using the [Runnable Batch API](/docs/concepts/runnables#batch). Parallel execution can significantly reduce the latency as processing can be done in parallel instead of sequentially.
-- **Guarantee Async support**: Any chain built with LCEL can be run asynchronously using the [Runnable Async API](/docs/concepts/runnables#async-api). This can be useful when running chains in a server environment where you want to handle large number of requests concurrently.
+- **Optimize parallel execution**: Run Runnables in parallel using [RunnableParallel](#runnableparallel) or run multiple inputs through a given chain in parallel using the [Runnable Batch API](/docs/concepts/runnables/#optimized-parallel-execution-batch). Parallel execution can significantly reduce the latency as processing can be done in parallel instead of sequentially.
+- **Guarantee Async support**: Any chain built with LCEL can be run asynchronously using the [Runnable Async API](/docs/concepts/runnables/#asynchronous-support). This can be useful when running chains in a server environment where you want to handle large number of requests concurrently.
 - **Simplify streaming**: LCEL chains can be streamed, allowing for incremental output as the chain is executed. LangChain can optimize the streaming of the output to minimize the time-to-first-token(time elapsed until the first chunk of output from a [chat model](/docs/concepts/chat_models) or [llm](/docs/concepts/text_llms) comes out).
 
 Other benefits include:
