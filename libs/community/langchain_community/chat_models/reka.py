@@ -1,5 +1,4 @@
 import json
-import warnings
 from typing import (
     Any,
     AsyncIterator,
@@ -18,7 +17,7 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.language_models import BaseLanguageModel, LanguageModelInput
+from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
     agenerate_from_stream,
@@ -140,6 +139,7 @@ def convert_to_reka_messages(messages: List[BaseMessage]) -> List[Dict[str, Any]
             raise ValueError(f"Unsupported message type: {type(message)}")
 
     return reka_messages
+
 
 class ChatReka(BaseChatModel):
     """Reka chat large language models."""

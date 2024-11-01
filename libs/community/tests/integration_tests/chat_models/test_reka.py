@@ -8,8 +8,8 @@ from langchain_core.messages import (
     AIMessage,
     BaseMessage,
     HumanMessage,
-    ToolMessage,
     SystemMessage,
+    ToolMessage,
 )
 from langchain_core.outputs import ChatGeneration, LLMResult
 
@@ -182,7 +182,7 @@ def test_reka_system_message() -> None:
     chat = ChatReka(model="reka-flash", verbose=True)
     messages = [
         SystemMessage(content="You are a helpful AI that speaks like Shakespeare."),
-        HumanMessage(content="Tell me about the weather today.")
+        HumanMessage(content="Tell me about the weather today."),
     ]
     response = chat.invoke(messages)
     assert isinstance(response, AIMessage)
@@ -199,16 +199,16 @@ def test_reka_system_message_multi_turn() -> None:
         SystemMessage(content="You are a math tutor who explains concepts simply."),
         HumanMessage(content="What is a prime number?"),
     ]
-    
+
     # First turn
     response1 = chat.invoke(messages)
     assert isinstance(response1, AIMessage)
     messages.append(response1)
-    
+
     # Second turn
     messages.append(HumanMessage(content="Can you give me an example?"))
     response2 = chat.invoke(messages)
     assert isinstance(response2, AIMessage)
-    
+
     logger.debug(f"First response: {response1.content}")
     logger.debug(f"Second response: {response2.content}")

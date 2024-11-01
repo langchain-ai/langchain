@@ -224,11 +224,8 @@ def test_reka_tool_use_with_mocked_response() -> None:
                 {
                     "role": "user",
                     "content": [
-                        {
-                            "type": "text",
-                            "text": "You are a helpful assistant.\nHello"
-                        }
-                    ]
+                        {"type": "text", "text": "You are a helpful assistant.\nHello"}
+                    ],
                 }
             ],
         ),
@@ -246,24 +243,18 @@ def test_reka_tool_use_with_mocked_response() -> None:
                     "content": [
                         {
                             "type": "text",
-                            "text": "You are a helpful assistant.\nWhat is 2+2?"
+                            "text": "You are a helpful assistant.\nWhat is 2+2?",
                         }
-                    ]
+                    ],
                 },
-                {
-                    "role": "assistant",
-                    "content": [{"type": "text", "text": "4"}]
-                },
-                {
-                    "role": "user",
-                    "content": [{"type": "text", "text": "Thanks!"}]
-                },
+                {"role": "assistant", "content": [{"type": "text", "text": "4"}]},
+                {"role": "user", "content": [{"type": "text", "text": "Thanks!"}]},
             ],
         ),
         # Test system message with media content
         (
             [
-                SystemMessage(content="You are a helpful assistant."),
+                SystemMessage(content="Hi."),
                 HumanMessage(
                     content=[
                         {"type": "text", "text": "What's in this image?"},
@@ -280,13 +271,13 @@ def test_reka_tool_use_with_mocked_response() -> None:
                     "content": [
                         {
                             "type": "text",
-                            "text": "You are a helpful assistant.\nWhat's in this image?"
+                            "text": "Hi.\nWhat's in this image?",
                         },
                         {
                             "type": "image_url",
                             "image_url": "https://example.com/image.jpg",
                         },
-                    ]
+                    ],
                 },
             ],
         ),
@@ -308,6 +299,6 @@ def test_multiple_system_messages_error() -> None:
         SystemMessage(content="System message 2"),
         HumanMessage(content="Hello"),
     ]
-    
+
     with pytest.raises(ValueError, match="Multiple system messages are not supported."):
         convert_to_reka_messages(messages)
