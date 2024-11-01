@@ -152,8 +152,7 @@ class CommaSeparatedListOutputParser(ListOutputParser):
         """Return the format instructions for the comma-separated list output."""
         return (
             "Your response should be a list of comma separated values, "
-            "with each value enclosed in double quotes if it contains a comma. "
-            'For example: `"foo, bar", "baz"`'
+            "eg: `foo, bar, baz` or `foo,bar,baz`"
         )
 
     def parse(self, text: str) -> list[str]:
@@ -165,10 +164,14 @@ class CommaSeparatedListOutputParser(ListOutputParser):
         Returns:
             A list of strings.
         """
-        reader = csv.reader(
-            StringIO(text), quotechar='"', delimiter=",", skipinitialspace=True
-        )
-        return [item for sublist in reader for item in sublist]
+        try:
+            reader = csv.reader(
+                StringIO(text), quotechar='"', delimiter=",", skipinitialspace=True
+            )
+            return [item for sublist in reader for item in sublist]
+        except csv.Error:
+            # keep old logic for backup
+            return [part.strip() for part in text.split(",")]
 
     @property
     def _type(self) -> str:
