@@ -112,12 +112,8 @@ class MarkdownifyTransformer(BaseDocumentTransformer):
         """
         Transform a list of documents asynchronously.
         """
-        # This function converts the _atransform_document method into a coroutine
-        # that can be used with asyncio.gather. The _atransform_document
-        # method returns a LangChain Document object, which is not hashable,
-        # so we convert that result into a coroutine, and then gather all of the
-        # coroutines into a list.
-        async def transform_document(document: Document, **kwargs: Any) -> Document:
-            return await self._atransform_document(document, **kwargs)
-
-        return await asyncio.gather(*[transform_document(doc, **kwargs) for doc in documents])
+        # TODO: implement progress tracking using tqdm.asyncio.
+        # See an example here: langchain_community/document_loaders/async_html.py:_lazy_fetch_all()
+        # Link: https://github.com/langchain-ai/langchain/blob/33d445550e649b5de25bb2600b9b86c4b3de1b76/libs/community/langchain_community/document_loaders/async_html.py#L173
+        tasks = [asyncio.create_task(self._atransform_document(document, **kwargs)) for doc in documents]
+        return await asyncio.gather(*tasks)
