@@ -23,10 +23,6 @@ packages:
   - name: langchain-ai21
     repo: langchain-ai/langchain-ai21
     path: libs/ai21
-  - name: langchain-airbyte
-    repo: langchain-ai/langchain
-    path: libs/partners/airbyte
-    disabled: true # dependency issues / stale
   - name: langchain-anthropic
     repo: langchain-ai/langchain
     path: libs/partners/anthropic

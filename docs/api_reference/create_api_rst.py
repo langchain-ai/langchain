@@ -530,7 +530,6 @@ def _out_file_path(package_name: str) -> Path:
 
 def _build_index(dirs: List[str]) -> None:
     custom_names = {
-        "airbyte": "Airbyte",
         "aws": "AWS",
         "ai21": "AI21",
         "ibm": "IBM",
