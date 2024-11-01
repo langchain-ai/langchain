@@ -1,4 +1,4 @@
-# 🦜️🔗 Langchain Neo4j
+# 🦜️🔗 LangChain Neo4j
 
 This package contains the LangChain integration with Neo4j.
 
