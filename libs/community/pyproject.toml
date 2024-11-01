@@ -35,7 +35,7 @@ ignore-words-list = "momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogy
 python = ">=3.9,<4.0"
 langchain-core = "^0.3.14"
 langchain = "^0.3.6"
-SQLAlchemy = ">=1.4,<3"
+SQLAlchemy = ">=1.4,<2.0.36"  # TODO(ccurme): https://github.com/Mause/duckdb_engine/issues/1128
 requests = "^2"
 PyYAML = ">=5.3"
 aiohttp = "^3.8.3"
