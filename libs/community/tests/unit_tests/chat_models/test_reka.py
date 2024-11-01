@@ -16,26 +16,26 @@ from langchain_community.chat_models.reka import (
 os.environ["REKA_API_KEY"] = "dummy_key"
 
 
-@pytest.mark.requires("reka-api")
+@pytest.mark.requires("reka")
 def test_reka_model_param() -> None:
     llm = ChatReka(model="reka-flash")
     assert llm.model == "reka-flash"
 
 
-@pytest.mark.requires("reka-api")
+@pytest.mark.requires("reka")
 def test_reka_model_kwargs() -> None:
     llm = ChatReka(model_kwargs={"foo": "bar"})
     assert llm.model_kwargs == {"foo": "bar"}
 
 
-@pytest.mark.requires("reka-api")
+@pytest.mark.requires("reka")
 def test_reka_incorrect_field() -> None:
     """Test that providing an incorrect field raises ValidationError."""
     with pytest.raises(ValidationError):
         ChatReka(unknown_field="bar")  # type: ignore
 
 
-@pytest.mark.requires("reka-api")
+@pytest.mark.requires("reka")
 def test_reka_initialization() -> None:
     """Test Reka initialization."""
     # Verify that ChatReka can be initialized using a secret key provided
@@ -43,7 +43,7 @@ def test_reka_initialization() -> None:
     ChatReka(model="reka-flash", reka_api_key="test_key")
 
 
-@pytest.mark.requires("reka-api")
+@pytest.mark.requires("reka")
 @pytest.mark.parametrize(
     ("content", "expected"),
     [
@@ -81,7 +81,7 @@ def test_process_content(content: Any, expected: List[Dict[str, Any]]) -> None:
     assert result == expected
 
 
-@pytest.mark.requires("reka-api")
+@pytest.mark.requires("reka")
 @pytest.mark.parametrize(
     ("messages", "expected"),
     [
@@ -130,25 +130,25 @@ def test_convert_to_reka_messages(
     assert result == expected
 
 
-@pytest.mark.requires("reka-api")
+@pytest.mark.requires("reka")
 def test_reka_streaming() -> None:
     llm = ChatReka(streaming=True)
     assert llm.streaming is True
 
 
-@pytest.mark.requires("reka-api")
+@pytest.mark.requires("reka")
 def test_reka_temperature() -> None:
     llm = ChatReka(temperature=0.5)
     assert llm.temperature == 0.5
 
 
-@pytest.mark.requires("reka-api")
+@pytest.mark.requires("reka")
 def test_reka_max_tokens() -> None:
     llm = ChatReka(max_tokens=100)
     assert llm.max_tokens == 100
 
 
-@pytest.mark.requires("reka-api")
+@pytest.mark.requires("reka")
 def test_reka_default_params() -> None:
     llm = ChatReka()
     assert llm._default_params == {
@@ -157,7 +157,7 @@ def test_reka_default_params() -> None:
     }
 
 
-@pytest.mark.requires("reka-api")
+@pytest.mark.requires("reka")
 def test_reka_identifying_params() -> None:
     """Test that ChatReka identifies its default parameters correctly."""
     chat = ChatReka(model="reka-flash", temperature=0.7, max_tokens=256)
@@ -169,15 +169,15 @@ def test_reka_identifying_params() -> None:
     assert chat._default_params == expected_params
 
 
-@pytest.mark.requires("reka-api")
+@pytest.mark.requires("reka")
 def test_reka_llm_type() -> None:
     llm = ChatReka()
     assert llm._llm_type == "reka-chat"
 
 
-@pytest.mark.requires("reka-api")
+@pytest.mark.requires("reka")
 def test_reka_tool_use_with_mocked_response() -> None:
-    with patch("langchain_community.chat_models.reka.Reka") as MockReka:
+    with patch("reka.client.Reka") as MockReka:
         # Mock the Reka client
         mock_client = MockReka.return_value
         mock_chat = MagicMock()

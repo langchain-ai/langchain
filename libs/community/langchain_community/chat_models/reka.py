@@ -141,8 +141,9 @@ def convert_to_reka_messages(messages: List[BaseMessage]) -> List[Dict[str, Any]
 
     return reka_messages
 
+class ChatReka(BaseChatModel):
+    """Reka chat large language models."""
 
-class RekaCommon(BaseLanguageModel):
     client: Any = None  #: :meta private:
     async_client: Any = None  #: :meta private:
     model: str = Field(default=DEFAULT_REKA_MODEL)
@@ -154,6 +155,7 @@ class RekaCommon(BaseLanguageModel):
     reka_api_key: Optional[str] = None
     count_tokens: Optional[Callable[[str], int]] = None
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    model_config = ConfigDict(extra="forbid")
 
     @model_validator(mode="before")
     @classmethod
@@ -192,17 +194,6 @@ class RekaCommon(BaseLanguageModel):
         if self.temperature is not None:
             params["temperature"] = self.temperature
         return {**params, **self.model_kwargs}
-
-
-class ChatReka(BaseChatModel, RekaCommon):
-    """Reka chat large language models."""
-
-    model: str = Field(default=DEFAULT_REKA_MODEL)
-    reka_api_key: Optional[str] = None
-    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
-    temperature: Optional[float] = None
-    max_tokens: int = Field(default=256)
-    model_config = ConfigDict(extra="forbid")
 
     @property
     def _llm_type(self) -> str:
@@ -389,13 +380,10 @@ class ChatReka(BaseChatModel, RekaCommon):
 
         # Ensure tool_choice is one of the allowed options
         if tool_choice not in ("auto", "none", "tool"):
-            warnings.warn(
+            raise ValueError(
                 f"Invalid tool_choice '{tool_choice}' provided. "
-                "Reka model cannot be forced to use this tool name. "
-                "Defaulting to 'tool', which will force the model "
-                "to invoke one or more of the tools it has been passed."
+                "Tool choice must be one of: 'auto', 'none', or 'tool'."
             )
-            tool_choice = "tool"
 
         # Map tool_choice to the parameter expected by the Reka API
         kwargs["tool_choice"] = tool_choice

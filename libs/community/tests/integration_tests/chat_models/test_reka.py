@@ -19,7 +19,7 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
-@pytest.mark.requires("reka-api")
+@pytest.mark.requires("reka")
 @pytest.mark.scheduled
 def test_reka_call() -> None:
     """Test a simple call to Reka."""
@@ -31,7 +31,7 @@ def test_reka_call() -> None:
     logger.debug(f"Response content: {response.content}")
 
 
-@pytest.mark.requires("reka-api")
+@pytest.mark.requires("reka")
 @pytest.mark.scheduled
 def test_reka_generate() -> None:
     """Test the generate method of Reka."""
@@ -50,7 +50,7 @@ def test_reka_generate() -> None:
     assert chat_messages == messages_copy
 
 
-@pytest.mark.requires("reka-api")
+@pytest.mark.requires("reka")
 @pytest.mark.scheduled
 def test_reka_streaming() -> None:
     """Test streaming tokens from Reka."""
@@ -62,7 +62,7 @@ def test_reka_streaming() -> None:
     logger.debug(f"Streaming response content: {response.content}")
 
 
-@pytest.mark.requires("reka-api")
+@pytest.mark.requires("reka")
 @pytest.mark.scheduled
 def test_reka_streaming_callback() -> None:
     """Test that streaming correctly invokes callbacks."""
@@ -79,7 +79,7 @@ def test_reka_streaming_callback() -> None:
     logger.debug(f"Number of LLM streams: {callback_handler.llm_streams}")
 
 
-@pytest.mark.requires("reka-api")
+@pytest.mark.requires("reka")
 @pytest.mark.scheduled
 async def test_reka_async_streaming_callback() -> None:
     """Test asynchronous streaming with callbacks."""
@@ -103,7 +103,7 @@ async def test_reka_async_streaming_callback() -> None:
         logger.debug(f"Async generated response: {response.text}")
 
 
-@pytest.mark.requires("reka-api")
+@pytest.mark.requires("reka")
 @pytest.mark.scheduled
 def test_reka_tool_usage_integration() -> None:
     """Test tool usage with Reka API integration."""
