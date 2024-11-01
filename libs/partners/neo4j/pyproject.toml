@@ -26,7 +26,6 @@ pytest-asyncio = "^0.23.2"
 pytest-socket = "^0.7.0"
 langchain-core = { path = "../../core", develop = true }
 pytest-watcher = "^0.3.4"
-pandas = "^2.2.3"
 
 [tool.poetry.group.codespell]
 optional = true
@@ -48,6 +47,7 @@ ruff = "^0.5"
 [tool.poetry.group.typing.dependencies]
 mypy = "^1.10"
 langchain-core = { path = "../../core", develop = true }
+types-pyyaml = "^6.0.12.20240917"
 
 [tool.poetry.group.dev]
 optional = true

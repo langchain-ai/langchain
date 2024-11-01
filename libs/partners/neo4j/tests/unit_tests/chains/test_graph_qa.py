@@ -1,7 +1,7 @@
 import pathlib
+from csv import DictReader
 from typing import Any, Dict, List
 
-import pandas as pd
 from langchain.chains.graph_qa.prompts import CYPHER_GENERATION_PROMPT, CYPHER_QA_PROMPT
 from langchain.memory import ConversationBufferMemory, ReadOnlySharedMemory
 from langchain_community.graphs.graph_document import GraphDocument
@@ -315,12 +315,12 @@ UNIT_TESTS_ROOT = HERE.parent
 
 def test_validating_cypher_statements() -> None:
     cypher_file = str(UNIT_TESTS_ROOT / "data/cypher_corrector.csv")
-    examples = pd.read_csv(cypher_file)
-    examples.fillna("", inplace=True)
-    for _, row in examples.iterrows():
-        schema = load_schemas(row["schema"])
-        corrector = CypherQueryCorrector(schema)
-        assert corrector(row["statement"]) == row["correct_query"]
+    with open(cypher_file, newline="") as csvfile:
+        csv_reader = DictReader(csvfile)
+        for row in csv_reader:
+            schema = load_schemas(row["schema"])
+            corrector = CypherQueryCorrector(schema)
+            assert corrector(row["statement"]) == row["correct_query"]
 
 
 def load_schemas(str_schemas: str) -> List[Schema]:
