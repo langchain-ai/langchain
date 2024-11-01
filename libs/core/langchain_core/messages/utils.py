@@ -965,7 +965,7 @@ def convert_to_openai_messages(
         if isinstance(message, AIMessage) and message.invalid_tool_calls:
             oai_msg["tool_calls"] = oai_msg.get(
                 "tool_calls", []
-            ) + _convert_to_openai_tool_calls(message.invalid_tool_calls)
+            ) + _convert_to_openai_tool_calls(message.invalid_tool_calls, invalid=True)
         if message.additional_kwargs.get("refusal"):
             oai_msg["refusal"] = message.additional_kwargs["refusal"]
         if isinstance(message, ToolMessage):
