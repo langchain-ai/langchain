@@ -4,7 +4,7 @@ from typing import Any, Dict, List
 from unittest.mock import MagicMock, patch
 
 import pytest
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from pydantic import ValidationError
 
 from langchain_community.chat_models import ChatReka
@@ -208,3 +208,106 @@ def test_reka_tool_use_with_mocked_response() -> None:
         assert tool_calls[0]["function"]["arguments"] == json.dumps(
             {"query": "LangChain"}
         )
+
+
+@pytest.mark.requires("reka")
+@pytest.mark.parametrize(
+    ("messages", "expected"),
+    [
+        # Test single system message
+        (
+            [
+                SystemMessage(content="You are a helpful assistant."),
+                HumanMessage(content="Hello"),
+            ],
+            [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "You are a helpful assistant.\nHello"
+                        }
+                    ]
+                }
+            ],
+        ),
+        # Test system message with multiple messages
+        (
+            [
+                SystemMessage(content="You are a helpful assistant."),
+                HumanMessage(content="What is 2+2?"),
+                AIMessage(content="4"),
+                HumanMessage(content="Thanks!"),
+            ],
+            [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "You are a helpful assistant.\nWhat is 2+2?"
+                        }
+                    ]
+                },
+                {
+                    "role": "assistant",
+                    "content": [{"type": "text", "text": "4"}]
+                },
+                {
+                    "role": "user",
+                    "content": [{"type": "text", "text": "Thanks!"}]
+                },
+            ],
+        ),
+        # Test system message with media content
+        (
+            [
+                SystemMessage(content="You are a helpful assistant."),
+                HumanMessage(
+                    content=[
+                        {"type": "text", "text": "What's in this image?"},
+                        {
+                            "type": "image_url",
+                            "image_url": "https://example.com/image.jpg",
+                        },
+                    ]
+                ),
+            ],
+            [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "You are a helpful assistant.\nWhat's in this image?"
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": "https://example.com/image.jpg",
+                        },
+                    ]
+                },
+            ],
+        ),
+    ],
+)
+def test_system_message_handling(
+    messages: List[BaseMessage], expected: List[Dict[str, Any]]
+) -> None:
+    """Test that system messages are handled correctly."""
+    result = convert_to_reka_messages(messages)
+    assert result == expected
+
+
+@pytest.mark.requires("reka")
+def test_multiple_system_messages_error() -> None:
+    """Test that multiple system messages raise an error."""
+    messages = [
+        SystemMessage(content="System message 1"),
+        SystemMessage(content="System message 2"),
+        HumanMessage(content="Hello"),
+    ]
+    
+    with pytest.raises(ValueError, match="Multiple system messages are not supported."):
+        convert_to_reka_messages(messages)
