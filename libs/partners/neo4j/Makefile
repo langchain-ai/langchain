@@ -56,7 +56,7 @@ check_imports: $(shell find langchain_neo4j -name '*.py')
 
 help:
 	@echo '----'
-	@echo 'check_imports				- check imports'
+	@echo 'check_imports                - check imports'
 	@echo 'format                       - run code formatters'
 	@echo 'lint                         - run linters'
 	@echo 'test                         - run unit tests'
