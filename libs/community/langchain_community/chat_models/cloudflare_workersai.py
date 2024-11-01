@@ -110,7 +110,7 @@ def _get_tool_calls_from_response(response: requests.Response) -> List[ToolCall]
     return tool_calls
 
 
-class CloudflareWorkersAIChatModel(BaseChatModel):
+class ChatCloudflareWorkersAI(BaseChatModel):
     """Custom chat model for Cloudflare Workers AI"""
 
     account_id: str = Field(...)
