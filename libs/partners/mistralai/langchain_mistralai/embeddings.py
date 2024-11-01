@@ -209,7 +209,7 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
             List of embeddings, one for each text.
         """
         try:
-            batch_responses = (
+            batch_responses = [
                 self.client.post(
                     url="/embeddings",
                     json=dict(
@@ -218,14 +218,17 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
                     ),
                 )
                 for batch in self._get_batches(texts)
-            )
-            return [
-                list(map(float, embedding_obj["embedding"]))
-                for response in batch_responses
-                for embedding_obj in response.json()["data"]
             ]
+            embeddings: List[List[float]] = []
+            for response in batch_responses:
+                response.raise_for_status()
+                embeddings.extend(
+                    list(map(float, embedding_obj["embedding"]))
+                    for embedding_obj in response.json()["data"]
+                )
+            return embeddings
         except Exception as e:
-            logger.error(f"An error occurred with MistralAI: {e}")
+            logger.error(f"An error occurred with MistralAI's response format: {e}")
             raise
 
     async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
