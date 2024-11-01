@@ -266,7 +266,8 @@ class ChatLiteLLM(BaseChatModel):
             **self.model_kwargs,
         }
 
-    def get_api_key(self) -> str:
+    @property
+    def _api_key(self) -> str:
         return (
             self.openai_api_key
             or self.azure_api_key
@@ -286,7 +287,7 @@ class ChatLiteLLM(BaseChatModel):
         if self.model_name is not None:
             set_model_value = self.model_name
         self.client.api_base = self.api_base
-        self.client.api_key = self.get_api_key()
+        self.client.api_key = self._api_key
         self.client.organization = self.organization
         creds: Dict[str, Any] = {
             "model": set_model_value,
