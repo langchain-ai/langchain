@@ -12,13 +12,16 @@ from typing import (
     Optional,
     Sequence,
     Tuple,
+    Type,
     TypedDict,
+    TypeVar,
     Union,
     get_origin,
 )
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.callbacks.manager import AsyncCallbackManagerForLLMRun
+from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
 from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
@@ -31,6 +34,9 @@ from pydantic import BaseModel, Field, model_validator
 from typing_extensions import Literal
 
 from langchain_community.adapters.openai import convert_message_to_dict
+
+_BM = TypeVar("_BM", bound=BaseModel)
+_DictOrPydanticClass = Union[Dict[str, Any], Type[_BM], Type]
 
 
 class ChatOutlines(BaseChatModel):
@@ -247,9 +253,9 @@ class ChatOutlines(BaseChatModel):
             check_packages_installed(["transformers", "torch", "datasets"])
             self.client = models.transformers(model_name=model, **self.model_kwargs)
         elif backend == "transformers_vision":
-            from transformers import LlavaNextForConditionalGeneration
-
             if hasattr(models, "transformers_vision"):
+                from transformers import LlavaNextForConditionalGeneration
+
                 self.client = models.transformers_vision(
                     model,
                     model_class=LlavaNextForConditionalGeneration,
@@ -322,17 +328,6 @@ class ChatOutlines(BaseChatModel):
             return generate.cfg(self.client, cfg_str=self.grammar)
         return generate.text(self.client)
 
-    @property
-    def tokenizer(self) -> Any:
-        """Access the tokenizer for the underlying model.
-
-        .encode() to tokenize text.
-        .decode() to convert tokens back to text.
-        """
-        if hasattr(self.client, "tokenizer"):
-            return self.client.tokenizer
-        raise ValueError("Tokenizer not found")
-
     def _convert_messages_to_openai_format(
         self, messages: list[BaseMessage]
     ) -> list[dict]:
@@ -340,10 +335,6 @@ class ChatOutlines(BaseChatModel):
 
     def _convert_messages_to_prompt(self, messages: list[BaseMessage]) -> str:
         """Convert a list of messages to a single prompt."""
-        # if hasattr(self.tokenizer, "apply_chat_template"):
-        #     return self.tokenizer.apply_chat_template(
-        #         messages, tokenize=False, add_generation_prompt=True
-        #     )
         if self.backend == "llamacpp":  # get base_model_name from gguf repo_id
             from huggingface_hub import ModelCard
 
@@ -357,8 +348,6 @@ class ChatOutlines(BaseChatModel):
             model_name = self.model
 
         from transformers import AutoTokenizer
-        # from llama_cpp.llama_tokenizer import LlamaHFTokenizer
-        # LlamaHFTokenizer.from_pretrained(
 
         return AutoTokenizer.from_pretrained(model_name).apply_chat_template(
             self._convert_messages_to_openai_format(messages),
@@ -372,12 +361,7 @@ class ChatOutlines(BaseChatModel):
         *,
         tool_choice: Optional[Union[Dict, bool, str]] = None,
         **kwargs: Any,
-    ) -> Runnable[
-        PromptValue
-        | str
-        | Sequence[Union[BaseMessage, list[str], tuple[str, str], str, dict[str, Any]]],
-        BaseMessage,
-    ]:
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind tool-like objects to this chat model
 
         tool_choice: does not currently support "any", "auto" choices like OpenAI
@@ -418,20 +402,11 @@ class ChatOutlines(BaseChatModel):
 
     def with_structured_output(
         self,
-        schema: Dict | type,
+        schema: Optional[_DictOrPydanticClass],
         *,
         include_raw: bool = False,
         **kwargs: Any,
-    ) -> Runnable[
-        Union[
-            PromptValue,
-            str,
-            Sequence[
-                Union[BaseMessage, list[str], tuple[str, str], str, dict[str, Any]]
-            ],
-        ],
-        Union[dict, BaseModel],
-    ]:
+    ) -> Runnable[LanguageModelInput, Union[dict, BaseModel]]:
         if get_origin(schema) is TypedDict:
             raise NotImplementedError("TypedDict is not supported yet by Outlines")
 
@@ -444,14 +419,8 @@ class ChatOutlines(BaseChatModel):
         else:
             parser = JsonOutputParser()
 
-        if include_raw:
-            return self | {
-                "raw": RunnablePassthrough(),
-                "parsed": parser,
-                "parsing_error": RunnableLambda(
-                    lambda x: None,  # todo add errors
-                ),
-            }
+        if include_raw:  # TODO
+            raise NotImplementedError("include_raw is not yet supported")
 
         return self | parser
 
@@ -467,7 +436,6 @@ class ChatOutlines(BaseChatModel):
             params["stop_at"] = stop
 
         prompt = self._convert_messages_to_prompt(messages)
-        # todo? stop = return assistant token mask
 
         response = ""
         if self.streaming:
