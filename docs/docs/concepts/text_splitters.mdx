@@ -105,14 +105,6 @@ Examples of structure-based splitting:
 - **JSON**: Split by object or array elements
 - **Code**: Split by functions, classes, or logical blocks
 
-Example implementation using LangChain's `ExperimentalMarkdownSyntaxTextSplitter`:
-
-```python
-from langchain_text_splitters import ExperimentalMarkdownSyntaxTextSplitter
-text_splitter = ExperimentalMarkdownSyntaxTextSplitter()
-texts = text_splitter.split_text(document)
-```
-
 :::info[Further reading]
 
 * See the how-to guide for [Markdown splitting](/docs/how_to/markdown_header_metadata_splitter/).
