@@ -890,7 +890,7 @@ class Neo4jVector(VectorStore):
 
         import_query = (
             "UNWIND $data AS row "
-            "CALL { WITH row "
+            "CALL (row) { WITH row "
             f"MERGE (c:`{self.node_label}` {{id: row.id}}) "
             "WITH c, row "
             f"CALL db.create.setNodeVectorProperty(c, "
