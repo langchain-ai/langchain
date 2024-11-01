@@ -95,16 +95,31 @@ jobs:
           PKG_NAME: ${{ needs.build.outputs.pkg-name }}
           VERSION: ${{ needs.build.outputs.version }}
         run: |
-          REGEX="^$PKG_NAME==\\d+\\.\\d+\\.\\d+\$"
-          echo $REGEX
-          PREV_TAG=$(git tag --sort=-creatordate | grep -P $REGEX || true | head -1)
+          PREV_TAG="${curr_version%.*}.$(( ${curr_version##*.} - 1 ))"; [[ "${curr_version##*.}" -eq 0 ]] && PREV_TAG=""
+
+          # backup case if releasing e.g. 0.3.0, looks up last release
+          # note if last release (chronologically) was e.g. 0.1.47 it will get 
+          # that instead of the last 0.2 release
+          if [ -z "$PREV_TAG" ]; then
+            REGEX="^$PKG_NAME==\\d+\\.\\d+\\.\\d+\$"
+            echo $REGEX
+            PREV_TAG=$(git tag --sort=-creatordate | grep -P $REGEX || true | head -1)
+          fi
+
+          # confirm prev-tag actually exists in git repo with git tag
+          if [ -z git tag -l $PREV_TAG ]; then
+            echo "Previous tag $PREV_TAG not found in git repo"
+            exit 1
+          fi
+
+
           TAG="${PKG_NAME}==${VERSION}"
           if [ "$TAG" == "$PREV_TAG" ]; then
             echo "No new version to release"
             exit 1
           fi
           echo tag="$TAG" >> $GITHUB_OUTPUT
-          echo prev-tag="$PREV_TAG" >> $GITHUB_OUTPUT
+          echo prev-tag="$PKG_NAME==$last_version" >> $GITHUB_OUTPUT
       - name: Generate release body
         id: generate-release-body
         working-directory: langchain
