@@ -10,7 +10,7 @@ DEFAULT_BASE_URL = "https://text.octoai.run/v1/"
 DEFAULT_MODEL = "codellama-7b-instruct"
 
 
-class OctoAIEndpoint(BaseOpenAI):
+class OctoAIEndpoint(BaseOpenAI):  # type: ignore[override]
     """OctoAI LLM Endpoints - OpenAI compatible.
 
     OctoAIEndpoint is a class to interact with OctoAI Compute Service large
@@ -102,7 +102,7 @@ class OctoAIEndpoint(BaseOpenAI):
             else:
                 values["openai_api_base"] = values["octoai_api_base"]
                 values["openai_api_key"] = values["octoai_api_token"].get_secret_value()
-                values["client"] = openai.Completion
+                values["client"] = openai.Completion  # type: ignore[attr-defined]
         except ImportError:
             raise ImportError(
                 "Could not import openai python package. "

@@ -20,6 +20,18 @@ First-party Databricks integrations are available in the langchain-databricks pa
 pip install langchain-databricks
 ```
 
+🚧 Upcoming Package Consolidation Notice
+
+This package (`langchain-databricks`) will soon be consolidated into a new package: `databricks-langchain`. The new package will serve as the primary hub for all Databricks Langchain integrations.
+
+What’s Changing?
+In the coming months, `databricks-langchain` will include all features currently in `langchain-databricks`, as well as additional integrations to provide a unified experience for Databricks users.
+
+What You Need to Know
+For now, continue to use `langchain-databricks` as usual. When `databricks-langchain` is ready, we’ll provide clear migration instructions to make the transition seamless. During the transition period, `langchain-databricks` will remain operational, and updates will be shared here with timelines and guidance.
+
+Thank you for your support as we work toward an improved, streamlined experience!
+
 Chat Model
 ----------
 
@@ -39,7 +51,7 @@ LLM
 `Databricks` is an LLM class to access completion endpoints hosted on Databricks.
 
 :::caution
-Text completion models have been deprecated and the latest and most popular models are [chat completion models](/docs/concepts/#chat-models). Use `ChatDatabricks` chat model instead to use those models and advanced features such as tool calling.
+Text completion models have been deprecated and the latest and most popular models are [chat completion models](/docs/concepts/chat_models). Use `ChatDatabricks` chat model instead to use those models and advanced features such as tool calling.
 :::
 
 ```
@@ -113,7 +125,7 @@ See [Databricks SQL Agent](https://docs.databricks.com/en/large-language-models/
 Open Models
 -----------
 
-To directly integrate Databricks's open models hosted on HuggingFace, you can use the [HuggingFace Integration](/docs/integrations/platforms/huggingface) of LangChain.
+To directly integrate Databricks's open models hosted on HuggingFace, you can use the [HuggingFace Integration](/docs/integrations/providers/huggingface) of LangChain.
 
 ```
 from langchain_huggingface import HuggingFaceEndpoint

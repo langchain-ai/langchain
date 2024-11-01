@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import logging
 from abc import abstractmethod
 from collections.abc import AsyncIterable, Collection, Iterable, Iterator
 from typing import (
     Any,
     ClassVar,
     Optional,
+    Sequence,
 )
 
 from langchain_core._api import beta
@@ -20,6 +22,8 @@ from langchain_core.vectorstores import VectorStore, VectorStoreRetriever
 from pydantic import Field
 
 from langchain_community.graph_vectorstores.links import METADATA_LINKS_KEY, Link
+
+logger = logging.getLogger(__name__)
 
 
 def _has_next(iterator: Iterator) -> bool:
@@ -158,6 +162,7 @@ class GraphVectorStore(VectorStore):
 
         Args:
             nodes: the nodes to add.
+            **kwargs: Additional keyword arguments.
         """
 
     async def aadd_nodes(
@@ -169,6 +174,7 @@ class GraphVectorStore(VectorStore):
 
         Args:
             nodes: the nodes to add.
+            **kwargs: Additional keyword arguments.
         """
         iterator = iter(await run_in_executor(None, self.add_nodes, nodes, **kwargs))
         done = object()
@@ -186,7 +192,7 @@ class GraphVectorStore(VectorStore):
         ids: Optional[Iterable[str]] = None,
         **kwargs: Any,
     ) -> list[str]:
-        """Run more texts through the embeddings and add to the vectorstore.
+        """Run more texts through the embeddings and add to the vector store.
 
         The Links present in the metadata field `links` will be extracted to create
         the `Node` links.
@@ -214,15 +220,15 @@ class GraphVectorStore(VectorStore):
             )
 
         Args:
-            texts: Iterable of strings to add to the vectorstore.
+            texts: Iterable of strings to add to the vector store.
             metadatas: Optional list of metadatas associated with the texts.
                 The metadata key `links` shall be an iterable of
                 :py:class:`~langchain_community.graph_vectorstores.links.Link`.
             ids: Optional list of IDs associated with the texts.
-            **kwargs: vectorstore specific parameters.
+            **kwargs: vector store specific parameters.
 
         Returns:
-            List of ids from adding the texts into the vectorstore.
+            List of ids from adding the texts into the vector store.
         """
         nodes = _texts_to_nodes(texts, metadatas, ids)
         return list(self.add_nodes(nodes, **kwargs))
@@ -235,7 +241,7 @@ class GraphVectorStore(VectorStore):
         ids: Optional[Iterable[str]] = None,
         **kwargs: Any,
     ) -> list[str]:
-        """Run more texts through the embeddings and add to the vectorstore.
+        """Run more texts through the embeddings and add to the vector store.
 
         The Links present in the metadata field `links` will be extracted to create
         the `Node` links.
@@ -263,15 +269,15 @@ class GraphVectorStore(VectorStore):
             )
 
         Args:
-            texts: Iterable of strings to add to the vectorstore.
+            texts: Iterable of strings to add to the vector store.
             metadatas: Optional list of metadatas associated with the texts.
                 The metadata key `links` shall be an iterable of
                 :py:class:`~langchain_community.graph_vectorstores.links.Link`.
             ids: Optional list of IDs associated with the texts.
-            **kwargs: vectorstore specific parameters.
+            **kwargs: vector store specific parameters.
 
         Returns:
-            List of ids from adding the texts into the vectorstore.
+            List of ids from adding the texts into the vector store.
         """
         nodes = _texts_to_nodes(texts, metadatas, ids)
         return [_id async for _id in self.aadd_nodes(nodes, **kwargs)]
@@ -281,7 +287,7 @@ class GraphVectorStore(VectorStore):
         documents: Iterable[Document],
         **kwargs: Any,
     ) -> list[str]:
-        """Run more documents through the embeddings and add to the vectorstore.
+        """Run more documents through the embeddings and add to the vector store.
 
         The Links present in the document metadata field `links` will be extracted to
         create the `Node` links.
@@ -316,7 +322,7 @@ class GraphVectorStore(VectorStore):
             )
 
         Args:
-            documents: Documents to add to the vectorstore.
+            documents: Documents to add to the vector store.
                 The document's metadata key `links` shall be an iterable of
                 :py:class:`~langchain_community.graph_vectorstores.links.Link`.
 
@@ -331,7 +337,7 @@ class GraphVectorStore(VectorStore):
         documents: Iterable[Document],
         **kwargs: Any,
     ) -> list[str]:
-        """Run more documents through the embeddings and add to the vectorstore.
+        """Run more documents through the embeddings and add to the vector store.
 
         The Links present in the document metadata field `links` will be extracted to
         create the `Node` links.
@@ -366,7 +372,7 @@ class GraphVectorStore(VectorStore):
             )
 
         Args:
-            documents: Documents to add to the vectorstore.
+            documents: Documents to add to the vector store.
                 The document's metadata key `links` shall be an iterable of
                 :py:class:`~langchain_community.graph_vectorstores.links.Link`.
 
@@ -383,6 +389,7 @@ class GraphVectorStore(VectorStore):
         *,
         k: int = 4,
         depth: int = 1,
+        filter: dict[str, Any] | None = None,  # noqa: A002
         **kwargs: Any,
     ) -> Iterable[Document]:
         """Retrieve documents from traversing this graph store.
@@ -396,8 +403,10 @@ class GraphVectorStore(VectorStore):
             k: The number of Documents to return from the initial search.
                 Defaults to 4. Applies to each of the query strings.
             depth: The maximum depth of edges to traverse. Defaults to 1.
+            filter: Optional metadata to filter the results.
+            **kwargs: Additional keyword arguments.
         Returns:
-            Retrieved documents.
+            Collection of retrieved documents.
         """
 
     async def atraversal_search(
@@ -406,6 +415,7 @@ class GraphVectorStore(VectorStore):
         *,
         k: int = 4,
         depth: int = 1,
+        filter: dict[str, Any] | None = None,  # noqa: A002
         **kwargs: Any,
     ) -> AsyncIterable[Document]:
         """Retrieve documents from traversing this graph store.
@@ -419,12 +429,20 @@ class GraphVectorStore(VectorStore):
             k: The number of Documents to return from the initial search.
                 Defaults to 4. Applies to each of the query strings.
             depth: The maximum depth of edges to traverse. Defaults to 1.
+            filter: Optional metadata to filter the results.
+            **kwargs: Additional keyword arguments.
         Returns:
-            Retrieved documents.
+            Collection of retrieved documents.
         """
         iterator = iter(
             await run_in_executor(
-                None, self.traversal_search, query, k=k, depth=depth, **kwargs
+                None,
+                self.traversal_search,
+                query,
+                k=k,
+                depth=depth,
+                filter=filter,
+                **kwargs,
             )
         )
         done = object()
@@ -439,12 +457,14 @@ class GraphVectorStore(VectorStore):
         self,
         query: str,
         *,
+        initial_roots: Sequence[str] = (),
         k: int = 4,
         depth: int = 2,
         fetch_k: int = 100,
         adjacent_k: int = 10,
         lambda_mult: float = 0.5,
         score_threshold: float = float("-inf"),
+        filter: dict[str, Any] | None = None,  # noqa: A002
         **kwargs: Any,
     ) -> Iterable[Document]:
         """Retrieve documents from this graph store using MMR-traversal.
@@ -459,6 +479,10 @@ class GraphVectorStore(VectorStore):
 
         Args:
             query: The query string to search for.
+            initial_roots: Optional list of document IDs to use for initializing search.
+                The top `adjacent_k` nodes adjacent to each initial root will be
+                included in the set of initial candidates. To fetch only in the
+                neighborhood of these nodes, set `fetch_k = 0`.
             k: Number of Documents to return. Defaults to 4.
             fetch_k: Number of Documents to fetch via similarity.
                 Defaults to 100.
@@ -471,18 +495,22 @@ class GraphVectorStore(VectorStore):
                 diversity and 1 to minimum diversity. Defaults to 0.5.
             score_threshold: Only documents with a score greater than or equal
                 this threshold will be chosen. Defaults to negative infinity.
+            filter: Optional metadata to filter the results.
+            **kwargs: Additional keyword arguments.
         """
 
     async def ammr_traversal_search(
         self,
         query: str,
         *,
+        initial_roots: Sequence[str] = (),
         k: int = 4,
         depth: int = 2,
         fetch_k: int = 100,
         adjacent_k: int = 10,
         lambda_mult: float = 0.5,
         score_threshold: float = float("-inf"),
+        filter: dict[str, Any] | None = None,  # noqa: A002
         **kwargs: Any,
     ) -> AsyncIterable[Document]:
         """Retrieve documents from this graph store using MMR-traversal.
@@ -497,6 +525,10 @@ class GraphVectorStore(VectorStore):
 
         Args:
             query: The query string to search for.
+            initial_roots: Optional list of document IDs to use for initializing search.
+                The top `adjacent_k` nodes adjacent to each initial root will be
+                included in the set of initial candidates. To fetch only in the
+                neighborhood of these nodes, set `fetch_k = 0`.
             k: Number of Documents to return. Defaults to 4.
             fetch_k: Number of Documents to fetch via similarity.
                 Defaults to 100.
@@ -509,18 +541,22 @@ class GraphVectorStore(VectorStore):
                 diversity and 1 to minimum diversity. Defaults to 0.5.
             score_threshold: Only documents with a score greater than or equal
                 this threshold will be chosen. Defaults to negative infinity.
+            filter: Optional metadata to filter the results.
+            **kwargs: Additional keyword arguments.
         """
         iterator = iter(
             await run_in_executor(
                 None,
                 self.mmr_traversal_search,
                 query,
+                initial_roots=initial_roots,
                 k=k,
                 fetch_k=fetch_k,
                 adjacent_k=adjacent_k,
                 depth=depth,
                 lambda_mult=lambda_mult,
                 score_threshold=score_threshold,
+                filter=filter,
                 **kwargs,
             )
         )
@@ -544,6 +580,11 @@ class GraphVectorStore(VectorStore):
         lambda_mult: float = 0.5,
         **kwargs: Any,
     ) -> list[Document]:
+        if kwargs.get("depth", 0) > 0:
+            logger.warning(
+                "'mmr' search started with depth > 0. "
+                "Maybe you meant to do a 'mmr_traversal' search?"
+            )
         return list(
             self.mmr_traversal_search(
                 query, k=k, fetch_k=fetch_k, lambda_mult=lambda_mult, depth=0
@@ -573,7 +614,7 @@ class GraphVectorStore(VectorStore):
             raise ValueError(
                 f"search_type of {search_type} not allowed. Expected "
                 "search_type to be 'similarity', 'similarity_score_threshold', "
-                "'mmr' or 'traversal'."
+                "'mmr', 'traversal', or 'mmr_traversal'."
             )
 
     async def asearch(
@@ -590,11 +631,13 @@ class GraphVectorStore(VectorStore):
             return await self.amax_marginal_relevance_search(query, **kwargs)
         elif search_type == "traversal":
             return [doc async for doc in self.atraversal_search(query, **kwargs)]
+        elif search_type == "mmr_traversal":
+            return [doc async for doc in self.ammr_traversal_search(query, **kwargs)]
         else:
             raise ValueError(
                 f"search_type of {search_type} not allowed. Expected "
                 "search_type to be 'similarity', 'similarity_score_threshold', "
-                "'mmr' or 'traversal'."
+                "'mmr', 'traversal', or 'mmr_traversal'."
             )
 
     def as_retriever(self, **kwargs: Any) -> GraphVectorStoreRetriever:
@@ -606,13 +649,14 @@ class GraphVectorStore(VectorStore):
 
                 - search_type (Optional[str]): Defines the type of search that
                   the Retriever should perform.
-                  Can be ``traversal`` (default), ``similarity``, ``mmr``, or
-                  ``similarity_score_threshold``.
+                  Can be ``traversal`` (default), ``similarity``, ``mmr``,
+                   ``mmr_traversal``, or ``similarity_score_threshold``.
                 - search_kwargs (Optional[Dict]): Keyword arguments to pass to the
                   search function. Can include things like:
 
                   - k(int): Amount of documents to return (Default: 4).
                   - depth(int): The maximum depth of edges to traverse (Default: 1).
+                    Only applies to search_type: ``traversal`` and ``mmr_traversal``.
                   - score_threshold(float): Minimum relevance threshold
                     for similarity_score_threshold.
                   - fetch_k(int): Amount of documents to pass to MMR algorithm
@@ -629,21 +673,21 @@ class GraphVectorStore(VectorStore):
             # Retrieve documents traversing edges
             docsearch.as_retriever(
                 search_type="traversal",
-                search_kwargs={'k': 6, 'depth': 3}
+                search_kwargs={'k': 6, 'depth': 2}
             )
 
-            # Retrieve more documents with higher diversity
+            # Retrieve documents with higher diversity
             # Useful if your dataset has many similar documents
             docsearch.as_retriever(
-                search_type="mmr",
-                search_kwargs={'k': 6, 'lambda_mult': 0.25}
+                search_type="mmr_traversal",
+                search_kwargs={'k': 6, 'lambda_mult': 0.25, 'depth': 2}
             )
 
             # Fetch more documents for the MMR algorithm to consider
             # But only return the top 5
             docsearch.as_retriever(
-                search_type="mmr",
-                search_kwargs={'k': 5, 'fetch_k': 50}
+                search_type="mmr_traversal",
+                search_kwargs={'k': 5, 'fetch_k': 50, 'depth': 2}
             )
 
             # Only retrieve documents that have a relevance score
@@ -657,7 +701,7 @@ class GraphVectorStore(VectorStore):
             docsearch.as_retriever(search_kwargs={'k': 1})
 
         """
-        return GraphVectorStoreRetriever(vectorstore=self, **kwargs)
+        return GraphVectorStoreRetriever(vector_store=self, **kwargs)
 
 
 @beta(message="Added in version 0.3.1 of langchain_community. API subject to change.")
@@ -744,7 +788,7 @@ class GraphVectorStoreRetriever(VectorStoreRetriever):
     Passing search parameters
     -------------------------
 
-    We can pass parameters to the underlying graph vectorstore's search methods using
+    We can pass parameters to the underlying graph vector store's search methods using
     ``search_kwargs``.
 
     Specifying graph traversal depth
@@ -793,7 +837,7 @@ class GraphVectorStoreRetriever(VectorStoreRetriever):
         retriever = graph_vectorstore.as_retriever(search_kwargs={"score_threshold": 0.5})
     """  # noqa: E501
 
-    vectorstore: GraphVectorStore
+    vector_store: GraphVectorStore
     """GraphVectorStore to use for retrieval."""
     search_type: str = "traversal"
     """Type of search to perform. Defaults to "traversal"."""
@@ -809,10 +853,10 @@ class GraphVectorStoreRetriever(VectorStoreRetriever):
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> list[Document]:
         if self.search_type == "traversal":
-            return list(self.vectorstore.traversal_search(query, **self.search_kwargs))
+            return list(self.vector_store.traversal_search(query, **self.search_kwargs))
         elif self.search_type == "mmr_traversal":
             return list(
-                self.vectorstore.mmr_traversal_search(query, **self.search_kwargs)
+                self.vector_store.mmr_traversal_search(query, **self.search_kwargs)
             )
         else:
             return super()._get_relevant_documents(query, run_manager=run_manager)
@@ -823,14 +867,14 @@ class GraphVectorStoreRetriever(VectorStoreRetriever):
         if self.search_type == "traversal":
             return [
                 doc
-                async for doc in self.vectorstore.atraversal_search(
+                async for doc in self.vector_store.atraversal_search(
                     query, **self.search_kwargs
                 )
             ]
         elif self.search_type == "mmr_traversal":
             return [
                 doc
-                async for doc in self.vectorstore.ammr_traversal_search(
+                async for doc in self.vector_store.ammr_traversal_search(
                     query, **self.search_kwargs
                 )
             ]
