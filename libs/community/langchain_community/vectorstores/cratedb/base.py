@@ -260,7 +260,7 @@ class CrateDBVectorStore(PGVector):
                     page_content=result.EmbeddingStore.document,
                     metadata=result.EmbeddingStore.cmetadata,
                 ),
-                result._score if self.embedding_function is not None else None,
+                result.similarity if self.embedding_function is not None else None,
             )
             for result in results
         ]
@@ -324,15 +324,22 @@ class CrateDBVectorStore(PGVector):
             results: List[Any] = (
                 session.query(  # type: ignore[attr-defined]
                     self.EmbeddingStore,
-                    # FIXME: Using `_score` is definitively the wrong choice.
-                    #        - https://github.com/crate-workbench/langchain/issues/19
-                    #        - https://github.com/crate/crate/issues/15835
                     # TODO: Original pgvector code uses `self.distance_strategy`.
                     #       CrateDB currently only supports EUCLIDEAN.
                     #       self.distance_strategy(embedding).label("distance")
-                    sqlalchemy.literal_column(
-                        f"{self.EmbeddingStore.__tablename__}._score"
-                    ).label("_score"),
+                    sqlalchemy.func.vector_similarity(
+                        self.EmbeddingStore.embedding,
+                        # TODO: Just reference the `embedding` symbol here, don't
+                        #       serialize its value prematurely.
+                        #       https://github.com/crate/crate/issues/16912
+                        #
+                        # Until that got fixed, marshal the arguments to
+                        # `vector_similarity()` manually, in order to work around
+                        # this edge case bug. We don't need to use JSON marshalling,
+                        # because Python's string representation of a list is just
+                        # right.
+                        sqlalchemy.text(str(embedding)),
+                    ).label("similarity"),
                 )
                 .filter(filter_by)
                 # CrateDB applies `KNN_MATCH` within the `WHERE` clause.
@@ -341,7 +348,7 @@ class CrateDBVectorStore(PGVector):
                         self.EmbeddingStore.embedding, embedding, k
                     )
                 )
-                .order_by(sqlalchemy.desc("_score"))
+                .order_by(sqlalchemy.desc("similarity"))
                 .join(
                     self.CollectionStore,
                     self.EmbeddingStore.collection_id == self.CollectionStore.uuid,
@@ -450,7 +457,7 @@ class CrateDBVectorStore(PGVector):
             )
 
     @staticmethod
-    def _euclidean_relevance_score_fn(score: float) -> float:
+    def _euclidean_relevance_score_fn(similarity: float) -> float:
         """Return a similarity score on a scale [0, 1]."""
         # The 'correct' relevance function
         # may differ depending on a few things, including:
@@ -465,4 +472,4 @@ class CrateDBVectorStore(PGVector):
 
         # Original:
         # return 1.0 - distance / math.sqrt(2)
-        return score / math.sqrt(2)
+        return similarity / math.sqrt(2)

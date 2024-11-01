@@ -232,7 +232,7 @@ def test_cratedb_with_metadatas_with_scores() -> None:
         pre_delete_collection=True,
     )
     output = docsearch.similarity_search_with_score("foo", k=1)
-    assert output == [(Document(page_content="foo", metadata={"page": "0"}), 2.0)]
+    assert output == [(Document(page_content="foo", metadata={"page": "0"}), 1.0)]
 
 
 def test_cratedb_with_filter_match() -> None:
@@ -250,9 +250,7 @@ def test_cratedb_with_filter_match() -> None:
     # TODO: Original:
     #       assert output == [(Document(page_content="foo", metadata={"page": "0"}), 0.0)]  # noqa: E501
     output = docsearch.similarity_search_with_score("foo", k=1, filter={"page": "0"})
-    assert output == [
-        (Document(page_content="foo", metadata={"page": "0"}), pytest.approx(2.2, 0.3))
-    ]
+    assert output == [(Document(page_content="foo", metadata={"page": "0"}), 1.0)]
 
 
 def test_cratedb_with_filter_distant_match() -> None:
@@ -269,9 +267,7 @@ def test_cratedb_with_filter_distant_match() -> None:
     )
     output = docsearch.similarity_search_with_score("foo", k=2, filter={"page": "2"})
     # Original score value: 0.0013003906671379406
-    assert output == [
-        (Document(page_content="baz", metadata={"page": "2"}), pytest.approx(1.5, 0.2))
-    ]
+    assert output == [(Document(page_content="baz", metadata={"page": "2"}), 0.2)]
 
 
 def test_cratedb_with_filter_no_match() -> None:
@@ -425,8 +421,8 @@ def test_cratedb_with_filter_in_set() -> None:
     )
     # Original score values: 0.0, 0.0013003906671379406
     assert output == [
-        (Document(page_content="foo", metadata={"page": "0"}), pytest.approx(3.0, 0.1)),
-        (Document(page_content="baz", metadata={"page": "2"}), pytest.approx(2.2, 0.1)),
+        (Document(page_content="foo", metadata={"page": "0"}), 1.0),
+        (Document(page_content="baz", metadata={"page": "2"}), 0.2),
     ]
 
 
@@ -474,9 +470,9 @@ def test_cratedb_relevance_score() -> None:
     output = docsearch.similarity_search_with_relevance_scores("foo", k=3)
     # Original score values: 1.0, 0.9996744261675065, 0.9986996093328621
     assert output == [
-        (Document(page_content="foo", metadata={"page": "0"}), pytest.approx(1.4, 0.1)),
-        (Document(page_content="bar", metadata={"page": "1"}), pytest.approx(1.1, 0.1)),
-        (Document(page_content="baz", metadata={"page": "2"}), pytest.approx(0.8, 0.1)),
+        (Document(page_content="foo", metadata={"page": "0"}), 0.7071067811865475),
+        (Document(page_content="bar", metadata={"page": "1"}), 0.35355339059327373),
+        (Document(page_content="baz", metadata={"page": "2"}), 0.1414213562373095),
     ]
 
 
@@ -495,9 +491,9 @@ def test_cratedb_retriever_search_threshold() -> None:
 
     retriever = docsearch.as_retriever(
         search_type="similarity_score_threshold",
-        search_kwargs={"k": 3, "score_threshold": 0.999},
+        search_kwargs={"k": 3, "score_threshold": 0.35},  # Original value: 0.999
     )
-    output = retriever.get_relevant_documents("summer")
+    output = retriever.invoke("summer")
     assert output == [
         Document(page_content="foo", metadata={"page": "0"}),
         Document(page_content="bar", metadata={"page": "1"}),
@@ -522,7 +518,7 @@ def test_cratedb_retriever_search_threshold_custom_normalization_fn() -> None:
         search_type="similarity_score_threshold",
         search_kwargs={"k": 3, "score_threshold": 0.5},
     )
-    output = retriever.get_relevant_documents("foo")
+    output = retriever.invoke("foo")
     assert output == []
 
 
@@ -551,7 +547,7 @@ def test_cratedb_max_marginal_relevance_search_with_score() -> None:
         pre_delete_collection=True,
     )
     output = docsearch.max_marginal_relevance_search_with_score("foo", k=1, fetch_k=3)
-    assert output == [(Document(page_content="foo"), 2.0)]
+    assert output == [(Document(page_content="foo"), 1.0)]
 
 
 def test_cratedb_multicollection_search_success() -> None:
