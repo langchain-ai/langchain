@@ -141,7 +141,7 @@ See [how to pass run time values to tools](/docs/how_to/tool_runtime/) for more 
 
 You can use the `RunnableConfig` object to pass custom run time values to tools.
 
-If you need to access the [RunnableConfig](/docs/concepts/runnables/#RunnableConfig) object from within a tool. This can be done by using the `RunnableConfig` annotation in the tool's function signature.
+If you need to access the [RunnableConfig](/docs/concepts/runnables/#runnableconfig) object from within a tool. This can be done by using the `RunnableConfig` annotation in the tool's function signature.
 
 ```python
 from langchain_core.runnables import RunnableConfig
@@ -160,7 +160,7 @@ The `config` will not be part of the tool's schema and will be injected at runti
 :::note
 You may need to access the `config` object to manually propagate it to subclass. This happens if you're working with python 3.9 / 3.10 in an [async](/docs/concepts/async) environment and need to manually propagate the `config` object to sub-calls.
 
-Please read [Propagation RunnableConfig](/docs/concepts/runnables#propagation-RunnableConfig) for more details to learn how to propagate the `RunnableConfig` down the call chain manually (or upgrade to Python 3.11 where this is no longer an issue).
+Please read [Propagation RunnableConfig](/docs/concepts/runnables/#propagation-of-runnableconfig) for more details to learn how to propagate the `RunnableConfig` down the call chain manually (or upgrade to Python 3.11 where this is no longer an issue).
 :::
 
 ### InjectedState
