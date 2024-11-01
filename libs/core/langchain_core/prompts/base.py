@@ -399,6 +399,74 @@ def _get_document_info(doc: Document, prompt: BasePromptTemplate[str]) -> dict:
         )
     return {k: base_info[k] for k in prompt.input_variables}
 
+def evaluate_rag_result(generated_response, query, expected_facts):
+    """
+    Evaluate the RAG result based on various criteria.
+    
+    Parameters:
+    - generated_response (str): The output from the RAG model.
+    - query (str): The original input query.
+    - expected_facts (list): A list of facts that should be present in the response.
+    
+    Returns:
+    - evaluation (dict): A dictionary containing scores for each criterion.
+    """
+    
+    evaluation = {
+        "Relevance": evaluate_relevance(generated_response, query),
+        "Accuracy": evaluate_accuracy(generated_response, expected_facts),
+        "Coherence": evaluate_coherence(generated_response),
+        "Completeness": evaluate_completeness(generated_response, expected_facts),
+        "Conciseness": evaluate_conciseness(generated_response),
+        "Engagement": evaluate_engagement(generated_response),
+        "Contextual Understanding": evaluate_contextual_understanding(generated_response)
+    }
+    
+    return evaluation
+
+def evaluate_relevance(response, query):
+    return 1 if query.lower() in response.lower() else 0
+
+def evaluate_accuracy(response, expected_facts):
+    return sum(1 for fact in expected_facts if fact.lower() in response.lower()) / len(expected_facts)
+
+def evaluate_coherence(response):
+    sentences = response.split('.')
+    return len(sentences) / max(1, len(sentences))
+
+def evaluate_completeness(response, expected_facts):
+    return sum(1 for fact in expected_facts if fact.lower() in response.lower()) / len(expected_facts)
+
+def evaluate_conciseness(response):
+    word_count = len(response.split())
+    return 1 if word_count < 100 else 0
+
+def evaluate_engagement(response):
+    return 1 if '?' in response or 'interesting' in response else 0
+
+def evaluate_contextual_understanding(response):
+    return 1 if 'context' in response else 0
+
+def evallama(query,expected_facts_input):
+    # ANSI escape codes for coloring
+    GREEN = "\033[92m"
+    RED = "\033[91m"
+    RESET = "\033[0m"
+
+    # Interactive part of the script
+    print("RAG Result Evaluation\n" + "-" * 30)
+    generated_response = after_rag_chain.invoke(query)
+    expected_facts = [fact.strip() for fact in expected_facts_input.split(',')]
+    evaluation_results = evaluate_rag_result(generated_response, query, expected_facts)
+    print(generated_response)
+    print("RAG Result Evaluation\n" + "-" * 30)
+    # Print evaluation results with colors
+    print("\nEvaluation Results:")
+    for criterion, score in evaluation_results.items():
+        if score >= 0.5:
+            print(f"{GREEN}{criterion}: {score:.2f}{RESET}")
+        else:
+            print(f"{RED}{criterion}: {score:.2f}{RESET}")
 
 def format_document(doc: Document, prompt: BasePromptTemplate[str]) -> str:
     """Format a document into a string based on a prompt template.
