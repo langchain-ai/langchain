@@ -73,7 +73,7 @@ Vector Search
 Databricks Vector Search is a serverless similarity search engine that allows you to store a vector representation of your data, including metadata, in a vector database. With Vector Search, you can create auto-updating vector search indexes from [Delta](https://docs.databricks.com/en/introduction/delta-comparison.html) tables managed by [Unity Catalog](https://www.databricks.com/product/unity-catalog) and query them with a simple API to return the most similar vectors.
 
 ```
-from databricks_langchain.vectorstores import DatabricksVectorSearch
+from databricks_langchain import DatabricksVectorSearch
 
 dvs = DatabricksVectorSearch(
     endpoint="<YOUT_ENDPOINT_NAME>",
