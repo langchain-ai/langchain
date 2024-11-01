@@ -2106,7 +2106,7 @@ class AzureCosmosDBSemanticCache(BaseCache):
         ef_construction: int = 64,
         ef_search: int = 40,
         score_threshold: Optional[float] = None,
-        application_name: str = "LangChain-CDBNoSQL-SemanticCache-Python",
+        application_name: str = "LangChain-CDBMongoVCore-SemanticCache-Python",
     ):
         """
         Args:
