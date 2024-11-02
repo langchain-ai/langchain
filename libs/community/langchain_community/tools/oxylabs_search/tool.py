@@ -1,15 +1,14 @@
 """Tool for the Oxylabs Search API."""
 
+import json
+from typing import Optional, Type
+
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
 from langchain_core.tools import BaseTool
-
-import json
 from pydantic import BaseModel, ConfigDict, Field
-from typing import Type, Optional
-
 
 from langchain_community.utilities.oxylabs_search import OxylabsSearchAPIWrapper
 
@@ -20,7 +19,7 @@ class OxylabsSearchQueryInput(BaseModel):
     query: str = Field(description="query to retrieve on Oxylabs Search API")
     geo_location: Optional[str] = Field(
         default="California,United States",
-        description="Geographic location for the search; adjust if location-specific information is requested."
+        description="Geographic location for the search; adjust if location-specific information is requested.",
     )
 
 
@@ -49,9 +48,11 @@ class OxylabsSearchRun(BaseTool):
         """Use the tool."""
 
         kwargs_ = dict(**self.kwargs)
-        kwargs_.update({
-            "geo_location": geo_location,
-        })
+        kwargs_.update(
+            {
+                "geo_location": geo_location,
+            }
+        )
 
         return self.wrapper.run(query, **kwargs_)
 
@@ -64,9 +65,11 @@ class OxylabsSearchRun(BaseTool):
         """Use the tool asynchronously."""
 
         kwargs_ = dict(**self.kwargs)
-        kwargs_.update({
-            "geo_location": geo_location,
-        })
+        kwargs_.update(
+            {
+                "geo_location": geo_location,
+            }
+        )
 
         return await self.wrapper.arun(query, **kwargs_)
 
@@ -100,9 +103,11 @@ class OxylabsSearchResults(BaseTool):
         """Use the tool."""
 
         kwargs_ = dict(**self.kwargs)
-        kwargs_.update({
-            "geo_location": geo_location,
-        })
+        kwargs_.update(
+            {
+                "geo_location": geo_location,
+            }
+        )
 
         return json.dumps(self.wrapper.results(query, **kwargs_))
 
@@ -115,10 +120,10 @@ class OxylabsSearchResults(BaseTool):
         """Use the tool asynchronously."""
 
         kwargs_ = dict(**self.kwargs)
-        kwargs_.update({
-            "geo_location": geo_location,
-        })
-
-        return json.dumps(
-            await self.wrapper.aresults(query, **kwargs_)
+        kwargs_.update(
+            {
+                "geo_location": geo_location,
+            }
         )
+
+        return json.dumps(await self.wrapper.aresults(query, **kwargs_))

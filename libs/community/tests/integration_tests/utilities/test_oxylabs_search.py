@@ -11,9 +11,7 @@ def oxylabs_installed() -> bool:
 
         return True
 
-    except Exception as e:
-        print(f"oxylabs not installed, skipping test {e}")
-
+    except Exception:
         return False
 
 

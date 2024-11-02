@@ -1,24 +1,19 @@
-"""Chain that calls Oxylabs API for Google Search.
-"""
-
-from typing import Any, Dict, List
+"""Chain that calls Oxylabs API for Google Search."""
 
 import asyncio
-
-from sqlalchemy.cyextension.util import Mapping
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
 
 from langchain_core.utils import get_from_dict_or_env
 from pydantic import BaseModel, ConfigDict, Field, model_validator
-from dataclasses import dataclass
-from typing import Optional
-
+from sqlalchemy.cyextension.util import Mapping
 
 RESULT_CATEGORIES = [
     "knowledge_graph",
     "combined_search_result",
     "product_information",
     "local_information",
-    "search_information"
+    "search_information",
 ]
 
 IMAGE_BINARY_CONTENT_ARRAY_ATTRIBUTE = "images"
@@ -34,16 +29,11 @@ class ResponseElement:
 
 
 def _get_default_excluded_result_attributes() -> List[str]:
-    return [
-        "pos_overall"
-    ]
+    return ["pos_overall"]
 
 
 def _get_default_image_content_attributes() -> List[str]:
-    return [
-        "image_data",
-        "data"
-    ]
+    return ["image_data", "data"]
 
 
 def _get_default_params() -> dict:
@@ -120,6 +110,7 @@ class OxylabsSearchAPIWrapper(BaseModel):
         print(result)
         ```
     """
+
     include_binary_image_data: Optional[bool] = Field(default=False)
     parsing_recursion_depth: Optional[int] = Field(default=5)
 
@@ -127,9 +118,15 @@ class OxylabsSearchAPIWrapper(BaseModel):
     params: dict = Field(default_factory=_get_default_params)
     result_categories: Optional[list] = Field(default=[])
 
-    excluded_result_attributes: List[str] = Field(default_factory=_get_default_excluded_result_attributes)
-    image_binary_content_attributes: List[str] = Field(default_factory=_get_default_image_content_attributes)
-    image_binary_content_array_attribute: str = Field(default=IMAGE_BINARY_CONTENT_ARRAY_ATTRIBUTE)
+    excluded_result_attributes: List[str] = Field(
+        default_factory=_get_default_excluded_result_attributes
+    )
+    image_binary_content_attributes: List[str] = Field(
+        default_factory=_get_default_image_content_attributes
+    )
+    image_binary_content_array_attribute: str = Field(
+        default=IMAGE_BINARY_CONTENT_ARRAY_ATTRIBUTE
+    )
 
     oxylabs_username: Optional[str] = None
     oxylabs_password: Optional[str] = None
@@ -160,8 +157,12 @@ class OxylabsSearchAPIWrapper(BaseModel):
         formed_values["oxylabs_password"] = oxylabs_password
         formed_values["params"] = dict(current_params)
 
-        formed_values["include_binary_image_data"] = values.get("include_binary_image_data", False)
-        formed_values["parsing_recursion_depth"] = values.get("parsing_recursion_depth", 5)
+        formed_values["include_binary_image_data"] = values.get(
+            "include_binary_image_data", False
+        )
+        formed_values["parsing_recursion_depth"] = values.get(
+            "parsing_recursion_depth", 5
+        )
 
         if "result_categories" in formed_values["params"]:
             validated_categories = cls.validate_response_categories(
@@ -317,20 +318,26 @@ class OxylabsSearchAPIWrapper(BaseModel):
             "combined_search_result": self._create_combined_search_result_snippets,
             "product_information": self._create_product_information_snippets,
             "local_information": self._create_local_information_snippets,
-            "search_information": self._create_search_information_snippets
+            "search_information": self._create_search_information_snippets,
         }
 
         snippets = list()
-        validated_categories = self.validate_response_categories(kwargs.get("result_categories", []))
+        validated_categories = self.validate_response_categories(
+            kwargs.get("result_categories", [])
+        )
         result_categories_ = validated_categories or self.result_categories or []
 
         for nr_, validated_response in enumerate(res):
             if result_categories_:
                 for result_category in result_categories_:
-                    result_category_processing_map[result_category](validated_response, snippets)
+                    result_category_processing_map[result_category](
+                        validated_response, snippets
+                    )
             else:
                 for result_category in result_category_processing_map:
-                    result_category_processing_map[result_category](validated_response, snippets)
+                    result_category_processing_map[result_category](
+                        validated_response, snippets
+                    )
 
         # Combine all snippets
         if snippets:
@@ -355,10 +362,7 @@ class OxylabsSearchAPIWrapper(BaseModel):
 
         if isinstance(target_structure, (str, float, int)):
             self.recursion_process_simple_types(
-                parent_,
-                recursion_padding,
-                target_snippets,
-                target_structure
+                parent_, recursion_padding, target_snippets, target_structure
             )
 
         elif isinstance(target_structure, dict):
@@ -368,7 +372,7 @@ class OxylabsSearchAPIWrapper(BaseModel):
                 parent_,
                 recursion_padding,
                 target_snippets,
-                target_structure
+                target_structure,
             )
 
         elif isinstance(target_structure, (list, tuple)):
@@ -378,7 +382,7 @@ class OxylabsSearchAPIWrapper(BaseModel):
                 parent_,
                 recursion_padding,
                 target_snippets,
-                target_structure
+                target_structure,
             )
 
         return "\n".join(target_snippets)
@@ -390,7 +394,7 @@ class OxylabsSearchAPIWrapper(BaseModel):
         parent_: ResponseElement,
         recursion_padding: str,
         target_snippets: list,
-        target_structure: Any
+        target_structure: Any,
     ) -> None:
         if target_structure:
             target_snippets.append(
@@ -419,7 +423,7 @@ class OxylabsSearchAPIWrapper(BaseModel):
         parent_: ResponseElement,
         recursion_padding: str,
         target_snippets: list,
-        target_structure: Any
+        target_structure: Any,
     ) -> None:
         if target_structure:
             target_snippets.append(
@@ -428,9 +432,7 @@ class OxylabsSearchAPIWrapper(BaseModel):
             for key_, value_ in target_structure.items():
                 if isinstance(value_, dict):
                     if value_:
-                        target_snippets.append(
-                            f"{recursion_padding}{key_.upper()}: "
-                        )
+                        target_snippets.append(f"{recursion_padding}{key_.upper()}: ")
                         target_snippets.append(
                             self.recursive_snippet_collector(
                                 value_,
@@ -469,7 +471,10 @@ class OxylabsSearchAPIWrapper(BaseModel):
 
                 elif isinstance(value_, (str, float, int)):
                     if value_:
-                        if key_ in self.image_binary_content_attributes and not self.include_binary_image_data:
+                        if (
+                            key_ in self.image_binary_content_attributes
+                            and not self.include_binary_image_data
+                        ):
                             value_ = "Redacted base64 image string..."
 
                         if key_ not in self.excluded_result_attributes:
@@ -478,17 +483,18 @@ class OxylabsSearchAPIWrapper(BaseModel):
                             )
 
     def recursion_process_simple_types(
-            self,
-            parent_: ResponseElement,
-            recursion_padding: str,
-            target_snippets: list,
-            target_structure: Any
+        self,
+        parent_: ResponseElement,
+        recursion_padding: str,
+        target_snippets: list,
+        target_structure: Any,
     ) -> None:
         if target_structure:
             if parent_.python_type == str(type(list())):
                 if (
-                        self.image_binary_content_array_attribute.upper() in parent_.path_.split("-")[-3:]
-                        or parent_.tag.lower() in self.image_binary_content_attributes
+                    self.image_binary_content_array_attribute.upper()
+                    in parent_.path_.split("-")[-3:]
+                    or parent_.tag.lower() in self.image_binary_content_attributes
                 ) and not self.include_binary_image_data:
                     target_structure = "Redacted base64 image string..."
 
@@ -497,7 +503,10 @@ class OxylabsSearchAPIWrapper(BaseModel):
                 )
 
             elif parent_.python_type == str(type(dict())):
-                if parent_.tag.lower() in self.image_binary_content_attributes and not self.include_binary_image_data:
+                if (
+                    parent_.tag.lower() in self.image_binary_content_attributes
+                    and not self.include_binary_image_data
+                ):
                     target_structure = "Redacted base64 image string..."
 
                 if parent_.tag.lower() not in self.excluded_result_attributes:
@@ -506,11 +515,7 @@ class OxylabsSearchAPIWrapper(BaseModel):
                     )
 
     def process_tags(
-        self,
-        snippets_: list,
-        tags_: list,
-        results: dict,
-        group_name: str = ""
+        self, snippets_: list, tags_: list, results: dict, group_name: str = ""
     ) -> None:
         check_tags = [tag_[0] in results for tag_ in tags_]
         if any(check_tags):

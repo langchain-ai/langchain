@@ -110,6 +110,9 @@ if TYPE_CHECKING:
     from langchain_community.utilities.outline import (
         OutlineAPIWrapper,
     )
+    from langchain_community.utilities.oxylabs_search import (
+        OxylabsSearchAPIWrapper,
+    )
     from langchain_community.utilities.passio_nutrition_ai import (
         NutritionAIAPI,
     )
@@ -169,9 +172,6 @@ if TYPE_CHECKING:
     )
     from langchain_community.utilities.zapier import (
         ZapierNLAWrapper,
-    )
-    from langchain_community.utilities.oxylabs_search import (
-        OxylabsSearchAPIWrapper,
     )
 
 __all__ = [
@@ -235,7 +235,7 @@ __all__ = [
     "WolframAlphaAPIWrapper",
     "YouSearchAPIWrapper",
     "ZapierNLAWrapper",
-    "OxylabsSearchAPIWrapper"
+    "OxylabsSearchAPIWrapper",
 ]
 
 _module_lookup = {
