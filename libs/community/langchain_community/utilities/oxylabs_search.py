@@ -121,11 +121,12 @@ class OxylabsSearchAPIWrapper(BaseModel):
         ```
     """
     include_binary_image_data: Optional[bool] = Field(default=False)
-    result_categories: Optional[list] = Field(default=[])
     parsing_recursion_depth: Optional[int] = Field(default=5)
 
     search_engine: Any = None
     params: dict = Field(default_factory=_get_default_params)
+    result_categories: Optional[list] = Field(default=[])
+
     excluded_result_attributes: List[str] = Field(default_factory=_get_default_excluded_result_attributes)
     image_binary_content_attributes: List[str] = Field(default_factory=_get_default_image_content_attributes)
     image_binary_content_array_attribute: str = Field(default=IMAGE_BINARY_CONTENT_ARRAY_ATTRIBUTE)
@@ -158,6 +159,9 @@ class OxylabsSearchAPIWrapper(BaseModel):
         formed_values["oxylabs_username"] = oxylabs_username
         formed_values["oxylabs_password"] = oxylabs_password
         formed_values["params"] = dict(current_params)
+
+        formed_values["include_binary_image_data"] = values.get("include_binary_image_data", False)
+        formed_values["parsing_recursion_depth"] = values.get("parsing_recursion_depth", 5)
 
         if "result_categories" in formed_values["params"]:
             validated_categories = cls.validate_response_categories(
