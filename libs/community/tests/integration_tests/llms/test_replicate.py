@@ -50,8 +50,8 @@ def test_replicate_input() -> None:
     assert llm.model_kwargs == {"max_new_tokens": 10}
 
 
-def test_replicate_api_key_propagation() -> None:
-    """Test that API key passed to the model is used to access the service."""
+def test_replicate_api_token_propagation() -> None:
+    """Test that API token passed to the model is used to access the service."""
     # Grab the api token from the environment variable.
     api_token = os.getenv("REPLICATE_API_TOKEN")
 
