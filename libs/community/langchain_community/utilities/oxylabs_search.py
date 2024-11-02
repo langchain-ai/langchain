@@ -64,15 +64,10 @@ def _get_default_params() -> dict:
             - parsing_instructions (dict): Additional instructions for parsing the search results.
             - context (list): Search context information.
             - request_timeout (int): Timeout for the Oxylabs service, in seconds.
-            - include_binary_image_data (bool): Determines whether binary image data should be included in the search results.
-                The default is False, meaning image data display is excluded by default.
-                Set to True to include binary image content display.
             - result_categories (list): Specifies the desired categories for the results from the available:
                 `knowledge_graph`, `combined_search_result`, `product_information`, `local_information`, `search_information`.
                 The list preserves the order of the categories, allowing prioritized filtering.
                 If left empty (default), results are returned from all available categories without filtering.
-            - parsing_recursion_depth (int): Defines the level of depth for parsing nested objects in the response.
-                A higher value means deeper levels of the response are parsed and structured.
     """
 
     return {
@@ -89,9 +84,7 @@ def _get_default_params() -> dict:
         "parsing_instructions": {},
         "context": [],
         "request_timeout": 165,
-        "include_binary_image_data": False,
         "result_categories": [],
-        "parsing_recursion_depth": 5
     }
 
 
@@ -119,9 +112,7 @@ class OxylabsSearchAPIWrapper(BaseModel):
                 "parsing_instructions": {},
                 "context": [],
                 "request_timeout": 165,
-                "include_binary_image_data": False,
                 "result_categories": [],
-                "parsing_recursion_depth": 5
             }
         )
         search_query = "Oxylabs"
@@ -129,14 +120,16 @@ class OxylabsSearchAPIWrapper(BaseModel):
         print(result)
         ```
     """
-    include_binary_image_data: Optional[bool] = None
-    result_categories: Optional[list] = None
+    include_binary_image_data: Optional[bool] = Field(default=False)
+    result_categories: Optional[list] = Field(default=[])
+    parsing_recursion_depth: Optional[int] = Field(default=5)
+
     search_engine: Any = None
     params: dict = Field(default_factory=_get_default_params)
     excluded_result_attributes: List[str] = Field(default_factory=_get_default_excluded_result_attributes)
     image_binary_content_attributes: List[str] = Field(default_factory=_get_default_image_content_attributes)
     image_binary_content_array_attribute: str = Field(default=IMAGE_BINARY_CONTENT_ARRAY_ATTRIBUTE)
-    parsing_recursion_depth: int = Field(default=5)
+
     oxylabs_username: Optional[str] = None
     oxylabs_password: Optional[str] = None
     model_config = ConfigDict(arbitrary_types_allowed=True, extra="forbid")
@@ -166,24 +159,12 @@ class OxylabsSearchAPIWrapper(BaseModel):
         formed_values["oxylabs_password"] = oxylabs_password
         formed_values["params"] = dict(current_params)
 
-        if "include_binary_image_data" in formed_values["params"]:
-            formed_values["include_binary_image_data"] = formed_values["params"]["include_binary_image_data"]
-            del formed_values["params"]["include_binary_image_data"]
-
         if "result_categories" in formed_values["params"]:
-            for result_category in formed_values["params"]["result_categories"]:
-                if result_category not in RESULT_CATEGORIES:
-                    raise NotImplementedError(
-                        f"Result category: `{result_category}` is not supported."
-                        f" Supported  categories: {', '.join(RESULT_CATEGORIES)}"
-                    )
-
-            formed_values["result_categories"] = formed_values["params"]["result_categories"]
-            del formed_values["params"]["result_categories"]
-
-        if "parsing_recursion_depth" in formed_values["params"]:
-            formed_values["parsing_recursion_depth"] = formed_values["params"]["parsing_recursion_depth"]
-            del formed_values["params"]["parsing_recursion_depth"]
+            validated_categories = cls.validate_response_categories(
+                formed_values["params"]["result_categories"]
+            )
+            if validated_categories:
+                formed_values["result_categories"] = validated_categories
 
         try:
             from oxylabs import RealtimeClient
@@ -226,6 +207,15 @@ class OxylabsSearchAPIWrapper(BaseModel):
             raise RuntimeError(f"Unknown Oxylabs Python SDK integration error: {exc}")
 
         return formed_values
+
+    @staticmethod
+    def validate_response_categories(result_categories: list) -> list:
+        validated_categories = []
+        for result_category in result_categories:
+            if result_category in RESULT_CATEGORIES:
+                validated_categories.append(result_category)
+
+        return validated_categories
 
     async def arun(self, query: str, **kwargs: Any) -> str:
         """Run query through OxylabsSearchAPI and parse result async."""
@@ -270,11 +260,12 @@ class OxylabsSearchAPIWrapper(BaseModel):
 
     def get_params(self, **kwargs) -> Dict[str, Any]:
         """Get default configuration parameters for OxylabsSearchAPI for scrape_search()."""
+        wrapper_params_ = ["result_categories"]
 
         _params = {
             f"{p_key}": self.params[p_key]
             for p_key in self.params
-            if self.params[p_key]
+            if self.params[p_key] and p_key not in wrapper_params_
         }
 
         for key, value in kwargs.items():
@@ -326,9 +317,10 @@ class OxylabsSearchAPIWrapper(BaseModel):
         }
 
         snippets = list()
+        validated_categories = self.validate_response_categories(kwargs.get("result_categories", []))
+        result_categories_ = validated_categories or self.result_categories or []
 
         for nr_, validated_response in enumerate(res):
-            result_categories_ = kwargs.get("result_categories", []) or self.result_categories or []
             if result_categories_:
                 for result_category in result_categories_:
                     result_category_processing_map[result_category](validated_response, snippets)
