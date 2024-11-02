@@ -9,11 +9,18 @@ from langchain_core.outputs import GenerationChunk
 from langchain_core.utils import get_from_dict_or_env, pre_init
 from langchain_core.utils.pydantic import get_fields
 from pydantic import ConfigDict, Field, model_validator
-from replicate.client import Client
 from typing_extensions import Self
 
 if TYPE_CHECKING:
     from replicate.prediction import Prediction
+
+try:
+    from replicate.client import Client
+except ImportError:
+    raise ImportError(
+        "Could not import replicate python package. "
+        "Please install it with `pip install replicate`."
+    )
 
 logger = logging.getLogger(__name__)
 

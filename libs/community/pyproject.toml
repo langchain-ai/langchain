@@ -56,9 +56,9 @@ select = [ "E", "F", "I", "T201",]
 omit = [ "tests/*",]
 
 [tool.pytest.ini_options]
-addopts = "--strict-markers --strict-config --durations=5 --snapshot-warn-unused -vv"
+addopts = "--strict-markers --strict-config --durations=5 -vv"
 markers = [ "requires: mark tests as requiring a specific library", "scheduled: mark tests to run in scheduled testing", "compile: mark placeholder test used to compile integration tests without running them",]
-asyncio_mode = "auto"
+# asyncio_mode = "auto"
 filterwarnings = [ "ignore::langchain_core._api.beta_decorator.LangChainBetaWarning", "ignore::langchain_core._api.deprecation.LangChainDeprecationWarning:test", "ignore::langchain_core._api.deprecation.LangChainPendingDeprecationWarning:test",]
 
 [tool.poetry.group.test]
