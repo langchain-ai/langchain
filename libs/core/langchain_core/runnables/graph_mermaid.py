@@ -304,8 +304,9 @@ async def _render_mermaid_using_pyppeteer(
 
 def _render_mermaid_using_api(
     mermaid_syntax: str,
+    file_type: Optional[str] = "png",
     output_file_path: Optional[str] = None,
-    background_color: Optional[str] = "white",
+    background_color: Optional[str] = "!white",
 ) -> bytes:
     """Renders Mermaid graph using the Mermaid.INK API."""
     try:
@@ -329,7 +330,8 @@ def _render_mermaid_using_api(
             background_color = f"!{background_color}"
 
     image_url = (
-        f"https://mermaid.ink/img/{mermaid_syntax_encoded}?bgColor={background_color}"
+        f"https://mermaid.ink/img/{mermaid_syntax_encoded}"
+        f"?type={file_type}&bgColor={background_color}"
     )
     response = requests.get(image_url, timeout=10)
     if response.status_code == 200:
