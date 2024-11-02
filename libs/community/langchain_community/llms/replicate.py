@@ -12,8 +12,8 @@ from pydantic import ConfigDict, Field, model_validator
 from typing_extensions import Self
 
 if TYPE_CHECKING:
-    from replicate.prediction import Prediction
     from replicate.client import Client
+    from replicate.prediction import Prediction
 
 logger = logging.getLogger(__name__)
 
