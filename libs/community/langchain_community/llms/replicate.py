@@ -13,14 +13,7 @@ from typing_extensions import Self
 
 if TYPE_CHECKING:
     from replicate.prediction import Prediction
-
-try:
     from replicate.client import Client
-except ImportError:
-    raise ImportError(
-        "Could not import replicate python package. "
-        "Please install it with `pip install replicate`."
-    )
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +58,7 @@ class Replicate(LLM):
     stop: List[str] = Field(default_factory=list)
     """Stop sequences to early-terminate generation."""
 
-    _client: Client = Client()
+    _client: Client = None
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -112,6 +105,13 @@ class Replicate(LLM):
     @model_validator(mode="after")
     def set_client(self) -> Self:
         """Add a client to the values."""
+        try:
+            from replicate.client import Client
+        except ImportError:
+            raise ImportError(
+                "Could not import replicate python package. "
+                "Please install it with `pip install replicate`."
+            )
         self._client = Client(api_token=self.replicate_api_token)
         return self
 
