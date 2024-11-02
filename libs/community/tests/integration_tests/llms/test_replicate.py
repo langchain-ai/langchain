@@ -2,6 +2,7 @@
 
 from langchain_community.llms.replicate import Replicate
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
+import os
 
 TEST_MODEL_HELLO = (
     "replicate/hello-world:"
@@ -47,3 +48,20 @@ def test_replicate_model_kwargs() -> None:
 def test_replicate_input() -> None:
     llm = Replicate(model=TEST_MODEL_LANG, input={"max_new_tokens": 10})
     assert llm.model_kwargs == {"max_new_tokens": 10}
+
+
+def test_replicate_api_key_propagation() -> None:
+    """Test that API key passed to the model is used to access the service."""
+    # Grab the api token from the environment variable.
+    api_token = os.getenv("REPLICATE_API_TOKEN")
+
+    # Reset the environment variable to ensure it's not available.
+    os.environ["REPLICATE_API_TOKEN"] = "yo"
+
+    # Pass the api token into the model.
+    llm = Replicate(model=TEST_MODEL_HELLO, replicate_api_token=api_token)
+    output = llm.invoke("What is a duck?")
+
+    assert output
+    assert isinstance(output, str)
+    
