@@ -1,8 +1,9 @@
 """Test Replicate API wrapper."""
 
+import os
+
 from langchain_community.llms.replicate import Replicate
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
-import os
 
 TEST_MODEL_HELLO = (
     "replicate/hello-world:"
@@ -64,4 +65,3 @@ def test_replicate_api_token_propagation() -> None:
 
     assert output
     assert isinstance(output, str)
-    

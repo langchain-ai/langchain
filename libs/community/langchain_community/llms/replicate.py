@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional
-from typing_extensions import Self
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
@@ -11,6 +10,7 @@ from langchain_core.utils import get_from_dict_or_env, pre_init
 from langchain_core.utils.pydantic import get_fields
 from pydantic import ConfigDict, Field, model_validator
 from replicate.client import Client
+from typing_extensions import Self
 
 if TYPE_CHECKING:
     from replicate.prediction import Prediction
