@@ -3,9 +3,7 @@ import pytest
 from langchain_community.utilities import PmcIDyRun
 
 
-@pytest.fixture
-def api_client() -> PmcIDyRun:
-    return PmcIDyRun()  
+lxml = pytest.importorskip("lxml")
 
 
 def test_run_success(api_client: PmcIDyRun) -> None:

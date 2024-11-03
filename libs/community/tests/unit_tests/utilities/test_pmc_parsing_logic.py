@@ -3,12 +3,24 @@ from unittest.mock import patch, MagicMock
 from langchain_community.utilities.parsing_logic import PubMed_Central_Parser  
 import pytest
 import os
-from lxml import etree
+import logging
 
 
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
+
+@pytest.mark.requires("lxml")
 class TestPubMedCentralParser(unittest.TestCase):
     """test the parsing logic for PubMed Central paper in xml form"""
+    
     def setUp(self):
+        try:
+            from lxml import etree
+        except ImportError as e:
+            logger.error(
+               "Could not import `lxml`. Please install it with `pip install lxml`. "
+            )
+            raise e
         self.parser = PubMed_Central_Parser()
         self.xml_string = '''
         <root>
@@ -160,7 +172,6 @@ class TestPubMedCentralParser(unittest.TestCase):
             elements = self.tree.xpath(f".//{tag}")
             self.assertFalse(elements, f"Element with tag '{tag}' should be removed but still exists.")
 
-
     def test_replace_unwanted_elements_with_their_captions(self):
         """test if unwanted elements with their captions are replaced"""
         self.parser._replace_unwanted_elements_with_their_captions(self.tree)
@@ -182,6 +193,13 @@ class TestPubMedCentralParser(unittest.TestCase):
         self.assertEqual(len(title_group_elements), 0, "title-group element should be removed")
 
     def test_pull_nested_paragraphs_to_top(self):
+        try:
+            from lxml import etree
+        except ImportError as e:
+            logger.error(
+               "Could not import `lxml`. Please install it with `pip install lxml`. "
+            )
+            raise e
         """test if nested paragraphs be flatten"""
         xml_string = '''
         <root>
@@ -210,9 +228,16 @@ class TestPubMedCentralParser(unittest.TestCase):
         # Check that there are no nested paragraphs
         nested_paragraphs = tree.xpath("./p/p")
         self.assertEqual(len(nested_paragraphs), 0, "There should be no nested paragraphs")
-        
+
     def test_extract_paragraphs_from_tree(self):
         """test if paragraphs in article can be all extracted"""
+        try:
+            from lxml import etree
+        except ImportError as e:
+            logger.error(
+               "Could not import `lxml`. Please install it with `pip install lxml`. "
+            )
+            raise e
         # Create an XML tree for the test
         xml_string = """
         <article>
