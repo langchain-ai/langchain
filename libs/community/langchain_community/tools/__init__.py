@@ -213,6 +213,10 @@ if TYPE_CHECKING:
     from langchain_community.tools.openweathermap.tool import (
         OpenWeatherMapQueryRun,
     )
+    from langchain_community.tools.oxylabs_search.tool import (
+        OxylabsSearchResults,
+        OxylabsSearchRun,
+    )
     from langchain_community.tools.playwright import (
         ClickTool,
         CurrentWebPageTool,
@@ -340,10 +344,6 @@ if TYPE_CHECKING:
         Detector,
         ZenGuardInput,
         ZenGuardTool,
-    )
-    from langchain_community.tools.oxylabs_search.tool import (
-        OxylabsSearchResults,
-        OxylabsSearchRun,
     )
 
 __all__ = [
