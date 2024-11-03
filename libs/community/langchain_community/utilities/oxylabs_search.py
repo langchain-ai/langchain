@@ -269,7 +269,7 @@ class OxylabsSearchAPIWrapper(BaseModel):
     async def aresults(self, query: str, **kwargs: Any) -> List[Dict[str, Any]]:
         """
         Run query through Oxylabs Web Scrapper API and return SERPResponse object async.
-         """
+        """
         params_ = self.get_params(**kwargs)
 
         search_client = self.search_engine
