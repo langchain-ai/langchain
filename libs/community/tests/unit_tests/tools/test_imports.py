@@ -94,6 +94,8 @@ EXPECTED_ALL = [
     "O365SendMessage",
     "OpenAPISpec",
     "OpenWeatherMapQueryRun",
+    "OxylabsSearchResults",
+    "OxylabsSearchRun",
     "PubmedQueryRun",
     "PolygonAggregates",
     "PolygonFinancials",

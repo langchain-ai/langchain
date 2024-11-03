@@ -37,6 +37,7 @@ EXPECTED_ALL = [
     "OpenWeatherMapAPIWrapper",
     "OracleSummary",
     "OutlineAPIWrapper",
+    "OxylabsSearchAPIWrapper",
     "NutritionAIAPI",
     "Portkey",
     "PowerBIDataset",
