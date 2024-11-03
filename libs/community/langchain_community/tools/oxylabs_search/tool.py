@@ -3,13 +3,14 @@
 import json
 from typing import Optional, Type
 
-from langchain_core.callbacks import (AsyncCallbackManagerForToolRun,
-                                      CallbackManagerForToolRun)
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForToolRun,
+    CallbackManagerForToolRun,
+)
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel, ConfigDict, Field
 
-from langchain_community.utilities.oxylabs_search import \
-    OxylabsSearchAPIWrapper
+from langchain_community.utilities.oxylabs_search import OxylabsSearchAPIWrapper
 
 
 class OxylabsSearchQueryInput(BaseModel):
