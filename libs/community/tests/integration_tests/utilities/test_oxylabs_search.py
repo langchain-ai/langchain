@@ -7,7 +7,7 @@ from langchain_community.utilities import OxylabsSearchAPIWrapper
 
 def oxylabs_installed() -> bool:
     try:
-        from oxylabs import RealtimeClient
+        from oxylabs import RealtimeClient  # noqa: F401
 
         return True
 
