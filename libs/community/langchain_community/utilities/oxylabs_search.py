@@ -118,7 +118,7 @@ class OxylabsSearchAPIWrapper(BaseModel):
     """
 
     include_binary_image_data: Optional[bool] = Field(default=False)
-    parsing_recursion_depth: Optional[int] = Field(default=5)
+    parsing_recursion_depth: int = Field(default=5)
 
     search_engine: Any = None
     params: dict = Field(default_factory=_get_default_params)
@@ -164,9 +164,10 @@ class OxylabsSearchAPIWrapper(BaseModel):
                 " as `oxylabs_username` and `oxylabs_password`."
             )
 
-        formed_values = dict()
+        formed_values: Dict[str, Any] = dict()
         formed_values["oxylabs_username"] = oxylabs_username
         formed_values["oxylabs_password"] = oxylabs_password
+        formed_values["params"] = dict()
         formed_values["params"] = dict(current_params)
 
         formed_values["include_binary_image_data"] = values.get(
@@ -284,7 +285,10 @@ class OxylabsSearchAPIWrapper(BaseModel):
 
         return validated_responses
 
-    def get_params(self, **kwargs) -> Dict[str, Any]:
+    def get_params(
+            self,
+            **kwargs: Any
+    ) -> Dict[str, Any]:
         """
         Get default configuration parameters for OxylabsSearchAPI for scrape_search().
         """
@@ -334,7 +338,7 @@ class OxylabsSearchAPIWrapper(BaseModel):
         except (KeyError, IndexError, TypeError, ValueError) as exc:
             raise RuntimeError(f"Response Validation Error: {str(exc)}")
 
-    def _process_response(self, res: Any, **kwargs) -> str:
+    def _process_response(self, res: Any, **kwargs: Any) -> str:
         """
         Process Oxylabs SERPResponse and serialize search results to string.
         """
@@ -349,7 +353,7 @@ class OxylabsSearchAPIWrapper(BaseModel):
             "search_information": self._create_search_information_snippets,
         }
 
-        snippets = list()
+        snippets: List[str] = list()
         validated_categories = self.validate_response_categories(
             kwargs.get("result_categories", [])
         )
@@ -378,9 +382,9 @@ class OxylabsSearchAPIWrapper(BaseModel):
         target_structure: Any,
         max_depth: int,
         current_depth: int,
-        parent_: Optional[ResponseElement] = None,
+        parent_: ResponseElement,
     ) -> str:
-        target_snippets = list()
+        target_snippets: List[str] = list()
 
         padding_multiplier = current_depth + 1
         recursion_padding = "  " * padding_multiplier
