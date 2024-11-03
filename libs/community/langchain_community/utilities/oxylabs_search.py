@@ -7,7 +7,6 @@ from typing import Any, Dict, List, Optional
 from langchain_core.utils import get_from_dict_or_env
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-
 RESULT_CATEGORIES = [
     "knowledge_graph",
     "combined_search_result",

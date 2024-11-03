@@ -1,10 +1,9 @@
 """ """
 
-from langchain_community.tools.oxylabs_search import (
-    OxylabsSearchResults,
-    OxylabsSearchRun,
-)
-from langchain_community.utilities.oxylabs_search import OxylabsSearchAPIWrapper
+from langchain_community.tools.oxylabs_search import (OxylabsSearchResults,
+                                                      OxylabsSearchRun)
+from langchain_community.utilities.oxylabs_search import \
+    OxylabsSearchAPIWrapper
 
 
 def test_oxylabs_search_call() -> None:
