@@ -193,10 +193,7 @@ class OxylabsSearchAPIWrapper(BaseModel):
             )
 
         try:
-            oxylabs_realtime_client = RealtimeClient(
-                oxylabs_username,
-                oxylabs_password
-            )
+            oxylabs_realtime_client = RealtimeClient(oxylabs_username, oxylabs_password)
             # The process to set any available provider
             source_ = formed_values["params"]["source"]
             source_provider_map = {
@@ -215,7 +212,7 @@ class OxylabsSearchAPIWrapper(BaseModel):
                 )
                 formed_values["search_engine"] = oxylabs_realtime_client_by_provider
             else:
-                supported_sources = ', '.join(sum(source_provider_map.values(), []))
+                supported_sources = ", ".join(sum(source_provider_map.values(), []))
                 raise NotImplementedError(
                     f"Source: `{source_}` is not supported."
                     f" Supported  sources: {supported_sources}"
@@ -492,7 +489,7 @@ class OxylabsSearchAPIWrapper(BaseModel):
                                     current_depth=current_depth + 1,
                                     parent_=ResponseElement(
                                         path_=f"{parent_.path_.upper()}"
-                                              f"-{key_.upper()}-ITEM-{nr_ + 1}",
+                                        f"-{key_.upper()}-ITEM-{nr_ + 1}",
                                         tag=key_.upper(),
                                         display_tag=f"{key_.upper()}-ITEM-{nr_ + 1}",
                                         python_type=str(type(value_)),
