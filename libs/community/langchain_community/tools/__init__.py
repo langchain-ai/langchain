@@ -341,6 +341,10 @@ if TYPE_CHECKING:
         ZenGuardInput,
         ZenGuardTool,
     )
+    from langchain_community.tools.oxylabs_search.tool import (
+        OxylabsSearchResults,
+        OxylabsSearchRun,
+    )
 
 __all__ = [
     "BaseTool",
@@ -441,6 +445,8 @@ __all__ = [
     "O365SendMessage",
     "OpenAPISpec",
     "OpenWeatherMapQueryRun",
+    "OxylabsSearchResults",
+    "OxylabsSearchRun",
     "PolygonAggregates",
     "PolygonFinancials",
     "PolygonLastQuote",
@@ -593,6 +599,8 @@ _module_lookup = {
     "O365SendMessage": "langchain_community.tools.office365.send_message",
     "OpenAPISpec": "langchain_community.tools.openapi.utils.openapi_utils",
     "OpenWeatherMapQueryRun": "langchain_community.tools.openweathermap.tool",
+    "OxylabsSearchResults": "langchain_community.tools.oxylabs_search.tool",
+    "OxylabsSearchRun": "langchain_community.tools.oxylabs_search.tool",
     "PolygonAggregates": "langchain_community.tools.polygon.aggregates",
     "PolygonFinancials": "langchain_community.tools.polygon.financials",
     "PolygonLastQuote": "langchain_community.tools.polygon.last_quote",
