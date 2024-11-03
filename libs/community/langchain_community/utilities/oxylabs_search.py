@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional
 
 from langchain_core.utils import get_from_dict_or_env
 from pydantic import BaseModel, ConfigDict, Field, model_validator
-from sqlalchemy.cyextension.util import Mapping
+
 
 RESULT_CATEGORIES = [
     "knowledge_graph",
@@ -17,6 +17,7 @@ RESULT_CATEGORIES = [
 ]
 
 IMAGE_BINARY_CONTENT_ARRAY_ATTRIBUTE = "images"
+BINARY_CONTENT_REPLACEMENT = "Redacted base64 image string..."
 
 
 @dataclass
@@ -42,8 +43,10 @@ def _get_default_params() -> dict:
     Returns:
         dict: Default parameters, including the following keys:
             - source (str): Source of the search engine, e.g., "google_search".
-            - user_agent_type (str): User agent type, e.g., "desktop". Can be set using values from `oxylabs.utils.types`.
-            - render (str): Render type for the search results, e.g., "html". Can be set using values from `oxylabs.utils.types`.
+            - user_agent_type (str): User agent type, e.g.,
+                "desktop". Can be set using values from `oxylabs.utils.types`.
+            - render (str): Render type for the search results, e.g.,
+                "html". Can be set using values from `oxylabs.utils.types`.
             - domain (str): Domain for the search engine, e.g., "com".
             - start_page (int): Starting page number for search results.
             - pages (int): Number of pages to retrieve.
@@ -51,13 +54,17 @@ def _get_default_params() -> dict:
             - parse (bool): Whether to enable result parsing into an object.
             - locale (str): Locale or location for the search.
             - geo_location (str): Geographic location for the search.
-            - parsing_instructions (dict): Additional instructions for parsing the search results.
+            - parsing_instructions (dict): Additional instructions for parsing
+                the search results.
             - context (list): Search context information.
             - request_timeout (int): Timeout for the Oxylabs service, in seconds.
-            - result_categories (list): Specifies the desired categories for the results from the available:
-                `knowledge_graph`, `combined_search_result`, `product_information`, `local_information`, `search_information`.
-                The list preserves the order of the categories, allowing prioritized filtering.
-                If left empty (default), results are returned from all available categories without filtering.
+            - result_categories (list): Specifies the desired categories for the
+                results from the available:
+                    `knowledge_graph`, `combined_search_result`, `product_information`,
+                    `local_information`, `search_information`.
+                The list preserves the order of the categories,
+                allowing prioritized filtering. If left empty (default),
+                results are returned from all available categories without filtering.
     """
 
     return {
@@ -127,6 +134,7 @@ class OxylabsSearchAPIWrapper(BaseModel):
     image_binary_content_array_attribute: str = Field(
         default=IMAGE_BINARY_CONTENT_ARRAY_ATTRIBUTE
     )
+    binary_content_replacement: str = Field(default=BINARY_CONTENT_REPLACEMENT)
 
     oxylabs_username: Optional[str] = None
     oxylabs_password: Optional[str] = None
@@ -135,7 +143,10 @@ class OxylabsSearchAPIWrapper(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def validate_environment(cls, values: Dict) -> Any:
-        """Validate that oxylabs username, password and python package exists in environment."""
+        """
+        Validate that oxylabs username,
+        password and python package exists in environment.
+        """
 
         default_params = _get_default_params()
         default_params.update(**values.get("params", {}))
@@ -148,8 +159,10 @@ class OxylabsSearchAPIWrapper(BaseModel):
         )
         if not (oxylabs_username and oxylabs_password):
             raise RuntimeError(
-                "Please set up environment variables: `OXYLABS_USERNAME` and `OXYLABS_PASSWORD`"
-                " or provide credentials in the parameters as `oxylabs_username` and `oxylabs_password`."
+                "Please set up environment variables:"
+                " `OXYLABS_USERNAME` and `OXYLABS_PASSWORD`"
+                " or provide credentials in the parameters"
+                " as `oxylabs_username` and `oxylabs_password`."
             )
 
         formed_values = dict()
@@ -181,7 +194,10 @@ class OxylabsSearchAPIWrapper(BaseModel):
             )
 
         try:
-            oxylabs_realtime_client = RealtimeClient(oxylabs_username, oxylabs_password)
+            oxylabs_realtime_client = RealtimeClient(
+                oxylabs_username,
+                oxylabs_password
+            )
             # The process to set any available provider
             source_ = formed_values["params"]["source"]
             source_provider_map = {
@@ -200,9 +216,10 @@ class OxylabsSearchAPIWrapper(BaseModel):
                 )
                 formed_values["search_engine"] = oxylabs_realtime_client_by_provider
             else:
+                supported_sources = ', '.join(sum(source_provider_map.values(), []))
                 raise NotImplementedError(
                     f"Source: `{source_}` is not supported."
-                    f" Supported  sources: {', '.join(sum(source_provider_map.values(), []))}"
+                    f" Supported  sources: {supported_sources}"
                 )
 
         except NotImplementedError as exc:
@@ -223,15 +240,21 @@ class OxylabsSearchAPIWrapper(BaseModel):
         return validated_categories
 
     async def arun(self, query: str, **kwargs: Any) -> str:
-        """Run query through OxylabsSearchAPI and parse result async."""
+        """
+        Run query through OxylabsSearchAPI and parse result async.
+        """
         return self._process_response(await self.aresults(query, **kwargs), **kwargs)
 
     def run(self, query: str, **kwargs: Any) -> str:
-        """Run query through OxylabsSearchAPI and parse result."""
+        """
+        Run query through OxylabsSearchAPI and parse result.
+        """
         return self._process_response(self.results(query, **kwargs), **kwargs)
 
     def results(self, query: str, **kwargs: Any) -> List[Dict[str, Any]]:
-        """Run query through Oxylabs Web Scrapper API and return SERPResponse object."""
+        """
+        Run query through Oxylabs Web Scrapper API and return SERPResponse object.
+        """
         params_ = self.get_params(**kwargs)
         search_client = self.search_engine
         search_result = search_client.scrape_search(query, **params_)
@@ -245,7 +268,9 @@ class OxylabsSearchAPIWrapper(BaseModel):
         return validated_responses
 
     async def aresults(self, query: str, **kwargs: Any) -> List[Dict[str, Any]]:
-        """Run query through Oxylabs Web Scrapper API and return SERPResponse object async."""
+        """
+        Run query through Oxylabs Web Scrapper API and return SERPResponse object async.
+         """
         params_ = self.get_params(**kwargs)
 
         search_client = self.search_engine
@@ -264,7 +289,9 @@ class OxylabsSearchAPIWrapper(BaseModel):
         return validated_responses
 
     def get_params(self, **kwargs) -> Dict[str, Any]:
-        """Get default configuration parameters for OxylabsSearchAPI for scrape_search()."""
+        """
+        Get default configuration parameters for OxylabsSearchAPI for scrape_search().
+        """
         wrapper_params_ = ["result_categories"]
 
         _params = {
@@ -280,7 +307,9 @@ class OxylabsSearchAPIWrapper(BaseModel):
         return _params
 
     def _validate_response(self, response: Any) -> List[Dict[Any, Any]]:
-        """Validate Oxylabs SERPResponse format and unpack data."""
+        """
+        Validate Oxylabs SERPResponse format and unpack data.
+        """
         validated_results = list()
         try:
             result_pages = response.raw["results"]
@@ -292,7 +321,8 @@ class OxylabsSearchAPIWrapper(BaseModel):
                 content = result_page["content"]
                 if not isinstance(content, dict):
                     raise ValueError(
-                        "Result `content` format error, try setting parameter `parse` to True"
+                        "Result `content` format error,"
+                        " try setting parameter `parse` to True"
                     )
 
                 unpacked_results = content["results"]
@@ -309,7 +339,9 @@ class OxylabsSearchAPIWrapper(BaseModel):
             raise RuntimeError(f"Response Validation Error: {str(exc)}")
 
     def _process_response(self, res: Any, **kwargs) -> str:
-        """Process Oxylabs SERPResponse and serialize search results to string."""
+        """
+        Process Oxylabs SERPResponse and serialize search results to string.
+        """
 
         result_ = "No good search result found"
 
@@ -460,7 +492,8 @@ class OxylabsSearchAPIWrapper(BaseModel):
                                     max_depth=max_depth,
                                     current_depth=current_depth + 1,
                                     parent_=ResponseElement(
-                                        path_=f"{parent_.path_.upper()}-{key_.upper()}-ITEM-{nr_ + 1}",
+                                        path_=f"{parent_.path_.upper()}"
+                                              f"-{key_.upper()}-ITEM-{nr_ + 1}",
                                         tag=key_.upper(),
                                         display_tag=f"{key_.upper()}-ITEM-{nr_ + 1}",
                                         python_type=str(type(value_)),
@@ -475,7 +508,7 @@ class OxylabsSearchAPIWrapper(BaseModel):
                             key_ in self.image_binary_content_attributes
                             and not self.include_binary_image_data
                         ):
-                            value_ = "Redacted base64 image string..."
+                            value_ = self.binary_content_replacement
 
                         if key_ not in self.excluded_result_attributes:
                             target_snippets.append(
@@ -496,7 +529,7 @@ class OxylabsSearchAPIWrapper(BaseModel):
                     in parent_.path_.split("-")[-3:]
                     or parent_.tag.lower() in self.image_binary_content_attributes
                 ) and not self.include_binary_image_data:
-                    target_structure = "Redacted base64 image string..."
+                    target_structure = self.binary_content_replacement
 
                 target_snippets.append(
                     f"{recursion_padding}{parent_.display_tag}: {str(target_structure)}"
@@ -507,11 +540,12 @@ class OxylabsSearchAPIWrapper(BaseModel):
                     parent_.tag.lower() in self.image_binary_content_attributes
                     and not self.include_binary_image_data
                 ):
-                    target_structure = "Redacted base64 image string..."
+                    target_structure = self.binary_content_replacement
 
                 if parent_.tag.lower() not in self.excluded_result_attributes:
                     target_snippets.append(
-                        f"{recursion_padding}{parent_.display_tag}: {str(target_structure)}"
+                        f"{recursion_padding}{parent_.display_tag}:"
+                        f" {str(target_structure)}"
                     )
 
     def process_tags(
@@ -540,7 +574,10 @@ class OxylabsSearchAPIWrapper(BaseModel):
     def _create_knowledge_graph_snippets(
         self, results: dict, knowledge_graph_snippets: list
     ) -> None:
-        """Create knowledge graph snippets from Oxylabs SERPResponse data search_information tag."""
+        """
+        Create knowledge graph snippets
+        from Oxylabs SERPResponse data search_information tag.
+        """
 
         knowledge_graph_tags = [
             ("knowledge", "Knowledge Graph"),
@@ -555,7 +592,10 @@ class OxylabsSearchAPIWrapper(BaseModel):
     def _create_combined_search_result_snippets(
         self, results: dict, combined_search_result_snippets: list
     ) -> None:
-        """Create combined search result snippets from Oxylabs SERPResponse data search_information tag."""
+        """
+        Create combined search result snippets
+        from Oxylabs SERPResponse data search_information tag.
+        """
 
         combined_search_result_tags = [
             ("organic", "Organic Results"),
@@ -581,7 +621,10 @@ class OxylabsSearchAPIWrapper(BaseModel):
     def _create_product_information_snippets(
         self, results: dict, product_information_snippets: list
     ) -> None:
-        """Create product information snippets from Oxylabs SERPResponse data search_information tag."""
+        """
+        Create product information snippets from
+        Oxylabs SERPResponse data search_information tag.
+        """
 
         product_information_tags = [
             ("popular_products", "Popular Products"),
@@ -597,7 +640,10 @@ class OxylabsSearchAPIWrapper(BaseModel):
     def _create_local_information_snippets(
         self, results: dict, local_information_snippets: list
     ) -> None:
-        """Create local group information snippets from Oxylabs SERPResponse data search_information tag."""
+        """
+        Create local group information snippets
+        from Oxylabs SERPResponse data search_information tag.
+        """
 
         local_information_tags = [
             ("top_sights", "Top Sights"),
@@ -617,7 +663,10 @@ class OxylabsSearchAPIWrapper(BaseModel):
     def _create_search_information_snippets(
         self, results: dict, search_information_snippets: list
     ) -> None:
-        """Create search information snippets from Oxylabs SERPResponse data search_information tag."""
+        """
+        Create search information snippets
+        from Oxylabs SERPResponse data search_information tag.
+        """
 
         search_information_tags = [
             ("search_information", "Search Information"),

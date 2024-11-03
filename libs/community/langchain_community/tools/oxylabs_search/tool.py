@@ -19,7 +19,8 @@ class OxylabsSearchQueryInput(BaseModel):
     query: str = Field(description="query to retrieve on Oxylabs Search API")
     geo_location: Optional[str] = Field(
         default="California,United States",
-        description="Geographic location for the search; adjust if location-specific information is requested.",
+        description="Geographic location for the search;"
+        " adjust if location-specific information is requested.",
     )
 
 
@@ -32,7 +33,8 @@ class OxylabsSearchRun(BaseTool):
         "Ideal for situations where you need to answer questions about current events,"
         "facts, products, recipes, local information, and other topics "
         "that can be explored via web browsing. "
-        "The input should be a search query and, if applicable, a geo_location string to enhance result accuracy. "
+        "The input should be a search query and, if applicable,"
+        " a geo_location string to enhance result accuracy. "
         "The output is a compiled, formatted summary of query results. "
     )
     wrapper: OxylabsSearchAPIWrapper
@@ -83,7 +85,8 @@ class OxylabsSearchResults(BaseTool):
         "Ideal for situations where you need to answer questions about current events,"
         "facts, products, recipes, local information, and other topics "
         "that can be explored via web browsing. "
-        "The input should be a search query and, if applicable, a geo_location string to enhance result accuracy. "
+        "The input should be a search query and, if applicable,"
+        " a geo_location string to enhance result accuracy. "
         "The output is a JSON array of response page objects. "
     )
     wrapper: OxylabsSearchAPIWrapper
