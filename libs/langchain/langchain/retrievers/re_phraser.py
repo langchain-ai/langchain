@@ -1,14 +1,17 @@
 import logging
 from typing import List
 
-from langchain.callbacks.manager import (
+from langchain_core.callbacks import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain.chains.llm import LLMChain
-from langchain.llms.base import BaseLLM
-from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import BaseRetriever, Document
+from langchain_core.documents import Document
+from langchain_core.language_models import BaseLLM
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import BasePromptTemplate
+from langchain_core.prompts.prompt import PromptTemplate
+from langchain_core.retrievers import BaseRetriever
+from langchain_core.runnables import Runnable
 
 logger = logging.getLogger(__name__)
 
@@ -23,19 +26,18 @@ DEFAULT_QUERY_PROMPT = PromptTemplate.from_template(DEFAULT_TEMPLATE)
 
 
 class RePhraseQueryRetriever(BaseRetriever):
-
-    """Given a user query, use an LLM to re-phrase it.
-    Then, retrieve docs for re-phrased query."""
+    """Given a query, use an LLM to re-phrase it.
+    Then, retrieve docs for the re-phrased query."""
 
     retriever: BaseRetriever
-    llm_chain: LLMChain
+    llm_chain: Runnable
 
     @classmethod
     def from_llm(
         cls,
         retriever: BaseRetriever,
         llm: BaseLLM,
-        prompt: PromptTemplate = DEFAULT_QUERY_PROMPT,
+        prompt: BasePromptTemplate = DEFAULT_QUERY_PROMPT,
     ) -> "RePhraseQueryRetriever":
         """Initialize from llm using default template.
 
@@ -49,8 +51,7 @@ class RePhraseQueryRetriever(BaseRetriever):
         Returns:
             RePhraseQueryRetriever
         """
-
-        llm_chain = LLMChain(llm=llm, prompt=prompt)
+        llm_chain = prompt | llm | StrOutputParser()
         return cls(
             retriever=retriever,
             llm_chain=llm_chain,
@@ -62,7 +63,7 @@ class RePhraseQueryRetriever(BaseRetriever):
         *,
         run_manager: CallbackManagerForRetrieverRun,
     ) -> List[Document]:
-        """Get relevated documents given a user question.
+        """Get relevant documents given a user question.
 
         Args:
             query: user question
@@ -70,11 +71,12 @@ class RePhraseQueryRetriever(BaseRetriever):
         Returns:
             Relevant documents for re-phrased question
         """
-        response = self.llm_chain(query, callbacks=run_manager.get_child())
-        re_phrased_question = response["text"]
+        re_phrased_question = self.llm_chain.invoke(
+            query, {"callbacks": run_manager.get_child()}
+        )
         logger.info(f"Re-phrased question: {re_phrased_question}")
-        docs = self.retriever.get_relevant_documents(
-            re_phrased_question, callbacks=run_manager.get_child()
+        docs = self.retriever.invoke(
+            re_phrased_question, config={"callbacks": run_manager.get_child()}
         )
         return docs
 

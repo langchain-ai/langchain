@@ -4,11 +4,12 @@ from __future__ import annotations
 
 from typing import Any, Callable, List, Optional, Protocol, Tuple
 
-from pydantic import Extra
+from langchain_core._api import deprecated
+from langchain_core.callbacks import Callbacks
+from langchain_core.documents import Document
+from pydantic import ConfigDict
 
-from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
-from langchain.docstore.document import Document
 
 
 class CombineDocsProtocol(Protocol):
@@ -25,9 +26,21 @@ class AsyncCombineDocsProtocol(Protocol):
         """Async interface for the combine_docs method."""
 
 
-def _split_list_of_docs(
+def split_list_of_docs(
     docs: List[Document], length_func: Callable, token_max: int, **kwargs: Any
 ) -> List[List[Document]]:
+    """Split Documents into subsets that each meet a cumulative length constraint.
+
+    Args:
+        docs: The full list of Documents.
+        length_func: Function for computing the cumulative length of a set of Documents.
+        token_max: The maximum cumulative length of any subset of Documents.
+        **kwargs: Arbitrary additional keyword params to pass to each call of the
+            length_func.
+
+    Returns:
+        A List[List[Document]].
+    """
     new_result_doc_list = []
     _sub_result_docs = []
     for doc in docs:
@@ -45,11 +58,27 @@ def _split_list_of_docs(
     return new_result_doc_list
 
 
-def _collapse_docs(
+def collapse_docs(
     docs: List[Document],
     combine_document_func: CombineDocsProtocol,
     **kwargs: Any,
 ) -> Document:
+    """Execute a collapse function on a set of documents and merge their metadatas.
+
+    Args:
+        docs: A list of Documents to combine.
+        combine_document_func: A function that takes in a list of Documents and
+            optionally addition keyword parameters and combines them into a single
+            string.
+        **kwargs: Arbitrary additional keyword params to pass to the
+            combine_document_func.
+
+    Returns:
+        A single Document with the output of combine_document_func for the page content
+            and the combined metadata's of all the input documents. All metadata values
+            are strings, and where there are overlapping keys across documents the
+            values are joined by ", ".
+    """
     result = combine_document_func(docs, **kwargs)
     combined_metadata = {k: str(v) for k, v in docs[0].metadata.items()}
     for doc in docs[1:]:
@@ -61,11 +90,27 @@ def _collapse_docs(
     return Document(page_content=result, metadata=combined_metadata)
 
 
-async def _acollapse_docs(
+async def acollapse_docs(
     docs: List[Document],
     combine_document_func: AsyncCombineDocsProtocol,
     **kwargs: Any,
 ) -> Document:
+    """Execute a collapse function on a set of documents and merge their metadatas.
+
+    Args:
+        docs: A list of Documents to combine.
+        combine_document_func: A function that takes in a list of Documents and
+            optionally addition keyword parameters and combines them into a single
+            string.
+        **kwargs: Arbitrary additional keyword params to pass to the
+            combine_document_func.
+
+    Returns:
+        A single Document with the output of combine_document_func for the page content
+            and the combined metadata's of all the input documents. All metadata values
+            are strings, and where there are overlapping keys across documents the
+            values are joined by ", ".
+    """
     result = await combine_document_func(docs, **kwargs)
     combined_metadata = {k: str(v) for k, v in docs[0].metadata.items()}
     for doc in docs[1:]:
@@ -77,6 +122,15 @@ async def _acollapse_docs(
     return Document(page_content=result, metadata=combined_metadata)
 
 
+@deprecated(
+    since="0.3.1",
+    removal="1.0",
+    message=(
+        "This class is deprecated. Please see the migration guide here for "
+        "a recommended replacement: "
+        "https://python.langchain.com/docs/versions/migrating_chains/map_reduce_chain/"
+    ),
+)
 class ReduceDocumentsChain(BaseCombineDocumentsChain):
     """Combine documents by recursively reducing them.
 
@@ -101,8 +155,8 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
             from langchain.chains import (
                 StuffDocumentsChain, LLMChain, ReduceDocumentsChain
             )
-            from langchain.prompts import PromptTemplate
-            from langchain.llms import OpenAI
+            from langchain_core.prompts import PromptTemplate
+            from langchain_community.llms import OpenAI
 
             # This controls how each document will be formatted. Specifically,
             # it will be passed to `format_document` - see that function for more
@@ -156,12 +210,15 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
     """The maximum number of tokens to group documents into. For example, if
     set to 3000 then documents will be grouped into chunks of no greater than
     3000 tokens before trying to combine them into a smaller chunk."""
+    collapse_max_retries: Optional[int] = None
+    """The maximum number of retries to collapse documents to fit token_max.
+    If None, it will keep trying to collapse documents to fit token_max.
+    Otherwise, after it reaches the max number, it will throw an error"""
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
     @property
     def _collapse_chain(self) -> BaseCombineDocumentsChain:
@@ -245,15 +302,22 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
             )
 
         _token_max = token_max or self.token_max
+        retries: int = 0
         while num_tokens is not None and num_tokens > _token_max:
-            new_result_doc_list = _split_list_of_docs(
+            new_result_doc_list = split_list_of_docs(
                 result_docs, length_func, _token_max, **kwargs
             )
             result_docs = []
             for docs in new_result_doc_list:
-                new_doc = _collapse_docs(docs, _collapse_docs_func, **kwargs)
+                new_doc = collapse_docs(docs, _collapse_docs_func, **kwargs)
                 result_docs.append(new_doc)
             num_tokens = length_func(result_docs, **kwargs)
+            retries += 1
+            if self.collapse_max_retries and retries == self.collapse_max_retries:
+                raise ValueError(
+                    f"Exceed {self.collapse_max_retries} tries to \
+                        collapse document to {_token_max} tokens."
+                )
         return result_docs, {}
 
     async def _acollapse(
@@ -273,15 +337,22 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
             )
 
         _token_max = token_max or self.token_max
+        retries: int = 0
         while num_tokens is not None and num_tokens > _token_max:
-            new_result_doc_list = _split_list_of_docs(
+            new_result_doc_list = split_list_of_docs(
                 result_docs, length_func, _token_max, **kwargs
             )
             result_docs = []
             for docs in new_result_doc_list:
-                new_doc = await _acollapse_docs(docs, _collapse_docs_func, **kwargs)
+                new_doc = await acollapse_docs(docs, _collapse_docs_func, **kwargs)
                 result_docs.append(new_doc)
             num_tokens = length_func(result_docs, **kwargs)
+            retries += 1
+            if self.collapse_max_retries and retries == self.collapse_max_retries:
+                raise ValueError(
+                    f"Exceed {self.collapse_max_retries} tries to \
+                        collapse document to {_token_max} tokens."
+                )
         return result_docs, {}
 
     @property

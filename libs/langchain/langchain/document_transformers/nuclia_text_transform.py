@@ -1,47 +1,25 @@
-import asyncio
-import json
-import uuid
-from typing import Any, Sequence
+from typing import TYPE_CHECKING, Any
 
-from langchain.schema.document import BaseDocumentTransformer, Document
-from langchain.tools.nuclia.tool import NucliaUnderstandingAPI
+from langchain._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_community.document_transformers import NucliaTextTransformer
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "NucliaTextTransformer": "langchain_community.document_transformers"
+}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class NucliaTextTransformer(BaseDocumentTransformer):
-    """
-    The Nuclia Understanding API splits into paragraphs and sentences,
-    identifies entities, provides a summary of the text and generates
-    embeddings for all sentences.
-    """
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    def __init__(self, nua: NucliaUnderstandingAPI):
-        self.nua = nua
 
-    def transform_documents(
-        self, documents: Sequence[Document], **kwargs: Any
-    ) -> Sequence[Document]:
-        raise NotImplementedError
-
-    async def atransform_documents(
-        self, documents: Sequence[Document], **kwargs: Any
-    ) -> Sequence[Document]:
-        tasks = [
-            self.nua.arun(
-                {
-                    "action": "push",
-                    "id": str(uuid.uuid4()),
-                    "text": doc.page_content,
-                    "path": None,
-                }
-            )
-            for doc in documents
-        ]
-        results = await asyncio.gather(*tasks)
-        for doc, result in zip(documents, results):
-            obj = json.loads(result)
-            metadata = {
-                "file": obj["file_extracted_data"][0],
-                "metadata": obj["field_metadata"][0],
-            }
-            doc.metadata["nuclia"] = metadata
-        return documents
+__all__ = [
+    "NucliaTextTransformer",
+]

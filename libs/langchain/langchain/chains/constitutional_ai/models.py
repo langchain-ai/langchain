@@ -1,4 +1,5 @@
 """Models for the Constitutional AI chain."""
+
 from pydantic import BaseModel
 
 

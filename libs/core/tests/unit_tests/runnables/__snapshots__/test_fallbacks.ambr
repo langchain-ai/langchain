@@ -1,0 +1,369 @@
+# serializer version: 1
+# name: test_fallbacks[chain]
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain",
+      "schema",
+      "runnable",
+      "RunnableSequence"
+    ],
+    "kwargs": {
+      "first": {
+        "lc": 1,
+        "type": "constructor",
+        "id": [
+          "langchain",
+          "schema",
+          "runnable",
+          "RunnableParallel"
+        ],
+        "kwargs": {
+          "steps__": {
+            "buz": {
+              "lc": 1,
+              "type": "not_implemented",
+              "id": [
+                "langchain_core",
+                "runnables",
+                "base",
+                "RunnableLambda"
+              ],
+              "repr": "RunnableLambda(lambda x: x)"
+            }
+          }
+        },
+        "name": "RunnableParallel<buz>"
+      },
+      "last": {
+        "lc": 1,
+        "type": "constructor",
+        "id": [
+          "langchain",
+          "schema",
+          "runnable",
+          "RunnableWithFallbacks"
+        ],
+        "kwargs": {
+          "runnable": {
+            "lc": 1,
+            "type": "constructor",
+            "id": [
+              "langchain",
+              "schema",
+              "runnable",
+              "RunnableSequence"
+            ],
+            "kwargs": {
+              "first": {
+                "lc": 1,
+                "type": "constructor",
+                "id": [
+                  "langchain",
+                  "prompts",
+                  "prompt",
+                  "PromptTemplate"
+                ],
+                "kwargs": {
+                  "input_variables": [
+                    "buz"
+                  ],
+                  "template": "what did baz say to {buz}",
+                  "template_format": "f-string"
+                },
+                "name": "PromptTemplate"
+              },
+              "last": {
+                "lc": 1,
+                "type": "not_implemented",
+                "id": [
+                  "langchain_core",
+                  "language_models",
+                  "fake",
+                  "FakeListLLM"
+                ],
+                "repr": "FakeListLLM(responses=['foo'], i=1)",
+                "name": "FakeListLLM"
+              }
+            },
+            "name": "RunnableSequence"
+          },
+          "fallbacks": [
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain",
+                "schema",
+                "runnable",
+                "RunnableSequence"
+              ],
+              "kwargs": {
+                "first": {
+                  "lc": 1,
+                  "type": "constructor",
+                  "id": [
+                    "langchain",
+                    "prompts",
+                    "prompt",
+                    "PromptTemplate"
+                  ],
+                  "kwargs": {
+                    "input_variables": [
+                      "buz"
+                    ],
+                    "template": "what did baz say to {buz}",
+                    "template_format": "f-string"
+                  },
+                  "name": "PromptTemplate"
+                },
+                "last": {
+                  "lc": 1,
+                  "type": "not_implemented",
+                  "id": [
+                    "langchain_core",
+                    "language_models",
+                    "fake",
+                    "FakeListLLM"
+                  ],
+                  "repr": "FakeListLLM(responses=['bar'])",
+                  "name": "FakeListLLM"
+                }
+              },
+              "name": "RunnableSequence"
+            }
+          ],
+          "exceptions_to_handle": [
+            {
+              "lc": 1,
+              "type": "not_implemented",
+              "id": [
+                "builtins",
+                "Exception"
+              ],
+              "repr": "<class 'Exception'>"
+            }
+          ]
+        },
+        "name": "RunnableWithFallbacks"
+      }
+    },
+    "name": "RunnableSequence"
+  }
+  '''
+# ---
+# name: test_fallbacks[chain_pass_exceptions]
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain",
+      "schema",
+      "runnable",
+      "RunnableSequence"
+    ],
+    "kwargs": {
+      "first": {
+        "lc": 1,
+        "type": "constructor",
+        "id": [
+          "langchain",
+          "schema",
+          "runnable",
+          "RunnableParallel"
+        ],
+        "kwargs": {
+          "steps__": {
+            "text": {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain",
+                "schema",
+                "runnable",
+                "RunnablePassthrough"
+              ],
+              "kwargs": {},
+              "name": "RunnablePassthrough"
+            }
+          }
+        },
+        "name": "RunnableParallel<text>"
+      },
+      "last": {
+        "lc": 1,
+        "type": "constructor",
+        "id": [
+          "langchain",
+          "schema",
+          "runnable",
+          "RunnableWithFallbacks"
+        ],
+        "kwargs": {
+          "runnable": {
+            "lc": 1,
+            "type": "not_implemented",
+            "id": [
+              "langchain_core",
+              "runnables",
+              "base",
+              "RunnableLambda"
+            ],
+            "repr": "RunnableLambda(_raise_error)"
+          },
+          "fallbacks": [
+            {
+              "lc": 1,
+              "type": "not_implemented",
+              "id": [
+                "langchain_core",
+                "runnables",
+                "base",
+                "RunnableLambda"
+              ],
+              "repr": "RunnableLambda(_dont_raise_error)"
+            }
+          ],
+          "exceptions_to_handle": [
+            {
+              "lc": 1,
+              "type": "not_implemented",
+              "id": [
+                "builtins",
+                "Exception"
+              ],
+              "repr": "<class 'Exception'>"
+            }
+          ],
+          "exception_key": "exception"
+        },
+        "name": "RunnableWithFallbacks"
+      }
+    },
+    "name": "RunnableSequence"
+  }
+  '''
+# ---
+# name: test_fallbacks[llm]
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain",
+      "schema",
+      "runnable",
+      "RunnableWithFallbacks"
+    ],
+    "kwargs": {
+      "runnable": {
+        "lc": 1,
+        "type": "not_implemented",
+        "id": [
+          "langchain_core",
+          "language_models",
+          "fake",
+          "FakeListLLM"
+        ],
+        "repr": "FakeListLLM(responses=['foo'], i=1)",
+        "name": "FakeListLLM"
+      },
+      "fallbacks": [
+        {
+          "lc": 1,
+          "type": "not_implemented",
+          "id": [
+            "langchain_core",
+            "language_models",
+            "fake",
+            "FakeListLLM"
+          ],
+          "repr": "FakeListLLM(responses=['bar'])",
+          "name": "FakeListLLM"
+        }
+      ],
+      "exceptions_to_handle": [
+        {
+          "lc": 1,
+          "type": "not_implemented",
+          "id": [
+            "builtins",
+            "Exception"
+          ],
+          "repr": "<class 'Exception'>"
+        }
+      ]
+    },
+    "name": "RunnableWithFallbacks"
+  }
+  '''
+# ---
+# name: test_fallbacks[llm_multi]
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain",
+      "schema",
+      "runnable",
+      "RunnableWithFallbacks"
+    ],
+    "kwargs": {
+      "runnable": {
+        "lc": 1,
+        "type": "not_implemented",
+        "id": [
+          "langchain_core",
+          "language_models",
+          "fake",
+          "FakeListLLM"
+        ],
+        "repr": "FakeListLLM(responses=['foo'], i=1)",
+        "name": "FakeListLLM"
+      },
+      "fallbacks": [
+        {
+          "lc": 1,
+          "type": "not_implemented",
+          "id": [
+            "langchain_core",
+            "language_models",
+            "fake",
+            "FakeListLLM"
+          ],
+          "repr": "FakeListLLM(responses=['baz'], i=1)",
+          "name": "FakeListLLM"
+        },
+        {
+          "lc": 1,
+          "type": "not_implemented",
+          "id": [
+            "langchain_core",
+            "language_models",
+            "fake",
+            "FakeListLLM"
+          ],
+          "repr": "FakeListLLM(responses=['bar'])",
+          "name": "FakeListLLM"
+        }
+      ],
+      "exceptions_to_handle": [
+        {
+          "lc": 1,
+          "type": "not_implemented",
+          "id": [
+            "builtins",
+            "Exception"
+          ],
+          "repr": "<class 'Exception'>"
+        }
+      ]
+    },
+    "name": "RunnableWithFallbacks"
+  }
+  '''
+# ---

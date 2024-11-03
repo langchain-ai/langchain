@@ -1,12 +1,26 @@
 from typing import Any, Dict, List
 
+from langchain_core._api import deprecated
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.messages import BaseMessage, get_buffer_string
+
 from langchain.memory.chat_memory import BaseChatMemory
-from langchain.schema.language_model import BaseLanguageModel
-from langchain.schema.messages import BaseMessage, get_buffer_string
 
 
+@deprecated(
+    since="0.3.1",
+    removal="1.0.0",
+    message=(
+        "Please see the migration guide at: "
+        "https://python.langchain.com/docs/versions/migrating_memory/"
+    ),
+)
 class ConversationTokenBufferMemory(BaseChatMemory):
-    """Conversation chat memory with token limit."""
+    """Conversation chat memory with token limit.
+
+    Keeps only the most recent messages in the conversation under the constraint
+    that the total number of tokens in the conversation does not exceed a certain limit.
+    """
 
     human_prefix: str = "Human"
     ai_prefix: str = "AI"
@@ -15,8 +29,22 @@ class ConversationTokenBufferMemory(BaseChatMemory):
     max_token_limit: int = 2000
 
     @property
-    def buffer(self) -> List[BaseMessage]:
+    def buffer(self) -> Any:
         """String buffer of memory."""
+        return self.buffer_as_messages if self.return_messages else self.buffer_as_str
+
+    @property
+    def buffer_as_str(self) -> str:
+        """Exposes the buffer as a string in case return_messages is False."""
+        return get_buffer_string(
+            self.chat_memory.messages,
+            human_prefix=self.human_prefix,
+            ai_prefix=self.ai_prefix,
+        )
+
+    @property
+    def buffer_as_messages(self) -> List[BaseMessage]:
+        """Exposes the buffer as a list of messages in case return_messages is True."""
         return self.chat_memory.messages
 
     @property
@@ -29,16 +57,7 @@ class ConversationTokenBufferMemory(BaseChatMemory):
 
     def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         """Return history buffer."""
-        buffer: Any = self.buffer
-        if self.return_messages:
-            final_buffer: Any = buffer
-        else:
-            final_buffer = get_buffer_string(
-                buffer,
-                human_prefix=self.human_prefix,
-                ai_prefix=self.ai_prefix,
-            )
-        return {self.memory_key: final_buffer}
+        return {self.memory_key: self.buffer}
 
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Save context from this conversation to buffer. Pruned."""

@@ -1,0 +1,86 @@
+{
+   "openapi": "3.0.1",
+   "info": {
+      "title": "Slack AI Plugin",
+      "description": "A plugin that allows users to interact with Slack using ChatGPT",
+      "version": "v1"
+   },
+   "servers": [
+      {
+         "url": "https://slack.com/api"
+      }
+   ],
+   "components": {
+      "schemas": {
+         "searchRequest": {
+            "type": "object",
+            "required": [
+               "query"
+            ],
+            "properties": {
+               "query": {
+                  "type": "string",
+                  "description": "Search query",
+                  "required": true
+               }
+            }
+         },
+         "Result": {
+            "type": "object",
+            "properties": {
+               "message": {
+                  "type": "string"
+               },
+               "permalink": {
+                  "type": "string"
+               }
+            }
+         }
+      }
+   },
+   "paths": {
+      "/ai.alpha.search.messages": {
+         "post": {
+            "operationId": "ai_alpha_search_messages",
+            "description": "Search for messages matching a query",
+            "requestBody": {
+               "required": true,
+               "content": {
+                  "application/json": {
+                     "schema": {
+                        "$ref": "#/components/schemas/searchRequest"
+                     }
+                  }
+               }
+            },
+            "responses": {
+               "200": {
+                  "description": "Success response",
+                  "content": {
+                     "application/json": {
+                        "schema": {
+                           "type": "object",
+                           "required": [
+                              "ok"
+                           ],
+                           "properties": {
+                              "ok": {
+                                 "type": "boolean",
+                                 "description": "Boolean indicating whether or not the request was successful"
+                              },
+                              "results": {
+                                 "type": "array",
+                                 "items": {
+                                    "$ref": "#/components/schemas/Result"
+                                 }
+                              }
+                           }
+                        }
+                     }
+                  }
+               }
+            }
+         }
+      }
+   }
+}

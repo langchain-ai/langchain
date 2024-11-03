@@ -1,48 +1,23 @@
-from __future__ import annotations
+from typing import TYPE_CHECKING, Any
 
-from typing import TYPE_CHECKING, List
-
-from pydantic import Field
-
-from langchain.agents.agent_toolkits.base import BaseToolkit
-from langchain.tools import BaseTool
-from langchain.tools.gmail.create_draft import GmailCreateDraft
-from langchain.tools.gmail.get_message import GmailGetMessage
-from langchain.tools.gmail.get_thread import GmailGetThread
-from langchain.tools.gmail.search import GmailSearch
-from langchain.tools.gmail.send_message import GmailSendMessage
-from langchain.tools.gmail.utils import build_resource_service
+from langchain._api import create_importer
 
 if TYPE_CHECKING:
-    # This is for linting and IDE typehints
-    from googleapiclient.discovery import Resource
-else:
-    try:
-        # We do this so pydantic can resolve the types when instantiating
-        from googleapiclient.discovery import Resource
-    except ImportError:
-        pass
+    from langchain_community.agent_toolkits.gmail.toolkit import GmailToolkit
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"GmailToolkit": "langchain_community.agent_toolkits.gmail.toolkit"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-SCOPES = ["https://mail.google.com/"]
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
 
-class GmailToolkit(BaseToolkit):
-    """Toolkit for interacting with Gmail."""
-
-    api_resource: Resource = Field(default_factory=build_resource_service)
-
-    class Config:
-        """Pydantic config."""
-
-        arbitrary_types_allowed = True
-
-    def get_tools(self) -> List[BaseTool]:
-        """Get the tools in the toolkit."""
-        return [
-            GmailCreateDraft(api_resource=self.api_resource),
-            GmailSendMessage(api_resource=self.api_resource),
-            GmailSearch(api_resource=self.api_resource),
-            GmailGetMessage(api_resource=self.api_resource),
-            GmailGetThread(api_resource=self.api_resource),
-        ]
+__all__ = [
+    "GmailToolkit",
+]

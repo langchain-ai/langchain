@@ -1,12 +1,16 @@
 """Chain for question-answering with self-verification."""
+
 from __future__ import annotations
 
 import warnings
 from typing import Any, Dict, List, Optional
 
-from pydantic import Extra, root_validator
+from langchain_core._api import deprecated
+from langchain_core.callbacks import CallbackManagerForChainRun
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.prompts import PromptTemplate
+from pydantic import ConfigDict, model_validator
 
-from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.llm_checker.prompt import (
@@ -16,8 +20,6 @@ from langchain.chains.llm_checker.prompt import (
     REVISED_ANSWER_PROMPT,
 )
 from langchain.chains.sequential import SequentialChain
-from langchain.prompts import PromptTemplate
-from langchain.schema.language_model import BaseLanguageModel
 
 
 def _load_question_to_checked_assertions_chain(
@@ -54,7 +56,7 @@ def _load_question_to_checked_assertions_chain(
         revised_answer_chain,
     ]
     question_to_checked_assertions_chain = SequentialChain(
-        chains=chains,
+        chains=chains,  # type: ignore[arg-type]
         input_variables=["question"],
         output_variables=["revised_statement"],
         verbose=True,
@@ -62,13 +64,23 @@ def _load_question_to_checked_assertions_chain(
     return question_to_checked_assertions_chain
 
 
+@deprecated(
+    since="0.2.13",
+    message=(
+        "See LangGraph guides for a variety of self-reflection and corrective "
+        "strategies for question-answering and other tasks: "
+        "https://langchain-ai.github.io/langgraph/tutorials/rag/langgraph_self_rag/"
+    ),
+    removal="1.0",
+)
 class LLMCheckerChain(Chain):
     """Chain for question-answering with self-verification.
 
     Example:
         .. code-block:: python
 
-            from langchain import OpenAI, LLMCheckerChain
+            from langchain_community.llms import OpenAI
+            from langchain.chains import LLMCheckerChain
             llm = OpenAI(temperature=0.7)
             checker_chain = LLMCheckerChain.from_llm(llm)
     """
@@ -88,14 +100,14 @@ class LLMCheckerChain(Chain):
     input_key: str = "query"  #: :meta private:
     output_key: str = "result"  #: :meta private:
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
-
-    @root_validator(pre=True)
-    def raise_deprecation(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def raise_deprecation(cls, values: Dict) -> Any:
         if "llm" in values:
             warnings.warn(
                 "Directly instantiating an LLMCheckerChain with an llm is deprecated. "
@@ -117,9 +129,9 @@ class LLMCheckerChain(Chain):
                         values.get("revised_answer_prompt", REVISED_ANSWER_PROMPT),
                     )
                 )
-                values[
-                    "question_to_checked_assertions_chain"
-                ] = question_to_checked_assertions_chain
+                values["question_to_checked_assertions_chain"] = (
+                    question_to_checked_assertions_chain
+                )
         return values
 
     @property

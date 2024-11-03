@@ -1,7 +1,7 @@
 # flake8: noqa
 from langchain.chains.prompt_selector import ConditionalPromptSelector, is_chat_model
-from langchain.prompts import PromptTemplate
-from langchain.prompts.chat import (
+from langchain_core.prompts import PromptTemplate
+from langchain_core.prompts.chat import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
@@ -17,7 +17,7 @@ PROMPT = PromptTemplate(
     template=prompt_template, input_variables=["context", "question"]
 )
 
-system_template = """Use the following pieces of context to answer the users question. 
+system_template = """Use the following pieces of context to answer the user's question. 
 If you don't know the answer, just say that you don't know, don't try to make up an answer.
 ----------------
 {context}"""

@@ -1,3 +1,3 @@
-# 🦜️🧪 LangChain Experimental
+This package has moved!
 
-This repository holds more experimental LangChain code.
+https://github.com/langchain-ai/langchain-experimental/tree/main/libs/experimental

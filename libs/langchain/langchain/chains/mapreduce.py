@@ -3,25 +3,37 @@
 Splits up a document, sends the smaller parts to the LLM with one prompt,
 then combines the results with another one.
 """
+
 from __future__ import annotations
 
 from typing import Any, Dict, List, Mapping, Optional
 
-from pydantic import Extra
+from langchain_core._api import deprecated
+from langchain_core.callbacks import CallbackManagerForChainRun, Callbacks
+from langchain_core.documents import Document
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.prompts import BasePromptTemplate
+from langchain_text_splitters import TextSplitter
+from pydantic import ConfigDict
 
-from langchain.callbacks.manager import CallbackManagerForChainRun, Callbacks
 from langchain.chains import ReduceDocumentsChain
 from langchain.chains.base import Chain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.llm import LLMChain
-from langchain.docstore.document import Document
-from langchain.schema import BasePromptTemplate
-from langchain.schema.language_model import BaseLanguageModel
-from langchain.text_splitter import TextSplitter
 
 
+@deprecated(
+    since="0.2.13",
+    removal="1.0",
+    message=(
+        "Refer here for a recommended map-reduce implementation using langgraph: "
+        "https://langchain-ai.github.io/langgraph/how-tos/map-reduce/. See also "
+        "migration guide: "
+        "https://python.langchain.com/docs/versions/migrating_chains/map_reduce_chain/"  # noqa: E501
+    ),
+)
 class MapReduceChain(Chain):
     """Map-reduce chain."""
 
@@ -66,11 +78,10 @@ class MapReduceChain(Chain):
             **kwargs,
         )
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
     @property
     def input_keys(self) -> List[str]:

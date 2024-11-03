@@ -2,21 +2,20 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-from pydantic import root_validator
+from langchain_core.output_parsers import BaseOutputParser
+from langchain_core.utils import pre_init
 
-from langchain.schema import BaseOutputParser
 
-
-class CombiningOutputParser(BaseOutputParser):
+class CombiningOutputParser(BaseOutputParser[Dict[str, Any]]):
     """Combine multiple output parsers into one."""
-
-    @property
-    def lc_serializable(self) -> bool:
-        return True
 
     parsers: List[BaseOutputParser]
 
-    @root_validator()
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        return True
+
+    @pre_init
     def validate_parsers(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate the parsers."""
         parsers = values["parsers"]
@@ -26,7 +25,7 @@ class CombiningOutputParser(BaseOutputParser):
             if parser._type == "combining":
                 raise ValueError("Cannot nest combining parsers")
             if parser._type == "list":
-                raise ValueError("Cannot comine list parsers")
+                raise ValueError("Cannot combine list parsers")
         return values
 
     @property

@@ -1,0 +1,27 @@
+# GooseAI
+
+>[GooseAI](https://goose.ai) makes deploying NLP services easier and more accessible. 
+> `GooseAI` is a fully managed inference service delivered via API. 
+> With feature parity to other well known APIs, `GooseAI` delivers a plug-and-play solution 
+> for serving open source language models at the industry's best economics by simply 
+> changing 2 lines in your code.
+
+## Installation and Setup
+
+- Install the Python SDK with `pip install openai`
+- Get your GooseAI api key from this link [here](https://goose.ai/).
+- Set the environment variable (`GOOSEAI_API_KEY`).
+
+```python
+import os
+os.environ["GOOSEAI_API_KEY"] = "YOUR_API_KEY"
+```
+
+
+## LLMs
+
+See a [usage example](/docs/integrations/llms/gooseai).
+
+```python
+from langchain_community.llms import GooseAI
+```

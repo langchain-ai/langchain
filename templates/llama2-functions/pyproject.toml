@@ -1,0 +1,32 @@
+[tool.poetry]
+name = "llama2-functions"
+version = "0.1.0"
+description = "Extraction with a JSON-output LLaMA2 model"
+authors = [
+    "Lance Martin <lance@langchain.dev>",
+]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+langchain = "^0.1"
+replicate = ">=0.15.4"
+
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.21"
+
+[tool.langserve]
+export_module = "llama2_functions"
+export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "extraction"
+author = "LangChain"
+integrations = ["Llama.cpp", "Replicate"]
+tags = ["local-llm", "function-calling"]
+
+[build-system]
+requires = [
+    "poetry-core",
+]
+build-backend = "poetry.core.masonry.api"

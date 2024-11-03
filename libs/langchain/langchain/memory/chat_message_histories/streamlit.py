@@ -1,40 +1,25 @@
-from typing import List
+from typing import TYPE_CHECKING, Any
 
-from langchain.schema import (
-    BaseChatMessageHistory,
-)
-from langchain.schema.messages import BaseMessage
+from langchain._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_community.chat_message_histories import StreamlitChatMessageHistory
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "StreamlitChatMessageHistory": "langchain_community.chat_message_histories"
+}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class StreamlitChatMessageHistory(BaseChatMessageHistory):
-    """
-    Chat message history that stores messages in Streamlit session state.
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    Args:
-        key: The key to use in Streamlit session state for storing messages.
-    """
 
-    def __init__(self, key: str = "langchain_messages"):
-        try:
-            import streamlit as st
-        except ImportError as e:
-            raise ImportError(
-                "Unable to import streamlit, please run `pip install streamlit`."
-            ) from e
-
-        if key not in st.session_state:
-            st.session_state[key] = []
-        self._messages = st.session_state[key]
-
-    @property
-    def messages(self) -> List[BaseMessage]:  # type: ignore
-        """Retrieve the current list of messages"""
-        return self._messages
-
-    def add_message(self, message: BaseMessage) -> None:
-        """Add a message to the session memory"""
-        self._messages.append(message)
-
-    def clear(self) -> None:
-        """Clear session memory"""
-        self._messages.clear()
+__all__ = [
+    "StreamlitChatMessageHistory",
+]

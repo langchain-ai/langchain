@@ -1,46 +1,23 @@
-"""Wrapper around wikipedia API."""
+from typing import TYPE_CHECKING, Any
+
+from langchain._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_community.docstore.wikipedia import Wikipedia
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"Wikipedia": "langchain_community.docstore.wikipedia"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-from typing import Union
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-from langchain.docstore.base import Docstore
-from langchain.docstore.document import Document
 
-
-class Wikipedia(Docstore):
-    """Wrapper around wikipedia API."""
-
-    def __init__(self) -> None:
-        """Check that wikipedia package is installed."""
-        try:
-            import wikipedia  # noqa: F401
-        except ImportError:
-            raise ImportError(
-                "Could not import wikipedia python package. "
-                "Please install it with `pip install wikipedia`."
-            )
-
-    def search(self, search: str) -> Union[str, Document]:
-        """Try to search for wiki page.
-
-        If page exists, return the page summary, and a PageWithLookups object.
-        If page does not exist, return similar entries.
-
-        Args:
-            search: search string.
-
-        Returns: a Document object or error message.
-        """
-        import wikipedia
-
-        try:
-            page_content = wikipedia.page(search).content
-            url = wikipedia.page(search).url
-            result: Union[str, Document] = Document(
-                page_content=page_content, metadata={"page": url}
-            )
-        except wikipedia.PageError:
-            result = f"Could not find [{search}]. Similar: {wikipedia.search(search)}"
-        except wikipedia.DisambiguationError:
-            result = f"Could not find [{search}]. Similar: {wikipedia.search(search)}"
-        return result
+__all__ = [
+    "Wikipedia",
+]

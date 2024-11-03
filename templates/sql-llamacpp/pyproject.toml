@@ -1,0 +1,32 @@
+[tool.poetry]
+name = "sql-llamacpp"
+version = "0.1.0"
+description = "Private QA with a SQL database using natural language and a local LLM via llama.cpp"
+authors = [
+    "Lance Martin <lance@langchain.dev>",
+]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+langchain = "^0.1"
+llama-cpp-python = ">=0.1.79"
+
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.21"
+
+[tool.langserve]
+export_module = "sql_llamacpp"
+export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "sql"
+author = "LangChain"
+integrations = ["LLamacpp"]
+tags = ["sql"]
+
+[build-system]
+requires = [
+    "poetry-core",
+]
+build-backend = "poetry.core.masonry.api"

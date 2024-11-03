@@ -1,0 +1,35 @@
+[tool.poetry]
+name = "rag_conversation_zep"
+version = "0.0.1"
+description = "A RAG application built with Zep. Zep provides a VectorStore implementation to the chain."
+authors = ["Daniel Chalef <daniel@getzep.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+langchain = "^0.1"
+openai = "<2"
+zep-python = "^1.4.0"
+tiktoken = "^0.5.1"
+beautifulsoup4 = "^4.12.2"
+bs4 = "^0.0.1"
+langchain-text-splitters = ">=0.0.1,<0.1"
+
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.21"
+fastapi = ">=0.104.0,<1"
+sse-starlette = "^1.6.5"
+
+[tool.langserve]
+export_module = "rag_conversation_zep"
+export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "rag"
+author = "Elastic"
+integrations = ["OpenAI", "Zep"]
+tags = ["vectordbs"]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

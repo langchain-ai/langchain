@@ -1,50 +1,23 @@
-from typing import Iterable, List
+from typing import TYPE_CHECKING, Any
 
-from langchain.document_loaders.blob_loaders import FileSystemBlobLoader
-from langchain.document_loaders.blob_loaders.schema import Blob, BlobLoader
+from langchain._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_community.document_loaders import YoutubeAudioLoader
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"YoutubeAudioLoader": "langchain_community.document_loaders"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class YoutubeAudioLoader(BlobLoader):
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    """Load YouTube urls as audio file(s)."""
 
-    def __init__(self, urls: List[str], save_dir: str):
-        if not isinstance(urls, list):
-            raise TypeError("urls must be a list")
-
-        self.urls = urls
-        self.save_dir = save_dir
-
-    def yield_blobs(self) -> Iterable[Blob]:
-        """Yield audio blobs for each url."""
-
-        try:
-            import yt_dlp
-        except ImportError:
-            raise ImportError(
-                "yt_dlp package not found, please install it with "
-                "`pip install yt_dlp`"
-            )
-
-        # Use yt_dlp to download audio given a YouTube url
-        ydl_opts = {
-            "format": "m4a/bestaudio/best",
-            "noplaylist": True,
-            "outtmpl": self.save_dir + "/%(title)s.%(ext)s",
-            "postprocessors": [
-                {
-                    "key": "FFmpegExtractAudio",
-                    "preferredcodec": "m4a",
-                }
-            ],
-        }
-
-        for url in self.urls:
-            # Download file
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                ydl.download(url)
-
-        # Yield the written blobs
-        loader = FileSystemBlobLoader(self.save_dir, glob="*.m4a")
-        for blob in loader.yield_blobs():
-            yield blob
+__all__ = [
+    "YoutubeAudioLoader",
+]

@@ -6,29 +6,22 @@ import warnings
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from pydantic import Extra, root_validator
+from langchain_core._api import deprecated
+from langchain_core.callbacks import CallbackManagerForChainRun
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.prompts.prompt import PromptTemplate
+from pydantic import ConfigDict, model_validator
 
-from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.sequential import SequentialChain
-from langchain.prompts.prompt import PromptTemplate
-from langchain.schema.language_model import BaseLanguageModel
 
 PROMPTS_DIR = Path(__file__).parent / "prompts"
 
-CREATE_ASSERTIONS_PROMPT = PromptTemplate.from_file(
-    PROMPTS_DIR / "create_facts.txt", ["summary"]
-)
-CHECK_ASSERTIONS_PROMPT = PromptTemplate.from_file(
-    PROMPTS_DIR / "check_facts.txt", ["assertions"]
-)
-REVISED_SUMMARY_PROMPT = PromptTemplate.from_file(
-    PROMPTS_DIR / "revise_summary.txt", ["checked_assertions", "summary"]
-)
-ARE_ALL_TRUE_PROMPT = PromptTemplate.from_file(
-    PROMPTS_DIR / "are_all_true_prompt.txt", ["checked_assertions"]
-)
+CREATE_ASSERTIONS_PROMPT = PromptTemplate.from_file(PROMPTS_DIR / "create_facts.txt")
+CHECK_ASSERTIONS_PROMPT = PromptTemplate.from_file(PROMPTS_DIR / "check_facts.txt")
+REVISED_SUMMARY_PROMPT = PromptTemplate.from_file(PROMPTS_DIR / "revise_summary.txt")
+ARE_ALL_TRUE_PROMPT = PromptTemplate.from_file(PROMPTS_DIR / "are_all_true_prompt.txt")
 
 
 def _load_sequential_chain(
@@ -73,13 +66,23 @@ def _load_sequential_chain(
     return chain
 
 
+@deprecated(
+    since="0.2.13",
+    message=(
+        "See LangGraph guides for a variety of self-reflection and corrective "
+        "strategies for question-answering and other tasks: "
+        "https://langchain-ai.github.io/langgraph/tutorials/rag/langgraph_self_rag/"
+    ),
+    removal="1.0",
+)
 class LLMSummarizationCheckerChain(Chain):
     """Chain for question-answering with self-verification.
 
     Example:
         .. code-block:: python
 
-            from langchain import OpenAI, LLMSummarizationCheckerChain
+            from langchain_community.llms import OpenAI
+            from langchain.chains import LLMSummarizationCheckerChain
             llm = OpenAI(temperature=0.0)
             checker_chain = LLMSummarizationCheckerChain.from_llm(llm)
     """
@@ -102,14 +105,14 @@ class LLMSummarizationCheckerChain(Chain):
     max_checks: int = 2
     """Maximum number of times to check the assertions. Default to double-checking."""
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
-
-    @root_validator(pre=True)
-    def raise_deprecation(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def raise_deprecation(cls, values: Dict) -> Any:
         if "llm" in values:
             warnings.warn(
                 "Directly instantiating an LLMSummarizationCheckerChain with an llm is "
@@ -164,7 +167,7 @@ class LLMSummarizationCheckerChain(Chain):
                 break
 
             if self.verbose:
-                print(output["revised_summary"])
+                print(output["revised_summary"])  # noqa: T201
 
             chain_input = output["revised_summary"]
 

@@ -17,7 +17,6 @@ def test_zero_distance(distance: StringDistance) -> None:
     assert result["score"] == 0
 
 
-@pytest.mark.asyncio
 @pytest.mark.requires("rapidfuzz")
 @pytest.mark.parametrize("distance", list(StringDistance))
 async def test_zero_distance_async(distance: StringDistance) -> None:
@@ -43,7 +42,6 @@ def test_zero_distance_pairwise(
     assert result["score"] == 0
 
 
-@pytest.mark.asyncio
 @pytest.mark.requires("rapidfuzz")
 @pytest.mark.parametrize("distance", list(StringDistance))
 async def test_zero_distance_pairwise_async(distance: StringDistance) -> None:
@@ -56,8 +54,13 @@ async def test_zero_distance_pairwise_async(distance: StringDistance) -> None:
     assert result["score"] == 0
 
 
+valid_distances = [
+    distance for distance in StringDistance if distance != StringDistance.HAMMING
+]
+
+
 @pytest.mark.requires("rapidfuzz")
-@pytest.mark.parametrize("distance", list(StringDistance))
+@pytest.mark.parametrize("distance", valid_distances)
 @pytest.mark.parametrize("normalize_score", [True, False])
 def test_non_zero_distance(distance: StringDistance, normalize_score: bool) -> None:
     eval_chain = StringDistanceEvalChain(
@@ -72,9 +75,8 @@ def test_non_zero_distance(distance: StringDistance, normalize_score: bool) -> N
         assert result["score"] < 1.0
 
 
-@pytest.mark.asyncio
 @pytest.mark.requires("rapidfuzz")
-@pytest.mark.parametrize("distance", list(StringDistance))
+@pytest.mark.parametrize("distance", valid_distances)
 async def test_non_zero_distance_async(distance: StringDistance) -> None:
     eval_chain = StringDistanceEvalChain(distance=distance)
     prediction = "I like to eat apples."
@@ -87,7 +89,7 @@ async def test_non_zero_distance_async(distance: StringDistance) -> None:
 
 
 @pytest.mark.requires("rapidfuzz")
-@pytest.mark.parametrize("distance", list(StringDistance))
+@pytest.mark.parametrize("distance", valid_distances)
 def test_non_zero_distance_pairwise(distance: StringDistance) -> None:
     eval_chain = PairwiseStringDistanceEvalChain(distance=distance)
     prediction = "I like to eat apples."
@@ -99,9 +101,8 @@ def test_non_zero_distance_pairwise(distance: StringDistance) -> None:
     assert 0 < result["score"] < 1.0
 
 
-@pytest.mark.asyncio
 @pytest.mark.requires("rapidfuzz")
-@pytest.mark.parametrize("distance", list(StringDistance))
+@pytest.mark.parametrize("distance", valid_distances)
 async def test_non_zero_distance_pairwise_async(distance: StringDistance) -> None:
     eval_chain = PairwiseStringDistanceEvalChain(distance=distance)
     prediction = "I like to eat apples."

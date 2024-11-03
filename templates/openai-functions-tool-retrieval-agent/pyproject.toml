@@ -1,0 +1,32 @@
+[tool.poetry]
+name = "openai-functions-tool-retrieval-agent"
+version = "0.0.1"
+description = "Use large numbers of tools with tool retrieval strategies"
+authors = []
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+langchain = "^0.1"
+openai = "<2"
+tiktoken = "^0.5.1"
+faiss-cpu = "^1.7.4"
+
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.21"
+fastapi = ">=0.104.0,<1"
+sse-starlette = "^1.6.5"
+
+[tool.langserve]
+export_module = "openai_functions_tool_retrieval_agent"
+export_attr = "agent_executor"
+
+[tool.templates-hub]
+use-case = "agents"
+author = "LangChain"
+integrations = ["OpenAI", "FAISS"]
+tags = ["agents", "function-calling"]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

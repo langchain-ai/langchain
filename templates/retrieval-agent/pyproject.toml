@@ -1,0 +1,32 @@
+[tool.poetry]
+name = "retrieval-agent"
+version = "0.0.1"
+description = "Retrieval agent for Azure OpenAI"
+authors = []
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+langchain = "^0.1"
+openai = "<2"
+arxiv = "^2.0.0"
+langchain-openai = "^0.0.2.post1"
+
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.21"
+fastapi = ">=0.104.0,<1"
+sse-starlette = "^1.6.5"
+
+[tool.langserve]
+export_module = "retrieval_agent"
+export_attr = "agent_executor"
+
+[tool.templates-hub]
+use-case = "research"
+author = "LangChain"
+integrations = ["OpenAI", "Azure"]
+tags = ["data", "agents"]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

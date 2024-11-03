@@ -2,22 +2,109 @@
 
 from typing import Any, Dict, List, Optional, Tuple
 
-from pydantic import Extra, Field, root_validator
+from langchain_core._api import deprecated
+from langchain_core.callbacks import Callbacks
+from langchain_core.documents import Document
+from langchain_core.language_models import LanguageModelLike
+from langchain_core.output_parsers import BaseOutputParser, StrOutputParser
+from langchain_core.prompts import BasePromptTemplate, format_document
+from langchain_core.runnables import Runnable, RunnablePassthrough
+from pydantic import ConfigDict, Field, model_validator
 
-from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import (
+    DEFAULT_DOCUMENT_PROMPT,
+    DEFAULT_DOCUMENT_SEPARATOR,
+    DOCUMENTS_KEY,
     BaseCombineDocumentsChain,
+    _validate_prompt,
 )
 from langchain.chains.llm import LLMChain
-from langchain.docstore.document import Document
-from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import BasePromptTemplate, format_document
 
 
-def _get_default_document_prompt() -> PromptTemplate:
-    return PromptTemplate(input_variables=["page_content"], template="{page_content}")
+def create_stuff_documents_chain(
+    llm: LanguageModelLike,
+    prompt: BasePromptTemplate,
+    *,
+    output_parser: Optional[BaseOutputParser] = None,
+    document_prompt: Optional[BasePromptTemplate] = None,
+    document_separator: str = DEFAULT_DOCUMENT_SEPARATOR,
+    document_variable_name: str = DOCUMENTS_KEY,
+) -> Runnable[Dict[str, Any], Any]:
+    """Create a chain for passing a list of Documents to a model.
+
+    Args:
+        llm: Language model.
+        prompt: Prompt template. Must contain input variable "context" (override by
+            setting document_variable), which will be used for passing in the formatted documents.
+        output_parser: Output parser. Defaults to StrOutputParser.
+        document_prompt: Prompt used for formatting each document into a string. Input
+            variables can be "page_content" or any metadata keys that are in all
+            documents. "page_content" will automatically retrieve the
+            `Document.page_content`, and all other inputs variables will be
+            automatically retrieved from the `Document.metadata` dictionary. Default to
+            a prompt that only contains `Document.page_content`.
+        document_separator: String separator to use between formatted document strings.
+        document_variable_name: Variable name to use for the formatted documents in the prompt.
+            Defaults to "context".
+
+    Returns:
+        An LCEL Runnable. The input is a dictionary that must have a "context" key that
+        maps to a List[Document], and any other input variables expected in the prompt.
+        The Runnable return type depends on output_parser used.
+
+    Example:
+        .. code-block:: python
+
+            # pip install -U langchain langchain-community
+
+            from langchain_community.chat_models import ChatOpenAI
+            from langchain_core.documents import Document
+            from langchain_core.prompts import ChatPromptTemplate
+            from langchain.chains.combine_documents import create_stuff_documents_chain
+
+            prompt = ChatPromptTemplate.from_messages(
+                [("system", "What are everyone's favorite colors:\\n\\n{context}")]
+            )
+            llm = ChatOpenAI(model="gpt-3.5-turbo")
+            chain = create_stuff_documents_chain(llm, prompt)
+
+            docs = [
+                Document(page_content="Jesse loves red but not yellow"),
+                Document(page_content = "Jamal loves green but not as much as he loves orange")
+            ]
+
+            chain.invoke({"context": docs})
+    """  # noqa: E501
+
+    _validate_prompt(prompt, document_variable_name)
+    _document_prompt = document_prompt or DEFAULT_DOCUMENT_PROMPT
+    _output_parser = output_parser or StrOutputParser()
+
+    def format_docs(inputs: dict) -> str:
+        return document_separator.join(
+            format_document(doc, _document_prompt)
+            for doc in inputs[document_variable_name]
+        )
+
+    return (
+        RunnablePassthrough.assign(**{document_variable_name: format_docs}).with_config(
+            run_name="format_inputs"
+        )
+        | prompt
+        | llm
+        | _output_parser
+    ).with_config(run_name="stuff_documents_chain")
 
 
+@deprecated(
+    since="0.2.13",
+    removal="1.0",
+    message=(
+        "This class is deprecated. Use the `create_stuff_documents_chain` constructor "
+        "instead. See migration guide here: "
+        "https://python.langchain.com/docs/versions/migrating_chains/stuff_docs_chain/"  # noqa: E501
+    ),
+)
 class StuffDocumentsChain(BaseCombineDocumentsChain):
     """Chain that combines documents by stuffing into context.
 
@@ -31,15 +118,15 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
         .. code-block:: python
 
             from langchain.chains import StuffDocumentsChain, LLMChain
-            from langchain.prompts import PromptTemplate
-            from langchain.llms import OpenAI
+            from langchain_core.prompts import PromptTemplate
+            from langchain_community.llms import OpenAI
 
             # This controls how each document will be formatted. Specifically,
             # it will be passed to `format_document` - see that function for more
             # details.
             document_prompt = PromptTemplate(
                 input_variables=["page_content"],
-                 template="{page_content}"
+                template="{page_content}"
             )
             document_variable_name = "context"
             llm = OpenAI()
@@ -60,7 +147,7 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
     """LLM chain which is called with the formatted document string,
     along with any other inputs."""
     document_prompt: BasePromptTemplate = Field(
-        default_factory=_get_default_document_prompt
+        default_factory=lambda: DEFAULT_DOCUMENT_PROMPT
     )
     """Prompt to use to format each document, gets passed to `format_document`."""
     document_variable_name: str
@@ -69,14 +156,14 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
     document_separator: str = "\n\n"
     """The string with which to join the formatted documents"""
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
-
-    @root_validator(pre=True)
-    def get_default_document_variable_name(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def get_default_document_variable_name(cls, values: Dict) -> Any:
         """Get default document variable name, if not provided.
 
         If only one variable is present in the llm_chain.prompt,
@@ -100,11 +187,18 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
                 )
         return values
 
+    @property
+    def input_keys(self) -> List[str]:
+        extra_keys = [
+            k for k in self.llm_chain.input_keys if k != self.document_variable_name
+        ]
+        return super().input_keys + extra_keys
+
     def _get_inputs(self, docs: List[Document], **kwargs: Any) -> dict:
         """Construct inputs from kwargs and docs.
 
-        Format and the join all the documents together into one input with name
-        `self.document_variable_name`. The pluck any additional variables
+        Format and then join all the documents together into one input with name
+        `self.document_variable_name`. Also pluck any additional variables
         from **kwargs.
 
         Args:
@@ -144,7 +238,7 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
         """
         inputs = self._get_inputs(docs, **kwargs)
         prompt = self.llm_chain.prompt.format(**inputs)
-        return self.llm_chain.llm.get_num_tokens(prompt)
+        return self.llm_chain._get_num_tokens(prompt)
 
     def combine_docs(
         self, docs: List[Document], callbacks: Callbacks = None, **kwargs: Any

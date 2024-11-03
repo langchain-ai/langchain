@@ -1,0 +1,32 @@
+[tool.poetry]
+name = "sql-research-assistant"
+version = "0.0.1"
+description = "Uses GPT Researcher as a research agent over SQL"
+authors = []
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+langchain = "^0.1"
+openai = "^0.28.1"
+bs4 = "^0.0.1"
+duckduckgo-search = "^4.1.0"
+
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.21"
+fastapi = ">=0.104.0,<1"
+sse-starlette = "^1.6.5"
+
+[tool.langserve]
+export_module = "sql_research_assistant"
+export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "research"
+author = "LangChain"
+integrations = ["Ollama", "OpenAI"]
+tags = ["data", "agents", "sql", "local-models"]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

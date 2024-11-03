@@ -1,0 +1,62 @@
+name: release_docker
+
+on:
+  workflow_call:
+    inputs:
+      dockerfile:
+        required: true
+        type: string
+        description: "Path to the Dockerfile to build"
+      image:
+        required: true
+        type: string
+        description: "Name of the image to build"
+
+env:
+  TEST_TAG: ${{ inputs.image }}:test
+  LATEST_TAG: ${{ inputs.image }}:latest
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Get git tag
+        uses: actions-ecosystem/action-get-latest-tag@v1
+        id: get-latest-tag
+      - name: Set docker tag
+        env:
+          VERSION: ${{ steps.get-latest-tag.outputs.tag }}
+        run: |
+          echo "VERSION_TAG=${{ inputs.image }}:${VERSION#v}" >> $GITHUB_ENV
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build for Test
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ${{ inputs.dockerfile }}
+          load: true
+          tags: ${{ env.TEST_TAG }}
+      - name: Test
+        run: |
+          docker run --rm ${{ env.TEST_TAG }} python -c "import langchain"
+      - name: Build and Push to Docker Hub
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ${{ inputs.dockerfile }}
+          # We can only build for the intersection of platforms supported by
+          # QEMU and base python image, for now build only for
+          # linux/amd64 and linux/arm64
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ env.LATEST_TAG }},${{ env.VERSION_TAG }}
+          push: true

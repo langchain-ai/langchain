@@ -1,18 +1,21 @@
 """Interface for tools."""
+
 from typing import List, Optional
 
-from langchain.callbacks.manager import (
+from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain.tools.base import BaseTool, Tool, tool
+from langchain_core.tools import BaseTool, tool
 
 
-class InvalidTool(BaseTool):
+class InvalidTool(BaseTool):  # type: ignore[override]
     """Tool that is run when invalid tool name is encountered by agent."""
 
-    name = "invalid_tool"
-    description = "Called when tool name is invalid. Suggests valid tool names."
+    name: str = "invalid_tool"
+    """Name of the tool."""
+    description: str = "Called when tool name is invalid. Suggests valid tool names."
+    """Description of the tool."""
 
     def _run(
         self,
@@ -41,4 +44,4 @@ class InvalidTool(BaseTool):
         )
 
 
-__all__ = ["InvalidTool", "BaseTool", "tool", "Tool"]
+__all__ = ["InvalidTool", "tool"]

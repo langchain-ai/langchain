@@ -1,0 +1,34 @@
+,1,2,3,4,5,6,7,8,9,10,11,12
+A,0.065,0.063,0.061,0.070,0.061,0.060,0.065,0.064,0.063,0.063,0.059,0.073
+B,0.188,0.164,0.213,0.219,0.161,0.176,0.184,0.172,0.176,0.164,0.181,0.173
+C,0.207,0.190,0.218,0.190,0.211,0.182,0.215,0.211,0.187,0.184,0.208,0.171
+D,0.076,0.081,0.093,0.071,0.081,0.075,0.106,0.071,0.073,0.084,0.076,0.081
+E,0.076,0.069,0.082,0.099,0.094,0.072,0.086,0.064,0.070,0.067,0.068,0.074
+F,0.080,0.067,0.077,0.067,0.068,0.066,0.069,0.074,0.068,0.078,0.065,0.066
+G,0.061,0.076,0.063,0.069,0.083,0.074,0.071,0.067,0.066,0.067,0.067,0.068
+H,0.080,0.090,0.074,0.066,0.074,0.075,0.076,0.079,0.071,0.066,0.063,0.069
+
+
+
+,1,2,3,4,5,6,7,8,9,10,11,12
+A,Sample 1,Sample 2,Sample 3,Sample 4,Sample 5,Sample 6,Sample 7,Sample 8,Sample 9,Sample 10,Sample 11,Sample 12
+B,Sample 13,Sample 14,Sample 15,Sample 16,Sample 17,Sample 18,Sample 19,Sample 20,Sample 21,Sample 22,Sample 23,Sample 24
+C,Sample 25,Sample 26,Sample 27,Sample 28,Sample 29,Sample 30,Sample 31,Sample 32,Sample 33,Sample 34,Sample 35,Sample 36
+D,Sample 37,Sample 38,Sample 39,Sample 40,Sample 41,Sample 42,Sample 43,Sample 44,Sample 45,Sample 46,Sample 47,Sample 48
+E,Sample 49,Sample 50,Sample 51,Sample 52,Sample 53,Sample 54,Sample 55,Sample 56,Sample 57,Sample 58,Sample 59,Sample 60
+F,Sample 61,Sample 62,Sample 63,Sample 64,Sample 65,Sample 66,Sample 67,Sample 68,Sample 69,Sample 70,Sample 71,Sample 72
+G,Sample 73,Sample 74,Sample 75,Sample 76,Sample 77,Sample 78,Sample 79,Sample 80,Sample 81,Sample 82,Sample 83,Sample 84
+H,Sample 85,Sample 86,Sample 87,Sample 88,Sample 89,Sample 90,Sample 91,Sample 92,Sample 93,Sample 94,Sample 95,Sample 96
+
+
+
+Sample Wavelength (nm),540
+Reference Wavelength (nm),-1
+
+
+
+Smart Validation,Pass,
+Plate Well Assignment,Pass,Measured values of assigned wells indicate correct plate layout.
+Plate Orientation,,
+Replicates,,
+Standards,,

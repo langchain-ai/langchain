@@ -1,0 +1,34 @@
+[tool.poetry]
+name = "cassandra-synonym-caching"
+version = "0.0.1"
+description = "LLM caching backed by Apache Cassandra® or Astra DB"
+authors = [
+    "Stefano Lottini <stefano.lottini@datastax.com>",
+]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+langchain = "^0.1"
+openai = "<2"
+tiktoken = "^0.5.1"
+cassio = "^0.1.3"
+
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.21"
+
+[tool.langserve]
+export_module = "cassandra_synonym_caching"
+export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "rag"
+author = "DataStax"
+integrations = ["OpenAI", "Cassandra"]
+tags = ["vectordbs"]
+
+[build-system]
+requires = [
+    "poetry-core",
+]
+build-backend = "poetry.core.masonry.api"

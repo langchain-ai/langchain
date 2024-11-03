@@ -1,0 +1,49 @@
+             LayoutParser         : A Uniﬁed Toolkit for Deep
+          Learning Based Document Image Analysis
+
+
+Zejiang Shen           1  (     ), Ruochen Zhang                2, Melissa Dell         3, Benjamin Charles Germain
+                                         Lee   4, Jacob Carlson            3, and Weining Li              5
+
+                                                           1  Allen Institute for AI
+                                                           shannons@allenai.org
+                                                               2  Brown University
+                                                        ruochen          zhang@brown.edu
+                                                             3  Harvard University
+                                  {melissadell,jacob                       carlson       }@fas.harvard.edu
+                                                       4  University of Washington
+                                                         bcgl@cs.washington.edu
+                                                          5  University of Waterloo
+                                                            w422li@uwaterloo.ca
+
+
+
+             Abstract.        Recentadvancesindocumentimageanalysis(DIA)havebeen
+             primarily driven by the application of neural networks. Ideally, research
+             outcomes could be easily deployed in production and extended for further
+             investigation. However, various factors like loosely organized codebases
+             and sophisticated model conﬁgurations complicate the easy reuse of im-
+             portant innovations by awide audience. Though there havebeen on-going
+             eﬀorts to improve reusability and simplify deep learning (DL) model
+             development in disciplines like natural language processing and computer
+             vision, none of them are optimized for challenges in the domain of DIA.
+             This represents a major gap in the existing toolkit, as DIA is central to
+             academic research across a wide range of disciplines in the social sciences
+             and humanities. This paper introduces                           LayoutParser           , an open-source
+             library for streamlining the usage of DL in DIA research and applica-
+             tions. The core          LayoutParser            library comes with a set of simple and
+             intuitive interfaces for applying and customizing DL models for layout de-
+             tection,characterrecognition,andmanyotherdocumentprocessingtasks.
+             To promote extensibility,                 LayoutParser            also incorporates a community
+             platform for sharing both pre-trained models and full document digiti-
+             zation pipelines. We demonstrate that                         LayoutParser            is helpful for both
+             lightweight and large-scale digitization pipelines in real-word use cases.
+             The library is publicly available at                    https://layout-parser.github.io                            .
+
+             Keywords:          DocumentImageAnalysis                                    ·DeepLearning                    ·LayoutAnalysis
+             · Character Recognition                              · Open Source library                           · Toolkit.
+
+1   Introduction
+
+Deep Learning(DL)-based approaches are the state-of-the-art for a wide range of
+documentimageanalysis(DIA)tasksincludingdocumentimageclassiﬁcation[                                              11 ,

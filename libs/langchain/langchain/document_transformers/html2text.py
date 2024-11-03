@@ -1,41 +1,25 @@
-from typing import Any, Sequence
+from typing import TYPE_CHECKING, Any
 
-from langchain.schema import BaseDocumentTransformer, Document
+from langchain._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_community.document_transformers import Html2TextTransformer
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "Html2TextTransformer": "langchain_community.document_transformers"
+}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class Html2TextTransformer(BaseDocumentTransformer):
-    """Replace occurrences of a particular search pattern with a replacement string
-    Example:
-        .. code-block:: python
-            from langchain.document_transformers import Html2TextTransformer
-            html2text=Html2TextTransformer()
-            docs_transform=html2text.transform_documents(docs)
-    """
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    def transform_documents(
-        self,
-        documents: Sequence[Document],
-        **kwargs: Any,
-    ) -> Sequence[Document]:
-        try:
-            import html2text
-        except ImportError:
-            raise ImportError(
-                """html2text package not found, please 
-                install it with `pip install html2text`"""
-            )
 
-        # Create an html2text.HTML2Text object and override some properties
-        h = html2text.HTML2Text()
-        h.ignore_links = True
-        h.ignore_images = True
-        for d in documents:
-            d.page_content = h.handle(d.page_content)
-        return documents
-
-    async def atransform_documents(
-        self,
-        documents: Sequence[Document],
-        **kwargs: Any,
-    ) -> Sequence[Document]:
-        raise NotImplementedError
+__all__ = [
+    "Html2TextTransformer",
+]

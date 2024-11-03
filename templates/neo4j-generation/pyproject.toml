@@ -1,0 +1,36 @@
+[tool.poetry]
+name = "neo4j-generation"
+version = "0.0.1"
+description = "Knowledge graph extraction with Neo4j AuraDB"
+authors = [
+    "Tomaz Bratanic <tomaz.bratanic@neo4j.com>",
+]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+langchain = "^0.1"
+openai = "<2"
+neo4j = "^5.12.0"
+langchain-openai = "^0.0.8"
+langchain-community = "^0.0.28"
+langchain-experimental = "^0.0.54"
+
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.21"
+
+[tool.langserve]
+export_module = "neo4j_generation.chain"
+export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "extraction"
+author = "Neo4j"
+integrations = ["Neo4j", "OpenAI"]
+tags = ["graph-database", "search"]
+
+[build-system]
+requires = [
+    "poetry-core",
+]
+build-backend = "poetry.core.masonry.api"

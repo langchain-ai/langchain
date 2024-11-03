@@ -5,14 +5,18 @@ from __future__ import annotations
 import inspect
 import re
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
-from pydantic import Extra, root_validator
-
-from langchain.callbacks.manager import (
+from langchain_core._api import deprecated
+from langchain_core.callbacks import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
 )
+from langchain_core.documents import Document
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.prompts import BasePromptTemplate
+from pydantic import ConfigDict, model_validator
+
 from langchain.chains import ReduceDocumentsChain
 from langchain.chains.base import Chain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
@@ -25,11 +29,17 @@ from langchain.chains.qa_with_sources.map_reduce_prompt import (
     EXAMPLE_PROMPT,
     QUESTION_PROMPT,
 )
-from langchain.docstore.document import Document
-from langchain.schema import BasePromptTemplate
-from langchain.schema.language_model import BaseLanguageModel
 
 
+@deprecated(
+    since="0.2.13",
+    removal="1.0",
+    message=(
+        "This class is deprecated. Refer to this guide on retrieval and question "
+        "answering with sources: "
+        "https://python.langchain.com/docs/how_to/qa_sources/"
+    ),
+)
 class BaseQAWithSourcesChain(Chain, ABC):
     """Question answering chain with sources over documents."""
 
@@ -59,7 +69,7 @@ class BaseQAWithSourcesChain(Chain, ABC):
             document_prompt=document_prompt,
             document_variable_name="summaries",
         )
-        reduce_documents_chain = ReduceDocumentsChain(
+        reduce_documents_chain = ReduceDocumentsChain(  # type: ignore[misc]
             combine_documents_chain=combine_results_chain
         )
         combine_documents_chain = MapReduceDocumentsChain(
@@ -87,11 +97,10 @@ class BaseQAWithSourcesChain(Chain, ABC):
         )
         return cls(combine_documents_chain=combine_documents_chain, **kwargs)
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
     @property
     def input_keys(self) -> List[str]:
@@ -112,12 +121,24 @@ class BaseQAWithSourcesChain(Chain, ABC):
             _output_keys = _output_keys + ["source_documents"]
         return _output_keys
 
-    @root_validator(pre=True)
-    def validate_naming(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_naming(cls, values: Dict) -> Any:
         """Fix backwards compatibility in naming."""
         if "combine_document_chain" in values:
             values["combine_documents_chain"] = values.pop("combine_document_chain")
         return values
+
+    def _split_sources(self, answer: str) -> Tuple[str, str]:
+        """Split sources from answer."""
+        if re.search(r"SOURCES?:", answer, re.IGNORECASE):
+            answer, sources = re.split(
+                r"SOURCES?:|QUESTION:\s", answer, flags=re.IGNORECASE
+            )[:2]
+            sources = re.split(r"\n", sources)[0].strip()
+        else:
+            sources = ""
+        return answer, sources
 
     @abstractmethod
     def _get_docs(
@@ -145,10 +166,7 @@ class BaseQAWithSourcesChain(Chain, ABC):
         answer = self.combine_documents_chain.run(
             input_documents=docs, callbacks=_run_manager.get_child(), **inputs
         )
-        if re.search(r"SOURCES:\s", answer):
-            answer, sources = re.split(r"SOURCES:\s", answer)
-        else:
-            sources = ""
+        answer, sources = self._split_sources(answer)
         result: Dict[str, Any] = {
             self.answer_key: answer,
             self.sources_answer_key: sources,
@@ -182,10 +200,7 @@ class BaseQAWithSourcesChain(Chain, ABC):
         answer = await self.combine_documents_chain.arun(
             input_documents=docs, callbacks=_run_manager.get_child(), **inputs
         )
-        if re.search(r"SOURCES:\s", answer):
-            answer, sources = re.split(r"SOURCES:\s", answer)
-        else:
-            sources = ""
+        answer, sources = self._split_sources(answer)
         result: Dict[str, Any] = {
             self.answer_key: answer,
             self.sources_answer_key: sources,
@@ -195,6 +210,15 @@ class BaseQAWithSourcesChain(Chain, ABC):
         return result
 
 
+@deprecated(
+    since="0.2.13",
+    removal="1.0",
+    message=(
+        "This class is deprecated. Refer to this guide on retrieval and question "
+        "answering with sources: "
+        "https://python.langchain.com/docs/how_to/qa_sources/"
+    ),
+)
 class QAWithSourcesChain(BaseQAWithSourcesChain):
     """Question answering with sources over documents."""
 

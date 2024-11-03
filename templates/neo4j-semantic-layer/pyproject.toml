@@ -1,0 +1,33 @@
+[tool.poetry]
+name = "neo4j-semantic-layer"
+version = "0.1.0"
+description = "Build a semantic layer to allow an agent to interact with a graph database in consistent and robust way."
+authors = [
+    "Tomaz Bratanic <tomaz.bratanic@neo4j.com>",
+]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+langchain = "^0.1"
+openai = "<2"
+neo4j = "^5.14.0"
+
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.21"
+
+[tool.langserve]
+export_module = "neo4j_semantic_layer"
+export_attr = "agent_executor"
+
+[tool.templates-hub]
+use-case = "semantic_layer"
+author = "Neo4j"
+integrations = ["Neo4j", "OpenAI"]
+tags = ["search", "graph-database", "function-calling"]
+
+[build-system]
+requires = [
+    "poetry-core",
+]
+build-backend = "poetry.core.masonry.api"
