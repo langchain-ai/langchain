@@ -285,10 +285,7 @@ class OxylabsSearchAPIWrapper(BaseModel):
 
         return validated_responses
 
-    def get_params(
-            self,
-            **kwargs: Any
-    ) -> Dict[str, Any]:
+    def get_params(self, **kwargs: Any) -> Dict[str, Any]:
         """
         Get default configuration parameters for OxylabsSearchAPI for scrape_search().
         """
