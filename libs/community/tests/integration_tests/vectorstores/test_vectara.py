@@ -300,7 +300,6 @@ def test_vectara_with_langchain_mmr(vectara3: Vectara) -> None:  # type: ignore[
 
 
 def test_vectara_rerankers(vectara3: Vectara) -> None:  # type: ignore[no-untyped-def]
-
     # test Vectara multi-lingual reranker
     summary_config = SummaryConfig(is_enabled=True, max_results=7, response_lang="eng")
     rerank_config = RerankConfig(reranker="rerank_multilingual_v1", rerank_k=50)
@@ -317,8 +316,7 @@ def test_vectara_rerankers(vectara3: Vectara) -> None:  # type: ignore[no-untype
     # test Vectara udf reranker
     summary_config = SummaryConfig(is_enabled=True, max_results=7, response_lang="eng")
     rerank_config = RerankConfig(
-        reranker="udf", rerank_k=50, 
-        user_function="get('$.score')"
+        reranker="udf", rerank_k=50, user_function="get('$.score')"
     )
     config = VectaraQueryConfig(
         k=10,
