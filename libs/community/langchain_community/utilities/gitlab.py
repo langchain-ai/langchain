@@ -347,7 +347,8 @@ class GitLabAPIWrapper(BaseModel):
 
     def list_files_from_directory(self, path: str) -> str:
         """
-        Get the list of files in the active branch of the repository from a specific directory
+        Get the list of files in the active branch of the repository
+        from a specific directory
 
         Returns:
             str: A plaintext report containing the list of files
@@ -366,10 +367,7 @@ class GitLabAPIWrapper(BaseModel):
             )
             if files:
                 files_str = "\n".join(files)
-                return (
-                    f"Found {len(files)} files in branch `{branch}`:\n"
-                    f"{files_str}"
-                )
+                return f"Found {len(files)} files in branch `{branch}`:\n{files_str}"
             else:
                 return f"No files found in branch: `{branch}`"
         except Exception as e:
@@ -417,8 +415,8 @@ class GitLabAPIWrapper(BaseModel):
 
             except GitlabCreateError as e:
                 if (
-                        e.response_code == 400
-                        and "Branch already exists" in e.error_message
+                    e.response_code == 400
+                    and "Branch already exists" in e.error_message
                 ):
                     i += 1
                     new_branch_name = f"{proposed_branch_name}_v{i}"

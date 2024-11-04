@@ -9,17 +9,17 @@ from langchain_community.tools.gitlab.prompt import (
     COMMENT_ON_ISSUE_PROMPT,
     CREATE_FILE_PROMPT,
     CREATE_PULL_REQUEST_PROMPT,
+    CREATE_REPO_BRANCH,
     DELETE_FILE_PROMPT,
     GET_ISSUE_PROMPT,
     GET_ISSUES_PROMPT,
-    READ_FILE_PROMPT,
-    UPDATE_FILE_PROMPT,
-    CREATE_REPO_BRANCH,
-    LIST_REPO_BRANCES,
-    SET_ACTIVE_BRANCH,
-    GET_REPO_FILES_IN_MAIN,
-    GET_REPO_FILES_IN_BOT_BRANCH,
     GET_REPO_FILES_FROM_DIRECTORY,
+    GET_REPO_FILES_IN_BOT_BRANCH,
+    GET_REPO_FILES_IN_MAIN,
+    LIST_REPO_BRANCES,
+    READ_FILE_PROMPT,
+    SET_ACTIVE_BRANCH,
+    UPDATE_FILE_PROMPT,
 )
 from langchain_community.tools.gitlab.tool import GitLabAction
 from langchain_community.utilities.gitlab import GitLabAPIWrapper
@@ -124,7 +124,7 @@ class GitLabToolkit(BaseToolkit):
             },
             {
                 "mode": "list_files_from_directory",
-                "name": "Overview of files in current working branch from a specific path",
+                "name": "Overview of files in current working branch from a specific path",  # noqa: E501
                 "description": GET_REPO_FILES_FROM_DIRECTORY,
             },
         ]
