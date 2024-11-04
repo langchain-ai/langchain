@@ -13,9 +13,9 @@ from langchain_core.prompts.chat import (
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
-from langchain_core.pydantic_v1 import Field
 from langchain_core.tools import BaseTool
 from langchain_core.tools.base import BaseToolkit
+from pydantic import ConfigDict, Field
 
 from langchain_community.tools.powerbi.prompt import (
     QUESTION_TO_QUERY_BASE,
@@ -51,7 +51,7 @@ class PowerBIToolkit(BaseToolkit):
         examples: Optional. The examples for the prompt. Default is None.
         max_iterations: Optional. The maximum iterations to run. Default is 5.
         callback_manager: Optional. The callback manager. Default is None.
-        output_token_limit: Optional. The output token limit. Default is None.
+        output_token_limit: The output token limit. Default is 4000.
         tiktoken_model_name: Optional. The TikToken model name. Default is None.
     """
 
@@ -60,11 +60,12 @@ class PowerBIToolkit(BaseToolkit):
     examples: Optional[str] = None
     max_iterations: int = 5
     callback_manager: Optional[BaseCallbackManager] = None
-    output_token_limit: Optional[int] = None
+    output_token_limit: int = 4000
     tiktoken_model_name: Optional[str] = None
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""

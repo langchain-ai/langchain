@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 
-def merge_dicts(left: Dict[str, Any], *others: Dict[str, Any]) -> Dict[str, Any]:
+def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]:
     """Merge many dicts, handling specific scenarios where a key exists in both
     dictionaries but has a value of None in 'left'. In such cases, the method uses the
     value from 'right' for that key in the merged dictionary.
@@ -29,17 +29,16 @@ def merge_dicts(left: Dict[str, Any], *others: Dict[str, Any]) -> Dict[str, Any]
     merged = left.copy()
     for right in others:
         for right_k, right_v in right.items():
-            if right_k not in merged:
-                merged[right_k] = right_v
-            elif right_v is not None and merged[right_k] is None:
+            if right_k not in merged or right_v is not None and merged[right_k] is None:
                 merged[right_k] = right_v
             elif right_v is None:
                 continue
             elif type(merged[right_k]) is not type(right_v):
-                raise TypeError(
+                msg = (
                     f'additional_kwargs["{right_k}"] already exists in this message,'
                     " but with a different type."
                 )
+                raise TypeError(msg)
             elif isinstance(merged[right_k], str):
                 # TODO: Add below special handling for 'type' key in 0.3 and remove
                 # merge_lists 'type' logic.
@@ -62,14 +61,15 @@ def merge_dicts(left: Dict[str, Any], *others: Dict[str, Any]) -> Dict[str, Any]
             elif merged[right_k] == right_v:
                 continue
             else:
-                raise TypeError(
+                msg = (
                     f"Additional kwargs key {right_k} already exists in left dict and "
                     f"value has unsupported type {type(merged[right_k])}."
                 )
+                raise TypeError(msg)
     return merged
 
 
-def merge_lists(left: Optional[List], *others: Optional[List]) -> Optional[List]:
+def merge_lists(left: Optional[list], *others: Optional[list]) -> Optional[list]:
     """Add many lists, handling None.
 
     Args:
@@ -127,10 +127,11 @@ def merge_obj(left: Any, right: Any) -> Any:
     if left is None or right is None:
         return left if left is not None else right
     elif type(left) is not type(right):
-        raise TypeError(
+        msg = (
             f"left and right are of different types. Left type:  {type(left)}. Right "
             f"type: {type(right)}."
         )
+        raise TypeError(msg)
     elif isinstance(left, str):
         return left + right
     elif isinstance(left, dict):
@@ -140,7 +141,8 @@ def merge_obj(left: Any, right: Any) -> Any:
     elif left == right:
         return left
     else:
-        raise ValueError(
+        msg = (
             f"Unable to merge {left=} and {right=}. Both must be of type str, dict, or "
             f"list, or else be two equal objects."
         )
+        raise ValueError(msg)

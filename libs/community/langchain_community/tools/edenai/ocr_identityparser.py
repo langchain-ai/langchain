@@ -4,7 +4,7 @@ import logging
 from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import BaseModel, Field, HttpUrl
+from pydantic import BaseModel, Field, HttpUrl
 
 from langchain_community.tools.edenai.edenai_base_tool import EdenaiTool
 
@@ -15,7 +15,7 @@ class IDParsingInput(BaseModel):
     query: HttpUrl = Field(description="url of the document to parse")
 
 
-class EdenAiParsingIDTool(EdenaiTool):
+class EdenAiParsingIDTool(EdenaiTool):  # type: ignore[override, override, override]
     """Tool that queries the Eden AI  Identity parsing API.
 
     for api reference check edenai documentation:

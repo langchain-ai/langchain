@@ -71,7 +71,7 @@ class UnstructuredPDFLoader(UnstructuredFileLoader):
     def _get_elements(self) -> List:
         from unstructured.partition.pdf import partition_pdf
 
-        return partition_pdf(filename=self.file_path, **self.unstructured_kwargs)
+        return partition_pdf(filename=self.file_path, **self.unstructured_kwargs)  # type: ignore[arg-type]
 
 
 class BasePDFLoader(BaseLoader, ABC):
@@ -178,7 +178,7 @@ class PyPDFLoader(BasePDFLoader):
 
             loader = PyPDFLoader(
                 file_path = "./example_data/layout-parser-paper.pdf",
-                password = "my-pasword",
+                password = "my-password",
                 extract_images = True,
                 # headers = None
                 # extraction_mode = "plain",
@@ -572,7 +572,8 @@ class MathpixPDFLoader(BasePDFLoader):
         response = requests.get(url, headers=self._mathpix_headers)
         return response.content.decode("utf-8")
 
-    def clean_pdf(self, contents: str) -> str:
+    @staticmethod
+    def clean_pdf(contents: str) -> str:
         """Clean the PDF file.
 
         Args:

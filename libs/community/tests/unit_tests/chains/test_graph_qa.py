@@ -59,6 +59,7 @@ def test_graph_cypher_qa_chain_prompt_selection_1() -> None:
         return_intermediate_steps=False,
         qa_prompt=qa_prompt,
         cypher_prompt=cypher_prompt,
+        allow_dangerous_requests=True,
     )
     assert chain.qa_chain.prompt == qa_prompt  # type: ignore[union-attr]
     assert chain.cypher_generation_chain.prompt == cypher_prompt
@@ -71,6 +72,7 @@ def test_graph_cypher_qa_chain_prompt_selection_2() -> None:
         graph=FakeGraphStore(),
         verbose=True,
         return_intermediate_steps=False,
+        allow_dangerous_requests=True,
     )
     assert chain.qa_chain.prompt == CYPHER_QA_PROMPT  # type: ignore[union-attr]
     assert chain.cypher_generation_chain.prompt == CYPHER_GENERATION_PROMPT
@@ -87,6 +89,7 @@ def test_graph_cypher_qa_chain_prompt_selection_3() -> None:
         return_intermediate_steps=False,
         cypher_llm_kwargs={"memory": readonlymemory},
         qa_llm_kwargs={"memory": readonlymemory},
+        allow_dangerous_requests=True,
     )
     assert chain.qa_chain.prompt == CYPHER_QA_PROMPT  # type: ignore[union-attr]
     assert chain.cypher_generation_chain.prompt == CYPHER_GENERATION_PROMPT
@@ -107,6 +110,7 @@ def test_graph_cypher_qa_chain_prompt_selection_4() -> None:
         return_intermediate_steps=False,
         cypher_llm_kwargs={"prompt": cypher_prompt, "memory": readonlymemory},
         qa_llm_kwargs={"prompt": qa_prompt, "memory": readonlymemory},
+        allow_dangerous_requests=True,
     )
     assert chain.qa_chain.prompt == qa_prompt  # type: ignore[union-attr]
     assert chain.cypher_generation_chain.prompt == cypher_prompt
@@ -130,6 +134,7 @@ def test_graph_cypher_qa_chain_prompt_selection_5() -> None:
             cypher_prompt=cypher_prompt,
             cypher_llm_kwargs={"memory": readonlymemory},
             qa_llm_kwargs={"memory": readonlymemory},
+            allow_dangerous_requests=True,
         )
         assert False
     except ValueError:
@@ -181,6 +186,7 @@ def test_graph_cypher_qa_chain() -> None:
         return_intermediate_steps=False,
         cypher_llm_kwargs={"prompt": prompt, "memory": readonlymemory},
         memory=memory,
+        allow_dangerous_requests=True,
     )
     chain.run("Test question")
     chain.run("Test new question")

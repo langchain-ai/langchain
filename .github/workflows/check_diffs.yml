@@ -31,6 +31,7 @@ jobs:
         uses: Ana06/get-changed-files@v2.2.0
       - id: set-matrix
         run: |
+          python -m pip install packaging
           python .github/scripts/check_diff.py ${{ steps.files.outputs.all }} >> $GITHUB_OUTPUT
     outputs:
       lint: ${{ steps.set-matrix.outputs.lint }}
@@ -39,6 +40,7 @@ jobs:
       compile-integration-tests: ${{ steps.set-matrix.outputs.compile-integration-tests }}
       dependencies: ${{ steps.set-matrix.outputs.dependencies }}
       test-doc-imports: ${{ steps.set-matrix.outputs.test-doc-imports }}
+      test-pydantic: ${{ steps.set-matrix.outputs.test-pydantic }}
   lint:
     name: cd ${{ matrix.job-configs.working-directory }}
     needs: [ build ]
@@ -46,6 +48,7 @@ jobs:
     strategy:
       matrix:
         job-configs: ${{ fromJson(needs.build.outputs.lint) }}
+      fail-fast: false
     uses: ./.github/workflows/_lint.yml
     with:
       working-directory: ${{ matrix.job-configs.working-directory }}
@@ -59,10 +62,25 @@ jobs:
     strategy:
       matrix:
         job-configs: ${{ fromJson(needs.build.outputs.test) }}
+      fail-fast: false
     uses: ./.github/workflows/_test.yml
     with:
       working-directory: ${{ matrix.job-configs.working-directory }}
       python-version: ${{ matrix.job-configs.python-version }}
+    secrets: inherit
+
+  test-pydantic:
+    name: cd ${{ matrix.job-configs.working-directory }}
+    needs: [ build ]
+    if: ${{ needs.build.outputs.test-pydantic != '[]' }}
+    strategy:
+      matrix:
+        job-configs: ${{ fromJson(needs.build.outputs.test-pydantic) }}
+      fail-fast: false
+    uses: ./.github/workflows/_test_pydantic.yml
+    with:
+      working-directory: ${{ matrix.job-configs.working-directory }}
+      pydantic-version: ${{ matrix.job-configs.pydantic-version }}
     secrets: inherit
 
   test-doc-imports:
@@ -71,6 +89,7 @@ jobs:
     strategy:
       matrix:
         job-configs: ${{ fromJson(needs.build.outputs.test-doc-imports) }}
+      fail-fast: false
     uses: ./.github/workflows/_test_doc_imports.yml
     secrets: inherit
     with:
@@ -83,20 +102,8 @@ jobs:
     strategy:
       matrix:
         job-configs: ${{ fromJson(needs.build.outputs.compile-integration-tests) }}
+      fail-fast: false
     uses: ./.github/workflows/_compile_integration_test.yml
-    with:
-      working-directory: ${{ matrix.job-configs.working-directory }}
-      python-version: ${{ matrix.job-configs.python-version }}
-    secrets: inherit
-
-  dependencies:
-    name: cd ${{ matrix.job-configs.working-directory }}
-    needs: [ build ]
-    if: ${{ needs.build.outputs.dependencies != '[]' }}
-    strategy:
-      matrix:
-        job-configs: ${{ fromJson(needs.build.outputs.dependencies) }}
-    uses: ./.github/workflows/_dependencies.yml
     with:
       working-directory: ${{ matrix.job-configs.working-directory }}
       python-version: ${{ matrix.job-configs.python-version }}
@@ -110,6 +117,7 @@ jobs:
       matrix:
         # note different variable for extended test dirs
         job-configs: ${{ fromJson(needs.build.outputs.extended-tests) }}
+      fail-fast: false
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -149,7 +157,7 @@ jobs:
           echo "$STATUS" | grep 'nothing to commit, working tree clean'
   ci_success:
     name: "CI Success"
-    needs: [build, lint, test, compile-integration-tests, dependencies, extended-tests, test-doc-imports]
+    needs: [build, lint, test, compile-integration-tests, extended-tests, test-doc-imports, test-pydantic]
     if: |
       always()
     runs-on: ubuntu-latest

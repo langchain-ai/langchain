@@ -1,7 +1,7 @@
 from typing import List, Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 
 from langchain_community.tools.office365.base import O365BaseTool
 
@@ -31,7 +31,7 @@ class CreateDraftMessageSchema(BaseModel):
     )
 
 
-class O365CreateDraftMessage(O365BaseTool):
+class O365CreateDraftMessage(O365BaseTool):  # type: ignore[override, override]
     """Tool for creating a draft email in Office 365."""
 
     name: str = "create_email_draft"
