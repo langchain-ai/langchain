@@ -74,7 +74,7 @@ class OVHCloudEmbeddings(BaseModel, Embeddings):
             contentType (str): The content type of the request, application/json or text/plain.
             payload (str): The payload of the request.
             route (str): The route of the request, batch_text2vec or text2vec.
-        """
+        """  # noqa: E501
         headers = {
             "content-type": contentType,
             "Authorization": f"Bearer {self.access_token}",
