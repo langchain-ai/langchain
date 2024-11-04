@@ -1430,6 +1430,8 @@ class AgentExecutor(Chain):
     ) -> AgentStep:
         if run_manager:
             run_manager.on_agent_action(agent_action, color="green")
+        if isinstance(agent_action.tool, str):
+            agent_action.tool = agent_action.tool.replace('[', '').replace(']', '')
         # Otherwise we lookup the tool
         if agent_action.tool in name_to_tool_map:
             tool = name_to_tool_map[agent_action.tool]
