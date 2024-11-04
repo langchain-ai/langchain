@@ -69,16 +69,12 @@ def get_minimum_version(package_name: str, spec_string: str) -> Optional[str]:
     """
     # rewrite occurrences of ^0.0.z to 0.0.z (can be anywhere in constraint string)
     spec_string = re.sub(r"\^0\.0\.(\d+)", r"0.0.\1", spec_string)
-    # rewrite occurrences of ^0.y.z to >=0.y.z,<0.y+1.0 (can be anywhere in constraint string)
+    # rewrite occurrences of ^0.y.z to >=0.y.z,<0.y+1 (can be anywhere in constraint string)
     for y in range(1, 10):
-        spec_string = re.sub(
-            rf"\^0\.{y}\.(\d+)", rf">=0.{y}.\1,<0.{y+1}.0", spec_string
-        )
+        spec_string = re.sub(rf"\^0\.{y}\.(\d+)", rf">=0.{y}.\1,<0.{y+1}", spec_string)
     # rewrite occurrences of ^x.y.z to >=x.y.z,<x+1.0.0 (can be anywhere in constraint string)
     for x in range(1, 10):
-        spec_string = re.sub(
-            rf"\^{x}\.0\.(\d+)", rf">={x}.0.\1,<{x+1}.0.0", spec_string
-        )
+        spec_string = re.sub(rf"\^{x}\.0\.(\d+)", rf">={x}.0.\1,<{x+1}", spec_string)
 
     spec_set = SpecifierSet(spec_string)
     all_versions = get_pypi_versions(package_name)
