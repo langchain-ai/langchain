@@ -68,7 +68,9 @@ class OVHCloudEmbeddings(BaseModel, Embeddings):
         """
         return self._generate_embedding(text)
 
-    def _send_request_to_ai_endpoints(self, contentType: str, payload: str, route: str):
+    def _send_request_to_ai_endpoints(
+        self, contentType: str, payload: str, route: str
+    ) -> Any:
         """Send a HTTPS request to OVHcloud AI Endpoints
         Args:
             contentType (str): The content type of the request, application/json or text/plain.
