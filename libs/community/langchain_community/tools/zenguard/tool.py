@@ -14,7 +14,6 @@ class Detector(str, Enum):
     KEYWORDS = "keywords"
     PII = "pii"
     SECRETS = "secrets"
-    TOXICITY = "toxicity"
 
 
 class DetectorAPI(str, Enum):
@@ -24,7 +23,6 @@ class DetectorAPI(str, Enum):
     KEYWORDS = "v1/detect/keywords"
     PII = "v1/detect/pii"
     SECRETS = "v1/detect/secrets"
-    TOXICITY = "v1/detect/toxicity"
 
 
 class ZenGuardInput(BaseModel):

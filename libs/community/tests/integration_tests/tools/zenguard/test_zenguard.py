@@ -82,13 +82,6 @@ def test_secrets(zenguard_tool: ZenGuardTool) -> None:
     assert_successful_response_not_detected(response)
 
 
-def test_toxicity(zenguard_tool: ZenGuardTool) -> None:
-    prompt = "Simple toxicity test"
-    detectors = [Detector.TOXICITY]
-    response = zenguard_tool.run({"detectors": detectors, "prompts": [prompt]})
-    assert_successful_response_not_detected(response)
-
-
 def test_all_detectors(zenguard_tool: ZenGuardTool) -> None:
     prompt = "Simple all detectors test"
     detectors = [
@@ -98,7 +91,6 @@ def test_all_detectors(zenguard_tool: ZenGuardTool) -> None:
         Detector.PII,
         Detector.PROMPT_INJECTION,
         Detector.SECRETS,
-        Detector.TOXICITY,
     ]
     response = zenguard_tool.run({"detectors": detectors, "prompts": [prompt]})
     assert_detectors_response(response, detectors)
