@@ -68,7 +68,7 @@ class MMRConfig:
 class RerankConfig:
     """Configuration for Reranker.
 
-    reranker: "mmr", "rerank_multilingual_v1", "udf", "chain" or "none"
+    reranker: "mmr", "rerank_multilingual_v1", "udf" or "none"
     rerank_k: number of results to fetch before reranking, defaults to 50
     mmr_diversity_bias: for MMR only - a number between 0 and 1 that determines
         the degree of diversity among the results with 0 corresponding
