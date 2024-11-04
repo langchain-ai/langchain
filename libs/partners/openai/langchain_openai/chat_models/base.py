@@ -605,6 +605,8 @@ class BaseChatOpenAI(BaseChatModel):
             token_usage = output["token_usage"]
             if token_usage is not None:
                 for k, v in token_usage.items():
+                    if v is None:
+                        continue
                     if k in overall_token_usage:
                         overall_token_usage[k] = _update_token_usage(
                             overall_token_usage[k], v

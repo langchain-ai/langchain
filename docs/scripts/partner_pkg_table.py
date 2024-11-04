@@ -25,6 +25,13 @@ EXTERNAL_PACKAGES = {
     "redis",
     "weaviate",
     "upstage",
+    "mongodb",
+    "azure-dynamic-sessions",
+    "ibm",
+    "unstructured",
+    "milvus",
+    "together",
+    "ai21",
 }
 
 JS_PACKAGES = {
@@ -56,6 +63,7 @@ JS_PACKAGES = {
     "nomic",
     "google-common",
     "ollama",
+    "ibm",
 }
 
 
@@ -68,7 +76,7 @@ ALL_PACKAGES = IN_REPO_PACKAGES.union(EXTERNAL_PACKAGES)
 CUSTOM_NAME = {
     "google-genai": "Google Generative AI",
     "aws": "AWS",
-    "airbyte": "Airbyte",
+    "ibm": "IBM",
 }
 CUSTOM_PROVIDER_PAGES = {
     "azure-dynamic-sessions": "/docs/integrations/providers/microsoft/",

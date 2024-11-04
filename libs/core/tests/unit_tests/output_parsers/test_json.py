@@ -3,7 +3,7 @@ from collections.abc import AsyncIterator, Iterator
 from typing import Any
 
 import pytest
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers.json import (
@@ -603,3 +603,16 @@ def test_base_model_schema_consistency() -> None:
 
     assert initial_joke_schema == retrieved_joke_schema
     assert openai_func.get("name", None) is not None
+
+
+def test_unicode_handling() -> None:
+    """Tests if the JsonOutputParser is able to process unicodes."""
+
+    class Sample(BaseModel):
+        title: str = Field(description="科学文章的标题")
+
+    parser = SimpleJsonOutputParser(pydantic_object=Sample)
+    format_instructions = parser.get_format_instructions()
+    assert (
+        "科学文章的标题" in format_instructions
+    ), "Unicode characters should not be escaped"

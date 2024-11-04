@@ -301,6 +301,42 @@ def test_trim_messages_last_40_include_system_allow_partial_start_on_human() -> 
     assert _MESSAGES_TO_TRIM == _MESSAGES_TO_TRIM_COPY
 
 
+def test_trim_messages_allow_partial_one_message() -> None:
+    expected = [
+        HumanMessage("Th", id="third"),
+    ]
+
+    actual = trim_messages(
+        [HumanMessage("This is a funky text.", id="third")],
+        max_tokens=2,
+        token_counter=lambda messages: sum(len(m.content) for m in messages),
+        text_splitter=lambda x: list(x),
+        strategy="first",
+        allow_partial=True,
+    )
+
+    assert actual == expected
+    assert _MESSAGES_TO_TRIM == _MESSAGES_TO_TRIM_COPY
+
+
+def test_trim_messages_last_allow_partial_one_message() -> None:
+    expected = [
+        HumanMessage("t.", id="third"),
+    ]
+
+    actual = trim_messages(
+        [HumanMessage("This is a funky text.", id="third")],
+        max_tokens=2,
+        token_counter=lambda messages: sum(len(m.content) for m in messages),
+        text_splitter=lambda x: list(x),
+        strategy="last",
+        allow_partial=True,
+    )
+
+    assert actual == expected
+    assert _MESSAGES_TO_TRIM == _MESSAGES_TO_TRIM_COPY
+
+
 def test_trim_messages_allow_partial_text_splitter() -> None:
     expected = [
         HumanMessage("a 4 token text.", id="third"),
