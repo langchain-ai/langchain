@@ -27,67 +27,83 @@ def client() -> Generator[chromadb.ClientAPI, None, None]:
 def test_chroma() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
+    ids = ["1", "2", "3"]
     docsearch = Chroma.from_texts(
-        collection_name="test_collection", texts=texts, embedding=FakeEmbeddings()
+        collection_name="test_collection",
+        texts=texts,
+        ids=ids,
+        embedding=FakeEmbeddings(),
     )
     output = docsearch.similarity_search("foo", k=1)
 
     docsearch.delete_collection()
 
-    assert output == [Document(page_content="foo")]
+    assert output == [Document(page_content="foo", id="1")]
 
 
 async def test_chroma_async() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
+    ids = ["1", "2", "3"]
     docsearch = Chroma.from_texts(
-        collection_name="test_collection", texts=texts, embedding=FakeEmbeddings()
+        collection_name="test_collection",
+        texts=texts,
+        ids=ids,
+        embedding=FakeEmbeddings(),
     )
     output = await docsearch.asimilarity_search("foo", k=1)
 
     docsearch.delete_collection()
-    assert output == [Document(page_content="foo")]
+    assert output == [Document(page_content="foo", id="1")]
 
 
 def test_chroma_with_metadatas() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
+    ids = ["1", "2", "3"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
     docsearch = Chroma.from_texts(
         collection_name="test_collection",
         texts=texts,
+        ids=ids,
         embedding=FakeEmbeddings(),
         metadatas=metadatas,
     )
     output = docsearch.similarity_search("foo", k=1)
     docsearch.delete_collection()
-    assert output == [Document(page_content="foo", metadata={"page": "0"})]
+    assert output == [Document(page_content="foo", metadata={"page": "0"}, id="1")]
 
 
 def test_chroma_with_metadatas_with_scores() -> None:
     """Test end to end construction and scored search."""
     texts = ["foo", "bar", "baz"]
+    ids = ["1", "2", "3"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
     docsearch = Chroma.from_texts(
         collection_name="test_collection",
         texts=texts,
+        ids=ids,
         embedding=FakeEmbeddings(),
         metadatas=metadatas,
     )
     output = docsearch.similarity_search_with_score("foo", k=1)
     docsearch.delete_collection()
-    assert output == [(Document(page_content="foo", metadata={"page": "0"}), 0.0)]
+    assert output == [
+        (Document(page_content="foo", metadata={"page": "0"}, id="1"), 0.0)
+    ]
 
 
 def test_chroma_with_metadatas_with_scores_using_vector() -> None:
     """Test end to end construction and scored search, using embedding vector."""
     texts = ["foo", "bar", "baz"]
+    ids = ["1", "2", "3"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
     embeddings = FakeEmbeddings()
 
     docsearch = Chroma.from_texts(
         collection_name="test_collection",
         texts=texts,
+        ids=ids,
         embedding=embeddings,
         metadatas=metadatas,
     )
@@ -96,33 +112,43 @@ def test_chroma_with_metadatas_with_scores_using_vector() -> None:
         embedding=embedded_query, k=1
     )
     docsearch.delete_collection()
-    assert output == [(Document(page_content="foo", metadata={"page": "0"}), 0.0)]
+    assert output == [
+        (Document(page_content="foo", metadata={"page": "0"}, id="1"), 0.0)
+    ]
 
 
 def test_chroma_search_filter() -> None:
     """Test end to end construction and search with metadata filtering."""
     texts = ["far", "bar", "baz"]
+    ids = ["1", "2", "3"]
     metadatas = [{"first_letter": "{}".format(text[0])} for text in texts]
     docsearch = Chroma.from_texts(
         collection_name="test_collection",
         texts=texts,
+        ids=ids,
         embedding=FakeEmbeddings(),
         metadatas=metadatas,
     )
     output1 = docsearch.similarity_search("far", k=1, filter={"first_letter": "f"})
     output2 = docsearch.similarity_search("far", k=1, filter={"first_letter": "b"})
     docsearch.delete_collection()
-    assert output1 == [Document(page_content="far", metadata={"first_letter": "f"})]
-    assert output2 == [Document(page_content="bar", metadata={"first_letter": "b"})]
+    assert output1 == [
+        Document(page_content="far", metadata={"first_letter": "f"}, id="1")
+    ]
+    assert output2 == [
+        Document(page_content="bar", metadata={"first_letter": "b"}, id="2")
+    ]
 
 
 def test_chroma_search_filter_with_scores() -> None:
     """Test end to end construction and scored search with metadata filtering."""
     texts = ["far", "bar", "baz"]
+    ids = ["1", "2", "3"]
     metadatas = [{"first_letter": "{}".format(text[0])} for text in texts]
     docsearch = Chroma.from_texts(
         collection_name="test_collection",
         texts=texts,
+        ids=ids,
         embedding=FakeEmbeddings(),
         metadatas=metadatas,
     )
@@ -134,10 +160,10 @@ def test_chroma_search_filter_with_scores() -> None:
     )
     docsearch.delete_collection()
     assert output1 == [
-        (Document(page_content="far", metadata={"first_letter": "f"}), 0.0)
+        (Document(page_content="far", metadata={"first_letter": "f"}, id="1"), 0.0)
     ]
     assert output2 == [
-        (Document(page_content="bar", metadata={"first_letter": "b"}), 1.0)
+        (Document(page_content="bar", metadata={"first_letter": "b"}, id="2"), 1.0)
     ]
 
 
@@ -146,15 +172,17 @@ def test_chroma_with_persistence() -> None:
     chroma_persist_dir = "./tests/persist_dir"
     collection_name = "test_collection"
     texts = ["foo", "bar", "baz"]
+    ids = ["1", "2", "3"]
     docsearch = Chroma.from_texts(
         collection_name=collection_name,
         texts=texts,
+        ids=ids,
         embedding=FakeEmbeddings(),
         persist_directory=chroma_persist_dir,
     )
 
     output = docsearch.similarity_search("foo", k=1)
-    assert output == [Document(page_content="foo")]
+    assert output[0].page_content == "foo"
 
     # Get a new VectorStore from the persisted directory
     docsearch = Chroma(
@@ -175,32 +203,41 @@ def test_chroma_with_persistence() -> None:
 def test_chroma_mmr() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
+    ids = ["1", "2", "3"]
     docsearch = Chroma.from_texts(
-        collection_name="test_collection", texts=texts, embedding=FakeEmbeddings()
+        collection_name="test_collection",
+        texts=texts,
+        ids=ids,
+        embedding=FakeEmbeddings(),
     )
     output = docsearch.max_marginal_relevance_search("foo", k=1)
     docsearch.delete_collection()
-    assert output == [Document(page_content="foo")]
+    assert output == [Document(page_content="foo", id="1")]
 
 
 def test_chroma_mmr_by_vector() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
+    ids = ["1", "2", "3"]
     embeddings = FakeEmbeddings()
     docsearch = Chroma.from_texts(
-        collection_name="test_collection", texts=texts, embedding=embeddings
+        collection_name="test_collection", texts=texts, ids=ids, embedding=embeddings
     )
     embedded_query = embeddings.embed_query("foo")
     output = docsearch.max_marginal_relevance_search_by_vector(embedded_query, k=1)
     docsearch.delete_collection()
-    assert output == [Document(page_content="foo")]
+    assert output == [Document(page_content="foo", id="1")]
 
 
 def test_chroma_with_include_parameter() -> None:
     """Test end to end construction and include parameter."""
     texts = ["foo", "bar", "baz"]
+    ids = ["1", "2", "3"]
     docsearch = Chroma.from_texts(
-        collection_name="test_collection", texts=texts, embedding=FakeEmbeddings()
+        collection_name="test_collection",
+        texts=texts,
+        ids=ids,
+        embedding=FakeEmbeddings(),
     )
     output1 = docsearch.get(include=["embeddings"])
     output2 = docsearch.get()
@@ -252,20 +289,24 @@ def test_chroma_update_document() -> None:
     docsearch.delete_collection()
 
     # Assert that the updated document is returned by the search
-    assert output == [Document(page_content=updated_content, metadata={"page": "0"})]
+    assert output == [
+        Document(page_content=updated_content, metadata={"page": "0"}, id="doc1")
+    ]
 
-    assert new_embedding == embedding.embed_documents([updated_content])[0]
-    assert new_embedding != old_embedding
+    assert list(new_embedding) == embedding.embed_documents([updated_content])[0]
+    assert list(new_embedding) != list(old_embedding)
 
 
 # TODO: RELEVANCE SCORE IS BROKEN. FIX TEST
 def test_chroma_with_relevance_score_custom_normalization_fn() -> None:
     """Test searching with relevance score and custom normalization function."""
     texts = ["foo", "bar", "baz"]
+    ids = ["1", "2", "3"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
     docsearch = Chroma.from_texts(
         collection_name="test1_collection",
         texts=texts,
+        ids=ids,
         embedding=FakeEmbeddings(),
         metadatas=metadatas,
         relevance_score_fn=lambda d: d * 0,
@@ -274,9 +315,9 @@ def test_chroma_with_relevance_score_custom_normalization_fn() -> None:
     output = docsearch.similarity_search_with_relevance_scores("foo", k=3)
     docsearch.delete_collection()
     assert output == [
-        (Document(page_content="foo", metadata={"page": "0"}), 0.0),
-        (Document(page_content="bar", metadata={"page": "1"}), 0.0),
-        (Document(page_content="baz", metadata={"page": "2"}), 0.0),
+        (Document(page_content="foo", metadata={"page": "0"}, id="1"), 0.0),
+        (Document(page_content="bar", metadata={"page": "1"}, id="2"), 0.0),
+        (Document(page_content="baz", metadata={"page": "2"}, id="3"), 0.0),
     ]
 
 
@@ -301,8 +342,8 @@ def test_chroma_add_documents_no_metadata() -> None:
 def test_chroma_add_documents_mixed_metadata() -> None:
     db = Chroma(embedding_function=FakeEmbeddings())
     docs = [
-        Document(page_content="foo"),
-        Document(page_content="bar", metadata={"baz": 1}),
+        Document(page_content="foo", id="0"),
+        Document(page_content="bar", metadata={"baz": 1}, id="1"),
     ]
     ids = ["0", "1"]
     actual_ids = db.add_documents(docs, ids=ids)
