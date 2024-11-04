@@ -1,7 +1,6 @@
+import json
 import logging
 import time
-import json
-
 from typing import Any, List
 
 import requests
@@ -84,7 +83,10 @@ class OVHCloudEmbeddings(BaseModel, Embeddings):
         session = requests.session()
         while True:
             response = session.post(
-                f"https://{self.model_name}.endpoints.{self.region}.ai.cloud.ovh.net/api/{route}",
+                (
+                    f"https://{self.model_name}.endpoints.{self.region}"
+                    f".ai.cloud.ovh.net/api/{route}"
+                ),
                 headers=headers,
                 data=payload,
             )
