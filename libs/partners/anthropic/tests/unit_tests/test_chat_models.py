@@ -695,6 +695,28 @@ def test__format_messages_with_cache_control() -> None:
     assert expected_messages == actual_messages
 
 
+def test__format_messages_with_multiple_system() -> None:
+    messages = [
+        HumanMessage("baz"),
+        SystemMessage("bar"),
+        SystemMessage("baz"),
+        SystemMessage(
+            [
+                {"type": "text", "text": "foo", "cache_control": {"type": "ephemeral"}},
+            ]
+        ),
+    ]
+    expected_system = [
+        {"type": "text", "text": "bar"},
+        {"type": "text", "text": "baz"},
+        {"type": "text", "text": "foo", "cache_control": {"type": "ephemeral"}},
+    ]
+    expected_messages = [{"role": "user", "content": "baz"}]
+    actual_system, actual_messages = _format_messages(messages)
+    assert expected_system == actual_system
+    assert expected_messages == actual_messages
+
+
 def test_anthropic_api_key_is_secret_string() -> None:
     """Test that the API key is stored as a SecretStr."""
     chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]

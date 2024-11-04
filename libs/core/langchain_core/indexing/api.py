@@ -484,7 +484,7 @@ async def aindex(
         docs_source: Data loader or iterable of documents to index.
         record_manager: Timestamped set to keep track of which documents were
                          updated.
-        vectorstore: Vector store or Document Index to index the documents into
+        vector_store: VectorStore or DocumentIndex to index the documents into.
         batch_size: Batch size to use when indexing. Default is 100.
         cleanup: How to handle clean up of documents. Default is None.
             - Incremental: Cleans up all documents that haven't been updated AND
