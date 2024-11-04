@@ -120,7 +120,7 @@ jobs:
             exit 1
           fi
           echo tag="$TAG" >> $GITHUB_OUTPUT
-          echo prev-tag="$PKG_NAME==$last_version" >> $GITHUB_OUTPUT
+          echo prev-tag="$PREV_TAG" >> $GITHUB_OUTPUT
       - name: Generate release body
         id: generate-release-body
         working-directory: langchain
