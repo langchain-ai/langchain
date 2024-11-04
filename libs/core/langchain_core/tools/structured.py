@@ -1,21 +1,18 @@
 from __future__ import annotations
 
 import textwrap
+from collections.abc import Awaitable
 from inspect import signature
 from typing import (
+    Annotated,
     Any,
-    Awaitable,
     Callable,
-    Dict,
-    List,
     Literal,
     Optional,
-    Type,
     Union,
 )
 
 from pydantic import BaseModel, Field, SkipValidation
-from typing_extensions import Annotated
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
@@ -50,7 +47,7 @@ class StructuredTool(BaseTool):
     # TODO: Is this needed?
     async def ainvoke(
         self,
-        input: Union[str, Dict, ToolCall],
+        input: Union[str, dict, ToolCall],
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Any:
@@ -81,7 +78,8 @@ class StructuredTool(BaseTool):
             if config_param := _get_runnable_config_param(self.func):
                 kwargs[config_param] = config
             return self.func(*args, **kwargs)
-        raise NotImplementedError("StructuredTool does not support sync invocation.")
+        msg = "StructuredTool does not support sync invocation."
+        raise NotImplementedError(msg)
 
     async def _arun(
         self,
@@ -112,7 +110,7 @@ class StructuredTool(BaseTool):
         name: Optional[str] = None,
         description: Optional[str] = None,
         return_direct: bool = False,
-        args_schema: Optional[Type[BaseModel]] = None,
+        args_schema: Optional[type[BaseModel]] = None,
         infer_schema: bool = True,
         *,
         response_format: Literal["content", "content_and_artifact"] = "content",
@@ -170,7 +168,8 @@ class StructuredTool(BaseTool):
         elif coroutine is not None:
             source_function = coroutine
         else:
-            raise ValueError("Function and/or coroutine must be provided")
+            msg = "Function and/or coroutine must be provided"
+            raise ValueError(msg)
         name = name or source_function.__name__
         if args_schema is None and infer_schema:
             # schema name is appended within function
@@ -187,9 +186,8 @@ class StructuredTool(BaseTool):
         if description_ is None and args_schema:
             description_ = args_schema.__doc__ or None
         if description_ is None:
-            raise ValueError(
-                "Function must have a docstring if description not provided."
-            )
+            msg = "Function must have a docstring if description not provided."
+            raise ValueError(msg)
         if description is None:
             # Only apply if using the function's docstring
             description_ = textwrap.dedent(description_).strip()
@@ -209,7 +207,7 @@ class StructuredTool(BaseTool):
         )
 
 
-def _filter_schema_args(func: Callable) -> List[str]:
+def _filter_schema_args(func: Callable) -> list[str]:
     filter_args = list(FILTERED_ARGS)
     if config_param := _get_runnable_config_param(func):
         filter_args.append(config_param)

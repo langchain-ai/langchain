@@ -1,7 +1,8 @@
 """Internal tracers used for stream_log and astream events implementations."""
 
 import abc
-from typing import AsyncIterator, Iterator, TypeVar
+from collections.abc import AsyncIterator, Iterator
+from typing import TypeVar
 from uuid import UUID
 
 T = TypeVar("T")

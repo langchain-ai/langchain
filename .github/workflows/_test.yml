@@ -58,7 +58,7 @@ jobs:
         env:
           MIN_VERSIONS: ${{ steps.min-version.outputs.min-versions }}
         run: |
-          poetry run pip install --force-reinstall $MIN_VERSIONS --editable .
+          poetry run pip install $MIN_VERSIONS
           make tests
         working-directory: ${{ inputs.working-directory }}
 

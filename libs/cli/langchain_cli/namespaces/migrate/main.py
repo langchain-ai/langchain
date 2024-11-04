@@ -5,6 +5,7 @@ from pathlib import Path
 import rich
 import typer
 from gritql import run
+from typer import Option
 
 
 def get_gritdir_path() -> Path:
@@ -15,6 +16,17 @@ def get_gritdir_path() -> Path:
 
 def migrate(
     ctx: typer.Context,
+    # Using diff instead of dry-run for backwards compatibility with the old CLI
+    diff: bool = Option(
+        False,
+        "--diff",
+        help="Show the changes that would be made without applying them.",
+    ),
+    interactive: bool = Option(
+        False,
+        "--interactive",
+        help="Prompt for confirmation before making each change",
+    ),
 ) -> None:
     """Migrate langchain to the most recent version.
 
@@ -47,9 +59,15 @@ def migrate(
     rich.print("-" * 10)
     rich.print()
 
+    args = list(ctx.args)
+    if interactive:
+        args.append("--interactive")
+    if diff:
+        args.append("--dry-run")
+
     final_code = run.apply_pattern(
         "langchain_all_migrations()",
-        ctx.args,
+        args,
         grit_dir=get_gritdir_path(),
     )
 

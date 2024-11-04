@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Tuple
+from typing import Any
 from typing import Optional as Optional
 
 from pydantic import model_validator
@@ -8,7 +8,7 @@ from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.prompts.chat import BaseChatPromptTemplate
 
 
-def _get_inputs(inputs: dict, input_variables: List[str]) -> dict:
+def _get_inputs(inputs: dict, input_variables: list[str]) -> dict:
     return {k: inputs[k] for k in input_variables}
 
 
@@ -28,17 +28,17 @@ class PipelinePromptTemplate(BasePromptTemplate):
 
     final_prompt: BasePromptTemplate
     """The final prompt that is returned."""
-    pipeline_prompts: List[Tuple[str, BasePromptTemplate]]
+    pipeline_prompts: list[tuple[str, BasePromptTemplate]]
     """A list of tuples, consisting of a string (`name`) and a Prompt Template."""
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "prompts", "pipeline"]
 
     @model_validator(mode="before")
     @classmethod
-    def get_input_variables(cls, values: Dict) -> Any:
+    def get_input_variables(cls, values: dict) -> Any:
         """Get input variables."""
         created_variables = set()
         all_variables = set()
