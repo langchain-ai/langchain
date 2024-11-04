@@ -32,6 +32,21 @@ IGNORED_PARTNERS = [
     "huggingface",
 ]
 
+# Cap python version at 3.12 for some packages with dependencies that are not yet
+# compatible with python 3.13 (mostly hf tokenizers).
+PY_312_MAX_PACKAGES = [
+    f"libs/partners/{integration}"
+    for integration in [
+        "anthropic",
+        "chroma",
+        "couchbase",
+        "huggingface",
+        "mistralai",
+        "nomic",
+        "qdrant",
+    ]
+]
+
 
 def all_package_dirs() -> Set[str]:
     return {
@@ -117,9 +132,7 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
         # declare deps in funny way
         py_versions = ["3.9", "3.11"]
 
-    elif dir_ == "libs/partners/huggingface":
-        # huggingface tokenizers doesn't support 3.13 yet
-        # because of pep517 builds
+    elif dir_ in PY_312_MAX_PACKAGES:
         py_versions = ["3.9", "3.12"]
 
     elif dir_ in ["libs/community", "libs/langchain"] and job == "extended-tests":
@@ -287,6 +300,8 @@ if __name__ == "__main__":
             ] != ["README.md"]:
                 dirs_to_run["test"].add(f"libs/partners/{partner_dir}")
             # Skip if the directory was deleted or is just a tombstone readme
+        elif file == "libs/packages.yml":
+            continue
         elif file.startswith("libs/"):
             raise ValueError(
                 f"Unknown lib: {file}. check_diff.py likely needs "

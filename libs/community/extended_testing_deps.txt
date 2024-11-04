@@ -58,6 +58,7 @@ oracledb>=2.2.0,<3
 pandas>=2.0.1,<3
 pdfminer-six>=20221105,<20240706
 pgvector>=0.1.6,<0.2
+playwright>=1.48.0,<2
 praw>=7.7.1,<8
 premai>=0.3.25,<0.4
 psychicapi>=0.8.0,<0.9
@@ -96,3 +97,4 @@ nanopq==0.2.1
 mlflow[genai]>=2.14.0
 databricks-sdk>=0.30.0
 websocket>=0.2.1,<1
+writer-sdk>=1.2.0
