@@ -121,3 +121,7 @@ python = ">=3.9"
 [[tool.poetry.group.typing.dependencies.langchain-core]]
 version = ">=0.1.40,<0.3"
 python = "<3.9"
+
+[tool.poetry.group.test.dependencies.langchain-standard-tests]
+path="../../standard-tests"
+develop = true
