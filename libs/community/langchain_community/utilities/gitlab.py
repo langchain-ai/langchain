@@ -333,6 +333,8 @@ class GitLabAPIWrapper(BaseModel):
             str: A plaintext report containing the list of files
             in the repository in the main branch
         """
+        if self.gitlab_base_branch is None:
+            return "No base branch set. Please set a base branch."
         return self._list_files(self.gitlab_base_branch)
 
     def list_files_in_bot_branch(self) -> str:
@@ -343,6 +345,8 @@ class GitLabAPIWrapper(BaseModel):
             str: A plaintext report containing the list of files
             in the repository in the active branch
         """
+        if self.gitlab_branch is None:
+            return "No active branch set. Please set a branch."
         return self._list_files(self.gitlab_branch)
 
     def list_files_from_directory(self, path: str) -> str:
@@ -354,6 +358,8 @@ class GitLabAPIWrapper(BaseModel):
             str: A plaintext report containing the list of files
             in the repository in the active branch from the specified directory
         """
+        if self.gitlab_branch is None:
+            return "No active branch set. Please set a branch."
         return self._list_files(
             branch=self.gitlab_branch,
             path=path,
