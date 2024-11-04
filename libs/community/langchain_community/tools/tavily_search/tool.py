@@ -6,8 +6,8 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel, Field
 
 from langchain_community.utilities.tavily_search import TavilySearchAPIWrapper
 
@@ -18,7 +18,7 @@ class TavilyInput(BaseModel):
     query: str = Field(description="search query to look up")
 
 
-class TavilySearchResults(BaseTool):
+class TavilySearchResults(BaseTool):  # type: ignore[override, override]
     """Tool that queries the Tavily Search API and gets back json.
 
     Setup:
@@ -190,7 +190,7 @@ class TavilySearchResults(BaseTool):
         return self.api_wrapper.clean_results(raw_results["results"]), raw_results
 
 
-class TavilyAnswer(BaseTool):
+class TavilyAnswer(BaseTool):  # type: ignore[override, override]
     """Tool that queries the Tavily Search API and gets back an answer."""
 
     name: str = "tavily_answer"

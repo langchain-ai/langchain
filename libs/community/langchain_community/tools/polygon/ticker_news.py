@@ -1,8 +1,8 @@
 from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel
 
 from langchain_community.utilities.polygon import PolygonAPIWrapper
 
@@ -13,7 +13,7 @@ class Inputs(BaseModel):
     query: str
 
 
-class PolygonTickerNews(BaseTool):
+class PolygonTickerNews(BaseTool):  # type: ignore[override, override]
     """Tool that gets the latest news for a given ticker from Polygon"""
 
     mode: str = "get_ticker_news"

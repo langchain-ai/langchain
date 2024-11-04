@@ -10,8 +10,8 @@ from langchain_core.output_parsers.openai_functions import (
 )
 from langchain_core.prompts import PromptTemplate
 from langchain_core.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.utils.pydantic import is_basemodel_subclass
+from pydantic import BaseModel, Field
 
 from langchain.chains.llm import LLMChain
 from langchain.chains.openai_functions.utils import get_llm_kwargs
@@ -32,7 +32,7 @@ class AnswerWithSources(BaseModel):
     message=(
         "This function is deprecated. Refer to this guide on retrieval and question "
         "answering with structured responses: "
-        "https://python.langchain.com/v0.2/docs/how_to/qa_sources/#structure-sources-in-model-response"  # noqa: E501
+        "https://python.langchain.com/docs/how_to/qa_sources/#structure-sources-in-model-response"  # noqa: E501
     ),
 )
 def create_qa_with_structure_chain(
@@ -72,7 +72,10 @@ def create_qa_with_structure_chain(
             f"Should be one of `pydantic` or `base`."
         )
     if isinstance(schema, type) and is_basemodel_subclass(schema):
-        schema_dict = cast(dict, schema.schema())
+        if hasattr(schema, "model_json_schema"):
+            schema_dict = cast(dict, schema.model_json_schema())
+        else:
+            schema_dict = cast(dict, schema.schema())
     else:
         schema_dict = cast(dict, schema)
     function = {
@@ -111,7 +114,7 @@ def create_qa_with_structure_chain(
     message=(
         "This function is deprecated. Refer to this guide on retrieval and question "
         "answering with sources: "
-        "https://python.langchain.com/v0.2/docs/how_to/qa_sources/#structure-sources-in-model-response"  # noqa: E501
+        "https://python.langchain.com/docs/how_to/qa_sources/#structure-sources-in-model-response"  # noqa: E501
     ),
 )
 def create_qa_with_sources_chain(

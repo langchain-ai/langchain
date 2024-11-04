@@ -25,7 +25,7 @@ from langchain_core.messages import (
     SystemMessage,
     ToolMessage,
 )
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel
 from typing_extensions import Literal
 
 
@@ -177,6 +177,12 @@ def _convert_message_chunk(chunk: BaseMessageChunk, i: int) -> dict:
         if "function_call" in chunk.additional_kwargs:
             _dict["function_call"] = chunk.additional_kwargs["function_call"]
             # If the first chunk is a function call, the content is not empty string,
+            # not missing, but None.
+            if i == 0:
+                _dict["content"] = None
+        if "tool_calls" in chunk.additional_kwargs:
+            _dict["tool_calls"] = chunk.additional_kwargs["tool_calls"]
+            # If the first chunk is tool calls, the content is not empty string,
             # not missing, but None.
             if i == 0:
                 _dict["content"] = None

@@ -5,8 +5,8 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, ConfigDict, model_validator
 
 if TYPE_CHECKING:
     from gitlab.v4.objects import Issue
@@ -15,8 +15,8 @@ if TYPE_CHECKING:
 class GitLabAPIWrapper(BaseModel):
     """Wrapper for GitLab API."""
 
-    gitlab: Any  #: :meta private:
-    gitlab_repo_instance: Any  #: :meta private:
+    gitlab: Any = None  #: :meta private:
+    gitlab_repo_instance: Any = None  #: :meta private:
     gitlab_repository: Optional[str] = None
     """The name of the GitLab repository, in the form {username}/{repo-name}."""
     gitlab_personal_access_token: Optional[str] = None
@@ -30,11 +30,13 @@ class GitLabAPIWrapper(BaseModel):
         Usually 'main' or 'master'. Defaults to 'main'.
     """
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that api key and python package exists in environment."""
 
         gitlab_url = get_from_dict_or_env(
@@ -205,6 +207,12 @@ class GitLabAPIWrapper(BaseModel):
         Returns:
             str: A success or failure message
         """
+        if self.gitlab_branch == self.gitlab_base_branch:
+            return (
+                "You're attempting to commit directly"
+                f"to the {self.gitlab_base_branch} branch, which is protected. "
+                "Please create a new branch and try again."
+            )
         file_path = file_query.split("\n")[0]
         file_contents = file_query[len(file_path) + 2 :]
         try:
@@ -251,6 +259,12 @@ class GitLabAPIWrapper(BaseModel):
         Returns:
             A success or failure message
         """
+        if self.gitlab_branch == self.gitlab_base_branch:
+            return (
+                "You're attempting to commit directly"
+                f"to the {self.gitlab_base_branch} branch, which is protected. "
+                "Please create a new branch and try again."
+            )
         try:
             file_path = file_query.split("\n")[0]
             old_file_contents = (
@@ -297,6 +311,12 @@ class GitLabAPIWrapper(BaseModel):
         Returns:
             str: Success or failure message
         """
+        if self.gitlab_branch == self.gitlab_base_branch:
+            return (
+                "You're attempting to commit directly"
+                f"to the {self.gitlab_base_branch} branch, which is protected. "
+                "Please create a new branch and try again."
+            )
         try:
             self.gitlab_repo_instance.files.delete(
                 file_path, self.gitlab_branch, "Delete " + file_path

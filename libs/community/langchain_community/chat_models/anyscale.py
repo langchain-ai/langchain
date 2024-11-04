@@ -5,12 +5,12 @@ from __future__ import annotations
 import logging
 import os
 import sys
-from typing import TYPE_CHECKING, Dict, Optional, Set
+from typing import TYPE_CHECKING, Any, Dict, Optional, Set
 
 import requests
 from langchain_core.messages import BaseMessage
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from pydantic import Field, SecretStr, model_validator
 
 from langchain_community.adapters.openai import convert_message_to_dict
 from langchain_community.chat_models.openai import (
@@ -102,8 +102,9 @@ class ChatAnyscale(ChatOpenAI):
 
         return {model["id"] for model in models_response.json()["data"]}
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: dict) -> dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: dict) -> Any:
         """Validate that api key and python package exists in environment."""
         values["anyscale_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(
@@ -154,7 +155,7 @@ class ChatAnyscale(ChatOpenAI):
             else:
                 values["openai_api_base"] = values["anyscale_api_base"]
                 values["openai_api_key"] = values["anyscale_api_key"].get_secret_value()
-                values["client"] = openai.ChatCompletion
+                values["client"] = openai.ChatCompletion  # type: ignore[attr-defined]
         except AttributeError as exc:
             raise ValueError(
                 "`openai` has no `ChatCompletion` attribute, this is likely "

@@ -1,7 +1,7 @@
 from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 
 from langchain_community.tools.slack.base import SlackBaseTool
 
@@ -19,7 +19,7 @@ class SendMessageSchema(BaseModel):
     )
 
 
-class SlackSendMessage(SlackBaseTool):
+class SlackSendMessage(SlackBaseTool):  # type: ignore[override, override]
     """Tool for sending a message in Slack."""
 
     name: str = "send_message"

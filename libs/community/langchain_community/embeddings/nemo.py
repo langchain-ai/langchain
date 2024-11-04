@@ -8,8 +8,8 @@ import aiohttp
 import requests
 from langchain_core._api.deprecation import deprecated
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.utils import pre_init
+from pydantic import BaseModel
 
 
 def is_endpoint_live(url: str, headers: Optional[dict], payload: Any) -> bool:

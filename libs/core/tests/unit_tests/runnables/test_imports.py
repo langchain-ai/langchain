@@ -35,3 +35,9 @@ EXPECTED_ALL = [
 
 def test_all_imports() -> None:
     assert set(__all__) == set(EXPECTED_ALL)
+
+
+def test_imports_for_specific_funcs() -> None:
+    """Test that a few specific imports in more internal namespaces."""
+    # create_model implementation has been moved to langchain_core.utils.pydantic
+    from langchain_core.runnables.utils import create_model  # noqa
