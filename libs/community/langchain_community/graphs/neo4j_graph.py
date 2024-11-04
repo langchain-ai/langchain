@@ -14,6 +14,10 @@ LIST_LIMIT = 128
 # Threshold for returning all available prop values in graph schema
 DISTINCT_VALUE_LIMIT = 10
 
+vector_indexes_query = """
+SHOW VECTOR INDEXES YIELD name, type, entityType, labelsOrTypes, properties
+"""
+
 node_properties_query = """
 CALL apoc.meta.data()
 YIELD label, other, elementType, type, property
@@ -161,6 +165,7 @@ def _get_rel_import_query(baseEntityLabel: bool) -> str:
 def _format_schema(schema: Dict, is_enhanced: bool) -> str:
     formatted_node_props = []
     formatted_rel_props = []
+    formatted_vector_indexes = []
     if is_enhanced:
         # Enhanced formatting for nodes
         for node_type, properties in schema["node_props"].items():
@@ -275,6 +280,13 @@ def _format_schema(schema: Dict, is_enhanced: bool) -> str:
         for el in schema["relationships"]
     ]
 
+    # Format vector indexes
+    for index in schema["vector_indexes"]:
+        formatted_vector_indexes.append(
+            f"{index['name']}: {index['type']} index on {index['entityType']} "
+            f"{index['labelsOrTypes']} and PROPERTIES {index['properties']}"
+        )
+
     return "\n".join(
         [
             "Node properties:",
@@ -283,6 +295,8 @@ def _format_schema(schema: Dict, is_enhanced: bool) -> str:
             "\n".join(formatted_rel_props),
             "The relationships:",
             "\n".join(formatted_rels),
+            "Vector indexes:",
+            "\n".join(formatted_vector_indexes),
         ]
     )
 
@@ -490,6 +504,16 @@ class Neo4jGraph(GraphStore):
                 params={"EXCLUDED_LABELS": EXCLUDED_LABELS + [BASE_ENTITY_LABEL]},
             )
         ]
+        vector_indexes = [
+            {
+                "name": el["name"],
+                "type": el["type"],
+                "entityType": el["entityType"],
+                "labelsOrTypes": el["labelsOrTypes"],
+                "properties": el["properties"],
+            }
+            for el in self.query(vector_indexes_query)
+        ]
 
         # Get constraints & indexes
         try:
@@ -509,6 +533,7 @@ class Neo4jGraph(GraphStore):
             "node_props": {el["labels"]: el["properties"] for el in node_properties},
             "rel_props": {el["type"]: el["properties"] for el in rel_properties},
             "relationships": relationships,
+            "vector_indexes": vector_indexes,
             "metadata": {"constraint": constraint, "index": index},
         }
         if self._enhanced_schema:

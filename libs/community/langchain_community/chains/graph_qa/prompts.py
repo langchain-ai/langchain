@@ -49,6 +49,44 @@ CYPHER_GENERATION_PROMPT = PromptTemplate(
     input_variables=["schema", "question"], template=CYPHER_GENERATION_TEMPLATE
 )
 
+CYPHER_FILTER_GENERATION_TEMPLATE = """Task:Generate Cypher statement to query a graph database.
+Instructions:
+Use only the provided relationship types, properties and indexes in the schema.
+Do not use any other relationship types, properties or indexes that are not provided.
+If the query you propose includes semantic search with a specific filter, return the filter to be used between "###" tags along with the Cypher statement between ```.
+Schema:
+{schema}
+Note: Do not include any explanations or apologies in your responses.
+Do not respond to any questions that might ask anything else than for you to construct a Cypher statement.
+Do not include any text except the generated Cypher statement and (if applicable) the filter to be used.
+
+For some node properties, you could use a vector index for semantic search. Only use vector indexes where appropriate. If that is the case, you can use the following Cypher query as an example:
+
+CALL db.index.vector.queryNodes('vector_idx', 2, $search_emb) YIELD node, score RETURN node.description AS text, score
+
+This query returns the top k=2 nodes with the highest similarity score to the search vector $search_emb.
+You must select the appropriate vector index name (vector_idx) for your query from one of indexes names provided in the schema.
+You could adapt "k", but always include "$search_emb" as the search vector parameter.
+
+The question is:
+{question}
+
+Example output:
+```
+# your generated cypher statement here (without any queryNodes call)
+```
+OR
+```
+# your generated cypher statement here (with queryNodes call)
+```
+###
+# your filter here, e.g.: "foo bar baz"
+###
+"""
+CYPHER_FILTER_GENERATION_PROMPT = PromptTemplate(
+    input_variables=["schema", "question"], template=CYPHER_FILTER_GENERATION_TEMPLATE
+)
+
 NEBULAGRAPH_EXTRA_INSTRUCTIONS = """
 Instructions:
 
