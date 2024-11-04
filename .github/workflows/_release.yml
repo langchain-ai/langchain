@@ -95,7 +95,7 @@ jobs:
           PKG_NAME: ${{ needs.build.outputs.pkg-name }}
           VERSION: ${{ needs.build.outputs.version }}
         run: |
-          PREV_TAG="${curr_version%.*}.$(( ${curr_version##*.} - 1 ))"; [[ "${curr_version##*.}" -eq 0 ]] && PREV_TAG=""
+          PREV_TAG="$PKG_NAME==${VERSION%.*}.$(( ${VERSION##*.} - 1 ))"; [[ "${VERSION##*.}" -eq 0 ]] && PREV_TAG=""
 
           # backup case if releasing e.g. 0.3.0, looks up last release
           # note if last release (chronologically) was e.g. 0.1.47 it will get 
