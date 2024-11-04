@@ -7,11 +7,14 @@ else:
     # for python 3.10 and below, which doesnt have stdlib tomllib
     import tomli as tomllib
 
-from packaging.version import parse as parse_version
 from packaging.specifiers import SpecifierSet
 from packaging.version import Version
 
-import re
+
+import requests
+from packaging.version import parse
+from typing import List
+
 
 MIN_VERSION_LIBS = [
     "langchain-core",
@@ -31,29 +34,50 @@ SKIP_IF_PULL_REQUEST = [
 ]
 
 
-def get_min_version(version: str) -> str:
-    # base regex for x.x.x with cases for rc/post/etc
-    # valid strings: https://peps.python.org/pep-0440/#public-version-identifiers
-    vstring = r"\d+(?:\.\d+){0,2}(?:(?:a|b|rc|\.post|\.dev)\d+)?"
-    # case ^x.x.x
-    _match = re.match(f"^\\^({vstring})$", version)
-    if _match:
-        return _match.group(1)
+def get_pypi_versions(package_name: str) -> List[str]:
+    """
+    Fetch all available versions for a package from PyPI.
 
-    # case >=x.x.x,<y.y.y
-    _match = re.match(f"^>=({vstring}),<({vstring})$", version)
-    if _match:
-        _min = _match.group(1)
-        _max = _match.group(2)
-        assert parse_version(_min) < parse_version(_max)
-        return _min
+    Args:
+        package_name (str): Name of the package
 
-    # case x.x.x
-    _match = re.match(f"^({vstring})$", version)
-    if _match:
-        return _match.group(1)
+    Returns:
+        List[str]: List of all available versions
 
-    raise ValueError(f"Unrecognized version format: {version}")
+    Raises:
+        requests.exceptions.RequestException: If PyPI API request fails
+        KeyError: If package not found or response format unexpected
+    """
+    pypi_url = f"https://pypi.org/pypi/{package_name}/json"
+    response = requests.get(pypi_url)
+    response.raise_for_status()
+    return list(response.json()["releases"].keys())
+
+
+def get_minimum_version(package_name: str, spec_string: str) -> Optional[str]:
+    """
+    Find the minimum published version that satisfies the given constraints.
+
+    Args:
+        package_name (str): Name of the package
+        spec_string (str): Version specification string (e.g., ">=0.2.43,<0.4.0,!=0.3.0")
+
+    Returns:
+        Optional[str]: Minimum compatible version or None if no compatible version found
+    """
+    spec_set = SpecifierSet(spec_string)
+    all_versions = get_pypi_versions(package_name)
+
+    valid_versions = []
+    for version_str in all_versions:
+        try:
+            version = parse(version_str)
+            if spec_set.contains(version):
+                valid_versions.append(version)
+        except ValueError:
+            continue
+
+    return str(min(valid_versions)) if valid_versions else None
 
 
 def get_min_version_from_toml(
@@ -96,7 +120,7 @@ def get_min_version_from_toml(
                 ][0]["version"]
 
             # Use parse_version to get the minimum supported version from version_string
-            min_version = get_min_version(version_string)
+            min_version = get_minimum_version(lib, version_string)
 
             # Store the minimum version in the min_versions dictionary
             min_versions[lib] = min_version
