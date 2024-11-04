@@ -284,26 +284,28 @@ class HanaDB(VectorStore):
         distance_func_name = HANA_DISTANCE_FUNCTION[self.distance_strategy][0]
         default_index_name = f"{self.table_name}_{distance_func_name}_idx"
         # Use provided index_name or default
-        index_name = index_name or default_index_name
-
+        index_name = HanaDB._sanitize_name(index_name) if index_name else default_index_name
         # Initialize build_config and search_config as empty dictionaries
         build_config = {}
         search_config = {}
 
         # Validate and add m parameter to build_config if provided
         if m is not None:
+            m = HanaDB._sanitize_int(m)
             if not (4 <= m <= 1000):
                 raise ValueError("M must be in the range [4, 1000]")
             build_config["M"] = m
 
         # Validate and add ef_construction to build_config if provided
         if ef_construction is not None:
+            ef_construction = HanaDB._sanitize_int(ef_construction)
             if not (1 <= ef_construction <= 100000):
                 raise ValueError("efConstruction must be in the range [1, 100000]")
             build_config["efConstruction"] = ef_construction
 
         # Validate and add ef_search to search_config if provided
         if ef_search is not None:
+            ef_search = HanaDB._sanitize_int(ef_search)
             if not (1 <= ef_search <= 100000):
                 raise ValueError("efSearch must be in the range [1, 100000]")
             search_config["efSearch"] = ef_search
