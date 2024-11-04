@@ -61,6 +61,8 @@ ENGINES = Literal[
 ]
 AVAILABLE_ENGINES: List[ENGINES] = list(get_args(ENGINES))
 
+logger = logging.getLogger(__name__)
+
 
 def VDMS_Client(
     host: str = "localhost",
@@ -139,13 +141,8 @@ class VDMS(VectorStore):
         collection_name: str = DEFAULT_COLLECTION_NAME,
         engine: ENGINES = "FaissFlat",
         distance_strategy: DISTANCE_METRICS = "L2",
-        log_level: int = logging.WARNING,
-        logger: logging.Logger = logging.getLogger(__name__),
         **kwargs: Any,
     ) -> None:
-        # super().__init__(**kwargs)
-        self.logger = logger
-        self.logger.setLevel(log_level)
         self.collection_name = collection_name
 
         # Check required parameters
@@ -153,7 +150,7 @@ class VDMS(VectorStore):
         self.similarity_search_engine = engine
         self.distance_strategy = distance_strategy
         self.embedding = embedding
-        self.utils = VDMS_Utils(client, logger=self.logger)
+        self.utils = VDMS_Utils(client)
         self._check_required_inputs(collection_name, embedding_dimensions, **kwargs)
         self.updated_properties_flag = False
         self._add_set()
@@ -186,7 +183,7 @@ class VDMS(VectorStore):
         else:
             status = "exists"
 
-        self.logger.info(f"Descriptor set {collection_name} {status}")
+        logger.info(f"Descriptor set {collection_name} {status}")
 
     def _check_required_inputs(
         self,
@@ -965,8 +962,8 @@ class VDMS(VectorStore):
             #     }
             #     pstr = f"[!] Embedding with id ({id}) exists in DB;"
             #     pstr += "Therefore, skipped and not inserted"
-            #     self.logger.warning(pstr)
-            #     self.logger.warning(f"\tSkipped values are: {skipped_value}")
+            #     logger.warning(pstr)
+            #     logger.warning(f"\tSkipped values are: {skipped_value}")
             #     return {}
 
         if metadata:
@@ -1011,7 +1008,7 @@ class VDMS(VectorStore):
         Returns:
             List of Document objects ordered by decreasing similarity/diversty.
         """
-        self.logger.info(f"Max Marginal Relevance search for query: {query}")
+        logger.info(f"Max Marginal Relevance search for query: {query}")
         query_embedding = self.get_embedding_from_query(query)
         return self.max_marginal_relevance_search_by_vector(
             query_embedding, k, fetch_k, lambda_mult, filter, **kwargs
@@ -1069,7 +1066,7 @@ class VDMS(VectorStore):
                 lambda_mult=lambda_mult,
             )
 
-            self.logger.info(
+            logger.info(
                 f"VDMS similarity search mmr took {time.time() - start_time} seconds"
             )
             candidates = self.results2docs(results)
@@ -1126,7 +1123,7 @@ class VDMS(VectorStore):
                 lambda_mult=lambda_mult,
             )
 
-            self.logger.info(
+            logger.info(
                 f"VDMS similarity search mmr took {time.time() - start_time} seconds"
             )
             candidates = self.results2docs_and_scores(results)
@@ -1158,7 +1155,7 @@ class VDMS(VectorStore):
         Returns:
             List of Document objects ordered by decreasing similarity/diversty.
         """
-        self.logger.info(f"Max Marginal Relevance search for query: {query}")
+        logger.info(f"Max Marginal Relevance search for query: {query}")
         query_embedding = self.get_embedding_from_query(query)
         return self.max_marginal_relevance_search_by_vector_with_score(
             query_embedding, k, fetch_k, lambda_mult, filter, **kwargs
@@ -1241,7 +1238,7 @@ class VDMS(VectorStore):
                         (Document(page_content=txt_contents, metadata=props), distance)
                     )
         except Exception as e:
-            self.logger.warning(
+            logger.warning(
                 f"No results returned. Error while parsing results: {e}"
             )
         return final_res
@@ -1302,7 +1299,7 @@ class VDMS(VectorStore):
             filter=filter,
             **kwargs,
         )
-        self.logger.info(
+        logger.info(
             f"VDMS similarity search took {time.time() - start_time} seconds"
         )
 
@@ -1436,9 +1433,8 @@ class VDMS(VectorStore):
 
 
 class VDMS_Utils:
-    def __init__(self, client: vdms.vdms, logger: logging.Logger) -> None:
+    def __init__(self, client: vdms.vdms) -> None:
         self.client = client
-        self.logger = logger
 
         # Check connection to client
         if not self.client.is_connected():
@@ -1772,7 +1768,7 @@ class VDMS_Utils:
             response[0][command_str]["returned"] = len(new_entities)
             if len(new_entities) < k_neighbors:
                 p_str = "Returned items < k_neighbors; Try increasing fetch_k"
-                self.logger.warning(p_str)
+                logger.warning(p_str)
 
         if normalize_distance:
             max_dist = 1.0 if max_dist in [0, np.inf] else max_dist
