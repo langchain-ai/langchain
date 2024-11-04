@@ -15,6 +15,8 @@ import requests
 from packaging.version import parse
 from typing import List
 
+import re
+
 
 MIN_VERSION_LIBS = [
     "langchain-core",
@@ -65,6 +67,19 @@ def get_minimum_version(package_name: str, spec_string: str) -> Optional[str]:
     Returns:
         Optional[str]: Minimum compatible version or None if no compatible version found
     """
+    # rewrite occurrences of ^0.0.z to 0.0.z (can be anywhere in constraint string)
+    spec_string = re.sub(r"\^0\.0\.(\d+)", r"0.0.\1", spec_string)
+    # rewrite occurrences of ^0.y.z to >=0.y.z,<0.y+1.0 (can be anywhere in constraint string)
+    for y in range(1, 10):
+        spec_string = re.sub(
+            rf"\^0\.{y}\.(\d+)", rf">=0.{y}.\1,<0.{y+1}.0", spec_string
+        )
+    # rewrite occurrences of ^x.y.z to >=x.y.z,<x+1.0.0 (can be anywhere in constraint string)
+    for x in range(1, 10):
+        spec_string = re.sub(
+            rf"\^{x}\.0\.(\d+)", rf">={x}.0.\1,<{x+1}.0.0", spec_string
+        )
+
     spec_set = SpecifierSet(spec_string)
     all_versions = get_pypi_versions(package_name)
 
@@ -136,6 +151,20 @@ def check_python_version(version_string, constraint_string):
     :param constraint_string: A string representing the package's Python version constraints (e.g. ">=3.6, <4.0").
     :return: True if the version matches the constraints, False otherwise.
     """
+
+    # rewrite occurrences of ^0.0.z to 0.0.z (can be anywhere in constraint string)
+    constraint_string = re.sub(r"\^0\.0\.(\d+)", r"0.0.\1", constraint_string)
+    # rewrite occurrences of ^0.y.z to >=0.y.z,<0.y+1.0 (can be anywhere in constraint string)
+    for y in range(1, 10):
+        constraint_string = re.sub(
+            rf"\^0\.{y}\.(\d+)", rf">=0.{y}.\1,<0.{y+1}.0", constraint_string
+        )
+    # rewrite occurrences of ^x.y.z to >=x.y.z,<x+1.0.0 (can be anywhere in constraint string)
+    for x in range(1, 10):
+        constraint_string = re.sub(
+            rf"\^{x}\.0\.(\d+)", rf">={x}.0.\1,<{x+1}.0.0", constraint_string
+        )
+
     try:
         version = Version(version_string)
         constraints = SpecifierSet(constraint_string)
