@@ -143,7 +143,3 @@ packages:
   - name: langchain-box
     repo: langchain-ai/langchain
     path: libs/partners/box
-  - name: langchain-neo4j
-    repo: langchain-ai/langchain-neo4j
-    path: libs/neo4j
-    
