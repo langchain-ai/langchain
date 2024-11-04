@@ -11,8 +11,9 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, LLMResult
-from langchain_core.pydantic_v1 import Extra, Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import ConfigDict, Field, model_validator
+from typing_extensions import Self
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
@@ -73,14 +74,14 @@ class GradientLLM(BaseLLM):
     """ClientSession, private, subject to change in upcoming releases."""
 
     # LLM call kwargs
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        populate_by_name=True,
+        extra="forbid",
+    )
 
-        allow_population_by_field_name = True
-        extra = Extra.forbid
-
-    @root_validator(allow_reuse=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that api key and python package exists in environment."""
 
         values["gradient_access_token"] = get_from_dict_or_env(
@@ -90,20 +91,34 @@ class GradientLLM(BaseLLM):
             values, "gradient_workspace_id", "GRADIENT_WORKSPACE_ID"
         )
 
-        if (
-            values["gradient_access_token"] is None
-            or len(values["gradient_access_token"]) < 10
-        ):
+        values["gradient_api_url"] = get_from_dict_or_env(
+            values, "gradient_api_url", "GRADIENT_API_URL"
+        )
+        return values
+
+    @model_validator(mode="after")
+    def post_init(self) -> Self:
+        """Post init validation."""
+        # Can be most to post_init_validation
+        try:
+            import gradientai  # noqa
+        except ImportError:
+            logging.warning(
+                "DeprecationWarning: `GradientLLM` will use "
+                "`pip install gradientai` in future releases of langchain."
+            )
+        except Exception:
+            pass
+
+        # Can be most to post_init_validation
+        if self.gradient_access_token is None or len(self.gradient_access_token) < 10:
             raise ValueError("env variable `GRADIENT_ACCESS_TOKEN` must be set")
 
-        if (
-            values["gradient_workspace_id"] is None
-            or len(values["gradient_access_token"]) < 3
-        ):
+        if self.gradient_workspace_id is None or len(self.gradient_access_token) < 3:
             raise ValueError("env variable `GRADIENT_WORKSPACE_ID` must be set")
 
-        if values["model_kwargs"]:
-            kw = values["model_kwargs"]
+        if self.model_kwargs:
+            kw = self.model_kwargs
             if not 0 <= kw.get("temperature", 0.5) <= 1:
                 raise ValueError("`temperature` must be in the range [0.0, 1.0]")
 
@@ -116,21 +131,7 @@ class GradientLLM(BaseLLM):
             if 0 >= kw.get("max_generated_token_count", 1):
                 raise ValueError("`max_generated_token_count` must be positive")
 
-        values["gradient_api_url"] = get_from_dict_or_env(
-            values, "gradient_api_url", "GRADIENT_API_URL"
-        )
-
-        try:
-            import gradientai  # noqa
-        except ImportError:
-            logging.warning(
-                "DeprecationWarning: `GradientLLM` will use "
-                "`pip install gradientai` in future releases of langchain."
-            )
-        except Exception:
-            pass
-
-        return values
+        return self
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
@@ -172,21 +173,23 @@ class GradientLLM(BaseLLM):
                 "content-type": "application/json",
             },
             json=dict(
-                samples=tuple(
-                    {
-                        "inputs": input,
-                    }
-                    for input in inputs
-                )
-                if multipliers is None
-                else tuple(
-                    {
-                        "inputs": input,
-                        "fineTuningParameters": {
-                            "multiplier": multiplier,
-                        },
-                    }
-                    for input, multiplier in zip(inputs, multipliers)
+                samples=(
+                    tuple(
+                        {
+                            "inputs": input,
+                        }
+                        for input in inputs
+                    )
+                    if multipliers is None
+                    else tuple(
+                        {
+                            "inputs": input,
+                            "fineTuningParameters": {
+                                "multiplier": multiplier,
+                            },
+                        }
+                        for input, multiplier in zip(inputs, multipliers)
+                    )
                 ),
             ),
         )
@@ -337,9 +340,11 @@ class GradientLLM(BaseLLM):
     ) -> LLMResult:
         """Run the LLM on the given prompt and input."""
         generations = []
-        for generation in asyncio.gather(
-            [self._acall(prompt, stop=stop, run_manager=run_manager, **kwargs)]
-            for prompt in prompts
+        for generation in await asyncio.gather(
+            *[
+                self._acall(prompt, stop=stop, run_manager=run_manager, **kwargs)
+                for prompt in prompts
+            ]
         ):
             generations.append([Generation(text=generation)])
         return LLMResult(generations=generations)

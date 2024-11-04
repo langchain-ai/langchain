@@ -3,7 +3,7 @@ from typing import List
 import pytest as pytest
 from langchain_core.documents import Document
 
-from langchain.retrievers.multi_query import _unique_documents
+from langchain.retrievers.multi_query import LineListOutputParser, _unique_documents
 
 
 @pytest.mark.parametrize(
@@ -38,3 +38,16 @@ from langchain.retrievers.multi_query import _unique_documents
 )
 def test__unique_documents(documents: List[Document], expected: List[Document]) -> None:
     assert _unique_documents(documents) == expected
+
+
+@pytest.mark.parametrize(
+    "text,expected",
+    [
+        ("foo\nbar\nbaz", ["foo", "bar", "baz"]),
+        ("foo\nbar\nbaz\n", ["foo", "bar", "baz"]),
+        ("foo\n\nbar", ["foo", "bar"]),
+    ],
+)
+def test_line_list_output_parser(text: str, expected: List[str]) -> None:
+    parser = LineListOutputParser()
+    assert parser.parse(text) == expected

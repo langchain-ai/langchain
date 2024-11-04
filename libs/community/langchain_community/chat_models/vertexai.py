@@ -1,4 +1,5 @@
 """Wrapper around Google VertexAI chat-based models."""
+
 from __future__ import annotations
 
 import base64
@@ -26,7 +27,7 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import root_validator
+from langchain_core.utils import pre_init
 
 from langchain_community.llms.vertexai import (
     _VertexAICommon,
@@ -205,10 +206,10 @@ def _get_question(messages: List[BaseMessage]) -> HumanMessage:
 
 @deprecated(
     since="0.0.12",
-    removal="0.3.0",
+    removal="1.0",
     alternative_import="langchain_google_vertexai.ChatVertexAI",
 )
-class ChatVertexAI(_VertexAICommon, BaseChatModel):
+class ChatVertexAI(_VertexAICommon, BaseChatModel):  # type: ignore[override]
     """`Vertex AI` Chat large language models API."""
 
     model_name: str = "chat-bison"
@@ -224,7 +225,7 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
         """Get the namespace of the langchain object."""
         return ["langchain", "chat_models", "vertexai"]
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in environment."""
         is_gemini = is_gemini_model(values["model_name"])

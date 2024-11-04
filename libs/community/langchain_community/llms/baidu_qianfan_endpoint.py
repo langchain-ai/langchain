@@ -16,29 +16,105 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
-from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
+from pydantic import Field, SecretStr
 
 logger = logging.getLogger(__name__)
 
 
 class QianfanLLMEndpoint(LLM):
-    """Baidu Qianfan hosted open source or customized models.
+    """Baidu Qianfan completion model integration.
 
-    To use, you should have the ``qianfan`` python package installed, and
-    the environment variable ``qianfan_ak`` and ``qianfan_sk`` set with
-    your API key and Secret Key.
+    Setup:
+        Install ``qianfan`` and set environment variables ``QIANFAN_AK``, ``QIANFAN_SK``.
 
-    ak, sk are required parameters which you could get from
-    https://cloud.baidu.com/product/wenxinworkshop
+        .. code-block:: bash
 
-    Example:
+            pip install qianfan
+            export QIANFAN_AK="your-api-key"
+            export QIANFAN_SK="your-secret_key"
+
+    Key init args — completion params:
+        model: str
+            Name of Qianfan model to use.
+        temperature: Optional[float]
+            Sampling temperature.
+        endpoint: Optional[str]
+            Endpoint of the Qianfan LLM
+        top_p: Optional[float]
+            What probability mass to use.
+
+    Key init args — client params:
+        timeout: Optional[int]
+            Timeout for requests.
+        api_key: Optional[str]
+            Qianfan API KEY. If not passed in will be read from env var QIANFAN_AK.
+        secret_key: Optional[str]
+            Qianfan SECRET KEY. If not passed in will be read from env var QIANFAN_SK.
+
+    See full list of supported init args and their descriptions in the params section.
+
+    Instantiate:
         .. code-block:: python
 
             from langchain_community.llms import QianfanLLMEndpoint
-            qianfan_model = QianfanLLMEndpoint(model="ERNIE-Bot",
-                endpoint="your_endpoint", qianfan_ak="your_ak", qianfan_sk="your_sk")
-    """
+
+            llm = QianfanLLMEndpoint(
+                model="ERNIE-3.5-8K",
+                # api_key="...",
+                # secret_key="...",
+                # other params...
+            )
+
+    Invoke:
+        .. code-block:: python
+
+            input_text = "用50个字左右阐述，生命的意义在于"
+            llm.invoke(input_text)
+
+        .. code-block:: python
+
+            '生命的意义在于体验、成长、爱与被爱、贡献与传承，以及对未知的勇敢探索与自我超越。'
+
+    Stream:
+        .. code-block:: python
+
+            for chunk in llm.stream(input_text):
+                print(chunk)
+
+        .. code-block:: python
+
+            生命的意义 | 在于不断探索 | 与成长 | ，实现 | 自我价值，| 给予爱 | 并接受 | 爱， | 在经历 | 中感悟 | ，让 | 短暂的存在 | 绽放出无限 | 的光彩 | 与温暖 | 。
+
+        .. code-block:: python
+
+            stream = llm.stream(input_text)
+            full = next(stream)
+            for chunk in stream:
+                full += chunk
+            full
+
+        .. code-block::
+
+            '生命的意义在于探索、成长、爱与被爱、贡献价值、体验世界之美，以及在有限的时间里追求内心的平和与幸福。'
+
+    Async:
+        .. code-block:: python
+
+            await llm.ainvoke(input_text)
+
+            # stream:
+            # async for chunk in llm.astream(input_text):
+            #    print(chunk)
+
+            # batch:
+            # await llm.abatch([input_text])
+
+        .. code-block:: python
+
+            '生命的意义在于探索、成长、爱与被爱、贡献社会，在有限的时间里追寻无限的可能，实现自我价值，让生活充满色彩与意义。'
+
+    """  # noqa: E501
 
     init_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """init kwargs for qianfan client init, such as `query_per_second` which is 
@@ -47,26 +123,28 @@ class QianfanLLMEndpoint(LLM):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """extra params for model invoke using with `do`."""
 
-    client: Any
+    client: Any = None
 
-    qianfan_ak: Optional[str] = None
-    qianfan_sk: Optional[str] = None
+    qianfan_ak: Optional[SecretStr] = Field(default=None, alias="api_key")
+    qianfan_sk: Optional[SecretStr] = Field(default=None, alias="secret_key")
 
     streaming: Optional[bool] = False
     """Whether to stream the results or not."""
 
-    model: str = "ERNIE-Bot-turbo"
+    model: Optional[str] = Field(default=None)
     """Model name. 
     you could get from https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Nlks5zkzu
     
     preset models are mapping to an endpoint.
     `model` will be ignored if `endpoint` is set
+    
+    Default is set by `qianfan` SDK, not here
     """
 
     endpoint: Optional[str] = None
     """Endpoint of the Qianfan LLM, required if custom model used."""
 
-    request_timeout: Optional[int] = 60
+    request_timeout: Optional[int] = Field(default=60, alias="timeout")
     """request timeout for chat http requests"""
 
     top_p: Optional[float] = 0.8
@@ -76,12 +154,12 @@ class QianfanLLMEndpoint(LLM):
     In the case of other model, passing these params will not affect the result.
     """
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         values["qianfan_ak"] = convert_to_secret_str(
             get_from_dict_or_env(
                 values,
-                "qianfan_ak",
+                ["qianfan_ak", "api_key"],
                 "QIANFAN_AK",
                 default="",
             )
@@ -89,7 +167,7 @@ class QianfanLLMEndpoint(LLM):
         values["qianfan_sk"] = convert_to_secret_str(
             get_from_dict_or_env(
                 values,
-                "qianfan_sk",
+                ["qianfan_sk", "secret_key"],
                 "QIANFAN_SK",
                 default="",
             )

@@ -3,16 +3,13 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
+from collections.abc import AsyncIterator, Iterator, Sequence
 from typing import (
     TYPE_CHECKING,
     Any,
-    AsyncIterator,
-    Dict,
-    Iterator,
-    List,
     Optional,
-    Sequence,
     TypeVar,
     Union,
     cast,
@@ -28,7 +25,12 @@ from langchain_core.outputs import (
     GenerationChunk,
     LLMResult,
 )
-from langchain_core.runnables.schema import EventData, StreamEvent
+from langchain_core.runnables.schema import (
+    CustomStreamEvent,
+    EventData,
+    StandardStreamEvent,
+    StreamEvent,
+)
 from langchain_core.runnables.utils import (
     Input,
     Output,
@@ -47,24 +49,36 @@ logger = logging.getLogger(__name__)
 
 
 class RunInfo(TypedDict):
-    """Information about a run."""
+    """Information about a run.
+
+    This is used to keep track of the metadata associated with a run.
+
+    Parameters:
+        name: The name of the run.
+        tags: The tags associated with the run.
+        metadata: The metadata associated with the run.
+        run_type: The type of the run.
+        inputs: The inputs to the run.
+        parent_run_id: The ID of the parent run.
+    """
 
     name: str
-    tags: List[str]
-    metadata: Dict[str, Any]
+    tags: list[str]
+    metadata: dict[str, Any]
     run_type: str
     inputs: NotRequired[Any]
     parent_run_id: Optional[UUID]
 
 
-def _assign_name(name: Optional[str], serialized: Dict[str, Any]) -> str:
+def _assign_name(name: Optional[str], serialized: Optional[dict[str, Any]]) -> str:
     """Assign a name to a run."""
     if name is not None:
         return name
-    if "name" in serialized:
-        return serialized["name"]
-    elif "id" in serialized:
-        return serialized["id"][-1]
+    if serialized is not None:
+        if "name" in serialized:
+            return serialized["name"]
+        elif "id" in serialized:
+            return serialized["id"][-1]
     return "Unnamed"
 
 
@@ -90,15 +104,15 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         # Map of run ID to run info.
         # the entry corresponding to a given run id is cleaned
         # up when each corresponding run ends.
-        self.run_map: Dict[UUID, RunInfo] = {}
+        self.run_map: dict[UUID, RunInfo] = {}
         # The callback event that corresponds to the end of a parent run
         # may be invoked BEFORE the callback event that corresponds to the end
         # of a child run, which results in clean up of run_map.
         # So we keep track of the mapping between children and parent run IDs
         # in a separate container. This container is GCed when the tracer is GCed.
-        self.parent_map: Dict[UUID, Optional[UUID]] = {}
+        self.parent_map: dict[UUID, Optional[UUID]] = {}
 
-        self.is_tapped: Dict[UUID, Any] = {}
+        self.is_tapped: dict[UUID, Any] = {}
 
         # Filter which events will be sent over the queue.
         self.root_event_filter = _RootEventFilter(
@@ -115,17 +129,18 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         self.send_stream = memory_stream.get_send_stream()
         self.receive_stream = memory_stream.get_receive_stream()
 
-    def _get_parent_ids(self, run_id: UUID) -> List[str]:
+    def _get_parent_ids(self, run_id: UUID) -> list[str]:
         """Get the parent IDs of a run (non-recursively) cast to strings."""
         parent_ids = []
 
         while parent_id := self.parent_map.get(run_id):
             str_parent_id = str(parent_id)
             if str_parent_id in parent_ids:
-                raise AssertionError(
+                msg = (
                     f"Parent ID {parent_id} is already in the parent_ids list. "
                     f"This should never happen."
                 )
+                raise AssertionError(msg)
             parent_ids.append(str_parent_id)
             run_id = parent_id
 
@@ -145,7 +160,19 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
     async def tap_output_aiter(
         self, run_id: UUID, output: AsyncIterator[T]
     ) -> AsyncIterator[T]:
-        """Tap the output aiter."""
+        """Tap the output aiter.
+
+        This method is used to tap the output of a Runnable that produces
+        an async iterator. It is used to generate stream events for the
+        output of the Runnable.
+
+        Args:
+            run_id: The ID of the run.
+            output: The output of the Runnable.
+
+        Yields:
+            T: The output of the Runnable.
+        """
         sentinel = object()
         # atomic check and set
         tap = self.is_tapped.setdefault(run_id, sentinel)
@@ -161,7 +188,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             return
         if tap is sentinel:
             # if we are the first to tap, issue stream events
-            event: StreamEvent = {
+            event: StandardStreamEvent = {
                 "event": f"on_{run_info['run_type']}_stream",
                 "run_id": str(run_id),
                 "name": run_info["name"],
@@ -187,7 +214,15 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 yield chunk
 
     def tap_output_iter(self, run_id: UUID, output: Iterator[T]) -> Iterator[T]:
-        """Tap the output aiter."""
+        """Tap the output aiter.
+
+        Args:
+            run_id: The ID of the run.
+            output: The output of the Runnable.
+
+        Yields:
+            T: The output of the Runnable.
+        """
         sentinel = object()
         # atomic check and set
         tap = self.is_tapped.setdefault(run_id, sentinel)
@@ -203,7 +238,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             return
         if tap is sentinel:
             # if we are the first to tap, issue stream events
-            event: StreamEvent = {
+            event: StandardStreamEvent = {
                 "event": f"on_{run_info['run_type']}_stream",
                 "run_id": str(run_id),
                 "name": run_info["name"],
@@ -232,8 +267,8 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         self,
         run_id: UUID,
         *,
-        tags: Optional[List[str]],
-        metadata: Optional[Dict[str, Any]],
+        tags: Optional[list[str]],
+        metadata: Optional[dict[str, Any]],
         parent_run_id: Optional[UUID],
         name_: str,
         run_type: str,
@@ -259,13 +294,13 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
 
     async def on_chat_model_start(
         self,
-        serialized: Dict[str, Any],
-        messages: List[List[BaseMessage]],
+        serialized: dict[str, Any],
+        messages: list[list[BaseMessage]],
         *,
         run_id: UUID,
-        tags: Optional[List[str]] = None,
+        tags: Optional[list[str]] = None,
         parent_run_id: Optional[UUID] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         name: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
@@ -300,13 +335,13 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
 
     async def on_llm_start(
         self,
-        serialized: Dict[str, Any],
-        prompts: List[str],
+        serialized: dict[str, Any],
+        prompts: list[str],
         *,
         run_id: UUID,
-        tags: Optional[List[str]] = None,
+        tags: Optional[list[str]] = None,
         parent_run_id: Optional[UUID] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         name: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
@@ -341,6 +376,28 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             run_type,
         )
 
+    async def on_custom_event(
+        self,
+        name: str,
+        data: Any,
+        *,
+        run_id: UUID,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Generate a custom astream event."""
+        event = CustomStreamEvent(
+            event="on_custom_event",
+            run_id=str(run_id),
+            name=name,
+            tags=tags or [],
+            metadata=metadata or {},
+            data=data,
+            parent_ids=self._get_parent_ids(run_id),
+        )
+        self._send(event, name)
+
     async def on_llm_new_token(
         self,
         token: str,
@@ -355,7 +412,8 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         chunk_: Union[GenerationChunk, BaseMessageChunk]
 
         if run_info is None:
-            raise AssertionError(f"Run ID {run_id} not found in run map.")
+            msg = f"Run ID {run_id} not found in run map."
+            raise AssertionError(msg)
         if self.is_tapped.get(run_id):
             return
         if run_info["run_type"] == "chat_model":
@@ -373,7 +431,8 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             else:
                 chunk_ = cast(GenerationChunk, chunk)
         else:
-            raise ValueError(f"Unexpected run type: {run_info['run_type']}")
+            msg = f"Unexpected run type: {run_info['run_type']}"
+            raise ValueError(msg)
 
         self._send(
             {
@@ -397,11 +456,11 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         run_info = self.run_map.pop(run_id)
         inputs_ = run_info["inputs"]
 
-        generations: Union[List[List[GenerationChunk]], List[List[ChatGenerationChunk]]]
+        generations: Union[list[list[GenerationChunk]], list[list[ChatGenerationChunk]]]
         output: Union[dict, BaseMessage] = {}
 
         if run_info["run_type"] == "chat_model":
-            generations = cast(List[List[ChatGenerationChunk]], response.generations)
+            generations = cast(list[list[ChatGenerationChunk]], response.generations)
             for gen in generations:
                 if output != {}:
                     break
@@ -411,7 +470,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
 
             event = "on_chat_model_end"
         elif run_info["run_type"] == "llm":
-            generations = cast(List[List[GenerationChunk]], response.generations)
+            generations = cast(list[list[GenerationChunk]], response.generations)
             output = {
                 "generations": [
                     [
@@ -428,7 +487,8 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             }
             event = "on_llm_end"
         else:
-            raise ValueError(f"Unexpected run type: {run_info['run_type']}")
+            msg = f"Unexpected run type: {run_info['run_type']}"
+            raise ValueError(msg)
 
         self._send(
             {
@@ -445,13 +505,13 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
 
     async def on_chain_start(
         self,
-        serialized: Dict[str, Any],
-        inputs: Dict[str, Any],
+        serialized: dict[str, Any],
+        inputs: dict[str, Any],
         *,
         run_id: UUID,
-        tags: Optional[List[str]] = None,
+        tags: Optional[list[str]] = None,
         parent_run_id: Optional[UUID] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         run_type: Optional[str] = None,
         name: Optional[str] = None,
         **kwargs: Any,
@@ -493,10 +553,10 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
 
     async def on_chain_end(
         self,
-        outputs: Dict[str, Any],
+        outputs: dict[str, Any],
         *,
         run_id: UUID,
-        inputs: Optional[Dict[str, Any]] = None,
+        inputs: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
         """End a trace for a chain run."""
@@ -527,15 +587,15 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
 
     async def on_tool_start(
         self,
-        serialized: Dict[str, Any],
+        serialized: dict[str, Any],
         input_str: str,
         *,
         run_id: UUID,
-        tags: Optional[List[str]] = None,
+        tags: Optional[list[str]] = None,
         parent_run_id: Optional[UUID] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         name: Optional[str] = None,
-        inputs: Optional[Dict[str, Any]] = None,
+        inputs: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
         """Start a trace for a tool run."""
@@ -570,10 +630,11 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         """End a trace for a tool run."""
         run_info = self.run_map.pop(run_id)
         if "inputs" not in run_info:
-            raise AssertionError(
+            msg = (
                 f"Run ID {run_id} is a tool call and is expected to have "
                 f"inputs associated with it."
             )
+            raise AssertionError(msg)
         inputs = run_info["inputs"]
 
         self._send(
@@ -594,13 +655,13 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
 
     async def on_retriever_start(
         self,
-        serialized: Dict[str, Any],
+        serialized: dict[str, Any],
         query: str,
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         name: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
@@ -678,7 +739,7 @@ async def _astream_events_implementation_v1(
     exclude_types: Optional[Sequence[str]] = None,
     exclude_tags: Optional[Sequence[str]] = None,
     **kwargs: Any,
-) -> AsyncIterator[StreamEvent]:
+) -> AsyncIterator[StandardStreamEvent]:
     from langchain_core.runnables import ensure_config
     from langchain_core.runnables.utils import _RootEventFilter
     from langchain_core.tracers.log_stream import (
@@ -733,7 +794,7 @@ async def _astream_events_implementation_v1(
             encountered_start_event = True
             state = run_log.state.copy()
 
-            event = StreamEvent(
+            event = StandardStreamEvent(
                 event=f"on_{state['type']}_start",
                 run_id=state["id"],
                 name=root_name,
@@ -759,10 +820,7 @@ async def _astream_events_implementation_v1(
             data: EventData = {}
             log_entry: LogEntry = run_log.state["logs"][path]
             if log_entry["end_time"] is None:
-                if log_entry["streamed_output"]:
-                    event_type = "stream"
-                else:
-                    event_type = "start"
+                event_type = "stream" if log_entry["streamed_output"] else "start"
             else:
                 event_type = "end"
 
@@ -774,7 +832,6 @@ async def _astream_events_implementation_v1(
                 inputs = log_entry["inputs"]
                 if inputs is not None:
                     data["input"] = inputs
-                pass
 
             if event_type == "end":
                 inputs = log_entry["inputs"]
@@ -787,18 +844,19 @@ async def _astream_events_implementation_v1(
             if event_type == "stream":
                 num_chunks = len(log_entry["streamed_output"])
                 if num_chunks != 1:
-                    raise AssertionError(
+                    msg = (
                         f"Expected exactly one chunk of streamed output, "
                         f"got {num_chunks} instead. This is impossible. "
                         f"Encountered in: {log_entry['name']}"
                     )
+                    raise AssertionError(msg)
 
                 data = {"chunk": log_entry["streamed_output"][0]}
                 # Clean up the stream, we don't need it anymore.
                 # And this avoids duplicates as well!
                 log_entry["streamed_output"] = []
 
-            yield StreamEvent(
+            yield StandardStreamEvent(
                 event=f"on_{log_entry['type']}_{event_type}",
                 name=log_entry["name"],
                 run_id=log_entry["id"],
@@ -814,17 +872,18 @@ async def _astream_events_implementation_v1(
         if state["streamed_output"]:
             num_chunks = len(state["streamed_output"])
             if num_chunks != 1:
-                raise AssertionError(
+                msg = (
                     f"Expected exactly one chunk of streamed output, "
                     f"got {num_chunks} instead. This is impossible. "
                     f"Encountered in: {state['name']}"
                 )
+                raise AssertionError(msg)
 
             data = {"chunk": state["streamed_output"][0]}
             # Clean up the stream, we don't need it anymore.
             state["streamed_output"] = []
 
-            event = StreamEvent(
+            event = StandardStreamEvent(
                 event=f"on_{state['type']}_stream",
                 run_id=state["id"],
                 tags=root_tags,
@@ -839,7 +898,7 @@ async def _astream_events_implementation_v1(
     state = run_log.state
 
     # Finally yield the end event for the root runnable.
-    event = StreamEvent(
+    event = StandardStreamEvent(
         event=f"on_{state['type']}_end",
         name=root_name,
         run_id=state["id"],
@@ -866,7 +925,7 @@ async def _astream_events_implementation_v2(
     exclude_types: Optional[Sequence[str]] = None,
     exclude_tags: Optional[Sequence[str]] = None,
     **kwargs: Any,
-) -> AsyncIterator[StreamEvent]:
+) -> AsyncIterator[StandardStreamEvent]:
     """Implementation of the astream events API for V2 runnables."""
     from langchain_core.callbacks.base import BaseCallbackManager
     from langchain_core.runnables import ensure_config
@@ -893,10 +952,11 @@ async def _astream_events_implementation_v2(
         callbacks.add_handler(event_streamer, inherit=True)
         config["callbacks"] = callbacks
     else:
-        raise ValueError(
+        msg = (
             f"Unexpected type for callbacks: {callbacks}."
             "Expected None, list or AsyncCallbackManager."
         )
+        raise ValueError(msg)
 
     # Call the runnable in streaming mode,
     # add each chunk to the output stream
@@ -929,21 +989,24 @@ async def _astream_events_implementation_v2(
                 yield event
                 continue
 
-            if event["run_id"] == first_event_run_id and event["event"].endswith(
-                "_end"
+            # If it's the end event corresponding to the root runnable
+            # we dont include the input in the event since it's guaranteed
+            # to be included in the first event.
+            if (
+                event["run_id"] == first_event_run_id
+                and event["event"].endswith("_end")
+                and "input" in event["data"]
             ):
-                # If it's the end event corresponding to the root runnable
-                # we dont include the input in the event since it's guaranteed
-                # to be included in the first event.
-                if "input" in event["data"]:
-                    del event["data"]["input"]
+                del event["data"]["input"]
 
             yield event
+    except asyncio.CancelledError as exc:
+        # Cancel the task if it's still running
+        task.cancel(exc.args[0] if exc.args else None)
+        raise
     finally:
         # Cancel the task if it's still running
         task.cancel()
         # Await it anyway, to run any cleanup code, and propagate any exceptions
-        try:
+        with contextlib.suppress(asyncio.CancelledError):
             await task
-        except asyncio.CancelledError:
-            pass

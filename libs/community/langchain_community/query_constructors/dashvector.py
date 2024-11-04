@@ -1,4 +1,5 @@
 """Logic for converting internal query language to a valid DashVector query."""
+
 from typing import Tuple, Union
 
 from langchain_core.structured_query import (

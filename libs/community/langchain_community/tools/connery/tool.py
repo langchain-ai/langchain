@@ -6,13 +6,13 @@ from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain_core.pydantic_v1 import BaseModel, Field, create_model, root_validator
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel, Field, create_model, model_validator
 
 from langchain_community.tools.connery.models import Action, Parameter
 
 
-class ConneryAction(BaseTool):
+class ConneryAction(BaseTool):  # type: ignore[override, override]
     """Connery Action tool."""
 
     name: str
@@ -25,7 +25,7 @@ class ConneryAction(BaseTool):
     def _run(
         self,
         run_manager: Optional[CallbackManagerForToolRun] = None,
-        **kwargs: Dict[str, str],
+        **kwargs: Any,
     ) -> Dict[str, str]:
         """
         Runs the Connery Action with the provided input.
@@ -40,7 +40,7 @@ class ConneryAction(BaseTool):
     async def _arun(
         self,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-        **kwargs: Dict[str, str],
+        **kwargs: Any,
     ) -> Dict[str, str]:
         """
         Runs the Connery Action asynchronously with the provided input.
@@ -63,8 +63,9 @@ class ConneryAction(BaseTool):
 
         return self.args_schema.schema_json(indent=2)
 
-    @root_validator()
-    def validate_attributes(cls, values: dict) -> dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_attributes(cls, values: dict) -> Any:
         """
         Validate the attributes of the ConneryAction class.
         Parameters:
@@ -153,8 +154,8 @@ class ConneryAction(BaseTool):
             type = param.type
 
             dynamic_input_fields[param.key] = (
-                str,
-                Field(default, title=title, description=description, type=type),
+                type,
+                Field(default, title=title, description=description),
             )
 
         InputModel = create_model("InputSchema", **dynamic_input_fields)

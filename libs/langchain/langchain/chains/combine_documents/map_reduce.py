@@ -4,17 +4,27 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Tuple, Type
 
+from langchain_core._api import deprecated
 from langchain_core.callbacks import Callbacks
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain_core.runnables.config import RunnableConfig
 from langchain_core.runnables.utils import create_model
+from pydantic import BaseModel, ConfigDict, model_validator
 
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.reduce import ReduceDocumentsChain
 from langchain.chains.llm import LLMChain
 
 
+@deprecated(
+    since="0.3.1",
+    removal="1.0",
+    message=(
+        "This class is deprecated. Please see the migration guide here for "
+        "a recommended replacement: "
+        "https://python.langchain.com/docs/versions/migrating_chains/map_reduce_chain/"
+    ),
+)
 class MapReduceDocumentsChain(BaseCombineDocumentsChain):
     """Combining documents by mapping a chain over them, then combining results.
 
@@ -126,14 +136,14 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
             _output_keys = _output_keys + ["intermediate_steps"]
         return _output_keys
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
-
-    @root_validator(pre=True)
-    def get_reduce_chain(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def get_reduce_chain(cls, values: Dict) -> Any:
         """For backwards compatibility."""
         if "combine_document_chain" in values:
             if "reduce_documents_chain" in values:
@@ -155,19 +165,24 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
 
         return values
 
-    @root_validator(pre=True)
-    def get_return_intermediate_steps(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def get_return_intermediate_steps(cls, values: Dict) -> Any:
         """For backwards compatibility."""
         if "return_map_steps" in values:
             values["return_intermediate_steps"] = values["return_map_steps"]
             del values["return_map_steps"]
         return values
 
-    @root_validator(pre=True)
-    def get_default_document_variable_name(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def get_default_document_variable_name(cls, values: Dict) -> Any:
         """Get default document variable name, if not provided."""
+        if "llm_chain" not in values:
+            raise ValueError("llm_chain must be provided")
+
+        llm_chain_variables = values["llm_chain"].prompt.input_variables
         if "document_variable_name" not in values:
-            llm_chain_variables = values["llm_chain"].prompt.input_variables
             if len(llm_chain_variables) == 1:
                 values["document_variable_name"] = llm_chain_variables[0]
             else:
@@ -176,7 +191,6 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
                     "multiple llm_chain input_variables"
                 )
         else:
-            llm_chain_variables = values["llm_chain"].prompt.input_variables
             if values["document_variable_name"] not in llm_chain_variables:
                 raise ValueError(
                     f"document_variable_name {values['document_variable_name']} was "

@@ -1,12 +1,13 @@
 """Tools for interacting with an Apache Cassandra database."""
+
 from __future__ import annotations
 
 import traceback
 from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Type, Union
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel, ConfigDict, Field
 
 from langchain_community.utilities.cassandra_database import CassandraDatabase
 
@@ -19,15 +20,16 @@ class BaseCassandraDatabaseTool(BaseModel):
 
     db: CassandraDatabase = Field(exclude=True)
 
-    class Config(BaseTool.Config):
-        pass
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
 
 class _QueryCassandraDatabaseToolInput(BaseModel):
     query: str = Field(..., description="A detailed and correct CQL query.")
 
 
-class QueryCassandraDatabaseTool(BaseCassandraDatabaseTool, BaseTool):
+class QueryCassandraDatabaseTool(BaseCassandraDatabaseTool, BaseTool):  # type: ignore[override, override]
     """Tool for querying an Apache Cassandra database with provided CQL."""
 
     name: str = "cassandra_db_query"
@@ -58,7 +60,7 @@ class _GetSchemaCassandraDatabaseToolInput(BaseModel):
     )
 
 
-class GetSchemaCassandraDatabaseTool(BaseCassandraDatabaseTool, BaseTool):
+class GetSchemaCassandraDatabaseTool(BaseCassandraDatabaseTool, BaseTool):  # type: ignore[override, override]
     """Tool for getting the schema of a keyspace in an Apache Cassandra database."""
 
     name: str = "cassandra_db_schema"
@@ -105,7 +107,7 @@ class _GetTableDataCassandraDatabaseToolInput(BaseModel):
     )
 
 
-class GetTableDataCassandraDatabaseTool(BaseCassandraDatabaseTool, BaseTool):
+class GetTableDataCassandraDatabaseTool(BaseCassandraDatabaseTool, BaseTool):  # type: ignore[override, override]
     """
     Tool for getting data from a table in an Apache Cassandra database.
     Use the WHERE clause to specify the predicate for the query that uses the

@@ -1,4 +1,5 @@
 """Test LiteLLM Router API wrapper."""
+
 import asyncio
 from copy import deepcopy
 from typing import Any, AsyncGenerator, Coroutine, Dict, List, Tuple, Union, cast
@@ -265,7 +266,6 @@ def test_litellm_router_streaming_callback(
     fake_completion.check_inputs(expected_num_calls=1)
 
 
-@pytest.mark.asyncio
 @pytest.mark.scheduled
 async def test_async_litellm_router(
     fake_completion: FakeCompletion, litellm_router: Any
@@ -294,7 +294,6 @@ async def test_async_litellm_router(
     fake_completion.check_inputs(expected_num_calls=2)
 
 
-@pytest.mark.asyncio
 @pytest.mark.scheduled
 async def test_async_litellm_router_streaming(
     fake_completion: FakeCompletion, litellm_router: Any

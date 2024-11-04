@@ -1,4 +1,5 @@
 """Utilities for the Playwright browser tools."""
+
 from __future__ import annotations
 
 import asyncio

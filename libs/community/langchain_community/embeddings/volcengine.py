@@ -4,8 +4,8 @@ import logging
 from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.utils import get_from_dict_or_env, pre_init
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +43,7 @@ class VolcanoEmbeddings(BaseModel, Embeddings):
     client: Any
     """volcano client"""
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """
         Validate whether volcano_ak and volcano_sk in the environment variables or

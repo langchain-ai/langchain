@@ -3,8 +3,8 @@
 from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel, Field
 
 from langchain_community.utilities.wikipedia import WikipediaAPIWrapper
 
@@ -15,7 +15,7 @@ class WikipediaQueryInput(BaseModel):
     query: str = Field(description="query to look up on wikipedia")
 
 
-class WikipediaQueryRun(BaseTool):
+class WikipediaQueryRun(BaseTool):  # type: ignore[override, override]
     """Tool that searches the Wikipedia API."""
 
     name: str = "wikipedia"

@@ -141,9 +141,8 @@ class CustomOpenAIChatContentFormatter(ContentFormatterBase):
             except (KeyError, IndexError, TypeError) as e:
                 raise ValueError(self.format_error_msg.format(api_type=api_type)) from e
             return ChatGeneration(
-                message=BaseMessage(
+                message=AIMessage(
                     content=choice.strip(),
-                    type="assistant",
                 ),
                 generation_info=None,
             )
@@ -158,7 +157,9 @@ class CustomOpenAIChatContentFormatter(ContentFormatterBase):
             except (KeyError, IndexError, TypeError) as e:
                 raise ValueError(self.format_error_msg.format(api_type=api_type)) from e
             return ChatGeneration(
-                message=BaseMessage(
+                message=AIMessage(content=choice["message"]["content"].strip())
+                if choice["message"]["role"] == "assistant"
+                else BaseMessage(
                     content=choice["message"]["content"].strip(),
                     type=choice["message"]["role"],
                 ),
@@ -303,7 +304,7 @@ class AzureMLChatOnlineEndpoint(BaseChatModel, AzureMLBaseEndpoint):
             "http_client": None,
         }
 
-        client = openai.OpenAI(**client_params)
+        client = openai.OpenAI(**client_params)  # type: ignore[arg-type, arg-type, arg-type, arg-type, arg-type, arg-type]
         message_dicts = [
             CustomOpenAIChatContentFormatter._convert_message_to_dict(m)
             for m in messages
@@ -311,28 +312,30 @@ class AzureMLChatOnlineEndpoint(BaseChatModel, AzureMLBaseEndpoint):
         params = {"stream": True, "stop": stop, "model": None, **kwargs}
 
         default_chunk_class = AIMessageChunk
-        for chunk in client.chat.completions.create(messages=message_dicts, **params):
+        for chunk in client.chat.completions.create(messages=message_dicts, **params):  # type: ignore[arg-type]
             if not isinstance(chunk, dict):
-                chunk = chunk.dict()
-            if len(chunk["choices"]) == 0:
+                chunk = chunk.dict()  # type: ignore[attr-defined]
+            if len(chunk["choices"]) == 0:  # type: ignore[call-overload]
                 continue
-            choice = chunk["choices"][0]
-            chunk = _convert_delta_to_message_chunk(
-                choice["delta"], default_chunk_class
+            choice = chunk["choices"][0]  # type: ignore[call-overload]
+            chunk = _convert_delta_to_message_chunk(  # type: ignore[assignment]
+                choice["delta"],  # type: ignore[arg-type, index]
+                default_chunk_class,  # type: ignore[arg-type, index]
             )
             generation_info = {}
-            if finish_reason := choice.get("finish_reason"):
+            if finish_reason := choice.get("finish_reason"):  # type: ignore[union-attr]
                 generation_info["finish_reason"] = finish_reason
-            logprobs = choice.get("logprobs")
+            logprobs = choice.get("logprobs")  # type: ignore[union-attr]
             if logprobs:
                 generation_info["logprobs"] = logprobs
-            default_chunk_class = chunk.__class__
-            chunk = ChatGenerationChunk(
-                message=chunk, generation_info=generation_info or None
+            default_chunk_class = chunk.__class__  # type: ignore[assignment]
+            chunk = ChatGenerationChunk(  # type: ignore[assignment]
+                message=chunk,  # type: ignore[arg-type]
+                generation_info=generation_info or None,  # type: ignore[arg-type]
             )
             if run_manager:
-                run_manager.on_llm_new_token(chunk.text, chunk=chunk, logprobs=logprobs)
-            yield chunk
+                run_manager.on_llm_new_token(chunk.text, chunk=chunk, logprobs=logprobs)  # type: ignore[attr-defined, arg-type]
+            yield chunk  # type: ignore[misc]
 
     async def _astream(
         self,
@@ -356,7 +359,7 @@ class AzureMLChatOnlineEndpoint(BaseChatModel, AzureMLBaseEndpoint):
             "http_client": None,
         }
 
-        async_client = openai.AsyncOpenAI(**client_params)
+        async_client = openai.AsyncOpenAI(**client_params)  # type: ignore[arg-type, arg-type, arg-type, arg-type, arg-type, arg-type]
         message_dicts = [
             CustomOpenAIChatContentFormatter._convert_message_to_dict(m)
             for m in messages
@@ -364,8 +367,9 @@ class AzureMLChatOnlineEndpoint(BaseChatModel, AzureMLBaseEndpoint):
         params = {"stream": True, "stop": stop, "model": None, **kwargs}
 
         default_chunk_class = AIMessageChunk
-        async for chunk in await async_client.chat.completions.create(
-            messages=message_dicts, **params
+        async for chunk in await async_client.chat.completions.create(  # type: ignore[attr-defined]
+            messages=message_dicts,  # type: ignore[arg-type]
+            **params,  # type: ignore[arg-type]
         ):
             if not isinstance(chunk, dict):
                 chunk = chunk.dict()

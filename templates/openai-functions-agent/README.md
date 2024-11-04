@@ -1,9 +1,8 @@
+# OpenAI functions - agent 
 
-# openai-functions-agent
+This template creates an agent that uses `OpenAI function calling` to communicate its decisions on what actions to take. 
 
-This template creates an agent that uses OpenAI function calling to communicate its decisions on what actions to take. 
-
-This example creates an agent that can optionally look up information on the internet using Tavily's search engine.
+This example creates an agent that can optionally look up information on the internet using `Tavily`'s search engine.
 
 ## Environment Setup
 

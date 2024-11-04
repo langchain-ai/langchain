@@ -5,8 +5,8 @@ from typing import Any, Callable, Dict, List, Optional
 
 import requests
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
+from pydantic import BaseModel, ConfigDict, Field, SecretStr
 from tenacity import (
     before_sleep_log,
     retry,
@@ -45,25 +45,63 @@ def embed_with_retry(embeddings: MiniMaxEmbeddings, *args: Any, **kwargs: Any) -
 
 
 class MiniMaxEmbeddings(BaseModel, Embeddings):
-    """MiniMax's embedding service.
+    """MiniMax embedding model integration.
 
-    To use, you should have the environment variable ``MINIMAX_GROUP_ID`` and
-    ``MINIMAX_API_KEY`` set with your API token, or pass it as a named parameter to
-    the constructor.
+    Setup:
+        To use, you should have the environment variable ``MINIMAX_GROUP_ID`` and
+        ``MINIMAX_API_KEY`` set with your API token.
 
-    Example:
+        .. code-block:: bash
+
+            export MINIMAX_API_KEY="your-api-key"
+            export MINIMAX_GROUP_ID="your-group-id"
+
+    Key init args — completion params:
+        model: Optional[str]
+            Name of ZhipuAI model to use.
+        api_key: Optional[str]
+            Automatically inferred from env var `MINIMAX_GROUP_ID` if not provided.
+        group_id: Optional[str]
+            Automatically inferred from env var `MINIMAX_GROUP_ID` if not provided.
+
+    See full list of supported init args and their descriptions in the params section.
+
+    Instantiate:
+
         .. code-block:: python
 
             from langchain_community.embeddings import MiniMaxEmbeddings
-            embeddings = MiniMaxEmbeddings()
 
-            query_text = "This is a test query."
-            query_result = embeddings.embed_query(query_text)
+            embed = MiniMaxEmbeddings(
+                model="embo-01",
+                # api_key="...",
+                # group_id="...",
+                # other
+            )
 
-            document_text = "This is a test document."
-            document_result = embeddings.embed_documents([document_text])
+    Embed single text:
+        .. code-block:: python
 
-    """
+            input_text = "The meaning of life is 42"
+            embed.embed_query(input_text)
+
+        .. code-block:: python
+
+            [0.03016241, 0.03617699, 0.0017198119, -0.002061239, -0.00029994643, -0.0061320597, -0.0043635326, ...]
+
+    Embed multiple text:
+        .. code-block:: python
+
+            input_texts = ["This is a test query1.", "This is a test query2."]
+            embed.embed_documents(input_texts)
+
+        .. code-block:: python
+
+            [
+                [-0.0021588828, -0.007608119, 0.029349545, -0.0038194496, 0.008031177, -0.004529633, -0.020150753, ...],
+                [ -0.00023150232, -0.011122423, 0.016930554, 0.0083089275, 0.012633711, 0.019683322, -0.005971041, ...]
+            ]
+    """  # noqa: E501
 
     endpoint_url: str = "https://api.minimax.chat/v1/embeddings"
     """Endpoint URL to use."""
@@ -74,24 +112,26 @@ class MiniMaxEmbeddings(BaseModel, Embeddings):
     embed_type_query: str = "query"
     """For embed_query"""
 
-    minimax_group_id: Optional[str] = None
+    minimax_group_id: Optional[str] = Field(default=None, alias="group_id")
     """Group ID for MiniMax API."""
-    minimax_api_key: Optional[SecretStr] = None
+    minimax_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
     """API Key for MiniMax API."""
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        populate_by_name=True,
+        extra="forbid",
+    )
 
-        extra = Extra.forbid
-
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that group id and api key exists in environment."""
         minimax_group_id = get_from_dict_or_env(
-            values, "minimax_group_id", "MINIMAX_GROUP_ID"
+            values, ["minimax_group_id", "group_id"], "MINIMAX_GROUP_ID"
         )
         minimax_api_key = convert_to_secret_str(
-            get_from_dict_or_env(values, "minimax_api_key", "MINIMAX_API_KEY")
+            get_from_dict_or_env(
+                values, ["minimax_api_key", "api_key"], "MINIMAX_API_KEY"
+            )
         )
         values["minimax_group_id"] = minimax_group_id
         values["minimax_api_key"] = minimax_api_key

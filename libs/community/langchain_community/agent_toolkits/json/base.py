@@ -38,7 +38,7 @@ def create_json_agent(
         input_variables: The input variables to use. Default is None.
         verbose: Whether to print verbose output. Default is False.
         agent_executor_kwargs: Optional additional arguments for the agent executor.
-        **kwargs: Additional arguments for the agent.
+        kwargs: Additional arguments for the agent.
 
     Returns:
         The agent executor.

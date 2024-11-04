@@ -23,9 +23,9 @@ def mock_quip():  # type: ignore
 
 @pytest.mark.requires("quip_api")
 class TestQuipLoader:
-    API_URL = "https://example-api.quip.com"
+    API_URL: str = "https://example-api.quip.com"
     DOC_URL_PREFIX = ("https://example.quip.com",)
-    ACCESS_TOKEN = "api_token"
+    ACCESS_TOKEN: str = "api_token"
 
     MOCK_FOLDER_IDS = ["ABC"]
     MOCK_THREAD_IDS = ["ABC", "DEF"]

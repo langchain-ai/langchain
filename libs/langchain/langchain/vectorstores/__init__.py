@@ -18,6 +18,7 @@ and retrieve the data that are 'most similar' to the embedded query.
 
     Embeddings, Document
 """  # noqa: E501
+
 from typing import TYPE_CHECKING, Any
 
 from langchain_core.vectorstores import VectorStore

@@ -2,8 +2,8 @@ import shutil
 from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel, Field
 
 from langchain_community.tools.file_management.utils import (
     INVALID_PATH_TEMPLATE,
@@ -19,7 +19,7 @@ class FileMoveInput(BaseModel):
     destination_path: str = Field(..., description="New path for the moved file")
 
 
-class MoveFileTool(BaseFileToolMixin, BaseTool):
+class MoveFileTool(BaseFileToolMixin, BaseTool):  # type: ignore[override, override]
     """Tool that moves a file."""
 
     name: str = "move_file"

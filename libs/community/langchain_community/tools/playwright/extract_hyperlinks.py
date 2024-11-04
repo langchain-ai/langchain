@@ -7,7 +7,7 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from pydantic import BaseModel, Field, model_validator
 
 from langchain_community.tools.playwright.base import BaseBrowserTool
 from langchain_community.tools.playwright.utils import (
@@ -28,15 +28,16 @@ class ExtractHyperlinksToolInput(BaseModel):
     )
 
 
-class ExtractHyperlinksTool(BaseBrowserTool):
+class ExtractHyperlinksTool(BaseBrowserTool):  # type: ignore[override, override]
     """Extract all hyperlinks on the page."""
 
     name: str = "extract_hyperlinks"
     description: str = "Extract all hyperlinks on the current webpage"
     args_schema: Type[BaseModel] = ExtractHyperlinksToolInput
 
-    @root_validator
-    def check_bs_import(cls, values: dict) -> dict:
+    @model_validator(mode="before")
+    @classmethod
+    def check_bs_import(cls, values: dict) -> Any:
         """Check that the arguments are valid."""
         try:
             from bs4 import BeautifulSoup  # noqa: F401
@@ -63,8 +64,9 @@ class ExtractHyperlinksTool(BaseBrowserTool):
             links = [urljoin(base_url, anchor.get("href", "")) for anchor in anchors]
         else:
             links = [anchor.get("href", "") for anchor in anchors]
-        # Return the list of links as a JSON string
-        return json.dumps(links)
+        # Return the list of links as a JSON string. Duplicated link
+        # only appears once in the list
+        return json.dumps(list(set(links)))
 
     def _run(
         self,

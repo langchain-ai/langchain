@@ -64,7 +64,7 @@ def create_openapi_agent(
             Default is False.
         agent_executor_kwargs: Optional. Additional keyword arguments
             for the agent executor.
-        **kwargs: Additional arguments.
+        kwargs: Additional arguments.
 
     Returns:
         The agent executor.

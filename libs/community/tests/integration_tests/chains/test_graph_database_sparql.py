@@ -1,4 +1,5 @@
 """Test RDF/ SPARQL Graph Database Chain."""
+
 import pathlib
 import re
 from unittest.mock import MagicMock, Mock

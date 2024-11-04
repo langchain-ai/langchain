@@ -1,9 +1,10 @@
-# rag-google-cloud-vertexai-search
+# RAG - Google Cloud Vertex AI Search
 
-This template is an application that utilizes Google Vertex AI Search, a machine learning powered search service, and
+This template is an application that utilizes `Google Vertex AI Search`, 
+a machine learning powered search service, and
 PaLM 2 for Chat (chat-bison). The application uses a Retrieval chain to answer questions based on your documents.
 
-For more context on building RAG applications with Vertex AI Search,
+For more context on building RAG applications with `Vertex AI Search`,
 check [here](https://cloud.google.com/generative-ai-app-builder/docs/enterprise-search-introduction).
 
 ## Environment Setup

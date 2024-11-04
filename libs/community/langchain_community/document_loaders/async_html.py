@@ -133,11 +133,16 @@ class AsyncHtmlLoader(BaseLoader):
         async with aiohttp.ClientSession(trust_env=self.trust_env) as session:
             for i in range(retries):
                 try:
+                    kwargs: Dict = dict(
+                        headers=self.session.headers,
+                        cookies=self.session.cookies.get_dict(),
+                        **self.requests_kwargs,
+                    )
+                    if not self.session.verify:
+                        kwargs["ssl"] = False
                     async with session.get(
                         url,
-                        headers=self.session.headers,
-                        ssl=None if self.session.verify else False,
-                        **self.requests_kwargs,
+                        **kwargs,
                     ) as response:
                         try:
                             text = await response.text()

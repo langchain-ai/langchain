@@ -1,4 +1,5 @@
 """JinaChat wrapper."""
+
 from __future__ import annotations
 
 import logging
@@ -39,12 +40,13 @@ from langchain_core.messages import (
     SystemMessageChunk,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import (
     convert_to_secret_str,
     get_from_dict_or_env,
     get_pydantic_field_names,
+    pre_init,
 )
+from pydantic import ConfigDict, Field, SecretStr, model_validator
 from tenacity import (
     before_sleep_log,
     retry,
@@ -68,11 +70,11 @@ def _create_retry_decorator(llm: JinaChat) -> Callable[[Any], Any]:
         stop=stop_after_attempt(llm.max_retries),
         wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
         retry=(
-            retry_if_exception_type(openai.error.Timeout)
-            | retry_if_exception_type(openai.error.APIError)
-            | retry_if_exception_type(openai.error.APIConnectionError)
-            | retry_if_exception_type(openai.error.RateLimitError)
-            | retry_if_exception_type(openai.error.ServiceUnavailableError)
+            retry_if_exception_type(openai.error.Timeout)  # type: ignore[attr-defined]
+            | retry_if_exception_type(openai.error.APIError)  # type: ignore[attr-defined]
+            | retry_if_exception_type(openai.error.APIConnectionError)  # type: ignore[attr-defined]
+            | retry_if_exception_type(openai.error.RateLimitError)  # type: ignore[attr-defined]
+            | retry_if_exception_type(openai.error.ServiceUnavailableError)  # type: ignore[attr-defined]
         ),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
@@ -169,7 +171,7 @@ class JinaChat(BaseChatModel):
         """Return whether this model can be serialized by Langchain."""
         return False
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     temperature: float = 0.7
     """What sampling temperature to use."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
@@ -186,13 +188,13 @@ class JinaChat(BaseChatModel):
     max_tokens: Optional[int] = None
     """Maximum number of tokens to generate."""
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
-        allow_population_by_field_name = True
-
-    @root_validator(pre=True)
-    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})
@@ -217,7 +219,7 @@ class JinaChat(BaseChatModel):
         values["model_kwargs"] = extra
         return values
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["jinachat_api_key"] = convert_to_secret_str(
@@ -232,7 +234,7 @@ class JinaChat(BaseChatModel):
                 "Please install it with `pip install openai`."
             )
         try:
-            values["client"] = openai.ChatCompletion
+            values["client"] = openai.ChatCompletion  # type: ignore[attr-defined]
         except AttributeError:
             raise ValueError(
                 "`openai` has no `ChatCompletion` attribute, this is likely "
@@ -264,11 +266,11 @@ class JinaChat(BaseChatModel):
             stop=stop_after_attempt(self.max_retries),
             wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
             retry=(
-                retry_if_exception_type(openai.error.Timeout)
-                | retry_if_exception_type(openai.error.APIError)
-                | retry_if_exception_type(openai.error.APIConnectionError)
-                | retry_if_exception_type(openai.error.RateLimitError)
-                | retry_if_exception_type(openai.error.ServiceUnavailableError)
+                retry_if_exception_type(openai.error.Timeout)  # type: ignore[attr-defined]
+                | retry_if_exception_type(openai.error.APIError)  # type: ignore[attr-defined]
+                | retry_if_exception_type(openai.error.APIConnectionError)  # type: ignore[attr-defined]
+                | retry_if_exception_type(openai.error.RateLimitError)  # type: ignore[attr-defined]
+                | retry_if_exception_type(openai.error.ServiceUnavailableError)  # type: ignore[attr-defined]
             ),
             before_sleep=before_sleep_log(logger, logging.WARNING),
         )

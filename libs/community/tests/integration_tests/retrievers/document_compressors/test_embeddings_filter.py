@@ -1,4 +1,5 @@
 """Integration test for embedding-based relevant doc filtering."""
+
 import numpy as np
 from langchain.retrievers.document_compressors import EmbeddingsFilter
 from langchain_core.documents import Document

@@ -27,3 +27,10 @@ def test_tongyi_generate_stream() -> None:
     print(output)  # noqa: T201
     assert isinstance(output, LLMResult)
     assert isinstance(output.generations, list)
+
+
+def test_tongyi_with_param_alias() -> None:
+    """Test tongyi parameters alias"""
+    llm = Tongyi(model="qwen-max", api_key="your-api_key")  # type: ignore[call-arg]
+    assert llm.model_name == "qwen-max"
+    assert llm.dashscope_api_key == "your-api_key"

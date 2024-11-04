@@ -1,5 +1,4 @@
-
-# extraction-anthropic-functions
+# Extraction - Anthropic functions
 
 This template enables [Anthropic function calling](https://python.langchain.com/docs/integrations/chat/anthropic_functions). 
 

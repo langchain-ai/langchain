@@ -1,11 +1,12 @@
 """Test Base Schema of documents."""
-from typing import Iterator, List
+
+from collections.abc import Iterator
 
 import pytest
 
 from langchain_core.document_loaders.base import BaseBlobParser, BaseLoader
-from langchain_core.document_loaders.blob_loaders import Blob
 from langchain_core.documents import Document
+from langchain_core.documents.base import Blob
 
 
 def test_base_blob_parser() -> None:
@@ -32,7 +33,7 @@ def test_base_blob_parser() -> None:
 
 def test_default_lazy_load() -> None:
     class FakeLoader(BaseLoader):
-        def load(self) -> List[Document]:
+        def load(self) -> list[Document]:
             return [
                 Document(page_content="foo"),
                 Document(page_content="bar"),

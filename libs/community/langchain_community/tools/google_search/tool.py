@@ -11,10 +11,10 @@ from langchain_community.utilities.google_search import GoogleSearchAPIWrapper
 
 @deprecated(
     since="0.0.33",
-    removal="0.3.0",
+    removal="1.0",
     alternative_import="langchain_google_community.GoogleSearchRun",
 )
-class GoogleSearchRun(BaseTool):
+class GoogleSearchRun(BaseTool):  # type: ignore[override]
     """Tool that queries the Google search API."""
 
     name: str = "google_search"
@@ -36,10 +36,10 @@ class GoogleSearchRun(BaseTool):
 
 @deprecated(
     since="0.0.33",
-    removal="0.3.0",
+    removal="1.0",
     alternative_import="langchain_google_community.GoogleSearchResults",
 )
-class GoogleSearchResults(BaseTool):
+class GoogleSearchResults(BaseTool):  # type: ignore[override]
     """Tool that queries the Google Search API and gets back json."""
 
     name: str = "google_search_results_json"

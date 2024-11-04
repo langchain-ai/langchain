@@ -1,5 +1,19 @@
+import json
 import logging
-from typing import Any, Dict, Iterator, List, Mapping, Optional, cast
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Literal,
+    Mapping,
+    Optional,
+    Sequence,
+    Type,
+    Union,
+    cast,
+)
 from urllib.parse import urlparse
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
@@ -15,15 +29,27 @@ from langchain_core.messages import (
     FunctionMessage,
     HumanMessage,
     HumanMessageChunk,
+    InvalidToolCall,
     SystemMessage,
     SystemMessageChunk,
+    ToolCall,
+    ToolMessage,
+    ToolMessageChunk,
+)
+from langchain_core.messages.tool import tool_call_chunk
+from langchain_core.output_parsers.openai_tools import (
+    make_invalid_tool_call,
+    parse_tool_call,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import (
+from langchain_core.runnables import Runnable, RunnableConfig
+from langchain_core.tools import BaseTool
+from langchain_core.utils.function_calling import convert_to_openai_tool
+from pydantic import (
+    BaseModel,
     Field,
     PrivateAttr,
 )
-from langchain_core.runnables import RunnableConfig
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +68,7 @@ class ChatMlflow(BaseChatModel):
             chat = ChatMlflow(
                 target_uri="http://localhost:5000",
                 endpoint="chat",
-                temperature-0.1,
+                temperature=0.1,
             )
     """
 
@@ -176,29 +202,36 @@ class ChatMlflow(BaseChatModel):
         chunk_iter = self._client.predict_stream(endpoint=self.endpoint, inputs=data)
         first_chunk_role = None
         for chunk in chunk_iter:
-            choice = chunk["choices"][0]
+            if chunk["choices"]:
+                choice = chunk["choices"][0]
 
-            chunk_delta = choice["delta"]
-            if first_chunk_role is None:
-                first_chunk_role = chunk_delta.get("role")
-            chunk = ChatMlflow._convert_delta_to_message_chunk(
-                chunk_delta, first_chunk_role
-            )
+                chunk_delta = choice["delta"]
+                if first_chunk_role is None:
+                    first_chunk_role = chunk_delta.get("role")
 
-            generation_info = {}
-            if finish_reason := choice.get("finish_reason"):
-                generation_info["finish_reason"] = finish_reason
-            if logprobs := choice.get("logprobs"):
-                generation_info["logprobs"] = logprobs
+                chunk_message = ChatMlflow._convert_delta_to_message_chunk(
+                    chunk_delta, first_chunk_role
+                )
 
-            chunk = ChatGenerationChunk(
-                message=chunk, generation_info=generation_info or None
-            )
+                generation_info = {}
+                if finish_reason := choice.get("finish_reason"):
+                    generation_info["finish_reason"] = finish_reason
+                if logprobs := choice.get("logprobs"):
+                    generation_info["logprobs"] = logprobs
 
-            if run_manager:
-                run_manager.on_llm_new_token(chunk.text, chunk=chunk, logprobs=logprobs)
+                chunk = ChatGenerationChunk(
+                    message=chunk_message, generation_info=generation_info or None
+                )
 
-            yield chunk
+                if run_manager:
+                    run_manager.on_llm_new_token(
+                        chunk.text, chunk=chunk, logprobs=logprobs
+                    )
+
+                yield chunk
+            else:
+                # Handle the case where choices are empty if needed
+                continue
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:
@@ -221,11 +254,32 @@ class ChatMlflow(BaseChatModel):
     @staticmethod
     def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         role = _dict["role"]
-        content = _dict["content"]
+        content = cast(str, _dict.get("content"))
         if role == "user":
             return HumanMessage(content=content)
         elif role == "assistant":
-            return AIMessage(content=content)
+            content = content or ""
+            additional_kwargs: Dict = {}
+            tool_calls = []
+            invalid_tool_calls = []
+            if raw_tool_calls := _dict.get("tool_calls"):
+                additional_kwargs["tool_calls"] = raw_tool_calls
+                for raw_tool_call in raw_tool_calls:
+                    try:
+                        tool_calls.append(
+                            parse_tool_call(raw_tool_call, return_id=True)
+                        )
+                    except Exception as e:
+                        invalid_tool_calls.append(
+                            make_invalid_tool_call(raw_tool_call, str(e))
+                        )
+            return AIMessage(
+                content=content,
+                additional_kwargs=additional_kwargs,
+                id=_dict.get("id"),
+                tool_calls=tool_calls,
+                invalid_tool_calls=invalid_tool_calls,
+            )
         elif role == "system":
             return SystemMessage(content=content)
         else:
@@ -236,13 +290,38 @@ class ChatMlflow(BaseChatModel):
         _dict: Mapping[str, Any], default_role: str
     ) -> BaseMessageChunk:
         role = _dict.get("role", default_role)
-        content = _dict["content"]
+        content = _dict.get("content") or ""
         if role == "user":
             return HumanMessageChunk(content=content)
         elif role == "assistant":
-            return AIMessageChunk(content=content)
+            additional_kwargs: Dict = {}
+            tool_call_chunks = []
+            if raw_tool_calls := _dict.get("tool_calls"):
+                additional_kwargs["tool_calls"] = raw_tool_calls
+                try:
+                    tool_call_chunks = [
+                        tool_call_chunk(
+                            name=rtc["function"].get("name"),
+                            args=rtc["function"].get("arguments"),
+                            id=rtc.get("id"),
+                            index=rtc["index"],
+                        )
+                        for rtc in raw_tool_calls
+                    ]
+                except KeyError:
+                    pass
+            return AIMessageChunk(
+                content=content,
+                additional_kwargs=additional_kwargs,
+                id=_dict.get("id"),
+                tool_call_chunks=tool_call_chunks,
+            )
         elif role == "system":
             return SystemMessageChunk(content=content)
+        elif role == "tool":
+            return ToolMessageChunk(
+                content=content, tool_call_id=_dict["tool_call_id"], id=_dict.get("id")
+            )
         else:
             return ChatMessageChunk(content=content, role=role)
 
@@ -255,14 +334,47 @@ class ChatMlflow(BaseChatModel):
 
     @staticmethod
     def _convert_message_to_dict(message: BaseMessage) -> dict:
+        message_dict = {"content": message.content}
+        if (name := message.name or message.additional_kwargs.get("name")) is not None:
+            message_dict["name"] = name
         if isinstance(message, ChatMessage):
-            message_dict = {"role": message.role, "content": message.content}
+            message_dict["role"] = message.role
         elif isinstance(message, HumanMessage):
-            message_dict = {"role": "user", "content": message.content}
+            message_dict["role"] = "user"
         elif isinstance(message, AIMessage):
-            message_dict = {"role": "assistant", "content": message.content}
+            message_dict["role"] = "assistant"
+            if message.tool_calls or message.invalid_tool_calls:
+                message_dict["tool_calls"] = [
+                    _lc_tool_call_to_openai_tool_call(tc) for tc in message.tool_calls
+                ] + [
+                    _lc_invalid_tool_call_to_openai_tool_call(tc)
+                    for tc in message.invalid_tool_calls
+                ]  # type: ignore[assignment]
+            elif "tool_calls" in message.additional_kwargs:
+                message_dict["tool_calls"] = message.additional_kwargs["tool_calls"]
+                tool_call_supported_props = {"id", "type", "function"}
+                message_dict["tool_calls"] = [
+                    {
+                        k: v
+                        for k, v in tool_call.items()  # type: ignore[union-attr]
+                        if k in tool_call_supported_props
+                    }
+                    for tool_call in message_dict["tool_calls"]
+                ]
+            else:
+                pass
+            # If tool calls present, content null value should be None not empty string.
+            if "tool_calls" in message_dict:
+                message_dict["content"] = message_dict["content"] or None  # type: ignore[assignment]
         elif isinstance(message, SystemMessage):
-            message_dict = {"role": "system", "content": message.content}
+            message_dict["role"] = "system"
+        elif isinstance(message, ToolMessage):
+            message_dict["role"] = "tool"
+            message_dict["tool_call_id"] = message.tool_call_id
+            supported_props = {"content", "role", "tool_call_id"}
+            message_dict = {
+                k: v for k, v in message_dict.items() if k in supported_props
+            }
         elif isinstance(message, FunctionMessage):
             raise ValueError(
                 "Function messages are not supported by Databricks. Please"
@@ -273,12 +385,6 @@ class ChatMlflow(BaseChatModel):
 
         if "function_call" in message.additional_kwargs:
             ChatMlflow._raise_functions_not_supported()
-        if message.additional_kwargs:
-            logger.warning(
-                "Additional message arguments are unsupported by Databricks"
-                " and will be ignored: %s",
-                message.additional_kwargs,
-            )
         return message_dict
 
     @staticmethod
@@ -295,3 +401,89 @@ class ChatMlflow(BaseChatModel):
 
         usage = response.get("usage", {})
         return ChatResult(generations=generations, llm_output=usage)
+
+    def bind_tools(
+        self,
+        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        *,
+        tool_choice: Optional[
+            Union[dict, str, Literal["auto", "none", "required", "any"], bool]
+        ] = None,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        """Bind tool-like objects to this chat model.
+
+        Assumes model is compatible with OpenAI tool-calling API.
+
+        Args:
+            tools: A list of tool definitions to bind to this chat model.
+                Can be  a dictionary, pydantic model, callable, or BaseTool. Pydantic
+                models, callables, and BaseTools will be automatically converted to
+                their schema dictionary representation.
+            tool_choice: Which tool to require the model to call.
+                Options are:
+                name of the tool (str): calls corresponding tool;
+                "auto": automatically selects a tool (including no tool);
+                "none": model does not generate any tool calls and instead must
+                    generate a standard assistant message;
+                "required": the model picks the most relevant tool in tools and
+                    must generate a tool call;
+
+                or a dict of the form:
+                {"type": "function", "function": {"name": <<tool_name>>}}.
+            **kwargs: Any additional parameters to pass to the
+                :class:`~langchain.runnable.Runnable` constructor.
+        """
+        formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
+        if tool_choice:
+            if isinstance(tool_choice, str):
+                # tool_choice is a tool/function name
+                if tool_choice not in ("auto", "none", "required"):
+                    tool_choice = {
+                        "type": "function",
+                        "function": {"name": tool_choice},
+                    }
+            elif isinstance(tool_choice, dict):
+                tool_names = [
+                    formatted_tool["function"]["name"]
+                    for formatted_tool in formatted_tools
+                ]
+                if not any(
+                    tool_name == tool_choice["function"]["name"]
+                    for tool_name in tool_names
+                ):
+                    raise ValueError(
+                        f"Tool choice {tool_choice} was specified, but the only "
+                        f"provided tools were {tool_names}."
+                    )
+            else:
+                raise ValueError(
+                    f"Unrecognized tool_choice type. Expected str, bool or dict. "
+                    f"Received: {tool_choice}"
+                )
+            kwargs["tool_choice"] = tool_choice
+        return super().bind(tools=formatted_tools, **kwargs)
+
+
+def _lc_tool_call_to_openai_tool_call(tool_call: ToolCall) -> dict:
+    return {
+        "type": "function",
+        "id": tool_call["id"],
+        "function": {
+            "name": tool_call["name"],
+            "arguments": json.dumps(tool_call["args"]),
+        },
+    }
+
+
+def _lc_invalid_tool_call_to_openai_tool_call(
+    invalid_tool_call: InvalidToolCall,
+) -> dict:
+    return {
+        "type": "function",
+        "id": invalid_tool_call["id"],
+        "function": {
+            "name": invalid_tool_call["name"],
+            "arguments": invalid_tool_call["args"],
+        },
+    }

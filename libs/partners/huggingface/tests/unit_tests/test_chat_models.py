@@ -1,7 +1,7 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List  # type: ignore[import-not-found]
 from unittest.mock import MagicMock, Mock, patch
 
-import pytest
+import pytest  # type: ignore[import-not-found]
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,

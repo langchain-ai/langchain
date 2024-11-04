@@ -5,13 +5,13 @@ from langchain.agents import AgentExecutor
 from langchain.agents.format_scratchpad import format_log_to_str
 from langchain.agents.output_parsers import ReActJsonSingleInputOutputParser
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
-from langchain.tools.render import render_text_description
-from langchain.tools.retriever import create_retriever_tool
 from langchain_community.chat_models.fireworks import ChatFireworks
 from langchain_community.utilities.arxiv import ArxivAPIWrapper
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.retrievers import BaseRetriever
+from langchain_core.tools.render import render_text_description
+from langchain_core.tools.retriever import create_retriever_tool
 
 MODEL_ID = "accounts/fireworks/models/mixtral-8x7b-instruct"
 

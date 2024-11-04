@@ -8,7 +8,8 @@ from typing import Any, Dict, Iterator, List, Mapping, Optional
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_core.utils import pre_init
+from pydantic import BaseModel, ConfigDict, Field
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
@@ -18,16 +19,14 @@ CUSTOM_ENDPOINT_PREFIX = "ocid1.generativeaiendpoint"
 class Provider(ABC):
     @property
     @abstractmethod
-    def stop_sequence_key(self) -> str:
-        ...
+    def stop_sequence_key(self) -> str: ...
 
     @abstractmethod
-    def completion_response_to_text(self, response: Any) -> str:
-        ...
+    def completion_response_to_text(self, response: Any) -> str: ...
 
 
 class CohereProvider(Provider):
-    stop_sequence_key = "stop_sequences"
+    stop_sequence_key: str = "stop_sequences"
 
     def __init__(self) -> None:
         from oci.generative_ai_inference import models
@@ -39,7 +38,7 @@ class CohereProvider(Provider):
 
 
 class MetaProvider(Provider):
-    stop_sequence_key = "stop"
+    stop_sequence_key: str = "stop"
 
     def __init__(self) -> None:
         from oci.generative_ai_inference import models
@@ -62,7 +61,7 @@ class OCIAuthType(Enum):
 class OCIGenAIBase(BaseModel, ABC):
     """Base class for OCI GenAI models"""
 
-    client: Any  #: :meta private:
+    client: Any = Field(default=None, exclude=True)  #: :meta private:
 
     auth_type: Optional[str] = "API_KEY"
     """Authentication type, could be 
@@ -80,10 +79,10 @@ class OCIGenAIBase(BaseModel, ABC):
     If not specified , DEFAULT will be used 
     """
 
-    model_id: str = None  # type: ignore[assignment]
+    model_id: Optional[str] = None
     """Id of the model to call, e.g., cohere.command"""
 
-    provider: str = None  # type: ignore[assignment]
+    provider: Optional[str] = None
     """Provider name of the model. Default to None, 
     will try to be derived from the model_id
     otherwise, requires user input
@@ -92,16 +91,20 @@ class OCIGenAIBase(BaseModel, ABC):
     model_kwargs: Optional[Dict] = None
     """Keyword arguments to pass to the model"""
 
-    service_endpoint: str = None  # type: ignore[assignment]
+    service_endpoint: Optional[str] = None
     """service endpoint url"""
 
-    compartment_id: str = None  # type: ignore[assignment]
+    compartment_id: Optional[str] = None
     """OCID of compartment"""
 
     is_stream: bool = False
     """Whether to stream back partial progress"""
 
-    @root_validator()
+    model_config = ConfigDict(
+        extra="forbid", arbitrary_types_allowed=True, protected_namespaces=()
+    )
+
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that OCI config and python package exists in environment."""
 
@@ -144,13 +147,13 @@ class OCIGenAIBase(BaseModel, ABC):
                     oci_config=client_kwargs["config"]
                 )
             elif values["auth_type"] == OCIAuthType(3).name:
-                client_kwargs[
-                    "signer"
-                ] = oci.auth.signers.InstancePrincipalsSecurityTokenSigner()
+                client_kwargs["signer"] = (
+                    oci.auth.signers.InstancePrincipalsSecurityTokenSigner()
+                )
             elif values["auth_type"] == OCIAuthType(4).name:
-                client_kwargs[
-                    "signer"
-                ] = oci.auth.signers.get_resource_principals_signer()
+                client_kwargs["signer"] = (
+                    oci.auth.signers.get_resource_principals_signer()
+                )
             else:
                 raise ValueError(
                     "Please provide valid value to auth_type, "
@@ -190,6 +193,12 @@ class OCIGenAIBase(BaseModel, ABC):
         if self.provider is not None:
             provider = self.provider
         else:
+            if self.model_id is None:
+                raise ValueError(
+                    "model_id is required to derive the provider, "
+                    "please provide the provider explicitly or specify "
+                    "the model_id to derive the provider."
+                )
             provider = self.model_id.split(".")[0].lower()
 
         if provider not in provider_map:
@@ -231,10 +240,10 @@ class OCIGenAI(LLM, OCIGenAIBase):
                 )
     """
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(
+        extra="forbid",
+        arbitrary_types_allowed=True,
+    )
 
     @property
     def _llm_type(self) -> str:
@@ -262,6 +271,12 @@ class OCIGenAI(LLM, OCIGenAIBase):
         _model_kwargs = self.model_kwargs or {}
         if stop is not None:
             _model_kwargs[self._provider.stop_sequence_key] = stop
+
+        if self.model_id is None:
+            raise ValueError(
+                "model_id is required to call the model, "
+                "please provide the model_id."
+            )
 
         if self.model_id.startswith(CUSTOM_ENDPOINT_PREFIX):
             serving_mode = models.DedicatedServingMode(endpoint_id=self.model_id)

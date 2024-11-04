@@ -27,7 +27,7 @@ class SupabaseVectorTranslator(Visitor):
     ]
     """Subset of allowed logical comparators."""
 
-    metadata_column = "metadata"
+    metadata_column: str = "metadata"
 
     def _map_comparator(self, comparator: Comparator) -> str:
         """

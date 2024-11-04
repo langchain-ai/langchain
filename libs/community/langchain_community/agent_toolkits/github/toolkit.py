@@ -2,10 +2,10 @@
 
 from typing import Dict, List
 
-from langchain_core.pydantic_v1 import BaseModel, Field
-from langchain_core.tools import BaseToolkit
+from langchain_core.tools import BaseTool
+from langchain_core.tools.base import BaseToolkit
+from pydantic import BaseModel, Field
 
-from langchain_community.tools import BaseTool
 from langchain_community.tools.github.prompt import (
     COMMENT_ON_ISSUE_PROMPT,
     CREATE_BRANCH_PROMPT,
@@ -164,9 +164,105 @@ class GitHubToolkit(BaseToolkit):
 
         See [Security](https://python.langchain.com/docs/security) for more information.
 
+    Setup:
+        See detailed installation instructions here:
+        https://python.langchain.com/docs/integrations/tools/github/#installation
+
+        You will need to install ``pygithub`` and set the following environment
+        variables:
+
+        .. code-block:: bash
+
+            pip install -U pygithub
+            export GITHUB_APP_ID="your-app-id"
+            export GITHUB_APP_PRIVATE_KEY="path-to-private-key"
+            export GITHUB_REPOSITORY="your-github-repository"
+
+    Instantiate:
+        .. code-block:: python
+
+            from langchain_community.agent_toolkits.github.toolkit import GitHubToolkit
+            from langchain_community.utilities.github import GitHubAPIWrapper
+
+            github = GitHubAPIWrapper()
+            toolkit = GitHubToolkit.from_github_api_wrapper(github)
+
+    Tools:
+        .. code-block:: python
+
+            tools = toolkit.get_tools()
+            for tool in tools:
+                print(tool.name)
+
+        .. code-block:: none
+
+            Get Issues
+            Get Issue
+            Comment on Issue
+            List open pull requests (PRs)
+            Get Pull Request
+            Overview of files included in PR
+            Create Pull Request
+            List Pull Requests' Files
+            Create File
+            Read File
+            Update File
+            Delete File
+            Overview of existing files in Main branch
+            Overview of files in current working branch
+            List branches in this repository
+            Set active branch
+            Create a new branch
+            Get files from a directory
+            Search issues and pull requests
+            Search code
+            Create review request
+
+    Use within an agent:
+        .. code-block:: python
+
+            from langchain_openai import ChatOpenAI
+            from langgraph.prebuilt import create_react_agent
+
+            # Select example tool
+            tools = [tool for tool in toolkit.get_tools() if tool.name == "Get Issue"]
+            assert len(tools) == 1
+            tools[0].name = "get_issue"
+
+            llm = ChatOpenAI(model="gpt-4o-mini")
+            agent_executor = create_react_agent(llm, tools)
+
+            example_query = "What is the title of issue 24888?"
+
+            events = agent_executor.stream(
+                {"messages": [("user", example_query)]},
+                stream_mode="values",
+            )
+            for event in events:
+                event["messages"][-1].pretty_print()
+
+        .. code-block:: none
+
+             ================================[1m Human Message [0m=================================
+
+            What is the title of issue 24888?
+            ==================================[1m Ai Message [0m==================================
+            Tool Calls:
+            get_issue (call_iSYJVaM7uchfNHOMJoVPQsOi)
+            Call ID: call_iSYJVaM7uchfNHOMJoVPQsOi
+            Args:
+                issue_number: 24888
+            =================================[1m Tool Message [0m=================================
+            Name: get_issue
+
+            {"number": 24888, "title": "Standardize KV-Store Docs", "body": "..."
+            ==================================[1m Ai Message [0m==================================
+
+            The title of issue 24888 is "Standardize KV-Store Docs".
+
     Parameters:
         tools: List[BaseTool]. The tools in the toolkit. Default is an empty list.
-    """
+    """  # noqa: E501
 
     tools: List[BaseTool] = []
 

@@ -62,3 +62,28 @@ def test_extra_kwargs() -> None:
     assert chat.temperature == 0.88
     assert chat.top_p == 0.7
     assert chat.with_search_enhance is True
+
+
+async def test_chat_baichuan_agenerate() -> None:
+    chat = ChatBaichuan()  # type: ignore[call-arg]
+    response = await chat.ainvoke("你好呀")
+    assert isinstance(response, AIMessage)
+    assert isinstance(response.content, str)
+
+
+async def test_chat_baichuan_astream() -> None:
+    chat = ChatBaichuan()  # type: ignore[call-arg]
+    async for chunk in chat.astream("今天天气如何？"):
+        assert isinstance(chunk, AIMessage)
+        assert isinstance(chunk.content, str)
+
+
+def test_chat_baichuan_with_system_role() -> None:
+    chat = ChatBaichuan()  # type: ignore[call-arg]
+    messages = [
+        ("system", "你是一名专业的翻译家，可以将用户的中文翻译为英文。"),
+        ("human", "我喜欢编程。"),
+    ]
+    response = chat.invoke(messages)
+    assert isinstance(response, AIMessage)
+    assert isinstance(response.content, str)

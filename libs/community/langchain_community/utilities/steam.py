@@ -2,18 +2,18 @@
 
 from typing import Any, List
 
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from pydantic import BaseModel, ConfigDict, model_validator
+
+from langchain_community.tools.steam.prompt import (
+    STEAM_GET_GAMES_DETAILS,
+    STEAM_GET_RECOMMENDED_GAMES,
+)
 
 
 class SteamWebAPIWrapper(BaseModel):
     """Wrapper for Steam API."""
 
-    steam: Any  # for python-steam-api
-
-    from langchain_community.tools.steam.prompt import (
-        STEAM_GET_GAMES_DETAILS,
-        STEAM_GET_RECOMMENDED_GAMES,
-    )
+    steam: Any = None  # for python-steam-api
 
     # operations: a list of dictionaries, each representing a specific operation that
     # can be performed with the API
@@ -30,17 +30,17 @@ class SteamWebAPIWrapper(BaseModel):
         },
     ]
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     def get_operations(self) -> List[dict]:
         """Return a list of operations."""
         return self.operations
 
-    @root_validator
-    def validate_environment(cls, values: dict) -> dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: dict) -> Any:
         """Validate api key and python package has been configured."""
 
         # check if the python package is installed

@@ -327,6 +327,10 @@ class DocumentDBVectorSearch(VectorStore):
         Returns:
             A list of documents closest to the query vector
         """
+        # $match can't be null, so intializes to {} when None to avoid
+        # "the match filter must be an expression in an object"
+        if not filter:
+            filter = {}
         pipeline: List[dict[str, Any]] = [
             {"$match": filter},
             {

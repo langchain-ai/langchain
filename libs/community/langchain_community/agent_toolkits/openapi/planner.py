@@ -9,8 +9,8 @@ import yaml
 from langchain_core.callbacks import BaseCallbackManager
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate, PromptTemplate
-from langchain_core.pydantic_v1 import Field
 from langchain_core.tools import BaseTool, Tool
+from pydantic import Field
 
 from langchain_community.agent_toolkits.openapi.planner_prompt import (
     API_CONTROLLER_PROMPT,
@@ -64,12 +64,12 @@ def _get_default_llm_chain_factory(
     return partial(_get_default_llm_chain, prompt)
 
 
-class RequestsGetToolWithParsing(BaseRequestsTool, BaseTool):
+class RequestsGetToolWithParsing(BaseRequestsTool, BaseTool):  # type: ignore[override]
     """Requests GET tool with LLM-instructed extraction of truncated responses."""
 
     name: str = "requests_get"
     """Tool name."""
-    description = REQUESTS_GET_TOOL_DESCRIPTION
+    description: str = REQUESTS_GET_TOOL_DESCRIPTION
     """Tool description."""
     response_length: int = MAX_RESPONSE_LENGTH
     """Maximum length of the response to be returned."""
@@ -98,12 +98,12 @@ class RequestsGetToolWithParsing(BaseRequestsTool, BaseTool):
         raise NotImplementedError()
 
 
-class RequestsPostToolWithParsing(BaseRequestsTool, BaseTool):
+class RequestsPostToolWithParsing(BaseRequestsTool, BaseTool):  # type: ignore[override]
     """Requests POST tool with LLM-instructed extraction of truncated responses."""
 
     name: str = "requests_post"
     """Tool name."""
-    description = REQUESTS_POST_TOOL_DESCRIPTION
+    description: str = REQUESTS_POST_TOOL_DESCRIPTION
     """Tool description."""
     response_length: int = MAX_RESPONSE_LENGTH
     """Maximum length of the response to be returned."""
@@ -129,12 +129,12 @@ class RequestsPostToolWithParsing(BaseRequestsTool, BaseTool):
         raise NotImplementedError()
 
 
-class RequestsPatchToolWithParsing(BaseRequestsTool, BaseTool):
+class RequestsPatchToolWithParsing(BaseRequestsTool, BaseTool):  # type: ignore[override]
     """Requests PATCH tool with LLM-instructed extraction of truncated responses."""
 
     name: str = "requests_patch"
     """Tool name."""
-    description = REQUESTS_PATCH_TOOL_DESCRIPTION
+    description: str = REQUESTS_PATCH_TOOL_DESCRIPTION
     """Tool description."""
     response_length: int = MAX_RESPONSE_LENGTH
     """Maximum length of the response to be returned."""
@@ -162,12 +162,12 @@ class RequestsPatchToolWithParsing(BaseRequestsTool, BaseTool):
         raise NotImplementedError()
 
 
-class RequestsPutToolWithParsing(BaseRequestsTool, BaseTool):
+class RequestsPutToolWithParsing(BaseRequestsTool, BaseTool):  # type: ignore[override]
     """Requests PUT tool with LLM-instructed extraction of truncated responses."""
 
     name: str = "requests_put"
     """Tool name."""
-    description = REQUESTS_PUT_TOOL_DESCRIPTION
+    description: str = REQUESTS_PUT_TOOL_DESCRIPTION
     """Tool description."""
     response_length: int = MAX_RESPONSE_LENGTH
     """Maximum length of the response to be returned."""
@@ -193,12 +193,12 @@ class RequestsPutToolWithParsing(BaseRequestsTool, BaseTool):
         raise NotImplementedError()
 
 
-class RequestsDeleteToolWithParsing(BaseRequestsTool, BaseTool):
+class RequestsDeleteToolWithParsing(BaseRequestsTool, BaseTool):  # type: ignore[override]
     """Tool that sends a DELETE request and parses the response."""
 
     name: str = "requests_delete"
     """The name of the tool."""
-    description = REQUESTS_DELETE_TOOL_DESCRIPTION
+    description: str = REQUESTS_DELETE_TOOL_DESCRIPTION
     """The description of the tool."""
 
     response_length: Optional[int] = MAX_RESPONSE_LENGTH
@@ -292,17 +292,21 @@ def _create_api_controller_agent(
         )
     if "DELETE" in allowed_operations:
         delete_llm_chain = LLMChain(llm=llm, prompt=PARSING_DELETE_PROMPT)
-        RequestsDeleteToolWithParsing(  # type: ignore[call-arg]
-            requests_wrapper=requests_wrapper,
-            llm_chain=delete_llm_chain,
-            allow_dangerous_requests=allow_dangerous_requests,
+        tools.append(
+            RequestsDeleteToolWithParsing(  # type: ignore[call-arg]
+                requests_wrapper=requests_wrapper,
+                llm_chain=delete_llm_chain,
+                allow_dangerous_requests=allow_dangerous_requests,
+            )
         )
     if "PATCH" in allowed_operations:
         patch_llm_chain = LLMChain(llm=llm, prompt=PARSING_PATCH_PROMPT)
-        RequestsPatchToolWithParsing(  # type: ignore[call-arg]
-            requests_wrapper=requests_wrapper,
-            llm_chain=patch_llm_chain,
-            allow_dangerous_requests=allow_dangerous_requests,
+        tools.append(
+            RequestsPatchToolWithParsing(  # type: ignore[call-arg]
+                requests_wrapper=requests_wrapper,
+                llm_chain=patch_llm_chain,
+                allow_dangerous_requests=allow_dangerous_requests,
+            )
         )
     if not tools:
         raise ValueError("Tools not found")
@@ -352,7 +356,7 @@ def _create_api_controller_tool(
         for endpoint_name in endpoint_names:
             found_match = False
             for name, _, docs in api_spec.endpoints:
-                regex_name = re.compile(re.sub("\{.*?\}", ".*", name))
+                regex_name = re.compile(re.sub("\\{.*?\\}", ".*", name))
                 if regex_name.match(endpoint_name):
                     found_match = True
                     docs_str += f"== Docs for {endpoint_name} == \n{yaml.dump(docs)}\n"
@@ -417,7 +421,7 @@ def create_openapi_agent(
             Default is False.
         allowed_operations: Optional. The allowed operations.
             Default is ("GET", "POST").
-        **kwargs: Additional arguments.
+        kwargs: Additional arguments.
 
     Returns:
         The agent executor.

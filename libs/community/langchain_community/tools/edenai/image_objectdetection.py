@@ -1,16 +1,21 @@
 from __future__ import annotations
 
 import logging
-from typing import Optional
+from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
+from pydantic import BaseModel, Field, HttpUrl
 
 from langchain_community.tools.edenai.edenai_base_tool import EdenaiTool
 
 logger = logging.getLogger(__name__)
 
 
-class EdenAiObjectDetectionTool(EdenaiTool):
+class ObjectDetectionInput(BaseModel):
+    query: HttpUrl = Field(description="url of the image to analyze")
+
+
+class EdenAiObjectDetectionTool(EdenaiTool):  # type: ignore[override, override, override]
     """Tool that queries the Eden AI Object detection API.
 
     for api reference check edenai documentation:
@@ -30,6 +35,7 @@ class EdenAiObjectDetectionTool(EdenaiTool):
         (with bounding boxes) objects in an image """
         "Input should be the string url of the image to identify."
     )
+    args_schema: Type[BaseModel] = ObjectDetectionInput
 
     show_positions: bool = False
 

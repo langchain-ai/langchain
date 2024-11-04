@@ -1,4 +1,5 @@
 """Test Anthropic API wrapper."""
+
 from typing import Generator
 
 import pytest

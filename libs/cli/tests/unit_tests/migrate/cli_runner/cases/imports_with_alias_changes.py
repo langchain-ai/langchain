@@ -1,4 +1,5 @@
 """Handle a test case where the import is updated and may involve an alias change."""
+
 from tests.unit_tests.migrate.cli_runner.case import Case
 from tests.unit_tests.migrate.cli_runner.file import File
 

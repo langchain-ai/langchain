@@ -6,18 +6,13 @@ import logging
 import sys
 import traceback
 from abc import ABC, abstractmethod
+from collections.abc import Coroutine, Sequence
 from datetime import datetime, timezone
 from typing import (
     TYPE_CHECKING,
     Any,
-    Coroutine,
-    Dict,
-    List,
     Literal,
     Optional,
-    Sequence,
-    Set,
-    Tuple,
     Union,
     cast,
 )
@@ -46,7 +41,8 @@ SCHEMA_FORMAT_TYPE = Literal["original", "streaming_events"]
 
 class _TracerCore(ABC):
     """
-    Abstract base class for tracers
+    Abstract base class for tracers.
+
     This class provides common methods, and reusable methods for tracers.
     """
 
@@ -65,23 +61,24 @@ class _TracerCore(ABC):
         Args:
             _schema_format: Primarily changes how the inputs and outputs are
                 handled. For internal use only. This API will change.
+
                 - 'original' is the format used by all current tracers.
-                   This format is slightly inconsistent with respect to inputs
-                   and outputs.
+                  This format is slightly inconsistent with respect to inputs
+                  and outputs.
                 - 'streaming_events' is used for supporting streaming events,
-                   for internal usage. It will likely change in the future, or
-                   be deprecated entirely in favor of a dedicated async tracer
-                   for streaming events.
+                  for internal usage. It will likely change in the future, or
+                  be deprecated entirely in favor of a dedicated async tracer
+                  for streaming events.
                 - 'original+chat' is a format that is the same as 'original'
-                   except it does NOT raise an attribute error on_chat_model_start
+                  except it does NOT raise an attribute error on_chat_model_start
             kwargs: Additional keyword arguments that will be passed to
-                    the super class.
+                the superclass.
         """
         super().__init__(**kwargs)
         self._schema_format = _schema_format  # For internal use only API will change.
-        self.run_map: Dict[str, Run] = {}
+        self.run_map: dict[str, Run] = {}
         """Map of run ID to run. Cleared on run end."""
-        self.order_map: Dict[UUID, Tuple[UUID, str]] = {}
+        self.order_map: dict[UUID, tuple[UUID, str]] = {}
         """Map of run ID to (trace_id, dotted_order). Cleared when tracer GCed."""
 
     @abstractmethod
@@ -121,7 +118,7 @@ class _TracerCore(ABC):
                     self._add_child_run(parent_run, run)
             else:
                 if self.log_missing_parent:
-                    logger.warning(
+                    logger.debug(
                         f"Parent run {run.parent_run_id} not found for run {run.id}."
                         " Treating as a root run."
                     )
@@ -135,32 +132,34 @@ class _TracerCore(ABC):
         self.run_map[str(run.id)] = run
 
     def _get_run(
-        self, run_id: UUID, run_type: Union[str, Set[str], None] = None
+        self, run_id: UUID, run_type: Union[str, set[str], None] = None
     ) -> Run:
         try:
             run = self.run_map[str(run_id)]
         except KeyError as exc:
-            raise TracerException(f"No indexed run ID {run_id}.") from exc
+            msg = f"No indexed run ID {run_id}."
+            raise TracerException(msg) from exc
 
         if isinstance(run_type, str):
-            run_types: Union[Set[str], None] = {run_type}
+            run_types: Union[set[str], None] = {run_type}
         else:
             run_types = run_type
         if run_types is not None and run.run_type not in run_types:
-            raise TracerException(
+            msg = (
                 f"Found {run.run_type} run at ID {run_id}, "
                 f"but expected {run_types} run."
             )
+            raise TracerException(msg)
         return run
 
     def _create_chat_model_run(
         self,
-        serialized: Dict[str, Any],
-        messages: List[List[BaseMessage]],
+        serialized: dict[str, Any],
+        messages: list[list[BaseMessage]],
         run_id: UUID,
-        tags: Optional[List[str]] = None,
+        tags: Optional[list[str]] = None,
         parent_run_id: Optional[UUID] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         name: Optional[str] = None,
         **kwargs: Any,
     ) -> Run:
@@ -173,10 +172,11 @@ class _TracerCore(ABC):
             # This can eventually be cleaned up by writing a "modern" tracer
             # that has all the updated schema changes corresponding to
             # the "streaming_events" format.
-            raise NotImplementedError(
+            msg = (
                 f"Chat model tracing is not supported in "
                 f"for {self._schema_format} format."
             )
+            raise NotImplementedError(msg)
         start_time = datetime.now(timezone.utc)
         if metadata:
             kwargs.update({"metadata": metadata})
@@ -198,16 +198,16 @@ class _TracerCore(ABC):
 
     def _create_llm_run(
         self,
-        serialized: Dict[str, Any],
-        prompts: List[str],
+        serialized: dict[str, Any],
+        prompts: list[str],
         run_id: UUID,
-        tags: Optional[List[str]] = None,
+        tags: Optional[list[str]] = None,
         parent_run_id: Optional[UUID] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         name: Optional[str] = None,
         **kwargs: Any,
     ) -> Run:
-        """Create a llm run"""
+        """Create a llm run."""
         start_time = datetime.now(timezone.utc)
         if metadata:
             kwargs.update({"metadata": metadata})
@@ -234,10 +234,10 @@ class _TracerCore(ABC):
         **kwargs: Any,
     ) -> Run:
         """
-        Append token event to LLM run and return the run
+        Append token event to LLM run and return the run.
         """
         llm_run = self._get_run(run_id, run_type={"llm", "chat_model"})
-        event_kwargs: Dict[str, Any] = {"token": token}
+        event_kwargs: dict[str, Any] = {"token": token}
         if chunk:
             event_kwargs["chunk"] = chunk
         llm_run.events.append(
@@ -256,7 +256,7 @@ class _TracerCore(ABC):
         **kwargs: Any,
     ) -> Run:
         llm_run = self._get_run(run_id)
-        retry_d: Dict[str, Any] = {
+        retry_d: dict[str, Any] = {
             "slept": retry_state.idle_for,
             "attempt": retry_state.attempt_number,
         }
@@ -281,7 +281,7 @@ class _TracerCore(ABC):
 
     def _complete_llm_run(self, response: LLMResult, run_id: UUID) -> Run:
         llm_run = self._get_run(run_id, run_type={"llm", "chat_model"})
-        llm_run.outputs = response.dict()
+        llm_run.outputs = response.model_dump()
         for i, generations in enumerate(response.generations):
             for j, generation in enumerate(generations):
                 output_generation = llm_run.outputs["generations"][i][j]
@@ -304,17 +304,17 @@ class _TracerCore(ABC):
 
     def _create_chain_run(
         self,
-        serialized: Dict[str, Any],
-        inputs: Dict[str, Any],
+        serialized: dict[str, Any],
+        inputs: dict[str, Any],
         run_id: UUID,
-        tags: Optional[List[str]] = None,
+        tags: Optional[list[str]] = None,
         parent_run_id: Optional[UUID] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         run_type: Optional[str] = None,
         name: Optional[str] = None,
         **kwargs: Any,
     ) -> Run:
-        """Create a chain Run"""
+        """Create a chain Run."""
         start_time = datetime.now(timezone.utc)
         if metadata:
             kwargs.update({"metadata": metadata})
@@ -341,7 +341,8 @@ class _TracerCore(ABC):
                 "input": inputs,
             }
         else:
-            raise ValueError(f"Invalid format: {self._schema_format}")
+            msg = f"Invalid format: {self._schema_format}"
+            raise ValueError(msg)
 
     def _get_chain_outputs(self, outputs: Any) -> Any:
         """Get the outputs for a chain run."""
@@ -352,13 +353,14 @@ class _TracerCore(ABC):
                 "output": outputs,
             }
         else:
-            raise ValueError(f"Invalid format: {self._schema_format}")
+            msg = f"Invalid format: {self._schema_format}"
+            raise ValueError(msg)
 
     def _complete_chain_run(
         self,
-        outputs: Dict[str, Any],
+        outputs: dict[str, Any],
         run_id: UUID,
-        inputs: Optional[Dict[str, Any]] = None,
+        inputs: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Run:
         """Update a chain run with outputs and end time."""
@@ -373,7 +375,7 @@ class _TracerCore(ABC):
     def _errored_chain_run(
         self,
         error: BaseException,
-        inputs: Optional[Dict[str, Any]],
+        inputs: Optional[dict[str, Any]],
         run_id: UUID,
         **kwargs: Any,
     ) -> Run:
@@ -387,14 +389,14 @@ class _TracerCore(ABC):
 
     def _create_tool_run(
         self,
-        serialized: Dict[str, Any],
+        serialized: dict[str, Any],
         input_str: str,
         run_id: UUID,
-        tags: Optional[List[str]] = None,
+        tags: Optional[list[str]] = None,
         parent_run_id: Optional[UUID] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         name: Optional[str] = None,
-        inputs: Optional[Dict[str, Any]] = None,
+        inputs: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Run:
         """Create a tool run."""
@@ -407,7 +409,8 @@ class _TracerCore(ABC):
         elif self._schema_format == "streaming_events":
             inputs = {"input": inputs}
         else:
-            raise AssertionError(f"Invalid format: {self._schema_format}")
+            msg = f"Invalid format: {self._schema_format}"
+            raise AssertionError(msg)
 
         return Run(
             id=run_id,
@@ -426,7 +429,7 @@ class _TracerCore(ABC):
 
     def _complete_tool_run(
         self,
-        output: Dict[str, Any],
+        output: dict[str, Any],
         run_id: UUID,
         **kwargs: Any,
     ) -> Run:
@@ -452,12 +455,12 @@ class _TracerCore(ABC):
 
     def _create_retrieval_run(
         self,
-        serialized: Dict[str, Any],
+        serialized: dict[str, Any],
         query: str,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         name: Optional[str] = None,
         **kwargs: Any,
     ) -> Run:
@@ -514,15 +517,19 @@ class _TracerCore(ABC):
 
     def _end_trace(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
         """End a trace for a run."""
+        return None
 
     def _on_run_create(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
         """Process a run upon creation."""
+        return None
 
     def _on_run_update(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
         """Process a run upon update."""
+        return None
 
     def _on_llm_start(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
         """Process the LLM Run upon start."""
+        return None
 
     def _on_llm_new_token(
         self,
@@ -531,39 +538,52 @@ class _TracerCore(ABC):
         chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]],
     ) -> Union[None, Coroutine[Any, Any, None]]:
         """Process new LLM token."""
+        return None
 
     def _on_llm_end(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
         """Process the LLM Run."""
+        return None
 
     def _on_llm_error(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
         """Process the LLM Run upon error."""
+        return None
 
     def _on_chain_start(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
         """Process the Chain Run upon start."""
+        return None
 
     def _on_chain_end(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
         """Process the Chain Run."""
+        return None
 
     def _on_chain_error(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
         """Process the Chain Run upon error."""
+        return None
 
     def _on_tool_start(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
         """Process the Tool Run upon start."""
+        return None
 
     def _on_tool_end(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
         """Process the Tool Run."""
+        return None
 
     def _on_tool_error(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
         """Process the Tool Run upon error."""
+        return None
 
     def _on_chat_model_start(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
         """Process the Chat Model Run upon start."""
+        return None
 
     def _on_retriever_start(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
         """Process the Retriever Run upon start."""
+        return None
 
     def _on_retriever_end(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
         """Process the Retriever Run."""
+        return None
 
     def _on_retriever_error(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
         """Process the Retriever Run upon error."""
+        return None

@@ -15,7 +15,43 @@ logger = logging.getLogger(__name__)
 
 
 class RedisChatMessageHistory(BaseChatMessageHistory):
-    """Chat message history stored in a Redis database."""
+    """Chat message history stored in a Redis database.
+
+    Setup:
+        Install ``redis`` python package.
+
+        .. code-block:: bash
+
+            pip install redis
+
+    Instantiate:
+        .. code-block:: python
+
+        from langchain_community.chat_message_histories import RedisChatMessageHistory
+
+        history = RedisChatMessageHistory(
+            session_id = "your-session-id",
+            url="redis://your-host:your-port:your-database",  # redis://localhost:6379/0
+        )
+
+    Add and retrieve messages:
+        .. code-block:: python
+
+            # Add single message
+            history.add_message(message)
+
+            # Add batch messages
+            history.add_messages([message1, message2, message3, ...])
+
+            # Add human message
+            history.add_user_message(human_message)
+
+            # Add ai message
+            history.add_ai_message(ai_message)
+
+            # Retrieve messages
+            messages = history.messages
+    """  # noqa: E501
 
     def __init__(
         self,
@@ -24,6 +60,18 @@ class RedisChatMessageHistory(BaseChatMessageHistory):
         key_prefix: str = "message_store:",
         ttl: Optional[int] = None,
     ):
+        """Initialize with a RedisChatMessageHistory instance.
+
+        Args:
+            session_id: str
+                The ID for single chat session. Used to form keys with `key_prefix`.
+            url: Optional[str]
+                String parameter configuration for connecting to the redis.
+            key_prefix: Optional[str]
+                The prefix of the key, combined with `session id` to form the key.
+            ttl: Optional[int]
+                Set the expiration time of `key`, the unit is seconds.
+        """
         try:
             import redis
         except ImportError:

@@ -6,8 +6,9 @@ from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
-from langchain_core.pydantic_v1 import Extra, Field, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.utils import get_from_dict_or_env, pre_init
+from langchain_core.utils.pydantic import get_fields
+from pydantic import ConfigDict, Field, model_validator
 
 if TYPE_CHECKING:
     from replicate.prediction import Prediction
@@ -55,11 +56,10 @@ class Replicate(LLM):
     stop: List[str] = Field(default_factory=list)
     """Stop sequences to early-terminate generation."""
 
-    class Config:
-        """Configuration for this pydantic config."""
-
-        allow_population_by_field_name = True
-        extra = Extra.forbid
+    model_config = ConfigDict(
+        populate_by_name=True,
+        extra="forbid",
+    )
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
@@ -74,10 +74,11 @@ class Replicate(LLM):
         """Get the namespace of the langchain object."""
         return ["langchain", "llms", "replicate"]
 
-    @root_validator(pre=True)
-    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
-        all_required_field_names = {field.alias for field in cls.__fields__.values()}
+        all_required_field_names = {field for field in get_fields(cls).keys()}
 
         input = values.pop("input", {})
         if input:
@@ -97,7 +98,7 @@ class Replicate(LLM):
         values["model_kwargs"] = extra
         return values
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         replicate_api_token = get_from_dict_or_env(

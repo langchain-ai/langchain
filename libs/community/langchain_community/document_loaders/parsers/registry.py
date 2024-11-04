@@ -1,4 +1,5 @@
 """Module includes a registry of default parser configurations."""
+
 from langchain_community.document_loaders.base import BaseBlobParser
 from langchain_community.document_loaders.parsers.generic import MimeTypeBasedParser
 from langchain_community.document_loaders.parsers.msword import MsWordParser

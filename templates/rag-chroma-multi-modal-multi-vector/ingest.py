@@ -8,9 +8,9 @@ from pathlib import Path
 import pypdfium2 as pdfium
 from langchain.retrievers.multi_vector import MultiVectorRetriever
 from langchain.storage import LocalFileStore, UpstashRedisByteStore
+from langchain_chroma import Chroma
 from langchain_community.chat_models import ChatOpenAI
 from langchain_community.embeddings import OpenAIEmbeddings
-from langchain_community.vectorstores import Chroma
 from langchain_core.documents import Document
 from langchain_core.messages import HumanMessage
 from PIL import Image

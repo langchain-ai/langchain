@@ -2,9 +2,10 @@
 In order to run this test, you need to install VertexAI SDK:
 pip install google-cloud-aiplatform>=1.36.0
 
-Your end-user credentials would be used to make the calls (make sure you've run 
+Your end-user credentials would be used to make the calls (make sure you've run
 `gcloud auth login` first).
 """
+
 import os
 from typing import Optional
 
@@ -149,7 +150,6 @@ def test_model_garden_generate(
     assert len(output.generations) == 2
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "endpoint_os_variable_name,result_arg",
     [("FALCON_ENDPOINT_ID", "generated_text"), ("LLAMA_ENDPOINT_ID", None)],

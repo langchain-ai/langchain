@@ -1,6 +1,5 @@
 """Test the comparison chains."""
 
-
 import re
 
 import pytest

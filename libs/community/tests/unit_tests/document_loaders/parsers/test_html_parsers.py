@@ -1,4 +1,5 @@
 """Tests for the HTML parsers."""
+
 from pathlib import Path
 
 import pytest

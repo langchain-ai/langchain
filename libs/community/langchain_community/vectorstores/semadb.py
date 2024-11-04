@@ -25,7 +25,7 @@ class SemaDB(VectorStore):
 
     """
 
-    HOST = "semadb.p.rapidapi.com"
+    HOST: str = "semadb.p.rapidapi.com"
     BASE_URL = "https://" + HOST
 
     def __init__(

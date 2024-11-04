@@ -43,7 +43,7 @@ def _is_pinecone_v3() -> bool:
 
 
 @deprecated(
-    since="0.0.18", removal="0.3.0", alternative_import="langchain_pinecone.Pinecone"
+    since="0.0.18", removal="1.0", alternative_import="langchain_pinecone.Pinecone"
 )
 class Pinecone(VectorStore):
     """`Pinecone` vector store.

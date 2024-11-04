@@ -1,9 +1,10 @@
 """Util that sends messages via Infobip."""
-from typing import Dict, List, Optional
+
+from typing import Any, Dict, List, Optional
 
 import requests
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, ConfigDict, model_validator
 from requests.adapters import HTTPAdapter
 from urllib3.util import Retry
 
@@ -14,13 +15,13 @@ class InfobipAPIWrapper(BaseModel):
     infobip_api_key: Optional[str] = None
     infobip_base_url: Optional[str] = "https://api.infobip.com"
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
-        extra = Extra.forbid
-
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that api key exists in environment."""
         values["infobip_api_key"] = get_from_dict_or_env(
             values, "infobip_api_key", "INFOBIP_API_KEY"

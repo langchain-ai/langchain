@@ -57,12 +57,12 @@ def mock_lakefs_client_no_presign_local() -> Any:
 
 
 class TestLakeFSLoader(unittest.TestCase):
-    lakefs_access_key = "lakefs_access_key"
-    lakefs_secret_key = "lakefs_secret_key"
-    endpoint = "endpoint"
-    repo = "repo"
-    ref = "ref"
-    path = "path"
+    lakefs_access_key: str = "lakefs_access_key"
+    lakefs_secret_key: str = "lakefs_secret_key"
+    endpoint: str = "endpoint"
+    repo: str = "repo"
+    ref: str = "ref"
+    path: str = "path"
 
     @requests_mock.Mocker()
     @pytest.mark.usefixtures("mock_lakefs_client_no_presign_not_local")

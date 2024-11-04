@@ -5,8 +5,8 @@ from typing import Any, Callable, Dict, List, Optional, Union
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models.llms import create_base_retry_decorator
-from langchain_core.pydantic_v1 import BaseModel, SecretStr, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.utils import get_from_dict_or_env, pre_init
+from pydantic import BaseModel, SecretStr
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ class PremAIEmbeddings(BaseModel, Embeddings):
 
     client: Any
 
-    @root_validator()
+    @pre_init
     def validate_environments(cls, values: Dict) -> Dict:
         """Validate that the package is installed and that the API token is valid"""
         try:

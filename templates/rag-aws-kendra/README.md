@@ -1,10 +1,14 @@
-# rag-aws-kendra
+# RAG - AWS Kendra
 
-This template is an application that utilizes Amazon Kendra, a machine learning powered search service, and Anthropic Claude for text generation. The application retrieves documents using a Retrieval chain to answer questions from your documents. 
+This template is an application that utilizes `Amazon Kendra`, 
+a machine learning powered search service, 
+and `Anthropic Claude` for text generation. 
+The application retrieves documents using a Retrieval chain to answer 
+questions from your documents. 
 
-It uses the `boto3` library to connect with the Bedrock service. 
+It uses the `boto3` library to connect with the `Bedrock` service. 
 
-For more context on building RAG applications with Amazon Kendra, check [this page](https://aws.amazon.com/blogs/machine-learning/quickly-build-high-accuracy-generative-ai-applications-on-enterprise-data-using-amazon-kendra-langchain-and-large-language-models/).
+For more context on building RAG applications with `Amazon Kendra`, check [this page](https://aws.amazon.com/blogs/machine-learning/quickly-build-high-accuracy-generative-ai-applications-on-enterprise-data-using-amazon-kendra-langchain-and-large-language-models/).
 
 ## Environment Setup
 

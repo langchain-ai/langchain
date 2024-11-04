@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 @deprecated(
     since="0.0.12",
-    removal="0.3.0",
+    removal="1.0",
     alternative_import="langchain_google_vertexai.VectorSearchVectorStore",
 )
 class MatchingEngine(VectorStore):
@@ -284,7 +284,7 @@ class MatchingEngine(VectorStore):
                 page_content=page_content,
                 metadata=metadata,
             )
-            docs.append((document, result.distance))
+            docs.append((document, result.distance))  # type: ignore[arg-type]
 
         logger.debug("Downloaded documents for query.")
 
@@ -426,13 +426,16 @@ class MatchingEngine(VectorStore):
         """
         gcs_bucket_name = cls._validate_gcs_bucket(gcs_bucket_name)
         credentials = cls._create_credentials_from_file(credentials_path)
-        index = cls._create_index_by_id(index_id, project_id, region, credentials)
+        index = cls._create_index_by_id(index_id, project_id, region, credentials)  # type: ignore[arg-type]
         endpoint = cls._create_endpoint_by_id(
-            endpoint_id, project_id, region, credentials
+            endpoint_id,
+            project_id,
+            region,
+            credentials,  # type: ignore[arg-type]
         )
 
-        gcs_client = cls._get_gcs_client(credentials, project_id)
-        cls._init_aiplatform(project_id, region, gcs_bucket_name, credentials)
+        gcs_client = cls._get_gcs_client(credentials, project_id)  # type: ignore[arg-type]
+        cls._init_aiplatform(project_id, region, gcs_bucket_name, credentials)  # type: ignore[arg-type]
 
         return cls(
             project_id=project_id,

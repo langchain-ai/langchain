@@ -1,4 +1,5 @@
 """Chain that hits a URL and then uses an LLM to parse results."""
+
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
@@ -6,7 +7,7 @@ from typing import Any, Dict, List, Optional
 from langchain.chains import LLMChain
 from langchain.chains.base import Chain
 from langchain_core.callbacks import CallbackManagerForChainRun
-from langchain_core.pydantic_v1 import Extra, Field, root_validator
+from pydantic import ConfigDict, Field, model_validator
 
 from langchain_community.utilities.requests import TextRequestsWrapper
 
@@ -37,11 +38,10 @@ class LLMRequestsChain(Chain):
     input_key: str = "url"  #: :meta private:
     output_key: str = "output"  #: :meta private:
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
     @property
     def input_keys(self) -> List[str]:
@@ -59,8 +59,9 @@ class LLMRequestsChain(Chain):
         """
         return [self.output_key]
 
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that api key and python package exists in environment."""
         try:
             from bs4 import BeautifulSoup  # noqa: F401

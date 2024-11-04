@@ -38,7 +38,7 @@ class Match(Enum):
             return isinstance(value, float)
         elif template is cls.ObjectWildcard:
             return True
-        elif type(value) != type(template):
+        elif type(value) is not type(template):
             return False
         elif isinstance(value, dict):
             if len(value) != len(template):

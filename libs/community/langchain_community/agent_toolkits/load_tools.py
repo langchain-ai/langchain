@@ -101,8 +101,7 @@ from langchain_community.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 from langchain_core.callbacks import BaseCallbackManager
 from langchain_core.callbacks import Callbacks
 from langchain_core.language_models import BaseLanguageModel
-from langchain_core.tools import BaseTool
-from langchain_core.tools import Tool
+from langchain_core.tools import BaseTool, Tool
 
 
 def _get_tools_requests_get() -> BaseTool:
@@ -587,13 +586,17 @@ def load_huggingface_tool(
 
     Args:
         task_or_repo_id: Task or model repo id.
-        model_repo_id: Optional model repo id.
-        token: Optional token.
+        model_repo_id: Optional model repo id. Defaults to None.
+        token: Optional token. Defaults to None.
         remote: Optional remote. Defaults to False.
-        **kwargs:
+        kwargs: Additional keyword arguments.
 
     Returns:
         A tool.
+
+    Raises:
+        ImportError: If the required libraries are not installed.
+        NotImplementedError: If multimodal outputs or inputs are not supported.
     """
     try:
         from transformers import load_tool
@@ -619,6 +622,25 @@ def load_huggingface_tool(
         raise NotImplementedError("Multimodal inputs not supported yet.")
     return Tool.from_function(
         hf_tool.__call__, name=hf_tool.name, description=hf_tool.description
+    )
+
+
+def raise_dangerous_tools_exception(name: str) -> None:
+    raise ValueError(
+        f"{name} is a dangerous tool. You cannot use it without opting in "
+        "by setting allow_dangerous_tools to True. "
+        "Most tools have some inherit risk to them merely because they are "
+        'allowed to interact with the "real world".'
+        "Please refer to LangChain security guidelines "
+        "to https://python.langchain.com/docs/security."
+        "Some tools have been designated as dangerous because they pose "
+        "risk that is not intuitively obvious. For example, a tool that "
+        "allows an agent to make requests to the web, can also be used "
+        "to make requests to a server that is only accessible from the "
+        "server hosting the code."
+        "Again, all tools carry some risk, and it's your responsibility to "
+        "understand which tools you're using and the risks associated with "
+        "them."
     )
 
 
@@ -649,7 +671,8 @@ def load_tools(
 
     Args:
         tool_names: name of tools to load.
-        llm: An optional language model, may be needed to initialize certain tools.
+        llm: An optional language model may be needed to initialize certain tools.
+            Defaults to None.
         callbacks: Optional callback manager or list of callback handlers.
             If not provided, default global callback manager will be used.
         allow_dangerous_tools: Optional flag to allow dangerous tools.
@@ -661,9 +684,17 @@ def load_tools(
             Please note that this list may not be fully exhaustive.
             It is your responsibility to understand which tools
             you're using and the risks associated with them.
+            Defaults to False.
+        kwargs: Additional keyword arguments.
 
     Returns:
         List of tools.
+
+    Raises:
+        ValueError: If the tool name is unknown.
+        ValueError: If the tool requires an LLM to be provided.
+        ValueError: If the tool requires some parameters that were not provided.
+        ValueError: If the tool is a dangerous tool and allow_dangerous_tools is False.
     """
     tools = []
     callbacks = _handle_callbacks(
@@ -671,22 +702,7 @@ def load_tools(
     )
     for name in tool_names:
         if name in DANGEROUS_TOOLS and not allow_dangerous_tools:
-            raise ValueError(
-                f"{name} is a dangerous tool. You cannot use it without opting in "
-                "by setting allow_dangerous_tools to True. "
-                "Most tools have some inherit risk to them merely because they are "
-                'allowed to interact with the "real world".'
-                "Please refer to LangChain security guidelines "
-                "to https://python.langchain.com/docs/security."
-                "Some tools have been designated as dangerous because they pose "
-                "risk that is not intuitively obvious. For example, a tool that "
-                "allows an agent to make requests to the web, can also be used "
-                "to make requests to a server that is only accessible from the "
-                "server hosting the code."
-                "Again, all tools carry some risk, and it's your responsibility to "
-                "understand which tools you're using and the risks associated with "
-                "them."
-            )
+            raise_dangerous_tools_exception(name)
 
         if name in {"requests"}:
             warnings.warn(
@@ -695,8 +711,10 @@ def load_tools(
             )
         if name == "requests_all":
             # expand requests into various methods
+            if not allow_dangerous_tools:
+                raise_dangerous_tools_exception(name)
             requests_method_tools = [
-                _tool for _tool in _BASE_TOOLS if _tool.startswith("requests_")
+                _tool for _tool in DANGEROUS_TOOLS if _tool.startswith("requests_")
             ]
             tool_names.extend(requests_method_tools)
         elif name in _BASE_TOOLS:

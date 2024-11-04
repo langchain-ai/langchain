@@ -1,4 +1,5 @@
 """Functionality for loading chains."""
+
 from __future__ import annotations
 
 import json
@@ -6,6 +7,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Union
 
 import yaml
+from langchain_core._api import deprecated
 from langchain_core.prompts.loading import (
     _load_output_parser,
     load_prompt,
@@ -408,7 +410,7 @@ def _load_sql_database_chain(config: dict, **kwargs: Any) -> Any:
     if "llm_chain" in config:
         llm_chain_config = config.pop("llm_chain")
         chain = load_chain_from_config(llm_chain_config, **kwargs)
-        return SQLDatabaseChain(llm_chain=chain, database=database, **config)
+        return SQLDatabaseChain(llm_chain=chain, database=database, **config)  # type: ignore[arg-type]
     if "llm" in config:
         llm_config = config.pop("llm")
         llm = load_llm_from_config(llm_config, **kwargs)
@@ -648,6 +650,14 @@ type_to_loader_dict = {
 }
 
 
+@deprecated(
+    since="0.2.13",
+    message=(
+        "This function is deprecated and will be removed in langchain 1.0. "
+        "At that point chains must be imported from their respective modules."
+    ),
+    removal="1.0",
+)
 def load_chain_from_config(config: dict, **kwargs: Any) -> Chain:
     """Load chain from Config Dict."""
     if "_type" not in config:
@@ -661,6 +671,14 @@ def load_chain_from_config(config: dict, **kwargs: Any) -> Chain:
     return chain_loader(config, **kwargs)
 
 
+@deprecated(
+    since="0.2.13",
+    message=(
+        "This function is deprecated and will be removed in langchain 1.0. "
+        "At that point chains must be imported from their respective modules."
+    ),
+    removal="1.0",
+)
 def load_chain(path: Union[str, Path], **kwargs: Any) -> Chain:
     """Unified method for loading a chain from LangChainHub or local fs."""
     if isinstance(path, str) and path.startswith("lc://"):

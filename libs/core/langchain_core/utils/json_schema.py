@@ -1,30 +1,35 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from copy import deepcopy
-from typing import Any, Dict, List, Optional, Sequence, Set
+from typing import Any, Optional
 
 
 def _retrieve_ref(path: str, schema: dict) -> dict:
     components = path.split("/")
     if components[0] != "#":
-        raise ValueError(
+        msg = (
             "ref paths are expected to be URI fragments, meaning they should start "
             "with #."
         )
+        raise ValueError(msg)
     out = schema
     for component in components[1:]:
-        if component.isdigit():
+        if component in out:
+            out = out[component]
+        elif component.isdigit() and int(component) in out:
             out = out[int(component)]
         else:
-            out = out[component]
+            msg = f"Reference '{path}' not found."
+            raise KeyError(msg)
     return deepcopy(out)
 
 
 def _dereference_refs_helper(
     obj: Any,
-    full_schema: Dict[str, Any],
+    full_schema: dict[str, Any],
     skip_keys: Sequence[str],
-    processed_refs: Optional[Set[str]] = None,
+    processed_refs: Optional[set[str]] = None,
 ) -> Any:
     if processed_refs is None:
         processed_refs = set()
@@ -61,8 +66,8 @@ def _dereference_refs_helper(
 
 
 def _infer_skip_keys(
-    obj: Any, full_schema: dict, processed_refs: Optional[Set[str]] = None
-) -> List[str]:
+    obj: Any, full_schema: dict, processed_refs: Optional[set[str]] = None
+) -> list[str]:
     if processed_refs is None:
         processed_refs = set()
 
@@ -90,7 +95,16 @@ def dereference_refs(
     full_schema: Optional[dict] = None,
     skip_keys: Optional[Sequence[str]] = None,
 ) -> dict:
-    """Try to substitute $refs in JSON Schema."""
+    """Try to substitute $refs in JSON Schema.
+
+    Args:
+        schema_obj: The schema object to dereference.
+        full_schema: The full schema object. Defaults to None.
+        skip_keys: The keys to skip. Defaults to None.
+
+    Returns:
+        The dereferenced schema object.
+    """
 
     full_schema = full_schema or schema_obj
     skip_keys = (

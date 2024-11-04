@@ -13,10 +13,12 @@ whether permissions of the given toolkit are appropriate for the application.
 
 See [Security](https://python.langchain.com/docs/security) for more information.
 """
+
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from langchain_core._api.path import as_import_path
+from langchain_core.tools.retriever import create_retriever_tool
 
 from langchain._api import create_importer
 from langchain.agents.agent_toolkits.conversational_retrieval.openai_functions import (
@@ -31,7 +33,6 @@ from langchain.agents.agent_toolkits.vectorstore.toolkit import (
     VectorStoreRouterToolkit,
     VectorStoreToolkit,
 )
-from langchain.tools.retriever import create_retriever_tool
 
 if TYPE_CHECKING:
     from langchain_community.agent_toolkits.ainetwork.toolkit import AINetworkToolkit

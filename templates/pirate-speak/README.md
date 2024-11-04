@@ -1,7 +1,6 @@
+# Pirate speak
 
-# pirate-speak
-
-This template converts user input into pirate speak.
+This template converts user input into `pirate speak`.
 
 ## Environment Setup
 

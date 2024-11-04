@@ -20,13 +20,14 @@ from langchain_core.language_models import BaseLanguageModel
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
 from langchain_core.prompt_values import PromptValue
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import (
     check_package_version,
     get_from_dict_or_env,
     get_pydantic_field_names,
+    pre_init,
 )
-from langchain_core.utils.utils import build_extra_kwargs, convert_to_secret_str
+from langchain_core.utils.utils import _build_model_kwargs, convert_to_secret_str
+from pydantic import ConfigDict, Field, SecretStr, model_validator
 
 
 class _AnthropicCommon(BaseLanguageModel):
@@ -65,16 +66,14 @@ class _AnthropicCommon(BaseLanguageModel):
     count_tokens: Optional[Callable[[str], int]] = None
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
 
-    @root_validator(pre=True)
-    def build_extra(cls, values: Dict) -> Dict:
-        extra = values.get("model_kwargs", {})
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: Dict) -> Any:
         all_required_field_names = get_pydantic_field_names(cls)
-        values["model_kwargs"] = build_extra_kwargs(
-            extra, values, all_required_field_names
-        )
+        values = _build_model_kwargs(values, all_required_field_names)
         return values
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["anthropic_api_key"] = convert_to_secret_str(
@@ -150,7 +149,7 @@ class _AnthropicCommon(BaseLanguageModel):
 
 @deprecated(
     since="0.0.28",
-    removal="0.3",
+    removal="1.0",
     alternative_import="langchain_anthropic.AnthropicLLM",
 )
 class Anthropic(LLM, _AnthropicCommon):
@@ -179,13 +178,12 @@ class Anthropic(LLM, _AnthropicCommon):
             response = model.invoke(prompt)
     """
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        populate_by_name=True,
+        arbitrary_types_allowed=True,
+    )
 
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
-
-    @root_validator()
+    @pre_init
     def raise_warning(cls, values: Dict) -> Dict:
         """Raise warning that this class is deprecated."""
         warnings.warn(

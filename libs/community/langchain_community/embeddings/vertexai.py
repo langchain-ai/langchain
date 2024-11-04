@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Literal, Optional, Tuple
 from langchain_core._api.deprecation import deprecated
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models.llms import create_base_retry_decorator
-from langchain_core.pydantic_v1 import root_validator
+from langchain_core.utils import pre_init
 
 from langchain_community.llms.vertexai import _VertexAICommon
 from langchain_community.utilities.vertexai import raise_vertex_import_error
@@ -22,10 +22,10 @@ _MIN_BATCH_SIZE = 5
 
 @deprecated(
     since="0.0.12",
-    removal="0.3.0",
+    removal="1.0",
     alternative_import="langchain_google_vertexai.VertexAIEmbeddings",
 )
-class VertexAIEmbeddings(_VertexAICommon, Embeddings):
+class VertexAIEmbeddings(_VertexAICommon, Embeddings):  # type: ignore[override]
     """Google Cloud VertexAI embedding models."""
 
     # Instance context
@@ -33,7 +33,7 @@ class VertexAIEmbeddings(_VertexAICommon, Embeddings):
     show_progress_bar: bool = False
     """Whether to show a tqdm progress bar. Must have `tqdm` installed."""
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validates that the python package exists in environment."""
         cls._try_init_vertexai(values)
@@ -163,7 +163,8 @@ class VertexAIEmbeddings(_VertexAICommon, Embeddings):
             DeadlineExceeded,
         ]
         retry_decorator = create_base_retry_decorator(
-            error_types=errors, max_retries=self.max_retries
+            error_types=errors,  # type: ignore[arg-type]
+            max_retries=self.max_retries,  # type: ignore[arg-type]
         )
 
         @retry_decorator

@@ -1,4 +1,5 @@
-from typing import Awaitable, Callable, Optional, Union
+from collections.abc import Awaitable
+from typing import Callable, Optional, Union
 from uuid import UUID
 
 from langchain_core.runnables.config import (
@@ -16,7 +17,16 @@ AsyncListener = Union[
 
 
 class RootListenersTracer(BaseTracer):
-    """Tracer that calls listeners on run start, end, and error."""
+    """Tracer that calls listeners on run start, end, and error.
+
+    Parameters:
+        log_missing_parent: Whether to log a warning if the parent is missing.
+            Default is False.
+        config: The runnable config.
+        on_start: The listener to call on run start.
+        on_end: The listener to call on run end.
+        on_error: The listener to call on run error.
+    """
 
     log_missing_parent = False
 
@@ -28,6 +38,14 @@ class RootListenersTracer(BaseTracer):
         on_end: Optional[Listener],
         on_error: Optional[Listener],
     ) -> None:
+        """Initialize the tracer.
+
+        Args:
+            config: The runnable config.
+            on_start: The listener to call on run start.
+            on_end: The listener to call on run end.
+            on_error: The listener to call on run error
+        """
         super().__init__(_schema_format="original+chat")
 
         self.config = config
@@ -63,7 +81,16 @@ class RootListenersTracer(BaseTracer):
 
 
 class AsyncRootListenersTracer(AsyncBaseTracer):
-    """Async Tracer that calls listeners on run start, end, and error."""
+    """Async Tracer that calls listeners on run start, end, and error.
+
+    Parameters:
+        log_missing_parent: Whether to log a warning if the parent is missing.
+            Default is False.
+        config: The runnable config.
+        on_start: The listener to call on run start.
+        on_end: The listener to call on run end.
+        on_error: The listener to call on run error.
+    """
 
     log_missing_parent = False
 
@@ -75,6 +102,14 @@ class AsyncRootListenersTracer(AsyncBaseTracer):
         on_end: Optional[AsyncListener],
         on_error: Optional[AsyncListener],
     ) -> None:
+        """Initialize the tracer.
+
+        Args:
+            config: The runnable config.
+            on_start: The listener to call on run start.
+            on_end: The listener to call on run end.
+            on_error: The listener to call on run error
+        """
         super().__init__(_schema_format="original+chat")
 
         self.config = config

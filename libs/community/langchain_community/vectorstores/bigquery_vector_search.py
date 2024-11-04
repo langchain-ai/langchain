@@ -38,7 +38,7 @@ _vector_table_lock = Lock()  # process-wide BigQueryVectorSearch table lock
 
 @deprecated(
     since="0.0.33",
-    removal="0.3.0",
+    removal="1.0",
     alternative_import="langchain_google_community.BigQueryVectorSearch",
 )
 class BigQueryVectorSearch(VectorStore):

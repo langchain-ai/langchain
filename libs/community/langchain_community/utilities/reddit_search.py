@@ -2,8 +2,8 @@
 
 from typing import Any, Dict, List, Optional
 
-from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, model_validator
 
 
 class RedditSearchAPIWrapper(BaseModel):
@@ -30,8 +30,9 @@ class RedditSearchAPIWrapper(BaseModel):
     reddit_client_secret: Optional[str]
     reddit_user_agent: Optional[str]
 
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that the API ID, secret and user agent exists in environment
         and check that praw module is present.
         """

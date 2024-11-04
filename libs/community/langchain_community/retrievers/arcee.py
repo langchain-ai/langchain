@@ -2,9 +2,9 @@ from typing import Any, Dict, List, Optional
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import Extra, SecretStr, root_validator
 from langchain_core.retrievers import BaseRetriever
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
+from pydantic import ConfigDict, SecretStr
 
 from langchain_community.utilities.arcee import ArceeWrapper, DALMFilter
 
@@ -49,11 +49,9 @@ class ArceeRetriever(BaseRetriever):
     model_kwargs: Optional[Dict[str, Any]] = None
     """Keyword arguments to pass to the model."""
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        underscore_attrs_are_private = True
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     def __init__(self, **data: Any) -> None:
         """Initializes private fields."""
@@ -70,7 +68,7 @@ class ArceeRetriever(BaseRetriever):
 
         self._client.validate_model_training_status()
 
-    @root_validator()
+    @pre_init
     def validate_environments(cls, values: Dict) -> Dict:
         """Validate Arcee environment variables."""
 

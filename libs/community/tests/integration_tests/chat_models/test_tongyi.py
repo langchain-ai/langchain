@@ -8,7 +8,7 @@ from langchain_core.messages.ai import AIMessageChunk
 from langchain_core.messages.tool import ToolCall, ToolMessage
 from langchain_core.outputs import ChatGeneration, LLMResult
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
-from langchain_core.pydantic_v1 import BaseModel, SecretStr
+from pydantic import BaseModel, SecretStr
 from pytest import CaptureFixture
 
 from langchain_community.chat_models.tongyi import ChatTongyi
@@ -235,3 +235,34 @@ def test_manual_tool_call_msg() -> None:
     assert output.content
     # Should not have called the tool again.
     assert not output.tool_calls and not output.invalid_tool_calls
+
+
+class AnswerWithJustification(BaseModel):
+    """An answer to the user question along with justification for the answer."""
+
+    answer: str
+    justification: str
+
+
+def test_chat_tongyi_with_structured_output() -> None:
+    """Test ChatTongyi with structured output."""
+    llm = ChatTongyi()  # type: ignore
+    structured_llm = llm.with_structured_output(AnswerWithJustification)
+    response = structured_llm.invoke(
+        "What weighs more a pound of bricks or a pound of feathers"
+    )
+    assert isinstance(response, AnswerWithJustification)
+
+
+def test_chat_tongyi_with_structured_output_include_raw() -> None:
+    """Test ChatTongyi with structured output."""
+    llm = ChatTongyi()  # type: ignore
+    structured_llm = llm.with_structured_output(
+        AnswerWithJustification, include_raw=True
+    )
+    response = structured_llm.invoke(
+        "What weighs more a pound of bricks or a pound of feathers"
+    )
+    assert isinstance(response, dict)
+    assert isinstance(response.get("raw"), AIMessage)
+    assert isinstance(response.get("parsed"), AnswerWithJustification)

@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra
+from pydantic import BaseModel, ConfigDict
 
 
 class QuantizedBiEncoderEmbeddings(BaseModel, Embeddings):
@@ -100,10 +100,10 @@ For more information, please visit:
         )
         self.transformer_model.eval()
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.allow
+    model_config = ConfigDict(
+        extra="allow",
+        protected_namespaces=(),
+    )
 
     def _embed(self, inputs: Any) -> Any:
         try:

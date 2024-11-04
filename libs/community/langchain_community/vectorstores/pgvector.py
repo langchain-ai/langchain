@@ -219,12 +219,12 @@ def _results_to_docs(docs_and_scores: Any) -> List[Document]:
     since="0.0.31",
     message=(
         "This class is pending deprecation and may be removed in a future version. "
-        "You can swap to using the `PGVector`"
-        " implementation in `langchain_postgres`. "
+        "You can swap to using the `PGVector` "
+        "implementation in `langchain_postgres`. "
         "Please read the guidelines in the doc-string of this class "
         "to follow prior to migrating as there are some differences "
         "between the implementations. "
-        "See <https://github.com/langchain-ai/langchain-postgres> for details about"
+        "See <https://github.com/langchain-ai/langchain-postgres> for details about "
         "the new implementation."
     ),
     alternative="from langchain_postgres import PGVector;",
@@ -274,22 +274,22 @@ class PGVector(VectorStore):
             disabling creation is useful when using ReadOnly Databases.
 
     Example:
-        .. code-block:: python
 
-            from langchain_community.vectorstores import PGVector
-            from langchain_community.embeddings.openai import OpenAIEmbeddings
+       .. code-block:: python
 
-            CONNECTION_STRING = "postgresql+psycopg2://hwc@localhost:5432/test3"
-            COLLECTION_NAME = "state_of_the_union_test"
-            embeddings = OpenAIEmbeddings()
-            vectorestore = PGVector.from_documents(
-                embedding=embeddings,
-                documents=docs,
-                collection_name=COLLECTION_NAME,
-                connection_string=CONNECTION_STRING,
-                use_jsonb=True,
-            )
-    """
+           from langchain_community.vectorstores import PGVector
+           from langchain_community.embeddings.openai import OpenAIEmbeddings
+           CONNECTION_STRING = "postgresql+psycopg2://hwc@localhost:5432/test3"
+           COLLECTION_NAME = "state_of_the_union_test"
+           embeddings = OpenAIEmbeddings()
+           vectorestore = PGVector.from_documents(
+               embedding=embeddings,
+               documents=docs,
+               collection_name=COLLECTION_NAME,
+               connection_string=CONNECTION_STRING,
+               use_jsonb=True,
+
+    """  # noqa: E501
 
     def __init__(
         self,
@@ -331,11 +331,11 @@ class PGVector(VectorStore):
                 message=(
                     "Please use JSONB instead of JSON for metadata. "
                     "This change will allow for more efficient querying that "
-                    "involves filtering based on metadata."
+                    "involves filtering based on metadata. "
                     "Please note that filtering operators have been changed "
-                    "when using JSOB metadata to be prefixed with a $ sign "
+                    "when using JSONB metadata to be prefixed with a $ sign "
                     "to avoid name collisions with columns. "
-                    "If you're using an existing database, you will need to create a"
+                    "If you're using an existing database, you will need to create a "
                     "db migration for your metadata column to be JSONB and update your "
                     "queries to use the new operators. "
                 ),

@@ -1,7 +1,8 @@
 from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_core.utils import pre_init
+from pydantic import BaseModel, ConfigDict
 
 from langchain_community.llms.sagemaker_endpoint import ContentHandlerBase
 
@@ -109,13 +110,11 @@ class SagemakerEndpointEmbeddings(BaseModel, Embeddings):
     .. _boto3: <https://boto3.amazonaws.com/v1/documentation/api/latest/index.html>
     """
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True, extra="forbid", protected_namespaces=()
+    )
 
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
-
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Dont do anything if client provided externally"""
         if values.get("client") is not None:

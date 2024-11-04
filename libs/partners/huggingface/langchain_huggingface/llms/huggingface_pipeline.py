@@ -1,13 +1,13 @@
-from __future__ import annotations
+from __future__ import annotations  # type: ignore[import-not-found]
 
 import importlib.util
 import logging
-from typing import Any, List, Mapping, Optional
+from typing import Any, Dict, Iterator, List, Mapping, Optional
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import BaseLLM
-from langchain_core.outputs import Generation, LLMResult
-from langchain_core.pydantic_v1 import Extra
+from langchain_core.outputs import Generation, GenerationChunk, LLMResult
+from pydantic import ConfigDict, model_validator
 
 DEFAULT_MODEL_ID = "gpt2"
 DEFAULT_TASK = "text-generation"
@@ -54,9 +54,11 @@ class HuggingFacePipeline(BaseLLM):
             hf = HuggingFacePipeline(pipeline=pipe)
     """
 
-    pipeline: Any  #: :meta private:
-    model_id: str = DEFAULT_MODEL_ID
-    """Model name to use."""
+    pipeline: Any = None  #: :meta private:
+    model_id: Optional[str] = None
+    """The model name. If not set explicitly by the user,
+    it will be inferred from the provided pipeline (if available).
+    If neither is provided, the DEFAULT_MODEL_ID will be used."""
     model_kwargs: Optional[dict] = None
     """Keyword arguments passed to the model."""
     pipeline_kwargs: Optional[dict] = None
@@ -64,10 +66,20 @@ class HuggingFacePipeline(BaseLLM):
     batch_size: int = DEFAULT_BATCH_SIZE
     """Batch size to use when passing multiple documents to generate."""
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
-        extra = Extra.forbid
+    @model_validator(mode="before")
+    @classmethod
+    def pre_init_validator(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        """Ensure model_id is set either by pipeline or user input."""
+        if "model_id" not in values:
+            if "pipeline" in values and values["pipeline"]:
+                values["model_id"] = values["pipeline"].model.name_or_path
+            else:
+                values["model_id"] = DEFAULT_MODEL_ID
+        return values
 
     @classmethod
     def from_model_id(
@@ -75,7 +87,7 @@ class HuggingFacePipeline(BaseLLM):
         model_id: str,
         task: str,
         backend: str = "default",
-        device: Optional[int] = -1,
+        device: Optional[int] = None,
         device_map: Optional[str] = None,
         model_kwargs: Optional[dict] = None,
         pipeline_kwargs: Optional[dict] = None,
@@ -97,7 +109,21 @@ class HuggingFacePipeline(BaseLLM):
                 "Please install it with `pip install transformers`."
             )
 
-        _model_kwargs = model_kwargs or {}
+        _model_kwargs = model_kwargs.copy() if model_kwargs else {}
+        if device_map is not None:
+            if device is not None:
+                raise ValueError(
+                    "Both `device` and `device_map` are specified. "
+                    "`device` will override `device_map`. "
+                    "You will most likely encounter unexpected behavior."
+                    "Please remove `device` and keep "
+                    "`device_map`."
+                )
+
+            if "device_map" in _model_kwargs:
+                raise ValueError("`device_map` is already specified in `model_kwargs`.")
+
+            _model_kwargs["device_map"] = device_map
         tokenizer = AutoTokenizer.from_pretrained(model_id, **_model_kwargs)
 
         try:
@@ -208,7 +234,7 @@ class HuggingFacePipeline(BaseLLM):
                     cuda_device_count,
                 )
         if device is not None and device_map is not None and backend == "openvino":
-            logger.warning("Please set device for OpenVINO through: " "'model_kwargs'")
+            logger.warning("Please set device for OpenVINO through: `model_kwargs`")
         if "trust_remote_code" in _model_kwargs:
             _model_kwargs = {
                 k: v for k, v in _model_kwargs.items() if k != "trust_remote_code"
@@ -219,7 +245,6 @@ class HuggingFacePipeline(BaseLLM):
             model=model,
             tokenizer=tokenizer,
             device=device,
-            device_map=device_map,
             batch_size=batch_size,
             model_kwargs=_model_kwargs,
             **_pipeline_kwargs,
@@ -299,3 +324,62 @@ class HuggingFacePipeline(BaseLLM):
         return LLMResult(
             generations=[[Generation(text=text)] for text in text_generations]
         )
+
+    def _stream(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> Iterator[GenerationChunk]:
+        from threading import Thread
+
+        import torch
+        from transformers import (
+            StoppingCriteria,
+            StoppingCriteriaList,
+            TextIteratorStreamer,
+        )
+
+        pipeline_kwargs = kwargs.get("pipeline_kwargs", {})
+        skip_prompt = kwargs.get("skip_prompt", True)
+
+        if stop is not None:
+            stop = self.pipeline.tokenizer.convert_tokens_to_ids(stop)
+        stopping_ids_list = stop or []
+
+        class StopOnTokens(StoppingCriteria):
+            def __call__(
+                self,
+                input_ids: torch.LongTensor,
+                scores: torch.FloatTensor,
+                **kwargs: Any,
+            ) -> bool:
+                for stop_id in stopping_ids_list:
+                    if input_ids[0][-1] == stop_id:
+                        return True
+                return False
+
+        stopping_criteria = StoppingCriteriaList([StopOnTokens()])
+
+        streamer = TextIteratorStreamer(
+            self.pipeline.tokenizer,
+            timeout=60.0,
+            skip_prompt=skip_prompt,
+            skip_special_tokens=True,
+        )
+        generation_kwargs = dict(
+            text_inputs=prompt,
+            streamer=streamer,
+            stopping_criteria=stopping_criteria,
+            **pipeline_kwargs,
+        )
+        t1 = Thread(target=self.pipeline, kwargs=generation_kwargs)
+        t1.start()
+
+        for char in streamer:
+            chunk = GenerationChunk(text=char)
+            if run_manager:
+                run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+
+            yield chunk

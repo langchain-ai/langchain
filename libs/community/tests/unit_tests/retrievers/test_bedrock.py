@@ -28,9 +28,16 @@ def amazon_retriever(
     )
 
 
-def test_create_client(amazon_retriever: AmazonKnowledgeBasesRetriever) -> None:
-    with pytest.raises(ImportError):
-        amazon_retriever.create_client({})
+def test_create_client() -> None:
+    # Import error if boto3 is not installed
+    # Value error if credentials are not supplied.
+    with pytest.raises((ImportError, ValueError)):
+        AmazonKnowledgeBasesRetriever()  # type: ignore
+
+
+def test_standard_params(amazon_retriever: AmazonKnowledgeBasesRetriever) -> None:
+    ls_params = amazon_retriever._get_ls_params()
+    assert ls_params == {"ls_retriever_name": "amazonknowledgebases"}
 
 
 def test_get_relevant_documents(

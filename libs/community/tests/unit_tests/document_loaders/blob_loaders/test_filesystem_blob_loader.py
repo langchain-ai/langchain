@@ -1,4 +1,5 @@
 """Verify that file system blob loader works as expected."""
+
 import os
 import tempfile
 from pathlib import Path

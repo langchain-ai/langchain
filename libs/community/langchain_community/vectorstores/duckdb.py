@@ -191,6 +191,7 @@ class DuckDB(VectorStore):
         if have_pandas:
             # noinspection PyUnusedLocal
             df = pd.DataFrame.from_dict(data)  # noqa: F841
+            self._connection.register("df", df)
             self._connection.execute(
                 f"INSERT INTO {self._table_name} SELECT * FROM df",
             )
@@ -254,7 +255,7 @@ class DuckDB(VectorStore):
             texts: List of strings to add to the vector store.
             embedding: The embedding function or model to use for generating embeddings.
             metadatas: Optional list of metadata dictionaries associated with the texts.
-            **kwargs: Additional keyword arguments including:
+            kwargs: Additional keyword arguments including:
                 - connection: DuckDB connection. If not provided, a new connection will
                   be created.
                 - vector_key: The column name for storing vectors. Default "vector".

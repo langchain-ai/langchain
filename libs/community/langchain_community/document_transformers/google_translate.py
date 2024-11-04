@@ -8,7 +8,7 @@ from langchain_community.utilities.vertexai import get_client_info
 
 @deprecated(
     since="0.0.32",
-    removal="0.3.0",
+    removal="1.0",
     alternative_import="langchain_google_community.DocAIParser",
 )
 class GoogleTranslateTransformer(BaseDocumentTransformer):
@@ -33,7 +33,7 @@ class GoogleTranslateTransformer(BaseDocumentTransformer):
         """
         try:
             from google.api_core.client_options import ClientOptions
-            from google.cloud import translate
+            from google.cloud import translate  # type: ignore[attr-defined]
         except ImportError as exc:
             raise ImportError(
                 "Install Google Cloud Translate to use this parser."
@@ -76,7 +76,7 @@ class GoogleTranslateTransformer(BaseDocumentTransformer):
                 Options: `text/plain`, `text/html`
         """
         try:
-            from google.cloud import translate
+            from google.cloud import translate  # type: ignore[attr-defined]
         except ImportError as exc:
             raise ImportError(
                 "Install Google Cloud Translate to use this parser."

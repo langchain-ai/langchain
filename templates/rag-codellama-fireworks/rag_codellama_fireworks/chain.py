@@ -1,11 +1,11 @@
 import os
 
 from git import Repo
+from langchain_chroma import Chroma
 from langchain_community.document_loaders.generic import GenericLoader
 from langchain_community.document_loaders.parsers import LanguageParser
 from langchain_community.embeddings import GPT4AllEmbeddings
 from langchain_community.llms.fireworks import Fireworks
-from langchain_community.vectorstores import Chroma
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel

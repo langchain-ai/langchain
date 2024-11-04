@@ -6,11 +6,11 @@ from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import BaseTool
+from langchain_core.tools.render import ToolsRenderer, render_text_description
 
 from langchain.agents import AgentOutputParser
 from langchain.agents.format_scratchpad import format_log_to_str
 from langchain.agents.output_parsers import ReActSingleInputOutputParser
-from langchain.tools.render import ToolsRenderer, render_text_description
 
 
 def create_react_agent(
@@ -26,6 +26,12 @@ def create_react_agent(
 
     Based on paper "ReAct: Synergizing Reasoning and Acting in Language Models"
     (https://arxiv.org/abs/2210.03629)
+
+    .. warning::
+       This implementation is based on the foundational ReAct paper but is older and not well-suited for production applications.
+       For a more robust and feature-rich implementation, we recommend using the `create_react_agent` function from the LangGraph library.
+       See the [reference doc](https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent)
+       for more information.
 
     Args:
         llm: LLM to use as the agent.
@@ -71,7 +77,7 @@ def create_react_agent(
                     "input": "what's my name?",
                     # Notice that chat_history is a string
                     # since this prompt is aimed at LLMs, not chat models
-                    "chat_history": "Human: My name is Bob\nAI: Hello Bob!",
+                    "chat_history": "Human: My name is Bob\\nAI: Hello Bob!",
                 }
             )
 

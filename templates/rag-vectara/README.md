@@ -1,7 +1,6 @@
+# RAG - Vectara
 
-# rag-vectara
-
-This template performs RAG with vectara.
+This template performs RAG with `Vectara` vectorstore.
 
 ## Environment Setup
 

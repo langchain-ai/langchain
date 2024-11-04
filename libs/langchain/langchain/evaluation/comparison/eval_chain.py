@@ -1,4 +1,5 @@
 """Base classes for comparing the output of two models."""
+
 from __future__ import annotations
 
 import logging
@@ -9,7 +10,7 @@ from langchain_core.callbacks.manager import Callbacks
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts.prompt import PromptTemplate
-from langchain_core.pydantic_v1 import Extra, Field
+from pydantic import ConfigDict, Field
 
 from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
 from langchain.chains.llm import LLMChain
@@ -94,7 +95,7 @@ def resolve_pairwise_criteria(
     return criteria_
 
 
-class PairwiseStringResultOutputParser(BaseOutputParser[dict]):
+class PairwiseStringResultOutputParser(BaseOutputParser[dict]):  # type: ignore[override]
     """A parser for the output of the PairwiseStringEvalChain.
 
     Attributes:
@@ -150,7 +151,7 @@ class PairwiseStringResultOutputParser(BaseOutputParser[dict]):
         }
 
 
-class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
+class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):  # type: ignore[override]
     """A chain for comparing two outputs, such as the outputs
      of two models, prompts, or outputs of a single model on similar inputs.
 
@@ -190,10 +191,9 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
     def is_lc_serializable(cls) -> bool:
         return False
 
-    class Config:
-        """Configuration for the PairwiseStringEvalChain."""
-
-        extra = Extra.ignore
+    model_config = ConfigDict(
+        extra="ignore",
+    )
 
     @property
     def requires_reference(self) -> bool:
@@ -391,7 +391,7 @@ Performance may be significantly worse with other models."
         return self._prepare_output(result)
 
 
-class LabeledPairwiseStringEvalChain(PairwiseStringEvalChain):
+class LabeledPairwiseStringEvalChain(PairwiseStringEvalChain):  # type: ignore[override]
     """A chain for comparing two outputs, such as the outputs
      of two models, prompts, or outputs of a single model on similar inputs,
      with labeled preferences.

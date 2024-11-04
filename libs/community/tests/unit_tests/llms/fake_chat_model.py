@@ -1,4 +1,5 @@
 """Fake Chat Model wrapper for testing purposes."""
+
 from typing import Any, Dict, List, Optional
 
 from langchain_core.callbacks import (

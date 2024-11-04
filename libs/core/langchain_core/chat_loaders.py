@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Iterator, List
+from collections.abc import Iterator
 
 from langchain_core.chat_sessions import ChatSession
 
@@ -9,8 +9,16 @@ class BaseChatLoader(ABC):
 
     @abstractmethod
     def lazy_load(self) -> Iterator[ChatSession]:
-        """Lazy load the chat sessions."""
+        """Lazy load the chat sessions.
 
-    def load(self) -> List[ChatSession]:
-        """Eagerly load the chat sessions into memory."""
+        Returns:
+            An iterator of chat sessions.
+        """
+
+    def load(self) -> list[ChatSession]:
+        """Eagerly load the chat sessions into memory.
+
+        Returns:
+            A list of chat sessions.
+        """
         return list(self.lazy_load())

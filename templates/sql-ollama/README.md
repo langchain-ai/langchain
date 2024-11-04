@@ -1,4 +1,4 @@
-# sql-ollama
+# SQL - Ollama
 
 This template enables a user to interact with a SQL database using natural language. 
 

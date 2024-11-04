@@ -6,14 +6,21 @@ all: help
 # Define a variable for the test file path.
 TEST_FILE ?= tests/unit_tests/
 
-test:
-	poetry run pytest $(TEST_FILE)
-
-tests:
-	poetry run pytest $(TEST_FILE)
+test tests:
+	env \
+	-u LANGCHAIN_TRACING_V2 \
+	-u LANGCHAIN_API_KEY \
+	-u LANGSMITH_TRACING \
+	-u LANGCHAIN_PROJECT \
+	poetry run pytest --disable-socket --allow-unix-socket $(TEST_FILE)
 
 test_watch:
-	poetry run ptw --snapshot-update --now . -- -vv -x tests/unit_tests
+	env \
+	-u LANGCHAIN_TRACING_V2 \
+	-u LANGCHAIN_API_KEY \
+	-u LANGSMITH_TRACING \
+	-u LANGCHAIN_PROJECT \
+	poetry run ptw --snapshot-update --now . --disable-socket --allow-unix-socket -- -vv $(TEST_FILE)
 
 test_profile:
 	poetry run pytest -vv tests/unit_tests/ --profile-svg
@@ -22,7 +29,7 @@ check_imports: $(shell find langchain_core -name '*.py')
 	poetry run python ./scripts/check_imports.py $^
 
 extended_tests:
-	poetry run pytest --only-extended $(TEST_FILE)
+	poetry run pytest --only-extended --disable-socket --allow-unix-socket $(TEST_FILE)
 
 
 ######################
@@ -39,17 +46,14 @@ lint_tests: PYTHON_FILES=tests
 lint_tests: MYPY_CACHE=.mypy_cache_test
 
 lint lint_diff lint_package lint_tests:
-	./scripts/check_pydantic.sh .
 	./scripts/lint_imports.sh
-	poetry run ruff .
+	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff check $(PYTHON_FILES)
 	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff format $(PYTHON_FILES) --diff
-	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff --select I $(PYTHON_FILES)
-	[ "$(PYTHON_FILES)" = "" ] || poetry run mypy $(PYTHON_FILES)
 	[ "$(PYTHON_FILES)" = "" ] || mkdir -p $(MYPY_CACHE) && poetry run mypy $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
 
 format format_diff:
-	poetry run ruff format $(PYTHON_FILES)
-	poetry run ruff --select I --fix $(PYTHON_FILES)
+	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff format $(PYTHON_FILES)
+	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff check --fix $(PYTHON_FILES)
 
 spell_check:
 	poetry run codespell --toml pyproject.toml

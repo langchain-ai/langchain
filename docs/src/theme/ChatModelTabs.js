@@ -8,12 +8,14 @@ import CodeBlock from "@theme-original/CodeBlock";
  * @typedef {Object} ChatModelTabsProps - Component props.
  * @property {string} [openaiParams] - Parameters for OpenAI chat model. Defaults to `model="gpt-3.5-turbo-0125"`
  * @property {string} [anthropicParams] - Parameters for Anthropic chat model. Defaults to `model="claude-3-sonnet-20240229"`
- * @property {string} [cohereParams] - Parameters for Cohere chat model. Defaults to `model="command-r"`
+ * @property {string} [cohereParams] - Parameters for Cohere chat model. Defaults to `model="command-r-plus"`
  * @property {string} [fireworksParams] - Parameters for Fireworks chat model. Defaults to `model="accounts/fireworks/models/mixtral-8x7b-instruct"`
  * @property {string} [groqParams] - Parameters for Groq chat model. Defaults to `model="llama3-8b-8192"`
  * @property {string} [mistralParams] - Parameters for Mistral chat model. Defaults to `model="mistral-large-latest"`
  * @property {string} [googleParams] - Parameters for Google chat model. Defaults to `model="gemini-pro"`
  * @property {string} [togetherParams] - Parameters for Together chat model. Defaults to `model="mistralai/Mixtral-8x7B-Instruct-v0.1"`
+ * @property {string} [nvidiaParams] - Parameters for Nvidia NIM model. Defaults to `model="meta/llama3-70b-instruct"`
+ * @property {string} [awsBedrockParams] - Parameters for AWS Bedrock chat model.
  * @property {boolean} [hideOpenai] - Whether or not to hide OpenAI chat model.
  * @property {boolean} [hideAnthropic] - Whether or not to hide Anthropic chat model.
  * @property {boolean} [hideCohere] - Whether or not to hide Cohere chat model.
@@ -23,6 +25,8 @@ import CodeBlock from "@theme-original/CodeBlock";
  * @property {boolean} [hideGoogle] - Whether or not to hide Google VertexAI chat model.
  * @property {boolean} [hideTogether] - Whether or not to hide Together chat model.
  * @property {boolean} [hideAzure] - Whether or not to hide Microsoft Azure OpenAI chat model.
+ * @property {boolean} [hideNvidia] - Whether or not to hide NVIDIA NIM model.
+ * @property {boolean} [hideAWS] - Whether or not to hide AWS models.
  * @property {string} [customVarName] - Custom variable name for the model. Defaults to `model`.
  */
 
@@ -40,6 +44,8 @@ export default function ChatModelTabs(props) {
     googleParams,
     togetherParams,
     azureParams,
+    nvidiaParams,
+    awsBedrockParams,
     hideOpenai,
     hideAnthropic,
     hideCohere,
@@ -49,26 +55,30 @@ export default function ChatModelTabs(props) {
     hideGoogle,
     hideTogether,
     hideAzure,
+    hideNvidia,
+    hideAWS,
     customVarName,
   } = props;
 
-  const openAIParamsOrDefault = openaiParams ?? `model="gpt-3.5-turbo-0125"`;
+  const openAIParamsOrDefault = openaiParams ?? `model="gpt-4o-mini"`;
   const anthropicParamsOrDefault =
-    anthropicParams ?? `model="claude-3-sonnet-20240229"`;
-  const cohereParamsOrDefault = cohereParams ?? `model="command-r"`;
+    anthropicParams ?? `model="claude-3-5-sonnet-20240620"`;
+  const cohereParamsOrDefault = cohereParams ?? `model="command-r-plus"`;
   const fireworksParamsOrDefault =
     fireworksParams ??
-    `model="accounts/fireworks/models/mixtral-8x7b-instruct"`;
+    `model="accounts/fireworks/models/llama-v3p1-70b-instruct"`;
   const groqParamsOrDefault = groqParams ?? `model="llama3-8b-8192"`;
   const mistralParamsOrDefault =
     mistralParams ?? `model="mistral-large-latest"`;
-  const googleParamsOrDefault = googleParams ?? `model="gemini-pro"`;
+  const googleParamsOrDefault = googleParams ?? `model="gemini-1.5-flash"`;
   const togetherParamsOrDefault =
     togetherParams ??
     `\n    base_url="https://api.together.xyz/v1",\n    api_key=os.environ["TOGETHER_API_KEY"],\n    model="mistralai/Mixtral-8x7B-Instruct-v0.1",\n`;
   const azureParamsOrDefault =
     azureParams ??
     `\n    azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],\n    azure_deployment=os.environ["AZURE_OPENAI_DEPLOYMENT_NAME"],\n    openai_api_version=os.environ["AZURE_OPENAI_API_VERSION"],\n`;
+  const nvidiaParamsOrDefault = nvidiaParams ?? `model="meta/llama3-70b-instruct"`
+  const awsBedrockParamsOrDefault = awsBedrockParams ?? `model_id="anthropic.claude-3-5-sonnet-20240620-v1:0"`;
 
   const llmVarName = customVarName ?? "model";
 
@@ -119,6 +129,15 @@ export default function ChatModelTabs(props) {
       shouldHide: hideCohere,
     },
     {
+      value: "NVIDIA",
+      label: "NVIDIA",
+      text: `from langchain_nvidia_ai_endpoints import ChatNVIDIA\n\n${llmVarName} = ChatNVIDIA(${nvidiaParamsOrDefault})`,
+      apiKeyName: "NVIDIA_API_KEY",
+      packageName: "langchain-nvidia-ai-endpoints",
+      default: false,
+      shouldHide: hideNvidia,
+    },
+    {
       value: "FireworksAI",
       label: "FireworksAI",
       text: `from langchain_fireworks import ChatFireworks\n\n${llmVarName} = ChatFireworks(${fireworksParamsOrDefault})`,
@@ -154,6 +173,15 @@ export default function ChatModelTabs(props) {
       default: false,
       shouldHide: hideTogether,
     },
+    {
+      value: "AWS",
+      label: "AWS",
+      text: `from langchain_aws import ChatBedrock\n\n${llmVarName} = ChatBedrock(${awsBedrockParamsOrDefault})`,
+      apiKeyText: "# Ensure your AWS credentials are configured",
+      packageName: "langchain-aws",
+      default: false,
+      shouldHide: hideAWS,
+    },
   ];
 
   return (
@@ -161,18 +189,29 @@ export default function ChatModelTabs(props) {
       {tabItems
         .filter((tabItem) => !tabItem.shouldHide)
         .map((tabItem) => {
-          const apiKeyText = `import getpass
+          let apiKeyText = "";
+          if (tabItem.apiKeyName) {
+            apiKeyText = `import getpass
 import os
 
 os.environ["${tabItem.apiKeyName}"] = getpass.getpass()`;
+          } else if (tabItem.apiKeyText) {
+            apiKeyText = tabItem.apiKeyText;
+          }
+
           return (
             <TabItem
+              key={tabItem.value}
               value={tabItem.value}
               label={tabItem.label}
               default={tabItem.default}
             >
-              <CodeBlock language="bash">{`pip install -qU ${tabItem.packageName}`}</CodeBlock>              
-              <CodeBlock language="python">{apiKeyText + "\n\n" + tabItem.text}</CodeBlock>
+              <CodeBlock language="bash">
+                {`pip install -qU ${tabItem.packageName}`}
+              </CodeBlock>
+              <CodeBlock language="python">
+                {apiKeyText ? apiKeyText + "\n\n" + tabItem.text : tabItem.text}
+              </CodeBlock>
             </TabItem>
           );
         })

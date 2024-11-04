@@ -2,8 +2,8 @@ from typing import Any, Dict, List, Mapping, Optional
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from langchain_core.pydantic_v1 import Extra, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
+from pydantic import ConfigDict, SecretStr
 
 
 class NLPCloud(LLM):
@@ -19,7 +19,7 @@ class NLPCloud(LLM):
             nlpcloud = NLPCloud(model="finetuned-gpt-neox-20b")
     """
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     model_name: str = "finetuned-gpt-neox-20b"
     """Model name to use."""
     gpu: bool = True
@@ -51,12 +51,11 @@ class NLPCloud(LLM):
 
     nlpcloud_api_key: Optional[SecretStr] = None
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
-        extra = Extra.forbid
-
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["nlpcloud_api_key"] = convert_to_secret_str(

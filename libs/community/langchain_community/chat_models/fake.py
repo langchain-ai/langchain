@@ -1,4 +1,5 @@
 """Fake ChatModel for testing purposes."""
+
 import asyncio
 import time
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Union

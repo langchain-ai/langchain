@@ -1,4 +1,5 @@
 """Unit test for Google Trends API Wrapper."""
+
 import os
 from unittest.mock import patch
 

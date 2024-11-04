@@ -1,14 +1,15 @@
 """Standard LangChain interface tests"""
 
-import base64
-from typing import Type, cast
+from pathlib import Path
+from typing import Dict, List, Literal, Type, cast
 
-import httpx
 from langchain_core.language_models import BaseChatModel
-from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.messages import AIMessage
 from langchain_standard_tests.integration_tests import ChatModelIntegrationTests
 
 from langchain_openai import ChatOpenAI
+
+REPO_ROOT_DIR = Path(__file__).parents[6]
 
 
 class TestOpenAIStandard(ChatModelIntegrationTests):
@@ -18,69 +19,56 @@ class TestOpenAIStandard(ChatModelIntegrationTests):
 
     @property
     def chat_model_params(self) -> dict:
-        return {"model": "gpt-4o"}
+        return {"model": "gpt-4o-mini", "stream_usage": True}
 
     @property
     def supports_image_inputs(self) -> bool:
         return True
 
-    # TODO: Add to standard tests if reliable token counting is added to other models.
-    def test_image_token_counting_jpeg(self, model: BaseChatModel) -> None:
-        image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
-        message = HumanMessage(
-            content=[
-                {"type": "text", "text": "describe the weather in this image"},
-                {"type": "image_url", "image_url": {"url": image_url}},
+    @property
+    def supported_usage_metadata_details(
+        self,
+    ) -> Dict[
+        Literal["invoke", "stream"],
+        List[
+            Literal[
+                "audio_input",
+                "audio_output",
+                "reasoning_output",
+                "cache_read_input",
+                "cache_creation_input",
             ]
-        )
-        expected = cast(AIMessage, model.invoke([message])).usage_metadata[  # type: ignore[index]
-            "input_tokens"
-        ]
-        actual = model.get_num_tokens_from_messages([message])
-        assert expected == actual
+        ],
+    ]:
+        return {"invoke": ["reasoning_output", "cache_read_input"], "stream": []}
 
-        image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
-        message = HumanMessage(
-            content=[
-                {"type": "text", "text": "describe the weather in this image"},
-                {
-                    "type": "image_url",
-                    "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
-                },
-            ]
-        )
-        expected = cast(AIMessage, model.invoke([message])).usage_metadata[  # type: ignore[index]
-            "input_tokens"
-        ]
-        actual = model.get_num_tokens_from_messages([message])
-        assert expected == actual
+    def invoke_with_cache_read_input(self, *, stream: bool = False) -> AIMessage:
+        with open(REPO_ROOT_DIR / "README.md", "r") as f:
+            readme = f.read()
 
-    def test_image_token_counting_png(self, model: BaseChatModel) -> None:
-        image_url = "https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png"
-        message = HumanMessage(
-            content=[
-                {"type": "text", "text": "how many dice are in this image"},
-                {"type": "image_url", "image_url": {"url": image_url}},
-            ]
-        )
-        expected = cast(AIMessage, model.invoke([message])).usage_metadata[  # type: ignore[index]
-            "input_tokens"
-        ]
-        actual = model.get_num_tokens_from_messages([message])
-        assert expected == actual
+        input_ = f"""What's langchain? Here's the langchain README:
+        
+        {readme}
+        """
+        llm = ChatOpenAI(model="gpt-4o-mini", stream_usage=True)
+        _invoke(llm, input_, stream)
+        # invoke twice so first invocation is cached
+        return _invoke(llm, input_, stream)
 
-        image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
-        message = HumanMessage(
-            content=[
-                {"type": "text", "text": "how many dice are in this image"},
-                {
-                    "type": "image_url",
-                    "image_url": {"url": f"data:image/png;base64,{image_data}"},
-                },
-            ]
+    def invoke_with_reasoning_output(self, *, stream: bool = False) -> AIMessage:
+        llm = ChatOpenAI(model="o1-mini", stream_usage=True, temperature=1)
+        input_ = (
+            "explain  the relationship between the 2008/9 economic crisis and the "
+            "startup ecosystem in the early 2010s"
         )
-        expected = cast(AIMessage, model.invoke([message])).usage_metadata[  # type: ignore[index]
-            "input_tokens"
-        ]
-        actual = model.get_num_tokens_from_messages([message])
-        assert expected == actual
+        return _invoke(llm, input_, stream)
+
+
+def _invoke(llm: ChatOpenAI, input_: str, stream: bool) -> AIMessage:
+    if stream:
+        full = None
+        for chunk in llm.stream(input_):
+            full = full + chunk if full else chunk  # type: ignore[operator]
+        return cast(AIMessage, full)
+    else:
+        return cast(AIMessage, llm.invoke(input_))
