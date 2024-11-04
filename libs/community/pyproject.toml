@@ -103,6 +103,8 @@ vcrpy = "^6"
 ruff = "^0.5"
 # TODO: hack to fix 3.9 builds
 cffi = [{version = "<1.17.1", python="<3.10"}, {version = "*", python=">=3.10"}]
+# TODO: hack to fix 3.12 builds
+orjson = "<3.10.0"
 
 
 [tool.poetry.group.dev.dependencies]
