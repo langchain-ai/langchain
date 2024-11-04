@@ -69,7 +69,10 @@ def convert_message_to_dict(message: BaseMessage) -> dict:
             message_dict["function_call"] = message.additional_kwargs["function_call"]
         elif len(message.tool_calls) != 0:
             tool_call = message.tool_calls[0]
-            message_dict["function_call"] = {"name": tool_call["name"], "args": tool_call["args"]}
+            message_dict["function_call"] = {
+                "name": tool_call["name"],
+                "args": tool_call["args"],
+            }
 
         # If function call only, content is None not empty string
         if "function_call" in message_dict and message_dict["content"] == "":
