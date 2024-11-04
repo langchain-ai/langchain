@@ -832,11 +832,8 @@ class SambaNovaCloud(LLM):
         if self.streaming:
             completion = ""
             for chunk in self._stream(
-                prompt=prompt,
-                stop=stop, 
-                run_manager=run_manager, 
-                **kwargs
-                ):
+                prompt=prompt, stop=stop, run_manager=run_manager, **kwargs
+            ):
                 completion += chunk.text
 
             return completion
