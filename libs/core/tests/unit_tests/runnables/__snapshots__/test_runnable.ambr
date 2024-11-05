@@ -2752,12 +2752,20 @@
           .. versionadded:: 0.3.9
         ''',
         'properties': dict({
+          'accepted_prediction': dict({
+            'title': 'Accepted Prediction',
+            'type': 'integer',
+          }),
           'audio': dict({
             'title': 'Audio',
             'type': 'integer',
           }),
           'reasoning': dict({
             'title': 'Reasoning',
+            'type': 'integer',
+          }),
+          'rejected_prediction': dict({
+            'title': 'Rejected Prediction',
             'type': 'integer',
           }),
         }),
@@ -4225,12 +4233,20 @@
           .. versionadded:: 0.3.9
         ''',
         'properties': dict({
+          'accepted_prediction': dict({
+            'title': 'Accepted Prediction',
+            'type': 'integer',
+          }),
           'audio': dict({
             'title': 'Audio',
             'type': 'integer',
           }),
           'reasoning': dict({
             'title': 'Reasoning',
+            'type': 'integer',
+          }),
+          'rejected_prediction': dict({
+            'title': 'Rejected Prediction',
             'type': 'integer',
           }),
         }),
@@ -5729,12 +5745,20 @@
           .. versionadded:: 0.3.9
         ''',
         'properties': dict({
+          'accepted_prediction': dict({
+            'title': 'Accepted Prediction',
+            'type': 'integer',
+          }),
           'audio': dict({
             'title': 'Audio',
             'type': 'integer',
           }),
           'reasoning': dict({
             'title': 'Reasoning',
+            'type': 'integer',
+          }),
+          'rejected_prediction': dict({
+            'title': 'Rejected Prediction',
             'type': 'integer',
           }),
         }),
@@ -7109,12 +7133,20 @@
           .. versionadded:: 0.3.9
         ''',
         'properties': dict({
+          'accepted_prediction': dict({
+            'title': 'Accepted Prediction',
+            'type': 'integer',
+          }),
           'audio': dict({
             'title': 'Audio',
             'type': 'integer',
           }),
           'reasoning': dict({
             'title': 'Reasoning',
+            'type': 'integer',
+          }),
+          'rejected_prediction': dict({
+            'title': 'Rejected Prediction',
             'type': 'integer',
           }),
         }),
@@ -8624,12 +8656,20 @@
           .. versionadded:: 0.3.9
         ''',
         'properties': dict({
+          'accepted_prediction': dict({
+            'title': 'Accepted Prediction',
+            'type': 'integer',
+          }),
           'audio': dict({
             'title': 'Audio',
             'type': 'integer',
           }),
           'reasoning': dict({
             'title': 'Reasoning',
+            'type': 'integer',
+          }),
+          'rejected_prediction': dict({
+            'title': 'Rejected Prediction',
             'type': 'integer',
           }),
         }),
@@ -10049,12 +10089,20 @@
           .. versionadded:: 0.3.9
         ''',
         'properties': dict({
+          'accepted_prediction': dict({
+            'title': 'Accepted Prediction',
+            'type': 'integer',
+          }),
           'audio': dict({
             'title': 'Audio',
             'type': 'integer',
           }),
           'reasoning': dict({
             'title': 'Reasoning',
+            'type': 'integer',
+          }),
+          'rejected_prediction': dict({
+            'title': 'Rejected Prediction',
             'type': 'integer',
           }),
         }),
@@ -11472,12 +11520,20 @@
           .. versionadded:: 0.3.9
         ''',
         'properties': dict({
+          'accepted_prediction': dict({
+            'title': 'Accepted Prediction',
+            'type': 'integer',
+          }),
           'audio': dict({
             'title': 'Audio',
             'type': 'integer',
           }),
           'reasoning': dict({
             'title': 'Reasoning',
+            'type': 'integer',
+          }),
+          'rejected_prediction': dict({
+            'title': 'Rejected Prediction',
             'type': 'integer',
           }),
         }),
@@ -12937,12 +12993,20 @@
           .. versionadded:: 0.3.9
         ''',
         'properties': dict({
+          'accepted_prediction': dict({
+            'title': 'Accepted Prediction',
+            'type': 'integer',
+          }),
           'audio': dict({
             'title': 'Audio',
             'type': 'integer',
           }),
           'reasoning': dict({
             'title': 'Reasoning',
+            'type': 'integer',
+          }),
+          'rejected_prediction': dict({
+            'title': 'Rejected Prediction',
             'type': 'integer',
           }),
         }),
