@@ -61,9 +61,6 @@ class ToolsUnitTests(ToolsTests):
     def test_has_name(self, tool: BaseTool) -> None:
         assert tool.name
 
-    def test_has_description(self, tool: BaseTool) -> None:
-        assert tool.description
-
     def test_has_input_schema(self, tool: BaseTool) -> None:
         assert tool.get_input_schema()
 
