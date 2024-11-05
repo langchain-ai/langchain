@@ -1,8 +1,6 @@
-"""Unit tests for Writer chat model integration."""
-
 import json
 from typing import Any, Dict, List, Optional
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from langchain_core.callbacks.manager import CallbackManager
@@ -10,6 +8,8 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, Tool
 
 from langchain_community.chat_models.writer import ChatWriter
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
+
+"""Classes for mocking Writer responses."""
 
 
 class ChoiceDelta:
@@ -104,16 +104,33 @@ class Chat:
         self.choices = choices
 
 
+"""Unit tests for Writer chat model integration."""
+
+
 class TestChatWriter:
     def test_writer_model_param(self) -> None:
         """Test different ways to initialize the chat model."""
         test_cases: List[dict] = [
-            {"model_name": "palmyra-x-004"},
-            {"model": "palmyra-x-004"},
-            {"model_name": "palmyra-x-004"},
+            {
+                "model_name": "palmyra-x-004",
+                "client": MagicMock(),
+                "async_client": AsyncMock(),
+            },
+            {
+                "model": "palmyra-x-004",
+                "client": MagicMock(),
+                "async_client": AsyncMock(),
+            },
+            {
+                "model_name": "palmyra-x-004",
+                "client": MagicMock(),
+                "async_client": AsyncMock(),
+            },
             {
                 "model": "palmyra-x-004",
                 "temperature": 0.5,
+                "client": MagicMock(),
+                "async_client": AsyncMock(),
             },
         ]
 
@@ -183,7 +200,6 @@ class TestChatWriter:
     @pytest.fixture(autouse=True)
     def mock_unstreaming_completion(self) -> Chat:
         """Fixture providing a mock API response."""
-
         return Chat(
             id="chat-12345",
             object="chat.completion",
@@ -270,30 +286,30 @@ class TestChatWriter:
         self, mock_unstreaming_completion: List[ChatCompletionChunk]
     ) -> None:
         """Test basic chat completion with mocked response."""
-        chat = ChatWriter()
         mock_client = MagicMock()
         mock_client.chat.chat.return_value = mock_unstreaming_completion
 
-        with patch.object(chat, "client", mock_client):
-            message = HumanMessage(content="Hi there!")
-            response = chat.invoke([message])
-            assert isinstance(response, AIMessage)
-            assert response.content == "Hello! How can I help you?"
+        chat = ChatWriter(client=mock_client, async_client=AsyncMock())
+
+        message = HumanMessage(content="Hi there!")
+        response = chat.invoke([message])
+        assert isinstance(response, AIMessage)
+        assert response.content == "Hello! How can I help you?"
 
     @pytest.mark.asyncio
     async def test_async_completion(
         self, mock_unstreaming_completion: List[ChatCompletionChunk]
     ) -> None:
         """Test async chat completion with mocked response."""
-        chat = ChatWriter()
         mock_client = AsyncMock()
         mock_client.chat.chat.return_value = mock_unstreaming_completion
 
-        with patch.object(chat, "async_client", mock_client):
-            message = HumanMessage(content="Hi there!")
-            response = await chat.ainvoke([message])
-            assert isinstance(response, AIMessage)
-            assert response.content == "Hello! How can I help you?"
+        chat = ChatWriter(client=MagicMock(), async_client=mock_client)
+
+        message = HumanMessage(content="Hi there!")
+        response = await chat.ainvoke([message])
+        assert isinstance(response, AIMessage)
+        assert response.content == "Hello! How can I help you?"
 
     def test_sync_streaming(
         self, mock_streaming_chunks: List[ChatCompletionChunk]
@@ -302,27 +318,25 @@ class TestChatWriter:
         callback_handler = FakeCallbackHandler()
         callback_manager = CallbackManager([callback_handler])
 
-        chat = ChatWriter(
-            callback_manager=callback_manager,
-            max_tokens=10,
-        )
-
         mock_client = MagicMock()
         mock_response = MagicMock()
         mock_response.__iter__.return_value = mock_streaming_chunks
         mock_client.chat.chat.return_value = mock_response
 
-        with patch.object(chat, "client", mock_client):
-            message = HumanMessage(content="Hi")
-            response = chat.stream([message])
+        chat = ChatWriter(
+            client=mock_client,
+            async_client=AsyncMock(),
+            callback_manager=callback_manager,
+            max_tokens=10,
+        )
 
-            response_message = ""
-
-            for chunk in response:
-                response_message += str(chunk.content)
-
-            assert callback_handler.llm_streams > 0
-            assert response_message == "Hello! How can I help you?"
+        message = HumanMessage(content="Hi")
+        response = chat.stream([message])
+        response_message = ""
+        for chunk in response:
+            response_message += str(chunk.content)
+        assert callback_handler.llm_streams > 0
+        assert response_message == "Hello! How can I help you?"
 
     @pytest.mark.asyncio
     async def test_async_streaming(
@@ -332,27 +346,25 @@ class TestChatWriter:
         callback_handler = FakeCallbackHandler()
         callback_manager = CallbackManager([callback_handler])
 
-        chat = ChatWriter(
-            callback_manager=callback_manager,
-            max_tokens=10,
-        )
-
         mock_client = AsyncMock()
         mock_response = AsyncMock()
         mock_response.__aiter__.return_value = mock_streaming_chunks
         mock_client.chat.chat.return_value = mock_response
 
-        with patch.object(chat, "async_client", mock_client):
-            message = HumanMessage(content="Hi")
-            response = chat.astream([message])
+        chat = ChatWriter(
+            client=MagicMock(),
+            async_client=mock_client,
+            callback_manager=callback_manager,
+            max_tokens=10,
+        )
 
-            response_message = ""
-
-            async for chunk in response:
-                response_message += str(chunk.content)
-
-            assert callback_handler.llm_streams > 0
-            assert response_message == "Hello! How can I help you?"
+        message = HumanMessage(content="Hi")
+        response = chat.astream([message])
+        response_message = ""
+        async for chunk in response:
+            response_message += str(chunk.content)
+        assert callback_handler.llm_streams > 0
+        assert response_message == "Hello! How can I help you?"
 
     def test_sync_tool_calling(
         self, mock_tool_call_choice_response: Dict[str, Any]
@@ -368,7 +380,7 @@ class TestChatWriter:
         mock_client = MagicMock()
         mock_client.chat.chat.return_value = mock_tool_call_choice_response
 
-        chat = ChatWriter(client=mock_client)
+        chat = ChatWriter(client=mock_client, async_client=AsyncMock())
 
         chat_with_tools = chat.bind_tools(
             tools=[GetWeather],
@@ -396,7 +408,7 @@ class TestChatWriter:
         mock_client = AsyncMock()
         mock_client.chat.chat.return_value = mock_tool_call_choice_response
 
-        chat = ChatWriter(async_client=mock_client)
+        chat = ChatWriter(client=MagicMock(), async_client=mock_client)
 
         chat_with_tools = chat.bind_tools(
             tools=[GetWeather],

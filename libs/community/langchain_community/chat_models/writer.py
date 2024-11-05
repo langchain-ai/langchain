@@ -54,12 +54,20 @@ class ChatWriter(BaseChatModel):
         .. code-block:: python
 
             from langchain_community.chat_models import ChatWriter
+            from writerai import Writer, AsyncWriter
 
-            chat = ChatWriter(model="palmyra-x-004")
+            client = Writer()
+            async_client = AsyncWriter()
+
+            chat = ChatWriter(
+                client=client,
+                async_client=async_client,
+                model="palmyra-x-004"
+            )
     """
 
-    client: Any = Field(default=None, exclude=True)  #: :meta private:
-    async_client: Any = Field(default=None, exclude=True)  #: :meta private:
+    client: Any = Field(exclude=True)  #: :meta private:
+    async_client: Any = Field(exclude=True)  #: :meta private:
     model_name: str = Field(default="palmyra-x-004", alias="model")
     """Model name to use."""
     temperature: float = 0.7
