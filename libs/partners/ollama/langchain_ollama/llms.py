@@ -38,6 +38,10 @@ class OllamaLLM(BaseLLM):
     model: str
     """Model name to use."""
 
+    images: Optional[List[str]] = None
+    """List of images to bind to the model. Input into prompts
+    using this model. (Default: [])"""
+
     mirostat: Optional[int] = None
     """Enable Mirostat sampling for controlling perplexity.
     (default: 0, 0 = disabled, 1 = Mirostat, 2 = Mirostat 2.0)"""
@@ -132,6 +136,7 @@ class OllamaLLM(BaseLLM):
         return {
             "model": self.model,
             "format": self.format,
+            "images": self.images,
             "options": {
                 "mirostat": self.mirostat,
                 "mirostat_eta": self.mirostat_eta,
@@ -172,6 +177,37 @@ class OllamaLLM(BaseLLM):
         self._client = Client(host=self.base_url, **client_kwargs)
         self._async_client = AsyncClient(host=self.base_url, **client_kwargs)
         return self
+    
+    def _convert_images_to_ollama_input(
+        self,
+        image_list: List[str | dict]
+    ) -> List[str]:
+        """Format given images to pass as Ollama image input."""
+        images = []
+        if not image_list:
+            return images
+        for image in image_list:
+            if isinstance(image, str):
+                image_url = image
+            elif (
+                isinstance(image, dict)
+                and "url" in image
+                and isinstance(image["url"], str)
+            ):
+                image_url = image["url"]
+            else:
+                raise ValueError(
+                    "Only string image_url or dict with string 'url' "
+                    "inside content parts are supported."
+                )
+            
+            # Supports data:image.jpeg;base64,<image> format
+            # and base64 strings, and image paths.
+            if image_url.startswith("data:image/jpeg;base64,"):
+                images.append(image_url.split(",")[1])
+            else:
+                images.append(image_url)
+        return images
 
     async def _acreate_generate_stream(
         self,
@@ -191,9 +227,13 @@ class OllamaLLM(BaseLLM):
                 params[key] = kwargs[key]
 
         params["options"]["stop"] = stop
+        params["images"] = self._convert_images_to_ollama_input(params["images"])
+        if self.images is not None:
+            params["images"] += self.images
         async for part in await self._async_client.generate(
             model=params["model"],
             prompt=prompt,
+            images=params["images"],
             stream=True,
             options=Options(**params["options"]),
             keep_alive=params["keep_alive"],
@@ -219,9 +259,13 @@ class OllamaLLM(BaseLLM):
                 params[key] = kwargs[key]
 
         params["options"]["stop"] = stop
+        params["images"] = self._convert_images_to_ollama_input(params["images"])
+        if self.images is not None:
+            params["images"] += self.images
         yield from self._client.generate(
             model=params["model"],
             prompt=prompt,
+            images=params["images"],
             stream=True,
             options=Options(**params["options"]),
             keep_alive=params["keep_alive"],
