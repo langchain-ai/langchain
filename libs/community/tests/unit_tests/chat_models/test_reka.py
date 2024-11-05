@@ -4,6 +4,7 @@ from typing import Any, Dict, List
 from unittest.mock import MagicMock, patch
 
 import pytest
+import tiktoken
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from pydantic import ValidationError
 
@@ -302,3 +303,22 @@ def test_multiple_system_messages_error() -> None:
 
     with pytest.raises(ValueError, match="Multiple system messages are not supported."):
         convert_to_reka_messages(messages)
+
+
+@pytest.mark.requires("reka")
+def test_get_num_tokens() -> None:
+    """Test that token counting works correctly."""
+    llm = ChatReka()
+
+    # Test basic text
+    text = "Hello, world!"
+    expected_tokens = len(tiktoken.get_encoding("cl100k_base").encode(text))
+    assert llm.get_num_tokens(text) == expected_tokens
+
+    # Test empty string
+    assert llm.get_num_tokens("") == 0
+
+    # Test longer text with special characters
+    complex_text = "Hello 🌍! This is a test of the token counting"
+    expected_tokens = len(tiktoken.get_encoding("cl100k_base").encode(complex_text))
+    assert llm.get_num_tokens(complex_text) == expected_tokens

@@ -13,6 +13,7 @@ from typing import (
     Union,
 )
 
+import tiktoken
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -153,9 +154,9 @@ class ChatReka(BaseChatModel):
     default_request_timeout: Optional[float] = None
     max_retries: int = 2
     reka_api_key: Optional[str] = None
-    count_tokens: Optional[Callable[[str], int]] = None
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     model_config = ConfigDict(extra="forbid")
+    _tiktoken_encoder = None
 
     @model_validator(mode="before")
     @classmethod
@@ -330,11 +331,9 @@ class ChatReka(BaseChatModel):
 
     def get_num_tokens(self, text: str) -> int:
         """Calculate number of tokens."""
-        if self.count_tokens is None:
-            raise NotImplementedError(
-                "get_num_tokens() is not implemented for Reka models."
-            )
-        return self.count_tokens(text)
+        if self._tiktoken_encoder is None:
+            self._tiktoken_encoder = tiktoken.get_encoding("cl100k_base")
+        return len(self._tiktoken_encoder.encode(text))
 
     def bind_tools(
         self,
