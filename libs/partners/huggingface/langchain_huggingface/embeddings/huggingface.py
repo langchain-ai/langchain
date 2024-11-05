@@ -70,7 +70,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
         protected_namespaces=(),
     )
 
-    def embed(
+    def _embed(
         self, texts: list[str], encode_kwargs: Dict[str, Any]
     ) -> List[List[float]]:
         """
@@ -116,7 +116,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-        return self.embed(texts, self.encode_kwargs)
+        return self._embed(texts, self.encode_kwargs)
 
     def embed_query(self, text: str) -> List[float]:
         """Compute query embeddings using a HuggingFace transformer model.
@@ -132,4 +132,4 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
             if len(self.query_encode_kwargs) > 0
             else self.encode_kwargs
         )
-        return self.embed([text], embed_kwargs)[0]
+        return self._embed([text], embed_kwargs)[0]
