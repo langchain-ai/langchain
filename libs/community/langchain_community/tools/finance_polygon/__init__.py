@@ -6,6 +6,7 @@ from langchain_community.tools.finance_polygon.related_companies import PolygonR
 from langchain_community.tools.finance_polygon.exchanges import PolygonExchanges
 from langchain_community.tools.finance_polygon.conditions import PolygonConditions
 from langchain_community.tools.finance_polygon.stock_splits import PolygonStockSplits
+from langchain_community.tools.finance_polygon.stocks_financials import PolygonStocksFinancials
 
 __all__ = [
     "PolygonCryptoAggregates",
@@ -14,4 +15,5 @@ __all__ = [
     "PolygonExchanges",
     "PolygonConditions",
     "PolygonStockSplits",
+    "PolygonStocksFinancials",
 ]

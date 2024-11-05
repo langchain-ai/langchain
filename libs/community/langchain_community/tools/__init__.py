@@ -157,6 +157,10 @@ if TYPE_CHECKING:
         PolygonStockSplits,
     )
 
+    from langchain_community.tools.finance_polygon.stocks_financials import (
+        PolygonStocksFinancials,
+    )
+
     from langchain_community.tools.gmail import (
         GmailCreateDraft,
         GmailGetMessage,

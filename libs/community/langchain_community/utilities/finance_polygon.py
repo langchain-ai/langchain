@@ -243,6 +243,70 @@ class FinancePolygonAPIWrapper(BaseModel):
             raise ValueError(f"API Error: {data}")
 
         return data.get("results", None)
+    
+    def get_stocks_financials(self, **kwargs: Any) -> Optional[dict]:
+        """
+        Get a list of historical financial data for a stock ticker.
+
+        /vX/reference/financials?limit={limit}&apiKey={apiKey}
+        """
+
+        ticker = kwargs.get("ticker", None)
+        cik = kwargs.get("cik", None)
+        company_name = kwargs.get("company_name", None)
+        sic = kwargs.get("sic", None)
+        filing_date = kwargs.get("filing_date", None)
+        period_of_report_date = kwargs.get("period_of_report_date", None)
+        timeframe = kwargs.get("timeframe", None)
+        include_sources = kwargs.get("include_sources", None)
+        order = kwargs.get("order", None)
+        limit = kwargs.get("limit", 10)
+        sort = kwargs.get("sort", None)
+
+        url = POLYGON_BASE_URL + "vX/reference/financials?"
+
+        if ticker is not None:
+            url = url + f"ticker={ticker}&"
+
+        if cik is not None:
+            url = url + f"cik={cik}&"
+        
+        if company_name is not None:
+            url = url + f"company_name={company_name}&"
+        
+        if sic is not None:
+            url = url + f"sic={sic}&"
+        
+        if filing_date is not None:
+            url = url + f"filing_date={filing_date}&"
+
+        if period_of_report_date is not None:
+            url = url + f"period_of_report_date={period_of_report_date}&"
+
+        if timeframe is not None:
+            url = url + f"timeframe={timeframe}&"
+
+        if include_sources is not None:
+            url = url + f"include_sources={include_sources}&"
+
+        if order is not None:
+            url = url + f"order={order}&"
+
+        url = url + f"limit={limit}&"
+
+        if sort is not None:
+            url = url + f"sort={sort}&"
+
+        url = url + f"apiKey={self.polygon_api_key}"
+
+        response = requests.get(url)
+        data = response.json()
+
+        status = data.get("status", None)
+        if status not in ("OK"):
+            raise ValueError(f"API Error: {data}")
+        
+        return data.get("results", None)
 
 
     def run(self, mode: str, ticker: str, **kwargs: Any) -> str:
