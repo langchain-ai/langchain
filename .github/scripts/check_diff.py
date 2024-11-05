@@ -37,7 +37,6 @@ IGNORED_PARTNERS = [
 PY_312_MAX_PACKAGES = [
     f"libs/partners/{integration}"
     for integration in [
-        "anthropic",
         "chroma",
         "couchbase",
         "huggingface",
