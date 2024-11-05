@@ -1115,7 +1115,13 @@ class ChatAnthropic(BaseChatModel):
 
     @beta()
     def get_num_tokens_from_messages(self, messages: List[BaseMessage]) -> int:
-        """Count tokens in a sequence of input messages."""
+        """Count tokens in a sequence of input messages.
+
+        .. versionchanged:: 0.2.5
+
+                Uses Anthropic's token counting API to count tokens in messages. See:
+                https://docs.anthropic.com/en/api/messages-count-tokens
+        """
         if any(
             isinstance(tool, ToolMessage)
             or (isinstance(tool, AIMessage) and tool.tool_calls)
