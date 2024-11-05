@@ -36,7 +36,12 @@ from langchain_core.messages.function import FunctionMessage, FunctionMessageChu
 from langchain_core.messages.human import HumanMessage, HumanMessageChunk
 from langchain_core.messages.modifier import RemoveMessage
 from langchain_core.messages.system import SystemMessage, SystemMessageChunk
-from langchain_core.messages.tool import ToolCall, ToolMessage, ToolMessageChunk
+from langchain_core.messages.tool import (
+    InvalidToolCall,
+    ToolCall,
+    ToolMessage,
+    ToolMessageChunk,
+)
 
 if TYPE_CHECKING:
     from langchain_text_splitters import TextSplitter
@@ -1404,7 +1409,7 @@ def _get_message_openai_role(message: BaseMessage) -> str:
 
 
 def _convert_to_openai_tool_calls(
-    tool_calls: list[ToolCall], invalid=False
+    tool_calls: list[Union[ToolCall, InvalidToolCall]], invalid: bool = False
 ) -> list[dict]:
     return [
         {
