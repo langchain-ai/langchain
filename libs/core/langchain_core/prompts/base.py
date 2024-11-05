@@ -7,15 +7,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from functools import cached_property
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Generic,
-    Optional,
-    TypeVar,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Callable, Generic, Optional, TypeVar, Union
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -35,7 +27,6 @@ from langchain_core.utils.pydantic import create_model_v2
 
 if TYPE_CHECKING:
     from langchain_core.documents import Document
-
 
 FormatOutputType = TypeVar("FormatOutputType")
 
@@ -260,27 +251,47 @@ class BasePromptTemplate(
         """
         return self.format_prompt(**kwargs)
 
-    def partial(self, **kwargs: Union[str, Callable[[], str]]) -> BasePromptTemplate:
+    def partial(
+        self, **kwargs: Union[str, Callable[[], str], BasePromptTemplate]
+    ) -> BasePromptTemplate:
         """Return a partial of the prompt template.
 
         Args:
-            kwargs: Union[str, Callable[[], str], partial variables to set.
+            kwargs: Union[str, Callable[[], str], BasePromptTemplate],
+            partial variables to set.
 
         Returns:
             BasePromptTemplate: A partial of the prompt template.
         """
         prompt_dict = self.__dict__.copy()
-        prompt_dict["input_variables"] = list(
-            set(self.input_variables).difference(kwargs)
+        input_vars = set(self.input_variables).difference(kwargs)
+        partial_vars = {}
+        for key, partial_var in kwargs.items():
+            if isinstance(partial_var, BasePromptTemplate):
+                # Prepare partial arguments, excluding the current key
+                new_kwargs = kwargs.copy()
+                new_kwargs.pop(key)
+                partial_var = partial_var.partial(**new_kwargs)
+            partial_vars[key] = partial_var
+        prompt_dict.update(
+            {
+                "input_variables": list(input_vars),
+                "partial_variables": {**kwargs, **partial_vars},
+            }
         )
-        prompt_dict["partial_variables"] = {**self.partial_variables, **kwargs}
         return type(self)(**prompt_dict)
 
     def _merge_partial_and_user_variables(self, **kwargs: Any) -> dict[str, Any]:
         # Get partial params:
-        partial_kwargs = {
-            k: v if not callable(v) else v() for k, v in self.partial_variables.items()
-        }
+        partial_kwargs = {}
+        for k, v in self.partial_variables.items():
+            if isinstance(v, BasePromptTemplate):
+                # Propagate partial variables and kwargs to nested prompt templates
+                partial_kwargs[k] = v.format(**kwargs)
+            elif callable(v):
+                partial_kwargs[k] = v()
+            else:
+                partial_kwargs[k] = v
         return {**partial_kwargs, **kwargs}
 
     @abstractmethod

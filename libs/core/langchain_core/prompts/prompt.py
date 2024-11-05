@@ -8,6 +8,7 @@ from typing import Any, Optional, Union
 
 from pydantic import BaseModel, model_validator
 
+from langchain_core.prompts import BasePromptTemplate
 from langchain_core.prompts.string import (
     DEFAULT_FORMATTER_MAPPING,
     PromptTemplateFormat,
@@ -104,12 +105,24 @@ class PromptTemplate(StringPromptTemplate):
             )
 
         if values["template_format"]:
+            # Collect nested partial variables from
+            # BasePromptTemplate instances in partial_variables
+            nested_partial_vars = {
+                key
+                for partial_var in values["partial_variables"].values()
+                if isinstance(partial_var, BasePromptTemplate)
+                for key in partial_var.partial_variables
+            }
+
+            # Filter template variables based on
+            # partial_variables and nested_partial_vars
             values["input_variables"] = [
                 var
                 for var in get_template_variables(
                     values["template"], values["template_format"]
                 )
                 if var not in values["partial_variables"]
+                and var not in nested_partial_vars
             ]
 
         return values

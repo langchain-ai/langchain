@@ -403,6 +403,58 @@ def test_partial() -> None:
     assert result == "This is a foo test."
 
 
+def test_nested_prompt_template_as_partial() -> None:
+    """Test prompt with PromptTemplate as partial variable."""
+    template_nested = "{bar}"
+    prompt_nested = PromptTemplate(input_variables=["bar"], template=template_nested)
+
+    template = "This is a {foo} test."
+    prompt = PromptTemplate(input_variables=["foo"], template=template)
+    assert prompt.template == template
+    assert prompt.input_variables == ["foo"]
+
+    new_prompt = prompt.partial(foo=prompt_nested)
+    assert new_prompt.input_variables == []
+    assert new_prompt.partial_variables["foo"].input_variables == ["bar"]
+    assert new_prompt.partial_variables["foo"].partial_variables == {}
+    result = new_prompt.format(bar="bar")
+    assert result == "This is a bar test."
+
+    new_prompt = prompt.partial(foo=prompt_nested, bar="bar")
+    assert new_prompt.input_variables == []
+    assert new_prompt.partial_variables["foo"].input_variables == []
+    assert new_prompt.partial_variables["foo"].partial_variables == {"bar": "bar"}
+    result = new_prompt.format()
+    assert result == "This is a bar test."
+
+
+def test_nested_prompt_template_with_shared_variable() -> None:
+    """Test prompt with PromptTemplate as partial variable, sharing another variable."""
+    template_nested = "{bar}"
+    prompt_nested = PromptTemplate(
+        input_variables=["bar", "foo"], template=template_nested
+    )
+
+    template = "This is a {foo} {bar} test."
+    prompt = PromptTemplate(input_variables=["foo", "bar"], template=template)
+    assert prompt.template == template
+    assert prompt.input_variables == ["bar", "foo"]
+
+    new_prompt = prompt.partial(foo=prompt_nested)
+    assert new_prompt.input_variables == ["bar"]
+    assert new_prompt.partial_variables["foo"].input_variables == ["bar"]
+    assert new_prompt.partial_variables["foo"].partial_variables == {}
+    result = new_prompt.format(bar="bar")
+    assert result == "This is a bar bar test."
+
+    new_prompt = prompt.partial(foo=prompt_nested, bar="bar")
+    assert new_prompt.input_variables == []
+    assert new_prompt.partial_variables["foo"].input_variables == []
+    assert new_prompt.partial_variables["foo"].partial_variables == {"bar": "bar"}
+    result = new_prompt.format()
+    assert result == "This is a bar bar test."
+
+
 @pytest.mark.requires("jinja2")
 def test_prompt_from_jinja2_template() -> None:
     """Test prompts can be constructed from a jinja2 template."""
@@ -508,7 +560,7 @@ def test_prompt_jinja2_missing_input_variables() -> None:
 
 @pytest.mark.requires("jinja2")
 def test_prompt_jinja2_extra_input_variables() -> None:
-    """Test error is raised when there are too many input variables."""
+    """Test warning is raised when there are too many input variables."""
     template = "This is a {{ foo }} test."
     input_variables = ["foo", "bar"]
     with pytest.warns(UserWarning):
@@ -525,7 +577,7 @@ def test_prompt_jinja2_extra_input_variables() -> None:
 
 @pytest.mark.requires("jinja2")
 def test_prompt_jinja2_wrong_input_variables() -> None:
-    """Test error is raised when name of input variable is wrong."""
+    """Test warning is raised when name of input variable is wrong."""
     template = "This is a {{ foo }} test."
     input_variables = ["bar"]
     with pytest.warns(UserWarning):
