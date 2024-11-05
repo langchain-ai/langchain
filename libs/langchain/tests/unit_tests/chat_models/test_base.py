@@ -180,9 +180,6 @@ def test_configurable_with_default() -> None:
     )
 
     assert model_with_config.model == "claude-3-sonnet-20240229"  # type: ignore[attr-defined]
-    # Anthropic defaults to using `transformers` for token counting.
-    with pytest.raises(ImportError):
-        model_with_config.get_num_tokens_from_messages([(HumanMessage("foo"))])  # type: ignore[attr-defined]
 
     assert model_with_config.model_dump() == {  # type: ignore[attr-defined]
         "name": None,
