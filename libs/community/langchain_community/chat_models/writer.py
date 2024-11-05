@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 from typing import (
     Any,
     AsyncIterator,
@@ -40,12 +39,7 @@ from langchain_core.messages import (
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.runnables import Runnable
 from langchain_core.utils.function_calling import convert_to_openai_tool
-from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
-
-try:
-    from writerai import AsyncWriter, Writer
-except ImportError as e:
-    raise ImportError("Please install Writer SDK!") from e
+from pydantic import BaseModel, ConfigDict, Field
 
 logger = logging.getLogger(__name__)
 
@@ -72,10 +66,6 @@ class ChatWriter(BaseChatModel):
     """What sampling temperature to use."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
-    writer_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
-    """Writer API key."""
-    writer_api_base: Optional[str] = Field(default=None, alias="base_url")
-    """Base URL for API requests."""
     n: int = 1
     """Number of chat completions to generate for each prompt."""
     max_tokens: Optional[int] = None
@@ -107,21 +97,6 @@ class ChatWriter(BaseChatModel):
             "max_tokens": self.max_tokens,
             **self.model_kwargs,
         }
-
-    @model_validator(mode="before")
-    def initialize_clients(cls, variables: Any) -> Any:
-        if not variables.get("api_key", ""):
-            variables["api_key"] = os.getenv("WRITER_API_KEY", "")
-
-        if variables["api_key"]:
-            if not variables.get("client"):
-                variables["client"] = Writer(api_key=variables["api_key"])
-            if not variables.get("async_client"):
-                variables["async_client"] = AsyncWriter(api_key=variables["api_key"])
-        else:
-            raise Exception("Writer API key not set")
-
-        return variables
 
     def _create_chat_result(self, response: Any) -> ChatResult:
         generations = []
