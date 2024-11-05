@@ -127,6 +127,33 @@ class FinancePolygonAPIWrapper(BaseModel):
             raise ValueError(f"API Error: {data}")
 
         return data.get("results", None)
+    
+
+    def get_exchanges(self, **kwagrs: Any) -> Optional[dict]:
+        """
+        Get a list of exchanges that Polygon.io knows about.
+
+        v3/reference/exchanges?asset_class={asset_class}&apiKey={apiKey}
+        """
+        
+        asset_class = kwagrs.get("asset_class", "stocks")
+        locale = kwagrs.get("locale", None)
+
+        url = POLYGON_BASE_URL + "v3/reference/exchanges?" + f"asset_class={asset_class}&"
+
+        if locale is not None:
+            url = url + f"locale={locale}&"
+        
+        url = url + f"apiKey={self.polygon_api_key}"
+
+        response = requests.get(url)
+        data = response.json()
+
+        status = data.get("status", None)
+        if status not in ("OK"):
+            raise ValueError(f"API Error: {data}")
+
+        return data.get("results", None)
 
 
     def run(self, mode: str, ticker: str, **kwargs: Any) -> str:
@@ -136,5 +163,7 @@ class FinancePolygonAPIWrapper(BaseModel):
             return json.dumps(self.get_ipos(**kwargs))
         elif mode == "get_related_companies":
             return json.dumps(self.get_related_companies(ticker))
+        elif mode == "get_exchanges":
+            return json.dumps(self.get_exchanges(**kwargs))
         else:
             raise ValueError(f"Invalid mode {mode} for Polygon API.")

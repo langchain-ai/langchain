@@ -33,8 +33,13 @@ class PolygonRelatedCompanies(BaseTool):
     def _run(
         self,
         ticker: str,
-    ) -> Optional[dict]:
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
         """
         Get related companies for a given ticker.
         """
-        return self.api_wrapper.get_related_companies(ticker=ticker)
+        return self.api_wrapper.run(
+            mode=self.mode,
+            ticker=ticker,
+            run_manager=run_manager
+        )

@@ -144,7 +144,11 @@ if TYPE_CHECKING:
     from langchain_community.tools.finance_polygon.related_companies import (
         PolygonRelatedCompanies,
     )
-    
+
+    from langchain_community.tools.finance_polygon.exchanges import (
+        PolygonExchanges,
+    )
+
     from langchain_community.tools.gmail import (
         GmailCreateDraft,
         GmailGetMessage,
