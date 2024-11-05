@@ -105,6 +105,28 @@ class FinancePolygonAPIWrapper(BaseModel):
             raise ValueError(f"API Error: {data}")
 
         return data.get("results", None)
+    
+    def get_related_companies(self, ticker: str) -> Optional[dict]:
+        """
+        Get a list of tickers related to the queried ticker based on News
+        and Returns data.
+
+        /v1/related-companies/{ticker}?apiKey={apiKey}
+        """
+
+        url = (
+            f"{POLYGON_BASE_URL}v1/related-companies"
+            f"/{ticker}"
+            f"?apiKey={self.polygon_api_key}"
+        )
+        response = requests.get(url)
+        data = response.json()
+
+        status = data.get("status", None)
+        if status not in ("OK"):
+            raise ValueError(f"API Error: {data}")
+
+        return data.get("results", None)
 
 
     def run(self, mode: str, ticker: str, **kwargs: Any) -> str:
@@ -112,5 +134,7 @@ class FinancePolygonAPIWrapper(BaseModel):
             return json.dumps(self.get_crypto_aggregates(ticker))
         elif mode == "get_ipos":
             return json.dumps(self.get_ipos(**kwargs))
+        elif mode == "get_related_companies":
+            return json.dumps(self.get_related_companies(ticker))
         else:
             raise ValueError(f"Invalid mode {mode} for Polygon API.")
