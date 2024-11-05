@@ -1,8 +1,7 @@
+from langchain_core.messages import ToolCall
 from langchain_core.tools import BaseTool
 
 from langchain_standard_tests.unit_tests.tools import ToolsTests
-
-from langchain_core.messages import ToolCall
 
 
 class ToolsIntegrationTests(ToolsTests):
