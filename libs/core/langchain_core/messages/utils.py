@@ -321,10 +321,11 @@ def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
                 "tool_calls" in msg_kwargs or "content" in msg_kwargs
             )
             if not content_or_tool_calls:
-                raise KeyError("Must have one of content or tool calls")
+                msg = "Must have one of content or tool calls"
+                raise KeyError(msg)
             msg_content = msg_kwargs.pop("content", "") or ""
         except KeyError as e:
-            msg = f"Message dict must contain 'role' and one of 'content' or 'tool_calls' keys, got {message}"
+            msg = f"Message dict must contain 'role' and one of 'content' or 'tool_calls' keys, got {message}"  # noqa: E501
             msg = create_message(
                 message=msg, error_code=ErrorCode.MESSAGE_COERCION_FAILURE
             )
