@@ -317,7 +317,7 @@ async def test_anthropic_async_streaming_callback() -> None:
 def test_anthropic_multimodal() -> None:
     """Test that multimodal inputs are handled correctly."""
     chat = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
-    messages = [
+    messages: list[BaseMessage] = [
         HumanMessage(
             content=[
                 {

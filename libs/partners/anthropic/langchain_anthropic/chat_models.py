@@ -1125,19 +1125,19 @@ class ChatAnthropic(BaseChatModel):
                 "get_num_tokens_from_messages does not yet support counting tokens "
                 "in tool calls."
             )
-        system, messages = _format_messages(messages)
-        if isinstance(system, str):
+        formatted_system, formatted_messages = _format_messages(messages)
+        if isinstance(formatted_system, str):
             response = self._client.beta.messages.count_tokens(
                 betas=["token-counting-2024-11-01"],
                 model=self.model,
-                system=system,
-                messages=messages,
+                system=formatted_system,
+                messages=formatted_messages,  # type: ignore[arg-type]
             )
         else:
             response = self._client.beta.messages.count_tokens(
                 betas=["token-counting-2024-11-01"],
                 model=self.model,
-                messages=messages,
+                messages=formatted_messages,  # type: ignore[arg-type]
             )
         return response.input_tokens
 
