@@ -4,10 +4,12 @@ from langchain_community.tools.finance_polygon.crypto_aggregates import PolygonC
 from langchain_community.tools.finance_polygon.ipos import PolygonIPOs
 from langchain_community.tools.finance_polygon.related_companies import PolygonRelatedCompanies
 from langchain_community.tools.finance_polygon.exchanges import PolygonExchanges
+from langchain_community.tools.finance_polygon.conditions import PolygonConditions
 
 __all__ = [
     "PolygonCryptoAggregates",
     "PolygonIPOs",
     "PolygonRelatedCompanies",
     "PolygonExchanges",
+    "PolygonConditions",
 ]

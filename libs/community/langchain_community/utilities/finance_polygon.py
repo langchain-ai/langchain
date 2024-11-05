@@ -154,6 +154,51 @@ class FinancePolygonAPIWrapper(BaseModel):
             raise ValueError(f"API Error: {data}")
 
         return data.get("results", None)
+    
+    def get_conditions(self, **kwargs: Any) -> Optional[dict]:
+        """
+        Get a list of conditions that Polygon.io uses.
+
+        /v3/reference/conditions?asset_class={asset_class}&limit={limit}&apiKey={apiKey}
+        """
+
+        asset_class = kwargs.get("asset_class", "stocks")
+        data_type = kwargs.get("data_type", None)
+        id = kwargs.get("id", None)
+        sip = kwargs.get("sip", None)
+        order = kwargs.get("order", None)
+        limit = kwargs.get("limit", 10)
+        sort = kwargs.get("sort", None)
+
+        url = POLYGON_BASE_URL + "v3/reference/conditions?" + f"asset_class={asset_class}&"
+
+        if data_type is not None:
+            url = url + f"data_type={data_type}&"
+        
+        if id is not None:
+            url = url + f"id={id}&"
+        
+        if sip is not None:
+            url = url + f"sip={sip}&"
+        
+        if order is not None:
+            url = url + f"order={order}&"
+        
+        url = url + f"limit={limit}&"
+
+        if sort is not None:
+            url = url + f"sort={sort}&"
+        
+        url = url + f"apiKey={self.polygon_api_key}"
+
+        response = requests.get(url)
+        data = response.json()
+
+        status = data.get("status", None)
+        if status not in ("OK"):
+            raise ValueError(f"API Error: {data}")
+        
+        return data.get("results", None)
 
 
     def run(self, mode: str, ticker: str, **kwargs: Any) -> str:
@@ -165,5 +210,7 @@ class FinancePolygonAPIWrapper(BaseModel):
             return json.dumps(self.get_related_companies(ticker))
         elif mode == "get_exchanges":
             return json.dumps(self.get_exchanges(**kwargs))
+        elif mode == "get_conditions":
+            return json.dumps(self.get_conditions(**kwargs))
         else:
             raise ValueError(f"Invalid mode {mode} for Polygon API.")

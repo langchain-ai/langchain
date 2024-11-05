@@ -149,6 +149,10 @@ if TYPE_CHECKING:
         PolygonExchanges,
     )
 
+    from langchain_community.tools.finance_polygon.conditions import (
+        PolygonConditions,
+    )
+
     from langchain_community.tools.gmail import (
         GmailCreateDraft,
         GmailGetMessage,
