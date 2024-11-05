@@ -199,6 +199,50 @@ class FinancePolygonAPIWrapper(BaseModel):
             raise ValueError(f"API Error: {data}")
         
         return data.get("results", None)
+    
+    def get_stock_splits(self, **kwargs: Any) -> Optional[dict]:
+        """
+        Get a list of historical stock splits for a specific ticker.
+
+        /v3/reference/splits?limit={limit}&apiKey={apiKey}
+        """
+
+        ticker = kwargs.get("ticker", None)
+        execution_date = kwargs.get("execution_date", None)
+        reverse_split = kwargs.get("reverse_split", None)
+        order = kwargs.get("order", None)
+        limit = kwargs.get("limit", 10)
+        sort = kwargs.get("sort", None)
+
+        url = POLYGON_BASE_URL + "v3/reference/splits?"
+
+        if ticker is not None:
+            url = url + f"ticker={ticker}&"
+        
+        if execution_date is not None:
+            url = url + f"execution_date={execution_date}&"
+        
+        if reverse_split is not None:
+            url = url + f"reverse_split={reverse_split}&"
+        
+        if order is not None:
+            url = url + f"order={order}&"
+
+        url = url + f"limit={limit}&"
+        
+        if sort is not None:
+            url = url + f"sort={sort}&"
+        
+        url = url + f"apiKey={self.polygon_api_key}"
+
+        response = requests.get(url)
+        data = response.json()
+
+        status = data.get("status", None)
+        if status not in ("OK"):
+            raise ValueError(f"API Error: {data}")
+
+        return data.get("results", None)
 
 
     def run(self, mode: str, ticker: str, **kwargs: Any) -> str:
@@ -212,5 +256,7 @@ class FinancePolygonAPIWrapper(BaseModel):
             return json.dumps(self.get_exchanges(**kwargs))
         elif mode == "get_conditions":
             return json.dumps(self.get_conditions(**kwargs))
+        elif mode == "get_stock_splits":
+            return json.dumps(self.get_stock_splits(**kwargs))
         else:
             raise ValueError(f"Invalid mode {mode} for Polygon API.")
