@@ -57,7 +57,7 @@ def _get_platform() -> str:
     return system
 
 
-class ShellTool(BaseTool):
+class ShellTool(BaseTool):  # type: ignore[override, override]
     """Tool to run shell commands."""
 
     process: Any = Field(default_factory=_get_default_bash_process)
