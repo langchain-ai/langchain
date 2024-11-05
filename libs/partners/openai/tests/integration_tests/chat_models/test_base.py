@@ -1055,9 +1055,9 @@ def test_prediction_tokens() -> None:
         prediction={"type": "content", "content": code},
     )
     assert isinstance(response, AIMessage)
-    assert response.usage_metadata is not None
-    output_token_details = response.usage_metadata["output_token_details"]
-    assert "accepted_prediction" in output_token_details
-    assert output_token_details["accepted_prediction"] > 0
-    assert "rejected_prediction" in output_token_details
-    assert output_token_details["rejected_prediction"] > 0
+    assert response.response_metadata is not None
+    output_token_details = response.response_metadata["token_usage"][
+        "completion_tokens_details"
+    ]
+    assert output_token_details["accepted_prediction_tokens"] > 0
+    assert output_token_details["rejected_prediction_tokens"] > 0
