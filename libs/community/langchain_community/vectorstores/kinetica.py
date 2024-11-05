@@ -12,11 +12,10 @@ from functools import partial
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type
 
 import numpy as np
-from pydantic_settings import SettingsConfigDict, BaseSettings
-
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
