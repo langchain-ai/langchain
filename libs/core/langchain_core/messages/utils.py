@@ -1409,7 +1409,7 @@ def _get_message_openai_role(message: BaseMessage) -> str:
 
 
 def _convert_to_openai_tool_calls(
-    tool_calls: list[Union[ToolCall, InvalidToolCall]], invalid: bool = False
+    tool_calls: Union[list[ToolCall], list[InvalidToolCall]], invalid: bool = False
 ) -> list[dict]:
     return [
         {
