@@ -39,8 +39,8 @@ class OllamaLLM(BaseLLM):
     """Model name to use."""
 
     images: Optional[List[str]] = None
-    """List of images to bind to the model. Input into prompts
-    using this model. (Default: [])"""
+    """A list of base64-encoded images to use as context. Only
+    supported by multimodal models. (Default: [])"""
 
     mirostat: Optional[int] = None
     """Enable Mirostat sampling for controlling perplexity.
