@@ -488,6 +488,7 @@ class VDMS(VectorStore):
             batch_texts = texts[start_idx:end_idx]
             batch_embedding_vectors = embeddings[start_idx:end_idx]
             batch_ids = ids[start_idx:end_idx]
+
             if metadatas:
                 batch_metadatas = metadatas[start_idx:end_idx]
 
@@ -1716,13 +1717,11 @@ class VDMS_Utils:
 
         if constraints is None:
             # K results returned
-            response, response_array, max_dist = self.get_k_candidates(
-                setname,
-                fetch_k,
-                results,
-                all_blobs,
-                normalize=normalize_distance,
-                k=k_neighbors,
+            response, response_array = self.get_k_candidates(
+                setname=setname,
+                k=fetch_k,
+                results=results,
+                all_blobs=all_blobs,
             )
         else:
             if results is None:
@@ -1749,8 +1748,11 @@ class VDMS_Utils:
                 return [], []
 
             # (2) Find top fetch_k results
-            response, response_array, max_dist = self.get_k_candidates(
-                setname, fetch_k, results, all_blobs, normalize=normalize_distance
+            response, response_array = self.get_k_candidates(
+                setname=setname,
+                k=fetch_k,
+                results=results,
+                all_blobs=all_blobs,
             )
             if command_str not in response[0] or (
                 command_str in response[0] and response[0][command_str]["returned"] == 0
@@ -1783,37 +1785,23 @@ class VDMS_Utils:
     def get_k_candidates(
         self,
         setname: str,
-        fetch_k: Optional[int],
+        k: Optional[int] = None,
         results: Optional[Dict[str, Any]] = None,
         all_blobs: Optional[List] = None,
-        normalize: Optional[bool] = False,
-        k: Optional[int] = None,
     ) -> Tuple[List[Dict[str, Any]], List, float]:
-        max_dist = 1
-        k = fetch_k if k is None else k
         command_str = "FindDescriptor"
         query = self.add_descriptor(
             command_str,
             setname,
-            k_neighbors=fetch_k,
+            k_neighbors=k,
             results=results,
         )
         response, response_array = self.run_vdms_query([query], all_blobs)
 
         if "FailedCommand" in response[0]:
-            return [], [], max_dist
+            return [], []
 
-        if k != fetch_k and "entities" in response[0][command_str]:
-            response[0][command_str]["entities"] = response[0][command_str]["entities"][
-                :k
-            ]
-            if len(response_array) != 0:
-                response_array = response_array[:k]
-
-        if normalize and command_str in response[0]:
-            max_dist = response[0][command_str]["entities"][-1]["_distance"]
-
-        return response, response_array, max_dist
+        return response, response_array
 
     def get_properties(
         self,
