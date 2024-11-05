@@ -177,10 +177,9 @@ class OllamaLLM(BaseLLM):
         self._client = Client(host=self.base_url, **client_kwargs)
         self._async_client = AsyncClient(host=self.base_url, **client_kwargs)
         return self
-    
+
     def _convert_images_to_ollama_input(
-        self,
-        image_list: List[str | dict]
+        self, image_list: List[str | dict]
     ) -> List[str]:
         """Format given images to pass as Ollama image input."""
         images = []
@@ -200,7 +199,7 @@ class OllamaLLM(BaseLLM):
                     "Only string image_url or dict with string 'url' "
                     "inside content parts are supported."
                 )
-            
+
             # Supports data:image.jpeg;base64,<image> format
             # and base64 strings, and image paths.
             if image_url.startswith("data:image/jpeg;base64,"):
