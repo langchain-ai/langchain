@@ -62,9 +62,55 @@ class FinancePolygonAPIWrapper(BaseModel):
             raise ValueError(f"API Error: {data}")
 
         return data.get("results", None)
+    
+    def get_ipos(self, **kwargs: Any) -> Optional[dict]:
+        """
+        Get IPOs for a specific ticker or other criteria.
+        
+        /vX/reference/ipos?limit={limit}&apiKey={apiKey}
+        """
+        ticker = kwargs.get("ticker", None)
+        us_code = kwargs.get("us_code", None)
+        isin = kwargs.get("isin", None)
+        listing_date = kwargs.get("listing_date", None)
+        ipo_status = kwargs.get("ipo_status", None)
+        order = kwargs.get("order", "asc")
+        limit = kwargs.get("limit", 10)
+        sort = kwargs.get("sort", "listing_date")
+
+        url = POLYGON_BASE_URL
+
+        if ticker is not None:
+            url = url +"vX/reference/ipos?" + f"ticker={ticker}&"
+        
+        if us_code is not None:
+            url = url + f"us_code={us_code}&"
+        
+        if isin is not None:
+            url = url + f"isin={isin}&"
+        
+        if listing_date is not None:
+            url = url + f"listing_date={listing_date}&"
+        
+        if ipo_status is not None:
+            url = url + f"ipo_status={ipo_status}&"
+        
+        url = url + f"order={order}&limit={limit}&sort={sort}&apiKey={self.polygon_api_key}"
+        
+        response = requests.get(url)
+        data = response.json()
+
+        status = data.get("status", None)
+        if status not in ("OK"):
+            raise ValueError(f"API Error: {data}")
+
+        return data.get("results", None)
+
 
     def run(self, mode: str, ticker: str, **kwargs: Any) -> str:
         if mode == "get_crypto_aggregate":
             return json.dumps(self.get_crypto_aggregates(ticker))
+        elif mode == "get_ipos":
+            return json.dumps(self.get_ipos(**kwargs))
         else:
             raise ValueError(f"Invalid mode {mode} for Polygon API.")
