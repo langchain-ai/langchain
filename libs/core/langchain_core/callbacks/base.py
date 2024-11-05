@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, List, Optional, Sequence, TypeVar, Union
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any, Optional, TypeVar, Union
 from uuid import UUID
 
 from tenacity import RetryCallState
@@ -274,9 +275,8 @@ class CallbackManagerMixin:
         """
         # NotImplementedError is thrown intentionally
         # Callback handler will fall back to on_llm_start if this is exception is thrown
-        raise NotImplementedError(
-            f"{self.__class__.__name__} does not implement `on_chat_model_start`"
-        )
+        msg = f"{self.__class__.__name__} does not implement `on_chat_model_start`"
+        raise NotImplementedError(msg)
 
     def on_retriever_start(
         self,
@@ -522,9 +522,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         """
         # NotImplementedError is thrown intentionally
         # Callback handler will fall back to on_llm_start if this is exception is thrown
-        raise NotImplementedError(
-            f"{self.__class__.__name__} does not implement `on_chat_model_start`"
-        )
+        msg = f"{self.__class__.__name__} does not implement `on_chat_model_start`"
+        raise NotImplementedError(msg)
 
     async def on_llm_new_token(
         self,
@@ -1070,4 +1069,4 @@ class BaseCallbackManager(CallbackManagerMixin):
             self.inheritable_metadata.pop(key)
 
 
-Callbacks = Optional[Union[List[BaseCallbackHandler], BaseCallbackManager]]
+Callbacks = Optional[Union[list[BaseCallbackHandler], BaseCallbackManager]]

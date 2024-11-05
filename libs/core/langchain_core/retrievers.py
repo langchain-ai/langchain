@@ -24,7 +24,7 @@ from __future__ import annotations
 import warnings
 from abc import ABC, abstractmethod
 from inspect import signature
-from typing import TYPE_CHECKING, Any, List, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from pydantic import ConfigDict
 from typing_extensions import TypedDict
@@ -47,7 +47,7 @@ if TYPE_CHECKING:
     )
 
 RetrieverInput = str
-RetrieverOutput = List[Document]
+RetrieverOutput = list[Document]
 RetrieverLike = Runnable[RetrieverInput, RetrieverOutput]
 RetrieverOutputLike = Runnable[Any, RetrieverOutput]
 
@@ -136,14 +136,14 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
     """Optional list of tags associated with the retriever. Defaults to None.
     These tags will be associated with each call to this retriever,
     and passed as arguments to the handlers defined in `callbacks`.
-    You can use these to eg identify a specific instance of a retriever with its 
+    You can use these to eg identify a specific instance of a retriever with its
     use case.
     """
     metadata: Optional[dict[str, Any]] = None
     """Optional metadata associated with the retriever. Defaults to None.
     This metadata will be associated with each call to this retriever,
     and passed as arguments to the handlers defined in `callbacks`.
-    You can use these to eg identify a specific instance of a retriever with its 
+    You can use these to eg identify a specific instance of a retriever with its
     use case.
     """
 

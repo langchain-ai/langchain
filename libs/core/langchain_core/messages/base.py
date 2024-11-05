@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Union, cast
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 from pydantic import ConfigDict, Field, field_validator
 
@@ -24,7 +25,7 @@ class BaseMessage(Serializable):
 
     additional_kwargs: dict = Field(default_factory=dict)
     """Reserved for additional payload data associated with the message.
-    
+
     For example, for a message from an AI, this could include tool calls as
     encoded by the model provider.
     """
@@ -34,16 +35,16 @@ class BaseMessage(Serializable):
 
     type: str
     """The type of the message. Must be a string that is unique to the message type.
-    
+
     The purpose of this field is to allow for easy identification of the message type
     when deserializing messages.
     """
 
     name: Optional[str] = None
-    """An optional name for the message. 
-    
+    """An optional name for the message.
+
     This can be used to provide a human-readable name for the message.
-    
+
     Usage of this field is optional, and whether it's used or not is up to the
     model implementation.
     """
@@ -143,7 +144,7 @@ def merge_content(
                 merged = [merged] + content  # type: ignore
         elif isinstance(content, list):
             # If both are lists
-            merged = merge_lists(cast(List, merged), content)  # type: ignore
+            merged = merge_lists(cast(list, merged), content)  # type: ignore
         # If the first content is a list, and the second content is a string
         else:
             # If the last element of the first content is a string
@@ -222,11 +223,12 @@ class BaseMessageChunk(BaseMessage):
                 response_metadata=response_metadata,
             )
         else:
-            raise TypeError(
+            msg = (
                 'unsupported operand type(s) for +: "'
                 f"{self.__class__.__name__}"
                 f'" and "{other.__class__.__name__}"'
             )
+            raise TypeError(msg)
 
 
 def message_to_dict(message: BaseMessage) -> dict:

@@ -77,6 +77,7 @@ EXPECTED_ALL = [
     "Relyt",
     "Rockset",
     "SKLearnVectorStore",
+    "SQLiteVec",
     "SQLiteVSS",
     "ScaNN",
     "SemaDB",

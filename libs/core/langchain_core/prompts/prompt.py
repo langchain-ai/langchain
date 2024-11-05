@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import warnings
 from pathlib import Path
-from typing import Any, Literal, Optional, Union
+from typing import Any, Optional, Union
 
 from pydantic import BaseModel, model_validator
 
 from langchain_core.prompts.string import (
     DEFAULT_FORMATTER_MAPPING,
+    PromptTemplateFormat,
     StringPromptTemplate,
     check_valid_template,
     get_template_variables,
@@ -24,7 +25,8 @@ class PromptTemplate(StringPromptTemplate):
     A prompt template consists of a string template. It accepts a set of parameters
     from the user that can be used to generate a prompt for a language model.
 
-    The template can be formatted using either f-strings (default) or jinja2 syntax.
+    The template can be formatted using either f-strings (default), jinja2,
+    or mustache syntax.
 
     *Security warning*:
         Prefer using `template_format="f-string"` instead of
@@ -67,7 +69,7 @@ class PromptTemplate(StringPromptTemplate):
     template: str
     """The prompt template."""
 
-    template_format: Literal["f-string", "mustache", "jinja2"] = "f-string"
+    template_format: PromptTemplateFormat = "f-string"
     """The format of the prompt template.
     Options are: 'f-string', 'mustache', 'jinja2'."""
 
@@ -89,12 +91,12 @@ class PromptTemplate(StringPromptTemplate):
 
         if values.get("validate_template"):
             if values["template_format"] == "mustache":
-                raise ValueError("Mustache templates cannot be validated.")
+                msg = "Mustache templates cannot be validated."
+                raise ValueError(msg)
 
             if "input_variables" not in values:
-                raise ValueError(
-                    "Input variables must be provided to validate the template."
-                )
+                msg = "Input variables must be provided to validate the template."
+                raise ValueError(msg)
 
             all_inputs = values["input_variables"] + list(values["partial_variables"])
             check_valid_template(
@@ -131,23 +133,22 @@ class PromptTemplate(StringPromptTemplate):
         # Allow for easy combining
         if isinstance(other, PromptTemplate):
             if self.template_format != "f-string":
-                raise ValueError(
-                    "Adding prompt templates only supported for f-strings."
-                )
+                msg = "Adding prompt templates only supported for f-strings."
+                raise ValueError(msg)
             if other.template_format != "f-string":
-                raise ValueError(
-                    "Adding prompt templates only supported for f-strings."
-                )
+                msg = "Adding prompt templates only supported for f-strings."
+                raise ValueError(msg)
             input_variables = list(
                 set(self.input_variables) | set(other.input_variables)
             )
             template = self.template + other.template
             # If any do not want to validate, then don't
             validate_template = self.validate_template and other.validate_template
-            partial_variables = {k: v for k, v in self.partial_variables.items()}
+            partial_variables = dict(self.partial_variables.items())
             for k, v in other.partial_variables.items():
                 if k in partial_variables:
-                    raise ValueError("Cannot have same variable partialed twice.")
+                    msg = "Cannot have same variable partialed twice."
+                    raise ValueError(msg)
                 else:
                     partial_variables[k] = v
             return PromptTemplate(
@@ -161,7 +162,8 @@ class PromptTemplate(StringPromptTemplate):
             prompt = PromptTemplate.from_template(other)
             return self + prompt
         else:
-            raise NotImplementedError(f"Unsupported operand type for +: {type(other)}")
+            msg = f"Unsupported operand type for +: {type(other)}"
+            raise NotImplementedError(msg)
 
     @property
     def _prompt_type(self) -> str:
@@ -248,7 +250,7 @@ class PromptTemplate(StringPromptTemplate):
         cls,
         template: str,
         *,
-        template_format: str = "f-string",
+        template_format: PromptTemplateFormat = "f-string",
         partial_variables: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> PromptTemplate:
@@ -270,7 +272,7 @@ class PromptTemplate(StringPromptTemplate):
         Args:
             template: The template to load.
             template_format: The format of the template. Use `jinja2` for jinja2,
-                             and `f-string` or None for f-strings.
+                             `mustache` for mustache, and `f-string` for f-strings.
                              Defaults to `f-string`.
             partial_variables: A dictionary of variables that can be used to partially
                                fill in the template. For example, if the template is
