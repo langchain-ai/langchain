@@ -1,43 +1,118 @@
 """Unit tests for Writer chat model integration."""
 
 import json
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from langchain_core.callbacks.manager import CallbackManager
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
-from pydantic import SecretStr
-from writerai.types import Chat
-from writerai.types.chat import (
-    Choice,
-    ChoiceLogprobs,
-    ChoiceLogprobsContent,
-    ChoiceLogprobsContentTopLogprob,
-    ChoiceLogprobsRefusal,
-    ChoiceLogprobsRefusalTopLogprob,
-    ChoiceMessage,
-    ChoiceMessageToolCall,
-    ChoiceMessageToolCallFunction,
-    Usage,
-)
-from writerai.types.chat_completion_chunk import ChatCompletionChunk, ChoiceDelta
-from writerai.types.chat_completion_chunk import Choice as ChunkChoice
 
 from langchain_community.chat_models.writer import ChatWriter
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
+
+
+class ChoiceDelta:
+    def __init__(self, content: str):
+        self.content = content
+
+
+class ChunkChoice:
+    def __init__(self, index: int, finish_reason: str, delta: ChoiceDelta):
+        self.index = index
+        self.finish_reason = finish_reason
+        self.delta = delta
+
+
+class ChatCompletionChunk:
+    def __init__(
+        self,
+        id: str,
+        object: str,
+        created: int,
+        model: str,
+        choices: List[ChunkChoice],
+    ):
+        self.id = id
+        self.object = object
+        self.created = created
+        self.model = model
+        self.choices = choices
+
+
+class ToolCallFunction:
+    def __init__(self, name: str, arguments: str):
+        self.name = name
+        self.arguments = arguments
+
+
+class ChoiceMessageToolCall:
+    def __init__(self, id: str, type: str, function: ToolCallFunction):
+        self.id = id
+        self.type = type
+        self.function = function
+
+
+class Usage:
+    def __init__(
+        self,
+        prompt_tokens: int,
+        completion_tokens: int,
+        total_tokens: int,
+    ):
+        self.prompt_tokens = prompt_tokens
+        self.completion_tokens = completion_tokens
+        self.total_tokens = total_tokens
+
+
+class ChoiceMessage:
+    def __init__(
+        self,
+        role: str,
+        content: str,
+        tool_calls: Optional[List[ChoiceMessageToolCall]] = None,
+    ):
+        self.role = role
+        self.content = content
+        self.tool_calls = tool_calls
+
+
+class Choice:
+    def __init__(self, index: int, finish_reason: str, message: ChoiceMessage):
+        self.index = index
+        self.finish_reason = finish_reason
+        self.message = message
+
+
+class Chat:
+    def __init__(
+        self,
+        id: str,
+        object: str,
+        created: int,
+        system_fingerprint: str,
+        model: str,
+        usage: Usage,
+        choices: List[Choice],
+    ):
+        self.id = id
+        self.object = object
+        self.created = created
+        self.system_fingerprint = system_fingerprint
+        self.model = model
+        self.usage = usage
+        self.choices = choices
 
 
 class TestChatWriter:
     def test_writer_model_param(self) -> None:
         """Test different ways to initialize the chat model."""
         test_cases: List[dict] = [
-            {"model_name": "palmyra-x-004", "api_key": "test-key"},
-            {"model": "palmyra-x-004", "api_key": "test-key"},
-            {"model_name": "palmyra-x-004", "api_key": "test-key"},
+            {"model_name": "palmyra-x-004"},
+            {"model": "palmyra-x-004"},
+            {"model_name": "palmyra-x-004"},
             {
                 "model": "palmyra-x-004",
-                "api_key": "test-key",
                 "temperature": 0.5,
             },
         ]
@@ -45,8 +120,6 @@ class TestChatWriter:
         for case in test_cases:
             chat = ChatWriter(**case)
             assert chat.model_name == "palmyra-x-004"
-            assert chat.writer_api_key
-            assert chat.writer_api_key.get_secret_value() == "test-key"
             assert chat.temperature == (0.5 if "temperature" in case else 0.7)
 
     def test_convert_writer_to_langchain_human(self) -> None:
@@ -110,40 +183,21 @@ class TestChatWriter:
     @pytest.fixture(autouse=True)
     def mock_unstreaming_completion(self) -> Chat:
         """Fixture providing a mock API response."""
+
         return Chat(
             id="chat-12345",
             object="chat.completion",
             created=1699000000,
             model="palmyra-x-004",
+            system_fingerprint="v1",
             usage=Usage(prompt_tokens=10, completion_tokens=8, total_tokens=18),
             choices=[
                 Choice(
                     index=0,
                     finish_reason="stop",
-                    logprobs=ChoiceLogprobs(
-                        content=[
-                            ChoiceLogprobsContent(
-                                token="",
-                                logprob=0,
-                                top_logprobs=[
-                                    ChoiceLogprobsContentTopLogprob(token="", logprob=0)
-                                ],
-                            )
-                        ],
-                        refusal=[
-                            ChoiceLogprobsRefusal(
-                                token="",
-                                logprob=0,
-                                top_logprobs=[
-                                    ChoiceLogprobsRefusalTopLogprob(token="", logprob=0)
-                                ],
-                            )
-                        ],
-                    ),
                     message=ChoiceMessage(
                         role="assistant",
                         content="Hello! How can I help you?",
-                        refusal="",
                     ),
                 )
             ],
@@ -156,39 +210,20 @@ class TestChatWriter:
             object="chat.completion",
             created=1699000000,
             model="palmyra-x-004",
+            system_fingerprint="v1",
+            usage=Usage(prompt_tokens=29, completion_tokens=32, total_tokens=61),
             choices=[
                 Choice(
                     index=0,
                     finish_reason="tool_calls",
-                    logprobs=ChoiceLogprobs(
-                        content=[
-                            ChoiceLogprobsContent(
-                                token="",
-                                logprob=0,
-                                top_logprobs=[
-                                    ChoiceLogprobsContentTopLogprob(token="", logprob=0)
-                                ],
-                            )
-                        ],
-                        refusal=[
-                            ChoiceLogprobsRefusal(
-                                token="",
-                                logprob=0,
-                                top_logprobs=[
-                                    ChoiceLogprobsRefusalTopLogprob(token="", logprob=0)
-                                ],
-                            )
-                        ],
-                    ),
                     message=ChoiceMessage(
                         role="assistant",
                         content="",
-                        refusal="",
                         tool_calls=[
                             ChoiceMessageToolCall(
                                 id="call_abc123",
                                 type="function",
-                                function=ChoiceMessageToolCallFunction(
+                                function=ToolCallFunction(
                                     name="GetWeather",
                                     arguments='{"location": "London"}',
                                 ),
@@ -235,7 +270,7 @@ class TestChatWriter:
         self, mock_unstreaming_completion: List[ChatCompletionChunk]
     ) -> None:
         """Test basic chat completion with mocked response."""
-        chat = ChatWriter(api_key=SecretStr("test-key"))
+        chat = ChatWriter()
         mock_client = MagicMock()
         mock_client.chat.chat.return_value = mock_unstreaming_completion
 
@@ -250,7 +285,7 @@ class TestChatWriter:
         self, mock_unstreaming_completion: List[ChatCompletionChunk]
     ) -> None:
         """Test async chat completion with mocked response."""
-        chat = ChatWriter(api_key=SecretStr("test-key"))
+        chat = ChatWriter()
         mock_client = AsyncMock()
         mock_client.chat.chat.return_value = mock_unstreaming_completion
 
@@ -270,7 +305,6 @@ class TestChatWriter:
         chat = ChatWriter(
             callback_manager=callback_manager,
             max_tokens=10,
-            api_key=SecretStr("test-key"),
         )
 
         mock_client = MagicMock()
@@ -301,7 +335,6 @@ class TestChatWriter:
         chat = ChatWriter(
             callback_manager=callback_manager,
             max_tokens=10,
-            api_key=SecretStr("test-key"),
         )
 
         mock_client = AsyncMock()
@@ -335,7 +368,7 @@ class TestChatWriter:
         mock_client = MagicMock()
         mock_client.chat.chat.return_value = mock_tool_call_choice_response
 
-        chat = ChatWriter(api_key=SecretStr("test-key"), client=mock_client)
+        chat = ChatWriter(client=mock_client)
 
         chat_with_tools = chat.bind_tools(
             tools=[GetWeather],
@@ -363,7 +396,7 @@ class TestChatWriter:
         mock_client = AsyncMock()
         mock_client.chat.chat.return_value = mock_tool_call_choice_response
 
-        chat = ChatWriter(api_key=SecretStr("test-key"), async_client=mock_client)
+        chat = ChatWriter(async_client=mock_client)
 
         chat_with_tools = chat.bind_tools(
             tools=[GetWeather],
