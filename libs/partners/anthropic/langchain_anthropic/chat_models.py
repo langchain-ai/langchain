@@ -21,7 +21,7 @@ from typing import (
 )
 
 import anthropic
-from langchain_core._api import deprecated
+from langchain_core._api import beta, deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -1112,6 +1112,34 @@ class ChatAnthropic(BaseChatModel):
             return RunnableMap(raw=llm) | parser_with_fallback
         else:
             return llm | output_parser
+
+    @beta()
+    def get_num_tokens_from_messages(self, messages: List[BaseMessage]) -> int:
+        """Count tokens in a sequence of input messages."""
+        if any(
+            isinstance(tool, ToolMessage)
+            or (isinstance(tool, AIMessage) and tool.tool_calls)
+            for tool in messages
+        ):
+            raise NotImplementedError(
+                "get_num_tokens_from_messages does not yet support counting tokens "
+                "in tool calls."
+            )
+        system, messages = _format_messages(messages)
+        if isinstance(system, str):
+            response = self._client.beta.messages.count_tokens(
+                betas=["token-counting-2024-11-01"],
+                model=self.model,
+                system=system,
+                messages=messages,
+            )
+        else:
+            response = self._client.beta.messages.count_tokens(
+                betas=["token-counting-2024-11-01"],
+                model=self.model,
+                messages=messages,
+            )
+        return response.input_tokens
 
 
 class AnthropicTool(TypedDict):

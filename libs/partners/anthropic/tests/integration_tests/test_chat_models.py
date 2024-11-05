@@ -334,6 +334,8 @@ def test_anthropic_multimodal() -> None:
     response = chat.invoke(messages)
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
+    num_tokens = chat.get_num_tokens_from_messages(messages)
+    assert num_tokens > 0
 
 
 def test_streaming() -> None:
@@ -503,6 +505,43 @@ def test_with_structured_output() -> None:
     response = structured_llm.invoke("what's the weather in san francisco, ca")
     assert isinstance(response, dict)
     assert response["location"]
+
+
+def test_get_num_tokens_from_messages() -> None:
+    llm = ChatAnthropic(model="claude-3-5-haiku-20241022")  # type: ignore[call-arg]
+
+    # Test simple case
+    messages = [
+        SystemMessage(content="You are an assistant."),
+        HumanMessage(content="What is the weather in SF?"),
+    ]
+    num_tokens = llm.get_num_tokens_from_messages(messages)
+    assert num_tokens > 0
+
+    # Test tool use (not yet supported)
+    messages = [
+        AIMessage(
+            content=[
+                {"text": "Let's see.", "type": "text"},
+                {
+                    "id": "toolu_01V6d6W32QGGSmQm4BT98EKk",
+                    "input": {"location": "SF"},
+                    "name": "get_weather",
+                    "type": "tool_use",
+                },
+            ],
+            tool_calls=[
+                {
+                    "name": "get_weather",
+                    "args": {"location": "SF"},
+                    "id": "toolu_01V6d6W32QGGSmQm4BT98EKk",
+                    "type": "tool_call",
+                },
+            ],
+        )
+    ]
+    with pytest.raises(NotImplementedError):
+        num_tokens = llm.get_num_tokens_from_messages(messages)
 
 
 class GetWeather(BaseModel):
