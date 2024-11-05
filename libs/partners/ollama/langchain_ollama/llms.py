@@ -182,7 +182,7 @@ class OllamaLLM(BaseLLM):
         self, image_list: List[str | dict]
     ) -> List[str]:
         """Format given images to pass as Ollama image input."""
-        images = []
+        images: List[str] = []
         if not image_list:
             return images
         for image in image_list:
