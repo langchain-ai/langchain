@@ -8,6 +8,7 @@ from typing import (
     ClassVar,
     Optional,
     Sequence,
+    cast,
 )
 
 from langchain_core._api import beta
@@ -701,7 +702,7 @@ class GraphVectorStore(VectorStore):
             docsearch.as_retriever(search_kwargs={'k': 1})
 
         """
-        return GraphVectorStoreRetriever(vector_store=self, **kwargs)
+        return GraphVectorStoreRetriever(vectorstore=self, **kwargs)
 
 
 @beta(message="Added in version 0.3.1 of langchain_community. API subject to change.")
@@ -837,8 +838,8 @@ class GraphVectorStoreRetriever(VectorStoreRetriever):
         retriever = graph_vectorstore.as_retriever(search_kwargs={"score_threshold": 0.5})
     """  # noqa: E501
 
-    vector_store: GraphVectorStore
-    """GraphVectorStore to use for retrieval."""
+    vectorstore: VectorStore
+    """VectorStore to use for retrieval."""
     search_type: str = "traversal"
     """Type of search to perform. Defaults to "traversal"."""
     allowed_search_types: ClassVar[Collection[str]] = (
@@ -849,14 +850,20 @@ class GraphVectorStoreRetriever(VectorStoreRetriever):
         "mmr_traversal",
     )
 
+    @property
+    def graph_vectorstore(self) -> GraphVectorStore:
+        return cast(GraphVectorStore, self.vectorstore)
+
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> list[Document]:
         if self.search_type == "traversal":
-            return list(self.vector_store.traversal_search(query, **self.search_kwargs))
+            return list(
+                self.graph_vectorstore.traversal_search(query, **self.search_kwargs)
+            )
         elif self.search_type == "mmr_traversal":
             return list(
-                self.vector_store.mmr_traversal_search(query, **self.search_kwargs)
+                self.graph_vectorstore.mmr_traversal_search(query, **self.search_kwargs)
             )
         else:
             return super()._get_relevant_documents(query, run_manager=run_manager)
@@ -867,14 +874,14 @@ class GraphVectorStoreRetriever(VectorStoreRetriever):
         if self.search_type == "traversal":
             return [
                 doc
-                async for doc in self.vector_store.atraversal_search(
+                async for doc in self.graph_vectorstore.atraversal_search(
                     query, **self.search_kwargs
                 )
             ]
         elif self.search_type == "mmr_traversal":
             return [
                 doc
-                async for doc in self.vector_store.ammr_traversal_search(
+                async for doc in self.graph_vectorstore.ammr_traversal_search(
                     query, **self.search_kwargs
                 )
             ]
