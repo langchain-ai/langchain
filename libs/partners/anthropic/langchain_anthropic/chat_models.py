@@ -15,7 +15,6 @@ from typing import (
     Sequence,
     Tuple,
     Type,
-    TypedDict,
     Union,
     cast,
 )
@@ -72,7 +71,7 @@ from pydantic import (
     SecretStr,
     model_validator,
 )
-from typing_extensions import NotRequired, Self
+from typing_extensions import NotRequired, Self, TypedDict
 
 from langchain_anthropic.output_parsers import extract_tool_calls
 
