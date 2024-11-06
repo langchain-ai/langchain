@@ -21,7 +21,7 @@ class FinancePolygonExchangesSchema(BaseModel):
         "Default is us."
     )
 
-class FinancePolygonExchanges(BaseTool):
+class PolygonExchanges(BaseTool):
     """
     Tool that lists all exchances that Polygon.io knows about
     """

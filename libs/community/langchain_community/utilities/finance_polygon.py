@@ -308,6 +308,25 @@ class FinancePolygonAPIWrapper(BaseModel):
         
         return data.get("results", None)
 
+    def get_last_trade(self, ticker: str) -> Optional[dict]:
+        """
+        Get the last trade data for a given stock.
+
+        /v2/last/trade/{ticker}?apiKey={apiKey}
+        """
+        url = (
+            f"{POLYGON_BASE_URL}v2/last/trade"
+            f"/{ticker}"
+            f"?apiKey={self.polygon_api_key}"
+        )
+        response = requests.get(url)
+        data = response.json()
+
+        status = data.get("status", None)
+        if status not in ("OK"):
+            raise ValueError(f"API Error: {data}")
+
+        return data.get("results", None)
 
     def run(self, mode: str, ticker: str, **kwargs: Any) -> str:
         if mode == "get_crypto_aggregate":
@@ -322,5 +341,9 @@ class FinancePolygonAPIWrapper(BaseModel):
             return json.dumps(self.get_conditions(**kwargs))
         elif mode == "get_stock_splits":
             return json.dumps(self.get_stock_splits(**kwargs))
+        elif mode == "get_stocks_financials":
+            return json.dumps(self.get_stocks_financials(**kwargs))
+        elif mode == "get_last_trade":
+            return json.dumps(self.get_last_trade(ticker))
         else:
             raise ValueError(f"Invalid mode {mode} for Polygon API.")

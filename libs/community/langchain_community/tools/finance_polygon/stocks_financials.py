@@ -52,13 +52,13 @@ class FinancePolygonStocksFinancialsSchema(BaseModel):
         "Possible values are: filing_date, period_of_report_date."
     )
 
-class FinancePolygonStocksFinancials(BaseTool):
+class PolygonStocksFinancials(BaseTool):
     """
     Tool that provides a historical financial data for stock ticker.
     """
 
     mode: str = "get_stocks_financials"
-    name: str = "finance_polygon_stocks_financials"
+    name: str = "polygon_stocks_financials"
     description: str = (
         "A wrapper around Polygon's Stocks Financials API. "
         "This tool is useful for fetching historical financial data "

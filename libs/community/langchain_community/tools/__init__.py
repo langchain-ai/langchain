@@ -161,6 +161,10 @@ if TYPE_CHECKING:
         PolygonStocksFinancials,
     )
 
+    from langchain_community.tools.finance_polygon.last_trade import (
+        PolygonLastTrade,
+    )
+
     from langchain_community.tools.gmail import (
         GmailCreateDraft,
         GmailGetMessage,
