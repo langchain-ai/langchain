@@ -547,6 +547,30 @@ def test_get_num_tokens_from_messages() -> None:
         """Get weather report for a city"""
         return "Sunny"
 
+    messages = [
+        HumanMessage(content="What is the weather in SF?"),
+        AIMessage(
+            content=[
+                {"text": "Let's see.", "type": "text"},
+                {
+                    "id": "toolu_01V6d6W32QGGSmQm4BT98EKk",
+                    "input": {"location": "SF"},
+                    "name": "get_weather",
+                    "type": "tool_use",
+                },
+            ],
+            tool_calls=[
+                {
+                    "name": "get_weather",
+                    "args": {"location": "SF"},
+                    "id": "toolu_01V6d6W32QGGSmQm4BT98EKk",
+                    "type": "tool_call",
+                },
+            ],
+        ),
+        ToolMessage(content="Sunny", tool_call_id="toolu_01V6d6W32QGGSmQm4BT98EKk"),
+    ]
+
     ## via init
     formatted_tool = convert_to_anthropic_tool(get_weather)
     llm = ChatAnthropic(
