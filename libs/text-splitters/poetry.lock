@@ -1170,7 +1170,7 @@ files = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.13"
+version = "0.3.15"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -2980,4 +2980,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0"
-content-hash = "985bbcb3e82965a3b68764c90270cece172f6a3a825e5e08644d4df63049cb44"
+content-hash = "1ca2ffa7cad6f306bdedb6aa3497597cd0292172c6a2a48684881cd344458598"

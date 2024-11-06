@@ -143,10 +143,12 @@ def _merge_messages(
             all(isinstance(m, c) for m in (curr, last))
             for c in (SystemMessage, HumanMessage)
         ):
-            if isinstance(last.content, str):
-                new_content: List = [{"type": "text", "text": last.content}]
+            if isinstance(cast(BaseMessage, last).content, str):
+                new_content: List = [
+                    {"type": "text", "text": cast(BaseMessage, last).content}
+                ]
             else:
-                new_content = copy.copy(last.content)
+                new_content = copy.copy(cast(list, cast(BaseMessage, last).content))
             if isinstance(curr.content, str):
                 new_content.append({"type": "text", "text": curr.content})
             else:

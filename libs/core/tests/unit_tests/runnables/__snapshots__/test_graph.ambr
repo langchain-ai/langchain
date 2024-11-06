@@ -26,6 +26,20 @@
   
   '''
 # ---
+# name: test_graph_mermaid_duplicate_nodes[mermaid]
+  '''
+  graph TD;
+  	PromptInput --> PromptTemplate_1;
+  	Parallel_llm1_llm2_Input --> FakeListLLM_1;
+  	FakeListLLM_1 --> Parallel_llm1_llm2_Output;
+  	Parallel_llm1_llm2_Input --> FakeListLLM_2;
+  	FakeListLLM_2 --> Parallel_llm1_llm2_Output;
+  	PromptTemplate_1 --> Parallel_llm1_llm2_Input;
+  	PromptTemplate_2 --> PromptTemplateOutput;
+  	Parallel_llm1_llm2_Output --> PromptTemplate_2;
+  
+  '''
+# ---
 # name: test_graph_sequence[ascii]
   '''
               +-------------+              
