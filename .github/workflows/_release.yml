@@ -103,14 +103,19 @@ jobs:
           if [ -z "$PREV_TAG" ]; then
             REGEX="^$PKG_NAME==\\d+\\.\\d+\\.\\d+\$"
             echo $REGEX
-            PREV_TAG=$(git tag --sort=-creatordate | grep -P $REGEX || true | head -1)
+            PREV_TAG=$(git tag --sort=-creatordate | (grep -P $REGEX || true) | head -1)
           fi
 
-          # confirm prev-tag actually exists in git repo with git tag
-          GIT_TAG_RESULT=$(git tag -l "$PREV_TAG")
-          if [ -z "$GIT_TAG_RESULT" ]; then
-            echo "Previous tag $PREV_TAG not found in git repo"
-            exit 1
+          # if PREV_TAG is empty, let it be empty
+          if [ -z "$PREV_TAG" ]; then
+            echo "No previous tag found - first release"
+          else
+            # confirm prev-tag actually exists in git repo with git tag
+            GIT_TAG_RESULT=$(git tag -l "$PREV_TAG")
+            if [ -z "$GIT_TAG_RESULT" ]; then
+              echo "Previous tag $PREV_TAG not found in git repo"
+              exit 1
+            fi
           fi
 
 
