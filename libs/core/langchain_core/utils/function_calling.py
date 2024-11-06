@@ -341,8 +341,8 @@ def convert_to_openai_function(
             A dictionary, Pydantic BaseModel class, TypedDict class, a LangChain
             Tool object, or a Python function. If a dictionary is passed in, it is
             assumed to already be a valid OpenAI function, a JSON schema with
-            top-level 'title' and 'description' keys specified, or an Anthropic format
-            tool.
+            top-level 'title' and 'description' keys specified, an Anthropic format
+            tool, or an Amazon Bedrock Converse format tool.
         strict:
             If True, model output is guaranteed to exactly match the JSON Schema
             provided in the function definition. If None, ``strict`` argument will not
@@ -362,6 +362,10 @@ def convert_to_openai_function(
     .. versionchanged:: 0.3.13
 
         Support for Anthropic format tools added.
+
+    .. versionchanged:: 0.3.14
+
+        Support for Amazon Bedrock Converse format tools added.
     """
     from langchain_core.tools import BaseTool
 
@@ -388,6 +392,13 @@ def convert_to_openai_function(
             "name": function["name"],
             "description": function["description"],
             "parameters": function["input_schema"],
+        }
+    # an Amazon Bedrock Converse format tool
+    elif isinstance(function, dict) and "toolSpec" in function:
+        oai_function = {
+            "name": function["toolSpec"]["name"],
+            "description": function["toolSpec"]["description"],
+            "parameters": function["toolSpec"]["inputSchema"]["json"],
         }
     elif isinstance(function, type) and is_basemodel_subclass(function):
         oai_function = cast(dict, convert_pydantic_to_openai_function(function))
