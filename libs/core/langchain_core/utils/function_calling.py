@@ -425,7 +425,11 @@ def convert_to_openai_function(
 
     if strict is not None:
         if "strict" in oai_function and oai_function["strict"] != strict:
-            msg = ""
+            msg = (
+                f"Tool/function already has a 'strict' key wth value "
+                f"{oai_function['strict']} which is different from the explicit "
+                f"`strict` arg received {strict=}."
+            )
             raise ValueError(msg)
         oai_function["strict"] = strict
         if strict:
