@@ -25,6 +25,7 @@ from langchain_community.document_loaders.blob_loaders.file_system import (
 )
 from langchain_community.document_loaders.blob_loaders.schema import Blob
 from langchain_community.document_loaders.parsers.generic import MimeTypeBasedParser
+from langchain_community.document_loaders.parsers.registry import get_parser
 
 if TYPE_CHECKING:
     from O365 import Account
@@ -147,8 +148,6 @@ class O365BaseLoader(BaseLoader, BaseModel):
                 handlers=mime_handlers, fallback_parser=None
             )
         else:
-            from langchain_community.document_loaders.parsers.registry import get_parser
-
             self._blob_parser = get_parser("default")
             if not isinstance(self._blob_parser, MimeTypeBasedParser):
                 raise TypeError(
