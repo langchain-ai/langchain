@@ -306,7 +306,7 @@ def _render_mermaid_using_api(
     mermaid_syntax: str,
     output_file_path: Optional[str] = None,
     background_color: Optional[str] = "white",
-    file_type: Optional[str] = "png",
+    file_type: Optional[Literal["jpeg", "png", "webp"]] = "png",
 ) -> bytes:
     """Renders Mermaid graph using the Mermaid.INK API."""
     try:
