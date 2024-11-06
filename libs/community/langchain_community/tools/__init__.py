@@ -169,6 +169,10 @@ if TYPE_CHECKING:
         PolygonMarketHolidays,
     )
 
+    from langchain_community.tools.finance_polygon.market_status import (
+        PolygonMarketStatus,
+    )
+
     from langchain_community.tools.gmail import (
         GmailCreateDraft,
         GmailGetMessage,

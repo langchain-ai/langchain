@@ -349,6 +349,26 @@ class FinancePolygonAPIWrapper(BaseModel):
             return None
         
         return data
+    
+    def get_market_status(self, **kwargs: Any) -> Optional[dict]:
+        """
+        Get the current trading status of the exchanges
+        and overall financial markets.
+
+        v1/marketstatus/now?apiKey={apiKey}
+        """
+
+        url = POLYGON_BASE_URL + "v1/marketstatus/now?" + f"apiKey={self.polygon_api_key}"
+
+        response = requests.get(url)
+        data = response.json()
+
+        status = data.get("market", None)
+        if status not in ("open" or "closed" or "extended-hours"):
+            raise ValueError(f"API Error: {data}")
+
+        return data
+
 
     def run(self, mode: str, ticker: str, **kwargs: Any) -> str:
         if mode == "get_crypto_aggregate":
@@ -369,5 +389,7 @@ class FinancePolygonAPIWrapper(BaseModel):
             return json.dumps(self.get_last_trade(ticker))
         elif mode == "get_market_holidays":
             return json.dumps(self.get_market_holidays(**kwargs))
+        elif mode == "get_market_status":
+            return json.dumps(self.get_market_status(**kwargs))
         else:
             raise ValueError(f"Invalid mode {mode} for Polygon API.")
