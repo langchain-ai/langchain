@@ -4,7 +4,6 @@ from typing import Any, Dict, List
 from unittest.mock import MagicMock, patch
 
 import pytest
-import tiktoken
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from pydantic import ValidationError
 
@@ -305,20 +304,44 @@ def test_multiple_system_messages_error() -> None:
         convert_to_reka_messages(messages)
 
 
+@pytest.mark.requires("tiktoken")
 @pytest.mark.requires("reka")
 def test_get_num_tokens() -> None:
-    """Test that token counting works correctly."""
+    """Test that token counting works correctly for different input types."""
     llm = ChatReka()
+    import tiktoken
 
-    # Test basic text
+    encoding = tiktoken.get_encoding("cl100k_base")
+
+    # Test string input
     text = "Hello, world!"
-    expected_tokens = len(tiktoken.get_encoding("cl100k_base").encode(text))
+    expected_tokens = len(encoding.encode(text))
     assert llm.get_num_tokens(text) == expected_tokens
 
-    # Test empty string
-    assert llm.get_num_tokens("") == 0
+    # Test BaseMessage input
+    message = HumanMessage(content="What is the weather like today?")
+    expected_tokens = len(encoding.encode(message.content))
+    assert llm.get_num_tokens(message) == expected_tokens
 
-    # Test longer text with special characters
+    # Test List[BaseMessage] input
+    messages = [
+        SystemMessage(content="You are a helpful assistant."),
+        HumanMessage(content="Hi!"),
+        AIMessage(content="Hello! How can I help you today?"),
+    ]
+    expected_tokens = sum(len(encoding.encode(msg.content)) for msg in messages)
+    assert llm.get_num_tokens(messages) == expected_tokens
+
+    # Test empty inputs
+    assert llm.get_num_tokens("") == 0
+    assert llm.get_num_tokens(HumanMessage(content="")) == 0
+    assert llm.get_num_tokens([]) == 0
+
+    # Test complex text with special characters
     complex_text = "Hello 🌍! This is a test of the token counting"
-    expected_tokens = len(tiktoken.get_encoding("cl100k_base").encode(complex_text))
+    expected_tokens = len(encoding.encode(complex_text))
     assert llm.get_num_tokens(complex_text) == expected_tokens
+
+    # Test invalid input type
+    with pytest.raises(ValueError, match="Got unexpected type for input:"):
+        llm.get_num_tokens(123)  # type: ignore

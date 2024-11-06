@@ -13,7 +13,6 @@ from typing import (
     Union,
 )
 
-import tiktoken
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -156,7 +155,9 @@ class ChatReka(BaseChatModel):
     reka_api_key: Optional[str] = None
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     model_config = ConfigDict(extra="forbid")
-    _tiktoken_encoder = None
+    token_counter: Optional[
+        Union[Callable[[list[BaseMessage]], int], Callable[[BaseMessage], int]]
+    ] = None
 
     @model_validator(mode="before")
     @classmethod
@@ -329,11 +330,29 @@ class ChatReka(BaseChatModel):
 
         return ChatResult(generations=[ChatGeneration(message=message)])
 
-    def get_num_tokens(self, text: str) -> int:
+    def get_num_tokens(self, input: Union[str, BaseMessage, List[BaseMessage]]) -> int:
         """Calculate number of tokens."""
-        if self._tiktoken_encoder is None:
-            self._tiktoken_encoder = tiktoken.get_encoding("cl100k_base")
-        return len(self._tiktoken_encoder.encode(text))
+        # Initialize encoder if not already set
+
+        if self.token_counter is None:
+            try:
+                import tiktoken
+            except ImportError:
+                raise ImportError(
+                    "Could not import tiktoken python package. "
+                    "Please install it with `pip install tiktoken`."
+                )
+            encoding = tiktoken.get_encoding("cl100k_base")
+
+            if isinstance(input, str):
+                return len(encoding.encode(input))
+            elif isinstance(input, BaseMessage):
+                return len(encoding.encode(input.content))
+            elif isinstance(input, list):
+                return sum(len(encoding.encode(msg.content)) for msg in input)
+            raise ValueError(f"Got unexpected type for input: {type(input)}")
+
+        return self.token_counter(input)
 
     def bind_tools(
         self,
