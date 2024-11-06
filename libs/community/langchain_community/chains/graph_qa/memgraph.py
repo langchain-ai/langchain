@@ -6,7 +6,6 @@ import re
 from typing import Any, Dict, List, Optional, Union
 
 from langchain.chains.base import Chain
-from langchain.chains.llm import LLMChain
 from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import (
@@ -99,8 +98,8 @@ class MemgraphQAChain(Chain):
     """
 
     graph: MemgraphGraph = Field(exclude=True)
-    cypher_generation_chain: LLMChain
-    qa_chain: Union[LLMChain, Runnable]
+    cypher_generation_chain: Runnable
+    qa_chain: Runnable
     graph_schema: str
     input_key: str = "query"  #: :meta private:
     output_key: str = "result"  #: :meta private:
@@ -230,12 +229,18 @@ class MemgraphQAChain(Chain):
             except (NotImplementedError, AttributeError):
                 raise ValueError("Provided LLM does not support native tools/functions")
         else:
-            qa_chain = LLMChain(llm=qa_llm, **use_qa_llm_kwargs)  # type: ignore[arg-type]
+            qa_chain = use_qa_llm_kwargs["prompt"] | qa_llm | StrOutputParser()  # type: ignore
 
-        cypher_generation_chain = LLMChain(
-            llm=cypher_llm or llm,  # type: ignore[arg-type]
-            **use_cypher_llm_kwargs,  # type: ignore[arg-type]
-        )
+        prompt = use_cypher_llm_kwargs["prompt"]
+        llm_to_use = cypher_llm if cypher_llm is not None else llm
+
+        if prompt is not None and llm_to_use is not None:
+            cypher_generation_chain = prompt | llm_to_use | StrOutputParser()  # type: ignore[arg-type]
+        else:
+            raise ValueError(
+                "Missing required components for the cypher generation chain: "
+                "'prompt' or 'llm'"
+            )
 
         graph_schema = kwargs["graph"].get_schema
 
@@ -264,8 +269,9 @@ class MemgraphQAChain(Chain):
 
         intermediate_steps: List = []
 
-        generated_cypher = self.cypher_generation_chain.run(args, callbacks=callbacks)
-
+        generated_cypher = self.cypher_generation_chain.invoke(
+            args, callbacks=callbacks
+        )
         # Extract Cypher code if it is wrapped in backticks
         generated_cypher = extract_cypher(generated_cypher)
 
@@ -284,7 +290,7 @@ class MemgraphQAChain(Chain):
             context = []
 
         if self.return_direct:
-            final_result = context
+            result = context
         else:
             _run_manager.on_text("Full Context:", end="\n", verbose=self.verbose)
             _run_manager.on_text(
@@ -294,7 +300,7 @@ class MemgraphQAChain(Chain):
             intermediate_steps.append({"context": context})
             if self.use_function_response:
                 function_response = get_function_response(question, context)
-                final_result = self.qa_chain.invoke(  # type: ignore
+                result = self.qa_chain.invoke(  # type: ignore
                     {"question": question, "function_response": function_response},
                 )
             else:
@@ -302,9 +308,8 @@ class MemgraphQAChain(Chain):
                     {"question": question, "context": context},
                     callbacks=callbacks,
                 )
-                final_result = result[self.qa_chain.output_key]  # type: ignore
 
-        chain_result: Dict[str, Any] = {self.output_key: final_result}
+        chain_result: Dict[str, Any] = {"result": result}
         if self.return_intermediate_steps:
             chain_result[INTERMEDIATE_STEPS_KEY] = intermediate_steps
 
