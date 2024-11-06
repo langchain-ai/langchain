@@ -84,6 +84,15 @@ _message_type_lookups = {
 }
 
 
+class AnthropicTool(TypedDict):
+    """Anthropic tool definition."""
+
+    name: str
+    description: str
+    input_schema: Dict[str, Any]
+    cache_control: NotRequired[Dict[str, str]]
+
+
 def _format_image(image_url: str) -> Dict:
     """
     Formats an image of format data:image/jpeg;base64,{b64_string}
@@ -604,6 +613,9 @@ class ChatAnthropic(BaseChatModel):
     message chunks will be generated during the stream including usage metadata.
     """
 
+    formatted_tools: List[AnthropicTool] = Field(default_factory=list)
+    """Tools in Anthropic format to be passed to model invocations."""
+
     @property
     def _llm_type(self) -> str:
         """Return type of chat model."""
@@ -690,6 +702,8 @@ class ChatAnthropic(BaseChatModel):
     ) -> Dict:
         messages = self._convert_input(input_).to_messages()
         system, formatted_messages = _format_messages(messages)
+        if self.formatted_tools and "tools" not in kwargs:
+            kwargs["tools"] = self.formatted_tools  # type: ignore[assignment]
         payload = {
             "model": self.model,
             "max_tokens": self.max_tokens,
@@ -955,6 +969,7 @@ class ChatAnthropic(BaseChatModel):
 
         """  # noqa: E501
         formatted_tools = [convert_to_anthropic_tool(tool) for tool in tools]
+        self.formatted_tools = formatted_tools
         if not tool_choice:
             pass
         elif isinstance(tool_choice, dict):
@@ -1120,41 +1135,22 @@ class ChatAnthropic(BaseChatModel):
         .. versionchanged:: 0.2.5
 
                 Uses Anthropic's token counting API to count tokens in messages. See:
-                https://docs.anthropic.com/en/api/messages-count-tokens
+                https://docs.anthropic.com/en/docs/build-with-claude/token-counting
         """
-        if any(
-            isinstance(tool, ToolMessage)
-            or (isinstance(tool, AIMessage) and tool.tool_calls)
-            for tool in messages
-        ):
-            raise NotImplementedError(
-                "get_num_tokens_from_messages does not yet support counting tokens "
-                "in tool calls."
-            )
         formatted_system, formatted_messages = _format_messages(messages)
+        kwargs: Dict[str, Any] = {}
         if isinstance(formatted_system, str):
-            response = self._client.beta.messages.count_tokens(
-                betas=["token-counting-2024-11-01"],
-                model=self.model,
-                system=formatted_system,
-                messages=formatted_messages,  # type: ignore[arg-type]
-            )
-        else:
-            response = self._client.beta.messages.count_tokens(
-                betas=["token-counting-2024-11-01"],
-                model=self.model,
-                messages=formatted_messages,  # type: ignore[arg-type]
-            )
+            kwargs["system"] = formatted_system
+        if self.formatted_tools:
+            kwargs["tools"] = self.formatted_tools
+
+        response = self._client.beta.messages.count_tokens(
+            betas=["token-counting-2024-11-01"],
+            model=self.model,
+            messages=formatted_messages,  # type: ignore[arg-type]
+            **kwargs,
+        )
         return response.input_tokens
-
-
-class AnthropicTool(TypedDict):
-    """Anthropic tool definition."""
-
-    name: str
-    description: str
-    input_schema: Dict[str, Any]
-    cache_control: NotRequired[Dict[str, str]]
 
 
 def convert_to_anthropic_tool(

@@ -20,6 +20,7 @@ from langchain_core.tools import tool
 from pydantic import BaseModel, Field
 
 from langchain_anthropic import ChatAnthropic, ChatAnthropicMessages
+from langchain_anthropic.chat_models import convert_to_anthropic_tool
 from tests.unit_tests._utils import FakeCallbackHandler
 
 MODEL_NAME = "claude-3-sonnet-20240229"
@@ -368,18 +369,15 @@ async def test_astreaming() -> None:
 
 def test_tool_use() -> None:
     llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
-    llm_with_tools = llm.bind_tools(
-        [
-            {
-                "name": "get_weather",
-                "description": "Get weather report for a city",
-                "input_schema": {
-                    "type": "object",
-                    "properties": {"location": {"type": "string"}},
-                },
-            }
-        ]
-    )
+    tool_schema = {
+        "name": "get_weather",
+        "description": "Get weather report for a city",
+        "input_schema": {
+            "type": "object",
+            "properties": {"location": {"type": "string"}},
+        },
+    }
+    llm_with_tools = llm.bind_tools([tool_schema])
     response = llm_with_tools.invoke("what's the weather in san francisco, ca")
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, list)
@@ -440,6 +438,31 @@ def test_tool_use() -> None:
         else:
             gathered = gathered + chunk  # type: ignore
     assert len(chunks) > 1
+
+    # Test via init
+    llm_with_tools = ChatAnthropic(model=MODEL_NAME, formatted_tools=[tool_schema])  # type: ignore
+    response = llm_with_tools.invoke("what's the weather in san francisco, ca")
+    assert isinstance(response, AIMessage)
+    assert isinstance(response.content, list)
+    assert isinstance(response.tool_calls, list)
+    assert len(response.tool_calls) == 1
+
+    # Test tool conversion
+    @tool
+    def get_weather(location: str) -> str:
+        """Get weather report for a city"""
+        return "Sunny"
+
+    formatted_tool = convert_to_anthropic_tool(get_weather)
+    llm_with_tools = ChatAnthropic(
+        model=MODEL_NAME,  # type: ignore[call-arg]
+        formatted_tools=[formatted_tool],
+    )
+    response = llm_with_tools.invoke("what's the weather in san francisco, ca")
+    assert isinstance(response, AIMessage)
+    assert isinstance(response.content, list)
+    assert isinstance(response.tool_calls, list)
+    assert len(response.tool_calls) == 1
 
 
 def test_anthropic_with_empty_text_block() -> None:
@@ -518,30 +541,25 @@ def test_get_num_tokens_from_messages() -> None:
     num_tokens = llm.get_num_tokens_from_messages(messages)
     assert num_tokens > 0
 
-    # Test tool use (not yet supported)
-    messages = [
-        AIMessage(
-            content=[
-                {"text": "Let's see.", "type": "text"},
-                {
-                    "id": "toolu_01V6d6W32QGGSmQm4BT98EKk",
-                    "input": {"location": "SF"},
-                    "name": "get_weather",
-                    "type": "tool_use",
-                },
-            ],
-            tool_calls=[
-                {
-                    "name": "get_weather",
-                    "args": {"location": "SF"},
-                    "id": "toolu_01V6d6W32QGGSmQm4BT98EKk",
-                    "type": "tool_call",
-                },
-            ],
-        )
-    ]
-    with pytest.raises(NotImplementedError):
-        num_tokens = llm.get_num_tokens_from_messages(messages)
+    # Test tool use
+    @tool
+    def get_weather(location: str) -> str:
+        """Get weather report for a city"""
+        return "Sunny"
+
+    ## via init
+    formatted_tool = convert_to_anthropic_tool(get_weather)
+    llm = ChatAnthropic(
+        model="claude-3-5-haiku-20241022",  # type: ignore[call-arg]
+        formatted_tools=[formatted_tool],
+    )
+    num_tokens = llm.get_num_tokens_from_messages(messages)
+    assert num_tokens > 0
+
+    ## via bind_tools
+    llm_with_tools = llm.bind_tools([get_weather])
+    num_tokens = llm_with_tools.get_num_tokens_from_messages(messages)  # type: ignore[attr-defined]
+    assert num_tokens > 0
 
 
 class GetWeather(BaseModel):
