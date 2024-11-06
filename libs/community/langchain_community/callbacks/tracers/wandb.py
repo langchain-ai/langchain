@@ -199,6 +199,8 @@ def modify_serialized_iterative(
         transformed_dict = transform_serialized(run)
 
         serialized = transformed_dict.pop("serialized")
+        if not serialized:
+            return {}
         for k, v in serialized.items():
             transformed_dict[k] = v
 
