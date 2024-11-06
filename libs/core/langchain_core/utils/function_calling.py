@@ -365,9 +365,12 @@ def convert_to_openai_function(
 
     .. versionchanged:: 0.3.14
 
-        - Support for Amazon Bedrock Converse format tools added.
-        - 'description' and 'parameters' keys are now optional. Only 'name' is
-            required and guaranteed to be part of the output.
+        Support for Amazon Bedrock Converse format tools added.
+
+    .. versionchanged:: 0.3.16
+
+        'description' and 'parameters' keys are now optional. Only 'name' is
+        required and guaranteed to be part of the output.
     """
     from langchain_core.tools import BaseTool
 
@@ -478,10 +481,12 @@ def convert_to_openai_tool(
 
     .. versionchanged:: 0.3.14
 
-        - Support for Amazon Bedrock Converse format tools added.
-        -
-            'description' and 'parameters' keys are now optional.
-            Only 'name' is required and guaranteed to be part of the 'function' dict.
+        Support for Amazon Bedrock Converse format tools added.
+
+    .. versionchanged:: 0.3.16
+
+        'description' and 'parameters' keys are now optional. Only 'name' is
+        required and guaranteed to be part of the output.
     """
     if isinstance(tool, dict) and tool.get("type") == "function" and "function" in tool:
         return tool
