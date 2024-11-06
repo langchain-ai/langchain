@@ -176,10 +176,10 @@ class KuzuGraph:
 
                 self.conn.execute(
                     f"""
-                    MERGE (c:Chunk {{id: $id}})
+                    MERGE (c:Chunk {{id: $id}}) 
                         SET c.text = $text,
                             c.type = "text_chunk"
-                    """,
+                    """,  # noqa: F541
                     parameters={
                         "id": document.source.metadata["id"],
                         "text": document.source.page_content,
