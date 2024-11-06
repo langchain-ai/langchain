@@ -2,7 +2,7 @@ import asyncio
 import base64
 import re
 from dataclasses import asdict
-from typing import Optional
+from typing import Literal, Optional
 
 from langchain_core.runnables.graph import (
     CurveStyle,
