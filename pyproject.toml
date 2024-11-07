@@ -68,7 +68,7 @@ extend-exclude = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"**/{docs}/*" = [
+"**/{cookbook,docs}/*" = [
     "E402", # allow imports to appear anywhere in docs
     "F401", # allow "imported but unused" example code
     "F811", # allow re-importing the same module, so that cells can stay independent
@@ -77,4 +77,5 @@ extend-exclude = [
 
 # These files were failing the listed rules at the time ruff was adopted for notebooks.
 # Don't require them to change at once, though we should look into them eventually.
+"cookbook/gymnasium_agent_simulation.ipynb" = ["F821"]
 "docs/docs/integrations/document_loaders/tensorflow_datasets.ipynb" = ["F821"]

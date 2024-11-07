@@ -66,12 +66,12 @@ spell_fix:
 
 ## lint: Run linting on the project.
 lint lint_package lint_tests:
-	poetry run ruff check docs
-	poetry run ruff format docs --diff
+	poetry run ruff check docs cookbook
+	poetry run ruff format docs cookbook cookbook --diff
 	poetry run ruff check --select I docs
-	git grep 'from langchain import' docs/docs | grep -vE 'from langchain import (hub)' && exit 1 || exit 0
+	git grep 'from langchain import' docs/docs cookbook | grep -vE 'from langchain import (hub)' && exit 1 || exit 0
 
 ## format: Format the project files.
 format format_diff:
-	poetry run ruff format docs
-	poetry run ruff check --select I --fix docs
+	poetry run ruff format docs cookbook
+	poetry run ruff check --select I --fix docs cookbook
