@@ -76,7 +76,10 @@ class DatabricksVectorSearchTranslator(Visitor):
             return self._visit_not_operation(operation)
         else:
             raise NotImplementedError(
-                f'Operator "{operation.operator}" is not supported'
+                f'Operator "{operation.operator}" is not supported. \
+                Allowable operators for Databricks Vector Search are: {[str(item) for item in self.allowed_operators]}. \
+                Be sure to pass this via the allowed_operators parameter for associated functions \
+                ( i.e. get_query_constructor_prompt() )'
             )
 
     def visit_comparison(self, comparison: Comparison) -> Dict:
@@ -90,5 +93,5 @@ class DatabricksVectorSearchTranslator(Visitor):
         if structured_query.filter is None:
             kwargs = {}
         else:
-            kwargs = {"filters": structured_query.filter.accept(self)}
+            kwargs = {"filter": structured_query.filter.accept(self)}
         return structured_query.query, kwargs
