@@ -590,7 +590,7 @@ def trim_messages(
     include_system: bool = False,
     text_splitter: Optional[Union[Callable[[str], list[str]], TextSplitter]] = None,
 ) -> list[BaseMessage]:
-    """Trim messages to be below a token count.
+    r"""Trim messages to be below a token count.
 
     trim_messages can be used to reduce the size of a chat history to a specified token
     count or specified message count.
