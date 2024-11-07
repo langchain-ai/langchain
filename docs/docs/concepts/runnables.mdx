@@ -15,7 +15,7 @@ This guide covers the main concepts and methods of the Runnable interface, which
 The Runnable way defines a standard interface that allows a Runnable component to be:
 
 * [Invoked](/docs/how_to/lcel_cheatsheet/#invoke-a-runnable): A single input is transformed into an output.
-* [Batched](/docs/how_to/lcel_cheatsheet/#batch-a-runnable/): Multiple inputs are efficiently transformed into outputs.
+* [Batched](/docs/how_to/lcel_cheatsheet/#batch-a-runnable): Multiple inputs are efficiently transformed into outputs.
 * [Streamed](/docs/how_to/lcel_cheatsheet/#stream-a-runnable): Outputs are streamed as they are produced.
 * Inspected: Schematic information about Runnable's input, output, and configuration can be accessed.
 * Composed: Multiple Runnables can be composed to work together using [the LangChain Expression Language (LCEL)](/docs/concepts/lcel) to create complex pipelines.
@@ -46,7 +46,7 @@ The async versions of `abatch` and `abatch_as_completed` these rely on asyncio's
 :::
 
 :::tip
-When processing a large number of inputs using `batch` or `batch_as_completed`, users may want to control the maximum number of parallel calls. This can be done by setting the `max_concurrency` attribute in the `RunnableConfig` dictionary. See the [RunnableConfig](/docs/concepts/runnables#RunnableConfig) for more information.
+When processing a large number of inputs using `batch` or `batch_as_completed`, users may want to control the maximum number of parallel calls. This can be done by setting the `max_concurrency` attribute in the `RunnableConfig` dictionary. See the [RunnableConfig](/docs/concepts/runnables/#runnableconfig) for more information.
 
 Chat Models also have a built-in [rate limiter](/docs/concepts/chat_models#rate-limiting) that can be used to control the rate at which requests are made.
 :::
@@ -312,7 +312,7 @@ Please read the [Callbacks Conceptual Guide](/docs/concepts/callbacks) for more 
 :::important
 If you're using Python 3.9 or 3.10 in an async environment, you must propagate
 the `RunnableConfig` manually to sub-calls in some cases. Please see the
-[Propagating RunnableConfig](#propagation-of-RunnableConfig) section for more information.
+[Propagating RunnableConfig](#propagation-of-runnableconfig) section for more information.
 :::
 
 ## Creating a runnable from a function
