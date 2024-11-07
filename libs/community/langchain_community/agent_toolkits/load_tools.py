@@ -28,7 +28,6 @@ from langchain_community.tools.ddg_search.tool import DuckDuckGoSearchRun
 from langchain_community.tools.eleven_labs.text2speech import ElevenLabsText2SpeechTool
 from langchain_community.tools.file_management import ReadFileTool
 from langchain_community.tools.golden_query.tool import GoldenQueryRun
-from langchain_community.tools.google_books.tool import GoogleBooksQueryRun
 from langchain_community.tools.google_cloud.texttospeech import (
     GoogleCloudTextToSpeechTool,
 )
@@ -336,6 +335,8 @@ def _get_pubmed(**kwargs: Any) -> BaseTool:
 
 
 def _get_google_books(**kwargs: Any) -> BaseTool:
+    from langchain_community.tools.google_books.tool import GoogleBooksQueryRun
+
     return GoogleBooksQueryRun(api_wrapper=GoogleBooksAPIWrapper(**kwargs))
 
 
