@@ -39,7 +39,7 @@ class PolygonAggregatesSchema(BaseModel):
     )
 
 
-class PolygonAggregates(BaseTool):
+class PolygonAggregates(BaseTool):  # type: ignore[override, override]
     """
     Tool that gets aggregate bars (stock prices) over a
     given date range for a given ticker from Polygon.
