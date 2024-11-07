@@ -396,6 +396,14 @@ def _import_oci_md_vllm() -> Type[BaseLLM]:
     return OCIModelDeploymentVLLM
 
 
+def _import_oci_md() -> Type[BaseLLM]:
+    from langchain_community.llms.oci_data_science_model_deployment_endpoint import (
+        OCIModelDeploymentLLM,
+    )
+
+    return OCIModelDeploymentLLM
+
+
 def _import_oci_gen_ai() -> Type[BaseLLM]:
     from langchain_community.llms.oci_generative_ai import OCIGenAI
 
@@ -508,12 +516,6 @@ def _import_sagemaker_endpoint() -> Type[BaseLLM]:
     from langchain_community.llms.sagemaker_endpoint import SagemakerEndpoint
 
     return SagemakerEndpoint
-
-
-def _import_sambaverse() -> Type[BaseLLM]:
-    from langchain_community.llms.sambanova import Sambaverse
-
-    return Sambaverse
 
 
 def _import_sambastudio() -> Type[BaseLLM]:
@@ -779,6 +781,8 @@ def __getattr__(name: str) -> Any:
         return _import_oci_md_tgi()
     elif name == "OCIModelDeploymentVLLM":
         return _import_oci_md_vllm()
+    elif name == "OCIModelDeploymentLLM":
+        return _import_oci_md()
     elif name == "OCIGenAI":
         return _import_oci_gen_ai()
     elif name == "OctoAIEndpoint":
@@ -817,8 +821,6 @@ def __getattr__(name: str) -> Any:
         return _import_rwkv()
     elif name == "SagemakerEndpoint":
         return _import_sagemaker_endpoint()
-    elif name == "Sambaverse":
-        return _import_sambaverse()
     elif name == "SambaStudio":
         return _import_sambastudio()
     elif name == "SelfHostedPipeline":
@@ -936,6 +938,7 @@ __all__ = [
     "OCIGenAI",
     "OCIModelDeploymentTGI",
     "OCIModelDeploymentVLLM",
+    "OCIModelDeploymentLLM",
     "OctoAIEndpoint",
     "Ollama",
     "OpaquePrompts",
@@ -954,7 +957,6 @@ __all__ = [
     "RWKV",
     "Replicate",
     "SagemakerEndpoint",
-    "Sambaverse",
     "SambaStudio",
     "SelfHostedHuggingFaceLLM",
     "SelfHostedPipeline",
@@ -1038,6 +1040,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "nlpcloud": _import_nlpcloud,
         "oci_model_deployment_tgi_endpoint": _import_oci_md_tgi,
         "oci_model_deployment_vllm_endpoint": _import_oci_md_vllm,
+        "oci_model_deployment_endpoint": _import_oci_md,
         "oci_generative_ai": _import_oci_gen_ai,
         "octoai_endpoint": _import_octoai_endpoint,
         "ollama": _import_ollama,
@@ -1051,7 +1054,6 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "replicate": _import_replicate,
         "rwkv": _import_rwkv,
         "sagemaker_endpoint": _import_sagemaker_endpoint,
-        "sambaverse": _import_sambaverse,
         "sambastudio": _import_sambastudio,
         "self_hosted": _import_self_hosted,
         "self_hosted_hugging_face": _import_self_hosted_hugging_face,

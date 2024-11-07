@@ -2,6 +2,7 @@
 
 from typing import Any, Dict, List, Optional, Sequence, Union
 
+from langchain_core._api import deprecated
 from langchain_core.documents import Document
 from langchain_core.vectorstores import VectorStoreRetriever
 from pydantic import Field
@@ -10,8 +11,18 @@ from langchain.memory.chat_memory import BaseMemory
 from langchain.memory.utils import get_prompt_input_key
 
 
+@deprecated(
+    since="0.3.1",
+    removal="1.0.0",
+    message=(
+        "Please see the migration guide at: "
+        "https://python.langchain.com/docs/versions/migrating_memory/"
+    ),
+)
 class VectorStoreRetrieverMemory(BaseMemory):
-    """VectorStoreRetriever-backed memory."""
+    """Store the conversation history in a vector store and retrieves the relevant
+    parts of past conversation based on the input.
+    """
 
     retriever: VectorStoreRetriever = Field(exclude=True)
     """VectorStoreRetriever object to connect to."""

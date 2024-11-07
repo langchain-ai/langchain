@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 MMR_RERANKER_ID = 272725718
 RERANKER_MULTILINGUAL_V1_ID = 272725719
+UDF_RERANKER_ID = 272725722
 
 
 @dataclass
@@ -38,7 +39,7 @@ class SummaryConfig:
     is_enabled: bool = False
     max_results: int = 7
     response_lang: str = "eng"
-    prompt_name: str = "vectara-summary-ext-v1.2.0"
+    prompt_name: str = "vectara-summary-ext-24-05-med-omni"
     stream: bool = False
 
 
@@ -67,7 +68,7 @@ class MMRConfig:
 class RerankConfig:
     """Configuration for Reranker.
 
-    reranker: "mmr", "rerank_multilingual_v1" or "none"
+    reranker: "mmr", "rerank_multilingual_v1", "udf" or "none"
     rerank_k: number of results to fetch before reranking, defaults to 50
     mmr_diversity_bias: for MMR only - a number between 0 and 1 that determines
         the degree of diversity among the results with 0 corresponding
@@ -76,11 +77,13 @@ class RerankConfig:
         Note: mmr_diversity_bias is equivalent 1-lambda_mult
         where lambda_mult is the value often used in max_marginal_relevance_search()
         We chose to use that since we believe it's more intuitive to the user.
+    user_function: for UDF only - the user function to use for reranking.
     """
 
     reranker: str = "none"
     rerank_k: int = 50
     mmr_diversity_bias: float = 0.3
+    user_function: str = ""
 
 
 @dataclass
@@ -445,7 +448,7 @@ class Vectara(VectorStore):
                         config.rerank_config.rerank_k
                         if (
                             config.rerank_config.reranker
-                            in ["mmr", "rerank_multilingual_v1"]
+                            in ["mmr", "udf", "rerank_multilingual_v1"]
                         )
                         else config.k
                     ),
@@ -472,6 +475,11 @@ class Vectara(VectorStore):
             body["query"][0]["rerankingConfig"] = {
                 "rerankerId": MMR_RERANKER_ID,
                 "mmrConfig": {"diversityBias": config.rerank_config.mmr_diversity_bias},
+            }
+        elif config.rerank_config.reranker == "udf":
+            body["query"][0]["rerankingConfig"] = {
+                "rerankerId": UDF_RERANKER_ID,
+                "userFunction": config.rerank_config.user_function,
             }
         elif config.rerank_config.reranker == "rerank_multilingual_v1":
             body["query"][0]["rerankingConfig"] = {
@@ -723,7 +731,7 @@ class Vectara(VectorStore):
         )
 
 
-class VectaraRetriever(VectorStoreRetriever):
+class VectaraRetriever(VectorStoreRetriever):  # type: ignore[override]
     """Vectara Retriever class."""
 
     vectorstore: Vectara
@@ -888,6 +896,7 @@ class VectaraRAG(Runnable):
         self,
         input: str,
         config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
     ) -> dict:
         res = {"answer": ""}
         for chunk in self.stream(input):

@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import textwrap
+from collections.abc import Awaitable
 from inspect import signature
 from typing import (
+    Annotated,
     Any,
-    Awaitable,
     Callable,
     Literal,
     Optional,
@@ -12,7 +13,6 @@ from typing import (
 )
 
 from pydantic import BaseModel, Field, SkipValidation
-from typing_extensions import Annotated
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
@@ -78,7 +78,8 @@ class StructuredTool(BaseTool):
             if config_param := _get_runnable_config_param(self.func):
                 kwargs[config_param] = config
             return self.func(*args, **kwargs)
-        raise NotImplementedError("StructuredTool does not support sync invocation.")
+        msg = "StructuredTool does not support sync invocation."
+        raise NotImplementedError(msg)
 
     async def _arun(
         self,
@@ -167,7 +168,8 @@ class StructuredTool(BaseTool):
         elif coroutine is not None:
             source_function = coroutine
         else:
-            raise ValueError("Function and/or coroutine must be provided")
+            msg = "Function and/or coroutine must be provided"
+            raise ValueError(msg)
         name = name or source_function.__name__
         if args_schema is None and infer_schema:
             # schema name is appended within function
@@ -184,9 +186,8 @@ class StructuredTool(BaseTool):
         if description_ is None and args_schema:
             description_ = args_schema.__doc__ or None
         if description_ is None:
-            raise ValueError(
-                "Function must have a docstring if description not provided."
-            )
+            msg = "Function must have a docstring if description not provided."
+            raise ValueError(msg)
         if description is None:
             # Only apply if using the function's docstring
             description_ = textwrap.dedent(description_).strip()

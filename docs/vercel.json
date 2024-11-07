@@ -27,6 +27,10 @@
   ],
   "redirects": [
     {
+      "source": "/v0.3/docs/:path(.*/?)*",
+      "destination": "/docs/:path*"
+    },
+    {
       "source": "/docs/modules/agents/tools/custom_tools(/?)",
       "destination": "/docs/how_to/custom_tools/"
     },
@@ -77,6 +81,22 @@
     {
       "source": "/docs/integrations/providers/mlflow_ai_gateway(/?)",
       "destination": "/docs/integrations/providers/mlflow/"
+    },
+    {
+      "source": "/docs/integrations/platforms/:path((?:anthropic|aws|google|huggingface|microsoft|openai)?/?)*",
+      "destination": "/docs/integrations/providers/:path*"
+    },
+    {
+      "source": "/docs/troubleshooting/errors/:path((?:GRAPH_RECURSION_LIMIT|INVALID_CONCURRENT_GRAPH_UPDATE|INVALID_GRAPH_NODE_RETURN_VALUE|MULTIPLE_SUBGRAPHS|INVALID_CHAT_HISTORY)/?)*",
+      "destination": "https://langchain-ai.github.io/langgraph/troubleshooting/errors/:path*"
+    },
+    {
+      "source": "/docs/contributing/:path((?:code|documentation|integrations|testing)(?:/|/.*/?)?)",
+      "destination": "/docs/contributing/how_to/:path"
+    },
+    {
+      "source": "/docs/contributing/:path((?:faq|repo_structure|review_process)/?)",
+      "destination": "/docs/contributing/reference/:path"
     }
   ]
 }

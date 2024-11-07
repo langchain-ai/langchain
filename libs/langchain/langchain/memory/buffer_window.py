@@ -1,12 +1,25 @@
 from typing import Any, Dict, List, Union
 
+from langchain_core._api import deprecated
 from langchain_core.messages import BaseMessage, get_buffer_string
 
 from langchain.memory.chat_memory import BaseChatMemory
 
 
+@deprecated(
+    since="0.3.1",
+    removal="1.0.0",
+    message=(
+        "Please see the migration guide at: "
+        "https://python.langchain.com/docs/versions/migrating_memory/"
+    ),
+)
 class ConversationBufferWindowMemory(BaseChatMemory):
-    """Buffer for storing conversation memory inside a limited size window."""
+    """Use to keep track of the last k turns of a conversation.
+
+    If the number of messages in the conversation is more than the maximum number
+    of messages to keep, the oldest messages are dropped.
+    """
 
     human_prefix: str = "Human"
     ai_prefix: str = "AI"

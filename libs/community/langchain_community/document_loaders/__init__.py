@@ -359,6 +359,7 @@ if TYPE_CHECKING:
     )
     from langchain_community.document_loaders.pebblo import (
         PebbloSafeLoader,
+        PebbloTextLoader,
     )
     from langchain_community.document_loaders.polars_dataframe import (
         PolarsDataFrameLoader,
@@ -650,6 +651,7 @@ _module_lookup = {
     "PDFPlumberLoader": "langchain_community.document_loaders.pdf",
     "PagedPDFSplitter": "langchain_community.document_loaders.pdf",
     "PebbloSafeLoader": "langchain_community.document_loaders.pebblo",
+    "PebbloTextLoader": "langchain_community.document_loaders.pebblo",
     "PlaywrightURLLoader": "langchain_community.document_loaders.url_playwright",
     "PolarsDataFrameLoader": "langchain_community.document_loaders.polars_dataframe",
     "PsychicLoader": "langchain_community.document_loaders.psychic",
@@ -855,6 +857,7 @@ __all__ = [
     "PDFPlumberLoader",
     "PagedPDFSplitter",
     "PebbloSafeLoader",
+    "PebbloTextLoader",
     "PlaywrightURLLoader",
     "PolarsDataFrameLoader",
     "PsychicLoader",
