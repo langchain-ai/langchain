@@ -267,12 +267,6 @@ jobs:
           make tests
         working-directory: ${{ inputs.working-directory }}
 
-      - name: 'Authenticate to Google Cloud'
-        id: 'auth'
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
-
       - name: Import integration test dependencies
         run: poetry install --with test,test_integration
         working-directory: ${{ inputs.working-directory }}
