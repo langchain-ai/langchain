@@ -58,7 +58,7 @@ class OxylabsSearchRun(BaseTool):  # type: ignore[override, override]
             tool = OxylabsSearchRun(wrapper=oxylabs_wrapper, kwargs={"result_categories": ["local_information", "combined_search_result"]})
             model_generated_tool_call = {"args": {"query": "Visit restaurants in Vilnius.", "geo_location": "Vilnius,Lithuania"}, "id": "1", "name": "oxylabs_search", "type": "tool_call",}
             tool.invoke(model_generated_tool_call)
-    
+
         .. code-block:: python
 
             ToolMessage(
