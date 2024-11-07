@@ -961,7 +961,7 @@ url = "../../core"
 
 [[package]]
 name = "langchain-standard-tests"
-version = "0.1.1"
+version = "0.3.0"
 description = "Standard tests for LangChain implementations"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -2907,4 +2907,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4"
-content-hash = "cf0e3bd09b93db2263ff4f41344268a888f7639aefc14268200b76d536a5b70a"
+content-hash = "9168410ed94cb8596fca8106bceb3cf19e9393f117bf94bf1e09191e8de0f3db"
