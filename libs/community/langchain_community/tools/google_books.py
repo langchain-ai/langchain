@@ -9,13 +9,7 @@ from pydantic import BaseModel, Field
 from langchain_community.utilities.google_books import GoogleBooksAPIWrapper
 
 
-class GoogleBooksQueryInput(BaseModel):
-    """Input for the GoogleBooksQuery tool."""
-
-    query: str = Field(description="query to look up on google books")
-
-
-class GoogleBooksQueryRun(BaseTool): # type: ignore[override]
+class GoogleBooksQueryRun(BaseTool):  # type: ignore[override]
     """Tool that searches the Google Books API."""
 
     name: str = "GoogleBooks"
@@ -27,7 +21,6 @@ class GoogleBooksQueryRun(BaseTool): # type: ignore[override]
         "Input should be a query string"
     )
     api_wrapper: GoogleBooksAPIWrapper
-    args_schema: Type[BaseModel] = GoogleBooksQueryInput
 
     def _run(
         self,
