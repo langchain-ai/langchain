@@ -8,8 +8,16 @@ from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.prompts.chat import BaseChatPromptTemplate
 
 
-def _get_inputs(inputs: dict, input_variables: list[str]) -> dict:
-    return {k: inputs[k] for k in input_variables}
+def _get_inputs(inputs: dict, input_variables: list[str], partial_variables: Optional[dict] = None) -> dict:
+    result_dict = {}
+    if partial_variables is not None and len(partial_variables) != 0:
+        result_dict = {partial_k: partial_val for partial_k, partial_val in partial_variables.items()}
+    for k in input_variables:
+        if k in inputs:
+            result_dict[k] = inputs[k]
+        if k not in inputs and k not in result_dict:
+            raise ValueError(f"Input {k} was not provided and is not a partial")
+    return result_dict
 
 
 class PipelinePromptTemplate(BasePromptTemplate):
@@ -58,7 +66,7 @@ class PipelinePromptTemplate(BasePromptTemplate):
             A formatted string.
         """
         for k, prompt in self.pipeline_prompts:
-            _inputs = _get_inputs(kwargs, prompt.input_variables)
+            _inputs = _get_inputs(kwargs, prompt.input_variables, prompt.partial_variables)
             if isinstance(prompt, BaseChatPromptTemplate):
                 kwargs[k] = prompt.format_messages(**_inputs)
             else:
@@ -76,7 +84,7 @@ class PipelinePromptTemplate(BasePromptTemplate):
             A formatted string.
         """
         for k, prompt in self.pipeline_prompts:
-            _inputs = _get_inputs(kwargs, prompt.input_variables)
+            _inputs = _get_inputs(kwargs, prompt.input_variables, prompt.partial_variables)
             if isinstance(prompt, BaseChatPromptTemplate):
                 kwargs[k] = await prompt.aformat_messages(**_inputs)
             else:
@@ -105,6 +113,21 @@ class PipelinePromptTemplate(BasePromptTemplate):
             A formatted string.
         """
         return (await self.aformat_prompt(**kwargs)).to_string()
+
+    def partial(self, **kwargs: dict[str, str]) -> None:
+        """Return a partial of the prompt template.
+
+        Args:
+            kwargs: dict[str, str], partial variables to set.
+
+        Returns:
+            BasePromptTemplate: A partial of the prompt template.
+        """
+        for partial_var, partial_input in kwargs.items():
+            for k, prompt in self.pipeline_prompts:
+                if partial_var in prompt.input_variables:
+                    prompt.partial_variables[partial_var] = partial_input
+    
 
     @property
     def _prompt_type(self) -> str:
