@@ -1007,6 +1007,8 @@ class Chroma(VectorStore):
         embeddings = self._embedding_function.embed_documents(text)
 
         if hasattr(
+            self._collection._client, "get_max_batch_size"
+        ) or hasattr(  # for Chroma 0.5.1 and above
             self._collection._client, "max_batch_size"
         ):  # for Chroma 0.4.10 and above
             from chromadb.utils.batch_utils import create_batches
@@ -1082,6 +1084,8 @@ class Chroma(VectorStore):
         else:
             ids = [id if id is not None else str(uuid.uuid4()) for id in ids]
         if hasattr(
+            chroma_collection._client, "get_max_batch_size"
+        ) or hasattr(  # for Chroma 0.5.1 and above
             chroma_collection._client, "max_batch_size"
         ):  # for Chroma 0.4.10 and above
             from chromadb.utils.batch_utils import create_batches

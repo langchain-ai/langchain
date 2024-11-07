@@ -17,7 +17,7 @@ class TestInMemoryVectorStore(ReadWriteTestSuite):
         return InMemoryVectorStore(embedding=embeddings)
 
 
-class TestAysncInMemoryVectorStore(AsyncReadWriteTestSuite):
+class TestAsyncInMemoryVectorStore(AsyncReadWriteTestSuite):
     @pytest.fixture
     async def vectorstore(self) -> VectorStore:
         embeddings = self.get_embeddings()
