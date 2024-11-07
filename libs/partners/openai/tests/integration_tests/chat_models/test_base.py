@@ -3,6 +3,7 @@
 import base64
 import json
 from pathlib import Path
+from textwrap import dedent
 from typing import Any, AsyncIterator, List, Literal, Optional, cast
 
 import httpx
@@ -1018,3 +1019,45 @@ def test_audio_input_modality() -> None:
 
     assert isinstance(output, AIMessage)
     assert "audio" in output.additional_kwargs
+
+
+def test_prediction_tokens() -> None:
+    code = dedent("""
+    /// <summary>
+    /// Represents a user with a first name, last name, and username.
+    /// </summary>
+    public class User
+    {
+        /// <summary>
+        /// Gets or sets the user's first name.
+        /// </summary>
+        public string FirstName { get; set; }
+
+        /// <summary>
+        /// Gets or sets the user's last name.
+        /// </summary>
+        public string LastName { get; set; }
+
+        /// <summary>
+        /// Gets or sets the user's username.
+        /// </summary>
+        public string Username { get; set; }
+    }
+    """)
+
+    llm = ChatOpenAI(model="gpt-4o")
+    query = (
+        "Replace the Username property with an Email property. "
+        "Respond only with code, and with no markdown formatting."
+    )
+    response = llm.invoke(
+        [{"role": "user", "content": query}, {"role": "user", "content": code}],
+        prediction={"type": "content", "content": code},
+    )
+    assert isinstance(response, AIMessage)
+    assert response.response_metadata is not None
+    output_token_details = response.response_metadata["token_usage"][
+        "completion_tokens_details"
+    ]
+    assert output_token_details["accepted_prediction_tokens"] > 0
+    assert output_token_details["rejected_prediction_tokens"] > 0
