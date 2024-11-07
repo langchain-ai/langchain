@@ -35,6 +35,7 @@ from pydantic import (
     validate_arguments,
 )
 from pydantic.v1 import BaseModel as BaseModelV1
+from pydantic.v1 import ValidationError as ValidationErrorV1
 from pydantic.v1 import validate_arguments as validate_arguments_v1
 
 from langchain_core._api import deprecated
@@ -404,7 +405,7 @@ class ChildTool(BaseTool):
     """Handle the content of the ToolException thrown."""
 
     handle_validation_error: Optional[
-        Union[bool, str, Callable[[ValidationError], str]]
+        Union[bool, str, Callable[[Union[ValidationError, ValidationErrorV1]], str]]
     ] = False
     """Handle the content of the ValidationError thrown."""
 
@@ -448,7 +449,7 @@ class ChildTool(BaseTool):
     def tool_call_schema(self) -> type[BaseModel]:
         full_schema = self.get_input_schema()
         fields = []
-        for name, type_ in _get_all_basemodel_annotations(full_schema).items():
+        for name, type_ in get_all_basemodel_annotations(full_schema).items():
             if not _is_injected_arg_type(type_):
                 fields.append(name)
         return _create_subset_model(
@@ -667,7 +668,7 @@ class ChildTool(BaseTool):
             else:
                 content = response
             status = "success"
-        except ValidationError as e:
+        except (ValidationError, ValidationErrorV1) as e:
             if not self.handle_validation_error:
                 error_to_raise = e
             else:
@@ -819,9 +820,11 @@ def _is_tool_call(x: Any) -> bool:
 
 
 def _handle_validation_error(
-    e: ValidationError,
+    e: Union[ValidationError, ValidationErrorV1],
     *,
-    flag: Union[Literal[True], str, Callable[[ValidationError], str]],
+    flag: Union[
+        Literal[True], str, Callable[[Union[ValidationError, ValidationErrorV1]], str]
+    ],
 ) -> str:
     if isinstance(flag, bool):
         content = "Tool input validation error"
@@ -959,7 +962,7 @@ def _is_injected_arg_type(type_: type) -> bool:
     )
 
 
-def _get_all_basemodel_annotations(
+def get_all_basemodel_annotations(
     cls: Union[TypeBaseModel, Any], *, default_to_bound: bool = True
 ) -> dict[str, type]:
     # cls has no subscript: cls = FooBar
@@ -977,7 +980,7 @@ def _get_all_basemodel_annotations(
         orig_bases: tuple = getattr(cls, "__orig_bases__", ())
     # cls has subscript: cls = FooBar[int]
     else:
-        annotations = _get_all_basemodel_annotations(
+        annotations = get_all_basemodel_annotations(
             get_origin(cls), default_to_bound=False
         )
         orig_bases = (cls,)
@@ -991,7 +994,7 @@ def _get_all_basemodel_annotations(
             # if class = FooBar inherits from Baz, parent = Baz
             if isinstance(parent, type) and is_pydantic_v1_subclass(parent):
                 annotations.update(
-                    _get_all_basemodel_annotations(parent, default_to_bound=False)
+                    get_all_basemodel_annotations(parent, default_to_bound=False)
                 )
                 continue
 

@@ -33,7 +33,7 @@ class CreateDraftSchema(BaseModel):
     )
 
 
-class GmailCreateDraft(GmailBaseTool):
+class GmailCreateDraft(GmailBaseTool):  # type: ignore[override, override]
     """Tool that creates a draft email for Gmail."""
 
     name: str = "create_gmail_draft"

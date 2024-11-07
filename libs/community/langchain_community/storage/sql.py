@@ -95,7 +95,7 @@ class SQLStore(BaseStore[str, bytes]):
 
         .. code-block:: python
 
-            from langchain_rag.storage import SQLStore
+            from langchain_community.storage import SQLStore
 
             # Instantiate the SQLStore with the root path
             sql_store = SQLStore(namespace="test", db_url="sqlite://:memory:")
