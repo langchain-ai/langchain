@@ -406,11 +406,13 @@ def _format_api_ref_url(doc_path: str, compact: bool = False) -> str:
 
 
 def _format_template_url(template_name: str) -> str:
-    return f"https://{LANGCHAIN_PYTHON_URL}/docs/templates/{template_name}"
+    return (
+        f"https://github.com/langchain-ai/langchain/blob/v0.2/templates/{template_name}"
+    )
 
 
 def _format_cookbook_url(cookbook_name: str) -> str:
-    return f"https://github.com/langchain-ai/langchain/blob/master/cookbook/{cookbook_name}.ipynb"
+    return f"https://github.com/langchain-ai/langchain/blob/v0.2/cookbook/{cookbook_name}.ipynb"
 
 
 def _compact_module_full_name(doc_path: str) -> str:
