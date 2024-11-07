@@ -179,7 +179,7 @@ class OllamaLLM(BaseLLM):
         return self
 
     def _convert_images_to_ollama_input(
-        self, image_list: List[str | dict]
+        self, image_list: List[Union[str, dict]]
     ) -> List[str]:
         """Format given images to pass as Ollama image input."""
         images: List[str] = []
