@@ -226,7 +226,7 @@ class ChatSambaNovaCloud(BaseChatModel):
     top_k: Optional[int] = Field(default=None)
     """model top k"""
 
-    stream_options: dict = Field(default={"include_usage": True})
+    stream_options: Dict[str, Any] = Field(default={"include_usage": True})
     """stream options, include usage to get generation metrics"""
 
     class Config:
@@ -278,9 +278,9 @@ class ChatSambaNovaCloud(BaseChatModel):
 
     def bind_tools(
         self,
-        tools: Sequence[Union[Dict[str, Any], Type, Callable, BaseTool]],
+        tools: Sequence[Union[Dict[str, Any], Type[Any], Callable[..., Any], BaseTool]],
         *,
-        tool_choice: Optional[Union[dict, bool, str]] = None,
+        tool_choice: Optional[Union[Dict[str, Any], bool, str]] = None,
         parallel_tool_calls: Optional[bool] = False,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
@@ -401,7 +401,7 @@ class ChatSambaNovaCloud(BaseChatModel):
         content = response_dict["choices"][0]["message"].get("content", "")
         if content is None:
             content = ""
-        additional_kwargs: Dict = {}
+        additional_kwargs: Dict[str, Any] = {}
         tool_calls = []
         invalid_tool_calls = []
         raw_tool_calls = response_dict["choices"][0]["message"].get("tool_calls")
@@ -738,10 +738,10 @@ class ChatSambaStudio(BaseChatModel):
     process_prompt: Optional[bool] = Field(default=True)
     """whether process prompt (for CoE generic v1 and v2 endpoints)"""
 
-    stream_options: dict = Field(default={"include_usage": True})
+    stream_options: Dict[str, Any] = Field(default={"include_usage": True})
     """stream options, include usage to get generation metrics"""
 
-    special_tokens: dict = Field(
+    special_tokens: Dict[str, Any] = Field(
         default={
             "start": "<|begin_of_text|>",
             "start_role": "<|begin_of_text|><|start_header_id|>{role}<|end_header_id|>",
