@@ -1,4 +1,5 @@
-from typing import Any, Iterable, List, Optional, cast
+from collections.abc import Iterable
+from typing import Any, Optional, cast
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings, FakeEmbeddings
@@ -11,8 +12,8 @@ from langchain_core.vectorstores import VectorStore
 
 class DummyVectorStore(VectorStore):
     def __init__(self, init_arg: Optional[str] = None):
-        self.texts: List[str] = []
-        self.metadatas: List[dict] = []
+        self.texts: list[str] = []
+        self.metadatas: list[dict] = []
         self._embeddings: Optional[Embeddings] = None
         self.init_arg = init_arg
 
@@ -23,9 +24,9 @@ class DummyVectorStore(VectorStore):
     def add_texts(
         self,
         texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        metadatas: Optional[list[dict]] = None,
         **kwargs: Any,
-    ) -> List[str]:
+    ) -> list[str]:
         self.texts.extend(texts)
         if metadatas:
             self.metadatas.extend(metadatas)
@@ -33,7 +34,7 @@ class DummyVectorStore(VectorStore):
 
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
-    ) -> List[Document]:
+    ) -> list[Document]:
         return [
             Document(
                 page_content=query, metadata={"query": query, "k": k, "other": "other"}
@@ -47,7 +48,7 @@ class DummyVectorStore(VectorStore):
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> list[Document]:
         return [
             Document(
                 page_content=query,
@@ -58,9 +59,9 @@ class DummyVectorStore(VectorStore):
     @classmethod
     def from_texts(
         cls,
-        texts: List[str],
+        texts: list[str],
         embedding: Embeddings,
-        metadatas: Optional[List[dict]] = None,
+        metadatas: Optional[list[dict]] = None,
         **kwargs: Any,
     ) -> "DummyVectorStore":
         store = DummyVectorStore(**kwargs)

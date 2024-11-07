@@ -8,7 +8,7 @@ from langchain_core.tools import BaseTool
 from langchain_community.utilities.google_scholar import GoogleScholarAPIWrapper
 
 
-class GoogleScholarQueryRun(BaseTool):
+class GoogleScholarQueryRun(BaseTool):  # type: ignore[override]
     """Tool that queries the Google search API."""
 
     name: str = "google_scholar"

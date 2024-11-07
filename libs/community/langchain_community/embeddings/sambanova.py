@@ -4,7 +4,7 @@ from typing import Dict, Generator, List, Optional
 import requests
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils import get_from_dict_or_env, pre_init
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class SambaStudioEmbeddings(BaseModel, Embeddings):
@@ -63,6 +63,8 @@ class SambaStudioEmbeddings(BaseModel, Embeddings):
 
     batch_size: int = 32
     """Batch size for the embedding models"""
+
+    model_config = ConfigDict(protected_namespaces=())
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
@@ -213,7 +215,7 @@ class SambaStudioEmbeddings(BaseModel, Embeddings):
                     )
                 try:
                     if params.get("select_expert"):
-                        embedding = response.json()["predictions"][0]
+                        embedding = response.json()["predictions"]
                     else:
                         embedding = response.json()["predictions"]
                     embeddings.extend(embedding)
@@ -299,7 +301,7 @@ class SambaStudioEmbeddings(BaseModel, Embeddings):
                 )
             try:
                 if params.get("select_expert"):
-                    embedding = response.json()["predictions"][0][0]
+                    embedding = response.json()["predictions"][0]
                 else:
                     embedding = response.json()["predictions"][0]
             except KeyError:
