@@ -189,7 +189,7 @@ class ChatCloudflareWorkersAI(BaseChatModel):
         schema: Union[Dict, Type[BaseModel]],
         *,
         include_raw: bool = False,
-        method: Optional[Literal["json_mode"]] = None,
+        method: Optional[Literal["json_mode", "function_calling"]] = "function_calling",
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
         """Model wrapper that returns outputs formatted to match the given schema."""

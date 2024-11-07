@@ -1,8 +1,9 @@
 """Test CloudflareWorkersAI Chat API wrapper."""
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Type
 
 import pytest
+from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
@@ -10,6 +11,7 @@ from langchain_core.messages import (
     SystemMessage,
     ToolMessage,
 )
+from langchain_standard_tests.unit_tests import ChatModelUnitTests
 
 from langchain_community.chat_models.cloudflare_workersai import (
     ChatCloudflareWorkersAI,
@@ -17,14 +19,18 @@ from langchain_community.chat_models.cloudflare_workersai import (
 )
 
 
-def test_standard_params() -> None:
-    llm = ChatCloudflareWorkersAI(
-        account_id="my_account_id",
-        api_token="my_api_token",
-        model="@hf/nousresearch/hermes-2-pro-mistral-7b",
-    )
+class TestChatCloudflareWorkersAI(ChatModelUnitTests):
+    @property
+    def chat_model_class(self) -> Type[BaseChatModel]:
+        return ChatCloudflareWorkersAI
 
-    assert llm.model == "@hf/nousresearch/hermes-2-pro-mistral-7b"
+    @property
+    def chat_model_params(self) -> dict:
+        return {
+            "account_id": "my_account_id",
+            "api_token": "my_api_token",
+            "model": "@hf/nousresearch/hermes-2-pro-mistral-7b",
+        }
 
 
 @pytest.mark.parametrize(
