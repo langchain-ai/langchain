@@ -16,7 +16,7 @@ IMPORT_OPENSEARCH_PY_ERROR = (
     "Could not import OpenSearch. Please install it with `pip install opensearch-py`."
 )
 IMPORT_ASYNC_OPENSEARCH_PY_ERROR = """
-Could not import AsyncOpenSearch. 
+Could not import AsyncOpenSearch.
 Please install it with `pip install opensearch-py`."""
 
 SCRIPT_SCORING_SEARCH = "script_scoring"
@@ -902,6 +902,7 @@ class OpenSearchVectorSearch(VectorStore):
                         if metadata_field == "*" or metadata_field not in hit["_source"]
                         else hit["_source"][metadata_field]
                     ),
+                    id=hit["_id"],
                 ),
                 hit["_score"],
             )
@@ -1099,6 +1100,7 @@ class OpenSearchVectorSearch(VectorStore):
             Document(
                 page_content=results[i]["_source"][text_field],
                 metadata=results[i]["_source"][metadata_field],
+                id=results[i]["_id"],
             )
             for i in mmr_selected
         ]
