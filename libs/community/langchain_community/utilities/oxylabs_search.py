@@ -59,8 +59,20 @@ def _get_default_params() -> dict:
             - request_timeout (int): Timeout for the Oxylabs service, in seconds.
             - result_categories (list): Specifies the desired categories for the
                 results from the available:
-                    `knowledge_graph`, `combined_search_result`, `product_information`,
-                    `local_information`, `search_information`.
+                    `knowledge_graph` which includes Oxylabs results categories:
+                       `knowledge`, `recipes`, `carousel`, `apps`.
+                    `combined_search_result` which includes Oxylabs results categories:
+                       `organic`, `paid`, `organic_videos`, `featured_snippet`,
+                       `top_stories`, `finance`, `sports_games`, `twitter`,
+                       `discussions_and_forums`, `images`, `videos`, `video_box`.
+                    `product_information` which includes Oxylabs results categories:
+                       `popular_products`, `pla`.
+                    `local_information` which includes Oxylabs results categories:
+                       `top_sights`, `flights`, `hotels`, `local_pack`,
+                       `local_service_ads`, `jobs`.
+                    `search_information` which includes Oxylabs results categories:
+                       `search_information`, `related_searches`,
+                       `related_searches_categorized`, `related_questions`.
                 The list preserves the order of the categories,
                 allowing prioritized filtering. If left empty (default),
                 results are returned from all available categories without filtering.
