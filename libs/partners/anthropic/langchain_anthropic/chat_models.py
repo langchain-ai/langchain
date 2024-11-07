@@ -1,3 +1,4 @@
+import copy
 import re
 import warnings
 from operator import itemgetter
@@ -116,7 +117,6 @@ def _merge_messages(
     """Merge runs of human/tool messages into single human messages with content blocks."""  # noqa: E501
     merged: list = []
     for curr in messages:
-        curr = curr.model_copy(deep=True)
         if isinstance(curr, ToolMessage):
             if (
                 isinstance(curr.content, list)
@@ -139,16 +139,21 @@ def _merge_messages(
                     ]
                 )
         last = merged[-1] if merged else None
-        if isinstance(last, HumanMessage) and isinstance(curr, HumanMessage):
-            if isinstance(last.content, str):
-                new_content: List = [{"type": "text", "text": last.content}]
+        if any(
+            all(isinstance(m, c) for m in (curr, last))
+            for c in (SystemMessage, HumanMessage)
+        ):
+            if isinstance(cast(BaseMessage, last).content, str):
+                new_content: List = [
+                    {"type": "text", "text": cast(BaseMessage, last).content}
+                ]
             else:
-                new_content = last.content
+                new_content = copy.copy(cast(list, cast(BaseMessage, last).content))
             if isinstance(curr.content, str):
                 new_content.append({"type": "text", "text": curr.content})
             else:
                 new_content.extend(curr.content)
-            last.content = new_content
+            merged[-1] = curr.model_copy(update={"content": new_content})
         else:
             merged.append(curr)
     return merged
@@ -174,13 +179,15 @@ def _format_messages(
     merged_messages = _merge_messages(messages)
     for i, message in enumerate(merged_messages):
         if message.type == "system":
-            if i != 0:
-                raise ValueError("System message must be at beginning of message list.")
-            if isinstance(message.content, list):
+            if system is not None:
+                raise ValueError("Received multiple non-consecutive system messages.")
+            elif isinstance(message.content, list):
                 system = [
-                    block
-                    if isinstance(block, dict)
-                    else {"type": "text", "text": "block"}
+                    (
+                        block
+                        if isinstance(block, dict)
+                        else {"type": "text", "text": block}
+                    )
                     for block in message.content
                 ]
             else:
@@ -1216,12 +1223,12 @@ def _make_message_chunk_from_anthropic_event(
             content_block = event.delta.model_dump()
             content_block["index"] = event.index
             content_block["type"] = "tool_use"
-            tool_call_chunk = {
-                "index": event.index,
-                "id": None,
-                "name": None,
-                "args": event.delta.partial_json,
-            }
+            tool_call_chunk = create_tool_call_chunk(
+                index=event.index,
+                id=None,
+                name=None,
+                args=event.delta.partial_json,
+            )
             message_chunk = AIMessageChunk(
                 content=[content_block],
                 tool_call_chunks=[tool_call_chunk],  # type: ignore
