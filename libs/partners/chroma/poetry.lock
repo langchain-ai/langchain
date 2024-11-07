@@ -966,7 +966,7 @@ description = "Standard tests for LangChain implementations"
 optional = false
 python-versions = ">=3.9,<4.0"
 files = []
-develop = true
+develop = false
 
 [package.dependencies]
 httpx = "^0.27.0"
@@ -975,8 +975,11 @@ pytest = ">=7,<9"
 syrupy = "^4"
 
 [package.source]
-type = "directory"
-url = "../../standard-tests"
+type = "git"
+url = "https://github.com/langchain-ai/langchain.git"
+reference = "HEAD"
+resolved_reference = "2cb39270ecd920adb93451c6edecc6e5b2efab30"
+subdirectory = "libs/standard-tests/"
 
 [[package]]
 name = "langsmith"
@@ -2907,4 +2910,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4"
-content-hash = "9168410ed94cb8596fca8106bceb3cf19e9393f117bf94bf1e09191e8de0f3db"
+content-hash = "9c0bb01edf7ea4fae82ced56a7fc121ffdf9222a13fbbf28d4eeaa89c4ca361d"
