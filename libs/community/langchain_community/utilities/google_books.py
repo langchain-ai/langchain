@@ -1,14 +1,14 @@
 """Util that calls Google Books."""
 
-from typing import Dict, Optional, List
+from typing import Dict, List, Optional
 
 import requests
+from langchain_core.utils import get_from_dict_or_env
 from pydantic import BaseModel, ConfigDict, model_validator
 
-from langchain_core.utils import get_from_dict_or_env
-
 GOOGLE_BOOKS_MAX_ITEM_SIZE = 5
-GOOGLE_BOOKS_API_URL = 'https://www.googleapis.com/books/v1/volumes'
+GOOGLE_BOOKS_API_URL = "https://www.googleapis.com/books/v1/volumes"
+
 
 class GoogleBooksAPIWrapper(BaseModel):
     """Wrapper around Google Books API.
@@ -34,7 +34,7 @@ class GoogleBooksAPIWrapper(BaseModel):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
         google_books_api_key = get_from_dict_or_env(
-          values, "google_books_api_key", "GOOGLE_BOOKS_API_KEY"
+            values, "google_books_api_key", "GOOGLE_BOOKS_API_KEY"
         )
         values["google_books_api_key"] = google_books_api_key
 
@@ -42,11 +42,11 @@ class GoogleBooksAPIWrapper(BaseModel):
 
     def run(self, query: str) -> str:
         # build Url based on API key, query, and max results
-        params = {
-            'q': query,
-            'maxResults': self.top_k_results,
-            'key': self.google_books_api_key
-        }
+        params = (
+            ("q", query),
+            ("maxResults", self.top_k_results),
+            ("key", self.google_books_api_key),
+        )
 
         # send request
         response = requests.get(GOOGLE_BOOKS_API_URL, params=params)
@@ -55,39 +55,38 @@ class GoogleBooksAPIWrapper(BaseModel):
         # some error handeling
         if response.status_code != 200:
             code = response.status_code
-            error = json.get('error', {}).get('message', 'Internal failure')
-            return f'Unable to retrieve books got status code {code}: {error}'
+            error = json.get("error", {}).get("message", "Internal failure")
+            return f"Unable to retrieve books got status code {code}: {error}"
 
         # send back data
-        return self._format(query, json.get('items', []))
+        return self._format(query, json.get("items", []))
 
     def _format(self, query: str, books: List) -> str:
         if not books:
-            return f'Sorry no books could be found for your query: {query}'
+            return f"Sorry no books could be found for your query: {query}"
 
-        start = f'Here are {len(books)} suggestions for books related to {query}:'
+        start = f"Here are {len(books)} suggestions for books related to {query}:"
 
         results = []
         results.append(start)
         i = 1
 
         for book in books:
-            info = book['volumeInfo']
-            title = info['title']
-            authors = self._format_authors(info['authors'])
-            summary = info['description']
-            source = info['infoLink']
+            info = book["volumeInfo"]
+            title = info["title"]
+            authors = self._format_authors(info["authors"])
+            summary = info["description"]
+            source = info["infoLink"]
 
             desc = f'{i}. "{title}" by {authors}: {summary}\n'
-            desc += f'You can read more at {source}'
+            desc += f"You can read more at {source}"
             results.append(desc)
 
             i += 1
 
-        return '\n\n'.join(results)
+        return "\n\n".join(results)
 
     def _format_authors(self, authors: List) -> str:
         if len(authors) == 1:
             return authors[0]
-        return '{} and {}'.format(', '.join(authors[:-1]), authors[-1])
-
+        return "{} and {}".format(", ".join(authors[:-1]), authors[-1])
