@@ -1,8 +1,18 @@
 import json
-from typing import Any, Callable, Dict, Iterator, List, Literal, Optional, Sequence, Type, Tuple, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+)
 
 import requests
-from langchain_core.tools import BaseTool
 from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
@@ -21,12 +31,13 @@ from langchain_core.messages import (
     SystemMessage,
     ToolMessage,
 )
-from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.output_parsers.openai_tools import (
     make_invalid_tool_call,
     parse_tool_call,
 )
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.runnables import Runnable
+from langchain_core.tools import BaseTool
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from langchain_core.utils.function_calling import convert_to_openai_tool
 from pydantic import Field, SecretStr
@@ -150,7 +161,7 @@ class ChatSambaNovaCloud(BaseChatModel):
 
         response = chat.ainvoke(messages)
         await response
-        
+
     Tool calling:
         .. code-block:: python
 
@@ -159,7 +170,10 @@ class ChatSambaNovaCloud(BaseChatModel):
         class GetWeather(BaseModel):
             '''Get the current weather in a given location'''
 
-            location: str = Field(..., description="The city and state, e.g. Los Angeles, CA")
+            location: str = Field(
+                ...,
+                description="The city and state, e.g. Los Angeles, CA"
+            )
 
         llm_with_tools = llm.bind_tools([GetWeather, GetPopulation])
         ai_msg = llm_with_tools.invoke("Should I bring my umbrella today in LA?")
@@ -269,17 +283,15 @@ class ChatSambaNovaCloud(BaseChatModel):
         tool_choice: Optional[Union[dict, bool, str]] = None,
         parallel_tool_calls: Optional[bool] = False,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, BaseMessage]:    
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind tool-like objects to this chat model
 
-        tool_choice: does not currently support "any", choice like 
-        should be one of ["auto", "none", "required"] 
+        tool_choice: does not currently support "any", choice like
+        should be one of ["auto", "none", "required"]
         """
-        
-        formatted_tools = [
-            convert_to_openai_tool(tool) for tool in tools
-        ]
-        
+
+        formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
+
         if tool_choice:
             if isinstance(tool_choice, str):
                 # tool_choice is a tool/function name
@@ -289,7 +301,9 @@ class ChatSambaNovaCloud(BaseChatModel):
                 if tool_choice:
                     tool_choice = "required"
             elif isinstance(tool_choice, dict):
-                raise ValueError("tool_choice must be one of ['auto', 'none', 'required']")
+                raise ValueError(
+                    "tool_choice must be one of ['auto', 'none', 'required']"
+                )
             else:
                 raise ValueError(
                     f"Unrecognized tool_choice type. Expected str, bool"
@@ -301,8 +315,13 @@ class ChatSambaNovaCloud(BaseChatModel):
         kwargs["parallel_tool_calls"] = parallel_tool_calls
         return super().bind(tools=formatted_tools, **kwargs)
 
-
-    def _handle_request(self, messages_dicts: List[Dict], stop: Optional[List[str]] = None, streaming: bool = False, **kwargs) -> Response:
+    def _handle_request(
+        self,
+        messages_dicts: List[Dict[str, Any]],
+        stop: Optional[List[str]] = None,
+        streaming: bool = False,
+        **kwargs: Any,
+    ) -> Response:
         """
         Performs a post request to the LLM API.
 
@@ -316,45 +335,46 @@ class ChatSambaNovaCloud(BaseChatModel):
         """
         if streaming:
             data = {
-                'messages': messages_dicts,
-                'max_tokens': self.max_tokens,
-                'stop': stop,
-                'model': self.model,
-                'temperature': self.temperature,
-                'top_p': self.top_p,
-                'top_k': self.top_k,
-                'stream': True,
-                'stream_options': self.stream_options,
-                **kwargs
+                "messages": messages_dicts,
+                "max_tokens": self.max_tokens,
+                "stop": stop,
+                "model": self.model,
+                "temperature": self.temperature,
+                "top_p": self.top_p,
+                "top_k": self.top_k,
+                "stream": True,
+                "stream_options": self.stream_options,
+                **kwargs,
             }
         else:
             data = {
-                'messages': messages_dicts,
-                'max_tokens': self.max_tokens,
-                'stop': stop,
-                'model': self.model,
-                'temperature': self.temperature,
-                'top_p': self.top_p,
-                'top_k': self.top_k,
+                "messages": messages_dicts,
+                "max_tokens": self.max_tokens,
+                "stop": stop,
+                "model": self.model,
+                "temperature": self.temperature,
+                "top_p": self.top_p,
+                "top_k": self.top_k,
                 **kwargs,
             }
         http_session = requests.Session()
         response = http_session.post(
             self.sambanova_url,
             headers={
-                'Authorization': f'Bearer {self.sambanova_api_key.get_secret_value()}',
-                'Content-Type': 'application/json'
+                "Authorization": f"Bearer {self.sambanova_api_key.get_secret_value()}",
+                "Content-Type": "application/json",
             },
             json=data,
-            stream =  streaming
+            stream=streaming,
         )
         if response.status_code != 200:
             raise RuntimeError(
-                f'Sambanova /complete call failed with status code ' f'{response.status_code}.',
-                f'{response.text}.',
+                f"Sambanova /complete call failed with status code "
+                f"{response.status_code}.",
+                f"{response.text}.",
             )
         return response
-    
+
     def _process_response(self, response: Response) -> AIMessage:
         """
         Process a non streaming response from the api
@@ -367,27 +387,31 @@ class ChatSambaNovaCloud(BaseChatModel):
         """
         try:
             response_dict = response.json()
-            if response_dict.get('error'):
+            if response_dict.get("error"):
                 raise RuntimeError(
-                    f'Sambanova /complete call failed with status code ' f'{response.status_code}.',
-                    f'{response_dict}.',
+                    f"Sambanova /complete call failed with status code "
+                    f"{response.status_code}.",
+                    f"{response_dict}.",
                 )
         except Exception as e:
             raise RuntimeError(
-                f"Sambanova /complete call failed couldn't get JSON response {e}" f'response: {response.text}'
+                f"Sambanova /complete call failed couldn't get JSON response {e}"
+                f"response: {response.text}"
             )
-        content = response_dict['choices'][0]['message'].get('content',"")
+        content = response_dict["choices"][0]["message"].get("content", "")
         if content is None:
             content = ""
         additional_kwargs: Dict = {}
         tool_calls = []
         invalid_tool_calls = []
-        raw_tool_calls = response_dict['choices'][0]['message'].get('tool_calls')
+        raw_tool_calls = response_dict["choices"][0]["message"].get("tool_calls")
         if raw_tool_calls:
             additional_kwargs["tool_calls"] = raw_tool_calls
             for raw_tool_call in raw_tool_calls:
                 if isinstance(raw_tool_call["function"]["arguments"], dict):
-                    raw_tool_call["function"]["arguments"]=json.dumps(raw_tool_call["function"].get("arguments",{}))
+                    raw_tool_call["function"]["arguments"] = json.dumps(
+                        raw_tool_call["function"].get("arguments", {})
+                    )
                 try:
                     tool_calls.append(parse_tool_call(raw_tool_call, return_id=True))
                 except Exception as e:
@@ -400,17 +424,19 @@ class ChatSambaNovaCloud(BaseChatModel):
             tool_calls=tool_calls,
             invalid_tool_calls=invalid_tool_calls,
             response_metadata={
-                'finish_reason': response_dict['choices'][0]['finish_reason'],
-                'usage': response_dict.get('usage'),
-                'model_name': response_dict['model'],
-                'system_fingerprint': response_dict['system_fingerprint'],
-                'created': response_dict['created'],
+                "finish_reason": response_dict["choices"][0]["finish_reason"],
+                "usage": response_dict.get("usage"),
+                "model_name": response_dict["model"],
+                "system_fingerprint": response_dict["system_fingerprint"],
+                "created": response_dict["created"],
             },
-            id=response_dict['id'],
+            id=response_dict["id"],
         )
         return message
-    
-    def _process_stream_response(self, response: Response) -> Iterator[BaseMessageChunk]:
+
+    def _process_stream_response(
+        self, response: Response
+    ) -> Iterator[BaseMessageChunk]:
         """
         Process a streaming response from the api
 
@@ -423,48 +449,55 @@ class ChatSambaNovaCloud(BaseChatModel):
         try:
             import sseclient
         except ImportError:
-            raise ImportError('could not import sseclient library' 'Please install it with `pip install sseclient-py`.')
+            raise ImportError(
+                "could not import sseclient library"
+                "Please install it with `pip install sseclient-py`."
+            )
 
         client = sseclient.SSEClient(response)
 
         for event in client.events():
-            if event.event == 'error_event':
+            if event.event == "error_event":
                 raise RuntimeError(
-                    f'Sambanova /complete call failed with status code ' f'{response.status_code}.' f'{event.data}.'
+                    f"Sambanova /complete call failed with status code "
+                    f"{response.status_code}."
+                    f"{event.data}."
                 )
 
             try:
                 # check if the response is a final event
                 # in that case event data response is '[DONE]'
-                if event.data != '[DONE]':
+                if event.data != "[DONE]":
                     if isinstance(event.data, str):
                         data = json.loads(event.data)
                     else:
                         raise RuntimeError(
-                            f'Sambanova /complete call failed with status code '
-                            f'{response.status_code}.'
-                            f'{event.data}.'
+                            f"Sambanova /complete call failed with status code "
+                            f"{response.status_code}."
+                            f"{event.data}."
                         )
-                    if data.get('error'):
+                    if data.get("error"):
                         raise RuntimeError(
-                            f'Sambanova /complete call failed with status code '
-                            f'{response.status_code}.'
-                            f'{event.data}.'
+                            f"Sambanova /complete call failed with status code "
+                            f"{response.status_code}."
+                            f"{event.data}."
                         )
-                    if len(data['choices']) > 0:
-                        finish_reason = data['choices'][0].get('finish_reason')
-                        content = data['choices'][0]['delta']['content']
-                        id = data['id']
-                        chunk = AIMessageChunk(content=content, id=id, additional_kwargs={})
+                    if len(data["choices"]) > 0:
+                        finish_reason = data["choices"][0].get("finish_reason")
+                        content = data["choices"][0]["delta"]["content"]
+                        id = data["id"]
+                        chunk = AIMessageChunk(
+                            content=content, id=id, additional_kwargs={}
+                        )
                     else:
-                        content = ''
-                        id = data['id']
+                        content = ""
+                        id = data["id"]
                         metadata = {
-                            'finish_reason': finish_reason,
-                            'usage': data.get('usage'),
-                            'model_name': data['model'],
-                            'system_fingerprint': data['system_fingerprint'],
-                            'created': data['created'],
+                            "finish_reason": finish_reason,
+                            "usage": data.get("usage"),
+                            "model_name": data["model"],
+                            "system_fingerprint": data["system_fingerprint"],
+                            "created": data["created"],
                         }
                         chunk = AIMessageChunk(
                             content=content,
@@ -473,10 +506,12 @@ class ChatSambaNovaCloud(BaseChatModel):
                             additional_kwargs={},
                         )
                     yield chunk
-                    
-            except Exception as e:
-                raise RuntimeError(f'Error getting content chunk raw streamed response: {e}' f'data: {event.data}')
 
+            except Exception as e:
+                raise RuntimeError(
+                    f"Error getting content chunk raw streamed response: {e}"
+                    f"data: {event.data}"
+                )
 
     def _generate(
         self,
@@ -502,17 +537,19 @@ class ChatSambaNovaCloud(BaseChatModel):
             result: ChatResult with model generation
         """
         if self.streaming:
-            stream_iter = self._stream(messages, stop=stop, run_manager=run_manager, **kwargs)
+            stream_iter = self._stream(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            )
             if stream_iter:
                 return generate_from_stream(stream_iter)
         messages_dicts = _create_message_dicts(messages)
         response = self._handle_request(messages_dicts, stop, streaming=False, **kwargs)
         message = self._process_response(response)
         generation = ChatGeneration(
-            message=message,  
+            message=message,
             generation_info={
                 "finish_reason": message.response_metadata["finish_reason"]
-                }
+            },
         )
         return ChatResult(generations=[generation])
 
@@ -540,11 +577,9 @@ class ChatSambaNovaCloud(BaseChatModel):
             chunk: ChatGenerationChunk with model partial generation
         """
         messages_dicts = _create_message_dicts(messages)
-        response = self._handle_request(messages_dicts, stop, streaming = True, **kwargs)
+        response = self._handle_request(messages_dicts, stop, streaming=True, **kwargs)
         for ai_message_chunk in self._process_stream_response(response):
-            chunk = ChatGenerationChunk(
-                message=ai_message_chunk
-            )
+            chunk = ChatGenerationChunk(message=ai_message_chunk)
             if run_manager:
                 run_manager.on_llm_new_token(chunk.text, chunk=chunk)
             yield chunk
