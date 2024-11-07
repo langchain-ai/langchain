@@ -396,7 +396,7 @@ class BedrockBase(BaseModel, ABC):
         """Validate that AWS credentials to and python package exists in environment."""
 
         # Skip creating new client if passed in constructor
-        if values["client"] is not None:
+        if values.get("client") is not None:
             return values
 
         try:

@@ -22,7 +22,7 @@ from langchain_community.vectorstores.vectara import (
 #    VECTARA_API_KEY, VECTARA_CORPUS_ID and VECTARA_CUSTOMER_ID
 #
 
-test_prompt_name = "vectara-experimental-summary-ext-2023-12-11-sml"
+test_prompt_name = "vectara-summary-ext-24-05-med-omni"
 
 
 def get_abbr(s: str) -> str:
@@ -299,8 +299,36 @@ def test_vectara_with_langchain_mmr(vectara3: Vectara) -> None:  # type: ignore[
     )
 
 
-def test_vectara_mmr(vectara3: Vectara) -> None:  # type: ignore[no-untyped-def]
-    # test MMR directly with rerank_config
+def test_vectara_rerankers(vectara3: Vectara) -> None:  # type: ignore[no-untyped-def]
+    # test Vectara multi-lingual reranker
+    summary_config = SummaryConfig(is_enabled=True, max_results=7, response_lang="eng")
+    rerank_config = RerankConfig(reranker="rerank_multilingual_v1", rerank_k=50)
+    config = VectaraQueryConfig(
+        k=10,
+        lambda_val=0.005,
+        rerank_config=rerank_config,
+        summary_config=summary_config,
+    )
+    rag = vectara3.as_rag(config)
+    output1 = rag.invoke("what is generative AI?")["answer"]
+    assert len(output1) > 0
+
+    # test Vectara udf reranker
+    summary_config = SummaryConfig(is_enabled=True, max_results=7, response_lang="eng")
+    rerank_config = RerankConfig(
+        reranker="udf", rerank_k=50, user_function="get('$.score')"
+    )
+    config = VectaraQueryConfig(
+        k=10,
+        lambda_val=0.005,
+        rerank_config=rerank_config,
+        summary_config=summary_config,
+    )
+    rag = vectara3.as_rag(config)
+    output1 = rag.invoke("what is generative AI?")["answer"]
+    assert len(output1) > 0
+
+    # test Vectara MMR reranker
     summary_config = SummaryConfig(is_enabled=True, max_results=7, response_lang="eng")
     rerank_config = RerankConfig(reranker="mmr", rerank_k=50, mmr_diversity_bias=0.2)
     config = VectaraQueryConfig(
