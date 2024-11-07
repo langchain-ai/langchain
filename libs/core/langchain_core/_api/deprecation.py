@@ -51,15 +51,18 @@ def _validate_deprecation_params(
 ) -> None:
     """Validate the deprecation parameters."""
     if pending and removal:
-        raise ValueError("A pending deprecation cannot have a scheduled removal")
+        msg = "A pending deprecation cannot have a scheduled removal"
+        raise ValueError(msg)
     if alternative and alternative_import:
-        raise ValueError("Cannot specify both alternative and alternative_import")
+        msg = "Cannot specify both alternative and alternative_import"
+        raise ValueError(msg)
 
     if alternative_import and "." not in alternative_import:
-        raise ValueError(
+        msg = (
             "alternative_import must be a fully qualified module path. Got "
             f" {alternative_import}"
         )
+        raise ValueError(msg)
 
 
 def deprecated(
@@ -222,7 +225,8 @@ def deprecated(
             if not _obj_type:
                 _obj_type = "attribute"
             if not _name:
-                raise ValueError(f"Field {obj} must have a name to be deprecated.")
+                msg = f"Field {obj} must have a name to be deprecated."
+                raise ValueError(msg)
             old_doc = obj.description
 
             def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:
@@ -241,7 +245,8 @@ def deprecated(
             if not _obj_type:
                 _obj_type = "attribute"
             if not _name:
-                raise ValueError(f"Field {obj} must have a name to be deprecated.")
+                msg = f"Field {obj} must have a name to be deprecated."
+                raise ValueError(msg)
             old_doc = obj.description
 
             def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:
@@ -428,10 +433,11 @@ def warn_deprecated(
     if not pending:
         if not removal:
             removal = f"in {removal}" if removal else "within ?? minor releases"
-            raise NotImplementedError(
+            msg = (
                 f"Need to determine which default deprecation schedule to use. "
                 f"{removal}"
             )
+            raise NotImplementedError(msg)
         else:
             removal = f"in {removal}"
 
@@ -523,9 +529,8 @@ def rename_parameter(
         @functools.wraps(f)
         def wrapper(*args: _P.args, **kwargs: _P.kwargs) -> _R:
             if new in kwargs and old in kwargs:
-                raise TypeError(
-                    f"{f.__name__}() got multiple values for argument {new!r}"
-                )
+                msg = f"{f.__name__}() got multiple values for argument {new!r}"
+                raise TypeError(msg)
             if old in kwargs:
                 warn_deprecated(
                     since,

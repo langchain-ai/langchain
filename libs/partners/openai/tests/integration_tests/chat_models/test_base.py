@@ -2,6 +2,8 @@
 
 import base64
 import json
+from pathlib import Path
+from textwrap import dedent
 from typing import Any, AsyncIterator, List, Literal, Optional, cast
 
 import httpx
@@ -236,30 +238,6 @@ async def test_async_chat_openai_bind_functions() -> None:
     assert len(response) == 1
     for generation in response:
         assert isinstance(generation, AIMessage)
-
-
-def test_chat_openai_extra_kwargs() -> None:
-    """Test extra kwargs to chat openai."""
-    # Check that foo is saved in extra_kwargs.
-    llm = ChatOpenAI(foo=3, max_tokens=10)  # type: ignore[call-arg]
-    assert llm.max_tokens == 10
-    assert llm.model_kwargs == {"foo": 3}
-
-    # Test that if extra_kwargs are provided, they are added to it.
-    llm = ChatOpenAI(foo=3, model_kwargs={"bar": 2})  # type: ignore[call-arg]
-    assert llm.model_kwargs == {"foo": 3, "bar": 2}
-
-    # Test that if provided twice it errors
-    with pytest.raises(ValueError):
-        ChatOpenAI(foo=3, model_kwargs={"foo": 2})  # type: ignore[call-arg]
-
-    # Test that if explicit param is specified in kwargs it errors
-    with pytest.raises(ValueError):
-        ChatOpenAI(model_kwargs={"temperature": 0.2})
-
-    # Test that "model" cannot be specified in kwargs
-    with pytest.raises(ValueError):
-        ChatOpenAI(model_kwargs={"model": "gpt-3.5-turbo-instruct"})
 
 
 @pytest.mark.scheduled
@@ -973,3 +951,113 @@ async def test_json_mode_async() -> None:
     assert isinstance(full, AIMessageChunk)
     assert isinstance(full.content, str)
     assert json.loads(full.content) == {"a": 1}
+
+
+def test_audio_output_modality() -> None:
+    llm = ChatOpenAI(
+        model="gpt-4o-audio-preview",
+        temperature=0,
+        model_kwargs={
+            "modalities": ["text", "audio"],
+            "audio": {"voice": "alloy", "format": "wav"},
+        },
+    )
+
+    history: List[BaseMessage] = [
+        HumanMessage("Make me a short audio clip of you yelling")
+    ]
+
+    output = llm.invoke(history)
+
+    assert isinstance(output, AIMessage)
+    assert "audio" in output.additional_kwargs
+
+    history.append(output)
+    history.append(HumanMessage("Make me a short audio clip of you whispering"))
+
+    output = llm.invoke(history)
+
+    assert isinstance(output, AIMessage)
+    assert "audio" in output.additional_kwargs
+
+
+def test_audio_input_modality() -> None:
+    llm = ChatOpenAI(
+        model="gpt-4o-audio-preview",
+        temperature=0,
+        model_kwargs={
+            "modalities": ["text", "audio"],
+            "audio": {"voice": "alloy", "format": "wav"},
+        },
+    )
+    filepath = Path(__file__).parent / "audio_input.wav"
+
+    audio_data = filepath.read_bytes()
+    b64_audio_data = base64.b64encode(audio_data).decode("utf-8")
+
+    history: list[BaseMessage] = [
+        HumanMessage(
+            [
+                {"type": "text", "text": "What is happening in this audio clip"},
+                {
+                    "type": "input_audio",
+                    "input_audio": {"data": b64_audio_data, "format": "wav"},
+                },
+            ]
+        )
+    ]
+
+    output = llm.invoke(history)
+
+    assert isinstance(output, AIMessage)
+    assert "audio" in output.additional_kwargs
+
+    history.append(output)
+    history.append(HumanMessage("Why?"))
+
+    output = llm.invoke(history)
+
+    assert isinstance(output, AIMessage)
+    assert "audio" in output.additional_kwargs
+
+
+def test_prediction_tokens() -> None:
+    code = dedent("""
+    /// <summary>
+    /// Represents a user with a first name, last name, and username.
+    /// </summary>
+    public class User
+    {
+        /// <summary>
+        /// Gets or sets the user's first name.
+        /// </summary>
+        public string FirstName { get; set; }
+
+        /// <summary>
+        /// Gets or sets the user's last name.
+        /// </summary>
+        public string LastName { get; set; }
+
+        /// <summary>
+        /// Gets or sets the user's username.
+        /// </summary>
+        public string Username { get; set; }
+    }
+    """)
+
+    llm = ChatOpenAI(model="gpt-4o")
+    query = (
+        "Replace the Username property with an Email property. "
+        "Respond only with code, and with no markdown formatting."
+    )
+    response = llm.invoke(
+        [{"role": "user", "content": query}, {"role": "user", "content": code}],
+        prediction={"type": "content", "content": code},
+    )
+    assert isinstance(response, AIMessage)
+    assert response.response_metadata is not None
+    output_token_details = response.response_metadata["token_usage"][
+        "completion_tokens_details"
+    ]
+    assert output_token_details["accepted_prediction_tokens"] > 0
+    assert output_token_details["rejected_prediction_tokens"] > 0

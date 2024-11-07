@@ -17,7 +17,7 @@ from langchain_core.utils import (
     get_pydantic_field_names,
     pre_init,
 )
-from langchain_core.utils.utils import build_extra_kwargs
+from langchain_core.utils.utils import _build_model_kwargs
 from pydantic import Field, SecretStr, model_validator
 
 SUPPORTED_ROLES: List[str] = [
@@ -131,10 +131,7 @@ class ChatSnowflakeCortex(BaseChatModel):
     def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
-        extra = values.get("model_kwargs", {})
-        values["model_kwargs"] = build_extra_kwargs(
-            extra, values, all_required_field_names
-        )
+        values = _build_model_kwargs(values, all_required_field_names)
         return values
 
     @pre_init
