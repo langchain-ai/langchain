@@ -335,7 +335,7 @@ def _get_pubmed(**kwargs: Any) -> BaseTool:
 
 
 def _get_google_books(**kwargs: Any) -> BaseTool:
-    from langchain_community.tools.google_books.tool import GoogleBooksQueryRun
+    from langchain_community.tools.google_books import GoogleBooksQueryRun
 
     return GoogleBooksQueryRun(api_wrapper=GoogleBooksAPIWrapper(**kwargs))
 

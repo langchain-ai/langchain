@@ -140,7 +140,7 @@ if TYPE_CHECKING:
         GmailSearch,
         GmailSendMessage,
     )
-    from langchain_community.tools.google_books.tool import (
+    from langchain_community.tools.google_books import (
         GoogleBooksQueryRun,
     )
     from langchain_community.tools.google_cloud.texttospeech import (
@@ -563,7 +563,7 @@ _module_lookup = {
     "GmailGetThread": "langchain_community.tools.gmail",
     "GmailSearch": "langchain_community.tools.gmail",
     "GmailSendMessage": "langchain_community.tools.gmail",
-    "GoogleBooksQueryRun": "langchain_community.tools.google_books.tool",
+    "GoogleBooksQueryRun": "langchain_community.tools.google_books",
     "GoogleCloudTextToSpeechTool": "langchain_community.tools.google_cloud.texttospeech",  # noqa: E501
     "GooglePlacesTool": "langchain_community.tools.google_places.tool",
     "GoogleSearchResults": "langchain_community.tools.google_search.tool",
