@@ -1,10 +1,9 @@
 """Tool for the Google Books API."""
 
-from typing import Optional, Type
+from typing import Optional
 
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool
-from pydantic import BaseModel, Field
 
 from langchain_community.utilities.google_books import GoogleBooksAPIWrapper
 
