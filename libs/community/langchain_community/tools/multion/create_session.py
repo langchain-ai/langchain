@@ -31,7 +31,7 @@ class CreateSessionSchema(BaseModel):
     )
 
 
-class MultionCreateSession(BaseTool):
+class MultionCreateSession(BaseTool):  # type: ignore[override]
     """Tool that creates a new Multion Browser Window with provided fields.
 
     Attributes:

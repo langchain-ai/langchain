@@ -9,6 +9,7 @@ from typing_extensions import Self
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.prompts.string import (
     DEFAULT_FORMATTER_MAPPING,
+    PromptTemplateFormat,
     StringPromptTemplate,
 )
 
@@ -36,8 +37,9 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
     prefix: Optional[StringPromptTemplate] = None
     """A PromptTemplate to put before the examples."""
 
-    template_format: str = "f-string"
-    """The format of the prompt template. Options are: 'f-string', 'jinja2'."""
+    template_format: PromptTemplateFormat = "f-string"
+    """The format of the prompt template.
+    Options are: 'f-string', 'jinja2', 'mustache'."""
 
     validate_template: bool = False
     """Whether or not to try validating the template."""
