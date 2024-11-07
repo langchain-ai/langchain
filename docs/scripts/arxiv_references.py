@@ -412,7 +412,7 @@ def _format_template_url(template_name: str) -> str:
 
 
 def _format_cookbook_url(cookbook_name: str) -> str:
-    return f"https://github.com/langchain-ai/langchain/blob/v0.2/cookbook/{cookbook_name}.ipynb"
+    return f"https://github.com/langchain-ai/langchain/blob/master/cookbook/{cookbook_name}.ipynb"
 
 
 def _compact_module_full_name(doc_path: str) -> str:
