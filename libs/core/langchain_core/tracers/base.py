@@ -5,11 +5,11 @@ from __future__ import annotations
 import asyncio
 import logging
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from typing import (
     TYPE_CHECKING,
     Any,
     Optional,
-    Sequence,
     Union,
 )
 from uuid import UUID
@@ -850,7 +850,6 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
 
     async def _on_run_create(self, run: Run) -> None:
         """Process a run upon creation."""
-        pass
 
     async def _on_run_update(self, run: Run) -> None:
         """Process a run upon update."""

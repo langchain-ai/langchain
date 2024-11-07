@@ -1,16 +1,18 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from copy import deepcopy
-from typing import Any, Optional, Sequence
+from typing import Any, Optional
 
 
 def _retrieve_ref(path: str, schema: dict) -> dict:
     components = path.split("/")
     if components[0] != "#":
-        raise ValueError(
+        msg = (
             "ref paths are expected to be URI fragments, meaning they should start "
             "with #."
         )
+        raise ValueError(msg)
     out = schema
     for component in components[1:]:
         if component in out:
@@ -18,7 +20,8 @@ def _retrieve_ref(path: str, schema: dict) -> dict:
         elif component.isdigit() and int(component) in out:
             out = out[int(component)]
         else:
-            raise KeyError(f"Reference '{path}' not found.")
+            msg = f"Reference '{path}' not found."
+            raise KeyError(msg)
     return deepcopy(out)
 
 

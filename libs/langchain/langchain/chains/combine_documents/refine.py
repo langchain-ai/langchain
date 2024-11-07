@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Tuple
 
+from langchain_core._api import deprecated
 from langchain_core.callbacks import Callbacks
 from langchain_core.documents import Document
 from langchain_core.prompts import BasePromptTemplate, format_document
@@ -20,6 +21,15 @@ def _get_default_document_prompt() -> PromptTemplate:
     return PromptTemplate(input_variables=["page_content"], template="{page_content}")
 
 
+@deprecated(
+    since="0.3.1",
+    removal="1.0",
+    message=(
+        "This class is deprecated. Please see the migration guide here for "
+        "a recommended replacement: "
+        "https://python.langchain.com/docs/versions/migrating_chains/refine_docs_chain/"  # noqa: E501
+    ),
+)
 class RefineDocumentsChain(BaseCombineDocumentsChain):
     """Combine documents by doing a first pass and then refining on more documents.
 

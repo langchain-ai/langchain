@@ -79,7 +79,7 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_tool,
 )
 from langchain_core.utils.pydantic import is_basemodel_subclass
-from langchain_core.utils.utils import build_extra_kwargs, from_env, secret_from_env
+from langchain_core.utils.utils import _build_model_kwargs, from_env, secret_from_env
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -366,10 +366,7 @@ class ChatFireworks(BaseChatModel):
     def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
-        extra = values.get("model_kwargs", {})
-        values["model_kwargs"] = build_extra_kwargs(
-            extra, values, all_required_field_names
-        )
+        values = _build_model_kwargs(values, all_required_field_names)
         return values
 
     @model_validator(mode="after")
@@ -721,19 +718,6 @@ class ChatFireworks(BaseChatModel):
                 tool_choice not in ("auto", "any", "none")
             ):
                 tool_choice = {"type": "function", "function": {"name": tool_choice}}
-            if isinstance(tool_choice, dict) and (len(formatted_tools) != 1):
-                raise ValueError(
-                    "When specifying `tool_choice`, you must provide exactly one "
-                    f"tool. Received {len(formatted_tools)} tools."
-                )
-            if isinstance(tool_choice, dict) and (
-                formatted_tools[0]["function"]["name"]
-                != tool_choice["function"]["name"]
-            ):
-                raise ValueError(
-                    f"Tool choice {tool_choice} was specified, but the only "
-                    f"provided tool was {formatted_tools[0]['function']['name']}."
-                )
             if isinstance(tool_choice, bool):
                 if len(tools) > 1:
                     raise ValueError(

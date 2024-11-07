@@ -10,21 +10,17 @@ import typing
 import uuid
 from typing import (
     TYPE_CHECKING,
+    Annotated,
     Any,
     Callable,
-    Dict,
-    List,
     Literal,
     Optional,
-    Set,
-    Tuple,
-    Type,
     Union,
     cast,
 )
 
 from pydantic import BaseModel
-from typing_extensions import Annotated, TypedDict, get_args, get_origin, is_typeddict
+from typing_extensions import TypedDict, get_args, get_origin, is_typeddict
 
 from langchain_core._api import deprecated
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
@@ -68,7 +64,7 @@ def _rm_titles(kv: dict, prev_key: str = "") -> dict:
     new_kv = {}
     for k, v in kv.items():
         if k == "title":
-            if isinstance(v, dict) and prev_key == "properties" and "title" in v.keys():
+            if isinstance(v, dict) and prev_key == "properties" and "title" in v:
                 new_kv[k] = _rm_titles(v, k)
             else:
                 continue
@@ -109,7 +105,8 @@ def convert_pydantic_to_openai_function(
     elif hasattr(model, "schema"):
         schema = model.schema()  # Pydantic 1
     else:
-        raise TypeError("Model must be a Pydantic model.")
+        msg = "Model must be a Pydantic model."
+        raise TypeError(msg)
     schema = dereference_refs(schema)
     if "definitions" in schema:  # pydantic 1
         schema.pop("definitions", None)
@@ -201,7 +198,7 @@ def _convert_typed_dict_to_openai_function(typed_dict: type) -> FunctionDescript
     from pydantic.v1 import BaseModel
 
     model = cast(
-        Type[BaseModel],
+        type[BaseModel],
         _convert_any_typed_dicts_to_pydantic(typed_dict, visited=visited),
     )
     return convert_pydantic_to_openai_function(model)  # type: ignore
@@ -237,17 +234,16 @@ def _convert_any_typed_dicts_to_pydantic(
                 new_arg_type = _convert_any_typed_dicts_to_pydantic(
                     annotated_args[0], depth=depth + 1, visited=visited
                 )
-                field_kwargs = {
-                    k: v for k, v in zip(("default", "description"), annotated_args[1:])
-                }
+                field_kwargs = dict(zip(("default", "description"), annotated_args[1:]))
                 if (field_desc := field_kwargs.get("description")) and not isinstance(
                     field_desc, str
                 ):
-                    raise ValueError(
+                    msg = (
                         f"Invalid annotation for field {arg}. Third argument to "
                         f"Annotated must be a string description, received value of "
                         f"type {type(field_desc)}."
                     )
+                    raise ValueError(msg)
                 elif arg_desc := arg_descriptions.get(arg):
                     field_kwargs["description"] = arg_desc
                 else:
@@ -340,23 +336,17 @@ def convert_to_openai_function(
     strict: Optional[bool] = None,
 ) -> dict[str, Any]:
     """Convert a raw function/class to an OpenAI function.
-
-    .. versionchanged:: 0.2.29
-
-        ``strict`` arg added.
-
     Args:
         function:
             A dictionary, Pydantic BaseModel class, TypedDict class, a LangChain
             Tool object, or a Python function. If a dictionary is passed in, it is
-            assumed to already be a valid OpenAI function or a JSON schema with
-            top-level 'title' and 'description' keys specified.
+            assumed to already be a valid OpenAI function, a JSON schema with
+            top-level 'title' key specified, an Anthropic format
+            tool, or an Amazon Bedrock Converse format tool.
         strict:
             If True, model output is guaranteed to exactly match the JSON Schema
             provided in the function definition. If None, ``strict`` argument will not
             be included in function definition.
-
-            .. versionadded:: 0.2.29
 
     Returns:
         A dict version of the passed in function which is compatible with the OpenAI
@@ -364,43 +354,86 @@ def convert_to_openai_function(
 
     Raises:
         ValueError: If function is not in a supported format.
+
+    .. versionchanged:: 0.2.29
+
+        ``strict`` arg added.
+
+    .. versionchanged:: 0.3.13
+
+        Support for Anthropic format tools added.
+
+    .. versionchanged:: 0.3.14
+
+        Support for Amazon Bedrock Converse format tools added.
+
+    .. versionchanged:: 0.3.16
+
+        'description' and 'parameters' keys are now optional. Only 'name' is
+        required and guaranteed to be part of the output.
     """
     from langchain_core.tools import BaseTool
 
-    # already in OpenAI function format
+    # an Anthropic format tool
     if isinstance(function, dict) and all(
-        k in function for k in ("name", "description", "parameters")
+        k in function for k in ("name", "input_schema")
     ):
-        oai_function = function
-    # a JSON schema with title and description
-    elif isinstance(function, dict) and all(
-        k in function for k in ("title", "description", "properties")
-    ):
-        function = function.copy()
         oai_function = {
-            "name": function.pop("title"),
-            "description": function.pop("description"),
-            "parameters": function,
+            "name": function["name"],
+            "parameters": function["input_schema"],
         }
+        if "description" in function:
+            oai_function["description"] = function["description"]
+    # an Amazon Bedrock Converse format tool
+    elif isinstance(function, dict) and "toolSpec" in function:
+        oai_function = {
+            "name": function["toolSpec"]["name"],
+            "parameters": function["toolSpec"]["inputSchema"]["json"],
+        }
+        if "description" in function["toolSpec"]:
+            oai_function["description"] = function["toolSpec"]["description"]
+    # already in OpenAI function format
+    elif isinstance(function, dict) and "name" in function:
+        oai_function = {
+            k: v
+            for k, v in function.items()
+            if k in ("name", "description", "parameters", "strict")
+        }
+    # a JSON schema with title and description
+    elif isinstance(function, dict) and "title" in function:
+        function_copy = function.copy()
+        oai_function = {"name": function_copy.pop("title")}
+        if "description" in function_copy:
+            oai_function["description"] = function_copy.pop("description")
+        if function_copy and "properties" in function_copy:
+            oai_function["parameters"] = function_copy
     elif isinstance(function, type) and is_basemodel_subclass(function):
-        oai_function = cast(Dict, convert_pydantic_to_openai_function(function))
+        oai_function = cast(dict, convert_pydantic_to_openai_function(function))
     elif is_typeddict(function):
         oai_function = cast(
-            Dict, _convert_typed_dict_to_openai_function(cast(Type, function))
+            dict, _convert_typed_dict_to_openai_function(cast(type, function))
         )
     elif isinstance(function, BaseTool):
-        oai_function = cast(Dict, format_tool_to_openai_function(function))
+        oai_function = cast(dict, format_tool_to_openai_function(function))
     elif callable(function):
-        oai_function = cast(Dict, convert_python_function_to_openai_function(function))
+        oai_function = cast(dict, convert_python_function_to_openai_function(function))
     else:
-        raise ValueError(
+        msg = (
             f"Unsupported function\n\n{function}\n\nFunctions must be passed in"
             " as Dict, pydantic.BaseModel, or Callable. If they're a dict they must"
             " either be in OpenAI function format or valid JSON schema with top-level"
             " 'title' and 'description' keys."
         )
+        raise ValueError(msg)
 
     if strict is not None:
+        if "strict" in oai_function and oai_function["strict"] != strict:
+            msg = (
+                f"Tool/function already has a 'strict' key wth value "
+                f"{oai_function['strict']} which is different from the explicit "
+                f"`strict` arg received {strict=}."
+            )
+            raise ValueError(msg)
         oai_function["strict"] = strict
         if strict:
             # As of 08/06/24, OpenAI requires that additionalProperties be supplied and
@@ -417,34 +450,48 @@ def convert_to_openai_tool(
     *,
     strict: Optional[bool] = None,
 ) -> dict[str, Any]:
-    """Convert a raw function/class to an OpenAI tool.
+    """Convert a tool-like object to an OpenAI tool schema.
 
-    .. versionchanged:: 0.2.29
-
-        ``strict`` arg added.
+    OpenAI tool schema reference:
+    https://platform.openai.com/docs/api-reference/chat/create#chat-create-tools
 
     Args:
         tool:
             Either a dictionary, a pydantic.BaseModel class, Python function, or
-            BaseTool. If a dictionary is passed in, it is assumed to already be a valid
-            OpenAI tool, OpenAI function, or a JSON schema with top-level 'title' and
-            'description' keys specified.
+            BaseTool. If a dictionary is passed in, it is
+            assumed to already be a valid OpenAI function, a JSON schema with
+            top-level 'title' key specified, an Anthropic format
+            tool, or an Amazon Bedrock Converse format tool.
         strict:
             If True, model output is guaranteed to exactly match the JSON Schema
             provided in the function definition. If None, ``strict`` argument will not
             be included in tool definition.
 
-            .. versionadded:: 0.2.29
-
     Returns:
         A dict version of the passed in tool which is compatible with the
         OpenAI tool-calling API.
+
+    .. versionchanged:: 0.2.29
+
+        ``strict`` arg added.
+
+    .. versionchanged:: 0.3.13
+
+        Support for Anthropic format tools added.
+
+    .. versionchanged:: 0.3.14
+
+        Support for Amazon Bedrock Converse format tools added.
+
+    .. versionchanged:: 0.3.16
+
+        'description' and 'parameters' keys are now optional. Only 'name' is
+        required and guaranteed to be part of the output.
     """
     if isinstance(tool, dict) and tool.get("type") == "function" and "function" in tool:
         return tool
     oai_function = convert_to_openai_function(tool, strict=strict)
-    oai_tool: dict[str, Any] = {"type": "function", "function": oai_function}
-    return oai_tool
+    return {"type": "function", "function": oai_function}
 
 
 def tool_example_to_messages(
@@ -559,7 +606,8 @@ def _parse_google_docstring(
             if filtered_annotations and (
                 len(docstring_blocks) < 2 or not docstring_blocks[1].startswith("Args:")
             ):
-                raise ValueError("Found invalid Google-Style docstring.")
+                msg = "Found invalid Google-Style docstring."
+                raise ValueError(msg)
         descriptors = []
         args_block = None
         past_descriptors = False
@@ -567,7 +615,7 @@ def _parse_google_docstring(
             if block.startswith("Args:"):
                 args_block = block
                 break
-            elif block.startswith("Returns:") or block.startswith("Example:"):
+            elif block.startswith(("Returns:", "Example:")):
                 # Don't break in case Args come after
                 past_descriptors = True
             elif not past_descriptors:
@@ -577,7 +625,8 @@ def _parse_google_docstring(
         description = " ".join(descriptors)
     else:
         if error_on_invalid_docstring:
-            raise ValueError("Found invalid Google-Style docstring.")
+            msg = "Found invalid Google-Style docstring."
+            raise ValueError(msg)
         description = ""
         args_block = None
     arg_descriptions = {}
@@ -598,17 +647,17 @@ def _py_38_safe_origin(origin: type) -> type:
     )
 
     origin_map: dict[type, Any] = {
-        dict: Dict,
-        list: List,
-        tuple: Tuple,
-        set: Set,
+        dict: dict,
+        list: list,
+        tuple: tuple,
+        set: set,
         collections.abc.Iterable: typing.Iterable,
         collections.abc.Mapping: typing.Mapping,
         collections.abc.Sequence: typing.Sequence,
         collections.abc.MutableMapping: typing.MutableMapping,
         **origin_union_type_map,
     }
-    return cast(Type, origin_map.get(origin, origin))
+    return cast(type, origin_map.get(origin, origin))
 
 
 def _recursive_set_additional_properties_false(
