@@ -2168,7 +2168,7 @@ class Qdrant(VectorStore):
             points = [
                 models.PointStruct(
                     id=point_id,
-                    vector=vector
+                    vector=vector  # type: ignore[arg-type]
                     if self.vector_name is None
                     else {self.vector_name: vector},
                     payload=payload,
@@ -2208,7 +2208,7 @@ class Qdrant(VectorStore):
             points = [
                 models.PointStruct(
                     id=point_id,
-                    vector=vector
+                    vector=vector  # type: ignore[arg-type]
                     if self.vector_name is None
                     else {self.vector_name: vector},
                     payload=payload,
