@@ -6,31 +6,65 @@ from langchain_core.documents import Document
 
 
 class DoclingLoader(BaseLoader):
-    """Load PDF, HTML, DOCX, PPTX, Markdown, and more document formats using Docling.
+    """
+    Docling document loader integration
 
-    Example of markdown mode (default mode):
+    Setup:
+        Install ``docling`` besides ``langchain-community``.
+
+        .. code-block:: bash
+
+            pip install -U docling langchain-community
+
+    Instantiate:
         .. code-block:: python
 
             from langchain_community.document_loaders import DoclingLoader
 
             loader = DoclingLoader(
-                file_path="https://arxiv.org/pdf/2408.09869",
-                export_type=DoclingLoader.ExportType.MARKDOWN,
+                file_path = "https://arxiv.org/pdf/2408.09869",
+                # converter=...,
+                # convert_kwargs=...,
+                # export_type=...,
+                # md_export_kwargs=...,
+                # chunker=...,
             )
-            documents = loader.load()
-            # # or directly get the splits:
-            # splits = loader.load_and_split()
 
-    Example of doc chunks mode:
+    Load:
         .. code-block:: python
 
-            from langchain_community.document_loaders import DoclingLoader
+            docs = loader.load()
+            print(docs[0].page_content[:100])
+            print(docs[0].metadata)
 
-            loader = DoclingLoader(
-                file_path="https://arxiv.org/pdf/2408.09869",
-                export_type=DoclingLoader.ExportType.DOC_CHUNKS,
-            )
-            splits = loader.load()
+        .. code-block:: python
+
+            ## Docling Technical Report
+
+            Version 1.0
+
+            Christoph Auer Maksym Lysak Ahmed Nassar Michele Dolfi Nik
+            {'source': 'https://arxiv.org/pdf/2408.09869'}
+
+    Lazy load:
+        .. code-block:: python
+
+            docs = []
+            docs_lazy = loader.lazy_load()
+
+            for doc in docs_lazy:
+                docs.append(doc)
+            print(docs[0].page_content[:100])
+            print(docs[0].metadata)
+
+        .. code-block:: python
+
+            ## Docling Technical Report
+
+            Version 1.0
+
+            Christoph Auer Maksym Lysak Ahmed Nassar Michele Dolfi Nik
+            {'source': 'https://arxiv.org/pdf/2408.09869'}
     """
 
     class ExportType(str, Enum):
