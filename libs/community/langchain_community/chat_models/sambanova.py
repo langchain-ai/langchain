@@ -689,6 +689,33 @@ class ChatSambaStudio(BaseChatModel):
         response = chat.ainvoke(messages)
         await response
 
+    Tool calling:
+        .. code-block:: python
+
+        from pydantic import BaseModel, Field
+
+        class GetWeather(BaseModel):
+            '''Get the current weather in a given location'''
+
+            location: str = Field(
+                ...,
+                description="The city and state, e.g. Los Angeles, CA"
+            )
+
+        llm_with_tools = llm.bind_tools([GetWeather, GetPopulation])
+        ai_msg = llm_with_tools.invoke("Should I bring my umbrella today in LA?")
+        ai_msg.tool_calls
+
+        .. code-block:: python
+
+        [
+            {
+                'name': 'GetWeather',
+                'args': {'location': 'Los Angeles, CA'},
+                'id': 'call_adf61180ea2b4d228a'
+            }
+        ]
+
     Token usage:
         .. code-block:: python
         response = chat.invoke(messages)
@@ -812,6 +839,45 @@ class ChatSambaStudio(BaseChatModel):
         )
         super().__init__(**kwargs)
 
+    def bind_tools(
+        self,
+        tools: Sequence[Union[Dict[str, Any], Type[Any], Callable[..., Any], BaseTool]],
+        *,
+        tool_choice: Optional[Union[Dict[str, Any], bool, str]] = None,
+        parallel_tool_calls: Optional[bool] = False,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        """Bind tool-like objects to this chat model
+
+        tool_choice: does not currently support "any", choice like
+        should be one of ["auto", "none", "required"]
+        """
+
+        formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
+
+        if tool_choice:
+            if isinstance(tool_choice, str):
+                # tool_choice is a tool/function name
+                if tool_choice not in ("auto", "none", "required"):
+                    tool_choice = "auto"
+            elif isinstance(tool_choice, bool):
+                if tool_choice:
+                    tool_choice = "required"
+            elif isinstance(tool_choice, dict):
+                raise ValueError(
+                    "tool_choice must be one of ['auto', 'none', 'required']"
+                )
+            else:
+                raise ValueError(
+                    f"Unrecognized tool_choice type. Expected str, bool"
+                    f"Received: {tool_choice}"
+                )
+        else:
+            tool_choice = "auto"
+        kwargs["tool_choice"] = tool_choice
+        kwargs["parallel_tool_calls"] = parallel_tool_calls
+        return super().bind(tools=formatted_tools, **kwargs)
+
     def _get_role(self, message: BaseMessage) -> str:
         """
         Get the role of LangChain BaseMessage
@@ -907,6 +973,7 @@ class ChatSambaStudio(BaseChatModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         streaming: Optional[bool] = False,
+        **kwargs: Any,
     ) -> Response:
         """
         Performs a post request to the LLM API.
@@ -933,6 +1000,7 @@ class ChatSambaStudio(BaseChatModel):
                 "top_k": self.top_k,
                 "stream": streaming,
                 "stream_options": self.stream_options,
+                **kwargs,
             }
             data = {key: value for key, value in data.items() if value is not None}
             headers = {
@@ -952,6 +1020,7 @@ class ChatSambaStudio(BaseChatModel):
                 "top_p": self.top_p,
                 "top_k": self.top_k,
                 "do_sample": self.do_sample,
+                **kwargs,
             }
             if self.model_kwargs is not None:
                 params = {**params, **self.model_kwargs}
@@ -961,6 +1030,11 @@ class ChatSambaStudio(BaseChatModel):
 
         # create request payload for generic v1 API
         elif "api/predict/generic" in self.sambastudio_url:
+            if "tools" in kwargs.keys():
+                raise NotImplementedError(
+                    "tool calling not supported in API Generic V1, "
+                    "switch to OpenAI compatible API or Generic V2 API"
+                )
             params = {
                 "select_expert": self.model,
                 "process_prompt": self.process_prompt,
@@ -969,6 +1043,7 @@ class ChatSambaStudio(BaseChatModel):
                 "top_p": self.top_p,
                 "top_k": self.top_k,
                 "do_sample": self.do_sample,
+                **kwargs,
             }
             if self.model_kwargs is not None:
                 params = {**params, **self.model_kwargs}
@@ -1032,9 +1107,15 @@ class ChatSambaStudio(BaseChatModel):
                 f"response: {response.text}"
             )
 
+        additional_kwargs: Dict[str, Any] = {}
+        tool_calls = []
+        invalid_tool_calls = []
+
         # process response payload for openai compatible API
         if "openai" in self.sambastudio_url:
-            content = response_dict["choices"][0]["message"]["content"]
+            content = response_dict["choices"][0]["message"].get("content", "")
+            if content is None:
+                content = ""
             id = response_dict["id"]
             response_metadata = {
                 "finish_reason": response_dict["choices"][0]["finish_reason"],
@@ -1043,12 +1124,44 @@ class ChatSambaStudio(BaseChatModel):
                 "system_fingerprint": response_dict["system_fingerprint"],
                 "created": response_dict["created"],
             }
+            raw_tool_calls = response_dict["choices"][0]["message"].get("tool_calls")
+            if raw_tool_calls:
+                additional_kwargs["tool_calls"] = raw_tool_calls
+                for raw_tool_call in raw_tool_calls:
+                    if isinstance(raw_tool_call["function"]["arguments"], dict):
+                        raw_tool_call["function"]["arguments"] = json.dumps(
+                            raw_tool_call["function"].get("arguments", {})
+                        )
+                    try:
+                        tool_calls.append(
+                            parse_tool_call(raw_tool_call, return_id=True)
+                        )
+                    except Exception as e:
+                        invalid_tool_calls.append(
+                            make_invalid_tool_call(raw_tool_call, str(e))
+                        )
 
         # process response payload for generic v2 API
         elif "api/v2/predict/generic" in self.sambastudio_url:
             content = response_dict["items"][0]["value"]["completion"]
             id = response_dict["items"][0]["id"]
             response_metadata = response_dict["items"][0]
+            raw_tool_calls = response_dict["items"][0]["value"].get("tool_calls")
+            if raw_tool_calls:
+                additional_kwargs["tool_calls"] = raw_tool_calls
+                for raw_tool_call in raw_tool_calls:
+                    if isinstance(raw_tool_call["function"]["arguments"], dict):
+                        raw_tool_call["function"]["arguments"] = json.dumps(
+                            raw_tool_call["function"].get("arguments", {})
+                        )
+                    try:
+                        tool_calls.append(
+                            parse_tool_call(raw_tool_call, return_id=True)
+                        )
+                    except Exception as e:
+                        invalid_tool_calls.append(
+                            make_invalid_tool_call(raw_tool_call, str(e))
+                        )
 
         # process response payload for generic v1 API
         elif "api/predict/generic" in self.sambastudio_url:
@@ -1064,7 +1177,9 @@ class ChatSambaStudio(BaseChatModel):
 
         return AIMessage(
             content=content,
-            additional_kwargs={},
+            additional_kwargs=additional_kwargs,
+            tool_calls=tool_calls,
+            invalid_tool_calls=invalid_tool_calls,
             response_metadata=response_metadata,
             id=id,
         )
@@ -1307,7 +1422,7 @@ class ChatSambaStudio(BaseChatModel):
             )
             if stream_iter:
                 return generate_from_stream(stream_iter)
-        response = self._handle_request(messages, stop, streaming=False)
+        response = self._handle_request(messages, stop, streaming=False, **kwargs)
         message = self._process_response(response)
         generation = ChatGeneration(message=message)
         return ChatResult(generations=[generation])
@@ -1335,7 +1450,7 @@ class ChatSambaStudio(BaseChatModel):
         Yields:
             chunk: ChatGenerationChunk with model partial generation
         """
-        response = self._handle_request(messages, stop, streaming=True)
+        response = self._handle_request(messages, stop, streaming=True, **kwargs)
         for ai_message_chunk in self._process_stream_response(response):
             chunk = ChatGenerationChunk(message=ai_message_chunk)
             if run_manager:
