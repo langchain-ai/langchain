@@ -388,6 +388,85 @@ class FinancePolygonAPIWrapper(BaseModel):
         )
         return self._get_response(url)
 
+    def get_sma(self, ticker: str, **kwargs: Any) -> Optional[dict]:
+        """
+        Get the Simple Moving Average (SMA) for a ticker.
+
+        /v1/indicators/sma/{stockTicker}
+        """
+        timespan = kwargs.get("timespan", "day")
+        adjusted = kwargs.get("adjusted", True)
+        window = kwargs.get("window", 50)
+        series_type = kwargs.get("series_type", "close")
+        limit = kwargs.get("limit", 10)
+
+        url = (
+            f"{POLYGON_BASE_URL}v1/indicators/sma/{ticker}?"
+            f"timespan={timespan}&adjusted={str(adjusted).lower()}&window={window}&"
+            f"series_type={series_type}&limit={limit}&apiKey={self.polygon_api_key}"
+        )
+        return self._get_response(url)
+
+    def get_ema(self, ticker: str, **kwargs: Any) -> Optional[dict]:
+        """
+        Get the Exponential Moving Average (EMA) for a ticker.
+
+        /v1/indicators/ema/{stockTicker}
+        """
+        timespan = kwargs.get("timespan", "day")
+        adjusted = kwargs.get("adjusted", True)
+        window = kwargs.get("window", 50)
+        series_type = kwargs.get("series_type", "close")
+        limit = kwargs.get("limit", 10)
+
+        url = (
+            f"{POLYGON_BASE_URL}v1/indicators/ema/{ticker}?"
+            f"timespan={timespan}&adjusted={str(adjusted).lower()}&window={window}&"
+            f"series_type={series_type}&limit={limit}&apiKey={self.polygon_api_key}"
+        )
+        return self._get_response(url)
+
+    def get_macd(self, ticker: str, **kwargs: Any) -> Optional[dict]:
+        """
+        Get Moving Average Convergence/Divergence (MACD) data for a ticker.
+
+        /v1/indicators/macd/{stockTicker}
+        """
+        timespan = kwargs.get("timespan", "day")
+        adjusted = kwargs.get("adjusted", True)
+        short_window = kwargs.get("short_window", 12)
+        long_window = kwargs.get("long_window", 26)
+        signal_window = kwargs.get("signal_window", 9)
+        series_type = kwargs.get("series_type", "close")
+        limit = kwargs.get("limit", 10)
+
+        url = (
+            f"{POLYGON_BASE_URL}v1/indicators/macd/{ticker}?"
+            f"timespan={timespan}&adjusted={str(adjusted).lower()}&"
+            f"short_window={short_window}&long_window={long_window}&"
+            f"signal_window={signal_window}&series_type={series_type}&limit={limit}&apiKey={self.polygon_api_key}"
+        )
+        return self._get_response(url)
+
+    def get_rsi(self, ticker: str, **kwargs: Any) -> Optional[dict]:
+        """
+        Get the Relative Strength Index (RSI) for a ticker.
+
+        /v1/indicators/rsi/{stockTicker}
+        """
+        timespan = kwargs.get("timespan", "day")
+        adjusted = kwargs.get("adjusted", True)
+        window = kwargs.get("window", 14)
+        series_type = kwargs.get("series_type", "close")
+        limit = kwargs.get("limit", 10)
+
+        url = (
+            f"{POLYGON_BASE_URL}v1/indicators/rsi/{ticker}?"
+            f"timespan={timespan}&adjusted={str(adjusted).lower()}&window={window}&"
+            f"series_type={series_type}&limit={limit}&apiKey={self.polygon_api_key}"
+        )
+        return self._get_response(url)
+
     def run(self, mode: str, ticker: str = "", **kwargs: Any) -> str:
         if mode == "get_crypto_aggregate":
             return json.dumps(self.get_crypto_aggregates(ticker))
@@ -417,5 +496,13 @@ class FinancePolygonAPIWrapper(BaseModel):
             return json.dumps(self.get_single_ticker(ticker, **kwargs))
         elif mode == "get_universal_snapshot":
             return json.dumps(self.get_universal_snapshot(**kwargs))
+        elif mode == "get_sma":
+            return json.dumps(self.get_sma(ticker, **kwargs))
+        elif mode == "get_ema":
+            return json.dumps(self.get_ema(ticker, **kwargs))
+        elif mode == "get_macd":
+            return json.dumps(self.get_macd(ticker, **kwargs))
+        elif mode == "get_rsi":
+            return json.dumps(self.get_rsi(ticker, **kwargs))
         else:
             raise ValueError(f"Invalid mode {mode} for Polygon API.")

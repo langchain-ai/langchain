@@ -14,6 +14,10 @@ from langchain_community.tools.finance_polygon.all_tickers import PolygonAllTick
 from langchain_community.tools.finance_polygon.gainers_losers import PolygonGainersLosers
 from langchain_community.tools.finance_polygon.single_ticker import PolygonSingleTicker
 from langchain_community.tools.finance_polygon.universal_snapshot import PolygonUniversalSnapshot
+from langchain_community.tools.finance_polygon.sma import PolygonSMA
+from langchain_community.tools.finance_polygon.ema import PolygonEMA
+from langchain_community.tools.finance_polygon.macd import PolygonMACD
+from langchain_community.tools.finance_polygon.rsi import PolygonRSI
 
 __all__ = [
     "PolygonCryptoAggregates",
@@ -30,5 +34,9 @@ __all__ = [
     "PolygonGainersLosers",
     "PolygonSingleTicker",
     "PolygonUniversalSnapshot",
-]
+    "PolygonSMA",
+    "PolygonEMA",
+    "PolygonMACD",
+    "PolygonRSI",
 
+]

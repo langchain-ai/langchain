@@ -137,7 +137,18 @@ if TYPE_CHECKING:
     from langchain_community.tools.finance_polygon.all_tickers import (
         PolygonAllTickers,
     )
-
+    from langchain_community.tools.finance_polygon.sma import (
+        PolygonSMA,
+    )
+    from langchain_community.tools.finance_polygon.ema import (
+        PolygonEMA,
+    )
+    from langchain_community.tools.finance_polygon.macd import (
+        PolygonMACD,
+    )
+    from langchain_community.tools.finance_polygon.rsi import (
+        PolygonRSI,
+    )
     from langchain_community.tools.finance_polygon.single_ticker import (
         PolygonSingleTicker,
     )
@@ -459,6 +470,10 @@ __all__ = [
     "PolygonLastTrade",
     "PolygonMarketHolidays",
     "PolygonMarketStatus",
+    "PolygonSMA",
+    "PolygonEMA",
+    "PolygonMACD",
+    "PolygonRSI",
     "E2BDataAnalysisTool",
     "EdenAiExplicitImageTool",
     "EdenAiObjectDetectionTool",
