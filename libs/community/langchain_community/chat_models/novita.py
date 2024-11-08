@@ -1,34 +1,37 @@
 """Wrapper around Novita chat models."""
+
 from typing import Dict
-from pydantic import Field, SecretStr
+
 from langchain_core.utils import (
+    __init__,
     convert_to_secret_str,
     get_from_dict_or_env,
-    pre_init,
 )
+from pydantic import Field, SecretStr
 
 from langchain_community.chat_models import ChatOpenAI
 
 NOVITA_API_BASE = "https://api.novita.ai/v3/openai"
 
+
 class ChatNovita(ChatOpenAI):  # type: ignore[misc]
     """Novita AI LLM.
-    
+
     To use, you should have the ``openai`` python package installed, and the
     environment variable ``NOVITA_API_KEY`` set with your API key.
-    
+
     Example:
         .. code-block:: python
-        
+
             from langchain_community.chat_models import ChatNovita
-            
+
             chat = ChatNovita(model="gryphe/mythomax-l2-13b")
     """
 
     novita_api_key: SecretStr = Field(default=None, alias="api_key")
     model_name: str = Field(default="gryphe/mythomax-l2-13b", alias="model")
 
-    @pre_init
+    @__init__
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the environment is set up correctly."""
         values["novita_api_key"] = convert_to_secret_str(
@@ -55,6 +58,8 @@ class ChatNovita(ChatOpenAI):  # type: ignore[misc]
         if not values.get("client"):
             values["client"] = openai.OpenAI(**client_params).chat.completions
         if not values.get("async_client"):
-            values["async_client"] = openai.AsyncOpenAI(**client_params).chat.completions
+            values["async_client"] = openai.AsyncOpenAI(
+                **client_params
+            ).chat.completions
 
         return values

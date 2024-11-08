@@ -128,6 +128,9 @@ if TYPE_CHECKING:
     from langchain_community.chat_models.naver import (
         ChatClovaX,
     )
+    from langchain_community.chat_models.novita import (
+        ChatNovita,
+    )
     from langchain_community.chat_models.oci_data_science import (
         ChatOCIModelDeployment,
         ChatOCIModelDeploymentTGI,
@@ -189,9 +192,6 @@ if TYPE_CHECKING:
     )
     from langchain_community.chat_models.zhipuai import (
         ChatZhipuAI,
-    )
-    from langchain_community.chat_models.novita import (
-        ChatNovita,
     )
 
 __all__ = [
