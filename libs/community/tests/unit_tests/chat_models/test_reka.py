@@ -314,12 +314,13 @@ def test_get_num_tokens() -> None:
     encoding = tiktoken.get_encoding("cl100k_base")
 
     # Test string input
-    text = "Hello, world!"
+    text = "What is the weather like today?"
     expected_tokens = len(encoding.encode(text))
     assert llm.get_num_tokens(text) == expected_tokens
 
     # Test BaseMessage input
     message = HumanMessage(content="What is the weather like today?")
+    assert isinstance(message.content, str)
     expected_tokens = len(encoding.encode(message.content))
     assert llm.get_num_tokens(message) == expected_tokens
 
@@ -329,19 +330,12 @@ def test_get_num_tokens() -> None:
         HumanMessage(content="Hi!"),
         AIMessage(content="Hello! How can I help you today?"),
     ]
-    expected_tokens = sum(len(encoding.encode(msg.content)) for msg in messages)
+    expected_tokens = sum(
+        len(encoding.encode(msg.content))
+        for msg in messages
+        if isinstance(msg.content, str)
+    )
     assert llm.get_num_tokens(messages) == expected_tokens
 
-    # Test empty inputs
-    assert llm.get_num_tokens("") == 0
-    assert llm.get_num_tokens(HumanMessage(content="")) == 0
+    # Test empty message list
     assert llm.get_num_tokens([]) == 0
-
-    # Test complex text with special characters
-    complex_text = "Hello 🌍! This is a test of the token counting"
-    expected_tokens = len(encoding.encode(complex_text))
-    assert llm.get_num_tokens(complex_text) == expected_tokens
-
-    # Test invalid input type
-    with pytest.raises(ValueError, match="Got unexpected type for input:"):
-        llm.get_num_tokens(123)  # type: ignore

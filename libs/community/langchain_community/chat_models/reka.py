@@ -156,7 +156,7 @@ class ChatReka(BaseChatModel):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     model_config = ConfigDict(extra="forbid")
     token_counter: Optional[
-        Union[Callable[[list[BaseMessage]], int], Callable[[BaseMessage], int]]
+        Callable[[Union[str, BaseMessage, List[BaseMessage]]], int]
     ] = None
 
     @model_validator(mode="before")
@@ -331,28 +331,52 @@ class ChatReka(BaseChatModel):
         return ChatResult(generations=[ChatGeneration(message=message)])
 
     def get_num_tokens(self, input: Union[str, BaseMessage, List[BaseMessage]]) -> int:
-        """Calculate number of tokens."""
-        # Initialize encoder if not already set
+        """Calculate number of tokens.
 
-        if self.token_counter is None:
-            try:
-                import tiktoken
-            except ImportError:
-                raise ImportError(
-                    "Could not import tiktoken python package. "
-                    "Please install it with `pip install tiktoken`."
+        Args:
+            input: Either a string, a single BaseMessage, or a list of BaseMessages.
+
+        Returns:
+            int: Number of tokens in the input.
+
+        Raises:
+            ImportError: If tiktoken is not installed.
+            ValueError: If message content is not a string.
+        """
+        if self.token_counter is not None:
+            return self.token_counter(input)
+
+        try:
+            import tiktoken
+        except ImportError:
+            raise ImportError(
+                "Could not import tiktoken python package. "
+                "Please install it with `pip install tiktoken`."
+            )
+
+        encoding = tiktoken.get_encoding("cl100k_base")
+
+        if isinstance(input, str):
+            return len(encoding.encode(input))
+        elif isinstance(input, BaseMessage):
+            content = input.content
+            if not isinstance(content, str):
+                raise ValueError(
+                    f"Message content must be a string, got {type(content)}"
                 )
-            encoding = tiktoken.get_encoding("cl100k_base")
-
-            if isinstance(input, str):
-                return len(encoding.encode(input))
-            elif isinstance(input, BaseMessage):
-                return len(encoding.encode(input.content))
-            elif isinstance(input, list):
-                return sum(len(encoding.encode(msg.content)) for msg in input)
-            raise ValueError(f"Got unexpected type for input: {type(input)}")
-
-        return self.token_counter(input)
+            return len(encoding.encode(content))
+        elif isinstance(input, list):
+            total = 0
+            for msg in input:
+                content = msg.content
+                if not isinstance(content, str):
+                    raise ValueError(
+                        f"Message content must be a string, got {type(content)}"
+                    )
+                total += len(encoding.encode(content))
+            return total
+        else:
+            raise TypeError(f"Unsupported input type: {type(input)}")
 
     def bind_tools(
         self,
