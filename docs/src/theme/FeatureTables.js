@@ -300,6 +300,12 @@ const FEATURE_TABLES = {
                 package: "langchain-google_vertexai",
                 apiLink: "https://python.langchain.com/api_reference/google_vertexai/llms/langchain_google_vertexai.llms.VertexAI.html"
             },
+            {
+                name: "NVIDIA",
+                link: "NVIDIA",
+                package: "langchain-nvidia",
+                apiLink: "https://python.langchain.com/api_reference/nvidia_ai_endpoints/llm/langchain_nvidia_ai_endpoints.llm.NVIDIA.html"
+            },
         ],
     },
     text_embedding: {
@@ -386,6 +392,12 @@ const FEATURE_TABLES = {
                 link: "ibm_watsonx",
                 package: "langchain-ibm",
                 apiLink: "https://python.langchain.com/api_reference/ibm/embeddings/langchain_ibm.embeddings.WatsonxEmbeddings.html"
+            },
+            {
+                name: "NVIDIA",
+                link: "NVIDIAEmbeddings",
+                package: "langchain-nvidia",
+                apiLink: "https://python.langchain.com/api_reference/nvidia_ai_endpoints/embeddings/langchain_nvidia_ai_endpoints.embeddings.NVIDIAEmbeddings.html"
             },
         ]
     },
