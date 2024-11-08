@@ -44,10 +44,14 @@ def _results_to_docs_and_scores(results: Any) -> List[Tuple[Document, float]]:
     return [
         # TODO: Chroma can do batch querying,
         # we shouldn't hard code to the 1st result
-        (Document(page_content=result[0], metadata=result[1] or {}), result[2])
+        (
+            Document(page_content=result[0], metadata=result[1] or {}, id=result[2]),
+            result[3],
+        )
         for result in zip(
             results["documents"][0],
             results["metadatas"][0],
+            results["ids"][0],
             results["distances"][0],
         )
     ]
@@ -1129,6 +1133,8 @@ class Chroma(VectorStore):
         """
         texts = [doc.page_content for doc in documents]
         metadatas = [doc.metadata for doc in documents]
+        if ids is None:
+            ids = [doc.id if doc.id else "" for doc in documents]
         return cls.from_texts(
             texts=texts,
             embedding=embedding,
