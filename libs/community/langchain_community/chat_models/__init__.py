@@ -190,6 +190,10 @@ if TYPE_CHECKING:
     from langchain_community.chat_models.zhipuai import (
         ChatZhipuAI,
     )
+    from langchain_community.chat_models.novita import (
+        ChatNovita,
+    )
+
 __all__ = [
     "AzureChatOpenAI",
     "BedrockChat",
@@ -252,6 +256,7 @@ __all__ = [
     "SolarChat",
     "VolcEngineMaasChat",
     "ChatYi",
+    "ChatNovita",
 ]
 
 
@@ -317,6 +322,7 @@ _module_lookup = {
     "ChatPremAI": "langchain_community.chat_models.premai",
     "ChatLlamaCpp": "langchain_community.chat_models.llamacpp",
     "ChatYi": "langchain_community.chat_models.yi",
+    "ChatNovita": "langchain_community.chat_models.novita",
 }
 
 

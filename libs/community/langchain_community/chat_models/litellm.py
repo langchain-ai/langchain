@@ -225,6 +225,7 @@ class ChatLiteLLM(BaseChatModel):
     replicate_api_key: Optional[str] = None
     cohere_api_key: Optional[str] = None
     openrouter_api_key: Optional[str] = None
+    novita_api_key: Optional[str] = None
     streaming: bool = False
     api_base: Optional[str] = None
     organization: Optional[str] = None
@@ -325,6 +326,9 @@ class ChatLiteLLM(BaseChatModel):
         )
         values["together_ai_api_key"] = get_from_dict_or_env(
             values, "together_ai_api_key", "TOGETHERAI_API_KEY", default=""
+        )
+        values["novita_api_key"] = get_from_dict_or_env(
+            values, "novita_api_key", "NOVITA_API_KEY", default=""
         )
         values["client"] = litellm
 
