@@ -1,11 +1,12 @@
-from typing import Any, List, Mapping, Optional, Dict, Iterator, AsyncIterator
+from typing import Any, AsyncIterator, Dict, Iterator, List, Mapping, Optional
 
-from pydantic import ConfigDict, Field
-
-from langchain_community.llms.utils import enforce_stop_tokens
-from langchain_core.callbacks import CallbackManagerForLLMRun, AsyncCallbackManagerForLLMRun
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
+from pydantic import ConfigDict, Field
 
 
 class Writer(LLM):
@@ -95,23 +96,23 @@ class Writer(LLM):
         **kwargs: Any,
     ) -> str:
         params = {**self._identifying_params, **kwargs}
-        text = self.client.completions.create(prompt=prompt, **params).choices[0].text
         if stop is not None:
-            text = enforce_stop_tokens(text, stop)
+            params.update({"stop": stop})
+        text = self.client.completions.create(prompt=prompt, **params).choices[0].text
         return text
 
     async def _acall(
-            self,
-            prompt: str,
-            stop: Optional[list[str]] = None,
-            run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-            **kwargs: Any,
+        self,
+        prompt: str,
+        stop: Optional[list[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         params = {**self._identifying_params, **kwargs}
+        if stop is not None:
+            params.update({"stop": stop})
         response = await self.async_client.completions.create(prompt=prompt, **params)
         text = response.choices[0].text
-        if stop is not None:
-            text = enforce_stop_tokens(text, stop)
         return text
 
     def _stream(
@@ -122,6 +123,8 @@ class Writer(LLM):
         **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
         params = {**self._identifying_params, **kwargs, "stream": True}
+        if stop is not None:
+            params.update({"stop": stop})
         response = self.client.completions.create(prompt=prompt, **params)
         for chunk in response:
             if run_manager:
@@ -136,6 +139,8 @@ class Writer(LLM):
         **kwargs: Any,
     ) -> AsyncIterator[GenerationChunk]:
         params = {**self._identifying_params, **kwargs, "stream": True}
+        if stop is not None:
+            params.update({"stop": stop})
         response = await self.async_client.completions.create(prompt=prompt, **params)
         async for chunk in response:
             if run_manager:
