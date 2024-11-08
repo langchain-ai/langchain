@@ -820,7 +820,11 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 # of Generation objects in this case, which is invalid
                 # for ChatResult, so we check and treat this as an
                 # uncached case.
-                if isinstance(cache_val, list) and len(cache_val) > 0 and isinstance(cache_val[0], ChatGeneration):
+                if (
+                    isinstance(cache_val, list)
+                    and len(cache_val) > 0
+                    and isinstance(cache_val[0], ChatGeneration)
+                ):
                     return ChatResult(generations=cache_val)
             elif self.cache is None:
                 pass
@@ -899,7 +903,11 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 # of Generation objects in this case, which is invalid
                 # for ChatResult, so we check and treat this as an
                 # uncached case.
-                if isinstance(cache_val, list) and len(cache_val) > 0 and isinstance(cache_val[0], ChatGeneration):
+                if (
+                    isinstance(cache_val, list)
+                    and len(cache_val) > 0
+                    and isinstance(cache_val[0], ChatGeneration)
+                ):
                     return ChatResult(generations=cache_val)
             elif self.cache is None:
                 pass
