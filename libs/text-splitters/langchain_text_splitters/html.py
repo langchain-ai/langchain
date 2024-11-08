@@ -91,18 +91,14 @@ class HTMLHeaderTextSplitter:
             text: HTML text
         """
         return self.split_text_from_file(StringIO(text))
-
-
+        
     def split_text_from_file(self, file: Any) -> List[Document]:
         """Split HTML file using BeautifulSoup.
-    
         Args:
             file: HTML file path or file-like object.
-    
         Returns:
             List of Document objects with page_content and metadata.
         """
-    
         # Read the HTML content from the file or file-like object
         if isinstance(file, str):
             with open(file, 'r', encoding='utf-8') as f:
@@ -110,28 +106,28 @@ class HTMLHeaderTextSplitter:
         else:
             # Assuming file is a file-like object
             html_content = file.read()
-    
+
         # Parse the HTML content using BeautifulSoup
         soup = BeautifulSoup(html_content, 'html.parser')
-    
+
         # Extract the header tags and their corresponding metadata keys
         headers_to_split_on = [tag[0] for tag in self.headers_to_split_on]
         header_mapping = dict(self.headers_to_split_on)
-    
+
         documents = []
-    
+
         # Find the body of the document
         body = soup.body if soup.body else soup
-    
+
         # Find all header tags in the order they appear
         all_headers = body.find_all(headers_to_split_on)
-    
+
         # If there's content before the first header, collect it
         first_header = all_headers[0] if all_headers else None
         if first_header:
             pre_header_content = ''
             for elem in first_header.find_all_previous():
-                if isinstance(elem, Tag):
+                if isinstance(elem, bs4.Tag):
                     text = elem.get_text(separator=' ', strip=True)
                     if text:
                         pre_header_content = text + ' ' + pre_header_content
@@ -149,30 +145,30 @@ class HTMLHeaderTextSplitter:
                     metadata={}
                 ))
             return documents
-    
+
         # Process each header and its associated content
         for header in all_headers:
             current_metadata = {}
             header_name = header.name
             header_text = header.get_text(separator=' ', strip=True)
             current_metadata[header_mapping[header_name]] = header_text
-    
+
             # Collect all sibling elements until the next header of the same or higher level
             content_elements = []
             for sibling in header.find_next_siblings():
                 if sibling.name in headers_to_split_on:
                     # Stop at the next header
                     break
-                if isinstance(sibling, Tag):
+                if isinstance(sibling, bs4.Tag):
                     content_elements.append(sibling)
-    
+
             # Get the text content of the collected elements
             current_content = ''
             for elem in content_elements:
                 text = elem.get_text(separator=' ', strip=True)
                 if text:
                     current_content += text + ' '
-    
+
             # Create a Document if there is content
             if current_content.strip():
                 documents.append(Document(
@@ -185,9 +181,8 @@ class HTMLHeaderTextSplitter:
                     page_content='',
                     metadata=current_metadata.copy()
                 ))
-    
-        return documents
 
+        return documents
 
 
 class HTMLSectionSplitter:
