@@ -1357,12 +1357,62 @@ class FAISS(VectorStore):
                 f"filter must be a dict of metadata or a callable, not {type(filter)}"
             )
 
-        def filter_func(metadata: Dict[str, Any]) -> bool:
-            return all(
-                metadata.get(key) in value
-                if isinstance(value, list)
-                else metadata.get(key) == value
-                for key, value in filter.items()  # type: ignore
-            )
+        LOGICAL_OPERATORS = {
+            "$eq": lambda a, b: a == b,
+            "$neq": lambda a, b: a != b,
+            "$gt": lambda a, b: a > b,
+            "$lt": lambda a, b: a < b,
+            "$gte": lambda a, b: a >= b,
+            "$lte": lambda a, b: a <= b,
+            "$in": lambda a, b: a in b,
+            "$nin": lambda a, b: a not in b,
+        }
 
-        return filter_func
+        def filter_func_cond(
+            field: str, condition: Dict[str, Any]
+        ) -> Callable[[Dict[str, Any]], bool]:
+            operators = []
+            if type(condition) is not dict:
+                if isinstance(condition, list):
+                    operators.append(
+                        lambda doc, field=field, value=condition: doc.get(field)
+                        in value
+                    )
+                else:
+                    operators.append(
+                        lambda doc, field=field, value=condition: doc.get(field)
+                        == value
+                    )
+            else:
+                for op, value in condition.items():
+                    if op in LOGICAL_OPERATORS:
+                        operators.append(
+                            lambda doc,
+                            field=field,
+                            op=op,
+                            value=value: LOGICAL_OPERATORS[op](doc.get(field), value)
+                        )
+                    else:
+                        raise ValueError(
+                            f"filter contains an unsupported operator: {op}"
+                        )
+            return lambda doc: all(op(doc) for op in operators)
+
+        def filter_func(filter: Dict[str, Any]) -> Callable[[Dict[str, Any]], bool]:
+            if "$and" in filter:
+                conditions = [filter_func(sub_filter) for sub_filter in filter["$and"]]
+                return lambda doc: all(cond(doc) for cond in conditions)
+            elif "$or" in filter:
+                conditions = [filter_func(sub_filter) for sub_filter in filter["$or"]]
+                return lambda doc: any(cond(doc) for cond in conditions)
+            elif "$not" in filter:
+                condition = filter_func(filter["$not"])
+                return lambda doc: not condition(doc)
+            else:
+                conditions = [
+                    filter_func_cond(field, condition)
+                    for field, condition in filter.items()
+                ]
+                return lambda doc: all(cond(doc) for cond in conditions)
+
+        return filter_func(filter)
