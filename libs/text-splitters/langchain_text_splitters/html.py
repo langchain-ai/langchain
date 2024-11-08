@@ -11,7 +11,6 @@ from langchain_core.documents import Document
 from langchain_text_splitters.character import RecursiveCharacterTextSplitter
 from bs4 import BeautifulSoup
 from bs4.element import Tag
-from langchain.docstore.document import Document
 
 class ElementType(TypedDict):
     """Element type as typed dict."""
