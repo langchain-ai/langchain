@@ -133,6 +133,23 @@ if TYPE_CHECKING:
     from langchain_community.tools.financial_datasets.income_statements import (
         IncomeStatements,
     )
+
+    from langchain_community.tools.finance_polygon.all_tickers import (
+        PolygonAllTickers,
+    )
+
+    from langchain_community.tools.finance_polygon.single_ticker import (
+        PolygonSingleTicker,
+    )
+
+    from langchain_community.tools.finance_polygon.gainers_losers import (
+        PolygonGainersLosers,
+    )
+
+    from langchain_community.tools.finance_polygon.universal_snapshot import (
+        PolygonUniversalSnapshot,
+    )
+
     from langchain_community.tools.finance_polygon.crypto_aggregates import (
         PolygonCryptoAggregates,
     )
@@ -428,6 +445,20 @@ __all__ = [
     "DataheraldTextToSQL",
     "DuckDuckGoSearchResults",
     "DuckDuckGoSearchRun",
+    "PolygonAllTickers",
+    "PolygonSingleTicker",
+    "PolygonGainersLosers",
+    "PolygonUniversalSnapshot",
+    "PolygonCryptoAggregates",
+    "PolygonIPOs",
+    "PolygonRelatedCompanies",
+    "PolygonExchanges",
+    "PolygonConditions",
+    "PolygonStockSplits",
+    "PolygonStocksFinancials",
+    "PolygonLastTrade",
+    "PolygonMarketHolidays",
+    "PolygonMarketStatus",
     "E2BDataAnalysisTool",
     "EdenAiExplicitImageTool",
     "EdenAiObjectDetectionTool",

@@ -10,6 +10,10 @@ from langchain_community.tools.finance_polygon.stocks_financials import PolygonS
 from langchain_community.tools.finance_polygon.last_trade import PolygonLastTrade
 from langchain_community.tools.finance_polygon.market_holidays import PolygonMarketHolidays
 from langchain_community.tools.finance_polygon.market_status import PolygonMarketStatus
+from langchain_community.tools.finance_polygon.all_tickers import PolygonAllTickers
+from langchain_community.tools.finance_polygon.gainers_losers import PolygonGainersLosers
+from langchain_community.tools.finance_polygon.single_ticker import PolygonSingleTicker
+from langchain_community.tools.finance_polygon.universal_snapshot import PolygonUniversalSnapshot
 
 __all__ = [
     "PolygonCryptoAggregates",
@@ -22,4 +26,9 @@ __all__ = [
     "PolygonLastTrade",
     "PolygonMarketHolidays",
     "PolygonMarketStatus",
+    "PolygonAllTickers",
+    "PolygonGainersLosers",
+    "PolygonSingleTicker",
+    "PolygonUniversalSnapshot",
 ]
+

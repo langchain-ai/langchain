@@ -29,6 +29,16 @@ class FinancePolygonAPIWrapper(BaseModel):
 
         return values
 
+    @staticmethod
+    def _get_response(endpoint: str) -> dict:
+        """Make Get Request to `endpoint` and return `data` if OK"""
+        response = requests.get(endpoint)
+        data = response.json()
+        status = data.get("status", None)
+        if status not in ("OK"):
+            raise ValueError(f"API Error: {data}")
+        return data.get("results", None)
+
     def get_crypto_aggregates(self, ticker: str, **kwargs: Any) -> Optional[dict]:
         """
         Get aggregate bars for a cryptocurrency over a given date range
@@ -54,19 +64,13 @@ class FinancePolygonAPIWrapper(BaseModel):
             f"&adjusted={adjusted}"
             f"&sort={sort}"
         )
-        response = requests.get(url)
-        data = response.json()
 
-        status = data.get("status", None)
-        if status not in ("OK"):
-            raise ValueError(f"API Error: {data}")
+        return self._get_response(url)
 
-        return data.get("results", None)
-    
     def get_ipos(self, **kwargs: Any) -> Optional[dict]:
         """
         Get IPOs for a specific ticker or other criteria.
-        
+
         /vX/reference/ipos?limit={limit}&apiKey={apiKey}
         """
         ticker = kwargs.get("ticker", None)
@@ -81,31 +85,25 @@ class FinancePolygonAPIWrapper(BaseModel):
         url = POLYGON_BASE_URL
 
         if ticker is not None:
-            url = url +"vX/reference/ipos?" + f"ticker={ticker}&"
-        
+            url = url + "vX/reference/ipos?" + f"ticker={ticker}&"
+
         if us_code is not None:
             url = url + f"us_code={us_code}&"
-        
+
         if isin is not None:
             url = url + f"isin={isin}&"
-        
+
         if listing_date is not None:
             url = url + f"listing_date={listing_date}&"
-        
+
         if ipo_status is not None:
             url = url + f"ipo_status={ipo_status}&"
-        
-        url = url + f"order={order}&limit={limit}&sort={sort}&apiKey={self.polygon_api_key}"
-        
-        response = requests.get(url)
-        data = response.json()
 
-        status = data.get("status", None)
-        if status not in ("OK"):
-            raise ValueError(f"API Error: {data}")
+        url = url + \
+            f"order={order}&limit={limit}&sort={sort}&apiKey={self.polygon_api_key}"
 
-        return data.get("results", None)
-    
+        return self._get_response(url)
+
     def get_related_companies(self, ticker: str) -> Optional[dict]:
         """
         Get a list of tickers related to the queried ticker based on News
@@ -119,15 +117,7 @@ class FinancePolygonAPIWrapper(BaseModel):
             f"/{ticker}"
             f"?apiKey={self.polygon_api_key}"
         )
-        response = requests.get(url)
-        data = response.json()
-
-        status = data.get("status", None)
-        if status not in ("OK"):
-            raise ValueError(f"API Error: {data}")
-
-        return data.get("results", None)
-    
+        return self._get_response(url)
 
     def get_exchanges(self, **kwagrs: Any) -> Optional[dict]:
         """
@@ -135,26 +125,20 @@ class FinancePolygonAPIWrapper(BaseModel):
 
         v3/reference/exchanges?asset_class={asset_class}&apiKey={apiKey}
         """
-        
+
         asset_class = kwagrs.get("asset_class", "stocks")
         locale = kwagrs.get("locale", None)
 
-        url = POLYGON_BASE_URL + "v3/reference/exchanges?" + f"asset_class={asset_class}&"
+        url = POLYGON_BASE_URL + "v3/reference/exchanges?" + \
+            f"asset_class={asset_class}&"
 
         if locale is not None:
             url = url + f"locale={locale}&"
-        
+
         url = url + f"apiKey={self.polygon_api_key}"
 
-        response = requests.get(url)
-        data = response.json()
+        return self._get_response(url)
 
-        status = data.get("status", None)
-        if status not in ("OK"):
-            raise ValueError(f"API Error: {data}")
-
-        return data.get("results", None)
-    
     def get_conditions(self, **kwargs: Any) -> Optional[dict]:
         """
         Get a list of conditions that Polygon.io uses.
@@ -170,36 +154,30 @@ class FinancePolygonAPIWrapper(BaseModel):
         limit = kwargs.get("limit", 10)
         sort = kwargs.get("sort", None)
 
-        url = POLYGON_BASE_URL + "v3/reference/conditions?" + f"asset_class={asset_class}&"
+        url = POLYGON_BASE_URL + "v3/reference/conditions?" + \
+            f"asset_class={asset_class}&"
 
         if data_type is not None:
             url = url + f"data_type={data_type}&"
-        
+
         if id is not None:
             url = url + f"id={id}&"
-        
+
         if sip is not None:
             url = url + f"sip={sip}&"
-        
+
         if order is not None:
             url = url + f"order={order}&"
-        
+
         url = url + f"limit={limit}&"
 
         if sort is not None:
             url = url + f"sort={sort}&"
-        
+
         url = url + f"apiKey={self.polygon_api_key}"
 
-        response = requests.get(url)
-        data = response.json()
+        return self._get_response(url)
 
-        status = data.get("status", None)
-        if status not in ("OK"):
-            raise ValueError(f"API Error: {data}")
-        
-        return data.get("results", None)
-    
     def get_stock_splits(self, **kwargs: Any) -> Optional[dict]:
         """
         Get a list of historical stock splits for a specific ticker.
@@ -218,32 +196,25 @@ class FinancePolygonAPIWrapper(BaseModel):
 
         if ticker is not None:
             url = url + f"ticker={ticker}&"
-        
+
         if execution_date is not None:
             url = url + f"execution_date={execution_date}&"
-        
+
         if reverse_split is not None:
             url = url + f"reverse_split={reverse_split}&"
-        
+
         if order is not None:
             url = url + f"order={order}&"
 
         url = url + f"limit={limit}&"
-        
+
         if sort is not None:
             url = url + f"sort={sort}&"
-        
+
         url = url + f"apiKey={self.polygon_api_key}"
 
-        response = requests.get(url)
-        data = response.json()
+        return self._get_response(url)
 
-        status = data.get("status", None)
-        if status not in ("OK"):
-            raise ValueError(f"API Error: {data}")
-
-        return data.get("results", None)
-    
     def get_stocks_financials(self, **kwargs: Any) -> Optional[dict]:
         """
         Get a list of historical financial data for a stock ticker.
@@ -270,13 +241,13 @@ class FinancePolygonAPIWrapper(BaseModel):
 
         if cik is not None:
             url = url + f"cik={cik}&"
-        
+
         if company_name is not None:
             url = url + f"company_name={company_name}&"
-        
+
         if sic is not None:
             url = url + f"sic={sic}&"
-        
+
         if filing_date is not None:
             url = url + f"filing_date={filing_date}&"
 
@@ -299,14 +270,7 @@ class FinancePolygonAPIWrapper(BaseModel):
 
         url = url + f"apiKey={self.polygon_api_key}"
 
-        response = requests.get(url)
-        data = response.json()
-
-        status = data.get("status", None)
-        if status not in ("OK"):
-            raise ValueError(f"API Error: {data}")
-        
-        return data.get("results", None)
+        return self._get_response(url)
 
     def get_last_trade(self, ticker: str) -> Optional[dict]:
         """
@@ -319,23 +283,17 @@ class FinancePolygonAPIWrapper(BaseModel):
             f"/{ticker}"
             f"?apiKey={self.polygon_api_key}"
         )
-        response = requests.get(url)
-        data = response.json()
+        return self._get_response(url)
 
-        status = data.get("status", None)
-        if status not in ("OK"):
-            raise ValueError(f"API Error: {data}")
-
-        return data.get("results", None)
-    
     def get_market_holidays(self, **kwargs: Any) -> Optional[dict]:
         """
         Get the upcoming market holidays and their open/close times.
-        
+
         /v1/marketstatus/upcoming?apiKey={apiKey}
         """
 
-        url = POLYGON_BASE_URL + "v1/marketstatus/upcoming?" + f"apiKey={self.polygon_api_key}"
+        url = POLYGON_BASE_URL + "v1/marketstatus/upcoming?" + \
+            f"apiKey={self.polygon_api_key}"
 
         response = requests.get(url)
         data = response.json()
@@ -347,9 +305,9 @@ class FinancePolygonAPIWrapper(BaseModel):
 
         if data is None:
             return None
-        
+
         return data
-    
+
     def get_market_status(self, **kwargs: Any) -> Optional[dict]:
         """
         Get the current trading status of the exchanges
@@ -358,7 +316,8 @@ class FinancePolygonAPIWrapper(BaseModel):
         v1/marketstatus/now?apiKey={apiKey}
         """
 
-        url = POLYGON_BASE_URL + "v1/marketstatus/now?" + f"apiKey={self.polygon_api_key}"
+        url = POLYGON_BASE_URL + "v1/marketstatus/now?" + \
+            f"apiKey={self.polygon_api_key}"
 
         response = requests.get(url)
         data = response.json()
@@ -369,8 +328,67 @@ class FinancePolygonAPIWrapper(BaseModel):
 
         return data
 
+    def get_all_tickers(self, **kwargs: Any) -> Optional[dict]:
+        """
+        Get market data for all traded stock symbols or specific tickers.
 
-    def run(self, mode: str, ticker: str, **kwargs: Any) -> str:
+        /v2/snapshot/locale/us/markets/stocks/tickers
+        """
+        tickers = kwargs.get("tickers", "")
+        include_otc = kwargs.get("include_otc", False)
+
+        url = (
+            f"{POLYGON_BASE_URL}v2/snapshot/locale/us/markets/stocks/tickers?"
+            f"tickers={tickers}&include_otc={str(include_otc).lower()}&apiKey={self.polygon_api_key}"
+        )
+        return self._get_response(url)
+
+    def get_top_gainers_losers(self, **kwargs: Any) -> Optional[dict]:
+        """
+        Get the top gainers or losers in the market.
+
+        /v2/snapshot/locale/us/markets/stocks/{direction}
+        """
+        direction = kwargs.get("direction")
+        include_otc = kwargs.get("include_otc", False)
+
+        if direction not in ["gainers", "losers"]:
+            raise ValueError("Direction must be either 'gainers' or 'losers'")
+
+        url = (
+            f"{POLYGON_BASE_URL}v2/snapshot/locale/us/markets/stocks/{direction}?"
+            f"include_otc={str(include_otc).lower()}&apiKey={self.polygon_api_key}"
+        )
+        return self._get_response(url)
+
+    def get_single_ticker(self, ticker: str, **kwargs: Any) -> Optional[dict]:
+        """
+        Get market data for a single stock ticker.
+
+        /v2/snapshot/locale/us/markets/stocks/tickers/{stocksTicker}
+        """
+        url = (
+            f"{POLYGON_BASE_URL}v2/snapshot/locale/us/markets/stocks/tickers/{ticker}?"
+            f"apiKey={self.polygon_api_key}"
+        )
+        return self._get_response(url)
+
+    def get_universal_snapshot(self, **kwargs: Any) -> Optional[dict]:
+        """
+        Get snapshots for multiple asset types.
+
+        /v3/snapshot
+        """
+        tickers = kwargs.get("tickers", "")
+        limit = kwargs.get("limit", 10)
+
+        url = (
+            f"{POLYGON_BASE_URL}v3/snapshot?"
+            f"ticker.any_of={tickers}&limit={limit}&apiKey={self.polygon_api_key}"
+        )
+        return self._get_response(url)
+
+    def run(self, mode: str, ticker: str = "", **kwargs: Any) -> str:
         if mode == "get_crypto_aggregate":
             return json.dumps(self.get_crypto_aggregates(ticker))
         elif mode == "get_ipos":
@@ -391,5 +409,13 @@ class FinancePolygonAPIWrapper(BaseModel):
             return json.dumps(self.get_market_holidays(**kwargs))
         elif mode == "get_market_status":
             return json.dumps(self.get_market_status(**kwargs))
+        elif mode == "get_all_tickers":
+            return json.dumps(self.get_all_tickers(**kwargs))
+        elif mode == "get_top_gainers_losers":
+            return json.dumps(self.get_top_gainers_losers(**kwargs))
+        elif mode == "get_single_ticker":
+            return json.dumps(self.get_single_ticker(ticker, **kwargs))
+        elif mode == "get_universal_snapshot":
+            return json.dumps(self.get_universal_snapshot(**kwargs))
         else:
             raise ValueError(f"Invalid mode {mode} for Polygon API.")
