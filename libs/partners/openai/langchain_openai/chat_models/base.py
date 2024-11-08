@@ -605,6 +605,8 @@ class BaseChatOpenAI(BaseChatModel):
             token_usage = output["token_usage"]
             if token_usage is not None:
                 for k, v in token_usage.items():
+                    if v is None:
+                        continue
                     if k in overall_token_usage:
                         overall_token_usage[k] = _update_token_usage(
                             overall_token_usage[k], v
@@ -2143,9 +2145,13 @@ def _convert_to_openai_response_format(
     if isinstance(schema, type) and is_basemodel_subclass(schema):
         return schema
 
-    if "json_schema" in schema and schema.get("type") == "json_schema":
+    if (
+        isinstance(schema, dict)
+        and "json_schema" in schema
+        and schema.get("type") == "json_schema"
+    ):
         response_format = schema
-    elif "name" in schema and "schema" in schema:
+    elif isinstance(schema, dict) and "name" in schema and "schema" in schema:
         response_format = {"type": "json_schema", "json_schema": schema}
     else:
         strict = strict if strict is not None else True
