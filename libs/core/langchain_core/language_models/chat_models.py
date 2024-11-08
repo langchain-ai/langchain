@@ -815,7 +815,14 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 prompt = dumps(messages)
                 cache_val = llm_cache.lookup(prompt, llm_string)
                 if isinstance(cache_val, list):
-                    return ChatResult(generations=cache_val)
+                    # When objects that are not Serializable are cached,
+                    # they may not be succesfully serialized upon read.
+                    # Currently, many caches failover to returning a list
+                    # of Generation objects in this case, which is invalid
+                    # for ChatResult, so we check and treat this as an
+                    # uncached case.
+                    if len(cache_val) > 0 and isinstance(cache_val[0], ChatGeneration):
+                        return ChatResult(generations=cache_val)
             elif self.cache is None:
                 pass
             else:
@@ -888,7 +895,14 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 prompt = dumps(messages)
                 cache_val = await llm_cache.alookup(prompt, llm_string)
                 if isinstance(cache_val, list):
-                    return ChatResult(generations=cache_val)
+                    # When objects that are not Serializable are cached,
+                    # they may not be succesfully serialized upon read.
+                    # Currently, many caches failover to returning a list
+                    # of Generation objects in this case, which is invalid
+                    # for ChatResult, so we check and treat this as an
+                    # uncached case.
+                    if len(cache_val) > 0 and isinstance(cache_val[0], ChatGeneration):
+                        return ChatResult(generations=cache_val)
             elif self.cache is None:
                 pass
             else:
