@@ -158,6 +158,9 @@ if TYPE_CHECKING:
     from langchain_community.document_loaders.doc_intelligence import (
         AzureAIDocumentIntelligenceLoader,
     )
+    from langchain_community.document_loaders.docling import (
+        DoclingLoader,
+    )
     from langchain_community.document_loaders.docugami import (
         DocugamiLoader,
     )
@@ -585,6 +588,7 @@ _module_lookup = {
     "DiffbotLoader": "langchain_community.document_loaders.diffbot",
     "DirectoryLoader": "langchain_community.document_loaders.directory",
     "DiscordChatLoader": "langchain_community.document_loaders.discord",
+    "DoclingLoader": "langchain_community.document_loaders.docling",
     "DocugamiLoader": "langchain_community.document_loaders.docugami",
     "DocusaurusLoader": "langchain_community.document_loaders.docusaurus",
     "Docx2txtLoader": "langchain_community.document_loaders.word_document",
@@ -791,6 +795,7 @@ __all__ = [
     "DiffbotLoader",
     "DirectoryLoader",
     "DiscordChatLoader",
+    "DoclingLoader",
     "DocugamiLoader",
     "DocusaurusLoader",
     "Docx2txtLoader",

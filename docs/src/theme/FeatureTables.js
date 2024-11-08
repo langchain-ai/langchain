@@ -27,7 +27,6 @@ const FEATURE_TABLES = {
                 "multimodal": true,
                 "local": false,
                 "apiLink": "https://python.langchain.com/api_reference/anthropic/chat_models/langchain_anthropic.chat_models.ChatAnthropic.html"
-                
             },
             {
                 "name": "ChatMistralAI",
@@ -200,7 +199,7 @@ const FEATURE_TABLES = {
                 "link": "upstage",
                 "structured_output": true,
                 "tool_calling": true,
-                "json_mode": false, 
+                "json_mode": false,
                 "multimodal": false,
                 "local": false,
                 "apiLink": "https://python.langchain.com/api_reference/upstage/chat_models/langchain_upstage.chat_models.ChatUpstage.html"
@@ -211,7 +210,7 @@ const FEATURE_TABLES = {
                 "link": "databricks",
                 "structured_output": true,
                 "tool_calling": true,
-                "json_mode": false, 
+                "json_mode": false,
                 "multimodal": false,
                 "local": false,
                 "apiLink": "https://python.langchain.com/api_reference/upstage/chat_models/langchain_databricks.chat_models.ChatDatabricks.html"
@@ -222,7 +221,7 @@ const FEATURE_TABLES = {
                 "link": "ibm_watsonx",
                 "structured_output": true,
                 "tool_calling": true,
-                "json_mode": true, 
+                "json_mode": true,
                 "multimodal": false,
                 "local": false,
                 "apiLink": "https://python.langchain.com/api_reference/ibm/chat_models/langchain_ibm.chat_models.ChatWatsonx.html"
@@ -620,7 +619,7 @@ const FEATURE_TABLES = {
                 partnerPackage: false,
                 loaderName: "SharePointLoader",
                 apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.sharepoint.SharePointLoader.html"
-                
+
             },
             {
                 name: "Tencent COS Directory",
@@ -754,7 +753,7 @@ const FEATURE_TABLES = {
                 link: "twitter",
                 loaderName: "TwitterTweetLoader",
                 apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.twitter.TwitterTweetLoader.html"
-                
+
             },
             {
                 name: "Reddit",
@@ -787,6 +786,13 @@ const FEATURE_TABLES = {
                 source: "Uses Unstructured to load and parse web pages",
                 api: "Package",
                 apiLink: "https://python.langchain.com/api_reference/unstructured/document_loaders/langchain_unstructured.document_loaders.UnstructuredLoader.html"
+            },
+            {
+                name: "Docling",
+                link: "docling",
+                source: "Uses Docling to load and parse web pages",
+                api: "Package",
+                apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.DoclingLoader.html"
             },
             {
                 name: "RecursiveURL",
@@ -841,6 +847,13 @@ const FEATURE_TABLES = {
                 source: "Uses AWS API to load PDFs",
                 api: "API",
                 apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.pdf.AmazonTextractPDFLoader.html"
+            },
+            {
+                name: "Docling",
+                link: "docling",
+                source: "Uses Docling to load PDFs",
+                api: "Package",
+                apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.DoclingLoader.html"
             },
             {
                 name: "MathPix",
@@ -912,6 +925,12 @@ const FEATURE_TABLES = {
                 link: "unstructured_file",
                 source: "Many file types (see https://docs.unstructured.io/platform/supported-file-types)",
                 apiLink: "https://python.langchain.com/api_reference/unstructured/document_loaders/langchain_unstructured.document_loaders.UnstructuredLoader.html"
+            },
+            {
+                name: "Docling",
+                link: "docling",
+                source: "Various file types (see https://ds4sd.github.io/docling/)",
+                apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.DoclingLoader.html"
             },
             {
                 name: "JSONLoader",

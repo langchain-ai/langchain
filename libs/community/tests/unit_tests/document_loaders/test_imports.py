@@ -59,6 +59,7 @@ EXPECTED_ALL = [
     "DiffbotLoader",
     "DirectoryLoader",
     "DiscordChatLoader",
+    "DoclingLoader",
     "DocugamiLoader",
     "DocusaurusLoader",
     "Docx2txtLoader",
