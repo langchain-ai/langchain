@@ -245,6 +245,7 @@ class TestChatWriter:
             assert isinstance(response, AIMessage)
             assert response.content == "Hello! How can I help you?"
 
+    @pytest.mark.asyncio
     async def test_async_completion(
         self, mock_unstreaming_completion: List[ChatCompletionChunk]
     ) -> None:
@@ -289,6 +290,7 @@ class TestChatWriter:
             assert callback_handler.llm_streams > 0
             assert response_message == "Hello! How can I help you?"
 
+    @pytest.mark.asyncio
     async def test_async_streaming(
         self, mock_streaming_chunks: List[ChatCompletionChunk]
     ) -> None:
@@ -346,6 +348,7 @@ class TestChatWriter:
         assert response.tool_calls[0]["name"] == "GetWeather"
         assert response.tool_calls[0]["args"]["location"] == "London"
 
+    @pytest.mark.asyncio
     async def test_async_tool_calling(
         self, mock_tool_call_choice_response: Dict[str, Any]
     ) -> None:

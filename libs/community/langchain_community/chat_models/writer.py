@@ -20,7 +20,6 @@ from typing import (
     Union,
 )
 
-from dotenv import load_dotenv
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -49,8 +48,6 @@ except ImportError as e:
     raise ImportError("Please install Writer SDK!") from e
 
 logger = logging.getLogger(__name__)
-
-load_dotenv()
 
 
 class ChatWriter(BaseChatModel):
