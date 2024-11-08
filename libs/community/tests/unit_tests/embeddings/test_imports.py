@@ -82,6 +82,7 @@ EXPECTED_ALL = [
     "AscendEmbeddings",
     "ZhipuAIEmbeddings",
     "TextEmbedEmbeddings",
+    "PredictionGuardEmbeddings",
 ]
 
 
