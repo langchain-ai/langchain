@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import base64
+import io
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from pathlib import Path
@@ -22,6 +24,7 @@ from pydantic import (
     SkipValidation,
     model_validator,
 )
+from pypdf import PdfReader
 
 from langchain_core._api import deprecated
 from langchain_core.load import Serializable
@@ -46,6 +49,22 @@ from langchain_core.prompts.string import (
 )
 from langchain_core.utils import get_colored_text
 from langchain_core.utils.interactive_env import is_interactive_env
+
+
+# extract pdf into bytes
+def extract_pdf_text(pdf_data: bytes) -> str:
+    # Decode the base64 back into bytes
+    pdf_bytes = base64.b64decode(pdf_data)
+    pdf_text = ""
+
+    # Read the PDF and extract text
+    with io.BytesIO(pdf_bytes) as pdf_file:
+        reader = PdfReader(pdf_file)
+        for page in reader.pages:
+            extracted_text = page.extract_text()
+            pdf_text += extracted_text + "\n"
+
+    return pdf_text
 
 
 class BaseMessagePromptTemplate(Serializable, ABC):
@@ -468,6 +487,10 @@ class _ImageTemplateParam(TypedDict, total=False):
     image_url: Union[str, dict]
 
 
+class _PdfTemplateParam(TypedDict, total=False):
+    pdf: Union[str, dict]
+
+
 class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
     """Human message prompt template. This is a message sent from the user."""
 
@@ -571,6 +594,12 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                         msg = f"Invalid image template: {tmpl}"
                         raise ValueError(msg)
                     prompt.append(img_template_obj)
+                elif isinstance(tmpl, dict) and "data" in tmpl:
+                    if tmpl.get("mime_type") == "application/pdf":
+                        pdf_template = cast(_PdfTemplateParam, tmpl)["data"]
+                        pdf_text = extract_pdf_text(pdf_template)
+
+                        prompt.append(PromptTemplate.from_template(pdf_text))
                 else:
                     msg = f"Invalid template: {tmpl}"
                     raise ValueError(msg)

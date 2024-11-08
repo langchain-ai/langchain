@@ -37,6 +37,36 @@ from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION, PYDANTIC_MINOR
 from tests.unit_tests.pydantic_utils import _normalize_schema
 
 
+def test_create_pdf_chat_prompt() -> None:
+    """Test chat prompt with pdf data as bytes."""
+    file_path = (
+        Path(__file__).parent.parent.parent.parent.parent
+        / "community/tests/examples/hello.pdf"
+    )
+
+    with open(file_path, "rb") as file:
+        file_data = file.read()
+
+    pdf_data = base64.b64encode(file_data).decode("utf-8")
+    prompt = ChatPromptTemplate(
+        [
+            (
+                "human",
+                [
+                    {"type": "media", "mime_type": "application/pdf", "data": pdf_data},
+                ],
+            )
+        ]
+    )
+
+    expected_prompt = PromptTemplate(template="Hello world!\n1\n")
+
+    assert len(prompt.messages) == 1
+    output_prompt = prompt.messages[0]
+    assert isinstance(output_prompt, HumanMessagePromptTemplate)
+    assert output_prompt.prompt == [expected_prompt]
+
+
 @pytest.fixture
 def messages() -> list[BaseMessagePromptTemplate]:
     """Create messages."""
