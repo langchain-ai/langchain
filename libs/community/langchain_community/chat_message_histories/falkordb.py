@@ -121,7 +121,7 @@ class FalkorDBChatMessageHistory(BaseChatMessageHistory):
                 f"{self._node_label}", "id", dim=5, similarity_function="cosine"
             )
         except Exception as e:
-            if "already indexed" in e:
+            if "already indexed" in str(e):
                 raise ValueError(f"{self._node_label} has already been indexed")
 
     def _process_records(self, records: list) -> List[BaseMessage]:
