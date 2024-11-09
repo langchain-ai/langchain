@@ -1,7 +1,7 @@
-from typing import List, Optional, Union
 import os
-import redis.exceptions
+from typing import List, Optional, Union
 
+import redis.exceptions
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.messages import (
     AIMessage,
@@ -26,14 +26,20 @@ class FalkorDBChatMessageHistory(BaseChatMessageHistory):
         password (Optional[str]): Password for authenticating with FalkorDB.
         host (str): Host where the FalkorDB is running. Defaults to 'localhost'.
         port (int): Port number where the FalkorDB is running. Defaults to 6379.
-        node_label (str): Label for the session node in the graph. Defaults to "Session".
-        window (int): The number of messages to retrieve when querying the history. Defaults to 3.
-        ssl (bool): Whether to use SSL for connecting to the database. Defaults to False.
-        graph (Optional[FalkorDBGraph]): Optionally provide an existing FalkorDBGraph object for connecting.
+        node_label (str): Label for the session node
+                        in the graph. Defaults to "Session".
+        window (int): The number of messages to retrieve when querying
+                        the history. Defaults to 3.
+        ssl (bool): Whether to use SSL for connecting
+                    to the database. Defaults to False.
+        graph (Optional[FalkorDBGraph]): Optionally provide an existing
+                    FalkorDBGraph object for connecting.
 
     Example:
         .. code-block:: python
-            from langchain_community.chat_message_histories import FalkorDBChatMessageHistory
+            from langchain_community.chat_message_histories import (
+            FalkorDBChatMessageHistory
+            )
 
             history = FalkorDBChatMessageHistory(
                 session_id="1234",
@@ -56,7 +62,10 @@ class FalkorDBChatMessageHistory(BaseChatMessageHistory):
         *,
         graph: Optional[FalkorDBGraph] = None,
     ) -> None:
-        """Initialize the FalkorDBChatMessageHistory class with the session and connection details."""
+        """
+        Initialize the FalkorDBChatMessageHistory
+        class with the session and connection details.
+        """
         try:
             import falkordb
         except ImportError:
@@ -115,21 +124,23 @@ class FalkorDBChatMessageHistory(BaseChatMessageHistory):
             if "already indexed" in e:
                 raise ValueError(f"{self._node_label} has already been indexed")
 
-    def _process_records(self, records: list) -> list:
+    def _process_records(self, records: list) -> List[BaseMessage]:
         """Process the records from FalkorDB and convert them into BaseMessage objects.
 
         Args:
             records (list): The raw records fetched from the FalkorDB query.
 
         Returns:
-            list: A list of `BaseMessage` objects.
+            List[BaseMessage]: A list of `BaseMessage` objects.
         """
-        messages = []
+        # Explicitly set messages as a list of BaseMessage
+        messages: List[BaseMessage] = []
 
         for record in records:
             content = record[0].get("data", {}).get("content", "")
             message_type = record[0].get("type", "").lower()
 
+            # Append the correct message type to the list
             if message_type == "human":
                 messages.append(
                     HumanMessage(
@@ -143,7 +154,7 @@ class FalkorDBChatMessageHistory(BaseChatMessageHistory):
                     )
                 )
             else:
-                print(f"Unknown message type: {message_type}")
+                raise ValueError(f"Unknown message type: {message_type}")
 
         return messages
 

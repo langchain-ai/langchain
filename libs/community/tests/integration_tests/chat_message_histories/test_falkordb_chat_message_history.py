@@ -2,9 +2,9 @@
 Integration tests for FalkorDB Chat History/Memory functionality.
 
 Note:
-These tests are conducted using a local FalkorDB instance but can also 
+These tests are conducted using a local FalkorDB instance but can also
 be run against a Cloud FalkorDB instance. Ensure that appropriate host,port
-cusername, and password configurations are set up 
+cusername, and password configurations are set up
 before running the tests.
 
 Test Cases:
@@ -14,10 +14,14 @@ Test Cases:
    when passing the FalkorDB driver through a graph object.
 
 """
+
 from langchain_core.messages import AIMessage, HumanMessage
 
-from langchain_community.chat_message_histories.falkordb import FalkorDBChatMessageHistory
+from langchain_community.chat_message_histories.falkordb import (
+    FalkorDBChatMessageHistory,
+)
 from langchain_community.graphs import FalkorDBGraph
+
 
 def test_add_messages() -> None:
     """Basic testing: add messages to the FalkorDBChatMessageHistory."""
