@@ -54,7 +54,7 @@ class NUASchema(BaseModel):
     )
 
 
-class NucliaUnderstandingAPI(BaseTool):
+class NucliaUnderstandingAPI(BaseTool):  # type: ignore[override, override]
     """Tool to process files with the Nuclia Understanding API."""
 
     name: str = "nuclia_understanding_api"
