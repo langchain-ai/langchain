@@ -205,15 +205,45 @@ class ChatPerplexity(BaseChatModel):
         stream_resp = self.client.chat.completions.create(
             model=params["model"], messages=message_dicts, stream=True
         )
+        
+        # Track whether we've seen the last chunk
+        final_chunk_seen = False
+        citations = []
+        
         for chunk in stream_resp:
             if not isinstance(chunk, dict):
-                chunk = chunk.dict()
-            if len(chunk["choices"]) == 0:
+                chunk_dict = chunk.dict()
+            else:
+                chunk_dict = chunk
+                
+            # Store citations if they exist
+            if "citations" in chunk_dict:
+                citations = chunk_dict["citations"]
+                
+            if len(chunk_dict["choices"]) == 0:
                 continue
-            choice = chunk["choices"][0]
+                
+            choice = chunk_dict["choices"][0]
+            
+            # Check if this is the final chunk
+            if choice.get("finish_reason") is not None:
+                final_chunk_seen = True
+                
+            # Create message chunk
             chunk = self._convert_delta_to_message_chunk(
                 choice["delta"], default_chunk_class
             )
+            
+            # Add citations if this is the final chunk and we have citations
+            if final_chunk_seen and citations:
+                citation_text = "\n\nCitations:\n" + "\n".join(
+                    f"[{i+1}] {citation}" for i, citation in enumerate(citations)
+                )
+                chunk = self._convert_delta_to_message_chunk(
+                    {"role": "assistant", "content": citation_text},
+                    default_chunk_class
+                )
+            
             finish_reason = choice.get("finish_reason")
             generation_info = (
                 dict(finish_reason=finish_reason) if finish_reason is not None else None
