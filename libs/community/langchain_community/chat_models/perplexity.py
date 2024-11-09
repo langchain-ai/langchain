@@ -46,22 +46,9 @@ logger = logging.getLogger(__name__)
 
 
 class ChatPerplexity(BaseChatModel):
-    """`Perplexity AI` Chat models API.
-
-    To use, you should have the ``openai`` python package installed, and the
-    environment variable ``PPLX_API_KEY`` set to your API key.
-    Any parameters that are valid to be passed to the openai.create call can be passed
-    in, even if not explicitly saved on this class.
-
-    Example:
-        .. code-block:: python
-
-            from langchain_community.chat_models import ChatPerplexity
-
-            chat = ChatPerplexity(
-                model="llama-3.1-sonar-small-128k-online",
-                temperature=0.7,
-            )
+    """Modified `Perplexity AI` Chat models API with citation support.
+    
+    This version includes citations in the output when available from the API response.
     """
 
     client: Any = None  #: :meta private:
@@ -74,18 +61,12 @@ class ChatPerplexity(BaseChatModel):
     pplx_api_key: Optional[str] = Field(
         default_factory=from_env("PPLX_API_KEY", default=None), alias="api_key"
     )
-    """Base URL path for API requests,
-    leave blank if not using a proxy or service emulator."""
     request_timeout: Optional[Union[float, Tuple[float, float]]] = Field(
         None, alias="timeout"
     )
-    """Timeout for requests to PerplexityChat completion API. Default is None."""
     max_retries: int = 6
-    """Maximum number of retries to make when generating."""
     streaming: bool = False
-    """Whether to stream the results or not."""
     max_tokens: Optional[int] = None
-    """Maximum number of tokens to generate."""
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -204,9 +185,9 @@ class ChatPerplexity(BaseChatModel):
         elif role == "tool" or default_class == ToolMessageChunk:
             return ToolMessageChunk(content=content, tool_call_id=_dict["tool_call_id"])
         elif role or default_class == ChatMessageChunk:
-            return ChatMessageChunk(content=content, role=role)  # type: ignore[arg-type]
+            return ChatMessageChunk(content=content, role=role)
         else:
-            return default_class(content=content)  # type: ignore[call-arg]
+            return default_class(content=content)
 
     def _stream(
         self,
@@ -243,6 +224,14 @@ class ChatPerplexity(BaseChatModel):
                 run_manager.on_llm_new_token(chunk.text, chunk=chunk)
             yield chunk
 
+    def _append_citations(self, content: str, citations: List[str]) -> str:
+        """Append citations to the message content."""
+        if citations:
+            content += "\n\nCitations:\n"
+            for i, citation in enumerate(citations, 1):
+                content += f"[{i}] {citation}\n"
+        return content
+
     def _generate(
         self,
         messages: List[BaseMessage],
@@ -256,12 +245,25 @@ class ChatPerplexity(BaseChatModel):
             )
             if stream_iter:
                 return generate_from_stream(stream_iter)
+            
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
         response = self.client.chat.completions.create(
             model=params["model"], messages=message_dicts
         )
-        message = AIMessage(content=response.choices[0].message.content)
+        
+        # Get the response content
+        content = response.choices[0].message.content
+        
+        # Get citations if available (assuming response is converted to dict)
+        response_dict = response.dict() if hasattr(response, 'dict') else response
+        citations = response_dict.get('citations', [])
+        
+        # Append citations to content if available
+        if citations:
+            content = self._append_citations(content, citations)
+            
+        message = AIMessage(content=content)
         return ChatResult(generations=[ChatGeneration(message=message)])
 
     @property
