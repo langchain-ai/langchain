@@ -2917,7 +2917,7 @@ url = "libs/community"
 
 [[package]]
 name = "langchain-core"
-version = "0.3.13"
+version = "0.3.15"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -7436,4 +7436,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0"
-content-hash = "82af52368eb8ef7947e31a6ae145b79420453ec61334439982e14fe87a553d4e"
+content-hash = "8b78402e6323cdbfdef703ac281ca31cd7fc57170f83926e9a49b261ea1e69a8"
