@@ -15,6 +15,7 @@ from typing import (
     Sequence,
     Tuple,
     Type,
+    TypedDict,
     Union,
     cast,
 )
@@ -71,7 +72,7 @@ from pydantic import (
     SecretStr,
     model_validator,
 )
-from typing_extensions import NotRequired, Self, TypedDict
+from typing_extensions import NotRequired, Self
 
 from langchain_anthropic.output_parsers import extract_tool_calls
 
@@ -81,15 +82,6 @@ _message_type_lookups = {
     "AIMessageChunk": "assistant",
     "HumanMessageChunk": "user",
 }
-
-
-class AnthropicTool(TypedDict):
-    """Anthropic tool definition."""
-
-    name: str
-    description: str
-    input_schema: Dict[str, Any]
-    cache_control: NotRequired[Dict[str, str]]
 
 
 def _format_image(image_url: str) -> Dict:
@@ -612,9 +604,6 @@ class ChatAnthropic(BaseChatModel):
     message chunks will be generated during the stream including usage metadata.
     """
 
-    formatted_tools: List[AnthropicTool] = Field(default_factory=list)
-    """Tools in Anthropic format to be passed to model invocations."""
-
     @property
     def _llm_type(self) -> str:
         """Return type of chat model."""
@@ -701,8 +690,6 @@ class ChatAnthropic(BaseChatModel):
     ) -> Dict:
         messages = self._convert_input(input_).to_messages()
         system, formatted_messages = _format_messages(messages)
-        if self.formatted_tools and "tools" not in kwargs:
-            kwargs["tools"] = self.formatted_tools  # type: ignore[assignment]
         payload = {
             "model": self.model,
             "max_tokens": self.max_tokens,
@@ -968,7 +955,6 @@ class ChatAnthropic(BaseChatModel):
 
         """  # noqa: E501
         formatted_tools = [convert_to_anthropic_tool(tool) for tool in tools]
-        self.formatted_tools = formatted_tools
         if not tool_choice:
             pass
         elif isinstance(tool_choice, dict):
@@ -1128,7 +1114,13 @@ class ChatAnthropic(BaseChatModel):
             return llm | output_parser
 
     @beta()
-    def get_num_tokens_from_messages(self, messages: List[BaseMessage]) -> int:
+    def get_num_tokens_from_messages(
+        self,
+        messages: List[BaseMessage],
+        tools: Optional[
+            Sequence[Union[Dict[str, Any], Type, Callable, BaseTool]]
+        ] = None,
+    ) -> int:
         """Count tokens in a sequence of input messages.
 
         .. versionchanged:: 0.2.5
@@ -1140,8 +1132,8 @@ class ChatAnthropic(BaseChatModel):
         kwargs: Dict[str, Any] = {}
         if isinstance(formatted_system, str):
             kwargs["system"] = formatted_system
-        if self.formatted_tools:
-            kwargs["tools"] = self.formatted_tools
+        if tools:
+            kwargs["tools"] = [convert_to_anthropic_tool(tool) for tool in tools]
 
         response = self._client.beta.messages.count_tokens(
             betas=["token-counting-2024-11-01"],
@@ -1150,6 +1142,15 @@ class ChatAnthropic(BaseChatModel):
             **kwargs,
         )
         return response.input_tokens
+
+
+class AnthropicTool(TypedDict):
+    """Anthropic tool definition."""
+
+    name: str
+    description: str
+    input_schema: Dict[str, Any]
+    cache_control: NotRequired[Dict[str, str]]
 
 
 def convert_to_anthropic_tool(
