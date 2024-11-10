@@ -341,7 +341,7 @@ def convert_to_openai_function(
             A dictionary, Pydantic BaseModel class, TypedDict class, a LangChain
             Tool object, or a Python function. If a dictionary is passed in, it is
             assumed to already be a valid OpenAI function, a JSON schema with
-            top-level 'title' and 'description' keys specified, an Anthropic format
+            top-level 'title' key specified, an Anthropic format
             tool, or an Amazon Bedrock Converse format tool.
         strict:
             If True, model output is guaranteed to exactly match the JSON Schema
@@ -366,40 +366,47 @@ def convert_to_openai_function(
     .. versionchanged:: 0.3.14
 
         Support for Amazon Bedrock Converse format tools added.
+
+    .. versionchanged:: 0.3.16
+
+        'description' and 'parameters' keys are now optional. Only 'name' is
+        required and guaranteed to be part of the output.
     """
     from langchain_core.tools import BaseTool
 
-    # already in OpenAI function format
-    if isinstance(function, dict) and all(
-        k in function for k in ("name", "description", "parameters")
-    ):
-        oai_function = function
-    # a JSON schema with title and description
-    elif isinstance(function, dict) and all(
-        k in function for k in ("title", "description", "properties")
-    ):
-        function = function.copy()
-        oai_function = {
-            "name": function.pop("title"),
-            "description": function.pop("description"),
-            "parameters": function,
-        }
     # an Anthropic format tool
-    elif isinstance(function, dict) and all(
-        k in function for k in ("name", "description", "input_schema")
+    if isinstance(function, dict) and all(
+        k in function for k in ("name", "input_schema")
     ):
         oai_function = {
             "name": function["name"],
-            "description": function["description"],
             "parameters": function["input_schema"],
         }
+        if "description" in function:
+            oai_function["description"] = function["description"]
     # an Amazon Bedrock Converse format tool
     elif isinstance(function, dict) and "toolSpec" in function:
         oai_function = {
             "name": function["toolSpec"]["name"],
-            "description": function["toolSpec"]["description"],
             "parameters": function["toolSpec"]["inputSchema"]["json"],
         }
+        if "description" in function["toolSpec"]:
+            oai_function["description"] = function["toolSpec"]["description"]
+    # already in OpenAI function format
+    elif isinstance(function, dict) and "name" in function:
+        oai_function = {
+            k: v
+            for k, v in function.items()
+            if k in ("name", "description", "parameters", "strict")
+        }
+    # a JSON schema with title and description
+    elif isinstance(function, dict) and "title" in function:
+        function_copy = function.copy()
+        oai_function = {"name": function_copy.pop("title")}
+        if "description" in function_copy:
+            oai_function["description"] = function_copy.pop("description")
+        if function_copy and "properties" in function_copy:
+            oai_function["parameters"] = function_copy
     elif isinstance(function, type) and is_basemodel_subclass(function):
         oai_function = cast(dict, convert_pydantic_to_openai_function(function))
     elif is_typeddict(function):
@@ -420,6 +427,13 @@ def convert_to_openai_function(
         raise ValueError(msg)
 
     if strict is not None:
+        if "strict" in oai_function and oai_function["strict"] != strict:
+            msg = (
+                f"Tool/function already has a 'strict' key wth value "
+                f"{oai_function['strict']} which is different from the explicit "
+                f"`strict` arg received {strict=}."
+            )
+            raise ValueError(msg)
         oai_function["strict"] = strict
         if strict:
             # As of 08/06/24, OpenAI requires that additionalProperties be supplied and
@@ -438,12 +452,16 @@ def convert_to_openai_tool(
 ) -> dict[str, Any]:
     """Convert a tool-like object to an OpenAI tool schema.
 
+    OpenAI tool schema reference:
+    https://platform.openai.com/docs/api-reference/chat/create#chat-create-tools
+
     Args:
         tool:
             Either a dictionary, a pydantic.BaseModel class, Python function, or
-            BaseTool. If a dictionary is passed in, it is assumed to already be a valid
-            OpenAI tool, OpenAI function, a JSON schema with top-level 'title' and
-            'description' keys specified, or an Anthropic format tool.
+            BaseTool. If a dictionary is passed in, it is
+            assumed to already be a valid OpenAI function, a JSON schema with
+            top-level 'title' key specified, an Anthropic format
+            tool, or an Amazon Bedrock Converse format tool.
         strict:
             If True, model output is guaranteed to exactly match the JSON Schema
             provided in the function definition. If None, ``strict`` argument will not
@@ -460,6 +478,15 @@ def convert_to_openai_tool(
     .. versionchanged:: 0.3.13
 
         Support for Anthropic format tools added.
+
+    .. versionchanged:: 0.3.14
+
+        Support for Amazon Bedrock Converse format tools added.
+
+    .. versionchanged:: 0.3.16
+
+        'description' and 'parameters' keys are now optional. Only 'name' is
+        required and guaranteed to be part of the output.
     """
     if isinstance(tool, dict) and tool.get("type") == "function" and "function" in tool:
         return tool
