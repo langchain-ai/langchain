@@ -220,6 +220,8 @@ class Outlines(LLM):
         else:
             raise ValueError(f"Unsupported backend: {self.backend}")
 
+        return self
+
     @property
     def _llm_type(self) -> str:
         return "outlines"

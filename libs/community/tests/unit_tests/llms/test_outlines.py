@@ -1,9 +1,10 @@
 import pytest
+from _pytest.monkeypatch import MonkeyPatch
 
 from langchain_community.llms.outlines import Outlines
 
 
-def test_outlines_initialization(monkeypatch):
+def test_outlines_initialization(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(Outlines, "build_client", lambda self: self)
 
     llm = Outlines(
@@ -17,7 +18,7 @@ def test_outlines_initialization(monkeypatch):
     assert llm.stop == ["\n"]
 
 
-def test_outlines_backend_llamacpp(monkeypatch):
+def test_outlines_backend_llamacpp(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(Outlines, "build_client", lambda self: self)
     llm = Outlines(
         model="TheBloke/Llama-2-7B-Chat-GGUF/llama-2-7b-chat.Q4_K_M.gguf",
@@ -26,32 +27,32 @@ def test_outlines_backend_llamacpp(monkeypatch):
     assert llm.backend == "llamacpp"
 
 
-def test_outlines_backend_vllm(monkeypatch):
+def test_outlines_backend_vllm(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(Outlines, "build_client", lambda self: self)
     llm = Outlines(model="microsoft/Phi-3-mini-4k-instruct", backend="vllm")
     assert llm.backend == "vllm"
 
 
-def test_outlines_backend_mlxlm(monkeypatch):
+def test_outlines_backend_mlxlm(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(Outlines, "build_client", lambda self: self)
     llm = Outlines(model="microsoft/Phi-3-mini-4k-instruct", backend="mlxlm")
     assert llm.backend == "mlxlm"
 
 
-def test_outlines_with_regex(monkeypatch):
+def test_outlines_with_regex(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(Outlines, "build_client", lambda self: self)
     regex = r"\d{3}-\d{3}-\d{4}"
     llm = Outlines(model="microsoft/Phi-3-mini-4k-instruct", regex=regex)
     assert llm.regex == regex
 
 
-def test_outlines_with_type_constraints(monkeypatch):
+def test_outlines_with_type_constraints(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(Outlines, "build_client", lambda self: self)
     llm = Outlines(model="microsoft/Phi-3-mini-4k-instruct", type_constraints=int)
     assert llm.type_constraints == int  # noqa
 
 
-def test_outlines_with_json_schema(monkeypatch):
+def test_outlines_with_json_schema(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(Outlines, "build_client", lambda self: self)
     from pydantic import BaseModel, Field
 
@@ -63,7 +64,7 @@ def test_outlines_with_json_schema(monkeypatch):
     assert llm.json_schema == TestSchema
 
 
-def test_outlines_with_grammar(monkeypatch):
+def test_outlines_with_grammar(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(Outlines, "build_client", lambda self: self)
     grammar = """
     ?start: expression
@@ -76,7 +77,7 @@ def test_outlines_with_grammar(monkeypatch):
     assert llm.grammar == grammar
 
 
-def test_raise_for_multiple_output_constraints(monkeypatch):
+def test_raise_for_multiple_output_constraints(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(Outlines, "build_client", lambda self: self)
     with pytest.raises(ValueError):
         Outlines(

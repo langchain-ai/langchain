@@ -1,10 +1,11 @@
 import pytest
+from _pytest.monkeypatch import MonkeyPatch
 from pydantic import BaseModel, Field
 
 from langchain_community.chat_models.outlines import ChatOutlines
 
 
-def test_chat_outlines_initialization(monkeypatch):
+def test_chat_outlines_initialization(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(ChatOutlines, "build_client", lambda self: self)
 
     chat = ChatOutlines(
@@ -18,7 +19,7 @@ def test_chat_outlines_initialization(monkeypatch):
     assert chat.stop == ["\n"]
 
 
-def test_chat_outlines_backend_llamacpp(monkeypatch):
+def test_chat_outlines_backend_llamacpp(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(ChatOutlines, "build_client", lambda self: self)
     chat = ChatOutlines(
         model="TheBloke/Llama-2-7B-Chat-GGUF/llama-2-7b-chat.Q4_K_M.gguf",
@@ -27,32 +28,32 @@ def test_chat_outlines_backend_llamacpp(monkeypatch):
     assert chat.backend == "llamacpp"
 
 
-def test_chat_outlines_backend_vllm(monkeypatch):
+def test_chat_outlines_backend_vllm(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(ChatOutlines, "build_client", lambda self: self)
     chat = ChatOutlines(model="microsoft/Phi-3-mini-4k-instruct", backend="vllm")
     assert chat.backend == "vllm"
 
 
-def test_chat_outlines_backend_mlxlm(monkeypatch):
+def test_chat_outlines_backend_mlxlm(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(ChatOutlines, "build_client", lambda self: self)
     chat = ChatOutlines(model="microsoft/Phi-3-mini-4k-instruct", backend="mlxlm")
     assert chat.backend == "mlxlm"
 
 
-def test_chat_outlines_with_regex(monkeypatch):
+def test_chat_outlines_with_regex(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(ChatOutlines, "build_client", lambda self: self)
     regex = r"\d{3}-\d{3}-\d{4}"
     chat = ChatOutlines(model="microsoft/Phi-3-mini-4k-instruct", regex=regex)
     assert chat.regex == regex
 
 
-def test_chat_outlines_with_type_constraints(monkeypatch):
+def test_chat_outlines_with_type_constraints(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(ChatOutlines, "build_client", lambda self: self)
     chat = ChatOutlines(model="microsoft/Phi-3-mini-4k-instruct", type_constraints=int)
     assert chat.type_constraints == int  # noqa
 
 
-def test_chat_outlines_with_json_schema(monkeypatch):
+def test_chat_outlines_with_json_schema(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(ChatOutlines, "build_client", lambda self: self)
 
     class TestSchema(BaseModel):
@@ -65,7 +66,7 @@ def test_chat_outlines_with_json_schema(monkeypatch):
     assert chat.json_schema == TestSchema
 
 
-def test_chat_outlines_with_grammar(monkeypatch):
+def test_chat_outlines_with_grammar(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(ChatOutlines, "build_client", lambda self: self)
 
     grammar = """
@@ -79,7 +80,7 @@ def test_chat_outlines_with_grammar(monkeypatch):
     assert chat.grammar == grammar
 
 
-def test_raise_for_multiple_output_constraints(monkeypatch):
+def test_raise_for_multiple_output_constraints(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(ChatOutlines, "build_client", lambda self: self)
 
     with pytest.raises(ValueError):
