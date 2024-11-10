@@ -708,7 +708,9 @@ class RemoteFasterWhisperParser(BaseBlobParser):
     Example: Load a local audio file and remotely transcribe it into a document.
         .. code-block:: python
         from langchain.document_loaders.generic import GenericLoader
-        from langchain_community.document_loaders.parsers.audio import RemoteFasterWhisperParser
+        from langchain_community.document_loaders.parsers.audio import (
+            RemoteFasterWhisperParser
+        )
 
         server_url = 'http://localhost:8000'  # add you server url here
 
@@ -720,13 +722,14 @@ class RemoteFasterWhisperParser(BaseBlobParser):
         print(loader.load())
 
     """
+
     TRANSCRIPTION_ENDPOINT = "v1/audio/transcriptions"
 
     def __init__(
         self,
         *,
         base_url: str,
-        model_size: Optional[str] = 'Systran/faster-distil-whisper-large-v3',
+        model_size: Optional[str] = "Systran/faster-distil-whisper-large-v3",
     ) -> None:
         """
         Initialize the RemoteFasterWhisperParser.
@@ -747,24 +750,25 @@ class RemoteFasterWhisperParser(BaseBlobParser):
             blob (Blob): The audio blob to be transcribed.
 
         Yields:
-            Document: A Document object containing the transcribed text and associated metadata.
+            Document: A Document object containing the transcribed text and
+            associated metadata.
         """
         audio_bytes = self._load_audio_from_blob(blob=blob)
         transcription = self._transcribe_audio(file_bytes=audio_bytes)
         yield Document(
-            page_content=transcription['text'],
+            page_content=transcription["text"],
             metadata={
                 "source": blob.source,
                 **blob.metadata,
             },
         )
 
-    def _transcribe_audio(self, file_bytes: bytes) -> dict[str, str]:
+    def _transcribe_audio(self, file_bytes: io.BytesIO) -> dict[str, str]:
         """
         Transcribe the audio file by sending it to the remote Faster Whisper server.
 
         Args:
-            file_bytes (bytes): The audio file data in bytes format.
+            file_bytes (io.BytesIO): The audio file data in bytes format.
 
         Returns:
             dict[str, str]: A dictionary containing the transcription result.
@@ -772,25 +776,33 @@ class RemoteFasterWhisperParser(BaseBlobParser):
         Raises:
             RuntimeError: If the transcription process fails.
         """
-        url = self._get_transcription_url()
+
         process = subprocess.Popen(
-            ['curl', url, '-F', 'file=@-;type=audio/mp3', '-F', f'model={self.model_size}'],
+            [
+                "curl",
+                self.transcription_url,
+                "-F",
+                "file=@-;type=audio/mp3",
+                "-F",
+                f"model={self.model_size}",
+            ],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
+            stderr=subprocess.PIPE,
         )
 
         stdout, stderr = process.communicate(input=file_bytes.read())
 
         if process.returncode != 0:
-            raise RuntimeError(f'Error: {stderr.decode()}')
+            raise RuntimeError(f"Error: {stderr.decode()}")
 
         return json.loads(stdout.decode())
 
-    def _get_transcription_url(self) -> str:
+    @property
+    def transcription_url(self) -> str:
         return f"{self.base_url}/{self.TRANSCRIPTION_ENDPOINT}"
 
-    def _load_audio_from_blob(self, blob: Blob) -> bytes:
+    def _load_audio_from_blob(self, blob: Blob) -> io.BytesIO:
         """
         Load the audio data from the given blob and convert it to MP3 format.
 
