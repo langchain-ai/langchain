@@ -141,5 +141,5 @@ packages:
     repo: langchain-ai/langchain
     path: libs/partners/ollama
   - name: langchain-box
-    repo: langchain-ai/langchain
-    path: libs/partners/box
+    repo: langchain-ai/langchain-box
+    path: libs/box
