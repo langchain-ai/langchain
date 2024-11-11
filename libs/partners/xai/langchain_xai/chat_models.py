@@ -346,7 +346,8 @@ class ChatXAI(BaseChatOpenAI):
 
         if client_params["api_key"] is None:
             raise ValueError(
-                "xAI API key is not set. Please set it in the `xai_api_key` field or in the `XAI_API_KEY` environment variable."
+                "xAI API key is not set. Please set it in the `xai_api_key` field or "
+                "in the `XAI_API_KEY` environment variable."
             )
 
         if not (self.client or None):
