@@ -17,7 +17,9 @@ Test Cases:
 
 from langchain_core.messages import AIMessage, HumanMessage
 
-from langchain_community.chat_message_histories.falkordb import FalkorDBChatMessageHistory
+from langchain_community.chat_message_histories.falkordb import (
+    FalkorDBChatMessageHistory,
+)
 from langchain_community.graphs import FalkorDBGraph
 
 
