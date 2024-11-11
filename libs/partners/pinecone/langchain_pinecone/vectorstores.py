@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
 import uuid
@@ -21,6 +22,7 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.utils.iter import batch_iterate
 from langchain_core.vectorstores import VectorStore
 from pinecone import Pinecone as PineconeClient  # type: ignore
+from pinecone.exceptions import NotFoundException
 
 from langchain_pinecone._utilities import DistanceStrategy, maximal_marginal_relevance
 
@@ -222,6 +224,29 @@ class PineconeVectorStore(VectorStore):
     def embeddings(self) -> Optional[Embeddings]:
         """Access the query embedding object if available."""
         return self._embedding
+
+    def _get_vector_count(self) -> int:
+        description = self._index.describe_index_stats()
+        return description["total_vector_count"]
+
+    async def _wait_on_index(self, expected_num_docs: int) -> None:
+        """
+        Wait for the Pinecone Index to be ready.
+
+        Blocks until the index has the expected number of documents.
+
+        Args:
+            expected_num_docs: The expected number of documents in the index.
+
+        """
+        ready = False
+        while not ready:
+            await asyncio.sleep(2)
+            try:
+                vector_count = self._get_vector_count()
+                ready = vector_count == expected_num_docs
+            except NotFoundException:
+                pass
 
     def add_texts(
         self,
