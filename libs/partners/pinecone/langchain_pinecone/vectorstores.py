@@ -294,6 +294,8 @@ class PineconeVectorStore(VectorStore):
         for metadata, text in zip(metadatas, texts):
             metadata[self._text_key] = text
 
+        initial_vector_count = self._get_vector_count()
+
         # For loops to avoid memory issues and optimize when using HTTP based embeddings
         # The first loop runs the embeddings, it benefits when using OpenAI embeddings
         # The second loops runs the pinecone upsert asynchronously.
@@ -322,6 +324,8 @@ class PineconeVectorStore(VectorStore):
                     async_req=async_req,
                     **kwargs,
                 )
+
+        asyncio.run(self._wait_on_index(len(texts) + initial_vector_count))
 
         return ids
 
