@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import enum
-import math
 from typing import (
     Any,
     Callable,
@@ -466,10 +465,10 @@ class CrateDBVectorStore(PGVector):
         #  others are not!)
         # - embedding dimensionality
         # - etc.
-        # This function converts the euclidean norm of normalized embeddings
+        # This function converts the Euclidean norm of normalized embeddings
         # (0 is most similar, sqrt(2) most dissimilar)
         # to a similarity function (0 to 1)
 
         # Original:
         # return 1.0 - distance / math.sqrt(2)
-        return similarity / math.sqrt(2)
+        return similarity

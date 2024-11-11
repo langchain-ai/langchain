@@ -470,9 +470,9 @@ def test_cratedb_relevance_score() -> None:
     output = docsearch.similarity_search_with_relevance_scores("foo", k=3)
     # Original score values: 1.0, 0.9996744261675065, 0.9986996093328621
     assert output == [
-        (Document(page_content="foo", metadata={"page": "0"}), 0.7071067811865475),
-        (Document(page_content="bar", metadata={"page": "1"}), 0.35355339059327373),
-        (Document(page_content="baz", metadata={"page": "2"}), 0.1414213562373095),
+        (Document(page_content="foo", metadata={"page": "0"}), 1.0),
+        (Document(page_content="bar", metadata={"page": "1"}), 0.5),
+        (Document(page_content="baz", metadata={"page": "2"}), 0.2),
     ]
 
 
