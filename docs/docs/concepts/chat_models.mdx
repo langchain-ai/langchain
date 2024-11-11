@@ -8,7 +8,7 @@ Modern LLMs are typically accessed through a chat model interface that takes a l
 
 The newest generation of chat models offer additional capabilities:
 
-* [Tool calling](/docs/concepts/tool_calling): Many popular chat models offer a native [tool calling](/docs/concepts/tool_calling) API. This API allows developers to build rich applications that enable AI to interact with external services, APIs, and databases. Tool calling can also be used to extract structured information from unstructured data and perform various other tasks.
+* [Tool calling](/docs/concepts/tool_calling): Many popular chat models offer a native [tool calling](/docs/concepts/tool_calling) API. This API allows developers to build rich applications that enable LLMs to interact with external services, APIs, and databases. Tool calling can also be used to extract structured information from unstructured data and perform various other tasks.
 * [Structured output](/docs/concepts/structured_outputs): A technique to make a chat model respond in a structured format, such as JSON that matches a given schema.
 * [Multimodality](/docs/concepts/multimodality): The ability to work with data other than text; for example, images, audio, and video.
 
@@ -19,7 +19,7 @@ LangChain provides a consistent interface for working with chat models from diff
 * Integrations with many chat model providers (e.g., Anthropic, OpenAI, Ollama, Microsoft Azure, Google Vertex, Amazon Bedrock, Hugging Face, Cohere, Groq). Please see [chat model integrations](/docs/integrations/chat/) for an up-to-date list of supported models.
 * Use either LangChain's [messages](/docs/concepts/messages) format or OpenAI format.
 * Standard [tool calling API](/docs/concepts/tool_calling): standard interface for binding tools to models, accessing tool call requests made by models, and sending tool results back to the model.
-* Standard API for structuring outputs (/docs/concepts/structured_outputs) via the `with_structured_output` method.
+* Standard API for [structuring outputs](/docs/concepts/structured_outputs/#structured-output-method) via the `with_structured_output` method.
 * Provides support for [async programming](/docs/concepts/async), [efficient batching](/docs/concepts/runnables/#optimized-parallel-execution-batch), [a rich streaming API](/docs/concepts/streaming).
 * Integration with [LangSmith](https://docs.smith.langchain.com) for monitoring and debugging production-grade applications based on LLMs.
 * Additional features like standardized [token usage](/docs/concepts/messages/#aimessage), [rate limiting](#rate-limiting), [caching](#caching) and more.
