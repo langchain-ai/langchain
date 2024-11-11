@@ -15,7 +15,7 @@ class ObjectDetectionInput(BaseModel):
     query: HttpUrl = Field(description="url of the image to analyze")
 
 
-class EdenAiObjectDetectionTool(EdenaiTool):
+class EdenAiObjectDetectionTool(EdenaiTool):  # type: ignore[override, override, override]
     """Tool that queries the Eden AI Object detection API.
 
     for api reference check edenai documentation:

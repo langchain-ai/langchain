@@ -1022,7 +1022,7 @@ class Agent(BaseSingleActionAgent):
         }
 
 
-class ExceptionTool(BaseTool):
+class ExceptionTool(BaseTool):  # type: ignore[override]
     """Tool that just returns the query."""
 
     name: str = "_Exception"
@@ -1182,7 +1182,7 @@ class AgentExecutor(Chain):
     def _action_agent(self) -> Union[BaseSingleActionAgent, BaseMultiActionAgent]:
         """Type cast self.agent.
 
-        The .agent attribute type includes Runnable, but is converted to one of
+        If the `agent` attribute is a Runnable, it will be converted one of
         RunnableAgentType in the validate_runnable_agent root_validator.
 
         To support instantiating with a Runnable, here we explicitly cast the type

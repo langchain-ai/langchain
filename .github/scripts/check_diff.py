@@ -32,6 +32,21 @@ IGNORED_PARTNERS = [
     "huggingface",
 ]
 
+# Cap python version at 3.12 for some packages with dependencies that are not yet
+# compatible with python 3.13 (mostly hf tokenizers).
+PY_312_MAX_PACKAGES = [
+    f"libs/partners/{integration}"
+    for integration in [
+        "anthropic",
+        "chroma",
+        "couchbase",
+        "huggingface",
+        "mistralai",
+        "nomic",
+        "qdrant",
+    ]
+]
+
 
 def all_package_dirs() -> Set[str]:
     return {
@@ -110,12 +125,15 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
         return _get_pydantic_test_configs(dir_)
 
     if dir_ == "libs/core":
-        py_versions = ["3.9", "3.10", "3.11", "3.12"]
+        py_versions = ["3.9", "3.10", "3.11", "3.12", "3.13"]
     # custom logic for specific directories
     elif dir_ == "libs/partners/milvus":
         # milvus poetry doesn't allow 3.12 because they
         # declare deps in funny way
         py_versions = ["3.9", "3.11"]
+
+    elif dir_ in PY_312_MAX_PACKAGES:
+        py_versions = ["3.9", "3.12"]
 
     elif dir_ in ["libs/community", "libs/langchain"] and job == "extended-tests":
         # community extended test resolution in 3.12 is slow
@@ -125,8 +143,11 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
     elif dir_ == "libs/community" and job == "compile-integration-tests":
         # community integration deps are slow in 3.12
         py_versions = ["3.9", "3.11"]
-    else:
+    elif dir_ == ".":
+        # unable to install with 3.13 because tokenizers doesn't support 3.13 yet
         py_versions = ["3.9", "3.12"]
+    else:
+        py_versions = ["3.9", "3.13"]
 
     return [{"working-directory": dir_, "python-version": py_v} for py_v in py_versions]
 
@@ -279,12 +300,14 @@ if __name__ == "__main__":
             ] != ["README.md"]:
                 dirs_to_run["test"].add(f"libs/partners/{partner_dir}")
             # Skip if the directory was deleted or is just a tombstone readme
+        elif file == "libs/packages.yml":
+            continue
         elif file.startswith("libs/"):
             raise ValueError(
                 f"Unknown lib: {file}. check_diff.py likely needs "
                 "an update for this new library!"
             )
-        elif any(file.startswith(p) for p in ["docs/", "templates/", "cookbook/"]):
+        elif any(file.startswith(p) for p in ["docs/", "cookbook/"]):
             if file.startswith("docs/"):
                 docs_edited = True
             dirs_to_run["lint"].add(".")
