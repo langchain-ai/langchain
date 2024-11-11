@@ -599,17 +599,17 @@ class ChatSambaStudio(BaseChatModel):
             ChatSambaStudio(
                 sambastudio_url = set with your SambaStudio deployed endpoint URL,
                 sambastudio_api_key = set with your SambaStudio deployed endpoint Key.
-                model = model or expert name (set for CoE endpoints),
+                model = model or expert name (set for Bundle endpoints),
                 max_tokens = max number of tokens to generate,
                 temperature = model temperature,
                 top_p = model top p,
                 top_k = model top k,
                 do_sample = wether to do sample
                 process_prompt = wether to process prompt
-                    (set for CoE generic v1 and v2 endpoints)
+                    (set for Bundle generic v1 and v2 endpoints)
                 stream_options = include usage to get generation metrics
                 special_tokens = start, start_role, end_role, end special tokens
-                    (set for CoE generic v1 and v2 endpoints when process prompt
+                    (set for Bundle generic v1 and v2 endpoints when process prompt
                      set to false or for StandAlone v1 and v2 endpoints)
                 model_kwargs: Optional = Extra Key word arguments to pass to the model.
             )
@@ -617,7 +617,7 @@ class ChatSambaStudio(BaseChatModel):
     Key init args — completion params:
         model: str
             The name of the model to use, e.g., Meta-Llama-3-70B-Instruct-4096
-            (set for CoE endpoints).
+            (set for Bundle endpoints).
         streaming: bool
             Whether to use streaming
         max_tokens: inthandler when using non streaming methods
@@ -631,12 +631,12 @@ class ChatSambaStudio(BaseChatModel):
         do_sample: bool
             wether to do sample
         process_prompt:
-            wether to process prompt (set for CoE generic v1 and v2 endpoints)
+            wether to process prompt (set for Bundle generic v1 and v2 endpoints)
         stream_options: dict
             stream options, include usage to get generation metrics
         special_tokens: dict
             start, start_role, end_role and end special tokens
-            (set for CoE generic v1 and v2 endpoints when process prompt set to false
+            (set for Bundle generic v1 and v2 endpoints when process prompt set to false
              or for StandAlone v1 and v2 endpoints) default to llama3 special tokens
         model_kwargs: dict
             Extra Key word arguments to pass to the model.
@@ -655,17 +655,17 @@ class ChatSambaStudio(BaseChatModel):
             chat = ChatSambaStudio=(
                 sambastudio_url = set with your SambaStudio deployed endpoint URL,
                 sambastudio_api_key = set with your SambaStudio deployed endpoint Key.
-                model = model or expert name (set for CoE endpoints),
+                model = model or expert name (set for Bundle endpoints),
                 max_tokens = max number of tokens to generate,
                 temperature = model temperature,
                 top_p = model top p,
                 top_k = model top k,
                 do_sample = wether to do sample
                 process_prompt = wether to process prompt
-                    (set for CoE generic v1 and v2 endpoints)
+                    (set for Bundle generic v1 and v2 endpoints)
                 stream_options = include usage to get generation metrics
                 special_tokens = start, start_role, end_role, and special tokens
-                    (set for CoE generic v1 and v2 endpoints when process prompt
+                    (set for Bundle generic v1 and v2 endpoints when process prompt
                      set to false or for StandAlone v1 and v2 endpoints)
                 model_kwargs: Optional = Extra Key word arguments to pass to the model.
             )
@@ -742,7 +742,7 @@ class ChatSambaStudio(BaseChatModel):
     """SambaStudio streaming Url"""
 
     model: Optional[str] = Field(default=None)
-    """The name of the model or expert to use (for CoE endpoints)"""
+    """The name of the model or expert to use (for Bundle endpoints)"""
 
     streaming: bool = Field(default=False)
     """Whether to use streaming handler when using non streaming methods"""
@@ -763,7 +763,7 @@ class ChatSambaStudio(BaseChatModel):
     """whether to do sampling"""
 
     process_prompt: Optional[bool] = Field(default=True)
-    """whether process prompt (for CoE generic v1 and v2 endpoints)"""
+    """whether process prompt (for Bundle generic v1 and v2 endpoints)"""
 
     stream_options: Dict[str, Any] = Field(default={"include_usage": True})
     """stream options, include usage to get generation metrics"""
@@ -777,7 +777,7 @@ class ChatSambaStudio(BaseChatModel):
         }
     )
     """start, start_role, end_role and end special tokens 
-    (set for CoE generic v1 and v2 endpoints when process prompt set to false 
+    (set for Bundle generic v1 and v2 endpoints when process prompt set to false 
      or for StandAlone v1 and v2 endpoints) 
     default to llama3 special tokens"""
 
