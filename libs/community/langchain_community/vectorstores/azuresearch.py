@@ -1808,7 +1808,7 @@ def _result_to_document(result: Dict) -> Document:
     else:
         fields_id = {}
     return Document(
-        page_content=result.pop(FIELDS_CONTENT),
+        page_content=result[FIELDS_CONTENT],
         metadata={
             **fields_id,
             **fields_metadata,
