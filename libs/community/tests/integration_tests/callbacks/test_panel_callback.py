@@ -1,7 +1,7 @@
 """Integration tests for the PanelCallbackHandler module."""
 
 import pytest
-from langchain_openai import ChatOpenAI
+from langchain_community.llms import OpenAI
 
 # Import the internal PanelCallbackHandler from its module - and not from
 # the `langchain_community.callbacks.streamlit` package - so that we don't end up using
@@ -17,7 +17,7 @@ def test_panel_callback() -> None:
 
     chat_interface = pn.chat.ChatInterface()
     callback = PanelCallbackHandler(chat_interface)
-    llm = ChatOpenAI(model_name="gpt-4o-mini", streaming=True, callbacks=[callback])
+    llm = OpenAI(temperature=0, streaming=True, callbacks=[callback])
     llm.invoke("hey")
     objects = chat_interface.objects
     assert len(objects) == 1
