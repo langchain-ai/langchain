@@ -56,7 +56,8 @@ class SambaStudio(LLM):
                 do_sample: bool
                     wether to do sample
                 process_prompt:
-                    wether to process prompt (set for Bundle generic v1 and v2 endpoints)
+                    wether to process prompt 
+                    (set for Bundle generic v1 and v2 endpoints)
     Key init args — client params:
         sambastudio_url: str
             SambaStudio endpoint Url
