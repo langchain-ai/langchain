@@ -89,7 +89,6 @@ class TestPinecone:
             index_name=INDEX_NAME,
             namespace=NAMESPACE_NAME,
         )
-        time.sleep(DEFAULT_SLEEP)  # prevent race condition
         output = docsearch.similarity_search(unique_id, k=1, namespace=NAMESPACE_NAME)
         output[0].id = None  # overwrite ID for ease of comparison
         assert output == [Document(page_content=needs)]
@@ -113,7 +112,6 @@ class TestPinecone:
             metadatas=metadatas,
             namespace=namespace,
         )
-        time.sleep(DEFAULT_SLEEP)  # prevent race condition
         output = docsearch.similarity_search(needs, k=1, namespace=namespace)
 
         output[0].id = None
@@ -133,7 +131,6 @@ class TestPinecone:
             namespace=NAMESPACE_NAME,
         )
         print(texts)  # noqa: T201
-        time.sleep(DEFAULT_SLEEP)  # prevent race condition
         output = docsearch.similarity_search_with_score(
             "foo", k=3, namespace=NAMESPACE_NAME
         )
@@ -178,8 +175,6 @@ class TestPinecone:
             namespace=f"{INDEX_NAME}-2",
         )
 
-        time.sleep(DEFAULT_SLEEP)  # prevent race condition
-
         # Search with namespace
         docsearch = PineconeVectorStore.from_existing_index(
             index_name=INDEX_NAME,
@@ -203,7 +198,6 @@ class TestPinecone:
             index_name=INDEX_NAME,
             namespace=NAMESPACE_NAME,
         )
-        time.sleep(DEFAULT_SLEEP)  # prevent race condition
         index_stats = self.index.describe_index_stats()
         assert index_stats["namespaces"][NAMESPACE_NAME]["vector_count"] == len(texts)
 
@@ -215,7 +209,6 @@ class TestPinecone:
             index_name=INDEX_NAME,
             namespace=NAMESPACE_NAME,
         )
-        time.sleep(DEFAULT_SLEEP)  # prevent race condition
         index_stats = self.index.describe_index_stats()
         assert (
             index_stats["namespaces"][NAMESPACE_NAME]["vector_count"] == len(texts) * 2
@@ -234,8 +227,6 @@ class TestPinecone:
             index_name=INDEX_NAME,
             metadatas=metadatas,
         )
-        # wait for the index to be ready
-        time.sleep(DEFAULT_SLEEP)
         output = docsearch.similarity_search_with_relevance_scores("foo", k=3)
         print(output)  # noqa: T201
         assert all(
