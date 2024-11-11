@@ -33,14 +33,14 @@ if TYPE_CHECKING:
     from langchain_community.chat_message_histories.elasticsearch import (
         ElasticsearchChatMessageHistory,
     )
+    from langchain_community.chat_message_histories.falkordb import (
+        FalkorDBChatMessageHistory,
+    )
     from langchain_community.chat_message_histories.file import (
         FileChatMessageHistory,
     )
     from langchain_community.chat_message_histories.firestore import (
         FirestoreChatMessageHistory,
-    )
-    from langchain_community.chat_message_histories.falkordb import (
-        FalkorDBChatMessageHistory,
     )
     from langchain_community.chat_message_histories.in_memory import (
         ChatMessageHistory,
