@@ -85,6 +85,7 @@ DEPRECATED_LOOKUP = {
     "LLMThoughtLabeler": (
         "langchain_community.callbacks.streamlit.streamlit_callback_handler"
     ),
+    "PanelCallbackHandler": "langchain_community.callbacks.panel_callback",
     "StreamlitCallbackHandler": "langchain_community.callbacks.streamlit",
     "WandbCallbackHandler": "langchain_community.callbacks.wandb_callback",
     "WhyLabsCallbackHandler": "langchain_community.callbacks.whylabs_callback",
