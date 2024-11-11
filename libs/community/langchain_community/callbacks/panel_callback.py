@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Optional, Sequence
 from uuid import UUID
 
 from langchain.callbacks.base import BaseCallbackHandler
@@ -182,8 +182,15 @@ class PanelCallbackHandler(BaseCallbackHandler):
         return super().on_retriever_error(
             error, run_id=run_id, parent_run_id=parent_run_id, **kwargs
         )
-
-    def on_retriever_end(self, documents: list[Document], **kwargs: Any) -> Any:
+    
+    def on_retriever_end(
+        self,
+        documents: Sequence[Document],
+        *,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
+        **kwargs: Any,
+    ) -> Any:
         objects = [
             (f"Document {index}", document.page_content)
             for index, document in enumerate(documents)
