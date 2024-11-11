@@ -5,8 +5,8 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain_core.pydantic_v1 import Field
 from langchain_core.tools import BaseTool
+from pydantic import Field
 
 from langchain_community.llms.gradient_ai import TrainResult
 
@@ -30,7 +30,7 @@ class TrainableLLM(Protocol):
     ) -> TrainResult: ...
 
 
-class Memorize(BaseTool):
+class Memorize(BaseTool):  # type: ignore[override]
     """Tool that trains a language model."""
 
     name: str = "memorize"

@@ -4,9 +4,9 @@ No setup required. Free.
 https://pypi.org/project/duckduckgo-search/
 """
 
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from pydantic import BaseModel, ConfigDict, model_validator
 
 
 class DuckDuckGoSearchAPIWrapper(BaseModel):
@@ -37,11 +37,13 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
     Options: text, news
     """
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that python package exists in environment."""
         try:
             from duckduckgo_search import DDGS  # noqa: F401
@@ -61,7 +63,7 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
         with DDGS() as ddgs:
             ddgs_gen = ddgs.text(
                 query,
-                region=self.region,
+                region=self.region,  # type: ignore[arg-type]
                 safesearch=self.safesearch,
                 timelimit=self.time,
                 max_results=max_results or self.max_results,
@@ -80,7 +82,7 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
         with DDGS() as ddgs:
             ddgs_gen = ddgs.news(
                 query,
-                region=self.region,
+                region=self.region,  # type: ignore[arg-type]
                 safesearch=self.safesearch,
                 timelimit=self.time,
                 max_results=max_results or self.max_results,

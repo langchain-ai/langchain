@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from pydantic import BaseModel, model_validator
 
 from langchain_community.document_loaders.base import BaseLoader
 
@@ -33,8 +33,9 @@ class DropboxLoader(BaseLoader, BaseModel):
     recursive: bool = False
     """Flag to indicate whether to load files recursively from subfolders."""
 
-    @root_validator(pre=True)
-    def validate_inputs(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_inputs(cls, values: Dict[str, Any]) -> Any:
         """Validate that either folder_path or file_paths is set, but not both."""
         if (
             values.get("dropbox_folder_path") is not None

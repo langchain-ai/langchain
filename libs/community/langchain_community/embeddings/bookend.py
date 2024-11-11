@@ -5,7 +5,7 @@ from typing import Any, List
 
 import requests
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 API_URL = "https://api.bookend.ai/"
 DEFAULT_TASK = "embeddings"
@@ -41,6 +41,8 @@ class BookendEmbeddings(BaseModel, Embeddings):
     model_id: str
     """Embeddings model ID to use."""
     auth_header: dict = Field(default_factory=dict)
+
+    model_config = ConfigDict(protected_namespaces=())
 
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)

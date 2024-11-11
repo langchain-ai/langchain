@@ -140,6 +140,9 @@ if TYPE_CHECKING:
         GmailSearch,
         GmailSendMessage,
     )
+    from langchain_community.tools.google_books import (
+        GoogleBooksQueryRun,
+    )
     from langchain_community.tools.google_cloud.texttospeech import (
         GoogleCloudTextToSpeechTool,
     )
@@ -166,6 +169,7 @@ if TYPE_CHECKING:
     from langchain_community.tools.interaction.tool import (
         StdInInquireTool,
     )
+    from langchain_community.tools.jina_search.tool import JinaSearch
     from langchain_community.tools.jira.tool import (
         JiraAction,
     )
@@ -406,6 +410,7 @@ __all__ = [
     "GmailGetThread",
     "GmailSearch",
     "GmailSendMessage",
+    "GoogleBooksQueryRun",
     "GoogleCloudTextToSpeechTool",
     "GooglePlacesTool",
     "GoogleSearchResults",
@@ -419,6 +424,7 @@ __all__ = [
     "InfoSQLDatabaseTool",
     "InfoSparkSQLTool",
     "JiraAction",
+    "JinaSearch",
     "JsonGetValueTool",
     "JsonListKeysTool",
     "ListDirectoryTool",
@@ -557,6 +563,7 @@ _module_lookup = {
     "GmailGetThread": "langchain_community.tools.gmail",
     "GmailSearch": "langchain_community.tools.gmail",
     "GmailSendMessage": "langchain_community.tools.gmail",
+    "GoogleBooksQueryRun": "langchain_community.tools.google_books",
     "GoogleCloudTextToSpeechTool": "langchain_community.tools.google_cloud.texttospeech",  # noqa: E501
     "GooglePlacesTool": "langchain_community.tools.google_places.tool",
     "GoogleSearchResults": "langchain_community.tools.google_search.tool",
@@ -570,6 +577,7 @@ _module_lookup = {
     "InfoSQLDatabaseTool": "langchain_community.tools.sql_database.tool",
     "InfoSparkSQLTool": "langchain_community.tools.spark_sql.tool",
     "JiraAction": "langchain_community.tools.jira.tool",
+    "JinaSearch": "langchain_community.tools.jina_search.tool",
     "JsonGetValueTool": "langchain_community.tools.json.tool",
     "JsonListKeysTool": "langchain_community.tools.json.tool",
     "ListDirectoryTool": "langchain_community.tools.file_management",
