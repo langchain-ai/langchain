@@ -167,9 +167,7 @@ class PanelCallbackHandler(BaseCallbackHandler):
         self.instance.disabled = True
         return super().on_chain_start(serialized, inputs, *args, **kwargs)
 
-    def on_chain_end(
-        self, outputs: dict[str, Any], *args: Any, **kwargs: Any
-    ) -> Any:
+    def on_chain_end(self, outputs: dict[str, Any], *args: Any, **kwargs: Any) -> Any:
         self.instance.disabled = self._disabled_state
         return super().on_chain_end(outputs, *args, **kwargs)
 
