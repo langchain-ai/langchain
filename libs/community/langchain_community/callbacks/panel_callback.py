@@ -182,7 +182,7 @@ class PanelCallbackHandler(BaseCallbackHandler):
         return super().on_retriever_error(
             error, run_id=run_id, parent_run_id=parent_run_id, **kwargs
         )
-    
+
     def on_retriever_end(
         self,
         documents: Sequence[Document],
