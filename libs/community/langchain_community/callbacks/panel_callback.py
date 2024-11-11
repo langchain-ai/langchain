@@ -21,21 +21,28 @@ def import_panel() -> panel:
 
 class PanelCallbackHandler(BaseCallbackHandler):
     """
-    The Langchain `PanelCallbackHandler` itself is not a widget or pane, but is useful for rendering
-    and streaming the *chain of thought* from Langchain Tools, Agents, and Chains
-    as `ChatMessage` objects.
+    The Langchain `PanelCallbackHandler` itself is not a widget or pane,
+    but is useful for rendering and streaming the *chain of thought* from
+    Langchain Tools, Agents, and Chains as `ChatMessage` objects.
 
     :Example:
 
-    >>> chat_interface = pn.widgets.ChatInterface(callback=callback, callback_user="Langchain")
-    >>> callback_handler = pn.widgets.langchain.PanelCallbackHandler(instance=chat_interface)
+    >>> chat_interface = pn.widgets.ChatInterface(
+            callback=callback, callback_user="Langchain"
+        )
+    >>> callback_handler = pn.widgets.langchain.PanelCallbackHandler(
+            instance=chat_interface
+        )
     >>> llm = ChatOpenAI(streaming=True, callbacks=[callback_handler])
     >>> chain = ConversationChain(llm=llm)
 
     Args:
-        instance (ChatFeed | ChatInterface): The ChatFeed or ChatInterface instance to stream messages to.
-        user (str, optional): The user to display in the chat feed. Defaults to "LangChain".
-        avatar (str, optional): The avatar to display in the chat feed. Defaults to DEFAULT_AVATARS["langchain"].
+        instance (ChatFeed | ChatInterface): The ChatFeed or ChatInterface
+            instance to stream messages to.
+        user (str, optional): The user to display in the chat feed.
+            Defaults to "LangChain".
+        avatar (str, optional): The avatar to display in the chat feed.
+            Defaults to DEFAULT_AVATARS["langchain"].
     """
 
     def __init__(
