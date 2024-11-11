@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional
 from uuid import UUID
 
 from langchain.callbacks.base import BaseCallbackHandler
-from langchain.schema import AgentAction, AgentFinish, LLMResult, Document
+from langchain.schema import AgentAction, AgentFinish, Document, LLMResult
 from langchain_core.utils import guard_import
 
 if TYPE_CHECKING:
