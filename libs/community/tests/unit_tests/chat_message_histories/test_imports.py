@@ -9,6 +9,7 @@ EXPECTED_ALL = [
     "ElasticsearchChatMessageHistory",
     "FileChatMessageHistory",
     "FirestoreChatMessageHistory",
+    "FalkorDBChatMessageHistory",
     "MomentoChatMessageHistory",
     "MongoDBChatMessageHistory",
     "Neo4jChatMessageHistory",
