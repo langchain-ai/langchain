@@ -307,7 +307,7 @@ if __name__ == "__main__":
                 f"Unknown lib: {file}. check_diff.py likely needs "
                 "an update for this new library!"
             )
-        elif any(file.startswith(p) for p in ["docs/", "templates/", "cookbook/"]):
+        elif any(file.startswith(p) for p in ["docs/", "cookbook/"]):
             if file.startswith("docs/"):
                 docs_edited = True
             dirs_to_run["lint"].add(".")
