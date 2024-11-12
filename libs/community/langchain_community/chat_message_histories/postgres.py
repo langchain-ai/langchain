@@ -93,6 +93,13 @@ class PostgresChatMessageHistory(BaseChatMessageHistory):
         self.cursor.execute(query, (self.session_id,))
         self.connection.commit()
 
+    def update_session_id(self, new_session_id: str) -> None:
+        "Update the session ID for the current instance and in the database"
+        query = f"UPDATE {self.table_name} SET session_id = %s WHERE session_id = %s;"
+        self.cursor.execute(query, (new_session_id, self.session_id))
+        self.connection.commit()
+        self.session_id = new_session_id    
+
     def __del__(self) -> None:
         if self.cursor:
             self.cursor.close()
