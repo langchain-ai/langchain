@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-ollama"
-version = "0.2.0"
+version = "0.2.1"
 description = "An integration package connecting Ollama and LangChain"
 authors = []
 readme = "README.md"
@@ -21,10 +21,23 @@ disallow_untyped_defs = "True"
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
 ollama = ">=0.3.0,<1"
-langchain-core = "^0.3.0"
+langchain-core = "^0.3.15"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "T201"]
+select = [
+  "E",    # pycodestyle
+  "F",    # pyflakes
+  "I",    # isort
+  "T201", # print
+  "D",    # pydocstyle
+
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["D"]  # ignore docstring checks for tests
 
 [tool.coverage.run]
 omit = ["tests/*"]
