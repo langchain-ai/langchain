@@ -78,11 +78,6 @@ def get_minimum_version(package_name: str, spec_string: str) -> Optional[str]:
         spec_string = re.sub(
             rf"\^{x}\.(\d+)\.(\d+)", rf">={x}.\1.\2,<{x+1}", spec_string
         )
-    # Rewrite occurrences of ^x to >=x.0.0,<x+1.0.0 (can be anywhere in constraint string)
-    for x in range(1, 10):
-        spec_string = re.sub(
-            rf"\^{x}(?!\.\d)", rf">={x}.0.0,<{x+1}.0.0", spec_string
-        )
 
     spec_set = SpecifierSet(spec_string)
     all_versions = get_pypi_versions(package_name)
