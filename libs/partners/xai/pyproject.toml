@@ -20,10 +20,10 @@ disallow_untyped_defs = "True"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-langchain-openai = "^0.2"
-langchain-core = "^0.3"
-requests = "^2"
-aiohttp = "^3.9.1"
+langchain-openai = ">=0.2,<0.3"
+langchain-core = ">=0.3,<0.4"
+requests = ">=2,<3"
+aiohttp = ">=3.9,<4"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "D"]
