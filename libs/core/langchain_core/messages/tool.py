@@ -50,7 +50,7 @@ class ToolMessage(BaseMessage):
     to request multiple tool calls in parallel.
     """  # noqa: E501
 
-    tool_call_id: str
+    tool_call_id: Optional[str] = None
     """Tool call that this message is responding to."""
 
     type: Literal["tool"] = "tool"
@@ -119,7 +119,7 @@ class ToolMessage(BaseMessage):
         else:
             pass
 
-        tool_call_id = values["tool_call_id"]
+        tool_call_id = values.get("tool_call_id")
         if isinstance(tool_call_id, (UUID, int, float)):
             values["tool_call_id"] = str(tool_call_id)
         return values

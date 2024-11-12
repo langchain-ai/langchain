@@ -892,6 +892,9 @@ def _format_output(
     content: Any, artifact: Any, tool_call_id: Optional[str], name: str, status: str
 ) -> Union[ToolMessage, Any]:
     if tool_call_id:
+        if isinstance(content, ToolMessage):
+            content.tool_call_id = tool_call_id
+            return content
         if not _is_message_content_type(content):
             content = _stringify(content)
         return ToolMessage(
