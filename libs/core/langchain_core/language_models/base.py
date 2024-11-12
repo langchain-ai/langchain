@@ -364,13 +364,22 @@ class BaseLanguageModel(
         """
         return len(self.get_token_ids(text))
 
-    def get_num_tokens_from_messages(self, messages: list[BaseMessage]) -> int:
+    def get_num_tokens_from_messages(
+        self,
+        messages: list[BaseMessage],
+        tools: Optional[Sequence] = None,
+    ) -> int:
         """Get the number of tokens in the messages.
 
         Useful for checking if an input fits in a model's context window.
 
+        **Note**: the base implementation of get_num_tokens_from_messages ignores
+        tool schemas.
+
         Args:
             messages: The message inputs to tokenize.
+            tools: If provided, sequence of dict, BaseModel, function, or BaseTools
+                to be converted to tool schemas.
 
         Returns:
             The sum of the number of tokens across the messages.
