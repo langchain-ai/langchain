@@ -960,8 +960,8 @@ class QdrantVectorStore(VectorStore):
 
             yield batch_ids, points
 
+    @staticmethod
     def _build_payloads(
-        self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]],
         content_payload_key: str,
