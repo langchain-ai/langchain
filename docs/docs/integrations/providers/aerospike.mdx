@@ -1,0 +1,24 @@
+# Aerospike
+
+>[Aerospike](https://aerospike.com/docs/vector) is a high-performance, distributed database known for its speed and scalability, now with support for vector storage and search, enabling retrieval and search of embedding vectors for machine learning and AI applications.
+> See the documentation for Aerospike Vector Search (AVS) [here](https://aerospike.com/docs/vector).
+
+## Installation and Setup
+
+Install the AVS Python SDK and AVS langchain vector store:
+
+```bash
+pip install aerospike-vector-search langchain-community
+
+See the documentation for the Ptyhon SDK [here](https://aerospike-vector-search-python-client.readthedocs.io/en/latest/index.html).
+The documentation for the AVS langchain vector store is [here](https://api.python.langchain.com/en/latest/community/vectorstores/langchain_community.vectorstores.aerospike.Aerospike.html).
+
+## Vector Store
+
+To import this vectorstore:
+
+```python
+from langchain_community.vectorstores import Aerospike
+
+See a usage example [here](https://colab.research.google.com/github/aerospike/langchain/blob/master/docs/docs/integrations/vectorstores/aerospike.ipynb?authuser=1).
+
