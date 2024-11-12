@@ -1,6 +1,6 @@
 # langchain-xai
 
-This package contains the LangChain integrations for [xAI](https://x.ai/) through their [APIs](https://docs.x.ai/).
+This package contains the LangChain integrations for [xAI](https://x.ai/) through their [APIs](https://console.x.ai).
 
 ## Installation and Setup
 
@@ -10,7 +10,7 @@ This package contains the LangChain integrations for [xAI](https://x.ai/) throug
 pip install -U langchain-xai
 ```
 
-- Get your xAI api key from the [xAI Dashboard](https://x.ai/api-keys) and set it as an environment variable (`XAI_API_KEY`)
+- Get your xAI api key from the [xAI Dashboard](https://console.x.ai) and set it as an environment variable (`XAI_API_KEY`)
 
 ## Chat Completions
 
