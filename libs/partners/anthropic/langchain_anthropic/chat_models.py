@@ -1128,6 +1128,51 @@ class ChatAnthropic(BaseChatModel):
             tools: If provided, sequence of dict, BaseModel, function, or BaseTools
                 to be converted to tool schemas.
 
+        Basic usage:
+            .. code-block:: python
+
+                from langchain_anthropic import ChatAnthropic
+                from langchain_core.messages import HumanMessage, SystemMessage
+
+                llm = ChatAnthropic(model="claude-3-5-sonnet-20241022")
+
+                messages = [
+                    SystemMessage(content="You are a scientist"),
+                    HumanMessage(content="Hello, Claude"),
+                ]
+                llm.get_num_tokens_from_messages(messages)
+
+            .. code-block:: none
+
+                14
+
+        Pass tool schemas:
+            .. code-block:: python
+
+                from langchain_anthropic import ChatAnthropic
+                from langchain_core.messages import HumanMessage
+                from langchain_core.tools import tool
+
+                llm = ChatAnthropic(model="claude-3-5-sonnet-20241022")
+
+                @tool(parse_docstring=True)
+                def get_weather(location: str) -> str:
+                    \"\"\"Get the current weather in a given location
+
+                    Args:
+                        location: The city and state, e.g. San Francisco, CA
+                    \"\"\"
+                    return "Sunny"
+
+                messages = [
+                    HumanMessage(content="What's the weather like in San Francisco?"),
+                ]
+                llm.get_num_tokens_from_messages(messages, tools=[get_weather])
+
+            .. code-block:: none
+
+                403
+
         .. versionchanged:: 0.3.0
 
                 Uses Anthropic's token counting API to count tokens in messages. See:
