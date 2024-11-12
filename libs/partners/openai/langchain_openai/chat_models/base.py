@@ -991,7 +991,7 @@ class BaseChatOpenAI(BaseChatModel):
             # TODO: Add support for streaming with Pydantic response_format.
             warnings.warn("Streaming with Pydantic response_format not yet supported.")
             return False
-        if self.model_name.startswith("o1"):
+        if self.model_name is not None and self.model_name.startswith("o1"):
             # TODO: Add support for streaming with o1 once supported.
             return False
 
