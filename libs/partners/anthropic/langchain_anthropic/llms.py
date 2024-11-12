@@ -376,7 +376,7 @@ class AnthropicLLM(LLM, _AnthropicCommon):
         """Calculate number of tokens."""
         raise NotImplementedError(
             "Anthropic's legacy count_tokens method was removed in anthropic 0.39.0 "
-            "and langchain-anthropic 0.2.5. Please use "
+            "and langchain-anthropic 0.3.0. Please use "
             "ChatAnthropic.get_num_tokens_from_messages instead."
         )
 
