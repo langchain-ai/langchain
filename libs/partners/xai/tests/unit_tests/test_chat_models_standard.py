@@ -24,13 +24,12 @@ class TestXAIStandard(ChatModelUnitTests):
         return (
             {
                 "XAI_API_KEY": "api_key",
-                "XAI_API_BASE": "https://base.com",
             },
             {
                 "model": "grok-beta",
             },
             {
                 "xai_api_key": "api_key",
-                "xai_api_base": "https://base.com",
+                "xai_api_base": "https://api.x.ai/v1/",
             },
         )

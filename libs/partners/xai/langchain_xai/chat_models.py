@@ -9,7 +9,7 @@ from typing import (
 
 import openai
 from langchain_core.language_models.chat_models import LangSmithParams
-from langchain_core.utils import from_env, secret_from_env
+from langchain_core.utils import secret_from_env
 from langchain_openai.chat_models.base import BaseChatOpenAI
 from pydantic import ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
@@ -262,10 +262,9 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
 
     Automatically read from env variable `XAI_API_KEY` if not provided.
     """
-    xai_api_base: str = Field(
-        default_factory=from_env("XAI_API_BASE", default="https://api.x.ai/v1/"),
-        alias="base_url",
-    )
+    xai_api_base: str = Field(default="https://api.x.ai/v1/")
+    """Base URL path for API requests."""
+
     openai_api_key: Optional[SecretStr] = None
     openai_api_base: Optional[str] = None
 
@@ -299,6 +298,11 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             attributes["xai_api_base"] = self.xai_api_base
 
         return attributes
+
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether this model can be serialized by Langchain."""
+        return True
 
     @property
     def _llm_type(self) -> str:
