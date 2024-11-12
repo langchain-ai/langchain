@@ -15,7 +15,7 @@ from pydantic import ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
 
-class ChatXAI(BaseChatOpenAI):
+class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
     r"""ChatXAI chat model.
 
     Setup:
