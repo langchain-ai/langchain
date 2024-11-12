@@ -12,6 +12,7 @@ from typing import (
     TypeVar,
     Union,
 )
+import warnings
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from typing_extensions import TypeAlias, TypedDict, override
@@ -384,6 +385,10 @@ class BaseLanguageModel(
         Returns:
             The sum of the number of tokens across the messages.
         """
+        if tools is not None:
+            warnings.warn(
+                "Counting tokens in tool schemas is not yet supported. Ignoring tools."
+            )
         return sum([self.get_num_tokens(get_buffer_string([m])) for m in messages])
 
     @classmethod

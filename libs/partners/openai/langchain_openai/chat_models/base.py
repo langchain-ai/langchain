@@ -911,7 +911,9 @@ class BaseChatOpenAI(BaseChatModel):
         """
         # TODO: Count bound tools as part of input.
         if tools is not None:
-            warnings.warn("Counting tokens in tool schemas is not yet supported. Ignoring tools.")
+            warnings.warn(
+                "Counting tokens in tool schemas is not yet supported. Ignoring tools."
+            )
         if sys.version_info[1] <= 7:
             return super().get_num_tokens_from_messages(messages)
         model, encoding = self._get_encoding_model()

@@ -220,7 +220,9 @@ class ChatAnyscale(ChatOpenAI):
         Official documentation: https://github.com/openai/openai-cookbook/blob/main/examples/How_to_format_inputs_to_ChatGPT_models.ipynb
         """
         if tools is not None:
-            warnings.warn("Counting tokens in tool schemas is not yet supported.")
+            warnings.warn(
+                "Counting tokens in tool schemas is not yet supported. Ignoring tools."
+            )
         if sys.version_info[1] <= 7:
             return super().get_num_tokens_from_messages(messages)
         model, encoding = self._get_encoding_model()
