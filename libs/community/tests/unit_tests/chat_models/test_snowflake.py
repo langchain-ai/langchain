@@ -141,15 +141,18 @@ def test_session_handled_outside_not_closed() -> None:
         mock_del.assert_called_once()
         sp_session_mock.close.assert_not_called()
 
+
 @pytest.mark.parametrize(
     "set_env_vars",
-    [{
-        "temp_env_vars": {
-            "SNOWFLAKE_USERNAME": "user",
-            "SNOWFLAKE_ACCOUNT": "account",
-            "SNOWFLAKE_PASSWORD": "password",
+    [
+        {
+            "temp_env_vars": {
+                "SNOWFLAKE_USERNAME": "user",
+                "SNOWFLAKE_ACCOUNT": "account",
+                "SNOWFLAKE_PASSWORD": "password",
+            }
         }
-    }],
+    ],
     indirect=["set_env_vars"],
 )
 def test_del_called_without_session_provided(set_env_vars: Any) -> None:
