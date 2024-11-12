@@ -252,6 +252,27 @@ class ChatXAI(BaseChatOpenAI):
 
     """  # noqa: E501
 
+    model_name: str = Field(alias="model")
+    """Model name to use."""
+    xai_api_key: Optional[SecretStr] = Field(
+        alias="api_key",
+        default_factory=secret_from_env("XAI_API_KEY", default=None),
+    )
+    """xAI API key.
+
+    Automatically read from env variable `XAI_API_KEY` if not provided.
+    """
+    xai_api_base: str = Field(
+        default_factory=from_env("XAI_API_BASE", default="https://api.x.ai/v1/"),
+        alias="base_url",
+    )
+    openai_api_key: Optional[SecretStr] = None
+    openai_api_base: Optional[str] = None
+
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+
     @property
     def lc_secrets(self) -> Dict[str, str]:
         """A map of constructor argument names to secret ids.
@@ -291,25 +312,6 @@ class ChatXAI(BaseChatOpenAI):
         params = super()._get_ls_params(stop=stop, **kwargs)
         params["ls_provider"] = "xai"
         return params
-
-    model_name: str = Field(default="grok-beta", alias="model")
-    """Model name to use."""
-    xai_api_key: Optional[SecretStr] = Field(
-        alias="api_key",
-        default_factory=secret_from_env("XAI_API_KEY", default=None),
-    )
-    """xAI API key.
-
-    Automatically read from env variable `XAI_API_KEY` if not provided.
-    """
-    xai_api_base: str = Field(
-        default_factory=from_env("XAI_API_BASE", default="https://api.x.ai/v1/"),
-        alias="base_url",
-    )
-
-    model_config = ConfigDict(
-        populate_by_name=True,
-    )
 
     @model_validator(mode="after")
     def validate_environment(self) -> Self:

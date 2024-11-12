@@ -1,5 +1,6 @@
 import json
 
+import pytest
 from langchain_core.messages import (
     AIMessage,
     FunctionMessage,
@@ -17,7 +18,7 @@ from langchain_xai import ChatXAI
 
 def test_initialization() -> None:
     """Test chat model initialization."""
-    ChatXAI()
+    ChatXAI(model="grok-beta")
 
 
 def test_xai_model_param() -> None:
@@ -27,6 +28,34 @@ def test_xai_model_param() -> None:
     assert llm.model_name == "foo"
     ls_params = llm._get_ls_params()
     assert ls_params["ls_provider"] == "xai"
+
+
+def test_chat_xai_invalid_streaming_params() -> None:
+    """Test that streaming correctly invokes on_llm_new_token callback."""
+    with pytest.raises(ValueError):
+        ChatXAI(
+            model="grok-beta",
+            max_tokens=10,
+            streaming=True,
+            temperature=0,
+            n=5,
+        )
+
+
+def test_chat_xai_extra_kwargs() -> None:
+    """Test extra kwargs to chat xai."""
+    # Check that foo is saved in extra_kwargs.
+    llm = ChatXAI(model="grok-beta", foo=3, max_tokens=10)  # type: ignore[call-arg]
+    assert llm.max_tokens == 10
+    assert llm.model_kwargs == {"foo": 3}
+
+    # Test that if extra_kwargs are provided, they are added to it.
+    llm = ChatXAI(model="grok-beta", foo=3, model_kwargs={"bar": 2})  # type: ignore[call-arg]
+    assert llm.model_kwargs == {"foo": 3, "bar": 2}
+
+    # Test that if provided twice it errors
+    with pytest.raises(ValueError):
+        ChatXAI(model="grok-beta", foo=3, model_kwargs={"foo": 2})  # type: ignore[call-arg]
 
 
 def test_function_dict_to_message_function_message() -> None:
