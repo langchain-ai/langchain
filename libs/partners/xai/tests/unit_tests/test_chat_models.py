@@ -1,6 +1,6 @@
 import json
 
-import pytest
+import pytest  # type: ignore[import-not-found]
 from langchain_core.messages import (
     AIMessage,
     FunctionMessage,
