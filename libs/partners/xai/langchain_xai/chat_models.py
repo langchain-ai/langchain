@@ -135,7 +135,6 @@ class ChatXAI(BaseChatOpenAI):
 
             from pydantic import BaseModel, Field
 
-            # Only certain models support tool calling, check the xAI website to confirm compatibility
             llm = ChatXAI(model="grok-beta")
 
             class GetWeather(BaseModel):
@@ -203,19 +202,6 @@ class ChatXAI(BaseChatOpenAI):
                 rating=7
             )
 
-    JSON mode:
-        .. code-block:: python
-
-            json_llm = llm.bind(response_format={"type": "json_object"})
-            ai_msg = json_llm.invoke(
-                "Return a JSON object with key 'random_ints' and a value of 10 random ints in [0-99]"
-            )
-            ai_msg.content
-
-        .. code-block:: python
-
-            ' {\\n"random_ints": [\\n13,\\n54,\\n78,\\n45,\\n67,\\n90,\\n11,\\n29,\\n84,\\n33\\n]\\n}'
-
     Token usage:
         .. code-block:: python
 
@@ -258,9 +244,9 @@ class ChatXAI(BaseChatOpenAI):
                     'prompt_tokens': 19,
                     'total_tokens': 23
                     },
-                'model_name': 'mistralai/Mixtral-8x7B-Instruct-v0.1',
+                'model_name': 'grok-beta',
                 'system_fingerprint': None,
-                'finish_reason': 'eos',
+                'finish_reason': 'stop',
                 'logprobs': None
             }
 
