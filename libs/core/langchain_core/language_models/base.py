@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
 from functools import cache
@@ -12,7 +13,6 @@ from typing import (
     TypeVar,
     Union,
 )
-import warnings
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from typing_extensions import TypeAlias, TypedDict, override
@@ -387,7 +387,8 @@ class BaseLanguageModel(
         """
         if tools is not None:
             warnings.warn(
-                "Counting tokens in tool schemas is not yet supported. Ignoring tools."
+                "Counting tokens in tool schemas is not yet supported. Ignoring tools.",
+                stacklevel=2,
             )
         return sum([self.get_num_tokens(get_buffer_string([m])) for m in messages])
 
