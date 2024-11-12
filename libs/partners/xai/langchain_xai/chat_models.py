@@ -285,7 +285,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
-        return ["langchain", "chat_models", "xai"]
+        return ["langchain_xai", "chat_models"]
 
     @property
     def lc_attributes(self) -> Dict[str, Any]:
