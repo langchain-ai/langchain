@@ -1123,6 +1123,11 @@ class ChatAnthropic(BaseChatModel):
     ) -> int:
         """Count tokens in a sequence of input messages.
 
+        Args:
+            messages: The message inputs to tokenize.
+            tools: If provided, sequence of dict, BaseModel, function, or BaseTools
+                to be converted to tool schemas.
+
         .. versionchanged:: 0.2.5
 
                 Uses Anthropic's token counting API to count tokens in messages. See:

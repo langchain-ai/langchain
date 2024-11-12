@@ -336,6 +336,7 @@ def test_anthropic_multimodal() -> None:
     assert isinstance(response.content, str)
     num_tokens = chat.get_num_tokens_from_messages(messages)
     assert num_tokens > 0
+    import pdb; pdb.set_trace()
 
 
 def test_streaming() -> None:
@@ -508,24 +509,34 @@ def test_with_structured_output() -> None:
 
 
 def test_get_num_tokens_from_messages() -> None:
-    llm = ChatAnthropic(model="claude-3-5-haiku-20241022")  # type: ignore[call-arg]
+    llm = ChatAnthropic(model="claude-3-5-sonnet-20241022")  # type: ignore[call-arg]
 
     # Test simple case
     messages = [
-        SystemMessage(content="You are an assistant."),
-        HumanMessage(content="What is the weather in SF?"),
+        SystemMessage(content="You are a scientist"),
+        HumanMessage(content="Hello, Claude"),
     ]
     num_tokens = llm.get_num_tokens_from_messages(messages)
     assert num_tokens > 0
 
     # Test tool use
-    @tool
+    @tool(parse_docstring=True)
     def get_weather(location: str) -> str:
-        """Get weather report for a city"""
+        """Get the current weather in a given location
+
+        Args:
+            location: The city and state, e.g. San Francisco, CA
+        """
         return "Sunny"
 
     messages = [
-        HumanMessage(content="What is the weather in SF?"),
+        HumanMessage(content="What's the weather like in San Francisco?"),
+    ]
+    num_tokens = llm.get_num_tokens_from_messages(messages, tools=[get_weather])
+    assert num_tokens > 0
+
+    messages = [
+        HumanMessage(content="What's the weather like in San Francisco?"),
         AIMessage(
             content=[
                 {"text": "Let's see.", "type": "text"},
