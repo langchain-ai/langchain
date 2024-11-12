@@ -459,6 +459,130 @@ def test_convert_to_openai_function_nested_strict() -> None:
     assert actual == expected
 
 
+json_schema_no_description_no_params = {
+    "title": "dummy_function",
+}
+
+
+json_schema_no_description = {
+    "title": "dummy_function",
+    "type": "object",
+    "properties": {
+        "arg1": {"description": "foo", "type": "integer"},
+        "arg2": {
+            "description": "one of 'bar', 'baz'",
+            "enum": ["bar", "baz"],
+            "type": "string",
+        },
+    },
+    "required": ["arg1", "arg2"],
+}
+
+
+anthropic_tool_no_description = {
+    "name": "dummy_function",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "arg1": {"description": "foo", "type": "integer"},
+            "arg2": {
+                "description": "one of 'bar', 'baz'",
+                "enum": ["bar", "baz"],
+                "type": "string",
+            },
+        },
+        "required": ["arg1", "arg2"],
+    },
+}
+
+
+bedrock_converse_tool_no_description = {
+    "toolSpec": {
+        "name": "dummy_function",
+        "inputSchema": {
+            "json": {
+                "type": "object",
+                "properties": {
+                    "arg1": {"description": "foo", "type": "integer"},
+                    "arg2": {
+                        "description": "one of 'bar', 'baz'",
+                        "enum": ["bar", "baz"],
+                        "type": "string",
+                    },
+                },
+                "required": ["arg1", "arg2"],
+            }
+        },
+    }
+}
+
+
+openai_function_no_description = {
+    "name": "dummy_function",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "arg1": {"description": "foo", "type": "integer"},
+            "arg2": {
+                "description": "one of 'bar', 'baz'",
+                "enum": ["bar", "baz"],
+                "type": "string",
+            },
+        },
+        "required": ["arg1", "arg2"],
+    },
+}
+
+
+openai_function_no_description_no_params = {
+    "name": "dummy_function",
+}
+
+
+@pytest.mark.parametrize(
+    "func",
+    [
+        anthropic_tool_no_description,
+        json_schema_no_description,
+        bedrock_converse_tool_no_description,
+        openai_function_no_description,
+    ],
+)
+def test_convert_to_openai_function_no_description(func: dict) -> None:
+    expected = {
+        "name": "dummy_function",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "arg1": {"description": "foo", "type": "integer"},
+                "arg2": {
+                    "description": "one of 'bar', 'baz'",
+                    "enum": ["bar", "baz"],
+                    "type": "string",
+                },
+            },
+            "required": ["arg1", "arg2"],
+        },
+    }
+    actual = convert_to_openai_function(func)
+    assert actual == expected
+
+
+@pytest.mark.parametrize(
+    "func",
+    [
+        json_schema_no_description_no_params,
+        openai_function_no_description_no_params,
+    ],
+)
+def test_convert_to_openai_function_no_description_no_params(func: dict) -> None:
+    expected = {
+        "name": "dummy_function",
+    }
+    actual = convert_to_openai_function(func)
+    assert actual == expected
+
+
 @pytest.mark.xfail(
     reason="Pydantic converts Optional[str] to str in .model_json_schema()"
 )
