@@ -1114,37 +1114,38 @@ class ChatAnthropic(BaseChatModel):
             return llm | output_parser
 
     @beta()
-    def get_num_tokens_from_messages(self, messages: List[BaseMessage]) -> int:
+    def get_num_tokens_from_messages(
+        self,
+        messages: List[BaseMessage],
+        tools: Optional[
+            Sequence[Union[Dict[str, Any], Type, Callable, BaseTool]]
+        ] = None,
+    ) -> int:
         """Count tokens in a sequence of input messages.
+
+        Args:
+            messages: The message inputs to tokenize.
+            tools: If provided, sequence of dict, BaseModel, function, or BaseTools
+                to be converted to tool schemas.
 
         .. versionchanged:: 0.2.5
 
                 Uses Anthropic's token counting API to count tokens in messages. See:
-                https://docs.anthropic.com/en/api/messages-count-tokens
+                https://docs.anthropic.com/en/docs/build-with-claude/token-counting
         """
-        if any(
-            isinstance(tool, ToolMessage)
-            or (isinstance(tool, AIMessage) and tool.tool_calls)
-            for tool in messages
-        ):
-            raise NotImplementedError(
-                "get_num_tokens_from_messages does not yet support counting tokens "
-                "in tool calls."
-            )
         formatted_system, formatted_messages = _format_messages(messages)
+        kwargs: Dict[str, Any] = {}
         if isinstance(formatted_system, str):
-            response = self._client.beta.messages.count_tokens(
-                betas=["token-counting-2024-11-01"],
-                model=self.model,
-                system=formatted_system,
-                messages=formatted_messages,  # type: ignore[arg-type]
-            )
-        else:
-            response = self._client.beta.messages.count_tokens(
-                betas=["token-counting-2024-11-01"],
-                model=self.model,
-                messages=formatted_messages,  # type: ignore[arg-type]
-            )
+            kwargs["system"] = formatted_system
+        if tools:
+            kwargs["tools"] = [convert_to_anthropic_tool(tool) for tool in tools]
+
+        response = self._client.beta.messages.count_tokens(
+            betas=["token-counting-2024-11-01"],
+            model=self.model,
+            messages=formatted_messages,  # type: ignore[arg-type]
+            **kwargs,
+        )
         return response.input_tokens
 
 
