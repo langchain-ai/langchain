@@ -171,8 +171,8 @@ module.exports = {
             },
           ],
           link: {
-            type: "generated-index",
-            slug: "integrations/providers/all",
+            type: "doc",
+            id: "integrations/providers/all",
           },
         },
       ],
