@@ -23,7 +23,7 @@ python = ">=3.9,<4.0"
 langchain-openai = ">=0.2,<0.3"
 langchain-core = ">=0.3,<0.4"
 requests = ">=2,<3"
-aiohttp = ">=3.9,<4"
+aiohttp = ">=3.9.1,<4"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "D"]
