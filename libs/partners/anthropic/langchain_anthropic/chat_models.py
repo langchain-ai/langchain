@@ -1128,7 +1128,7 @@ class ChatAnthropic(BaseChatModel):
             tools: If provided, sequence of dict, BaseModel, function, or BaseTools
                 to be converted to tool schemas.
 
-        .. versionchanged:: 0.2.5
+        .. versionchanged:: 0.3.0
 
                 Uses Anthropic's token counting API to count tokens in messages. See:
                 https://docs.anthropic.com/en/docs/build-with-claude/token-counting
