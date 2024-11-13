@@ -941,7 +941,7 @@ class Chroma(VectorStore):
         Args:
             ids: The ids of the embeddings to get. Optional.
             where: A Where type dict used to filter results by.
-                   E.g. `{"color" : "red", "price": 4.20}`. Optional.
+                   E.g. `{"$and": [{"color": "red"}, {"price": 4.20}]}` Optional.
             limit: The number of documents to return. Optional.
             offset: The offset to start returning results from.
                     Useful for paging results with limit. Optional.
@@ -997,6 +997,8 @@ class Chroma(VectorStore):
         embeddings = self._embedding_function.embed_documents(text)
 
         if hasattr(
+            self._collection._client, "get_max_batch_size"
+        ) or hasattr(  # for Chroma 0.5.1 and above
             self._collection._client, "max_batch_size"
         ):  # for Chroma 0.4.10 and above
             from chromadb.utils.batch_utils import create_batches
@@ -1070,6 +1072,8 @@ class Chroma(VectorStore):
         if ids is None:
             ids = [str(uuid.uuid4()) for _ in texts]
         if hasattr(
+            chroma_collection._client, "get_max_batch_size"
+        ) or hasattr(  # for Chroma 0.5.1 and above
             chroma_collection._client, "max_batch_size"
         ):  # for Chroma 0.4.10 and above
             from chromadb.utils.batch_utils import create_batches

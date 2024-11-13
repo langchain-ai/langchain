@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel
 from syrupy import SnapshotAssertion
@@ -356,13 +356,14 @@ def test_runnable_get_graph_with_invalid_input_type() -> None:
         @property
         @override
         def InputType(self) -> type:
-            raise TypeError()
+            raise TypeError
 
         @override
         def invoke(
             self,
             input: int,
             config: Optional[RunnableConfig] = None,
+            **kwargs: Any,
         ) -> int:
             return input
 
@@ -380,13 +381,14 @@ def test_runnable_get_graph_with_invalid_output_type() -> None:
         @property
         @override
         def OutputType(self) -> type:
-            raise TypeError()
+            raise TypeError
 
         @override
         def invoke(
             self,
             input: int,
             config: Optional[RunnableConfig] = None,
+            **kwargs: Any,
         ) -> int:
             return input
 
@@ -403,3 +405,17 @@ def test_graph_mermaid_escape_node_label() -> None:
     assert _escape_node_label("foo-bar") == "foo-bar"
     assert _escape_node_label("foo_1") == "foo_1"
     assert _escape_node_label("#foo*&!") == "_foo___"
+
+
+def test_graph_mermaid_duplicate_nodes(snapshot: SnapshotAssertion) -> None:
+    fake_llm = FakeListLLM(responses=["foo", "bar"])
+    sequence: Runnable = (
+        PromptTemplate.from_template("Hello, {input}")
+        | {
+            "llm1": fake_llm,
+            "llm2": fake_llm,
+        }
+        | PromptTemplate.from_template("{llm1} {llm2}")
+    )
+    graph = sequence.get_graph()
+    assert graph.draw_mermaid(with_styles=False) == snapshot(name="mermaid")

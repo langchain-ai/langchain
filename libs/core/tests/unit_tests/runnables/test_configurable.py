@@ -23,7 +23,8 @@ class MyRunnable(RunnableSerializable[str, str]):
     @classmethod
     def my_error(cls, values: dict[str, Any]) -> Any:
         if "_my_hidden_property" in values:
-            raise ValueError("Cannot set _my_hidden_property")
+            msg = "Cannot set _my_hidden_property"
+            raise ValueError(msg)
         return values
 
     @model_validator(mode="after")
@@ -31,7 +32,9 @@ class MyRunnable(RunnableSerializable[str, str]):
         self._my_hidden_property = self.my_property
         return self
 
-    def invoke(self, input: str, config: Optional[RunnableConfig] = None) -> Any:
+    def invoke(
+        self, input: str, config: Optional[RunnableConfig] = None, **kwargs: Any
+    ) -> Any:
         return input + self._my_hidden_property
 
     def my_custom_function(self) -> str:
@@ -51,7 +54,9 @@ class MyRunnable(RunnableSerializable[str, str]):
 class MyOtherRunnable(RunnableSerializable[str, str]):
     my_other_property: str
 
-    def invoke(self, input: str, config: Optional[RunnableConfig] = None) -> Any:
+    def invoke(
+        self, input: str, config: Optional[RunnableConfig] = None, **kwargs: Any
+    ) -> Any:
         return input + self.my_other_property
 
     def my_other_custom_function(self) -> str:
