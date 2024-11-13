@@ -219,12 +219,7 @@ class ChatLiteLLM(BaseChatModel):
     model: str = "gpt-3.5-turbo"
     model_name: Optional[str] = None
     """Model name to use."""
-    openai_api_key: Optional[str] = None
-    azure_api_key: Optional[str] = None
-    anthropic_api_key: Optional[str] = None
-    replicate_api_key: Optional[str] = None
-    cohere_api_key: Optional[str] = None
-    openrouter_api_key: Optional[str] = None
+    api_key: Optional[str] = None
     streaming: bool = False
     api_base: Optional[str] = None
     organization: Optional[str] = None
@@ -271,6 +266,7 @@ class ChatLiteLLM(BaseChatModel):
         if self.model_name is not None:
             set_model_value = self.model_name
         self.client.api_base = self.api_base
+        self.client.api_key = self.api_key
         self.client.organization = self.organization
         creds: Dict[str, Any] = {
             "model": set_model_value,
