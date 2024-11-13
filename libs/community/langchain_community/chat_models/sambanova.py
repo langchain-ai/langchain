@@ -54,6 +54,7 @@ def _convert_message_to_dict(message: BaseMessage) -> Dict[str, Any]:
     Returns:
         messages_dict:  role / content dict
     """
+    message_dict: Dict[str, Any] = {}
     if isinstance(message, ChatMessage):
         message_dict = {"role": message.role, "content": message.content}
     elif isinstance(message, SystemMessage):
@@ -62,8 +63,16 @@ def _convert_message_to_dict(message: BaseMessage) -> Dict[str, Any]:
         message_dict = {"role": "user", "content": message.content}
     elif isinstance(message, AIMessage):
         message_dict = {"role": "assistant", "content": message.content}
+        if "tool_calls" in message.additional_kwargs:
+            message_dict["tool_calls"] = message.additional_kwargs["tool_calls"]
+            if message_dict["content"] == "":
+                message_dict["content"] = None
     elif isinstance(message, ToolMessage):
-        message_dict = {"role": "tool", "content": message.content}
+        message_dict = {
+            "role": "tool",
+            "content": message.content,
+            "tool_call_id": message.tool_call_id,
+        }
     else:
         raise TypeError(f"Got unknown type {message}")
     return message_dict
@@ -229,6 +238,9 @@ class ChatSambaNovaCloud(BaseChatModel):
     stream_options: Dict[str, Any] = Field(default={"include_usage": True})
     """stream options, include usage to get generation metrics"""
 
+    additional_headers: Dict[str, Any] = Field(default={})
+    """Additional headers to sent in request"""
+
     class Config:
         populate_by_name = True
 
@@ -363,6 +375,7 @@ class ChatSambaNovaCloud(BaseChatModel):
             headers={
                 "Authorization": f"Bearer {self.sambanova_api_key.get_secret_value()}",
                 "Content-Type": "application/json",
+                **self.additional_headers,
             },
             json=data,
             stream=streaming,
