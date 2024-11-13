@@ -195,7 +195,7 @@ class ChatWriter(BaseChatModel):
     def _convert_messages_to_writer(
         self, messages: List[BaseMessage], stop: Optional[List[str]] = None
     ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
-        """Convert a list f LandChain messages to List of Writer dict messages."""
+        """Convert a list of LangChain messages to List of Writer dicts."""
         params = {
             "model": self.model_name,
             "temperature": self.temperature,

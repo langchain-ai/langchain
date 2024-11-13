@@ -1,10 +1,12 @@
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional, Type
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from langchain_core.callbacks.manager import CallbackManager
+from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
+from langchain_standard_tests.unit_tests import ChatModelUnitTests
 
 from langchain_community.chat_models.writer import ChatWriter
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
@@ -104,10 +106,9 @@ class Chat:
         self.choices = choices
 
 
-"""Unit tests for Writer chat model integration."""
+class TestChatWriterCustom:
+    """Test case for ChatWriter"""
 
-
-class TestChatWriter:
     def test_writer_model_param(self) -> None:
         """Test different ways to initialize the chat model."""
         test_cases: List[dict] = [
@@ -420,3 +421,80 @@ class TestChatWriter:
         assert response.tool_calls
         assert response.tool_calls[0]["name"] == "GetWeather"
         assert response.tool_calls[0]["args"]["location"] == "London"
+
+
+class TestChatWriterStandart(ChatModelUnitTests):
+    """Test case for ChatWriter that inherits from standard LangChain tests."""
+
+    @property
+    def chat_model_class(self) -> Type[BaseChatModel]:
+        """Return ChatWriter model class."""
+        return ChatWriter
+
+    @property
+    def chat_model_params(self) -> Dict:
+        """Return any additional parameters needed."""
+        return {
+            "api_key": "fake-api-key",
+            "model_name": "palmyra-x-004",
+            "client": MagicMock(),
+            "async_client": AsyncMock(),
+        }
+
+    @property
+    def has_tool_calling(self) -> bool:
+        """Writer supports tool/function calling."""
+        return True
+
+    @property
+    def tool_choice_value(self) -> Optional[str]:
+        """Value to use for tool choice in tests."""
+        return "auto"
+
+    @property
+    def has_structured_output(self) -> bool:
+        """Writer does not yet support structured output."""
+        return False
+
+    @property
+    def supports_image_inputs(self) -> bool:
+        """Writer does not support image inputs."""
+        return False
+
+    @property
+    def supports_video_inputs(self) -> bool:
+        """Writer does not support video inputs."""
+        return False
+
+    @property
+    def returns_usage_metadata(self) -> bool:
+        """Writer returns token usage information."""
+        return True
+
+    @property
+    def supports_anthropic_inputs(self) -> bool:
+        """Writer does not support anthropic inputs."""
+        return False
+
+    @property
+    def supports_image_tool_message(self) -> bool:
+        """Writer does not support image tool message."""
+        return False
+
+    @property
+    def supported_usage_metadata_details(
+        self,
+    ) -> Dict[
+        Literal["invoke", "stream"],
+        List[
+            Literal[
+                "audio_input",
+                "audio_output",
+                "reasoning_output",
+                "cache_read_input",
+                "cache_creation_input",
+            ]
+        ],
+    ]:
+        """Return which types of usage metadata your model supports."""
+        return {"invoke": ["cache_creation_input"], "stream": ["reasoning_output"]}
