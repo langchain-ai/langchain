@@ -1,9 +1,9 @@
-# Why langchain?
+# Why LangChain?
 
-The goal of `langchain` the Python package and LangChain the company is to make it as easy possible for developers to build applications that reason.
+The goal of `langchain` the Python package and LangChain the company is to make it as easy as possible for developers to build applications that reason.
 While LangChain originally started as a single open source package, it has evolved into a company and a whole ecosystem.
 This page will talk about the LangChain ecosystem as a whole.
-Most of the components within in the LangChain ecosystem can be used by themselves - so if you feel particularly drawn to certain components but not others, that is totally fine! Pick and choose whichever components you like best.
+Most of the components within the LangChain ecosystem can be used by themselves - so if you feel particularly drawn to certain components but not others, that is totally fine! Pick and choose whichever components you like best for your own use case!
 
 ## Features
 
@@ -17,8 +17,8 @@ LangChain exposes a standard interface for key components, making it easy to swi
 [Orchestration](https://en.wikipedia.org/wiki/Orchestration_(computing)) is crucial for building such applications.
 
 3. **Observability and evaluation:** As applications become more complex, it becomes increasingly difficult to understand what is happening within them.
-Furthermore, the pace of development can become rate-limited by the [paradox of choice](https://en.wikipedia.org/wiki/Paradox_of_choice):
-for example, developers often wonder how to engineer their prompt or which LLM best balances accuracy, latency, and cost. 
+Furthermore, the pace of development can become rate-limited by the [paradox of choice](https://en.wikipedia.org/wiki/Paradox_of_choice).
+For example, developers often wonder how to engineer their prompt or which LLM best balances accuracy, latency, and cost. 
 [Observability](https://en.wikipedia.org/wiki/Observability) and evaluations can help developers monitor their applications and rapidly answer these types of questions with confidence.
 
 
@@ -72,11 +72,11 @@ There are several common characteristics of LLM applications that this orchestra
 * **[Persistence](https://langchain-ai.github.io/langgraph/concepts/persistence/):** The application needs to maintain [short-term and / or long-term memory](https://langchain-ai.github.io/langgraph/concepts/memory/).
 * **[Human-in-the-loop](https://langchain-ai.github.io/langgraph/concepts/human_in_the_loop/):** The application needs human interaction, e.g., pausing, reviewing, editing, approving certain steps.
 
-The recommended way to do orchestration for these complex applications is [LangGraph](https://langchain-ai.github.io/langgraph/concepts/high_level/).
+The recommended way to orchestrate components for complex applications is [LangGraph](https://langchain-ai.github.io/langgraph/concepts/high_level/).
 LangGraph is a library that gives developers a high degree of control by expressing the flow of the application as a set of nodes and edges.
 LangGraph comes with built-in support for [persistence](https://langchain-ai.github.io/langgraph/concepts/persistence/), [human-in-the-loop](https://langchain-ai.github.io/langgraph/concepts/human_in_the_loop/), [memory](https://langchain-ai.github.io/langgraph/concepts/memory/), and other features.
-It's particularly  well suited for building [agents](https://langchain-ai.github.io/langgraph/concepts/agentic_concepts/) or [multi-agent](https://langchain-ai.github.io/langgraph/concepts/multi_agent/) applications. 
-Importantly, individual LangChain components can be used within LangGraph nodes, but you can also use LangGraph **without** using LangChain components.
+It's particularly well suited for building [agents](https://langchain-ai.github.io/langgraph/concepts/agentic_concepts/) or [multi-agent](https://langchain-ai.github.io/langgraph/concepts/multi_agent/) applications. 
+Importantly, individual LangChain components can be used as LangGraph nodes, but you can also use LangGraph **without** using LangChain components.
 
 :::info[Further reading]
 
