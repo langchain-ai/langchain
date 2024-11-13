@@ -573,6 +573,7 @@ class ChatSambaNovaCloud(BaseChatModel):
 
         Example: schema=None, method="json_mode", include_raw=True:
             .. code-block::
+            
                 from langchain_community.chat_models import ChatSambaNovaCloud
 
                 llm = ChatSambaNovaCloud(model="Meta-Llama-3.1-70B-Instruct", temperature=0)
@@ -594,6 +595,7 @@ class ChatSambaNovaCloud(BaseChatModel):
 
         Example: schema=None, method="json_schema", include_raw=True:
             .. code-block::
+            
                 from langchain_community.chat_models import ChatSambaNovaCloud
 
                 class AnswerWithJustification(BaseModel):
