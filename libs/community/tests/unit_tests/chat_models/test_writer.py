@@ -106,6 +106,7 @@ class Chat:
         self.choices = choices
 
 
+@pytest.mark.requires("writer-sdk")
 class TestChatWriterCustom:
     """Test case for ChatWriter"""
 
@@ -114,24 +115,16 @@ class TestChatWriterCustom:
         test_cases: List[dict] = [
             {
                 "model_name": "palmyra-x-004",
-                "client": MagicMock(),
-                "async_client": AsyncMock(),
             },
             {
                 "model": "palmyra-x-004",
-                "client": MagicMock(),
-                "async_client": AsyncMock(),
             },
             {
                 "model_name": "palmyra-x-004",
-                "client": MagicMock(),
-                "async_client": AsyncMock(),
             },
             {
                 "model": "palmyra-x-004",
                 "temperature": 0.5,
-                "client": MagicMock(),
-                "async_client": AsyncMock(),
             },
         ]
 
@@ -423,6 +416,7 @@ class TestChatWriterCustom:
         assert response.tool_calls[0]["args"]["location"] == "London"
 
 
+@pytest.mark.requires("writer-sdk")
 class TestChatWriterStandart(ChatModelUnitTests):
     """Test case for ChatWriter that inherits from standard LangChain tests."""
 

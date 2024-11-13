@@ -38,8 +38,9 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.runnables import Runnable
+from langchain_core.utils import get_from_dict_or_env
 from langchain_core.utils.function_calling import convert_to_openai_tool
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 
 logger = logging.getLogger(__name__)
 
@@ -66,8 +67,10 @@ class ChatWriter(BaseChatModel):
             )
     """
 
-    client: Any = Field(exclude=True)  #: :meta private:
-    async_client: Any = Field(exclude=True)  #: :meta private:
+    client: Any = Field(default=None, exclude=True)  #: :meta private:
+    async_client: Any = Field(default=None, exclude=True)  #: :meta private:
+    writer_api_key: Optional[SecretStr] = Field(default=None)
+    """Writer API key."""
     model_name: str = Field(default="palmyra-x-004", alias="model")
     """Model name to use."""
     temperature: float = 0.7
@@ -105,6 +108,24 @@ class ChatWriter(BaseChatModel):
             "max_tokens": self.max_tokens,
             **self.model_kwargs,
         }
+
+    @model_validator(mode="before")
+    def validate_environment(self, values: Dict) -> Any:
+        """Validates that api key is passed and creates Writer clients."""
+        try:
+            from writerai import AsyncClient, Client
+        except ImportError as e:
+            raise ImportError(
+                "Could not import writerai python package. "
+                "Please install it with `pip install writerai`."
+            ) from e
+
+        if not (values["client"] and values["async_client"]):
+            api_key = get_from_dict_or_env(values, "api_key", "WRITER_API_KEY")
+            values["client"] = Client(api_key=api_key)
+            values["async_client"] = AsyncClient(api_key=api_key)
+
+        return values
 
     def _create_chat_result(self, response: Any) -> ChatResult:
         generations = []
