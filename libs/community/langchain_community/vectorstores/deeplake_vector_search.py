@@ -1,4 +1,5 @@
 import uuid
+import numpy as np
 from typing import Any, Callable, Dict, Iterable, List, Optional, Union
 
 from langchain_core.embeddings import Embeddings
@@ -61,7 +62,7 @@ class DeepLakeVectorStore:
     ) -> Optional[list[str]]:
         if embedding_function is not None:
             embedding_data = embedding_function(text)
-        if embedding_tensor is not None:
+        if embedding_tensor is None:
             embedding_tensor = "embedding"
         _id = (
             tensors["id"]
@@ -73,7 +74,7 @@ class DeepLakeVectorStore:
                 "text": text,
                 "metadata": metadata,
                 "id": _id,
-                embedding_tensor: embedding_data,
+                embedding_tensor: np.array(embedding_data),
             }
         )
         self.ds.commit()
@@ -113,16 +114,16 @@ class DeepLakeVectorStore:
             embedding = self.embedding_function.embed_documents([embedding])[0]
         emb_str = ", ".join([str(e) for e in embedding])
 
-        column_list = " * " if return_tensors else ", ".join(return_tensors)
+        column_list = " * " if not return_tensors else ", ".join(
+            return_tensors)
 
         metric = self.__metric_to_function(distance_metric)
         order_by = " ASC "
         if metric == "cosine_similarity":
             order_by = " DESC "
         dp = f"(embedding, ARRAY[{emb_str}])"
-        column_list += f", {self.__metric_to_function(distance_metric)}{dp} as score"
-        mf = self.__metric_to_function(distance_metric)
-        query = f"SELECT {column_list} ORDER BY {mf}{dp} {order_by} LIMIT {k}"
+        column_list += f", {metric}{dp} as score"
+        query = f"SELECT {column_list} ORDER BY {metric}{dp} {order_by} LIMIT {k}"
         view = self.ds.query(query)
         return self.__view_to_docs(view)
 
@@ -158,7 +159,8 @@ class DeepLakeVectorStore:
 
     def __create_dataset(self) -> None:
         if self.embedding_function is None:
-            raise ValueError("embedding_function is required to create a new dataset")
+            raise ValueError(
+                "embedding_function is required to create a new dataset")
         emb_size = len(self.embedding_function.embed_documents(["test"])[0])
         self.ds = deeplake.create(self.path, self.token)
         self.ds.add_column("text", deeplake.types.Text("inverted"))
