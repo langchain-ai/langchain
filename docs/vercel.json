@@ -76,7 +76,7 @@
     },
     {
       "source": "/v0.2/docs/templates/:path(.*/?)*",
-      "destination": "https://github.com/langchain-ai/langchain/tree/master/templates/:path*"
+      "destination": "https://github.com/langchain-ai/langchain/tree/v0.2/templates/:path*"
     },
     {
       "source": "/docs/integrations/providers/mlflow_ai_gateway(/?)",
@@ -87,7 +87,7 @@
       "destination": "/docs/integrations/providers/:path*"
     },
     {
-      "source": "/docs/troubleshooting/errors/:path((?:GRAPH_RECURSION_LIMIT|INVALID_CONCURRENT_GRAPH_UPDATE|INVALID_GRAPH_NODE_RETURN_VALUE|MULTIPLE_SUBGRAPHS)/?)*",
+      "source": "/docs/troubleshooting/errors/:path((?:GRAPH_RECURSION_LIMIT|INVALID_CONCURRENT_GRAPH_UPDATE|INVALID_GRAPH_NODE_RETURN_VALUE|MULTIPLE_SUBGRAPHS|INVALID_CHAT_HISTORY)/?)*",
       "destination": "https://langchain-ai.github.io/langgraph/troubleshooting/errors/:path*"
     },
     {
