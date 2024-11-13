@@ -66,37 +66,6 @@ class FalkorDBQAChain(Chain):
     return_direct: bool = False
     """Whether or not to return the result of querying the graph directly."""
 
-    allow_dangerous_requests: bool = False
-    """Forced user opt-in to acknowledge that the chain can make dangerous requests.
-
-    *Security note*: Make sure that the database connection uses credentials
-        that are narrowly-scoped to only include necessary permissions.
-        Failure to do so may result in data corruption or loss, since the calling
-        code may attempt commands that would result in deletion, mutation
-        of data if appropriately prompted or reading sensitive data if such
-        data is present in the database.
-        The best way to guard against such negative outcomes is to (as appropriate)
-        limit the permissions granted to the credentials used with this tool.
-
-        See https://python.langchain.com/docs/security for more information.
-    """
-
-    def __init__(self, **kwargs: Any) -> None:
-        """Initialize the chain."""
-        super().__init__(**kwargs)
-        if self.allow_dangerous_requests is not True:
-            raise ValueError(
-                "In order to use this chain, you must acknowledge that it can make "
-                "dangerous requests by setting `allow_dangerous_requests` to `True`."
-                "You must narrowly scope the permissions of the database connection "
-                "to only include necessary permissions. Failure to do so may result "
-                "in data corruption or loss or reading sensitive data if such data is "
-                "present in the database."
-                "Only use this chain if you understand the risks and have taken the "
-                "necessary precautions. "
-                "See https://python.langchain.com/docs/security for more information."
-            )
-
     @property
     def input_keys(self) -> List[str]:
         """Return the input keys.
