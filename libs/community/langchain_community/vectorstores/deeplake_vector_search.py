@@ -1,7 +1,7 @@
 import uuid
-import numpy as np
 from typing import Any, Callable, Dict, Iterable, List, Optional, Union
 
+import numpy as np
 from langchain_core.embeddings import Embeddings
 
 try:
@@ -114,8 +114,7 @@ class DeepLakeVectorStore:
             embedding = self.embedding_function.embed_documents([embedding])[0]
         emb_str = ", ".join([str(e) for e in embedding])
 
-        column_list = " * " if not return_tensors else ", ".join(
-            return_tensors)
+        column_list = " * " if not return_tensors else ", ".join(return_tensors)
 
         metric = self.__metric_to_function(distance_metric)
         order_by = " ASC "
@@ -159,8 +158,7 @@ class DeepLakeVectorStore:
 
     def __create_dataset(self) -> None:
         if self.embedding_function is None:
-            raise ValueError(
-                "embedding_function is required to create a new dataset")
+            raise ValueError("embedding_function is required to create a new dataset")
         emb_size = len(self.embedding_function.embed_documents(["test"])[0])
         self.ds = deeplake.create(self.path, self.token)
         self.ds.add_column("text", deeplake.types.Text("inverted"))
