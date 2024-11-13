@@ -796,6 +796,9 @@ class ChatSambaStudio(BaseChatModel):
 
     model_kwargs: Optional[Dict[str, Any]] = None
     """Key word arguments to pass to the model."""
+    
+    additional_headers: Dict[str, Any] = Field(default={})
+    """Additional headers to send in request"""
 
     class Config:
         populate_by_name = True
@@ -942,6 +945,7 @@ class ChatSambaStudio(BaseChatModel):
                         "content": message.content,
                     }
                 )
+                #TODO add tools msgs id and assistant msgs tool calls
             messages_string = json.dumps(messages_dict)
         else:
             messages_string = self.special_tokens["start"]
@@ -1020,6 +1024,7 @@ class ChatSambaStudio(BaseChatModel):
                 "Authorization": f"Bearer "
                 f"{self.sambastudio_api_key.get_secret_value()}",
                 "Content-Type": "application/json",
+                **self.additional_headers
             }
 
         # create request payload for generic v1 API
@@ -1039,7 +1044,7 @@ class ChatSambaStudio(BaseChatModel):
                 params = {**params, **self.model_kwargs}
             params = {key: value for key, value in params.items() if value is not None}
             data = {"items": items, "params": params}
-            headers = {"key": self.sambastudio_api_key.get_secret_value()}
+            headers = {"key": self.sambastudio_api_key.get_secret_value(), **self.additional_headers}
 
         # create request payload for generic v1 API
         elif "api/predict/generic" in self.sambastudio_url:
@@ -1075,7 +1080,7 @@ class ChatSambaStudio(BaseChatModel):
                     "instances": [self._messages_to_string(messages)],
                     "params": params,
                 }
-            headers = {"key": self.sambastudio_api_key.get_secret_value()}
+            headers = {"key": self.sambastudio_api_key.get_secret_value(), **self.additional_headers}
 
         else:
             raise ValueError(
