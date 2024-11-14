@@ -40,7 +40,14 @@ class DeepLakeVectorStore:
         self.index_params = index_params
         self.kwargs = kwargs
         if read_only:
-            self.ds = deeplake.open_read_only(self.path, self.token)
+            try:
+                self.ds = deeplake.open_read_only(self.path, self.token)
+            except Exception as e:
+                try:
+                    self.ds = deeplake.query(
+                        f"select * from {self.path}", token=self.token)
+                except Exception:
+                    raise e
         else:
             try:
                 self.ds = deeplake.open(self.path, self.token)
