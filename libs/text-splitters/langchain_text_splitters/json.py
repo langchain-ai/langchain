@@ -11,6 +11,22 @@ class RecursiveJsonSplitter:
     def __init__(
         self, max_chunk_size: int = 2000, min_chunk_size: Optional[int] = None
     ):
+        """Initialize the chunk size configuration for text processing.
+
+        This constructor sets up the maximum and minimum chunk sizes, ensuring that
+        the `min_chunk_size` defaults to a value slightly smaller than the
+        `max_chunk_size` if not explicitly provided.
+
+        Args:
+            max_chunk_size (int): The maximum size for a chunk. Defaults to 2000.
+            min_chunk_size (Optional[int]): The minimum size for a chunk. If None,
+                defaults to the maximum chunk size minus 200, with a lower bound of 50.
+
+        Attributes:
+            max_chunk_size (int): The configured maximum size for each chunk.
+            min_chunk_size (int): The configured minimum size for each chunk, derived
+                from `max_chunk_size` if not explicitly provided.
+        """
         super().__init__()
         self.max_chunk_size = max_chunk_size
         self.min_chunk_size = (

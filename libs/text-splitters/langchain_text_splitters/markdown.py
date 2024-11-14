@@ -281,6 +281,22 @@ class ExperimentalMarkdownSyntaxTextSplitter:
         return_each_line: bool = False,
         strip_headers: bool = True,
     ):
+        """Initialize the text splitter with header splitting and formatting options.
+
+        This constructor sets up the required configuration for splitting text into
+        chunks based on specified headers and formatting preferences.
+
+        Args:
+            headers_to_split_on (Union[List[Tuple[str, str]], None]):
+                A list of tuples, where each tuple contains a header tag (e.g., "h1")
+                and its corresponding metadata key. If None, default headers are used.
+            return_each_line (bool):
+                Whether to return each line as an individual chunk.
+                Defaults to False, which aggregates lines into larger chunks.
+            strip_headers (bool):
+                Whether to exclude headers from the resulting chunks.
+                Defaults to True.
+        """
         self.chunks: List[Document] = []
         self.current_chunk = Document(page_content="")
         self.current_header_stack: List[Tuple[int, str]] = []

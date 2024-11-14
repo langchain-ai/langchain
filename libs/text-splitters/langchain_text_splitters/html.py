@@ -186,6 +186,8 @@ class HTMLSectionSplitter:
             xslt_path: path to xslt file for document transformation.
             Uses a default if not passed.
             Needed for html contents that using different format and layouts.
+            **kwargs (Any): Additional optional arguments for customizations.
+
         """
         self.headers_to_split_on = dict(headers_to_split_on)
 
