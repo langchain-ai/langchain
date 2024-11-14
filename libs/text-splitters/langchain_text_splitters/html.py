@@ -238,6 +238,23 @@ class HTMLSectionSplitter:
         return documents
 
     def split_html_by_headers(self, html_doc: str) -> List[Dict[str, Optional[str]]]:
+        """Split an HTML document into sections based on specified header tags.
+
+        This method uses BeautifulSoup to parse the HTML content and divides it into
+        sections based on headers defined in `headers_to_split_on`. Each section
+        contains the header text, content under the header, and the tag name.
+
+        Args:
+            html_doc (str): The HTML document to be split into sections.
+
+        Returns:
+            List[Dict[str, Optional[str]]]: A list of dictionaries representing
+            sections.
+                Each dictionary contains:
+                - 'header': The header text or a default title for the first section.
+                - 'content': The content under the header.
+                - 'tag_name': The name of the header tag (e.g., "h1", "h2").
+        """
         try:
             from bs4 import BeautifulSoup, PageElement  # type: ignore[import-untyped]
         except ImportError as e:
@@ -282,6 +299,18 @@ class HTMLSectionSplitter:
         return sections
 
     def convert_possible_tags_to_header(self, html_content: str) -> str:
+        """Convert specific HTML tags to headers using an XSLT transformation.
+
+        This method uses an XSLT file to transform the HTML content, converting
+        certain tags into headers for easier parsing. If no XSLT path is provided,
+        the HTML content is returned unchanged.
+
+        Args:
+            html_content (str): The HTML content to be transformed.
+
+        Returns:
+            str: The transformed HTML content as a string.
+        """
         if self.xslt_path is None:
             return html_content
 

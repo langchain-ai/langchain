@@ -309,6 +309,21 @@ class ExperimentalMarkdownSyntaxTextSplitter:
         self.return_each_line = return_each_line
 
     def split_text(self, text: str) -> List[Document]:
+        """Split the input text into structured chunks.
+
+        This method processes the input text line by line, identifying and handling
+        specific patterns such as headers, code blocks, and horizontal rules to
+        split it into structured chunks based on headers, code blocks, and
+        horizontal rules.
+
+        Args:
+            text (str): The input text to be split into chunks.
+
+        Returns:
+            List[Document]: A list of `Document` objects representing the structured
+            chunks of the input text. If `return_each_line` is enabled, each line
+            is returned as a separate `Document`.
+        """
         raw_lines = text.splitlines(keepends=True)
 
         while raw_lines:
