@@ -110,7 +110,8 @@ class ChatWriter(BaseChatModel):
         }
 
     @model_validator(mode="before")
-    def validate_environment(self, values: Dict) -> Any:
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validates that api key is passed and creates Writer clients."""
         try:
             from writerai import AsyncClient, Client
@@ -120,10 +121,19 @@ class ChatWriter(BaseChatModel):
                 "Please install it with `pip install writerai`."
             ) from e
 
-        if not (values["client"] and values["async_client"]):
+        if not (values.get("client") and values.get("async_client")):
             api_key = get_from_dict_or_env(values, "api_key", "WRITER_API_KEY")
-            values["client"] = Client(api_key=api_key)
-            values["async_client"] = AsyncClient(api_key=api_key)
+            values.update({"client": Client(api_key=api_key)})
+            values.update({"async_client": AsyncClient(api_key=api_key)})
+
+        if not (
+            type(values.get("client")) is Client
+            and type(values.get("async_client")) is AsyncClient
+        ):
+            raise ValueError(
+                "'client' attribute must be with type 'Client' and "
+                "'async_client' must be with type 'AsyncClient' from 'writerai' package"
+            )
 
         return values
 

@@ -106,25 +106,31 @@ class Chat:
         self.choices = choices
 
 
-@pytest.mark.requires("writer-sdk")
+@pytest.mark.requires("writerai")
 class TestChatWriterCustom:
     """Test case for ChatWriter"""
+
+    from writerai import AsyncClient, Client
 
     def test_writer_model_param(self) -> None:
         """Test different ways to initialize the chat model."""
         test_cases: List[dict] = [
             {
                 "model_name": "palmyra-x-004",
+                "api_key": "key",
             },
             {
                 "model": "palmyra-x-004",
+                "api_key": "key",
             },
             {
                 "model_name": "palmyra-x-004",
+                "api_key": "key",
             },
             {
                 "model": "palmyra-x-004",
                 "temperature": 0.5,
+                "api_key": "key",
             },
         ]
 
@@ -280,10 +286,12 @@ class TestChatWriterCustom:
         self, mock_unstreaming_completion: List[ChatCompletionChunk]
     ) -> None:
         """Test basic chat completion with mocked response."""
-        mock_client = MagicMock()
-        mock_client.chat.chat.return_value = mock_unstreaming_completion
+        mock_client = self.Client(api_key="key")
+        mock_client.chat.chat = MagicMock(return_value=mock_unstreaming_completion)
 
-        chat = ChatWriter(client=mock_client, async_client=AsyncMock())
+        async_client = self.AsyncClient(api_key="key")
+
+        chat = ChatWriter(client=mock_client, async_client=async_client)
 
         message = HumanMessage(content="Hi there!")
         response = chat.invoke([message])
@@ -416,7 +424,7 @@ class TestChatWriterCustom:
         assert response.tool_calls[0]["args"]["location"] == "London"
 
 
-@pytest.mark.requires("writer-sdk")
+@pytest.mark.requires("writerai")
 class TestChatWriterStandart(ChatModelUnitTests):
     """Test case for ChatWriter that inherits from standard LangChain tests."""
 
