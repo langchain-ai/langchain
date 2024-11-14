@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-chroma"
-version = "0.1.5"
+version = "0.2.0"
 description = "An integration package connecting Chroma and LangChain"
 authors = []
 readme = "README.md"
@@ -19,14 +19,8 @@ disallow_untyped_defs = true
 "Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-chroma%3D%3D0%22&expanded=true"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4"
-[[tool.poetry.dependencies.langchain-core]]
-version = ">=0.1.40,<0.4"
-python = ">=3.9"
-
-[[tool.poetry.dependencies.langchain-core]]
-version = ">=0.1.40,<0.3"
-python = "<3.9"
+python = ">=3.9,<4"
+langchain-core = ">=0.2.43,<0.4.0,!=0.3.0,!=0.3.1,!=0.3.2,!=0.3.3,!=0.3.4,!=0.3.5,!=0.3.6,!=0.3.7,!=0.3.8,!=0.3.9,!=0.3.10,!=0.3.11,!=0.3.12,!=0.3.13,!=0.3.14"
 
 [[tool.poetry.dependencies.numpy]]
 version = "^1"
@@ -85,6 +79,8 @@ pytest-mock = "^3.10.0"
 syrupy = "^4.0.2"
 pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
+# hack to make sure py3.9 compatible versionof onnxruntime is installed for testing
+onnxruntime = [{version = "<1.20", python = "<3.10"}, {version = "*", python = ">=3.10"}]
 [[tool.poetry.group.test.dependencies.langchain-core]]
 path = "../../core"
 develop = true
@@ -101,6 +97,8 @@ codespell = "^2.2.0"
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.5"
+# hack to make sure py3.9 compatible versionof onnxruntime is installed for testing
+onnxruntime = [{version = "<1.20", python = "<3.10"}, {version = "*", python = ">=3.10"}]
 
 [tool.poetry.group.dev.dependencies]
 [[tool.poetry.group.dev.dependencies.langchain-core]]

@@ -14,7 +14,7 @@ hide_table_of_contents: true
 
 # Key-value stores
 
-[Key-value stores](/docs/concepts/#key-value-stores) are used by other LangChain components to store and retrieve data.
+[Key-value stores](/docs/concepts/key_value_stores) are used by other LangChain components to store and retrieve data.
 
 :::info
 

@@ -45,22 +45,22 @@ The conceptual guide does not cover step-by-step instructions or specific implem
 - **[AIMessageChunk](/docs/concepts/messages#aimessagechunk)**: A partial response from an AI message. Used when streaming responses from a chat model.
 - **[AIMessage](/docs/concepts/messages#aimessage)**: Represents a complete response from an AI model.
 - **[astream_events](/docs/concepts/chat_models#key-methods)**: Stream granular information from [LCEL](/docs/concepts/lcel) chains.
-- **[BaseTool](/docs/concepts/tools#basetool)**: The base class for all tools in LangChain.
+- **[BaseTool](/docs/concepts/tools/#tool-interface)**: The base class for all tools in LangChain.
 - **[batch](/docs/concepts/runnables)**: Use to execute a runnable with batch inputs a Runnable.
-- **[bind_tools](/docs/concepts/chat_models#bind-tools)**: Allows models to interact with tools.
+- **[bind_tools](/docs/concepts/tool_calling/#tool-binding)**: Allows models to interact with tools.
 - **[Caching](/docs/concepts/chat_models#caching)**: Storing results to avoid redundant calls to a chat model.
-- **[Chat models](/docs/concepts/multimodality#chat-models)**: Chat models that handle multiple data modalities.
-- **[Configurable runnables](/docs/concepts/runnables#configurable-Runnables)**: Creating configurable Runnables.
+- **[Chat models](/docs/concepts/multimodality/#multimodality-in-chat-models)**: Chat models that handle multiple data modalities.
+- **[Configurable runnables](/docs/concepts/runnables/#configurable-runnables)**: Creating configurable Runnables.
 - **[Context window](/docs/concepts/chat_models#context-window)**: The maximum size of input a chat model can process.
 - **[Conversation patterns](/docs/concepts/chat_history#conversation-patterns)**: Common patterns in chat interactions.
 - **[Document](https://python.langchain.com/api_reference/core/documents/langchain_core.documents.base.Document.html)**: LangChain's representation of a document.
-- **[Embedding models](/docs/concepts/multimodality#embedding-models)**: Models that generate vector embeddings for various data types.
+- **[Embedding models](/docs/concepts/multimodality/#multimodality-in-embedding-models)**: Models that generate vector embeddings for various data types.
 - **[HumanMessage](/docs/concepts/messages#humanmessage)**: Represents a message from a human user.
 - **[InjectedState](/docs/concepts/tools#injectedstate)**: A state injected into a tool function.
 - **[InjectedStore](/docs/concepts/tools#injectedstore)**: A store that can be injected into a tool for data persistence.
 - **[InjectedToolArg](/docs/concepts/tools#injectedtoolarg)**: Mechanism to inject arguments into tool functions.
 - **[input and output types](/docs/concepts/runnables#input-and-output-types)**: Types used for input and output in Runnables.
-- **[Integration packages](/docs/concepts/architecture#partner-packages)**: Third-party packages that integrate with LangChain.
+- **[Integration packages](/docs/concepts/architecture/#integration-packages)**: Third-party packages that integrate with LangChain.
 - **[invoke](/docs/concepts/runnables)**: A standard method to invoke a Runnable.
 - **[JSON mode](/docs/concepts/structured_outputs#json-mode)**: Returning responses in JSON format.
 - **[langchain-community](/docs/concepts/architecture#langchain-community)**: Community-driven components for LangChain.
@@ -70,20 +70,20 @@ The conceptual guide does not cover step-by-step instructions or specific implem
 - **[langserve](/docs/concepts/architecture#langserve)**: Use to deploy LangChain Runnables as REST endpoints. Uses FastAPI. Works primarily for LangChain Runnables, does not currently integrate with LangGraph.
 - **[Managing chat history](/docs/concepts/chat_history#managing-chat-history)**: Techniques to maintain and manage the chat history.
 - **[OpenAI format](/docs/concepts/messages#openai-format)**: OpenAI's message format for chat models.
-- **[Propagation of RunnableConfig](/docs/concepts/runnables#propagation-RunnableConfig)**: Propagating configuration through Runnables. Read if working with python 3.9, 3.10 and async.
+- **[Propagation of RunnableConfig](/docs/concepts/runnables/#propagation-of-runnableconfig)**: Propagating configuration through Runnables. Read if working with python 3.9, 3.10 and async.
 - **[rate-limiting](/docs/concepts/chat_models#rate-limiting)**: Client side rate limiting for chat models.
-- **[RemoveMessage](/docs/concepts/messages#remove-message)**: An abstraction used to remove a message from chat history, used primarily in LangGraph.
+- **[RemoveMessage](/docs/concepts/messages/#removemessage)**: An abstraction used to remove a message from chat history, used primarily in LangGraph.
 - **[role](/docs/concepts/messages#role)**: Represents the role (e.g., user, assistant) of a chat message.
-- **[RunnableConfig](/docs/concepts/runnables#RunnableConfig)**: Use to pass run time information to Runnables (e.g., `run_name`, `run_id`, `tags`, `metadata`, `max_concurrency`, `recursion_limit`, `configurable`).
+- **[RunnableConfig](/docs/concepts/runnables/#runnableconfig)**: Use to pass run time information to Runnables (e.g., `run_name`, `run_id`, `tags`, `metadata`, `max_concurrency`, `recursion_limit`, `configurable`).
 - **[Standard parameters for chat models](/docs/concepts/chat_models#standard-parameters)**: Parameters such as API key, `temperature`, and `max_tokens`,
 - **[stream](/docs/concepts/streaming)**: Use to stream output from a Runnable or a graph.
 - **[Tokenization](/docs/concepts/tokens)**: The process of converting data into tokens and vice versa.
 - **[Tokens](/docs/concepts/tokens)**: The basic unit that a language model reads, processes, and generates under the hood.
 - **[Tool artifacts](/docs/concepts/tools#tool-artifacts)**: Add artifacts to the output of a tool that will not be sent to the model, but will be available for downstream processing.
 - **[Tool binding](/docs/concepts/tool_calling#tool-binding)**: Binding tools to models.
-- **[@tool](/docs/concepts/tools#@tool)**: Decorator for creating tools in LangChain.
+- **[@tool](/docs/concepts/tools/#create-tools-using-the-tool-decorator)**: Decorator for creating tools in LangChain.
 - **[Toolkits](/docs/concepts/tools#toolkits)**: A collection of tools that can be used together.
 - **[ToolMessage](/docs/concepts/messages#toolmessage)**: Represents a message that contains the results of a tool execution.
 - **[Vector stores](/docs/concepts/vectorstores)**: Datastores specialized for storing and efficiently searching vector embeddings.
-- **[with_structured_output](/docs/concepts/chat_models#with-structured-output)**: A helper method for chat models that natively support [tool calling](/docs/concepts/tool_calling) to get structured output matching a given schema specified via Pydantic, JSON schema or a function.
+- **[with_structured_output](/docs/concepts/structured_outputs/#structured-output-method)**: A helper method for chat models that natively support [tool calling](/docs/concepts/tool_calling) to get structured output matching a given schema specified via Pydantic, JSON schema or a function.
 - **[with_types](/docs/concepts/runnables#with_types)**: Method to overwrite the input and output types of a runnable. Useful when working with complex LCEL chains and deploying with LangServe.

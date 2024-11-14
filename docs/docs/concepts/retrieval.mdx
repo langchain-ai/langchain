@@ -27,7 +27,7 @@ These systems accommodate various data formats:
 - Unstructured text (e.g., documents) is often stored in vector stores or lexical search indexes.
 - Structured data is typically housed in relational or graph databases with defined schemas.
 
-Despite this diversity in data formats, modern AI applications increasingly aim to make all types of data accessible through natural language interfaces. 
+Despite the growing diversity in data formats, modern AI applications increasingly aim to make all types of data accessible through natural language interfaces. 
 Models play a crucial role in this process by translating natural language queries into formats compatible with the underlying search index or database. 
 This translation enables more intuitive and flexible interactions with complex data structures.
 
@@ -41,7 +41,7 @@ This translation enables more intuitive and flexible interactions with complex d
 
 ## Query analysis 
 
-While users typically prefer to interact with retrieval systems using natural language, retrieval systems can specific query syntax or benefit from particular keywords. 
+While users typically prefer to interact with retrieval systems using natural language, these systems may require specific query syntax or benefit from certain keywords. 
 Query analysis serves as a bridge between raw user input and optimized search queries. Some common applications of query analysis include:
 
 1. **Query Re-writing**: Queries can be re-written or expanded to improve semantic or lexical searches.
@@ -65,7 +65,7 @@ Various techniques have been developed to leverage models for query re-writing, 
 
 | Name                                                                                                      | When to use                                                                                     | Description                                                                                                                                                                                                                                                                            |
 |-----------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [Multi-query](/docs/how_to/MultiQueryRetriever/)                                                          | When you want to ensure high recall in retrieval by providing multiple pharsings of a question. | Rewrite the user question with multiple pharsings, retrieve documents for each rewritten question, return the unique documents for all queries.                                                                                                                                        |
+| [Multi-query](/docs/how_to/MultiQueryRetriever/)                                                          | When you want to ensure high recall in retrieval by providing multiple phrasings of a question. | Rewrite the user question with multiple phrasings, retrieve documents for each rewritten question, return the unique documents for all queries.                                                                                                                                        |
 | [Decomposition](https://github.com/langchain-ai/rag-from-scratch/blob/main/rag_from_scratch_5_to_9.ipynb) | When a question can be broken down into smaller subproblems.                                    | Decompose a question into a set of subproblems / questions, which can either be solved sequentially (use the answer from first + retrieval to answer the second) or in parallel (consolidate each answer into final answer).                                                           |
 | [Step-back](https://github.com/langchain-ai/rag-from-scratch/blob/main/rag_from_scratch_5_to_9.ipynb)     | When a higher-level conceptual understanding is required.                                       | First prompt the LLM to ask a generic step-back question about higher-level concepts or principles, and retrieve relevant facts about them. Use this grounding to help answer the user question. [Paper](https://arxiv.org/pdf/2310.06117).                                            |
 | [HyDE](https://github.com/langchain-ai/rag-from-scratch/blob/main/rag_from_scratch_5_to_9.ipynb)          | If you have challenges retrieving relevant documents using the raw user inputs.                 | Use an LLM to convert questions into hypothetical documents that answer the question. Use the embedded hypothetical documents to retrieve real documents with the premise that doc-doc similarity search can produce more relevant matches. [Paper](https://arxiv.org/abs/2212.10496). |
