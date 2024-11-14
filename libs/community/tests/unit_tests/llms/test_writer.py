@@ -9,26 +9,40 @@ from pydantic import SecretStr
 from langchain_community.llms.writer import Writer
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
+"""Classes for mocking Writer responses."""
+
+
+class Choice:
+    def __init__(self, text: str):
+        self.text = text
+
+
+class Completion:
+    def __init__(self, choices: List[Choice]):
+        self.choices = choices
+
+
+class StreamingData:
+    def __init__(self, value: str):
+        self.value = value
+
 
 @pytest.mark.requires("writerai")
 class TestWriterLLM:
     """Unit tests for Writer LLM integration."""
 
-    from writerai.types import Completion, StreamingData
-    from writerai.types.completion import Choice
-
     @pytest.fixture(autouse=True)
     def mock_unstreaming_completion(self) -> Completion:
         """Fixture providing a mock API response."""
-        return self.Completion(choices=[self.Choice(text="Hello! How can I help you?")])
+        return Completion(choices=[Choice(text="Hello! How can I help you?")])
 
     @pytest.fixture(autouse=True)
     def mock_streaming_completion(self) -> List[StreamingData]:
         """Fixture providing mock streaming response chunks."""
         return [
-            self.StreamingData(value="Hello! "),
-            self.StreamingData(value="How can I"),
-            self.StreamingData(value=" help you?"),
+            StreamingData(value="Hello! "),
+            StreamingData(value="How can I"),
+            StreamingData(value=" help you?"),
         ]
 
     def test_sync_unstream_completion(
