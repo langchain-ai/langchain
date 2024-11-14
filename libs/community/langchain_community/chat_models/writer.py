@@ -49,36 +49,38 @@ class ChatWriter(BaseChatModel):
     """Writer chat model.
 
     To use, you should have the ``writer-sdk`` Python package installed, and the
-    environment variable ``WRITER_API_KEY`` set with your API key.
+    environment variable ``WRITER_API_KEY`` set with your API key or pass 'api_key'
+    init param.
 
     Example:
         .. code-block:: python
 
             from langchain_community.chat_models import ChatWriter
-            from writerai import Writer, AsyncWriter
-
-            client = Writer()
-            async_client = AsyncWriter()
 
             chat = ChatWriter(
-                client=client,
-                async_client=async_client,
+                api_key="your key"
                 model="palmyra-x-004"
             )
     """
 
     client: Any = Field(default=None, exclude=True)  #: :meta private:
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
-    writer_api_key: Optional[SecretStr] = Field(default=None)
+
+    api_key: Optional[SecretStr] = Field(default=None)
     """Writer API key."""
+
     model_name: str = Field(default="palmyra-x-004", alias="model")
     """Model name to use."""
+
     temperature: float = 0.7
     """What sampling temperature to use."""
+
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
+
     n: int = 1
     """Number of chat completions to generate for each prompt."""
+
     max_tokens: Optional[int] = None
     """Maximum number of tokens to generate."""
 
@@ -121,10 +123,27 @@ class ChatWriter(BaseChatModel):
                 "Please install it with `pip install writerai`."
             ) from e
 
-        if not (values.get("client") and values.get("async_client")):
-            api_key = get_from_dict_or_env(values, "api_key", "WRITER_API_KEY")
-            values.update({"client": Client(api_key=api_key)})
-            values.update({"async_client": AsyncClient(api_key=api_key)})
+        if not values.get("client"):
+            values.update(
+                {
+                    "client": Client(
+                        api_key=get_from_dict_or_env(
+                            values, "api_key", "WRITER_API_KEY"
+                        )
+                    )
+                }
+            )
+
+        if not values.get("async_client"):
+            values.update(
+                {
+                    "async_client": AsyncClient(
+                        api_key=get_from_dict_or_env(
+                            values, "api_key", "WRITER_API_KEY"
+                        )
+                    )
+                }
+            )
 
         if not (
             type(values.get("client")) is Client

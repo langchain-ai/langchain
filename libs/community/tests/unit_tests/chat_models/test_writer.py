@@ -1,5 +1,6 @@
 import json
-from typing import Any, Dict, List, Literal, Optional, Type
+from typing import Any, Dict, List, Literal, Optional, Tuple, Type
+from unittest import mock
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -7,110 +8,163 @@ from langchain_core.callbacks.manager import CallbackManager
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_standard_tests.unit_tests import ChatModelUnitTests
+from pydantic import SecretStr
 
 from langchain_community.chat_models.writer import ChatWriter
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
-
-"""Classes for mocking Writer responses."""
-
-
-class ChoiceDelta:
-    def __init__(self, content: str):
-        self.content = content
-
-
-class ChunkChoice:
-    def __init__(self, index: int, finish_reason: str, delta: ChoiceDelta):
-        self.index = index
-        self.finish_reason = finish_reason
-        self.delta = delta
-
-
-class ChatCompletionChunk:
-    def __init__(
-        self,
-        id: str,
-        object: str,
-        created: int,
-        model: str,
-        choices: List[ChunkChoice],
-    ):
-        self.id = id
-        self.object = object
-        self.created = created
-        self.model = model
-        self.choices = choices
-
-
-class ToolCallFunction:
-    def __init__(self, name: str, arguments: str):
-        self.name = name
-        self.arguments = arguments
-
-
-class ChoiceMessageToolCall:
-    def __init__(self, id: str, type: str, function: ToolCallFunction):
-        self.id = id
-        self.type = type
-        self.function = function
-
-
-class Usage:
-    def __init__(
-        self,
-        prompt_tokens: int,
-        completion_tokens: int,
-        total_tokens: int,
-    ):
-        self.prompt_tokens = prompt_tokens
-        self.completion_tokens = completion_tokens
-        self.total_tokens = total_tokens
-
-
-class ChoiceMessage:
-    def __init__(
-        self,
-        role: str,
-        content: str,
-        tool_calls: Optional[List[ChoiceMessageToolCall]] = None,
-    ):
-        self.role = role
-        self.content = content
-        self.tool_calls = tool_calls
-
-
-class Choice:
-    def __init__(self, index: int, finish_reason: str, message: ChoiceMessage):
-        self.index = index
-        self.finish_reason = finish_reason
-        self.message = message
-
-
-class Chat:
-    def __init__(
-        self,
-        id: str,
-        object: str,
-        created: int,
-        system_fingerprint: str,
-        model: str,
-        usage: Usage,
-        choices: List[Choice],
-    ):
-        self.id = id
-        self.object = object
-        self.created = created
-        self.system_fingerprint = system_fingerprint
-        self.model = model
-        self.usage = usage
-        self.choices = choices
 
 
 @pytest.mark.requires("writerai")
 class TestChatWriterCustom:
     """Test case for ChatWriter"""
 
-    from writerai import AsyncClient, Client
+    from writerai.types import Chat
+    from writerai.types.chat import (
+        Choice,
+        ChoiceLogprobs,
+        ChoiceLogprobsContent,
+        ChoiceLogprobsContentTopLogprob,
+        ChoiceLogprobsRefusal,
+        ChoiceLogprobsRefusalTopLogprob,
+        ChoiceMessage,
+        ChoiceMessageToolCall,
+        ChoiceMessageToolCallFunction,
+        Usage,
+    )
+    from writerai.types.chat_completion_chunk import ChatCompletionChunk, ChoiceDelta
+    from writerai.types.chat_completion_chunk import Choice as ChunkChoice
+
+    @pytest.fixture(autouse=True)
+    def mock_unstreaming_completion(self) -> Chat:
+        """Fixture providing a mock API response."""
+        return self.Chat(
+            id="chat-12345",
+            object="chat.completion",
+            created=1699000000,
+            model="palmyra-x-004",
+            usage=self.Usage(prompt_tokens=10, completion_tokens=8, total_tokens=18),
+            choices=[
+                self.Choice(
+                    index=0,
+                    finish_reason="stop",
+                    logprobs=self.ChoiceLogprobs(
+                        content=[
+                            self.ChoiceLogprobsContent(
+                                token="",
+                                logprob=0,
+                                top_logprobs=[
+                                    self.ChoiceLogprobsContentTopLogprob(
+                                        token="", logprob=0
+                                    )
+                                ],
+                            )
+                        ],
+                        refusal=[
+                            self.ChoiceLogprobsRefusal(
+                                token="",
+                                logprob=0,
+                                top_logprobs=[
+                                    self.ChoiceLogprobsRefusalTopLogprob(
+                                        token="", logprob=0
+                                    )
+                                ],
+                            )
+                        ],
+                    ),
+                    message=self.ChoiceMessage(
+                        role="assistant",
+                        content="Hello! How can I help you?",
+                        refusal="",
+                    ),
+                )
+            ],
+        )
+
+    @pytest.fixture(autouse=True)
+    def mock_tool_call_choice_response(self) -> Chat:
+        return self.Chat(
+            id="chat-12345",
+            object="chat.completion",
+            created=1699000000,
+            model="palmyra-x-004",
+            choices=[
+                self.Choice(
+                    index=0,
+                    finish_reason="tool_calls",
+                    logprobs=self.ChoiceLogprobs(
+                        content=[
+                            self.ChoiceLogprobsContent(
+                                token="",
+                                logprob=0,
+                                top_logprobs=[
+                                    self.ChoiceLogprobsContentTopLogprob(
+                                        token="", logprob=0
+                                    )
+                                ],
+                            )
+                        ],
+                        refusal=[
+                            self.ChoiceLogprobsRefusal(
+                                token="",
+                                logprob=0,
+                                top_logprobs=[
+                                    self.ChoiceLogprobsRefusalTopLogprob(
+                                        token="", logprob=0
+                                    )
+                                ],
+                            )
+                        ],
+                    ),
+                    message=self.ChoiceMessage(
+                        role="assistant",
+                        content="",
+                        refusal="",
+                        tool_calls=[
+                            self.ChoiceMessageToolCall(
+                                id="call_abc123",
+                                type="function",
+                                function=self.ChoiceMessageToolCallFunction(
+                                    name="GetWeather",
+                                    arguments='{"location": "London"}',
+                                ),
+                            )
+                        ],
+                    ),
+                )
+            ],
+        )
+
+    @pytest.fixture(autouse=True)
+    def mock_streaming_chunks(self) -> List[ChatCompletionChunk]:
+        """Fixture providing mock streaming response chunks."""
+        return [
+            self.ChatCompletionChunk(
+                id="chat-12345",
+                object="chat.completion",
+                created=1699000000,
+                model="palmyra-x-004",
+                choices=[
+                    self.ChunkChoice(
+                        index=0,
+                        finish_reason="stop",
+                        delta=self.ChoiceDelta(content="Hello! "),
+                    )
+                ],
+            ),
+            self.ChatCompletionChunk(
+                id="chat-12345",
+                object="chat.completion",
+                created=1699000000,
+                model="palmyra-x-004",
+                choices=[
+                    self.ChunkChoice(
+                        index=0,
+                        finish_reason="stop",
+                        delta=self.ChoiceDelta(content="How can I help you?"),
+                    )
+                ],
+            ),
+        ]
 
     def test_writer_model_param(self) -> None:
         """Test different ways to initialize the chat model."""
@@ -197,121 +251,36 @@ class TestChatWriterCustom:
         assert result.tool_calls[0]["name"] == "get_weather"
         assert result.tool_calls[0]["args"]["location"] == "London"
 
-    @pytest.fixture(autouse=True)
-    def mock_unstreaming_completion(self) -> Chat:
-        """Fixture providing a mock API response."""
-        return Chat(
-            id="chat-12345",
-            object="chat.completion",
-            created=1699000000,
-            model="palmyra-x-004",
-            system_fingerprint="v1",
-            usage=Usage(prompt_tokens=10, completion_tokens=8, total_tokens=18),
-            choices=[
-                Choice(
-                    index=0,
-                    finish_reason="stop",
-                    message=ChoiceMessage(
-                        role="assistant",
-                        content="Hello! How can I help you?",
-                    ),
-                )
-            ],
-        )
-
-    @pytest.fixture(autouse=True)
-    def mock_tool_call_choice_response(self) -> Chat:
-        return Chat(
-            id="chat-12345",
-            object="chat.completion",
-            created=1699000000,
-            model="palmyra-x-004",
-            system_fingerprint="v1",
-            usage=Usage(prompt_tokens=29, completion_tokens=32, total_tokens=61),
-            choices=[
-                Choice(
-                    index=0,
-                    finish_reason="tool_calls",
-                    message=ChoiceMessage(
-                        role="assistant",
-                        content="",
-                        tool_calls=[
-                            ChoiceMessageToolCall(
-                                id="call_abc123",
-                                type="function",
-                                function=ToolCallFunction(
-                                    name="GetWeather",
-                                    arguments='{"location": "London"}',
-                                ),
-                            )
-                        ],
-                    ),
-                )
-            ],
-        )
-
-    @pytest.fixture(autouse=True)
-    def mock_streaming_chunks(self) -> List[ChatCompletionChunk]:
-        """Fixture providing mock streaming response chunks."""
-        return [
-            ChatCompletionChunk(
-                id="chat-12345",
-                object="chat.completion",
-                created=1699000000,
-                model="palmyra-x-004",
-                choices=[
-                    ChunkChoice(
-                        index=0,
-                        finish_reason="stop",
-                        delta=ChoiceDelta(content="Hello! "),
-                    )
-                ],
-            ),
-            ChatCompletionChunk(
-                id="chat-12345",
-                object="chat.completion",
-                created=1699000000,
-                model="palmyra-x-004",
-                choices=[
-                    ChunkChoice(
-                        index=0,
-                        finish_reason="stop",
-                        delta=ChoiceDelta(content="How can I help you?"),
-                    )
-                ],
-            ),
-        ]
-
     def test_sync_completion(
         self, mock_unstreaming_completion: List[ChatCompletionChunk]
     ) -> None:
         """Test basic chat completion with mocked response."""
-        mock_client = self.Client(api_key="key")
-        mock_client.chat.chat = MagicMock(return_value=mock_unstreaming_completion)
+        chat = ChatWriter(api_key=SecretStr("key"))
 
-        async_client = self.AsyncClient(api_key="key")
+        mock_client = MagicMock()
+        mock_client.chat.chat.return_value = mock_unstreaming_completion
 
-        chat = ChatWriter(client=mock_client, async_client=async_client)
-
-        message = HumanMessage(content="Hi there!")
-        response = chat.invoke([message])
-        assert isinstance(response, AIMessage)
-        assert response.content == "Hello! How can I help you?"
+        with mock.patch.object(chat, "client", mock_client):
+            message = HumanMessage(content="Hi there!")
+            response = chat.invoke([message])
+            assert isinstance(response, AIMessage)
+            assert response.content == "Hello! How can I help you?"
 
     @pytest.mark.asyncio
     async def test_async_completion(
         self, mock_unstreaming_completion: List[ChatCompletionChunk]
     ) -> None:
         """Test async chat completion with mocked response."""
-        mock_client = AsyncMock()
-        mock_client.chat.chat.return_value = mock_unstreaming_completion
+        chat = ChatWriter(api_key=SecretStr("key"))
 
-        chat = ChatWriter(client=MagicMock(), async_client=mock_client)
+        mock_async_client = AsyncMock()
+        mock_async_client.chat.chat.return_value = mock_unstreaming_completion
 
-        message = HumanMessage(content="Hi there!")
-        response = await chat.ainvoke([message])
-        assert isinstance(response, AIMessage)
-        assert response.content == "Hello! How can I help you?"
+        with mock.patch.object(chat, "async_client", mock_async_client):
+            message = HumanMessage(content="Hi there!")
+            response = await chat.ainvoke([message])
+            assert isinstance(response, AIMessage)
+            assert response.content == "Hello! How can I help you?"
 
     def test_sync_streaming(
         self, mock_streaming_chunks: List[ChatCompletionChunk]
@@ -320,25 +289,25 @@ class TestChatWriterCustom:
         callback_handler = FakeCallbackHandler()
         callback_manager = CallbackManager([callback_handler])
 
+        chat = ChatWriter(
+            api_key=SecretStr("key"),
+            callback_manager=callback_manager,
+            max_tokens=10,
+        )
+
         mock_client = MagicMock()
         mock_response = MagicMock()
         mock_response.__iter__.return_value = mock_streaming_chunks
         mock_client.chat.chat.return_value = mock_response
 
-        chat = ChatWriter(
-            client=mock_client,
-            async_client=AsyncMock(),
-            callback_manager=callback_manager,
-            max_tokens=10,
-        )
-
-        message = HumanMessage(content="Hi")
-        response = chat.stream([message])
-        response_message = ""
-        for chunk in response:
-            response_message += str(chunk.content)
-        assert callback_handler.llm_streams > 0
-        assert response_message == "Hello! How can I help you?"
+        with mock.patch.object(chat, "client", mock_client):
+            message = HumanMessage(content="Hi")
+            response = chat.stream([message])
+            response_message = ""
+            for chunk in response:
+                response_message += str(chunk.content)
+            assert callback_handler.llm_streams > 0
+            assert response_message == "Hello! How can I help you?"
 
     @pytest.mark.asyncio
     async def test_async_streaming(
@@ -348,25 +317,25 @@ class TestChatWriterCustom:
         callback_handler = FakeCallbackHandler()
         callback_manager = CallbackManager([callback_handler])
 
-        mock_client = AsyncMock()
-        mock_response = AsyncMock()
-        mock_response.__aiter__.return_value = mock_streaming_chunks
-        mock_client.chat.chat.return_value = mock_response
-
         chat = ChatWriter(
-            client=MagicMock(),
-            async_client=mock_client,
+            api_key=SecretStr("key"),
             callback_manager=callback_manager,
             max_tokens=10,
         )
 
-        message = HumanMessage(content="Hi")
-        response = chat.astream([message])
-        response_message = ""
-        async for chunk in response:
-            response_message += str(chunk.content)
-        assert callback_handler.llm_streams > 0
-        assert response_message == "Hello! How can I help you?"
+        mock_async_client = AsyncMock()
+        mock_response = AsyncMock()
+        mock_response.__aiter__.return_value = mock_streaming_chunks
+        mock_async_client.chat.chat.return_value = mock_response
+
+        with mock.patch.object(chat, "async_client", mock_async_client):
+            message = HumanMessage(content="Hi")
+            response = chat.astream([message])
+            response_message = ""
+            async for chunk in response:
+                response_message += str(chunk.content)
+            assert callback_handler.llm_streams > 0
+            assert response_message == "Hello! How can I help you?"
 
     def test_sync_tool_calling(
         self, mock_tool_call_choice_response: Dict[str, Any]
@@ -379,21 +348,22 @@ class TestChatWriterCustom:
 
             location: str = Field(..., description="The location to get weather for")
 
+        chat = ChatWriter(api_key=SecretStr("key"))
+
         mock_client = MagicMock()
         mock_client.chat.chat.return_value = mock_tool_call_choice_response
-
-        chat = ChatWriter(client=mock_client, async_client=AsyncMock())
 
         chat_with_tools = chat.bind_tools(
             tools=[GetWeather],
             tool_choice="GetWeather",
         )
 
-        response = chat_with_tools.invoke("What's the weather in London?")
-        assert isinstance(response, AIMessage)
-        assert response.tool_calls
-        assert response.tool_calls[0]["name"] == "GetWeather"
-        assert response.tool_calls[0]["args"]["location"] == "London"
+        with mock.patch.object(chat, "client", mock_client):
+            response = chat_with_tools.invoke("What's the weather in London?")
+            assert isinstance(response, AIMessage)
+            assert response.tool_calls
+            assert response.tool_calls[0]["name"] == "GetWeather"
+            assert response.tool_calls[0]["args"]["location"] == "London"
 
     @pytest.mark.asyncio
     async def test_async_tool_calling(
@@ -407,21 +377,22 @@ class TestChatWriterCustom:
 
             location: str = Field(..., description="The location to get weather for")
 
-        mock_client = AsyncMock()
-        mock_client.chat.chat.return_value = mock_tool_call_choice_response
+        mock_async_client = AsyncMock()
+        mock_async_client.chat.chat.return_value = mock_tool_call_choice_response
 
-        chat = ChatWriter(client=MagicMock(), async_client=mock_client)
+        chat = ChatWriter(api_key=SecretStr("key"))
 
         chat_with_tools = chat.bind_tools(
             tools=[GetWeather],
             tool_choice="GetWeather",
         )
 
-        response = await chat_with_tools.ainvoke("What's the weather in London?")
-        assert isinstance(response, AIMessage)
-        assert response.tool_calls
-        assert response.tool_calls[0]["name"] == "GetWeather"
-        assert response.tool_calls[0]["args"]["location"] == "London"
+        with mock.patch.object(chat, "async_client", mock_async_client):
+            response = await chat_with_tools.ainvoke("What's the weather in London?")
+            assert isinstance(response, AIMessage)
+            assert response.tool_calls
+            assert response.tool_calls[0]["name"] == "GetWeather"
+            assert response.tool_calls[0]["args"]["location"] == "London"
 
 
 @pytest.mark.requires("writerai")
@@ -439,8 +410,6 @@ class TestChatWriterStandart(ChatModelUnitTests):
         return {
             "api_key": "fake-api-key",
             "model_name": "palmyra-x-004",
-            "client": MagicMock(),
-            "async_client": AsyncMock(),
         }
 
     @property
@@ -500,3 +469,9 @@ class TestChatWriterStandart(ChatModelUnitTests):
     ]:
         """Return which types of usage metadata your model supports."""
         return {"invoke": ["cache_creation_input"], "stream": ["reasoning_output"]}
+
+    @property
+    def init_from_env_params(self) -> Tuple[dict, dict, dict]:
+        """Return env vars, init args, and expected instance attrs for initializing
+        from env vars."""
+        return {"WRITER_API_KEY": "key"}, {"api_key": "key"}, {"api_key": "key"}
