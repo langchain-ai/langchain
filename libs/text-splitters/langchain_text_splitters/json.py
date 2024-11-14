@@ -8,6 +8,18 @@ from langchain_core.documents import Document
 
 
 class RecursiveJsonSplitter:
+    """Splits JSON data into smaller, structured chunks while preserving hierarchy.
+
+    This class provides methods to split JSON data into smaller dictionaries or
+    JSON-formatted strings based on configurable maximum and minimum chunk sizes.
+    It supports nested JSON structures, optionally converts lists into dictionaries
+    for better chunking, and allows the creation of document objects for further use.
+
+    Attributes:
+        max_chunk_size (int): The maximum size for each chunk. Defaults to 2000.
+        min_chunk_size (int): The minimum size for each chunk, derived from
+            `max_chunk_size` if not explicitly provided.
+    """
     def __init__(
         self, max_chunk_size: int = 2000, min_chunk_size: Optional[int] = None
     ):
