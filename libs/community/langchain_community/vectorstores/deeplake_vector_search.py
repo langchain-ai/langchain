@@ -45,7 +45,8 @@ class DeepLakeVectorStore:
             except Exception as e:
                 try:
                     self.ds = deeplake.query(
-                        f"select * from {self.path}", token=self.token)
+                        f"select * from {self.path}", token=self.token
+                    )
                 except Exception:
                     raise e
         else:
