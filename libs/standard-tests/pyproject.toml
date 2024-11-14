@@ -3,7 +3,8 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
-name = "langchain-standard-tests"
+name = "langchain-tests"
+packages = [{ include = "langchain_standard_tests" }]
 version = "0.3.0"
 description = "Standard tests for LangChain implementations"
 authors = ["Erick Friis <erick@langchain.dev>"]
