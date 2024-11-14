@@ -6,7 +6,8 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
-from pydantic import ConfigDict, Field
+from langchain_core.utils import get_from_dict_or_env
+from pydantic import ConfigDict, Field, SecretStr, model_validator
 
 
 class Writer(LLM):
@@ -30,8 +31,11 @@ class Writer(LLM):
             )
     """
 
-    client: Any = Field(exclude=True)  #: :meta private:
-    async_client: Any = Field(exclude=True)  #: :meta private:
+    client: Any = Field(default=None, exclude=True)  #: :meta private:
+    async_client: Any = Field(default=None, exclude=True)  #: :meta private:
+
+    api_key: Optional[SecretStr] = Field(default=None)
+    """Writer API key."""
 
     model_name: str = Field(default="palmyra-x-003-instruct", alias="model")
     """Model name to use."""
@@ -87,6 +91,51 @@ class Writer(LLM):
     def _llm_type(self) -> str:
         """Return type of llm."""
         return "writer"
+
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
+        """Validates that api key is passed and creates Writer clients."""
+        try:
+            from writerai import AsyncClient, Client
+        except ImportError as e:
+            raise ImportError(
+                "Could not import writerai python package. "
+                "Please install it with `pip install writerai`."
+            ) from e
+
+        if not values.get("client"):
+            values.update(
+                {
+                    "client": Client(
+                        api_key=get_from_dict_or_env(
+                            values, "api_key", "WRITER_API_KEY"
+                        )
+                    )
+                }
+            )
+
+        if not values.get("async_client"):
+            values.update(
+                {
+                    "async_client": AsyncClient(
+                        api_key=get_from_dict_or_env(
+                            values, "api_key", "WRITER_API_KEY"
+                        )
+                    )
+                }
+            )
+
+        if not (
+            type(values.get("client")) is Client
+            and type(values.get("async_client")) is AsyncClient
+        ):
+            raise ValueError(
+                "'client' attribute must be with type 'Client' and "
+                "'async_client' must be with type 'AsyncClient' from 'writerai' package"
+            )
+
+        return values
 
     def _call(
         self,

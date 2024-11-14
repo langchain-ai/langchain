@@ -1,46 +1,34 @@
 from typing import List
+from unittest import mock
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from langchain_core.callbacks import CallbackManager
+from pydantic import SecretStr
 
 from langchain_community.llms.writer import Writer
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
-"""Classes for mocking Writer responses."""
 
-
-class Choice:
-    def __init__(self, text: str):
-        self.text = text
-
-
-class Completion:
-    def __init__(self, choices: List[Choice]):
-        self.choices = choices
-
-
-class Chunk:
-    def __init__(self, value: str):
-        self.value = value
-
-
-"""Unit tests for Writer LLM integration."""
-
-
+@pytest.mark.requires("writerai")
 class TestWriterLLM:
+    """Unit tests for Writer LLM integration."""
+
+    from writerai.types import Completion, StreamingData
+    from writerai.types.completion import Choice
+
     @pytest.fixture(autouse=True)
     def mock_unstreaming_completion(self) -> Completion:
         """Fixture providing a mock API response."""
-        return Completion(choices=[Choice(text="Hello! How can I help you?")])
+        return self.Completion(choices=[self.Choice(text="Hello! How can I help you?")])
 
     @pytest.fixture(autouse=True)
-    def mock_streaming_completion(self) -> List[Chunk]:
+    def mock_streaming_completion(self) -> List[StreamingData]:
         """Fixture providing mock streaming response chunks."""
         return [
-            Chunk(value="Hello! "),
-            Chunk(value="How can I"),
-            Chunk(value=" help you?"),
+            self.StreamingData(value="Hello! "),
+            self.StreamingData(value="How can I"),
+            self.StreamingData(value=" help you?"),
         ]
 
     def test_sync_unstream_completion(
@@ -50,11 +38,12 @@ class TestWriterLLM:
         mock_client = MagicMock()
         mock_client.completions.create.return_value = mock_unstreaming_completion
 
-        llm = Writer(client=mock_client, async_client=AsyncMock())
+        llm = Writer(api_key=SecretStr("key"))
 
-        response_text = llm.invoke(input="Hello")
+        with mock.patch.object(llm, "client", mock_client):
+            response_text = llm.invoke(input="Hello")
 
-        assert response_text == "Hello! How can I help you?"
+            assert response_text == "Hello! How can I help you?"
 
     def test_sync_unstream_completion_with_params(
         self, mock_unstreaming_completion: Completion
@@ -63,11 +52,12 @@ class TestWriterLLM:
         mock_client = MagicMock()
         mock_client.completions.create.return_value = mock_unstreaming_completion
 
-        llm = Writer(client=mock_client, async_client=AsyncMock(), temperature=1)
+        llm = Writer(api_key=SecretStr("key"), temperature=1)
 
-        response_text = llm.invoke(input="Hello")
+        with mock.patch.object(llm, "client", mock_client):
+            response_text = llm.invoke(input="Hello")
 
-        assert response_text == "Hello! How can I help you?"
+            assert response_text == "Hello! How can I help you?"
 
     @pytest.mark.asyncio
     async def test_async_unstream_completion(
@@ -77,11 +67,12 @@ class TestWriterLLM:
         mock_async_client = AsyncMock()
         mock_async_client.completions.create.return_value = mock_unstreaming_completion
 
-        llm = Writer(client=MagicMock(), async_client=mock_async_client)
+        llm = Writer(api_key=SecretStr("key"))
 
-        response_text = await llm.ainvoke(input="Hello")
+        with mock.patch.object(llm, "async_client", mock_async_client):
+            response_text = await llm.ainvoke(input="Hello")
 
-        assert response_text == "Hello! How can I help you?"
+            assert response_text == "Hello! How can I help you?"
 
     @pytest.mark.asyncio
     async def test_async_unstream_completion_with_params(
@@ -91,14 +82,15 @@ class TestWriterLLM:
         mock_async_client = AsyncMock()
         mock_async_client.completions.create.return_value = mock_unstreaming_completion
 
-        llm = Writer(client=MagicMock(), async_client=mock_async_client, temperature=1)
+        llm = Writer(api_key=SecretStr("key"), temperature=1)
 
-        response_text = await llm.ainvoke(input="Hello")
+        with mock.patch.object(llm, "async_client", mock_async_client):
+            response_text = await llm.ainvoke(input="Hello")
 
-        assert response_text == "Hello! How can I help you?"
+            assert response_text == "Hello! How can I help you?"
 
     def test_sync_streaming_completion(
-        self, mock_streaming_completion: List[Chunk]
+        self, mock_streaming_completion: List[StreamingData]
     ) -> None:
         """Test sync streaming."""
 
@@ -107,18 +99,19 @@ class TestWriterLLM:
         mock_response.__iter__.return_value = mock_streaming_completion
         mock_client.completions.create.return_value = mock_response
 
-        llm = Writer(client=mock_client, async_client=AsyncMock())
+        llm = Writer(api_key=SecretStr("key"))
 
-        response = llm.stream(input="Hello")
+        with mock.patch.object(llm, "client", mock_client):
+            response = llm.stream(input="Hello")
 
-        response_message = ""
-        for chunk in response:
-            response_message += chunk
+            response_message = ""
+            for chunk in response:
+                response_message += chunk
 
         assert response_message == "Hello! How can I help you?"
 
     def test_sync_streaming_completion_with_callback_handler(
-        self, mock_streaming_completion: List[Chunk]
+        self, mock_streaming_completion: List[StreamingData]
     ) -> None:
         """Test sync streaming with callback handler."""
         callback_handler = FakeCallbackHandler()
@@ -130,19 +123,19 @@ class TestWriterLLM:
         mock_client.completions.create.return_value = mock_response
 
         llm = Writer(
-            client=mock_client,
-            async_client=AsyncMock(),
+            api_key=SecretStr("key"),
             callback_manager=callback_manager,
         )
 
-        response = llm.stream(input="Hello")
+        with mock.patch.object(llm, "client", mock_client):
+            response = llm.stream(input="Hello")
 
-        response_message = ""
-        for chunk in response:
-            response_message += chunk
+            response_message = ""
+            for chunk in response:
+                response_message += chunk
 
-        assert callback_handler.llm_streams == 3
-        assert response_message == "Hello! How can I help you?"
+            assert callback_handler.llm_streams == 3
+            assert response_message == "Hello! How can I help you?"
 
     @pytest.mark.asyncio
     async def test_async_streaming_completion(
@@ -155,15 +148,16 @@ class TestWriterLLM:
         mock_response.__aiter__.return_value = mock_streaming_completion
         mock_async_client.completions.create.return_value = mock_response
 
-        llm = Writer(client=MagicMock(), async_client=mock_async_client)
+        llm = Writer(api_key=SecretStr("key"))
 
-        response = llm.astream(input="Hello")
+        with mock.patch.object(llm, "async_client", mock_async_client):
+            response = llm.astream(input="Hello")
 
-        response_message = ""
-        async for chunk in response:
-            response_message += str(chunk)
+            response_message = ""
+            async for chunk in response:
+                response_message += str(chunk)
 
-        assert response_message == "Hello! How can I help you?"
+            assert response_message == "Hello! How can I help you?"
 
     @pytest.mark.asyncio
     async def test_async_streaming_completion_with_callback_handler(
@@ -179,16 +173,16 @@ class TestWriterLLM:
         mock_async_client.completions.create.return_value = mock_response
 
         llm = Writer(
-            client=MagicMock(),
-            async_client=mock_async_client,
+            api_key=SecretStr("key"),
             callback_manager=callback_manager,
         )
 
-        response = llm.astream(input="Hello")
+        with mock.patch.object(llm, "async_client", mock_async_client):
+            response = llm.astream(input="Hello")
 
-        response_message = ""
-        async for chunk in response:
-            response_message += str(chunk)
+            response_message = ""
+            async for chunk in response:
+                response_message += str(chunk)
 
-        assert callback_handler.llm_streams == 3
-        assert response_message == "Hello! How can I help you?"
+            assert callback_handler.llm_streams == 3
+            assert response_message == "Hello! How can I help you?"
