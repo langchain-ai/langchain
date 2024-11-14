@@ -321,6 +321,51 @@ def test_faiss_mmr_with_metadatas_and_filter() -> None:
         query_vec, k=10, lambda_mult=0.1, filter=lambda di: di["page"] == 1
     )
 
+@pytest.mark.requires("faiss")
+def test_faiss_mmr_with_metadatas_and_basic_operators_filter_eq() -> None:
+    texts = ["foo", "foo", "fou", "foy"]
+    metadatas = [{"page": i} for i in range(len(texts))]
+    docsearch = FAISS.from_texts(texts, FakeEmbeddings(), metadatas=metadatas)
+    query_vec = FakeEmbeddings().embed_query(text="foo")
+    output = docsearch.max_marginal_relevance_search_with_score_by_vector(
+        query_vec, k=10, lambda_mult=0.1, filter={"page": {"$eq": 1}}
+    )
+    assert len(output) == 1
+    assert output[0][0] == Document(page_content="foo", metadata={"page": 1})
+    assert output[0][1] == 0.0
+    assert output == docsearch.max_marginal_relevance_search_with_score_by_vector(
+        query_vec, k=10, lambda_mult=0.1, filter=lambda di: di["page"] == 1
+    )
+
+@pytest.mark.requires("faiss")
+def test_faiss_mmr_with_metadatas_and_basic_operators_filter_neq() -> None:
+    texts = ["foo", "foo", "fou", "foy"]
+    metadatas = [{"page": i} for i in range(len(texts))]
+    docsearch = FAISS.from_texts(texts, FakeEmbeddings(), metadatas=metadatas)
+    query_vec = FakeEmbeddings().embed_query(text="foo")
+    output = docsearch.max_marginal_relevance_search_with_score_by_vector(
+        query_vec, k=10, lambda_mult=0.1, filter={"page": {"$neq": 1}}
+    )
+    assert len(output) == 3
+    assert output[0][0] == Document(page_content="foo", metadata={"page": 0})
+    assert output[0][1] == 0.0
+    assert output == docsearch.max_marginal_relevance_search_with_score_by_vector(
+        query_vec, k=10, lambda_mult=0.1, filter=lambda di: di["page"] != 1
+    )
+
+@pytest.mark.requires("faiss")
+def test_faiss_mmr_with_metadatas_and_filter_nested_operators_empty() -> None:
+    texts = ["foo", "foo", "fou", "foy"]
+    metadatas = [{"page": i} for i in range(len(texts))]
+    docsearch = FAISS.from_texts(texts, FakeEmbeddings(), metadatas=metadatas)
+    query_vec = FakeEmbeddings().embed_query(text="foo")
+    output = docsearch.max_marginal_relevance_search_with_score_by_vector(
+        query_vec, k=10, lambda_mult=0.1, filter= {'$and': [{"page": 0}, {"page": 1}]}
+    )
+    assert len(output) == 0
+    assert output == docsearch.max_marginal_relevance_search_with_score_by_vector(
+        query_vec, k=10, lambda_mult=0.1, filter=lambda di: (di["page"] != 1) and (di["page"] == 1)
+    )
 
 @pytest.mark.requires("faiss")
 async def test_faiss_async_mmr_with_metadatas_and_filter() -> None:
