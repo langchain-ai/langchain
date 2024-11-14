@@ -164,6 +164,41 @@ def _drop_table_if_exists(client: Connection, table_name: str) -> None:
         logger.error(f"Failed to check and drop table {table_name}: {e}")
 
 
+def _drop_tables(
+    client: Connection, relation_table_list: pd.DataFrame, node_table_list: pd.DataFrame
+) -> None:
+    relation_table_list["id"].apply(
+        lambda table_name: _drop_table_if_exists(client, table_name)
+    )
+    node_table_list["id"].apply(
+        lambda table_name: _drop_table_if_exists(client, table_name)
+    )
+
+
+def _graph_exists(client: Connection, graph_name: str) -> bool:
+    graph_exists_query = f"""
+        SELECT *
+            FROM GRAPH_TABLE({graph_name}
+            MATCH (n)
+            COLUMNS (n.*))
+        """
+    try:
+        with client.cursor() as cursor:
+            try:
+                cursor.execute(graph_exists_query)
+                logger.debug("Graph exists")
+                return True
+            except Exception as e:
+                logger.debug(f"Graph does not exist: {e}, {graph_exists_query}")
+                return False
+    except DatabaseError as ex:
+        err_obj = ex.args
+        if err_obj[0].code == 942:
+            return False
+        logger.error(f"Graph does not exist: {err_obj}")
+        raise
+
+
 def _remove_backticks(text: str | int) -> str:
     return str(text).replace("`", "")
 
@@ -171,9 +206,66 @@ def _remove_backticks(text: str | int) -> str:
 def _ddl_sql_query(client: Connection, ddl_query: str) -> None:
     """DDL SQL query"""
     with client.cursor() as cursor:
-        cursor.execute(ddl_query)
-        logger.debug(ddl_query)
-    client.commit()
+        try:
+            cursor.execute(ddl_query)
+            logger.debug(f"Success DDL query: {ddl_query}")
+        except Exception as e:
+            logger.error(f"Failed to execute DDL query: {e}, {ddl_query}")
+
+
+def _create_node_list(document: GraphDocument, doc_id: int | None) -> pd.DataFrame:
+    node_list = pd.DataFrame(
+        [
+            (_clean_value(node.type), _clean_value(node.id), doc_id)
+            for node in document.nodes
+        ]
+        + [
+            (_clean_value(rel.source.type), _clean_value(rel.source.id), doc_id)
+            for rel in document.relationships
+        ]
+        + [
+            (_clean_value(rel.target.type), _clean_value(rel.target.id), doc_id)
+            for rel in document.relationships
+        ],
+        columns=["id", "node_value", "doc_id"],
+    )
+    logger.debug(node_list)
+    return node_list
+
+
+def _create_relation_list(
+    document: GraphDocument, node_list: pd.DataFrame
+) -> pd.DataFrame:
+    relation_list = pd.DataFrame(
+        [
+            {
+                "id": _clean_value(rel.type)
+                + ("_rel" if rel.type in node_list["id"].values else ""),
+                "source": _clean_value(rel.source.type),
+                "source_value": _clean_value(rel.source.id),
+                "target": _clean_value(rel.target.type),
+                "target_value": _clean_value(rel.target.id),
+            }
+            for rel in document.relationships
+        ]
+    )
+    logger.debug(relation_list)
+
+    tmp_relation_list = relation_list[["id", "source", "target"]].drop_duplicates(
+        ignore_index=True
+    )
+    tmp_relation_list["id"] = tmp_relation_list["id"] + tmp_relation_list.groupby(
+        ["id"]
+    ).cumcount().astype(str).replace("0", "")
+
+    for index, row in tmp_relation_list.iterrows():
+        relation_list.loc[
+            (relation_list["id"] == row["id"].rstrip("123456789"))
+            & (relation_list["source"] == row["source"])
+            & (relation_list["target"] == row["target"]),
+            "id",
+        ] = row["id"]
+    return relation_list
 
 
 def _create_document_tables(client: Connection) -> None:
@@ -224,7 +316,10 @@ def _create_node_tables(client: Connection, node_table_list: pd.DataFrame) -> No
             logger.error(f"Failed to create node table: {e}")
 
 
-def _insert_node_data(client: Connection, node_data_list: pd.DataFrame) -> None:
+def _insert_node_data(client: Connection, node_list: pd.DataFrame) -> None:
+    node_data_list = node_list.drop_duplicates(ignore_index=True)
+    logger.debug(node_data_list)
+
     for index, node_data in node_data_list.iterrows():
         logger.debug(node_data)
         tmp_insert_node_data_query = f"""
@@ -272,7 +367,13 @@ def _create_relation_tables(
             logger.error(f"Failed to create relation table: {e}")
 
 
-def _insert_relation_data(client: Connection, relation_data_list: pd.DataFrame) -> None:
+def _insert_relation_data(client: Connection, relation_list: pd.DataFrame) -> None:
+    relation_data_list = relation_list[
+        ["id", "source_value", "target_value"]
+    ].drop_duplicates(ignore_index=True)
+    relation_data_list["name"] = relation_data_list["id"]
+    logger.debug(relation_data_list)
+
     for index, relation_data in relation_data_list.iterrows():
         tmp_insert_relation_data_query = f"""
             INSERT INTO {relation_data["id"]} (source, target, name)
@@ -337,6 +438,20 @@ def _create_property_graph_query(
     return create_graph_query
 
 
+def _create_graph(
+    node_table_list: pd.DataFrame,
+    relation_table_list: pd.DataFrame,
+    graph_name: str,
+    client: Connection,
+) -> None:
+    create_graph_query = _create_property_graph_query(
+        node_table_list=node_table_list,
+        relation_table_list=relation_table_list,
+        graph_name=graph_name,
+    )
+    _ddl_sql_query(client=client, ddl_query=create_graph_query)
+
+
 def _clean_value(value: str | int) -> str:
     val = str(value)
     result = _remove_backticks(val) + ("_t" if val.upper() in reserved_words else "")
@@ -361,7 +476,9 @@ class OracleGraph(GraphStore):
                 "Failed to import opg4py. Please install with "
                 "`pip install -U oracle-graph-client-xxx`."
             ) from e
+        self.schema: str = ""
         self.insert_mode = "array"
+        self.structured_schema: Dict[str, Any] = {}
 
         try:
             self.connection = pgql.get_connection(
@@ -388,13 +505,30 @@ class OracleGraph(GraphStore):
         """
         return self.schema
 
+    @property
+    def get_structured_schema(self) -> Dict[str, Any]:
+        """Returns the structured schema of the Graph"""
+        return self.structured_schema
+
     def set_connection(self, client: Connection) -> None:
         """_summary_
 
         Args:
-            client (Connection): _description_
+            client (Connection): The connection of Oracle Database
         """
+        client.autocommit = True
         self.client = client
+
+    def refresh_schema(self) -> None:
+        """
+        Refresh the Oracle graph schema information.
+        """
+
+        try:
+            self.schema = self.connection.get_schema()
+            logger.debug(f"Schema is {self.schema}")
+        except Exception as e:
+            logger.error(f"Failed to refresh schema: {e}")
 
     def get_graph(
         self,
@@ -405,28 +539,6 @@ class OracleGraph(GraphStore):
             logger.debug(f"Exist Graph is {self.exist_graph}")
         except Exception as e:
             logger.error(f"Failed to get graph: {e}")
-
-    def drop_graph(self, graph_name: str) -> None:
-        """Drop the specified graph
-
-        Args:
-            graph_name (str): The name of the graph to drop.
-        """
-        drop_graph_query = f"""
-        DROP PROPERTY GRAPH {graph_name}
-        """
-        try:
-            self.pgql_execute(query=drop_graph_query)
-        except Exception as e:
-            logger.error(f"Failed to drop graph: {e}")
-
-    def close(self) -> None:
-        """Close the connection to the Oracle database"""
-        try:
-            self.connection.close()
-            logger.debug("Connection to Oracle database closed")
-        except Exception as e:
-            logger.error(f"Failed to close connection: {e}")
 
     def pgql_execute(self, query: str, param: dict = {}) -> None:
         """execute PGQL query
@@ -465,7 +577,7 @@ class OracleGraph(GraphStore):
             logger.error(f"Failed to execute query: {e}")
             return []
 
-    def sql_execute(self, query: str, param: dict = {}) -> List[Dict[str, Any]]:
+    def query(self, query: str, param: dict = {}) -> List[Dict[str, Any]]:
         """SQL Execute Oracle Graph
 
         Args:
@@ -486,37 +598,30 @@ class OracleGraph(GraphStore):
                 else:
                     data = [r for r in results]
                     return data
+        except DatabaseError as e:
+            logger.error(f"Failed to execute SQL query: {e}, {query}")
+            return []
         except Exception as e:
-            logger.error(f"Failed to execute query: {e}")
+            logger.error(f"Failed to execute query: {e}, {query}")
             return []
 
-    def sql_commit(self, client: Connection) -> None:
-        """Commit the query
+    def drop_graph(self, graph_name: str) -> None:
+        """Drop the graph with the given name
 
         Args:
-            client: Oracle Database connection.
-
+            graph_name (str): The name of the graph to drop.
         """
         try:
-            client.commit()
+            if _graph_exists(client=self.client, graph_name=graph_name):
+                self.pgql_execute(query=f"DROP PROPERTY GRAPH {graph_name}")
+                logger.debug(f"Success to Drop Graph: {graph_name}")
+            else:
+                logger.debug(f"{graph_name} does not exist")
         except Exception as e:
-            logger.error(f"Failed to commit: {e}")
-
-    def client_close(self, client: Connection) -> None:
-        """Close the Oracle Database client
-
-        Args:
-            client: Oracle Database connection.
-
-        """
-        try:
-            client.close()
-        except Exception as e:
-            logger.error(f"Failed to close client: {e}")
+            logger.error(f"Failed to drop graph: {e}")
 
     def add_graph_documents(
         self,
-        # client: Connection,
         graph_documents: List[GraphDocument],
         include_source: bool = False,
         graph_name: str = "",
@@ -531,8 +636,6 @@ class OracleGraph(GraphStore):
             including nodes, relationships, and the source document information.
             include_source (bool, optional): _description_. Defaults to False.
 
-        Returns:
-            _type_: _description_
         """
         self.graph_documents = graph_documents
         self.graph_name = graph_name
@@ -546,51 +649,8 @@ class OracleGraph(GraphStore):
                     document.source.page_content.encode("utf-8")
                 ).hexdigest()
 
-        node_list = pd.DataFrame(
-            [
-                (_clean_value(node.type), _clean_value(node.id), doc_id)
-                for node in document.nodes
-            ]
-            + [
-                (_clean_value(rel.source.type), _clean_value(rel.source.id), doc_id)
-                for rel in document.relationships
-            ]
-            + [
-                (_clean_value(rel.target.type), _clean_value(rel.target.id), doc_id)
-                for rel in document.relationships
-            ],
-            columns=["id", "node_value", "doc_id"],
-        )
-        logger.debug(node_list)
-
-        relation_list = pd.DataFrame(
-            [
-                {
-                    "id": _clean_value(rel.type)
-                    + ("_rel" if rel.type in node_list["id"].values else ""),
-                    "source": _clean_value(rel.source.type),
-                    "source_value": _clean_value(rel.source.id),
-                    "target": _clean_value(rel.target.type),
-                    "target_value": _clean_value(rel.target.id),
-                }
-                for rel in document.relationships
-            ]
-        )
-
-        tmp_relation_list = relation_list[["id", "source", "target"]].drop_duplicates(
-            ignore_index=True
-        )
-        tmp_relation_list["id"] = tmp_relation_list["id"] + tmp_relation_list.groupby(
-            ["id"]
-        ).cumcount().astype(str).replace("0", "")
-
-        for index, row in tmp_relation_list.iterrows():
-            relation_list.loc[
-                (relation_list["id"] == row["id"].rstrip("123456789"))
-                & (relation_list["source"] == row["source"])
-                & (relation_list["target"] == row["target"]),
-                "id",
-            ] = row["id"]
+        node_list = _create_node_list(document=document, doc_id=doc_id)
+        relation_list = _create_relation_list(document=document, node_list=node_list)
 
         node_table_list = node_list[["id"]].drop_duplicates(ignore_index=True)
         logger.debug(node_table_list)
@@ -599,6 +659,9 @@ class OracleGraph(GraphStore):
             ignore_index=True
         )
         logger.debug(relation_table_list)
+
+        self.get_graph()
+        self.drop_graph(graph_name=graph_name)
 
         if not include_source:
             _drop_table_if_exists(client=self.client, table_name="document_table")
@@ -609,40 +672,24 @@ class OracleGraph(GraphStore):
                 document_data=document.source.page_content,
             )
 
-        drop_graph_query = f"""
-        DROP PROPERTY GRAPH {self.graph_name}
-        """
-        self.sql_execute(query=drop_graph_query)
-
-        relation_table_list["id"].apply(
-            lambda table_name: _drop_table_if_exists(self.client, table_name)
-        )
-        node_table_list["id"].apply(
-            lambda table_name: _drop_table_if_exists(self.client, table_name)
+        _drop_tables(
+            client=self.client,
+            relation_table_list=relation_table_list,
+            node_table_list=node_table_list,
         )
 
         _create_node_tables(client=self.client, node_table_list=node_table_list)
 
-        node_data_list = node_list.drop_duplicates(ignore_index=True)
-        logger.debug(node_data_list)
-
-        _insert_node_data(client=self.client, node_data_list=node_data_list)
+        _insert_node_data(client=self.client, node_list=node_list)
 
         _create_relation_tables(
             client=self.client, relation_table_list=relation_table_list
         )
+        _insert_relation_data(client=self.client, relation_list=relation_list)
 
-        relation_data_list = relation_list[
-            ["id", "source_value", "target_value"]
-        ].drop_duplicates(ignore_index=True)
-        relation_data_list["name"] = relation_data_list["id"]
-        logger.debug(relation_data_list)
-
-        _insert_relation_data(client=self.client, relation_data_list=relation_data_list)
-
-        create_graph_query = _create_property_graph_query(
+        _create_graph(
             node_table_list=node_table_list,
             relation_table_list=relation_table_list,
             graph_name=self.graph_name,
+            client=self.client,
         )
-        _ddl_sql_query(client=self.client, ddl_query=create_graph_query)
