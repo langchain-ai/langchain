@@ -53,7 +53,7 @@ include_docs_query = (
 
 
 @deprecated(
-    since="0.3.6",
+    since="0.3.8",
     removal="1.0",
     alternative_import="langchain_neo4j.graphs.neo4j_graph.clean_string_values",
 )
@@ -72,7 +72,7 @@ def clean_string_values(text: str) -> str:
 
 
 @deprecated(
-    since="0.3.6",
+    since="0.3.8",
     removal="1.0",
     alternative_import="langchain_neo4j.graphs.neo4j_graph.value_sanitize",
 )
@@ -123,7 +123,7 @@ def value_sanitize(d: Any) -> Any:
 
 
 @deprecated(
-    since="0.3.6",
+    since="0.3.8",
     removal="1.0",
     alternative_import="langchain_neo4j.graphs.neo4j_graph._get_node_import_query",
 )
@@ -151,7 +151,7 @@ def _get_node_import_query(baseEntityLabel: bool, include_source: bool) -> str:
 
 
 @deprecated(
-    since="0.3.6",
+    since="0.3.8",
     removal="1.0",
     alternative_import="langchain_neo4j.graphs.neo4j_graph._get_rel_import_query",
 )
@@ -180,7 +180,7 @@ def _get_rel_import_query(baseEntityLabel: bool) -> str:
 
 
 @deprecated(
-    since="0.3.6",
+    since="0.3.8",
     removal="1.0",
     alternative_import="langchain_neo4j.graphs.neo4j_graph._format_schema",
 )
@@ -314,7 +314,7 @@ def _format_schema(schema: Dict, is_enhanced: bool) -> str:
 
 
 @deprecated(
-    since="0.3.6",
+    since="0.3.8",
     removal="1.0",
     alternative_import="langchain_neo4j.graphs.neo4j_graph._remove_backticks",
 )
@@ -323,7 +323,7 @@ def _remove_backticks(text: str) -> str:
 
 
 @deprecated(
-    since="0.3.6",
+    since="0.3.8",
     removal="1.0",
     alternative_import="langchain_neo4j.Neo4jGraph",
 )

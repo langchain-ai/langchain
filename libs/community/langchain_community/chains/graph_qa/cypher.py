@@ -46,7 +46,7 @@ very concise style in interpreting results!
 
 
 @deprecated(
-    since="0.3.6",
+    since="0.3.8",
     removal="1.0",
     alternative_import="langchain_neo4j.chains.graph_qa.cypher.extract_cypher",
 )
@@ -69,7 +69,7 @@ def extract_cypher(text: str) -> str:
 
 
 @deprecated(
-    since="0.3.6",
+    since="0.3.8",
     removal="1.0",
     alternative_import="langchain_neo4j.chains.graph_qa.cypher.construct_schema",
 )
@@ -136,7 +136,7 @@ def construct_schema(
 
 
 @deprecated(
-    since="0.3.6",
+    since="0.3.8",
     removal="1.0",
     alternative_import="langchain_neo4j.chains.graph_qa.cypher.get_function_response",
 )
@@ -166,7 +166,7 @@ def get_function_response(
 
 
 @deprecated(
-    since="0.3.6",
+    since="0.3.8",
     removal="1.0",
     alternative_import="langchain_neo4j.GraphCypherQAChain",
 )

@@ -9,7 +9,7 @@ from langchain_community.graphs import Neo4jGraph
 
 
 @deprecated(
-    since="0.3.6",
+    since="0.3.8",
     removal="1.0",
     alternative_import="langchain_neo4j.Neo4jChatMessageHistory",
 )

@@ -65,7 +65,7 @@ SUPPORTED_OPERATORS = (
 
 
 @deprecated(
-    since="0.3.6",
+    since="0.3.8",
     removal="1.0",
     alternative_import="langchain_neo4j.vectorstores.neo4j_vector.SearchType",
 )
@@ -80,7 +80,7 @@ DEFAULT_SEARCH_TYPE = SearchType.VECTOR
 
 
 @deprecated(
-    since="0.3.6",
+    since="0.3.8",
     removal="1.0",
     alternative_import="langchain_neo4j.vectorstores.neo4j_vector.IndexType",
 )
@@ -95,7 +95,7 @@ DEFAULT_INDEX_TYPE = IndexType.NODE
 
 
 @deprecated(
-    since="0.3.6",
+    since="0.3.8",
     removal="1.0",
     alternative_import="langchain_neo4j.vectorstores.neo4j_vector._get_search_index_query",
 )
@@ -136,7 +136,7 @@ def _get_search_index_query(
 
 
 @deprecated(
-    since="0.3.6",
+    since="0.3.8",
     removal="1.0",
     alternative_import="langchain_neo4j.vectorstores.neo4j_vector.check_if_not_null",
 )
@@ -148,7 +148,7 @@ def check_if_not_null(props: List[str], values: List[Any]) -> None:
 
 
 @deprecated(
-    since="0.3.6",
+    since="0.3.8",
     removal="1.0",
     alternative_import="langchain_neo4j.vectorstores.neo4j_vector.sort_by_index_name",
 )
@@ -160,7 +160,7 @@ def sort_by_index_name(
 
 
 @deprecated(
-    since="0.3.6",
+    since="0.3.8",
     removal="1.0",
     alternative_import="langchain_neo4j.vectorstores.neo4j_vector.remove_lucene_chars",
 )
@@ -193,7 +193,7 @@ def remove_lucene_chars(text: str) -> str:
 
 
 @deprecated(
-    since="0.3.6",
+    since="0.3.8",
     removal="1.0",
     alternative_import="langchain_neo4j.vectorstores.neo4j_vector.dict_to_yaml_str",
 )
@@ -223,7 +223,7 @@ def dict_to_yaml_str(input_dict: Dict, indent: int = 0) -> str:
 
 
 @deprecated(
-    since="0.3.6",
+    since="0.3.8",
     removal="1.0",
     alternative_import="langchain_neo4j.vectorstores.neo4j_vector.combine_queries",
 )
@@ -262,7 +262,7 @@ def combine_queries(
 
 
 @deprecated(
-    since="0.3.6",
+    since="0.3.8",
     removal="1.0",
     alternative_import="langchain_neo4j.vectorstores.neo4j_vector.collect_params",
 )
@@ -294,7 +294,7 @@ def collect_params(
 
 
 @deprecated(
-    since="0.3.6",
+    since="0.3.8",
     removal="1.0",
     alternative_import="langchain_neo4j.vectorstores.neo4j_vector._handle_field_filter",
 )
@@ -400,7 +400,7 @@ def _handle_field_filter(
 
 
 @deprecated(
-    since="0.3.6",
+    since="0.3.8",
     removal="1.0",
     alternative_import="langchain_neo4j.vectorstores.neo4j_vector.construct_metadata_filter",
 )
@@ -487,7 +487,7 @@ def construct_metadata_filter(filter: Dict[str, Any]) -> Tuple[str, Dict]:
 
 
 @deprecated(
-    since="0.3.6",
+    since="0.3.8",
     removal="1.0",
     alternative_import="langchain_neo4j.Neo4jVector",
 )

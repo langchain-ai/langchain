@@ -12,7 +12,7 @@ from langchain_core.structured_query import (
 
 
 @deprecated(
-    since="0.3.6",
+    since="0.3.8",
     removal="1.0",
     alternative_import="langchain_neo4j.query_constructors.neo4j.Neo4jTranslator",
 )
