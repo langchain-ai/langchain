@@ -21,8 +21,8 @@ class ElementType(TypedDict):
 
 
 class HTMLHeaderTextSplitter:
-    """
-    Splitting HTML files based on specified headers.
+    """Splitting HTML files based on specified headers.
+
     Requires lxml package.
     """
 
@@ -46,7 +46,7 @@ class HTMLHeaderTextSplitter:
     def aggregate_elements_to_chunks(
         self, elements: List[ElementType]
     ) -> List[Document]:
-        """Combine elements with common metadata into chunks
+        """Combine elements with common metadata into chunks.
 
         Args:
             elements: HTML element content with associated identifying info and metadata
@@ -72,7 +72,7 @@ class HTMLHeaderTextSplitter:
         ]
 
     def split_text_from_url(self, url: str, **kwargs: Any) -> List[Document]:
-        """Split HTML from web URL
+        """Split HTML from web URL.
 
         Args:
             url: web URL
@@ -83,7 +83,7 @@ class HTMLHeaderTextSplitter:
         return self.split_text_from_file(BytesIO(r.content))
 
     def split_text(self, text: str) -> List[Document]:
-        """Split HTML text string
+        """Split HTML text string.
 
         Args:
             text: HTML text
@@ -91,7 +91,7 @@ class HTMLHeaderTextSplitter:
         return self.split_text_from_file(StringIO(text))
 
     def split_text_from_file(self, file: Any) -> List[Document]:
-        """Split HTML file
+        """Split HTML file.
 
         Args:
             file: HTML file
@@ -166,8 +166,8 @@ class HTMLHeaderTextSplitter:
 
 
 class HTMLSectionSplitter:
-    """
-    Splitting HTML files based on specified tag and font sizes.
+    """Splitting HTML files based on specified tag and font sizes.
+
     Requires lxml package.
     """
 
@@ -210,7 +210,7 @@ class HTMLSectionSplitter:
         return text_splitter.split_documents(results)
 
     def split_text(self, text: str) -> List[Document]:
-        """Split HTML text string
+        """Split HTML text string.
 
         Args:
             text: HTML text
@@ -299,7 +299,7 @@ class HTMLSectionSplitter:
         return str(result)
 
     def split_text_from_file(self, file: Any) -> List[Document]:
-        """Split HTML file
+        """Split HTML file.
 
         Args:
             file: HTML file

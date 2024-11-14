@@ -45,7 +45,8 @@ class MarkdownHeaderTextSplitter:
         self.strip_headers = strip_headers
 
     def aggregate_lines_to_chunks(self, lines: List[LineType]) -> List[Document]:
-        """Combine lines with common metadata into chunks
+        """Combine lines with common metadata into chunks.
+
         Args:
             lines: Line of text / associated header metadata
         """
@@ -87,10 +88,11 @@ class MarkdownHeaderTextSplitter:
         ]
 
     def split_text(self, text: str) -> List[Document]:
-        """Split markdown file
-        Args:
-            text: Markdown file"""
+        """Split markdown file.
 
+        Args:
+            text: Markdown file
+        """
         # Split the input text by newline character ("\n").
         lines = text.split("\n")
         # Final output
@@ -225,8 +227,7 @@ class HeaderType(TypedDict):
 
 
 class ExperimentalMarkdownSyntaxTextSplitter:
-    """
-    An experimental text splitter for handling Markdown syntax.
+    """An experimental text splitter for handling Markdown syntax.
 
     This splitter aims to retain the exact whitespace of the original text while
     extracting structured metadata, such as headers. It is a re-implementation of the

@@ -51,9 +51,7 @@ class RecursiveJsonSplitter:
         current_path: Optional[List[str]] = None,
         chunks: Optional[List[Dict]] = None,
     ) -> List[Dict]:
-        """
-        Split json into maximum size dictionaries while preserving structure.
-        """
+        """Split json into maximum size dictionaries while preserving structure."""
         current_path = current_path or []
         chunks = chunks if chunks is not None else [{}]
         if isinstance(data, dict):
@@ -83,8 +81,7 @@ class RecursiveJsonSplitter:
         json_data: Dict[str, Any],
         convert_lists: bool = False,
     ) -> List[Dict]:
-        """Splits JSON into a list of JSON chunks"""
-
+        """Splits JSON into a list of JSON chunks."""
         if convert_lists:
             chunks = self._json_split(self._list_to_dict_preprocessing(json_data))
         else:
@@ -101,8 +98,7 @@ class RecursiveJsonSplitter:
         convert_lists: bool = False,
         ensure_ascii: bool = True,
     ) -> List[str]:
-        """Splits JSON into a list of JSON formatted strings"""
-
+        """Splits JSON into a list of JSON formatted strings."""
         chunks = self.split_json(json_data=json_data, convert_lists=convert_lists)
 
         # Convert to string
