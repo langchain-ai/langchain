@@ -166,8 +166,10 @@ class ChatSambaNovaCloud(BaseChatModel):
                 top_k = model top k,
                 stream_options = include usage to get generation metrics
             )
+
     Invoke:
         .. code-block:: python
+
             messages = [
                 SystemMessage(content="your are an AI assistant."),
                 HumanMessage(content="tell me a joke."),
@@ -177,41 +179,41 @@ class ChatSambaNovaCloud(BaseChatModel):
     Stream:
         .. code-block:: python
 
-        for chunk in chat.stream(messages):
-            print(chunk.content, end="", flush=True)
+            for chunk in chat.stream(messages):
+                print(chunk.content, end="", flush=True)
 
     Async:
         .. code-block:: python
 
-        response = chat.ainvoke(messages)
-        await response
+            response = chat.ainvoke(messages)
+            await response
 
     Tool calling:
         .. code-block:: python
 
-        from pydantic import BaseModel, Field
+            from pydantic import BaseModel, Field
 
-        class GetWeather(BaseModel):
-            '''Get the current weather in a given location'''
+            class GetWeather(BaseModel):
+                '''Get the current weather in a given location'''
 
-            location: str = Field(
-                ...,
-                description="The city and state, e.g. Los Angeles, CA"
-            )
+                location: str = Field(
+                    ...,
+                    description="The city and state, e.g. Los Angeles, CA"
+                )
 
-        llm_with_tools = llm.bind_tools([GetWeather, GetPopulation])
-        ai_msg = llm_with_tools.invoke("Should I bring my umbrella today in LA?")
-        ai_msg.tool_calls
+            llm_with_tools = llm.bind_tools([GetWeather, GetPopulation])
+            ai_msg = llm_with_tools.invoke("Should I bring my umbrella today in LA?")
+            ai_msg.tool_calls
 
-        .. code-block:: python
+        .. code-block:: none
 
-        [
-            {
-                'name': 'GetWeather',
-                'args': {'location': 'Los Angeles, CA'},
-                'id': 'call_adf61180ea2b4d228a'
-            }
-        ]
+            [
+                {
+                    'name': 'GetWeather',
+                    'args': {'location': 'Los Angeles, CA'},
+                    'id': 'call_adf61180ea2b4d228a'
+                }
+            ]
 
     Structured output:
         .. code-block:: python
@@ -238,15 +240,17 @@ class ChatSambaNovaCloud(BaseChatModel):
 
     Token usage:
         .. code-block:: python
-        response = chat.invoke(messages)
-        print(response.response_metadata["usage"]["prompt_tokens"]
-        print(response.response_metadata["usage"]["total_tokens"]
+
+            response = chat.invoke(messages)
+            print(response.response_metadata["usage"]["prompt_tokens"]
+            print(response.response_metadata["usage"]["total_tokens"]
 
     Response metadata
         .. code-block:: python
 
-        response = chat.invoke(messages)
-        print(response.response_metadata)
+            response = chat.invoke(messages)
+            print(response.response_metadata)
+
     """
 
     sambanova_url: str = Field(default="")
@@ -569,6 +573,7 @@ class ChatSambaNovaCloud(BaseChatModel):
 
         Example: schema=None, method="json_mode", include_raw=True:
             .. code-block::
+
                 from langchain_community.chat_models import ChatSambaNovaCloud
 
                 llm = ChatSambaNovaCloud(model="Meta-Llama-3.1-70B-Instruct", temperature=0)
@@ -590,6 +595,7 @@ class ChatSambaNovaCloud(BaseChatModel):
 
         Example: schema=None, method="json_schema", include_raw=True:
             .. code-block::
+
                 from langchain_community.chat_models import ChatSambaNovaCloud
 
                 class AnswerWithJustification(BaseModel):
