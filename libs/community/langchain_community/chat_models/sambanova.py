@@ -615,6 +615,7 @@ class ChatSambaNovaCloud(BaseChatModel):
                 #     'parsed': AnswerWithJustification(answer='They are the same weight', justification='A pound is a unit of weight or mass, so a pound of bricks and a pound of feathers both weigh the same amount, one pound. The difference is in their density and volume. A pound of feathers would take up more space than a pound of bricks due to the difference in their densities.'),
                 #     'parsing_error': None
                 # }
+
         """  # noqa: E501
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
@@ -962,7 +963,9 @@ class ChatSambaStudio(BaseChatModel):
         ``SAMBASTUDIO_API_KEY`` set with your SambaStudio deployed endpoint Key.
         https://docs.sambanova.ai/sambastudio/latest/index.html
         Example:
+
         .. code-block:: python
+
             ChatSambaStudio(
                 sambastudio_url = set with your SambaStudio deployed endpoint URL,
                 sambastudio_api_key = set with your SambaStudio deployed endpoint Key.
@@ -1036,8 +1039,10 @@ class ChatSambaStudio(BaseChatModel):
                      set to false or for StandAlone v1 and v2 endpoints)
                 model_kwargs: Optional = Extra Key word arguments to pass to the model.
             )
+
     Invoke:
         .. code-block:: python
+
             messages = [
                 SystemMessage(content="your are an AI assistant."),
                 HumanMessage(content="tell me a joke."),
@@ -1047,53 +1052,77 @@ class ChatSambaStudio(BaseChatModel):
     Stream:
         .. code-block:: python
 
-        for chunk in chat.stream(messages):
-            print(chunk.content, end="", flush=True)
+            for chunk in chat.stream(messages):
+                print(chunk.content, end="", flush=True)
 
     Async:
         .. code-block:: python
 
-        response = chat.ainvoke(messages)
-        await response
+            response = chat.ainvoke(messages)
+            await response
 
     Tool calling:
         .. code-block:: python
 
-        from pydantic import BaseModel, Field
+            from pydantic import BaseModel, Field
 
-        class GetWeather(BaseModel):
-            '''Get the current weather in a given location'''
+            class GetWeather(BaseModel):
+                '''Get the current weather in a given location'''
 
-            location: str = Field(
-                ...,
-                description="The city and state, e.g. Los Angeles, CA"
-            )
+                location: str = Field(
+                    ...,
+                    description="The city and state, e.g. Los Angeles, CA"
+                )
 
-        llm_with_tools = llm.bind_tools([GetWeather, GetPopulation])
-        ai_msg = llm_with_tools.invoke("Should I bring my umbrella today in LA?")
-        ai_msg.tool_calls
+            llm_with_tools = llm.bind_tools([GetWeather, GetPopulation])
+            ai_msg = llm_with_tools.invoke("Should I bring my umbrella today in LA?")
+            ai_msg.tool_calls
 
         .. code-block:: python
 
-        [
-            {
-                'name': 'GetWeather',
-                'args': {'location': 'Los Angeles, CA'},
-                'id': 'call_adf61180ea2b4d228a'
-            }
-        ]
+            [
+                {
+                    'name': 'GetWeather',
+                    'args': {'location': 'Los Angeles, CA'},
+                    'id': 'call_adf61180ea2b4d228a'
+                }
+            ]
+
+    Structured output:
+        .. code-block:: python
+
+            from typing import Optional
+
+            from pydantic import BaseModel, Field
+
+            class Joke(BaseModel):
+                '''Joke to tell user.'''
+
+                setup: str = Field(description="The setup of the joke")
+                punchline: str = Field(description="The punchline to the joke")
+
+            structured_model = llm.with_structured_output(Joke)
+            structured_model.invoke("Tell me a joke about cats")
+
+        .. code-block:: python
+
+            Joke(setup="Why did the cat join a band?",
+            punchline="Because it wanted to be the purr-cussionist!")
+
+        See ``ChatSambaStudio.with_structured_output()`` for more.
 
     Token usage:
         .. code-block:: python
-        response = chat.invoke(messages)
-        print(response.response_metadata["usage"]["prompt_tokens"]
-        print(response.response_metadata["usage"]["total_tokens"]
+
+            response = chat.invoke(messages)
+            print(response.response_metadata["usage"]["prompt_tokens"]
+            print(response.response_metadata["usage"]["total_tokens"]
 
     Response metadata
         .. code-block:: python
 
-        response = chat.invoke(messages)
-        print(response.response_metadata)
+            response = chat.invoke(messages)
+            print(response.response_metadata)
     """
 
     sambastudio_url: str = Field(default="")
@@ -1248,6 +1277,319 @@ class ChatSambaStudio(BaseChatModel):
         kwargs["parallel_tool_calls"] = parallel_tool_calls
         return super().bind(tools=formatted_tools, **kwargs)
 
+    def with_structured_output(
+        self,
+        schema: Optional[Union[Dict[str, Any], Type[BaseModel]]] = None,
+        *,
+        method: Literal[
+            "function_calling", "json_mode", "json_schema"
+        ] = "function_calling",
+        include_raw: bool = False,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, Union[Dict[str, Any], BaseModel]]:
+        """Model wrapper that returns outputs formatted to match the given schema.
+
+        Args:
+            schema:
+                The output schema. Can be passed in as:
+                    - an OpenAI function/tool schema,
+                    - a JSON Schema,
+                    - a TypedDict class,
+                    - or a Pydantic class.
+                If ``schema`` is a Pydantic class then the model output will be a
+                Pydantic instance of that class, and the model-generated fields will be
+                validated by the Pydantic class. Otherwise the model output will be a
+                dict and will not be validated. See :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`
+                for more on how to properly specify types and descriptions of
+                schema fields when specifying a Pydantic or TypedDict class.
+
+            method:
+                The method for steering model generation, either "function_calling"
+                "json_mode" or "json_schema".
+                If "function_calling" then the schema will be converted
+                to an OpenAI function and the returned model will make use of the
+                function-calling API. If "json_mode" or "json_schema" then OpenAI's
+                JSON mode will be used.
+                Note that if using "json_mode" or "json_schema" then you must include instructions
+                for formatting the output into the desired schema into the model call.
+
+            include_raw:
+                If False then only the parsed structured output is returned. If
+                an error occurs during model output parsing it will be raised. If True
+                then both the raw model response (a BaseMessage) and the parsed model
+                response will be returned. If an error occurs during output parsing it
+                will be caught and returned as well. The final output is always a dict
+                with keys "raw", "parsed", and "parsing_error".
+
+        Returns:
+            A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
+
+            If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs
+            an instance of ``schema`` (i.e., a Pydantic object).
+
+            Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
+
+            If ``include_raw`` is True, then Runnable outputs a dict with keys:
+                - ``"raw"``: BaseMessage
+                - ``"parsed"``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
+                - ``"parsing_error"``: Optional[BaseException]
+
+        Example: schema=Pydantic class, method="function_calling", include_raw=False:
+            .. code-block:: python
+
+                from typing import Optional
+
+                from langchain_community.chat_models import ChatSambaStudio
+                from pydantic import BaseModel, Field
+
+
+                class AnswerWithJustification(BaseModel):
+                    '''An answer to the user question along with justification for the answer.'''
+
+                    answer: str
+                    justification: str = Field(
+                        description="A justification for the answer."
+                    )
+
+
+                llm = ChatSambaStudio(model="Meta-Llama-3.1-70B-Instruct", temperature=0)
+                structured_llm = llm.with_structured_output(AnswerWithJustification)
+
+                structured_llm.invoke(
+                    "What weighs more a pound of bricks or a pound of feathers"
+                )
+
+                # -> AnswerWithJustification(
+                #     answer='They weigh the same',
+                #     justification='A pound is a unit of weight or mass, so a pound of bricks and a pound of feathers both weigh the same.'
+                # )
+
+        Example: schema=Pydantic class, method="function_calling", include_raw=True:
+            .. code-block:: python
+
+                from langchain_community.chat_models import ChatSambaStudio
+                from pydantic import BaseModel
+
+
+                class AnswerWithJustification(BaseModel):
+                    '''An answer to the user question along with justification for the answer.'''
+
+                    answer: str
+                    justification: str
+
+
+                llm = ChatSambaStudio(model="Meta-Llama-3.1-70B-Instruct", temperature=0)
+                structured_llm = llm.with_structured_output(
+                    AnswerWithJustification, include_raw=True
+                )
+
+                structured_llm.invoke(
+                    "What weighs more a pound of bricks or a pound of feathers"
+                )
+                # -> {
+                #     'raw': AIMessage(content='', additional_kwargs={'tool_calls': [{'function': {'arguments': '{"answer": "They weigh the same.", "justification": "A pound is a unit of weight or mass, so one pound of bricks and one pound of feathers both weigh the same amount."}', 'name': 'AnswerWithJustification'}, 'id': 'call_17a431fc6a4240e1bd', 'type': 'function'}]}, response_metadata={'finish_reason': 'tool_calls', 'usage': {'acceptance_rate': 5, 'completion_tokens': 53, 'completion_tokens_after_first_per_sec': 343.7964936837758, 'completion_tokens_after_first_per_sec_first_ten': 439.1205661878638, 'completion_tokens_per_sec': 162.8511306784833, 'end_time': 1731527851.0698032, 'is_last_response': True, 'prompt_tokens': 213, 'start_time': 1731527850.7137961, 'time_to_first_token': 0.20475482940673828, 'total_latency': 0.32545061111450196, 'total_tokens': 266, 'total_tokens_per_sec': 817.3283162354066}, 'model_name': 'Meta-Llama-3.1-70B-Instruct', 'system_fingerprint': 'fastcoe', 'created': 1731527850}, id='95667eaf-447f-4b53-bb6e-b6e1094ded88', tool_calls=[{'name': 'AnswerWithJustification', 'args': {'answer': 'They weigh the same.', 'justification': 'A pound is a unit of weight or mass, so one pound of bricks and one pound of feathers both weigh the same amount.'}, 'id': 'call_17a431fc6a4240e1bd', 'type': 'tool_call'}]),
+                #     'parsed': AnswerWithJustification(answer='They weigh the same.', justification='A pound is a unit of weight or mass, so one pound of bricks and one pound of feathers both weigh the same amount.'),
+                #     'parsing_error': None
+                # }
+
+        Example: schema=TypedDict class, method="function_calling", include_raw=False:
+            .. code-block:: python
+
+                # IMPORTANT: If you are using Python <=3.8, you need to import Annotated
+                # from typing_extensions, not from typing.
+                from typing_extensions import Annotated, TypedDict
+
+                from langchain_community.chat_models import ChatSambaStudio
+
+
+                class AnswerWithJustification(TypedDict):
+                    '''An answer to the user question along with justification for the answer.'''
+
+                    answer: str
+                    justification: Annotated[
+                        Optional[str], None, "A justification for the answer."
+                    ]
+
+
+                llm = ChatSambaStudio(model="Meta-Llama-3.1-70B-Instruct", temperature=0)
+                structured_llm = llm.with_structured_output(AnswerWithJustification)
+
+                structured_llm.invoke(
+                    "What weighs more a pound of bricks or a pound of feathers"
+                )
+                # -> {
+                #     'answer': 'They weigh the same',
+                #     'justification': 'A pound is a unit of weight or mass, so one pound of bricks and one pound of feathers both weigh the same amount.'
+                # }
+
+        Example: schema=OpenAI function schema, method="function_calling", include_raw=False:
+            .. code-block:: python
+
+                from langchain_community.chat_models import ChatSambaStudio
+
+                oai_schema = {
+                    'name': 'AnswerWithJustification',
+                    'description': 'An answer to the user question along with justification for the answer.',
+                    'parameters': {
+                        'type': 'object',
+                        'properties': {
+                            'answer': {'type': 'string'},
+                            'justification': {'description': 'A justification for the answer.', 'type': 'string'}
+                        },
+                       'required': ['answer']
+                   }
+                }
+
+                llm = ChatSambaStudio(model="Meta-Llama-3.1-70B-Instruct", temperature=0)
+                structured_llm = llm.with_structured_output(oai_schema)
+
+                structured_llm.invoke(
+                    "What weighs more a pound of bricks or a pound of feathers"
+                )
+                # -> {
+                #     'answer': 'They weigh the same',
+                #     'justification': 'A pound is a unit of weight or mass, so one pound of bricks and one pound of feathers both weigh the same amount.'
+                # }
+
+        Example: schema=Pydantic class, method="json_mode", include_raw=True:
+            .. code-block::
+
+                from langchain_community.chat_models import ChatSambaStudio
+                from pydantic import BaseModel
+
+                class AnswerWithJustification(BaseModel):
+                    answer: str
+                    justification: str
+
+                llm = ChatSambaStudio(model="Meta-Llama-3.1-70B-Instruct", temperature=0)
+                structured_llm = llm.with_structured_output(
+                    AnswerWithJustification,
+                    method="json_mode",
+                    include_raw=True
+                )
+
+                structured_llm.invoke(
+                    "Answer the following question. "
+                    "Make sure to return a JSON blob with keys 'answer' and 'justification'.\n\n"
+                    "What's heavier a pound of bricks or a pound of feathers?"
+                )
+                # -> {
+                #     'raw': AIMessage(content='{\n  "answer": "They are the same weight",\n  "justification": "A pound is a unit of weight or mass, so a pound of bricks and a pound of feathers both weigh the same amount, one pound. The difference is in their density and volume. A pound of feathers would take up more space than a pound of bricks due to the difference in their densities."\n}', additional_kwargs={}, response_metadata={'finish_reason': 'stop', 'usage': {'acceptance_rate': 5.3125, 'completion_tokens': 79, 'completion_tokens_after_first_per_sec': 292.65701089829776, 'completion_tokens_after_first_per_sec_first_ten': 346.43324678555325, 'completion_tokens_per_sec': 200.012158915008, 'end_time': 1731528071.1708555, 'is_last_response': True, 'prompt_tokens': 70, 'start_time': 1731528070.737394, 'time_to_first_token': 0.16693782806396484, 'total_latency': 0.3949759876026827, 'total_tokens': 149, 'total_tokens_per_sec': 377.2381225105847}, 'model_name': 'Meta-Llama-3.1-70B-Instruct', 'system_fingerprint': 'fastcoe', 'created': 1731528070}, id='83208297-3eb9-4021-a856-ca78a15758df'),
+                #     'parsed': AnswerWithJustification(answer='They are the same weight', justification='A pound is a unit of weight or mass, so a pound of bricks and a pound of feathers both weigh the same amount, one pound. The difference is in their density and volume. A pound of feathers would take up more space than a pound of bricks due to the difference in their densities.'),
+                #     'parsing_error': None
+                # }
+
+        Example: schema=None, method="json_mode", include_raw=True:
+            .. code-block::
+
+                from langchain_community.chat_models import ChatSambaStudio
+
+                llm = ChatSambaStudio(model="Meta-Llama-3.1-70B-Instruct", temperature=0)
+                structured_llm = llm.with_structured_output(method="json_mode", include_raw=True)
+
+                structured_llm.invoke(
+                    "Answer the following question. "
+                    "Make sure to return a JSON blob with keys 'answer' and 'justification'.\n\n"
+                    "What's heavier a pound of bricks or a pound of feathers?"
+                )
+                # -> {
+                #     'raw': AIMessage(content='{\n  "answer": "They are the same weight",\n  "justification": "A pound is a unit of weight or mass, so a pound of bricks and a pound of feathers both weigh the same amount, one pound. The difference is in their density and volume. A pound of feathers would take up more space than a pound of bricks due to the difference in their densities."\n}', additional_kwargs={}, response_metadata={'finish_reason': 'stop', 'usage': {'acceptance_rate': 4.722222222222222, 'completion_tokens': 79, 'completion_tokens_after_first_per_sec': 357.1315485254867, 'completion_tokens_after_first_per_sec_first_ten': 416.83279609305305, 'completion_tokens_per_sec': 240.92819585198137, 'end_time': 1731528164.8474727, 'is_last_response': True, 'prompt_tokens': 70, 'start_time': 1731528164.4906917, 'time_to_first_token': 0.13837409019470215, 'total_latency': 0.3278985247892492, 'total_tokens': 149, 'total_tokens_per_sec': 454.4088757208256}, 'model_name': 'Meta-Llama-3.1-70B-Instruct', 'system_fingerprint': 'fastcoe', 'created': 1731528164}, id='15261eaf-8a25-42ef-8ed5-f63d8bf5b1b0'),
+                #     'parsed': {
+                #         'answer': 'They are the same weight',
+                #         'justification': 'A pound is a unit of weight or mass, so a pound of bricks and a pound of feathers both weigh the same amount, one pound. The difference is in their density and volume. A pound of feathers would take up more space than a pound of bricks due to the difference in their densities.'},
+                #     },
+                #     'parsing_error': None
+                # }
+
+        Example: schema=None, method="json_schema", include_raw=True:
+            .. code-block::
+
+                from langchain_community.chat_models import ChatSambaStudio
+
+                class AnswerWithJustification(BaseModel):
+                    answer: str
+                    justification: str
+
+                llm = ChatSambaStudio(model="Meta-Llama-3.1-70B-Instruct", temperature=0)
+                structured_llm = llm.with_structured_output(AnswerWithJustification, method="json_schema", include_raw=True)
+
+                structured_llm.invoke(
+                    "Answer the following question. "
+                    "Make sure to return a JSON blob with keys 'answer' and 'justification'.\n\n"
+                    "What's heavier a pound of bricks or a pound of feathers?"
+                )
+                # -> {
+                #     'raw': AIMessage(content='{\n  "answer": "They are the same weight",\n  "justification": "A pound is a unit of weight or mass, so a pound of bricks and a pound of feathers both weigh the same amount, one pound. The difference is in their density and volume. A pound of feathers would take up more space than a pound of bricks due to the difference in their densities."\n}', additional_kwargs={}, response_metadata={'finish_reason': 'stop', 'usage': {'acceptance_rate': 5.3125, 'completion_tokens': 79, 'completion_tokens_after_first_per_sec': 292.65701089829776, 'completion_tokens_after_first_per_sec_first_ten': 346.43324678555325, 'completion_tokens_per_sec': 200.012158915008, 'end_time': 1731528071.1708555, 'is_last_response': True, 'prompt_tokens': 70, 'start_time': 1731528070.737394, 'time_to_first_token': 0.16693782806396484, 'total_latency': 0.3949759876026827, 'total_tokens': 149, 'total_tokens_per_sec': 377.2381225105847}, 'model_name': 'Meta-Llama-3.1-70B-Instruct', 'system_fingerprint': 'fastcoe', 'created': 1731528070}, id='83208297-3eb9-4021-a856-ca78a15758df'),
+                #     'parsed': AnswerWithJustification(answer='They are the same weight', justification='A pound is a unit of weight or mass, so a pound of bricks and a pound of feathers both weigh the same amount, one pound. The difference is in their density and volume. A pound of feathers would take up more space than a pound of bricks due to the difference in their densities.'),
+                #     'parsing_error': None
+                # }
+
+        """  # noqa: E501
+        if kwargs:
+            raise ValueError(f"Received unsupported arguments {kwargs}")
+        is_pydantic_schema = _is_pydantic_class(schema)
+        if method == "function_calling":
+            if schema is None:
+                raise ValueError(
+                    "schema must be specified when method is 'function_calling'. "
+                    "Received None."
+                )
+            tool_name = convert_to_openai_tool(schema)["function"]["name"]
+            llm = self.bind_tools([schema], tool_choice=tool_name)
+            if is_pydantic_schema:
+                output_parser: OutputParserLike[Any] = PydanticToolsParser(
+                    tools=[schema],  # type: ignore[list-item]
+                    first_tool_only=True,
+                )
+            else:
+                output_parser = JsonOutputKeyToolsParser(
+                    key_name=tool_name, first_tool_only=True
+                )
+        elif method == "json_mode":
+            llm = self
+            # TODO bind response format when json mode available by API
+            # llm = self.bind(response_format={"type": "json_object"})
+            if is_pydantic_schema:
+                schema = cast(Type[BaseModel], schema)
+                output_parser = PydanticOutputParser(pydantic_object=schema)
+            else:
+                output_parser = JsonOutputParser()
+
+        elif method == "json_schema":
+            if schema is None:
+                raise ValueError(
+                    "schema must be specified when method is not 'json_mode'. "
+                    "Received None."
+                )
+            llm = self
+            # TODO bind response format when json schema available by API,
+            # update example
+            # llm = self.bind(
+            #   response_format={"type": "json_object", "json_schema": schema}
+            # )
+            if is_pydantic_schema:
+                schema = cast(Type[BaseModel], schema)
+                output_parser = PydanticOutputParser(pydantic_object=schema)
+            else:
+                output_parser = JsonOutputParser()
+        else:
+            raise ValueError(
+                f"Unrecognized method argument. Expected one of 'function_calling' or "
+                f"'json_mode'. Received: '{method}'"
+            )
+
+        if include_raw:
+            parser_assign = RunnablePassthrough.assign(
+                parsed=itemgetter("raw") | output_parser, parsing_error=lambda _: None
+            )
+            parser_none = RunnablePassthrough.assign(parsed=lambda _: None)
+            parser_with_fallback = parser_assign.with_fallbacks(
+                [parser_none], exception_key="parsing_error"
+            )
+            return RunnableMap(raw=llm) | parser_with_fallback
+        else:
+            return llm | output_parser
+
     def _get_role(self, message: BaseMessage) -> str:
         """
         Get the role of LangChain BaseMessage
@@ -1298,8 +1640,8 @@ class ChatSambaStudio(BaseChatModel):
                         "role": self._get_role(message),
                         "content": message.content,
                     }
+                    # TODO add tools msgs id and assistant msgs tool calls
                 )
-                # TODO add tools msgs id and assistant msgs tool calls
             messages_string = json.dumps(messages_dict)
         else:
             messages_string = self.special_tokens["start"]
