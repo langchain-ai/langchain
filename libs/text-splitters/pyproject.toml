@@ -33,6 +33,7 @@ select = [
     "T201",     # print
     "D",        # pydocstyle
 ]
+ignore = ["D100"]  # ignore missing module docstring
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
