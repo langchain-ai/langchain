@@ -319,8 +319,9 @@ class YoutubeLoader(BaseLoader):
                 'Could not import "pytube" Python package. '
                 "Please install it with `pip install pytube`."
             )
+        yt_url = f"https://www.youtube.com/watch?v={self.video_id}"    
         yt = YouTube(
-             f"https://www.youtube.com/watch?v={self.video_id}",
+             yt_url,
              use_oauth=True,
              allow_oauth_cache=True
             )
