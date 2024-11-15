@@ -138,8 +138,8 @@ export default function EmbeddingTabs(props) {
         shouldHide: hideNvidia,
       },
       {
-        value: "Fake Embedding",
-        label: "Fake Embedding",
+        value: "Fake",
+        label: "Fake",
         text: `from langchain_core.embeddings import FakeEmbeddings\n\n${embeddingVarName} = FakeEmbeddings(${fakeEmbeddingParamsOrDefault})`,
         apiKeyName: undefined,
         packageName: "langchain-core",
