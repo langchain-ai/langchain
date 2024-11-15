@@ -42,6 +42,7 @@ if TYPE_CHECKING:
         AzureAISearchRetriever,
         AzureCognitiveSearchRetriever,
         BM25Retriever,
+        BM25SRetriever,
         ChaindeskRetriever,
         ChatGPTPluginRetriever,
         CohereRagRetriever,
