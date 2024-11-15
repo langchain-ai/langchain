@@ -42,11 +42,11 @@ pydantic-settings = "^2.4.0"
 langsmith = "^0.1.125"
 httpx-sse = "^0.4.0"
 [[tool.poetry.dependencies.numpy]]
-version = "^1"
+version = ">=1.22.4,<2"
 python = "<3.12"
 
 [[tool.poetry.dependencies.numpy]]
-version = "^1.26.0"
+version = ">=1.26.2,<2"
 python = ">=3.12"
 
 [tool.ruff.lint]
