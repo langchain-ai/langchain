@@ -54,8 +54,8 @@ class TestHuggingFaceEndpoint(ChatModelIntegrationTests):
         super().test_tool_calling(model)
 
     @pytest.mark.xfail(reason=("Not implemented"))
-    def test_tool_calling_async(self, model: BaseChatModel) -> None:
-        super().test_tool_calling_async(model)
+    async def test_tool_calling_async(self, model: BaseChatModel) -> None:
+        await super().test_tool_calling_async(model)
 
     @pytest.mark.xfail(reason=("Not implemented"))
     def test_tool_calling_with_no_arguments(self, model: BaseChatModel) -> None:
