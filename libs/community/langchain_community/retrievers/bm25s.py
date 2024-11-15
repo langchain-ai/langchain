@@ -1,11 +1,12 @@
 from __future__ import annotations
-from typing import Any, Dict, Iterable, List, Optional
+
 import json
+from typing import Any, Dict, Iterable, List, Optional
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
-from pydantic import Field
 from langchain_core.retrievers import BaseRetriever
+from pydantic import Field
 
 DEFAULT_PERSISTENCE_DIRECTORY = "./bm25s_index"
 CORPUS_PERSISTENCE_FILE = "corpus.jsonl"
@@ -22,6 +23,7 @@ class BM25SRetriever(BaseRetriever):
     As usual, with Runnables, there's a default async implementation that's provided
     that delegates to the sync implementation running on another thread.
     """
+
     vectorizer: Any
     """ BM25S vectorizer."""
     docs: List[Document] = Field(repr=False)
@@ -62,8 +64,7 @@ class BM25SRetriever(BaseRetriever):
             from bm25s import tokenize as bm25s_tokenize
         except ImportError:
             raise ImportError(
-                "Could not import bm25s, please install with `pip install "
-                "bm25s`."
+                "Could not import bm25s, please install with `pip install " "bm25s`."
             )
 
         bm25_params = bm25_params or {}
@@ -83,7 +84,7 @@ class BM25SRetriever(BaseRetriever):
             for i, d in enumerate(docs):
                 entry = {"id": i, "text": d.page_content, "metadata": d.metadata}
                 doc_str = json.dumps(entry)
-                f.write(doc_str + '\n')
+                f.write(doc_str + "\n")
 
         return cls(vectorizer=vectorizer, docs=docs, **kwargs)
 
@@ -124,10 +125,10 @@ class BM25SRetriever(BaseRetriever):
         with open(f"{path}/{CORPUS_PERSISTENCE_FILE}", "r") as f:
             corpus = [json.loads(line) for line in f]
 
-        docs = [Document(page_content=d['text'], metadata=d['metadata']) for d in corpus]
-        return cls(
-            vectorizer=vectorizer, docs=docs, **kwargs
-        )
+        docs = [
+            Document(page_content=d["text"], metadata=d["metadata"]) for d in corpus
+        ]
+        return cls(vectorizer=vectorizer, docs=docs, **kwargs)
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
@@ -137,11 +138,12 @@ class BM25SRetriever(BaseRetriever):
         processed_query = bm25s_tokenize(query)
         if self.activate_numba:
             self.vectorizer.activate_numba_scorer()
-            return_docs = self.vectorizer.retrieve(processed_query, k=self.k, backend_selection="numba")
+            return_docs = self.vectorizer.retrieve(
+                processed_query, k=self.k, backend_selection="numba"
+            )
             return [self.docs[i] for i in return_docs.documents[0]]
         else:
-            return_docs, scores = self.vectorizer.retrieve(processed_query, self.docs, k=self.k)
+            return_docs, scores = self.vectorizer.retrieve(
+                processed_query, self.docs, k=self.k
+            )
             return [return_docs[0, i] for i in range(return_docs.shape[1])]
-
-
-
