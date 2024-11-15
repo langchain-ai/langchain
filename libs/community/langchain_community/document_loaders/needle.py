@@ -8,7 +8,6 @@ from needle.v1.models import FileToAdd
 
 class NeedleLoader(BaseLoader):
     """NeedleLoader.
-
     Loads files from a Needle collection and converts them into LangChain `Document` objects.
     """
 
