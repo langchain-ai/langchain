@@ -327,7 +327,7 @@ class ChatOllama(BaseChatModel):
     """Base url the model is hosted under."""
 
     client_kwargs: Optional[dict] = {}
-    """Additional kwargs to pass to the httpx Client. 
+    """Additional kwargs to pass to the httpx Client.
     For a full list of the params, see [this link](https://pydoc.dev/httpx/latest/httpx.Client.html)
     """
 
@@ -475,26 +475,27 @@ class ChatOllama(BaseChatModel):
                 params[key] = kwargs[key]
 
         params["options"]["stop"] = stop
-        if "tools" in kwargs:
-            yield await self._async_client.chat(
-                model=params["model"],
-                messages=ollama_messages,
-                stream=False,
-                options=Options(**params["options"]),
-                keep_alive=params["keep_alive"],
-                format=params["format"],
-                tools=kwargs["tools"],
-            )  # type:ignore
-        else:
-            async for part in await self._async_client.chat(
-                model=params["model"],
-                messages=ollama_messages,
-                stream=True,
-                options=Options(**params["options"]),
-                keep_alive=params["keep_alive"],
-                format=params["format"],
-            ):  # type:ignore
+
+        tools = kwargs.get("tools", None)
+        stream = tools is None or len(tools) == 0
+
+        chat_params = {
+            "model": params["model"],
+            "messages": ollama_messages,
+            "stream": stream,
+            "options": Options(**params["options"]),
+            "keep_alive": params["keep_alive"],
+            "format": params["format"],
+        }
+
+        if tools is not None:
+            chat_params["tools"] = tools
+
+        if stream:
+            async for part in await self._async_client.chat(**chat_params):
                 yield part
+        else:
+            yield await self._async_client.chat(**chat_params)
 
     def _create_chat_stream(
         self,
@@ -513,25 +514,26 @@ class ChatOllama(BaseChatModel):
                 params[key] = kwargs[key]
 
         params["options"]["stop"] = stop
-        if "tools" in kwargs:
-            yield self._client.chat(
-                model=params["model"],
-                messages=ollama_messages,
-                stream=False,
-                options=Options(**params["options"]),
-                keep_alive=params["keep_alive"],
-                format=params["format"],
-                tools=kwargs["tools"],
-            )
+
+        tools = kwargs.get("tools", None)
+        stream = tools is None or len(tools) == 0
+
+        chat_params = {
+            "model": params["model"],
+            "messages": ollama_messages,
+            "stream": stream,
+            "options": Options(**params["options"]),
+            "keep_alive": params["keep_alive"],
+            "format": params["format"],
+        }
+
+        if tools is not None:
+            chat_params["tools"] = tools
+
+        if stream:
+            yield from self._client.chat(**chat_params)
         else:
-            yield from self._client.chat(
-                model=params["model"],
-                messages=ollama_messages,
-                stream=True,
-                options=Options(**params["options"]),
-                keep_alive=params["keep_alive"],
-                format=params["format"],
-            )
+            yield self._client.chat(**chat_params)
 
     def _chat_stream_with_aggregation(
         self,
