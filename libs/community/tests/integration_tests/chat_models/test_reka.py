@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.mark.requires("reka")
+@pytest.mark.skip(reason="Dependency conflict w/ other dependencies for urllib3 versions.")
 def test_reka_call() -> None:
     """Test a simple call to Reka."""
     chat = ChatReka(model="reka-flash", verbose=True)
@@ -32,6 +33,7 @@ def test_reka_call() -> None:
 
 
 @pytest.mark.requires("reka")
+@pytest.mark.skip(reason="Dependency conflict w/ other dependencies for urllib3 versions.")
 def test_reka_generate() -> None:
     """Test the generate method of Reka."""
     chat = ChatReka(model="reka-flash", verbose=True)
@@ -50,6 +52,7 @@ def test_reka_generate() -> None:
 
 
 @pytest.mark.requires("reka")
+@pytest.mark.skip(reason="Dependency conflict w/ other dependencies for urllib3 versions.")
 def test_reka_streaming() -> None:
     """Test streaming tokens from Reka."""
     chat = ChatReka(model="reka-flash", streaming=True, verbose=True)
@@ -61,6 +64,7 @@ def test_reka_streaming() -> None:
 
 
 @pytest.mark.requires("reka")
+@pytest.mark.skip(reason="Dependency conflict w/ other dependencies for urllib3 versions.")
 def test_reka_streaming_callback() -> None:
     """Test that streaming correctly invokes callbacks."""
     callback_handler = FakeCallbackHandler()
@@ -77,6 +81,7 @@ def test_reka_streaming_callback() -> None:
 
 
 @pytest.mark.requires("reka")
+@pytest.mark.skip(reason="Dependency conflict w/ other dependencies for urllib3 versions.")
 async def test_reka_async_streaming_callback() -> None:
     """Test asynchronous streaming with callbacks."""
     callback_handler = FakeCallbackHandler()
@@ -100,6 +105,7 @@ async def test_reka_async_streaming_callback() -> None:
 
 
 @pytest.mark.requires("reka")
+@pytest.mark.skip(reason="Dependency conflict w/ other dependencies for urllib3 versions.")
 def test_reka_tool_usage_integration() -> None:
     """Test tool usage with Reka API integration."""
     # Initialize the ChatReka model with tools and verbose logging
@@ -170,6 +176,7 @@ def test_reka_tool_usage_integration() -> None:
 
 
 @pytest.mark.requires("reka")
+@pytest.mark.skip(reason="Dependency conflict w/ other dependencies for urllib3 versions.")
 def test_reka_system_message() -> None:
     """Test Reka with system message."""
     chat = ChatReka(model="reka-flash", verbose=True)
@@ -184,6 +191,7 @@ def test_reka_system_message() -> None:
 
 
 @pytest.mark.requires("reka")
+@pytest.mark.skip(reason="Dependency conflict w/ other dependencies for urllib3 versions.")
 def test_reka_system_message_multi_turn() -> None:
     """Test multi-turn conversation with system message."""
     chat = ChatReka(model="reka-flash", verbose=True)
