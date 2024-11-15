@@ -16,7 +16,6 @@ from langchain_community.chat_models.reka import (
 os.environ["REKA_API_KEY"] = "dummy_key"
 
 
-@pytest.mark.requires("reka")
 @pytest.mark.skip(
     reason="Dependency conflict w/ other dependencies for urllib3 versions."
 )
@@ -25,7 +24,6 @@ def test_reka_model_param() -> None:
     assert llm.model == "reka-flash"
 
 
-@pytest.mark.requires("reka")
 @pytest.mark.skip(
     reason="Dependency conflict w/ other dependencies for urllib3 versions."
 )
@@ -34,7 +32,6 @@ def test_reka_model_kwargs() -> None:
     assert llm.model_kwargs == {"foo": "bar"}
 
 
-@pytest.mark.requires("reka")
 @pytest.mark.skip(
     reason="Dependency conflict w/ other dependencies for urllib3 versions."
 )
@@ -44,7 +41,6 @@ def test_reka_incorrect_field() -> None:
         ChatReka(unknown_field="bar")  # type: ignore
 
 
-@pytest.mark.requires("reka")
 @pytest.mark.skip(
     reason="Dependency conflict w/ other dependencies for urllib3 versions."
 )
@@ -55,7 +51,6 @@ def test_reka_initialization() -> None:
     ChatReka(model="reka-flash", reka_api_key="test_key")
 
 
-@pytest.mark.requires("reka")
 @pytest.mark.skip(
     reason="Dependency conflict w/ other dependencies for urllib3 versions."
 )
@@ -96,7 +91,6 @@ def test_process_content(content: Any, expected: List[Dict[str, Any]]) -> None:
     assert result == expected
 
 
-@pytest.mark.requires("reka")
 @pytest.mark.skip(
     reason="Dependency conflict w/ other dependencies for urllib3 versions."
 )
@@ -148,7 +142,6 @@ def test_convert_to_reka_messages(
     assert result == expected
 
 
-@pytest.mark.requires("reka")
 @pytest.mark.skip(
     reason="Dependency conflict w/ other dependencies for urllib3 versions."
 )
@@ -157,7 +150,6 @@ def test_reka_streaming() -> None:
     assert llm.streaming is True
 
 
-@pytest.mark.requires("reka")
 @pytest.mark.skip(
     reason="Dependency conflict w/ other dependencies for urllib3 versions."
 )
@@ -166,7 +158,6 @@ def test_reka_temperature() -> None:
     assert llm.temperature == 0.5
 
 
-@pytest.mark.requires("reka")
 @pytest.mark.skip(
     reason="Dependency conflict w/ other dependencies for urllib3 versions."
 )
@@ -175,7 +166,6 @@ def test_reka_max_tokens() -> None:
     assert llm.max_tokens == 100
 
 
-@pytest.mark.requires("reka")
 @pytest.mark.skip(
     reason="Dependency conflict w/ other dependencies for urllib3 versions."
 )
@@ -187,7 +177,6 @@ def test_reka_default_params() -> None:
     }
 
 
-@pytest.mark.requires("reka")
 @pytest.mark.skip(
     reason="Dependency conflict w/ other dependencies for urllib3 versions."
 )
@@ -202,7 +191,6 @@ def test_reka_identifying_params() -> None:
     assert chat._default_params == expected_params
 
 
-@pytest.mark.requires("reka")
 @pytest.mark.skip(
     reason="Dependency conflict w/ other dependencies for urllib3 versions."
 )
@@ -211,7 +199,6 @@ def test_reka_llm_type() -> None:
     assert llm._llm_type == "reka-chat"
 
 
-@pytest.mark.requires("reka")
 @pytest.mark.skip(
     reason="Dependency conflict w/ other dependencies for urllib3 versions."
 )
@@ -249,7 +236,6 @@ def test_reka_tool_use_with_mocked_response() -> None:
         )
 
 
-@pytest.mark.requires("reka")
 @pytest.mark.skip(
     reason="Dependency conflict w/ other dependencies for urllib3 versions."
 )
@@ -333,7 +319,6 @@ def test_system_message_handling(
     assert result == expected
 
 
-@pytest.mark.requires("reka")
 @pytest.mark.skip(
     reason="Dependency conflict w/ other dependencies for urllib3 versions."
 )
@@ -349,8 +334,6 @@ def test_multiple_system_messages_error() -> None:
         convert_to_reka_messages(messages)
 
 
-@pytest.mark.requires("tiktoken")
-@pytest.mark.requires("reka")
 @pytest.mark.skip(
     reason="Dependency conflict w/ other dependencies for urllib3 versions."
 )

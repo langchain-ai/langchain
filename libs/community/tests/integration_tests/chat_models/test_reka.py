@@ -20,7 +20,6 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
-@pytest.mark.requires("reka")
 @pytest.mark.skip(
     reason="Dependency conflict w/ other dependencies for urllib3 versions."
 )
@@ -34,7 +33,6 @@ def test_reka_call() -> None:
     logger.debug(f"Response content: {response.content}")
 
 
-@pytest.mark.requires("reka")
 @pytest.mark.skip(
     reason="Dependency conflict w/ other dependencies for urllib3 versions."
 )
@@ -55,7 +53,6 @@ def test_reka_generate() -> None:
     assert chat_messages == messages_copy
 
 
-@pytest.mark.requires("reka")
 @pytest.mark.skip(
     reason="Dependency conflict w/ other dependencies for urllib3 versions."
 )
@@ -69,7 +66,6 @@ def test_reka_streaming() -> None:
     logger.debug(f"Streaming response content: {response.content}")
 
 
-@pytest.mark.requires("reka")
 @pytest.mark.skip(
     reason="Dependency conflict w/ other dependencies for urllib3 versions."
 )
@@ -88,7 +84,6 @@ def test_reka_streaming_callback() -> None:
     logger.debug(f"Number of LLM streams: {callback_handler.llm_streams}")
 
 
-@pytest.mark.requires("reka")
 @pytest.mark.skip(
     reason="Dependency conflict w/ other dependencies for urllib3 versions."
 )
@@ -114,7 +109,6 @@ async def test_reka_async_streaming_callback() -> None:
         logger.debug(f"Async generated response: {response.text}")
 
 
-@pytest.mark.requires("reka")
 @pytest.mark.skip(
     reason="Dependency conflict w/ other dependencies for urllib3 versions."
 )
@@ -187,7 +181,6 @@ def test_reka_tool_usage_integration() -> None:
         pytest.fail("The model did not request a tool.")
 
 
-@pytest.mark.requires("reka")
 @pytest.mark.skip(
     reason="Dependency conflict w/ other dependencies for urllib3 versions."
 )
@@ -204,7 +197,6 @@ def test_reka_system_message() -> None:
     logger.debug(f"Response with system message: {response.content}")
 
 
-@pytest.mark.requires("reka")
 @pytest.mark.skip(
     reason="Dependency conflict w/ other dependencies for urllib3 versions."
 )
