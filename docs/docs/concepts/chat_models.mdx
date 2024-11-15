@@ -2,7 +2,7 @@
 
 ## Overview
 
-Large Language Models (LLMs) are advanced machine learning models that excel in a wide range of language-related tasks such as text generation, translation, summarization, question answering, and more, without needing task-specific tuning for every scenario.
+Large Language Models (LLMs) are advanced machine learning models that excel in a wide range of language-related tasks such as text generation, translation, summarization, question answering, and more, without needing task-specific fine tuning for every scenario.
 
 Modern LLMs are typically accessed through a chat model interface that takes a list of [messages](/docs/concepts/messages) as input and returns a [message](/docs/concepts/messages) as output.
 
@@ -85,7 +85,7 @@ Many chat models have standardized parameters that can be used to configure the 
 | Parameter      | Description                                                                                                                                                                                                                                                                                                    |
 |----------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `model`        | The name or identifier of the specific AI model you want to use (e.g., `"gpt-3.5-turbo"` or `"gpt-4"`).                                                                                                                                                                                                        |
-| `temperature`  | Controls the randomness of the model's output. A higher value (e.g., 1.0) makes responses more creative, while a lower value (e.g., 0.1) makes them more deterministic and focused.                                                                                                                            |
+| `temperature`  | Controls the randomness of the model's output. A higher value (e.g., 1.0) makes responses more creative, while a lower value (e.g., 0.0) makes them more deterministic and focused.                                                                                                                            |
 | `timeout`      | The maximum time (in seconds) to wait for a response from the model before canceling the request. Ensures the request doesn’t hang indefinitely.                                                                                                                                                               |
 | `max_tokens`   | Limits the total number of tokens (words and punctuation) in the response. This controls how long the output can be.                                                                                                                                                                                           |
 | `stop`         | Specifies stop sequences that indicate when the model should stop generating tokens. For example, you might use specific strings to signal the end of a response.                                                                                                                                              |
@@ -97,9 +97,9 @@ Many chat models have standardized parameters that can be used to configure the 
 Some important things to note:
 
 - Standard parameters only apply to model providers that expose parameters with the intended functionality. For example, some providers do not expose a configuration for maximum output tokens, so max_tokens can't be supported on these.
-- Standard params are currently only enforced on integrations that have their own integration packages (e.g. `langchain-openai`, `langchain-anthropic`, etc.), they're not enforced on models in ``langchain-community``.
+- Standard parameters are currently only enforced on integrations that have their own integration packages (e.g. `langchain-openai`, `langchain-anthropic`, etc.), they're not enforced on models in `langchain-community`.
 
-ChatModels also accept other parameters that are specific to that integration. To find all the parameters supported by a ChatModel head to the [API reference](https://python.langchain.com/api_reference/) for that model.
+Chat models also accept other parameters that are specific to that integration. To find all the parameters supported by a Chat model head to the their respective [API reference](https://python.langchain.com/api_reference/) for that model.
 
 ## Tool calling
 
@@ -150,7 +150,7 @@ An alternative approach is to use semantic caching, where you cache responses ba
 
 A semantic cache introduces a dependency on another model on the critical path of your application (e.g., the semantic cache may rely on an [embedding model](/docs/concepts/embedding_models) to convert text to a vector representation), and it's not guaranteed to capture the meaning of the input accurately.
 
-However, there might be situations where caching chat model responses is beneficial. For example, if you have a chat model that is used to answer frequently asked questions, caching responses can help reduce the load on the model provider and improve response times.
+However, there might be situations where caching chat model responses is beneficial. For example, if you have a chat model that is used to answer frequently asked questions, caching responses can help reduce the load on the model provider, costs, and improve response times.
 
 Please see the [how to cache chat model responses](/docs/how_to/chat_model_caching/) guide for more details.
 
