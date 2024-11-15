@@ -13,16 +13,7 @@ CORPUS_PERSISTENCE_FILE = "corpus.jsonl"
 
 
 class BM25SRetriever(BaseRetriever):
-    """A toy retriever that contains the top k documents that contain the user query.
-
-    This retriever only implements the sync method _get_relevant_documents.
-
-    If the retriever were to involve file access or network access, it could benefit
-    from a native async implementation of `_aget_relevant_documents`.
-
-    As usual, with Runnables, there's a default async implementation that's provided
-    that delegates to the sync implementation running on another thread.
-    """
+    """`BM25` retriever with `bm25s` backend"""
 
     vectorizer: Any
     """ BM25S vectorizer."""
