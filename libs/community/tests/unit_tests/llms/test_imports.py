@@ -70,6 +70,7 @@ EXPECT_ALL = [
     "PaiEasEndpoint",
     "Petals",
     "PipelineAI",
+    "Pipeshift",
     "Predibase",
     "PredictionGuard",
     "PromptLayerOpenAI",
