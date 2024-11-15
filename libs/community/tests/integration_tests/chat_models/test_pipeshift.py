@@ -8,7 +8,7 @@ DEFAULT_MODEL = "mistralai/Mistral-7B-Instruct-v0.3"
 
 def test_chat_pipeshift_model() -> None:
     """Test ChatPipeshift wrapper handles model."""
-    chat = ChatPipeshift(model="foo") # type: ignore[call-arg]
+    chat = ChatPipeshift(model="foo")  # type: ignore[call-arg]
     assert chat.model == "foo"
     chat = ChatPipeshift(model="bar")  # type: ignore[call-arg]
     assert chat.model == "bar"
@@ -17,7 +17,7 @@ def test_chat_pipeshift_model() -> None:
 @pytest.mark.enable_socket
 def test_chat_pipeshift_system_message() -> None:
     """Test ChatPipeshift wrapper with system message."""
-    chat = ChatPipeshift(max_tokens=10) # type: ignore[call-arg]
+    chat = ChatPipeshift(max_tokens=10)  # type: ignore[call-arg]
     system_message = SystemMessage(content="You are to chat with the user.")
     human_message = HumanMessage(content="Hello")
     messages = [system_message, human_message]
@@ -74,17 +74,17 @@ def test_chat_pipeshift_extra_kwargs() -> None:
 
     # Test that if explicit param is specified in kwargs it errors
     with pytest.raises(ValueError):
-        ChatPipeshift(model_kwargs={"temperature": 0.2}) # type: ignore[call-arg]
+        ChatPipeshift(model_kwargs={"temperature": 0.2})  # type: ignore[call-arg]
 
     # Test that "model" cannot be specified in kwargs
     with pytest.raises(ValueError):
-        ChatPipeshift(model_kwargs={"model": DEFAULT_MODEL}) # type: ignore[call-arg]
+        ChatPipeshift(model_kwargs={"model": DEFAULT_MODEL})  # type: ignore[call-arg]
 
 
 @pytest.mark.enable_socket
 def test_stream() -> None:
     """Test streaming tokens from Pipeshift."""
-    llm = ChatPipeshift() # type: ignore[call-arg]
+    llm = ChatPipeshift()  # type: ignore[call-arg]
 
     for token in llm.stream("I'm Pickle Rick"):
         assert isinstance(token.content, str)
@@ -93,7 +93,7 @@ def test_stream() -> None:
 @pytest.mark.enable_socket
 async def test_astream() -> None:
     """Test streaming tokens from Pipeshift."""
-    llm = ChatPipeshift() # type: ignore[call-arg]
+    llm = ChatPipeshift()  # type: ignore[call-arg]
 
     async for token in llm.astream("I'm Pickle Rick"):
         assert isinstance(token.content, str)
@@ -102,7 +102,7 @@ async def test_astream() -> None:
 @pytest.mark.enable_socket
 async def test_abatch() -> None:
     """Test streaming tokens from ChatPipeshift."""
-    llm = ChatPipeshift() # type: ignore[call-arg]
+    llm = ChatPipeshift()  # type: ignore[call-arg]
 
     result = await llm.abatch(["I'm Pickle Rick", "I'm not Pickle Rick"])
     for token in result:
@@ -112,7 +112,7 @@ async def test_abatch() -> None:
 @pytest.mark.enable_socket
 async def test_abatch_tags() -> None:
     """Test batch tokens from ChatPipeshift."""
-    llm = ChatPipeshift() # type: ignore[call-arg]
+    llm = ChatPipeshift()  # type: ignore[call-arg]
 
     result = await llm.abatch(
         ["I'm Pickle Rick", "I'm not Pickle Rick"], config={"tags": ["foo"]}
@@ -124,7 +124,7 @@ async def test_abatch_tags() -> None:
 @pytest.mark.enable_socket
 def test_batch() -> None:
     """Test batch tokens from ChatPipeshift."""
-    llm = ChatPipeshift() # type: ignore[call-arg]
+    llm = ChatPipeshift()  # type: ignore[call-arg]
 
     result = llm.batch(["I'm Pickle Rick", "I'm not Pickle Rick"])
     for token in result:
@@ -134,7 +134,7 @@ def test_batch() -> None:
 @pytest.mark.enable_socket
 async def test_ainvoke() -> None:
     """Test invoke tokens from ChatPipeshift."""
-    llm = ChatPipeshift() # type: ignore[call-arg]
+    llm = ChatPipeshift()  # type: ignore[call-arg]
 
     result = await llm.ainvoke("I'm Pickle Rick", config={"tags": ["foo"]})
     assert isinstance(result.content, str)
@@ -143,7 +143,7 @@ async def test_ainvoke() -> None:
 @pytest.mark.enable_socket
 def test_invoke() -> None:
     """Test invoke tokens from ChatPipeshift."""
-    llm = ChatPipeshift() # type: ignore[call-arg]
+    llm = ChatPipeshift()  # type: ignore[call-arg]
 
     result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
     assert isinstance(result.content, str)

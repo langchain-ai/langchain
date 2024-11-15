@@ -21,12 +21,12 @@ from langchain_community.chat_models.pipeshift import ChatPipeshift
 def test_initialization() -> None:
     """Test chat model initialization."""
     with patch.dict(os.environ, {"PIPESHIFT_API_KEY": "dummy_key"}):
-        ChatPipeshift() # type: ignore[call-arg]
+        ChatPipeshift()  # type: ignore[call-arg]
 
 
 def test_pipeshift_model_param() -> None:
     with patch.dict(os.environ, {"PIPESHIFT_API_KEY": "dummy_key"}):
-        llm = ChatPipeshift(model="foo") # type: ignore[call-arg]
+        llm = ChatPipeshift(model="foo")  # type: ignore[call-arg]
         assert llm.model == "foo"
         llm = ChatPipeshift(model="foo")  # type: ignore[call-arg]
         assert llm.model == "foo"
