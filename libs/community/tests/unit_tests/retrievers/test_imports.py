@@ -38,6 +38,7 @@ EXPECTED_ALL = [
     "RememberizerRetriever",
     "TFIDFRetriever",
     "BM25Retriever",
+    "BM25SRetriever",
     "VespaRetriever",
     "WeaviateHybridSearchRetriever",
     "WikipediaRetriever",
