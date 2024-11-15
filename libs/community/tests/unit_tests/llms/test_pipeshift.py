@@ -11,7 +11,7 @@ from langchain_community.llms.pipeshift import Pipeshift
 def test_pipeshift_api_key_is_secret_string() -> None:
     """Test that the API key is stored as a SecretStr."""
     llm = Pipeshift(
-        pipeshift_api_key="secret-api-key",  # type: ignore[call-arg]
+        pipeshift_api_key="secret-api-key",  # type: ignore[arg-type]
         model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
         temperature=0.2,
         max_tokens=512,
@@ -40,7 +40,7 @@ def test_pipeshift_api_key_masked_when_passed_via_constructor(
 ) -> None:
     """Test that the API key is masked when passed via the constructor."""
     llm = Pipeshift(
-        pipeshift_api_key="secret-api-key",  # type: ignore[call-arg]
+        pipeshift_api_key="secret-api-key",  # type: ignore[arg-type]
         model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
         temperature=0.2,
         max_tokens=512,
@@ -54,7 +54,7 @@ def test_pipeshift_api_key_masked_when_passed_via_constructor(
 def test_pipeshift_uses_actual_secret_value_from_secretstr() -> None:
     """Test that the actual secret value is correctly retrieved."""
     llm = Pipeshift(
-        pipeshift_api_key="secret-api-key",  # type: ignore[call-arg]
+        pipeshift_api_key="secret-api-key", # type: ignore[arg-type]
         model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
         temperature=0.2,
         max_tokens=512,
