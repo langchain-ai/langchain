@@ -1847,8 +1847,8 @@ langchain-core = "^0.3.15"
 langchain-text-splitters = "^0.3.0"
 langsmith = "^0.1.17"
 numpy = [
-    {version = ">=1,<2", markers = "python_version < \"3.12\""},
-    {version = ">=1.26.0,<2.0.0", markers = "python_version >= \"3.12\""},
+    {version = ">=1.22.4,<2", markers = "python_version < \"3.12\""},
+    {version = ">=1.26.2,<2", markers = "python_version >= \"3.12\""},
 ]
 pydantic = "^2.7.4"
 PyYAML = ">=5.3"
@@ -4545,4 +4545,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0"
-content-hash = "a02b86c4746a93545fe99f8a30ea9becedead16f881254d7763a052ec50c9648"
+content-hash = "19d0e7026b0f8b3f829ac928a80325ee1b07cd8788707f1df8ab9496712814a1"
