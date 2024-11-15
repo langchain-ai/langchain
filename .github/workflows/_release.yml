@@ -267,12 +267,6 @@ jobs:
           make tests
         working-directory: ${{ inputs.working-directory }}
 
-      - name: 'Authenticate to Google Cloud'
-        id: 'auth'
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
-
       - name: Import integration test dependencies
         run: poetry install --with test,test_integration
         working-directory: ${{ inputs.working-directory }}
@@ -314,6 +308,7 @@ jobs:
           VOYAGE_API_KEY: ${{ secrets.VOYAGE_API_KEY }}
           UPSTAGE_API_KEY: ${{ secrets.UPSTAGE_API_KEY }}
           FIREWORKS_API_KEY: ${{ secrets.FIREWORKS_API_KEY }}
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
         run: make integration_tests
         working-directory: ${{ inputs.working-directory }}
 
