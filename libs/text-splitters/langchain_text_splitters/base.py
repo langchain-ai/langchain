@@ -263,6 +263,7 @@ class TokenTextSplitter(TextSplitter):
             List[str]: A list of text chunks, where each chunk is derived from a portion
             of the input text based on the tokenization and chunking rules.
         """
+
         def _encode(_text: str) -> List[int]:
             return self._tokenizer.encode(
                 _text,

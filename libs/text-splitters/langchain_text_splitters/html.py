@@ -278,7 +278,7 @@ class HTMLSectionSplitter:
                 section_content: List = []
             else:
                 current_header = header_element.text.strip()
-                current_header_tag = header_element.name
+                current_header_tag = header_element.name  # type: ignore[attr-defined]
                 section_content = []
             for element in header_element.next_elements:
                 if i + 1 < len(headers) and element == headers[i + 1]:

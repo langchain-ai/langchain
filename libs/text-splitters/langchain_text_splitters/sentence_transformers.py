@@ -64,6 +64,7 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
             List[str]: A list of string components derived from the input text after
             encoding and processing.
         """
+
         def encode_strip_start_and_stop_token_ids(text: str) -> List[int]:
             return self._encode(text)[1:-1]
 
