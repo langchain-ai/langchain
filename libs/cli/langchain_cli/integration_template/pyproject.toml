@@ -1,5 +1,5 @@
 [build-system]
-requires = [ "poetry-core>=1.0.0",]
+requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
@@ -23,14 +23,16 @@ python = ">=3.9,<4.0"
 langchain-core = "^0.3.15"
 
 [tool.ruff.lint]
-select = [ "E", "F", "I", "T201",]
+select = ["E", "F", "I", "T201"]
 
 [tool.coverage.run]
-omit = [ "tests/*",]
+omit = ["tests/*"]
 
 [tool.pytest.ini_options]
 addopts = "--strict-markers --strict-config --durations=5"
-markers = [ "compile: mark placeholder test used to compile integration tests without running them",]
+markers = [
+    "compile: mark placeholder test used to compile integration tests without running them",
+]
 asyncio_mode = "auto"
 
 [tool.poetry.group.test]
@@ -53,6 +55,7 @@ pytest = "^7.4.3"
 pytest-asyncio = "^0.23.2"
 pytest-socket = "^0.7.0"
 pytest-watcher = "^0.3.4"
+langchain-tests = "0.3.0"
 
 [tool.poetry.group.codespell.dependencies]
 codespell = "^2.2.6"
@@ -65,14 +68,4 @@ ruff = "^0.5"
 [tool.poetry.group.typing.dependencies]
 mypy = "^1.10"
 
-[tool.poetry.group.test.dependencies.langchain-core]
-path = "../../core"
-develop = true
-
-[tool.poetry.group.dev.dependencies.langchain-core]
-path = "../../core"
-develop = true
-
-[tool.poetry.group.typing.dependencies.langchain-core]
-path = "../../core"
-develop = true
+[tool.poetry.group.dev.dependencies]
