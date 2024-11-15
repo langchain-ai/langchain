@@ -11,9 +11,10 @@ pip install -U langchain-cli
 ## Adding packages
 
 ```bash
-# adding packages from 
-# https://github.com/langchain-ai/langchain/tree/master/templates
-langchain app add $PROJECT_NAME
+# adding packages from v0.2 templates
+# https://github.com/langchain-ai/langchain/tree/v0.2/templates
+langchain app add $PROJECT_NAME --branch v0.2
+# langchain app add pirate-speak --branch v0.2
 
 # adding custom GitHub repo packages
 langchain app add --repo $OWNER/$REPO
