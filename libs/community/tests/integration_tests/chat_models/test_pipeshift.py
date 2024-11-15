@@ -25,6 +25,7 @@ def test_chat_pipeshift_system_message() -> None:
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
 
+
 # @pytest.mark.enable_socket
 # def test_chat_pipeshift_llm_output_contains_model_name() -> None:
 #     """Test llm_output contains model."""
@@ -53,6 +54,7 @@ def test_chat_pipeshift_system_message() -> None:
 #             temperature=0,
 #             n=5,
 #         )
+
 
 @pytest.mark.enable_socket
 def test_chat_pipeshift_extra_kwargs() -> None:
