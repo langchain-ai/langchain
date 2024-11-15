@@ -284,7 +284,9 @@ class HanaDB(VectorStore):
         distance_func_name = HANA_DISTANCE_FUNCTION[self.distance_strategy][0]
         default_index_name = f"{self.table_name}_{distance_func_name}_idx"
         # Use provided index_name or default
-        index_name = HanaDB._sanitize_name(index_name) if index_name else default_index_name
+        index_name = (
+            HanaDB._sanitize_name(index_name) if index_name else default_index_name
+        )
         # Initialize build_config and search_config as empty dictionaries
         build_config = {}
         search_config = {}
