@@ -1,4 +1,4 @@
-## How to publish an integration package from a template
+# How to publish an integration package from a template
 
 :::danger
 This guide is a work-in-progress.
@@ -17,7 +17,7 @@ can be imported with code like:
 from langchain_{partner} import X
 ```
 
-### Set up a new package
+## Set up a new package
 
 To set up a new partner package, use the latest version of the LangChain CLI. You can install or update it with:
 
@@ -57,7 +57,7 @@ libs/parrot-link/
   .gitignore
 ```
 
-### Implement your package
+## Implement your package
 
 First, add any dependencies your package needs, such as your company's SDK:
 
@@ -75,18 +75,18 @@ Then, implement your package in `libs/partners/parrot-link/langchain_parrot_link
 
 By default, this will include stubs for a Chat Model, an LLM, and/or a Vector Store. You should delete any of the files you won't use and remove them from `__init__.py`.
 
-### Write Unit and Integration Tests
+## Write Unit and Integration Tests
 
 Some basic tests are presented in the `tests/` directory. You should add more tests to cover your package's functionality.
 
 For information on running and implementing tests, see the [Testing guide](../testing.mdx).
 
-### Write documentation
+## Write documentation
 
 Documentation is generated from Jupyter notebooks in the `docs/` directory. You should place the notebooks with examples
 to the relevant `docs/docs/integrations` directory in the monorepo root.
 
-### (If Necessary) Deprecate community integration
+## (If Necessary) Deprecate community integration
 
 Note: this is only necessary if you're migrating an existing community integration into 
 a partner package. If the component you're integrating is net-new to LangChain (i.e. 
@@ -121,7 +121,7 @@ class ChatParrotLink(BaseChatModel):
 
 You should do this for *each* component that you're migrating to the partner package.
 
-### Additional steps
+## Additional steps
 
 Contributor steps:
 
