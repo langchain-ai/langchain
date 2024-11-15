@@ -17,11 +17,13 @@ from langchain_community.adapters.openai import (
 )
 from langchain_community.chat_models.pipeshift import ChatPipeshift
 
+
 @pytest.mark.requires("openai")
 def test_initialization() -> None:
     """Test chat model initialization."""
     with patch.dict(os.environ, {"PIPESHIFT_API_KEY": "dummy_key"}):
         ChatPipeshift()  # type: ignore[call-arg]
+
 
 @pytest.mark.requires("openai")
 def test_pipeshift_model_param() -> None:
