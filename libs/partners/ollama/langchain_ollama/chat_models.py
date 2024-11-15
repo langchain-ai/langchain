@@ -475,27 +475,27 @@ class ChatOllama(BaseChatModel):
                 params[key] = kwargs[key]
 
         params["options"]["stop"] = stop
-        if "tools" in kwargs:
-            async for part in await self._async_client.chat(
-                model=params["model"],
-                messages=ollama_messages,
-                stream=True,
-                options=Options(**params["options"]),
-                keep_alive=params["keep_alive"],
-                format=params["format"],
-                tools=kwargs["tools"],
-            ):  # type:ignore
+
+        tools = kwargs.get("tools", None)
+        stream = tools is None or len(tools) == 0
+
+        chat_params = {
+            "model": params["model"],
+            "messages": ollama_messages,
+            "stream": stream,
+            "options": Options(**params["options"]),
+            "keep_alive": params["keep_alive"],
+            "format": params["format"],
+        }
+
+        if tools is not None:
+            chat_params["tools"] = tools
+
+        if stream:
+            async for part in await self._async_client.chat(**chat_params):
                 yield part
         else:
-            async for part in await self._async_client.chat(
-                model=params["model"],
-                messages=ollama_messages,
-                stream=True,
-                options=Options(**params["options"]),
-                keep_alive=params["keep_alive"],
-                format=params["format"],
-            ):  # type:ignore
-                yield part
+            yield await self._async_client.chat(**chat_params)
 
     def _create_chat_stream(
         self,
