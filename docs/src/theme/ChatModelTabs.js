@@ -120,6 +120,15 @@ export default function ChatModelTabs(props) {
       shouldHide: hideGoogle,
     },
     {
+      value: "AWS",
+      label: "AWS",
+      text: `from langchain_aws import ChatBedrock\n\n${llmVarName} = ChatBedrock(${awsBedrockParamsOrDefault})`,
+      apiKeyText: "# Ensure your AWS credentials are configured",
+      packageName: "langchain-aws",
+      default: false,
+      shouldHide: hideAWS,
+    },
+    {
       value: "Cohere",
       label: "Cohere",
       text: `from langchain_cohere import ChatCohere\n\n${llmVarName} = ChatCohere(${cohereParamsOrDefault})`,
@@ -172,15 +181,6 @@ export default function ChatModelTabs(props) {
       packageName: "langchain-openai",
       default: false,
       shouldHide: hideTogether,
-    },
-    {
-      value: "AWS",
-      label: "AWS",
-      text: `from langchain_aws import ChatBedrock\n\n${llmVarName} = ChatBedrock(${awsBedrockParamsOrDefault})`,
-      apiKeyText: "# Ensure your AWS credentials are configured",
-      packageName: "langchain-aws",
-      default: false,
-      shouldHide: hideAWS,
     },
   ];
 
