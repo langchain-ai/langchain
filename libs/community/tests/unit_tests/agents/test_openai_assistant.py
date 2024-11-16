@@ -17,14 +17,14 @@ def test_set_run_truncation_params() -> None:
     input = {
         "content": "AI question",
         "thread_id": "thread_xyz",
-        "instructions": "You are a helpful assistant. Answer questions as better as you can",
+        "instructions": "You're a helpful assistant; answer questions as best you can.",
         "model": "gpt-4o",
         "max_prompt_tokens": 2000,
         "truncation_strategy": {"type": "last_messages", "last_messages": 10},
     }
     expected_response = {
         "assistant_id": "assistant_xyz",
-        "instructions": "You are a helpful assistant. Answer questions as better as you can",
+        "instructions": "You're a helpful assistant; answer questions as best you can.",
         "model": "gpt-4o",
         "max_prompt_tokens": 2000,
         "truncation_strategy": {"type": "last_messages", "last_messages": 10},
