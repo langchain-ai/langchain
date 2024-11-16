@@ -227,6 +227,17 @@ const FEATURE_TABLES = {
                 "local": false,
                 "apiLink": "https://python.langchain.com/api_reference/ibm/chat_models/langchain_ibm.chat_models.ChatWatsonx.html"
             },
+            {
+                "name": "ChatXAI",
+                "package": "langchain-xai",
+                "link": "xai",
+                "structured_output": true,
+                "tool_calling": true,
+                "json_mode": false,
+                "multimodal": false,
+                "local": false,
+                "apiLink": "https://python.langchain.com/api_reference/xai/chat_models/langchain_xai.chat_models.ChatXAI.html"
+            },
         ],
     },
     llms: {

@@ -10,6 +10,7 @@ modules = [
     "chat_models",
     "vectorstores",
     "embeddings",
+    "tools",
 ]
 
 for module in modules:
@@ -17,14 +18,21 @@ for module in modules:
         f"langchain_standard_tests.integration_tests.{module}"
     )
 
-from langchain_standard_tests.integration_tests.chat_models import (
-    ChatModelIntegrationTests,
-)
-from langchain_standard_tests.integration_tests.embeddings import (
-    EmbeddingsIntegrationTests,
-)
+from .base_store import BaseStoreAsyncTests, BaseStoreSyncTests
+from .cache import AsyncCacheTestSuite, SyncCacheTestSuite
+from .chat_models import ChatModelIntegrationTests
+from .embeddings import EmbeddingsIntegrationTests
+from .tools import ToolsIntegrationTests
+from .vectorstores import AsyncReadWriteTestSuite, ReadWriteTestSuite
 
 __all__ = [
     "ChatModelIntegrationTests",
     "EmbeddingsIntegrationTests",
+    "ToolsIntegrationTests",
+    "BaseStoreAsyncTests",
+    "BaseStoreSyncTests",
+    "AsyncCacheTestSuite",
+    "SyncCacheTestSuite",
+    "AsyncReadWriteTestSuite",
+    "ReadWriteTestSuite",
 ]

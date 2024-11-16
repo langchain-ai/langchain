@@ -286,6 +286,27 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(full, AIMessage)
         _validate_tool_call_message(full)
 
+    async def test_tool_calling_async(self, model: BaseChatModel) -> None:
+        if not self.has_tool_calling:
+            pytest.skip("Test requires tool calling.")
+        if self.tool_choice_value == "tool_name":
+            tool_choice: Optional[str] = "magic_function"
+        else:
+            tool_choice = self.tool_choice_value
+        model_with_tools = model.bind_tools([magic_function], tool_choice=tool_choice)
+
+        # Test ainvoke
+        query = "What is the value of magic_function(3)? Use the tool."
+        result = await model_with_tools.ainvoke(query)
+        _validate_tool_call_message(result)
+
+        # Test astream
+        full: Optional[BaseMessageChunk] = None
+        async for chunk in model_with_tools.astream(query):
+            full = chunk if full is None else full + chunk  # type: ignore
+        assert isinstance(full, AIMessage)
+        _validate_tool_call_message(full)
+
     def test_tool_calling_with_no_arguments(self, model: BaseChatModel) -> None:
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
