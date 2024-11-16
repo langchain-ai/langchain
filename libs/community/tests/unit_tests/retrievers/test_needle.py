@@ -1,5 +1,4 @@
 import pytest
-from langchain_core.documents import Document
 from pytest_mock import MockerFixture
 
 from langchain_community.retrievers.needle import NeedleRetriever

@@ -83,7 +83,7 @@ class NeedleLoader(BaseLoader):
         for file in files:
             if file.status == "indexed":
                 doc = Document(
-                    page_content="",  # Empty content since Needle doesn't provide file content fetching
+                    page_content="",  # Needle doesn't provide file content fetching
                     metadata={
                         "source": file.url,
                         "title": file.name,

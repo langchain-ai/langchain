@@ -60,7 +60,5 @@ def test_add_and_fetch_files(mocker: MockerFixture):
     added_files = document_store._fetch_documents()
 
     # Assertions to verify that the file was added and fetched correctly
-    assert type(added_files[0].metadata["title"]) == str
-    assert type(added_files[0].metadata["source"]) == str
-
-    print("Test passed: Files added and fetched successfully.")
+    assert isinstance(added_files[0].metadata["title"], str)
+    assert isinstance(added_files[0].metadata["source"], str)

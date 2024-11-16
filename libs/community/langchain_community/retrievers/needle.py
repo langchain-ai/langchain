@@ -4,13 +4,13 @@ from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
 from needle.v1 import NeedleClient
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
 
 
 class NeedleRetriever(BaseRetriever, BaseModel):
     """NeedleRetriever.
-
-    Retrieves relevant documents or context from a Needle collection based on a search query.
+    Retrieves relevant documents or context 
+    from a Needle collection based on a search query.
     """
 
     needle_api_key: Optional[str] = Field(None, description="Needle API Key")
