@@ -13,8 +13,7 @@ from langchain_standard_tests.base import BaseStandardTests
 class EmbeddingsTests(BaseStandardTests):
     @property
     @abstractmethod
-    def embeddings_class(self) -> Type[Embeddings]:
-        ...
+    def embeddings_class(self) -> Type[Embeddings]: ...
 
     @property
     def embedding_model_params(self) -> dict:

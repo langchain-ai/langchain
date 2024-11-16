@@ -6,7 +6,7 @@
 
 The **L**ang**C**hain **E**xpression **L**anguage (LCEL) takes a [declarative](https://en.wikipedia.org/wiki/Declarative_programming) approach to building new [Runnables](/docs/concepts/runnables) from existing Runnables.
 
-This means that you describe what you want to happen, rather than how you want it to happen, allowing LangChain to optimize the run-time execution of the chains.
+This means that you describe what *should* happen, rather than *how* it should happen, allowing LangChain to optimize the run-time execution of the chains.
 
 We often refer to a `Runnable` created using LCEL as a "chain". It's important to remember that a "chain" is `Runnable` and it implements the full [Runnable Interface](/docs/concepts/runnables).
 
@@ -20,8 +20,8 @@ We often refer to a `Runnable` created using LCEL as a "chain". It's important t
 
 LangChain optimizes the run-time execution of chains built with LCEL in a number of ways:
 
-- **Optimize parallel execution**: Run Runnables in parallel using [RunnableParallel](#runnableparallel) or run multiple inputs through a given chain in parallel using the [Runnable Batch API](/docs/concepts/runnables/#optimized-parallel-execution-batch). Parallel execution can significantly reduce the latency as processing can be done in parallel instead of sequentially.
-- **Guarantee Async support**: Any chain built with LCEL can be run asynchronously using the [Runnable Async API](/docs/concepts/runnables/#asynchronous-support). This can be useful when running chains in a server environment where you want to handle large number of requests concurrently.
+- **Optimized parallel execution**: Run Runnables in parallel using [RunnableParallel](#runnableparallel) or run multiple inputs through a given chain in parallel using the [Runnable Batch API](/docs/concepts/runnables/#optimized-parallel-execution-batch). Parallel execution can significantly reduce the latency as processing can be done in parallel instead of sequentially.
+- **Guaranteed Async support**: Any chain built with LCEL can be run asynchronously using the [Runnable Async API](/docs/concepts/runnables/#asynchronous-support). This can be useful when running chains in a server environment where you want to handle large number of requests concurrently.
 - **Simplify streaming**: LCEL chains can be streamed, allowing for incremental output as the chain is executed. LangChain can optimize the streaming of the output to minimize the time-to-first-token(time elapsed until the first chunk of output from a [chat model](/docs/concepts/chat_models) or [llm](/docs/concepts/text_llms) comes out).
 
 Other benefits include:
@@ -38,7 +38,7 @@ LCEL is an [orchestration solution](https://en.wikipedia.org/wiki/Orchestration_
 
 While we have seen users run chains with hundreds of steps in production, we generally recommend using LCEL for simpler orchestration tasks. When the application requires complex state management, branching, cycles or multiple agents, we recommend that users take advantage of [LangGraph](/docs/concepts/architecture#langgraph).
 
-In LangGraph, users define graphs that specify the flow of the application. This allows users to keep using LCEL within individual nodes when LCEL is needed, while making it easy to define complex orchestration logic that is more readable and maintainable.
+In LangGraph, users define graphs that specify the application's flow. This allows users to keep using LCEL within individual nodes when LCEL is needed, while making it easy to define complex orchestration logic that is more readable and maintainable.
 
 Here are some guidelines:
 
