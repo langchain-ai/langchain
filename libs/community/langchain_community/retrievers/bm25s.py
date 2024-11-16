@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Callable, Dict, Iterable, List, Optional, Union
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
@@ -33,18 +33,28 @@ class BM25SRetriever(BaseRetriever):
         texts: Iterable[str],
         metadatas: Optional[Iterable[dict]] = None,
         bm25_params: Optional[Dict[str, Any]] = None,
-        stopwords_lang: str = "en",
-        persist_directory: Optional[str] = DEFAULT_PERSISTENCE_DIRECTORY,
+        stopwords: Union[str, List[str]] = "en",
+        stemmer: Optional[Callable[[List[str]], List[str]]] = None,
+        persist_directory: Optional[str] = None,
         **kwargs: Any,
     ) -> BM25SRetriever:
         """
         Create a BM25Retriever from a list of texts.
         Args:
-            texts: A list of texts to vectorize.
-            metadatas: A list of metadata dicts to associate with each text.
-            bm25_params: Parameters to pass to the BM25s vectorizer.
-            stopwords_lang: The language to use for stopword removal. Defaults to "en".
-            persist_directory: The directory to save the BM25 index to.
+            texts:
+                A list of texts to vectorize.
+            metadatas:
+                A list of metadata dicts to associate with each text.
+            bm25_params:
+                Parameters to pass to the BM25s vectorizer.
+            stopwords:
+                The list of stopwords to remove from the text. Defaults to "en".
+            stemmer:
+                The stemmer to use for stemming the tokens. It is recommended to
+                use the PyStemmer library for stemming, but you can also any
+                callable that takes a list of strings and returns a list of strings.
+            persist_directory:
+                The directory to save the BM25 index to.
             **kwargs: Any other arguments to pass to the retriever.
 
         Returns:
@@ -60,7 +70,11 @@ class BM25SRetriever(BaseRetriever):
 
         bm25_params = bm25_params or {}
         texts_processed = bm25s_tokenize(
-            texts=texts, stopwords=stopwords_lang, return_ids=False, show_progress=False
+            texts=texts,
+            stopwords=stopwords,
+            stemmer=stemmer,
+            return_ids=False,
+            show_progress=False,
         )
         vectorizer = BM25(**bm25_params)
         vectorizer.index(texts_processed)
@@ -68,6 +82,7 @@ class BM25SRetriever(BaseRetriever):
         metadatas = metadatas or ({} for _ in texts)
         docs = [Document(page_content=t, metadata=m) for t, m in zip(texts, metadatas)]
 
+        persist_directory = persist_directory or DEFAULT_PERSISTENCE_DIRECTORY
         # persist the vectorizer
         vectorizer.save(persist_directory)
         # additionally persist the corpus and the metadata
@@ -85,15 +100,26 @@ class BM25SRetriever(BaseRetriever):
         documents: Iterable[Document],
         *,
         bm25_params: Optional[Dict[str, Any]] = None,
-        stopwords_lang: str = "en",
+        stopwords: Union[str, List[str]] = "en",
+        stemmer: Optional[Callable[[List[str]], List[str]]] = None,
+        persist_directory: Optional[str] = None,
         **kwargs: Any,
     ) -> BM25SRetriever:
         """
         Create a BM25Retriever from a list of Documents.
         Args:
-            documents: A list of Documents to vectorize.
-            bm25_params: Parameters to pass to the BM25 vectorizer.
-            stopwords_lang: The language to use for stopword removal. Defaults to "en".
+            documents:
+                A list of Documents to vectorize.
+            bm25_params:
+                Parameters to pass to the BM25 vectorizer.
+            stopwords:
+                The list of stopwords to remove from the text. Defaults to "en".
+            stemmer:
+                The stemmer to use for stemming the tokens. It is recommended to
+                use the PyStemmer library for stemming, but you can also any
+                callable that takes a list of strings and returns a list of strings.
+            persist_directory:
+                The directory to save the BM25 index to.
             **kwargs: Any other arguments to pass to the retriever.
 
         Returns:
@@ -102,9 +128,11 @@ class BM25SRetriever(BaseRetriever):
         texts, metadatas = zip(*((d.page_content, d.metadata) for d in documents))
         return cls.from_texts(
             texts=texts,
-            bm25_params=bm25_params,
-            stopwords_lang=stopwords_lang,
             metadatas=metadatas,
+            bm25_params=bm25_params,
+            stopwords=stopwords,
+            stemmer=stemmer,
+            persist_directory=persist_directory,
             **kwargs,
         )
 
@@ -122,11 +150,14 @@ class BM25SRetriever(BaseRetriever):
         return cls(vectorizer=vectorizer, docs=docs, **kwargs)
 
     def _get_relevant_documents(
-        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+        self,
+        query: str,
+        *,
+        run_manager: CallbackManagerForRetrieverRun,
     ) -> List[Document]:
         from bm25s import tokenize as bm25s_tokenize
 
-        processed_query = bm25s_tokenize(query)
+        processed_query = bm25s_tokenize(query, return_ids=False)
         if self.activate_numba:
             self.vectorizer.activate_numba_scorer()
             return_docs = self.vectorizer.retrieve(
