@@ -45,6 +45,7 @@ EXPECTED_ALL = [
     "ChatVertexAI",
     "ChatYandexGPT",
     "ChatYuan2",
+    "ChatReka",
     "ChatZhipuAI",
     "ErnieBotChat",
     "FakeListChatModel",
