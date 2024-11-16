@@ -11,6 +11,7 @@ def _create_mock_client(*args: Any, use_async: bool = False, **kwargs: Any) -> A
     client.beta.threads.runs.create = MagicMock(return_value=None)  # type: ignore
     return client
 
+
 @pytest.mark.requires("openai")
 def test_set_run_truncation_params() -> None:
     client = _create_mock_client()
