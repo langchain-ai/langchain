@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 
 class NeedleRetriever(BaseRetriever, BaseModel):
     """NeedleRetriever.
-    Retrieves relevant documents or context 
+    Retrieves relevant documents or context
     from a Needle collection based on a search query.
     """
 
