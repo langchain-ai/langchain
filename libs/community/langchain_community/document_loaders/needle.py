@@ -7,7 +7,40 @@ from needle.v1.models import FileToAdd
 
 
 class NeedleLoader(BaseLoader):
-    """Load Needle documents."""
+    """
+    NeedleLoader is a document loader for managing documents stored in a Needle collection.
+
+    Setup:
+        Install the `needle-python` library and set your Needle API key as an environment variable.
+
+        .. code-block:: bash
+
+            pip install needle-python
+            export NEEDLE_API_KEY="your-api-key"
+
+    Key init args:
+        - `needle_api_key` (Optional[str]): API key for authenticating with Needle.
+        - `collection_id` (str): Identifier for the Needle collection to load documents from.
+
+    Usage:
+        .. code-block:: python
+
+            from langchain_community.document_loaders.needle import NeedleLoader
+
+            loader = NeedleLoader(
+                needle_api_key="your-api-key",
+                collection_id="your-collection-id"
+            )
+
+            # Load documents
+            documents = loader.load()
+            for doc in documents:
+                print(doc.metadata)
+
+            # Lazy load documents
+            for doc in loader.lazy_load():
+                print(doc.metadata)
+    """
 
     def __init__(
         self,
@@ -35,7 +68,8 @@ class NeedleLoader(BaseLoader):
             raise ValueError("Collection ID must be provided.")
 
     def _get_collection(self) -> None:
-        """Ensures the collection is set.
+        """
+        Ensures the Needle collection is set and the client is initialized.
 
         Raises:
             ValueError: If the Needle client is not initialized or
@@ -49,7 +83,8 @@ class NeedleLoader(BaseLoader):
             raise ValueError("Collection ID must be provided.")
 
     def add_files(self, files: dict) -> None:
-        """Adds files to the Needle collection.
+        """
+        Adds files to the Needle collection.
 
         Args:
             files (dict): Dictionary where keys are file names and values are file URLs.
@@ -68,10 +103,11 @@ class NeedleLoader(BaseLoader):
         )
 
     def _fetch_documents(self) -> List[Document]:
-        """Fetches documents from the Needle collection.
+        """
+        Fetches metadata for documents from the Needle collection.
 
         Returns:
-            List[Document]: List of documents with metadata, excluding content.
+            List[Document]: A list of documents with metadata. Content is excluded.
 
         Raises:
             ValueError: If the collection is not properly initialized.
@@ -94,7 +130,8 @@ class NeedleLoader(BaseLoader):
         return docs
 
     def load(self) -> List[Document]:
-        """Loads documents from the Needle collection.
+        """
+        Loads all documents from the Needle collection.
 
         Returns:
             List[Document]: A list of documents from the collection.
@@ -102,7 +139,8 @@ class NeedleLoader(BaseLoader):
         return self._fetch_documents()
 
     def lazy_load(self) -> Iterator[Document]:
-        """Lazy loads documents from the Needle collection.
+        """
+        Lazily loads documents from the Needle collection.
 
         Yields:
             Iterator[Document]: An iterator over the documents.
