@@ -8,10 +8,10 @@ from needle.v1.models import FileToAdd
 
 class NeedleLoader(BaseLoader):
     """
-    NeedleLoader is a document loader for managing documents stored in a Needle collection.
+    NeedleLoader is a document loader for managing documents stored in a collection.
 
     Setup:
-        Install the `needle-python` library and set your Needle API key as an environment variable.
+        Install the `needle-python` library and set your Needle API key.
 
         .. code-block:: bash
 
@@ -20,7 +20,7 @@ class NeedleLoader(BaseLoader):
 
     Key init args:
         - `needle_api_key` (Optional[str]): API key for authenticating with Needle.
-        - `collection_id` (str): Identifier for the Needle collection to load documents from.
+        - `collection_id` (str): Needle collection to load documents from.
 
     Usage:
         .. code-block:: python

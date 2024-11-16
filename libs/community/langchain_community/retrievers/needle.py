@@ -13,7 +13,7 @@ class NeedleRetriever(BaseRetriever, BaseModel):
     based on a search query.
 
     Setup:
-        Install the `needle-python` library and set your Needle API key as an environment variable.
+        Install the `needle-python` library and set your Needle API key.
 
         .. code-block:: bash
 
@@ -21,7 +21,7 @@ class NeedleRetriever(BaseRetriever, BaseModel):
             export NEEDLE_API_KEY="your-api-key"
 
     Key init args:
-        - `needle_api_key` (Optional[str]): The API key for authenticating with the Needle service.
+        - `needle_api_key` (Optional[str]): The API key for authenticating with Needle.
         - `collection_id` (str): The ID of the Needle collection to search in.
         - `client` (Optional[NeedleClient]): An optional instance of the NeedleClient.
 
@@ -80,7 +80,8 @@ class NeedleRetriever(BaseRetriever, BaseModel):
 
         Args:
             query (str): The query string used to search the collection.
-            run_manager (CallbackManagerForRetrieverRun): Callback manager for managing retriever runs.
+            run_manager (CallbackManagerForRetrieverRun):
+            Callback manager for managing retriever runs.
 
         Returns:
             List[Document]: A list of documents relevant to the query.
