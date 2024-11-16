@@ -7,29 +7,40 @@ from needle.v1.models import FileToAdd
 
 
 class NeedleLoader(BaseLoader):
-    """NeedleLoader.
-    Loads files from a Needle collection and converts them into LangChain `Document` objects.
-    """
-
-    needle_api_key: Optional[str] = None
-    client: Optional[NeedleClient] = None
-    collection_id: Optional[str] = None
+    """Load Needle documents."""
 
     def __init__(
         self,
         needle_api_key: Optional[str] = None,
         collection_id: Optional[str] = None,
-    ):
+    ) -> None:
+        """
+        Initializes the NeedleLoader with API key and collection ID.
+
+        Args:
+            needle_api_key (Optional[str]): API key for authenticating with Needle.
+            collection_id (Optional[str]): Identifier for the Needle collection.
+
+        Raises:
+            ValueError: If the collection ID is not provided.
+        """
         super().__init__()
         self.needle_api_key = needle_api_key
         self.collection_id = collection_id
         if self.needle_api_key:
             self.client = NeedleClient(api_key=self.needle_api_key)
+        else:
+            self.client = None
         if not self.collection_id:
             raise ValueError("Collection ID must be provided.")
 
     def _get_collection(self) -> None:
-        """Ensures the collection ID is set."""
+        """Ensures the collection is set.
+
+        Raises:
+            ValueError: If the Needle client is not initialized or
+                        if the collection ID is missing.
+        """
         if not self.client:
             raise ValueError(
                 "NeedleClient is not initialized. Provide a valid API key."
@@ -38,7 +49,14 @@ class NeedleLoader(BaseLoader):
             raise ValueError("Collection ID must be provided.")
 
     def add_files(self, files: dict) -> None:
-        """Add files to the Needle collection."""
+        """Adds files to the Needle collection.
+
+        Args:
+            files (dict): Dictionary where keys are file names and values are file URLs.
+
+        Raises:
+            ValueError: If the collection is not properly initialized.
+        """
         self._get_collection()
 
         files_to_add = []
@@ -50,7 +68,14 @@ class NeedleLoader(BaseLoader):
         )
 
     def _fetch_documents(self) -> List[Document]:
-        """Lists documents from the Needle collection."""
+        """Fetches documents from the Needle collection.
+
+        Returns:
+            List[Document]: List of documents with metadata, excluding content.
+
+        Raises:
+            ValueError: If the collection is not properly initialized.
+        """
         self._get_collection()
 
         files = self.client.collections.files.list(self.collection_id)
@@ -69,10 +94,18 @@ class NeedleLoader(BaseLoader):
         return docs
 
     def load(self) -> List[Document]:
-        """Load documents from the Needle collection."""
+        """Loads documents from the Needle collection.
+
+        Returns:
+            List[Document]: A list of documents from the collection.
+        """
         return self._fetch_documents()
 
     def lazy_load(self) -> Iterator[Document]:
-        """Lazy load documents."""
+        """Lazy loads documents from the Needle collection.
+
+        Yields:
+            Iterator[Document]: An iterator over the documents.
+        """
         for doc in self._fetch_documents():
             yield doc
