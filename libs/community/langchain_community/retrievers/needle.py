@@ -39,7 +39,10 @@ class NeedleRetriever(BaseRetriever, BaseModel):
                 print(doc.page_content)
     """
 
-    from needle.v1 import NeedleClient
+    try:
+        from needle.v1 import NeedleClient
+    except ImportError:
+        raise ImportError("Please install with `pip install " "needle-python`.")
 
     needle_api_key: Optional[str] = Field(None, description="Needle API Key")
     collection_id: Optional[str] = Field(
@@ -53,7 +56,10 @@ class NeedleRetriever(BaseRetriever, BaseModel):
 
         If a client instance is already provided, this method does nothing.
         """
-        from needle.v1 import NeedleClient
+        try:
+            from needle.v1 import NeedleClient
+        except ImportError:
+            raise ImportError("Please install with `pip install " "needle-python`.")
 
         if not self.client:
             self.client = NeedleClient(api_key=self.needle_api_key)

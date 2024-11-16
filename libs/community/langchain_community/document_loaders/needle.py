@@ -55,7 +55,10 @@ class NeedleLoader(BaseLoader):
         Raises:
             ValueError: If the collection ID is not provided.
         """
-        from needle.v1 import NeedleClient
+        try:
+            from needle.v1 import NeedleClient
+        except ImportError:
+            raise ImportError("Please install with `pip install " "needle-python`.")
 
         super().__init__()
         self.needle_api_key = needle_api_key
@@ -94,7 +97,10 @@ class NeedleLoader(BaseLoader):
         Raises:
             ValueError: If the collection is not properly initialized.
         """
-        from needle.v1.models import FileToAdd
+        try:
+            from needle.v1.models import FileToAdd
+        except ImportError:
+            raise ImportError("Please install with `pip install " "needle-python`.")
 
         self._get_collection()
         assert self.client is not None, "NeedleClient must be initialized."
