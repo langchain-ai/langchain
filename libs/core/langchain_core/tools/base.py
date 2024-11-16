@@ -654,7 +654,7 @@ class ChildTool(BaseTool):
 
             if config_param := _get_runnable_config_param(self._run):
                 tool_kwargs[config_param] = config
-            response = context.run(self._run, *tool_args, **tool_kwargs)
+            response = context.run(self._run, *tool_args, **tool_kwargs, **kwargs)
             if self.response_format == "content_and_artifact":
                 if not isinstance(response, tuple) or len(response) != 2:
                     msg = (
