@@ -19,6 +19,7 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
+    is_method: bool = False,
 ) -> Callable[[Union[Callable, Runnable]], BaseTool]: ...
 
 
@@ -33,6 +34,7 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
+    is_method: bool = False,
 ) -> BaseTool: ...
 
 
@@ -46,6 +48,7 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
+    is_method: bool = False,
 ) -> BaseTool: ...
 
 
@@ -59,6 +62,7 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
+    is_method: bool = False,
 ) -> Callable[[Union[Callable, Runnable]], BaseTool]: ...
 
 
@@ -72,6 +76,7 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
+    is_method: bool = False,
 ) -> Union[
     BaseTool,
     Callable[[Union[Callable, Runnable]], BaseTool],
@@ -102,6 +107,9 @@ def tool(
         error_on_invalid_docstring: if ``parse_docstring`` is provided, configure
             whether to raise ValueError on invalid Google Style docstrings.
             Defaults to True.
+        is_method: Whether the tool is a method. This allows the tool to be used
+            without manually passing the `self` argument.
+            Defaults to False.
 
     Returns:
         The tool.
@@ -246,6 +254,24 @@ def tool(
                 description = None
 
             if infer_schema or args_schema is not None:
+                if is_method:
+                    @property
+                    def method_tool(self) -> StructuredTool:
+                        return StructuredTool.from_function(
+                            func,
+                            coroutine,
+                            name=tool_name,
+                            description=description,
+                            return_direct=return_direct,
+                            args_schema=schema,
+                            infer_schema=infer_schema,
+                            response_format=response_format,
+                            parse_docstring=parse_docstring,
+                            error_on_invalid_docstring=error_on_invalid_docstring,
+                            outer_self=self,
+                        )
+                    return method_tool
+                
                 return StructuredTool.from_function(
                     func,
                     coroutine,

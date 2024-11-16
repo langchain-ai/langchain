@@ -2110,3 +2110,33 @@ def test_injected_arg_with_complex_type() -> None:
         return foo.value
 
     assert injected_tool.invoke({"x": 5, "foo": Foo()}) == "bar"  # type: ignore
+
+def test_method_tool_self_ref() -> None:
+    """Test that a method tool can reference self."""
+    
+    class A:
+        def __init__(self, c):
+            self.c = c
+
+        @tool(is_method=True)
+        def foo(self, a: int, b: int):
+            """Add two numbers to c."""
+            return a + b + self.c
+    
+    b = A(10)
+    assert b.foo.invoke({'a': 1, 'b': 2}) == 13
+
+def test_method_tool_args() -> None:
+    """Test that a method tool's args do not include self."""
+    
+    class A:
+        def __init__(self, c):
+            self.c = c
+
+        @tool(is_method=True)
+        def foo(self, a: int, b: int):
+            """Add two numbers to c."""
+            return a + b + self.c
+    
+    b = A(10)
+    assert 'self' not in b.foo.args
