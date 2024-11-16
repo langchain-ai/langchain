@@ -24,6 +24,16 @@ class EscapePreprocessor(Preprocessor):
             # escape ``` in code
             cell.source = cell.source.replace("```", r"\`\`\`")
             # escape ``` in output
+
+            # allow overriding title based on comment at beginning of cell
+            if cell.source.startswith("# title="):
+                lines = cell.source.split("\n")
+                title = lines[0].split("# title=")[1]
+                if title.startswith('"') and title.endswith('"'):
+                    title = title[1:-1]
+                cell.metadata["title"] = title
+                cell.source = "\n".join(lines[1:])
+
             if "outputs" in cell:
                 filter_out = set()
                 for i, output in enumerate(cell["outputs"]):

@@ -1,6 +1,6 @@
 # Runnable interface
 
-The Runnable interface is foundational for working with LangChain components, and it's implemented across many of them, such as [language models](/docs/concepts/chat_models), [output parsers](/docs/concepts/output_parsers), [retrievers](/docs/concepts/retrievers), [compiled LangGraph graphs](
+The Runnable interface is the foundation for working with LangChain components, and it's implemented across many of them, such as [language models](/docs/concepts/chat_models), [output parsers](/docs/concepts/output_parsers), [retrievers](/docs/concepts/retrievers), [compiled LangGraph graphs](
 https://langchain-ai.github.io/langgraph/concepts/low_level/#compiling-your-graph) and more.
 
 This guide covers the main concepts and methods of the Runnable interface, which allows developers to interact with various LangChain components in a consistent and predictable manner.
@@ -42,7 +42,7 @@ Some Runnables may provide their own implementations of `batch` and `batch_as_co
 rely on a `batch` API provided by a model provider).
 
 :::note
-The async versions of `abatch` and `abatch_as_completed` these rely on asyncio's [gather](https://docs.python.org/3/library/asyncio-task.html#asyncio.gather) and [as_completed](https://docs.python.org/3/library/asyncio-task.html#asyncio.as_completed) functions to run the `ainvoke` method in parallel.
+The async versions of `abatch` and `abatch_as_completed` relies on asyncio's [gather](https://docs.python.org/3/library/asyncio-task.html#asyncio.gather) and [as_completed](https://docs.python.org/3/library/asyncio-task.html#asyncio.as_completed) functions to run the `ainvoke` method in parallel.
 :::
 
 :::tip
@@ -58,7 +58,7 @@ Runnables expose an asynchronous API, allowing them to be called using the `awai
 
 Please refer to the [Async Programming with LangChain](/docs/concepts/async) guide for more details.
 
-## Streaming apis
+## Streaming APIs
 <span data-heading-keywords="streaming-api"></span>
 
 Streaming is critical in making applications based on LLMs feel responsive to end-users.
@@ -101,7 +101,7 @@ This is an advanced feature that is unnecessary for most users. You should proba
 skip this section unless you have a specific need to inspect the schema of a Runnable.
 :::
 
-In some advanced uses, you may want to programmatically **inspect** the Runnable and determine what input and output types the Runnable expects and produces.
+In more advanced use cases, you may want to programmatically **inspect** the Runnable and determine what input and output types the Runnable expects and produces.
 
 The Runnable interface provides methods to get the [JSON Schema](https://json-schema.org/) of the input and output types of a Runnable, as well as [Pydantic schemas](https://docs.pydantic.dev/latest/) for the input and output types.
 
@@ -315,7 +315,7 @@ the `RunnableConfig` manually to sub-calls in some cases. Please see the
 [Propagating RunnableConfig](#propagation-of-runnableconfig) section for more information.
 :::
 
-## Creating a runnable from a function
+## Creating a runnable from a function {#custom-runnables}
 
 You may need to create a custom Runnable that runs arbitrary logic. This is especially
 useful if using [LangChain Expression Language (LCEL)](/docs/concepts/lcel) to compose

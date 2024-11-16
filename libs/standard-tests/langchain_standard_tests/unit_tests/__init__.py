@@ -7,11 +7,14 @@ import pytest
 modules = [
     "chat_models",
     "embeddings",
+    "tools",
 ]
 
 for module in modules:
     pytest.register_assert_rewrite(f"langchain_standard_tests.unit_tests.{module}")
 
-from langchain_standard_tests.unit_tests.chat_models import ChatModelUnitTests
+from .chat_models import ChatModelUnitTests
+from .embeddings import EmbeddingsUnitTests
+from .tools import ToolsUnitTests
 
-__all__ = ["ChatModelUnitTests", "EmbeddingsUnitTests"]
+__all__ = ["ChatModelUnitTests", "EmbeddingsUnitTests", "ToolsUnitTests"]
