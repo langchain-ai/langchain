@@ -36,9 +36,9 @@ class MockFiles:
         ]
 
 
-# Need to pass real API key and collection ID to test this function, otherwise fails
-@pytest.mark.usefixtures("socket_enabled")
+@pytest.mark.requires("needle-python")
 def test_add_and_fetch_files(mocker: MockerFixture):
+    """Test adding and fetching files using the NeedleLoader with a mock NeedleClient."""
     # Mock the NeedleClient to use the mock implementation
     mocker.patch("needle.v1.NeedleClient", new=MockNeedleClient)
 

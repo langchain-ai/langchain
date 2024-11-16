@@ -66,6 +66,9 @@ class NeedleRetriever(BaseRetriever, BaseModel):
             List[Document]: A list of documents matching the search query.
         """
         self._initialize_client()
+        if self.client is None:
+            raise ValueError("Provide a valid API key.")
+
         results = self.client.collections.search(
             collection_id=self.collection_id, text=query
         )

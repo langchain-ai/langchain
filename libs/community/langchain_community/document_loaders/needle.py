@@ -93,6 +93,7 @@ class NeedleLoader(BaseLoader):
             ValueError: If the collection is not properly initialized.
         """
         self._get_collection()
+        assert self.client is not None, "NeedleClient must be initialized."
 
         files_to_add = []
         for name, url in files.items():
@@ -113,6 +114,7 @@ class NeedleLoader(BaseLoader):
             ValueError: If the collection is not properly initialized.
         """
         self._get_collection()
+        assert self.client is not None, "NeedleClient must be initialized."
 
         files = self.client.collections.files.list(self.collection_id)
         docs = []
@@ -128,6 +130,7 @@ class NeedleLoader(BaseLoader):
                 )
                 docs.append(doc)
         return docs
+
 
     def load(self) -> List[Document]:
         """
