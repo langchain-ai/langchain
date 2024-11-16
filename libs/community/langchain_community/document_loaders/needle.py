@@ -1,4 +1,4 @@
-from typing import Iterator, List, Optional
+from typing import Dict, Iterator, List, Optional
 
 from langchain_core.document_loaders.base import BaseLoader
 from langchain_core.documents import Document
@@ -56,13 +56,15 @@ class NeedleLoader(BaseLoader):
             ValueError: If the collection ID is not provided.
         """
         from needle.v1 import NeedleClient
+
         super().__init__()
         self.needle_api_key = needle_api_key
         self.collection_id = collection_id
+        self.client: Optional[NeedleClient] = None
+
         if self.needle_api_key:
             self.client = NeedleClient(api_key=self.needle_api_key)
-        else:
-            self.client = None
+
         if not self.collection_id:
             raise ValueError("Collection ID must be provided.")
 
@@ -74,19 +76,20 @@ class NeedleLoader(BaseLoader):
             ValueError: If the Needle client is not initialized or
                         if the collection ID is missing.
         """
-        if not self.client:
+        if self.client is None:
             raise ValueError(
                 "NeedleClient is not initialized. Provide a valid API key."
             )
         if not self.collection_id:
             raise ValueError("Collection ID must be provided.")
 
-    def add_files(self, files: dict) -> None:
+    def add_files(self, files: Dict[str, str]) -> None:
         """
         Adds files to the Needle collection.
 
         Args:
-            files (dict): Dictionary where keys are file names and values are file URLs.
+            files (Dict[str, str]): Dictionary where keys are file names and values
+                                    are file URLs.
 
         Raises:
             ValueError: If the collection is not properly initialized.
@@ -96,9 +99,7 @@ class NeedleLoader(BaseLoader):
         self._get_collection()
         assert self.client is not None, "NeedleClient must be initialized."
 
-        files_to_add = []
-        for name, url in files.items():
-            files_to_add.append(FileToAdd(name=name, url=url))
+        files_to_add = [FileToAdd(name=name, url=url) for name, url in files.items()]
 
         self.client.collections.files.add(
             collection_id=self.collection_id, files=files_to_add
@@ -118,20 +119,19 @@ class NeedleLoader(BaseLoader):
         assert self.client is not None, "NeedleClient must be initialized."
 
         files = self.client.collections.files.list(self.collection_id)
-        docs = []
-        for file in files:
-            if file.status == "indexed":
-                doc = Document(
-                    page_content="",  # Needle doesn't provide file content fetching
-                    metadata={
-                        "source": file.url,
-                        "title": file.name,
-                        "size": file.size if hasattr(file, "size") else None,
-                    },
-                )
-                docs.append(doc)
+        docs = [
+            Document(
+                page_content="",  # Needle doesn't provide file content fetching
+                metadata={
+                    "source": file.url,
+                    "title": file.name,
+                    "size": getattr(file, "size", None),
+                },
+            )
+            for file in files
+            if file.status == "indexed"
+        ]
         return docs
-
 
     def load(self) -> List[Document]:
         """
@@ -149,5 +149,4 @@ class NeedleLoader(BaseLoader):
         Yields:
             Iterator[Document]: An iterator over the documents.
         """
-        for doc in self._fetch_documents():
-            yield doc
+        yield from self._fetch_documents()

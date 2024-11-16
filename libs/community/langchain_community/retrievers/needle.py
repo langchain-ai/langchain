@@ -38,6 +38,7 @@ class NeedleRetriever(BaseRetriever, BaseModel):
             for doc in results:
                 print(doc.page_content)
     """
+
     from needle.v1 import NeedleClient
 
     needle_api_key: Optional[str] = Field(None, description="Needle API Key")
