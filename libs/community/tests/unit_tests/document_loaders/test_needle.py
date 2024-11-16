@@ -38,7 +38,7 @@ class MockFiles:
 
 @pytest.mark.requires("needle-python")
 def test_add_and_fetch_files(mocker: MockerFixture):
-    """Test adding and fetching files using the NeedleLoader with a mock NeedleClient."""
+    """Test adding and fetching files using the NeedleLoader with a mock."""
     # Mock the NeedleClient to use the mock implementation
     mocker.patch("needle.v1.NeedleClient", new=MockNeedleClient)
 

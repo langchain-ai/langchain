@@ -3,7 +3,6 @@ from typing import List, Optional
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
-from needle.v1 import NeedleClient
 from pydantic import BaseModel, Field
 
 
@@ -39,6 +38,7 @@ class NeedleRetriever(BaseRetriever, BaseModel):
             for doc in results:
                 print(doc.page_content)
     """
+    from needle.v1 import NeedleClient
 
     needle_api_key: Optional[str] = Field(None, description="Needle API Key")
     collection_id: Optional[str] = Field(
@@ -52,6 +52,8 @@ class NeedleRetriever(BaseRetriever, BaseModel):
 
         If a client instance is already provided, this method does nothing.
         """
+        from needle.v1 import NeedleClient
+
         if not self.client:
             self.client = NeedleClient(api_key=self.needle_api_key)
 

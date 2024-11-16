@@ -2,8 +2,6 @@ from typing import Iterator, List, Optional
 
 from langchain_core.document_loaders.base import BaseLoader
 from langchain_core.documents import Document
-from needle.v1 import NeedleClient
-from needle.v1.models import FileToAdd
 
 
 class NeedleLoader(BaseLoader):
@@ -57,6 +55,7 @@ class NeedleLoader(BaseLoader):
         Raises:
             ValueError: If the collection ID is not provided.
         """
+        from needle.v1 import NeedleClient
         super().__init__()
         self.needle_api_key = needle_api_key
         self.collection_id = collection_id
@@ -92,6 +91,8 @@ class NeedleLoader(BaseLoader):
         Raises:
             ValueError: If the collection is not properly initialized.
         """
+        from needle.v1.models import FileToAdd
+
         self._get_collection()
         assert self.client is not None, "NeedleClient must be initialized."
 
