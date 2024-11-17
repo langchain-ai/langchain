@@ -219,7 +219,11 @@ jobs:
 
           # Replace all dashes in the package name with underscores,
           # since that's how Python imports packages with dashes in the name.
-          IMPORT_NAME="$(echo "$PKG_NAME" | sed s/-/_/g)"
+          if [ "$PKG_NAME" == "langchain-tests" ]; then
+            IMPORT_NAME="langchain_standard_tests"
+          else
+            IMPORT_NAME="$(echo "$PKG_NAME" | sed s/-/_/g)"
+          fi
 
           poetry run python -c "import $IMPORT_NAME; print(dir($IMPORT_NAME))"
 
@@ -308,6 +312,7 @@ jobs:
           VOYAGE_API_KEY: ${{ secrets.VOYAGE_API_KEY }}
           UPSTAGE_API_KEY: ${{ secrets.UPSTAGE_API_KEY }}
           FIREWORKS_API_KEY: ${{ secrets.FIREWORKS_API_KEY }}
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
         run: make integration_tests
         working-directory: ${{ inputs.working-directory }}
 
