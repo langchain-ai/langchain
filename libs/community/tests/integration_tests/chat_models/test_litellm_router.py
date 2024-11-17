@@ -66,7 +66,7 @@ def aiter_to_iter(it: AsyncIterator) -> Generator:
         try:
             # Wait until the sync generator requests an item before continuing
             while q_in.get():
-                q_out.put((True, await anext(it)))
+                q_out.put((True, await it.__anext__()))
         except StopAsyncIteration:
             q_out.put((False, None))
         except BaseException as ex:
