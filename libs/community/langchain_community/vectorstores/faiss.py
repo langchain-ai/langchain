@@ -1369,7 +1369,7 @@ class FAISS(VectorStore):
         }
 
         for op in filter.keys():
-                if op.startswith("$") and op not in LOGICAL_OPERATORS and op not in ["$and", "$or", "$not"]:
+                if op.startswith("$") and op not in COMPARISON_OPERATORS and op not in ["$and", "$or", "$not"]:
                     raise ValueError(
                         f"filter contains an unsupported operator: {op}"
                     )
