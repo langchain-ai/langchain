@@ -640,6 +640,62 @@ class FinancePolygonAPIWrapper(BaseModel):
             raise ValueError(f"API Error: {data}")
         return data.get("results", None)
     
+    def get_dividends(self, ticker: str, **kwargs: Any) -> Optional[dict]:
+        """
+        Get a list of historical cash dividends, including the ticker symbol, 
+        declaration date, ex-dividend date, record date, pay date, frequency, 
+        and amount.
+        
+        /v3/reference/dividends
+        """
+
+        ex_dividend_date = kwargs.get("ex_dividend_date", None)
+        record_date = kwargs.get("record_date", None)
+        declaration_date = kwargs.get("declaration_date", None)
+        pay_date = kwargs.get("pay_date", None)
+        frequency = kwargs.get("frequency", None)
+        cash_amount = kwargs.get("cash_amount", None)
+        dividend_type = kwargs.get("dividend_type", None)
+        order = kwargs.get("order", None)
+        limit = kwargs.get("limit", 10)
+        sort = kwargs.get("sort", None)
+
+        url =  f"{POLYGON_BASE_URL}v3/reference/dividends"
+
+        if ticker is not None:
+            url += f"?ticker={ticker}"
+        if ex_dividend_date is not None:
+            url += f"&ex_dividend_date={ex_dividend_date}"
+        if record_date is not None:
+            url += f"&record_date={record_date}"
+        if declaration_date is not None:
+            url += f"&declaration_date={declaration_date}"
+        if pay_date is not None:
+            url += f"&pay_date={pay_date}"
+        if frequency is not None:
+            url += f"&frequency={frequency}"
+        if cash_amount is not None:
+            url += f"&cash_amount={cash_amount}"
+        if dividend_type is not None:
+            url += f"&dividend_type={dividend_type}"    
+        if order is not None:
+            url += f"&order={order}"
+
+        url += f"&limit={limit}"
+        
+        if sort is not None:
+            url += f"&sort={sort}"
+        
+        url += f"&apiKey={self.polygon_api_key}"
+        
+        response = requests.get(url)
+        data = response.json()
+
+        status = data.get("status", None)
+        if status not in ("OK"):
+            raise ValueError(f"API Error: {data}")
+        return data.get("results", None)
+    
     def run(self, mode: str, ticker: str = "", **kwargs: Any) -> str:
         if mode == "get_crypto_aggregate":
             return json.dumps(self.get_crypto_aggregates(ticker))
@@ -689,6 +745,8 @@ class FinancePolygonAPIWrapper(BaseModel):
             return json.dumps(self.get_previous_close(ticker, **kwargs))
         elif mode == 'get_trades':
             return json.dump(self.get_trades(ticker, **kwargs))
+        elif mode == 'get_dividends':
+            return json.dump(self.get_dividends(ticker, **kwargs))
         else:
             raise ValueError(f"Invalid mode {mode} for Polygon API.")
         
