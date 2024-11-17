@@ -530,6 +530,33 @@ class FinancePolygonAPIWrapper(BaseModel):
         if status not in ("OK"):
             raise ValueError(f"API Error: {data}")
         return data.get("results", None)
+    
+    def get_grouped_daily(self,**kwargs: Any) -> Optional[dict]:
+        """
+        Get the daily open, high, low, and close (OHLC) for
+        the entire stocks/equities markets, given the beginning date
+        for the aggregate window
+        
+        /v2/aggs/grouped/locale/us/market/stocks/{date}
+        """
+
+        date = kwargs.get("date", None)
+        adjusted = kwargs.get("adjusted", True)
+        include_otc = kwargs.get("include_otc", False)
+
+        url = f"{POLYGON_BASE_URL}v2/aggs/grouped/locale/us/market/stocks"
+
+        if date is not None:
+            url += f"/{date}"
+        url += f"?adjusted={adjusted}&include_otc={include_otc}&apiKey={self.polygon_api_key}"
+        
+        response = requests.get(url)
+        data = response.json()
+
+        status = data.get("status", None)
+        if status not in ("OK"):
+            raise ValueError(f"API Error: {data}")
+        return data.get("results", None)
 
     def run(self, mode: str, ticker: str = "", **kwargs: Any) -> str:
         if mode == "get_crypto_aggregate":
@@ -571,6 +598,8 @@ class FinancePolygonAPIWrapper(BaseModel):
         elif mode == "get_aggregates":
             return json.dumps(self.get_aggregates(ticker, **kwargs))
         elif mode == "get_daily_open_close":
-            return json.dumps(self.get_daily_open_close(ticker, **kwargs)) 
+            return json.dumps(self.get_daily_open_close(ticker, **kwargs))
+        elif mode == "get_grouped_daily":
+            return json.dumps(self.get_grouped_daily(**kwargs)) 
         else:
             raise ValueError(f"Invalid mode {mode} for Polygon API.")
