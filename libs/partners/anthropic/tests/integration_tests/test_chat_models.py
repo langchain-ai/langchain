@@ -317,7 +317,7 @@ async def test_anthropic_async_streaming_callback() -> None:
 def test_anthropic_multimodal() -> None:
     """Test that multimodal inputs are handled correctly."""
     chat = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
-    messages = [
+    messages: list[BaseMessage] = [
         HumanMessage(
             content=[
                 {
@@ -334,6 +334,8 @@ def test_anthropic_multimodal() -> None:
     response = chat.invoke(messages)
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
+    num_tokens = chat.get_num_tokens_from_messages(messages)
+    assert num_tokens > 0
 
 
 def test_streaming() -> None:
@@ -503,6 +505,60 @@ def test_with_structured_output() -> None:
     response = structured_llm.invoke("what's the weather in san francisco, ca")
     assert isinstance(response, dict)
     assert response["location"]
+
+
+def test_get_num_tokens_from_messages() -> None:
+    llm = ChatAnthropic(model="claude-3-5-sonnet-20241022")  # type: ignore[call-arg]
+
+    # Test simple case
+    messages = [
+        SystemMessage(content="You are a scientist"),
+        HumanMessage(content="Hello, Claude"),
+    ]
+    num_tokens = llm.get_num_tokens_from_messages(messages)
+    assert num_tokens > 0
+
+    # Test tool use
+    @tool(parse_docstring=True)
+    def get_weather(location: str) -> str:
+        """Get the current weather in a given location
+
+        Args:
+            location: The city and state, e.g. San Francisco, CA
+        """
+        return "Sunny"
+
+    messages = [
+        HumanMessage(content="What's the weather like in San Francisco?"),
+    ]
+    num_tokens = llm.get_num_tokens_from_messages(messages, tools=[get_weather])
+    assert num_tokens > 0
+
+    messages = [
+        HumanMessage(content="What's the weather like in San Francisco?"),
+        AIMessage(
+            content=[
+                {"text": "Let's see.", "type": "text"},
+                {
+                    "id": "toolu_01V6d6W32QGGSmQm4BT98EKk",
+                    "input": {"location": "SF"},
+                    "name": "get_weather",
+                    "type": "tool_use",
+                },
+            ],
+            tool_calls=[
+                {
+                    "name": "get_weather",
+                    "args": {"location": "SF"},
+                    "id": "toolu_01V6d6W32QGGSmQm4BT98EKk",
+                    "type": "tool_call",
+                },
+            ],
+        ),
+        ToolMessage(content="Sunny", tool_call_id="toolu_01V6d6W32QGGSmQm4BT98EKk"),
+    ]
+    num_tokens = llm.get_num_tokens_from_messages(messages, tools=[get_weather])
+    assert num_tokens > 0
 
 
 class GetWeather(BaseModel):
