@@ -19,6 +19,7 @@ from langchain_community.tools.finance_polygon.ema import PolygonEMA
 from langchain_community.tools.finance_polygon.macd import PolygonMACD
 from langchain_community.tools.finance_polygon.rsi import PolygonRSI
 from langchain_community.tools.finance_polygon.aggregates_stocks import PolygonAggregates
+from langchain_community.tools.finance_polygon.daily_open_close import PolygonDailyOpenClose
 
 __all__ = [
     "PolygonCryptoAggregates",
@@ -40,4 +41,5 @@ __all__ = [
     "PolygonMACD",
     "PolygonRSI",
     "PolygonAggregates"
+    "PolygonDailyOpenClose"
 ]

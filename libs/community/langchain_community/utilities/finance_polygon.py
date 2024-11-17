@@ -503,7 +503,33 @@ class FinancePolygonAPIWrapper(BaseModel):
         if status not in ("OK"):
             raise ValueError(f"API Error: {data}")
         return data.get("results", None)
+    
+    def get_daily_open_close(self, stocksTicker: str, **kwargs: Any) -> Optional[dict]:
+        """
+        Get daily open/close for a stock given the ticker symbol and date
 
+        /v1/open-close/{stocksTicker}/{date}
+        """
+
+        date = kwargs.get("date", None)
+        adjusted = kwargs.get("adjusted", True)
+
+        url = POLYGON_BASE_URL + "/v1/open-close"
+        
+        if stocksTicker is not None:
+            url += f"/{stocksTicker}"
+        if date is not None:
+            url += f"/{date}"
+
+        url += f"?adjusted={adjusted}&apiKey={self.polygon_api_key}"
+       
+        response = requests.get(url)
+        data = response.json()
+
+        status = data.get("status", None)
+        if status not in ("OK"):
+            raise ValueError(f"API Error: {data}")
+        return data.get("results", None)
 
     def run(self, mode: str, ticker: str = "", **kwargs: Any) -> str:
         if mode == "get_crypto_aggregate":
@@ -544,6 +570,7 @@ class FinancePolygonAPIWrapper(BaseModel):
             return json.dumps(self.get_rsi(ticker, **kwargs))
         elif mode == "get_aggregates":
             return json.dumps(self.get_aggregates(ticker, **kwargs))
-        
+        elif mode == "get_daily_open_close":
+            return json.dumps(self.get_daily_open_close(ticker, **kwargs)) 
         else:
             raise ValueError(f"Invalid mode {mode} for Polygon API.")
