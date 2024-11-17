@@ -198,9 +198,8 @@ class ChatLiteLLMRouter(ChatLiteLLM):
             if token_usage is not None:
                 # get dict from LiteLLM Usage class
                 for k, v in token_usage.model_dump().items():
-                    if k in overall_token_usage:
-                        if overall_token_usage[k] is not None:
-                            overall_token_usage[k] += v
+                    if k in overall_token_usage and overall_token_usage[k] is not None:
+                        overall_token_usage[k] += v
                     else:
                         overall_token_usage[k] = v
             if system_fingerprint is None:
