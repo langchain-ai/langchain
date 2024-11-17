@@ -45,27 +45,26 @@ class StructuredTool(BaseTool):
     """The outer self of the tool for methods."""
 
     # --- Runnable ---
-    
-    def _add_outer_self(
-        self,
-        input: Union[str, dict, ToolCall]
-    ) -> dict:
-        """Add outer self into arguments for method tools."""
-        if self.outer_self is None:
-            return input
 
+    def _add_outer_self(self, input: Union[str, dict, ToolCall]) -> dict | ToolCall:
+        """Add outer self into arguments for method tools."""
+
+        # If input is a string, then it is the first argument
         if isinstance(input, str):
-            args = {'self': self.outer_self}
-            for x in self.args.keys(): # loop should only happen once
+            args = {"self": self.outer_self}
+            for x in self.args:  # loop should only happen once
                 args[x] = input
             return args
-        elif 'type' in input.keys() and input['type'] == 'tool_call':
-            input['args']['self'] = self.outer_self
-        elif isinstance(input, dict):
-            input['self'] = self.outer_self
 
+        # ToolCall
+        if "type" in input and input["type"] == "tool_call":
+            input["args"]["self"] = self.outer_self
+            return input
+
+        # Dict
+        input["self"] = self.outer_self
         return input
-    
+
     def invoke(
         self,
         input: Union[str, dict, ToolCall],
@@ -98,7 +97,7 @@ class StructuredTool(BaseTool):
         """The tool's input arguments."""
         properties = self.args_schema.model_json_schema()["properties"]
         if self.outer_self is not None:
-            properties.pop('self')
+            properties.pop("self")
         return properties
 
     def _run(
@@ -114,8 +113,8 @@ class StructuredTool(BaseTool):
                 kwargs["callbacks"] = run_manager.get_child()
             if config_param := _get_runnable_config_param(self.func):
                 kwargs[config_param] = config
-            if 'outer_self' in kwargs.keys():
-                kwargs['self'] = kwargs.pop('outer_self')
+            if "outer_self" in kwargs:
+                kwargs["self"] = kwargs.pop("outer_self")
             return self.func(*args, **kwargs)
         msg = "StructuredTool does not support sync invocation."
         raise NotImplementedError(msg)
@@ -133,8 +132,8 @@ class StructuredTool(BaseTool):
                 kwargs["callbacks"] = run_manager.get_child()
             if config_param := _get_runnable_config_param(self.coroutine):
                 kwargs[config_param] = config
-            if 'outer_self' in kwargs.keys():
-                kwargs['self'] = kwargs.pop('outer_self')
+            if "outer_self" in kwargs:
+                kwargs["self"] = kwargs.pop("outer_self")
             return await self.coroutine(*args, **kwargs)
 
         # If self.coroutine is None, then this will delegate to the default

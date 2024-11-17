@@ -19,7 +19,6 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
-    is_method: bool = False,
 ) -> Callable[[Union[Callable, Runnable]], BaseTool]: ...
 
 
@@ -216,7 +215,9 @@ def tool(
             A function that takes a callable or Runnable and returns a tool.
         """
 
-        def _tool_factory(dec_func: Union[Callable, Runnable]) -> BaseTool:
+        def _tool_factory(
+            dec_func: Union[Callable, Runnable],
+        ) -> BaseTool | Callable[[Callable], BaseTool]:
             if isinstance(dec_func, Runnable):
                 runnable = dec_func
 
@@ -250,9 +251,13 @@ def tool(
                 description = None
 
             if infer_schema or args_schema is not None:
-                if "self" in inspect.signature(dec_func).parameters.keys():
+                if (
+                    not isinstance(dec_func, Runnable)
+                    and "self" in inspect.signature(dec_func).parameters
+                ):
+
                     @property
-                    def method_tool(self) -> StructuredTool:
+                    def method_tool(self: Callable) -> StructuredTool:
                         return StructuredTool.from_function(
                             func,
                             coroutine,
@@ -266,8 +271,9 @@ def tool(
                             error_on_invalid_docstring=error_on_invalid_docstring,
                             outer_self=self,
                         )
+
                     return method_tool
-                
+
                 return StructuredTool.from_function(
                     func,
                     coroutine,
