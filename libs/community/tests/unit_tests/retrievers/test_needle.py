@@ -47,9 +47,10 @@ def test_get_relevant_documents(mocker: MockerFixture) -> None:
     """
     from langchain_community.retrievers.needle import NeedleRetriever  # noqa: I001
 
-    # Patch NeedleClient with the mock
+    # Patch the actual NeedleClient import path used in the NeedleRetriever
     mocker.patch(
-        "langchain_community.retrievers.needle.NeedleClient", new=MockNeedleClient
+        "needle.v1.NeedleClient",
+        new=MockNeedleClient
     )
 
     # Initialize the retriever with mocked API key and collection ID

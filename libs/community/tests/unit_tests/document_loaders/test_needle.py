@@ -11,6 +11,7 @@ def test_add_and_fetch_files(mocker: MockerFixture) -> None:
     from needle.v1.models import CollectionFile  # noqa: I001
 
     # Create mock instances using mocker
+    # Create mock instances using mocker
     mock_files = mocker.Mock()
     mock_files.add.return_value = [
         CollectionFile(
@@ -18,6 +19,13 @@ def test_add_and_fetch_files(mocker: MockerFixture) -> None:
             name="tech-radar-30.pdf",
             url="https://example.com/",
             status="indexed",
+            type="mock_type",
+            user_id="mock_user_id",
+            connector_id="mock_connector_id",
+            size=1234,
+            md5_hash="mock_md5_hash",
+            created_at="2024-01-01T00:00:00Z",
+            updated_at="2024-01-01T00:00:00Z",
         )
     ]
     mock_files.list.return_value = [
@@ -26,6 +34,13 @@ def test_add_and_fetch_files(mocker: MockerFixture) -> None:
             name="tech-radar-30.pdf",
             url="https://example.com/",
             status="indexed",
+            type="mock_type",
+            user_id="mock_user_id",
+            connector_id="mock_connector_id",
+            size=1234,
+            md5_hash="mock_md5_hash",
+            created_at="2024-01-01T00:00:00Z",
+            updated_at="2024-01-01T00:00:00Z",
         )
     ]
 
