@@ -781,6 +781,29 @@ def test_faiss_mmr_with_metadatas_and_nested_logical_comparsion_operators_filter
 
 
 @pytest.mark.requires("faiss")
+def test_faiss_mmr_with_metadatas_and_nested_logical_comparsion_operators_filter_3() -> None:
+    texts = ["foo", "foo", "fou", "foy"]
+    metadatas = [{"page": i} for i in range(len(texts))]
+    docsearch = FAISS.from_texts(texts, FakeEmbeddings(), metadatas=metadatas)
+    query_vec = FakeEmbeddings().embed_query(text="foo")
+    output = docsearch.max_marginal_relevance_search_with_score_by_vector(
+        query_vec, k=10, lambda_mult=0.1, filter= {'$or': 
+                                                   [{"$and": [{"page": {"$lt": 1}}, {"page": {"$gt": 2}}]}, 
+                                                    {"$not": {"page": {"$nin": [0]}}},
+                                                    {"page": {"$eq": 3}}]}
+    )
+    assert len(output) == 2
+    assert output[0][0] == Document(page_content="foo", metadata={"page": 0})
+    assert output[0][1] == 0.0
+    assert output[1][0] == Document(page_content="foy", metadata={"page": 3})
+    assert output == docsearch.max_marginal_relevance_search_with_score_by_vector(
+        query_vec, k=10, lambda_mult=0.1, filter=lambda di: (di["page"] < 1 and di["page"] > 2) or
+                                                            (not di["page"] not in [0]) or
+                                                            (di["page"] == 3)
+    )
+
+
+@pytest.mark.requires("faiss")
 def test_faiss_mmr_with_metadatas_and_empty_conditions() -> None:
     """Test with an empty filter condition."""
     texts = ["foo", "bar", "baz"]

@@ -1357,7 +1357,7 @@ class FAISS(VectorStore):
                 f"filter must be a dict of metadata or a callable, not {type(filter)}"
             )
 
-        LOGICAL_OPERATORS = {
+        COMPARISON_OPERATORS = {
             "$eq": lambda a, b: a == b,
             "$neq": lambda a, b: a != b,
             "$gt": lambda a, b: a > b,
@@ -1391,12 +1391,12 @@ class FAISS(VectorStore):
                     )
             else:
                 for op, value in condition.items():
-                    if op in LOGICAL_OPERATORS:
+                    if op in COMPARISON_OPERATORS:
                         operators.append(
                             lambda doc,
                             field=field,
                             op=op,
-                            value=value: LOGICAL_OPERATORS[op](doc.get(field), value)
+                            value=value: COMPARISON_OPERATORS[op](doc.get(field), value)
                         )
                     else:
                         raise ValueError(
