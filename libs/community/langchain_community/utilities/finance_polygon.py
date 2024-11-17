@@ -579,6 +579,31 @@ class FinancePolygonAPIWrapper(BaseModel):
             raise ValueError(f"API Error: {data}")
         return data.get("results", None)
 
+    def get_previous_close(self, ticker: str, **kwargs: Any) -> Optional[dict]:
+        """
+        Get the previous day's open, high, low, and close (OHLC)
+        given the stock ticker.
+        
+        /v2/aggs/ticker/{stocksTicker}/prev
+        """
+
+        adjusted = kwargs.get("adjusted", True)
+
+        url = f"{POLYGON_BASE_URL}v2/aggs/ticker"
+
+        if ticker is not None:
+            url += f"/{ticker}"
+        
+        url += f"/prev?adjusted={adjusted}&apiKey={self.polygon_api_key}"
+
+        response = requests.get(url)
+        data = response.json()
+
+        status = data.get("status", None)
+        if status not in ("OK"):
+            raise ValueError(f"API Error: {data}")
+        return data.get("results", None)
+
     def run(self, mode: str, ticker: str = "", **kwargs: Any) -> str:
         if mode == "get_crypto_aggregate":
             return json.dumps(self.get_crypto_aggregates(ticker))
@@ -624,5 +649,7 @@ class FinancePolygonAPIWrapper(BaseModel):
             return json.dumps(self.get_grouped_daily(**kwargs)) 
         elif mode == "get_last_quote":
             return json.dumps(self.get_last_quote(ticker))
+        elif mode == "get_previous_close":
+            return json.dumps(self.get_previous_close(ticker, **kwargs))
         else:
             raise ValueError(f"Invalid mode {mode} for Polygon API.")
