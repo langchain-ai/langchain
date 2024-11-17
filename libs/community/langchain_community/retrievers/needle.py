@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Any, List, Optional  # noqa: I001
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
@@ -39,16 +39,12 @@ class NeedleRetriever(BaseRetriever, BaseModel):
                 print(doc.page_content)
     """
 
-    try:
-        from needle.v1 import NeedleClient
-    except ImportError:
-        raise ImportError("Please install with `pip install " "needle-python`.")
-
+    client: Optional[Any] = None
+    """Optional instance of NeedleClient."""
     needle_api_key: Optional[str] = Field(None, description="Needle API Key")
     collection_id: Optional[str] = Field(
         ..., description="The ID of the Needle collection to search in"
     )
-    client: Optional[NeedleClient] = None
 
     def _initialize_client(self) -> None:
         """
@@ -59,7 +55,7 @@ class NeedleRetriever(BaseRetriever, BaseModel):
         try:
             from needle.v1 import NeedleClient
         except ImportError:
-            raise ImportError("Please install with `pip install " "needle-python`.")
+            raise ImportError("Please install with `pip install needle-python`.")
 
         if not self.client:
             self.client = NeedleClient(api_key=self.needle_api_key)
@@ -76,7 +72,7 @@ class NeedleRetriever(BaseRetriever, BaseModel):
         """
         self._initialize_client()
         if self.client is None:
-            raise ValueError("Provide a valid API key.")
+            raise ValueError("NeedleClient is not initialized. Provide an API key.")
 
         results = self.client.collections.search(
             collection_id=self.collection_id, text=query
@@ -92,10 +88,9 @@ class NeedleRetriever(BaseRetriever, BaseModel):
 
         Args:
             query (str): The query string used to search the collection.
-            run_manager (CallbackManagerForRetrieverRun):
-            Callback manager for managing retriever runs.
-
         Returns:
             List[Document]: A list of documents relevant to the query.
         """
+        # The `run_manager` parameter is included to match the superclass signature,
+        # but it is not used in this implementation.
         return self._search_collection(query)
