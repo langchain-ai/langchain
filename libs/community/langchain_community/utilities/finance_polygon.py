@@ -557,6 +557,27 @@ class FinancePolygonAPIWrapper(BaseModel):
         if status not in ("OK"):
             raise ValueError(f"API Error: {data}")
         return data.get("results", None)
+    
+    def get_last_quote(self, ticker: str) -> Optional[dict]:
+        """
+        Get the most recent NBBO (Quote) tick for a given stock.
+        
+        /v2/last/nbbo/{stocksTicker}
+        """
+
+        url = f"{POLYGON_BASE_URL}vs/last/nbbo"
+        if ticker is not None:
+            url += f"/{ticker}"
+        
+        url += f"?apiKey={self.polygon_api_key}"
+
+        response = requests.get(url)
+        data = response.json()
+
+        status = data.get("status", None)
+        if status not in ("OK"):
+            raise ValueError(f"API Error: {data}")
+        return data.get("results", None)
 
     def run(self, mode: str, ticker: str = "", **kwargs: Any) -> str:
         if mode == "get_crypto_aggregate":
@@ -601,5 +622,7 @@ class FinancePolygonAPIWrapper(BaseModel):
             return json.dumps(self.get_daily_open_close(ticker, **kwargs))
         elif mode == "get_grouped_daily":
             return json.dumps(self.get_grouped_daily(**kwargs)) 
+        elif mode == "get_last_quote":
+            return json.dumps(self.get_last_quote(ticker))
         else:
             raise ValueError(f"Invalid mode {mode} for Polygon API.")

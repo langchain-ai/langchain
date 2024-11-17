@@ -21,6 +21,7 @@ from langchain_community.tools.finance_polygon.rsi import PolygonRSI
 from langchain_community.tools.finance_polygon.aggregates_stocks import PolygonAggregates
 from langchain_community.tools.finance_polygon.daily_open_close import PolygonDailyOpenClose
 from langchain_community.tools.finance_polygon.grouped_daily import PolygonGroupedDaily
+from langchain_community.tools.finance_polygon.last_quote import PolygonLastQuote
 
 __all__ = [
     "PolygonCryptoAggregates",
@@ -44,4 +45,5 @@ __all__ = [
     "PolygonAggregates",
     "PolygonDailyOpenClose",
     "PolygonGroupedDaily",
+    "PolygonLastQuote",
 ]
