@@ -23,7 +23,8 @@ from langchain_core.outputs import ChatGeneration, LLMResult
 from langchain_community.chat_models.litellm_router import ChatLiteLLMRouter
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
-model_group = "gpt-4"
+model_group_gpt4 = "gpt-4"
+model_group_to_test = "gpt-35-turbo"
 fake_model_prefix = "azure/fake-deployment-name-"
 fake_models_names = [fake_model_prefix + suffix for suffix in ["1", "2"]]
 fake_api_key = "fakekeyvalue"
@@ -35,7 +36,7 @@ token_usage_key_name = "token_usage"
 
 model_list = [
     {
-        "model_name": model_group,
+        "model_name": model_group_gpt4,
         "litellm_params": {
             "model": fake_models_names[0],
             "api_key": fake_api_key,
@@ -44,7 +45,7 @@ model_list = [
         },
     },
     {
-        "model_name": model_group,
+        "model_name": model_group_to_test,
         "litellm_params": {
             "model": fake_models_names[1],
             "api_key": fake_api_key,
@@ -114,7 +115,7 @@ class FakeCompletion:
             ],
             "created": 0,
             "id": "",
-            "model": model_group,
+            "model": model_group_to_test,
             "object": "chat.completion",
         }
         if kwargs["stream"]:
@@ -181,7 +182,7 @@ class FakeCompletion:
         for kwargs in self.seen_inputs:
             metadata = kwargs["metadata"]
 
-            assert metadata["model_group"] == model_group
+            assert metadata["model_group"] == model_group_to_test
 
             # LiteLLM router chooses one model name from the model_list
             assert kwargs["model"] in fake_models_names
@@ -211,9 +212,7 @@ def litellm_router() -> Any:
     """LiteLLM router for testing."""
     from litellm import Router
 
-    return Router(
-        model_list=model_list,
-    )
+    return Router(model_list=model_list)
 
 
 @pytest.mark.scheduled
@@ -222,7 +221,7 @@ def test_litellm_router_call(
     fake_completion: FakeCompletion, litellm_router: Any
 ) -> None:
     """Test valid call to LiteLLM Router."""
-    chat = ChatLiteLLMRouter(router=litellm_router)
+    chat = ChatLiteLLMRouter(router=litellm_router, model_name=model_group_to_test)
     message = HumanMessage(content="Hello")
 
     response = chat.invoke([message])
@@ -240,7 +239,7 @@ def test_litellm_router_generate(
     fake_completion: FakeCompletion, litellm_router: Any
 ) -> None:
     """Test generate method of LiteLLM Router."""
-    chat = ChatLiteLLMRouter(router=litellm_router)
+    chat = ChatLiteLLMRouter(router=litellm_router, model_name=model_group_to_test)
     chat_messages: List[List[BaseMessage]] = [
         [HumanMessage(content="How many toes do dogs have?")]
     ]
@@ -274,7 +273,9 @@ def test_litellm_router_streaming(
     fake_completion: FakeCompletion, litellm_router: Any
 ) -> None:
     """Test streaming tokens from LiteLLM Router."""
-    chat = ChatLiteLLMRouter(router=litellm_router, streaming=True)
+    chat = ChatLiteLLMRouter(
+        router=litellm_router, model_name=model_group_to_test, streaming=True
+    )
     message = HumanMessage(content="Hello")
 
     response = chat.invoke([message])
@@ -295,6 +296,7 @@ def test_litellm_router_streaming_callback(
     callback_handler = FakeCallbackHandler()
     chat = ChatLiteLLMRouter(
         router=litellm_router,
+        model_name=model_group_to_test,
         streaming=True,
         callbacks=[callback_handler],
         verbose=True,
@@ -317,7 +319,7 @@ async def test_async_litellm_router(
     fake_completion: FakeCompletion, litellm_router: Any
 ) -> None:
     """Test async generation."""
-    chat = ChatLiteLLMRouter(router=litellm_router)
+    chat = ChatLiteLLMRouter(router=litellm_router, model_name=model_group_to_test)
     message = HumanMessage(content="Hello")
 
     response = await chat.agenerate([[message], [message]])
@@ -351,6 +353,7 @@ async def test_async_litellm_router_streaming(
     callback_handler = FakeCallbackHandler()
     chat = ChatLiteLLMRouter(
         router=litellm_router,
+        model_name=model_group_to_test,
         streaming=True,
         callbacks=[callback_handler],
         verbose=True,
