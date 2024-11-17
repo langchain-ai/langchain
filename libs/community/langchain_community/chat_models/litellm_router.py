@@ -56,6 +56,7 @@ class ChatLiteLLMRouter(ChatLiteLLM):
 
     def __init__(self, *, router: Any, **kwargs: Any) -> None:
         """Construct Chat LiteLLM Router."""
+        kwargs = {**kwargs, "router": router}
         super().__init__(**kwargs)
         self.router = router
 
@@ -196,9 +197,10 @@ class ChatLiteLLMRouter(ChatLiteLLM):
             token_usage = output["token_usage"]
             if token_usage is not None:
                 # get dict from LiteLLM Usage class
-                for k, v in token_usage.dict().items():
+                for k, v in token_usage.model_dump().items():
                     if k in overall_token_usage:
-                        overall_token_usage[k] += v
+                        if overall_token_usage[k] is not None:
+                            overall_token_usage[k] += v
                     else:
                         overall_token_usage[k] = v
             if system_fingerprint is None:

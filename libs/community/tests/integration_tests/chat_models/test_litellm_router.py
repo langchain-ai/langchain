@@ -1,8 +1,20 @@
 """Test LiteLLM Router API wrapper."""
 
 import asyncio
+import queue
+import threading
 from copy import deepcopy
-from typing import Any, AsyncGenerator, Coroutine, Dict, List, Tuple, Union, cast
+from typing import (
+    Any,
+    AsyncGenerator,
+    AsyncIterator,
+    Dict,
+    Generator,
+    List,
+    Tuple,
+    Union,
+    cast,
+)
 
 import pytest
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
@@ -43,6 +55,39 @@ model_list = [
 ]
 
 
+# from https://stackoverflow.com/a/78573267
+def aiter_to_iter(it: AsyncIterator) -> Generator:
+    "Convert an async iterator into a regular (sync) iterator."
+    q_in: queue.SimpleQueue = queue.SimpleQueue()
+    q_out: queue.SimpleQueue = queue.SimpleQueue()
+
+    async def threadmain() -> None:
+        try:
+            # Wait until the sync generator requests an item before continuing
+            while q_in.get():
+                q_out.put((True, await anext(it)))
+        except StopAsyncIteration:
+            q_out.put((False, None))
+        except BaseException as ex:
+            q_out.put((False, ex))
+
+    thread = threading.Thread(target=asyncio.run, args=(threadmain(),), daemon=True)
+    thread.start()
+
+    try:
+        while True:
+            q_in.put(True)
+            cont, result = q_out.get()
+            if cont:
+                yield result
+            elif result is None:
+                break
+            else:
+                raise result
+    finally:
+        q_in.put(False)
+
+
 class FakeCompletion:
     def __init__(self) -> None:
         self.seen_inputs: List[Any] = []
@@ -54,13 +99,6 @@ class FakeCompletion:
         result = deepcopy(base_result)
         choices = cast(List[Dict[str, Any]], result["choices"])
         return result, choices
-
-    @staticmethod
-    def _get_next_result(
-        agen: AsyncGenerator[Dict[str, Any], None],
-    ) -> Dict[str, Any]:
-        coroutine = cast(Coroutine, agen.__anext__())
-        return asyncio.run(coroutine)
 
     async def _get_fake_results_agenerator(
         self, **kwargs: Any
@@ -115,17 +153,18 @@ class FakeCompletion:
 
     def completion(self, **kwargs: Any) -> Union[List, Dict[str, Any]]:
         agen = self._get_fake_results_agenerator(**kwargs)
+        synchronous_iter = aiter_to_iter(agen)
         if kwargs["stream"]:
             results: List[Dict[str, Any]] = []
             while True:
                 try:
-                    results.append(self._get_next_result(agen))
-                except StopAsyncIteration:
+                    results.append(synchronous_iter.__next__())
+                except StopIteration:
                     break
             return results
         else:
             # there is only one result for non-streaming
-            return self._get_next_result(agen)
+            return synchronous_iter.__next__()
 
     async def acompletion(
         self, **kwargs: Any
@@ -178,6 +217,7 @@ def litellm_router() -> Any:
 
 
 @pytest.mark.scheduled
+@pytest.mark.enable_socket
 def test_litellm_router_call(
     fake_completion: FakeCompletion, litellm_router: Any
 ) -> None:
@@ -195,12 +235,11 @@ def test_litellm_router_call(
 
 
 @pytest.mark.scheduled
+@pytest.mark.enable_socket
 def test_litellm_router_generate(
     fake_completion: FakeCompletion, litellm_router: Any
 ) -> None:
     """Test generate method of LiteLLM Router."""
-    from litellm import Usage
-
     chat = ChatLiteLLMRouter(router=litellm_router)
     chat_messages: List[List[BaseMessage]] = [
         [HumanMessage(content="How many toes do dogs have?")]
@@ -219,13 +258,18 @@ def test_litellm_router_generate(
             assert generation.message.content == fake_answer
     assert chat_messages == messages_copy
     assert result.llm_output is not None
-    assert result.llm_output[token_usage_key_name] == Usage(
-        completion_tokens=1, prompt_tokens=2, total_tokens=3
-    )
+    assert result.llm_output[token_usage_key_name] == {
+        "completion_tokens": 1,
+        "completion_tokens_details": None,
+        "prompt_tokens": 2,
+        "prompt_tokens_details": None,
+        "total_tokens": 3,
+    }
     fake_completion.check_inputs(expected_num_calls=1)
 
 
 @pytest.mark.scheduled
+@pytest.mark.enable_socket
 def test_litellm_router_streaming(
     fake_completion: FakeCompletion, litellm_router: Any
 ) -> None:
@@ -243,6 +287,7 @@ def test_litellm_router_streaming(
 
 
 @pytest.mark.scheduled
+@pytest.mark.enable_socket
 def test_litellm_router_streaming_callback(
     fake_completion: FakeCompletion, litellm_router: Any
 ) -> None:
@@ -267,12 +312,11 @@ def test_litellm_router_streaming_callback(
 
 
 @pytest.mark.scheduled
+@pytest.mark.enable_socket
 async def test_async_litellm_router(
     fake_completion: FakeCompletion, litellm_router: Any
 ) -> None:
     """Test async generation."""
-    from litellm import Usage
-
     chat = ChatLiteLLMRouter(router=litellm_router)
     message = HumanMessage(content="Hello")
 
@@ -288,13 +332,18 @@ async def test_async_litellm_router(
             assert generation.message.content == generation.text
             assert generation.message.content == fake_answer
     assert response.llm_output is not None
-    assert response.llm_output[token_usage_key_name] == Usage(
-        completion_tokens=2, prompt_tokens=4, total_tokens=6
-    )
+    assert response.llm_output[token_usage_key_name] == {
+        "completion_tokens": 2,
+        "completion_tokens_details": None,
+        "prompt_tokens": 4,
+        "prompt_tokens_details": None,
+        "total_tokens": 6,
+    }
     fake_completion.check_inputs(expected_num_calls=2)
 
 
 @pytest.mark.scheduled
+@pytest.mark.enable_socket
 async def test_async_litellm_router_streaming(
     fake_completion: FakeCompletion, litellm_router: Any
 ) -> None:
