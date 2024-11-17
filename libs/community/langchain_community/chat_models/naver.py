@@ -51,6 +51,12 @@ def _convert_chunk_to_message_chunk(
     role = message.get("role")
     content = message.get("content") or ""
 
+    if sse.event == "result":
+        response_metadata = {}
+        if "stopReason" in sse_data:
+            response_metadata['stopReason'] = sse_data["stopReason"]
+        return AIMessageChunk(content='', response_metadata=response_metadata)
+
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content)
     elif role == "assistant" or default_class == AIMessageChunk:
@@ -123,8 +129,6 @@ async def _aiter_sse(
         async for sse in event_source.aiter_sse():
             event_data = sse.json()
             if sse.event == "signal" and event_data.get("data", {}) == "[DONE]":
-                return
-            if sse.event == "result":
                 return
             yield sse
 
@@ -362,8 +366,6 @@ class ChatClovaX(BaseChatModel):
                             sse.event == "signal"
                             and event_data.get("data", {}) == "[DONE]"
                         ):
-                            return
-                        if sse.event == "result":
                             return
                         if sse.event == "error":
                             raise SSEError(message=sse.data)
