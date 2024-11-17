@@ -603,7 +603,43 @@ class FinancePolygonAPIWrapper(BaseModel):
         if status not in ("OK"):
             raise ValueError(f"API Error: {data}")
         return data.get("results", None)
+    
+    def get_trades(self, ticker: str, **kwargs: Any) -> Optional[dict]:
+        """
+        Get trades for a ticker symbol in a given the timestamp.
+        
+        /v3/trades/{stockTicker}
+        """
 
+        timestamp = kwargs.get("timestamp", None)
+        order = kwargs.get("order", None)
+        limit = kwargs.get("limit", 1000)
+        sort = kwargs.get("sort", None)
+
+        url =  f"{POLYGON_BASE_URL}v3/trades"
+
+        if ticker is not None:
+            url += f"/{ticker}"
+        if timestamp is not None:
+            url += f"?timestamp={timestamp}"
+        if order is not None:
+            url += f"&order={order}"
+
+        url += f"&limit={limit}"
+        
+        if sort is not None:
+            url += f"&sort={sort}"
+        
+        url += f"&apiKey={self.polygon_api_key}"
+        
+        response = requests.get(url)
+        data = response.json()
+
+        status = data.get("status", None)
+        if status not in ("OK"):
+            raise ValueError(f"API Error: {data}")
+        return data.get("results", None)
+    
     def run(self, mode: str, ticker: str = "", **kwargs: Any) -> str:
         if mode == "get_crypto_aggregate":
             return json.dumps(self.get_crypto_aggregates(ticker))
@@ -651,5 +687,8 @@ class FinancePolygonAPIWrapper(BaseModel):
             return json.dumps(self.get_last_quote(ticker))
         elif mode == "get_previous_close":
             return json.dumps(self.get_previous_close(ticker, **kwargs))
+        elif mode == 'get_trades':
+            return json.dump(self.get_trades(ticker, **kwargs))
         else:
             raise ValueError(f"Invalid mode {mode} for Polygon API.")
+        
