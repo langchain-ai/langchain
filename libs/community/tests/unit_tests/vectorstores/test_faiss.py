@@ -433,7 +433,7 @@ def test_faiss_mmr_with_metadatas_and_comparison_operators_filter_lte() -> None:
 
 
 @pytest.mark.requires("faiss")
-def test_faiss_mmr_with_metadatas_and_comparison_operators_filter_in() -> None:
+def test_faiss_mmr_with_metadatas_and_comparison_operators_filter_in_1() -> None:
     texts = ["foo", "foo", "fou", "foy"]
     metadatas = [{"page": i} for i in range(len(texts))]
     docsearch = FAISS.from_texts(texts, FakeEmbeddings(), metadatas=metadatas)
@@ -450,7 +450,7 @@ def test_faiss_mmr_with_metadatas_and_comparison_operators_filter_in() -> None:
 
 
 @pytest.mark.requires("faiss")
-def test_faiss_mmr_with_metadatas_and_comparison_operators_filter_in_1() -> None:
+def test_faiss_mmr_with_metadatas_and_comparison_operators_filter_in_2() -> None:
     texts = ["foo", "foo", "fou", "foy"]
     metadatas = [{"page": i} for i in range(len(texts))]
     docsearch = FAISS.from_texts(texts, FakeEmbeddings(), metadatas=metadatas)
@@ -468,7 +468,7 @@ def test_faiss_mmr_with_metadatas_and_comparison_operators_filter_in_1() -> None
 
 
 @pytest.mark.requires("faiss")
-def test_faiss_mmr_with_metadatas_and_comparison_operators_filter_nin() -> None:
+def test_faiss_mmr_with_metadatas_and_comparison_operators_filter_nin_1() -> None:
     texts = ["foo", "foo", "fou", "foy"]
     metadatas = [{"page": i} for i in range(len(texts))]
     docsearch = FAISS.from_texts(texts, FakeEmbeddings(), metadatas=metadatas)
@@ -486,7 +486,7 @@ def test_faiss_mmr_with_metadatas_and_comparison_operators_filter_nin() -> None:
 
 
 @pytest.mark.requires("faiss")
-def test_faiss_mmr_with_metadatas_and_comparison_operators_filter_nin_1() -> None:
+def test_faiss_mmr_with_metadatas_and_comparison_operators_filter_nin_2() -> None:
     texts = ["foo", "foo", "fou", "foy"]
     metadatas = [{"page": i} for i in range(len(texts))]
     docsearch = FAISS.from_texts(texts, FakeEmbeddings(), metadatas=metadatas)
@@ -522,7 +522,7 @@ def test_faiss_mmr_with_metadatas_and_logical_operators_filter_not() -> None:
 
 
 @pytest.mark.requires("faiss")
-def test_faiss_mmr_with_metadatas_and_logical_operators_filter_or() -> None:
+def test_faiss_mmr_with_metadatas_and_logical_operators_filter_or_1() -> None:
     texts = ["foo", "foo", "fou", "foy"]
     metadatas = [{"page": i} for i in range(len(texts))]
     docsearch = FAISS.from_texts(texts, FakeEmbeddings(), metadatas=metadatas)
@@ -539,7 +539,7 @@ def test_faiss_mmr_with_metadatas_and_logical_operators_filter_or() -> None:
 
 
 @pytest.mark.requires("faiss")
-def test_faiss_mmr_with_metadatas_and_logical_operators_filter_or_1() -> None:
+def test_faiss_mmr_with_metadatas_and_logical_operators_filter_or_2() -> None:
     texts = ["foo", "foo", "fou", "foy"]
     metadatas = [{"page": i} for i in range(len(texts))]
     docsearch = FAISS.from_texts(texts, FakeEmbeddings(), metadatas=metadatas)
@@ -558,7 +558,7 @@ def test_faiss_mmr_with_metadatas_and_logical_operators_filter_or_1() -> None:
 
 
 @pytest.mark.requires("faiss")
-def test_faiss_mmr_with_metadatas_and_logical_operators_filter_or_2() -> None:
+def test_faiss_mmr_with_metadatas_and_logical_operators_filter_or_3() -> None:
     texts = ["foo", "foo", "fou", "foy"]
     metadatas = [{"page": i} for i in range(len(texts))]
     docsearch = FAISS.from_texts(texts, FakeEmbeddings(), metadatas=metadatas)
@@ -579,7 +579,7 @@ def test_faiss_mmr_with_metadatas_and_logical_operators_filter_or_2() -> None:
 
 
 @pytest.mark.requires("faiss")
-def test_faiss_mmr_with_metadatas_and_logical_operators_filter_and() -> None:
+def test_faiss_mmr_with_metadatas_and_logical_operators_filter_and_1() -> None:
     texts = ["foo", "foo", "fou", "foy"]
     metadatas = [{"page": i} for i in range(len(texts))]
     docsearch = FAISS.from_texts(texts, FakeEmbeddings(), metadatas=metadatas)
@@ -596,7 +596,7 @@ def test_faiss_mmr_with_metadatas_and_logical_operators_filter_and() -> None:
 
 
 @pytest.mark.requires("faiss")
-def test_faiss_mmr_with_metadatas_and_logical_operators_filter_and_1() -> None:
+def test_faiss_mmr_with_metadatas_and_logical_operators_filter_and_2() -> None:
     texts = ["foo", "foo", "fou", "foy"]
     metadatas = [{"page": i} for i in range(len(texts))]
     docsearch = FAISS.from_texts(texts, FakeEmbeddings(), metadatas=metadatas)
@@ -611,7 +611,7 @@ def test_faiss_mmr_with_metadatas_and_logical_operators_filter_and_1() -> None:
 
 
 @pytest.mark.requires("faiss")
-def test_faiss_mmr_with_metadatas_and_logical_operators_filter_and_2() -> None:
+def test_faiss_mmr_with_metadatas_and_logical_operators_filter_and_3() -> None:
     texts = ["foo", "foo", "fou", "foy"]
     metadatas = [{"page": i} for i in range(len(texts))]
     docsearch = FAISS.from_texts(texts, FakeEmbeddings(), metadatas=metadatas)
@@ -628,7 +628,7 @@ def test_faiss_mmr_with_metadatas_and_logical_operators_filter_and_2() -> None:
 
 
 @pytest.mark.requires("faiss")
-def test_faiss_mmr_with_metadatas_and_logical_operators_filter_and_3() -> None:
+def test_faiss_mmr_with_metadatas_and_logical_operators_filter_and_4() -> None:
     texts = ["foo", "foo", "fou", "foy"]
     metadatas = [{"page": i} for i in range(len(texts))]
     docsearch = FAISS.from_texts(texts, FakeEmbeddings(), metadatas=metadatas)
@@ -647,7 +647,7 @@ def test_faiss_mmr_with_metadatas_and_logical_operators_filter_and_3() -> None:
 
 
 @pytest.mark.requires("faiss")
-def test_faiss_mmr_with_metadatas_and_nested_logical_operators_filter() -> None:
+def test_faiss_mmr_with_metadatas_and_nested_logical_operators_filter_1() -> None:
     texts = ["foo", "foo", "fou", "foy"]
     metadatas = [{"page": i} for i in range(len(texts))]
     docsearch = FAISS.from_texts(texts, FakeEmbeddings(), metadatas=metadatas)
@@ -666,7 +666,7 @@ def test_faiss_mmr_with_metadatas_and_nested_logical_operators_filter() -> None:
 
 
 @pytest.mark.requires("faiss")
-def test_faiss_mmr_with_metadatas_and_nested_logical_operators_filter_1() -> None:
+def test_faiss_mmr_with_metadatas_and_nested_logical_operators_filter_2() -> None:
     texts = ["foo", "foo", "fou", "foy"]
     metadatas = [{"page": i} for i in range(len(texts))]
     docsearch = FAISS.from_texts(texts, FakeEmbeddings(), metadatas=metadatas)
@@ -687,7 +687,7 @@ def test_faiss_mmr_with_metadatas_and_nested_logical_operators_filter_1() -> Non
 
 
 @pytest.mark.requires("faiss")
-def test_faiss_mmr_with_metadatas_and_nested_logical_operators_filter_2() -> None:
+def test_faiss_mmr_with_metadatas_and_nested_logical_operators_filter_3() -> None:
     texts = ["foo", "foo", "fou", "foy"]
     metadatas = [{"page": i} for i in range(len(texts))]
     docsearch = FAISS.from_texts(texts, FakeEmbeddings(), metadatas=metadatas)
@@ -705,7 +705,7 @@ def test_faiss_mmr_with_metadatas_and_nested_logical_operators_filter_2() -> Non
 
 
 @pytest.mark.requires("faiss")
-def test_faiss_mmr_with_metadatas_and_logical_comparsion_operators_filter() -> None:
+def test_faiss_mmr_with_metadatas_and_logical_comparsion_operators_filter_1() -> None:
     texts = ["foo", "foo", "fou", "foy"]
     metadatas = [{"page": i} for i in range(len(texts))]
     docsearch = FAISS.from_texts(texts, FakeEmbeddings(), metadatas=metadatas)
@@ -723,7 +723,7 @@ def test_faiss_mmr_with_metadatas_and_logical_comparsion_operators_filter() -> N
 
 
 @pytest.mark.requires("faiss")
-def test_faiss_mmr_with_metadatas_and_logical_comparsion_operators_filter_1() -> None:
+def test_faiss_mmr_with_metadatas_and_logical_comparsion_operators_filter_2() -> None:
     texts = ["foo", "foo", "fou", "foy"]
     metadatas = [{"page": i} for i in range(len(texts))]
     docsearch = FAISS.from_texts(texts, FakeEmbeddings(), metadatas=metadatas)
@@ -742,7 +742,7 @@ def test_faiss_mmr_with_metadatas_and_logical_comparsion_operators_filter_1() ->
 
 
 @pytest.mark.requires("faiss")
-def test_faiss_mmr_with_metadatas_and_nested_logical_comparsion_operators_filter() -> None:
+def test_faiss_mmr_with_metadatas_and_nested_logical_comparsion_operators_filter_1() -> None:
     texts = ["foo", "foo", "fou", "foy"]
     metadatas = [{"page": i} for i in range(len(texts))]
     docsearch = FAISS.from_texts(texts, FakeEmbeddings(), metadatas=metadatas)
@@ -761,7 +761,7 @@ def test_faiss_mmr_with_metadatas_and_nested_logical_comparsion_operators_filter
 
 
 @pytest.mark.requires("faiss")
-def test_faiss_mmr_with_metadatas_and_nested_logical_comparsion_operators_filter_1() -> None:
+def test_faiss_mmr_with_metadatas_and_nested_logical_comparsion_operators_filter_2() -> None:
     texts = ["foo", "foo", "fou", "foy"]
     metadatas = [{"page": i} for i in range(len(texts))]
     docsearch = FAISS.from_texts(texts, FakeEmbeddings(), metadatas=metadatas)
