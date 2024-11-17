@@ -401,7 +401,7 @@ class OpenSearchVectorSearch(VectorStore):
         self.is_aoss = _is_aoss_enabled(http_auth=http_auth)
         self.client = _get_opensearch_client(opensearch_url, **kwargs)
         self.async_client = _get_async_opensearch_client(opensearch_url, **kwargs)
-        self.engine = kwargs.get("engine")
+        self.engine = kwargs.get("engine", "nmslib")
 
     @property
     def embeddings(self) -> Embeddings:
@@ -420,7 +420,7 @@ class OpenSearchVectorSearch(VectorStore):
         index_name = kwargs.get("index_name", self.index_name)
         text_field = kwargs.get("text_field", "text")
         dim = len(embeddings[0])
-        engine = kwargs.get("engine", "nmslib")
+        engine = kwargs.get("engine", self.engine)
         space_type = kwargs.get("space_type", "l2")
         ef_search = kwargs.get("ef_search", 512)
         ef_construction = kwargs.get("ef_construction", 512)
@@ -461,7 +461,7 @@ class OpenSearchVectorSearch(VectorStore):
         index_name = kwargs.get("index_name", self.index_name)
         text_field = kwargs.get("text_field", "text")
         dim = len(embeddings[0])
-        engine = kwargs.get("engine", "nmslib")
+        engine = kwargs.get("engine", self.engine)
         space_type = kwargs.get("space_type", "l2")
         ef_search = kwargs.get("ef_search", 512)
         ef_construction = kwargs.get("ef_construction", 512)
@@ -530,7 +530,7 @@ class OpenSearchVectorSearch(VectorStore):
             )
 
         if is_appx_search:
-            engine = kwargs.get("engine", "nmslib")
+            engine = kwargs.get("engine", self.engine)
             space_type = kwargs.get("space_type", "l2")
             ef_search = kwargs.get("ef_search", 512)
             ef_construction = kwargs.get("ef_construction", 512)
