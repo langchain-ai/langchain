@@ -32,8 +32,9 @@ def _get_anthropic_claude_token_cost(
         # The model ID can be a cross-region (system-defined) inference profile ID,
         # which has a prefix indicating the region (e.g., 'us', 'eu') but
         # shares the same token costs as the "base model".
-        # By extracting the "base model ID", by taking the last two segments of the model ID,
-        # we can map cross-region inference profile IDs to their corresponding cost entries.
+        # By extracting the "base model ID", by taking the last two segments
+        # of the model ID, we can map cross-region inference profile IDs to
+        # their corresponding cost entries.
         base_model_id = model_id.split('.')[-2] + '.' + model_id.split('.')[-1]
     else:
         base_model_id = None
