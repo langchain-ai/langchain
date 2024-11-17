@@ -770,6 +770,9 @@ class ChildTool(BaseTool):
                 tool_kwargs["run_manager"] = run_manager
             if config_param := _get_runnable_config_param(func_to_check):
                 tool_kwargs[config_param] = config
+            
+            if 'self' in tool_kwargs.keys():
+                tool_kwargs['outer_self'] = tool_kwargs.pop('self')
 
             coro = context.run(self._arun, *tool_args, **tool_kwargs)
             if asyncio_accepts_context():

@@ -46,14 +46,34 @@ class StructuredTool(BaseTool):
 
     # --- Runnable ---
     
+    def _add_outer_self(
+        self,
+        input: Union[str, dict, ToolCall]
+    ) -> dict:
+        """Add outer self into arguments for method tools."""
+        if self.outer_self is None:
+            return input
+
+        if isinstance(input, str):
+            args = {'self': self.outer_self}
+            for x in self.args.keys(): # loop should only happen once
+                args[x] = input
+            return args
+        elif 'type' in input.keys() and input['type'] == 'tool_call':
+            input['args']['self'] = self.outer_self
+        elif isinstance(input, dict):
+            input['self'] = self.outer_self
+
+        return input
+    
     def invoke(
         self,
         input: Union[str, dict, ToolCall],
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Any:
-        if self.outer_self is not None and isinstance(input, dict):
-            input['self'] = self.outer_self
+        if self.outer_self is not None:
+            input = self._add_outer_self(input)
         return super().invoke(input, config, **kwargs)
 
     # TODO: Is this needed?
@@ -67,6 +87,8 @@ class StructuredTool(BaseTool):
             # If the tool does not implement async, fall back to default implementation
             return await run_in_executor(config, self.invoke, input, config, **kwargs)
 
+        if self.outer_self is not None:
+            input = self._add_outer_self(input)
         return await super().ainvoke(input, config, **kwargs)
 
     # --- Tool ---
@@ -111,6 +133,8 @@ class StructuredTool(BaseTool):
                 kwargs["callbacks"] = run_manager.get_child()
             if config_param := _get_runnable_config_param(self.coroutine):
                 kwargs[config_param] = config
+            if 'outer_self' in kwargs.keys():
+                kwargs['self'] = kwargs.pop('outer_self')
             return await self.coroutine(*args, **kwargs)
 
         # If self.coroutine is None, then this will delegate to the default

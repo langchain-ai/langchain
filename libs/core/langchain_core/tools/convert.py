@@ -34,7 +34,6 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
-    is_method: bool = False,
 ) -> BaseTool: ...
 
 
@@ -48,7 +47,6 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
-    is_method: bool = False,
 ) -> BaseTool: ...
 
 
@@ -62,7 +60,6 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
-    is_method: bool = False,
 ) -> Callable[[Union[Callable, Runnable]], BaseTool]: ...
 
 
@@ -76,7 +73,6 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
-    is_method: bool = False,
 ) -> Union[
     BaseTool,
     Callable[[Union[Callable, Runnable]], BaseTool],
@@ -254,7 +250,7 @@ def tool(
                 description = None
 
             if infer_schema or args_schema is not None:
-                if is_method:
+                if "self" in inspect.signature(dec_func).parameters.keys():
                     @property
                     def method_tool(self) -> StructuredTool:
                         return StructuredTool.from_function(
