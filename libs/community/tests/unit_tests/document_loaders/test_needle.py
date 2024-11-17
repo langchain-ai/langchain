@@ -2,7 +2,7 @@ import pytest
 from pytest_mock import MockerFixture
 
 
-@pytest.mark.requires("needle-python")
+@pytest.mark.requires("needle")
 def test_add_and_fetch_files(mocker: MockerFixture) -> None:
     """
     Test adding and fetching files using the NeedleLoader with a mock.

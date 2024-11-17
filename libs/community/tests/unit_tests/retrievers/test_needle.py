@@ -24,7 +24,7 @@ class MockNeedleClient:
             ]
 
 
-@pytest.mark.requires("needle-python")
+@pytest.mark.requires("needle")
 def test_needle_retriever_initialization() -> None:
     """
     Test that the NeedleRetriever is initialized correctly.
@@ -40,7 +40,7 @@ def test_needle_retriever_initialization() -> None:
     assert retriever.collection_id == "mock_collection_id"
 
 
-@pytest.mark.requires("needle-python")
+@pytest.mark.requires("needle")
 def test_get_relevant_documents(mocker: MockerFixture) -> None:
     """
     Test that the retriever correctly fetches documents.
