@@ -18,6 +18,13 @@ from langchain_community.tools.finance_polygon.sma import PolygonSMA
 from langchain_community.tools.finance_polygon.ema import PolygonEMA
 from langchain_community.tools.finance_polygon.macd import PolygonMACD
 from langchain_community.tools.finance_polygon.rsi import PolygonRSI
+from langchain_community.tools.finance_polygon.aggregates_stocks import PolygonAggregates
+from langchain_community.tools.finance_polygon.daily_open_close import PolygonDailyOpenClose
+from langchain_community.tools.finance_polygon.grouped_daily import PolygonGroupedDaily
+from langchain_community.tools.finance_polygon.last_quote import PolygonLastQuote
+from langchain_community.tools.finance_polygon.previous_close import PolygonPreviousClose
+from langchain_community.tools.finance_polygon.trades import PolygonTrades
+from langchain_community.tools.finance_polygon.dividends import PolygonDividends
 
 __all__ = [
     "PolygonCryptoAggregates",
@@ -38,5 +45,11 @@ __all__ = [
     "PolygonEMA",
     "PolygonMACD",
     "PolygonRSI",
-
+    "PolygonAggregates",
+    "PolygonDailyOpenClose",
+    "PolygonGroupedDaily",
+    "PolygonLastQuote",
+    "PolygonPreviousClose",
+    "PolygonTrades",
+    "PolygonDividends"
 ]
