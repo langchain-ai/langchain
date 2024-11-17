@@ -9,9 +9,16 @@ repository = "https://www.github.com/langchain-ai/langchain"
 
 
 [tool.poetry.dependencies]
-python = ">=3.9,<4.0"
+python = ">=3.8.1,<4.0"
 redis = "^5.2.0"
-langchain-core = "^0.3.15"
+
+[tool.poetry.group.docs.dependencies]
+autodoc_pydantic = "^1"
+sphinx = "^7"
+myst-parser = "^3"
+sphinx-autobuild = "^2021"
+pydata-sphinx-theme = "^0.14"
+toml = "^0.10.2"
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.5.0"
