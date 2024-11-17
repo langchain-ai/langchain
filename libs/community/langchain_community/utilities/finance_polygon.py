@@ -466,6 +466,44 @@ class FinancePolygonAPIWrapper(BaseModel):
             f"series_type={series_type}&limit={limit}&apiKey={self.polygon_api_key}"
         )
         return self._get_response(url)
+    
+    def get_aggregates(self, ticker: str, **kwargs: Any) -> Optional[dict]:
+        """
+        Get aggregate bars for a stock over a given date range
+        in custom time window sizes.
+
+        /v2/aggs/ticker/{stocksTicker}/range/{multiplier}/{timespan}/{from}/{to}
+        """
+        multiplier = kwargs.get("timespan_multiplier", 1)
+        timespan = kwargs.get("timespan", "day")
+        from_date = kwargs.get("from_date", None)
+        to_date = kwargs.get("to_date", None)
+        adjusted = kwargs.get("adjusted", True)
+        sort = kwargs.get("sort", "asc")
+        limit = kwargs.get("limit", 5000)
+
+        url = POLYGON_BASE_URL + "/v2/aggs/ticker"
+
+        if ticker is not None:
+            url += f"/{ticker}"
+        
+        url += f"/range/{multiplier}/{timespan}"
+
+        if from_date is not None:
+            url += f"/{from_date}"
+        if to_date is not None:
+            url += f"/{to_date}"
+        
+        url += f"?adjusted={adjusted}&sort={sort}&limit={limit}&apiKey={self.polygon_api_key}"
+    
+        response = requests.get(url)
+        data = response.json()
+
+        status = data.get("status", None)
+        if status not in ("OK"):
+            raise ValueError(f"API Error: {data}")
+        return data.get("results", None)
+
 
     def run(self, mode: str, ticker: str = "", **kwargs: Any) -> str:
         if mode == "get_crypto_aggregate":
@@ -504,5 +542,8 @@ class FinancePolygonAPIWrapper(BaseModel):
             return json.dumps(self.get_macd(ticker, **kwargs))
         elif mode == "get_rsi":
             return json.dumps(self.get_rsi(ticker, **kwargs))
+        elif mode == "get_aggregates":
+            return json.dumps(self.get_aggregates(ticker, **kwargs))
+        
         else:
             raise ValueError(f"Invalid mode {mode} for Polygon API.")
