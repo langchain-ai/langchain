@@ -1,13 +1,12 @@
 """Wrapper around Novita chat models."""
 
-from typing import Dict
+from typing import Dict, Any
 
 from langchain_core.utils import (
-    __init__,
     convert_to_secret_str,
     get_from_dict_or_env,
 )
-from pydantic import Field, SecretStr
+from pydantic import Field, SecretStr, model_validator
 
 from langchain_community.chat_models import ChatOpenAI
 
@@ -31,8 +30,9 @@ class ChatNovita(ChatOpenAI):  # type: ignore[misc]
     novita_api_key: SecretStr = Field(default=None, alias="api_key")
     model_name: str = Field(default="gryphe/mythomax-l2-13b", alias="model")
 
-    @__init__
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that the environment is set up correctly."""
         values["novita_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(
