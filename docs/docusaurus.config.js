@@ -26,6 +26,7 @@ const config = {
   trailingSlash: true,
   onBrokenLinks: "throw",
   onBrokenMarkdownLinks: "throw",
+  onBrokenAnchors: "throw",
 
   themes: ["@docusaurus/theme-mermaid"],
   markdown: {
@@ -180,6 +181,11 @@ const config = {
                 type: "doc",
                 docId: "people",
                 label: "People",
+              },
+              {
+                type: "doc",
+                docId: "troubleshooting/errors/index",
+                label: "Error reference",
               },
               {
                 type: 'html',

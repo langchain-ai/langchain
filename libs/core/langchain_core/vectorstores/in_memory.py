@@ -329,23 +329,38 @@ class InMemoryVectorStore(VectorStore):
         filter: Optional[Callable[[Document], bool]] = None,
         **kwargs: Any,
     ) -> list[tuple[Document, float, list[float]]]:
-        result = []
-        for doc in self.store.values():
-            vector = doc["vector"]
-            similarity = float(cosine_similarity([embedding], [vector]).item(0))
-            result.append(
-                (
-                    Document(
-                        id=doc["id"], page_content=doc["text"], metadata=doc["metadata"]
-                    ),
-                    similarity,
-                    vector,
-                )
-            )
-        result.sort(key=lambda x: x[1], reverse=True)
+        # get all docs with fixed order in list
+        docs = list(self.store.values())
+
         if filter is not None:
-            result = [r for r in result if filter(r[0])]
-        return result[:k]
+            docs = [
+                doc
+                for doc in docs
+                if filter(Document(page_content=doc["text"], metadata=doc["metadata"]))
+            ]
+
+        if not docs:
+            return []
+
+        similarity = cosine_similarity([embedding], [doc["vector"] for doc in docs])[0]
+
+        # get the indices ordered by similarity score
+        top_k_idx = similarity.argsort()[::-1][:k]
+
+        return [
+            (
+                Document(
+                    id=doc_dict["id"],
+                    page_content=doc_dict["text"],
+                    metadata=doc_dict["metadata"],
+                ),
+                float(similarity[idx].item()),
+                doc_dict["vector"],
+            )
+            for idx in top_k_idx
+            # Assign using walrus operator to avoid multiple lookups
+            if (doc_dict := docs[idx])
+        ]
 
     def similarity_search_with_score_by_vector(
         self,

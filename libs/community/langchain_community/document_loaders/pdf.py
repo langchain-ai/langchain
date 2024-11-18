@@ -71,7 +71,7 @@ class UnstructuredPDFLoader(UnstructuredFileLoader):
     def _get_elements(self) -> List:
         from unstructured.partition.pdf import partition_pdf
 
-        return partition_pdf(filename=self.file_path, **self.unstructured_kwargs)
+        return partition_pdf(filename=self.file_path, **self.unstructured_kwargs)  # type: ignore[arg-type]
 
 
 class BasePDFLoader(BaseLoader, ABC):
@@ -178,7 +178,7 @@ class PyPDFLoader(BasePDFLoader):
 
             loader = PyPDFLoader(
                 file_path = "./example_data/layout-parser-paper.pdf",
-                password = "my-pasword",
+                password = "my-password",
                 extract_images = True,
                 # headers = None
                 # extraction_mode = "plain",
@@ -572,7 +572,8 @@ class MathpixPDFLoader(BasePDFLoader):
         response = requests.get(url, headers=self._mathpix_headers)
         return response.content.decode("utf-8")
 
-    def clean_pdf(self, contents: str) -> str:
+    @staticmethod
+    def clean_pdf(contents: str) -> str:
         """Clean the PDF file.
 
         Args:
@@ -942,6 +943,83 @@ class DocumentIntelligenceLoader(BasePDFLoader):
         """Lazy load given path as pages."""
         blob = Blob.from_path(self.file_path)  # type: ignore[attr-defined]
         yield from self.parser.parse(blob)
+
+
+class ZeroxPDFLoader(BasePDFLoader):
+    """
+    Document loader utilizing Zerox library:
+    https://github.com/getomni-ai/zerox
+
+    Zerox converts PDF document to serties of images (page-wise) and
+    uses vision-capable LLM model to generate Markdown representation.
+
+    Zerox utilizes anyc operations. Therefore when using this loader
+    inside Jupyter Notebook (or any environment running async)
+    you will need to:
+    ```python
+        import nest_asyncio
+        nest_asyncio.apply()
+    ```
+    """
+
+    def __init__(
+        self,
+        file_path: Union[str, Path],
+        model: str = "gpt-4o-mini",
+        **zerox_kwargs: Any,
+    ) -> None:
+        super().__init__(file_path=file_path)
+        """
+        Initialize the parser with arguments to be passed to the zerox function.
+        Make sure to set necessary environmnet variables such as API key, endpoint, etc.
+        Check zerox documentation for list of necessary environment variables for
+        any given model.
+
+        Args:
+            file_path:
+                Path or url of the pdf file
+            model:
+                Vision capable model to use. Defaults to "gpt-4o-mini".
+                Hosted models are passed in format "<provider>/<model>"
+                Examples: "azure/gpt-4o-mini", "vertex_ai/gemini-1.5-flash-001"
+                          See more details in zerox documentation.
+            **zerox_kwargs: 
+                Arguments specific to the zerox function.
+                see datailed list of arguments here in zerox repository:
+                https://github.com/getomni-ai/zerox/blob/main/py_zerox/pyzerox/core/zerox.py#L25
+        """  # noqa: E501
+        self.zerox_kwargs = zerox_kwargs
+        self.model = model
+
+    def lazy_load(self) -> Iterator[Document]:
+        """
+        Loads documnts from pdf utilizing zerox library:
+        https://github.com/getomni-ai/zerox
+
+        Returns:
+            Iterator[Document]: An iterator over parsed Document instances.
+        """
+        import asyncio
+
+        from pyzerox import zerox
+
+        # Directly call asyncio.run to execute zerox synchronously
+        zerox_output = asyncio.run(
+            zerox(file_path=self.file_path, model=self.model, **self.zerox_kwargs)
+        )
+
+        # Convert zerox output to Document instances and yield them
+        if len(zerox_output.pages) > 0:
+            num_pages = zerox_output.pages[-1].page
+            for page in zerox_output.pages:
+                yield Document(
+                    page_content=page.content,
+                    metadata={
+                        "source": self.source,
+                        "page": page.page,
+                        "num_pages": num_pages,
+                    },
+                )
 
 
 # Legacy: only for backwards compatibility. Use PyPDFLoader instead
