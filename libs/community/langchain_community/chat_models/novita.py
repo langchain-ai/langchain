@@ -1,6 +1,6 @@
 """Wrapper around Novita chat models."""
 
-from typing import Dict, Any
+from typing import Any, Dict
 
 from langchain_core.utils import (
     convert_to_secret_str,
