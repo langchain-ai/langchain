@@ -209,6 +209,10 @@ if TYPE_CHECKING:
         PolygonReferenceTickerEvents,
     )
 
+    from langchain_community.tools.finance_polygon.ref_ticker_news import (
+        PolygonReferenceTickerNews,
+    )
+
     from langchain_community.tools.finance_polygon.market_status import (
         PolygonMarketStatus,
     )

@@ -149,6 +149,34 @@ class FinancePolygonAPIWrapper(BaseModel):
 
         return self._get_response(url)
     
+    def get_reference_tickers(self, **kwargs: Any) -> Optional[dict]:
+        """
+        Get the most recent news articles relating to a stock ticker symbol, 
+        including a summary of the article and a link to the original source.
+
+        /v2/reference/news/
+        """
+        ticker = kwargs.get("ticker", "")
+        published_utc = kwargs.get("published_utc", "")
+        order = kwargs.get("order", "")
+        limit = kwargs.get("limit", 10)
+        sort = kwargs.get("sort", "")
+
+        url = POLYGON_BASE_URL + "v3/reference/tickers?"
+
+        if ticker is not "":
+            url = url + f"ticker={ticker}&"
+        if published_utc is not "":
+            url = url + f"published_utc={published_utc}&"
+        if order is not "":
+            url = url + f"order={order}&"
+        url = url + f"limit={limit}&"
+        if sort is not "":
+            url = url + f"sort={sort}&"
+        url = url + f"apiKey={self.polygon_api_key}"
+
+        return self._get_response(url)
+    
     def get_reference_ticker_details(self, ticker, **kwargs) -> Optional[dict]:
         """
         Get ticker details from Polygon.
@@ -830,6 +858,8 @@ class FinancePolygonAPIWrapper(BaseModel):
             return json.dumps(self.get_reference_ticker_details(ticker, **kwargs))
         elif mode == 'get_reference_ticker_events':
             return json.dumps(self.get_reference_ticker_events(ticker, **kwargs))
+        elif mode == 'get_reference_ticker_news':
+            return json.dumps(self.get_reference_ticker_news(**kwargs))
         else:
             raise ValueError(f"Invalid mode {mode} for Polygon API.")
         

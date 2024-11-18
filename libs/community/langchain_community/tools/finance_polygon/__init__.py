@@ -28,6 +28,8 @@ from langchain_community.tools.finance_polygon.dividends import PolygonDividends
 from langchain_community.tools.finance_polygon.ref_ticker import PolygonReferenceTicker
 from langchain_community.tools.finance_polygon.ref_ticker_details import PolygonReferenceTickerDetails
 from langchain_community.tools.finance_polygon.ref_ticker_events import PolygonReferenceTickerEvents
+from langchain_community.tools.finance_polygon.ref_ticker_news import PolygonReferenceTickerNews
+
 
 
 __all__ = [

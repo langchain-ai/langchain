@@ -10,7 +10,7 @@ from langchain_community.utilities.finance_polygon import FinancePolygonAPIWrapp
 class FinancePolygonReferenceTickerEventsSchema(BaseModel):
     """Input for PolygonReferenceTickerEvents."""
 
-    id: str = Field(
+    event_id: str = Field(
         description="identifier of an asset.",
     )
     types: str = Field(
