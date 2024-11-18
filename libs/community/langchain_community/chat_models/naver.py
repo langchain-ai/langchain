@@ -35,7 +35,7 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.utils import convert_to_secret_str, get_from_env
-from pydantic import AliasChoices, Field, SecretStr, model_validator
+from pydantic import AliasChoices, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
 _DEFAULT_BASE_URL = "https://clovastudio.stream.ntruss.com"
@@ -214,10 +214,7 @@ class ChatClovaX(BaseChatModel):
     timeout: int = Field(gt=0, default=90)
     max_retries: int = Field(ge=1, default=2)
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        populate_by_name = True
+    model_config = ConfigDict(populate_by_name=True, protected_namespaces=())
 
     @property
     def _default_params(self) -> Dict[str, Any]:

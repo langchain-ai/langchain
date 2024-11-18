@@ -7,6 +7,7 @@ from langchain_core.utils import convert_to_secret_str, get_from_env
 from pydantic import (
     AliasChoices,
     BaseModel,
+    ConfigDict,
     Field,
     SecretStr,
     model_validator,
@@ -86,8 +87,7 @@ class ClovaXEmbeddings(BaseModel, Embeddings):
 
     timeout: int = Field(gt=0, default=60)
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True, protected_namespaces=())
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
