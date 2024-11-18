@@ -1117,7 +1117,7 @@ const FEATURE_TABLES = {
             },
             {
                 name: "SQLServer",
-                link: "azuresqldb",
+                link: "sqlserver",
                 deleteById: true,
                 filtering: true,
                 searchByVector: true,
