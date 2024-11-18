@@ -493,7 +493,7 @@ files = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.17"
+version = "0.3.19"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -517,8 +517,8 @@ type = "directory"
 url = "../../core"
 
 [[package]]
-name = "langchain-standard-tests"
-version = "0.3.0"
+name = "langchain-tests"
+version = "0.3.1"
 description = "Standard tests for LangChain implementations"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -1562,4 +1562,4 @@ watchmedo = ["PyYAML (>=3.10)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0"
-content-hash = "193b209048042991c70a06289c41e67d44cc104c970a70857beacc8a51f0459b"
+content-hash = "79ff1e8bd2a97aefd574186299e51f9e2487ee51bcde1e199d6e786c3fdde8ea"
