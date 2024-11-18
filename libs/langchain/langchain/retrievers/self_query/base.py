@@ -196,6 +196,16 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
             if isinstance(vectorstore, HanaDB):
                 return HanaTranslator()
 
+        try:
+            from langchain_weaviate.vectorstores import WeaviateVectorStore
+
+            from langchain.retrievers.self_query.weaviate import WeaviateTranslator
+        except ImportError:
+            pass
+        else:
+            if isinstance(vectorstore, WeaviateVectorStore):
+                return WeaviateTranslator()
+
         raise ValueError(
             f"Self query retriever with Vector Store type {vectorstore.__class__}"
             f" not supported."
