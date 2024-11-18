@@ -1368,7 +1368,7 @@ class FAISS(VectorStore):
             "$nin": lambda a, b: a not in b,
         }
 
-        for op in filter.keys():
+        for op in filter:
             if op.startswith("$") and op not in COMPARISON_OPERATORS and op not in {"$and", "$or", "$not"}:
                 raise ValueError(
                     f"filter contains an unsupported operator: {op}"
