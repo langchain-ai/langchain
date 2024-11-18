@@ -1,6 +1,6 @@
 """Test Lindorm AI embeddings."""
 
-from langchain_community.embeddings.lindormai import LindormAIEmbeddings
+from langchain_community.embeddings.lindorm_embedding import LindormAIEmbeddings
 import environs
 
 env = environs.Env()

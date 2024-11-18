@@ -11,7 +11,7 @@ from opensearchpy.helpers import scan
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders import TextLoader
-from langchain_community.embeddings.lindormai import LindormAIEmbeddings
+from langchain_community.embeddings.lindorm_embedding import LindormAIEmbeddings
 from langchain_community.vectorstores.lindorm_search_store import LindormSearchStore
 import environs
 
