@@ -26,7 +26,7 @@ from langchain_community.tools.finance_polygon.previous_close import PolygonPrev
 from langchain_community.tools.finance_polygon.trades import PolygonTrades
 from langchain_community.tools.finance_polygon.dividends import PolygonDividends
 from langchain_community.tools.finance_polygon.ref_ticker import PolygonReferenceTicker
-
+from langchain_community.tools.finance_polygon.ref_ticker_details import PolygonReferenceTickerDetails
 
 __all__ = [
     "PolygonCryptoAggregates",
@@ -54,5 +54,6 @@ __all__ = [
     "PolygonPreviousClose",
     "PolygonTrades",
     "PolygonDividends",
-    "PolygonReferenceTicker"
+    "PolygonReferenceTicker",
+    "PolygonReferenceTickerDetails"
 ]
