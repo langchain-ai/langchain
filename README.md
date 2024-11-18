@@ -129,7 +129,7 @@ Please see [here](https://python.langchain.com) for full documentation, which in
 
 - [🦜🛠️ LangSmith](https://docs.smith.langchain.com/): Trace and evaluate your language model applications and intelligent agents to help you move from prototype to production.
 - [🦜🕸️ LangGraph](https://langchain-ai.github.io/langgraph/): Create stateful, multi-actor applications with LLMs. Integrates smoothly with LangChain, but can be used without it.
-- [🦜🏓 LangServe](https://python.langchain.com/docs/langserve): Deploy LangChain runnables and chains as REST APIs.
+- [🦜🕸️ LangGraph Platform](https://langchain-ai.github.io/langgraph/concepts/#langgraph-platform): Deploy LLM applications built with LangGraph into production.
 
 ## 💁 Contributing
 
