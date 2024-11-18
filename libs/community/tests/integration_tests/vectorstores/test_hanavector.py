@@ -1432,3 +1432,80 @@ def test_preexisting_specific_columns_for_returned_metadata_completeness(
     assert docs[0].metadata["quality"] == "good"
     assert docs[0].metadata["ready"]
     assert "NonExisting" not in docs[0].metadata.keys()
+
+
+
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_hanavector_keyword_search(texts: List[str], metadatas: List[dict]) -> None:
+    table_name = "TEST_TABLE_KEYWORD_SEARCH"
+    # Delete table if it exists
+    drop_table(test_setup.conn, table_name)
+
+    vectorDB = HanaDB.from_texts(
+        connection=test_setup.conn,
+        texts=texts,
+        metadatas=metadatas,
+        embedding=embedding,
+        table_name=table_name,
+    )
+
+    # Perform keyword search
+    keyword = "foo"
+    docs = vectorDB.similarity_search(query=keyword, k=3, filter={"$keyword": f"{keyword}"})
+
+    # Validate the results
+    assert len(docs) == 1
+    assert docs[0].page_content == keyword
+    assert keyword in docs[0].page_content
+
+
+    # Perform keyword search with non-existing keyword
+    non_existing_keyword = "nonexistent"
+    docs = vectorDB.similarity_search(query=non_existing_keyword, k=3, filter={"$keyword": f"{non_existing_keyword}"})
+
+    assert len(docs) == 0, "Expected no results for non-existing keyword"
+
+
+
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_hanavector_keyword_search_with_metadata(
+    texts: List[str], metadatas: List[dict]
+) -> None:
+    table_name = "TEST_TABLE_KEYWORD_SEARCH_METADATA"
+    # Delete table if it exists
+    drop_table(test_setup.conn, table_name)
+
+    sql_str = (
+        f'CREATE TABLE "{table_name}" ('
+        f'"VEC_TEXT" NCLOB, '
+        f'"VEC_META" NCLOB, '
+        f'"VEC_VECTOR" REAL_VECTOR, '
+        f'"quality" NVARCHAR(100), '
+        f'"start" INTEGER);'
+    )
+    try:
+        cur = test_setup.conn.cursor()
+        cur.execute(sql_str)
+    finally:
+        cur.close()
+
+    vectorDB = HanaDB.from_texts(
+        connection=test_setup.conn,
+        texts=texts,
+        metadatas=metadatas,
+        embedding=embedding,
+        table_name=table_name,
+        specific_metadata_columns=["quality", "start"],
+    )
+
+    docs = vectorDB.similarity_search("hello", k=5, filter={"quality": "good"})
+    assert len(docs) == 1
+    assert docs[0].page_content == "foo"
+
+    docs = vectorDB.similarity_search("hello", k=5, filter={"quality": "good", "$keyword": "foo"})
+    assert len(docs) == 1
+    assert docs[0].page_content == "foo"
+
+    docs = vectorDB.similarity_search("hello", k=5, filter={"quality": "good", "$keyword": "bar"})
+    assert len(docs) == 0
+
