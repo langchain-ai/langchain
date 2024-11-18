@@ -29,6 +29,8 @@ from langchain_community.tools.finance_polygon.ref_ticker import PolygonReferenc
 from langchain_community.tools.finance_polygon.ref_ticker_details import PolygonReferenceTickerDetails
 from langchain_community.tools.finance_polygon.ref_ticker_events import PolygonReferenceTickerEvents
 from langchain_community.tools.finance_polygon.ref_ticker_news import PolygonReferenceTickerNews
+from langchain_community.tools.finance_polygon.ref_ticker_types import PolygonReferenceTickerTypes
+
 
 
 
@@ -60,5 +62,7 @@ __all__ = [
     "PolygonDividends",
     "PolygonReferenceTicker",
     "PolygonReferenceTickerDetails",
-    "PolygonReferenceTickerEvents"
+    "PolygonReferenceTickerEvents",
+    "PolygonReferenceTickerNews",
+    "PolygonReferenceTickerTypes"
 ]
