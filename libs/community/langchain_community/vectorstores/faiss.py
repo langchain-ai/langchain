@@ -1406,19 +1406,16 @@ class FAISS(VectorStore):
 
         def filter_func(filter: Dict[str, Any]) -> Callable[[Dict[str, Any]], bool]:
             if "$and" in filter:
-                conditions = [filter_func(sub_filter) for sub_filter in filter["$and"]]
-                return lambda doc: all(cond(doc) for cond in conditions)
-            elif "$or" in filter:
-                conditions = [filter_func(sub_filter) for sub_filter in filter["$or"]]
-                return lambda doc: any(cond(doc) for cond in conditions)
-            elif "$not" in filter:
+                return lambda doc: all(cond(doc) for cond in (filter_func(sub_filter) for sub_filter in filter["$and"]))
+            if "$or" in filter:
+                return lambda doc: any(cond(doc) for cond in (filter_func(sub_filter) for sub_filter in filter["$or"]))
+            if "$not" in filter:
                 condition = filter_func(filter["$not"])
                 return lambda doc: not condition(doc)
-            else:
-                conditions = [
-                    filter_func_cond(field, condition)
-                    for field, condition in filter.items()
-                ]
-                return lambda doc: all(cond(doc) for cond in conditions)
+            return lambda doc: all(cond(doc) for cond in (
+                filter_func_cond(field, condition)
+                for field, condition in filter.items()
+            ))
+            
 
         return filter_func(filter)
