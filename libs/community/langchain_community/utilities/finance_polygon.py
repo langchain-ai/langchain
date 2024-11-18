@@ -164,6 +164,22 @@ class FinancePolygonAPIWrapper(BaseModel):
         url = url + f"apiKey={self.polygon_api_key}"
 
         return self._get_response(url)
+    
+    def get_reference_ticker_events(self, event_id, **kwargs) -> Optional[dict]:
+        """
+        Get events details for an asset from Polygon.
+
+        /vX/reference/tickers/{id}/events
+        """
+        types = kwargs.get("types", "")
+        url = POLYGON_BASE_URL + f"v3/reference/tickers/{event_id}/events?"
+
+        if types is not "":
+            url = url + f"types={types}&"
+        
+        url = url + f"apiKey={self.polygon_api_key}"
+
+        return self._get_response(url)
 
     def get_related_companies(self, ticker: str) -> Optional[dict]:
         """
@@ -812,6 +828,8 @@ class FinancePolygonAPIWrapper(BaseModel):
             return json.dumps(self.get_reference_tickers(**kwargs))
         elif mode == 'get_reference_ticker_details':
             return json.dumps(self.get_reference_ticker_details(ticker, **kwargs))
+        elif mode == 'get_reference_ticker_events':
+            return json.dumps(self.get_reference_ticker_events(ticker, **kwargs))
         else:
             raise ValueError(f"Invalid mode {mode} for Polygon API.")
         

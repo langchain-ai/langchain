@@ -27,6 +27,8 @@ from langchain_community.tools.finance_polygon.trades import PolygonTrades
 from langchain_community.tools.finance_polygon.dividends import PolygonDividends
 from langchain_community.tools.finance_polygon.ref_ticker import PolygonReferenceTicker
 from langchain_community.tools.finance_polygon.ref_ticker_details import PolygonReferenceTickerDetails
+from langchain_community.tools.finance_polygon.ref_ticker_events import PolygonReferenceTickerEvents
+
 
 __all__ = [
     "PolygonCryptoAggregates",
@@ -55,5 +57,6 @@ __all__ = [
     "PolygonTrades",
     "PolygonDividends",
     "PolygonReferenceTicker",
-    "PolygonReferenceTickerDetails"
+    "PolygonReferenceTickerDetails",
+    "PolygonReferenceTickerEvents"
 ]
