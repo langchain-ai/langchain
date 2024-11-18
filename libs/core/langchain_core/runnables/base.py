@@ -3598,9 +3598,8 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
                     if v.annotation != Any and k == "root":
                         return super().get_input_schema(config)
 
-
             # This is correct, but pydantic typings/mypy don't think so.
-            return create_model_v2(  # type: ignore[call-overload]
+            return create_model_v2( # type: ignore[call-overload]
                 self.get_name("Input"),
                 field_definitions={
                     k: (v.annotation, v.default)
