@@ -103,6 +103,51 @@ class FinancePolygonAPIWrapper(BaseModel):
             f"order={order}&limit={limit}&sort={sort}&apiKey={self.polygon_api_key}"
 
         return self._get_response(url)
+    
+    def get_reference_tickers(self, **kwargs: Any) -> Optional[dict]:
+        """
+        Get all supported reference tickers by Polygon.
+
+        /v3/reference/tickers/
+        """
+        ticker = kwargs.get("ticker", "")
+        ticker_type = kwargs.get("ticker_type", "")
+        market = kwargs.get("market", "")
+        exchange = kwargs.get("exchange", "")
+        cusip = kwargs.get("cusip", "")
+        cik = kwargs.get("cik", "")
+        date = kwargs.get("date", "") #add default date
+        search = kwargs.get("search", "")
+        active = kwargs.get("active", "true")
+        order = kwargs.get("order", "")
+        limit = kwargs.get("limit", 100)
+        sort = kwargs.get("sort", "")
+
+        url = POLYGON_BASE_URL + "v3/reference/tickers?"
+
+        if ticker is not "":
+            url = url + f"ticker={ticker}&"
+        if ticker_type is not "":
+            url = url + f"ticker_type={ticker_type}&"
+        if exchange is not "":
+            url = url + f"exchange={exchange}&"
+        if cusip is not "":
+            url = url + f"cusip={cusip}&"
+        if cik is not "":
+            url = url + f"exchange={cik}&"
+        if date is not "":
+            url = url + f"date={date}&"
+        if search is not "":
+            url = url + f"search={search}&"
+        url = url + f"active={active}&"
+        if order is not "":
+            url = url + f"order={order}&"
+        url = url + f"limit={limit}&"
+        if sort is not "":
+            url = url + f"sort={sort}&"
+        url = url + f"apiKey={self.polygon_api_key}"
+
+        return self._get_response(url)
 
     def get_related_companies(self, ticker: str) -> Optional[dict]:
         """
@@ -744,9 +789,11 @@ class FinancePolygonAPIWrapper(BaseModel):
         elif mode == "get_previous_close":
             return json.dumps(self.get_previous_close(ticker, **kwargs))
         elif mode == 'get_trades':
-            return json.dump(self.get_trades(ticker, **kwargs))
+            return json.dumps(self.get_trades(ticker, **kwargs))
         elif mode == 'get_dividends':
-            return json.dump(self.get_dividends(ticker, **kwargs))
+            return json.dumps(self.get_dividends(ticker, **kwargs))
+        elif mode == 'get_reference_tickers':
+            return json.dumps(self.get_reference_tickers(**kwargs))
         else:
             raise ValueError(f"Invalid mode {mode} for Polygon API.")
         

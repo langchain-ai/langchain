@@ -197,6 +197,10 @@ if TYPE_CHECKING:
         PolygonMarketHolidays,
     )
 
+    from langchain_community.tools.finance_polygon.ref_ticker import (
+        PolygonReferenceTicker,
+    )
+
     from langchain_community.tools.finance_polygon.market_status import (
         PolygonMarketStatus,
     )

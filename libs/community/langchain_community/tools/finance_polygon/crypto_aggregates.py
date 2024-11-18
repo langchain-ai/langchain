@@ -53,7 +53,7 @@ class PolygonCryptoAggregates(BaseTool):  # type: ignore[override, override]
         "Input should be the ticker, date range, timespan, and timespan multiplier"
         " that you want to get the aggregate bars for."
     )
-    args_schema: Type[PolygonCryptoAggregatesSchema] = PolygonCryptoAggregatesSchema
+    args_schema: Type[FinancePolygonCryptoAggregatesSchema] = FinancePolygonCryptoAggregatesSchema
 
     api_wrapper: FinancePolygonAPIWrapper
 
