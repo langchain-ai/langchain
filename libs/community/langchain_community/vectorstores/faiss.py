@@ -1372,10 +1372,8 @@ class FAISS(VectorStore):
         valid_operators = set(COMPARISON_OPERATORS.keys()) | {"$and", "$or", "$not"}
         for op in filter:
             if op and op.startswith("$") and op not in valid_operators:
-                raise ValueError(
-                    f"filter contains an unsupported operator: {op}"
-                )
-                
+                raise ValueError(f"filter contains an unsupported operator: {op}")
+
         def filter_func_cond(
             field: str, condition: Dict[str, Any]
         ) -> Callable[[Dict[str, Any]], bool]:
@@ -1399,11 +1397,18 @@ class FAISS(VectorStore):
 
         def filter_func(filter: Dict[str, Any]) -> Callable[[Dict[str, Any]], bool]:
             if "$and" in filter:
-                return lambda doc: all(filter_func(sub_filter)(doc) for sub_filter in filter["$and"])
+                return lambda doc: all(
+                    filter_func(sub_filter)(doc) for sub_filter in filter["$and"]
+                )
             if "$or" in filter:
-                return lambda doc: any(filter_func(sub_filter)(doc) for sub_filter in filter["$or"])
+                return lambda doc: any(
+                    filter_func(sub_filter)(doc) for sub_filter in filter["$or"]
+                )
             if "$not" in filter:
                 return lambda doc: not filter_func(filter["$not"])(doc)
-            return lambda doc: all(filter_func_cond(field, condition)(doc) for field, condition in filter.items())
+            return lambda doc: all(
+                filter_func_cond(field, condition)(doc)
+                for field, condition in filter.items()
+            )
 
         return filter_func(filter)
