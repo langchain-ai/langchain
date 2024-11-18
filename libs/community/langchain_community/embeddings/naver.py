@@ -115,7 +115,7 @@ class ClovaXEmbeddings(BaseModel, Embeddings):
 
         if not self.ncp_apigw_api_key:
             self.ncp_apigw_api_key = convert_to_secret_str(
-                get_from_env("ncp_apigw_api_key", "NCP_APIGW_API_KEY")
+                get_from_env("ncp_apigw_api_key", "NCP_APIGW_API_KEY", "")
             )
 
         if not self.base_url:
