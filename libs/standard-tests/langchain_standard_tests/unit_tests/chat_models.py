@@ -79,8 +79,7 @@ def my_adder(a: int, b: int) -> int:
 class ChatModelTests(BaseStandardTests):
     @property
     @abstractmethod
-    def chat_model_class(self) -> Type[BaseChatModel]:
-        ...
+    def chat_model_class(self) -> Type[BaseChatModel]: ...
 
     @property
     def chat_model_params(self) -> dict:
@@ -244,17 +243,19 @@ class ChatModelUnitTests(ChatModelTests):
 
         ls_params = model._get_ls_params()
         try:
-            ExpectedParams(**ls_params)
+            ExpectedParams(**ls_params)  # type: ignore
         except ValidationErrorV1 as e:
             pytest.fail(f"Validation error: {e}")
 
         # Test optional params
         model = self.chat_model_class(
-            max_tokens=10, stop=["test"], **self.chat_model_params
+            max_tokens=10,
+            stop=["test"],
+            **self.chat_model_params,  # type: ignore
         )
         ls_params = model._get_ls_params()
         try:
-            ExpectedParams(**ls_params)
+            ExpectedParams(**ls_params)  # type: ignore
         except ValidationErrorV1 as e:
             pytest.fail(f"Validation error: {e}")
 
