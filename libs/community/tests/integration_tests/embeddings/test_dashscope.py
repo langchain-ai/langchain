@@ -78,6 +78,13 @@ def test_dashscope_embedding_with_empty_string() -> None:
     assert len(output[1]) == 1536
 
 
+def test_dashscope_embedding_with_alias() -> None:
+    """Test dashscope embeddings with `api_key` alias."""
+    api_key = "your-api-key"
+    embeddings = DashScopeEmbeddings(api_key=api_key)
+    assert embeddings.dashscope_api_key == api_key
+
+
 if __name__ == "__main__":
     test_dashscope_embedding_documents()
     test_dashscope_embedding_documents_multiple()

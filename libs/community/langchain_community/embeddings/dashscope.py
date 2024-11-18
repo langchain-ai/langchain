@@ -11,7 +11,7 @@ from typing import (
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils import get_from_dict_or_env
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from requests.exceptions import HTTPError
 from tenacity import (
     before_sleep_log,
@@ -79,42 +79,79 @@ def embed_with_retry(embeddings: DashScopeEmbeddings, **kwargs: Any) -> Any:
 
 
 class DashScopeEmbeddings(BaseModel, Embeddings):
-    """DashScope embedding models.
+    """Tongyi embedding model integration.
 
-    To use, you should have the ``dashscope`` python package installed, and the
-    environment variable ``DASHSCOPE_API_KEY`` set with your API key or pass it
-    as a named parameter to the constructor.
+    Setup:
+        Install ``dashscope`` python package and set environment variable ``DASHSCOPE_API_KEY``.
 
-    Example:
+    Key init args — embedding params:
+        model: str
+            Name of Tongyi model to use.
+
+    Key init args — client params:
+        api_key: Optional[str] = None
+            Tongyi API key.
+        max_retries: int = 5
+            Maximum number of retries to make when generating.
+
+    See full list of supported init args and their descriptions in the params section.
+
+    Instantiate:
         .. code-block:: python
 
             from langchain_community.embeddings import DashScopeEmbeddings
-            embeddings = DashScopeEmbeddings(dashscope_api_key="my-api-key")
 
-    Example:
+            embeddings = DashScopeEmbeddings(model='text-embedding-v2')
+
+    Embed single text:
         .. code-block:: python
 
-            import os
-            os.environ["DASHSCOPE_API_KEY"] = "your DashScope API KEY"
+            input_text = "塞翁失马，焉知非福"
+            vector = embeddings.embed_query(input_text)
+            print(vector[:3])
 
-            from langchain_community.embeddings.dashscope import DashScopeEmbeddings
-            embeddings = DashScopeEmbeddings(
-                model="text-embedding-v1",
-            )
-            text = "This is a test query."
-            query_result = embeddings.embed_query(text)
+        .. code-block:: python
 
-    """
+            [1.514211893081665, 2.2103159427642822, 3.0578529834747314]
+
+    Embed multiple texts:
+        .. code-block:: python
+
+            input_texts = ['风急天高猿啸哀', '渚清沙白鸟飞回', '无边落木萧萧下', '不尽长江滚滚来']
+            vectors = embeddings.embed_documents(input_texts)
+            # Showing only the first 3 coordinates
+            print(len(vectors))
+            print(vectors[0][:3])
+
+        .. code-block:: python
+
+            4
+            [1.5536729097366333, -2.237586736679077, 1.5397623777389526]
+
+    Async:
+        .. code-block:: python
+
+            vector = await embeddings.aembed_query(input_text)
+            print(vector[:3])
+
+            # multiple:
+            # await embeddings.aembed_documents(input_texts)
+
+        .. code-block:: python
+
+            [1.514211893081665, 2.2103159427642822, 3.0578529834747314]
+
+    """  # noqa: E501
 
     client: Any = None  #: :meta private:
     """The DashScope client."""
     model: str = "text-embedding-v1"
-    dashscope_api_key: Optional[str] = None
+    dashscope_api_key: Optional[str] = Field(None, alias="api_key")
     max_retries: int = 5
     """Maximum number of retries to make when generating."""
 
     model_config = ConfigDict(
-        extra="forbid",
+        populate_by_name=True,
     )
 
     @model_validator(mode="before")
@@ -124,7 +161,7 @@ class DashScopeEmbeddings(BaseModel, Embeddings):
 
         """Validate that api key and python package exists in environment."""
         values["dashscope_api_key"] = get_from_dict_or_env(
-            values, "dashscope_api_key", "DASHSCOPE_API_KEY"
+            values, ["dashscope_api_key", "api_key"], "DASHSCOPE_API_KEY"
         )
         dashscope.api_key = values["dashscope_api_key"]
         try:
