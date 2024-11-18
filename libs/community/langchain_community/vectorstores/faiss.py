@@ -1379,18 +1379,7 @@ class FAISS(VectorStore):
             field: str, condition: Dict[str, Any]
         ) -> Callable[[Dict[str, Any]], bool]:
             operators = []
-            if type(condition) is not dict:
-                if isinstance(condition, list):
-                    operators.append(
-                        lambda doc, field=field, value=condition: doc.get(field)
-                        in value
-                    )
-                else:
-                    operators.append(
-                        lambda doc, field=field, value=condition: doc.get(field)
-                        == value
-                    )
-            else:
+            if type(condition) is dict:
                 for op, value in condition.items():
                     if op in COMPARISON_OPERATORS:
                         operators.append(
@@ -1403,6 +1392,17 @@ class FAISS(VectorStore):
                         raise ValueError(
                             f"filter contains an unsupported operator: {op}"
                         )
+            elif isinstance(condition, list):
+                operators.append(
+                    lambda doc, field=field, value=condition: doc.get(field)
+                    in value
+                )
+            else:
+                operators.append(
+                    lambda doc, field=field, value=condition: doc.get(field)
+                    == value
+                )
+
             return lambda doc: all(op(doc) for op in operators)
 
         def filter_func(filter: Dict[str, Any]) -> Callable[[Dict[str, Any]], bool]:
