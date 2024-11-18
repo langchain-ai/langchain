@@ -140,7 +140,7 @@ export default function EmbeddingTabs(props) {
       {
         value: "Fake",
         label: "Fake",
-        text: `from langchain_core.embeddings import FakeEmbeddings\n\n${embeddingVarName} = FakeEmbeddings(${fakeEmbeddingParamsOrDefault})`,
+        text: `from langchain_core.embeddings import DeterministicFakeEmbedding\n\n${embeddingVarName} = DeterministicFakeEmbedding(${fakeEmbeddingParamsOrDefault})`,
         apiKeyName: undefined,
         packageName: "langchain-core",
         default: false,
