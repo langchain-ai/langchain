@@ -720,7 +720,7 @@ files = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.18"
+version = "0.3.19"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -762,8 +762,8 @@ type = "directory"
 url = "../openai"
 
 [[package]]
-name = "langchain-standard-tests"
-version = "0.3.0"
+name = "langchain-tests"
+version = "0.3.1"
 description = "Standard tests for LangChain implementations"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -2071,4 +2071,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0"
-content-hash = "1f77714ec9420ce148ab90de835585ddf87ce68f2d28240f63fcea47c9bccf6c"
+content-hash = "df184c08b8561a31c587e9fd643cd80fa9b9fee422dfe73e0243bafe6e0e6964"
