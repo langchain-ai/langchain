@@ -140,7 +140,7 @@ export default function EmbeddingTabs(props) {
       {
         value: "Fake",
         label: "Fake",
-        text: `from langchain_core.embeddings import FakeEmbeddings\n\n${embeddingVarName} = FakeEmbeddings(${fakeEmbeddingParamsOrDefault})`,
+        text: `from langchain_core.embeddings import DeterministicFakeEmbedding\n\n${embeddingVarName} = DeterministicFakeEmbedding(${fakeEmbeddingParamsOrDefault})`,
         apiKeyName: undefined,
         packageName: "langchain-core",
         default: false,
@@ -153,9 +153,7 @@ export default function EmbeddingTabs(props) {
             {tabItems
                 .filter((tabItem) => !tabItem.shouldHide)
                 .map((tabItem) => {
-                    const apiKeyText = tabItem.apiKeyName ? `import getpass
-
-    os.environ["${tabItem.apiKeyName}"] = getpass.getpass()` : '';
+                    const apiKeyText = tabItem.apiKeyName ? `import getpass\n\nos.environ["${tabItem.apiKeyName}"] = getpass.getpass()` : '';
                     return (
                         <TabItem
                             value={tabItem.value}
