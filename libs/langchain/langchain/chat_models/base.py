@@ -445,7 +445,7 @@ _SUPPORTED_PROVIDERS = {
     "groq",
     "bedrock",
     "bedrock_converse",
-    "google_anthropic_vertex"
+    "google_anthropic_vertex",
 }
 
 
