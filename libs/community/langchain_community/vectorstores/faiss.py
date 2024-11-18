@@ -1368,6 +1368,7 @@ class FAISS(VectorStore):
             "$nin": lambda a, b: a not in b,
         }
 
+        # Validate top-level filter operators.
         valid_operators = set(COMPARISON_OPERATORS.keys()) | {"$and", "$or", "$not"}
         for op in filter:
             if op and op.startswith("$") and op not in valid_operators:
@@ -1378,32 +1379,23 @@ class FAISS(VectorStore):
         def filter_func_cond(
             field: str, condition: Dict[str, Any]
         ) -> Callable[[Dict[str, Any]], bool]:
-            operators = []
-            if type(condition) is dict:
+            if isinstance(condition, dict):
+                operators = []
                 for op, value in condition.items():
-                    if op in COMPARISON_OPERATORS:
-                        operators.append(
-                            lambda doc,
-                            field=field,
-                            op=op,
-                            value=value: COMPARISON_OPERATORS[op](doc.get(field), value)
-                        )
-                    else:
+                    if op not in COMPARISON_OPERATORS:
                         raise ValueError(
                             f"filter contains an unsupported operator: {op}"
                         )
-            elif isinstance(condition, list):
-                operators.append(
-                    lambda doc, field=field, value=condition: doc.get(field)
-                    in value
-                )
-            else:
-                operators.append(
-                    lambda doc, field=field, value=condition: doc.get(field)
-                    == value
-                )
-
-            return lambda doc: all(op(doc) for op in operators)
+                    operators.append(
+                        lambda doc,
+                        field=field,
+                        op=op,
+                        value=value: COMPARISON_OPERATORS[op](doc.get(field), value)
+                    )
+                return lambda doc: all(op(doc) for op in operators)
+            if isinstance(condition, list):
+                return lambda doc: doc.get(field) in condition
+            return lambda doc: doc.get(field) == condition
 
         def filter_func(filter: Dict[str, Any]) -> Callable[[Dict[str, Any]], bool]:
             if "$and" in filter:
