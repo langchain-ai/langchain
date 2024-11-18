@@ -51,6 +51,10 @@
       "destination": "/docs/how_to/multimodal_inputs/"
     },
     {
+      "source": "/docs/tutorials/pdf_qa",
+      "destination": "/docs/tutorials/retrievers/"
+    },
+    {
       "source": "/docs/langsmith(/?)",
       "destination": "https://docs.smith.langchain.com/"
     },
