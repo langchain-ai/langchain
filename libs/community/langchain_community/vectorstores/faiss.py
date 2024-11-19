@@ -1346,8 +1346,11 @@ class FAISS(VectorStore):
             conditions for documents.
 
         Returns:
-            Callable[[Dict[str, Any]], bool]: A function that takes Document's metadata
-            and returns True if it satisfies the filter conditions, otherwise False.
+            A function that takes Document's metadata and returns True if it
+            satisfies the filter conditions, otherwise False.
+        
+        Raises:
+            ValueError: If the filter is invalid or contains unsuported operators.
         """
         if callable(filter):
             return filter
@@ -1375,8 +1378,18 @@ class FAISS(VectorStore):
                 raise ValueError(f"filter contains an unsupported operator: {op}")
 
         def filter_func_cond(
-            field: str, condition: Dict[str, Any]
+            field: str, condition: Union[Dict[str, Any], List[Any], Any]
         ) -> Callable[[Dict[str, Any]], bool]:
+            """
+            Creates a filter function based on field and condition.
+            
+            Args:
+                field: The document field to filter on
+                condition: Filter condition (dict for operators, list for in, or direct value for equality)
+            
+            Returns:
+                A filter function that takes a document and returns boolean
+            """
             if isinstance(condition, dict):
                 operators = []
                 for op, value in condition.items():
