@@ -312,22 +312,28 @@ class ChatClovaX(BaseChatModel):
         return self
 
     def default_headers(self) -> Dict[str, Any]:
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        }
+
         clovastudio_api_key = (
             self.ncp_clovastudio_api_key.get_secret_value()
             if self.ncp_clovastudio_api_key
             else None
         )
+        if clovastudio_api_key:
+            headers["X-NCP-CLOVASTUDIO-API-KEY"] = clovastudio_api_key
+
         apigw_api_key = (
             self.ncp_apigw_api_key.get_secret_value()
             if self.ncp_apigw_api_key
             else None
         )
-        return {
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-            "X-NCP-CLOVASTUDIO-API-KEY": clovastudio_api_key,
-            "X-NCP-APIGW-API-KEY": apigw_api_key,
-        }
+        if apigw_api_key:
+            headers["X-NCP-APIGW-API-KEY"] = apigw_api_key
+
+        return headers
 
     def _create_message_dicts(
         self, messages: List[BaseMessage], stop: Optional[List[str]]
