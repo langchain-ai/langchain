@@ -7,7 +7,7 @@ import pytest
 from langchain_core.tools import BaseTool
 from pydantic import SecretStr
 
-from langchain_standard_tests.base import BaseStandardTests
+from langchain_tests.base import BaseStandardTests
 
 
 class ToolsTests(BaseStandardTests):
