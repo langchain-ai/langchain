@@ -22,9 +22,7 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatResult, LLMResult
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_tests.integration_tests.chat_models import (
-    _validate_tool_call_message,
-)
+from langchain_tests.integration_tests.chat_models import _validate_tool_call_message
 from langchain_tests.integration_tests.chat_models import (
     magic_function as invalid_magic_function,
 )
