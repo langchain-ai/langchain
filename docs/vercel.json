@@ -36,11 +36,11 @@
     },
     {
       "source": "/docs/expression_language(/?)",
-      "destination": "/docs/concepts/#langchain-expression-language-lcel"
+      "destination": "/docs/concepts/lcel"
     },
     {
       "source": "/docs/expression_language/interface(/?)",
-      "destination": "/docs/concepts/#runnable-interface"
+      "destination": "/docs/concepts/runnables"
     },
     {
       "source": "/docs/versions/overview(/?)",
@@ -53,6 +53,10 @@
     {
       "source": "/docs/tutorials/pdf_qa",
       "destination": "/docs/tutorials/retrievers/"
+    },
+    {
+      "source": "/docs/tutorials/query_analysis",
+      "destination": "/docs/tutorials/rag#query-analysis"
     },
     {
       "source": "/docs/langsmith(/?)",
