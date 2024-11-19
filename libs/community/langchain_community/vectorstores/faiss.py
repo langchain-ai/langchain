@@ -1348,7 +1348,7 @@ class FAISS(VectorStore):
         Returns:
             A function that takes Document's metadata and returns True if it
             satisfies the filter conditions, otherwise False.
-        
+
         Raises:
             ValueError: If the filter is invalid or contains unsuported operators.
         """
@@ -1360,7 +1360,8 @@ class FAISS(VectorStore):
                 f"filter must be a dict of metadata or a callable, not {type(filter)}"
             )
 
-        from operator import eq, gt, lt, ge, le, ne
+        from operator import eq, ge, gt, le, lt, ne
+
         COMPARISON_OPERATORS = {
             "$eq": eq,
             "$neq": ne,
@@ -1374,12 +1375,9 @@ class FAISS(VectorStore):
             "$nin": lambda a, b: a not in b,
         }
         OPERATIONS = COMPARISON_OPERATORS | SEQUENCE_OPERATORS
+        VALID_OPERATORS = frozenset(list(OPERATIONS) + ["$and", "$or", "$not"])
+        SET_CONVERT_THRESHOLD = 10
 
-        LOGICAL_OPERATORS = {"$and", "$or", "$not"}
-        VALID_OPERATORS = set(COMPARISON_OPERATORS.keys()) | set(
-            SEQUENCE_OPERATORS.keys()
-        ) | LOGICAL_OPERATORS
-        
         # Validate top-level filter operators.
         for op in filter:
             if op and op.startswith("$") and op not in VALID_OPERATORS:
@@ -1390,11 +1388,12 @@ class FAISS(VectorStore):
         ) -> Callable[[Dict[str, Any]], bool]:
             """
             Creates a filter function based on field and condition.
-            
+
             Args:
                 field: The document field to filter on
-                condition: Filter condition (dict for operators, list for in, or direct value for equality)
-            
+                condition: Filter condition (dict for operators, list for in,
+                           or direct value for equality)
+
             Returns:
                 A filter function that takes a document and returns boolean
             """
@@ -1402,34 +1401,60 @@ class FAISS(VectorStore):
                 operators = []
                 for op, value in condition.items():
                     if op not in OPERATIONS:
-                        raise ValueError(
-                            f"filter contains unsupported operator: {op}"
-                        )
+                        raise ValueError(f"filter contains unsupported operator: {op}")
                     operators.append((OPERATIONS[op], value))
-                
+
                 def filter_fn(doc):
                     doc_value = doc.get(field)
                     return all(op(doc_value, value) for op, value in operators)
+
                 return filter_fn
 
             if isinstance(condition, list):
+                if len(condition) > SET_CONVERT_THRESHOLD:
+                    condition_set = frozenset(condition)
+                    return lambda doc: doc.get(field) in condition_set
                 return lambda doc: doc.get(field) in condition
+
             return lambda doc: doc.get(field) == condition
 
         def filter_func(filter: Dict[str, Any]) -> Callable[[Dict[str, Any]], bool]:
+            """
+            Creates a filter function that evaluates documents against specified
+            filter conditions.
+
+            This function processes a dictionary of filter conditions and returns
+            a callable that can evaluate documents against these conditions. It
+            supports logical operators ($and, $or, $not) and field-level filtering.
+
+            Args:
+                filter (Dict[str, Any]): A dictionary containing filter conditions.
+                Can include:
+                    - Logical operators ($and, $or, $not) with lists of sub-filters
+                    - Field-level conditions with comparison or sequence operators
+                    - Direct field-value mappings for equality comparison
+
+            Returns:
+                Callable[[Dict[str, Any]], bool]: A function that takes a document
+                (as a dictionary) and returns True if the document matches all
+                filter conditions, False otherwise.
+            """
             if "$and" in filter:
-                return lambda doc: all(
-                    filter_func(sub_filter)(doc) for sub_filter in filter["$and"]
-                )
+                filters = [filter_func(sub_filter) for sub_filter in filter["$and"]]
+                return lambda doc: all(f(doc) for f in filters)
+
             if "$or" in filter:
-                return lambda doc: any(
-                    filter_func(sub_filter)(doc) for sub_filter in filter["$or"]
-                )
+                filters = [filter_func(sub_filter) for sub_filter in filter["$or"]]
+                return lambda doc: any(f(doc) for f in filters)
+
             if "$not" in filter:
-                return lambda doc: not filter_func(filter["$not"])(doc)
-            return lambda doc: all(
-                filter_func_cond(field, condition)(doc)
+                cond = filter_func(filter["$not"])
+                return lambda doc: not cond(doc)
+
+            conditions = [
+                filter_func_cond(field, condition)
                 for field, condition in filter.items()
-            )
+            ]
+            return lambda doc: all(condition(doc) for condition in conditions)
 
         return filter_func(filter)
