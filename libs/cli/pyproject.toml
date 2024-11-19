@@ -14,11 +14,11 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
 typer = { extras = ["all"], version = "^0.9.0" }
-gitpython = ">=3.0,<4.0"
+gitpython = "^3"
 langserve = { extras = ["all"], version = ">=0.0.51" }
 uvicorn = ">=0.23,<1.0"
-tomlkit = ">=0.12.0,<1.0"
-gritql = ">=0.1.0,<1.0"
+tomlkit = ">=0.12"
+gritql = "^0.1.1"
 
 [tool.poetry.scripts]
 langchain = "langchain_cli.cli:app"
