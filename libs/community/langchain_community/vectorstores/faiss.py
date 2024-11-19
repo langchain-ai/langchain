@@ -1360,21 +1360,29 @@ class FAISS(VectorStore):
                 f"filter must be a dict of metadata or a callable, not {type(filter)}"
             )
 
+        from operator import eq, gt, lt, ge, le, ne
         COMPARISON_OPERATORS = {
-            "$eq": lambda a, b: a == b,
-            "$neq": lambda a, b: a != b,
-            "$gt": lambda a, b: a > b,
-            "$lt": lambda a, b: a < b,
-            "$gte": lambda a, b: a >= b,
-            "$lte": lambda a, b: a <= b,
+            "$eq": eq,
+            "$neq": ne,
+            "$gt": gt,
+            "$lt": lt,
+            "$gte": ge,
+            "$lte": le,
+        }
+        SEQUENCE_OPERATORS = {
             "$in": lambda a, b: a in b,
             "$nin": lambda a, b: a not in b,
         }
+        OPERATIONS = COMPARISON_OPERATORS | SEQUENCE_OPERATORS
 
+        LOGICAL_OPERATORS = {"$and", "$or", "$not"}
+        VALID_OPERATORS = set(COMPARISON_OPERATORS.keys()) | set(
+            SEQUENCE_OPERATORS.keys()
+        ) | LOGICAL_OPERATORS
+        
         # Validate top-level filter operators.
-        valid_operators = set(COMPARISON_OPERATORS.keys()) | {"$and", "$or", "$not"}
         for op in filter:
-            if op and op.startswith("$") and op not in valid_operators:
+            if op and op.startswith("$") and op not in VALID_OPERATORS:
                 raise ValueError(f"filter contains unsupported operator: {op}")
 
         def filter_func_cond(
@@ -1393,11 +1401,11 @@ class FAISS(VectorStore):
             if isinstance(condition, dict):
                 operators = []
                 for op, value in condition.items():
-                    if op not in COMPARISON_OPERATORS:
+                    if op not in OPERATIONS:
                         raise ValueError(
                             f"filter contains unsupported operator: {op}"
                         )
-                    operators.append((COMPARISON_OPERATORS[op], value))
+                    operators.append((OPERATIONS[op], value))
                 
                 def filter_fn(doc):
                     doc_value = doc.get(field)
