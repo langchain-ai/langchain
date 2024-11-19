@@ -1375,7 +1375,7 @@ class FAISS(VectorStore):
         valid_operators = set(COMPARISON_OPERATORS.keys()) | {"$and", "$or", "$not"}
         for op in filter:
             if op and op.startswith("$") and op not in valid_operators:
-                raise ValueError(f"filter contains an unsupported operator: {op}")
+                raise ValueError(f"filter contains unsupported operator: {op}")
 
         def filter_func_cond(
             field: str, condition: Union[Dict[str, Any], List[Any], Any]
@@ -1395,15 +1395,15 @@ class FAISS(VectorStore):
                 for op, value in condition.items():
                     if op not in COMPARISON_OPERATORS:
                         raise ValueError(
-                            f"filter contains an unsupported operator: {op}"
+                            f"filter contains unsupported operator: {op}"
                         )
-                    operators.append(
-                        lambda doc,
-                        field=field,
-                        op=op,
-                        value=value: COMPARISON_OPERATORS[op](doc.get(field), value)
-                    )
-                return lambda doc: all(op(doc) for op in operators)
+                    operators.append((COMPARISON_OPERATORS[op], value))
+                
+                def filter_fn(doc):
+                    doc_value = doc.get(field)
+                    return all(op(doc_value, value) for op, value in operators)
+                return filter_fn
+
             if isinstance(condition, list):
                 return lambda doc: doc.get(field) in condition
             return lambda doc: doc.get(field) == condition
