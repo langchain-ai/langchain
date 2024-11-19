@@ -1,10 +1,11 @@
 """Lindorm AI chat model."""
+
 from __future__ import annotations
 
 import logging
+from importlib import util
 from typing import (
     Any,
-    AsyncIterator,
     Callable,
     Dict,
     Iterator,
@@ -38,8 +39,9 @@ from langchain_core.outputs import (
     ChatGenerationChunk,
     ChatResult,
 )
-from langchain_core.pydantic_v1 import Field, root_validator, BaseModel
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables import Runnable
+from pydantic import model_validator
 from requests.exceptions import HTTPError
 from tenacity import (
     before_sleep_log,
@@ -151,20 +153,22 @@ class ChatLindormAI(BaseChatModel):
         """Return type of llm."""
         return "lindormai"
 
-    @root_validator()
+    @model_validator(mode="before")
     def validate_environment(cls, values: Dict) -> Dict:
         """Ensure the client is initialized properly."""
         if not values.get("client"):
-            try:
-                import lindormai
-            except ImportError:
+            if util.find_spec("lindormai") is None:
                 raise ImportError(
                     "Could not import lindormai python package. "
-                    "Please install it with `pip install lindormai-x.y.z-py3-none-any.whl`."
+                    "Please install it with "
+                    "`pip install lindormai-x.y-z-py3-none-any.whl`."
                 )
+            else:
+                from lindormai.model_manager import ModelManager
 
-            from lindormai.model_manager import ModelManager
-            values["client"] = ModelManager(values['endpoint'], values['username'], values['password'])
+                values["client"] = ModelManager(
+                    values["endpoint"], values["username"], values["password"]
+                )
         return values
 
     @property
@@ -189,7 +193,11 @@ class ChatLindormAI(BaseChatModel):
 
         @retry_decorator
         def _completion_with_retry(**_kwargs: Any) -> Any:
-            return self.client.infer(name=self.model_name, input_data=str(_kwargs["input_data"]), params=_kwargs)
+            return self.client.infer(
+                name=self.model_name,
+                input_data=str(_kwargs["input_data"]),
+                params=_kwargs,
+            )
 
         return _completion_with_retry(**kwargs)
 
@@ -199,24 +207,29 @@ class ChatLindormAI(BaseChatModel):
 
         @retry_decorator
         def _stream_completion_with_retry(**_kwargs: Any) -> Any:
-            responses = self.client.stream_infer(name=self.model_name, input_data=str(_kwargs["input_data"]),
-                                                  params=_kwargs)
+            responses = self.client.stream_infer(
+                name=self.model_name,
+                input_data=str(_kwargs["input_data"]),
+                params=_kwargs,
+            )
             for resp in responses:
                 yield resp
 
         return _stream_completion_with_retry(**kwargs)
 
     def _generate(
-            self,
-            messages: List[BaseMessage],
-            stop: Optional[List[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
-            **kwargs: Any,
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> ChatResult:
         generations = []
         if self.streaming:
             generation: Optional[ChatGenerationChunk] = None
-            for chunk in self._stream(messages, stop=stop, run_manager=run_manager, **kwargs):
+            for chunk in self._stream(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            ):
                 if generation is None:
                     generation = chunk
                 else:
@@ -224,7 +237,9 @@ class ChatLindormAI(BaseChatModel):
             assert generation is not None
             generations.append(self._chunk_to_generation(generation))
         else:
-            params: Dict[str, Any] = self._invocation_params(messages=messages, stop=stop, **kwargs)
+            params: Dict[str, Any] = self._invocation_params(
+                messages=messages, stop=stop, **kwargs
+            )
             params["force_nonstream"] = True
             resp = self.completion_with_retry(**params)
             generations.append(
@@ -238,22 +253,26 @@ class ChatLindormAI(BaseChatModel):
         )
 
     async def _agenerate(
-            self,
-            messages: List[BaseMessage],
-            stop: Optional[List[str]] = None,
-            run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-            **kwargs: Any,
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> ChatResult:
-        raise NotImplementedError("Please use `_generate`. Official does not support asynchronous requests")
+        raise NotImplementedError(
+            "Please use `_generate`. Official does not support asynchronous requests"
+        )
 
     def _stream(
-            self,
-            messages: List[BaseMessage],
-            stop: Optional[List[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
-            **kwargs: Any,
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        params: Dict[str, Any] = self._invocation_params(messages=messages, stop=stop, stream=True, **kwargs)
+        params: Dict[str, Any] = self._invocation_params(
+            messages=messages, stop=stop, stream=True, **kwargs
+        )
         for stream_resp in self.stream_completion_with_retry(**params):
             chunk = ChatGenerationChunk(
                 **self._chat_generation_from_lindormai_resp(stream_resp, is_chunk=True)
@@ -262,17 +281,19 @@ class ChatLindormAI(BaseChatModel):
                 run_manager.on_llm_new_token(chunk.text, chunk=chunk)
             yield chunk
 
-    async def _astream(
-            self,
-            messages: List[BaseMessage],
-            stop: Optional[List[str]] = None,
-            run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-            **kwargs: Any,
-    ) -> AsyncIterator[ChatGenerationChunk]:
-        raise NotImplementedError("Please use `_stream`. Official does not support asynchronous requests")
+    # async def _astream(
+    #     self,
+    #     messages: List[BaseMessage],
+    #     stop: Optional[List[str]] = None,
+    #     run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+    #     **kwargs: Any,
+    # ) -> AsyncIterator[ChatGenerationChunk]:
+    #     raise NotImplementedError(
+    #         "Please use `_stream`. Official does not support asynchronous requests"
+    #     )
 
     def _invocation_params(
-            self, messages: List[BaseMessage], stop: Any, **kwargs: Any
+        self, messages: List[BaseMessage], stop: Any, **kwargs: Any
     ) -> Dict[str, Any]:
         params = {**self._default_params, **kwargs}
         if stop is not None:
@@ -301,19 +322,17 @@ class ChatLindormAI(BaseChatModel):
 
     @staticmethod
     def _chat_generation_from_lindormai_resp(
-            resp: Any, is_chunk: bool = False
+        resp: Any, is_chunk: bool = False
     ) -> Dict[str, Any]:
         if resp is None:
             raise ValueError("Response cannot be None")
-        elif 'output' in resp:
-            content = resp['output']
+        elif "output" in resp:
+            content = resp["output"]
         else:
-            content = ''
-            for output in resp['outputs']:
+            content = ""
+            for output in resp["outputs"]:
                 content += output
-        return dict(
-            message=AIMessage(content=content)
-        )
+        return dict(message=AIMessage(content=content))
 
     @staticmethod
     def _chunk_to_generation(chunk: ChatGenerationChunk) -> ChatGeneration:
@@ -323,12 +342,12 @@ class ChatLindormAI(BaseChatModel):
         )
 
     def bind_functions(
-            self,
-            functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable]],
-            function_call: Optional[str] = None,
-            **kwargs: Any,
+        self,
+        functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable]],
+        function_call: Optional[str] = None,
+        **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
-        """TODO(minshan): Bind functions (and other objects) to this chat model. This method will be used for function calls in the future.
+        """
 
         Args:
             functions: A list of function definitions to bind to this chat model.

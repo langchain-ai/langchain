@@ -20,7 +20,10 @@ try:
     from opensearchpy import OpenSearch
     from opensearchpy.helpers import bulk
 except ImportError:
-    raise ImportError("Could not import OpenSearch. Please install it with `pip install opensearch-py`.")
+    raise ImportError(
+        "Could not import OpenSearch. Please install it with "
+        "`pip install opensearch-py`."
+    )
 
 logger = logging.getLogger(__name__)
 
@@ -28,12 +31,7 @@ logger = logging.getLogger(__name__)
 class LindormSearchByteStore(ByteStore):
     """An lindorm search byte store."""
 
-    def __init__(self,
-                 lindorm_search_url: str,
-                 index_name: str,
-                 **kwargs: Any
-                 ):
-
+    def __init__(self, lindorm_search_url: str, index_name: str, **kwargs: Any):
         """
         Initialize the Lindorm Search ByteStore by specifying the index to use and
         determining whether the input key should be stored in it.
@@ -56,21 +54,10 @@ class LindormSearchByteStore(ByteStore):
     @cached_property
     def mapping(self) -> Dict[str, Any]:
         mapping = {
-            "settings": {
-                "index": {
-                    "number_of_shards": 4
-                }
-            },
+            "settings": {"index": {"number_of_shards": 4}},
             "mappings": {
-                "properties": {
-                    "key": {
-                        "type": "text"
-                    },
-                    "value": {
-                        "type": "text"
-                    }
-                }
-            }
+                "properties": {"key": {"type": "text"}, "value": {"type": "text"}}
+            },
         }
         return mapping
 
@@ -104,10 +91,8 @@ class LindormSearchByteStore(ByteStore):
         cache_keys = [self._key(k) for k in keys]
 
         records = self.client.mget(
-            body={
-                "docs": [{"_id": doc_id} for doc_id in cache_keys]
-            },
-            index=self._index_name
+            body={"docs": [{"_id": doc_id} for doc_id in cache_keys]},
+            index=self._index_name,
         )
 
         return [
@@ -119,7 +104,7 @@ class LindormSearchByteStore(ByteStore):
         """Set the values for the given keys.
 
         Args:
-            key_value_pairs (Sequence[Tuple[str, bytes]]): A sequence of key-value pairs.
+            key_value_pairs: A sequence of key-value pairs.
         """
         if not self.client.indices.exists(index=self._index_name):
             logger.info(f"Creating new index: {self._index_name}")
@@ -132,7 +117,7 @@ class LindormSearchByteStore(ByteStore):
                 "_index": self._index_name,
                 "_id": self._key(key),
                 "key": key,
-                "value": self.transform_bytes_to_str(value)
+                "value": self.transform_bytes_to_str(value),
             }
             requests.append(request)
 
@@ -149,14 +134,16 @@ class LindormSearchByteStore(ByteStore):
             request = {
                 "_op_type": "delete",
                 "_index": self._index_name,
-                "_id": self._key(key)
+                "_id": self._key(key),
             }
             requests.append(request)
 
         bulk(self.client, requests)
         self.client.indices.refresh(index=self._index_name)
 
-    def yield_keys(self, prefix: Optional[str] = None, scroll='5m', size=100) -> Iterator[str]:
+    def yield_keys(
+        self, prefix: Optional[str] = None, scroll: str = "5m", size: int = 100
+    ) -> Iterator[str]:
         """Get an iterator over keys that match the given prefix.
 
         Args:
@@ -172,22 +159,17 @@ class LindormSearchByteStore(ByteStore):
 
         """Get an iterator over keys that match the given prefix."""
 
-        if prefix == None or prefix == "":
-            prefix = "" if prefix == None else prefix
-            logger.warning("It might be expensive to yield keys when prefix is None or \"\"")
+        if prefix is None or prefix == "":
+            prefix = "" if prefix is None else prefix
+            logger.warning(
+                'It might be expensive to yield keys when prefix is None or ""'
+            )
 
-        query = {
-            "query": {
-                "prefix": {
-                    "key": prefix
-                }
-            }
-        }
+        query = {"query": {"prefix": {"key": prefix}}}
 
-        results = self.client.search(index=self._index_name,
-                                     body=query,
-                                     scroll=scroll,
-                                     size=size)
+        results = self.client.search(
+            index=self._index_name, body=query, scroll=scroll, size=size
+        )
 
         # yield results from the initial search
         for hit in results["hits"]["hits"]:
@@ -201,15 +183,15 @@ class LindormSearchByteStore(ByteStore):
             results = self.client.scroll(scroll_id=scroll_id, scroll=scroll)
 
             # exit when no more results
-            if len(results['hits']['hits']) == 0:
+            if len(results["hits"]["hits"]) == 0:
                 break
 
             # yield results from the scroll request.
-            for hit in results['hits']['hits']:
-                yield hit['_source']["key"]
+            for hit in results["hits"]["hits"]:
+                yield hit["_source"]["key"]
 
             # update the scroll_id for the next iteration.
-            scroll_id = results['_scroll_id']
+            scroll_id = results["_scroll_id"]
 
     def delete_index(self, index_name: Optional[str] = None) -> Optional[bool]:
         """Deletes a given index from vectorstore."""

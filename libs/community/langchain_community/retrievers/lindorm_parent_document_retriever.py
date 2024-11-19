@@ -1,9 +1,8 @@
 from typing import Any, List, Optional
 
+from langchain.retrievers import ParentDocumentRetriever
 from langchain_core.documents import Document
 from langchain_text_splitters import TextSplitter
-
-from langchain.retrievers import ParentDocumentRetriever
 
 
 class LindormParentDocumentRetriever(ParentDocumentRetriever):
@@ -59,14 +58,16 @@ class LindormParentDocumentRetriever(ParentDocumentRetriever):
 
     """The key to use to track the parent id. This will be stored in the
     metadata of child documents."""
-    parent_splitter: Optional[TextSplitter] = None
+    parent_splitter: TextSplitter
     """The text splitter to use to create parent documents.
     If none, then the parent documents will be the raw documents passed in."""
 
     def add_documents(
-            self,
-            documents: List[Document],
-            **kwargs: Any,
+        self,
+        documents: List[Document],
+        ids: Optional[List[str]] = None,
+        add_to_docstore: bool = True,
+        **kwargs: Any,
     ) -> None:
         """Adds documents to the docstore and vectorstores.
 
@@ -83,7 +84,8 @@ class LindormParentDocumentRetriever(ParentDocumentRetriever):
                 and you don't want to re-add them.
 
             kwargs: Additional keyword arguments passed to the parent document
-                routing_field: which field in metadata to use as the document's routing key
+                routing_field: which field in metadata to use as the document's routing
+                              key
                 tag: which field in metadata to use as the document's identity
                 metadata: global metadata to override parent document's metadata
 

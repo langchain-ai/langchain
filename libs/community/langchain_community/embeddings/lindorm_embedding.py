@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import logging
+from importlib import util
 from typing import Any, Dict, List
 
 from langchain.embeddings.base import Embeddings
-from langchain.pydantic_v1 import BaseModel, Field, root_validator
+from pydantic import BaseModel, Field, model_validator
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +28,7 @@ class LindormAIEmbeddings(BaseModel, Embeddings):
                 model_name='bge_model'
             )
     """
+
     endpoint: str = Field(
         ...,
         description="The endpoint of Lindorm AI to use.",
@@ -43,25 +45,28 @@ class LindormAIEmbeddings(BaseModel, Embeddings):
         ...,
         description="The model to use.",
     )
-    client: Any
+    client: Any = Field(None, description="Created Opensearch Client")
 
     class Config:
+        protected_namespaces = ()
         arbitrary_types_allowed = True  # Allow arbitrary types to be used
 
-    @root_validator()
+    @model_validator(mode="before")
     def validate_environment(cls, values: Dict) -> Dict:
         """Ensure the client is initialized properly."""
         if not values.get("client"):
-            try:
-                import lindormai
-            except ImportError:
+            if util.find_spec("lindormai") is None:
                 raise ImportError(
                     "Could not import lindormai python package. "
-                    "Please install it with `pip install lindormai-x.y.z-py3-none-any.whl`."
+                    "Please install it with"
+                    " `pip install lindormai-x.y-z-py3-none-any.whl`."
                 )
+            else:
+                from lindormai.model_manager import ModelManager
 
-            from lindormai.model_manager import ModelManager
-            values["client"] = ModelManager(values['endpoint'], values['username'], values['password'])
+                values["client"] = ModelManager(
+                    values["endpoint"], values["username"], values["password"]
+                )
         return values
 
     def embed_query(self, text: str) -> List[float]:
@@ -70,7 +75,8 @@ class LindormAIEmbeddings(BaseModel, Embeddings):
         Args:
             text (str): Text for which embedding is to be generated.
         Returns:
-            List[float]: Embedding of the input text, as a list of floating-point numbers.
+            List[float]: Embedding of the input text, as a list of floating-point
+                        numbers.
         """
         response = self.client.infer(name=self.model_name, input_data=text)
         return response
@@ -81,15 +87,21 @@ class LindormAIEmbeddings(BaseModel, Embeddings):
         Args:
             texts (List[str]): List of texts for which embeddings are to be generated.
         Returns:
-            List[List[float]]: A list of embeddings for each document in the input list. Each embedding is represented as a list of floating-point numbers.
+            List[List[float]]: A list of embeddings for each document in the input list.
+                Each embedding is represented as a list of floating-point numbers.
         """
         response = self.client.infer(name=self.model_name, input_data=texts)
         return response
 
     async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
         """Asynchronous Embed search docs."""
-        raise NotImplementedError("Please use `embed_documents`. Official does not support asynchronous requests")
+        raise NotImplementedError(
+            "Please use `embed_documents`. "
+            "Official does not support asynchronous requests"
+        )
 
     async def aembed_query(self, text: str) -> List[float]:
         """Asynchronous Embed query text."""
-        raise NotImplementedError("Please use `embed_query`. Official does not support asynchronous requests")
+        raise NotImplementedError(
+            "Please use `embed_query`. Official does not support asynchronous requests"
+        )
