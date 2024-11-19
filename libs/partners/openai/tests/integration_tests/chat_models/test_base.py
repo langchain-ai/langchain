@@ -2,6 +2,8 @@
 
 import base64
 import json
+from pathlib import Path
+from textwrap import dedent
 from typing import Any, AsyncIterator, List, Literal, Optional, cast
 
 import httpx
@@ -20,10 +22,8 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatResult, LLMResult
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_standard_tests.integration_tests.chat_models import (
-    _validate_tool_call_message,
-)
-from langchain_standard_tests.integration_tests.chat_models import (
+from langchain_tests.integration_tests.chat_models import _validate_tool_call_message
+from langchain_tests.integration_tests.chat_models import (
     magic_function as invalid_magic_function,
 )
 from pydantic import BaseModel, Field
@@ -949,3 +949,139 @@ async def test_json_mode_async() -> None:
     assert isinstance(full, AIMessageChunk)
     assert isinstance(full.content, str)
     assert json.loads(full.content) == {"a": 1}
+
+
+def test_audio_output_modality() -> None:
+    llm = ChatOpenAI(
+        model="gpt-4o-audio-preview",
+        temperature=0,
+        model_kwargs={
+            "modalities": ["text", "audio"],
+            "audio": {"voice": "alloy", "format": "wav"},
+        },
+    )
+
+    history: List[BaseMessage] = [
+        HumanMessage("Make me a short audio clip of you yelling")
+    ]
+
+    output = llm.invoke(history)
+
+    assert isinstance(output, AIMessage)
+    assert "audio" in output.additional_kwargs
+
+    history.append(output)
+    history.append(HumanMessage("Make me a short audio clip of you whispering"))
+
+    output = llm.invoke(history)
+
+    assert isinstance(output, AIMessage)
+    assert "audio" in output.additional_kwargs
+
+
+def test_audio_input_modality() -> None:
+    llm = ChatOpenAI(
+        model="gpt-4o-audio-preview",
+        temperature=0,
+        model_kwargs={
+            "modalities": ["text", "audio"],
+            "audio": {"voice": "alloy", "format": "wav"},
+        },
+    )
+    filepath = Path(__file__).parent / "audio_input.wav"
+
+    audio_data = filepath.read_bytes()
+    b64_audio_data = base64.b64encode(audio_data).decode("utf-8")
+
+    history: list[BaseMessage] = [
+        HumanMessage(
+            [
+                {"type": "text", "text": "What is happening in this audio clip"},
+                {
+                    "type": "input_audio",
+                    "input_audio": {"data": b64_audio_data, "format": "wav"},
+                },
+            ]
+        )
+    ]
+
+    output = llm.invoke(history)
+
+    assert isinstance(output, AIMessage)
+    assert "audio" in output.additional_kwargs
+
+    history.append(output)
+    history.append(HumanMessage("Why?"))
+
+    output = llm.invoke(history)
+
+    assert isinstance(output, AIMessage)
+    assert "audio" in output.additional_kwargs
+
+
+def test_prediction_tokens() -> None:
+    code = dedent(
+        """
+    /// <summary>
+    /// Represents a user with a first name, last name, and username.
+    /// </summary>
+    public class User
+    {
+        /// <summary>
+        /// Gets or sets the user's first name.
+        /// </summary>
+        public string FirstName { get; set; }
+
+        /// <summary>
+        /// Gets or sets the user's last name.
+        /// </summary>
+        public string LastName { get; set; }
+
+        /// <summary>
+        /// Gets or sets the user's username.
+        /// </summary>
+        public string Username { get; set; }
+    }
+    """
+    )
+
+    llm = ChatOpenAI(model="gpt-4o")
+    query = (
+        "Replace the Username property with an Email property. "
+        "Respond only with code, and with no markdown formatting."
+    )
+    response = llm.invoke(
+        [{"role": "user", "content": query}, {"role": "user", "content": code}],
+        prediction={"type": "content", "content": code},
+    )
+    assert isinstance(response, AIMessage)
+    assert response.response_metadata is not None
+    output_token_details = response.response_metadata["token_usage"][
+        "completion_tokens_details"
+    ]
+    assert output_token_details["accepted_prediction_tokens"] > 0
+    assert output_token_details["rejected_prediction_tokens"] > 0
+
+
+def test_stream_o1() -> None:
+    list(ChatOpenAI(model="o1-mini").stream("how are you"))
+
+
+async def test_astream_o1() -> None:
+    async for _ in ChatOpenAI(model="o1-mini").astream("how are you"):
+        pass
+
+
+class Foo(BaseModel):
+    response: str
+
+
+def test_stream_response_format() -> None:
+    list(ChatOpenAI(model="gpt-4o-mini").stream("how are ya", response_format=Foo))
+
+
+async def test_astream_response_format() -> None:
+    async for _ in ChatOpenAI(model="gpt-4o-mini").astream(
+        "how are ya", response_format=Foo
+    ):
+        pass
