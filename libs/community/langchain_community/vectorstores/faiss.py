@@ -1404,7 +1404,24 @@ class FAISS(VectorStore):
                         raise ValueError(f"filter contains unsupported operator: {op}")
                     operators.append((OPERATIONS[op], value))
 
-                def filter_fn(doc):
+                def filter_fn(doc: Dict[str, Any]) -> bool:
+                    """
+                    Evaluates a document against a set of predefined operators
+                    and their values. This function applies multiple
+                    comparison/sequence operators to a specific field value
+                    from the document. All conditions must be satisfied for the 
+                    function to return True.
+                    
+                    Args:
+                        doc (Dict[str, Any]): The document to evaluate, containing
+                        key-value pairs where keys are field names and values
+                        are the field values. The document must contain the field
+                        being filtered.
+                    
+                    Returns:
+                        bool: True if the document's field value satisfies all operator conditions,
+                            False otherwise.
+                    """
                     doc_value = doc.get(field)
                     return all(op(doc_value, value) for op, value in operators)
 
