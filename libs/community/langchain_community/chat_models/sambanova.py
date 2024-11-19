@@ -623,7 +623,8 @@ class ChatSambaNovaCloud(BaseChatModel):
         if method == "function_calling":
             if schema is None:
                 raise ValueError(
-                    "`schema` must be specified when method is `function_calling`. Received None."
+                    "`schema` must be specified when method is `function_calling`. "
+                    "Received None."
                 )
             tool_name = convert_to_openai_tool(schema)["function"]["name"]
             llm = self.bind_tools([schema], tool_choice=tool_name)
@@ -649,7 +650,8 @@ class ChatSambaNovaCloud(BaseChatModel):
         elif method == "json_schema":
             if schema is None:
                 raise ValueError(
-                    "`schema` must be specified when method is not `json_mode`. Received None."
+                    "`schema` must be specified when method is not `json_mode`. "
+                    "Received None."
                 )
             llm = self
             # TODO bind response format when json schema available by API,
@@ -1668,8 +1670,9 @@ class ChatSambaStudio(BaseChatModel):
         else:
             if "tools" in kwargs.keys():
                 raise NotImplementedError(
-                    "tool calling not supported in API Generic V2 without process_prompt, "
-                    "switch to OpenAI compatible API or Generic V2 API with process_prompt=True"
+                    "tool calling not supported in API Generic V2 "
+                    "without process_prompt, switch to OpenAI compatible API "
+                    "or Generic V2 API with process_prompt=True"
                 )
             messages_string = self.special_tokens["start"]
             for message in messages:
