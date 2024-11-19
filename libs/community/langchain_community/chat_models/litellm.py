@@ -287,6 +287,7 @@ class ChatLiteLLM(BaseChatModel):
 
         @retry_decorator
         def _completion_with_retry(**kwargs: Any) -> Any:
+            print(kwargs)
             return self.client.completion(**kwargs)
 
         return _completion_with_retry(**kwargs)
@@ -486,6 +487,8 @@ class ChatLiteLLM(BaseChatModel):
         """
 
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
+        if "tool_choice" in kwargs and kwargs["tool_choice"] == "any":
+            kwargs["tool_choice"] = "auto"
         return super().bind(tools=formatted_tools, **kwargs)
 
     @property
