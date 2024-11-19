@@ -786,9 +786,7 @@ def test_faiss_mmr_with_metadatas_and_logical_comparsion_operators_filter_2() ->
 
 
 @pytest.mark.requires("faiss")
-def test_faiss_mmr_with_metadatas_and_nested_logical_comparsion_operators_filter_1() -> (
-    None
-):
+def test_faiss_mmr_with_metadatas_and_nested_logical_comparsion_ops_filter_1() -> None:
     texts = ["foo", "foo", "fou", "foy"]
     metadatas = [{"page": i} for i in range(len(texts))]
     docsearch = FAISS.from_texts(texts, FakeEmbeddings(), metadatas=metadatas)
@@ -816,9 +814,7 @@ def test_faiss_mmr_with_metadatas_and_nested_logical_comparsion_operators_filter
 
 
 @pytest.mark.requires("faiss")
-def test_faiss_mmr_with_metadatas_and_nested_logical_comparsion_operators_filter_2() -> (
-    None
-):
+def test_faiss_mmr_with_metadatas_and_nested_logical_comparsion_ops_filter_2() -> None:
     texts = ["foo", "foo", "fou", "foy"]
     metadatas = [{"page": i} for i in range(len(texts))]
     docsearch = FAISS.from_texts(texts, FakeEmbeddings(), metadatas=metadatas)
@@ -841,15 +837,13 @@ def test_faiss_mmr_with_metadatas_and_nested_logical_comparsion_operators_filter
         k=10,
         lambda_mult=0.1,
         filter=lambda di: (di["page"] < 1 or di["page"] > 2)
-        and (not di["page"] in [0])
+        and (di["page"] not in [0])
         and (di["page"] != 3),
     )
 
 
 @pytest.mark.requires("faiss")
-def test_faiss_mmr_with_metadatas_and_nested_logical_comparsion_operators_filter_3() -> (
-    None
-):
+def test_faiss_mmr_with_metadatas_and_nested_logical_comparsion_ops_filter_3() -> None:
     texts = ["foo", "foo", "fou", "foy"]
     metadatas = [{"page": i} for i in range(len(texts))]
     docsearch = FAISS.from_texts(texts, FakeEmbeddings(), metadatas=metadatas)
@@ -1063,7 +1057,7 @@ def test_faiss_mmr_with_metadatas_and_multiple_nested_logical_operators() -> Non
 def test_faiss_mmr_with_metadatas_and_mixed_data_types() -> None:
     """Test with metadata containing mixed data types (numbers, strings, booleans)."""
     texts = ["foo", "bar", "baz", "qux", "quux"]
-    metadatas = [
+    metadatas: list[dict] = [
         {"page": "1", "isActive": True, "priority": 2.5},
         {"page": 2, "isActive": False, "priority": 3.0},
         {"page": 3, "isActive": True, "priority": 1.5},
@@ -1117,7 +1111,7 @@ def test_faiss_mmr_with_metadatas_and_conflicting_conditions() -> None:
 def test_faiss_mmr_with_metadatas_and_null_field_values() -> None:
     """Test with fields that have null or undefined values."""
     texts = ["foo", "bar", "baz", "qux"]
-    metadatas = [{"page": 1}, {"page": None}, {"page": 2}, {"page": None}]
+    metadatas: list[dict] = [{"page": 1}, {"page": None}, {"page": 2}, {"page": None}]
     docsearch = FAISS.from_texts(texts, FakeEmbeddings(), metadatas=metadatas)
     query_vec = FakeEmbeddings().embed_query(text="foo")
     # Using a filter to find documents where page is null
