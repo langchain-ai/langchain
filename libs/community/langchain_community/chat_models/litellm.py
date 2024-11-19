@@ -287,7 +287,6 @@ class ChatLiteLLM(BaseChatModel):
 
         @retry_decorator
         def _completion_with_retry(**kwargs: Any) -> Any:
-            print(kwargs)
             return self.client.completion(**kwargs)
 
         return _completion_with_retry(**kwargs)
