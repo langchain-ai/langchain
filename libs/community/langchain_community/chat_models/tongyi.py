@@ -558,19 +558,22 @@ class ChatTongyi(BaseChatModel):
                     yield check_response(resp)
 
         return _stream_completion_with_retry(**kwargs)
-        
+
     def fix_response_text(self, resp: Any) -> Any:
-        """reponse ` {"role": "assistant", "content": [{"text": "图像"}]}}]}` 
+        """reponse ` {"role": "assistant", "content": [{"text": "图像"}]}}]}`
         is not working for langchain
         """
 
         resp_copy = json.loads(json.dumps(resp))
         choice = resp_copy["output"]["choices"][0]
         message = choice["message"]
-        if isinstance(message.get('content'), list):
-            content_text = "".join(item.get('text', '') 
-                for item in message['content'] if isinstance(item, dict))
-            message['content'] = content_text
+        if isinstance(message.get("content"), list):
+            content_text = "".join(
+                item.get("text", "")
+                for item in message["content"]
+                if isinstance(item, dict)
+            )
+            message["content"] = content_text
 
         return resp_copy
 
