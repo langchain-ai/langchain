@@ -38,7 +38,7 @@ install-py-deps:
 
 generate-files:
 	mkdir -p $(INTERMEDIATE_DIR)
-	cp -r $(SOURCE_DIR)/* $(INTERMEDIATE_DIR)
+	cp -rp $(SOURCE_DIR)/* $(INTERMEDIATE_DIR)
 
 	$(PYTHON) scripts/tool_feat_table.py $(INTERMEDIATE_DIR)
 

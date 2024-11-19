@@ -114,7 +114,7 @@ export default function ChatModelTabs(props) {
       value: "Google",
       label: "Google",
       text: `from langchain_google_vertexai import ChatVertexAI\n\n${llmVarName} = ChatVertexAI(${googleParamsOrDefault})`,
-      apiKeyName: "GOOGLE_API_KEY",
+      apiKeyText: "# Ensure your VertexAI credentials are configured",
       packageName: "langchain-google-vertexai",
       default: false,
       shouldHide: hideGoogle,
