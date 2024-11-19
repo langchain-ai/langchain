@@ -219,11 +219,7 @@ jobs:
 
           # Replace all dashes in the package name with underscores,
           # since that's how Python imports packages with dashes in the name.
-          if [ "$PKG_NAME" == "langchain-tests" ]; then
-            IMPORT_NAME="langchain_standard_tests"
-          else
-            IMPORT_NAME="$(echo "$PKG_NAME" | sed s/-/_/g)"
-          fi
+          IMPORT_NAME="$(echo "$PKG_NAME" | sed s/-/_/g)"
 
           poetry run python -c "import $IMPORT_NAME; print(dir($IMPORT_NAME))"
 
