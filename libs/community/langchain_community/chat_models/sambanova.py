@@ -113,8 +113,8 @@ class ChatSambaNovaCloud(BaseChatModel):
 
     Setup:
         To use, you should have the environment variables:
-        ``SAMBANOVA_URL`` set with your SambaNova Cloud URL.
-        ``SAMBANOVA_API_KEY`` set with your SambaNova Cloud API Key.
+        `SAMBANOVA_URL` set with your SambaNova Cloud URL.
+        `SAMBANOVA_API_KEY` set with your SambaNova Cloud API Key.
         http://cloud.sambanova.ai/
         Example:
         .. code-block:: python
@@ -236,7 +236,7 @@ class ChatSambaNovaCloud(BaseChatModel):
             Joke(setup="Why did the cat join a band?",
             punchline="Because it wanted to be the purr-cussionist!")
 
-        See ``ChatSambanovaCloud.with_structured_output()`` for more.
+        See `ChatSambanovaCloud.with_structured_output()` for more.
 
     Token usage:
         .. code-block:: python
@@ -387,8 +387,8 @@ class ChatSambaNovaCloud(BaseChatModel):
                     - an OpenAI function/tool schema,
                     - a JSON Schema,
                     - a TypedDict class,
-                    - or a Pydantic class.
-                If ``schema`` is a Pydantic class then the model output will be a
+                    - or a Pydantic.BaseModel class.
+                If `schema` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
                 dict and will not be validated. See :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`
@@ -416,15 +416,15 @@ class ChatSambaNovaCloud(BaseChatModel):
         Returns:
             A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
 
-            If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs
-            an instance of ``schema`` (i.e., a Pydantic object).
+            If `include_raw` is False and `schema` is a Pydantic class, Runnable outputs
+            an instance of `schema` (i.e., a Pydantic object).
 
-            Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
+            Otherwise, if `include_raw` is False then Runnable outputs a dict.
 
-            If ``include_raw`` is True, then Runnable outputs a dict with keys:
-                - ``"raw"``: BaseMessage
-                - ``"parsed"``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-                - ``"parsing_error"``: Optional[BaseException]
+            If `include_raw` is True, then Runnable outputs a dict with keys:
+                - `"raw"`: BaseMessage
+                - `"parsed"`: None if there was a parsing error, otherwise the type depends on the `schema` as described above.
+                - `"parsing_error"`: Optional[BaseException]
 
         Example: schema=Pydantic class, method="function_calling", include_raw=False:
             .. code-block:: python
@@ -617,20 +617,20 @@ class ChatSambaNovaCloud(BaseChatModel):
                 # }
 
         """  # noqa: E501
-        if kwargs:
+        if kwargs is not None:
             raise ValueError(f"Received unsupported arguments {kwargs}")
         is_pydantic_schema = _is_pydantic_class(schema)
         if method == "function_calling":
             if schema is None:
                 raise ValueError(
-                    "schema must be specified when method is 'function_calling'. "
+                    "`schema` must be specified when method is `function_calling`. "
                     "Received None."
                 )
             tool_name = convert_to_openai_tool(schema)["function"]["name"]
             llm = self.bind_tools([schema], tool_choice=tool_name)
             if is_pydantic_schema:
                 output_parser: OutputParserLike[Any] = PydanticToolsParser(
-                    tools=[schema],  # type: ignore[list-item]
+                    tools=[schema],
                     first_tool_only=True,
                 )
             else:
@@ -650,7 +650,7 @@ class ChatSambaNovaCloud(BaseChatModel):
         elif method == "json_schema":
             if schema is None:
                 raise ValueError(
-                    "schema must be specified when method is not 'json_mode'. "
+                    "`schema` must be specified when method is not `json_mode`. "
                     "Received None."
                 )
             llm = self
@@ -666,8 +666,8 @@ class ChatSambaNovaCloud(BaseChatModel):
                 output_parser = JsonOutputParser()
         else:
             raise ValueError(
-                f"Unrecognized method argument. Expected one of 'function_calling' or "
-                f"'json_mode'. Received: '{method}'"
+                f"Unrecognized method argument. Expected one of `function_calling` or "
+                f"`json_mode`. Received: `{method}`"
             )
 
         if include_raw:

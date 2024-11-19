@@ -7,14 +7,13 @@ import pytest
 from langchain_core.tools import BaseTool
 from pydantic import SecretStr
 
-from langchain_standard_tests.base import BaseStandardTests
+from langchain_tests.base import BaseStandardTests
 
 
 class ToolsTests(BaseStandardTests):
     @property
     @abstractmethod
-    def tool_constructor(self) -> Union[Type[BaseTool], Callable]:
-        ...
+    def tool_constructor(self) -> Union[Type[BaseTool], Callable]: ...
 
     @property
     def tool_constructor_params(self) -> dict:
