@@ -1424,7 +1424,6 @@ class FAISS(VectorStore):
                     """
                     doc_value = doc.get(field)
                     return all(op(doc_value, value) for op, value in operators)
-
                 return filter_fn
 
             if isinstance(condition, list):
