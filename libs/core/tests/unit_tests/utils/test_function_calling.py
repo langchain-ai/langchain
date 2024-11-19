@@ -26,6 +26,7 @@ except ImportError:
     TypingAnnotated = ExtensionsAnnotated
 
 from pydantic import BaseModel, Field
+from pydantic.version import VERSION as PydanticVersion
 
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langchain_core.runnables import Runnable, RunnableLambda
@@ -460,6 +461,9 @@ def test_convert_to_openai_function_nested_strict() -> None:
     assert actual == expected
 
 
+@pytest.mark.skipif(
+    tuple(map(int, PydanticVersion.split('.'))) < (2, 9, 0), reason="Expected based on pydantic version >= 2.9."
+)
 def test_convert_to_openai_function_enum_description() -> None:
     class MyEnum(Enum):
         ENUM_ARG1 = "enum1"
@@ -496,7 +500,9 @@ def test_convert_to_openai_function_enum_description() -> None:
     actual = convert_to_openai_function(my_function)
     assert actual == expected
 
-
+@pytest.mark.skipif(
+    tuple(map(int, PydanticVersion.split('.'))) < (2, 9, 0), reason="Expected based on pydantic version >= 2.9."
+)
 def test_convert_to_openai_function_enum_alias() -> None:
     class MyEnum(Enum):
         ENUM_ARG1 = "enum1"
@@ -532,7 +538,9 @@ def test_convert_to_openai_function_enum_alias() -> None:
     actual = convert_to_openai_function(my_function)
     assert actual == expected
 
-
+@pytest.mark.skipif(
+    tuple(map(int, PydanticVersion.split('.'))) < (2, 9, 0), reason="Expected based on pydantic version >= 2.9."
+)
 def test_convert_to_openai_function_enum_description_and_alias() -> None:
     class MyEnum(Enum):
         ENUM_ARG1 = "enum1"
