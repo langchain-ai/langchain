@@ -78,7 +78,7 @@ export default function ChatModelTabs(props) {
     azureParams ??
     `\n    azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],\n    azure_deployment=os.environ["AZURE_OPENAI_DEPLOYMENT_NAME"],\n    openai_api_version=os.environ["AZURE_OPENAI_API_VERSION"],\n`;
   const nvidiaParamsOrDefault = nvidiaParams ?? `model="meta/llama3-70b-instruct"`
-  const awsBedrockParamsOrDefault = awsBedrockParams ?? `model_id="anthropic.claude-3-5-sonnet-20240620-v1:0"`;
+  const awsBedrockParamsOrDefault = awsBedrockParams ?? `model="anthropic.claude-3-5-sonnet-20240620-v1:0",\n    beta_use_converse_api=True`;
 
   const llmVarName = customVarName ?? "model";
 
@@ -114,10 +114,19 @@ export default function ChatModelTabs(props) {
       value: "Google",
       label: "Google",
       text: `from langchain_google_vertexai import ChatVertexAI\n\n${llmVarName} = ChatVertexAI(${googleParamsOrDefault})`,
-      apiKeyName: "GOOGLE_API_KEY",
+      apiKeyText: "# Ensure your VertexAI credentials are configured",
       packageName: "langchain-google-vertexai",
       default: false,
       shouldHide: hideGoogle,
+    },
+    {
+      value: "AWS",
+      label: "AWS",
+      text: `from langchain_aws import ChatBedrock\n\n${llmVarName} = ChatBedrock(${awsBedrockParamsOrDefault})`,
+      apiKeyText: "# Ensure your AWS credentials are configured",
+      packageName: "langchain-aws",
+      default: false,
+      shouldHide: hideAWS,
     },
     {
       value: "Cohere",
@@ -172,15 +181,6 @@ export default function ChatModelTabs(props) {
       packageName: "langchain-openai",
       default: false,
       shouldHide: hideTogether,
-    },
-    {
-      value: "AWS",
-      label: "AWS",
-      text: `from langchain_aws import ChatBedrock\n\n${llmVarName} = ChatBedrock(${awsBedrockParamsOrDefault})`,
-      apiKeyText: "# Ensure your AWS credentials are configured",
-      packageName: "langchain-aws",
-      default: false,
-      shouldHide: hideAWS,
     },
   ];
 

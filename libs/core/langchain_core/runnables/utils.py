@@ -388,6 +388,7 @@ def get_lambda_source(func: Callable) -> Optional[str]:
         return name
 
 
+@lru_cache(maxsize=256)
 def get_function_nonlocals(func: Callable) -> list[Any]:
     """Get the nonlocal variables accessed by a function.
 
