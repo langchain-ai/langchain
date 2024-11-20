@@ -615,7 +615,6 @@ class ChatSambaNovaCloud(BaseChatModel):
                 #     'parsed': AnswerWithJustification(answer='They are the same weight', justification='A pound is a unit of weight or mass, so a pound of bricks and a pound of feathers both weigh the same amount, one pound. The difference is in their density and volume. A pound of feathers would take up more space than a pound of bricks due to the difference in their densities.'),
                 #     'parsing_error': None
                 # }
-
         """  # noqa: E501
         if kwargs is not None:
             raise ValueError(f"Received unsupported arguments {kwargs}")
