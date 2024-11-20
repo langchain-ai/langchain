@@ -1753,7 +1753,7 @@ class ChatSambaStudio(BaseChatModel):
                 **self.additional_headers,
             }
 
-        # create request payload for generic v1 API
+        # create request payload for generic v2 API
         elif "api/v2/predict/generic" in self.sambastudio_url:
             items = [
                 {"id": "item0", "value": self._messages_to_string(messages, **kwargs)}
