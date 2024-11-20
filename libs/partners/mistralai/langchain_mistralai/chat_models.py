@@ -365,10 +365,10 @@ class ChatMistralAI(BaseChatModel):
     # The type for client and async_client is ignored because the type is not
     # an Optional after the model is initialized and the model_validator
     # is run.
-    client: httpx.Client = Field(  #: :meta private: # type: ignore
+    client: httpx.Client = Field(  # type: ignore # : meta private:
         default=None, exclude=True
     )
-    async_client: httpx.AsyncClient = Field(  #: :meta private: # type: ignore
+    async_client: httpx.AsyncClient = Field(  # type: ignore # : meta private:
         default=None, exclude=True
     )  #: :meta private:
     mistral_api_key: Optional[SecretStr] = Field(
