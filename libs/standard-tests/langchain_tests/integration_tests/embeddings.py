@@ -2,7 +2,7 @@ from typing import List
 
 from langchain_core.embeddings import Embeddings
 
-from langchain_standard_tests.unit_tests.embeddings import EmbeddingsTests
+from langchain_tests.unit_tests.embeddings import EmbeddingsTests
 
 
 class EmbeddingsIntegrationTests(EmbeddingsTests):

@@ -7,13 +7,13 @@ import pytest
 from langchain_core.tools import BaseTool
 from pydantic import SecretStr
 
-from langchain_standard_tests.base import BaseStandardTests
+from langchain_tests.base import BaseStandardTests
 
 
 class ToolsTests(BaseStandardTests):
     @property
     @abstractmethod
-    def tool_constructor(self) -> Union[Type[BaseTool], Callable]: ...
+    def tool_constructor(self) -> Union[Type[BaseTool], Callable, BaseTool]: ...
 
     @property
     def tool_constructor_params(self) -> dict:
@@ -31,6 +31,14 @@ class ToolsTests(BaseStandardTests):
 
     @pytest.fixture
     def tool(self) -> BaseTool:
+        if isinstance(self.tool_constructor, BaseTool):
+            if self.tool_constructor_params != {}:
+                msg = (
+                    "If tool_constructor is an instance of BaseTool, "
+                    "tool_constructor_params must be empty"
+                )
+                raise ValueError(msg)
+            return self.tool_constructor
         return self.tool_constructor(**self.tool_constructor_params)
 
 
