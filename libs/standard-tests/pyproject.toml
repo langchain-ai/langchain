@@ -4,8 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-tests"
-packages = [{ include = "langchain_standard_tests" }]
-version = "0.3.1"
+version = "0.3.2"
 description = "Standard tests for LangChain implementations"
 authors = ["Erick Friis <erick@langchain.dev>"]
 readme = "README.md"

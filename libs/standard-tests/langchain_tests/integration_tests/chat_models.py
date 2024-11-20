@@ -21,11 +21,11 @@ from pydantic import BaseModel, Field
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import Field as FieldV1
 
-from langchain_standard_tests.unit_tests.chat_models import (
+from langchain_tests.unit_tests.chat_models import (
     ChatModelTests,
     my_adder_tool,
 )
-from langchain_standard_tests.utils.pydantic import PYDANTIC_MAJOR_VERSION
+from langchain_tests.utils.pydantic import PYDANTIC_MAJOR_VERSION
 
 
 class MagicFunctionSchema(BaseModel):

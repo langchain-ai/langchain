@@ -13,7 +13,7 @@ class BaseStandardTests(ABC):
         def explore_bases(cls: Type) -> None:
             nonlocal comparison_class
             for base in cls.__bases__:
-                if base.__module__.startswith("langchain_standard_tests."):
+                if base.__module__.startswith("langchain_tests."):
                     if comparison_class is None:
                         comparison_class = base
                     else:
