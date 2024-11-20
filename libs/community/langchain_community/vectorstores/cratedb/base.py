@@ -469,6 +469,7 @@ class CrateDBVectorStore(PGVector):
         # (0 is most similar, sqrt(2) most dissimilar)
         # to a similarity function (0 to 1)
 
-        # Original:
-        # return 1.0 - distance / math.sqrt(2)
+        # CrateDB uses the `vector_similarity()` SQL function in this context,
+        # which already returns a normalized value.
+        # https://cratedb.com/docs/crate/reference/en/latest/general/builtins/scalar-functions.html#vector-similarity-float-vector-float-vector
         return similarity
