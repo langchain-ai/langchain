@@ -11,7 +11,9 @@ from typing import Dict, Any
 def load_packages_yaml() -> Dict[str, Any]:
     """Load and parse the packages.yml file."""
     with open("langchain/libs/packages.yml", "r") as f:
-        return yaml.safe_load(f)
+        all_packages = yaml.safe_load(f)
+
+    return {k: v for k, v in all_packages.items() if k["repo"]}
 
 
 def get_target_dir(package_name: str) -> Path:
@@ -23,24 +25,19 @@ def get_target_dir(package_name: str) -> Path:
     return base_path / "partners" / package_name_short
 
 
-def clean_target_directories(packages: Dict[str, Any]) -> None:
+def clean_target_directories(packages: list) -> None:
     """Remove old directories that will be replaced."""
-    for package in packages["packages"]:
-        if package["repo"] != "langchain-ai/langchain":
-            target_dir = get_target_dir(package["name"])
-            if target_dir.exists():
-                print(f"Removing {target_dir}")
-                shutil.rmtree(target_dir)
+    for package in packages:
+
+        target_dir = get_target_dir(package["name"])
+        if target_dir.exists():
+            print(f"Removing {target_dir}")
+            shutil.rmtree(target_dir)
 
 
-def move_libraries(packages: Dict[str, Any]) -> None:
+def move_libraries(packages: list) -> None:
     """Move libraries from their source locations to the target directories."""
-    for package in packages["packages"]:
-        # Skip if it's the main langchain repo or disabled
-        if package["repo"] == "langchain-ai/langchain" or package.get(
-            "disabled", False
-        ):
-            continue
+    for package in packages:
 
         repo_name = package["repo"].split("/")[1]
         source_path = package["path"]
@@ -68,7 +65,14 @@ def main():
     """Main function to orchestrate the library sync process."""
     try:
         # Load packages configuration
-        packages = load_packages_yaml()
+        package_yaml = load_packages_yaml()
+        packages = [
+            p
+            for p in package_yaml["packages"]
+            if not p.get("disabled", False)
+            and p["repo"].startswith("langchain-ai/")
+            and p["repo"] != "langchain-ai/langchain"
+        ]
 
         # Clean target directories
         clean_target_directories(packages)
