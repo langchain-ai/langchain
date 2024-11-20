@@ -14,6 +14,15 @@ from langchain_core._api import (
     surface_langchain_beta_warnings,
     surface_langchain_deprecation_warnings,
 )
+from langchain_core._api.shorthand import (
+    chat_model,
+    document_loader,
+    embeddings,
+    retriever,
+    tool,
+    toolkit,
+    vectorstore,
+)
 
 try:
     __version__ = metadata.version(__package__)
@@ -23,3 +32,14 @@ except metadata.PackageNotFoundError:
 
 surface_langchain_deprecation_warnings()
 surface_langchain_beta_warnings()
+
+__all__ = [
+    "__version__",
+    "chat_model",
+    "retriever",
+    "tool",
+    "toolkit",
+    "document_loader",
+    "vectorstore",
+    "embeddings",
+]
