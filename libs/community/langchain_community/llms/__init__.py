@@ -518,6 +518,12 @@ def _import_sagemaker_endpoint() -> Type[BaseLLM]:
     return SagemakerEndpoint
 
 
+def _import_sambanovacloud() -> Type[BaseLLM]:
+    from langchain_community.llms.sambanova import SambaNovaCloud
+
+    return SambaNovaCloud
+
+
 def _import_sambastudio() -> Type[BaseLLM]:
     from langchain_community.llms.sambanova import SambaStudio
 
@@ -821,6 +827,8 @@ def __getattr__(name: str) -> Any:
         return _import_rwkv()
     elif name == "SagemakerEndpoint":
         return _import_sagemaker_endpoint()
+    elif name == "SambaNovaCloud":
+        return _import_sambanovacloud()
     elif name == "SambaStudio":
         return _import_sambastudio()
     elif name == "SelfHostedPipeline":
@@ -957,6 +965,7 @@ __all__ = [
     "RWKV",
     "Replicate",
     "SagemakerEndpoint",
+    "SambaNovaCloud",
     "SambaStudio",
     "SelfHostedHuggingFaceLLM",
     "SelfHostedPipeline",
@@ -1054,6 +1063,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "replicate": _import_replicate,
         "rwkv": _import_rwkv,
         "sagemaker_endpoint": _import_sagemaker_endpoint,
+        "sambanovacloud": _import_sambanovacloud,
         "sambastudio": _import_sambastudio,
         "self_hosted": _import_self_hosted,
         "self_hosted_hugging_face": _import_self_hosted_hugging_face,
