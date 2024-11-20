@@ -1,21 +1,18 @@
 """Test Lindorm AI rerank Model."""
 
 import asyncio
+import os
 from typing import Any
 
-import environs
 from langchain_core.documents import Document
 
 from langchain_community.document_compressors.lindormai_rerank import LindormAIRerank
 
-env = environs.Env()
-env.read_env(".env")
-
 
 class Config:
-    AI_LLM_ENDPOINT = env.str("AI_LLM_ENDPOINT", "<LLM_ENDPOINT>")
-    AI_USERNAME = env.str("AI_USERNAME", "root")
-    AI_PWD = env.str("AI_PWD", "<PASSWORD>")
+    AI_LLM_ENDPOINT = os.environ.get("AI_LLM_ENDPOINT", "<LLM_ENDPOINT>")
+    AI_USERNAME = os.environ.get("AI_USERNAME", "root")
+    AI_PWD = os.environ.get("AI_PWD", "<PASSWORD>")
 
     AI_DEFAULT_RERANK_MODEL = "rerank_bge_v2_m3"
 

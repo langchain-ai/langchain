@@ -3,35 +3,45 @@
 import asyncio
 import copy
 import logging
+import os
 import timeit
 import uuid
 from functools import partial
+from importlib import util
 from typing import Any
 
-import environs
 from langchain_core.documents import Document
 from langchain_text_splitters import CharacterTextSplitter
-from opensearchpy.helpers import scan
 
 from langchain_community.document_loaders import TextLoader
 from langchain_community.embeddings.lindorm_embedding import LindormAIEmbeddings
-from langchain_community.vectorstores.lindorm_search_store import LindormSearchStore
+from langchain_community.vectorstores.lindorm_vector_search import LindormVectorStore
 
-env = environs.Env()
-env.read_env(".env")
+IMPORT_OPENSEARCH_PY_ERROR = (
+    "Could not import OpenSearch. Please install it with `pip install opensearch-py`."
+)
+
+
+def _get_opensearch_scan() -> Any:
+    if util.find_spec("opensearchpy.helpers"):
+        from opensearchpy.helpers import scan
+
+        return scan  # 返回 bulk 函数的引用
+    else:
+        raise ImportError(IMPORT_OPENSEARCH_PY_ERROR)
 
 
 class Config:
-    AI_LLM_ENDPOINT = env.str("AI_LLM_ENDPOINT", "<LLM_ENDPOINT>")
-    AI_EMB_ENDPOINT = env.str("AI_EMB_ENDPOINT", "<EMB_ENDPOINT>")
-    AI_USERNAME = env.str("AI_USERNAME", "root")
-    AI_PWD = env.str("AI_PWD", "<PASSWORD>")
+    AI_LLM_ENDPOINT = os.environ.get("AI_LLM_ENDPOINT", "<LLM_ENDPOINT>")
+    AI_EMB_ENDPOINT = os.environ.get("AI_EMB_ENDPOINT", "<EMB_ENDPOINT>")
+    AI_USERNAME = os.environ.get("AI_USERNAME", "root")
+    AI_PWD = os.environ.get("AI_PWD", "<PASSWORD>")
 
     AI_DEFAULT_RERANK_MODEL = "rerank_bge_v2_m3"
     AI_DEFAULT_EMBEDDING_MODEL = "bge_m3_model"
-    SEARCH_ENDPOINT = env.str("SEARCH_ENDPOINT", "SEARCH_ENDPOINT")
-    SEARCH_USERNAME = env.str("SEARCH_USERNAME", "root")
-    SEARCH_PWD = env.str("SEARCH_PWD", "<PASSWORD>")
+    SEARCH_ENDPOINT = os.environ.get("SEARCH_ENDPOINT", "SEARCH_ENDPOINT")
+    SEARCH_USERNAME = os.environ.get("SEARCH_USERNAME", "root")
+    SEARCH_PWD = os.environ.get("SEARCH_PWD", "<PASSWORD>")
 
 
 logger = logging.getLogger(__name__)
@@ -72,6 +82,7 @@ BUILD_INDEX = True
 
 
 def test_build_index() -> Any:
+    scan = _get_opensearch_scan()
     BUILD_INDEX_PARAMS["index_name"] = "tl_non_route_index"
     BUILD_INDEX_PARAMS["method_name"] = "hnsw"
 
@@ -92,9 +103,9 @@ def test_build_index() -> Any:
             str(doc.metadata["rating"]) for doc in BUILD_INDEX_PARAMS["documents"]
         ]
         BUILD_INDEX_PARAMS["overwrite"] = False
-        docsearch = LindormSearchStore.from_documents(**BUILD_INDEX_PARAMS)
+        docsearch = LindormVectorStore.from_documents(**BUILD_INDEX_PARAMS)
     else:
-        docsearch = LindormSearchStore(**BUILD_INDEX_PARAMS)
+        docsearch = LindormVectorStore(**BUILD_INDEX_PARAMS)
 
     ratings = []
     for hit in scan(docsearch.client, index=docsearch.index_name):
@@ -108,6 +119,7 @@ def test_build_index() -> Any:
 
 
 def test_build_route_index() -> Any:
+    scan = _get_opensearch_scan()
     ROUTE_BUILD_INDEX_PARAMS = copy.deepcopy(BUILD_INDEX_PARAMS)
     ROUTE_BUILD_INDEX_PARAMS["index_name"] = "tl_route_index"
     ROUTE_BUILD_INDEX_PARAMS["routing_field"] = "split_setting"
@@ -137,9 +149,9 @@ def test_build_route_index() -> Any:
         # docsearch.delete_index(ROUTE_BUILD_INDEX_PARAMS["index_name"])
         # docsearch.from_documents(**ROUTE_BUILD_INDEX_PARAMS)
 
-        docsearch = LindormSearchStore.from_documents(**ROUTE_BUILD_INDEX_PARAMS)
+        docsearch = LindormVectorStore.from_documents(**ROUTE_BUILD_INDEX_PARAMS)
     else:
-        docsearch = LindormSearchStore(**ROUTE_BUILD_INDEX_PARAMS)
+        docsearch = LindormVectorStore(**ROUTE_BUILD_INDEX_PARAMS)
 
     ratings = []
     for hit in scan(docsearch.client, index=docsearch.index_name):
@@ -200,12 +212,12 @@ def test_inherit_codebook(init_by_from: bool) -> Any:
         ROUTE_INHERIT_INDEX_PARAMS["ids"] = [
             str(doc.metadata["rating"]) for doc in documents
         ]
-        docsearch = LindormSearchStore.from_documents(**ROUTE_INHERIT_INDEX_PARAMS)
+        docsearch = LindormVectorStore.from_documents(**ROUTE_INHERIT_INDEX_PARAMS)
     else:
         texts = [d.page_content for d in documents]
         metadatas = [d.metadata for d in documents]
         ids = [str(d.metadata["rating"]) for d in documents]
-        docsearch = LindormSearchStore(**ROUTE_INHERIT_INDEX_PARAMS)
+        docsearch = LindormVectorStore(**ROUTE_INHERIT_INDEX_PARAMS)
         docsearch.add_texts(texts=texts, metadatas=metadatas, ids=ids)
 
     # search texts
@@ -594,7 +606,7 @@ def test_text_search_with_filter_clause(docsearch: Any) -> None:
 
 
 def test_init() -> None:
-    ldv = LindormSearchStore(
+    ldv = LindormVectorStore(
         lindorm_search_url=Config.SEARCH_ENDPOINT,
         index_name="test",
         embedding=get_default_embedding(),

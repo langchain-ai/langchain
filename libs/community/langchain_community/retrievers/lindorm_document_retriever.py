@@ -2,66 +2,9 @@ from typing import Any, List, Optional
 
 from langchain.retrievers import ParentDocumentRetriever
 from langchain_core.documents import Document
-from langchain_text_splitters import TextSplitter
 
 
 class LindormParentDocumentRetriever(ParentDocumentRetriever):
-    """Retrieve small chunks then retrieve their parent documents.
-
-    When splitting documents for retrieval, there are often conflicting desires:
-
-    1. You may want to have small documents, so that their embeddings can most
-        accurately reflect their meaning. If too long, then the embeddings can
-        lose meaning.
-    2. You want to have long enough documents that the context of each chunk is
-        retained.
-
-    The ParentDocumentRetriever strikes that balance by splitting and storing
-    small chunks of data. During retrieval, it first fetches the small chunks
-    but then looks up the parent ids for those chunks and returns those larger
-    documents.
-
-    Note that "parent document" refers to the document that a small chunk
-    originated from. This can either be the whole raw document OR a larger
-    chunk.
-
-    Examples:
-
-        .. code-block:: python
-
-            from langchain_community.embeddings import OpenAIEmbeddings
-            from langchain_community.vectorstores import Chroma
-            from langchain_text_splitters import RecursiveCharacterTextSplitter
-            from langchain.storage import InMemoryStore
-
-            # This text splitter is used to create the parent documents
-            parent_splitter = RecursiveCharacterTextSplitter(chunk_size=2000, add_start_index=True)
-            # This text splitter is used to create the child documents
-            # It should create documents smaller than the parent
-            child_splitter = RecursiveCharacterTextSplitter(chunk_size=400, add_start_index=True)
-            # The vectorstore to use to index the child chunks
-            vectorstore = Chroma(embedding_function=OpenAIEmbeddings())
-            # The storage layer for the parent documents
-            store = InMemoryStore()
-
-            # Initialize the retriever
-            retriever = ParentDocumentRetriever(
-                vectorstore=vectorstore,
-                docstore=store,
-                child_splitter=child_splitter,
-                parent_splitter=parent_splitter,
-            )
-    """  # noqa: E501
-
-    child_splitter: TextSplitter
-    """The text splitter to use to create child documents."""
-
-    """The key to use to track the parent id. This will be stored in the
-    metadata of child documents."""
-    parent_splitter: TextSplitter
-    """The text splitter to use to create parent documents.
-    If none, then the parent documents will be the raw documents passed in."""
-
     def add_documents(
         self,
         documents: List[Document],
@@ -102,7 +45,8 @@ class LindormParentDocumentRetriever(ParentDocumentRetriever):
         tag = kwargs.pop("tag", "source")
         metadata = kwargs.pop("metadata", {})
         routing = metadata.get(routing_field, "")
-        documents = self.parent_splitter.split_documents(documents)
+        if self.parent_splitter is not None:
+            documents = self.parent_splitter.split_documents(documents)
         parent_docs = []
         child_docs = []
         for i, doc in enumerate(documents):

@@ -59,7 +59,7 @@ class LindormAIEmbeddings(BaseModel, Embeddings):
                 raise ImportError(
                     "Could not import lindormai python package. "
                     "Please install it with"
-                    " `pip install lindormai-x.y-z-py3-none-any.whl`."
+                    " `pip install lindormai`."
                 )
             else:
                 from lindormai.model_manager import ModelManager

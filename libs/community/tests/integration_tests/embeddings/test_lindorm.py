@@ -1,17 +1,14 @@
 """Test Lindorm AI embeddings."""
 
-import environs
+import os
 
 from langchain_community.embeddings.lindorm_embedding import LindormAIEmbeddings
 
-env = environs.Env()
-env.read_env(".env")
-
 
 class Config:
-    AI_LLM_ENDPOINT = env.str("AI_LLM_ENDPOINT", "<LLM_ENDPOINT>")
-    AI_USERNAME = env.str("AI_USERNAME", "root")
-    AI_PWD = env.str("AI_PWD", "<PASSWORD>")
+    AI_LLM_ENDPOINT = os.environ.get("AI_LLM_ENDPOINT", "<LLM_ENDPOINT>")
+    AI_USERNAME = os.environ.get("AI_USERNAME", "root")
+    AI_PWD = os.environ.get("AI_PWD", "<PASSWORD>")
 
     AI_DEFAULT_EMBEDDING_MODEL = "bge_m3_model"
 

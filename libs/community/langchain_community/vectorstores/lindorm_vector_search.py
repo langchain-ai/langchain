@@ -13,7 +13,6 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.runnables import run_in_executor
 from langchain_core.vectorstores import VectorStore
 from tenacity import retry, stop_after_attempt, wait_fixed
-from tqdm import tqdm
 
 IMPORT_OPENSEARCH_PY_ERROR = (
     "Could not import OpenSearch. Please install it with `pip install opensearch-py`."
@@ -285,7 +284,7 @@ def bulk_ingest_embedding_thread(
     logger.info("bulk_ingest_embedding_thread stop")
 
 
-class LindormSearchStore(VectorStore):
+class LindormVectorStore(VectorStore):
     """
     Implement of ElasticSearch/OpenSearch-Compatible Lindorm Search Engine vector store.
 
@@ -329,7 +328,7 @@ class LindormSearchStore(VectorStore):
         self.embed_jobs: List[Any] = []
         self.write_jobs: List[Any] = []
 
-        self.progress_bar = tqdm()
+        # self.progress_bar = tqdm()
         self.total_done = 0
 
         # init route info
@@ -797,11 +796,6 @@ class LindormSearchStore(VectorStore):
                 logger.info("All texts existed, Finish")
                 return ids
 
-        self.progress_bar = tqdm(
-            total=self.total_done + total_items,
-            initial=self.total_done,
-        )
-
         for offset in range(0, total_items, bulk_size):
             texts_bulk = texts[offset : offset + bulk_size]
             metadatas_bulk = (
@@ -815,7 +809,6 @@ class LindormSearchStore(VectorStore):
             try:
                 # main thread will block util all task done or receive KeyboardInterrupt
                 return_ids_bulk = self.return_ids_queue.get(timeout=1)
-                self.progress_bar.update(len(return_ids_bulk))
                 return_ids += return_ids_bulk
             except queue.Empty:
                 # when call add_texts in a loop, and use KeyboardInterrupt
@@ -823,8 +816,6 @@ class LindormSearchStore(VectorStore):
                 # may not read in time, so here use '>='
                 if len(return_ids) >= total_items:
                     logger.info("All task done.")
-                    self.total_done = self.progress_bar.n
-                    self.progress_bar.close()
                     break
             except KeyboardInterrupt:
                 logger.info("Received KeyboardInterrupt, interrupt current task...")
@@ -838,8 +829,6 @@ class LindormSearchStore(VectorStore):
 
                 # close current progress bar to avoid being triggerred twice or more
                 # time in notebook.
-                self.total_done = self.progress_bar.n
-                self.progress_bar.close()
                 raise KeyboardInterrupt(
                     "Received KeyboardInterrupt, interrupt current task..."
                 )
@@ -1451,7 +1440,7 @@ class LindormSearchStore(VectorStore):
         bulk_size: int = 500,
         ids: Optional[List[str]] = None,
         **kwargs: Any,
-    ) -> LindormSearchStore:
+    ) -> LindormVectorStore:
         """Construct LindormSearchStore wrapper from raw texts.
 
             Example:

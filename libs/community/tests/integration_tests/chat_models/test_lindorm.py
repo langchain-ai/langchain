@@ -1,19 +1,17 @@
 """Test Lindorm AI Chat Model."""
 
-import environs
+import os
+
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.outputs import ChatGeneration, LLMResult
 
 from langchain_community.chat_models.lindorm_chat import ChatLindormAI
 
-env = environs.Env()
-env.read_env(".env")
-
 
 class Config:
-    AI_CHAT_LLM_ENDPOINT = env.str("AI_CHAT_LLM_ENDPOINT", "<CHAT_ENDPOINT>")
-    AI_CHAT_USERNAME = env.str("AI_CHAT_USERNAME", "root")
-    AI_CHAT_PWD = env.str("AI_CHAT_PWD", "<PASSWORD>")
+    AI_CHAT_LLM_ENDPOINT = os.environ.get("AI_CHAT_LLM_ENDPOINT", "<CHAT_ENDPOINT>")
+    AI_CHAT_USERNAME = os.environ.get("AI_CHAT_USERNAME", "root")
+    AI_CHAT_PWD = os.environ.get("AI_CHAT_PWD", "<PASSWORD>")
     AI_DEFAULT_CHAT_MODEL = "qa_model_qwen_72b_chat"
 
 
