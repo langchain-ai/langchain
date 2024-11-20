@@ -54,8 +54,8 @@ def _convert_chunk_to_message_chunk(
     if sse.event == "result":
         response_metadata = {}
         if "stopReason" in sse_data:
-            response_metadata['stopReason'] = sse_data["stopReason"]
-        return AIMessageChunk(content='', response_metadata=response_metadata)
+            response_metadata["stopReason"] = sse_data["stopReason"]
+        return AIMessageChunk(content="", response_metadata=response_metadata)
 
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content)
