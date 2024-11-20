@@ -72,7 +72,6 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         Milvus,
         MyScale,
         Neo4jVector,
-        OceanBase,
         OpenSearchVectorSearch,
         PGVector,
         Qdrant,
