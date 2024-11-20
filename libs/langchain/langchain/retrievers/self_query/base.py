@@ -49,7 +49,6 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
     )
     from langchain_community.query_constructors.myscale import MyScaleTranslator
     from langchain_community.query_constructors.neo4j import Neo4jTranslator
-    from langchain_community.query_constructors.oceanbase import OceanBaseTranslator
     from langchain_community.query_constructors.opensearch import OpenSearchTranslator
     from langchain_community.query_constructors.pgvector import PGVectorTranslator
     from langchain_community.query_constructors.pinecone import PineconeTranslator
@@ -113,7 +112,6 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         Milvus: MilvusTranslator,
         SupabaseVectorStore: SupabaseVectorTranslator,
         TimescaleVector: TimescaleVectorTranslator,
-        OceanBase: OceanBaseTranslator,
         OpenSearchVectorSearch: OpenSearchTranslator,
         CommunityMongoDBAtlasVectorSearch: MongoDBAtlasTranslator,
         Neo4jVector: Neo4jTranslator,
