@@ -1,0 +1,244 @@
+# How to bootstrap a new integration package
+
+This guide walks through the process of publishing a new LangChain integration 
+package to PyPi.
+
+Integration packages are just Python packages that can be installed with `pip install <your-package>`,
+which contain classes that are compatible with LangChain's core interfaces.
+
+In this guide, we will be using [Poetry](https://python-poetry.org/) for
+dependency management and packaging, and you're welcome to use any other tools you prefer.
+
+## **Prerequisites**
+
+- [GitHub](https://github.com) account
+- [PyPi](https://pypi.org/) account
+
+## Boostrapping a new Python package with Poetry
+
+First, install Poetry:
+
+```bash
+pip install poetry
+```
+
+Next, create a new Python package with Poetry:
+
+```bash
+poetry new langchain-parrot-link
+```
+
+Add main dependencies using Poetry, which will add them to your `pyproject.toml` file:
+
+```bash
+poetry add langchain-core
+```
+
+We will also add some `test` dependencies in a separate poetry dependency group. If
+you are not using Poetry, we recommend adding these in a way that won't package them
+with your published package, or just installing them separately when you run tests.
+
+`langchain-tests` will provide the [standard tests](./standard_tests) we will use later. 
+We recommended pinning these to the latest version: 
+<img src="https://img.shields.io/pypi/v/langchain-tests" style={{position:"relative",top:4,left:3}} />
+
+
+```bash
+poetry add --group test pytest langchain-tests=={latest version}
+```
+
+You're now ready to start writing your integration package!
+
+## Writing your integration
+
+Let's say you're building a simple integration package that provides a `ChatParrotLink`
+chat model integration for LangChain. Here's a simple example of what your project
+structure might look like:
+
+```plaintext
+langchain-parrot-link/
+├── langchain_parrot_link/
+│   ├── __init__.py
+│   └── chat_models.py
+├── tests/
+│   ├── __init__.py
+│   └── test_chat_models.py
+├── pyproject.toml
+└── README.md
+```
+
+All of these files should already exist from step 1, except for 
+`chat_models.py` and `test_chat_models.py`! We will implement `test_chat_models.py` 
+later, following the [standard tests](./standard_tests) guide.
+
+To implement `chat_models.py`, let's copy the implementation from our
+[Custom Chat Model Guide](../../../how_to/custom_chat_model).
+
+<details>
+    <summary>chat_models.py</summary>
+```python title="langchain_parrot_link/chat_models.py"
+from typing import Any, Dict, Iterator, List, Optional
+
+from langchain_core.callbacks import (
+    CallbackManagerForLLMRun,
+)
+from langchain_core.language_models import BaseChatModel
+from langchain_core.messages import AIMessageChunk, BaseMessage, AIMessage
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+
+
+class CustomChatModelAdvanced(BaseChatModel):
+    """A custom chat model that echoes the first `n` characters of the input.
+
+    When contributing an implementation to LangChain, carefully document
+    the model including the initialization parameters, include
+    an example of how to initialize the model and include any relevant
+    links to the underlying models documentation or API.
+
+    Example:
+
+        .. code-block:: python
+
+            model = CustomChatModel(n=2)
+            result = model.invoke([HumanMessage(content="hello")])
+            result = model.batch([[HumanMessage(content="hello")],
+                                 [HumanMessage(content="world")]])
+    """
+
+    model_name: str
+    """The name of the model"""
+    n: int
+    """The number of characters from the last message of the prompt to be echoed."""
+
+    def _generate(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        """Override the _generate method to implement the chat model logic.
+
+        This can be a call to an API, a call to a local model, or any other
+        implementation that generates a response to the input prompt.
+
+        Args:
+            messages: the prompt composed of a list of messages.
+            stop: a list of strings on which the model should stop generating.
+                  If generation stops due to a stop token, the stop token itself
+                  SHOULD BE INCLUDED as part of the output. This is not enforced
+                  across models right now, but it's a good practice to follow since
+                  it makes it much easier to parse the output of the model
+                  downstream and understand why generation stopped.
+            run_manager: A run manager with callbacks for the LLM.
+        """
+        # Replace this with actual logic to generate a response from a list
+        # of messages.
+        last_message = messages[-1]
+        tokens = last_message.content[: self.n]
+        message = AIMessage(
+            content=tokens,
+            additional_kwargs={},  # Used to add additional payload (e.g., function calling request)
+            response_metadata={  # Use for response metadata
+                "time_in_seconds": 3,
+            },
+        )
+        ##
+
+        generation = ChatGeneration(message=message)
+        return ChatResult(generations=[generation])
+
+    def _stream(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        """Stream the output of the model.
+
+        This method should be implemented if the model can generate output
+        in a streaming fashion. If the model does not support streaming,
+        do not implement it. In that case streaming requests will be automatically
+        handled by the _generate method.
+
+        Args:
+            messages: the prompt composed of a list of messages.
+            stop: a list of strings on which the model should stop generating.
+                  If generation stops due to a stop token, the stop token itself
+                  SHOULD BE INCLUDED as part of the output. This is not enforced
+                  across models right now, but it's a good practice to follow since
+                  it makes it much easier to parse the output of the model
+                  downstream and understand why generation stopped.
+            run_manager: A run manager with callbacks for the LLM.
+        """
+        last_message = messages[-1]
+        tokens = last_message.content[: self.n]
+
+        for token in tokens:
+            chunk = ChatGenerationChunk(message=AIMessageChunk(content=token))
+
+            if run_manager:
+                # This is optional in newer versions of LangChain
+                # The on_llm_new_token will be called automatically
+                run_manager.on_llm_new_token(token, chunk=chunk)
+
+            yield chunk
+
+        # Let's add some other information (e.g., response metadata)
+        chunk = ChatGenerationChunk(
+            message=AIMessageChunk(content="", response_metadata={"time_in_sec": 3})
+        )
+        if run_manager:
+            # This is optional in newer versions of LangChain
+            # The on_llm_new_token will be called automatically
+            run_manager.on_llm_new_token(token, chunk=chunk)
+        yield chunk
+
+    @property
+    def _llm_type(self) -> str:
+        """Get the type of language model used by this chat model."""
+        return "echoing-chat-model-advanced"
+
+    @property
+    def _identifying_params(self) -> Dict[str, Any]:
+        """Return a dictionary of identifying parameters.
+
+        This information is used by the LangChain callback system, which
+        is used for tracing purposes make it possible to monitor LLMs.
+        """
+        return {
+            # The model name allows users to specify custom token counting
+            # rules in LLM monitoring applications (e.g., in LangSmith users
+            # can provide per token pricing for their model and monitor
+            # costs for the given LLM.)
+            "model_name": self.model_name,
+        }
+```
+</details>
+
+## Publishing your package to PyPi
+
+First, make sure you have a PyPi account and have logged in with Poetry:
+
+```bash
+poetry config pypi-token.pypi <your-pypi-token>
+```
+
+Next, build your package:
+
+```bash
+poetry build
+```
+
+Finally, publish your package to PyPi:
+
+```bash
+poetry publish
+```
+
+You're all set! Your package is now available on PyPi and can be installed with `pip install langchain-parrot-link`.
+
+## Next Steps
+
+Now that you've published your package, you can move on to the next step: [Implement the standard tests](./standard_tests) for your integration and successfully run them.
