@@ -78,7 +78,7 @@ class _KdtSuggestContext(BaseModel):
 class _KdtSuggestPayload(BaseModel):
     """pydantic API request type"""
 
-    question: Optional[str]
+    question: Optional[str] = None
     context: List[_KdtSuggestContext]
 
     def get_system_str(self) -> str:
@@ -410,17 +410,20 @@ class ChatKinetica(BaseChatModel):
 
         # query kinetica for the prompt
         sql = f"GENERATE PROMPT WITH OPTIONS (CONTEXT_NAMES = '{context_name}')"
+
         result = self._execute_sql(sql)
         prompt = result["Prompt"]
         prompt_json = json.loads(prompt)
 
         # convert the prompt to messages
         # request = SuggestRequest.model_validate(prompt_json) # pydantic v2
+
         request = _KdtoSuggestRequest.model_validate(prompt_json)
         payload = request.payload
 
         dict_messages = []
         dict_messages.append(dict(role="system", content=payload.get_system_str()))
+
         dict_messages.extend(payload.get_messages())
         messages = [self._convert_message_from_dict(m) for m in dict_messages]
         return messages
