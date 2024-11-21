@@ -640,7 +640,7 @@ class PineconeVectorStore(VectorStore):
         return None
 
 
-@deprecated(since="0.0.3", removal="0.3.0", alternative="PineconeVectorStore")
+@deprecated(since="0.0.3", removal="1.0.0", alternative="PineconeVectorStore")
 class Pinecone(PineconeVectorStore):
     """Deprecated. Use PineconeVectorStore instead."""
 

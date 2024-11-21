@@ -45,7 +45,7 @@ def is_endpoint_live(url: str, headers: Optional[dict], payload: Any) -> bool:
 
 @deprecated(
     since="0.0.37",
-    removal="0.2.0",
+    removal="1.0.0",
     message=(
         "Directly instantiating a NeMoEmbeddings from langchain-community is "
         "deprecated. Please use langchain-nvidia-ai-endpoints NVIDIAEmbeddings "
