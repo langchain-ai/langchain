@@ -495,6 +495,7 @@ def _package_dir(package_name: str = "langchain") -> Path:
         "core",
         "cli",
         "text-splitters",
+        "standard-tests",
     ):
         return ROOT_DIR / "libs" / package_name / _package_namespace(package_name)
     else:
