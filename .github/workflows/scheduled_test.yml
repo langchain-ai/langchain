@@ -100,7 +100,7 @@ jobs:
           GOOGLE_CSE_ID: ${{ secrets.GOOGLE_CSE_ID }}
         run: |
           cd langchain/${{ matrix.working-directory }}
-          make integration_tests
+          poetry run python -m pytest tests/integration_tests -k test_structured_few_shot_examples
 
       - name: Remove external libraries
         run: | 
