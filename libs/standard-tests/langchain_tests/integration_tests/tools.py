@@ -10,7 +10,10 @@ class ToolsIntegrationTests(ToolsTests):
         If invoked with a ToolCall, the tool should return a valid ToolMessage content.
         """
         tool_call = ToolCall(
-            name=tool.name, args=self.tool_invoke_params_example, id=None
+            name=tool.name,
+            args=self.tool_invoke_params_example,
+            id=None,
+            type="tool_call",
         )
         result = tool.invoke(tool_call)
 
@@ -35,7 +38,10 @@ class ToolsIntegrationTests(ToolsTests):
         If ainvoked with a ToolCall, the tool should return a valid ToolMessage content.
         """
         tool_call = ToolCall(
-            name=tool.name, args=self.tool_invoke_params_example, id=None
+            name=tool.name,
+            args=self.tool_invoke_params_example,
+            id=None,
+            type="tool_call",
         )
         result = await tool.ainvoke(tool_call)
 
