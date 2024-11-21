@@ -2,6 +2,7 @@
 # Copyright (c) 2024, Chad Juliano, Kinetica DB Inc.
 ##
 """Kinetica SQL generation LLM API."""
+
 import json
 import logging
 import os
@@ -419,11 +420,10 @@ class ChatKinetica(BaseChatModel):
 
         request = _KdtoSuggestRequest.model_validate(prompt_json)
         payload = request.payload
-      
 
         dict_messages = []
         dict_messages.append(dict(role="system", content=payload.get_system_str()))
-       
+
         dict_messages.extend(payload.get_messages())
         messages = [self._convert_message_from_dict(m) for m in dict_messages]
         return messages
