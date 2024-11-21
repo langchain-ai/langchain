@@ -5,7 +5,7 @@ from typing import Optional, Type
 import pytest
 from langchain_core.language_models import BaseChatModel
 from langchain_core.rate_limiters import InMemoryRateLimiter
-from langchain_standard_tests.integration_tests import (
+from langchain_tests.integration_tests import (
     ChatModelIntegrationTests,
 )
 
