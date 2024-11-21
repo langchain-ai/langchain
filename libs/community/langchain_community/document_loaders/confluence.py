@@ -398,7 +398,7 @@ class ConfluenceLoader(BaseLoader):
                 include_restricted_content,
                 include_attachments,
                 include_comments,
-                False, # labels are not included in the search results
+                False,  # labels are not included in the search results
                 content_format,
                 ocr_languages,
                 keep_markdown_format,
@@ -420,7 +420,8 @@ class ConfluenceLoader(BaseLoader):
                     before_sleep=before_sleep_log(logger, logging.WARNING),
                 )(self.confluence.get_page_by_id)
                 page = get_page(
-                    page_id=page_id, expand=expand,
+                    page_id=page_id,
+                    expand=expand,
                 )
                 if not include_restricted_content and not self.is_public_page(page):
                     continue
@@ -593,7 +594,10 @@ class ConfluenceLoader(BaseLoader):
 
         if include_labels:
             labels = [
-                l['name'] for l in page.get("metadata", {}).get("labels", {}).get("results", [])
+                label["name"]
+                for label in page.get("metadata", {})
+                .get("labels", {})
+                .get("results", [])
             ]
 
         metadata = {
