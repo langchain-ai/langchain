@@ -144,3 +144,6 @@ packages:
   - name: langchain-box
     repo: langchain-ai/langchain-box
     path: libs/box
+  - name: langchain-tests
+    repo: langchain-ai/langchain
+    path: libs/standard-tests
