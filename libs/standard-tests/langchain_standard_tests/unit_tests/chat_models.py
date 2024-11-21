@@ -36,7 +36,8 @@ class Person(BaseModel):  # Used by some dependent tests. Should be deprecated.
 def generate_schema_pydantic_v1_from_2() -> Any:
     """Use to generate a schema from v1 namespace in pydantic 2."""
     if PYDANTIC_MAJOR_VERSION != 2:
-        raise AssertionError("This function is only compatible with Pydantic v2.")
+        raise AssertionError(
+            "This function is only compatible with Pydantic v2.")
 
     class PersonB(BaseModelV1):
         """Record attributes of a person."""
@@ -264,5 +265,7 @@ class ChatModelUnitTests(ChatModelTests):
         env_params, model_params, expected_attrs = self.init_from_env_params
         with mock.patch.dict(os.environ, env_params):
             ser = dumpd(model)
+            print("Serialized Output:", ser)
+            print("Expected Snapshot:", snapshot(name="serialized"))
             assert ser == snapshot(name="serialized")
             assert model.dict() == load(dumpd(model)).dict()

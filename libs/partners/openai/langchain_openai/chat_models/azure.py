@@ -471,7 +471,8 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
         Example: `https://example-resource.azure.openai.com/`
     """
-    deployment_name: Union[str, None] = Field(default=None, alias="azure_deployment")
+    deployment_name: Union[str, None] = Field(
+        default=None, alias="azure_deployment")
     """A model deployment. 
     
         If given sets the base client URL to include `/deployments/{azure_deployment}`.
@@ -509,7 +510,8 @@ class AzureChatOpenAI(BaseChatOpenAI):
         will be invoked if `azure_ad_async_token_provider` is not provided.
     """
 
-    azure_ad_async_token_provider: Union[Callable[[], Awaitable[str]], None] = None
+    azure_ad_async_token_provider: Union[Callable[[
+    ], Awaitable[str]], None] = None
     """A function that returns an Azure Active Directory token.
         
         Will be invoked on every async request.
@@ -538,7 +540,8 @@ class AzureChatOpenAI(BaseChatOpenAI):
         azure_endpoint and update client params accordingly.
     """
 
-    model_name: Optional[str] = Field(default=None, alias="model")  # type: ignore[assignment]
+    model_name: Optional[str] = Field(
+        default=None, alias="model")  # type: ignore[assignment]
     """Name of the deployed OpenAI model, e.g. "gpt-4o", "gpt-35-turbo", etc. 
     
     Distinct from the Azure deployment name, which is set by the Azure user.
@@ -647,7 +650,8 @@ class AzureChatOpenAI(BaseChatOpenAI):
         }
         if not self.client:
             sync_specific = {"http_client": self.http_client}
-            self.root_client = openai.AzureOpenAI(**client_params, **sync_specific)  # type: ignore[arg-type]
+            self.root_client = openai.AzureOpenAI(
+                **client_params, **sync_specific)  # type: ignore[arg-type]
             self.client = self.root_client.chat.completions
         if not self.async_client:
             async_specific = {"http_client": self.http_async_client}
