@@ -59,6 +59,10 @@
       "destination": "/docs/tutorials/rag#query-analysis"
     },
     {
+      "source": "/docs/tutorials/local_rag",
+      "destination": "/docs/tutorials/rag"
+    },
+    {
       "source": "/docs/langsmith(/?)",
       "destination": "https://docs.smith.langchain.com/"
     },
