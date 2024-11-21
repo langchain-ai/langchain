@@ -21,7 +21,7 @@ from typing import (
 )
 
 import anthropic
-from langchain_core._api import deprecated
+from langchain_core._api import beta, deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -1113,6 +1113,86 @@ class ChatAnthropic(BaseChatModel):
         else:
             return llm | output_parser
 
+    @beta()
+    def get_num_tokens_from_messages(
+        self,
+        messages: List[BaseMessage],
+        tools: Optional[
+            Sequence[Union[Dict[str, Any], Type, Callable, BaseTool]]
+        ] = None,
+    ) -> int:
+        """Count tokens in a sequence of input messages.
+
+        Args:
+            messages: The message inputs to tokenize.
+            tools: If provided, sequence of dict, BaseModel, function, or BaseTools
+                to be converted to tool schemas.
+
+        Basic usage:
+            .. code-block:: python
+
+                from langchain_anthropic import ChatAnthropic
+                from langchain_core.messages import HumanMessage, SystemMessage
+
+                llm = ChatAnthropic(model="claude-3-5-sonnet-20241022")
+
+                messages = [
+                    SystemMessage(content="You are a scientist"),
+                    HumanMessage(content="Hello, Claude"),
+                ]
+                llm.get_num_tokens_from_messages(messages)
+
+            .. code-block:: none
+
+                14
+
+        Pass tool schemas:
+            .. code-block:: python
+
+                from langchain_anthropic import ChatAnthropic
+                from langchain_core.messages import HumanMessage
+                from langchain_core.tools import tool
+
+                llm = ChatAnthropic(model="claude-3-5-sonnet-20241022")
+
+                @tool(parse_docstring=True)
+                def get_weather(location: str) -> str:
+                    \"\"\"Get the current weather in a given location
+
+                    Args:
+                        location: The city and state, e.g. San Francisco, CA
+                    \"\"\"
+                    return "Sunny"
+
+                messages = [
+                    HumanMessage(content="What's the weather like in San Francisco?"),
+                ]
+                llm.get_num_tokens_from_messages(messages, tools=[get_weather])
+
+            .. code-block:: none
+
+                403
+
+        .. versionchanged:: 0.3.0
+
+                Uses Anthropic's token counting API to count tokens in messages. See:
+                https://docs.anthropic.com/en/docs/build-with-claude/token-counting
+        """
+        formatted_system, formatted_messages = _format_messages(messages)
+        kwargs: Dict[str, Any] = {}
+        if isinstance(formatted_system, str):
+            kwargs["system"] = formatted_system
+        if tools:
+            kwargs["tools"] = [convert_to_anthropic_tool(tool) for tool in tools]
+
+        response = self._client.beta.messages.count_tokens(
+            betas=["token-counting-2024-11-01"],
+            model=self.model,
+            messages=formatted_messages,  # type: ignore[arg-type]
+            **kwargs,
+        )
+        return response.input_tokens
+
 
 class AnthropicTool(TypedDict):
     """Anthropic tool definition."""
@@ -1249,7 +1329,7 @@ def _make_message_chunk_from_anthropic_event(
     return message_chunk
 
 
-@deprecated(since="0.1.0", removal="0.3.0", alternative="ChatAnthropic")
+@deprecated(since="0.1.0", removal="1.0.0", alternative="ChatAnthropic")
 class ChatAnthropicMessages(ChatAnthropic):
     pass
 

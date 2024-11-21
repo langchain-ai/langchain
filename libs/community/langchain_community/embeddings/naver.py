@@ -7,6 +7,7 @@ from langchain_core.utils import convert_to_secret_str, get_from_env
 from pydantic import (
     AliasChoices,
     BaseModel,
+    ConfigDict,
     Field,
     SecretStr,
     model_validator,
@@ -86,8 +87,7 @@ class ClovaXEmbeddings(BaseModel, Embeddings):
 
     timeout: int = Field(gt=0, default=60)
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True, protected_namespaces=())
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
@@ -115,7 +115,7 @@ class ClovaXEmbeddings(BaseModel, Embeddings):
 
         if not self.ncp_apigw_api_key:
             self.ncp_apigw_api_key = convert_to_secret_str(
-                get_from_env("ncp_apigw_api_key", "NCP_APIGW_API_KEY")
+                get_from_env("ncp_apigw_api_key", "NCP_APIGW_API_KEY", "")
             )
 
         if not self.base_url:
@@ -143,22 +143,28 @@ class ClovaXEmbeddings(BaseModel, Embeddings):
         return self
 
     def default_headers(self) -> Dict[str, Any]:
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        }
+
         clovastudio_api_key = (
             self.ncp_clovastudio_api_key.get_secret_value()
             if self.ncp_clovastudio_api_key
             else None
         )
+        if clovastudio_api_key:
+            headers["X-NCP-CLOVASTUDIO-API-KEY"] = clovastudio_api_key
+
         apigw_api_key = (
             self.ncp_apigw_api_key.get_secret_value()
             if self.ncp_apigw_api_key
             else None
         )
-        return {
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-            "X-NCP-CLOVASTUDIO-API-KEY": clovastudio_api_key,
-            "X-NCP-APIGW-API-KEY": apigw_api_key,
-        }
+        if apigw_api_key:
+            headers["X-NCP-APIGW-API-KEY"] = apigw_api_key
+
+        return headers
 
     def _embed_text(self, text: str) -> List[float]:
         payload = {"text": text}
