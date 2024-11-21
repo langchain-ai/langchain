@@ -210,8 +210,8 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             First, debug
             :meth:`~langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_invoke`
-            because `batch` has a default implementation that calls `invoke` for each message
-            in the batch.
+            because `batch` has a default implementation that calls `invoke` for each
+            message in the batch.
 
             If that test passes but not this one, you should make sure your `batch`
             method does not raise any exceptions, and that it returns a list of valid
@@ -239,8 +239,8 @@ class ChatModelIntegrationTests(ChatModelTests):
             :meth:`~langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_batch`
             and
             :meth:`~langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_ainvoke`
-            because `abatch` has a default implementation that calls `ainvoke` for each message
-            in the batch.
+            because `abatch` has a default implementation that calls `ainvoke` for each
+            message in the batch.
 
             If those tests pass but not this one, you should make sure your `abatch`
             method does not raise any exceptions, and that it returns a list of valid
@@ -288,10 +288,13 @@ class ChatModelIntegrationTests(ChatModelTests):
     def test_usage_metadata(self, model: BaseChatModel) -> None:
         """Test to verify that the model returns correct usage metadata.
 
-        .. dropdown:: Configuration to test optional feature
+        This test is optional and should be skipped if the model does not return
+        usage metadata (see Configuration below).
 
-            By default, this test is skipped.
-            To test this feature, set `returns_usage_metadata` to True in your test
+        .. dropdown:: Configuration
+
+            By default, this test is run.
+            To disable this feature, set `returns_usage_metadata` to False in your test
             class:
 
             .. code-block:: python
@@ -299,16 +302,65 @@ class ChatModelIntegrationTests(ChatModelTests):
                 class TestMyChatModelIntegration(ChatModelIntegrationTests):
                     @property
                     def returns_usage_metadata(self) -> bool:
-                        return True
+                        return False
+
+            This test can also check the format of specific kinds of usage metadata
+            based on the `supported_usage_metadata_details` property. This property
+            should be configured as follows with the types of tokens that the model
+            supports tracking:
+
+            .. code-block:: python
+
+                class TestMyChatModelIntegration(ChatModelIntegrationTests):
+                    @property
+                    def supported_usage_metadata_details(self) -> dict:
+                        return {
+                            "invoke": [
+                                "audio_input",
+                                "audio_output",
+                                "reasoning_output",
+                                "cache_read_input",
+                                "cache_creation_input",
+                            ],
+                            "stream": [
+                                "audio_input",
+                                "audio_output",
+                                "reasoning_output",
+                                "cache_read_input",
+                                "cache_creation_input",
+                            ],
+                        }
+
 
         .. dropdown:: Troubleshooting
 
-            If this test fails, verify that:
-            1. Your model correctly tracks and returns token usage
-            2. All usage metadata fields (input_tokens, output_tokens, total_tokens) are present
-            3. Special token counting (audio, reasoning, cache) works if supported
-            4. All token counts are non-negative integers
-            5. Total tokens equals or exceeds the sum of input and output tokens
+            If this test fails, first verify that your model returns
+            :class:`~langchain_core.messages.ai.UsageMetadata` dicts
+            attached to the returned AIMessage object in `_generate`:
+
+            .. code-block:: python
+
+                return ChatResult(
+                    generations=[ChatGeneration(
+                        message=AIMessage(
+                            content="Output text",
+                            usage_metadata={
+                                "input_tokens": 350,
+                                "output_tokens": 240,
+                                "total_tokens": 590,
+                                "input_token_details": {
+                                    "audio": 10,
+                                    "cache_creation": 200,
+                                    "cache_read": 100,
+                                },
+                                "output_token_details": {
+                                    "audio": 10,
+                                    "reasoning": 200,
+                                }
+                            }
+                        )
+                    )]
+                )
         """
         if not self.returns_usage_metadata:
             pytest.skip("Not implemented.")
@@ -379,10 +431,10 @@ class ChatModelIntegrationTests(ChatModelTests):
         """
         Test to verify that the model returns correct usage metadata in streaming mode.
 
-        .. dropdown:: Configuration to test optional feature
+        .. dropdown:: Configuration
 
-            By default, this test is skipped.
-            To test this feature, set `returns_usage_metadata` to True in your test
+            By default, this test is run.
+            To disable this feature, set `returns_usage_metadata` to False in your test
             class:
 
             .. code-block:: python
@@ -390,17 +442,73 @@ class ChatModelIntegrationTests(ChatModelTests):
                 class TestMyChatModelIntegration(ChatModelIntegrationTests):
                     @property
                     def returns_usage_metadata(self) -> bool:
-                        return True
+                        return False
+
+            This test can also check the format of specific kinds of usage metadata
+            based on the `supported_usage_metadata_details` property. This property
+            should be configured as follows with the types of tokens that the model
+            supports tracking:
+
+            .. code-block:: python
+
+                class TestMyChatModelIntegration(ChatModelIntegrationTests):
+                    @property
+                    def supported_usage_metadata_details(self) -> dict:
+                        return {
+                            "invoke": [
+                                "audio_input",
+                                "audio_output",
+                                "reasoning_output",
+                                "cache_read_input",
+                                "cache_creation_input",
+                            ],
+                            "stream": [
+                                "audio_input",
+                                "audio_output",
+                                "reasoning_output",
+                                "cache_read_input",
+                                "cache_creation_input",
+                            ],
+                        }
 
         .. dropdown:: Troubleshooting
 
-            If this test fails, verify that:
-            1. Input tokens are only counted once across all chunks
-            2. Output tokens are correctly accumulated across chunks
-            3. Total tokens reflect the complete conversation
-            4. Special token types (audio, reasoning, cache) are tracked if supported
-            5. The final aggregated usage metadata matches non-streaming behavior
-            6. No double-counting occurs when combining chunks
+            If this test fails, first verify that your model yields
+            :class:`~langchain_core.messages.ai.UsageMetadata` dicts
+            attached to the returned AIMessage object in `_stream`
+            that sum up to the total usage metadata.
+
+            Note that `input_tokens` should only be included on one of the chunks
+            (typically the first or the last chunk), and the rest should have 0 or None
+            to avoid counting input tokens multiple times.
+
+            `output_tokens` typically count the number of tokens in each chunk, not the
+            sum. This test will pass as long as the sum of `output_tokens` across all
+            chunks is not 0.
+
+            .. code-block:: python
+
+                yield ChatResult(
+                    generations=[ChatGeneration(
+                        message=AIMessage(
+                            content="Output text",
+                            usage_metadata={
+                                "input_tokens": 0,
+                                "output_tokens": 240,
+                                "total_tokens": 590,
+                                "input_token_details": {
+                                    "audio": 10,
+                                    "cache_creation": 200,
+                                    "cache_read": 100,
+                                },
+                                "output_token_details": {
+                                    "audio": 10,
+                                    "reasoning": 200,
+                                }
+                            }
+                        )
+                    )]
+                )
         """
         if not self.returns_usage_metadata:
             pytest.skip("Not implemented.")
