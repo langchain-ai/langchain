@@ -6,7 +6,7 @@ from langchain_tests.integration_tests import ToolsIntegrationTests
 from langchain_tests.unit_tests import ToolsUnitTests
 
 
-class ParrotMultiplyTool(BaseTool):
+class ParrotMultiplyTool(BaseTool):  # type: ignore
     name: str = "ParrotMultiplyTool"
     description: str = (
         "Multiply two numbers like a parrot. Parrots always add "
