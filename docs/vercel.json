@@ -63,6 +63,10 @@
       "destination": "/docs/tutorials/rag"
     },
     {
+      "source": "/docs/tutorials/data_generation",
+      "destination": "https://python.langchain.com/v0.2/docs/tutorials/data_generation/"
+    },
+    {
       "source": "/docs/langsmith(/?)",
       "destination": "https://docs.smith.langchain.com/"
     },
