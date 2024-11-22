@@ -72,7 +72,7 @@ class ChatAnyscale(ChatOpenAI):
     def is_lc_serializable(cls) -> bool:
         return False
 
-    anyscale_api_key: SecretStr = Field(default=None)
+    anyscale_api_key: SecretStr = Field(default=SecretStr(""))
     """AnyScale Endpoints API keys."""
     model_name: str = Field(default=DEFAULT_MODEL, alias="model")
     """Model name to use."""
