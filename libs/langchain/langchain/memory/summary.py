@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from typing import Any, Dict, List, Type
+from langchain_core.caches import BaseCache
+from langchain_core.callbacks import Callbacks
 
 from langchain_core._api import deprecated
 from langchain_core.chat_history import BaseChatMessageHistory
@@ -131,3 +133,5 @@ class ConversationSummaryMemory(BaseChatMemory, SummarizerMixin):
         """Clear memory contents."""
         super().clear()
         self.buffer = ""
+
+ConversationSummaryMemory.model_rebuild()
