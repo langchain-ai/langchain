@@ -48,8 +48,9 @@ class EdenaiTool(BaseTool):  # type: ignore[override]
             requests.Response: The response from the EdenAI API call.
 
         """
+        api_key = self.edenai_api_key.get_secret_value() if self.edenai_api_key else ""
         headers = {
-            "Authorization": f"Bearer {self.edenai_api_key.get_secret_value()}",
+            "Authorization": f"Bearer {api_key}",
             "User-Agent": self.get_user_agent(),
         }
 
