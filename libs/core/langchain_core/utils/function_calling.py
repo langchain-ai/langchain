@@ -22,7 +22,7 @@ from typing import (
 from pydantic import BaseModel
 from typing_extensions import TypedDict, get_args, get_origin, is_typeddict
 
-from langchain_core._api import deprecated
+from langchain_core._api import beta, deprecated
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
 from langchain_core.utils.json_schema import dereference_refs
 from langchain_core.utils.pydantic import is_basemodel_subclass
@@ -494,10 +494,12 @@ def convert_to_openai_tool(
     return {"type": "function", "function": oai_function}
 
 
+@beta()
 def tool_example_to_messages(
     input: str,
     tool_calls: list[BaseModel],
     tool_outputs: Optional[list[str]] = None,
+    *,
     ai_response: Optional[str] = None,
 ) -> list[BaseMessage]:
     """Convert an example into a list of messages that can be fed into an LLM.
