@@ -495,6 +495,7 @@ def _package_dir(package_name: str = "langchain") -> Path:
         "core",
         "cli",
         "text-splitters",
+        "standard-tests",
     ):
         return ROOT_DIR / "libs" / package_name / _package_namespace(package_name)
     else:
@@ -649,7 +650,7 @@ def main(dirs: Optional[list] = None) -> None:
         dirs = [
             dir_
             for dir_ in os.listdir(ROOT_DIR / "libs")
-            if dir_ not in ("cli", "partners", "standard-tests", "packages.yml")
+            if dir_ not in ("cli", "partners", "packages.yml")
         ]
         dirs += [
             dir_
