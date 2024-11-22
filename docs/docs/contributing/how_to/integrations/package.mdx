@@ -55,6 +55,13 @@ Note: Replace `<latest_version>` with the latest version of `langchain-tests` be
 poetry add --group test pytest pytest-socket langchain-tests==<latest_version>
 ```
 
+And finally, have poetry set up a virtual environment with your dependencies, as well
+as your integration package:
+
+```bash
+poetry install --with test
+```
+
 You're now ready to start writing your integration package!
 
 ## Writing your integration
