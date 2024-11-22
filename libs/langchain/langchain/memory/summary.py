@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import Any, Dict, List, Type
 
 from langchain_core._api import deprecated
-from langchain_core.caches import BaseCache
-from langchain_core.callbacks import Callbacks
+from langchain_core.caches import BaseCache as BaseCache # For model_rebuild
+from langchain_core.callbacks import Callbacks as Callbacks # For model_rebuild
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import BaseMessage, SystemMessage, get_buffer_string
