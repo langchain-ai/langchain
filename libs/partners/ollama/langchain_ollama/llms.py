@@ -177,6 +177,7 @@ class OllamaLLM(BaseLLM):
             options=Options(**params["options"]),
             keep_alive=params["keep_alive"],
             format=params["format"],
+            **kwargs,
         )
 
     @property
