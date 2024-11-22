@@ -48,7 +48,18 @@ def get_pydantic_major_version() -> int:
         return 0
 
 
+def _get_pydantic_minor_version() -> int:
+    """Get the minor version of Pydantic."""
+    try:
+        import pydantic
+
+        return int(pydantic.__version__.split(".")[1])
+    except ImportError:
+        return 0
+
+
 PYDANTIC_MAJOR_VERSION = get_pydantic_major_version()
+PYDANTIC_MINOR_VERSION = _get_pydantic_minor_version()
 
 
 if PYDANTIC_MAJOR_VERSION == 1:
