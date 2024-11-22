@@ -1798,7 +1798,9 @@ def _result_to_document(result: Dict) -> Document:
             fields_metadata = json.loads(result[FIELDS_METADATA])
     else:
         fields_metadata = {
-            key: value for key, value in result.items() if key != FIELDS_CONTENT_VECTOR
+            key: value
+            for key, value in result.items()
+            if key not in [FIELDS_CONTENT_VECTOR, FIELDS_CONTENT]
         }
     # IDs
     if FIELDS_ID in result:
@@ -1806,7 +1808,7 @@ def _result_to_document(result: Dict) -> Document:
     else:
         fields_id = {}
     return Document(
-        page_content=result.pop(FIELDS_CONTENT),
+        page_content=result[FIELDS_CONTENT],
         metadata={
             **fields_id,
             **fields_metadata,
