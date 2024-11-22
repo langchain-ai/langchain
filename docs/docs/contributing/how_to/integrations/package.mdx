@@ -29,10 +29,11 @@ pip install poetry
 Next, come up with a name for your package. For this guide, we'll use `langchain-parrot-link`.
 You can confirm that the name is available on PyPi by searching for it on the [PyPi website](https://pypi.org/).
 
-Next, create your new Python package with Poetry:
+Next, create your new Python package with Poetry, and navigate into the new directory with `cd`:
 
 ```bash
 poetry new langchain-parrot-link
+cd langchain-parrot-link
 ```
 
 Add main dependencies using Poetry, which will add them to your `pyproject.toml` file:
@@ -48,10 +49,10 @@ with your published package, or just installing them separately when you run tes
 `langchain-tests` will provide the [standard tests](../standard_tests) we will use later. 
 We recommended pinning these to the latest version: <img src="https://img.shields.io/pypi/v/langchain-tests" style={{position:"relative",top:4,left:3}} />
 
-Note: Replace `{latest version}` with the latest version of `langchain-tests` below.
+Note: Replace `<latest_version>` with the latest version of `langchain-tests` below.
 
 ```bash
-poetry add --group test pytest pytest-socket langchain-tests=={latest version}
+poetry add --group test pytest pytest-socket langchain-tests==<latest_version>
 ```
 
 You're now ready to start writing your integration package!
