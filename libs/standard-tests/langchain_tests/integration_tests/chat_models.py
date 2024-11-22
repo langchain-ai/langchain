@@ -77,6 +77,24 @@ class ChatModelIntegrationTests(ChatModelTests):
         return {}
 
     def test_invoke(self, model: BaseChatModel) -> None:
+        """Test to verify that `model.invoke(simple_message)` works.
+
+        This should pass for all integrations.
+
+        .. dropdown:: Troubleshooting
+
+            If this test fails, you should make sure your _generate method
+            does not raise any exceptions, and that it returns a valid
+            :class:`~langchain_core.outputs.chat_result.ChatResult` like so:
+
+            .. code-block:: python
+
+                return ChatResult(
+                    generations=[ChatGeneration(
+                        message=AIMessage(content="Output text")
+                    )]
+                )
+        """
         result = model.invoke("Hello")
         assert result is not None
         assert isinstance(result, AIMessage)
@@ -84,6 +102,31 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert len(result.content) > 0
 
     async def test_ainvoke(self, model: BaseChatModel) -> None:
+        """Test to verify that `await model.ainvoke(simple_message)` works.
+
+        This should pass for all integrations. Passing this test does not indicate
+        a "natively async" implementation, but rather that the model can be used
+        in an async context.
+
+        .. dropdown:: Troubleshooting
+
+            First, debug
+            :meth:`~langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_invoke`.
+            because `ainvoke` has a default implementation that calls `invoke` in an
+            async context.
+
+            If that test passes but not this one, you should make sure your _agenerate
+            method does not raise any exceptions, and that it returns a valid
+            :class:`~langchain_core.outputs.chat_result.ChatResult` like so:
+
+            .. code-block:: python
+
+                return ChatResult(
+                    generations=[ChatGeneration(
+                        message=AIMessage(content="Output text")
+                    )]
+                )
+        """
         result = await model.ainvoke("Hello")
         assert result is not None
         assert isinstance(result, AIMessage)
@@ -91,6 +134,30 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert len(result.content) > 0
 
     def test_stream(self, model: BaseChatModel) -> None:
+        """Test to verify that `model.stream(simple_message)` works.
+
+        This should pass for all integrations. Passing this test does not indicate
+        a "streaming" implementation, but rather that the model can be used in a
+        streaming context.
+
+        .. dropdown:: Troubleshooting
+
+            First, debug
+            :meth:`~langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_invoke`.
+            because `stream` has a default implementation that calls `invoke` and yields
+            the result as a single chunk.
+
+            If that test passes but not this one, you should make sure your _stream
+            method does not raise any exceptions, and that it yields valid
+            :class:`~langchain_core.outputs.chat_generation.ChatGenerationChunk`
+            objects like so:
+
+            .. code-block:: python
+
+                yield ChatGenerationChunk(
+                    message=AIMessageChunk(content="chunk text")
+                )
+        """
         num_tokens = 0
         for token in model.stream("Hello"):
             assert token is not None
@@ -99,6 +166,33 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert num_tokens > 0
 
     async def test_astream(self, model: BaseChatModel) -> None:
+        """Test to verify that `await model.astream(simple_message)` works.
+
+        This should pass for all integrations. Passing this test does not indicate
+        a "natively async" or "streaming" implementation, but rather that the model can
+        be used in an async streaming context.
+
+        .. dropdown:: Troubleshooting
+
+            First, debug
+            :meth:`~langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_stream`.
+            and
+            :meth:`~langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_ainvoke`.
+            because `astream` has a default implementation that calls `_stream` in an
+            async context if it is implemented, or `ainvoke` and yields the result as a
+            single chunk if not.
+
+            If those tests pass but not this one, you should make sure your _astream
+            method does not raise any exceptions, and that it yields valid
+            :class:`~langchain_core.outputs.chat_generation.ChatGenerationChunk`
+            objects like so:
+
+            .. code-block:: python
+
+                yield ChatGenerationChunk(
+                    message=AIMessageChunk(content="chunk text")
+                )
+        """
         num_tokens = 0
         async for token in model.astream("Hello"):
             assert token is not None
@@ -107,6 +201,22 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert num_tokens > 0
 
     def test_batch(self, model: BaseChatModel) -> None:
+        """Test to verify that `model.batch([messages])` works.
+
+        This should pass for all integrations. Tests the model's ability to process
+        multiple prompts in a single batch.
+
+        .. dropdown:: Troubleshooting
+
+            First, debug
+            :meth:`~langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_invoke`
+            because `batch` has a default implementation that calls `invoke` for each
+            message in the batch.
+
+            If that test passes but not this one, you should make sure your `batch`
+            method does not raise any exceptions, and that it returns a list of valid
+            :class:`~langchain_core.messages.AIMessage` objects.
+        """
         batch_results = model.batch(["Hello", "Hey"])
         assert batch_results is not None
         assert isinstance(batch_results, list)
@@ -118,6 +228,24 @@ class ChatModelIntegrationTests(ChatModelTests):
             assert len(result.content) > 0
 
     async def test_abatch(self, model: BaseChatModel) -> None:
+        """Test to verify that `await model.abatch([messages])` works.
+
+        This should pass for all integrations. Tests the model's ability to process
+        multiple prompts in a single batch asynchronously.
+
+        .. dropdown:: Troubleshooting
+
+            First, debug
+            :meth:`~langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_batch`
+            and
+            :meth:`~langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_ainvoke`
+            because `abatch` has a default implementation that calls `ainvoke` for each
+            message in the batch.
+
+            If those tests pass but not this one, you should make sure your `abatch`
+            method does not raise any exceptions, and that it returns a list of valid
+            :class:`~langchain_core.messages.AIMessage` objects.
+        """
         batch_results = await model.abatch(["Hello", "Hey"])
         assert batch_results is not None
         assert isinstance(batch_results, list)
@@ -129,6 +257,23 @@ class ChatModelIntegrationTests(ChatModelTests):
             assert len(result.content) > 0
 
     def test_conversation(self, model: BaseChatModel) -> None:
+        """Test to verify that the model can handle multi-turn conversations.
+
+        This should pass for all integrations. Tests the model's ability to process
+        a sequence of alternating human and AI messages as context for generating
+        the next response.
+
+        .. dropdown:: Troubleshooting
+
+            First, debug
+            :meth:`~langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_invoke`
+            because this test also uses `model.invoke()`.
+
+            If that test passes but not this one, you should verify that:
+            1. Your model correctly processes the message history
+            2. The model maintains appropriate context from previous messages
+            3. The response is a valid :class:`~langchain_core.messages.AIMessage`
+        """
         messages = [
             HumanMessage("hello"),
             AIMessage("hello"),
@@ -141,6 +286,82 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert len(result.content) > 0
 
     def test_usage_metadata(self, model: BaseChatModel) -> None:
+        """Test to verify that the model returns correct usage metadata.
+
+        This test is optional and should be skipped if the model does not return
+        usage metadata (see Configuration below).
+
+        .. dropdown:: Configuration
+
+            By default, this test is run.
+            To disable this feature, set `returns_usage_metadata` to False in your test
+            class:
+
+            .. code-block:: python
+
+                class TestMyChatModelIntegration(ChatModelIntegrationTests):
+                    @property
+                    def returns_usage_metadata(self) -> bool:
+                        return False
+
+            This test can also check the format of specific kinds of usage metadata
+            based on the `supported_usage_metadata_details` property. This property
+            should be configured as follows with the types of tokens that the model
+            supports tracking:
+
+            .. code-block:: python
+
+                class TestMyChatModelIntegration(ChatModelIntegrationTests):
+                    @property
+                    def supported_usage_metadata_details(self) -> dict:
+                        return {
+                            "invoke": [
+                                "audio_input",
+                                "audio_output",
+                                "reasoning_output",
+                                "cache_read_input",
+                                "cache_creation_input",
+                            ],
+                            "stream": [
+                                "audio_input",
+                                "audio_output",
+                                "reasoning_output",
+                                "cache_read_input",
+                                "cache_creation_input",
+                            ],
+                        }
+
+
+        .. dropdown:: Troubleshooting
+
+            If this test fails, first verify that your model returns
+            :class:`~langchain_core.messages.ai.UsageMetadata` dicts
+            attached to the returned AIMessage object in `_generate`:
+
+            .. code-block:: python
+
+                return ChatResult(
+                    generations=[ChatGeneration(
+                        message=AIMessage(
+                            content="Output text",
+                            usage_metadata={
+                                "input_tokens": 350,
+                                "output_tokens": 240,
+                                "total_tokens": 590,
+                                "input_token_details": {
+                                    "audio": 10,
+                                    "cache_creation": 200,
+                                    "cache_read": 100,
+                                },
+                                "output_token_details": {
+                                    "audio": 10,
+                                    "reasoning": 200,
+                                }
+                            }
+                        )
+                    )]
+                )
+        """
         if not self.returns_usage_metadata:
             pytest.skip("Not implemented.")
         result = model.invoke("Hello")
@@ -207,6 +428,92 @@ class ChatModelIntegrationTests(ChatModelTests):
             )
 
     def test_usage_metadata_streaming(self, model: BaseChatModel) -> None:
+        """
+        Test to verify that the model returns correct usage metadata in streaming mode.
+
+        .. dropdown:: Configuration
+
+            By default, this test is run.
+            To disable this feature, set `returns_usage_metadata` to False in your test
+            class:
+
+            .. code-block:: python
+
+                class TestMyChatModelIntegration(ChatModelIntegrationTests):
+                    @property
+                    def returns_usage_metadata(self) -> bool:
+                        return False
+
+            This test can also check the format of specific kinds of usage metadata
+            based on the `supported_usage_metadata_details` property. This property
+            should be configured as follows with the types of tokens that the model
+            supports tracking:
+
+            .. code-block:: python
+
+                class TestMyChatModelIntegration(ChatModelIntegrationTests):
+                    @property
+                    def supported_usage_metadata_details(self) -> dict:
+                        return {
+                            "invoke": [
+                                "audio_input",
+                                "audio_output",
+                                "reasoning_output",
+                                "cache_read_input",
+                                "cache_creation_input",
+                            ],
+                            "stream": [
+                                "audio_input",
+                                "audio_output",
+                                "reasoning_output",
+                                "cache_read_input",
+                                "cache_creation_input",
+                            ],
+                        }
+
+        .. dropdown:: Troubleshooting
+
+            If this test fails, first verify that your model yields
+            :class:`~langchain_core.messages.ai.UsageMetadata` dicts
+            attached to the returned AIMessage object in `_stream`
+            that sum up to the total usage metadata.
+
+            Note that `input_tokens` should only be included on one of the chunks
+            (typically the first or the last chunk), and the rest should have 0 or None
+            to avoid counting input tokens multiple times.
+
+            `output_tokens` typically count the number of tokens in each chunk, not the
+            sum. This test will pass as long as the sum of `output_tokens` across all
+            chunks is not 0.
+
+            .. code-block:: python
+
+                yield ChatResult(
+                    generations=[ChatGeneration(
+                        message=AIMessage(
+                            content="Output text",
+                            usage_metadata={
+                                "input_tokens": (
+                                    num_input_tokens if is_first_chunk else 0
+                                ),
+                                "output_tokens": 11,
+                                "total_tokens": (
+                                    11+num_input_tokens if is_first_chunk else 11
+                                ),
+                                "input_token_details": {
+                                    "audio": 10,
+                                    "cache_creation": 200,
+                                    "cache_read": 100,
+                                },
+                                "output_token_details": {
+                                    "audio": 10,
+                                    "reasoning": 200,
+                                }
+                            }
+                        )
+                    )]
+                )
+        """
         if not self.returns_usage_metadata:
             pytest.skip("Not implemented.")
         full: Optional[AIMessageChunk] = None
