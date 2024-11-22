@@ -154,8 +154,7 @@ def _convert_mistral_chat_message_to_message(
                     parsed["id"] = uuid.uuid4().hex[:]
                 tool_calls.append(parsed)
             except Exception as e:
-                invalid_tool_calls.append(
-                    make_invalid_tool_call(raw_tool_call, str(e)))
+                invalid_tool_calls.append(make_invalid_tool_call(raw_tool_call, str(e)))
     return AIMessage(
         content=content,
         additional_kwargs=additional_kwargs,
@@ -450,8 +449,7 @@ class ChatMistralAI(BaseChatModel):
 
                 return iter_sse()
             else:
-                response = self.client.post(
-                    url="/chat/completions", json=kwargs)
+                response = self.client.post(url="/chat/completions", json=kwargs)
                 _raise_on_error(response)
                 return response.json()
 
@@ -471,16 +469,14 @@ class ChatMistralAI(BaseChatModel):
                         overall_token_usage[k] += v
                     else:
                         overall_token_usage[k] = v
-        combined = {"token_usage": overall_token_usage,
-                    "model_name": self.model}
+        combined = {"token_usage": overall_token_usage, "model_name": self.model}
         return combined
 
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate api key, python package exists, temperature, and top_p."""
         if isinstance(self.mistral_api_key, SecretStr):
-            api_key_str: Optional[str] = self.mistral_api_key.get_secret_value(
-            )
+            api_key_str: Optional[str] = self.mistral_api_key.get_secret_value()
         else:
             api_key_str = self.mistral_api_key
 
@@ -574,8 +570,7 @@ class ChatMistralAI(BaseChatModel):
             logger.warning(
                 "Parameter `stop` not yet supported (https://docs.mistral.ai/api)"
             )
-        message_dicts = [
-            _convert_message_to_mistral_chat_message(m) for m in messages]
+        message_dicts = [_convert_message_to_mistral_chat_message(m) for m in messages]
         return message_dicts, params
 
     def _stream(
@@ -594,8 +589,7 @@ class ChatMistralAI(BaseChatModel):
         ):
             if len(chunk["choices"]) == 0:
                 continue
-            new_chunk = _convert_chunk_to_message_chunk(
-                chunk, default_chunk_class)
+            new_chunk = _convert_chunk_to_message_chunk(chunk, default_chunk_class)
             # make future chunks same type as first chunk
             default_chunk_class = new_chunk.__class__
             gen_chunk = ChatGenerationChunk(message=new_chunk)
@@ -621,8 +615,7 @@ class ChatMistralAI(BaseChatModel):
         ):
             if len(chunk["choices"]) == 0:
                 continue
-            new_chunk = _convert_chunk_to_message_chunk(
-                chunk, default_chunk_class)
+            new_chunk = _convert_chunk_to_message_chunk(chunk, default_chunk_class)
             # make future chunks same type as first chunk
             default_chunk_class = new_chunk.__class__
             gen_chunk = ChatGenerationChunk(message=new_chunk)
@@ -904,8 +897,7 @@ class ChatMistralAI(BaseChatModel):
         """  # noqa: E501
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
-        is_pydantic_schema = isinstance(
-            schema, type) and is_basemodel_subclass(schema)
+        is_pydantic_schema = isinstance(schema, type) and is_basemodel_subclass(schema)
         if method == "function_calling":
             if schema is None:
                 raise ValueError(

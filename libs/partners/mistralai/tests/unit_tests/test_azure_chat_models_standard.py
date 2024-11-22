@@ -1,11 +1,12 @@
 """Standard LangChain interface tests"""
 
-from langchain_mistralai import AzureChatMistralAI
-from langchain_standard_tests.unit_tests import ChatModelUnitTests
-from langchain_core.language_models import BaseChatModel
+from typing import Tuple, Type
 
 import pytest
-from typing import Tuple, Type
+from langchain_core.language_models import BaseChatModel
+from langchain_standard_tests.unit_tests import ChatModelUnitTests
+
+from langchain_mistralai import AzureChatMistralAI
 
 
 class TestAzureMistralAIStandard(ChatModelUnitTests):

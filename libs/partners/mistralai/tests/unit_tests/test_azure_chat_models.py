@@ -1,7 +1,5 @@
 """Test MistralAI Chat API wrapper."""
 
-import pytest
-from typing import Tuple, Type
 import os
 from unittest import mock
 
@@ -34,10 +32,13 @@ def test_initialize_more() -> None:
 
 
 def test_initialize_azure_mistral_with_mistral_endpoint_and_key_in_env() -> None:
-    with mock.patch.dict(os.environ, {
-        "AZURE_MISTRAL_ENDPOINT": "https://azure.mistral-endpoint.com/",
-        "AZURE_MISTRAL_API_KEY": "env-secret-key",
-    }):
+    with mock.patch.dict(
+        os.environ,
+        {
+            "AZURE_MISTRAL_ENDPOINT": "https://azure.mistral-endpoint.com/",
+            "AZURE_MISTRAL_API_KEY": "env-secret-key",
+        },
+    ):
         llm = AzureChatMistralAI()
         assert llm.azure_endpoint == "https://azure.mistral-endpoint.com/"
         assert llm.mistral_api_key.get_secret_value() == "env-secret-key"

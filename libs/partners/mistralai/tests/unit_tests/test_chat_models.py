@@ -43,8 +43,7 @@ def test_mistralai_initialization() -> None:
         # type: ignore[call-arg, arg-type]
         ChatMistralAI(model="test", api_key="test"),
     ]:
-        assert cast(
-            SecretStr, model.mistral_api_key).get_secret_value() == "test"
+        assert cast(SecretStr, model.mistral_api_key).get_secret_value() == "test"
 
 
 @pytest.mark.parametrize(
@@ -174,8 +173,7 @@ def test__convert_dict_to_message_tool_call() -> None:
             "name": "GenerateUsername",
         },
     }
-    message = {"role": "assistant", "content": "",
-               "tool_calls": [raw_tool_call]}
+    message = {"role": "assistant", "content": "", "tool_calls": [raw_tool_call]}
     result = _convert_mistral_chat_message_to_message(message)
     expected_output = AIMessage(
         content="",
@@ -209,8 +207,7 @@ def test__convert_dict_to_message_tool_call() -> None:
             },
         },
     ]
-    message = {"role": "assistant", "content": "",
-               "tool_calls": raw_tool_calls}
+    message = {"role": "assistant", "content": "", "tool_calls": raw_tool_calls}
     result = _convert_mistral_chat_message_to_message(message)
     expected_output = AIMessage(
         content="",
@@ -256,6 +253,5 @@ def test_tool_id_conversion() -> None:
         "call_JIIjI55tTipFFzpcP8re3BpM": "8kxAQvoED",
     }
     for input_id, expected_output in result_map.items():
-        assert _convert_tool_call_id_to_mistral_compatible(
-            input_id) == expected_output
+        assert _convert_tool_call_id_to_mistral_compatible(input_id) == expected_output
         assert _is_valid_mistral_tool_call_id(expected_output)

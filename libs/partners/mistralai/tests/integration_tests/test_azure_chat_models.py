@@ -1,28 +1,19 @@
 """Test AzureChatMistralAI wrapper."""
 
+import json
 import os
 from typing import Any, Optional
 
-
-import json
-from typing import Any, Optional
-
 import pytest
-from langchain_core.callbacks import CallbackManager
 from langchain_core.messages import (
+    AIMessage,
     AIMessageChunk,
-    BaseMessage,
     BaseMessageChunk,
     HumanMessage,
-    AIMessage,
 )
-
-from langchain_core.outputs import ChatGeneration, ChatResult, LLMResult
-from tests.unit_tests.fake.callbacks import FakeCallbackHandler
-
-from langchain_mistralai import AzureChatMistralAI
 from pydantic import BaseModel
 
+from langchain_mistralai import AzureChatMistralAI
 
 AZURE_MISTRAL_ENDPOINT = os.environ.get("AZURE_MISTRAL_ENDPOINT", "")
 AZURE_MISTRAL_API_KEY = os.environ.get("AZURE_MISTRAL_API_KEY", "")
@@ -73,8 +64,7 @@ async def test_astream() -> None:
     assert full.usage_metadata["input_tokens"] > 0
     assert full.usage_metadata["output_tokens"] > 0
     assert (
-        full.usage_metadata["input_tokens"] +
-        full.usage_metadata["output_tokens"]
+        full.usage_metadata["input_tokens"] + full.usage_metadata["output_tokens"]
         == full.usage_metadata["total_tokens"]
     )
 
@@ -167,8 +157,8 @@ def test_chat_mistralai_streaming_llm_output_not_contain_token_usage() -> None:
 
 
 def test_structured_output() -> None:
-    llm = AzureChatMistralAI(model="mistral-large-latest",
-                             temperature=0)  # type: ignore[call-arg]
+    # type: ignore[call-arg]
+    llm = AzureChatMistralAI(model="mistral-large-latest", temperature=0)
     schema = {
         "title": "AnswerWithJustification",
         "description": (
@@ -189,8 +179,8 @@ def test_structured_output() -> None:
 
 
 def test_streaming_structured_output() -> None:
-    llm = AzureChatMistralAI(model="mistral-large-latest",
-                             temperature=0)  # type: ignore[call-arg]
+    # type: ignore[call-arg]
+    llm = AzureChatMistralAI(model="mistral-large-latest", temperature=0)
 
     class Person(BaseModel):
         name: str
@@ -208,8 +198,8 @@ def test_streaming_structured_output() -> None:
 
 
 def test_tool_call() -> None:
-    llm = AzureChatMistralAI(model="mistral-large-latest",
-                             temperature=0)  # type: ignore[call-arg]
+    # type: ignore[call-arg]
+    llm = AzureChatMistralAI(model="mistral-large-latest", temperature=0)
 
     class Person(BaseModel):
         name: str
@@ -226,8 +216,8 @@ def test_tool_call() -> None:
 
 
 def test_streaming_tool_call() -> None:
-    llm = AzureChatMistralAI(model="mistral-large-latest",
-                             temperature=0)  # type: ignore[call-arg]
+    # type: ignore[call-arg]
+    llm = AzureChatMistralAI(model="mistral-large-latest", temperature=0)
 
     class Person(BaseModel):
         name: str

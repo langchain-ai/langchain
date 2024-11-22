@@ -4,24 +4,16 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import (
-    Any,
-    Dict,
-    List,
-    Optional,
-    Union,
-    Tuple
-)
-
-from pydantic import BaseModel, Field, SecretStr, model_validator
-from typing_extensions import Self
-
-from langchain_core.utils import from_env, secret_from_env
-from langchain_core.utils.pydantic import is_basemodel_subclass
-from langchain_mistralai.chat_models.base import ChatMistralAI
+from typing import Any, Dict, List, Optional, Tuple
 
 import httpx
-from httpx_sse import EventSource, aconnect_sse, connect_sse
+from langchain_core.messages import BaseMessage
+from langchain_core.utils import from_env, secret_from_env
+from langchain_core.utils.pydantic import is_basemodel_subclass
+from pydantic import Field, SecretStr, model_validator
+from typing_extensions import Self
+
+from langchain_mistralai.chat_models.base import ChatMistralAI
 
 logger = logging.getLogger(__name__)
 
@@ -33,15 +25,12 @@ def _is_pydantic_class(obj: Any) -> bool:
 class AzureChatMistralAI(ChatMistralAI):
     """Azure Mistral AI chat model integration.
 
-    This class wraps the Mistral AI model to be used on Azure endpoints, following
-    a structure similar to the `AzureChatOpenAI` class.
+    This class wraps the Mistral AI model to be used on Azure endpoints
 
     Setup:
-        Similar to how Azure ChatOpenAI is set up, this class expects environment
-        variables `AZURE_MISTRAL_API_KEY` and `AZURE_MISTRAL_ENDPOINT` to be set.
+        This class expects environment variables `AZURE_MISTRAL_API_KEY`
+        and `AZURE_MISTRAL_ENDPOINT` to be set.
     Key init args - completion params:
-        azure_deployment: str
-            Name of Azure Mistral deployment to use.
         temperature: float
             Sampling temperature.
         max_tokens: Optional[int]
@@ -77,18 +66,21 @@ class AzureChatMistralAI(ChatMistralAI):
                 max_tokens=256,
                 top_p=0.9,
                 random_seed=42,
-                safe_prompt=True,
+                safe_prompt=False,
                 max_retries=3,
             )
 
-        By default, the necessary values are inferred from environment variables.
+        By default, the necessary values are inferred from
+        environment variables.
 
     Invocations:
         .. code-block:: python
 
             messages = [
-                ("system", "You are an insightful assistant for azure hosted Mistral AI."),
-                ("human", "Could you explain what a black hole is in simple terms?")
+                ("system", "You are an insightful assistant for
+                azure hosted Mistral AI."),
+                ("human", "Could you explain what a black hole
+                is in simple terms?")
             ]
             llm.invoke(messages)
 
@@ -110,68 +102,14 @@ class AzureChatMistralAI(ChatMistralAI):
     Example: https://your-mistral-endpoint.models.ai.azure.com/
     """
 
-    deployment_name: Union[str, None] = Field(
-        default=None, alias="deployment_name")
-    """Name of your Azure Mistral deployment to use for requests."""
-
-    # mistral_api_version: Optional[str] = Field(
-    #     alias="api_version",
-    #     default_factory=from_env("MISTRAL_API_VERSION", default=None),
-    # )
-    #
-    """Your Azure Mistral API key. Automatically inferred from env var AZURE_MISTRAL_API_KEY if not provided."""
+    """Your Azure Mistral API key. Automatically inferred 
+    from env var AZURE_MISTRAL_API_KEY if not provided."""
     mistral_api_key: Optional[SecretStr] = Field(
         alias="api_key",
         default_factory=secret_from_env(
             ["AZURE_MISTRAL_API_KEY", "MISTRAL_API_KEY"], default=None
         ),
     )
-
-    # """Your Azure Mistral API key. Automatically inferred from env var AZURE_MISTRAL_API_KEY if not provided."""
-    # mistral_api_type: Optional[str] = Field(
-    #     default_factory=from_env("MISTRAL_API_TYPE", default="azure")
-    # )
-
-    # azure_ad_token: Optional[SecretStr] = Field(
-    #     default_factory=secret_from_env("AZURE_OPENAI_AD_TOKEN", default=None)
-    # )
-    # """Your Azure Active Directory token.
-    #
-    #     Automatically inferred from env var `AZURE_OPENAI_AD_TOKEN` if not provided.
-    #
-    #     For more:
-    #     https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id.
-    # """
-
-    # azure_ad_token_provider: Union[Callable[[], str], None] = None
-    # """A function that returns an Azure Active Directory token.
-    #
-    #     Will be invoked on every sync request. For async requests,
-    #     will be invoked if `azure_ad_async_token_provider` is not provided.
-    # """
-    # azure_ad_async_token_provider: Union[Callable[[
-    # ], Awaitable[str]], None] = None
-    # """A function that returns an Azure Active Directory token.
-    #
-    #     Will be invoked on every async request.
-    # """
-    #
-    # """Specifies the type of API for forward compatibility. Defaults to 'azure'."""
-    # validate_base_url: bool = True
-    # """Determines if the base URL (azure_endpoint) should be validated."""
-    # model: str = Field(default="mistral-small", alias="model_name")
-    # """The name of the Mistral model used. Defaults to 'mistral-base'."""
-
-    # @property
-    # def _azure_endpoint_url(self) -> str:
-    #     """Constructs the full URL for the Azure Mistral endpoint."""
-    #     if not self.azure_endpoint:
-    #         raise ValueError(
-    #             "Azure endpoint must be specified or set in the environment.")
-    #     if not self.azure_deployment:
-    #         raise ValueError("Azure deployment name must be specified.")
-    #     # Construct URL analogous to how Azure endpoints for MistralAI are structured
-    #     return f"{self.azure_endpoint}azureai/deployments/{self.azure_deployment}"
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
@@ -192,15 +130,12 @@ class AzureChatMistralAI(ChatMistralAI):
     def validate_environment(self) -> Self:
         """Validate api key, python package exists, temperature, and top_p."""
         if isinstance(self.mistral_api_key, SecretStr):
-            api_key_str: Optional[str] = self.mistral_api_key.get_secret_value(
-            )
+            api_key_str: Optional[str] = self.mistral_api_key.get_secret_value()
         else:
             api_key_str = self.mistral_api_key
 
         base_url_str = (
-            self.azure_endpoint
-            or os.environ.get("AZURE_MISTRAL_ENDPOINT")
-            or None
+            self.azure_endpoint or os.environ.get("AZURE_MISTRAL_ENDPOINT") or None
         )
 
         if not base_url_str:
@@ -255,7 +190,7 @@ class AzureChatMistralAI(ChatMistralAI):
         """Combine Azure-specific parameters with parent class parameters."""
         return {
             "azure_endpoint": self.azure_endpoint,
-            ** super()._identifying_params,
+            **super()._identifying_params,
         }
 
     @property
@@ -265,9 +200,11 @@ class AzureChatMistralAI(ChatMistralAI):
     @property
     def lc_attributes(self) -> Dict[str, Any]:
         attributes: Dict[str, Any] = super().lc_attributes
-        attributes.update({
-            "azure_endpoint": self.azure_endpoint,
-        })
+        attributes.update(
+            {
+                "azure_endpoint": self.azure_endpoint,
+            }
+        )
         return attributes
 
     def _create_message_dicts(
