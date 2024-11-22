@@ -493,9 +493,13 @@ class ChatModelIntegrationTests(ChatModelTests):
                         message=AIMessage(
                             content="Output text",
                             usage_metadata={
-                                "input_tokens": 0,
-                                "output_tokens": 240,
-                                "total_tokens": 590,
+                                "input_tokens": (
+                                    num_input_tokens if is_first_chunk else 0
+                                ),
+                                "output_tokens": 11,
+                                "total_tokens": (
+                                    11+num_input_tokens if is_first_chunk else 11
+                                ),
                                 "input_token_details": {
                                     "audio": 10,
                                     "cache_creation": 200,
