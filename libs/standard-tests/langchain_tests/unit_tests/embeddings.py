@@ -7,7 +7,7 @@ import pytest
 from langchain_core.embeddings import Embeddings
 from pydantic import SecretStr
 
-from langchain_standard_tests.base import BaseStandardTests
+from langchain_tests.base import BaseStandardTests
 
 
 class EmbeddingsTests(BaseStandardTests):

@@ -3,7 +3,7 @@
 from typing import Tuple, Type
 
 from langchain_core.embeddings import Embeddings
-from langchain_standard_tests.unit_tests.embeddings import EmbeddingsUnitTests
+from langchain_tests.unit_tests.embeddings import EmbeddingsUnitTests
 
 from langchain_fireworks import FireworksEmbeddings
 
