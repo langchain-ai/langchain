@@ -721,7 +721,7 @@ class ChildTool(BaseTool):
             run_id: The id of the run. Defaults to None.
             config: The configuration for the tool. Defaults to None.
             tool_call_id: The id of the tool call. Defaults to None.
-            kwargs: Key Word Arugmenst to be passed to tool callbacks
+            kwargs: Keyword arguments to be passed to tool callbacks
 
         Returns:
             The output of the tool.
