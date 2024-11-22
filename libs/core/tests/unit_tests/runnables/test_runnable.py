@@ -2949,7 +2949,9 @@ def test_seq_prompt_map(mocker: MockerFixture, snapshot: SnapshotAssertion) -> N
     assert chain.first == prompt
     assert chain.middle == [RunnableLambda(passthrough)]
     assert isinstance(chain.last, RunnableParallel)
-    assert dumps(chain, pretty=True) == snapshot
+
+    if (PYDANTIC_MAJOR_VERSION, PYDANTIC_MINOR_VERSION) >= (2, 10):
+        assert dumps(chain, pretty=True) == snapshot
 
     # Test invoke
     prompt_spy = mocker.spy(prompt.__class__, "invoke")

@@ -211,7 +211,7 @@ def pre_init(func: Callable) -> Any:
                     name not in values or values[name] is None
                 ) and not field_info.is_required():
                     if field_info.default_factory is not None:
-                        values[name] = field_info.default_factory()
+                        values[name] = field_info.default_factory()  # type: ignore
                     else:
                         values[name] = field_info.default
 
