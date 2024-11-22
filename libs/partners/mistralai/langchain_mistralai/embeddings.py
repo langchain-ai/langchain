@@ -113,8 +113,14 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
             [-0.009100092574954033, 0.005071679595857859, -0.0029193938244134188]
     """
 
-    client: httpx.Client = Field(default=None)  #: :meta private:
-    async_client: httpx.AsyncClient = Field(default=None)  #: :meta private:
+    # The type for client and async_client is ignored because the type is not
+    # an Optional after the model is initialized and the model_validator
+    # is run.
+    client: httpx.Client = Field(default=None)  # type: ignore # : :meta private:
+
+    async_client: httpx.AsyncClient = Field(  # type: ignore # : meta private:
+        default=None
+    )
     mistral_api_key: SecretStr = Field(
         alias="api_key",
         default_factory=secret_from_env("MISTRAL_API_KEY", default=""),

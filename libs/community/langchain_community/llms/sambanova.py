@@ -105,7 +105,7 @@ class SambaStudio(LLM):
     sambastudio_url: str = Field(default="")
     """SambaStudio Url"""
 
-    sambastudio_api_key: SecretStr = Field(default="")
+    sambastudio_api_key: SecretStr = Field(default=SecretStr(""))
     """SambaStudio api key"""
 
     base_url: str = Field(default="", exclude=True)
@@ -607,7 +607,7 @@ class SambaNovaCloud(LLM):
     sambanova_url: str = Field(default="")
     """SambaNova Cloud Url"""
 
-    sambanova_api_key: SecretStr = Field(default="")
+    sambanova_api_key: SecretStr = Field(default=SecretStr(""))
     """SambaNova Cloud api key"""
 
     model: str = Field(default="Meta-Llama-3.1-8B-Instruct")

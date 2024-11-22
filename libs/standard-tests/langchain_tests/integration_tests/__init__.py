@@ -14,9 +14,7 @@ modules = [
 ]
 
 for module in modules:
-    pytest.register_assert_rewrite(
-        f"langchain_standard_tests.integration_tests.{module}"
-    )
+    pytest.register_assert_rewrite(f"langchain_tests.integration_tests.{module}")
 
 from .base_store import BaseStoreAsyncTests, BaseStoreSyncTests
 from .cache import AsyncCacheTestSuite, SyncCacheTestSuite

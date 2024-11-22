@@ -7,7 +7,7 @@ from langchain_core.documents import Document
 from langchain_core.embeddings.fake import DeterministicFakeEmbedding, Embeddings
 from langchain_core.vectorstores import VectorStore
 
-from langchain_standard_tests.base import BaseStandardTests
+from langchain_tests.base import BaseStandardTests
 
 # Arbitrarily chosen. Using a small embedding size
 # so tests are faster and easier to debug.
