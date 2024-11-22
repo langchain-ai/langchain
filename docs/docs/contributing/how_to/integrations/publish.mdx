@@ -23,8 +23,9 @@ First, make sure you have a PyPi account and have logged in with Poetry:
     <summary>How to create a PyPi Token</summary>
 
 1. Go to the [PyPi website](https://pypi.org/) and create an account.
-2. Go to your account settings and enable 2FA. To generate an API token, you **must** have 2FA enabled currently.
-3. Go to your account settings and [generate a new API token](https://pypi.org/manage/account/token/).
+2. Verify your email address by clicking the link that PyPi emails to you.
+3. Go to your account settings and click "Generate Recovery Codes" to enable 2FA. To generate an API token, you **must** have 2FA enabled currently.
+4. Go to your account settings and [generate a new API token](https://pypi.org/manage/account/token/).
 
 </details>
 
@@ -91,7 +92,7 @@ langchain-cli integration create-doc \
     --component-type Provider \
     --destination-dir docs/docs/integrations/providers \
     --name parrot-link \
-    --name-class ParrotLink \
+    --name-class ParrotLink
 ```
 
 And a chat model component page:
@@ -101,7 +102,7 @@ langchain-cli integration create-doc \
     --component-type ChatModel \
     --destination-dir docs/docs/integrations/chat \
     --name parrot-link \
-    --name-class ParrotLink \
+    --name-class ParrotLink
 ```
 
 And a vector store component page:
@@ -111,14 +112,14 @@ langchain-cli integration create-doc \
     --component-type VectorStore \
     --destination-dir docs/docs/integrations/vectorstores \
     --name parrot-link \
-    --name-class ParrotLink \
+    --name-class ParrotLink
 ```
 
 These commands will create the following 3 files, which you should fill out with information about your package:
 
-- `docs/docs/integrations/providers/parrot-link.ipynb`
-- `docs/docs/integrations/chat/parrot-link.ipynb`
-- `docs/docs/integrations/vectorstores/parrot-link.ipynb`
+- `docs/docs/integrations/providers/parrot_link.ipynb`
+- `docs/docs/integrations/chat/parrot_-_link.ipynb`
+- `docs/docs/integrations/vectorstores/parrot_-_link.ipynb`
 
 ### Manually create your documentation pages (if you prefer)
 
@@ -129,7 +130,7 @@ You can view the templates that the CLI uses to create these files [here](https:
 
 ### Register your package in `libs/packages.yml`
 
-Finally, add your package to the `libs/packages.yml` file in the LangChain Monorepo.
+Finally, add your package to the end of the `libs/packages.yml` file in the LangChain Monorepo.
 
 ```yaml
 packages:
@@ -140,6 +141,10 @@ packages:
 
 For `path`, you can use `.` if your package is in the root of your repository, or specify a subdirectory (e.g. `libs/parrot-link`) if it is in a subdirectory.
 
+If you followed the [package bootstrapping guide](../package), then your path is `.`.
+
 ### Submit a PR with your changes
 
 Once you have completed these steps, you can submit a PR to the LangChain Monorepo with **only these changes**.
+
+If you have additional changes to request, please submit them in a separate PR.
