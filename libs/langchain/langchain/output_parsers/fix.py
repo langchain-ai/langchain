@@ -32,7 +32,6 @@ class OutputFixingParser(BaseOutputParser[T]):
     # Should be an LLMChain but we want to avoid top-level imports from langchain.chains
     retry_chain: Annotated[
         Union[RunnableSerializable[OutputFixingParserRetryChainInput, str], Any],
-
         SkipValidation(),
     ]
     """The RunnableSerializable to use to retry the completion (Legacy: LLMChain)."""
