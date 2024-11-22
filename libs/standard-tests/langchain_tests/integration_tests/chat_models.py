@@ -17,6 +17,7 @@ from langchain_core.messages import (
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.tools import tool
+from langchain_core.utils.function_calling import tool_example_to_messages
 from pydantic import BaseModel, Field
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import Field as FieldV1
@@ -857,33 +858,20 @@ class ChatModelIntegrationTests(ChatModelTests):
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
         model_with_tools = model.bind_tools([my_adder_tool], tool_choice="any")
-        function_name = "my_adder_tool"
-        function_args = {"a": 1, "b": 2}
         function_result = json.dumps({"result": 3})
 
-        messages_string_content = [
-            HumanMessage("What is 1 + 2"),
-            AIMessage(
-                "",
-                tool_calls=[
-                    {
-                        "name": function_name,
-                        "args": function_args,
-                        "id": "abc123",
-                        "type": "tool_call",
-                    },
-                ],
-            ),
-            ToolMessage(
-                function_result,
-                name=function_name,
-                tool_call_id="abc123",
-            ),
-            AIMessage(function_result),
-            HumanMessage("What is 3 + 4"),
-        ]
-        result_string_content = model_with_tools.invoke(messages_string_content)
-        assert isinstance(result_string_content, AIMessage)
+        tool_schema = my_adder_tool.args_schema
+        assert tool_schema is not None
+        few_shot_messages = tool_example_to_messages(
+            "What is 1 + 2",
+            [tool_schema(a=1, b=2)],
+            tool_outputs=[function_result],
+            ai_response=function_result,
+        )
+
+        messages = few_shot_messages + [HumanMessage("What is 3 + 4")]
+        result = model_with_tools.invoke(messages)
+        assert isinstance(result, AIMessage)
 
     def test_image_inputs(self, model: BaseChatModel) -> None:
         if not self.supports_image_inputs:
