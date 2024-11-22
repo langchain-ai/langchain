@@ -1557,8 +1557,9 @@ EXPERIMENTAL_MARKDOWN_DOCUMENTS = DOCUMENTS = [
         "----\n"
         "This will be a new doc but with the same header metadata\n\n"
         "And it includes a new paragraph"
-    )
+    ),
 ]
+
 
 def test_experimental_markdown_syntax_text_splitter_with_multi_files() -> None:
     """Test experimental markdown syntax splitter called consecutively on two files."""
@@ -1566,7 +1567,7 @@ def test_experimental_markdown_syntax_text_splitter_with_multi_files() -> None:
     output = []
     for expriemental_markdown_document in EXPERIMENTAL_MARKDOWN_DOCUMENTS:
         output += markdown_splitter.split_text(expriemental_markdown_document)
-    
+
     expected_output = [
         Document(
             page_content="Content for header 1 from Document 1\n",
@@ -1574,7 +1575,10 @@ def test_experimental_markdown_syntax_text_splitter_with_multi_files() -> None:
         ),
         Document(
             page_content="Content for header 2 from Document 1\n",
-            metadata={"Header 1": "My Header 1 From Document 1", "Header 2": "Header 2 From Document 1"},
+            metadata={
+                "Header 1": "My Header 1 From Document 1",
+                "Header 2": "Header 2 From Document 1",
+            },
         ),
         Document(
             page_content=(
@@ -1604,7 +1608,10 @@ def test_experimental_markdown_syntax_text_splitter_with_multi_files() -> None:
         ),
         Document(
             page_content="Content for header 2 from Document 2\n",
-            metadata={"Header 1": "My Header 1 From Document 2", "Header 2": "Header 2 From Document 2"},
+            metadata={
+                "Header 1": "My Header 1 From Document 2",
+                "Header 2": "Header 2 From Document 2",
+            },
         ),
         Document(
             page_content=(

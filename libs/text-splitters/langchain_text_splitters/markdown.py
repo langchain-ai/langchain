@@ -296,7 +296,7 @@ class ExperimentalMarkdownSyntaxTextSplitter:
         self.chunks.clear()
         self.current_chunk = Document(page_content="")
         self.current_header_stack.clear()
-        
+
         raw_lines = text.splitlines(keepends=True)
 
         while raw_lines:
