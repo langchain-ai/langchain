@@ -151,6 +151,34 @@ class OllamaLLM(BaseLLM):
             "keep_alive": self.keep_alive,
         }
 
+    def _generate_params(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        if self.stop is not None and stop is not None:
+            raise ValueError("`stop` found in both the input and default params.")
+        elif self.stop is not None:
+            stop = self.stop
+
+        params = self._default_params
+
+        for key in self._default_params:
+            if key in kwargs:
+                params[key] = kwargs[key]
+
+        params["options"]["stop"] = stop
+
+        return dict(
+            model=params["model"],
+            prompt=prompt,
+            stream=True,
+            options=Options(**params["options"]),
+            keep_alive=params["keep_alive"],
+            format=params["format"],
+        )
+
     @property
     def _llm_type(self) -> str:
         """Return type of LLM."""
@@ -179,25 +207,8 @@ class OllamaLLM(BaseLLM):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> AsyncIterator[Union[Mapping[str, Any], str]]:
-        if self.stop is not None and stop is not None:
-            raise ValueError("`stop` found in both the input and default params.")
-        elif self.stop is not None:
-            stop = self.stop
-
-        params = self._default_params
-
-        for key in self._default_params:
-            if key in kwargs:
-                params[key] = kwargs[key]
-
-        params["options"]["stop"] = stop
         async for part in await self._async_client.generate(
-            model=params["model"],
-            prompt=prompt,
-            stream=True,
-            options=Options(**params["options"]),
-            keep_alive=params["keep_alive"],
-            format=params["format"],
+            **self._generate_params(prompt, stop=stop, **kwargs)
         ):  # type: ignore
             yield part
 
@@ -207,25 +218,8 @@ class OllamaLLM(BaseLLM):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> Iterator[Union[Mapping[str, Any], str]]:
-        if self.stop is not None and stop is not None:
-            raise ValueError("`stop` found in both the input and default params.")
-        elif self.stop is not None:
-            stop = self.stop
-
-        params = self._default_params
-
-        for key in self._default_params:
-            if key in kwargs:
-                params[key] = kwargs[key]
-
-        params["options"]["stop"] = stop
         yield from self._client.generate(
-            model=params["model"],
-            prompt=prompt,
-            stream=True,
-            options=Options(**params["options"]),
-            keep_alive=params["keep_alive"],
-            format=params["format"],
+            **self._generate_params(prompt, stop=stop, **kwargs)
         )
 
     async def _astream_with_aggregation(
