@@ -116,12 +116,12 @@ class OllamaLLM(BaseLLM):
     For a full list of the params, see [this link](https://pydoc.dev/httpx/latest/httpx.Client.html)
     """
 
-    _client: Client = PrivateAttr(default=None)
+    _client: Client = PrivateAttr(default=None)  # type: ignore
     """
     The client to use for making requests.
     """
 
-    _async_client: AsyncClient = PrivateAttr(default=None)
+    _async_client: AsyncClient = PrivateAttr(default=None)  # type: ignore
     """
     The async client to use for making requests.
     """
@@ -200,7 +200,7 @@ class OllamaLLM(BaseLLM):
         async for part in await self._async_client.generate(
             **self._generate_params(prompt, stop=stop, **kwargs)
         ):  # type: ignore
-            yield part
+            yield part  # type: ignore
 
     def _create_generate_stream(
         self,
@@ -210,7 +210,7 @@ class OllamaLLM(BaseLLM):
     ) -> Iterator[Union[Mapping[str, Any], str]]:
         yield from self._client.generate(
             **self._generate_params(prompt, stop=stop, **kwargs)
-        )
+        )  # type: ignore
 
     async def _astream_with_aggregation(
         self,
