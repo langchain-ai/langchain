@@ -31,10 +31,6 @@ class SuccessfulParseAfterRetries(BaseOutputParser[str]):
         return "parsed"
 
 
-def test_foo():
-    assert 1 == 1
-
-
 def test_retry_output_parser_parse_with_prompt() -> None:
     n: int = 5  # Success on the (n+1)-th attempt
     base_parser = SuccessfulParseAfterRetries(attemp_count_before_success=n)
