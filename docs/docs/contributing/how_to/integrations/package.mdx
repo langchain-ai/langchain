@@ -1,3 +1,7 @@
+---
+pagination_next: docs/contributing/how_to/integrations/standard_tests
+pagination_prev: docs/contributing/how_to/integrations
+---
 # How to bootstrap a new integration package
 
 This guide walks through the process of publishing a new LangChain integration 
@@ -22,7 +26,10 @@ First, install Poetry:
 pip install poetry
 ```
 
-Next, create a new Python package with Poetry:
+Next, come up with a name for your package. For this guide, we'll use `langchain-parrot-link`.
+You can confirm that the name is available on PyPi by searching for it on the [PyPi website](https://pypi.org/).
+
+Next, create your new Python package with Poetry:
 
 ```bash
 poetry new langchain-parrot-link
@@ -39,12 +46,12 @@ you are not using Poetry, we recommend adding these in a way that won't package 
 with your published package, or just installing them separately when you run tests.
 
 `langchain-tests` will provide the [standard tests](./standard_tests) we will use later. 
-We recommended pinning these to the latest version: 
-<img src="https://img.shields.io/pypi/v/langchain-tests" style={{position:"relative",top:4,left:3}} />
+We recommended pinning these to the latest version: <img src="https://img.shields.io/pypi/v/langchain-tests" style={{position:"relative",top:4,left:3}} />
 
+Note: Replace `{latest version}` with the latest version of `langchain-tests` below.
 
 ```bash
-poetry add --group test pytest langchain-tests=={latest version}
+poetry add --group test pytest pytest-socket langchain-tests=={latest version}
 ```
 
 You're now ready to start writing your integration package!
@@ -72,7 +79,7 @@ All of these files should already exist from step 1, except for
 later, following the [standard tests](./standard_tests) guide.
 
 To implement `chat_models.py`, let's copy the implementation from our
-[Custom Chat Model Guide](../../../how_to/custom_chat_model).
+[Custom Chat Model Guide](../../../../how_to/custom_chat_model).
 
 <details>
     <summary>chat_models.py</summary>
@@ -217,28 +224,6 @@ class CustomChatModelAdvanced(BaseChatModel):
 ```
 </details>
 
-## Publishing your package to PyPi
-
-First, make sure you have a PyPi account and have logged in with Poetry:
-
-```bash
-poetry config pypi-token.pypi <your-pypi-token>
-```
-
-Next, build your package:
-
-```bash
-poetry build
-```
-
-Finally, publish your package to PyPi:
-
-```bash
-poetry publish
-```
-
-You're all set! Your package is now available on PyPi and can be installed with `pip install langchain-parrot-link`.
-
 ## Next Steps
 
-Now that you've published your package, you can move on to the next step: [Implement the standard tests](./standard_tests) for your integration and successfully run them.
+Now that you've implemented your package, you can move on to [testing your integration](../standard_tests) for your integration and successfully run them.
