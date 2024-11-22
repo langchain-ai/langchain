@@ -23,7 +23,7 @@ class EdenaiTool(BaseTool):  # type: ignore[override]
 
     feature: str
     subfeature: str
-    edenai_api_key: SecretStr = Field(
+    edenai_api_key: Optional[SecretStr] = Field(
         default_factory=secret_from_env("EDENAI_API_KEY", default=None)
     )
     is_async: bool = False
