@@ -279,6 +279,11 @@ def create_schema_from_function(
             ):
                 filter_args_.append(existing_param)
 
+    # Filter out injected arguments
+    for param_name, param in sig.parameters.items():
+        if param.annotation is InjectedToolArg:
+            filter_args_.append(param_name)
+
     description, arg_descriptions = _infer_arg_descriptions(
         func,
         parse_docstring=parse_docstring,
