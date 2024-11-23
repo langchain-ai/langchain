@@ -1560,13 +1560,90 @@ EXPERIMENTAL_MARKDOWN_DOCUMENTS = DOCUMENTS = [
     ),
 ]
 
+def test_md_header_multi_file_with_headers_splitter() -> None:
+    """Test experimental markdown splitter by header called consecutively on two files"""
+    
+    markdown_splitter = ExperimentalMarkdownSyntaxTextSplitter(strip_headers=False)
+    output = []
+    for experimental_markdown_document in EXPERIMENTAL_MARKDOWN_DOCUMENTS:
+        output += markdown_splitter.split_text(experimental_markdown_document)
+        
+    expected_output = [
+        Document(
+            page_content="# My Header 1 From Document 1\nContent for header 1 from Document 1\n",
+            metadata={"Header 1": "My Header 1 From Document 1"},
+        ),
+        Document(
+            page_content="## Header 2 From Document 1\nContent for header 2 from Document 1\n",
+            metadata={
+                "Header 1": "My Header 1 From Document 1",
+                "Header 2": "Header 2 From Document 1",
+            },
+        ),
+        Document(
+            page_content=(
+                "```python\ndef func_definition():\n   "
+                "print('Keep the whitespace consistent')\n```\n"
+            ),
+            metadata={
+                "Code": "python",
+                "Header 1": "My Header 1 From Document 1",
+                "Header 2": "Header 2 From Document 1",
+            },
+        ),
+        Document(
+            page_content="# Header 1 again From Document 1\nWe should also split on the horizontal line\n",
+            metadata={"Header 1": "Header 1 again From Document 1"},
+        ),
+        Document(
+            page_content=(
+                "This will be a new doc but with the same header metadata\n\n"
+                "And it includes a new paragraph"
+            ),
+            metadata={"Header 1": "Header 1 again From Document 1"},
+        ),
+        Document(
+            page_content="# My Header 1 From Document 2\nContent for header 1 from Document 2\n",
+            metadata={"Header 1": "My Header 1 From Document 2"},
+        ),
+        Document(
+            page_content="## Header 2 From Document 2\nContent for header 2 from Document 2\n",
+            metadata={
+                "Header 1": "My Header 1 From Document 2",
+                "Header 2": "Header 2 From Document 2",
+            },
+        ),
+        Document(
+            page_content=(
+                "```python\ndef func_definition():\n   "
+                "print('Keep the whitespace consistent')\n```\n"
+            ),
+            metadata={
+                "Code": "python",
+                "Header 1": "My Header 1 From Document 2",
+                "Header 2": "Header 2 From Document 2",
+            },
+        ),
+        Document(
+            page_content="# Header 1 again From Document 2\nWe should also split on the horizontal line\n",
+            metadata={"Header 1": "Header 1 again From Document 2"},
+        ),
+        Document(
+            page_content=(
+                "This will be a new doc but with the same header metadata\n\n"
+                "And it includes a new paragraph"
+            ),
+            metadata={"Header 1": "Header 1 again From Document 2"},
+        ),
+    ]
+    assert output == expected_output
 
 def test_experimental_markdown_syntax_text_splitter_with_multi_files() -> None:
-    """Test experimental markdown syntax splitter called consecutively on two files."""
+    """Test experimental markdown syntax splitter split on default called consecutively on two files."""
     markdown_splitter = ExperimentalMarkdownSyntaxTextSplitter()
     output = []
-    for expriemental_markdown_document in EXPERIMENTAL_MARKDOWN_DOCUMENTS:
-        output += markdown_splitter.split_text(expriemental_markdown_document)
+    for experimental_markdown_document in EXPERIMENTAL_MARKDOWN_DOCUMENTS:
+        output += markdown_splitter.split_text(experimental_markdown_document)
 
     expected_output = [
         Document(
