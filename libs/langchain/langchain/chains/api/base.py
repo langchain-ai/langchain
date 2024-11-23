@@ -198,8 +198,8 @@ try:
         api_docs: str
         question_key: str = "question"  #: :meta private:
         output_key: str = "output"  #: :meta private:
-        limit_to_domains: Optional[Sequence[str]] = Field(  # type: ignore
-            default_factory=list
+        limit_to_domains: Optional[Sequence[str]] = Field(
+            default_factory=list  # type: ignore
         )
         """Use to limit the domains that can be accessed by the API chain.
         
