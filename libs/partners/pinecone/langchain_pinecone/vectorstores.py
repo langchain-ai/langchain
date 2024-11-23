@@ -74,6 +74,7 @@ class PineconeVectorStore(VectorStore):
                     dimension=1536,
                     metric="cosine",
                     spec=ServerlessSpec(cloud="aws", region="us-east-1"),
+                    deletion_protection="disabled",  # Defaults to "enabled"
                 )
                 while not pc.describe_index(index_name).status["ready"]:
                     time.sleep(1)
