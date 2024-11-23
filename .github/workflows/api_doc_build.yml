@@ -37,9 +37,9 @@ jobs:
           # Get unique repositories
           REPOS=$(echo "$REPOS_UNSORTED" | sort -u)
           
-          # Checkout each unique repository
+          # Checkout each unique repository that is in langchain-ai org
           for repo in $REPOS; do
-            if [ "$repo" != "langchain-ai/langchain" ]; then
+            if [[ "$repo" != "langchain-ai/langchain" && "$repo" == langchain-ai/* ]]; then
               REPO_NAME=$(echo $repo | cut -d'/' -f2)
               echo "Checking out $repo to $REPO_NAME"
               git clone --depth 1 https://github.com/$repo.git $REPO_NAME
@@ -73,7 +73,7 @@ jobs:
         working-directory: langchain
         run: |
           python -m uv pip install $(ls ./libs/partners | xargs -I {} echo "./libs/partners/{}")
-          python -m uv pip install libs/core libs/langchain libs/text-splitters libs/community libs/experimental
+          python -m uv pip install libs/core libs/langchain libs/text-splitters libs/community libs/experimental libs/standard-tests
           python -m uv pip install -r docs/api_reference/requirements.txt
 
       - name: Set Git config

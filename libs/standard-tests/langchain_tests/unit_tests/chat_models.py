@@ -22,8 +22,8 @@ from pydantic.v1 import (
 )
 from syrupy import SnapshotAssertion
 
-from langchain_standard_tests.base import BaseStandardTests
-from langchain_standard_tests.utils.pydantic import PYDANTIC_MAJOR_VERSION
+from langchain_tests.base import BaseStandardTests
+from langchain_tests.utils.pydantic import PYDANTIC_MAJOR_VERSION
 
 
 class Person(BaseModel):  # Used by some dependent tests. Should be deprecated.

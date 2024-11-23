@@ -23,7 +23,7 @@ class EdenaiTool(BaseTool):  # type: ignore[override]
 
     feature: str
     subfeature: str
-    edenai_api_key: SecretStr = Field(
+    edenai_api_key: Optional[SecretStr] = Field(
         default_factory=secret_from_env("EDENAI_API_KEY", default=None)
     )
     is_async: bool = False
@@ -48,8 +48,9 @@ class EdenaiTool(BaseTool):  # type: ignore[override]
             requests.Response: The response from the EdenAI API call.
 
         """
+        api_key = self.edenai_api_key.get_secret_value() if self.edenai_api_key else ""
         headers = {
-            "Authorization": f"Bearer {self.edenai_api_key.get_secret_value()}",
+            "Authorization": f"Bearer {api_key}",
             "User-Agent": self.get_user_agent(),
         }
 
