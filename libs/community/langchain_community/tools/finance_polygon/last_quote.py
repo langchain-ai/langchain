@@ -4,6 +4,7 @@ from langchain_core.tools import BaseTool
 from pydantic import BaseModel, Field
 from langchain_community.utilities.finance_polygon import FinancePolygonAPIWrapper
 
+
 class PolygonLastQuoteSchema(BaseModel):
     """Inputs for PolygonLastQuote."""
 
@@ -11,7 +12,8 @@ class PolygonLastQuoteSchema(BaseModel):
         description="The ticker symbol to fetch the NBBO tick for.",
     )
 
-class PolygonLastQuote(BaseTool):
+
+class FinancePolygonLastQuote(BaseTool):
     """
     Tool that gets the most recent NBBO (Quote) tick for a given stock.
     """
@@ -37,3 +39,4 @@ class PolygonLastQuote(BaseTool):
             mode=self.mode,
             ticker=ticker,
         )
+

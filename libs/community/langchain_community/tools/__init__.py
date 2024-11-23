@@ -189,10 +189,6 @@ if TYPE_CHECKING:
         PolygonStocksFinancials,
     )
 
-    from langchain_community.tools.finance_polygon.last_trade import (
-        PolygonLastTrade,
-    )
-
     from langchain_community.tools.finance_polygon.market_holidays import (
         PolygonMarketHolidays,
     )
@@ -215,6 +211,38 @@ if TYPE_CHECKING:
 
     from langchain_community.tools.finance_polygon.ref_ticker_types import (
         PolygonReferenceTickerTypes,
+    )
+
+    from langchain_community.tools.finance_polygon.aggregates_stocks import (
+        FinancePolygonAggregates
+    )
+
+    from langchain_community.tools.finance_polygon.daily_open_close import (
+        PolygonDailyOpenClose
+    )
+
+    from langchain_community.tools.finance_polygon.grouped_daily import (
+        PolygonGroupedDaily
+    )
+
+    from langchain_community.tools.finance_polygon.last_quote import (
+        FinancePolygonLastQuote
+    )
+
+    from langchain_community.tools.finance_polygon.last_trade import (
+        FinancePolygonLastTrade
+    )
+
+    from langchain_community.tools.finance_polygon.previous_close import (
+        PolygonPreviousClose
+    )
+
+    from langchain_community.tools.finance_polygon.trades import (
+        PolygonTrades
+    )
+
+    from langchain_community.tools.finance_polygon.dividends import (
+        PolygonDividends
     )
 
     from langchain_community.tools.finance_polygon.market_status import (
@@ -487,7 +515,19 @@ __all__ = [
     "PolygonConditions",
     "PolygonStockSplits",
     "PolygonStocksFinancials",
-    "PolygonLastTrade",
+    "PolygonReferenceTicker",
+    "PolygonReferenceTickerDetails",
+    "PolygonReferenceTickerEvents",
+    "PolygonReferenceTickerNews",
+    "PolygonReferenceTickerTypes",
+    "FinancePolygonAggregates",
+    "PolygonDailyOpenClose",
+    "PolygonGroupedDaily",
+    "FinancePolygonLastQuote",
+    "FinancePolygonLastTrade",
+    "PolygonPreviousClose",
+    "PolygonTrades",
+    "PolygonDividends",
     "PolygonMarketHolidays",
     "PolygonMarketStatus",
     "PolygonSMA",

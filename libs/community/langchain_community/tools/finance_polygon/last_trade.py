@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 
 from langchain_community.utilities.finance_polygon import FinancePolygonAPIWrapper
 
+
 class FinancePolygonLastTradeSchema(BaseModel):
     """Input for FinancePolygonLastTrade."""
 
@@ -13,7 +14,8 @@ class FinancePolygonLastTradeSchema(BaseModel):
         description="The ticker symbol to fetch last trade data for."
     )
 
-class PolygonLastTrade(BaseTool):
+
+class FinancePolygonLastTrade(BaseTool):
     """
     Tool that provides the last trade data for a given stock.
     NOTE: this tool requires a "Stock Developer" subscription to Polygon.io.
@@ -39,6 +41,4 @@ class PolygonLastTrade(BaseTool):
             mode=self.mode,
             ticker=ticker,
             run_manager=run_manager,
-    )
-
-
+        )

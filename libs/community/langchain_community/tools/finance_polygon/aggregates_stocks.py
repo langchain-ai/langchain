@@ -4,6 +4,7 @@ from langchain_core.tools import BaseTool
 from pydantic import BaseModel, Field
 from langchain_community.utilities.finance_polygon import FinancePolygonAPIWrapper
 
+
 class PolygonAggregatesSchema(BaseModel):
     """Input for PolygonAggregates."""
 
@@ -33,7 +34,8 @@ class PolygonAggregatesSchema(BaseModel):
         "Either a date with the format YYYY-MM-DD or a millisecond timestamp"
     )
 
-class PolygonAggregates(BaseTool):
+
+class FinancePolygonAggregates(BaseTool):
     """
     Tool that gets aggregate bars (stocks) over a
     given date range for a given ticker from Polygon.

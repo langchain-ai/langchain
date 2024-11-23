@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 
 from langchain_community.utilities.finance_polygon import FinancePolygonAPIWrapper
 
+
 class PolygonMarketHolidays(BaseTool):
     """
     Tool that provides the upcoming market holidays and their
@@ -14,7 +15,7 @@ class PolygonMarketHolidays(BaseTool):
 
     mode: str = "get_market_holidays"
     name: str = "polygon_market_holidays"
-    descrription: str = (
+    description: str = (
         "A wrapper around Polygon's Market Holidays API. "
         "This tool provides the upcoming market holidays and their "
         "open/close times."
@@ -30,4 +31,5 @@ class PolygonMarketHolidays(BaseTool):
         return self.api_wrapper.run(
             mode=self.mode,
             run_manager=run_manager
-    )
+        )
+

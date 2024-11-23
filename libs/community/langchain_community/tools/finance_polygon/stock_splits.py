@@ -4,7 +4,9 @@ from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel, Field
 
+from langchain_community.tools.finance_polygon.stocks_financials import FinancePolygonStocksFinancialsSchema
 from langchain_community.utilities.finance_polygon import FinancePolygonAPIWrapper
+
 
 class FinancePolygonStockSplitsSchema(BaseModel):
     """Input for PolygonStockSplits."""
@@ -39,6 +41,7 @@ class FinancePolygonStockSplitsSchema(BaseModel):
         "Possible values are: execution_date, ticker."
     )
 
+
 class PolygonStockSplits(BaseTool):
     """
     Tool that provides a list of historical stock splits, 
@@ -53,6 +56,9 @@ class PolygonStockSplits(BaseTool):
         "This tool is useful for fetching detailed information"
         "about historical stock splits."
     )
+
+    args_schema: Type[FinancePolygonStocksFinancialsSchema] = FinancePolygonStocksFinancialsSchema
+    api_wrapper: FinancePolygonAPIWrapper
 
     def _run(
             self,
@@ -75,3 +81,4 @@ class PolygonStockSplits(BaseTool):
             sort=sort,
             run_manager=run_manager,
         )
+
