@@ -38,7 +38,7 @@ class OpenAIModerationChain(Chain):
     output_key: str = "output"  #: :meta private:
     openai_api_key: Optional[str] = None
     openai_organization: Optional[str] = None
-    openai_pre_1_0: bool = Field(default=None)
+    openai_pre_1_0: bool = Field(default=False)
 
     @model_validator(mode="before")
     @classmethod
