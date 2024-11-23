@@ -468,6 +468,7 @@
                   'const': 'ai',
                   'default': 'ai',
                   'title': 'Type',
+                  'type': 'string',
                 }),
                 'usage_metadata': dict({
                   'anyOf': list([
@@ -580,6 +581,7 @@
                   'const': 'AIMessageChunk',
                   'default': 'AIMessageChunk',
                   'title': 'Type',
+                  'type': 'string',
                 }),
                 'usage_metadata': dict({
                   'anyOf': list([
@@ -664,6 +666,7 @@
                   'const': 'chat',
                   'default': 'chat',
                   'title': 'Type',
+                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -738,6 +741,7 @@
                   'const': 'ChatMessageChunk',
                   'default': 'ChatMessageChunk',
                   'title': 'Type',
+                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -809,6 +813,7 @@
                   'const': 'function',
                   'default': 'function',
                   'title': 'Type',
+                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -871,6 +876,7 @@
                   'const': 'FunctionMessageChunk',
                   'default': 'FunctionMessageChunk',
                   'title': 'Type',
+                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -969,6 +975,7 @@
                   'const': 'human',
                   'default': 'human',
                   'title': 'Type',
+                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -1043,6 +1050,7 @@
                   'const': 'HumanMessageChunk',
                   'default': 'HumanMessageChunk',
                   'title': 'Type',
+                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -1141,6 +1149,7 @@
                 'type': dict({
                   'const': 'invalid_tool_call',
                   'title': 'Type',
+                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -1266,6 +1275,7 @@
                   'const': 'system',
                   'default': 'system',
                   'title': 'Type',
+                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -1335,6 +1345,7 @@
                   'const': 'SystemMessageChunk',
                   'default': 'SystemMessageChunk',
                   'title': 'Type',
+                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -1383,6 +1394,7 @@
                 'type': dict({
                   'const': 'tool_call',
                   'title': 'Type',
+                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -1461,6 +1473,7 @@
                 'type': dict({
                   'const': 'tool_call_chunk',
                   'title': 'Type',
+                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -1583,6 +1596,7 @@
                   'const': 'tool',
                   'default': 'tool',
                   'title': 'Type',
+                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -1664,6 +1678,7 @@
                   'const': 'ToolMessageChunk',
                   'default': 'ToolMessageChunk',
                   'title': 'Type',
+                  'type': 'string',
                 }),
               }),
               'required': list([
