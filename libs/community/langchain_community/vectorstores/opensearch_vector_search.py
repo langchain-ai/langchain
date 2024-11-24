@@ -1134,7 +1134,7 @@ class OpenSearchVectorSearch(VectorStore):
             texts,
             embedding,
             metadatas=metadatas,
-            bulk_size=self.bulk_size,
+            bulk_size=cls.bulk_size,
             ids=ids,
             **kwargs,
         )
@@ -1198,7 +1198,7 @@ class OpenSearchVectorSearch(VectorStore):
             texts,
             embedding,
             metadatas=metadatas,
-            bulk_size=self.bulk_size,
+            bulk_size=cls.bulk_size,
             ids=ids,
             **kwargs,
         )
@@ -1278,7 +1278,7 @@ class OpenSearchVectorSearch(VectorStore):
             "max_chunk_bytes",
             "is_aoss",
         ]
-        _validate_embeddings_and_bulk_size(len(embeddings), self.bulk_size)
+        _validate_embeddings_and_bulk_size(len(embeddings), cls.bulk_size)
         dim = len(embeddings[0])
         # Get the index name from either from kwargs or ENV Variable
         # before falling back to random generation
@@ -1409,7 +1409,7 @@ class OpenSearchVectorSearch(VectorStore):
             "max_chunk_bytes",
             "is_aoss",
         ]
-        _validate_embeddings_and_bulk_size(len(embeddings), self.bulk_size)
+        _validate_embeddings_and_bulk_size(len(embeddings), cls.bulk_size)
         dim = len(embeddings[0])
         # Get the index name from either from kwargs or ENV Variable
         # before falling back to random generation
