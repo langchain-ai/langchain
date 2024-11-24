@@ -1290,22 +1290,7 @@ typing-extensions = ">=4.7"
 type = "directory"
 url = "libs/core"
 
-[[package]]
-name = "langchain-experimental"
-version = "0.3.0"
-description = "Building applications with LLMs through composability"
-optional = false
-python-versions = ">=3.9,<4.0"
-files = []
-develop = true
 
-[package.dependencies]
-langchain-community = "^0.3.0"
-langchain-core = "^0.3.0"
-
-[package.source]
-type = "directory"
-url = "libs/experimental"
 
 [[package]]
 name = "langchain-openai"
