@@ -1833,7 +1833,7 @@ files = [
 
 [[package]]
 name = "langchain"
-version = "0.3.7"
+version = "0.3.8"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -1843,7 +1843,7 @@ develop = true
 [package.dependencies]
 aiohttp = "^3.8.3"
 async-timeout = {version = "^4.0.0", markers = "python_version < \"3.11\""}
-langchain-core = "^0.3.15"
+langchain-core = "^0.3.21"
 langchain-text-splitters = "^0.3.0"
 langsmith = "^0.1.17"
 numpy = [
@@ -1862,7 +1862,7 @@ url = "../langchain"
 
 [[package]]
 name = "langchain-core"
-version = "0.3.19"
+version = "0.3.21"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -1887,7 +1887,7 @@ url = "../core"
 
 [[package]]
 name = "langchain-tests"
-version = "0.3.1"
+version = "0.3.4"
 description = "Standard tests for LangChain implementations"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -1896,7 +1896,7 @@ develop = true
 
 [package.dependencies]
 httpx = "^0.27.0"
-langchain-core = "^0.3.15"
+langchain-core = "^0.3.19"
 pytest = ">=7,<9"
 syrupy = "^4"
 
@@ -4553,4 +4553,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0"
-content-hash = "b369e0441d1066761e311c967981f172881e87fc9f2f5b96b9891667bd336404"
+content-hash = "f1f67f510295d6d3a4895bed9b6a0ae73bc85a993ef51b37884e60f5094c0298"
