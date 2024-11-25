@@ -66,7 +66,7 @@ def _get_tool_calls_from_response(
     """Get tool calls from ollama response."""
     tool_calls = []
     if "message" in response:
-        if "tool_calls" in response["message"]:
+        if "tool_calls" in response["message"] and response["message"]["tool_calls"]:
             for tc in response["message"]["tool_calls"]:
                 tool_calls.append(
                     tool_call(
