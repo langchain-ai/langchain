@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from langchain_community.utilities.finance_polygon import FinancePolygonAPIWrapper
 
@@ -7,11 +7,13 @@ API_KEY = "test_key"  # Test API key
 
 
 class TestFinancePolygonAPIWrapper(unittest.TestCase):
-    def setUp(self):
-        self.wrapper = FinancePolygonAPIWrapper(polygon_api_key=API_KEY)
+    def setUp(self) -> None:
+        self.wrapper: FinancePolygonAPIWrapper = FinancePolygonAPIWrapper(
+            polygon_api_key=API_KEY
+        )
 
-    @patch("finance_polygon.requests.get")
-    def test_get_crypto_aggregates(self, mock_get):
+    @patch("requests.get")
+    def test_get_crypto_aggregates(self, mock_get: MagicMock) -> None:
         mock_get.return_value.json.return_value = {
             "status": "OK",
             "results": {"key": "value"},
@@ -25,8 +27,8 @@ class TestFinancePolygonAPIWrapper(unittest.TestCase):
             f"?apiKey={API_KEY}&adjusted=True&sort=asc"
         )
 
-    @patch("finance_polygon.requests.get")
-    def test_get_ipos(self, mock_get):
+    @patch("requests.get")
+    def test_get_ipos(self, mock_get: MagicMock) -> None:
         mock_get.return_value.json.return_value = {
             "status": "OK",
             "results": {"ipo": "data"},
@@ -37,8 +39,8 @@ class TestFinancePolygonAPIWrapper(unittest.TestCase):
             f"https://api.polygon.io/vX/reference/ipos?order=asc&limit=5&sort=ticker&apiKey={API_KEY}"
         )
 
-    @patch("finance_polygon.requests.get")
-    def test_get_reference_tickers(self, mock_get):
+    @patch("requests.get")
+    def test_get_reference_tickers(self, mock_get: MagicMock) -> None:
         mock_get.return_value.json.return_value = {
             "status": "OK",
             "results": {"tickers": ["AAPL", "GOOG"]},
@@ -49,8 +51,8 @@ class TestFinancePolygonAPIWrapper(unittest.TestCase):
             f"https://api.polygon.io/v3/reference/tickers?ticker=AAPL&active=true&limit=2&apiKey={API_KEY}"
         )
 
-    @patch("finance_polygon.requests.get")
-    def test_get_reference_ticker_news(self, mock_get):
+    @patch("requests.get")
+    def test_get_reference_ticker_news(self, mock_get: MagicMock) -> None:
         mock_get.return_value.json.return_value = {
             "status": "OK",
             "results": {"news": ["News1", "News2"]},
@@ -61,8 +63,8 @@ class TestFinancePolygonAPIWrapper(unittest.TestCase):
             f"https://api.polygon.io/v3/reference/tickers?ticker=AAPL&limit=2&apiKey={API_KEY}"
         )
 
-    @patch("finance_polygon.requests.get")
-    def test_get_reference_ticker_details(self, mock_get):
+    @patch("requests.get")
+    def test_get_reference_ticker_details(self, mock_get: MagicMock) -> None:
         mock_get.return_value.json.return_value = {
             "status": "OK",
             "results": {"ticker": "AAPL"},
@@ -73,8 +75,8 @@ class TestFinancePolygonAPIWrapper(unittest.TestCase):
             f"https://api.polygon.io/v3/reference/tickers/AAPL?apiKey={API_KEY}"
         )
 
-    @patch("finance_polygon.requests.get")
-    def test_get_related_companies(self, mock_get):
+    @patch("requests.get")
+    def test_get_related_companies(self, mock_get: MagicMock) -> None:
         mock_get.return_value.json.return_value = {
             "status": "OK",
             "results": ["MSFT", "GOOG"],
@@ -85,8 +87,8 @@ class TestFinancePolygonAPIWrapper(unittest.TestCase):
             f"https://api.polygon.io/v1/related-companies/AAPL?apiKey={API_KEY}"
         )
 
-    @patch("finance_polygon.requests.get")
-    def test_get_exchanges(self, mock_get):
+    @patch("requests.get")
+    def test_get_exchanges(self, mock_get: MagicMock) -> None:
         mock_get.return_value.json.return_value = {
             "status": "OK",
             "results": {"exchanges": ["NYSE", "NASDAQ"]},
@@ -97,8 +99,8 @@ class TestFinancePolygonAPIWrapper(unittest.TestCase):
             f"https://api.polygon.io/v3/reference/exchanges?asset_class=stocks&apiKey={API_KEY}"
         )
 
-    @patch("finance_polygon.requests.get")
-    def test_get_conditions(self, mock_get):
+    @patch("requests.get")
+    def test_get_conditions(self, mock_get: MagicMock) -> None:
         mock_get.return_value.json.return_value = {
             "status": "OK",
             "results": {"conditions": ["condition1"]},
@@ -109,8 +111,8 @@ class TestFinancePolygonAPIWrapper(unittest.TestCase):
             f"https://api.polygon.io/v3/reference/conditions?asset_class=stocks&limit=10&apiKey={API_KEY}"
         )
 
-    @patch("finance_polygon.requests.get")
-    def test_get_stock_splits(self, mock_get):
+    @patch("requests.get")
+    def test_get_stock_splits(self, mock_get: MagicMock) -> None:
         mock_get.return_value.json.return_value = {
             "status": "OK",
             "results": {"splits": ["split1"]},
@@ -121,8 +123,8 @@ class TestFinancePolygonAPIWrapper(unittest.TestCase):
             f"https://api.polygon.io/v3/reference/splits?ticker=AAPL&limit=10&apiKey={API_KEY}"
         )
 
-    @patch("finance_polygon.requests.get")
-    def test_get_last_trade(self, mock_get):
+    @patch("requests.get")
+    def test_get_last_trade(self, mock_get: MagicMock) -> None:
         mock_get.return_value.json.return_value = {
             "status": "OK",
             "results": {"trade": "data"},
@@ -133,8 +135,8 @@ class TestFinancePolygonAPIWrapper(unittest.TestCase):
             f"https://api.polygon.io/v2/last/trade/AAPL?apiKey={API_KEY}"
         )
 
-    @patch("finance_polygon.requests.get")
-    def test_get_previous_close(self, mock_get):
+    @patch("requests.get")
+    def test_get_previous_close(self, mock_get: MagicMock) -> None:
         mock_get.return_value.json.return_value = {
             "status": "OK",
             "results": {"close": "data"},
@@ -145,8 +147,8 @@ class TestFinancePolygonAPIWrapper(unittest.TestCase):
             f"https://api.polygon.io/v2/aggs/ticker/AAPL/prev?adjusted=True&apiKey={API_KEY}"
         )
 
-    @patch("finance_polygon.requests.get")
-    def test_get_market_status(self, mock_get):
+    @patch("requests.get")
+    def test_get_market_status(self, mock_get: MagicMock) -> None:
         mock_get.return_value.json.return_value = {"status": "OK", "market": "open"}
         result = self.wrapper.get_market_status()
         self.assertEqual(result, {"status": "OK", "market": "open"})
@@ -154,8 +156,8 @@ class TestFinancePolygonAPIWrapper(unittest.TestCase):
             f"https://api.polygon.io/v1/marketstatus/now?apiKey={API_KEY}"
         )
 
-    @patch("finance_polygon.requests.get")
-    def test_get_market_holidays(self, mock_get):
+    @patch("requests.get")
+    def test_get_market_holidays(self, mock_get: MagicMock) -> None:
         mock_get.return_value.json.return_value = [{"status": "close"}]
         result = self.wrapper.get_market_holidays()
         self.assertEqual(result, [{"status": "close"}])
@@ -163,20 +165,19 @@ class TestFinancePolygonAPIWrapper(unittest.TestCase):
             f"https://api.polygon.io/v1/marketstatus/upcoming?apiKey={API_KEY}"
         )
 
-    @patch("finance_polygon.requests.get")
-    def test_get_dividends(self, mock_get):
+    @patch("requests.get")
+    def test_get_dividends(self, mock_get: MagicMock) -> None:
         mock_get.return_value.json.return_value = {
             "status": "OK",
             "results": [{"dividend": "data"}],
         }
         result = self.wrapper.get_dividends("AAPL")
-        self.assertEqual(result, {"results": [{"dividend": "data"}]})
+        self.assertEqual(result, [{"dividend": "data"}])
         mock_get.assert_called_once_with(
             f"https://api.polygon.io/v3/reference/dividends?ticker=AAPL&limit=10&apiKey={API_KEY}"
         )
 
-    @patch("finance_polygon.requests.get")
-    def test_run_invalid_mode(self):
+    def test_run_invalid_mode(self) -> None:
         with self.assertRaises(ValueError) as context:
             self.wrapper.run("invalid_mode")
         self.assertIn("Invalid mode", str(context.exception))

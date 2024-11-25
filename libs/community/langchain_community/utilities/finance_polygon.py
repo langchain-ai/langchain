@@ -82,10 +82,9 @@ class FinancePolygonAPIWrapper(BaseModel):
         limit = kwargs.get("limit", 10)
         sort = kwargs.get("sort", "listing_date")
 
-        url = POLYGON_BASE_URL
-
+        url = POLYGON_BASE_URL + "vX/reference/ipos?"
         if ticker is not None:
-            url = url + "vX/reference/ipos?" + f"ticker={ticker}&"
+            url = url + f"ticker={ticker}&"
 
         if us_code is not None:
             url = url + f"us_code={us_code}&"
