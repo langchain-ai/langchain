@@ -18,8 +18,7 @@ class FinancePolygonReferenceTickerEventsSchema(BaseModel):
     )
 
 
-# type: ignore[override, override]
-class PolygonReferenceTickerEvents(BaseTool):
+class PolygonReferenceTickerEvents(BaseTool):  # type: ignore[override, override]
     """
     Tool that gets a timeline of events for the entity associated
     with the given ticker, CUSIP, or Composite FIGI.

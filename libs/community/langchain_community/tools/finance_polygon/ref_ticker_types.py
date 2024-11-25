@@ -18,8 +18,7 @@ class FinancePolygonReferenceTickerTypesSchema(BaseModel):
     )
 
 
-# type: ignore[override, override]
-class PolygonReferenceTickerTypes(BaseTool):
+class PolygonReferenceTickerTypes(BaseTool):  # type: ignore[override, override]
     """
     Tool that lists all ticker types that Polygon.io has.
     """

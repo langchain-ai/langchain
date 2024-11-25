@@ -18,8 +18,7 @@ class FinancePolygonReferenceTickerDetailsSchema(BaseModel):
     )
 
 
-# type: ignore[override, override]
-class PolygonReferenceTickerDetails(BaseTool):
+class PolygonReferenceTickerDetails(BaseTool):  # type: ignore[override, override]
     """
     Tool that gets a single ticker supported by Polygon.io. This response
     will have detailed information about the ticker and the company behind it.
