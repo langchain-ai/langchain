@@ -15,7 +15,7 @@ class PolygonGroupedDailySchema(BaseModel):
     )
 
 
-class PolygonGroupedDaily(BaseTool):
+class PolygonGroupedDaily(BaseTool):  # type: ignore[override, override]
     """
     Tool that gets the daily open, high, low, and close
     (OHLC) for the entire stocks/equities markets

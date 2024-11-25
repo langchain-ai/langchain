@@ -6,7 +6,7 @@ from langchain_core.tools import BaseTool
 from langchain_community.utilities.finance_polygon import FinancePolygonAPIWrapper
 
 
-class PolygonMarketHolidays(BaseTool):
+class PolygonMarketHolidays(BaseTool):  # type: ignore[override, override]
     """
     Tool that provides the upcoming market holidays and their
     open/close times.

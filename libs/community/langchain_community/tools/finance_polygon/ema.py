@@ -36,7 +36,7 @@ class FinancePolygonEMASchema(BaseModel):
     )
 
 
-class PolygonEMA(BaseTool):
+class PolygonEMA(BaseTool):  # type: ignore[override, override]
     """
     Tool for fetching Exponential Moving Average (EMA) data for a ticker.
     """

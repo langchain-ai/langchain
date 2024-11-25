@@ -15,7 +15,7 @@ class PolygonTradesSchema(BaseModel):
     )
 
 
-class PolygonTrades(BaseTool):
+class PolygonTrades(BaseTool):  # type: ignore[override, override]
     """
     Tool that gets trades for a ticker symbol in a given timestamp.
     """

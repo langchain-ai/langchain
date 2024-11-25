@@ -37,7 +37,7 @@ class PolygonDividendsSchema(BaseModel):
     )
 
 
-class PolygonDividends(BaseTool):
+class PolygonDividends(BaseTool):  # type: ignore[override, override]
     """
     Tool that gets a list of historical cash dividends,
     including the ticker symbol, declaration date, ex-dividend date,

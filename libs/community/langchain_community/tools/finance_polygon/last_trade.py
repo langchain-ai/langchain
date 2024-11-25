@@ -13,7 +13,7 @@ class FinancePolygonLastTradeSchema(BaseModel):
     ticker: str = Field(description="The ticker symbol to fetch last trade data for.")
 
 
-class FinancePolygonLastTrade(BaseTool):
+class FinancePolygonLastTrade(BaseTool):  # type: ignore[override, override]
     """
     Tool that provides the last trade data for a given stock.
     NOTE: this tool requires a "Stock Developer" subscription to Polygon.io.

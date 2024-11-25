@@ -23,7 +23,7 @@ class FinancePolygonAllTickersSchema(BaseModel):
     )
 
 
-class PolygonAllTickers(BaseTool):
+class PolygonAllTickers(BaseTool):  # type: ignore[override, override]
     """
     Tool for fetching all traded stock symbols with snapshot data.
     """

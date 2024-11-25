@@ -36,7 +36,7 @@ class FinancePolygonRSISchema(BaseModel):
     )
 
 
-class PolygonRSI(BaseTool):
+class PolygonRSI(BaseTool):  # type: ignore[override, override]
     """
     Tool for fetching Relative Strength Index (RSI) data for a ticker.
     """

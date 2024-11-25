@@ -23,7 +23,7 @@ class FinancePolygonExchangesSchema(BaseModel):
     )
 
 
-class PolygonExchanges(BaseTool):
+class PolygonExchanges(BaseTool):  # type: ignore[override, override]
     """
     Tool that lists all exchances that Polygon.io knows about
     """

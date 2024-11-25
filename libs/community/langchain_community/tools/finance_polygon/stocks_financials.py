@@ -45,7 +45,7 @@ class FinancePolygonStocksFinancialsSchema(BaseModel):
     )
 
 
-class PolygonStocksFinancials(BaseTool):
+class PolygonStocksFinancials(BaseTool):  # type: ignore[override, override]
     """
     Tool that provides a historical financial data for stock ticker.
     """

@@ -46,7 +46,7 @@ class FinancePolygonIPOsSchema(BaseModel):
     )
 
 
-class PolygonIPOs(BaseTool):
+class PolygonIPOs(BaseTool):  # type: ignore[override, override]
     """
     Tool that provides detailed information abotu IPOs including both upcoming
     and historical events.

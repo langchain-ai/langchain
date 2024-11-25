@@ -15,7 +15,7 @@ class FinancePolygonRelatedCompaniesSchema(BaseModel):
     )
 
 
-class PolygonRelatedCompanies(BaseTool):
+class PolygonRelatedCompanies(BaseTool):  # type: ignore[override, override]
     """
     Tool that provides detailed information about related companies for a given ticker.
     """

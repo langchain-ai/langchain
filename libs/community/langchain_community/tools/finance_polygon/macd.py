@@ -44,7 +44,7 @@ class FinancePolygonMACDSchema(BaseModel):
     )
 
 
-class PolygonMACD(BaseTool):
+class PolygonMACD(BaseTool):  # type: ignore[override, override]
     """
     Tool for fetching Moving Average Convergence/Divergence (MACD) data for a ticker.
     """

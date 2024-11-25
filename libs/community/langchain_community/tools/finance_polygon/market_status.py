@@ -6,7 +6,7 @@ from langchain_core.tools import BaseTool
 from langchain_community.utilities.finance_polygon import FinancePolygonAPIWrapper
 
 
-class PolygonMarketStatus(BaseTool):
+class PolygonMarketStatus(BaseTool):  # type: ignore[override, override]
     """
     Tool that provides the current trading status of the exchanges
     and overall financial markets

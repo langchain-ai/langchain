@@ -15,7 +15,7 @@ class PolygonLastQuoteSchema(BaseModel):
     )
 
 
-class FinancePolygonLastQuote(BaseTool):
+class FinancePolygonLastQuote(BaseTool):  # type: ignore[override, override]
     """
     Tool that gets the most recent NBBO (Quote) tick for a given stock.
     """

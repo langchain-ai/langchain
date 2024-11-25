@@ -26,7 +26,7 @@ class FinancePolygonUniversalSnapshotSchema(BaseModel):
     )
 
 
-class PolygonUniversalSnapshot(BaseTool):
+class PolygonUniversalSnapshot(BaseTool):  # type: ignore[override, override]
     """
     Tool for fetching snapshots of multiple asset types.
     """

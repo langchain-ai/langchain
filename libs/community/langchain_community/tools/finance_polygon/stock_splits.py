@@ -43,7 +43,7 @@ class FinancePolygonStockSplitsSchema(BaseModel):
     )
 
 
-class PolygonStockSplits(BaseTool):
+class PolygonStockSplits(BaseTool):  # type: ignore[override, override]
     """
     Tool that provides a list of historical stock splits,
     including ticker symbol, the execution date, and the

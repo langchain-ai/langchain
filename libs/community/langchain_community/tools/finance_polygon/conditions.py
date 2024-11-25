@@ -45,7 +45,7 @@ class FinancePolygonConditionsSchema(BaseModel):
     )
 
 
-class PolygonConditions(BaseTool):
+class PolygonConditions(BaseTool):  # type: ignore[override, override]
     """
     Tool that lists all the conditions that Polygon.io uses.
     """

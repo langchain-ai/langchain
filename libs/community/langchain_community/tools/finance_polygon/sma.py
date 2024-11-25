@@ -36,7 +36,7 @@ class FinancePolygonSMASchema(BaseModel):
     )
 
 
-class PolygonSMA(BaseTool):
+class PolygonSMA(BaseTool):  # type: ignore[override, override]
     """
     Tool for fetching Simple Moving Average (SMA) data for a ticker.
     """

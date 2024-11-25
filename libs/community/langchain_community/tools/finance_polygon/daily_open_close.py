@@ -18,7 +18,7 @@ class PolygonDailyOpenCloseSchema(BaseModel):
     )
 
 
-class PolygonDailyOpenClose(BaseTool):
+class PolygonDailyOpenClose(BaseTool):  # type: ignore[override, override]
     """
     Tool that gets the daily open/close for a given
     ticker and date from Polygon

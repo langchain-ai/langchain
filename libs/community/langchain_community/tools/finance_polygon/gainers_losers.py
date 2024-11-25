@@ -20,7 +20,7 @@ class FinancePolygonGainersLosersSchema(BaseModel):
     )
 
 
-class PolygonGainersLosers(BaseTool):
+class PolygonGainersLosers(BaseTool):  # type: ignore[override, override]
     """
     Tool for fetching top gainers or losers in the market.
     """

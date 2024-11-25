@@ -15,7 +15,7 @@ class FinancePolygonSingleTickerSchema(BaseModel):
     )
 
 
-class PolygonSingleTicker(BaseTool):
+class PolygonSingleTicker(BaseTool):  # type: ignore[override, override]
     """
     Tool for fetching market data for a single traded stock ticker.
     """

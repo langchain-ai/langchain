@@ -13,7 +13,7 @@ class PolygonPreviousCloseSchema(BaseModel):
     ticker: str = Field(description="The ticker symbol to fetch previous close for.")
 
 
-class PolygonPreviousClose(BaseTool):
+class PolygonPreviousClose(BaseTool):  # type: ignore[override, override]
     """
     Tool that gets the previous day's open, high, low,
     and close (OHLC) for the specified stock ticker.
