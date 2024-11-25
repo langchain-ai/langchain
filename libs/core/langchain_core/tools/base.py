@@ -214,7 +214,7 @@ def create_schema_from_function(
     filter_args: Optional[Sequence[str]] = None,
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = False,
-    include_injected: bool = True,
+    include_injected: bool = False,
 ) -> type[BaseModel]:
     """Create a pydantic schema from a function's signature.
 
@@ -265,6 +265,13 @@ def create_schema_from_function(
 
     if filter_args:
         filter_args_ = filter_args
+        
+        existing_params: list[str] = list(sig.parameters.keys())
+        for existing_param in existing_params:
+            if not include_injected and _is_injected_arg_type(
+                sig.parameters[existing_param].annotation
+            ):
+                filter_args_.append(existing_param)
     else:
         # Handle classmethods and instance methods
         existing_params: list[str] = list(sig.parameters.keys())
@@ -279,10 +286,10 @@ def create_schema_from_function(
             ):
                 filter_args_.append(existing_param)
 
-    # Filter out injected arguments
-    for param_name, param in sig.parameters.items():
-        if param.annotation is InjectedToolArg:
-            filter_args_.append(param_name)
+    # # Filter out injected arguments
+    # for param_name, param in sig.parameters.items():
+    #     if param.annotation is InjectedToolArg:
+    #         filter_args_.append(param_name)
 
     description, arg_descriptions = _infer_arg_descriptions(
         func,
@@ -960,11 +967,17 @@ class InjectedToolArg:
 
 
 def _is_injected_arg_type(type_: type) -> bool:
-    return any(
-        isinstance(arg, InjectedToolArg)
-        or (isinstance(arg, type) and issubclass(arg, InjectedToolArg))
-        for arg in get_args(type_)[1:]
-    )
+    if type_ is InjectedToolArg:
+        return True
+    for arg in get_args(type_):
+        if arg is InjectedToolArg or (isinstance(arg, type) and issubclass(arg, InjectedToolArg)):
+            return True
+    return False
+    # return any(
+    #     isinstance(arg, InjectedToolArg)
+    #     or (isinstance(arg, type) and issubclass(arg, InjectedToolArg))
+    #     for arg in get_args(type_)[1:]
+    # )
 
 
 def get_all_basemodel_annotations(
