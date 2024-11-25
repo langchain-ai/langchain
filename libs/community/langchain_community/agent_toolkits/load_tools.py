@@ -392,6 +392,7 @@ def _get_golden_query(**kwargs: Any) -> BaseTool:
 def _get_pubmed(**kwargs: Any) -> BaseTool:
     return PubmedQueryRun(api_wrapper=PubMedAPIWrapper(**kwargs))
 
+
 def _get_finance_polygon_all_tickers(**kwargs: Any) -> BaseTool:
     return PolygonAllTickers(api_wrapper=FinancePolygonAPIWrapper(**kwargs))
 
@@ -511,10 +512,12 @@ def _get_finance_polygon_ref_ticker_news(**kwargs: Any) -> BaseTool:
 def _get_finance_polygon_trades(**kwargs: Any) -> BaseTool:
     return PolygonTrades(api_wrapper=FinancePolygonAPIWrapper(**kwargs))
 
+
 def _get_google_books(**kwargs: Any) -> BaseTool:
     from langchain_community.tools.google_books import GoogleBooksQueryRun
 
     return GoogleBooksQueryRun(api_wrapper=GoogleBooksAPIWrapper(**kwargs))
+
 
 def _get_google_jobs(**kwargs: Any) -> BaseTool:
     return GoogleJobsQueryRun(api_wrapper=GoogleJobsAPIWrapper(**kwargs))
