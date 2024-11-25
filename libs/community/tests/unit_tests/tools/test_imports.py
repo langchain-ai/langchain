@@ -65,6 +65,7 @@ EXPECTED_ALL = [
     "GmailGetThread",
     "GmailSearch",
     "GmailSendMessage",
+    "GoogleBooksQueryRun",
     "GoogleCloudTextToSpeechTool",
     "GooglePlacesTool",
     "GoogleSearchResults",

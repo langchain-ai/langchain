@@ -605,6 +605,8 @@ class BaseChatOpenAI(BaseChatModel):
             token_usage = output["token_usage"]
             if token_usage is not None:
                 for k, v in token_usage.items():
+                    if v is None:
+                        continue
                     if k in overall_token_usage:
                         overall_token_usage[k] = _update_token_usage(
                             overall_token_usage[k], v
@@ -630,24 +632,6 @@ class BaseChatOpenAI(BaseChatModel):
         default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
         base_generation_info = {}
 
-        if "response_format" in payload and is_basemodel_subclass(
-            payload["response_format"]
-        ):
-            # TODO: Add support for streaming with Pydantic response_format.
-            warnings.warn("Streaming with Pydantic response_format not yet supported.")
-            chat_result = self._generate(
-                messages, stop, run_manager=run_manager, **kwargs
-            )
-            msg = chat_result.generations[0].message
-            yield ChatGenerationChunk(
-                message=AIMessageChunk(
-                    **msg.dict(exclude={"type", "additional_kwargs"}),
-                    # preserve the "parsed" Pydantic object without converting to dict
-                    additional_kwargs=msg.additional_kwargs,
-                ),
-                generation_info=chat_result.generations[0].generation_info,
-            )
-            return
         if self.include_response_headers:
             raw_response = self.client.with_raw_response.create(**payload)
             response = raw_response.parse()
@@ -781,24 +765,6 @@ class BaseChatOpenAI(BaseChatModel):
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
         base_generation_info = {}
-        if "response_format" in payload and is_basemodel_subclass(
-            payload["response_format"]
-        ):
-            # TODO: Add support for streaming with Pydantic response_format.
-            warnings.warn("Streaming with Pydantic response_format not yet supported.")
-            chat_result = await self._agenerate(
-                messages, stop, run_manager=run_manager, **kwargs
-            )
-            msg = chat_result.generations[0].message
-            yield ChatGenerationChunk(
-                message=AIMessageChunk(
-                    **msg.dict(exclude={"type", "additional_kwargs"}),
-                    # preserve the "parsed" Pydantic object without converting to dict
-                    additional_kwargs=msg.additional_kwargs,
-                ),
-                generation_info=chat_result.generations[0].generation_info,
-            )
-            return
         if self.include_response_headers:
             raw_response = await self.async_client.with_raw_response.create(**payload)
             response = raw_response.parse()
@@ -920,8 +886,13 @@ class BaseChatOpenAI(BaseChatModel):
         _, encoding_model = self._get_encoding_model()
         return encoding_model.encode(text)
 
-    # TODO: Count bound tools as part of input.
-    def get_num_tokens_from_messages(self, messages: List[BaseMessage]) -> int:
+    def get_num_tokens_from_messages(
+        self,
+        messages: List[BaseMessage],
+        tools: Optional[
+            Sequence[Union[Dict[str, Any], Type, Callable, BaseTool]]
+        ] = None,
+    ) -> int:
         """Calculate num tokens for gpt-3.5-turbo and gpt-4 with tiktoken package.
 
         **Requirements**: You must have the ``pillow`` installed if you want to count
@@ -931,7 +902,18 @@ class BaseChatOpenAI(BaseChatModel):
         counting.
 
         OpenAI reference: https://github.com/openai/openai-cookbook/blob/
-        main/examples/How_to_format_inputs_to_ChatGPT_models.ipynb"""
+        main/examples/How_to_format_inputs_to_ChatGPT_models.ipynb
+
+        Args:
+            messages: The message inputs to tokenize.
+            tools: If provided, sequence of dict, BaseModel, function, or BaseTools
+                to be converted to tool schemas.
+        """
+        # TODO: Count bound tools as part of input.
+        if tools is not None:
+            warnings.warn(
+                "Counting tokens in tool schemas is not yet supported. Ignoring tools."
+            )
         if sys.version_info[1] <= 7:
             return super().get_num_tokens_from_messages(messages)
         model, encoding = self._get_encoding_model()
@@ -997,10 +979,29 @@ class BaseChatOpenAI(BaseChatModel):
         num_tokens += 3
         return num_tokens
 
+    def _should_stream(
+        self,
+        *,
+        async_api: bool,
+        run_manager: Optional[
+            Union[CallbackManagerForLLMRun, AsyncCallbackManagerForLLMRun]
+        ] = None,
+        response_format: Optional[Union[dict, type]] = None,
+        **kwargs: Any,
+    ) -> bool:
+        if isinstance(response_format, type) and is_basemodel_subclass(response_format):
+            # TODO: Add support for streaming with Pydantic response_format.
+            warnings.warn("Streaming with Pydantic response_format not yet supported.")
+            return False
+
+        return super()._should_stream(
+            async_api=async_api, run_manager=run_manager, **kwargs
+        )
+
     @deprecated(
         since="0.2.1",
         alternative="langchain_openai.chat_models.base.ChatOpenAI.bind_tools",
-        removal="0.3.0",
+        removal="1.0.0",
     )
     def bind_functions(
         self,
@@ -2143,9 +2144,13 @@ def _convert_to_openai_response_format(
     if isinstance(schema, type) and is_basemodel_subclass(schema):
         return schema
 
-    if "json_schema" in schema and schema.get("type") == "json_schema":
+    if (
+        isinstance(schema, dict)
+        and "json_schema" in schema
+        and schema.get("type") == "json_schema"
+    ):
         response_format = schema
-    elif "name" in schema and "schema" in schema:
+    elif isinstance(schema, dict) and "name" in schema and "schema" in schema:
         response_format = {"type": "json_schema", "json_schema": schema}
     else:
         strict = strict if strict is not None else True

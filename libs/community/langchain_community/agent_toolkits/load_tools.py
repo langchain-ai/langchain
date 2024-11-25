@@ -136,6 +136,7 @@ from langchain_community.utilities.dataforseo_api_search import DataForSeoAPIWra
 from langchain_community.utilities.duckduckgo_search import DuckDuckGoSearchAPIWrapper
 from langchain_community.utilities.finance_polygon import FinancePolygonAPIWrapper
 from langchain_community.utilities.golden_query import GoldenQueryAPIWrapper
+from langchain_community.utilities.google_books import GoogleBooksAPIWrapper
 from langchain_community.utilities.google_finance import GoogleFinanceAPIWrapper
 from langchain_community.utilities.google_jobs import GoogleJobsAPIWrapper
 from langchain_community.utilities.google_lens import GoogleLensAPIWrapper
@@ -391,7 +392,6 @@ def _get_golden_query(**kwargs: Any) -> BaseTool:
 def _get_pubmed(**kwargs: Any) -> BaseTool:
     return PubmedQueryRun(api_wrapper=PubMedAPIWrapper(**kwargs))
 
-
 def _get_finance_polygon_all_tickers(**kwargs: Any) -> BaseTool:
     return PolygonAllTickers(api_wrapper=FinancePolygonAPIWrapper(**kwargs))
 
@@ -511,6 +511,10 @@ def _get_finance_polygon_ref_ticker_news(**kwargs: Any) -> BaseTool:
 def _get_finance_polygon_trades(**kwargs: Any) -> BaseTool:
     return PolygonTrades(api_wrapper=FinancePolygonAPIWrapper(**kwargs))
 
+def _get_google_books(**kwargs: Any) -> BaseTool:
+    from langchain_community.tools.google_books import GoogleBooksQueryRun
+
+    return GoogleBooksQueryRun(api_wrapper=GoogleBooksAPIWrapper(**kwargs))
 
 def _get_google_jobs(**kwargs: Any) -> BaseTool:
     return GoogleJobsQueryRun(api_wrapper=GoogleJobsAPIWrapper(**kwargs))
@@ -669,6 +673,7 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
     "bing-search": (_get_bing_search, ["bing_subscription_key", "bing_search_url"]),
     "metaphor-search": (_get_metaphor_search, ["metaphor_api_key"]),
     "ddg-search": (_get_ddg_search, []),
+    "google-books": (_get_google_books, ["google_books_api_key"]),
     "google-lens": (_get_google_lens, ["serp_api_key"]),
     "google-serper": (_get_google_serper, ["serper_api_key", "aiosession"]),
     "google-scholar": (

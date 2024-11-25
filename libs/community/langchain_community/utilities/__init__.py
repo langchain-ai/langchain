@@ -48,6 +48,9 @@ if TYPE_CHECKING:
     from langchain_community.utilities.golden_query import (
         GoldenQueryAPIWrapper,
     )
+    from langchain_community.utilities.google_books import (
+        GoogleBooksAPIWrapper,
+    )
     from langchain_community.utilities.google_finance import (
         GoogleFinanceAPIWrapper,
     )
@@ -189,6 +192,7 @@ __all__ = [
     "DuckDuckGoSearchAPIWrapper",
     "FinancePolygonAPIWrapper",
     "GoldenQueryAPIWrapper",
+    "GoogleBooksAPIWrapper",
     "GoogleFinanceAPIWrapper",
     "GoogleJobsAPIWrapper",
     "GoogleLensAPIWrapper",
@@ -253,6 +257,7 @@ _module_lookup = {
     "DuckDuckGoSearchAPIWrapper": "langchain_community.utilities.duckduckgo_search",
     "FinancePolygonAPIWrapper": "langchain_community.utilities.finance_polygon",
     "GoldenQueryAPIWrapper": "langchain_community.utilities.golden_query",
+    "GoogleBooksAPIWrapper": "langchain_community.utilities.google_books",
     "GoogleFinanceAPIWrapper": "langchain_community.utilities.google_finance",
     "GoogleJobsAPIWrapper": "langchain_community.utilities.google_jobs",
     "GoogleLensAPIWrapper": "langchain_community.utilities.google_lens",

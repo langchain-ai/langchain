@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import csv
 import re
 from abc import abstractmethod
 from collections import deque
 from collections.abc import AsyncIterator, Iterator
+from io import StringIO
 from typing import Optional as Optional
 from typing import TypeVar, Union
 
@@ -162,7 +164,14 @@ class CommaSeparatedListOutputParser(ListOutputParser):
         Returns:
             A list of strings.
         """
-        return [part.strip() for part in text.split(",")]
+        try:
+            reader = csv.reader(
+                StringIO(text), quotechar='"', delimiter=",", skipinitialspace=True
+            )
+            return [item for sublist in reader for item in sublist]
+        except csv.Error:
+            # keep old logic for backup
+            return [part.strip() for part in text.split(",")]
 
     @property
     def _type(self) -> str:

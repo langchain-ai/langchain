@@ -14,6 +14,7 @@ EXPECTED_ALL = [
     "DriaAPIWrapper",
     "FinancePolygonAPIWrapper",
     "GoldenQueryAPIWrapper",
+    "GoogleBooksAPIWrapper",
     "GoogleFinanceAPIWrapper",
     "GoogleJobsAPIWrapper",
     "GoogleLensAPIWrapper",
