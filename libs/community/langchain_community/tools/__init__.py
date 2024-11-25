@@ -21,9 +21,6 @@ tool for the job.
 import importlib
 from typing import TYPE_CHECKING, Any
 
-from langchain_community.tools.finance_polygon import universal_snapshot
-from langchain_community.utilities import finance_polygon
-
 if TYPE_CHECKING:
     from langchain_core.tools import (
         BaseTool as BaseTool,
@@ -713,11 +710,11 @@ _module_lookup = {
     "O365SendMessage": "langchain_community.tools.office365.send_message",
     "OpenAPISpec": "langchain_community.tools.openapi.utils.openapi_utils",
     "OpenWeatherMapQueryRun": "langchain_community.tools.openweathermap.tool",
-    "FinancePolygonAggregates": "langchain_community.tools.finance_polygon.aggregates_stocks",
+    "FinancePolygonAggregates": "langchain_community.tools.finance_polygon.aggregates_stocks",  # noqa: E501
     "PolygonAllTickers": "langchain_community.tools.finance_polygon.all_tickers",
     "PolygonConditions": "langchain_community.tools.finance_polygon.conditions",
-    "PolygonCryptoAggregates": "langchain_community.tools.finance_polygon.crypto_aggregates",
-    "PolygonDailyOpenClose": "langchain_community.tools.finance_polygon.daily_open_close",
+    "PolygonCryptoAggregates": "langchain_community.tools.finance_polygon.crypto_aggregates",  # noqa: E501
+    "PolygonDailyOpenClose": "langchain_community.tools.finance_polygon.daily_open_close",  # noqa: E501
     "PolygonDividends": "langchain_community.tools.finance_polygon.dividends",
     "PolygonEMA": "langchain_community.tools.finance_polygon.ema",
     "PolygonExchanges": "langchain_community.tools.finance_polygon.exchanges",
@@ -727,22 +724,22 @@ _module_lookup = {
     "FinancePolygonLastQuote": "langchain_community.tools.finance_polygon.last_quote",
     "FinancePolygonLastTrade": "langchain_community.tools.finance_polygon.last_trade",
     "PolygonMACD": "langchain_community.tools.finance_polygon.macd",
-    "PolygonMarketHolidays": "langchain_community.tools.finance_polygon.market_holidays",
+    "PolygonMarketHolidays": "langchain_community.tools.finance_polygon.market_holidays",  # noqa: E501
     "PolygonMarketStatus": "langchain_community.tools.finance_polygon.market_status",
     "PolygonPreviousClose": "langchain_community.tools.finance_polygon.previous_close",
     "PolygonReferenceTicker": "langchain_community.tools.finance_polygon.ref_ticker",
-    "PolygonReferenceTickerDetails": "langchain_community.tools.finance_polygon.ref_ticker_details",
-    "PolygonReferenceTickerEvents": "langchain_community.tools.finance_polygon.ref_ticker_events",
-    "PolygonReferenceTickerNews": "langchain_community.tools.finance_polygon.ref_ticker_news",
-    "PolygonReferenceTickerTypes": "langchain_community.tools.finance_polygon.ref_ticker_types",
-    "PolygonRelatedCompanies": "langchain_community.tools.finance_polygon.related_companies",
+    "PolygonReferenceTickerDetails": "langchain_community.tools.finance_polygon.ref_ticker_details",  # noqa: E501
+    "PolygonReferenceTickerEvents": "langchain_community.tools.finance_polygon.ref_ticker_events",  # noqa: E501
+    "PolygonReferenceTickerNews": "langchain_community.tools.finance_polygon.ref_ticker_news",  # noqa: E501
+    "PolygonReferenceTickerTypes": "langchain_community.tools.finance_polygon.ref_ticker_types",  # noqa: E501
+    "PolygonRelatedCompanies": "langchain_community.tools.finance_polygon.related_companies",  # noqa: E501
     "PolygonRSI": "langchain_community.tools.finance_polygon.rsi",
     "PolygonSingleTicker": "langchain_community.tools.finance_polygon.single_ticker",
     "PolygonSMA": "langchain_community.tools.finance_polygon.sma",
     "PolygonStockSplits": "langchain_community.tools.finance_polygon.stock_splits",
-    "PolygonStocksFinancials": "langchain_community.tools.finance_polygon.stocks_financials",
+    "PolygonStocksFinancials": "langchain_community.tools.finance_polygon.stocks_financials",  # noqa: E501
     "PolygonTrades": "langchain_community.tools.finance_polygon.trades",
-    "PolygonUniversalSnapshot": "langchain_community.tools.finance_polygon.universal_snapshot",
+    "PolygonUniversalSnapshot": "langchain_community.tools.finance_polygon.universal_snapshot",  # noqa: E501
     "PolygonAggregates": "langchain_community.tools.polygon.aggregates",
     "PolygonFinancials": "langchain_community.tools.polygon.financials",
     "PolygonLastQuote": "langchain_community.tools.polygon.last_quote",

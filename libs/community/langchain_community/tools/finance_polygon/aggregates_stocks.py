@@ -44,7 +44,7 @@ class FinancePolygonAggregates(BaseTool):
     """
 
     mode: str = "get_aggregates"
-    name: str = "polygon_aggregates"
+    name: str = "finance_polygon_aggregates"
     description: str = (
         "A wrapper around Polygon's Stocks Aggregates API. "
         "This tool is useful for fetching aggregate bars (stocks) for a ticker. "

@@ -21,7 +21,7 @@ class FinancePolygonLastQuote(BaseTool):
     """
 
     mode: str = "get_last_quote"
-    name: str = "polygon_last_quote"
+    name: str = "finance_polygon_last_quote"
     description: str = (
         "A wrapper around Polygon's Last Quote API. "
         "This tool is useful for fetching the most recent NBBO (Quote) tick"
