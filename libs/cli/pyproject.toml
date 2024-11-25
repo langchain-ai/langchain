@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-cli"
-version = "0.0.31"
+version = "0.0.33"
 description = "CLI for interacting with LangChain"
 authors = ["Erick Friis <erick@langchain.dev>"]
 readme = "README.md"
@@ -14,10 +14,10 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
 typer = { extras = ["all"], version = "^0.9.0" }
-gitpython = "^3.1.40"
+gitpython = "^3"
 langserve = { extras = ["all"], version = ">=0.0.51" }
-uvicorn = "^0.23.2"
-tomlkit = "^0.12.2"
+uvicorn = ">=0.23,<1.0"
+tomlkit = ">=0.12"
 gritql = "^0.1.1"
 
 [tool.poetry.scripts]

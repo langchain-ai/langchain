@@ -84,7 +84,7 @@ class Anyscale(BaseOpenAI):  # type: ignore[override]
 
     """Key word arguments to pass to the model."""
     anyscale_api_base: str = Field(default=DEFAULT_BASE_URL)
-    anyscale_api_key: SecretStr = Field(default=None)
+    anyscale_api_key: SecretStr = Field(default=SecretStr(""))
     model_name: str = Field(default=DEFAULT_MODEL)
 
     prefix_messages: List = Field(default_factory=list)

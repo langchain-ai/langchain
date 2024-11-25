@@ -61,7 +61,7 @@ class GooseAI(LLM):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
 
-    logit_bias: Optional[Dict[str, float]] = Field(default_factory=dict)
+    logit_bias: Optional[Dict[str, float]] = Field(default_factory=dict)  # type: ignore[arg-type]
     """Adjust the probability of specific tokens being generated."""
 
     gooseai_api_key: Optional[SecretStr] = None
