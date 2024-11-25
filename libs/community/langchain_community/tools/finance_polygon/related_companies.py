@@ -6,12 +6,14 @@ from pydantic import BaseModel, Field
 
 from langchain_community.utilities.finance_polygon import FinancePolygonAPIWrapper
 
+
 class FinancePolygonRelatedCompaniesSchema(BaseModel):
     """Input for PolygonRelatedCompanies."""
 
     ticker: str = Field(
         description="The ticker symbol to fetch related companies for.",
     )
+
 
 class PolygonRelatedCompanies(BaseTool):
     """
@@ -26,7 +28,9 @@ class PolygonRelatedCompanies(BaseTool):
         " for a given ticker."
     )
 
-    args_schema: Type[FinancePolygonRelatedCompaniesSchema] = FinancePolygonRelatedCompaniesSchema
+    args_schema: Type[FinancePolygonRelatedCompaniesSchema] = (
+        FinancePolygonRelatedCompaniesSchema
+    )
 
     api_wrapper: FinancePolygonAPIWrapper
 
@@ -39,7 +43,5 @@ class PolygonRelatedCompanies(BaseTool):
         Get related companies for a given ticker.
         """
         return self.api_wrapper.run(
-            mode=self.mode,
-            ticker=ticker,
-            run_manager=run_manager
+            mode=self.mode, ticker=ticker, run_manager=run_manager
         )

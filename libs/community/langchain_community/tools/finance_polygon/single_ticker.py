@@ -24,16 +24,19 @@ class PolygonSingleTicker(BaseTool):
     name: str = "polygon_single_ticker"
     description: str = (
         "A wrapper around Polygon's Single Ticker API. "
-        "This tool provides the most up-to-date market data for a specific traded stock symbol."
+        "This tool provides the most up-to-date market data"
+        "for a specific traded stock symbol."
     )
 
-    args_schema: Type[FinancePolygonSingleTickerSchema] = FinancePolygonSingleTickerSchema
+    args_schema: Type[FinancePolygonSingleTickerSchema] = (
+        FinancePolygonSingleTickerSchema
+    )
     api_wrapper: FinancePolygonAPIWrapper
 
     def _run(
-            self,
-            ticker: str,
-            run_manager: Optional[CallbackManagerForToolRun] = None,
+        self,
+        ticker: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the Polygon API tool."""
         return self.api_wrapper.run(

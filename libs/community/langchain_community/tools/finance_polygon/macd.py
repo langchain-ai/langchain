@@ -15,35 +15,32 @@ class FinancePolygonMACDSchema(BaseModel):
     )
     timespan: str = Field(
         default="day",
-        description="The size of the aggregate time window. Default is 'day'."
+        description="The size of the aggregate time window. Default is 'day'.",
     )
     adjusted: bool = Field(
-        default=True,
-        description="Whether to adjust for splits. Default is true."
+        default=True, description="Whether to adjust for splits. Default is true."
     )
     short_window: int = Field(
         default=12,
-        description="The short window size for MACD calculation. Default is 12."
+        description="The short window size for MACD calculation. Default is 12.",
     )
     long_window: int = Field(
         default=26,
-        description="The long window size for MACD calculation. Default is 26."
+        description="The long window size for MACD calculation. Default is 26.",
     )
     signal_window: int = Field(
-        default=9,
-        description="The signal line window size for MACD. Default is 9."
+        default=9, description="The signal line window size for MACD. Default is 9."
     )
     series_type: str = Field(
         default="close",
-        description="Price type to calculate MACD, e.g., 'close'. Default is 'close'."
+        description="Price type to calculate MACD, e.g., 'close'. Default is 'close'.",
     )
     order: str = Field(
-        default="desc",
-        description="Order of results by timestamp. Default is 'desc'."
+        default="desc", description="Order of results by timestamp. Default is 'desc'."
     )
     limit: int = Field(
         default=10,
-        description="Number of results to return. Default is 10, max is 5000."
+        description="Number of results to return. Default is 10, max is 5000.",
     )
 
 
@@ -63,17 +60,17 @@ class PolygonMACD(BaseTool):
     api_wrapper: FinancePolygonAPIWrapper
 
     def _run(
-            self,
-            ticker: str,
-            timespan: str,
-            adjusted: bool,
-            short_window: int,
-            long_window: int,
-            signal_window: int,
-            series_type: str,
-            order: str,
-            limit: int,
-            run_manager: Optional[CallbackManagerForToolRun] = None,
+        self,
+        ticker: str,
+        timespan: str,
+        adjusted: bool,
+        short_window: int,
+        long_window: int,
+        signal_window: int,
+        series_type: str,
+        order: str,
+        limit: int,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the Polygon API tool."""
         return self.api_wrapper.run(

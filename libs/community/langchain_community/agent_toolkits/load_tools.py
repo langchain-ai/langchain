@@ -31,31 +31,57 @@ from langchain_community.tools.eleven_labs.text2speech import ElevenLabsText2Spe
 from langchain_community.tools.file_management import ReadFileTool
 from langchain_community.tools.finance_polygon.all_tickers import PolygonAllTickers
 from langchain_community.tools.finance_polygon.conditions import PolygonConditions
-from langchain_community.tools.finance_polygon.daily_open_close import PolygonDailyOpenClose
+from langchain_community.tools.finance_polygon.daily_open_close import (
+    PolygonDailyOpenClose,
+)
 from langchain_community.tools.finance_polygon.ema import PolygonEMA
 from langchain_community.tools.finance_polygon.exchanges import PolygonExchanges
-from langchain_community.tools.finance_polygon.gainers_losers import PolygonGainersLosers
+from langchain_community.tools.finance_polygon.gainers_losers import (
+    PolygonGainersLosers,
+)
 from langchain_community.tools.finance_polygon.ipos import PolygonIPOs
 from langchain_community.tools.finance_polygon.dividends import PolygonDividends
 from langchain_community.tools.finance_polygon.macd import PolygonMACD
-from langchain_community.tools.finance_polygon.market_holidays import PolygonMarketHolidays
+from langchain_community.tools.finance_polygon.market_holidays import (
+    PolygonMarketHolidays,
+)
 from langchain_community.tools.finance_polygon.market_status import PolygonMarketStatus
-from langchain_community.tools.finance_polygon.previous_close import PolygonPreviousClose
+from langchain_community.tools.finance_polygon.previous_close import (
+    PolygonPreviousClose,
+)
 from langchain_community.tools.finance_polygon.ref_ticker import PolygonReferenceTicker
-from langchain_community.tools.finance_polygon.ref_ticker_details import PolygonReferenceTickerDetails
-from langchain_community.tools.finance_polygon.ref_ticker_events import PolygonReferenceTickerEvents
-from langchain_community.tools.finance_polygon.ref_ticker_news import PolygonReferenceTickerNews
-from langchain_community.tools.finance_polygon.ref_ticker_types import PolygonReferenceTickerTypes
-from langchain_community.tools.finance_polygon.related_companies import PolygonRelatedCompanies
+from langchain_community.tools.finance_polygon.ref_ticker_details import (
+    PolygonReferenceTickerDetails,
+)
+from langchain_community.tools.finance_polygon.ref_ticker_events import (
+    PolygonReferenceTickerEvents,
+)
+from langchain_community.tools.finance_polygon.ref_ticker_news import (
+    PolygonReferenceTickerNews,
+)
+from langchain_community.tools.finance_polygon.ref_ticker_types import (
+    PolygonReferenceTickerTypes,
+)
+from langchain_community.tools.finance_polygon.related_companies import (
+    PolygonRelatedCompanies,
+)
 from langchain_community.tools.finance_polygon.rsi import PolygonRSI
 from langchain_community.tools.finance_polygon.single_ticker import PolygonSingleTicker
 from langchain_community.tools.finance_polygon.sma import PolygonSMA
 from langchain_community.tools.finance_polygon.stock_splits import PolygonStockSplits
-from langchain_community.tools.finance_polygon.stocks_financials import PolygonStocksFinancials
+from langchain_community.tools.finance_polygon.stocks_financials import (
+    PolygonStocksFinancials,
+)
 from langchain_community.tools.finance_polygon.trades import PolygonTrades
-from langchain_community.tools.finance_polygon.universal_snapshot import PolygonUniversalSnapshot
-from langchain_community.tools.finance_polygon.crypto_aggregates import PolygonCryptoAggregates
-from langchain_community.tools.finance_polygon.aggregates_stocks import FinancePolygonAggregates
+from langchain_community.tools.finance_polygon.universal_snapshot import (
+    PolygonUniversalSnapshot,
+)
+from langchain_community.tools.finance_polygon.crypto_aggregates import (
+    PolygonCryptoAggregates,
+)
+from langchain_community.tools.finance_polygon.aggregates_stocks import (
+    FinancePolygonAggregates,
+)
 from langchain_community.tools.finance_polygon.grouped_daily import PolygonGroupedDaily
 from langchain_community.tools.finance_polygon.last_quote import FinancePolygonLastQuote
 from langchain_community.tools.finance_polygon.last_trade import FinancePolygonLastTrade
@@ -622,8 +648,7 @@ def _get_reddit_search(**kwargs: Any) -> BaseTool:
 
 _EXTRA_LLM_TOOLS: Dict[
     str,
-    Tuple[Callable[[Arg(BaseLanguageModel, "llm"),
-                    KwArg(Any)], BaseTool], List[str]],
+    Tuple[Callable[[Arg(BaseLanguageModel, "llm"), KwArg(Any)], BaseTool], List[str]],
 ] = {
     "news-api": (_get_news_api, ["news_api_key"]),
     "tmdb-api": (_get_tmdb_api, ["tmdb_bearer_token"]),
@@ -653,33 +678,69 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
     "polygon-aggregates": (_get_finance_polygon_aggregates, ["polygon_api_key"]),
     "polygon-all-tickers": (_get_finance_polygon_all_tickers, ["polygon_api_key"]),
     "polygon-conditions": (_get_finance_polygon_conditions, ["polygon_api_key"]),
-    "polygon-crypto-aggregates": (_get_finance_polygon_crypto_aggregates, ["polygon_api_key"]),
+    "polygon-crypto-aggregates": (
+        _get_finance_polygon_crypto_aggregates,
+        ["polygon_api_key"],
+    ),
     "polygon-ema": (_get_finance_polygon_ema, ["polygon_api_key"]),
     "polygon-exchanges": (_get_finance_polygon_exchanges, ["polygon_api_key"]),
-    "polygon-gainers-losers": (_get_finance_polygon_gainers_losers, ["polygon_api_key"]),
+    "polygon-gainers-losers": (
+        _get_finance_polygon_gainers_losers,
+        ["polygon_api_key"],
+    ),
     "polygon-ipos": (_get_finance_polygon_ipos, ["polygon_api_key"]),
     "polygon-last-trade": (_get_finance_polygon_last_trade, ["polygon_api_key"]),
     "polygon-macd": (_get_finance_polygon_macd, ["polygon_api_key"]),
-    "polygon-market-holidays": (_get_finance_polygon_market_holidays, ["polygon_api_key"]),
+    "polygon-market-holidays": (
+        _get_finance_polygon_market_holidays,
+        ["polygon_api_key"],
+    ),
     "polygon-market-status": (_get_finance_polygon_market_status, ["polygon_api_key"]),
-    "polygon-related-companies": (_get_finance_polygon_related_companies, ["polygon_api_key"]),
+    "polygon-related-companies": (
+        _get_finance_polygon_related_companies,
+        ["polygon_api_key"],
+    ),
     "polygon-rsi": (_get_finance_polygon_rsi, ["polygon_api_key"]),
     "polygon-single-ticker": (_get_finance_polygon_single_ticker, ["polygon_api_key"]),
     "polygon-sma": (_get_finance_polygon_sma, ["polygon_api_key"]),
     "polygon-stock-splits": (_get_finance_polygon_stock_splits, ["polygon_api_key"]),
-    "polygon-stocks-financial": (_get_finance_polygon_stocks_financial, ["polygon_api_key"]),
-    "polygon-universal-snapshot": (_get_finance_polygon_universal_snapshot, ["polygon_api_key"]),
+    "polygon-stocks-financial": (
+        _get_finance_polygon_stocks_financial,
+        ["polygon_api_key"],
+    ),
+    "polygon-universal-snapshot": (
+        _get_finance_polygon_universal_snapshot,
+        ["polygon_api_key"],
+    ),
     "polygon-aggregates": (_get_finance_polygon_aggregates, ["polygon_api_key"]),
-    "polygon-daily-open-close": (_get_finance_polygon_daily_open_close, ["polygon_api_key"]),
+    "polygon-daily-open-close": (
+        _get_finance_polygon_daily_open_close,
+        ["polygon_api_key"],
+    ),
     "polygon-dividends": (_get_finance_polygon_dividends, ["polygon_api_key"]),
     "polygon-grouped-daily": (_get_finance_polygon_grouped_daily, ["polygon_api_key"]),
     "polygon-last-quote": (_get_finance_polygon_last_quote, ["polygon_api_key"]),
-    "polygon-previous-close": (_get_finance_polygon_previous_close, ["polygon_api_key"]),
+    "polygon-previous-close": (
+        _get_finance_polygon_previous_close,
+        ["polygon_api_key"],
+    ),
     "polygon-ref-ticker": (_get_finance_polygon_ref_ticker, ["polygon_api_key"]),
-    "polygon-ref-ticker-details": (_get_finance_polygon_ref_ticker_details, ["polygon_api_key"]),
-    "polygon-ref-ticker-events": (_get_finance_polygon_ref_ticker_events, ["polygon_api_key"]),
-    "polygon-ref-ticker-types": (_get_finance_polygon_ref_ticker_types, ["polygon_api_key"]),
-    "polygon-ref-ticker-news": (_get_finance_polygon_ref_ticker_news, ["polygon_api_key"]),
+    "polygon-ref-ticker-details": (
+        _get_finance_polygon_ref_ticker_details,
+        ["polygon_api_key"],
+    ),
+    "polygon-ref-ticker-events": (
+        _get_finance_polygon_ref_ticker_events,
+        ["polygon_api_key"],
+    ),
+    "polygon-ref-ticker-types": (
+        _get_finance_polygon_ref_ticker_types,
+        ["polygon_api_key"],
+    ),
+    "polygon-ref-ticker-news": (
+        _get_finance_polygon_ref_ticker_news,
+        ["polygon_api_key"],
+    ),
     "polygon-trades": (_get_finance_polygon_trades, ["polygon_api_key"]),
     "google-finance": (
         _get_google_finance,

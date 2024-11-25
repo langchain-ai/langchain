@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 
 from langchain_community.utilities.finance_polygon import FinancePolygonAPIWrapper
 
+
 class FinancePolygonConditionsSchema(BaseModel):
     """Input for PolygonConditions."""
 
@@ -20,9 +21,7 @@ class FinancePolygonConditionsSchema(BaseModel):
         "Possible values are: trade, bbo, nbbo."
     )
 
-    id: str = Field(
-        description="Filter for conditions with a given ID."
-    )
+    id: str = Field(description="Filter for conditions with a given ID.")
 
     sip: str = Field(
         description="Filter for conditions with a given SIP."
@@ -36,8 +35,7 @@ class FinancePolygonConditionsSchema(BaseModel):
     )
 
     limit: int = Field(
-        description="The number of results to return."
-        "Default is 10 and max is 1000."
+        description="The number of results to return." "Default is 10 and max is 1000."
     )
 
     sort: str = Field(
@@ -45,6 +43,7 @@ class FinancePolygonConditionsSchema(BaseModel):
         "Possible values are: asset_class, id, type, name, "
         "data_types, and legacy."
     )
+
 
 class PolygonConditions(BaseTool):
     """
@@ -63,15 +62,15 @@ class PolygonConditions(BaseTool):
     api_wrapper: FinancePolygonAPIWrapper
 
     def _run(
-            self,
-            asset_class: str,
-            data_type: str,
-            id: str,
-            sip: str,
-            order: str,
-            limit: int,
-            sort: str,
-            run_manager: Optional[CallbackManagerForToolRun] = None,
+        self,
+        asset_class: str,
+        data_type: str,
+        id: str,
+        sip: str,
+        order: str,
+        limit: int,
+        sort: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the Polygon API tool."""
         return self.api_wrapper.run(

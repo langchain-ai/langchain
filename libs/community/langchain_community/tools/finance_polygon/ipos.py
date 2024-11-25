@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 
 from langchain_community.utilities.finance_polygon import FinancePolygonAPIWrapper
 
+
 class FinancePolygonIPOsSchema(BaseModel):
     """Input for PolygonIPOs."""
 
@@ -29,12 +30,10 @@ class FinancePolygonIPOsSchema(BaseModel):
         "new, pending, postponed, rumor, withdrawn."
     )
     order: str = Field(
-        description="The order of the IPO."
-        "Possible values are: asc, desc."
+        description="The order of the IPO." "Possible values are: asc, desc."
     )
     limit: int = Field(
-        description="The number of results to return."
-        "Default is 10 and max is 1000."
+        description="The number of results to return." "Default is 10 and max is 1000."
     )
     sort: str = Field(
         description="The field to sort by."
@@ -57,26 +56,26 @@ class PolygonIPOs(BaseTool):
     name: str = "polygon_ipos"
     description: str = (
         "A wrapper around Polygon's IPOs API. "
-        "This tool is useful for fetching detailed information" 
+        "This tool is useful for fetching detailed information"
         " about IPOs for a ticker. "
         "Input should be the ticker, US code, ISIN, listing date, "
-        "IPO status, order, limit, and sort." 
+        "IPO status, order, limit, and sort."
     )
 
     args_schema: Type[FinancePolygonIPOsSchema] = FinancePolygonIPOsSchema
     api_wrapper: FinancePolygonAPIWrapper
 
     def _run(
-            self,
-            ticker: str,
-            us_code: str,
-            isin: str,
-            listing_date: str,
-            ipo_status: str,
-            order: str,
-            limit: int,
-            sort: str,
-            run_manager: Optional[CallbackManagerForToolRun] = None,
+        self,
+        ticker: str,
+        us_code: str,
+        isin: str,
+        listing_date: str,
+        ipo_status: str,
+        order: str,
+        limit: int,
+        sort: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the Polygon API tool."""
         return self.api_wrapper.run(
@@ -89,6 +88,5 @@ class PolygonIPOs(BaseTool):
             order=order,
             limit=limit,
             sort=sort,
-            run_manager=run_manager
+            run_manager=run_manager,
         )
-

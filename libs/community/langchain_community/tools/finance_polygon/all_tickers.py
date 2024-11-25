@@ -12,12 +12,14 @@ class FinancePolygonAllTickersSchema(BaseModel):
 
     tickers: str = Field(
         default="",
-        description="A case-sensitive comma-separated list of tickers for snapshot. Empty for all tickers."
+        description=(
+            "A case-sensitive comma-separated list of tickers for snapshot."
+            "Empty for all tickers."
+        ),
     )
 
     include_otc: bool = Field(
-        default=False,
-        description="Include OTC securities. Default is false."
+        default=False, description="Include OTC securities. Default is false."
     )
 
 
@@ -30,17 +32,18 @@ class PolygonAllTickers(BaseTool):
     name: str = "polygon_all_tickers"
     description: str = (
         "A wrapper around Polygon's All Tickers API. "
-        "This tool provides the most up-to-date market data for all or specified traded stock symbols."
+        "This tool provides the most up-to-date market data"
+        "for all or specified traded stock symbols."
     )
 
     args_schema: Type[FinancePolygonAllTickersSchema] = FinancePolygonAllTickersSchema
     api_wrapper: FinancePolygonAPIWrapper
 
     def _run(
-            self,
-            tickers: str,
-            include_otc: bool,
-            run_manager: Optional[CallbackManagerForToolRun] = None,
+        self,
+        tickers: str,
+        include_otc: bool,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the Polygon API tool."""
         return self.api_wrapper.run(

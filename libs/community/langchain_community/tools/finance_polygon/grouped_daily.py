@@ -1,23 +1,27 @@
 from typing import Optional, Type
+
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel, Field
+
 from langchain_community.utilities.finance_polygon import FinancePolygonAPIWrapper
+
 
 class PolygonGroupedDailySchema(BaseModel):
     """Inputs for PolygonGroupedDaily."""
 
     date: str = Field(
-        description="The beginning for the aggregate window"
-        "with format YYYY-MM-DD",
+        description="The beginning for the aggregate window" "with format YYYY-MM-DD",
     )
+
 
 class PolygonGroupedDaily(BaseTool):
     """
     Tool that gets the daily open, high, low, and close
     (OHLC) for the entire stocks/equities markets
-    
+
     """
+
     mode: str = "get_grouped_daily"
     name: str = "polygon_grouped_daily"
     description: str = (

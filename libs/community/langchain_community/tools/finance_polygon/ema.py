@@ -15,27 +15,24 @@ class FinancePolygonEMASchema(BaseModel):
     )
     timespan: str = Field(
         default="day",
-        description="The size of the aggregate time window. Default is 'day'."
+        description="The size of the aggregate time window. Default is 'day'.",
     )
     adjusted: bool = Field(
-        default=True,
-        description="Whether to adjust for splits. Default is true."
+        default=True, description="Whether to adjust for splits. Default is true."
     )
     window: int = Field(
-        default=50,
-        description="Window size for EMA calculation. Default is 50."
+        default=50, description="Window size for EMA calculation. Default is 50."
     )
     series_type: str = Field(
         default="close",
-        description="Price type to calculate EMA, e.g., 'close'. Default is 'close'."
+        description="Price type to calculate EMA, e.g., 'close'. Default is 'close'.",
     )
     order: str = Field(
-        default="desc",
-        description="Order of results by timestamp. Default is 'desc'."
+        default="desc", description="Order of results by timestamp. Default is 'desc'."
     )
     limit: int = Field(
         default=10,
-        description="Number of results to return. Default is 10, max is 5000."
+        description="Number of results to return. Default is 10, max is 5000.",
     )
 
 
@@ -48,22 +45,23 @@ class PolygonEMA(BaseTool):
     name: str = "polygon_ema"
     description: str = (
         "A wrapper around Polygon's EMA API. "
-        "This tool provides the exponential moving average (EMA) for a given stock ticker."
+        "This tool provides the exponential moving average (EMA)"
+        "for a given stock ticker."
     )
 
     args_schema: Type[FinancePolygonEMASchema] = FinancePolygonEMASchema
     api_wrapper: FinancePolygonAPIWrapper
 
     def _run(
-            self,
-            ticker: str,
-            timespan: str,
-            adjusted: bool,
-            window: int,
-            series_type: str,
-            order: str,
-            limit: int,
-            run_manager: Optional[CallbackManagerForToolRun] = None,
+        self,
+        ticker: str,
+        timespan: str,
+        adjusted: bool,
+        window: int,
+        series_type: str,
+        order: str,
+        limit: int,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the Polygon API tool."""
         return self.api_wrapper.run(

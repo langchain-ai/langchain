@@ -18,9 +18,10 @@ class FinancePolygonReferenceTickerEventsSchema(BaseModel):
     )
 
 
-class PolygonReferenceTickerEvents(BaseTool):  # type: ignore[override, override]
+# type: ignore[override, override]
+class PolygonReferenceTickerEvents(BaseTool):
     """
-    Tool that gets a timeline of events for the entity associated 
+    Tool that gets a timeline of events for the entity associated
     with the given ticker, CUSIP, or Composite FIGI.
     """
 
@@ -31,7 +32,9 @@ class PolygonReferenceTickerEvents(BaseTool):  # type: ignore[override, override
         "This tool is useful for fetching a timeline of events."
         "Input should be the id, types."
     )
-    args_schema: Type[FinancePolygonReferenceTickerEventsSchema] = FinancePolygonReferenceTickerEventsSchema
+    args_schema: Type[FinancePolygonReferenceTickerEventsSchema] = (
+        FinancePolygonReferenceTickerEventsSchema
+    )
 
     api_wrapper: FinancePolygonAPIWrapper
 
@@ -42,8 +45,4 @@ class PolygonReferenceTickerEvents(BaseTool):  # type: ignore[override, override
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the Polygon API tool."""
-        return self.api_wrapper.run(
-          mode=self.mode,
-          event_id=event_id,
-          types=types
-        )
+        return self.api_wrapper.run(mode=self.mode, event_id=event_id, types=types)

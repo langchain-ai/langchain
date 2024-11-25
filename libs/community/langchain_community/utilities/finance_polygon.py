@@ -99,8 +99,10 @@ class FinancePolygonAPIWrapper(BaseModel):
         if ipo_status is not None:
             url = url + f"ipo_status={ipo_status}&"
 
-        url = url + \
-            f"order={order}&limit={limit}&sort={sort}&apiKey={self.polygon_api_key}"
+        url = (
+            url
+            + f"order={order}&limit={limit}&sort={sort}&apiKey={self.polygon_api_key}"
+        )
 
         return self._get_response(url)
 
@@ -125,25 +127,27 @@ class FinancePolygonAPIWrapper(BaseModel):
 
         url = POLYGON_BASE_URL + "v3/reference/tickers?"
 
-        if ticker is not "":
+        if ticker != "":
             url = url + f"ticker={ticker}&"
-        if ticker_type is not "":
+        if ticker_type != "":
             url = url + f"ticker_type={ticker_type}&"
-        if exchange is not "":
+        if market != "":
+            url = url + f"market={market}&"
+        if exchange != "":
             url = url + f"exchange={exchange}&"
-        if cusip is not "":
+        if cusip != "":
             url = url + f"cusip={cusip}&"
-        if cik is not "":
+        if cik != "":
             url = url + f"exchange={cik}&"
-        if date is not "":
+        if date != "":
             url = url + f"date={date}&"
-        if search is not "":
+        if search != "":
             url = url + f"search={search}&"
         url = url + f"active={active}&"
-        if order is not "":
+        if order != "":
             url = url + f"order={order}&"
         url = url + f"limit={limit}&"
-        if sort is not "":
+        if sort != "":
             url = url + f"sort={sort}&"
         url = url + f"apiKey={self.polygon_api_key}"
 
@@ -151,7 +155,7 @@ class FinancePolygonAPIWrapper(BaseModel):
 
     def get_reference_ticker_news(self, **kwargs: Any) -> Optional[dict]:
         """
-        Get the most recent news articles relating to a stock ticker symbol, 
+        Get the most recent news articles relating to a stock ticker symbol,
         including a summary of the article and a link to the original source.
 
         /v2/reference/news/
@@ -164,14 +168,14 @@ class FinancePolygonAPIWrapper(BaseModel):
 
         url = POLYGON_BASE_URL + "v3/reference/tickers?"
 
-        if ticker is not "":
+        if ticker != "":
             url = url + f"ticker={ticker}&"
-        if published_utc is not "":
+        if published_utc != "":
             url = url + f"published_utc={published_utc}&"
-        if order is not "":
+        if order != "":
             url = url + f"order={order}&"
         url = url + f"limit={limit}&"
-        if sort is not "":
+        if sort != "":
             url = url + f"sort={sort}&"
         url = url + f"apiKey={self.polygon_api_key}"
 
@@ -186,7 +190,7 @@ class FinancePolygonAPIWrapper(BaseModel):
         date = kwargs.get("date", "")
         url = POLYGON_BASE_URL + f"v3/reference/tickers/{ticker}?"
 
-        if date is not "":
+        if date != "":
             url = url + f"date={date}&"
 
         url = url + f"apiKey={self.polygon_api_key}"
@@ -201,11 +205,11 @@ class FinancePolygonAPIWrapper(BaseModel):
         """
         asset_class = kwargs.get("asset_class", "")
         locale = kwargs.get("locale", "")
-        url = POLYGON_BASE_URL + f"v3/reference/tickers/types?"
+        url = POLYGON_BASE_URL + "v3/reference/tickers/types?"
 
-        if asset_class is not "":
+        if asset_class != "":
             url = url + f"asset_class={asset_class}&"
-        if locale is not "":
+        if locale != "":
             url = url + f"locale={locale}&"
 
         url = url + f"apiKey={self.polygon_api_key}"
@@ -221,7 +225,7 @@ class FinancePolygonAPIWrapper(BaseModel):
         types = kwargs.get("types", "")
         url = POLYGON_BASE_URL + f"v3/reference/tickers/{event_id}/events?"
 
-        if types is not "":
+        if types != "":
             url = url + f"types={types}&"
 
         url = url + f"apiKey={self.polygon_api_key}"
@@ -253,8 +257,9 @@ class FinancePolygonAPIWrapper(BaseModel):
         asset_class = kwagrs.get("asset_class", "stocks")
         locale = kwagrs.get("locale", None)
 
-        url = POLYGON_BASE_URL + "v3/reference/exchanges?" + \
-            f"asset_class={asset_class}&"
+        url = (
+            POLYGON_BASE_URL + "v3/reference/exchanges?" + f"asset_class={asset_class}&"
+        )
 
         if locale is not None:
             url = url + f"locale={locale}&"
@@ -278,8 +283,11 @@ class FinancePolygonAPIWrapper(BaseModel):
         limit = kwargs.get("limit", 10)
         sort = kwargs.get("sort", None)
 
-        url = POLYGON_BASE_URL + "v3/reference/conditions?" + \
-            f"asset_class={asset_class}&"
+        url = (
+            POLYGON_BASE_URL
+            + "v3/reference/conditions?"
+            + f"asset_class={asset_class}&"
+        )
 
         if data_type is not None:
             url = url + f"data_type={data_type}&"
@@ -416,8 +424,11 @@ class FinancePolygonAPIWrapper(BaseModel):
         /v1/marketstatus/upcoming?apiKey={apiKey}
         """
 
-        url = POLYGON_BASE_URL + "v1/marketstatus/upcoming?" + \
-            f"apiKey={self.polygon_api_key}"
+        url = (
+            POLYGON_BASE_URL
+            + "v1/marketstatus/upcoming?"
+            + f"apiKey={self.polygon_api_key}"
+        )
 
         response = requests.get(url)
         data = response.json()
@@ -440,8 +451,9 @@ class FinancePolygonAPIWrapper(BaseModel):
         v1/marketstatus/now?apiKey={apiKey}
         """
 
-        url = POLYGON_BASE_URL + "v1/marketstatus/now?" + \
-            f"apiKey={self.polygon_api_key}"
+        url = (
+            POLYGON_BASE_URL + "v1/marketstatus/now?" + f"apiKey={self.polygon_api_key}"
+        )
 
         response = requests.get(url)
         data = response.json()
@@ -618,7 +630,10 @@ class FinancePolygonAPIWrapper(BaseModel):
         if to_date is not None:
             url += f"/{to_date}"
 
-        url += f"?adjusted={adjusted}&sort={sort}&limit={limit}&apiKey={self.polygon_api_key}"
+        url += (
+            f"?adjusted={adjusted}&sort={sort}&limit={limit}"
+            f"&apiKey={self.polygon_api_key}"
+        )
 
         return self._get_response(url)
 
@@ -660,7 +675,11 @@ class FinancePolygonAPIWrapper(BaseModel):
 
         if date is not None:
             url += f"/{date}"
-        url += f"?adjusted={adjusted}&include_otc={include_otc}&apiKey={self.polygon_api_key}"
+        url += (
+            f"?adjusted={adjusted}"
+            f"&include_otc={include_otc}"
+            f"&apiKey={self.polygon_api_key}"
+        )
 
         return self._get_response(url)
 
@@ -730,8 +749,8 @@ class FinancePolygonAPIWrapper(BaseModel):
 
     def get_dividends(self, ticker: str, **kwargs: Any) -> Optional[dict]:
         """
-        Get a list of historical cash dividends, including the ticker symbol, 
-        declaration date, ex-dividend date, record date, pay date, frequency, 
+        Get a list of historical cash dividends, including the ticker symbol,
+        declaration date, ex-dividend date, record date, pay date, frequency,
         and amount.
 
         /v3/reference/dividends
@@ -825,19 +844,19 @@ class FinancePolygonAPIWrapper(BaseModel):
             return json.dumps(self.get_last_quote(ticker))
         elif mode == "get_previous_close":
             return json.dumps(self.get_previous_close(ticker, **kwargs))
-        elif mode == 'get_trades':
+        elif mode == "get_trades":
             return json.dumps(self.get_trades(ticker, **kwargs))
-        elif mode == 'get_dividends':
+        elif mode == "get_dividends":
             return json.dumps(self.get_dividends(ticker, **kwargs))
-        elif mode == 'get_reference_tickers':
+        elif mode == "get_reference_tickers":
             return json.dumps(self.get_reference_tickers(**kwargs))
-        elif mode == 'get_reference_ticker_details':
+        elif mode == "get_reference_ticker_details":
             return json.dumps(self.get_reference_ticker_details(ticker, **kwargs))
-        elif mode == 'get_reference_ticker_events':
+        elif mode == "get_reference_ticker_events":
             return json.dumps(self.get_reference_ticker_events(ticker, **kwargs))
-        elif mode == 'get_reference_ticker_news':
+        elif mode == "get_reference_ticker_news":
             return json.dumps(self.get_reference_ticker_news(**kwargs))
-        elif mode == 'get_reference_ticker_types':
+        elif mode == "get_reference_ticker_types":
             return json.dumps(self.get_reference_ticker_types(**kwargs))
         else:
             raise ValueError(f"Invalid mode {mode} for Polygon API.")

@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 
 from langchain_community.utilities.finance_polygon import FinancePolygonAPIWrapper
 
+
 class FinancePolygonExchangesSchema(BaseModel):
     """Input for PolygonExchanges."""
 
@@ -20,6 +21,7 @@ class FinancePolygonExchangesSchema(BaseModel):
         "Possible values are: us, global."
         "Default is us."
     )
+
 
 class PolygonExchanges(BaseTool):
     """
@@ -50,5 +52,5 @@ class PolygonExchanges(BaseTool):
             mode=self.mode,
             asset_class=asset_class,
             locale=locale,
-            run_manager=run_manager
+            run_manager=run_manager,
         )

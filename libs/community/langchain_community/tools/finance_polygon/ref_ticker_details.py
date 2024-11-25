@@ -18,9 +18,10 @@ class FinancePolygonReferenceTickerDetailsSchema(BaseModel):
     )
 
 
-class PolygonReferenceTickerDetails(BaseTool):  # type: ignore[override, override]
+# type: ignore[override, override]
+class PolygonReferenceTickerDetails(BaseTool):
     """
-    Tool that gets a single ticker supported by Polygon.io. This response 
+    Tool that gets a single ticker supported by Polygon.io. This response
     will have detailed information about the ticker and the company behind it.
     """
 
@@ -31,7 +32,9 @@ class PolygonReferenceTickerDetails(BaseTool):  # type: ignore[override, overrid
         "This tool is useful for fetching a details for a ticker symbol."
         "Input should be the ticker, date."
     )
-    args_schema: Type[FinancePolygonReferenceTickerDetailsSchema] = FinancePolygonReferenceTickerDetailsSchema
+    args_schema: Type[FinancePolygonReferenceTickerDetailsSchema] = (
+        FinancePolygonReferenceTickerDetailsSchema
+    )
 
     api_wrapper: FinancePolygonAPIWrapper
 
@@ -42,8 +45,4 @@ class PolygonReferenceTickerDetails(BaseTool):  # type: ignore[override, overrid
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the Polygon API tool."""
-        return self.api_wrapper.run(
-          mode=self.mode,
-          ticker=ticker,
-          date=date
-        )
+        return self.api_wrapper.run(mode=self.mode, ticker=ticker, date=date)

@@ -18,7 +18,8 @@ class FinancePolygonReferenceTickerTypesSchema(BaseModel):
     )
 
 
-class PolygonReferenceTickerTypes(BaseTool):  # type: ignore[override, override]
+# type: ignore[override, override]
+class PolygonReferenceTickerTypes(BaseTool):
     """
     Tool that lists all ticker types that Polygon.io has.
     """
@@ -29,7 +30,9 @@ class PolygonReferenceTickerTypes(BaseTool):  # type: ignore[override, override]
         "A wrapper around Polygon's Reference Tickers API. "
         "This tool is useful for fetching all ticker types"
     )
-    args_schema: Type[FinancePolygonReferenceTickerTypesSchema] = FinancePolygonReferenceTickerTypesSchema
+    args_schema: Type[FinancePolygonReferenceTickerTypesSchema] = (
+        FinancePolygonReferenceTickerTypesSchema
+    )
 
     api_wrapper: FinancePolygonAPIWrapper
 
@@ -41,7 +44,5 @@ class PolygonReferenceTickerTypes(BaseTool):  # type: ignore[override, override]
     ) -> str:
         """Use the Polygon API tool."""
         return self.api_wrapper.run(
-          mode=self.mode,
-          asset_class=asset_class,
-          locale=locale
+            mode=self.mode, asset_class=asset_class, locale=locale
         )

@@ -49,11 +49,13 @@ class PolygonCryptoAggregates(BaseTool):  # type: ignore[override, override]
     name: str = "polygon_crypto_aggregates"
     description: str = (
         "A wrapper around Polygon's Crypto Aggregates API. "
-        "This tool is useful for fetching aggregate bars (cryptocurrencies) for a ticker. "
+        "This tool is useful for fetching aggregate bars for a ticker."
         "Input should be the ticker, date range, timespan, and timespan multiplier"
         " that you want to get the aggregate bars for."
     )
-    args_schema: Type[FinancePolygonCryptoAggregatesSchema] = FinancePolygonCryptoAggregatesSchema
+    args_schema: Type[FinancePolygonCryptoAggregatesSchema] = (
+        FinancePolygonCryptoAggregatesSchema
+    )
 
     api_wrapper: FinancePolygonAPIWrapper
 

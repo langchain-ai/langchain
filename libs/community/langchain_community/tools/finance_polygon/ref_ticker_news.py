@@ -16,20 +16,14 @@ class FinancePolygonReferenceTickerNewsSchema(BaseModel):
     published_utc: str = Field(
         description="return results published on, before, or after this date.",
     )
-    order: str = Field (
-      description="order results based on sort field"
-    )
-    limit: int = Field (
-      description="limit number of returned results"
-    )
-    sort: str = Field (
-      description="sort field for ordering"
-    )
+    order: str = Field(description="order results based on sort field")
+    limit: int = Field(description="limit number of returned results")
+    sort: str = Field(description="sort field for ordering")
 
 
 class PolygonReferenceTickerNews(BaseTool):  # type: ignore[override, override]
     """
-    Get the most recent news articles relating to a stock ticker symbol, 
+    Get the most recent news articles relating to a stock ticker symbol,
     including a summary of the article and a link to the original source.
     """
 
@@ -40,7 +34,9 @@ class PolygonReferenceTickerNews(BaseTool):  # type: ignore[override, override]
         "This tool is useful for fetching news articles for a ticker."
         "Input should be the id, types."
     )
-    args_schema: Type[FinancePolygonReferenceTickerNewsSchema] = FinancePolygonReferenceTickerNewsSchema
+    args_schema: Type[FinancePolygonReferenceTickerNewsSchema] = (
+        FinancePolygonReferenceTickerNewsSchema
+    )
 
     api_wrapper: FinancePolygonAPIWrapper
 
@@ -55,10 +51,10 @@ class PolygonReferenceTickerNews(BaseTool):  # type: ignore[override, override]
     ) -> str:
         """Use the Polygon API tool."""
         return self.api_wrapper.run(
-          mode=self.mode,
-          ticker=ticker,
-          published_utc=published_utc,
-          order=order,
-          limit=limit,
-          sort=sort
+            mode=self.mode,
+            ticker=ticker,
+            published_utc=published_utc,
+            order=order,
+            limit=limit,
+            sort=sort,
         )

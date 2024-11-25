@@ -12,12 +12,17 @@ class FinancePolygonUniversalSnapshotSchema(BaseModel):
 
     tickers: str = Field(
         default="",
-        description="Comma-separated list of tickers to query up to 250. Empty to return all results."
+        description="""
+        Comma-separated list of tickers to query up to 250. 
+        Empty to return all results.
+        """,
     )
 
     limit: int = Field(
         default=10,
-        description="Limit the number of results returned. Default is 10 and max is 250."
+        description=(
+            "Limit the number of results returned." "Default is 10 and max is 250."
+        ),
     )
 
 
@@ -33,14 +38,16 @@ class PolygonUniversalSnapshot(BaseTool):
         "This tool is useful for fetching snapshots of assets across various types."
     )
 
-    args_schema: Type[FinancePolygonUniversalSnapshotSchema] = FinancePolygonUniversalSnapshotSchema
+    args_schema: Type[FinancePolygonUniversalSnapshotSchema] = (
+        FinancePolygonUniversalSnapshotSchema
+    )
     api_wrapper: FinancePolygonAPIWrapper
 
     def _run(
-            self,
-            tickers: str,
-            limit: int,
-            run_manager: Optional[CallbackManagerForToolRun] = None,
+        self,
+        tickers: str,
+        limit: int,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the Polygon API tool."""
         return self.api_wrapper.run(

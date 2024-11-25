@@ -1,22 +1,25 @@
 from typing import Optional, Type
+
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel, Field
+
 from langchain_community.utilities.finance_polygon import FinancePolygonAPIWrapper
+
 
 class PolygonPreviousCloseSchema(BaseModel):
     """Inputs for PolygonPreviousClose."""
 
-    ticker: str = Field(
-        description="The ticker symbol to fetch previous close for."
-    )
+    ticker: str = Field(description="The ticker symbol to fetch previous close for.")
+
 
 class PolygonPreviousClose(BaseTool):
     """
-    Tool that gets the previous day's open, high, low, 
+    Tool that gets the previous day's open, high, low,
     and close (OHLC) for the specified stock ticker.
-    
+
     """
+
     mode: str = "get_previous_close"
     name: str = "polygon_previous_close"
     description: str = (

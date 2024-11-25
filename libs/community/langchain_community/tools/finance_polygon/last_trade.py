@@ -10,9 +10,7 @@ from langchain_community.utilities.finance_polygon import FinancePolygonAPIWrapp
 class FinancePolygonLastTradeSchema(BaseModel):
     """Input for FinancePolygonLastTrade."""
 
-    ticker: str = Field(
-        description="The ticker symbol to fetch last trade data for."
-    )
+    ticker: str = Field(description="The ticker symbol to fetch last trade data for.")
 
 
 class FinancePolygonLastTrade(BaseTool):
@@ -32,9 +30,9 @@ class FinancePolygonLastTrade(BaseTool):
     api_wrapper: FinancePolygonAPIWrapper
 
     def _run(
-            self,
-            ticker: str,
-            run_manager: Optional[CallbackManagerForToolRun] = None,
+        self,
+        ticker: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the Polygon API tool."""
         return self.api_wrapper.run(

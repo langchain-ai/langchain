@@ -4,7 +4,9 @@ from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel, Field
 
-from langchain_community.tools.finance_polygon.stocks_financials import FinancePolygonStocksFinancialsSchema
+from langchain_community.tools.finance_polygon.stocks_financials import (
+    FinancePolygonStocksFinancialsSchema,
+)
 from langchain_community.utilities.finance_polygon import FinancePolygonAPIWrapper
 
 
@@ -32,8 +34,7 @@ class FinancePolygonStockSplitsSchema(BaseModel):
     )
 
     limit: int = Field(
-        description="The number of results to return."
-        "Default is 10 and max is 1000."
+        description="The number of results to return." "Default is 10 and max is 1000."
     )
 
     sort: str = Field(
@@ -44,7 +45,7 @@ class FinancePolygonStockSplitsSchema(BaseModel):
 
 class PolygonStockSplits(BaseTool):
     """
-    Tool that provides a list of historical stock splits, 
+    Tool that provides a list of historical stock splits,
     including ticker symbol, the execution date, and the
     factors of the split ratio.
     """
@@ -57,18 +58,20 @@ class PolygonStockSplits(BaseTool):
         "about historical stock splits."
     )
 
-    args_schema: Type[FinancePolygonStocksFinancialsSchema] = FinancePolygonStocksFinancialsSchema
+    args_schema: Type[FinancePolygonStocksFinancialsSchema] = (
+        FinancePolygonStocksFinancialsSchema
+    )
     api_wrapper: FinancePolygonAPIWrapper
 
     def _run(
-            self,
-            ticker: str,
-            execution_date: str,
-            reverse_split: str,
-            order: str,
-            limit: int,
-            sort: str,
-            run_manager: Optional[CallbackManagerForToolRun] = None,
+        self,
+        ticker: str,
+        execution_date: str,
+        reverse_split: str,
+        order: str,
+        limit: int,
+        sort: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the Polygon API tool."""
         return self.api_wrapper.run(
@@ -81,4 +84,3 @@ class PolygonStockSplits(BaseTool):
             sort=sort,
             run_manager=run_manager,
         )
-
