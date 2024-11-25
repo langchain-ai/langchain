@@ -7,7 +7,8 @@ tool for the job.
 
 .. code-block::
 
-    ToolMetaclass --> BaseTool --> <name>Tool  # Examples: AIPluginTool, BaseGraphQLTool
+    # Examples: AIPluginTool, BaseGraphQLTool
+    ToolMetaclass --> BaseTool --> <name>Tool
                                    <name>      # Examples: BraveSearch, HumanInputRun
 
 **Main helpers:**
@@ -19,6 +20,9 @@ tool for the job.
 
 import importlib
 from typing import TYPE_CHECKING, Any
+
+from langchain_community.tools.finance_polygon import universal_snapshot
+from langchain_community.utilities import finance_polygon
 
 if TYPE_CHECKING:
     from langchain_core.tools import (
@@ -709,6 +713,36 @@ _module_lookup = {
     "O365SendMessage": "langchain_community.tools.office365.send_message",
     "OpenAPISpec": "langchain_community.tools.openapi.utils.openapi_utils",
     "OpenWeatherMapQueryRun": "langchain_community.tools.openweathermap.tool",
+    "FinancePolygonAggregates": "langchain_community.tools.finance_polygon.aggregates_stocks",
+    "PolygonAllTickers": "langchain_community.tools.finance_polygon.all_tickers",
+    "PolygonConditions": "langchain_community.tools.finance_polygon.conditions",
+    "PolygonCryptoAggregates": "langchain_community.tools.finance_polygon.crypto_aggregates",
+    "PolygonDailyOpenClose": "langchain_community.tools.finance_polygon.daily_open_close",
+    "PolygonDividends": "langchain_community.tools.finance_polygon.dividends",
+    "PolygonEMA": "langchain_community.tools.finance_polygon.ema",
+    "PolygonExchanges": "langchain_community.tools.finance_polygon.exchanges",
+    "PolygonGainersLosers": "langchain_community.tools.finance_polygon.gainers_losers",
+    "PolygonGroupedDaily": "langchain_community.tools.finance_polygon.grouped_daily",
+    "PolygonIPOs": "langchain_community.tools.finance_polygon.ipos",
+    "FinancePolygonLastQuote": "langchain_community.tools.finance_polygon.last_quote",
+    "FinancePolygonLastTrade": "langchain_community.tools.finance_polygon.last_trade",
+    "PolygonMACD": "langchain_community.tools.finance_polygon.macd",
+    "PolygonMarketHolidays": "langchain_community.tools.finance_polygon.market_holidays",
+    "PolygonMarketStatus": "langchain_community.tools.finance_polygon.market_status",
+    "PolygonPreviousClose": "langchain_community.tools.finance_polygon.previous_close",
+    "PolygonReferenceTicker": "langchain_community.tools.finance_polygon.ref_ticker",
+    "PolygonReferenceTickerDetails": "langchain_community.tools.finance_polygon.ref_ticker_details",
+    "PolygonReferenceTickerEvents": "langchain_community.tools.finance_polygon.ref_ticker_events",
+    "PolygonReferenceTickerNews": "langchain_community.tools.finance_polygon.ref_ticker_news",
+    "PolygonReferenceTickerTypes": "langchain_community.tools.finance_polygon.ref_ticker_types",
+    "PolygonRelatedCompanies": "langchain_community.tools.finance_polygon.related_companies",
+    "PolygonRSI": "langchain_community.tools.finance_polygon.rsi",
+    "PolygonSingleTicker": "langchain_community.tools.finance_polygon.single_ticker",
+    "PolygonSMA": "langchain_community.tools.finance_polygon.sma",
+    "PolygonStockSplits": "langchain_community.tools.finance_polygon.stock_splits",
+    "PolygonStocksFinancials": "langchain_community.tools.finance_polygon.stocks_financials",
+    "PolygonTrades": "langchain_community.tools.finance_polygon.trades",
+    "PolygonUniversalSnapshot": "langchain_community.tools.finance_polygon.universal_snapshot",
     "PolygonAggregates": "langchain_community.tools.polygon.aggregates",
     "PolygonFinancials": "langchain_community.tools.polygon.financials",
     "PolygonLastQuote": "langchain_community.tools.polygon.last_quote",

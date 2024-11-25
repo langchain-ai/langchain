@@ -220,9 +220,10 @@ def test_ids_used_correctly() -> None:
     ]
     ids_provided = [i.metadata.get("id") for i in documents]
 
-    with patch.object(
-        SearchClient, "upload_documents", mock_upload_documents
-    ), patch.object(SearchIndexClient, "get_index", mock_default_index):
+    with (
+        patch.object(SearchClient, "upload_documents", mock_upload_documents),
+        patch.object(SearchIndexClient, "get_index", mock_default_index),
+    ):
         vector_store = create_vector_store()
         ids_used_at_upload = vector_store.add_documents(documents, ids=ids_provided)
         assert len(ids_provided) == len(ids_used_at_upload)

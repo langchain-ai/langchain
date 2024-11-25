@@ -44,11 +44,12 @@ def test_huggingface_tts_constructor() -> None:
 def test_huggingface_tts_run_with_requests_mock() -> None:
     os.environ["HUGGINGFACE_API_KEY"] = "foo"
 
-    with tempfile.TemporaryDirectory() as tmp_dir, patch(
-        "uuid.uuid4"
-    ) as mock_uuid, patch("requests.post") as mock_inference, patch(
-        "builtins.open", mock_open()
-    ) as mock_file:
+    with (
+        tempfile.TemporaryDirectory() as tmp_dir,
+        patch("uuid.uuid4") as mock_uuid,
+        patch("requests.post") as mock_inference,
+        patch("builtins.open", mock_open()) as mock_file,
+    ):
         input_query = "Dummy input"
 
         mock_uuid_value = uuid.UUID("00000000-0000-0000-0000-000000000000")
