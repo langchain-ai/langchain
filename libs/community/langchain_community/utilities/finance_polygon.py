@@ -181,7 +181,7 @@ class FinancePolygonAPIWrapper(BaseModel):
 
         return self._get_response(url)
 
-    def get_reference_ticker_details(self, ticker, **kwargs) -> Optional[dict]:
+    def get_reference_ticker_details(self, ticker: str, **kwargs: Any) -> Optional[dict]:
         """
         Get ticker details from Polygon.
 
@@ -197,7 +197,7 @@ class FinancePolygonAPIWrapper(BaseModel):
 
         return self._get_response(url)
 
-    def get_reference_ticker_types(self, **kwargs) -> Optional[dict]:
+    def get_reference_ticker_types(self, **kwargs: Any) -> Optional[dict]:
         """
         List all ticker types that Polygon.io has.
 
@@ -216,7 +216,7 @@ class FinancePolygonAPIWrapper(BaseModel):
 
         return self._get_response(url)
 
-    def get_reference_ticker_events(self, event_id, **kwargs) -> Optional[dict]:
+    def get_reference_ticker_events(self, event_id: str, **kwargs: Any) -> Optional[dict]:
         """
         Get events details for an asset from Polygon.
 
@@ -258,7 +258,8 @@ class FinancePolygonAPIWrapper(BaseModel):
         locale = kwagrs.get("locale", None)
 
         url = (
-            POLYGON_BASE_URL + "v3/reference/exchanges?" + f"asset_class={asset_class}&"
+            POLYGON_BASE_URL + "v3/reference/exchanges?" +
+            f"asset_class={asset_class}&"
         )
 
         if locale is not None:
@@ -452,7 +453,8 @@ class FinancePolygonAPIWrapper(BaseModel):
         """
 
         url = (
-            POLYGON_BASE_URL + "v1/marketstatus/now?" + f"apiKey={self.polygon_api_key}"
+            POLYGON_BASE_URL + "v1/marketstatus/now?" +
+            f"apiKey={self.polygon_api_key}"
         )
 
         response = requests.get(url)
