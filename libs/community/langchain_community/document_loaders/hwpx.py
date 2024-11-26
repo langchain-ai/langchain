@@ -4,10 +4,10 @@ from pathlib import Path
 from typing import Iterator, Union
 from xml.etree.ElementTree import parse  # OK: user-must-opt-in
 
-from langchain_core.documents import Document
 from langchain_community.document_loaders.base import BaseLoader
+from langchain_core.documents import Document
 
-# Logger configuration
+
 logger = logging.getLogger(__name__)
 
 class HwpxLoader(BaseLoader):
