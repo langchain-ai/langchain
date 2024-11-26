@@ -455,10 +455,11 @@ class PyPDFium2TocParser(BaseBlobParser):
                         "toc_index": toc_index,
                         "level": toc_entry.level,
                         "n_kids": toc_entry.n_kids,
-                        "page_indexes": page_indexes,
-                        "title": toc_entry.title,
+                        "page_indexes": ",".join(map(str, page_indexes)),
+                        "toc_title": toc_entry.title,
                     }
-                    metadata = {"source": blob.source, "toc_entry": toc_entry_meta_data}  # type: ignore[attr-defined]
+                    metadata = {"source": blob.source}
+                    metadata.update(toc_entry_meta_data)
                     yield Document(page_content=content, metadata=metadata)
             finally:
                 pdf_reader.close()
