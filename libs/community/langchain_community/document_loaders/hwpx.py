@@ -21,7 +21,7 @@ class HwpxLoader(BaseLoader):
         file_path: Path to the HWPX file.
 
     Returns:
-        Iterator of Document objects, each representing a section or piece of the HWPX file.
+        Iterator of Document objects.
     """
 
     def __init__(self, file_path: Union[str, Path]):
@@ -34,7 +34,8 @@ class HwpxLoader(BaseLoader):
             with zipfile.ZipFile(self.file_path, "r") as hwpx_zip:
                 file_list = hwpx_zip.namelist()
                 content_files = [
-                    x for x in file_list if x.startswith("Contents/sec") and x.endswith(".xml")
+                    x for x in file_list
+                    if x.startswith("Contents/sec") and x.endswith(".xml")
                 ]
 
                 for content_file in content_files:
@@ -43,19 +44,21 @@ class HwpxLoader(BaseLoader):
                             tree = parse(f)
                             root = tree.getroot()
 
-                            # Extract text from XML and yield as Document
                             text = self._extract_text_from_xml(root)
                             if text.strip():
-                                yield Document(page_content=text, metadata={"source": content_file})
+                                metadata={"source": content_file}
+                                yield Document(page_content=text, metadata=metadata)
 
                     except Exception as e:
                         logger.error(f"Error processing file {content_file}: {e}")
         except zipfile.BadZipFile as e:
-            logger.error(f"Error opening HWPX file {self.file_path}: Invalid zip format.") 
-            raise RuntimeError(f"Error opening HWPX file {self.file_path}: Invalid zip format.") from e
+            err_str = f"Error opening HWPX file {self.file_path}: Invalid zip format."
+            logger.error(err_str)
+            raise RuntimeError(err_str) from e
         except Exception as e:
-            logger.error(f"Unexpected error opening HWPX file {self.file_path}: {e}")
-            raise RuntimeError(f"Error opening HWPX file {self.file_path}") from e
+            err_str = f"Unexpected error opening HWPX file {self.file_path}: {e}"
+            logger.error(err_str)
+            raise RuntimeError(err_str) from e
 
     def _extract_text_from_xml(self, root) -> str:
         """
