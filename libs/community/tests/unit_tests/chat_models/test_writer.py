@@ -7,7 +7,7 @@ import pytest
 from langchain_core.callbacks.manager import CallbackManager
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
-from langchain_standard_tests.unit_tests import ChatModelUnitTests
+from langchain_tests.unit_tests import ChatModelUnitTests
 from pydantic import SecretStr
 
 from langchain_community.chat_models.writer import ChatWriter
