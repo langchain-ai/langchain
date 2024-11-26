@@ -2,10 +2,10 @@ import zipfile
 from pathlib import Path
 from typing import Iterator, Union
 from xml.etree.ElementTree import parse  # OK: user-must-opt-in
-import logging
 
 from langchain_core.documents import Document
 from langchain_community.document_loaders.base import BaseLoader
+import logging
 
 # Logger configuration
 logger = logging.getLogger(__name__)
@@ -33,7 +33,9 @@ class HwpxLoader(BaseLoader):
         try:
             with zipfile.ZipFile(self.file_path, "r") as hwpx_zip:
                 file_list = hwpx_zip.namelist()
-                content_files = [x for x in file_list if x.startswith("Contents/sec") and x.endswith(".xml")]
+                content_files = [
+                    x for x in file_list if x.startswith("Contents/sec") and x.endswith(".xml")
+                ]
 
                 for content_file in content_files:
                     try:
