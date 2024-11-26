@@ -51,7 +51,6 @@ python = "<3.12"
 version = ">=1.26.2,<2"
 python = ">=3.12"
 
-pypdf = "^5.1.0"
 [tool.ruff.lint]
 select = ["E", "F", "I", "T201"]
 

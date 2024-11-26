@@ -48,7 +48,6 @@ def test_required_dependencies(poetry_conf: Mapping[str, Any]) -> None:
             "langsmith",
             "pypdf",
             "numpy",
-            "pypdf",
             "pydantic",
             "python",
             "requests",
