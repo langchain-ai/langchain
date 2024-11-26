@@ -4,6 +4,7 @@ import logging
 from functools import cached_property
 from typing import Any, Dict, List, Optional
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils import pre_init
 from langchain_core.utils.pydantic import get_fields
@@ -15,6 +16,11 @@ MAX_BATCH_SIZE_CHARS = 1000000
 MAX_BATCH_SIZE_PARTS = 90
 
 
+@deprecated(
+    since="0.3.5",
+    removal="1.0",
+    alternative_import="langchain_gigachat.GigaChatEmbeddings",
+)
 class GigaChatEmbeddings(BaseModel, Embeddings):
     """GigaChat Embeddings models.
 

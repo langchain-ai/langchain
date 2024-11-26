@@ -3,7 +3,7 @@ from typing import Any
 
 import pytest
 from langchain_core.documents import Document
-from langchain_standard_tests.integration_tests.vectorstores import (
+from langchain_tests.integration_tests.vectorstores import (
     AsyncReadWriteTestSuite,
     ReadWriteTestSuite,
 )
