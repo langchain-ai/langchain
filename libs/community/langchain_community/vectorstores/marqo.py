@@ -109,18 +109,11 @@ class Marqo(VectorStore):
             List[str]: The list of ids that were added.
         """
 
+        settings = self._client.index(self._index_name).get_settings()
         if (
-            "index_defaults" in self._client.index(self._index_name).get_settings()
-            and self._client.index(self._index_name).get_settings()["index_defaults"][
-                "treat_urls_and_pointers_as_images"
-            ]
-            or (
-                "treat_urls_and_pointers_as_images"
-                in self._client.index(self._index_name).get_settings()
-                and self._client.index(self._index_name).get_settings()[
-                    "treat_urls_and_pointers_as_images"
-                ]
-            )
+            "index_defaults" in settings
+            and settings["index_defaults"]["treat_urls_and_pointers_as_images"]
+            or settings.get("treat_urls_and_pointers_as_images"):
         ):
             raise ValueError(
                 "Marqo.add_texts is disabled for multimodal indexes. To add documents "
