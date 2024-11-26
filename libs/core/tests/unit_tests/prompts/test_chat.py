@@ -37,7 +37,7 @@ from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION, PYDANTIC_MINOR
 from tests.unit_tests.pydantic_utils import _normalize_schema
 
 
-def test_create_pdf_chat_prompt() -> None:
+def test_create_chat_prompt_template() -> None:
     """Test chat prompt with pdf data as bytes."""
     file_path = (
         Path(__file__).parent.parent.parent.parent.parent
@@ -59,7 +59,7 @@ def test_create_pdf_chat_prompt() -> None:
         ]
     )
 
-    expected_prompt = PromptTemplate(template="Hello world!\n1\n")
+    expected_prompt = PromptTemplate(template="Hello world!\n1\n", input_variables=[])
 
     assert len(prompt.messages) == 1
     output_prompt = prompt.messages[0]

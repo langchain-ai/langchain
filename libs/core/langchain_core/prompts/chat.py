@@ -52,7 +52,7 @@ from langchain_core.utils.interactive_env import is_interactive_env
 
 
 # extract pdf into bytes
-def extract_pdf_text(pdf_data: bytes) -> str:
+def extract_pdf_text(pdf_data: str) -> str:
     # Decode the base64 back into bytes
     pdf_bytes = base64.b64decode(pdf_data)
     pdf_text = ""
@@ -488,7 +488,7 @@ class _ImageTemplateParam(TypedDict, total=False):
 
 
 class _PdfTemplateParam(TypedDict, total=False):
-    pdf: Union[str, dict]
+    data: str
 
 
 class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
