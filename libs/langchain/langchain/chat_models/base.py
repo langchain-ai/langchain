@@ -328,13 +328,7 @@ def init_chat_model(
 def _init_chat_model_helper(
     model: str, *, model_provider: Optional[str] = None, **kwargs: Any
 ) -> BaseChatModel:
-    model_provider = model_provider or _attempt_infer_model_provider(model)
-    if not model_provider:
-        raise ValueError(
-            f"Unable to infer model provider for {model=}, please specify "
-            f"model_provider directly."
-        )
-    model_provider = model_provider.replace("-", "_").lower()
+    model, model_provider = _parse_model(model, model_provider)
     if model_provider == "openai":
         _check_pkg("langchain_openai")
         from langchain_openai import ChatOpenAI
@@ -460,6 +454,19 @@ def _attempt_infer_model_provider(model_name: str) -> Optional[str]:
     else:
         return None
 
+
+def _parse_model(model: str, model_provider: Optional[str]) -> Tuple[str, str]:
+    if ":" in model and model.split(":")[0] in _SUPPORTED_PROVIDERS:
+        model_provider = model.split(":")[0]
+        model = ":".join(model.split(":")[1:])
+    model_provider = model_provider or _attempt_infer_model_provider(model)
+    if not model_provider:
+        raise ValueError(
+            f"Unable to infer model provider for {model=}, please specify "
+            f"model_provider directly."
+        )
+    model_provider = model_provider.replace("-", "_").lower()
+    return model, model_provider
 
 def _check_pkg(pkg: str) -> None:
     if not util.find_spec(pkg):
@@ -851,3 +858,4 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         self, schema: Union[Dict, Type[BaseModel]], **kwargs: Any
     ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
         return self.__getattr__("with_structured_output")(schema, **kwargs)
+

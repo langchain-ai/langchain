@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 from unittest import mock
 
 import pytest
@@ -38,10 +39,12 @@ def test_all_imports() -> None:
         ("mixtral-8x7b-32768", "groq"),
     ],
 )
-def test_init_chat_model(model_name: str, model_provider: str) -> None:
-    _: BaseChatModel = init_chat_model(
+def test_init_chat_model(model_name: str, model_provider: Optional[str]) -> None:
+    llm1: BaseChatModel = init_chat_model(
         model_name, model_provider=model_provider, api_key="foo"
     )
+    llm2: BaseChatModel = init_chat_model(f"{model_provider}:{model_name}")
+    assert llm1.dict() == llm2.dict()
 
 
 def test_init_missing_dep() -> None:
