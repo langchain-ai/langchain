@@ -87,6 +87,7 @@ EXPECTED_ALL = [
     "HNLoader",
     "HuggingFaceDatasetLoader",
     "HuggingFaceModelLoader",
+    "HwpxLoader",
     "IFixitLoader",
     "IMSDbLoader",
     "ImageCaptionLoader",
