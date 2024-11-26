@@ -44,6 +44,7 @@ dataclasses-json = ">= 0.5.7, < 0.7"
 pydantic-settings = "^2.4.0"
 langsmith = "^0.1.125"
 httpx-sse = "^0.4.0"
+pypdf = "^5.1.0"
 [[tool.poetry.dependencies.numpy]]
 version = ">=1.22.4,<2"
 python = "<3.12"

@@ -25,6 +25,7 @@ disallow_untyped_defs = "True"
 python = ">=3.9,<4.0"
 langchain-core = "^0.3.15"
 pyyaml = "^6.0.1"
+pypdf = "^5.1.0"
 
 [tool.coverage.run]
 omit = [ "tests/*",]

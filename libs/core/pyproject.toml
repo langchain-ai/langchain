@@ -39,6 +39,7 @@ jsonpatch = "^1.33"
 PyYAML = ">=5.3"
 packaging = ">=23.2,<25"
 typing-extensions = ">=4.7"
+pypdf = "^5.1.0"
 [[tool.poetry.dependencies.pydantic]]
 version = "^2.5.2"
 python = "<3.12.4"
