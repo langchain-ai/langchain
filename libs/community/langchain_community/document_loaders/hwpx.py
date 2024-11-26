@@ -6,7 +6,7 @@ from langchain_community.document_loaders.base import BaseLoader
 
 import zipfile
 
-from xml.etree.ElementTree import parse
+from xml.etree.ElementTree import parse # OK: user-must-opt-in
 
 
 class HwpxLoader(BaseLoader):
