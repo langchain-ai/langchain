@@ -42,7 +42,9 @@ def test_init_chat_model(model_name: str, model_provider: Optional[str]) -> None
     llm1: BaseChatModel = init_chat_model(
         model_name, model_provider=model_provider, api_key="foo"
     )
-    llm2: BaseChatModel = init_chat_model(f"{model_provider}:{model_name}")
+    llm2: BaseChatModel = init_chat_model(
+        f"{model_provider}:{model_name}", api_key="foo"
+    )
     assert llm1.dict() == llm2.dict()
 
 
