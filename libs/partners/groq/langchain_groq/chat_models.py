@@ -654,7 +654,7 @@ class ChatGroq(BaseChatModel):
     @deprecated(
         since="0.2.1",
         alternative="langchain_groq.chat_models.ChatGroq.bind_tools",
-        removal="0.3.0",
+        removal="1.0.0",
     )
     def bind_functions(
         self,
