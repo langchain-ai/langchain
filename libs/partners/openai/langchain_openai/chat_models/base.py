@@ -435,7 +435,7 @@ class BaseChatOpenAI(BaseChatModel):
     """Number of chat completions to generate for each prompt."""
     top_p: Optional[float] = None
     """Total probability mass of tokens to consider at each step."""
-    max_tokens: Optional[int] = Field(default=None, alias="max_completion_tokens")
+    max_tokens: Optional[int] = Field(default=None)
     """Maximum number of tokens to generate."""
     tiktoken_model_name: Optional[str] = None
     """The model name to pass to tiktoken when using this class. 
@@ -1966,6 +1966,9 @@ class ChatOpenAI(BaseChatOpenAI):
     """Whether to include usage metadata in streaming output. If True, additional
     message chunks will be generated during the stream including usage metadata.
     """
+
+    max_tokens: Optional[int] = Field(default=None, alias="max_completion_tokens")
+    """Maximum number of tokens to generate."""
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
