@@ -15,7 +15,7 @@ class HwpxLoader(BaseLoader):
     """
     Load `hwpx` files and convert their textual contents into LangChain Documents.
 
-    This loader extracts only the text content from HWPX files. 
+    This loader extracts only the text content from HWPX files.
     Image files and non-textual content cannot be loaded.
 
     Args:
@@ -35,7 +35,7 @@ class HwpxLoader(BaseLoader):
             with zipfile.ZipFile(self.file_path, "r") as hwpx_zip:
                 file_list = hwpx_zip.namelist()
                 content_files = [
-                    x 
+                    x
                     for x in file_list
                     if x.startswith("Contents/sec") and x.endswith(".xml")
                 ]
