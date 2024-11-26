@@ -1,5 +1,8 @@
 import base64
 import json
+import typing
+from collections.abc import Sequence
+from typing import Any, Callable, Optional, Union
 
 import pytest
 
@@ -19,6 +22,7 @@ from langchain_core.messages.utils import (
     merge_message_runs,
     trim_messages,
 )
+from langchain_core.tools import BaseTool
 
 
 @pytest.mark.parametrize("msg_cls", [HumanMessage, AIMessage, SystemMessage])
@@ -431,7 +435,15 @@ def dummy_token_counter(messages: list[BaseMessage]) -> int:
 
 
 class FakeTokenCountingModel(FakeChatModel):
-    def get_num_tokens_from_messages(self, messages: list[BaseMessage]) -> int:
+    def get_num_tokens_from_messages(
+        self,
+        messages: list[BaseMessage],
+        tools: Optional[
+            Sequence[
+                Union[typing.Dict[str, Any], type, Callable, BaseTool]  # noqa: UP006
+            ]
+        ] = None,
+    ) -> int:
         return dummy_token_counter(messages)
 
 

@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-mistralai"
-version = "0.2.1"
+version = "0.2.2"
 description = "An integration package connecting Mistral and LangChain"
 authors = []
 readme = "README.md"
@@ -75,7 +75,7 @@ mypy = "^1.10"
 path = "../../core"
 develop = true
 
-[tool.poetry.group.test.dependencies.langchain-standard-tests]
+[tool.poetry.group.test.dependencies.langchain-tests]
 path = "../../standard-tests"
 develop = true
 

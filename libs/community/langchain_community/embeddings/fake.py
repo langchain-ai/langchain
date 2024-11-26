@@ -36,7 +36,8 @@ class DeterministicFakeEmbedding(Embeddings, BaseModel):
         np.random.seed(seed)
         return list(np.random.normal(size=self.size))
 
-    def _get_seed(self, text: str) -> int:
+    @staticmethod
+    def _get_seed(text: str) -> int:
         """
         Get a seed for the random generator, using the hash of the text.
         """

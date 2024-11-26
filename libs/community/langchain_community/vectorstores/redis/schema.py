@@ -97,7 +97,7 @@ class RedisVectorField(RedisField):
     dims: int = Field(...)
     algorithm: object = Field(...)
     datatype: str = Field(default="FLOAT32")
-    distance_metric: RedisDistanceMetric = Field(default="COSINE")
+    distance_metric: RedisDistanceMetric = Field(default="COSINE")  # type: ignore[assignment]
     initial_cap: Optional[int] = None
 
     @field_validator("algorithm", "datatype", "distance_metric", mode="before")

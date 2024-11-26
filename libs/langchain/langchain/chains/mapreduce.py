@@ -28,10 +28,10 @@ from langchain.chains.llm import LLMChain
     since="0.2.13",
     removal="1.0",
     message=(
-        "Refer here for a recommended map-reduce implementation using langgraph: "
-        "https://langchain-ai.github.io/langgraph/how-tos/map-reduce/. See also "
-        "migration guide: "
-        "https://python.langchain.com/docs/versions/migrating_chains/map_reduce_chain/"  # noqa: E501
+        "Refer to migration guide here for a recommended implementation using "
+        "LangGraph: https://python.langchain.com/docs/versions/migrating_chains/map_reduce_chain/"  # noqa: E501
+        ". See also LangGraph guides for map-reduce: "
+        "https://langchain-ai.github.io/langgraph/how-tos/map-reduce/."
     ),
 )
 class MapReduceChain(Chain):

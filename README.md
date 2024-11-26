@@ -59,7 +59,8 @@ For these applications, LangChain simplifies the entire application lifecycle:
 
 - **[LangGraph Cloud](https://langchain-ai.github.io/langgraph/cloud/)**: Turn your LangGraph applications into production-ready APIs and Assistants.
 
-![Diagram outlining the hierarchical organization of the LangChain framework, displaying the interconnected parts across multiple layers.](docs/static/svg/langchain_stack_062024.svg "LangChain Architecture Overview")
+![Diagram outlining the hierarchical organization of the LangChain framework, displaying the interconnected parts across multiple layers.](docs/static/svg/langchain_stack_112024.svg#gh-light-mode-only "LangChain Architecture Overview")
+![Diagram outlining the hierarchical organization of the LangChain framework, displaying the interconnected parts across multiple layers.](docs/static/svg/langchain_stack_112024_dark.svg#gh-dark-mode-only "LangChain Architecture Overview")
 
 ## 🧱 What can you build with LangChain?
 
@@ -128,7 +129,7 @@ Please see [here](https://python.langchain.com) for full documentation, which in
 
 - [🦜🛠️ LangSmith](https://docs.smith.langchain.com/): Trace and evaluate your language model applications and intelligent agents to help you move from prototype to production.
 - [🦜🕸️ LangGraph](https://langchain-ai.github.io/langgraph/): Create stateful, multi-actor applications with LLMs. Integrates smoothly with LangChain, but can be used without it.
-- [🦜🏓 LangServe](https://python.langchain.com/docs/langserve): Deploy LangChain runnables and chains as REST APIs.
+- [🦜🕸️ LangGraph Platform](https://langchain-ai.github.io/langgraph/concepts/#langgraph-platform): Deploy LLM applications built with LangGraph into production.
 
 ## 💁 Contributing
 
