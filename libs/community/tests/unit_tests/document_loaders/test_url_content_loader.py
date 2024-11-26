@@ -30,8 +30,7 @@ class TestURLContentLoader:
             ),
             Document(
                 page_content=(
-                    "Document Name: "
-                    "https://sub.domain.example.com/path/to/resource/"
+                    "Document Name: " "https://sub.domain.example.com/path/to/resource/"
                 ),
                 metadata={"source": file_path},
             ),
@@ -52,8 +51,7 @@ class TestURLContentLoader:
             ),
             Document(
                 page_content=(
-                    "Document Name: "
-                    "https://www.kinecta.org/about-us/executive-staff"
+                    "Document Name: " "https://www.kinecta.org/about-us/executive-staff"
                 ),
                 metadata={"source": file_path},
             ),

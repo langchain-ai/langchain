@@ -14,6 +14,7 @@ def _is_visible(p: Path) -> bool:
             return False
     return True
 
+
 class URLContentLoader(DirectoryLoader):
     """Specialized loader to handle URLs with line breaks and special characters."""
 
@@ -33,10 +34,12 @@ class URLContentLoader(DirectoryLoader):
 
         for line in lines:
             stripped_line = line.strip()
-            if stripped_line.startswith("http://") or stripped_line.startswith("https://"):
+            if stripped_line.startswith("http://") or stripped_line.startswith(
+                "https://"
+            ):
                 if current_url:
-                    processed_lines.append(current_url)  
-                current_url = stripped_line 
+                    processed_lines.append(current_url)
+                current_url = stripped_line
             elif current_url:
                 current_url += stripped_line
             else:
@@ -56,9 +59,8 @@ class URLContentLoader(DirectoryLoader):
                     content = self.read_file(item)
                     processed_content = self._fix_special_chars_in_urls(content)
                     for line in processed_content.splitlines():
-                       yield Document(
-                             page_content=line,
-                             metadata={"source": str(item)}
+                        yield Document(
+                            page_content=line, metadata={"source": str(item)}
                         )
                 except Exception as e:
                     if self.silent_errors:
