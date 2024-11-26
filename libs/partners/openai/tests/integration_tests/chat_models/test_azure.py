@@ -262,3 +262,13 @@ async def test_json_mode_async(llm: AzureChatOpenAI) -> None:
     assert isinstance(full, AIMessageChunk)
     assert isinstance(full.content, str)
     assert json.loads(full.content) == {"a": 1}
+
+
+def test_o1_max_tokens() -> None:
+    response = ChatOpenAI(model="o1-mini", max_tokens=10).invoke("how are you")  # type: ignore[call-arg]
+    assert isinstance(response, AIMessage)
+
+    response = ChatOpenAI(model="gpt-4o", max_completion_tokens=10).invoke(
+        "how are you"
+    )
+    assert isinstance(response, AIMessage)

@@ -737,3 +737,15 @@ class AzureChatOpenAI(BaseChatOpenAI):
             )
 
         return chat_result
+
+    @property
+    def _default_params(self) -> Dict[str, Any]:
+        """Get the default parameters for calling OpenAI API."""
+        params = super()._default_params
+        if (
+            "o1" in params["model"]
+            and "max_tokens" in params["model"]
+            and "max_completion_tokens" not in params["model"]
+        ):
+            params["max_completion_tokens"] = params.pop("max_tokens")
+        return params
