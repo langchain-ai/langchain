@@ -13,6 +13,7 @@ def test_parsers_public_api_correct() -> None:
         "PyPDFParser",
         "PDFMinerParser",
         "PyMuPDFParser",
+        "PyPDFium2TocParser",
         "PyPDFium2Parser",
         "PDFPlumberParser",
         "VsdxParser",
