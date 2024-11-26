@@ -456,7 +456,11 @@ def _attempt_infer_model_provider(model_name: str) -> Optional[str]:
 
 
 def _parse_model(model: str, model_provider: Optional[str]) -> Tuple[str, str]:
-    if ":" in model and model.split(":")[0] in _SUPPORTED_PROVIDERS:
+    if (
+        not model_provider
+        and ":" in model
+        and model.split(":")[0] in _SUPPORTED_PROVIDERS
+    ):
         model_provider = model.split(":")[0]
         model = ":".join(model.split(":")[1:])
     model_provider = model_provider or _attempt_infer_model_provider(model)
