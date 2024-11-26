@@ -8,7 +8,7 @@ from langchain_core._api.deprecation import (
 )
 
 AGENT_DEPRECATION_WARNING = (
-    "This class will continue to be supported, but it is recommended for new "
+    "LangChain agents will continue to be supported, but it is recommended for new "
     "use cases to be built with LangGraph. LangGraph offers a more flexible and "
     "full-featured framework for building agents, including support for "
     "tool-calling, persistence of state, and human-in-the-loop workflows. See "
