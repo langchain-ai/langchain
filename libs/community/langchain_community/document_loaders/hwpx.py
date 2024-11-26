@@ -2,7 +2,7 @@ import logging
 import zipfile
 from pathlib import Path
 from typing import Iterator, Union
-from xml.etree.ElementTree import parse  # OK: user-must-opt-in
+from xml.etree.ElementTree import Element, parse  # OK: user-must-opt-in
 
 from langchain_core.documents import Document
 
@@ -62,7 +62,7 @@ class HwpxLoader(BaseLoader):
             logger.error(err_str)
             raise RuntimeError(err_str) from e
 
-    def _extract_text_from_xml(self, root) -> str:
+    def _extract_text_from_xml(self, root: Element) -> str:
         """
         Extract meaningful text from the XML tree.
 
