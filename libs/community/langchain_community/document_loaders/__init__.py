@@ -244,6 +244,9 @@ if TYPE_CHECKING:
     from langchain_community.document_loaders.hugging_face_model import (
         HuggingFaceModelLoader,
     )
+    from langchain_community.document_loaders.hwpx import (
+        HwpxLoader,
+    )
     from langchain_community.document_loaders.ifixit import (
         IFixitLoader,
     )
@@ -613,6 +616,7 @@ _module_lookup = {
     "HNLoader": "langchain_community.document_loaders.hn",
     "HuggingFaceDatasetLoader": "langchain_community.document_loaders.hugging_face_dataset",  # noqa: E501
     "HuggingFaceModelLoader": "langchain_community.document_loaders.hugging_face_model",
+    "HwpxLoader": "langchain_community.document_loaders.hwpx",
     "IFixitLoader": "langchain_community.document_loaders.ifixit",
     "IMSDbLoader": "langchain_community.document_loaders.imsdb",
     "ImageCaptionLoader": "langchain_community.document_loaders.image_captions",
@@ -819,6 +823,7 @@ __all__ = [
     "HNLoader",
     "HuggingFaceDatasetLoader",
     "HuggingFaceModelLoader",
+    "HwpxLoader",
     "IFixitLoader",
     "ImageCaptionLoader",
     "IMSDbLoader",
