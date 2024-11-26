@@ -432,7 +432,7 @@ class ConfluenceLoader(BaseLoader):
         cql: str,
         include_archived_spaces: Optional[bool] = None,
         nexturl: str = "",
-        **kwargs: Any
+        **kwargs: Any,
     ) -> tuple[List[dict], str]:
         if nexturl:
             response = self.confluence.get(nexturl)
