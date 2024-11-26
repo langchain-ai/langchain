@@ -2,6 +2,7 @@
 
 import uuid
 from typing import (
+    AsyncGenerator,
     Generator,
     cast,
 )
@@ -51,7 +52,7 @@ def client() -> Generator[chromadb.ClientAPI, None, None]:
     reason="API not accessible",
 )
 @pytest.fixture()
-async def aclient() -> Generator[chromadb.AsyncHttpClient, None, None]:
+async def aclient() -> AsyncGenerator[chromadb.AsyncClientAPI, None]:
     SharedSystemClient.clear_system_cache()
     client = await chromadb.AsyncHttpClient()
     yield client
@@ -558,7 +559,7 @@ async def test_chroma_update_document_async(aclient: chromadb.AsyncClientAPI) ->
         ids=[document_id],
     )
     old_embedding = (await docsearch._collection.peek())["embeddings"][  # type: ignore
-        (await docsearch._collection.peek())["ids"].index(document_id)
+        (await docsearch._collection.peek())["ids"].index(document_id)  # type: ignore
     ]
 
     # Define updated content for the document
@@ -575,7 +576,7 @@ async def test_chroma_update_document_async(aclient: chromadb.AsyncClientAPI) ->
 
     # Assert that the new embedding is correct
     new_embedding = (await docsearch._collection.peek())["embeddings"][  # type: ignore
-        (await docsearch._collection.peek())["ids"].index(document_id)
+        (await docsearch._collection.peek())["ids"].index(document_id)  # type: ignore
     ]
 
     await docsearch.adelete_collection()
@@ -914,7 +915,7 @@ async def test_create_collection_if_not_exist_default_async(
         texts=texts,
         embedding=FakeEmbeddings(),
     )
-    assert await docsearch._client.get_collection("test_collection") is not None
+    assert await docsearch._client.get_collection("test_collection") is not None  # type: ignore
     await docsearch.adelete_collection()
 
 
@@ -950,7 +951,7 @@ async def test_create_collection_if_not_exist_true_existing_async(
         create_collection_if_not_exists=True,
     )
     await vectorstore.aset_collection()
-    assert await vectorstore._client.get_collection("test_collection") is not None
+    assert await vectorstore._client.get_collection("test_collection") is not None  # type: ignore
     await vectorstore.adelete_collection()
 
 
@@ -986,7 +987,7 @@ async def test_create_collection_if_not_exist_false_existing_async(
         create_collection_if_not_exists=False,
     )
     await vectorstore.aset_collection()
-    assert await vectorstore._client.get_collection("test_collection") is not None
+    assert await vectorstore._client.get_collection("test_collection") is not None  # type: ignore
     await vectorstore.adelete_collection()
 
 
@@ -1055,7 +1056,7 @@ async def test_create_collection_if_not_exist_true_non_existing_async(
         create_collection_if_not_exists=True,
     )
     await vectorstore.aset_collection()
-    assert await vectorstore._client.get_collection("test_collection") is not None
+    assert await vectorstore._client.get_collection("test_collection") is not None  # type: ignore
     await vectorstore.adelete_collection()
 
 
@@ -1095,13 +1096,13 @@ async def test_collection_none_after_delete_async(
         embedding_function=FakeEmbeddings(),
     )
     await vectorstore.aset_collection()
-    assert await vectorstore._client.get_collection("test_collection") is not None
+    assert await vectorstore._client.get_collection("test_collection") is not None  # type: ignore
     await vectorstore.adelete_collection()
     assert vectorstore._chroma_collection is None
     with pytest.raises(Exception, match="Chroma collection not initialized"):
         _ = vectorstore._collection
     with pytest.raises(Exception, match="does not exist"):
-        await vectorstore._client.get_collection("test_collection")
+        await vectorstore._client.get_collection("test_collection")  # type: ignore
     with pytest.raises(Exception):
         await vectorstore.asimilarity_search("foo")
 
@@ -1138,12 +1139,12 @@ async def test_reset_collection_async(aclient: chromadb.AsyncClientAPI) -> None:
     )
     await vectorstore.aset_collection()
     await vectorstore.aadd_documents([Document(page_content="foo")])
-    assert await vectorstore._collection.count() == 1
+    assert await vectorstore._collection.count() == 1  # type: ignore
     await vectorstore.areset_collection()
     assert vectorstore._chroma_collection is not None
-    assert await vectorstore._client.get_collection("test_collection") is not None
+    assert await vectorstore._client.get_collection("test_collection") is not None  # type: ignore
     assert vectorstore._collection.name == "test_collection"
-    assert await vectorstore._collection.count() == 0
+    assert await vectorstore._collection.count() == 0  # type: ignore
     # Clean up
     await vectorstore.adelete_collection()
 
@@ -1187,8 +1188,8 @@ async def test_delete_where_clause_async(aclient: chromadb.AsyncClientAPI) -> No
             Document(page_content="bar", metadata={"test": "foo"}),
         ]
     )
-    assert await vectorstore._collection.count() == 2
+    assert await vectorstore._collection.count() == 2  # type: ignore
     await vectorstore.adelete(where={"test": "bar"})
-    assert await vectorstore._collection.count() == 1
+    assert await vectorstore._collection.count() == 1  # type: ignore
     # Clean up
     await vectorstore.adelete_collection()
